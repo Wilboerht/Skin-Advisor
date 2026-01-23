@@ -1,0 +1,87 @@
+export interface ProductItem {
+    id: string;
+    name: string;
+    nameEn?: string;
+    category: string;
+    image: string;
+    price: string;
+    description: string;
+    keyIngredients: string[];
+    suitableSkinTypes: string[];
+    benefits: string[];
+}
+
+export const PRODUCTS_CATALOG: ProductItem[] = [
+    {
+        id: "p1",
+        name: "光蕴焕活精华液",
+        nameEn: "Luminous Revival Serum",
+        category: "精华",
+        image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&q=80&w=300&h=300",
+        price: "¥890",
+        description: "蕴含珍稀植物精粹与高浓度多肽，深层修护肌底，焕发肌肤自然光泽。",
+        keyIngredients: ["多肽", "烟酰胺", "积雪草"],
+        suitableSkinTypes: ["all", "dull", "aging"],
+        benefits: ["提亮肤色", "抗衰老", "修护屏障"]
+    },
+    {
+        id: "p2",
+        name: "深海海藻保湿霜",
+        nameEn: "Deep Sea Algae Cream",
+        category: "面霜",
+        image: "https://images.unsplash.com/photo-1629198688000-71f23e745b6e?auto=format&fit=crop&q=80&w=300&h=300",
+        price: "¥680",
+        description: "轻盈质地，深层补水，锁住水分，令肌肤水润饱满。",
+        keyIngredients: ["深海藻类提取物", "透明质酸", "角鲨烷"],
+        suitableSkinTypes: ["dry", "combination", "sensitive"],
+        benefits: ["深层补水", "舒缓修护", "长效保湿"]
+    },
+    {
+        id: "p3",
+        name: "氨基酸温和洁面乳",
+        nameEn: "Amino Acid Gentle Cleanser",
+        category: "洁面",
+        image: "https://images.unsplash.com/photo-1556228720-1957be83d09a?auto=format&fit=crop&q=80&w=300&h=300",
+        price: "¥320",
+        description: "弱酸性配方，温和清洁不紧绷，呵护皮脂膜。",
+        keyIngredients: ["氨基酸表面活性剂", "甘油", "洋甘菊"],
+        suitableSkinTypes: ["all", "sensitive"],
+        benefits: ["温和清洁", "不伤角质", "洗后不干"]
+    },
+    {
+        id: "p4",
+        name: "多重防护隔离乳 SPF50+",
+        nameEn: "Multi-Protection Sunscreen",
+        category: "防晒",
+        image: "https://images.unsplash.com/photo-1571781565036-d3f7595ca3e4?auto=format&fit=crop&q=80&w=300&h=300",
+        price: "¥450",
+        description: "全波段防晒，轻薄透气，抵御紫外线与环境污染。",
+        keyIngredients: ["物理防晒剂", "维生素E", "红景天"],
+        suitableSkinTypes: ["all"],
+        benefits: ["高倍防晒", "抗氧化", "轻薄透气"]
+    },
+    {
+        id: "p5",
+        name: "视黄醇抗皱眼霜",
+        nameEn: "Retinol Anti-Wrinkle Eye Cream",
+        category: "眼霜",
+        image: "https://images.unsplash.com/photo-1608248597279-f99d160bfbc8?auto=format&fit=crop&q=80&w=300&h=300",
+        price: "¥720",
+        description: "淡化眼周细纹，改善黑眼圈，紧致眼部轮廓。",
+        keyIngredients: ["视黄醇", "咖啡因", "胜肽"],
+        suitableSkinTypes: ["aging", "dry"],
+        benefits: ["淡纹紧致", "消除浮肿", "提亮眼周"]
+    },
+    {
+        id: "p6",
+        name: "水杨酸净痘精华",
+        nameEn: "Salicylic Acid Acne Serum",
+        category: "精华",
+        image: "https://images.unsplash.com/photo-1617897903246-719242758050?auto=format&fit=crop&q=80&w=300&h=300",
+        price: "¥480",
+        description: "疏通毛孔，改善痘痘粉刺，平衡油脂分泌。",
+        keyIngredients: ["2%水杨酸", "茶树精油", "金缕梅"],
+        suitableSkinTypes: ["oily", "acne-prone"],
+        benefits: ["祛痘控油", "收缩毛孔", "改善黑头"]
+    }
+];

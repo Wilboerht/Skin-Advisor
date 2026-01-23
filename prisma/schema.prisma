@@ -1,0 +1,185 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// AI 护肤顾问 - 问题配置
+model AdvisorQuestion {
+  id        String   @id @default(cuid())
+  question  String   // 问题内容
+  fieldName String   @unique // 字段名 (skinType, concern, etc)
+  type      String   @default("single") // single, multiple
+  options   Json     // 选项列表 [{ value: 'dry', label: '干性肌肤' }]
+  order     Int      @default(0) // 排序
+  active    Boolean  @default(true) // 是否启用
+  required  Boolean  @default(true)
+  category  String   @default("general")
+  gender    String   @default("all") // male, female, all
+  updatedAt DateTime @updatedAt
+}
+
+// AI 顾问用户会话 - 行为追踪
+model AdvisorSession {
+  id              String    @id @default(cuid())
+  sessionId       String    @unique // 前端生成的会话ID
+  
+  // ===== 时间戳追踪 =====
+  startedAt               DateTime? // 会话开始时间
+  questionnaireStartedAt  DateTime? // 问卷开始时间
+  questionnaireCompletedAt DateTime? // 问卷完成时间
+  faceScanStartedAt       DateTime? // 面部扫描开始时间
+  faceScanCompletedAt     DateTime? // 面部扫描完成时间
+  analysisStartedAt       DateTime? // 分析开始时间
+  analysisCompletedAt     DateTime? // 分析完成时间
+  resultViewedAt          DateTime? // 结果查看时间
+  completedAt             DateTime? // 完成时间
+  
+  // ===== 问卷数据 =====
+  answers         Json?     // 问卷答案
+  
+  // ===== 面部扫描 =====
+  faceScanUsed    Boolean   @default(false)
+  faceScanSkipped Boolean   @default(false)
+  
+  // ===== 分析结果 =====
+  analysisSource  String?   // ai | fallback
+  analysisResult  Json?     // 分析结果快照
+  
+  // ===== 分享状态 =====
+  resultShared    Boolean   @default(false)
+  shareMethod     String?   // image | link | weibo | wechat | xiaohongshu | douyin
+  
+  // ===== 设备信息 =====
+  userAgent       String?   // 用户代理
+  ip              String?   // IP地址（脱敏后）
+  deviceType      String?   // desktop | mobile | tablet
+  browser         String?   // chrome | safari | firefox | edge
+  os              String?   // windows | macos | linux | android | ios
+  
+  // ===== 地理位置 =====
+  province        String?   // 省份
+  city            String?   // 城市
+  
+  // ===== 来源追踪 =====
+  referrer        String?   // 来源页面
+  fingerprint     String?   // 浏览器指纹（用于去重）
+  utmSource       String?   // UTM来源
+  utmMedium       String?   // UTM媒介
+  utmCampaign     String?   // UTM活动
+  
+  userId          String?
+  user            User?     @relation(fields: [userId], references: [id])
+
+  createdAt       DateTime  @default(now())
+}
+
+
+// 系统设置 (用于动态配置提示词等)
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+// AI 顾问对话记录
+model Conversation {
+  id              String                @id @default(cuid())
+  sessionId       String                // 关联的会话 ID (AdvisorSession.sessionId)
+  messages        ConversationMessage[]
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  @@index([sessionId])
+}
+
+model ConversationMessage {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String       // user, assistant, system
+  content        String
+  createdAt      DateTime     @default(now())
+}
+
+// 推荐规则引擎
+model RecommendationRule {
+  id          String   @id @default(cuid())
+  name        String
+  priority    Int      @default(0)
+  conditions  Json     // { skinType: ['oily'], concern: ['acne'] }
+  productIds  Json     // string[]
+  message     String?  // 推荐理由
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ===== CMS 新增模型 =====
+
+// 管理员用户
+model AdminUser {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String   // 加密后的密码
+  name      String?
+  role      String   @default("admin") // super_admin, editor
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// 普通用户 (C端)
+model User {
+  id              String           @id @default(cuid())
+  email           String           @unique
+  password        String
+  name            String?
+  role            String           @default("user")
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  // Relations
+  advisorSessions AdvisorSession[]
+  shareRewards    ShareReward[]
+}
+
+// 产品库
+model Product {
+  id                String   @id @default(cuid())
+  name              String
+  nameEn            String?
+  category          String   // 精华, 面霜, etc.
+  image             String
+  price             String
+  description       String
+  keyIngredients    Json     // string[] 核心成分
+  suitableSkinTypes Json     // string[] 适用肤质
+  benefits          Json     // string[] 主要功效
+  active            Boolean  @default(true)
+  featured          Boolean  @default(false)
+  sortOrder         Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+// 分享领奖记录
+model ShareReward {
+  id            String   @id @default(cuid())
+  name          String
+  phone         String
+  address       String
+  shareProofUrl String   // 截图 URL
+  skinScore     Int?
+  percentile    Int?
+  status        String   @default("pending") // pending, approved, rejected, shipped
+  trackingNo    String?  // 快递单号
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id])
+}

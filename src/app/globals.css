@@ -1,0 +1,142 @@
+@import "tailwindcss";
+
+@theme {
+  /* Colors */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-brand-gold: #C9A86C;
+  --color-brand-gold-light: #D4B77A;
+  --color-brand-gold-dark: #B8975B;
+  --color-brand-cream: #FAF8F5;
+  --color-brand-cream-dark: #F5F2ED;
+  --color-brand-charcoal: #2C2C2C;
+  --color-brand-charcoal-light: #4A4A4A;
+  --color-brand-blush: #F5E6E0;
+  --color-brand-beige: #E8E2D9;
+  --color-brand-beige-dark: #D9D0C3;
+  --color-brand-blue: #7a9fd4;
+  --color-brand-bronze: #8B6914;
+  --color-brand-champagne: #F7E7CE;
+
+  /* Fonts */
+  --font-serif: "PingFang SC", "Source Han Sans", "Microsoft YaHei", sans-serif;
+  --font-sans: "PingFang SC", "Source Han Sans", "Microsoft YaHei", sans-serif;
+
+  /* Spacing */
+  --spacing-xs: 8px;
+  --spacing-s: 16px;
+  --spacing-m: 24px;
+  --spacing-l: 48px;
+  --spacing-xl: 80px;
+  --spacing-xxl: 120px;
+
+  /* Shadows */
+  --shadow-luxury: 0 4px 20px -2px rgba(201, 168, 108, 0.15);
+  --shadow-luxury-lg: 0 8px 30px -4px rgba(201, 168, 108, 0.2);
+  --shadow-card: 0 2px 12px -2px rgba(44, 44, 44, 0.06);
+  --shadow-card-hover: 0 8px 24px -4px rgba(44, 44, 44, 0.1);
+  --shadow-glow-gold: 0 0 20px rgba(201, 168, 108, 0.3);
+
+  /* Background Images */
+  --image-gradient-luxury: linear-gradient(135deg, #C9A86C 0%, #D4B77A 50%, #B8975B 100%);
+  --image-gradient-cream: linear-gradient(180deg, #FAF8F5 0%, #F5F2ED 100%);
+  --image-gradient-radial-gold: radial-gradient(circle, rgba(201, 168, 108, 0.1) 0%, transparent 70%);
+  --image-shimmer: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%);
+
+  /* Animations */
+  --animate-fade-in: fadeIn 0.5s ease-out;
+  --animate-slide-up: slideUp 0.5s ease-out;
+  --animate-scale-in: scaleIn 0.3s ease-out;
+  --animate-shimmer: shimmer 2s infinite;
+  --animate-pulse-soft: pulseSoft 2s ease-in-out infinite;
+  --animate-float: float 3s ease-in-out infinite;
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes shimmer {
+    from {
+      transform: translateX(-100%);
+    }
+
+    to {
+      transform: translateX(100%);
+    }
+  }
+
+  @keyframes pulseSoft {
+
+    0%,
+    100% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.7;
+    }
+  }
+
+  @keyframes float {
+
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+
+    50% {
+      transform: translateY(-5px);
+    }
+  }
+}
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* 保持浅色主题，因为这是一个高亮风格的应用 */
+    /* 如果必须支持深色，可以在这里定义，但目前先强制浅色效果或保持简单 */
+    --background: #ffffff;
+    --foreground: #171717;
+  }
+}
+
+body {
+  background: var(--color-brand-cream);
+  color: var(--color-brand-charcoal);
+  font-family: var(--font-sans);
+}
