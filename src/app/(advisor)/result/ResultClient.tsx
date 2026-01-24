@@ -26,6 +26,7 @@ import { ShareRewardBanner } from "@/components/advisor/ShareRewardBanner";
 
 // Import the new CSS Module
 import styles from "./result.module.css";
+import sidebarStyles from "./sidebar.module.css";
 
 // Types
 export interface ComprehensiveResult {
@@ -274,70 +275,110 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
             <main className={styles.main}>
 
                 {/* Left Column: Summary */}
-                <aside className={styles.summaryCard}>
-                    <div className={styles.userProfile}>
-                        <div className={styles.avatarRing}>
-                            <img
-                                src={userImage || "/images/default-avatar.png"}
-                                alt="User"
-                                className={styles.avatar}
-                                onError={(e) => {
-                                    (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=User&background=random&color=fff`;
-                                }}
-                            />
-                        </div>
-                        <h2 className={styles.greeting}>您的肌肤报告</h2>
-                        <p className={styles.reportDate}>{new Date().toLocaleDateString()}</p>
-                    </div>
-
-                    <div className={styles.scoreDisplay}>
-                        <div className={styles.bigScore}>
-                            {faceAnalysis?.overallScore || 85}
-                        </div>
-                        <span className={styles.scoreLabel}>肌肤综合评分</span>
-                        <div className={styles.skinTypeBadge}>
-                            {result.skinProfile.typeLabel}
-                        </div>
-                    </div>
-
-                    <div className={styles.statsGrid}>
-                        <div className={styles.statItem}>
-                            <span className={styles.statValue}>
-                                {result.skinProfile.skinAge || 25}
-                            </span>
-                            <span className={styles.statLabel}>肌龄</span>
-                        </div>
-                        <div className={styles.statItem}>
-                            <span className={`${styles.statValue} ${faceAnalysis?.hydration.level === 'low' ? styles.textPoor :
-                                faceAnalysis?.hydration.level === 'medium' ? styles.textAvg : styles.textGood
-                                }`}>
-                                {faceAnalysis?.hydration.level === 'low' ? '缺乏' :
-                                    faceAnalysis?.hydration.level === 'medium' ? '适中' : '充足'}
-                            </span>
-                            <span className={styles.statLabel}>水分</span>
-                        </div>
-                    </div>
-
-                    {/* Reward Banner */}
-                    <div className="mt-8">
-                        <ShareRewardBanner
-                            score={faceAnalysis?.overallScore || 0}
-                            percentile={90}
+                <aside className={sidebarStyles.summaryCard}>
+                    {/* Icon & Title */}
+                    <div className={sidebarStyles.pageIconWrapper}>
+                        <img
+                            src={userImage || "/images/default-avatar.png"}
+                            alt="User"
+                            className={sidebarStyles.pageIcon}
+                            onError={(e) => {
+                                (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=User&background=random&color=fff`;
+                            }}
                         />
                     </div>
+                    <h1 className={sidebarStyles.pageTitle}>肌肤诊断报告</h1>
 
-                    {/* Summary Text */}
-                    <div className="mt-8 pt-8 border-t border-gray-100">
-                        <h4 className="text-sm font-semibold mb-3 text-gray-900">分析摘要</h4>
-                        <p className="text-sm text-gray-600 leading-relaxed mb-4">
-                            {result.analysis.summary}
-                        </p>
-                        <ul className={styles.detailList}>
-                            {result.analysis.details.slice(0, 3).map((detail, i) => (
-                                <li key={i} className={styles.detailItem}>{detail}</li>
-                            ))}
-                        </ul>
+                    {/* Properties List */}
+                    <div className={sidebarStyles.propertyList}>
+                        <div className={sidebarStyles.propertyRow}>
+                            <div className={sidebarStyles.propertyLabel}>
+                                <span className={sidebarStyles.propertyIcon}>📅</span>
+                                <span>生成日期</span>
+                            </div>
+                            <div className={sidebarStyles.propertyContent}>
+                                <span className={sidebarStyles.propertyText}>{new Date().toLocaleDateString()}</span>
+                            </div>
+                        </div>
+
+                        <div className={sidebarStyles.propertyRow}>
+                            <div className={sidebarStyles.propertyLabel}>
+                                <span className={sidebarStyles.propertyIcon}>📊</span>
+                                <span>综合评分</span>
+                            </div>
+                            <div className={sidebarStyles.propertyContent}>
+                                <span className={`${sidebarStyles.propertyTag} ${(faceAnalysis?.overallScore || 0) >= 80 ? sidebarStyles.tagGreen :
+                                    (faceAnalysis?.overallScore || 0) >= 60 ? sidebarStyles.tagOrange : sidebarStyles.tagRed
+                                    }`}>
+                                    {faceAnalysis?.overallScore || 85}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className={sidebarStyles.propertyRow}>
+                            <div className={sidebarStyles.propertyLabel}>
+                                <span className={sidebarStyles.propertyIcon}>🧬</span>
+                                <span>肤质类型</span>
+                            </div>
+                            <div className={sidebarStyles.propertyContent}>
+                                <span className={`${sidebarStyles.propertyTag} ${sidebarStyles.tagBlue}`}>
+                                    {result.skinProfile.typeLabel}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className={sidebarStyles.propertyRow}>
+                            <div className={sidebarStyles.propertyLabel}>
+                                <span className={sidebarStyles.propertyIcon}>🎂</span>
+                                <span>肌龄检测</span>
+                            </div>
+                            <div className={sidebarStyles.propertyContent}>
+                                <span className={sidebarStyles.propertyText}>
+                                    {result.skinProfile.skinAge || 25} 岁
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className={sidebarStyles.propertyRow}>
+                            <div className={sidebarStyles.propertyLabel}>
+                                <span className={sidebarStyles.propertyIcon}>💧</span>
+                                <span>水分状态</span>
+                            </div>
+                            <div className={sidebarStyles.propertyContent}>
+                                <span className={`${sidebarStyles.propertyTag} ${faceAnalysis?.hydration.level === 'low' ? sidebarStyles.tagRed :
+                                    faceAnalysis?.hydration.level === 'medium' ? sidebarStyles.tagOrange : sidebarStyles.tagGreen
+                                    }`}>
+                                    {faceAnalysis?.hydration.level === 'low' ? '缺乏' :
+                                        faceAnalysis?.hydration.level === 'medium' ? '适中' : '充足'}
+                                </span>
+                            </div>
+                        </div>
                     </div>
+
+                    <div className={sidebarStyles.divider} />
+
+                    {/* Summary Callout */}
+                    <div className={sidebarStyles.calloutBlock}>
+
+                        <div className={sidebarStyles.calloutContent}>
+                            <div className={sidebarStyles.calloutTitle}>分析摘要</div>
+                            <div className={sidebarStyles.calloutText}>
+                                {result.analysis.summary}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Reward Link */}
+                    <Link href="/share-reward" className={sidebarStyles.linkBlock}>
+                        <div className={sidebarStyles.linkIconBox}>
+                            <Gift size={18} />
+                        </div>
+                        <div className={sidebarStyles.linkContent}>
+                            <div className={sidebarStyles.linkTitle}>领取专属好礼</div>
+                            <div className={sidebarStyles.linkDesc}>您的评分超越了 90% 的用户</div>
+                        </div>
+                        <ChevronRight size={14} className="text-gray-400" />
+                    </Link>
                 </aside>
 
                 {/* Right Column: Detailed Analysis & Routine */}

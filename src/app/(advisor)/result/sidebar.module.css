@@ -1,0 +1,235 @@
+/* Notion-like Sidebar & Property System */
+
+/* --- Sidebar Container --- */
+.summaryCard {
+    /* Sticky sidebar positioning */
+    position: sticky;
+    top: 120px;
+    height: auto;
+    font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
+}
+
+/* --- Page Icon (User Avatar) --- */
+.pageIconWrapper {
+    width: 78px;
+    height: 78px;
+    margin-bottom: 24px;
+    transition: transform 0.2s;
+}
+
+.pageIconWrapper:hover {
+    transform: scale(1.02);
+}
+
+.pageIcon {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    /* Circle for avatar, Notion uses square but circle fits 'person' better */
+    object-fit: cover;
+    box-shadow: rgba(15, 15, 15, 0.1) 0px 0px 0px 1px;
+}
+
+/* --- Page Title --- */
+.pageTitle {
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: var(--notion-text);
+    margin: 0 0 24px 0;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+}
+
+/* --- Property List (Database Properties) --- */
+.propertyList {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    /* Tight gap like Notion properties */
+    margin-bottom: 24px;
+}
+
+.propertyRow {
+    display: flex;
+    align-items: center;
+    min-height: 32px;
+    padding: 2px 0;
+}
+
+.propertyLabel {
+    width: 120px;
+    /* Fixed width for labels column */
+    min-width: 120px;
+    font-size: 0.875rem;
+    color: var(--notion-gray);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.propertyIcon {
+    font-size: 1rem;
+    line-height: 1;
+    width: 20px;
+    text-align: center;
+    opacity: 0.8;
+}
+
+.propertyContent {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+/* --- Property Value Styles --- */
+.propertyText {
+    font-size: 0.875rem;
+    color: var(--notion-text);
+}
+
+/* Tags (Select/Multi-Select style) */
+.propertyTag {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 6px;
+    height: 20px;
+    border-radius: 3px;
+    font-size: 0.8125rem;
+    line-height: 20px;
+    white-space: nowrap;
+    cursor: default;
+}
+
+.tagGreen {
+    background: var(--tag-green-bg);
+    color: var(--tag-green-text);
+}
+
+.tagBlue {
+    background: var(--tag-blue-bg);
+    color: var(--tag-blue-text);
+}
+
+.tagOrange {
+    background: var(--tag-orange-bg);
+    color: var(--tag-orange-text);
+}
+
+.tagRed {
+    background: var(--tag-red-bg);
+    color: var(--tag-red-text);
+}
+
+.tagGray {
+    background: var(--tag-gray-bg);
+    color: var(--tag-gray-text);
+}
+
+
+/* --- Callout Block (Summary) --- */
+.calloutBlock {
+    padding: 16px;
+    background-color: var(--notion-hover);
+    /* Make background visible now */
+    /* Default to transparent, maybe light gray if needed */
+    border-radius: 4px;
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+    border: 1px solid transparent;
+    transition: background 0.1s;
+}
+
+.calloutBlock:hover {
+    background-color: var(--notion-hover);
+}
+
+.calloutIcon {
+    font-size: 1.5rem;
+    line-height: 1.5rem;
+}
+
+.calloutContent {
+    flex: 1;
+}
+
+.calloutTitle {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--notion-text);
+    margin-bottom: 4px;
+}
+
+.calloutText {
+    font-size: 0.875rem;
+    color: var(--notion-text);
+    line-height: 1.6;
+}
+
+/* --- Reward/Action Block --- */
+/* Mimic a "Link to Page" or "Synced Block" look */
+.linkBlock {
+    margin-top: 24px;
+    padding: 8px 12px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: background 0.1s;
+    color: var(--notion-text);
+    text-decoration: none;
+    border: 1px solid var(--notion-border);
+}
+
+.linkBlock:hover {
+    background-color: var(--notion-hover);
+}
+
+.linkIconBox {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+}
+
+.linkContent {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.linkTitle {
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+.linkDesc {
+    font-size: 0.75rem;
+    color: var(--notion-gray);
+    line-height: 1.3;
+}
+
+
+/* --- Divider --- */
+.divider {
+    height: 1px;
+    background: var(--notion-border);
+    margin: 8px 0;
+    width: 100%;
+}
+
+/* Utilities for hiding on small screens if needed */
+@media (max-width: 768px) {
+    .propertyLabel {
+        width: 100px;
+    }
+}
