@@ -177,29 +177,25 @@ export default function QuestionsPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="flex min-h-[80vh] flex-col justify-center px-4"
+                    className="flex min-h-screen flex-col items-center justify-center bg-[#FDFBF7] px-4"
                 >
-                    <div className="flex-1 flex items-center">
+                    <div className="w-full max-w-4xl">
                         <GenderSelection onSelect={handleGenderSelect} />
                     </div>
-                    {/* 底部导航 - 返回首页 */}
-                    <div className="mt-8 flex justify-center pb-6">
-                        <button
-                            onClick={() => router.push("/")}
-                            className="text-sm text-brand-charcoal/40 hover:text-brand-charcoal"
-                        >
-                            返回首页
-                        </button>
-                    </div>
+
+                    <button
+                        onClick={() => router.push("/")}
+                        className="fixed bottom-8 text-xs text-[#1A1A1A]/40 hover:text-[#1A1A1A] transition-colors tracking-widest uppercase font-medium"
+                    >
+                        CANCEL
+                    </button>
                 </m.div>
             </AnimatePresence>
         );
     }
 
-    // 安全检查：如果当前问题不存在（可能是因为过滤逻辑导致索引越界）
-    if (!currentQuestion) {
-        return null; // 或者显示加载状态
-    }
+    // 安全检查
+    if (!currentQuestion) return null;
 
     const isNextDisabled = () => {
         if (!currentQuestion) return true;
@@ -211,109 +207,120 @@ export default function QuestionsPage() {
     };
 
     return (
-        <div className="flex min-h-[80vh] flex-col justify-between px-4">
-            {/* 顶部导航栏 */}
-            <div className="flex items-center justify-between pt-4 mb-4">
+        <div className="min-h-screen bg-[#FDFBF7] flex flex-col items-center relative overflow-x-hidden text-[#1A1A1A]">
+
+            {/* Top Bar: Progress & Exit */}
+            <div className="w-full max-w-5xl mx-auto px-6 py-8 flex items-center justify-between z-20 shrink-0">
+                <div className="w-12 h-12 flex items-center justify-center">
+                    <span className="text-xs font-bold tracking-widest opacity-20">0{currentStepIndex + 1}</span>
+                </div>
+
+                <div className="flex-1 max-w-xs mx-auto px-4 opacity-0 sm:opacity-100 transition-opacity">
+                    <ProgressBar current={currentStepIndex + 1} total={questions.length} compact />
+                </div>
+
                 <button
                     onClick={() => setShowExitConfirm(true)}
-                    className="p-2 -ml-2 text-brand-charcoal/40 hover:text-brand-charcoal transition-colors"
+                    className="group w-12 h-12 flex items-center justify-end text-[#1A1A1A]/20 hover:text-[#1A1A1A] transition-colors"
                 >
-                    <X className="h-5 w-5" />
+                    <X className="h-6 w-6 transition-transform group-hover:rotate-90 duration-500" />
                 </button>
-                <div className="text-xs font-medium tracking-widest text-brand-gold uppercase">NIHPLOD</div>
-                <div className="w-5" /> {/* 占位以保持居中 */}
             </div>
 
-            {/* 进度条 */}
-            <div className="mb-8">
-                <ProgressBar current={currentStepIndex + 1} total={questions.length} />
+            {/* Main Content Area */}
+            <div className="flex-1 w-full max-w-5xl mx-auto px-6 flex flex-col justify-center pb-8 z-10 min-h-0">
+                <AnimatePresence mode="wait" custom={direction}>
+                    <m.div
+                        key={currentStepIndex}
+                        custom={direction}
+                        initial={{ opacity: 0, x: direction > 0 ? 30 : -30 }} // Reduced movement for cleaner feel
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: direction > 0 ? -30 : 30 }}
+                        transition={{ duration: 0.4, ease: [0.2, 0.8, 0.2, 1] }}
+                        className="w-full"
+                    >
+                        <QuestionStep
+                            question={currentQuestion}
+                            selectedValue={answers[currentQuestion.fieldName] || null}
+                            onSelect={handleSelect}
+                            direction={direction}
+                        />
+                    </m.div>
+                </AnimatePresence>
             </div>
 
-            {/* 问题区域 */}
-            <AnimatePresence mode="wait" custom={direction}>
-                <m.div
-                    key={currentStepIndex}
-                    custom={direction}
-                    initial={{ opacity: 0, x: direction > 0 ? 50 : -50 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: direction > 0 ? -50 : 50 }}
-                    transition={{ duration: 0.3 }}
-                    className="flex-1"
-                >
-                    <QuestionStep
-                        question={currentQuestion}
-                        selectedValue={answers[currentQuestion.fieldName] || null}
-                        onSelect={handleSelect}
-                        direction={direction}
-                    />
-                </m.div>
-            </AnimatePresence>
+            {/* Bottom Navigation */}
+            <div className="w-full max-w-5xl mx-auto px-6 pb-12 flex justify-between items-center z-20 shrink-0 h-16">
 
-            {/* 底部导航 */}
-            <div className="mt-8 flex items-center justify-between pb-6">
+                {/* Back Button */}
                 <button
                     onClick={handleBack}
-                    className="flex h-10 w-10 items-center justify-center rounded-full text-brand-charcoal/60 transition-colors hover:bg-black/5"
+                    className={`group flex items-center gap-3 text-sm font-medium transition-all duration-300 ${currentStepIndex === 0 && !gender
+                        ? "opacity-0 pointer-events-none"
+                        : "text-[#1A1A1A]/40 hover:text-[#1A1A1A]"
+                        }`}
                 >
-                    <ChevronLeft className="h-6 w-6" />
+                    <div className="w-10 h-10 rounded-full border border-[#1A1A1A]/10 flex items-center justify-center group-hover:bg-[#1A1A1A] group-hover:border-[#1A1A1A] transition-all">
+                        <ChevronLeft className="h-4 w-4 group-hover:text-white transition-colors" />
+                    </div>
+                    {/* <span className="hidden sm:inline-block tracking-wide">Back</span> */}
                 </button>
 
-                {currentQuestion.type === "multiple" && (
-                    <button
-                        onClick={handleNext}
-                        disabled={isNextDisabled()}
-                        className="flex items-center gap-2 rounded-full bg-brand-charcoal px-6 py-2.5 text-sm font-medium text-white transition-all hover:bg-black disabled:opacity-50"
-                    >
-                        <span>{currentStepIndex === questions.length - 1 ? "完成" : "下一步"}</span>
-                        <ChevronRight className="h-4 w-4" />
-                    </button>
-                )}
-
-                {/* 单选时如果是最后一页也需要显示按钮 (虽然会自动跳转，但作为 fallback) */}
-                {currentQuestion.type !== "multiple" && currentStepIndex === questions.length - 1 && (
-                    <button
-                        onClick={handleNext}
-                        disabled={isNextDisabled()}
-                        className="flex items-center gap-2 rounded-full bg-brand-charcoal px-6 py-2.5 text-sm font-medium text-white transition-all hover:bg-black disabled:opacity-50"
-                    >
-                        <span>完成测试</span>
-                        <ChevronRight className="h-4 w-4" />
-                    </button>
-                )}
+                {/* Next Button (Only for multiple choice or explicit action) */}
+                <div className="h-10 flex items-center">
+                    {currentQuestion.type === "multiple" && (
+                        <button
+                            onClick={handleNext}
+                            disabled={isNextDisabled()}
+                            className="bg-[#1A1A1A] text-white px-8 py-2.5 rounded-full text-sm font-medium tracking-wide hover:bg-[#3D4430] disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+                        >
+                            Next Step
+                        </button>
+                    )}
+                    {/* Fallback for last step is handled by auto-submit, but we can keep a manual button if stuck */}
+                    {currentQuestion.type !== "multiple" && currentStepIndex === questions.length - 1 && !isNextDisabled() && (
+                        <button
+                            onClick={handleNext}
+                            className="text-sm font-medium text-[#1A1A1A] border-b border-[#1A1A1A] pb-0.5 hover:opacity-50 transition-opacity"
+                        >
+                            Finish
+                        </button>
+                    )}
+                </div>
             </div>
 
-            {/* 退出确认弹窗 */}
+            {/* Simple Exit Modal */}
             <AnimatePresence>
                 {showExitConfirm && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <m.div
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-[#FDFBF7]/90 backdrop-blur-sm"
+                            onClick={() => setShowExitConfirm(false)}
+                        />
                         <m.div
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
-                            className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
+                            className="relative w-full max-w-sm bg-white p-8 shadow-2xl border border-[#1A1A1A]/5 text-center"
                         >
-                            <div className="text-center">
-                                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
-                                    <LogOut className="h-6 w-6 text-red-500" />
-                                </div>
-                                <h3 className="mb-2 text-lg font-medium text-brand-charcoal">确定要退出吗？</h3>
-                                <p className="mb-6 text-sm text-brand-charcoal/60">
-                                    退出后，当前的测试进度将不会被保存。
-                                </p>
-                                <div className="flex gap-3">
-                                    <button
-                                        onClick={() => setShowExitConfirm(false)}
-                                        className="flex-1 rounded-full border border-gray-200 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50"
-                                    >
-                                        继续测试
-                                    </button>
-                                    <button
-                                        onClick={() => router.push("/")}
-                                        className="flex-1 rounded-full bg-red-500 py-2.5 text-sm font-medium text-white hover:bg-red-600"
-                                    >
-                                        确认退出
-                                    </button>
-                                </div>
+                            <h3 className="text-xl font-serif text-[#1A1A1A] mb-2">结束测试？</h3>
+                            <p className="text-sm text-[#5E5E5E] mb-8 font-light">
+                                当前进度将不会被保存。
+                            </p>
+                            <div className="flex flex-col gap-3">
+                                <button
+                                    onClick={() => setShowExitConfirm(false)}
+                                    className="w-full bg-[#1A1A1A] text-white py-3 text-sm font-medium hover:bg-[#3D4430] transition-colors"
+                                >
+                                    继续测试
+                                </button>
+                                <button
+                                    onClick={() => router.push("/")}
+                                    className="w-full py-2 text-xs text-[#1A1A1A]/40 hover:text-[#1A1A1A] transition-colors"
+                                >
+                                    确认退出
+                                </button>
                             </div>
                         </m.div>
                     </div>

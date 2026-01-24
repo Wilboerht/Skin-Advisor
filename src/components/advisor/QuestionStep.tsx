@@ -49,49 +49,34 @@ export function QuestionStep({
         animate="center"
         exit="exit"
         transition={transition}
-        className="w-full"
+        className="w-full max-w-5xl mx-auto px-4"
       >
-        {/* 问题标题区域 - 优雅的高奢风格 */}
-        <div className="mb-4 text-center sm:mb-6 md:mb-8">
-          {/* 装饰性分隔线 */}
-          <m.div
-            className="mx-auto mb-4 flex items-center justify-center gap-2"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.1, duration: 0.4 }}
-          >
-            <span className="h-px w-6 bg-gradient-to-r from-transparent to-brand-gold/40" />
-            <span className="h-1 w-1 rounded-full bg-brand-gold/60" />
-            <span className="h-px w-6 bg-gradient-to-l from-transparent to-brand-gold/40" />
-          </m.div>
-
-          {/* 主标题 */}
+        {/* Header - Centered & Clean */}
+        <div className="text-center mb-16">
           <m.h2
-            className="text-base font-serif font-light tracking-wide text-brand-charcoal sm:text-lg md:text-2xl lg:text-3xl"
+            className="text-3xl md:text-5xl font-serif text-[#1A1A1A] mb-6 leading-tight max-w-3xl mx-auto"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15, duration: 0.4 }}
+            transition={{ delay: 0.1, duration: 0.5 }}
           >
             {question.question}
           </m.h2>
 
-          {/* 副标题 */}
           {question.subtext && (
             <m.p
-              className="mt-2 text-xs font-light tracking-wider text-brand-charcoal/50 sm:mt-2.5 sm:text-sm"
+              className="text-sm md:text-base text-[#5E5E5E] font-light leading-relaxed max-w-lg mx-auto"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.25, duration: 0.4 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
             >
               {question.subtext}
             </m.p>
           )}
         </div>
 
-        {/* 选项列表 - 优雅间距 */}
-        <div className="space-y-2.5 sm:space-y-3.5">
+        {/* Options - Grid Layout on Desktop */}
+        <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           {question.options.map((option, index) => {
-            // 判断选项是否被选中（支持单选和多选）
             const isSelected = Array.isArray(selectedValue)
               ? selectedValue.includes(option.value)
               : selectedValue === option.value;
@@ -105,7 +90,7 @@ export function QuestionStep({
                 emoji={option.emoji}
                 isSelected={isSelected}
                 onClick={() => onSelect(option.value)}
-                index={prefersReducedMotion ? 0 : index} // 降级时不交错动画
+                index={prefersReducedMotion ? 0 : index}
               />
             );
           })}
@@ -114,4 +99,3 @@ export function QuestionStep({
     </AnimatePresence>
   );
 }
-

@@ -818,198 +818,176 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
 
   // 获取当前步骤配置
 
+  // 获取当前步骤配置
+  const currentStepConfig = CAPTURE_STEPS.find(s => s.step === currentStep);
 
   return (
-    <div className="flex h-full flex-col items-center">
+    <div className="relative h-full w-full overflow-hidden bg-black">
       {/* 隐藏的 Canvas */}
       <canvas ref={canvasRef} className="hidden" />
 
-      {/* 步骤进度指示器 */}
-      <div className="mb-3 flex w-full max-w-sm items-center justify-center gap-2">
-        {CAPTURE_STEPS.map((step, index) => {
-          const isCompleted = capturedImages[step.step] !== null;
-          const isCurrent = step.step === currentStep && !isAllCaptured;
-
-          return (
-            <div key={step.step} className="flex items-center gap-2">
-              <div className="flex flex-col items-center">
-                <div
-                  className={cn(
-                    "flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all duration-300",
-                    isCompleted
-                      ? "border-green-500 bg-green-500 text-white"
-                      : isCurrent
-                        ? "border-brand-gold bg-brand-gold/10 text-brand-gold"
-                        : "border-gray-300 bg-gray-100 text-gray-400"
-                  )}
-                >
-                  {isCompleted ? (
-                    <Check className="h-5 w-5" />
-                  ) : (
-                    step.icon
-                  )}
-                </div>
-                <span className={cn(
-                  "mt-1 text-xs",
-                  isCurrent ? "font-medium text-brand-gold" : "text-gray-500"
-                )}>
-                  {step.label}
-                </span>
-              </div>
-              {index < CAPTURE_STEPS.length - 1 && (
-                <div className={cn(
-                  "mb-4 h-0.5 w-8 transition-colors duration-300",
-                  capturedImages[step.step] ? "bg-green-500" : "bg-gray-200"
-                )} />
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* 预览区域 */}
-      <div className="relative mb-3 aspect-[3/4] w-full max-w-sm overflow-hidden rounded-2xl bg-brand-charcoal/5">
-        {/* 完成后显示模糊背景 + 分析提示 */}
-        {isAllCaptured && capturedImages.front ? (
-          <div className="relative h-full w-full">
-            {/* 模糊的背景照片 */}
-            <m.img
-              src={capturedImages.front}
-              alt=""
-              className="h-full w-full scale-110 object-cover blur-xl"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
-            />
-            {/* 深色蒙版 */}
-            <div className="absolute inset-0 bg-brand-charcoal/60" />
-            {/* 即将开始分析提示 */}
-            <m.div
-              className="absolute inset-0 flex flex-col items-center justify-center"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.2 }}
-            >
-              <div className="flex flex-col items-center gap-4">
-                {/* 加载动画 */}
-                <div className="relative">
-                  <div className="h-16 w-16 animate-spin rounded-full border-[3px] border-white/20 border-t-brand-gold" />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Check className="h-6 w-6 text-white" />
-                  </div>
-                </div>
-                {/* 提示文字 */}
-                <div className="text-center">
-                  <p className="text-lg font-medium text-white">拍摄完成</p>
-                  <p className="mt-1 text-sm text-white/70">正在准备 AI 分析...</p>
-                </div>
-              </div>
-            </m.div>
-          </div>
+      {/* ⚠️ 沉浸式全屏视频流 */}
+      <div className="absolute inset-0 z-0">
+        {!isAllCaptured ? (
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className={cn(
+              "h-full w-full object-cover",
+              facingMode === "user" && "-scale-x-100"
+            )}
+          />
         ) : (
-          <>
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              className={cn(
-                "h-full w-full object-cover",
-                facingMode === "user" && "-scale-x-100"
-              )}
+          /* 拍摄完成后显示模糊的最后一张图作为背景 */
+          <div className="relative h-full w-full">
+            <m.img
+              src={capturedImages.front || capturedImages.chin || ""}
+              className="h-full w-full object-cover blur-2xl opacity-50 scale-110"
             />
-
-            {/* 面部引导框 */}
-            {!isLoading && !error && (
-              <FaceScanOverlay
-                currentStep={currentStep}
-                faceStatus={faceStatus}
-                stabilityProgress={stabilityProgress}
-              />
-            )}
-
-            {/* 加载状态 */}
-            {isLoading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-brand-charcoal/10">
-                <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-gold border-t-transparent" />
-              </div>
-            )}
-
-            {/* 错误状态 */}
-            {error && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-brand-charcoal/5 p-6 text-center">
-                <AlertCircle className="mb-2 h-10 w-10 text-red-400" />
-                <p className="text-sm text-brand-charcoal/70">{error}</p>
-              </div>
-            )}
-          </>
+            <div className="absolute inset-0 flex flex-col items-center justify-center z-10">
+              <div className="h-16 w-16 mb-6 rounded-full border-4 border-white/20 border-t-white animate-spin" />
+              <p className="text-xl font-medium text-white tracking-widest">ANALYZING</p>
+            </div>
+          </div>
         )}
 
-        {/* 切换摄像头按钮 */}
-        {!isAllCaptured && !error && !isLoading && (
-          <button
-            onClick={toggleCamera}
-            className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-sm transition-colors hover:bg-black/50"
-            aria-label="切换摄像头"
-          >
-            <RefreshCw className="h-5 w-5" />
-          </button>
-        )}
+        {/* 视频遮罩：让文字更清晰，同时增加质感 */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40 pointer-events-none" />
       </div>
 
-      {/* 光线提示 + 拍照提示 (精简版) - 固定高度避免抖动 */}
-      {!isAllCaptured && !error && !isLoading && (
-        <div className="flex w-full max-w-sm shrink-0 flex-col items-center justify-center" style={{ minHeight: '52px' }}>
-          {/* 冷却状态提示 */}
-          {isInCooldown ? (
-            <div className="flex flex-col items-center gap-1.5">
-              <div className="flex items-center gap-2 text-brand-gold">
-                <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-brand-gold border-t-transparent" />
-                <span className="text-xs font-medium">请调整姿势...</span>
-              </div>
-              {/* 冷却进度条 */}
-              <div className="h-0.5 w-24 overflow-hidden rounded-full bg-gray-200">
-                <m.div
-                  className="h-full bg-brand-gold"
-                  initial={{ width: "0%" }}
-                  animate={{ width: `${cooldownProgress}%` }}
-                  transition={{ duration: 0.05 }}
-                />
-              </div>
-              <p className="text-center text-xs text-brand-charcoal/60">
-                下一步：{CAPTURE_STEPS.find(s => s.step === currentStep)?.instruction}
-              </p>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center gap-1.5">
-              {/* 光线状态 + 操作提示 */}
-              <div className="flex items-center gap-3">
-                {renderLightIndicator()}
-                <span className="text-xs text-brand-charcoal/40">|</span>
-                <span className="text-xs text-brand-charcoal/60">系统自动拍照</span>
-              </div>
+      {/* ✨ 顶部步骤指示器 - 悬浮 */}
+      {!isAllCaptured && (
+        <div className="absolute top-6 left-0 right-0 z-20 flex justify-center pt-2">
+          <div className="flex items-center gap-4">
+            {CAPTURE_STEPS.map((step, index) => {
+              const isCompleted = capturedImages[step.step] !== null;
+              const isCurrent = step.step === currentStep;
 
-              {/* 手动拍照链接 - 5秒后才显示，否则显示占位符保持高度 */}
-              <div className="h-4">
-                {showManualButton && (
-                  <m.button
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    onClick={() => {
-                      if (faceStatus === "detecting" || faceStatus === "found" || faceStatus === "none") {
-                        takePhotoAuto();
-                      }
-                    }}
-                    className="text-[11px] text-brand-charcoal/40 underline decoration-dotted underline-offset-2 transition-colors hover:text-brand-gold"
-                  >
-                    检测困难？手动拍照
-                  </m.button>
+              return (
+                <div key={step.step} className="flex items-center">
+                  <div className={cn(
+                    "flex items-center gap-1.5 transition-all duration-300",
+                    isCurrent ? "opacity-100" : "opacity-40"
+                  )}>
+                    {isCompleted ? (
+                      <div className="h-1.5 w-1.5 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.8)]" />
+                    ) : (
+                      <div className={cn("h-1.5 w-1.5 rounded-full transition-all", isCurrent ? "bg-white scale-125" : "bg-white")} />
+                    )}
+                    <span className="text-[10px] font-medium tracking-widest uppercase text-white shadow-black drop-shadow-sm">
+                      {step.label}
+                    </span>
+                  </div>
+                  {/* Remove separator line for cleaner look */}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ✨ 中央取景框 overlay - 仅作为参考线 */}
+      {!isAllCaptured && !isLoading && !error && (
+        <div className="absolute inset-0 z-10 pointer-events-none">
+          <FaceScanOverlay
+            currentStep={currentStep}
+            faceStatus={faceStatus}
+            stabilityProgress={stabilityProgress}
+          />
+        </div>
+      )}
+
+      {/* ✨ 底部状态栏 - 悬浮 */}
+      {!isAllCaptured && !isLoading && !error && (
+        <div className="absolute bottom-8 left-0 right-0 z-20 flex flex-col items-center pointer-events-none px-4">
+
+          {/* 状态提示文字 - 极大号，像电影字幕 */}
+          <m.div
+            key={currentStep} // 切换步骤时触发动画
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center mb-4"
+          >
+            <h3 className="text-2xl md:text-3xl font-serif text-white mb-2 drop-shadow-md">
+              {isInCooldown ? "请稍候..." : currentStepConfig?.instruction}
+            </h3>
+
+            {/* 辅助状态：光线 和 自动拍照提示 */}
+            <div className="flex items-center justify-center gap-4 text-white/60 text-sm font-light">
+              {/* 光线指示 */}
+              <div className="flex items-center gap-1.5">
+                {lightLevel === 'low' || lightLevel === 'too_dark' ? (
+                  <>
+                    <SunDim className="w-4 h-4 text-yellow-300" />
+                    <span className="text-yellow-100">Light is Low</span>
+                  </>
+                ) : (
+                  <>
+                    <Sun className="w-4 h-4" />
+                    <span>Lighting Good</span>
+                  </>
                 )}
               </div>
+              {/* 拍照模式指示 */}
+              <div className="flex items-center gap-1.5 border-l border-white/20 pl-4">
+                <div className={cn(
+                  "w-2 h-2 rounded-full",
+                  faceStatus === 'ready' ? "bg-green-400 animate-pulse" : "bg-white/40"
+                )} />
+                <span>Auto Capture</span>
+              </div>
+            </div>
+          </m.div>
+
+          {/* 手动拍照按钮 (Fallback) */}
+          {showManualButton && (
+            <div className="pointer-events-auto mt-4">
+              <button
+                onClick={takePhotoAuto}
+                className="px-6 py-2 rounded-full border border-white/30 text-white text-sm hover:bg-white/10 transition-colors backdrop-blur-sm"
+              >
+                无法自动识别？点击手动拍照
+              </button>
             </div>
           )}
         </div>
       )}
+
+      {/* Loading Overlay */}
+      {isLoading && (
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black">
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+          <p className="mt-4 text-white/50 text-sm tracking-widest uppercase">Initializing Camera</p>
+        </div>
+      )}
+
+      {/* Error Overlay */}
+      {error && (
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/90 p-8 text-center">
+          <AlertCircle className="h-12 w-12 text-red-400 mb-4" />
+          <h3 className="text-white text-lg font-medium mb-2">Camera Error</h3>
+          <p className="text-white/60 max-w-md">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-8 px-8 py-3 bg-white text-black rounded-full text-sm font-medium hover:bg-gray-200 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {/* 摄像头切换 - 右上角 */}
+      {!isAllCaptured && !isLoading && (
+        <button
+          onClick={toggleCamera}
+          className="absolute top-8 right-8 z-30 p-3 rounded-full bg-black/20 border border-white/10 text-white hover:bg-black/40 backdrop-blur-md transition-all"
+        >
+          <RefreshCw className="w-5 h-5" />
+        </button>
+      )}
+
     </div>
   );
 }
