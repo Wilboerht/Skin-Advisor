@@ -1,0 +1,737 @@
+/* Notion-like Design System */
+/* Colors from Notion's palette */
+:root {
+    --notion-bg: #FFFFFF;
+    --notion-text: #37352F;
+    --notion-gray: #787774;
+    --notion-border: #E9E9E7;
+    --notion-hover: #F1F1EF;
+    --notion-selection: #CDE6F7;
+
+    /* Notion Pastels */
+    --tag-gray-bg: #F1F1EF;
+    --tag-gray-text: #787774;
+    --tag-brown-bg: #F4EEEE;
+    --tag-brown-text: #9F6B53;
+    --tag-orange-bg: #FAEBDD;
+    --tag-orange-text: #D9730D;
+    --tag-yellow-bg: #FBF3DB;
+    --tag-yellow-text: #CB912F;
+    --tag-green-bg: #EDF3EC;
+    --tag-green-text: #448361;
+    --tag-blue-bg: #E6F3F7;
+    --tag-blue-text: #337EA9;
+    --tag-purple-bg: #F6F3F9;
+    --tag-purple-text: #9065B0;
+    --tag-pink-bg: #F9F2F5;
+    --tag-pink-text: #C14C8A;
+    --tag-red-bg: #FDEEB;
+    --tag-red-text: #D44C47;
+}
+
+.container {
+    width: 100%;
+    min-height: 100vh;
+    background-color: var(--notion-bg);
+    color: var(--notion-text);
+    font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
+    line-height: 1.5;
+}
+
+/* --- Header --- */
+.header {
+    height: 48px;
+    /* Slightly shorter, compact */
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(4px);
+    border-bottom: 1px solid var(--notion-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.headerLeft {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.backButton {
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    border: none;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--notion-text);
+    transition: background 0.1s;
+}
+
+.backButton:hover {
+    background: var(--notion-hover);
+}
+
+.brandWrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* mimic breadcrumbs font style */
+.brandName {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--notion-text);
+    display: flex;
+    align-items: center;
+}
+
+.brandName::after {
+    content: "/";
+    margin: 0 8px;
+    color: var(--notion-gray);
+    font-weight: 400;
+}
+
+.reportType {
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: var(--notion-text);
+}
+
+.headerActions {
+    display: flex;
+    gap: 8px;
+}
+
+.actionBtn {
+    height: 28px;
+    padding: 0 12px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    color: var(--notion-text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.1s;
+}
+
+.actionBtn:hover {
+    background: var(--notion-hover);
+}
+
+.primaryActionBtn {
+    /* Usually Notion buttons are just text or subtle bg, but for primary we can use blue text or subtle blue bg */
+    color: #337EA9;
+}
+
+.primaryActionBtn:hover {
+    background: var(--tag-blue-bg);
+}
+
+/* --- Main Layout --- */
+/* --- Main Layout: Academic Resume Style --- */
+.main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 48px;
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 64px;
+    align-items: start;
+}
+
+@media (max-width: 1024px) {
+    .main {
+        grid-template-columns: 1fr;
+        max-width: 800px;
+        gap: 48px;
+    }
+}
+
+@media (max-width: 768px) {
+    .main {
+        padding: 24px 16px;
+    }
+}
+
+/* --- Left Sidebar (Personal Info) --- */
+.summaryCard {
+    background: transparent;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    position: sticky;
+    top: 80px;
+    /* Below header */
+    height: auto;
+    border-bottom: none;
+    padding-bottom: 0;
+    /* Optional right border for separation, but whitespace is better */
+}
+
+/* Move avatar to look like Notion Icon */
+.userProfile {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    margin-bottom: 24px;
+}
+
+.avatarRing {
+    width: 78px;
+    height: 78px;
+    border-radius: 50%;
+    /* Notion icons are square usually, but user avatar circle is fine */
+    overflow: hidden;
+    margin: 0 0 16px 0;
+    border: none;
+    padding: 0;
+    box-shadow: rgba(15, 15, 15, 0.1) 0px 0px 0px 1px;
+}
+
+.avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.greeting {
+    font-size: 2.5rem;
+    /* H1 size */
+    font-weight: 700;
+    color: var(--notion-text);
+    margin: 0 0 8px 0;
+    line-height: 1.2;
+}
+
+.reportDate {
+    font-size: 0.9rem;
+    color: var(--notion-gray);
+}
+
+/* Properties block (mimicking Notion Database Properties) */
+.scoreDisplay {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--notion-border);
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 8px 12px;
+}
+
+/* Adjust order: Value first (DOM) -> Label second */
+.bigScore {
+    grid-column: 1;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--tag-green-text);
+    background: var(--tag-green-bg);
+    padding: 2px 8px;
+    border-radius: 4px;
+    width: fit-content;
+}
+
+.scoreLabel {
+    grid-column: 2;
+    font-size: 0.875rem;
+    color: var(--notion-gray);
+}
+
+.skinTypeBadge {
+    grid-column: 1;
+    /* Aligns with score */
+    grid-row: 2;
+    background: var(--tag-blue-bg);
+    color: var(--tag-blue-text);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    width: fit-content;
+}
+
+/* We need a label for skin type to match the pattern, 
+   but DOM doesn't have one readily available next to it. 
+   We'll let it stand alone or just sit under the score. */
+
+.statsGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 0;
+    border: none;
+}
+
+.statItem {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 12px;
+}
+
+.statValue {
+    grid-column: 1;
+    min-width: 40px;
+    /* Ensure alignment */
+    text-align: center;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--notion-text);
+    background: var(--notion-hover);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.statLabel {
+    grid-column: 2;
+    font-size: 0.875rem;
+    color: var(--notion-gray);
+}
+
+.detailList {
+    margin-top: 24px;
+    background: var(--notion-hover);
+    /* Callout block style */
+    padding: 16px 16px 16px 40px;
+    /* space for icon */
+    border-radius: 4px;
+    position: relative;
+    list-style: none;
+}
+
+.detailList::before {
+    content: "💡";
+    /* Icon for callout */
+    position: absolute;
+    left: 12px;
+    top: 16px;
+    font-size: 1.2rem;
+}
+
+.detailItem {
+    font-size: 0.9rem;
+    color: var(--notion-text);
+    margin-bottom: 6px;
+}
+
+
+/* --- Content Area --- */
+.contentArea {
+    gap: 48px;
+}
+
+.sectionTitle {
+    font-size: 1.5rem;
+    /* H2 */
+    font-weight: 600;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--notion-border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--notion-text);
+}
+
+.sectionIcon {
+    width: 24px;
+    height: 24px;
+    color: var(--notion-text);
+}
+
+
+/* Radar Chart Container */
+.analysisGrid {
+    background: white;
+    border: 1px solid var(--notion-border);
+    border-radius: 4px;
+    padding: 24px;
+    display: grid;
+    gap: 32px;
+    /* more space */
+}
+
+@media (min-width: 1024px) {
+    .analysisGrid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.radarWrapper {
+    height: 300px;
+}
+
+.dimensionList {
+    /* Looks like a database list view */
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    /* borders between items */
+    border: 1px solid var(--notion-border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.dimensionCard {
+    background: white;
+    padding: 8px 12px;
+    border-radius: 0;
+    border-bottom: 1px solid var(--notion-border);
+    display: grid;
+    grid-template-columns: 100px 1fr 40px;
+    /* Name - Bar - Score */
+    align-items: center;
+    gap: 12px;
+    transition: background 0.1s;
+}
+
+.dimensionCard:last-child {
+    border-bottom: none;
+}
+
+.dimensionCard:hover {
+    background: var(--notion-hover);
+    box-shadow: none;
+    border-color: var(--notion-border);
+}
+
+.dimHeader {
+    margin: 0;
+    display: contents;
+    /* flatten layout */
+}
+
+.dimName {
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.dimScore {
+    grid-column: 3;
+    font-size: 0.875rem;
+    color: var(--notion-gray);
+    text-align: right;
+}
+
+.dimBarBg {
+    height: 6px;
+    background: var(--notion-hover);
+    border-radius: 3px;
+    margin: 0;
+    width: 100%;
+}
+
+.dimBarFill {
+    height: 100%;
+    border-radius: 3px;
+}
+
+
+/* Zone Grid - Gallery View Style */
+.zoneGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+}
+
+.zoneCard {
+    background: white;
+    border: 1px solid var(--notion-border);
+    border-radius: 4px;
+    padding: 12px;
+    text-align: left;
+    box-shadow: rgba(15, 15, 15, 0.05) 0px 1px 2px;
+    transition: background 0.1s;
+}
+
+.zoneCard:hover {
+    background: var(--notion-hover);
+}
+
+.zoneName {
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.zoneStatus {
+    display: inline-block;
+    padding: 2px 6px;
+    font-size: 0.75rem;
+    border-radius: 3px;
+    margin-bottom: 8px;
+}
+
+.zoneDesc {
+    font-size: 0.8125rem;
+    color: var(--notion-gray);
+    line-height: 1.4;
+}
+
+
+/* Routine - Toggles */
+.routineSection {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+}
+
+.routineTabs {
+    border-bottom: 1px solid var(--notion-border);
+    background: transparent;
+    gap: 24px;
+    padding: 0;
+    margin-bottom: 24px;
+}
+
+.routineTab {
+    padding: 0 0 8px 0;
+    background: transparent;
+    border-bottom: 2px solid transparent;
+    color: var(--notion-gray);
+    font-size: 0.9rem;
+    font-weight: 500;
+    flex: initial;
+    /* Don't stretch */
+}
+
+.routineTab:hover {
+    color: var(--notion-text);
+}
+
+.routineTab.active {
+    background: transparent;
+    color: var(--notion-text);
+    border-bottom: 2px solid var(--notion-text);
+}
+
+.routineContent {
+    padding: 0;
+}
+
+.routineSteps {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.stepCard {
+    display: flex;
+    gap: 16px;
+    padding: 12px;
+    border: 1px solid var(--notion-border);
+    border-radius: 4px;
+    background: white;
+}
+
+.stepIndex {
+    background: transparent;
+    color: var(--notion-gray);
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: monospace;
+    width: 24px;
+    height: 24px;
+    /* remove circle bg */
+    border-radius: 0;
+    justify-content: flex-start;
+}
+
+.stepInfo {
+    border: none;
+    padding: 0;
+}
+
+.stepHeader {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.stepName {
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.stepDuration {
+    font-size: 0.75rem;
+    color: var(--notion-gray);
+    background: var(--notion-hover);
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+
+.stepDesc {
+    margin-bottom: 8px;
+    font-size: 0.875rem;
+    color: var(--notion-text);
+}
+
+.dosageTag {
+    font-size: 0.75rem;
+    background: transparent;
+    border: none;
+    padding: 0;
+    color: var(--notion-gray);
+}
+
+.dosageTag::before {
+    content: "🧴 ";
+}
+
+
+/* Products - Gallery View Small */
+.productGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.productCard {
+    background: white;
+    border: 1px solid var(--notion-border);
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: rgba(15, 15, 15, 0.05) 0px 1px 2px;
+    transition: background 0.1s;
+}
+
+.productCard:hover {
+    background: var(--notion-hover);
+    border-color: var(--notion-border);
+    transform: none;
+    box-shadow: rgba(15, 15, 15, 0.1) 0px 2px 4px;
+}
+
+.productImgArea {
+    height: 140px;
+    /* shorter */
+    background: white;
+    border-bottom: 1px solid var(--notion-border);
+}
+
+.productMeta {
+    padding: 12px;
+}
+
+.productCat {
+    font-size: 0.75rem;
+    color: var(--tag-purple-text);
+    background: var(--tag-purple-bg);
+    padding: 2px 6px;
+    border-radius: 3px;
+    display: inline-block;
+    margin-bottom: 8px;
+}
+
+.productTitle {
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+}
+
+.productReason {
+    background: transparent;
+    color: var(--notion-gray);
+    font-size: 0.75rem;
+    padding: 0;
+    margin-top: 8px;
+}
+
+
+/* Footer */
+.footerArea {
+    border-top: 1px solid var(--notion-border);
+    margin-top: 64px;
+    padding-top: 32px;
+}
+
+.disclaimerBox {
+    background: var(--notion-hover);
+    padding: 16px;
+    border-radius: 4px;
+    color: var(--notion-gray);
+    font-size: 0.8rem;
+    margin-bottom: 32px;
+}
+
+.disclaimerTitle {
+    color: var(--notion-text);
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+
+/* Color Utilities */
+.colorGood {
+    background-color: var(--tag-green-bg);
+    color: var(--tag-green-text);
+}
+
+.colorAvg {
+    background-color: var(--tag-yellow-bg);
+    color: var(--tag-yellow-text);
+}
+
+.colorPoor {
+    background-color: var(--tag-red-bg);
+    color: var(--tag-red-text);
+}
+
+.textGood {
+    color: var(--tag-green-text);
+}
+
+.textAvg {
+    color: var(--tag-yellow-text);
+}
+
+.textPoor {
+    color: var(--tag-red-text);
+}
+
+/* Overwrite Bar Fill colors to match Notion palette */
+.dimBarFill.colorGood {
+    background-color: #448361 !important;
+}
+
+.dimBarFill.colorAvg {
+    background-color: #CB912F !important;
+}
+
+.dimBarFill.colorPoor {
+    background-color: #D44C47 !important;
+}
+
+
+/* Fade In */
+.fadeInUp {
+    animation: fadeIn 0.5s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
