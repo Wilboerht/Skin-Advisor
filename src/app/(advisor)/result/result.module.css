@@ -581,12 +581,13 @@
 }
 
 .routineHeader {
-    padding: 20px 32px;
+    padding: 20px 24px;
     border-bottom: 1px solid var(--notion-border);
     display: flex;
     justify-content: space-between;
     align-items: center;
     background: #fff;
+    /* Removed fixed height to match sectionTitle behavior */
 }
 
 /* Segmented Control Tabs */
@@ -628,117 +629,79 @@
     background: white;
 }
 
+
+/* --- Skincare Routine Redesign --- */
 .timeline {
-    position: relative;
-    padding-left: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 0;
 }
 
-/* Remove old global line */
-.timeline::before {
+/* Remove old timeline lines */
+.timeline::before,
+.timelineStep:not(:last-child)::after {
     display: none;
 }
 
 .timelineStep {
-    position: relative;
-    padding-left: 40px;
-    padding-bottom: 40px;
-    /* Use padding instead of margin for continuous line connection */
+    display: flex;
+    gap: 16px;
+    padding: 16px 20px;
+    background: #FAFAFA;
+    border: 1px solid #F0F0F0;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    align-items: flex-start;
     margin-bottom: 0;
 }
 
-.timelineStep:last-child {
-    padding-bottom: 0;
-}
 
-/* Connecting Line */
-.timelineStep:not(:last-child)::after {
-    content: '';
-    position: absolute;
-    left: 7px;
-    /* Center of 16px dot */
-    top: 12px;
-    /* Start at center of dot (top 4px + radius 8px) */
-    bottom: -12px;
-    /* Extend to center of next dot */
-    width: 2px;
-    background: #E5E5E5;
-    z-index: 1;
-}
 
-/* The Dot */
+/* Numbered Badge instead of specific Dot */
 .timelineDot {
-    position: absolute;
-    left: 0;
-    top: 4px;
-    width: 16px;
-    height: 16px;
-    background: white;
-    border: 3px solid #E3E3E3;
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
-    z-index: 2;
-    /* Above the line */
-    transition: all 0.3s ease;
-    box-shadow: 0 0 0 2px white;
-    /* Mask the line behind slightly more */
+    background: #EBEBEB;
+    color: #787774;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 2px;
+    /* Reset old styles */
+    border: none;
+    position: static;
+    box-shadow: none;
 }
 
-.timelineStep:hover .timelineDot {
-    border-color: #37352F;
-    transform: scale(1.1);
+
+
+/* Content Area */
+.stepContent {
+    flex: 1;
 }
 
-/* Content */
 .stepHeader {
     display: flex;
-    align-items: flex-end;
-    gap: 12px;
-    margin-bottom: 8px;
-    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    flex-wrap: nowrap;
 }
 
-.stepTitle {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #37352F;
-    line-height: 1.2;
-}
-
-.stepDuration {
-    font-size: 0.75rem;
-    background: #F0F0F0;
-    color: #787774;
-    padding: 2px 8px;
-    border-radius: 100px;
-    font-weight: 500;
-}
-
+/* Make EN name subtler next to title or below */
 .stepEnName {
-    font-size: 0.8rem;
-    color: #9B9A97;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.75rem;
+    color: #A0A0A0;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    margin-bottom: 8px;
-    display: block;
+    margin-top: 2px;
 }
 
-.stepDesc {
-    font-size: 0.95rem;
-    color: #37352F;
-    line-height: 1.6;
-    margin-bottom: 16px;
-}
-
-.stepDosage {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    background: #F7F6F3;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    color: #4A4A48;
-}
 
 .stepDosageIcon {
     font-size: 1rem;
@@ -818,8 +781,8 @@
     border-radius: 0;
     border-top: 1px solid var(--notion-border);
     color: var(--notion-gray);
-    font-size: 0.85rem;
-    line-height: 1.6;
+    font-size: 12px;
+    line-height: 1.5;
     margin-bottom: 32px;
 }
 
