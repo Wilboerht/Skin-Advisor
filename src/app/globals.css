@@ -214,3 +214,15 @@
 @utility delay-300 {
   animation-delay: 0.3s;
 }
+
+/* Recharts Aggressive Focus Removal */
+.recharts-wrapper,
+.recharts-wrapper *,
+.recharts-wrapper *:focus,
+.recharts-wrapper *:focus-visible,
+.recharts-surface,
+.recharts-layer {
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}

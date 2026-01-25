@@ -360,110 +360,140 @@
 
 
 /* --- Block: Analysis (Radar + List) --- */
-/* --- Block: Analysis (Notion Gallery View) --- */
+/* --- Block: Analysis (Clean Modern Dashboard) --- */
 .analysisGrid {
     display: flex;
     flex-direction: column;
-    gap: 0;
-    margin-bottom: 24px;
+    align-items: stretch;
+    background: #FFFFFF;
     border: 1px solid var(--notion-border);
-    border-radius: 3px;
-    /* Notion block radius */
-    box-shadow: rgba(15, 15, 15, 0.05) 0px 1px 2px;
-    background: white;
+    border-radius: 8px;
+    padding: 0;
     overflow: hidden;
+    margin-bottom: 24px;
+    /* Clean shadow for depth */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
 }
 
-/* 1. Top Section: Radar Chart Area */
+.analysisGrid .sectionTitle {
+    margin: 0;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--notion-border);
+    width: 100%;
+}
+
+@media (max-width: 900px) {
+    /* .analysisGrid handles responsive layout naturally now */
+}
+
+/* 1. Radar Section (Left) */
 .radarWrapper {
-    height: 360px;
+    flex: 1;
+    /* Allow flexible growth to share space */
+    min-height: 360px;
+    /* Ensure strictly valid chart height */
     display: flex;
     justify-content: center;
     align-items: center;
-    background: white;
-    border-bottom: 1px solid var(--notion-border);
+    background: #FAFAFA;
+    border-right: 1px solid var(--notion-border);
+    border-bottom: none;
     padding: 24px;
 }
 
-/* 2. Bottom Section: List View of Properties */
-.dimensionList {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    /* Masonry-ish grid */
-    background: #FBFAFA;
-    /* Slight contrast for "properties" area */
+@media (max-width: 900px) {
+    .radarWrapper {
+        width: 100%;
+        height: 300px;
+        min-height: 300px;
+        border-right: none;
+        border-bottom: 1px solid var(--notion-border);
+        background: #fff;
+    }
 }
 
-/* Individual Property Cell */
+
+/* 2. Metrics Section (Right) */
+.dimensionList {
+    flex: 1;
+    padding: 32px 40px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px 48px;
+    /* High horizontal gap */
+    background: #fff;
+    border: none;
+}
+
+@media (max-width: 900px) {
+    .dimensionList {
+        padding: 24px;
+        gap: 24px;
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Individual Metric Item - Minimalist */
 .dimensionCard {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding: 16px;
-    border-right: 1px solid var(--notion-border);
-    border-bottom: 1px solid var(--notion-border);
+    justify-content: center;
+    gap: 6px;
     background: transparent;
-    height: auto;
-}
-
-/* Remove right border for last item in row if we could, 
-   but grid makes it hard. CSS Grid gap is cleaner. */
-.dimensionList {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    background: white;
-    gap: 1px;
-    background-color: var(--notion-border);
-    /* Creates grid lines */
+    padding: 0;
     border: none;
-}
-
-.dimensionCard {
-    background: white;
-    border: none;
-    /* Handled by gap */
     height: auto;
+    transition: transform 0.2s;
 }
 
 .dimensionCard:hover {
-    background-color: #F7F7F5;
+    background: transparent;
+    transform: translateY(-1px);
 }
 
+/* Header: Label .... Score */
 .dimName {
-    font-size: 0.8rem;
-    color: var(--notion-gray);
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--notion-text);
     display: flex;
     justify-content: space-between;
+    align-items: center;
     width: 100%;
+    margin-bottom: 2px;
+    text-transform: none;
+    letter-spacing: normal;
 }
 
 .dimName::before {
     content: none;
 }
 
+/* Move score to be inline with name for this design */
 .dimScore {
-    font-size: 1.1rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.9rem;
     font-weight: 600;
-    font-family: ui-sans-serif, -apple-system, sans-serif;
     color: var(--notion-text);
+    text-align: right;
 }
 
+/* Refined Bar */
 .dimBarBg {
-    height: 4px;
+    height: 6px;
+    background: #F0F0F0;
+    border-radius: 100px;
+    overflow: hidden;
     width: 100%;
-    background: var(--tag-gray-bg);
-    border-radius: 2px;
-    margin-top: auto;
-    /* Push to bottom */
+    margin: 0;
 }
 
 .dimBarFill {
     height: 100%;
-    border-radius: 2px;
+    border-radius: 100px;
+    transition: width 0.6s ease-out;
 }
+
 
 @media (max-width: 600px) {
     .dimensionList {
@@ -501,7 +531,7 @@
 }
 
 .zoneName {
-    font-size: 0.875rem;
+    font-size: 0.95rem;
     font-weight: 600;
     margin-bottom: 8px;
 }
@@ -515,121 +545,196 @@
 }
 
 .zoneDesc {
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
     color: var(--notion-gray);
-    line-height: 1.4;
+    line-height: 1.5;
 }
 
 
 /* Routine - Toggles */
-.routineSection {
-    background: transparent;
-    border: none;
-    border-radius: 0;
-}
+/* --- Routine Section Modernized --- */
+/* ... (Routine styles skipped as they were handled in previous turn or are fine) ... */
+/* Wait, I cannot skip lines in replacement content unless I target minimal range. */
+/* Let's target specific blocks. */
 
-.routineTabs {
-    border-bottom: 1px solid var(--notion-border);
-    background: transparent;
-    gap: 24px;
-    padding: 0;
-    margin-bottom: 24px;
-}
+/* I will split this into two block updates or just do one large update if contiguous. */
+/* zoneName is line 527. productReason is line 779. They are far apart. */
+/* I will use the tool on .zoneName block first. */
 
-.routineTab {
-    padding: 0 0 8px 0;
-    background: transparent;
-    border-bottom: 2px solid transparent;
-    color: var(--notion-gray);
-    font-size: 0.9rem;
-    font-weight: 500;
-    flex: initial;
-    /* Don't stretch */
-}
 
-.routineTab:hover {
-    color: var(--notion-text);
-}
-
-.routineTab.active {
-    background: transparent;
-    color: var(--notion-text);
-    border-bottom: 2px solid var(--notion-text);
-}
-
-.routineContent {
-    padding: 0;
-}
-
-.routineSteps {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.stepCard {
-    display: flex;
-    gap: 16px;
-    padding: 12px;
+/* Routine - Toggles */
+/* --- Routine Section Modernized --- */
+.routineCard {
+    background: #fff;
     border: 1px solid var(--notion-border);
-    border-radius: 4px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+    overflow: hidden;
+    margin-top: 24px;
+}
+
+.routineHeader {
+    padding: 20px 32px;
+    border-bottom: 1px solid var(--notion-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fff;
+}
+
+/* Segmented Control Tabs */
+.toggleContainer {
+    display: flex;
+    background: #F1F1EF;
+    padding: 4px;
+    border-radius: 8px;
+    gap: 4px;
+}
+
+.toggleBtn {
+    padding: 6px 16px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #787774;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    user-select: none;
+}
+
+.toggleBtn:hover {
+    color: #37352F;
+}
+
+.toggleBtn.active {
+    background: white;
+    color: #37352F;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+/* Timeline Layout */
+.routineBody {
+    padding: 40px;
     background: white;
 }
 
-.stepIndex {
-    background: transparent;
-    color: var(--notion-gray);
-    font-size: 1rem;
-    font-weight: 600;
-    font-family: monospace;
-    width: 24px;
-    height: 24px;
-    /* remove circle bg */
-    border-radius: 0;
-    justify-content: flex-start;
+.timeline {
+    position: relative;
+    padding-left: 12px;
 }
 
-.stepInfo {
-    border: none;
-    padding: 0;
+/* Remove old global line */
+.timeline::before {
+    display: none;
 }
 
+.timelineStep {
+    position: relative;
+    padding-left: 40px;
+    padding-bottom: 40px;
+    /* Use padding instead of margin for continuous line connection */
+    margin-bottom: 0;
+}
+
+.timelineStep:last-child {
+    padding-bottom: 0;
+}
+
+/* Connecting Line */
+.timelineStep:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 7px;
+    /* Center of 16px dot */
+    top: 12px;
+    /* Start at center of dot (top 4px + radius 8px) */
+    bottom: -12px;
+    /* Extend to center of next dot */
+    width: 2px;
+    background: #E5E5E5;
+    z-index: 1;
+}
+
+/* The Dot */
+.timelineDot {
+    position: absolute;
+    left: 0;
+    top: 4px;
+    width: 16px;
+    height: 16px;
+    background: white;
+    border: 3px solid #E3E3E3;
+    border-radius: 50%;
+    z-index: 2;
+    /* Above the line */
+    transition: all 0.3s ease;
+    box-shadow: 0 0 0 2px white;
+    /* Mask the line behind slightly more */
+}
+
+.timelineStep:hover .timelineDot {
+    border-color: #37352F;
+    transform: scale(1.1);
+}
+
+/* Content */
 .stepHeader {
     display: flex;
-    align-items: baseline;
-    gap: 8px;
-    margin-bottom: 4px;
+    align-items: flex-end;
+    gap: 12px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
 }
 
-.stepName {
-    font-size: 0.95rem;
+.stepTitle {
+    font-size: 1.1rem;
     font-weight: 600;
+    color: #37352F;
+    line-height: 1.2;
 }
 
 .stepDuration {
     font-size: 0.75rem;
-    color: var(--notion-gray);
-    background: var(--notion-hover);
-    padding: 2px 4px;
-    border-radius: 3px;
+    background: #F0F0F0;
+    color: #787774;
+    padding: 2px 8px;
+    border-radius: 100px;
+    font-weight: 500;
+}
+
+.stepEnName {
+    font-size: 0.8rem;
+    color: #9B9A97;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+    display: block;
 }
 
 .stepDesc {
-    margin-bottom: 8px;
-    font-size: 0.875rem;
-    color: var(--notion-text);
+    font-size: 0.95rem;
+    color: #37352F;
+    line-height: 1.6;
+    margin-bottom: 16px;
 }
 
-.dosageTag {
-    font-size: 0.75rem;
-    background: transparent;
-    border: none;
-    padding: 0;
-    color: var(--notion-gray);
+.stepDosage {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #F7F6F3;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    color: #4A4A48;
 }
 
-.dosageTag::before {
-    content: "🧴 ";
+.stepDosageIcon {
+    font-size: 1rem;
 }
 
 
@@ -678,16 +783,18 @@
 }
 
 .productTitle {
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     margin-bottom: 4px;
+    font-weight: 600;
 }
 
 .productReason {
     background: transparent;
     color: var(--notion-gray);
-    font-size: 0.75rem;
+    font-size: 0.85rem;
     padding: 0;
     margin-top: 8px;
+    line-height: 1.5;
 }
 
 
@@ -699,18 +806,21 @@
 }
 
 .disclaimerBox {
-    background: var(--notion-hover);
-    padding: 16px;
-    border-radius: 4px;
+    background: transparent;
+    padding: 24px 0 0 0;
+    border-radius: 0;
+    border-top: 1px solid var(--notion-border);
     color: var(--notion-gray);
-    font-size: 0.8rem;
+    font-size: 0.85rem;
+    line-height: 1.6;
     margin-bottom: 32px;
 }
 
 .disclaimerTitle {
     color: var(--notion-text);
     font-weight: 600;
-    margin-bottom: 4px;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
 }
 
 

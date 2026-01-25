@@ -88,8 +88,8 @@ export const DIMENSION_LABELS: Record<string, string> = {
     wrinkles: "皱纹",
     texture: "纹理",
     pores: "毛孔",
-    uvDamage: "光损伤",
-    brownSpots: "色素",
+    uvDamage: "紫外线", // Was 光损伤
+    brownSpots: "深层斑", // Was 色素
     redAreas: "泛红",
     acneRisk: "痘痘风险",
 };

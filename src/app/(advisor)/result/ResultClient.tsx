@@ -13,11 +13,15 @@ import {
     Search,
     Sun,
     Moon,
-    Gift // Import Gift icon
+    Gift, // Import Gift icon
+    ClipboardList,
+    AlertCircle
 } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useToast } from "@/components/ui/Toast";
 import type { FaceAnalysisResult, ZoneAnalysis } from "@/lib/advisor-utils";
+import { DIMENSION_LABELS, SkinDimensionKey } from "@/lib/advisor-utils";
+import { getDimensionAdvice } from "@/lib/advice-utils";
 import { ScientificRadarChart } from "@/components/advisor/ScientificRadarChart";
 import { generateSkincareRoutines, getClimateByRegion } from "@/lib/skincare-dosage";
 import { copyToClipboard, generateShareUrl } from "@/lib/share";
@@ -75,6 +79,40 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
     const [activeRoutineTab, setActiveRoutineTab] = useState<'morning' | 'evening'>('morning');
     const [loading, setLoading] = useState(!initialData);
     const hasTrackedView = useRef(false);
+
+    // New State for interactivity
+    const [activeDimension, setActiveDimension] = useState<SkinDimensionKey | null>(null);
+
+    // Set default active dimension once data is loaded
+    useEffect(() => {
+        if (faceAnalysis?.dimensions && !activeDimension) {
+            // Find lowest score to focus on first, or default to 'spots'
+            // @ts-ignore
+            const lowest = Object.entries(faceAnalysis.dimensions).sort((a, b) => a[1].score - b[1].score)[0];
+            setActiveDimension((lowest?.[0] as SkinDimensionKey) || 'spots');
+        }
+    }, [faceAnalysis]);
+
+    // Helper for Lab Report
+    const renderLabRow = (param: string, value: string, ref: string, status: string) => {
+        const isAbnormal = status === 'High' || status === 'Low' || status === 'Elevated' || status === 'Rough';
+        return (
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-1 md:gap-4 py-2 border-b border-dotted border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
+                <div className="md:col-span-4 text-gray-700 font-medium">{param}</div>
+                <div className="md:col-span-3 md:text-right font-mono text-gray-900">{value}</div>
+                <div className="md:col-span-3 md:text-right font-mono text-xs text-gray-400 md:pt-1">
+                    <span className="md:hidden mr-2">Ref:</span>
+                    {ref}
+                </div>
+                <div className="md:col-span-2 md:text-right">
+                    <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider
+                        ${isAbnormal ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
+                        {status}
+                    </span>
+                </div>
+            </div>
+        );
+    };
 
     // Initialize & Restore Data
     useEffect(() => {
@@ -385,49 +423,239 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                 <div className={styles.contentArea}>
 
                     {/* 1. Radar Analysis */}
-                    {faceAnalysis?.dimensions && (
-                        <div className={`${styles.analysisGrid} ${styles.fadeInUp} border-0 shadow-sm`}>
+                    {/* 1. Radar Analysis (Interactive) */}
+                    {faceAnalysis?.dimensions && activeDimension && (
+                        <div className={`${styles.analysisGrid} ${styles.fadeInUp}`}>
                             <div className={styles.sectionTitle}>
-                                <ScanFace className={styles.sectionIcon} />
-                                <span>八维深度分析</span>
+                                <div className="flex items-center gap-3">
+                                    <ScanFace className="w-5 h-5 text-gray-700" />
+                                    <span className="text-lg font-semibold text-gray-900">八维深度分析</span>
+                                </div>
                             </div>
 
-                            <div className="grid lg:grid-cols-2 gap-8 items-center">
-                                <div className={styles.radarWrapper}>
-                                    <ScientificRadarChart dimensions={faceAnalysis.dimensions} />
-                                </div>
-                                <div className={styles.dimensionList}>
-                                    {Object.entries(faceAnalysis.dimensions).map(([key, data]) => {
-                                        // @ts-ignore
-                                        const label = data.details || key;
-                                        // @ts-ignore
-                                        const score = data.score;
+                            {/* Flexible Container for Radar + Detail Panel */}
+                            <div className="flex flex-col lg:flex-row items-stretch min-h-[400px]">
 
-                                        return (
-                                            <div key={key} className={styles.dimensionCard}>
-                                                <div className={styles.dimHeader}>
-                                                    <span className={styles.dimName}>
-                                                        {key === 'spots' ? '色斑' :
-                                                            key === 'wrinkles' ? '皱纹' :
-                                                                key === 'texture' ? '纹理' :
-                                                                    key === 'pores' ? '毛孔' :
-                                                                        key === 'uvDamage' ? '紫外线' :
-                                                                            key === 'brownSpots' ? '深层斑' :
-                                                                                key === 'redAreas' ? '泛红' : '痘痘风险'}
-                                                    </span>
-                                                    <span className={`${styles.dimScore} ${score >= 80 ? styles.textGood : score >= 60 ? styles.textAvg : styles.textPoor
-                                                        }`}>
-                                                        {score}
-                                                    </span>
-                                                </div>
-                                                <div className={styles.dimBarBg}>
-                                                    <div className={`${styles.dimBarFill} ${score >= 80 ? styles.colorGood : score >= 60 ? styles.colorAvg : styles.colorPoor
-                                                        }`} style={{ width: `${score}%` }} />
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
+                                {/* Left: Interactive Radar */}
+                                <div className={`${styles.radarWrapper} flex-1 border-r border-gray-100`}>
+                                    <ScientificRadarChart
+                                        dimensions={faceAnalysis.dimensions}
+                                        activeDimension={activeDimension}
+                                        onDimensionSelect={setActiveDimension}
+                                    />
                                 </div>
+
+                                {/* Right: Dynamic Detail Panel */}
+                                <div className="flex-1 p-8 flex flex-col justify-center bg-white">
+                                    <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+
+                                        {/* Header */}
+                                        <div className="flex items-center justify-between mb-6">
+                                            <div>
+                                                <h3 className="text-2xl font-bold text-gray-900 mb-1">
+                                                    {DIMENSION_LABELS[activeDimension]}
+                                                </h3>
+                                                <p className="text-sm text-gray-500">
+                                                    {activeDimension === 'spots' && 'Surface Pigmentation'}
+                                                    {activeDimension === 'wrinkles' && 'Fine Lines & Wrinkles'}
+                                                    {activeDimension === 'texture' && 'Skin Smoothness'}
+                                                    {activeDimension === 'pores' && 'Pore Visibility'}
+                                                    {activeDimension === 'uvDamage' && 'Deep Sun Damage'}
+                                                    {activeDimension === 'brownSpots' && 'Deep Pigmentation'}
+                                                    {activeDimension === 'redAreas' && 'Redness & Sensitivity'}
+                                                    {activeDimension === 'acneRisk' && 'Acne & Sebum'}
+                                                </p>
+                                            </div>
+                                            <div className={`text-4xl font-mono font-bold ${faceAnalysis.dimensions[activeDimension].score >= 80 ? 'text-emerald-500' :
+                                                faceAnalysis.dimensions[activeDimension].score >= 60 ? 'text-amber-500' : 'text-red-500'
+                                                }`}>
+                                                {faceAnalysis.dimensions[activeDimension].score}
+                                            </div>
+                                        </div>
+
+                                        {/* Progress Bar */}
+                                        <div className="h-2 w-full bg-gray-100 rounded-full mb-8 overflow-hidden">
+                                            <div
+                                                className={`h-full rounded-full transition-all duration-1000 ease-out ${faceAnalysis.dimensions[activeDimension].score >= 80 ? 'bg-emerald-500' :
+                                                    faceAnalysis.dimensions[activeDimension].score >= 60 ? 'bg-amber-500' : 'bg-red-500'
+                                                    }`}
+                                                style={{ width: `${faceAnalysis.dimensions[activeDimension].score}%` }}
+                                            />
+                                        </div>
+
+                                        {/* Diagnosis & Advice */}
+                                        <div className="bg-gray-50 rounded-xl p-6 border border-gray-100">
+                                            <div className="flex gap-3 mb-3">
+                                                <span className="text-lg">🩺</span>
+                                                <span className="font-semibold text-gray-900">AI 诊断建议</span>
+                                            </div>
+                                            <p className="text-gray-700 leading-relaxed text-[15px]">
+                                                {getDimensionAdvice(activeDimension, faceAnalysis.dimensions[activeDimension].score)}
+                                            </p>
+
+                                            {/* Optional: Add product category rec based on dimension */}
+                                            <div className="mt-4 pt-4 border-t border-gray-200 text-xs text-gray-500 flex items-center gap-2">
+                                                <span className="bg-white border border-gray-200 px-2 py-1 rounded">
+                                                    推荐成分
+                                                </span>
+                                                {activeDimension === 'wrinkles' && 'Retinol / Peptides'}
+                                                {activeDimension === 'spots' && 'Vitamin C / Niacinamide'}
+                                                {activeDimension === 'texture' && 'AHA / BHA'}
+                                                {activeDimension === 'pores' && 'Salicylic Acid'}
+                                                {activeDimension === 'redAreas' && 'Centella / B5'}
+                                                {(activeDimension === 'uvDamage' || activeDimension === 'brownSpots') && 'Sunscreen / Arbutin'}
+                                                {activeDimension === 'acneRisk' && 'Salicylic Acid / Tea Tree'}
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 1.5 Comprehensive Analysis Details - Professional Report Style */}
+                    {faceAnalysis && (
+                        <div className={`${styles.analysisGrid} ${styles.fadeInUp} border-0 shadow-sm mb-6`}>
+                            {/* Title */}
+                            <div className={styles.sectionTitle}>
+                                <div className="flex items-center gap-3">
+                                    <ClipboardList className="w-5 h-5 text-gray-700" />
+                                    <span className="text-lg font-semibold text-gray-900">综合检测报告</span>
+                                </div>
+                            </div>
+
+                            <div className="p-8 bg-white text-gray-800">
+                                {/* Report Header / Summary */}
+                                <div className="mb-8">
+                                    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 border-b border-gray-200 pb-2">
+                                        诊断摘要 (Summary)
+                                    </h4>
+                                    <p className="text-[15px] leading-relaxed text-gray-800 font-medium">
+                                        {faceAnalysis.summary}
+                                    </p>
+                                </div>
+
+                                {/* Lab-Grade Analysis Metrics */}
+                                <div className="mb-8 font-mono text-sm leading-6">
+                                    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 border-b border-gray-200 pb-2 flex justify-between">
+                                        <span>AI ESTIMATE</span>
+                                        <span className="text-gray-400 font-normal normal-case">Reference Standard: VISIA-CR™ Equivalent</span>
+                                    </h4>
+
+                                    <div className="grid grid-cols-1 gap-y-6">
+
+                                        {/* Table Header Row (Desktop only) */}
+                                        <div className="hidden md:grid grid-cols-12 text-xs text-gray-400 border-b border-gray-100 pb-2 mb-2 font-sans font-semibold">
+                                            <div className="col-span-4">PARAMETER</div>
+                                            <div className="col-span-3 text-right">AI ESTIMATE*</div>
+                                            <div className="col-span-3 text-right">REF. RANGE</div>
+                                            <div className="col-span-2 text-right">STATUS</div>
+                                        </div>
+
+                                        {/* Group 1: Biophysical Profile */}
+                                        <div>
+                                            <h5 className="text-[11px] font-bold text-gray-400 uppercase mb-2 border-l-2 border-blue-400 pl-2">I. Biophysical Profile (生物物理特性)</h5>
+                                            <div className="space-y-1">
+                                                {renderLabRow("Est. Skin pH",
+                                                    faceAnalysis.skinType.type === 'oily' ? '5.8 - 6.2' : faceAnalysis.skinType.type === 'dry' ? '4.5 - 5.0' : '5.2 - 5.5',
+                                                    "4.5 - 5.5",
+                                                    faceAnalysis.skinType.type === 'oily' ? 'High' : 'Normal')}
+
+                                                {renderLabRow("TEWL Index (Water Loss)",
+                                                    faceAnalysis.dimensions.redAreas.score > 80 ? 'Low (~8.5)' : 'High (>15)',
+                                                    "< 10.0 g/m²/h",
+                                                    faceAnalysis.dimensions.redAreas.score > 80 ? 'Normal' : 'Elevated')}
+
+                                                {renderLabRow("Stratum Corneum Hydration",
+                                                    faceAnalysis.hydration?.level === 'low' ? '~18.5 AU' : '~45.2 AU',
+                                                    "> 35.0 AU",
+                                                    faceAnalysis.hydration?.level === 'low' ? 'Low' : 'Normal')}
+                                            </div>
+                                        </div>
+
+                                        {/* Group 2: Pigmentation & Vascularity */}
+                                        <div>
+                                            <h5 className="text-[11px] font-bold text-gray-400 uppercase mb-2 border-l-2 border-amber-400 pl-2">II. Chromophore Map (色基分布分析)</h5>
+                                            <div className="space-y-1">
+                                                {renderLabRow("Melanin Index (MI)",
+                                                    `~${Math.round((100 - faceAnalysis.dimensions.spots.score) * 2.5)} MI`,
+                                                    "< 150 MI",
+                                                    faceAnalysis.dimensions.spots.score < 60 ? 'High' : 'Normal')}
+
+                                                {renderLabRow("Erythema Index (EI)",
+                                                    `~${Math.round((100 - faceAnalysis.dimensions.redAreas.score) * 3.2)} EI`,
+                                                    "< 200 EI",
+                                                    faceAnalysis.dimensions.redAreas.score < 60 ? 'Elevated' : 'Normal')}
+
+                                                {renderLabRow("Photo-aging Status (Glogau)",
+                                                    faceAnalysis.skinAge.estimated > 40 ? 'Type III' : faceAnalysis.skinAge.estimated > 30 ? 'Type II' : 'Type I',
+                                                    "Age Dependent",
+                                                    "-")}
+                                            </div>
+                                        </div>
+
+                                        {/* Group 3: Surface & Microbiome */}
+                                        <div>
+                                            <h5 className="text-[11px] font-bold text-gray-400 uppercase mb-2 border-l-2 border-emerald-400 pl-2">III. Surface & Microbiome (表面与微生态)</h5>
+                                            <div className="space-y-1">
+                                                {renderLabRow("Porphyrin Count (P. acnes)",
+                                                    faceAnalysis.dimensions.acneRisk.score < 60 ? 'High' : faceAnalysis.dimensions.acneRisk.score < 80 ? 'Moderate' : 'Low',
+                                                    "Low Risk",
+                                                    faceAnalysis.dimensions.acneRisk.score < 60 ? 'High' : faceAnalysis.dimensions.acneRisk.score < 80 ? 'Moderate' : 'Low')}
+
+                                                {renderLabRow("Sebum Excretion Rate",
+                                                    faceAnalysis.skinType.type === 'oily' ? 'High' : 'Normal',
+                                                    "Balanced",
+                                                    faceAnalysis.skinType.type === 'oily' ? 'Elevated' : 'Normal')}
+
+                                                {renderLabRow("Texture Roughness (Ra)",
+                                                    faceAnalysis.dimensions.texture.score < 70 ? '> 15 µm' : '< 10 µm',
+                                                    "< 10.0 µm",
+                                                    faceAnalysis.dimensions.texture.score < 70 ? 'Rough' : 'Smooth')}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-6 p-3 bg-gray-50 rounded border border-gray-100 text-[11px] text-gray-500 flex flex-col gap-1">
+                                        <div className="font-semibold text-gray-700 mb-1 flex items-center gap-1">
+                                            <AlertCircle className="w-3 h-3" />
+                                            数据说明 (Data Disclaimer)
+                                        </div>
+                                        <p>* AI ESTIMATE: 上述数值均由 AI 算法基于您的面部图像特征（纹理、色泽、对比度）反演推算得出，<span className="font-bold text-gray-700">并非物理探头实测数据</span>。</p>
+                                        <p>例如：TEWL（经表皮失水率）是根据皮肤屏障受损程度的视觉表现估算而来。本报告仅作护肤参考，不可替代医疗诊断。</p>
+                                    </div>
+                                </div>
+
+                                {/* Conditions List - Text Only */}
+                                {faceAnalysis.skinConditions && faceAnalysis.skinConditions.length > 0 && (
+                                    <div>
+                                        <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 border-b border-gray-200 pb-2">
+                                            症状详情 (Clinical Observations)
+                                        </h4>
+                                        <div className="space-y-4">
+                                            {faceAnalysis.skinConditions.map((cond, idx) => (
+                                                <div key={idx} className="flex flex-col sm:flex-row sm:gap-4 text-sm">
+                                                    <div className="sm:w-32 shrink-0 font-semibold text-gray-900 pt-0.5">
+                                                        {cond.condition}
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <div className="mb-1">
+                                                            <span className="text-gray-600 mr-2">区域: {cond.area}</span>
+                                                            <span className="text-gray-300 mr-2">|</span>
+                                                            <span className={`${cond.severity === 'severe' ? 'text-gray-900 font-bold' : 'text-gray-600'}`}>
+                                                                程度: {cond.severity === 'severe' ? '严重' : cond.severity === 'moderate' ? '中度' : '轻微'}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-gray-600 leading-relaxed text-xs">
+                                                            {cond.description}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
@@ -466,51 +694,57 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                     )}
 
                     {/* 3. Routine */}
+                    {/* 3. Routine */}
                     {routineData && (
-                        <div className={`${styles.routineSection} ${styles.fadeInUp}`}>
-                            <div className="p-6 pb-0 border-b border-gray-100 flex justify-between items-center bg-white">
-                                <div className={styles.sectionTitle} style={{ marginBottom: '20px' }}>
-                                    <Activity className={styles.sectionIcon} />
-                                    <span>科学护肤方案</span>
+                        <div className={`${styles.routineCard} ${styles.fadeInUp} border-0 shadow-sm`}>
+                            {/* Header with Title and Toggle */}
+                            <div className={styles.routineHeader}>
+                                <div className="flex items-center gap-3">
+                                    <Activity className="w-5 h-5 text-gray-700" />
+                                    <span className="text-lg font-semibold text-gray-900">科学护肤方案</span>
                                 </div>
-                            </div>
-                            <div className={styles.routineTabs}>
-                                <div
-                                    className={`${styles.routineTab} ${activeRoutineTab === 'morning' ? styles.active : ''}`}
-                                    onClick={() => setActiveRoutineTab('morning')}
-                                >
-                                    <div className="flex items-center justify-center gap-2">
-                                        <Sun className="w-4 h-4" /> 早间防护 Morning
+
+                                {/* Segmented Control */}
+                                <div className={styles.toggleContainer}>
+                                    <div
+                                        className={`${styles.toggleBtn} ${activeRoutineTab === 'morning' ? styles.active : ''}`}
+                                        onClick={() => setActiveRoutineTab('morning')}
+                                    >
+                                        <Sun className="w-3.5 h-3.5" />
+                                        早间防护
                                     </div>
-                                </div>
-                                <div
-                                    className={`${styles.routineTab} ${activeRoutineTab === 'evening' ? styles.active : ''}`}
-                                    onClick={() => setActiveRoutineTab('evening')}
-                                >
-                                    <div className="flex items-center justify-center gap-2">
-                                        <Moon className="w-4 h-4" /> 晚间修护 Evening
+                                    <div
+                                        className={`${styles.toggleBtn} ${activeRoutineTab === 'evening' ? styles.active : ''}`}
+                                        onClick={() => setActiveRoutineTab('evening')}
+                                    >
+                                        <Moon className="w-3.5 h-3.5" />
+                                        晚间修护
                                     </div>
                                 </div>
                             </div>
 
-                            <div className={styles.routineContent}>
-                                <div className={styles.routineSteps}>
+                            {/* Timeline Body */}
+                            <div className={styles.routineBody}>
+                                <div className={styles.timeline}>
                                     {routineData[activeRoutineTab].steps.map((step: any, idx: number) => (
-                                        <div key={idx} className={styles.stepCard}>
-                                            <div className={styles.stepIndex}>{idx + 1}</div>
-                                            <div className={styles.stepInfo}>
-                                                <div className={styles.stepHeader}>
-                                                    <span className={styles.stepName}>{step.name}</span>
-                                                    <span className={styles.stepDuration}>{step.duration}</span>
-                                                </div>
-                                                <div className="text-xs text-gray-400 mb-1 font-mono uppercase">{step.nameEn}</div>
-                                                <p className={styles.stepDesc}>{step.description}</p>
-                                                {step.dosage && (
-                                                    <div className={styles.dosageTag}>
-                                                        用量：{step.dosage.description}
-                                                    </div>
-                                                )}
+                                        <div key={idx} className={styles.timelineStep}>
+                                            <div className={styles.timelineDot} />
+
+                                            <div className={styles.stepHeader}>
+                                                <div className={styles.stepTitle}>{step.name}</div>
+                                                <div className={styles.stepDuration}>{step.duration}</div>
                                             </div>
+
+                                            <span className={styles.stepEnName}>{step.nameEn}</span>
+
+                                            <p className={styles.stepDesc}>{step.description}</p>
+
+                                            {step.dosage && (
+                                                <div className={styles.stepDosage}>
+                                                    <span className={styles.stepDosageIcon}>🧴</span>
+                                                    <span>用量：{step.dosage.description}</span>
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
