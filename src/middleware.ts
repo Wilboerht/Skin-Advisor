@@ -10,6 +10,7 @@ export function middleware(request: NextRequest) {
     const isAdminApi = pathname.startsWith('/api/admin');
 
     // Define public paths within admin
+    // Define public paths within admin
     const isLoginPage = pathname === '/admin/login';
     const isLoginApi = pathname === '/api/admin/auth/login';
 

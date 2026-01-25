@@ -32,12 +32,12 @@ function TagInput({
 
     return (
         <div>
-            <label className="block text-sm font-medium text-gray-700">{label}</label>
+            <label className="block text-sm font-medium text-slate-700">{label}</label>
             <div className="mt-2 flex flex-wrap gap-2">
                 {values.map((tag, i) => (
-                    <span key={i} className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-800">
+                    <span key={i} className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-800">
                         {tag}
-                        <button type="button" onClick={() => removeTag(i)} className="ml-2 text-gray-500 hover:text-gray-700">
+                        <button type="button" onClick={() => removeTag(i)} className="ml-2 text-slate-500 hover:text-slate-700">
                             <X className="h-3 w-3" />
                         </button>
                     </span>
@@ -48,10 +48,10 @@ function TagInput({
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
-                        className="block w-32 rounded-md border-0 py-1 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-brand-charcoal"
+                        className="block w-32 rounded-lg border-0 py-1 text-sm text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-slate-900"
                         placeholder="Add..."
                     />
-                    <button type="button" onClick={addTag} className="ml-2 p-1 text-gray-500 hover:text-brand-charcoal">
+                    <button type="button" onClick={addTag} className="ml-2 p-1 text-slate-500 hover:text-slate-900">
                         <Plus className="h-4 w-4" />
                     </button>
                 </div>
@@ -146,59 +146,59 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-8 bg-white p-8 rounded-xl shadow-sm border border-gray-200">
+        <form onSubmit={handleSubmit} className="space-y-8 bg-white p-8 rounded-xl shadow-sm border border-slate-200">
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 {/* Basic Info */}
                 <div className="space-y-6">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Product Name</label>
+                        <label className="block text-sm font-medium text-slate-700">Product Name</label>
                         <input
                             required
                             type="text"
                             value={formData.name}
                             onChange={e => setFormData({ ...formData, name: e.target.value })}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-charcoal focus:ring-brand-charcoal sm:text-sm p-2 border"
+                            className="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900 sm:text-sm p-2 border"
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">English Name</label>
+                        <label className="block text-sm font-medium text-slate-700">English Name</label>
                         <input
                             type="text"
                             value={formData.nameEn}
                             onChange={e => setFormData({ ...formData, nameEn: e.target.value })}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-charcoal focus:ring-brand-charcoal sm:text-sm p-2 border"
+                            className="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900 sm:text-sm p-2 border"
                         />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Category</label>
+                            <label className="block text-sm font-medium text-slate-700">Category</label>
                             <input
                                 required
                                 type="text"
                                 value={formData.category}
                                 onChange={e => setFormData({ ...formData, category: e.target.value })}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-charcoal focus:ring-brand-charcoal sm:text-sm p-2 border"
+                                className="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900 sm:text-sm p-2 border"
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Price</label>
+                            <label className="block text-sm font-medium text-slate-700">Price</label>
                             <input
                                 required
                                 type="text"
                                 value={formData.price}
                                 onChange={e => setFormData({ ...formData, price: e.target.value })}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-charcoal focus:ring-brand-charcoal sm:text-sm p-2 border"
+                                className="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900 sm:text-sm p-2 border"
                             />
                         </div>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Description</label>
+                        <label className="block text-sm font-medium text-slate-700">Description</label>
                         <textarea
                             required
                             rows={4}
                             value={formData.description}
                             onChange={e => setFormData({ ...formData, description: e.target.value })}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-charcoal focus:ring-brand-charcoal sm:text-sm p-2 border"
+                            className="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900 sm:text-sm p-2 border"
                         />
                     </div>
                 </div>
@@ -206,10 +206,10 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
                 {/* Image & Tags */}
                 <div className="space-y-6">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Product Image</label>
+                        <label className="block text-sm font-medium text-slate-700">Product Image</label>
                         <div
                             onClick={() => fileInputRef.current?.click()}
-                            className="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10 cursor-pointer hover:bg-gray-50"
+                            className="mt-2 flex justify-center rounded-lg border border-dashed border-slate-300 px-6 py-10 cursor-pointer hover:bg-slate-50"
                         >
                             <div className="text-center">
                                 {formData.image ? (
@@ -217,10 +217,10 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
                                         <img src={formData.image} className="mx-auto h-48 object-contain" alt="Preview" />
                                     </div>
                                 ) : (
-                                    <Upload className="mx-auto h-12 w-12 text-gray-300" aria-hidden="true" />
+                                    <Upload className="mx-auto h-12 w-12 text-slate-300" aria-hidden="true" />
                                 )}
-                                <div className="mt-4 flex text-sm leading-6 text-gray-600 justify-center">
-                                    <span className="relative rounded-md bg-white font-semibold text-brand-charcoal focus-within:outline-none focus-within:ring-2 focus-within:ring-brand-charcoal focus-within:ring-offset-2 hover:text-brand-charcoal">
+                                <div className="mt-4 flex text-sm leading-6 text-slate-600 justify-center">
+                                    <span className="relative rounded-md bg-white font-semibold text-slate-900 focus-within:outline-none focus-within:ring-2 focus-within:ring-slate-900 focus-within:ring-offset-2 hover:text-slate-700">
                                         {formData.image ? "Change Image" : "Upload a file"}
                                     </span>
                                     <input ref={fileInputRef} type="file" className="sr-only" onChange={handleImageUpload} accept="image/*" />
@@ -233,7 +233,7 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
                     <TagInput label="Benefits" values={benefits} onChange={setBenefits} />
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Suitable Skin Types</label>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">Suitable Skin Types</label>
                         <div className="flex flex-wrap gap-2">
                             {skinTypeOptions.map(opt => (
                                 <button
@@ -241,8 +241,8 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
                                     type="button"
                                     onClick={() => handleSkinTypeToggle(opt.value)}
                                     className={`px-3 py-1 rounded-full text-sm font-medium border ${suitableSkinTypes.includes(opt.value)
-                                            ? "bg-brand-charcoal text-white border-brand-charcoal"
-                                            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                                        ? "bg-slate-900 text-white border-slate-900"
+                                        : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
                                         }`}
                                 >
                                     {opt.label}
@@ -257,14 +257,14 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
                 <button
                     type="button"
                     onClick={() => router.back()}
-                    className="mr-3 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                    className="mr-3 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50"
                 >
                     Cancel
                 </button>
                 <button
                     type="submit"
                     disabled={loading}
-                    className="flex items-center rounded-md bg-brand-charcoal px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-charcoal disabled:opacity-70"
+                    className="flex items-center rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 disabled:opacity-70"
                 >
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Save Product

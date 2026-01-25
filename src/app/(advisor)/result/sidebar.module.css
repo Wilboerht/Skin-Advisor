@@ -4,7 +4,7 @@
 .summaryCard {
     /* Sticky sidebar positioning */
     position: sticky;
-    top: 120px;
+    top: 170px;
     height: auto;
     font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
 }
@@ -15,10 +15,20 @@
     height: 78px;
     margin-bottom: 24px;
     transition: transform 0.2s;
+    position: relative;
+    /* Ensure child absolute positioning works */
+    z-index: 50;
+    /* Bring to front on hover */
 }
 
 .pageIconWrapper:hover {
     transform: scale(1.02);
+}
+
+.pageIconWrapper:hover .profileExpander {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0);
 }
 
 .pageIcon {
@@ -28,6 +38,42 @@
     /* Circle for avatar, Notion uses square but circle fits 'person' better */
     object-fit: cover;
     box-shadow: rgba(15, 15, 15, 0.1) 0px 0px 0px 1px;
+    background: white;
+}
+
+/* Hidden container for 3 other angles */
+.profileExpander {
+    position: absolute;
+    left: 88px;
+    /* 78px width + 10px gap */
+    top: 0;
+    height: 78px;
+    display: flex;
+    gap: 10px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(-10px);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+    /* Prevent interaction when hidden */
+    background: rgba(255, 255, 255, 0.8);
+    padding: 4px;
+    border-radius: 40px;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.pageIconWrapper:hover .profileExpander {
+    pointer-events: auto;
+}
+
+.sideAngleIcon {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* --- Page Title --- */

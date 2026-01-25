@@ -1,9 +1,8 @@
-
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Lock, Loader2 } from "lucide-react";
+import { Lock, Loader2, ArrowRight, ShieldCheck } from "lucide-react";
 
 export default function AdminLoginPage() {
     const [username, setUsername] = useState("");
@@ -38,59 +37,86 @@ export default function AdminLoginPage() {
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-            <div className="w-full max-w-md space-y-8 rounded-2xl bg-white p-10 shadow-xl">
-                <div className="text-center">
-                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-charcoal/5">
-                        <Lock className="h-6 w-6 text-brand-charcoal" />
+        <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 relative overflow-hidden">
+            {/* Background Decor */}
+            <div className="absolute inset-0 z-0">
+                <div className="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-blue-50/50 to-transparent"></div>
+                <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-gradient-to-t from-slate-100 to-transparent rounded-full blur-3xl opacity-50"></div>
+            </div>
+
+            <div className="w-full max-w-sm z-10 animate-in fade-in zoom-in-95 duration-500">
+                {/* Brand Header */}
+                <div className="text-center mb-8">
+                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-slate-900 text-white shadow-lg shadow-slate-200 mb-6">
+                        <ShieldCheck className="w-6 h-6" />
                     </div>
-                    <h2 className="mt-6 text-3xl font-bold tracking-tight text-gray-900">
-                        NIHPLOD CMS
+                    <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+                        MySkin.Today CMS
                     </h2>
-                    <p className="mt-2 text-sm text-gray-600">
-                        Sign in to manage your advisor content
+                    <p className="mt-2 text-sm text-slate-500 font-medium tracking-wide uppercase">
+                        Administrative Access
                     </p>
                 </div>
 
-                <form className="mt-8 space-y-6" onSubmit={handleLogin}>
-                    <div className="-space-y-px rounded-md shadow-sm">
-                        <div>
-                            <input
-                                type="text"
-                                required
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
-                                className="relative block w-full rounded-t-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-brand-charcoal sm:text-sm sm:leading-6 px-3"
-                                placeholder="Username"
-                            />
+                {/* Login Card */}
+                <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 p-8">
+                    <form className="space-y-5" onSubmit={handleLogin}>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                                    Username
+                                </label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
+                                    className="block w-full rounded-lg border-slate-200 bg-slate-50/50 py-2.5 px-4 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all sm:text-sm"
+                                    placeholder="Enter your admin ID"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                                    Password
+                                </label>
+                                <input
+                                    type="password"
+                                    required
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className="block w-full rounded-lg border-slate-200 bg-slate-50/50 py-2.5 px-4 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all sm:text-sm"
+                                    placeholder="••••••••"
+                                />
+                            </div>
                         </div>
-                        <div>
-                            <input
-                                type="password"
-                                required
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className="relative block w-full rounded-b-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-brand-charcoal sm:text-sm sm:leading-6 px-3"
-                                placeholder="Password"
-                            />
-                        </div>
-                    </div>
 
-                    {error && (
-                        <div className="text-sm text-red-500 text-center">{error}</div>
-                    )}
+                        {error && (
+                            <div className="p-3 rounded-lg bg-red-50 text-red-600 text-xs font-medium text-center border border-red-100 flex items-center justify-center gap-2">
+                                <Lock className="w-3 h-3" />
+                                {error}
+                            </div>
+                        )}
 
-                    <div>
                         <button
                             type="submit"
                             disabled={loading}
-                            className="group relative flex w-full justify-center rounded-md bg-brand-charcoal px-3 py-2 text-sm font-semibold text-white hover:bg-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-70"
+                            className="group relative flex w-full justify-center items-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 hover:shadow-lg hover:shadow-slate-900/20 active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
                         >
-                            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Sign in
+                            {loading ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                                <>
+                                    Sign In <ArrowRight className="w-4 h-4 ml-0.5 group-hover:translate-x-0.5 transition-transform" />
+                                </>
+                            )}
                         </button>
-                    </div>
-                </form>
+                    </form>
+                </div>
+
+                {/* Footer */}
+                <p className="mt-8 text-center text-xs text-slate-400 font-medium">
+                    &copy; {new Date().getFullYear()} MySkin.Today. <br /> Secured System.
+                </p>
             </div>
         </div>
     );

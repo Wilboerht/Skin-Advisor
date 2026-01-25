@@ -1,7 +1,8 @@
-
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
     LayoutDashboard,
@@ -9,7 +10,9 @@ import {
     Gift,
     Settings,
     LogOut,
-    FileText
+    FileText,
+    ChevronLeft,
+    ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +27,7 @@ const MENU_ITEMS = [
 export default function AdminSidebar() {
     const pathname = usePathname();
     const router = useRouter();
+    const [collapsed, setCollapsed] = useState(false);
 
     const handleLogout = async () => {
         await fetch("/api/admin/auth/logout", { method: "POST" });
@@ -31,12 +35,36 @@ export default function AdminSidebar() {
     };
 
     return (
-        <div className="flex h-full w-64 flex-col bg-brand-charcoal text-white">
-            <div className="flex h-16 items-center px-6 font-serif text-xl font-bold tracking-wider text-brand-gold">
-                NIHPLOD CMS
+        <div
+            className={cn(
+                "flex h-full flex-col bg-white text-slate-700 shadow-sm z-20 transition-all duration-300 ease-in-out border-r border-slate-200",
+                collapsed ? "w-20" : "w-64"
+            )}
+        >
+            <div className={cn("flex h-20 items-center px-6 gap-3 border-b border-slate-100", collapsed ? "justify-center px-0" : "")}>
+                <div className="flex items-center justify-center shrink-0">
+                    <Image
+                        src="/logo-myskin-today.svg"
+                        alt="MySkin.Today"
+                        width={32}
+                        height={32}
+                        className="h-8 w-auto"
+                    />
+                </div>
+                {!collapsed && (
+                    <div className="animate-in fade-in duration-300 overflow-hidden whitespace-nowrap">
+                        <span className="block text-sm font-bold tracking-tight text-slate-900">MySkin.Today</span>
+                        <span className="block text-[10px] font-medium text-slate-400 tracking-wider uppercase">Admin Console</span>
+                    </div>
+                )}
             </div>
 
-            <nav className="flex-1 space-y-1 px-3 py-4">
+            <nav className="flex-1 space-y-1 px-3 py-6">
+                {!collapsed && (
+                    <div className="px-3 mb-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 animate-in fade-in duration-300">
+                        Navigation
+                    </div>
+                )}
                 {MENU_ITEMS.map((item) => {
                     const isActive = pathname === item.href;
                     return (
@@ -44,26 +72,48 @@ export default function AdminSidebar() {
                             key={item.href}
                             href={item.href}
                             className={cn(
-                                "group flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                                "group flex items-center rounded-md px-3 py-2 text-sm font-medium transition-all duration-200",
                                 isActive
-                                    ? "bg-white/10 text-white"
-                                    : "text-white/70 hover:bg-white/5 hover:text-white"
+                                    ? "bg-slate-100 text-slate-900 shadow-sm ring-1 ring-slate-200"
+                                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-900",
+                                collapsed ? "justify-center" : ""
                             )}
+                            title={collapsed ? item.label : undefined}
                         >
-                            <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
-                            {item.label}
+                            <item.icon className={cn("h-5 w-5 flex-shrink-0 transition-colors", isActive ? "text-slate-900" : "text-slate-400 group-hover:text-slate-700", collapsed ? "mr-0" : "mr-3")} />
+                            {!collapsed && (
+                                <span className="animate-in fade-in duration-200">{item.label}</span>
+                            )}
                         </Link>
                     );
                 })}
             </nav>
 
-            <div className="border-t border-white/10 p-4">
+            <div className="px-3 pb-2 pt-2 border-t border-slate-100">
+                <button
+                    onClick={() => setCollapsed(!collapsed)}
+                    className={cn(
+                        "flex w-full items-center rounded-md px-3 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-colors",
+                        collapsed ? "justify-center" : ""
+                    )}
+                    title={collapsed ? "Expand" : "Collapse"}
+                >
+                    {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4 mr-2" />}
+                    {!collapsed && <span>Collapse Sidebar</span>}
+                </button>
+            </div>
+
+            <div className="p-3">
                 <button
                     onClick={handleLogout}
-                    className="flex w-full items-center rounded-md px-3 py-2 text-sm font-medium text-white/70 hover:bg-white/5 hover:text-white"
+                    className={cn(
+                        "flex w-full items-center rounded-md px-3 py-2 text-sm font-medium text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors",
+                        collapsed ? "justify-center" : ""
+                    )}
+                    title={collapsed ? "Sign Out" : undefined}
                 >
-                    <LogOut className="mr-3 h-5 w-5" />
-                    Sign Out
+                    <LogOut className={cn("h-5 w-5", collapsed ? "mr-0" : "mr-3")} />
+                    {!collapsed && <span>Sign Out</span>}
                 </button>
             </div>
         </div>

@@ -39,19 +39,26 @@
 }
 
 /* --- Header --- */
+/* --- Header --- */
 .header {
     height: 48px;
-    /* Slightly shorter, compact */
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(4px);
     border-bottom: 1px solid var(--notion-border);
+    position: sticky;
+    top: 73px;
+    z-index: 100;
+    width: 100%;
+}
+
+.headerContent {
+    max-width: 1440px;
+    margin: 0 auto;
+    height: 100%;
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0 16px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
 }
 
 .headerLeft {
@@ -144,10 +151,10 @@
 .main {
     max-width: 1440px;
     margin: 0 auto;
-    padding: 48px;
+    padding: 40px 24px;
     display: grid;
-    grid-template-columns: 280px 1fr;
-    gap: 64px;
+    grid-template-columns: 320px 1fr;
+    gap: 40px;
     align-items: start;
 }
 

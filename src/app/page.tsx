@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Link } from "next-view-transitions";
 import { m, AnimatePresence, LazyMotion, domAnimation } from "framer-motion";
+import Image from "next/image";
 import { ArrowRight, Loader2, MapPin, User } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
@@ -107,9 +108,16 @@ export default function Home() {
         <div className="z-10 flex flex-col items-center text-center px-6 max-w-3xl mx-auto">
 
           <div className="animate-fade-in-up">
-            <span className="inline-block py-1 px-3 text-[#3D4430]/40 text-xs font-semibold tracking-[0.2em] uppercase mb-8">
-              NIHPLOD Skin Advisor
-            </span>
+            <div className="mb-8">
+              <Image
+                src="/logo-myskin-today.svg"
+                alt="MySkin.Today"
+                width={300}
+                height={90}
+                priority
+                className="h-24 w-auto mx-auto opacity-80"
+              />
+            </div>
 
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-serif text-[#1A1A1A] mb-8 leading-tight tracking-tight">
               专属您的<br className="sm:hidden" />护肤专家
