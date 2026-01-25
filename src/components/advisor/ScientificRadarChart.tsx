@@ -21,8 +21,8 @@ interface ScientificRadarChartProps {
 }
 
 const DIMENSION_ORDER: SkinDimensionKey[] = [
-    "spots", "wrinkles", "texture", "pores",
-    "acneRisk", "redAreas", "brownSpots", "uvDamage"
+    'waterOil', 'pores', 'skinTone', 'spots', 'wrinkles', 'skinTypeScore',
+    'uvDamage', 'sensitivity', 'darkCircles', 'firmness', 'acne', 'radiance'
 ];
 // Reordered slightly to distribute commonly paired attributes if needed, but standard order is fine.
 

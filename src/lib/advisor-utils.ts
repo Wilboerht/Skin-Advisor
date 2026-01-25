@@ -54,14 +54,18 @@ export interface FaceAnalysisResult {
         factors: string[];
     };
     dimensions: {
-        spots: DimensionScore; // 色斑
-        wrinkles: DimensionScore; // 皱纹
-        texture: DimensionScore; // 纹理
-        pores: DimensionScore; // 毛孔
-        uvDamage: DimensionScore; // 光损伤
-        brownSpots: DimensionScore; // 棕色斑
-        redAreas: DimensionScore; // 红色区
-        acneRisk: DimensionScore; // 紫质
+        waterOil: DimensionScore; // 01 水油平衡
+        pores: DimensionScore; // 02 毛孔状态
+        skinTone: DimensionScore; // 03 肤色均匀
+        spots: DimensionScore; // 04 色斑检测
+        wrinkles: DimensionScore; // 05 细纹皱纹
+        skinTypeScore: DimensionScore; // 06 肤质分型 (Score representation of stability/health)
+        uvDamage: DimensionScore; // 07 光老化
+        sensitivity: DimensionScore; // 08 敏感度
+        darkCircles: DimensionScore; // 09 黑眼圈
+        firmness: DimensionScore; // 10 皮肤弹性
+        acne: DimensionScore; // 11 痘痘分析
+        radiance: DimensionScore; // 12 光泽度
     };
     hydration: {
         level: string;
@@ -84,25 +88,33 @@ export type SkinDimensionKey = keyof SkinDimensions;
 
 // 中文映射
 export const DIMENSION_LABELS: Record<string, string> = {
-    spots: "色斑",
-    wrinkles: "皱纹",
-    texture: "纹理",
-    pores: "毛孔",
-    uvDamage: "紫外线", // Was 光损伤
-    brownSpots: "深层斑", // Was 色素
-    redAreas: "泛红",
-    acneRisk: "痘痘风险",
+    waterOil: "水油平衡",
+    pores: "毛孔状态",
+    skinTone: "肤色均匀",
+    spots: "色斑检测",
+    wrinkles: "细纹皱纹",
+    skinTypeScore: "肤质分型",
+    uvDamage: "光老化",
+    sensitivity: "敏感度",
+    darkCircles: "黑眼圈",
+    firmness: "皮肤弹性",
+    acne: "痘痘分析",
+    radiance: "光泽度"
 };
 
 export const DIMENSION_DESCRIPTIONS: Record<string, string> = {
-    spots: "表面可见的色斑、雀斑、晒斑",
-    wrinkles: "细纹、深层皱纹、表情纹",
-    texture: "皮肤表面光滑度和细腻程度",
-    pores: "毛孔大小和清晰度",
-    uvDamage: "太阳紫外线造成的深层损伤",
-    brownSpots: "深层色素沉着、黄褐斑",
-    redAreas: "炎症、红血丝、敏感区域",
-    acneRisk: "油脂分泌及潜在痤疮风险",
+    waterOil: "皮肤水分与油脂分泌的平衡状态",
+    pores: "毛孔大小、分布及清晰度",
+    skinTone: "肤色整体均匀度，有无局部暗沉",
+    spots: "表面可见色斑、晒斑及色素沉着",
+    wrinkles: "面部干纹、细纹及深层皱纹状态",
+    skinTypeScore: "皮肤生理类型的稳定性评分",
+    uvDamage: "紫外线造成的深层光老化损伤",
+    sensitivity: "皮肤屏障功能及耐受度",
+    darkCircles: "眼周色素沉着及循环状况",
+    firmness: "胶原蛋白支撑力及皮肤紧致度",
+    acne: "粉刺、闭口及痤疮风险",
+    radiance: "皮肤表面光泽感与通透度"
 };
 
 export function getDimensionLabel(key: string): string {
@@ -126,21 +138,25 @@ export function getDefaultFaceAnalysisResult(): FaceAnalysisResult {
         skinType: { type: "combination", confidence: 0.8, description: "混合性肌肤" },
         skinAge: { estimated: 25, factors: [] },
         dimensions: {
-            spots: { score: 75, grade: "good", details: "肤色基本均匀" },
-            wrinkles: { score: 80, grade: "good", details: "无明显干纹细纹" },
-            texture: { score: 70, grade: "average", details: "局部粗糙" },
-            pores: { score: 70, grade: "average", details: "T区毛孔可见" },
-            uvDamage: { score: 75, grade: "good", details: "有轻微光老化痕迹" },
-            brownSpots: { score: 80, grade: "good", details: "深层色素较少" },
-            redAreas: { score: 75, grade: "good", details: "两颊轻微泛红" },
-            acneRisk: { score: 70, grade: "average", details: "T区有油脂分泌" },
+            waterOil: { score: 72, grade: "average", details: "T区偏油，U区适中" },
+            pores: { score: 70, grade: "average", details: "鼻翼两侧毛孔明显" },
+            skinTone: { score: 75, grade: "good", details: "肤色基本均匀" },
+            spots: { score: 78, grade: "good", details: "少量浅层色斑" },
+            wrinkles: { score: 85, grade: "excellent", details: "无明显皱纹" },
+            skinTypeScore: { score: 80, grade: "good", details: "肤质较稳定" },
+            uvDamage: { score: 75, grade: "good", details: "轻度光老化痕迹" },
+            sensitivity: { score: 72, grade: "average", details: "换季易泛红" },
+            darkCircles: { score: 68, grade: "fair", details: "有轻微黑眼圈" },
+            firmness: { score: 82, grade: "excellent", details: "紧致度良好" },
+            acne: { score: 70, grade: "average", details: "偶尔冒痘" },
+            radiance: { score: 65, grade: "fair", details: "熬夜后略显暗沉" },
         },
         hydration: { level: "medium", description: "水分含量尚可，需加强保湿" },
         overallScore: 75,
-        summary: "您的皮肤整体状态良好，主要问题集中在 T 区出油和毛孔问题。建议加强清洁和分区护理。",
-        recommendations: ["做好分区护理", "加强T区清洁", "注意防晒"],
+        summary: "您的皮肤整体状态良好，主要问题集中在水油平衡和T区毛孔。眼周循环和光泽度也有提升空间。",
+        recommendations: ["做好分区护理", "加强T区清洁", "注意防晒", "使用眼霜"],
         skinConditions: [],
-        priorityAreas: ["pores", "texture"]
+        priorityAreas: ["pores", "radiance"]
     };
 }
 
@@ -309,7 +325,7 @@ export function identifyConcerns(
             if (faceAnalysis.dimensions.wrinkles.score < 60) concerns.add("wrinkles");
             if (faceAnalysis.dimensions.spots.score < 60) concerns.add("spots");
             if (faceAnalysis.dimensions.pores.score < 60) concerns.add("pores");
-            if (faceAnalysis.dimensions.acneRisk.score < 60) concerns.add("acne");
+            if (faceAnalysis.dimensions.acne.score < 60) concerns.add("acne");
         }
     }
 

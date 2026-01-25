@@ -20,7 +20,7 @@ import {
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useToast } from "@/components/ui/Toast";
 import type { FaceAnalysisResult, ZoneAnalysis } from "@/lib/advisor-utils";
-import { DIMENSION_LABELS, SkinDimensionKey } from "@/lib/advisor-utils";
+import { DIMENSION_LABELS, SkinDimensionKey, getDefaultFaceAnalysisResult } from "@/lib/advisor-utils";
 import { getDimensionAdvice } from "@/lib/advice-utils";
 import { ScientificRadarChart } from "@/components/advisor/ScientificRadarChart";
 import { generateSkincareRoutines, getClimateByRegion } from "@/lib/skincare-dosage";
@@ -458,12 +458,16 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                                                 <p className="text-sm text-gray-500">
                                                     {activeDimension === 'spots' && 'Surface Pigmentation'}
                                                     {activeDimension === 'wrinkles' && 'Fine Lines & Wrinkles'}
-                                                    {activeDimension === 'texture' && 'Skin Smoothness'}
                                                     {activeDimension === 'pores' && 'Pore Visibility'}
                                                     {activeDimension === 'uvDamage' && 'Deep Sun Damage'}
-                                                    {activeDimension === 'brownSpots' && 'Deep Pigmentation'}
-                                                    {activeDimension === 'redAreas' && 'Redness & Sensitivity'}
-                                                    {activeDimension === 'acneRisk' && 'Acne & Sebum'}
+                                                    {activeDimension === 'sensitivity' && 'Redness & Sensitivity'}
+                                                    {activeDimension === 'acne' && 'Acne & Sebum'}
+                                                    {activeDimension === 'waterOil' && 'Hydro-Lipid Balance'}
+                                                    {activeDimension === 'skinTone' && 'Skin Tone Evenness'}
+                                                    {activeDimension === 'firmness' && 'Elasticity & Firmness'}
+                                                    {activeDimension === 'radiance' && 'Skin Radiance'}
+                                                    {activeDimension === 'darkCircles' && 'Periorbital Pigmentation'}
+                                                    {activeDimension === 'skinTypeScore' && 'Barrier Stability'}
                                                 </p>
                                             </div>
                                             <div className={`text-4xl font-mono font-bold ${faceAnalysis.dimensions[activeDimension].score >= 80 ? 'text-emerald-500' :
@@ -492,22 +496,7 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                                             <p className="text-gray-700 leading-relaxed text-[15px]">
                                                 {getDimensionAdvice(activeDimension, faceAnalysis.dimensions[activeDimension].score)}
                                             </p>
-
-                                            {/* Optional: Add product category rec based on dimension */}
-                                            <div className="mt-4 pt-4 border-t border-gray-200 text-xs text-gray-500 flex items-center gap-2">
-                                                <span className="bg-white border border-gray-200 px-2 py-1 rounded">
-                                                    推荐成分
-                                                </span>
-                                                {activeDimension === 'wrinkles' && 'Retinol / Peptides'}
-                                                {activeDimension === 'spots' && 'Vitamin C / Niacinamide'}
-                                                {activeDimension === 'texture' && 'AHA / BHA'}
-                                                {activeDimension === 'pores' && 'Salicylic Acid'}
-                                                {activeDimension === 'redAreas' && 'Centella / B5'}
-                                                {(activeDimension === 'uvDamage' || activeDimension === 'brownSpots') && 'Sunscreen / Arbutin'}
-                                                {activeDimension === 'acneRisk' && 'Salicylic Acid / Tea Tree'}
-                                            </div>
                                         </div>
-
                                     </div>
                                 </div>
                             </div>
@@ -539,98 +528,115 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                                 {/* Lab-Grade Analysis Metrics */}
                                 <div className="mb-8 font-mono text-sm leading-6">
                                     <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 border-b border-gray-200 pb-2 flex justify-between">
-                                        <span>AI ESTIMATE</span>
-                                        <span className="text-gray-400 font-normal normal-case">Reference Standard: VISIA-CR™ Equivalent</span>
+                                        <span>AI 实验室数据 (AI Labs)</span>
+                                        <span className="text-gray-400 font-normal normal-case">参考标准：MySkin.Today™ 皮肤科学金标准 (Gold Standard)</span>
                                     </h4>
 
                                     <div className="grid grid-cols-1 gap-y-6">
 
                                         {/* Table Header Row (Desktop only) */}
                                         <div className="hidden md:grid grid-cols-12 text-xs text-gray-400 border-b border-gray-100 pb-2 mb-2 font-sans font-semibold">
-                                            <div className="col-span-4">PARAMETER</div>
-                                            <div className="col-span-3 text-right">AI ESTIMATE*</div>
-                                            <div className="col-span-3 text-right">REF. RANGE</div>
-                                            <div className="col-span-2 text-right">STATUS</div>
+                                            <div className="col-span-4">检测指标 (Parameter)</div>
+                                            <div className="col-span-3 text-right">测定值 (Value)*</div>
+                                            <div className="col-span-3 text-right">参考范围 (Range)</div>
+                                            <div className="col-span-2 text-right">状态 (Status)</div>
                                         </div>
 
                                         {/* Group 1: Biophysical Profile */}
                                         <div>
-                                            <h5 className="text-[11px] font-bold text-gray-400 uppercase mb-2 border-l-2 border-blue-400 pl-2">I. Biophysical Profile (生物物理特性)</h5>
+                                            <h5 className="text-[11px] font-bold text-gray-400 uppercase mb-2 border-l-2 border-blue-400 pl-2">I. 生物物理特性 (Biophysical Profile)</h5>
                                             <div className="space-y-1">
-                                                {renderLabRow("Est. Skin pH",
-                                                    faceAnalysis.skinType.type === 'oily' ? '5.8 - 6.2' : faceAnalysis.skinType.type === 'dry' ? '4.5 - 5.0' : '5.2 - 5.5',
+                                                {renderLabRow("皮肤 pH 值 (Est. pH)",
+                                                    faceAnalysis.dimensions.waterOil.score < 60 ? '5.8 - 6.2' : faceAnalysis.dimensions.waterOil.score > 80 ? '5.2 - 5.5' : '4.5 - 5.0',
                                                     "4.5 - 5.5",
-                                                    faceAnalysis.skinType.type === 'oily' ? 'High' : 'Normal')}
+                                                    faceAnalysis.dimensions.waterOil.score < 60 ? '偏碱' : '正常')}
 
-                                                {renderLabRow("TEWL Index (Water Loss)",
-                                                    faceAnalysis.dimensions.redAreas.score > 80 ? 'Low (~8.5)' : 'High (>15)',
+                                                {renderLabRow("经表皮失水率 (TEWL)",
+                                                    faceAnalysis.dimensions.sensitivity.score > 80 ? 'Low (~8.5)' : 'High (>15)',
                                                     "< 10.0 g/m²/h",
-                                                    faceAnalysis.dimensions.redAreas.score > 80 ? 'Normal' : 'Elevated')}
+                                                    faceAnalysis.dimensions.sensitivity.score > 80 ? '正常' : '偏高')}
 
-                                                {renderLabRow("Stratum Corneum Hydration",
-                                                    faceAnalysis.hydration?.level === 'low' ? '~18.5 AU' : '~45.2 AU',
+                                                {renderLabRow("角质层含水量 (Hydration)",
+                                                    faceAnalysis.dimensions.waterOil.score < 60 ? '~18.5 AU' : '~45.2 AU',
                                                     "> 35.0 AU",
-                                                    faceAnalysis.hydration?.level === 'low' ? 'Low' : 'Normal')}
+                                                    faceAnalysis.dimensions.waterOil.score < 60 ? '偏低' : '正常')}
+
+                                                {renderLabRow("真皮层弹性 (Elasticity R2)",
+                                                    faceAnalysis.dimensions.firmness.score > 80 ? '> 0.82' : faceAnalysis.dimensions.firmness.score > 60 ? '0.65 - 0.75' : '< 0.55',
+                                                    "> 0.70",
+                                                    faceAnalysis.dimensions.firmness.score > 60 ? '紧致' : '松弛')}
                                             </div>
                                         </div>
 
                                         {/* Group 2: Pigmentation & Vascularity */}
                                         <div>
-                                            <h5 className="text-[11px] font-bold text-gray-400 uppercase mb-2 border-l-2 border-amber-400 pl-2">II. Chromophore Map (色基分布分析)</h5>
+                                            <h5 className="text-[11px] font-bold text-gray-400 uppercase mb-2 border-l-2 border-amber-400 pl-2">II. 色基分布分析 (Chromophore Map)</h5>
                                             <div className="space-y-1">
-                                                {renderLabRow("Melanin Index (MI)",
+                                                {renderLabRow("黑色素指数 (Melanin Index)",
                                                     `~${Math.round((100 - faceAnalysis.dimensions.spots.score) * 2.5)} MI`,
                                                     "< 150 MI",
-                                                    faceAnalysis.dimensions.spots.score < 60 ? 'High' : 'Normal')}
+                                                    faceAnalysis.dimensions.spots.score < 60 ? '偏高' : '正常')}
 
-                                                {renderLabRow("Erythema Index (EI)",
-                                                    `~${Math.round((100 - faceAnalysis.dimensions.redAreas.score) * 3.2)} EI`,
+                                                {renderLabRow("红斑指数 (Erythema Index)",
+                                                    `~${Math.round((100 - faceAnalysis.dimensions.sensitivity.score) * 3.2)} EI`,
                                                     "< 200 EI",
-                                                    faceAnalysis.dimensions.redAreas.score < 60 ? 'Elevated' : 'Normal')}
+                                                    faceAnalysis.dimensions.sensitivity.score < 60 ? '偏高' : '正常')}
 
-                                                {renderLabRow("Photo-aging Status (Glogau)",
-                                                    faceAnalysis.skinAge.estimated > 40 ? 'Type III' : faceAnalysis.skinAge.estimated > 30 ? 'Type II' : 'Type I',
+                                                {renderLabRow("光老化等级 (Glogau Scale)",
+                                                    faceAnalysis.dimensions.uvDamage.score > 40 ? 'III 型' : faceAnalysis.dimensions.uvDamage.score > 30 ? 'II 型' : 'I 型',
                                                     "Age Dependent",
                                                     "-")}
+
+                                                {renderLabRow("肤色均匀度 (Homogeneity)",
+                                                    faceAnalysis.dimensions.skinTone.score > 80 ? '< 12% C.V.' : '< 25% C.V.',
+                                                    "< 15% C.V.",
+                                                    faceAnalysis.dimensions.skinTone.score > 80 ? '均匀' : '不均')}
                                             </div>
                                         </div>
 
                                         {/* Group 3: Surface & Microbiome */}
                                         <div>
-                                            <h5 className="text-[11px] font-bold text-gray-400 uppercase mb-2 border-l-2 border-emerald-400 pl-2">III. Surface & Microbiome (表面与微生态)</h5>
+                                            <h5 className="text-[11px] font-bold text-gray-400 uppercase mb-2 border-l-2 border-emerald-400 pl-2">III. 表面与微生态 (Surface & Microbiome)</h5>
                                             <div className="space-y-1">
-                                                {renderLabRow("Porphyrin Count (P. acnes)",
-                                                    faceAnalysis.dimensions.acneRisk.score < 60 ? 'High' : faceAnalysis.dimensions.acneRisk.score < 80 ? 'Moderate' : 'Low',
+                                                {renderLabRow("卟啉计数 (Porphyrins)",
+                                                    faceAnalysis.dimensions.acne.score < 60 ? 'High' : faceAnalysis.dimensions.acne.score < 80 ? 'Moderate' : 'Low',
                                                     "Low Risk",
-                                                    faceAnalysis.dimensions.acneRisk.score < 60 ? 'High' : faceAnalysis.dimensions.acneRisk.score < 80 ? 'Moderate' : 'Low')}
+                                                    faceAnalysis.dimensions.acne.score < 60 ? '偏多' : faceAnalysis.dimensions.acne.score < 80 ? '中等' : '少')}
 
-                                                {renderLabRow("Sebum Excretion Rate",
-                                                    faceAnalysis.skinType.type === 'oily' ? 'High' : 'Normal',
+                                                {renderLabRow("皮脂分泌率 (Sebum Rate)",
+                                                    faceAnalysis.dimensions.waterOil.score < 60 ? 'High' : 'Normal',
                                                     "Balanced",
-                                                    faceAnalysis.skinType.type === 'oily' ? 'Elevated' : 'Normal')}
+                                                    faceAnalysis.dimensions.waterOil.score < 60 ? '旺盛' : '正常')}
 
-                                                {renderLabRow("Texture Roughness (Ra)",
-                                                    faceAnalysis.dimensions.texture.score < 70 ? '> 15 µm' : '< 10 µm',
+                                                {renderLabRow("皮肤平滑度 (Roughness Ra)",
+                                                    faceAnalysis.dimensions.pores.score < 70 ? '> 15 µm' : '< 10 µm',
                                                     "< 10.0 µm",
-                                                    faceAnalysis.dimensions.texture.score < 70 ? 'Rough' : 'Smooth')}
+                                                    faceAnalysis.dimensions.pores.score < 70 ? '粗糙' : '细腻')}
+
+                                                {renderLabRow("光泽度指数 (Glossiness GU)",
+                                                    faceAnalysis.dimensions.radiance.score > 80 ? '> 8.5 GU' : faceAnalysis.dimensions.radiance.score > 60 ? '4.0 - 6.0 GU' : '< 3.0 GU',
+                                                    "> 6.0 GU",
+                                                    faceAnalysis.dimensions.radiance.score > 60 ? '透亮' : '暗沉')}
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="mt-6 p-3 bg-gray-50 rounded border border-gray-100 text-[11px] text-gray-500 flex flex-col gap-1">
-                                        <div className="font-semibold text-gray-700 mb-1 flex items-center gap-1">
-                                            <AlertCircle className="w-3 h-3" />
+                                    <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-100 text-[12px] text-gray-500 flex flex-col gap-2">
+                                        <div className="font-semibold text-gray-900 mb-1 flex items-center gap-2">
+                                            <AlertCircle className="w-3.5 h-3.5" />
                                             数据说明 (Data Disclaimer)
                                         </div>
-                                        <p>* AI ESTIMATE: 上述数值均由 AI 算法基于您的面部图像特征（纹理、色泽、对比度）反演推算得出，<span className="font-bold text-gray-700">并非物理探头实测数据</span>。</p>
-                                        <p>例如：TEWL（经表皮失水率）是根据皮肤屏障受损程度的视觉表现估算而来。本报告仅作护肤参考，不可替代医疗诊断。</p>
+                                        <div className="space-y-1 leading-relaxed">
+                                            <p>* AI ESTIMATE: 上述数值均由 AI 算法基于您的面部图像特征（纹理、色泽、对比度）反演推算得出，<span className="font-bold text-gray-700">并非物理探头实测数据</span>。</p>
+                                            <p>例如：TEWL（经表皮失水率）是根据皮肤屏障受损程度的视觉表现估算而来。本报告仅作护肤参考，不可替代医疗诊断。</p>
+                                        </div>
                                     </div>
                                 </div>
 
                                 {/* Conditions List - Text Only */}
                                 {faceAnalysis.skinConditions && faceAnalysis.skinConditions.length > 0 && (
                                     <div>
-                                        <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 border-b border-gray-200 pb-2">
+                                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-200 pb-2">
                                             症状详情 (Clinical Observations)
                                         </h4>
                                         <div className="space-y-4">
@@ -641,13 +647,13 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                                                     </div>
                                                     <div className="flex-1">
                                                         <div className="mb-1">
-                                                            <span className="text-gray-600 mr-2">区域: {cond.area}</span>
-                                                            <span className="text-gray-300 mr-2">|</span>
-                                                            <span className={`${cond.severity === 'severe' ? 'text-gray-900 font-bold' : 'text-gray-600'}`}>
+                                                            <span className="text-gray-500 mr-2 text-xs">区域: {cond.area}</span>
+                                                            <span className="text-gray-300 mr-2 text-xs">|</span>
+                                                            <span className={`text-xs ${cond.severity === 'severe' ? 'text-red-600 font-bold' : 'text-gray-600'}`}>
                                                                 程度: {cond.severity === 'severe' ? '严重' : cond.severity === 'moderate' ? '中度' : '轻微'}
                                                             </span>
                                                         </div>
-                                                        <p className="text-gray-600 leading-relaxed text-xs">
+                                                        <p className="text-[13px] leading-relaxed text-gray-600">
                                                             {cond.description}
                                                         </p>
                                                     </div>
@@ -662,10 +668,12 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
 
                     {/* 2. Zone Analysis */}
                     {faceAnalysis?.zoneAnalysis && (
-                        <div className={`${styles.analysisGrid} ${styles.fadeInUp}`}>
+                        <div className={`${styles.analysisGrid} ${styles.fadeInUp} border-0 shadow-sm`}>
                             <div className={styles.sectionTitle}>
-                                <Search className={styles.sectionIcon} />
-                                <span>区域重点关注</span>
+                                <div className="flex items-center gap-3">
+                                    <Search className="w-5 h-5 text-gray-700" />
+                                    <span className="text-lg font-semibold text-gray-900">区域重点关注</span>
+                                </div>
                             </div>
                             <div className={styles.zoneGrid}>
                                 {(['forehead', 'tZone', 'leftCheek', 'rightCheek', 'eyeArea', 'jawline'] as const).map(zone => {
@@ -677,13 +685,13 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
 
                                     return (
                                         <div key={zone} className={styles.zoneCard}>
-                                            <div className={styles.zoneName}>{labels[zone]}</div>
+                                            <div className="text-sm font-semibold text-gray-900 mb-1">{labels[zone]}</div>
                                             <span className={`${styles.zoneStatus} ${status === '良好' ? styles.colorGood :
                                                 status === '一般' ? styles.colorAvg : styles.colorPoor
                                                 }`}>
                                                 {status} {score}
                                             </span>
-                                            <p className={styles.zoneDesc}>
+                                            <p className="text-[13px] text-gray-600 mt-2 leading-relaxed">
                                                 {faceAnalysis.zoneAnalysis?.[zone].condition || "无明显问题"}
                                             </p>
                                         </div>
@@ -693,7 +701,6 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                         </div>
                     )}
 
-                    {/* 3. Routine */}
                     {/* 3. Routine */}
                     {routineData && (
                         <div className={`${styles.routineCard} ${styles.fadeInUp} border-0 shadow-sm`}>
@@ -731,17 +738,17 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                                             <div className={styles.timelineDot} />
 
                                             <div className={styles.stepHeader}>
-                                                <div className={styles.stepTitle}>{step.name}</div>
-                                                <div className={styles.stepDuration}>{step.duration}</div>
+                                                <div className="text-[15px] font-semibold text-gray-900">{step.name}</div>
+                                                <div className="text-xs text-gray-400 font-mono">{step.duration}</div>
                                             </div>
 
-                                            <span className={styles.stepEnName}>{step.nameEn}</span>
+                                            <span className="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-1 block">{step.nameEn}</span>
 
-                                            <p className={styles.stepDesc}>{step.description}</p>
+                                            <p className="text-[14px] leading-relaxed text-gray-600 mb-2">{step.description}</p>
 
                                             {step.dosage && (
-                                                <div className={styles.stepDosage}>
-                                                    <span className={styles.stepDosageIcon}>🧴</span>
+                                                <div className="flex items-center gap-2 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded w-fit">
+                                                    <span className="text-sm">🧴</span>
                                                     <span>用量：{step.dosage.description}</span>
                                                 </div>
                                             )}
@@ -754,10 +761,13 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
 
                     {/* 4. Products */}
                     {result.products && result.products.length > 0 && (
-                        <div className={styles.fadeInUp}>
-                            <h3 className={styles.sectionTitle}>
-                                <span>甄选产品推荐</span>
-                            </h3>
+                        <div className={`${styles.analysisGrid} ${styles.fadeInUp} border-0 shadow-sm`}>
+                            <div className={styles.sectionTitle}>
+                                <div className="flex items-center gap-3">
+                                    <Gift className="w-5 h-5 text-gray-700" />
+                                    <span className="text-lg font-semibold text-gray-900">甄选产品推荐</span>
+                                </div>
+                            </div>
                             <div className={styles.productGrid}>
                                 {result.products.map(product => (
                                     <Link key={product.id} href={`/products/${product.id}`} className={styles.productCard}>
@@ -765,14 +775,14 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                                             <img src={product.image} alt={product.name} className={styles.productImg} />
                                         </div>
                                         <div className={styles.productMeta}>
-                                            <span className={styles.productCat}>{product.category}</span>
-                                            <h4 className={styles.productTitle}>{product.name}</h4>
-                                            <div className={styles.productReason}>
+                                            <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1 block">{product.category}</span>
+                                            <h4 className="text-[15px] font-semibold text-gray-900 mb-1 leading-snug line-clamp-2">{product.name}</h4>
+                                            <div className="text-[13px] text-gray-600 leading-relaxed mb-3 line-clamp-2">
                                                 推荐理由：{product.reason}
                                             </div>
-                                            <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center text-sm font-medium">
+                                            <div className="mt-auto pt-3 border-t border-gray-100 flex justify-between items-center text-xs font-medium text-gray-900">
                                                 <span>{product.price || '查看详情'}</span>
-                                                <ChevronRight className="w-4 h-4 text-gray-400" />
+                                                <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
                                             </div>
                                         </div>
                                     </Link>
@@ -784,7 +794,10 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                     {/* Footer Actions */}
                     <div className={styles.footerArea}>
                         <div className={styles.disclaimerBox}>
-                            <div className={styles.disclaimerTitle}>免责声明</div>
+                            <div className="flex items-center gap-2 mb-2 text-gray-900 font-semibold text-xs uppercase tracking-wider">
+                                <AlertCircle className="w-3 h-3" />
+                                免责声明
+                            </div>
                             本报告结果基于人工智能图像分析生成，仅供参考。分析结果受拍摄光线、角度及设备清晰度影响，不能作为医学诊断依据。如遇严重皮肤问题，请咨询专业皮肤科医生。
                         </div>
 
