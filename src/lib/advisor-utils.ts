@@ -154,7 +154,13 @@ export function getDefaultFaceAnalysisResult(): FaceAnalysisResult {
         hydration: { level: "medium", description: "水分含量尚可，需加强保湿" },
         overallScore: 75,
         summary: "您的皮肤整体状态良好，主要问题集中在水油平衡和T区毛孔。眼周循环和光泽度也有提升空间。",
-        recommendations: ["做好分区护理", "加强T区清洁", "注意防晒", "使用眼霜"],
+        recommendations: [
+            "针对您目前的肤质状况，建议您采取精细化的分区护理策略。",
+            "由于T区油脂分泌较旺盛且伴有毛孔问题，建议早晚使用氨基酸洁面产品重点清洁额头与鼻翼，必要时可搭配低浓度水杨酸棉片进行局部湿敷，以疏通毛孔并控制油脂。",
+            "U区相对干燥敏感，应避免过度清洁，建议使用含有神经酰胺或透明质酸的修护型乳液进行保湿。",
+            "此外，您的眼周存在轻微循环不畅导致的黑眼圈，建议规律作息，并坚持使用含有咖啡因或胜肽成分的眼霜。",
+            "最后，鉴于光老化迹象初显，请务必全年坚持使用SPF30+以上的防晒霜，以预防紫外线对胶原蛋白的进一步损伤。"
+        ],
         skinConditions: [],
         priorityAreas: ["pores", "radiance"]
     };

@@ -540,12 +540,11 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                                         </div>
 
                                         {/* Diagnosis & Advice */}
-                                        <div className="bg-gray-50 rounded-xl p-6 border border-gray-100">
-                                            <div className="flex gap-3 mb-3">
-                                                <span className="text-lg">🩺</span>
-                                                <span className="font-semibold text-gray-900">AI 诊断建议</span>
-                                            </div>
-                                            <p className="text-gray-700 leading-relaxed text-[15px]">
+                                        <div className="mt-6">
+                                            <h4 className="text-base font-medium text-gray-900 mb-3 border-b border-gray-200 pb-2">
+                                                AI 诊断建议 (AI Analysis)
+                                            </h4>
+                                            <p className="text-[14px] leading-relaxed text-gray-700">
                                                 {getDimensionAdvice(activeDimension, faceAnalysis.dimensions[activeDimension].score)}
                                             </p>
                                         </div>
@@ -569,19 +568,19 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                             <div className="p-8 bg-white text-gray-800">
                                 {/* Report Header / Summary */}
                                 <div className="mb-8">
-                                    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 border-b border-gray-200 pb-2">
-                                        详细诊断报告 (Detailed Diagnosis)
+                                    <h4 className="text-base font-medium text-gray-900 mb-3 border-b border-gray-200 pb-2">
+                                        1、详细诊断报告 (Detailed Diagnosis)
                                     </h4>
 
                                     {/* Show Details if available, else fallback to Summary */}
                                     {result.analysis.details && result.analysis.details.length > 0 ? (
-                                        <div className="space-y-3 text-[15px] leading-relaxed text-gray-700">
+                                        <div className="space-y-3 text-[14px] leading-relaxed text-gray-700">
                                             {result.analysis.details.map((paragraph, idx) => (
                                                 <p key={idx}>{paragraph}</p>
                                             ))}
                                         </div>
                                     ) : (
-                                        <p className="text-[15px] leading-relaxed text-gray-800 font-medium">
+                                        <p className="text-[14px] leading-relaxed text-gray-700">
                                             {faceAnalysis.summary}
                                         </p>
                                     )}
@@ -590,32 +589,32 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                                 {/* Expert Advice */}
                                 {faceAnalysis.recommendations && faceAnalysis.recommendations.length > 0 && (
                                     <div className="mb-8">
-                                        <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 border-b border-gray-200 pb-2">
-                                            专家护肤建议 (Expert Recommendations)
+                                        <h4 className="text-base font-medium text-gray-900 mb-3 border-b border-gray-200 pb-2">
+                                            2、专家护肤建议 (Expert Recommendations)
                                         </h4>
-                                        <ul className="list-disc pl-5 space-y-2 text-[15px] leading-relaxed text-gray-700 marker:text-gray-400">
-                                            {faceAnalysis.recommendations.map((rec, idx) => (
-                                                <li key={idx} className="pl-1">{rec}</li>
-                                            ))}
-                                        </ul>
+                                        <div className="space-y-3 text-[14px] leading-relaxed text-gray-700">
+                                            <p>
+                                                {faceAnalysis.recommendations.join(" ")}
+                                            </p>
+                                        </div>
                                     </div>
                                 )}
 
                                 {/* Lab-Grade Analysis Metrics */}
-                                <div className="mb-8 rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden font-sans">
+                                <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden font-sans">
                                     <div
-                                        className="px-5 py-3 border-b border-slate-100 bg-slate-50/80 flex justify-between items-center cursor-pointer hover:bg-slate-100 transition-colors"
+                                        className={`px-5 py-3 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors ${showLabData ? 'border-b border-gray-100' : ''}`}
                                         onClick={() => setShowLabData(!showLabData)}
                                     >
-                                        <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                                            <Activity className="w-3.5 h-3.5 text-blue-600" />
-                                            <span>AI 实验室数据 (AI Labs)</span>
-                                        </h4>
+                                        <div className="flex items-center gap-2">
+                                            <Activity className="w-4 h-4 text-gray-500" />
+                                            <span className="text-sm font-medium text-gray-900">AI 实验室数据 (AI Labs)</span>
+                                        </div>
                                         <div className="flex items-center gap-3">
-                                            <span className="text-[10px] text-slate-400 font-medium bg-white px-2 py-0.5 rounded border border-slate-200/50 hidden sm:inline-block">
+                                            <span className="text-xs text-gray-400 font-normal hidden sm:inline-block">
                                                 MySkin.Today™ Gold Standard
                                             </span>
-                                            <ChevronRight className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${showLabData ? 'rotate-90' : ''}`} />
+                                            <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${showLabData ? 'rotate-90' : ''}`} />
                                         </div>
                                     </div>
                                     {showLabData && (
