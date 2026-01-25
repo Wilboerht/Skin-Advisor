@@ -502,26 +502,26 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                                         {/* Header */}
                                         <div className="flex items-center justify-between mb-6">
                                             <div>
-                                                <h3 className="text-2xl font-bold text-gray-900 mb-1">
+                                                <h3 className="text-lg font-semibold text-gray-900 mb-0.5">
                                                     {DIMENSION_LABELS[activeDimension]}
                                                 </h3>
-                                                <p className="text-sm text-gray-500">
-                                                    {activeDimension === 'spots' && 'Surface Pigmentation'}
-                                                    {activeDimension === 'wrinkles' && 'Fine Lines & Wrinkles'}
-                                                    {activeDimension === 'pores' && 'Pore Visibility'}
-                                                    {activeDimension === 'uvDamage' && 'Deep Sun Damage'}
-                                                    {activeDimension === 'sensitivity' && 'Redness & Sensitivity'}
-                                                    {activeDimension === 'acne' && 'Acne & Sebum'}
-                                                    {activeDimension === 'waterOil' && 'Hydro-Lipid Balance'}
-                                                    {activeDimension === 'skinTone' && 'Skin Tone Evenness'}
-                                                    {activeDimension === 'firmness' && 'Elasticity & Firmness'}
-                                                    {activeDimension === 'radiance' && 'Skin Radiance'}
-                                                    {activeDimension === 'darkCircles' && 'Periorbital Pigmentation'}
-                                                    {activeDimension === 'skinTypeScore' && 'Barrier Stability'}
+                                                <p className="text-xs text-gray-400 font-mono tracking-wide">
+                                                    {activeDimension === 'spots' && 'SURFACE PIGMENTATION'}
+                                                    {activeDimension === 'wrinkles' && 'FINE LINES & WRINKLES'}
+                                                    {activeDimension === 'pores' && 'PORE VISIBILITY'}
+                                                    {activeDimension === 'uvDamage' && 'DEEP SUN DAMAGE'}
+                                                    {activeDimension === 'sensitivity' && 'REDNESS & SENSITIVITY'}
+                                                    {activeDimension === 'acne' && 'ACNE & SEBUM'}
+                                                    {activeDimension === 'waterOil' && 'HYDRO-LIPID BALANCE'}
+                                                    {activeDimension === 'skinTone' && 'SKIN TONE EVENNESS'}
+                                                    {activeDimension === 'firmness' && 'ELASTICITY & FIRMNESS'}
+                                                    {activeDimension === 'radiance' && 'SKIN RADIANCE'}
+                                                    {activeDimension === 'darkCircles' && 'PERIORBITAL PIGMENTATION'}
+                                                    {activeDimension === 'skinTypeScore' && 'BARRIER STABILITY'}
                                                 </p>
                                             </div>
-                                            <div className={`text-4xl font-mono font-bold ${faceAnalysis.dimensions[activeDimension].score >= 80 ? 'text-emerald-500' :
-                                                faceAnalysis.dimensions[activeDimension].score >= 60 ? 'text-amber-500' : 'text-red-500'
+                                            <div className={`text-3xl font-mono font-medium ${faceAnalysis.dimensions[activeDimension].score >= 80 ? 'text-emerald-600' :
+                                                faceAnalysis.dimensions[activeDimension].score >= 60 ? 'text-amber-600' : 'text-rose-600'
                                                 }`}>
                                                 {faceAnalysis.dimensions[activeDimension].score}
                                             </div>
@@ -908,23 +908,43 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                     )}
 
                     {/* Footer Actions */}
-                    <div className={styles.footerArea}>
-                        <div className={styles.disclaimerBox}>
-                            <div className="flex items-center gap-2 mb-2 text-gray-900 font-semibold text-xs uppercase tracking-wider">
-                                <AlertCircle className="w-3 h-3" />
-                                免责声明
-                            </div>
-                            本报告结果基于人工智能图像分析生成，仅供参考。分析结果受拍摄光线、角度及设备清晰度影响，不能作为医学诊断依据。如遇严重皮肤问题，请咨询专业皮肤科医生。
-                        </div>
+                    {/* Footer Actions */}
 
-                        <button onClick={handleRetake} className="inline-flex items-center gap-2 text-gray-500 hover:text-black transition-colors px-6 py-3 border border-gray-200 rounded-lg hover:bg-white hover:border-black">
+
+                </div>
+            </main>
+
+            {/* Global Footer */}
+            <footer className="w-full bg-[#FAFAFA] border-t border-gray-100 mt-0 py-12">
+                <div className="max-w-[1440px] mx-auto px-6">
+                    {/* Retake Button - Centered */}
+                    <div className="flex justify-center mb-10">
+                        <button
+                            onClick={handleRetake}
+                            className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors px-8 py-3 border border-gray-200 rounded-full bg-white hover:bg-gray-50 text-sm font-medium transition-all hover:shadow-sm"
+                        >
                             <RotateCcw className="w-4 h-4" />
                             重新测试
                         </button>
                     </div>
 
+                    {/* Minimal Footer Text */}
+                    <div className="text-center">
+                        <div className="flex justify-center items-center gap-4 text-[11px] text-gray-400 mb-2">
+                            <a href="https://demo.myskin.today/terms" target="_blank" rel="noopener noreferrer" className="hover:text-gray-600 transition-colors">
+                                服务条款
+                            </a>
+                            <span className="text-gray-200">|</span>
+                            <a href="https://demo.myskin.today/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-gray-600 transition-colors">
+                                隐私政策
+                            </a>
+                        </div>
+                        <p className="text-[10px] text-gray-300">
+                            *AI 分析结果受图像质量影响仅供参考，不构成医疗诊断建议
+                        </p>
+                    </div>
                 </div>
-            </main >
+            </footer>
 
             {/* AI Chat Window */}
             {
