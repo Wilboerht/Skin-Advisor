@@ -52,16 +52,22 @@ export default function Home() {
     setShowLocationModal(false);
     if ("geolocation" in navigator) {
       try {
-        await new Promise<GeolocationPosition>((resolve, reject) => {
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject, {
             enableHighAccuracy: false,
             timeout: 10000,
             maximumAge: 300000,
           });
         });
+
+        localStorage.setItem("userRegion", JSON.stringify({
+          lat: position.coords.latitude,
+          lon: position.coords.longitude
+        }));
         sessionStorage.setItem("locationConsent", "granted");
         startNewTest();
-      } catch {
+      } catch (error) {
+        console.warn("Geolocation failed", error);
         setShowRegionSelectModal(true);
       }
     } else {
@@ -72,7 +78,7 @@ export default function Home() {
   const handleRegionSelect = (region: string) => {
     setShowRegionSelectModal(false);
     sessionStorage.setItem("locationConsent", "granted");
-    sessionStorage.setItem("userRegion", region);
+    localStorage.setItem("userRegion", JSON.stringify({ province: region, city: region }));
     startNewTest();
   };
 

@@ -76,7 +76,7 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
     const [result, setResult] = useState<ComprehensiveResult | null>(initialData?.result || null);
     const [faceAnalysis, setFaceAnalysis] = useState<FaceAnalysisResult | null>(initialData?.faceAnalysis || null);
     const [userImage, setUserImage] = useState<string | undefined>(undefined);
-    const [userLocation, setUserLocation] = useState<{ province?: string; city?: string } | null>(null);
+    const [userLocation, setUserLocation] = useState<{ province?: string; city?: string; lat?: number; lon?: number } | null>(null);
 
     // UI State
     const [activeRoutineTab, setActiveRoutineTab] = useState<'morning' | 'evening'>('morning');
@@ -207,17 +207,56 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
 
     // --- Mock Environment Data (Phase 3 Simulation) ---
     // In production, this would fetch from a weather API based on lat/long
-    const envData = useMemo(() => {
-        // Randomly simulate a "Bad Skin Day" scenario for demo
-        // Scenario: High UV, Dry Air, Moderate Pollution
-        return {
-            uvIndex: 9,          // High UV -> Needs 1.5x Sunscreen
-            humidity: 25,        // Very Dry -> Needs Oil
-            aqi: 160,            // Unhealthy -> Needs Deep Cleanse
-            temperature: 22,
-            location: "北京市 朝阳区 (模拟定位)"
+    // --- Real Environment Data Integration ---
+    const [envData, setEnvData] = useState({
+        uvIndex: 0,
+        humidity: 50,
+        aqi: 50,
+        temperature: 20,
+        location: "定位中...",
+        isRealData: false
+    });
+
+    useEffect(() => {
+        // Fetch Weather Data
+        const fetchWeather = async () => {
+            let query = "";
+
+            if (userLocation?.lat && userLocation?.lon) {
+                query = `${userLocation.lon},${userLocation.lat}`; // QWeather uses lon,lat
+            } else if (userLocation?.city) {
+                query = `${userLocation.province || ''}${userLocation.city}`;
+            } else if (userLocation?.province) {
+                // If only province (e.g. manual select might be loose), try it
+                query = userLocation.province;
+            } else if (typeof userLocation === 'string') {
+                // Handle legacy string case
+                query = userLocation;
+            } else {
+                query = "北京市";
+            }
+
+            try {
+                const res = await fetch(`/api/weather?city=${encodeURIComponent(query)}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setEnvData(data);
+                    // Update location display name if we got a real one from coordinates
+                    if (data.location && (!userLocation?.city || userLocation.lat)) {
+                        setUserLocation(prev => ({ ...prev, city: data.location }));
+                    }
+                }
+            } catch (e) {
+                console.error("Weather fetch failed", e);
+                setEnvData(prev => ({ ...prev, location: "暂无数据", isRealData: false }));
+            }
         };
-    }, []);
+
+        if (userLocation !== undefined) {
+            // Only fetch if userLocation is at least processed (null or object)
+            fetchWeather();
+        }
+    }, [userLocation]);
 
     // Derived Routine Data
     const routineData = useMemo(() => {
@@ -548,7 +587,12 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                             <div className="flex items-center gap-2 text-indigo-900 font-bold">
                                 <span className="text-xl">📍</span>
                                 <span>{envData.location}</span>
-                                <span className="text-xs bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full ml-2">实时环境监测中</span>
+                                <span className={`text-xs px-2 py-0.5 rounded-full ml-2 ${envData.isRealData
+                                    ? "bg-emerald-100 text-emerald-600"
+                                    : "bg-gray-100 text-gray-500"
+                                    }`}>
+                                    {envData.isRealData ? "实时环境监测中" : "模拟环境数据"}
+                                </span>
                             </div>
                             <div className="flex gap-4 text-sm font-medium text-gray-700 bg-white/60 px-4 py-2 rounded-full">
                                 <div className="flex items-center gap-1">
