@@ -12,6 +12,8 @@ import {
   ChevronRight,
   ChevronUp,
   User,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FaceScanOverlay } from "./FaceScanOverlay";
@@ -79,6 +81,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
   const [stabilityProgress, setStabilityProgress] = useState<number>(0); // 姿势稳定进度 0-100
   const [isInCooldown, setIsInCooldown] = useState<boolean>(false); // 冷却状态 UI 显示
   const [cooldownProgress, setCooldownProgress] = useState<number>(0); // 冷却进度 0-100
+  const [isMuted, setIsMuted] = useState(false); // 静音状态
   const [isLoading, setIsLoading] = useState(true);
   const [faceStatus, setFaceStatus] = useState<FaceStatus>("none");
   const [detectionStartTime, setDetectionStartTime] = useState<number | null>(null); // 检测开始时间，用于计算5秒后显示手动按钮
@@ -410,6 +413,37 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
   }, [modelsLoaded, isAllCaptured, calculateHeadPose, currentStep]);
 
   /**
+   * 播放快门音效
+   */
+  const playShutterSound = useCallback(() => {
+    if (isMuted) return;
+    try {
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContext) return;
+
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      // "Ding" sound - 清脆的提示音
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, ctx.currentTime); // A5
+      osc.frequency.exponentialRampToValueAtTime(1760, ctx.currentTime + 0.1); // A6
+
+      gain.gain.setValueAtTime(0.1, ctx.currentTime); // 音量适中
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+
+      osc.start();
+      osc.stop(ctx.currentTime + 0.3);
+    } catch (e) {
+      console.error("Audio play failed", e);
+    }
+  }, [isMuted]);
+
+  /**
    * 获取下一步骤
    */
   const getNextStep = useCallback((current: CaptureStep): CaptureStep | null => {
@@ -516,6 +550,9 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
       ...prev,
       [currentStep]: imageData,
     }));
+
+    // 播放音效
+    playShutterSound();
 
     stableCountRef.current = 0;
     faceBoxRef.current = null; // 重置面部框
@@ -980,12 +1017,20 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
 
       {/* 摄像头切换 - 右上角 */}
       {!isAllCaptured && !isLoading && (
-        <button
-          onClick={toggleCamera}
-          className="absolute top-8 right-8 z-30 p-3 rounded-full bg-black/20 border border-white/10 text-white hover:bg-black/40 backdrop-blur-md transition-all"
-        >
-          <RefreshCw className="w-5 h-5" />
-        </button>
+        <div className="absolute top-8 right-8 z-30 flex gap-3">
+          <button
+            onClick={() => setIsMuted(!isMuted)}
+            className="p-3 rounded-full bg-black/20 border border-white/10 text-white hover:bg-black/40 backdrop-blur-md transition-all"
+          >
+            {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+          </button>
+          <button
+            onClick={toggleCamera}
+            className="p-3 rounded-full bg-black/20 border border-white/10 text-white hover:bg-black/40 backdrop-blur-md transition-all"
+          >
+            <RefreshCw className="w-5 h-5" />
+          </button>
+        </div>
       )}
 
     </div>
