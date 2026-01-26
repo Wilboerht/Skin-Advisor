@@ -1,6 +1,11 @@
-import { headers } from "next/headers";
+import { SignJWT, importPKCS8 } from "jose";
 
-const QWEATHER_KEY = "a7c89169b99bfc904bae64470aba3f4a713b89becaa11d702fb99f605567e274";
+// Credential Configuration
+const QWEATHER_KEY_ID = "KJGUJC85DY";
+const PRIVATE_KEY_PEM = `-----BEGIN PRIVATE KEY-----
+MC4CAQAwBQYDK2VwBCIEILh6f4Pr8XqWFYm9CT6UAmG7sZ3UuPLqBwj4K50lKOZo
+-----END PRIVATE KEY-----`;
+
 const BASE_URL_API = "https://devapi.qweather.com/v7";
 const BASE_URL_GEO = "https://geoapi.qweather.com/v2";
 
@@ -14,25 +19,53 @@ export interface SkinEnvData {
     isRealData: boolean;
 }
 
-async function fetchQWeather(endpoint: string, params: Record<string, string>) {
-    const searchParams = new URLSearchParams({
-        ...params,
-        key: QWEATHER_KEY
-    });
+/**
+ * Generate JWT Token for QWeather API (EdDSA)
+ */
+async function getAuthToken(): Promise<string> {
+    try {
+        const alg = 'EdDSA';
+        const pkcs8 = await importPKCS8(PRIVATE_KEY_PEM, alg);
 
-    // Determine base URL
+        const jwt = await new SignJWT({})
+            .setProtectedHeader({ alg, kid: QWEATHER_KEY_ID })
+            .setSubject(QWEATHER_KEY_ID)
+            .setIssuedAt()
+            .setExpirationTime('1h') // Token valid for 1 hour
+            .sign(pkcs8);
+
+        return jwt;
+    } catch (e) {
+        console.error("JWT Generation Failed", e);
+        throw e;
+    }
+}
+
+async function fetchQWeather(endpoint: string, params: Record<string, string>) {
+    // 1. Generate Token
+    const token = await getAuthToken();
+
+    // 2. Build URL (No 'key' param needed)
+    const searchParams = new URLSearchParams(params);
     const baseUrl = endpoint.includes("city/lookup") ? BASE_URL_GEO : BASE_URL_API;
     const url = `${baseUrl}/${endpoint}?${searchParams.toString()}`;
 
     try {
-        const res = await fetch(url, { next: { revalidate: 1800 } }); // Cache for 30 mins
+        const res = await fetch(url, {
+            headers: {
+                "Authorization": `Bearer ${token}`
+            },
+            next: { revalidate: 1800 }
+        });
+
         if (!res.ok) {
-            console.warn(`QWeather API Failed: ${res.status} (${url})`); // Warn instead of Error
+            console.warn(`QWeather API Failed: ${res.status} (${url})`);
             return null;
         }
+
         const data = await res.json();
         if (data.code !== "200") {
-            console.error(`QWeather API Code Error: ${data.code} for ${url}`);
+            console.warn(`QWeather API Code Error: ${data.code} for ${url}`);
             return null;
         }
         return data;
@@ -44,41 +77,68 @@ async function fetchQWeather(endpoint: string, params: Record<string, string>) {
 
 export async function getSkinEnvData(locationInput: string): Promise<SkinEnvData> {
 
-    // Default Fallback Data (Beijingish)
+    // Default Fallback
     const fallbackData: SkinEnvData = {
         uvIndex: 5,
         humidity: 45,
         aqi: 75,
         temperature: 20,
-        location: locationInput || "标准测试环境",
+        location: "通用环境",
         weatherText: "多云",
         isRealData: false
     };
 
-    if (!locationInput) return fallbackData;
+    if (!locationInput || locationInput === "标准测试环境" || locationInput === "通用环境") return fallbackData;
 
     try {
-        // 1. Geo Lookup: Get City ID
-        // Strip common suffixes for better matching if needed, though API handles it well
-        const geoData = await fetchQWeather("city/lookup", { location: locationInput, number: "1" });
-        if (!geoData || !geoData.location || geoData.location.length === 0) {
-            console.warn(`City not found: ${locationInput}`);
-            return fallbackData;
-        }
+        // --- Strategy: Handle Coordinates Robustly ---
+        let locationQuery = locationInput;
+        let displayName = "通用环境"; // Default safe name
+        const isCoordinate = /^[-\d\.]+,[-\d\.]+$/.test(locationInput);
 
-        const cityInfo = geoData.location[0];
-        const locationId = cityInfo.id;
-        const locationName = `${cityInfo.adm1} ${cityInfo.name}`;
+        // 1. Try Geo Lookup for Name & ID
+        try {
+            const geoParams: Record<string, string> = { location: locationInput, number: "1" };
+            const geoData = await fetchQWeather("city/lookup", geoParams);
+
+            if (geoData && geoData.location && geoData.location.length > 0) {
+                const cityInfo = geoData.location[0];
+                locationQuery = cityInfo.id; // Switch to precise ID
+                displayName = `${cityInfo.adm1} ${cityInfo.name}`;
+            } else {
+                // Lookup failed
+                if (isCoordinate) {
+                    // Coordinate query for lookup failed (maybe ocean/remote?)
+                    // We can still try querying weather with raw coords
+                    locationQuery = locationInput;
+                    displayName = "当前位置"; // Don't show coords string
+                } else {
+                    // Name query failed (e.g. "Mars"), cannot proceed
+                    return fallbackData;
+                }
+            }
+        } catch (e) {
+            // Network or 404 error during lookup
+            if (isCoordinate) {
+                locationQuery = locationInput;
+                displayName = "当前位置";
+            } else {
+                return fallbackData;
+            }
+        }
 
         // 2. Fetch Data in Parallel
         const [weatherNow, airNow, weather3d] = await Promise.all([
-            fetchQWeather("weather/now", { location: locationId }),
-            fetchQWeather("air/now", { location: locationId }),
-            fetchQWeather("weather/3d", { location: locationId })
+            fetchQWeather("weather/now", { location: locationQuery }),
+            fetchQWeather("air/now", { location: locationQuery }),
+            fetchQWeather("weather/3d", { location: locationQuery })
         ]);
 
+        // If core weather data fails, we must fallback
+        if (!weatherNow) return fallbackData;
+
         // 3. Aggregate
-        let uv = 0;
+        let uv = 5; // Default safe UV
         let hum = 50;
         let temp = 20;
         let aqiVal = 50;
@@ -95,7 +155,6 @@ export async function getSkinEnvData(locationInput: string): Promise<SkinEnvData
         }
 
         if (weather3d && weather3d.daily && weather3d.daily.length > 0) {
-            // Use today's max UV index
             uv = parseInt(weather3d.daily[0].uvIndex) || 0;
         }
 
@@ -104,7 +163,7 @@ export async function getSkinEnvData(locationInput: string): Promise<SkinEnvData
             humidity: hum,
             aqi: aqiVal,
             temperature: temp,
-            location: locationName,
+            location: displayName,
             weatherText: text,
             isRealData: true
         };

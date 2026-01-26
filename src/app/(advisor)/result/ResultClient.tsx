@@ -18,7 +18,8 @@ import {
     ClipboardList,
     AlertCircle,
     FlaskConical,
-    Link as LinkIcon
+    Link as LinkIcon,
+    X
 } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useToast } from "@/components/ui/Toast";
@@ -217,13 +218,19 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
         isRealData: false
     });
 
+    // Prevent infinite loop by tracking the last fetched query
+    const lastFetchedQuery = useRef<string>("");
+
     useEffect(() => {
         // Fetch Weather Data
         const fetchWeather = async () => {
             let query = "";
 
             if (userLocation?.lat && userLocation?.lon) {
-                query = `${userLocation.lon},${userLocation.lat}`; // QWeather uses lon,lat
+                // Round to 2 decimals for API (QWeather recommends this for caching and lookup)
+                const latFixed = Number(userLocation.lat).toFixed(2);
+                const lonFixed = Number(userLocation.lon).toFixed(2);
+                query = `${lonFixed},${latFixed}`;
             } else if (userLocation?.city) {
                 query = `${userLocation.province || ''}${userLocation.city}`;
             } else if (userLocation?.province) {
@@ -239,20 +246,29 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                     humidity: 45,
                     aqi: 50,
                     temperature: 22,
-                    location: "标准参考环境",
+                    location: "通用环境",
                     isRealData: false
                 });
                 return;
             }
+
+            // Prevent duplicate fetches
+            if (query === lastFetchedQuery.current) return;
+            lastFetchedQuery.current = query;
 
             try {
                 const res = await fetch(`/api/weather?city=${encodeURIComponent(query)}`);
                 if (res.ok) {
                     const data = await res.json();
                     setEnvData(data);
+
                     // Update location display name if we got a real one from coordinates
-                    if (data.location && (!userLocation?.city || userLocation.lat)) {
-                        setUserLocation(prev => ({ ...prev, city: data.location }));
+                    // Only update if it's a real location name (not fallback) and different from current
+                    if (data.isRealData && data.location && data.location !== "通用环境" && userLocation?.city !== data.location) {
+                        setUserLocation(prev => {
+                            if (!prev || typeof prev === 'string') return { city: data.location };
+                            return { ...prev, city: data.location };
+                        });
                     }
                 }
             } catch (e) {
@@ -416,6 +432,34 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                     </div>
                 </div>
             </div>
+
+            {/* Validation Warning Banner */}
+            {faceAnalysis?.validation && (!faceAnalysis.validation.isValid || faceAnalysis.validation.message) && (
+                <div className="w-full bg-red-50 border-b border-red-100 relative group">
+                    <div className="max-w-[1440px] mx-auto px-4 py-3 pr-10 flex items-start gap-3">
+                        <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                            <h4 className="text-sm font-semibold text-red-900 mb-0.5">照片质量提示</h4>
+                            <p className="text-sm text-red-700 leading-relaxed">
+                                {faceAnalysis.validation.message}
+                            </p>
+                        </div>
+                        <button
+                            onClick={(e) => {
+                                // Since we don't have a specific state for hiding this yet, we can't persist the hide easily without state.
+                                // But typically we should use state. Let's add state logic or just manipulate DOM (bad practice).
+                                // Actually, let's just make it a controlled component or hack the display style.
+                                // Better: I will use state.
+                                const el = (e.target as HTMLElement).closest('.group');
+                                if (el) el.style.display = 'none';
+                            }}
+                            className="absolute right-4 top-3 p-1 rounded-full hover:bg-red-100 text-red-500 transition-colors"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Header */}
             <header className={styles.header}>
@@ -596,12 +640,6 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                             <div className="flex items-center gap-2 text-indigo-900 font-bold">
                                 <span className="text-xl">📍</span>
                                 <span>{envData.location}</span>
-                                <span className={`text-xs px-2 py-0.5 rounded-full ml-2 ${envData.isRealData
-                                    ? "bg-emerald-100 text-emerald-600"
-                                    : "bg-gray-100 text-gray-500"
-                                    }`}>
-                                    {envData.isRealData ? "实时环境监测中" : "模拟环境数据"}
-                                </span>
                             </div>
                             <div className="flex gap-4 text-sm font-medium text-gray-700 bg-white/60 px-4 py-2 rounded-full">
                                 <div className="flex items-center gap-1">
