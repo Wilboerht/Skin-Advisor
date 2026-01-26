@@ -37,6 +37,7 @@ model AdvisorSession {
   analysisCompletedAt     DateTime? // 分析完成时间
   resultViewedAt          DateTime? // 结果查看时间
   completedAt             DateTime? // 完成时间
+  expiresAt               DateTime? // 数据过期时间 (1个月后自动清理)
   
   // ===== 问卷数据 =====
   answers         Json?     // 问卷答案

@@ -182,6 +182,40 @@ export async function POST(request: NextRequest) {
         resultJson.products = finalProducts;
         resultJson.userLocation = geoLocation; // Return location for client use (PDF gen etc)
 
+        // 7. Persist Result to DB
+        if (sessionId) {
+            // Keep existing structure for 'analysisResult' JSON field
+            // Combine comprehensive result + faceAnalysis if present
+            const persistPayload = {
+                ...resultJson,
+                // Make sure faceAnalysis is also saved if available, though usually client sends it separate?
+                // Based on ResultClient expectations (initialData), it looks for:
+                // { result: ComprehensiveResult, faceAnalysis: FaceAnalysisResult }
+                // In current API flow, 'resultJson' IS the 'ComprehensiveResult' basically.
+                // Let's wrap it properly or save as is?
+                // Looking at page.tsx: const result = session.analysisResult as any;
+                // And page.tsx treats session.analysisResult AS the comprehensive result object directly.
+
+                // But wait, ResultClient needs faceAnalysis too.
+                // analyze route receives faceAnalysis in body. Let's merge it into the saved object 
+                // so page.tsx can retrieve it later.
+                faceAnalysis: faceAnalysis || resultJson.faceAnalysis || null
+            };
+
+            // Calculate Expiration Date (30 days from now)
+            const expiresAt = new Date();
+            expiresAt.setDate(expiresAt.getDate() + 30);
+
+            await prisma.advisorSession.update({
+                where: { sessionId },
+                data: {
+                    analysisResult: persistPayload as any, // stored as json
+                    completedAt: new Date(),
+                    expiresAt: expiresAt
+                }
+            }).catch(err => console.error("Failed to persist final analysis:", err));
+        }
+
         return NextResponse.json(resultJson, { headers: rateLimitHeaders });
 
     } catch (error) {

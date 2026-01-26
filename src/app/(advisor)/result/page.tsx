@@ -17,20 +17,35 @@ export default async function ResultPage(props: {
                 select: {
                     answers: true,
                     analysisResult: true,
-                    faceScanUsed: true
+                    faceScanUsed: true,
+                    expiresAt: true
                 }
             });
 
             if (session && session.analysisResult) {
-                const result = session.analysisResult as any;
-                initialData = {
-                    result: result as any, // Cast to ComprehensiveResult matching the client type strictly if needed
-                    faceAnalysis: result.faceAnalysis || null
-                };
+                // Check Expiration
+                if (session.expiresAt && new Date() > new Date(session.expiresAt)) {
+                    console.log(`Session ${id} expired at ${session.expiresAt}`);
+                    // Return null or specific expired state
+                    // Ideally we could redirect or show an expired state component
+                    // For now, let's treat it as not found so it falls back appropriately
+                    initialData = null;
+                } else {
+                    const result = session.analysisResult as any;
+                    initialData = {
+                        result: result as any,
+                        faceAnalysis: result.faceAnalysis || null
+                    };
+                }
             }
         } catch (e) {
             console.error("Failed to fetch session:", e);
         }
+    }
+
+    if (id && !initialData) {
+        // Optional: You could render a specific "Report Expired" component here
+        // return <div className="p-10 text-center">报告已过期或不存在</div>;
     }
 
     return <ResultClient id={id} initialData={initialData} />;

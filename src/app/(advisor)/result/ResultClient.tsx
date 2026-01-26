@@ -17,7 +17,8 @@ import {
     Gift, // Import Gift icon
     ClipboardList,
     AlertCircle,
-    FlaskConical
+    FlaskConical,
+    Link as LinkIcon
 } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useToast } from "@/components/ui/Toast";
@@ -217,22 +218,42 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
     const handleShare = async () => {
         console.log("Handle share clicked");
         try {
-            const url = generateShareUrl("/result", { ref: "button" });
+            // Point to the PUBLIC share landing page
+            const url = generateShareUrl("/share/result", {
+                id: id || "",
+                ref: "social_share"
+            });
             console.log("Generated share URL:", url);
             const success = await copyToClipboard(url);
-            console.log("Clipboard copy success:", success);
 
             if (success) {
-                console.log("Triggering success toast");
-                toast.success("链接已复制，可以发送给好友啦");
+                toast.success("分享链接已复制！");
                 trackResultShare("link");
             } else {
-                console.log("Triggering error toast");
-                toast.error("复制失败，请尝试手动复制链接");
+                toast.error("复制失败，请尝试手动复制");
             }
         } catch (e) {
             console.error("Share error:", e);
             toast.error("分享功能出现异常");
+        }
+    };
+
+    const handleSaveLink = async () => {
+        try {
+            // "Save Link" keeps the PRIVATE result page link (for self)
+            const url = generateShareUrl("/result", {
+                id: id || "",
+                ref: "save_link"
+            });
+            const success = await copyToClipboard(url);
+            if (success) {
+                toast.success("私密结果链接已保存（有效期30天）");
+            } else {
+                toast.error("保存失败，请重试");
+            }
+        } catch (e) {
+            console.error("Save link error:", e);
+            toast.error("保存功能异常");
         }
     };
 
@@ -340,6 +361,10 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                         <button onClick={handleShare} className={styles.actionBtn}>
                             <Share2 className="w-4 h-4" />
                             分享
+                        </button>
+                        <button onClick={handleSaveLink} className={styles.actionBtn}>
+                            <LinkIcon className="w-4 h-4" />
+                            保存结果链接
                         </button>
                         <button onClick={handleDownload} className={`${styles.actionBtn} ${styles.primaryActionBtn}`}>
                             <Download className="w-4 h-4" />
