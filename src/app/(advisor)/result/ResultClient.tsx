@@ -215,11 +215,24 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
 
     // Actions
     const handleShare = async () => {
-        const url = generateShareUrl("/result", { ref: "button" });
-        const success = await copyToClipboard(url);
-        if (success) {
-            toast.success("链接已复制，可以发送给好友啦");
-            trackResultShare("link");
+        console.log("Handle share clicked");
+        try {
+            const url = generateShareUrl("/result", { ref: "button" });
+            console.log("Generated share URL:", url);
+            const success = await copyToClipboard(url);
+            console.log("Clipboard copy success:", success);
+
+            if (success) {
+                console.log("Triggering success toast");
+                toast.success("链接已复制，可以发送给好友啦");
+                trackResultShare("link");
+            } else {
+                console.log("Triggering error toast");
+                toast.error("复制失败，请尝试手动复制链接");
+            }
+        } catch (e) {
+            console.error("Share error:", e);
+            toast.error("分享功能出现异常");
         }
     };
 

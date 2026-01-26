@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { X, CheckCircle, AlertCircle, Info } from "lucide-react";
-import { m, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 export type ToastType = "success" | "error" | "info";
 
@@ -71,20 +71,20 @@ function ToastContainer({
     removeToast: (id: string) => void;
 }) {
     return (
-        <div className="fixed top-4 left-1/2 z-50 flex w-full max-w-sm -translate-x-1/2 flex-col gap-2 px-4 sm:top-6">
+        <div className="fixed top-4 left-1/2 z-[9999] flex w-full max-w-sm -translate-x-1/2 flex-col gap-2 px-4 sm:top-6">
             <AnimatePresence>
                 {toasts.map((t) => (
-                    <m.div
+                    <motion.div
                         key={t.id}
                         initial={{ opacity: 0, y: -20, scale: 0.9 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
                         layout
                         className={`flex items-center gap-3 rounded-xl px-4 py-3 shadow-lg backdrop-blur-md border ${t.type === "success"
-                                ? "bg-white/90 border-green-200 text-green-800"
-                                : t.type === "error"
-                                    ? "bg-white/90 border-red-200 text-red-800"
-                                    : "bg-white/90 border-blue-200 text-slate-800"
+                            ? "bg-white/90 border-green-200 text-green-800"
+                            : t.type === "error"
+                                ? "bg-white/90 border-red-200 text-red-800"
+                                : "bg-white/90 border-blue-200 text-slate-800"
                             }`}
                     >
                         {t.type === "success" && <CheckCircle className="h-5 w-5 text-green-500 shrink-0" />}
@@ -99,7 +99,7 @@ function ToastContainer({
                         >
                             <X className="h-4 w-4 opacity-50" />
                         </button>
-                    </m.div>
+                    </motion.div>
                 ))}
             </AnimatePresence>
         </div>
