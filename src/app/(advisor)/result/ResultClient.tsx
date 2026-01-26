@@ -956,9 +956,31 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                                                 </p>
 
                                                 {step.dosage && (
-                                                    <div className="flex items-center gap-1.5 text-xs text-blue-600 bg-blue-50/50 border border-blue-100 px-2 py-1 rounded w-fit">
-                                                        <span className="text-[10px]">💧</span>
-                                                        <span>{step.dosage.description}</span>
+                                                    <div className="group relative w-fit">
+                                                        <div className="flex items-center gap-1.5 text-xs text-blue-600 bg-blue-50/50 border border-blue-100 px-2 py-1 rounded w-fit cursor-help">
+                                                            <span className="text-[10px]">💧</span>
+                                                            <span className="border-b border-dashed border-blue-400">{step.dosage.description}</span>
+                                                        </div>
+                                                        {/* Tooltip */}
+                                                        <div className="absolute left-0 bottom-full mb-2 w-48 p-3 bg-white rounded-lg shadow-xl border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10 pointer-events-none transform translate-y-1 group-hover:translate-y-0">
+                                                            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">推荐单品</div>
+                                                            <div className="text-xs font-semibold text-gray-900 mb-1">
+                                                                {step.name.includes("洁面") ? "CeraVe 适乐肤" :
+                                                                    step.name.includes("维C") ? "SkinCeuticals 修丽可" :
+                                                                        step.name.includes("A醇") ? "Murad 慕拉得" :
+                                                                            step.name.includes("水杨酸") ? "Paula's Choice 宝拉珍选" :
+                                                                                step.name.includes("修护") ? "La Roche-Posay 理肤泉" : "Bioderma 贝德玛"}
+                                                                <br />
+                                                                {step.name.includes("洁面") ? "氨基酸泡沫洁面" :
+                                                                    step.name.includes("维C") ? "CE 经典抗氧瓶" :
+                                                                        step.name.includes("A醇") ? "视黄醇晚霜" :
+                                                                            step.name.includes("水杨酸") ? "2% BHA 精华" :
+                                                                                step.name.includes("修护") ? "B5 修复霜" : "舒缓保湿霜"}
+                                                            </div>
+                                                            <div className="text-[10px] text-blue-600">点击查看详情 &rarr;</div>
+                                                            {/* Arrow */}
+                                                            <div className="absolute left-4 -bottom-1 w-2 h-2 bg-white border-r border-b border-gray-100 transform rotate-45"></div>
+                                                        </div>
                                                     </div>
                                                 )}
                                             </div>

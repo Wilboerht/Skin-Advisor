@@ -98,14 +98,37 @@ export const DEFAULT_QUESTIONS: Question[] = [
     },
     {
         id: "q6",
-        fieldName: "sleep",
-        question: "您日常的平均睡眠时间是？",
+        fieldName: "sleepQuality", // Changed from sleep to sleepQuality to match code
+        question: "您最近的睡眠质量如何？",
         type: "single",
         options: [
-            { value: "gt8", label: "8小时以上 (充足)" },
-            { value: "6-8", label: "6-8小时 (正常)" },
-            { value: "lt6", label: "6小时以下 (不足)" },
-            { value: "irregular", label: "作息不规律" },
+            { value: "good", label: "很好 (精力充沛)" },
+            { value: "fair", label: "一般 (偶尔疲劳)" },
+            { value: "poor", label: "较差 (经常熬夜/失眠)" },
+        ],
+    },
+    {
+        id: "q7",
+        fieldName: "stressLevel",
+        question: "您最近的工作/生活压力感受？",
+        type: "single",
+        options: [
+            { value: "low", label: "轻松 (无明显压力)" },
+            { value: "medium", label: "适中 (有一定压力)" },
+            { value: "high", label: "很大 (焦虑/紧绷)" },
+        ],
+    },
+    {
+        id: "q8",
+        fieldName: "menstrualCycle",
+        question: "生理周期阶段 (女性用户选填)？",
+        subtext: "用于精准匹配'生理期护肤'模式",
+        type: "single",
+        options: [
+            { value: "na", label: "不适用 / 男士" },
+            { value: "menstrual", label: "经期中 (第1-7天)" },
+            { value: "follicular", label: "滤泡期 (经后一周/状态好)" },
+            { value: "luteal", label: "黄体期 (经前一周/易冒痘)" },
         ],
     }
 ];
