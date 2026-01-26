@@ -85,13 +85,109 @@ export async function POST(request: NextRequest) {
         const limit = await rateLimit(`comprehensive-${ip}`, "comprehensive-analyze", { maxRequests: 3 });
         if (!limit.success) return NextResponse.json({ error: "请求过于频繁" }, { status: 429 });
 
-        const validImages: VisionImage[] = [];
-        if (images) {
-            if (images.front) validImages.push({ angle: "正脸", data: images.front });
-            if (images.left) validImages.push({ angle: "左侧脸", data: images.left });
-            if (images.right) validImages.push({ angle: "右侧脸", data: images.right });
-            if (images.chin) validImages.push({ angle: "下巴/颈部", data: images.chin });
+        // Dynamic imports for file handling
+        const fs = await import('fs/promises');
+        const path = await import('path');
+        const process = await import('process');
+        // Lazy import sharp to avoid startup overhead if not used
+        let sharp: any;
+        try {
+            sharp = (await import('sharp')).default;
+        } catch (e) {
+            aiLogger.warn("Sharp module not found, compression disabled");
         }
+
+        // Helper to resolve and optionally compress image data
+        const resolveImageData = async (imgData: string, compress: boolean = false) => {
+            if (!imgData) return null;
+
+            // If it's a full URL (http/https/oss), return as is
+            if (imgData.startsWith('http')) return imgData;
+
+            // Handle Local Files (or relative paths)
+            let buffer: Buffer | null = null;
+            let mimeType = 'image/jpeg';
+            let isLocalFile = false;
+
+            // Check if it is a local path
+            if ((imgData.startsWith('/') || imgData.startsWith('\\')) && !imgData.startsWith('data:')) {
+                try {
+                    // Remove leading slash
+                    let relativePath = imgData.startsWith('/') ? imgData.slice(1) : imgData;
+
+                    // IF relativePath already starts with "uploads/", DO NOT add it again.
+                    // The error log showed: .../public/uploads/uploads/... which is wrong.
+
+                    let filePath: string;
+                    if (relativePath.startsWith('uploads/') || relativePath.startsWith('uploads\\')) {
+                        filePath = path.join(process.cwd(), 'public', relativePath);
+                    } else {
+                        filePath = path.join(process.cwd(), 'public', 'uploads', relativePath);
+                    }
+
+                    buffer = await fs.readFile(filePath);
+                    const ext = path.extname(filePath).toLowerCase();
+                    mimeType = ext === '.png' ? 'image/png' : 'image/jpeg';
+                    isLocalFile = true;
+                } catch (e: any) {
+                    aiLogger.warn(`Failed to resolve local image path: ${imgData}`, { error: e.message });
+                    return null;
+                }
+            }
+            // Handle Base64 (if we wanted to compress incoming base64 we would decode it here, 
+            // but currently we focus on the file -> large base64 issue)
+            else if (imgData.startsWith('data:')) {
+                // If needed, we could parse buffer here for compression, but for now return as is unless requested
+                return imgData;
+            } else {
+                return imgData; // return as is (unknown format)
+            }
+
+            // Apply Compression if requested and we have a buffer
+            if (compress && buffer && sharp) {
+                try {
+                    aiLogger.info(`Compressing image...`);
+                    buffer = await sharp(buffer)
+                        .resize({ width: 1024, fit: 'inside', withoutEnlargement: true }) // Limit max dimension to 1024
+                        .jpeg({ quality: 75 }) // Moderate compression
+                        .toBuffer();
+                    mimeType = 'image/jpeg'; // details: always convert to jpeg for consistency/size
+                } catch (e: any) {
+                    aiLogger.error("Image compression failed", e);
+                    // Fallback to original buffer
+                }
+            }
+
+            if (buffer) {
+                return `data:${mimeType};base64,${buffer.toString('base64')}`;
+            }
+
+            return imgData;
+        };
+
+        // Helper to prepare valid images list
+        const loadImages = async (compress: boolean) => {
+            const validImages: VisionImage[] = [];
+            if (images) {
+                if (images.front) {
+                    const data = await resolveImageData(images.front, compress);
+                    if (data) validImages.push({ angle: "正脸", data });
+                }
+                if (images.left) {
+                    const data = await resolveImageData(images.left, compress);
+                    if (data) validImages.push({ angle: "左侧脸", data });
+                }
+                if (images.right) {
+                    const data = await resolveImageData(images.right, compress);
+                    if (data) validImages.push({ angle: "右侧脸", data });
+                }
+                if (images.chin) {
+                    const data = await resolveImageData(images.chin, compress);
+                    if (data) validImages.push({ angle: "下巴/颈部", data });
+                }
+            }
+            return validImages;
+        };
 
         let unifiedResult = null;
         let acquired = false;
@@ -115,12 +211,40 @@ export async function POST(request: NextRequest) {
                 `- ID: ${p.id}, 名称: ${p.name}, 功效: ${Array.isArray(p.benefits) ? (p.benefits as string[]).join("/") : p.benefits}, 适用: ${Array.isArray(p.suitableSkinTypes) ? (p.suitableSkinTypes as string[]).join("/") : p.suitableSkinTypes}`
             ).join("\n");
 
-            // Unified Call
-            unifiedResult = await callUnifiedAI(
-                validImages,
-                userAnswersContext,
-                productsContext
-            );
+            // Unified Call with Retry Mechanism
+            let validImages = await loadImages(false); // Try with original quality first
+
+            try {
+                unifiedResult = await callUnifiedAI(
+                    validImages,
+                    userAnswersContext,
+                    productsContext
+                );
+            } catch (e: any) {
+                // If error is 400 (Bad Request) or related to base64/payload size, retry with compression
+                const isPayloadError = e.message?.includes('400') || e.message?.includes('base64') || e.message?.includes('too large');
+
+                if (isPayloadError) {
+                    aiLogger.warn(`[${requestId}] AI Analysis failing with payload error (${e.message}). Retrying with COMPRESSED images...`);
+
+                    // Reload images with compression enabled
+                    validImages = await loadImages(true);
+
+                    try {
+                        unifiedResult = await callUnifiedAI(
+                            validImages,
+                            userAnswersContext,
+                            productsContext
+                        );
+                        aiLogger.info(`[${requestId}] Retry with compression SUCCESSFUL.`);
+                    } catch (retryError: any) {
+                        aiLogger.error(`[${requestId}] Retry with compression FAILED`, retryError);
+                        throw retryError; // Throw original or new error
+                    }
+                } else {
+                    throw e; // Throw if it's not a payload error (e.g. 500, timeout)
+                }
+            }
 
         } catch (e: any) {
             aiLogger.error(`[${requestId}] Unified Analysis failed`, e);

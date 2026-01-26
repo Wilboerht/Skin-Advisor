@@ -61,31 +61,110 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const { images, image } = result.data;
-        const validImages: VisionImage[] = [];
-
-        // 收集所有有效图片
-        if (Array.isArray(images)) {
-            // 新版数组格式
-            images.forEach((img: any) => {
-                if (img.data) {
-                    validImages.push({
-                        angle: img.angle || "front",
-                        data: img.data
-                    });
-                }
-            });
-        } else if (images) {
-            // 旧版对象格式
-            const imgs = images as any; // Cast for TS safety on legacy shape
-            if (imgs.front) validImages.push({ angle: "正脸", data: imgs.front });
-            if (imgs.left) validImages.push({ angle: "左侧脸", data: imgs.left });
-            if (imgs.right) validImages.push({ angle: "右侧脸", data: imgs.right });
-            if (imgs.chin) validImages.push({ angle: "下巴/颈部", data: imgs.chin });
-        } else if (image) {
-            // 旧版单图 string
-            validImages.push({ angle: "正脸", data: image });
+        // Dynamic imports for file handling
+        const fs = await import('fs/promises');
+        const path = await import('path');
+        const process = await import('process');
+        // Lazy import sharp
+        let sharp: any;
+        try {
+            sharp = (await import('sharp')).default;
+        } catch (e) {
+            aiLogger.warn("Sharp module not found, compression disabled");
         }
+
+        // Helper to resolve and optionally compress image data
+        const resolveImageData = async (imgData: string, compress: boolean = false) => {
+            if (!imgData) return null;
+            if (imgData.startsWith('http')) return imgData; // Full URL
+
+            // Handle Local Files
+            let buffer: Buffer | null = null;
+            let mimeType = 'image/jpeg';
+
+            if ((imgData.startsWith('/') || imgData.startsWith('\\')) && !imgData.startsWith('data:')) {
+                try {
+                    let relativePath = imgData.startsWith('/') ? imgData.slice(1) : imgData;
+                    // FIX: Check if uploads/ is already included
+                    let filePath: string;
+                    if (relativePath.startsWith('uploads/') || relativePath.startsWith('uploads\\')) {
+                        filePath = path.join(process.cwd(), 'public', relativePath);
+                    } else {
+                        filePath = path.join(process.cwd(), 'public', 'uploads', relativePath);
+                    }
+
+                    buffer = await fs.readFile(filePath);
+                    const ext = path.extname(filePath).toLowerCase();
+                    mimeType = ext === '.png' ? 'image/png' : 'image/jpeg';
+                } catch (e: any) {
+                    aiLogger.warn(`Failed to resolve local image path: ${imgData}`, { error: e.message });
+                    return null;
+                }
+            } else if (imgData.startsWith('data:')) {
+                return imgData; // Return base64 as is for now
+            } else {
+                return imgData; // Return as is
+            }
+
+            // Compression
+            if (compress && buffer && sharp) {
+                try {
+                    aiLogger.info(`Compressing image for retry...`);
+                    buffer = await sharp(buffer)
+                        .resize({ width: 1024, fit: 'inside', withoutEnlargement: true })
+                        .jpeg({ quality: 75 })
+                        .toBuffer();
+                    mimeType = 'image/jpeg';
+                } catch (e: any) {
+                    aiLogger.error("Image compression failed", e);
+                }
+            }
+
+            if (buffer) {
+                return `data:${mimeType};base64,${buffer.toString('base64')}`;
+            }
+            return imgData;
+        };
+
+        // Encapsulate Image Loading Logic
+        const loadImages = async (compress: boolean) => {
+            const loadedCoordinates: VisionImage[] = [];
+            const { images, image } = result.data;
+
+            if (Array.isArray(images)) {
+                for (const img of images) {
+                    if (img.data) {
+                        const data = await resolveImageData(img.data, compress);
+                        if (data) loadedCoordinates.push({ angle: img.angle || "front", data });
+                    }
+                }
+            } else if (images) {
+                const imgs = images as any;
+                if (imgs.front) {
+                    const data = await resolveImageData(imgs.front, compress);
+                    if (data) loadedCoordinates.push({ angle: "正脸", data });
+                }
+                if (imgs.left) {
+                    const data = await resolveImageData(imgs.left, compress);
+                    if (data) loadedCoordinates.push({ angle: "左侧脸", data });
+                }
+                if (imgs.right) {
+                    const data = await resolveImageData(imgs.right, compress);
+                    if (data) loadedCoordinates.push({ angle: "右侧脸", data });
+                }
+                if (imgs.chin) {
+                    const data = await resolveImageData(imgs.chin, compress);
+                    if (data) loadedCoordinates.push({ angle: "下巴/颈部", data });
+                }
+            } else if (image) {
+                const data = await resolveImageData(image, compress);
+                if (data) loadedCoordinates.push({ angle: "正脸", data });
+            }
+            return loadedCoordinates;
+        };
+
+        // Initial Load (Raw Quality)
+        let validImages = await loadImages(false);
 
         if (validImages.length === 0) {
             return NextResponse.json({ error: "无有效图片数据" }, { status: 400 });
@@ -115,12 +194,33 @@ export async function POST(request: NextRequest) {
             aiLogger.debug(`[Queue] Lock acquired.`);
 
             // 4. 调用 AI 分析 (包含重试机制)
-            const analysisResult = await analyzeImages(
-                validImages,
-                systemPrompt,
-                VISION_ANALYSIS_USER_PROMPT,
-                provider as any
-            );
+            let analysisResult;
+            try {
+                analysisResult = await analyzeImages(
+                    validImages,
+                    systemPrompt,
+                    VISION_ANALYSIS_USER_PROMPT,
+                    provider as any
+                );
+            } catch (e: any) {
+                // Retry if payload error
+                const isPayloadError = e.message?.includes('400') || e.message?.includes('base64') || e.message?.includes('too large');
+                if (isPayloadError) {
+                    aiLogger.warn(`[FaceAnalyze] Payload error (${e.message}), retrying with compression...`);
+                    // Reload with compression
+                    validImages = await loadImages(true);
+
+                    analysisResult = await analyzeImages(
+                        validImages,
+                        systemPrompt,
+                        VISION_ANALYSIS_USER_PROMPT,
+                        provider as any
+                    );
+                    aiLogger.info(`[FaceAnalyze] Retry successful.`);
+                } else {
+                    throw e;
+                }
+            }
 
             // 5. 结果校验
             if (analysisResult.validation && analysisResult.validation.isValid === false) {

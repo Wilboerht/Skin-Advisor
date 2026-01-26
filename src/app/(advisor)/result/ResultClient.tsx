@@ -729,6 +729,51 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                                 )}
                             </div>
 
+                            {/* Conditions List - Table Format */}
+                            {faceAnalysis?.skinConditions && faceAnalysis.skinConditions.length > 0 ? (
+                                <div className="mb-8">
+                                    <h4 className="text-base font-medium text-gray-900 mb-3 border-b border-gray-200 pb-2">
+                                        3、症状详情 (Clinical Observations)
+                                    </h4>
+                                    <div className="overflow-x-auto border border-gray-100 rounded-lg">
+                                        <table className="w-full text-sm text-center">
+                                            <thead className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider font-medium">
+                                                <tr>
+                                                    <th className="py-3 px-4 whitespace-nowrap">症状</th>
+                                                    <th className="py-3 px-4 whitespace-nowrap">区域</th>
+                                                    <th className="py-3 px-4 whitespace-nowrap">程度</th>
+                                                    <th className="py-3 px-4 text-left min-w-[200px]">详情/成因</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-100">
+                                                {faceAnalysis.skinConditions.map((cond, idx) => (
+                                                    <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                                                        <td className="py-3 px-4 font-semibold text-gray-900">
+                                                            {cond.condition}
+                                                        </td>
+                                                        <td className="py-3 px-4 text-gray-600">
+                                                            {cond.area}
+                                                        </td>
+                                                        <td className="py-3 px-4">
+                                                            <span className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium ${cond.severity?.toLowerCase() === 'severe' ? 'bg-red-50 text-red-600' :
+                                                                    cond.severity?.toLowerCase() === 'moderate' ? 'bg-amber-50 text-amber-600' :
+                                                                        'bg-slate-100 text-slate-600'
+                                                                }`}>
+                                                                {cond.severity?.toLowerCase() === 'severe' ? '严重' :
+                                                                    cond.severity?.toLowerCase() === 'moderate' ? '中度' : '轻微'}
+                                                            </span>
+                                                        </td>
+                                                        <td className="py-3 px-4 text-left text-gray-600 leading-relaxed text-[13px]">
+                                                            {cond.description}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            ) : null}
+
                             {/* Lab-Grade Analysis Metrics */}
                             <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden font-sans">
                                 <div
@@ -884,34 +929,7 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                             </div>
 
                             {/* Conditions List - Text Only */}
-                            {faceAnalysis?.skinConditions && faceAnalysis.skinConditions.length > 0 && (
-                                <div>
-                                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-200 pb-2">
-                                        症状详情 (Clinical Observations)
-                                    </h4>
-                                    <div className="space-y-4">
-                                        {faceAnalysis.skinConditions.map((cond, idx) => (
-                                            <div key={idx} className="flex flex-col sm:flex-row sm:gap-4 text-sm">
-                                                <div className="sm:w-32 shrink-0 font-semibold text-gray-900 pt-0.5">
-                                                    {cond.condition}
-                                                </div>
-                                                <div className="flex-1">
-                                                    <div className="mb-1">
-                                                        <span className="text-gray-500 mr-2 text-xs">区域: {cond.area}</span>
-                                                        <span className="text-gray-300 mr-2 text-xs">|</span>
-                                                        <span className={`text-xs ${cond.severity?.toLowerCase() === 'severe' ? 'text-red-600 font-bold' : 'text-gray-600'}`}>
-                                                            程度: {cond.severity?.toLowerCase() === 'severe' ? '严重' : cond.severity?.toLowerCase() === 'moderate' ? '中度' : '轻微'}
-                                                        </span>
-                                                    </div>
-                                                    <p className="text-[13px] leading-relaxed text-gray-600">
-                                                        {cond.description}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
+
                         </div>
                     </div>
 
