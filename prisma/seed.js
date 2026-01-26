@@ -1,5 +1,4 @@
-// Prisma 7.x 导入方式
-import { PrismaClient } from ".prisma/client";
+const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient({
     datasources: {
@@ -227,9 +226,7 @@ async function main() {
                     fieldName: q.fieldName,
                     question: q.question,
                     type: q.type,
-                    // @ts-ignore
                     options: JSON.stringify(q.options),
-                    // @ts-ignore
                     order: parseInt(q.id.replace("q", "")) || 10,
                     active: true,
                     required: true,

@@ -128,7 +128,10 @@ export async function POST(request: NextRequest) {
             where: { active: true }
         });
 
-        const skinTypeLabel = getSkinTypeLabel(answers.skinType || "unknown");
+        // Resolve Skin Type (Priority: Face Analysis > User Answer)
+        const finalSkinType = determineSkinType(answers, (faceAnalysis as any) || undefined);
+        const skinTypeLabel = getSkinTypeLabel(finalSkinType);
+
         const userPrompt = buildTextAnalysisPrompt({
             skinTypeLabel,
             ageRange: answers.ageRange,
@@ -198,9 +201,38 @@ export async function POST(request: NextRequest) {
         }
 
         // 7. Construct Final Standardized Result (Matching ComprehensiveResult Interface)
+
+        // Enhance Face Analysis with Text AI Recommendations if missing
+        let finalFaceAnalysis = faceAnalysis || resultJson.faceAnalysis || null;
+        if (finalFaceAnalysis) {
+            // Ensure recommendations exist
+            if (!finalFaceAnalysis.recommendations) {
+                finalFaceAnalysis.recommendations = [];
+            }
+
+            // If recommendations are empty or we have better ones from text analysis
+            if (resultJson.lifestyleTips && Array.isArray(resultJson.lifestyleTips)) {
+                // Clean up duplicates if any
+                const newRecs = resultJson.lifestyleTips.filter((tip: string) =>
+                    !finalFaceAnalysis.recommendations.includes(tip)
+                );
+                finalFaceAnalysis.recommendations = [...finalFaceAnalysis.recommendations, ...newRecs];
+            }
+
+            // Also include Routine steps if recommendations are still sparse
+            if (finalFaceAnalysis.recommendations.length < 3 && resultJson.routine) {
+                if (resultJson.routine.morning) {
+                    finalFaceAnalysis.recommendations.push(`早间护肤：${resultJson.routine.morning.join(' > ')}`);
+                }
+                if (resultJson.routine.evening) {
+                    finalFaceAnalysis.recommendations.push(`晚间护肤：${resultJson.routine.evening.join(' > ')}`);
+                }
+            }
+        }
+
         const standardizedResult = {
             skinProfile: {
-                type: answers.skinType || "unknown",
+                type: finalSkinType,
                 typeLabel: skinTypeLabel,
                 concerns: concerns,
                 skinAge: faceAnalysis?.skinAge?.estimated || 25
@@ -213,7 +245,7 @@ export async function POST(request: NextRequest) {
                 ].filter(Boolean)
             },
             products: finalProducts,
-            faceAnalysis: faceAnalysis || resultJson.faceAnalysis || null, // Ensure faceAnalysis is propagated
+            faceAnalysis: finalFaceAnalysis, // Ensure faceAnalysis is propagated
             dataSource: "hybrid",
             userLocation: geoLocation
         };
