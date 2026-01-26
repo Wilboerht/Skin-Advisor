@@ -132,7 +132,7 @@ export default function AnalyzingPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     answers,
-                    faceAnalysis,
+                    faceAnalysis: faceAnalysis || undefined,
                     sessionId: sessionId
                 })
             });

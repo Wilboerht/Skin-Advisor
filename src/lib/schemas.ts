@@ -60,7 +60,7 @@ export const AnalyzeRequestSchema = z.object({
             area: z.string().optional(),
             description: z.string().optional()
         })).optional()
-    }).optional()
+    }).nullable().optional()
 });
 
 // ============================================================================
@@ -84,15 +84,32 @@ export const ShareImageRequestSchema = z.object({
 // 面部分析 API 验证规则
 // ============================================================================
 
+// ============================================================================
+// 面部分析 API 验证规则
+// ============================================================================
+
 export const FaceAnalyzeRequestSchema = z.object({
-    images: z.object({
-        front: z.string().optional(),
-        left: z.string().optional(),
-        right: z.string().optional(),
-        chin: z.string().optional(),
-    }).optional(),
-    image: z.string().optional(), // 兼容旧版
-}).refine(data => data.images?.front || data.image, {
+    images: z.union([
+        // 支持新的数组格式 [{ data: "base64", angle: "front" }]
+        z.array(z.object({
+            data: z.string(),
+            angle: z.string()
+        })),
+        // 兼容旧的对象格式 { front: "base64" }
+        z.object({
+            front: z.string().optional(),
+            left: z.string().optional(),
+            right: z.string().optional(),
+            chin: z.string().optional(),
+        })
+    ]).optional(),
+    image: z.string().optional(), // 兼容旧版单图
+}).refine(data => {
+    if (data.image) return true;
+    if (Array.isArray(data.images)) return data.images.length > 0;
+    if (data.images && typeof data.images === 'object') return !!(data.images as any).front;
+    return false;
+}, {
     message: "请至少提供一张正面照片"
 });
 

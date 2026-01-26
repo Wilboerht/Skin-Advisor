@@ -577,7 +577,7 @@
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
     overflow: hidden;
-    margin-top: 24px;
+    margin-bottom: 24px;
 }
 
 .routineHeader {
@@ -625,7 +625,7 @@
 
 /* Timeline Layout */
 .routineBody {
-    padding: 40px;
+    padding: 0;
     background: white;
 }
 

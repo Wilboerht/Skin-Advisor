@@ -93,19 +93,33 @@ export async function POST(request: NextRequest) {
 
         if (!aiEnabled) {
             console.log("AI Disabled, using fallback analysis");
-            // 降级模式：使用规则引擎
-            const fallbackResult: any = fallbackAnalysis(answers as any);
+            // 降级模式：使用规则引擎生成面部分析数据
+            const fallbackFace = fallbackAnalysis(answers as any);
 
             // 补全产品推荐 (DB)
             const concerns = identifyConcerns(answers as any);
             const products = await recommendProducts(answers as any, concerns);
-            fallbackResult.recommendations = products.map(p => p.name); // 更新建议文案
-            fallbackResult.products = products; // 附加产品列表
 
-            return NextResponse.json({
-                ...fallbackResult,
-                userLocation: geoLocation // Return generic location info
-            }, { headers: rateLimitHeaders });
+            // 构造符合 ComprehensiveResult 结构的数据
+            const finalResult = {
+                skinAnalysis: {
+                    skinType: fallbackFace.skinType.type,
+                    skinTypeLabel: getSkinTypeLabel(fallbackFace.skinType.type),
+                    concerns: concerns,
+                    summary: fallbackFace.skinType.description || "基于您的问卷数据生成的初步分析报告。",
+                    details: [
+                        "由于 AI 服务暂时不可用，本报告基于您的问卷回答生成。",
+                        `检测到的主要肤质特征为：${getSkinTypeLabel(fallbackFace.skinType.type)}。`,
+                        ...fallbackFace.recommendations
+                    ],
+                    skinAge: 25
+                },
+                faceAnalysis: fallbackFace,
+                products: products,
+                userLocation: geoLocation
+            };
+
+            return NextResponse.json(finalResult, { headers: rateLimitHeaders });
         }
 
         // 5. 构建 AI 提示词与调用

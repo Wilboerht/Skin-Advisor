@@ -36,6 +36,18 @@ export default function Home() {
   ];
 
   /* --- Handlers --- */
+
+  const startNewTest = () => {
+    // Clear previous advisor state to ensure fresh start
+    localStorage.removeItem("advisor_answers");
+    localStorage.removeItem("advisor_gender");
+    localStorage.removeItem("advisor_face_images");
+    localStorage.removeItem("advisor_result");
+
+    setIsLoading(true);
+    router.push("/questions");
+  };
+
   const handleLocationAccept = async () => {
     setShowLocationModal(false);
     if ("geolocation" in navigator) {
@@ -48,8 +60,7 @@ export default function Home() {
           });
         });
         sessionStorage.setItem("locationConsent", "granted");
-        setIsLoading(true);
-        router.push("/questions");
+        startNewTest();
       } catch {
         setShowRegionSelectModal(true);
       }
@@ -62,22 +73,19 @@ export default function Home() {
     setShowRegionSelectModal(false);
     sessionStorage.setItem("locationConsent", "granted");
     sessionStorage.setItem("userRegion", region);
-    setIsLoading(true);
-    router.push("/questions");
+    startNewTest();
   };
 
   const handleSkipRegionSelect = () => {
     setShowRegionSelectModal(false);
     sessionStorage.setItem("locationConsent", "declined");
-    setIsLoading(true);
-    router.push("/questions");
+    startNewTest();
   };
 
   const handleLocationDecline = () => {
     setShowLocationModal(false);
     sessionStorage.setItem("locationConsent", "declined");
-    setIsLoading(true);
-    router.push("/questions");
+    startNewTest();
   };
 
   const handleStart = () => {

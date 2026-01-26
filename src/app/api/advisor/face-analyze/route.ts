@@ -20,13 +20,12 @@ export async function POST(request: NextRequest) {
     try {
         // 0. 检查 AI 开关
         if (!(await isAIEnabled())) {
-            // 如果允许降级，则返回模拟数据
-            if (process.env.NODE_ENV === 'development' || process.env.ALLOW_FALLBACK !== 'false') {
-                aiLogger.warn("AI disabled, using fallback result for face analysis.");
-                // 模拟延迟
-                await new Promise(resolve => setTimeout(resolve, 1500));
-                return NextResponse.json(getDefaultFaceAnalysisResult());
-            }
+            // if (process.env.NODE_ENV === 'development' || process.env.ALLOW_FALLBACK !== 'false') {
+            //     aiLogger.warn("AI disabled, using fallback result for face analysis.");
+            //     // 模拟延迟
+            //     await new Promise(resolve => setTimeout(resolve, 1500));
+            //     return NextResponse.json(getDefaultFaceAnalysisResult());
+            // }
 
             return NextResponse.json(
                 { error: "AI 助手当前已暂停服务" },
@@ -66,12 +65,25 @@ export async function POST(request: NextRequest) {
         const validImages: VisionImage[] = [];
 
         // 收集所有有效图片
-        if (images) {
-            if (images.front) validImages.push({ angle: "正脸", data: images.front });
-            if (images.left) validImages.push({ angle: "左侧脸", data: images.left });
-            if (images.right) validImages.push({ angle: "右侧脸", data: images.right });
-            if (images.chin) validImages.push({ angle: "下巴/颈部", data: images.chin });
+        if (Array.isArray(images)) {
+            // 新版数组格式
+            images.forEach((img: any) => {
+                if (img.data) {
+                    validImages.push({
+                        angle: img.angle || "front",
+                        data: img.data
+                    });
+                }
+            });
+        } else if (images) {
+            // 旧版对象格式
+            const imgs = images as any; // Cast for TS safety on legacy shape
+            if (imgs.front) validImages.push({ angle: "正脸", data: imgs.front });
+            if (imgs.left) validImages.push({ angle: "左侧脸", data: imgs.left });
+            if (imgs.right) validImages.push({ angle: "右侧脸", data: imgs.right });
+            if (imgs.chin) validImages.push({ angle: "下巴/颈部", data: imgs.chin });
         } else if (image) {
+            // 旧版单图 string
             validImages.push({ angle: "正脸", data: image });
         }
 
@@ -142,11 +154,11 @@ export async function POST(request: NextRequest) {
                 );
             }
 
-            // 降级策略
-            if (process.env.NODE_ENV === 'development' || process.env.ALLOW_FALLBACK === 'true') {
-                aiLogger.warn("Using fallback result due to AI error");
-                return NextResponse.json(getDefaultFaceAnalysisResult());
-            }
+            // Fallback removed to ensure only real data is used
+            // if (process.env.NODE_ENV === 'development' || process.env.ALLOW_FALLBACK === 'true') {
+            //     aiLogger.warn("Using fallback result due to AI error");
+            //     return NextResponse.json(getDefaultFaceAnalysisResult());
+            // }
 
             return NextResponse.json(
                 { error: "AI 分析服务暂时不可用，请稍后重试" },

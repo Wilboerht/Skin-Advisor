@@ -80,6 +80,24 @@ export interface FaceAnalysisResult {
     skinConditions: SkinCondition[];
     zoneAnalysis?: ZoneAnalysis;
     priorityAreas?: string[];
+
+    // AI 实验室数据 (新增)
+    labAnalysis?: LabAnalysisResult;
+}
+
+export interface LabAnalysisResult {
+    skinPh: { value: number; range: string; status: string }; // e.g. 5.5
+    tewl: { value: number; unit: string; status: string }; // e.g. 8.5 g/m2/h
+    elasticity: { value: number; unit: string; status: string }; // R2
+    melanin: { value: number; unit: string; status: string }; // MI
+    erythema: { value: number; unit: string; status: string }; // EI
+    glogau: { value: string; status: string }; // I, II, III
+    homogeneity: { value: number; unit: string; status: string }; // CV%
+    porphyrins: { value: number; status: string }; // count
+    sebum: { value: string; status: string }; // high/low
+    roughness: { value: number; unit: string; status: string }; // µm
+    glossiness: { value: number; unit: string; status: string }; // GU
+    wrinkleGrade: { value: string; status: string }; // Grade 1-3
 }
 
 // 可选的 8 维度评分接口 (用于 SkinRadarChart)
@@ -162,7 +180,21 @@ export function getDefaultFaceAnalysisResult(): FaceAnalysisResult {
             "最后，鉴于光老化迹象初显，请务必全年坚持使用SPF30+以上的防晒霜，以预防紫外线对胶原蛋白的进一步损伤。"
         ],
         skinConditions: [],
-        priorityAreas: ["pores", "radiance"]
+        priorityAreas: ["pores", "radiance"],
+        labAnalysis: {
+            skinPh: { value: 5.5, range: "4.5-5.5", status: "正常" },
+            tewl: { value: 8.5, unit: "g/m²/h", status: "正常" },
+            elasticity: { value: 0.75, unit: "R2", status: "紧致" },
+            melanin: { value: 120, unit: "MI", status: "正常" },
+            erythema: { value: 180, unit: "EI", status: "正常" },
+            glogau: { value: "II 型", status: "轻中度" },
+            homogeneity: { value: 14, unit: "% C.V.", status: "均匀" },
+            porphyrins: { value: 15, status: "少量" },
+            sebum: { value: "Normal", status: "正常" },
+            roughness: { value: 8.5, unit: "µm", status: "细腻" },
+            glossiness: { value: 5.5, unit: "GU", status: "透亮" },
+            wrinkleGrade: { value: "Grade 1", status: "无皱纹" }
+        }
     };
 }
 

@@ -52,11 +52,15 @@ export interface AISettings {
 }
 
 // 默认设置
+// Helper to determine default models based on provider env
+const envProvider = process.env.AI_PROVIDER || "deepseek";
+const envVisionProvider = process.env.AI_VISION_PROVIDER || "openai";
+
 const DEFAULT_AI_SETTINGS: AISettings = {
-    provider: "deepseek",
-    visionProvider: "openai",
-    model: "deepseek-chat",
-    visionModel: "gpt-4o",
+    provider: envProvider as AIProvider,
+    visionProvider: envVisionProvider as AIProvider,
+    model: process.env.AI_MODEL || (envProvider === "qwen" ? "qwen-plus" : envProvider === "openai" ? "gpt-4o" : envProvider === "anthropic" ? "claude-3-5-sonnet-20240620" : "deepseek-chat"),
+    visionModel: process.env.AI_VISION_MODEL || (envVisionProvider === "qwen" ? "qwen-vl-max" : envVisionProvider === "anthropic" ? "claude-3-5-sonnet-20240620" : "gpt-4o"),
     textSystemPrompt: TEXT_ANALYSIS_SYSTEM_PROMPT,
     visionSystemPrompt: "",
     chatSystemPrompt: "",
