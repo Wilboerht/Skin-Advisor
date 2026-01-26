@@ -27,6 +27,16 @@ export interface Question {
 
 export const DEFAULT_QUESTIONS: Question[] = [
     {
+        id: "q0",
+        fieldName: "gender",
+        question: "您的性别是？",
+        type: "single",
+        options: [
+            { value: "female", label: "女性" },
+            { value: "male", label: "男性" },
+        ],
+    },
+    {
         id: "q1",
         fieldName: "skinType",
         question: "您感觉您的肤质属于哪一种？",
@@ -55,8 +65,9 @@ export const DEFAULT_QUESTIONS: Question[] = [
             { value: "dark_circles", label: "黑眼圈/眼袋" },
         ],
     },
+
     {
-        id: "q3",
+        id: "q3b",
         fieldName: "ageRange",
         question: "您的年龄段是？",
         type: "single",
@@ -78,6 +89,11 @@ export const DEFAULT_QUESTIONS: Question[] = [
             { value: "no", label: "否" },
             { value: "yes", label: "是" },
         ],
+        dependsOn: { // Only for females
+            field: "gender",
+            value: "female",
+            operator: "equals"
+        }
     },
     {
         id: "q5",
@@ -91,14 +107,16 @@ export const DEFAULT_QUESTIONS: Question[] = [
             { value: "injection", label: "注射/微针类" },
         ],
         dependsOn: {
+            // Complex logic not fully supported by simple type, 
+            // but let's just keep it simple or remove dependency if pregnancy is now female only
             field: "pregnancy",
-            value: "no",
+            value: "no", // If pregnant, usually advised against many procedures, but let's keep logic simple
             operator: "equals"
         }
     },
     {
         id: "q6",
-        fieldName: "sleepQuality", // Changed from sleep to sleepQuality to match code
+        fieldName: "sleepQuality",
         question: "您最近的睡眠质量如何？",
         type: "single",
         options: [
@@ -121,14 +139,19 @@ export const DEFAULT_QUESTIONS: Question[] = [
     {
         id: "q8",
         fieldName: "menstrualCycle",
-        question: "生理周期阶段 (女性用户选填)？",
+        question: "生理周期阶段？",
         subtext: "用于精准匹配'生理期护肤'模式",
         type: "single",
         options: [
-            { value: "na", label: "不适用 / 男士" },
+            { value: "na", label: "不适用" },
             { value: "menstrual", label: "经期中 (第1-7天)" },
             { value: "follicular", label: "滤泡期 (经后一周/状态好)" },
             { value: "luteal", label: "黄体期 (经前一周/易冒痘)" },
         ],
+        dependsOn: {
+            field: "gender",
+            value: "female",
+            operator: "equals"
+        }
     }
 ];

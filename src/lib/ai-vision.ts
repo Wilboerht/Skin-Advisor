@@ -198,11 +198,21 @@ async function callOpenAICompatibleVision(
     ];
 
     images.forEach(img => {
+        // Ensure data URI format
+        let url = img.data;
+        if (!url.startsWith("http") && !url.startsWith("data:")) {
+            url = `data:image/jpeg;base64,${url}`;
+        }
+
+        // Qwen specific handling: If data URI is too long, it might fail.
+        // But without OSS, we have no choice but to try.
+        // Some adapters strip 'data:image/jpeg;base64,' but standard OpenAI requires it.
+
         content.push({
             type: "image_url",
             image_url: {
-                url: img.data,
-                // detail: "high" // OpenAI specific, optional
+                url: url,
+                // detail: "auto" // Default to auto
             },
         });
     });
