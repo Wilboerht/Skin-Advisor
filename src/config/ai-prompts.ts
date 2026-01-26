@@ -84,6 +84,14 @@ export const VISION_ANALYSIS_SYSTEM_PROMPT = `你是一位专业的皮肤科医�
     "roughness": { "value": 10, "unit": "µm", "status": "细腻" },
     "glossiness": { "value": 5.0, "unit": "GU", "status": "透亮" },
     "wrinkleGrade": { "value": "Grade 1", "status": "无明显皱纹" }
+  },
+  "zoneAnalysis": {
+    "forehead": { "condition": "简述问题(如油光/纹路)", "advice": "针对性护理建议" },
+    "tZone": { "condition": "简述问题", "advice": "建议" },
+    "leftCheek": { "condition": "简述问题", "advice": "建议" },
+    "rightCheek": { "condition": "简述问题", "advice": "建议" },
+    "eyeArea": { "condition": "简述问题", "advice": "建议" },
+    "jawline": { "condition": "简述问题", "advice": "建议" }
   }
 }
 
@@ -299,7 +307,15 @@ export const COMPREHENSIVE_ANALYSIS_SYSTEM_PROMPT = `
     "lifestyleTips": ["..."],
     "products": [
       { "id": "MustMatchProductID", "reason": "..." }
-    ]
+    ],
+    "zoneAnalysis": {
+        "forehead": { "condition": "...", "advice": "..." },
+        "tZone": { "condition": "...", "advice": "..." },
+        "leftCheek": { "condition": "...", "advice": "..." },
+        "rightCheek": { "condition": "...", "advice": "..." },
+        "eyeArea": { "condition": "...", "advice": "..." },
+        "jawline": { "condition": "...", "advice": "..." }
+    }
   }
 }
 

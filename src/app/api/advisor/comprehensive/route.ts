@@ -95,6 +95,7 @@ export async function POST(request: NextRequest) {
 
         let unifiedResult = null;
         let acquired = false;
+        let dbProducts: any[] = [];
 
         try {
             await chatQueue.acquire(); // Use chatQueue as it limits general heavy AI load
@@ -105,7 +106,7 @@ export async function POST(request: NextRequest) {
             const userAnswersContext = buildUserPrompt(answers, location);
 
             // 1. Fetch active products from DB for Context
-            const dbProducts = await prisma.product.findMany({
+            dbProducts = await prisma.product.findMany({
                 where: { active: true },
                 select: { id: true, name: true, benefits: true, suitableSkinTypes: true, category: true }
             });
@@ -135,6 +136,36 @@ export async function POST(request: NextRequest) {
         const refinedConcerns = identifyConcerns(answers, faceAnalysis);
         const algorithmicProducts = await recommendProducts(answers, refinedConcerns);
 
+        // 3. Smart Product Selection (AI + DB Validation)
+        let finalProducts = algorithmicProducts; // Default to algorithm
+
+        if (consultation?.products && Array.isArray(consultation.products) && consultation.products.length > 0) {
+            // Validate AI recommendations against DB
+            const validAiProducts = consultation.products
+                .map((aiProd: any) => {
+                    const realProduct = dbProducts.find(p => p.id === aiProd.id);
+                    if (realProduct) {
+                        return {
+                            ...realProduct,
+                            // Use AI's personalized reason if available, else generic description
+                            reason: aiProd.reason || `适合您的${realProduct.suitableSkinTypes?.[0] || '肤质'}`,
+                            // Ensure image field exists (mock or from DB)
+                            image: `/images/products/${realProduct.category}.png` // Placeholder mapping
+                        };
+                    }
+                    return null;
+                })
+                .filter((p: any) => p !== null);
+
+            // Only use AI results if we successfully matched specific products
+            if (validAiProducts.length >= 2) {
+                finalProducts = validAiProducts;
+                aiLogger.info("Using AI product recommendations", { count: finalProducts.length });
+            } else {
+                aiLogger.warn("AI recommendations invalid or insufficient, falling back to algorithm");
+            }
+        }
+
         const finalResult = {
             id: requestId,
             dataSource: "unified-multimodal",
@@ -153,7 +184,7 @@ export async function POST(request: NextRequest) {
                 ? [consultation.skinTypeAnalysis, ...(consultation.concernAnalysis || [])]
                 : [],
             // 3. Override products and routine with Algorithm Result
-            products: algorithmicProducts,
+            products: finalProducts,
             routine: generateSkincareRoutine(answers.currentRoutine || "basic"),
             lifestyleTips: consultation?.lifestyleTips || []
         };

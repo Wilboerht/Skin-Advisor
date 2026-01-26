@@ -298,26 +298,7 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
         router.push("/questions");
     };
 
-    // Helper to calculate simple zone score for display
-    const getZoneScore = (zoneName: keyof ZoneAnalysis, analysis?: ZoneAnalysis) => {
-        if (!analysis) return { score: 80, status: '良好' };
-        const data = analysis[zoneName];
-        // Simplified calculation for demo
-        let score = 0;
-        if (zoneName === 'forehead') score = 100 - (data.wrinkles + data.oil) / 2;
-        else if (zoneName === 'tZone') score = 100 - (data.oil + data.pores) / 2;
-        else if (zoneName === 'leftCheek' || zoneName === 'rightCheek') score = 100 - (data.spots + data.redness) / 2;
-        else if (zoneName === 'eyeArea') score = 100 - (data.wrinkles + data.darkCircles) / 2;
-        else score = (data.firmness + data.contour) / 2;
 
-        score = Math.max(0, Math.min(100, Math.round(score)));
-
-        let status = '良好';
-        if (score < 60) status = '需改善';
-        else if (score < 80) status = '一般';
-
-        return { score, status };
-    };
 
     if (loading || !result) {
         return (
@@ -851,26 +832,37 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                                 <span className="text-lg font-semibold text-gray-900">区域重点关注</span>
                             </div>
                         </div>
+
                         {faceAnalysis?.zoneAnalysis ? (
-                            <div className={styles.zoneGrid}>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {(['forehead', 'tZone', 'leftCheek', 'rightCheek', 'eyeArea', 'jawline'] as const).map(zone => {
-                                    const { score, status } = getZoneScore(zone, faceAnalysis.zoneAnalysis);
+                                    // @ts-ignore
+                                    const data = faceAnalysis.zoneAnalysis?.[zone];
                                     const labels: Record<string, string> = {
-                                        forehead: "额头", tZone: "T区", leftCheek: "左颊",
-                                        rightCheek: "右颊", eyeArea: "眼周", jawline: "下颌"
+                                        forehead: "额头 (Forehead)", tZone: "T区 (T-Zone)", leftCheek: "左颊 (L. Cheek)",
+                                        rightCheek: "右颊 (R. Cheek)", eyeArea: "眼周 (Eye Area)", jawline: "下颌 (Jawline)"
                                     };
 
                                     return (
-                                        <div key={zone} className={styles.zoneCard}>
-                                            <div className="text-sm font-semibold text-gray-900 mb-1">{labels[zone]}</div>
-                                            <span className={`${styles.zoneStatus} ${status === '良好' ? styles.colorGood :
-                                                status === '一般' ? styles.colorAvg : styles.colorPoor
-                                                }`}>
-                                                {status} {score}
-                                            </span>
-                                            <p className="text-[13px] text-gray-600 mt-2 leading-relaxed">
-                                                {faceAnalysis.zoneAnalysis?.[zone].condition || "无明显问题"}
-                                            </p>
+                                        <div key={zone} className="border border-gray-100 rounded-xl p-4 bg-gray-50/50 hover:bg-white hover:shadow-sm transition-all duration-200">
+                                            <div className="text-sm font-semibold text-gray-900 mb-2 border-b border-gray-200 pb-2">
+                                                {labels[zone]}
+                                            </div>
+
+                                            <div className="space-y-3">
+                                                <div>
+                                                    <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block mb-0.5">诊断发现</span>
+                                                    <p className="text-[13px] text-gray-700 leading-snug">
+                                                        {data?.condition || "无明显异常"}
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <span className="text-[11px] font-bold text-amber-500 uppercase tracking-wider block mb-0.5">护理建议</span>
+                                                    <p className="text-[13px] text-gray-600 leading-snug">
+                                                        {data?.advice || "保持日常清洁与保湿"}
+                                                    </p>
+                                                </div>
+                                            </div>
                                         </div>
                                     );
                                 })}

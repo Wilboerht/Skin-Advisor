@@ -11,16 +11,8 @@ export interface DimensionScore {
 
 // 区域分析数据结构
 export interface ZoneData {
-    wrinkles: number;
-    oil: number;
-    texture: number;
-    pores: number;
-    spots: number;
-    redness: number;
-    darkCircles: number;
-    firmness: number;
-    contour: number;
-    condition: string;
+    condition: string; // 该区域存在的问题
+    advice: string;    // 针对该区域的建议
 }
 
 export interface ZoneAnalysis {
