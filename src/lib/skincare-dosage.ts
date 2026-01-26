@@ -210,7 +210,8 @@ export function generateScientificRoutine(
     skinTypeRaw: string,
     climateCode: ClimateType,
     goldStandardData?: FaceAnalysisResult,
-    bioFactors?: BioFactors
+    bioFactors?: BioFactors,
+    envData?: EnvironmentData
 ): { daily: DailyRoutine; special: string[] } {
 
     // 1. Parse Input
@@ -239,6 +240,9 @@ export function generateScientificRoutine(
     if (isHighStress) {
         tolerance = tolerance === "high" ? "medium" : "low"; // Downgrade tolerance
     }
+
+    // --- ENVIRONMENT MODIFIER LOGIC (PHASE 3) ---
+    // This runs slightly later in the pipeline but we check data here
 
     // 3. Build Core Routine Slots
     const morningSteps: ScientificStep[] = [];
@@ -367,7 +371,7 @@ export function generateScientificRoutine(
     if (hasAgingRisk) special.push("建议定期进行医美项目如热玛吉或光子嫩肤 (需咨询医师)");
 
     // Tips Generation
-    const tips = [
+    let tips = [
         `当前耐受度设定: ${tolerance === 'low' ? '低 (新手/敏感)' : tolerance === 'medium' ? '中 (进阶)' : '高 (耐受)'}`,
         isSensitive ? "检测到敏感迹象，已自动降级酸类/A醇浓度，主打修护维稳。" : "",
         hasAcneRisk ? "针对皮脂活跃/卟啉问题，夜间增加了酸类调理步骤。" : "",
@@ -375,6 +379,16 @@ export function generateScientificRoutine(
         isLutealPhase ? "[生理期黄体期] 检测到处于黄体期，皮脂分泌将增加，算法已提前部署水杨酸进行控油防御。" : "",
         "早C晚A是经典搭配，但请严格注意防晒，否则功效归零。"
     ].filter(Boolean);
+
+    // Apply Environmental Adjustments if provided
+    if (envData) {
+        const { daily: adjDaily, special: adjSpecial } = applyEnvironmentalAdjustments(
+            { morning: morningSteps, evening: eveningSteps, tips },
+            special,
+            envData
+        );
+        return { daily: adjDaily, special: adjSpecial };
+    }
 
     return {
         daily: {
@@ -385,6 +399,81 @@ export function generateScientificRoutine(
         special
     }
 }
+
+/**
+ * Environmental Data Structure (Phase 3)
+ */
+export interface EnvironmentData {
+    uvIndex: number;          // 0-11+
+    humidity: number;         // Percentage 0-100
+    aqi: number;              // 0-500
+    temperature: number;      // Celsius
+    location?: string;
+}
+
+/**
+ * Apply real-time environmental modifiers to the routine
+ */
+function applyEnvironmentalAdjustments(
+    routine: DailyRoutine,
+    special: string[],
+    env: EnvironmentData
+): { daily: DailyRoutine; special: string[] } {
+
+    const newRoutine = { ...routine };
+    const newSpecial = [...special];
+
+    // 1. UV Defense
+    if (env.uvIndex >= 8) { // Very High / Extreme
+        // Boost Sunscreen
+        const sunscreen = newRoutine.morning.find(s => s.category === "sunscreen");
+        if (sunscreen) {
+            sunscreen.dosage.amount *= 1.5;
+            sunscreen.dosage.tips += " | ⚠️ 紫外线极强，每2小时必须补涂";
+        }
+        newRoutine.tips.push("☀️今日紫外线预警：已将防晒用量调至 1.5倍，请务必配合硬防晒（伞/帽）。");
+    }
+
+    // 2. Humidity Control
+    if (env.humidity < 30) { // Very Dry
+        // Boost Moisturizer
+        const amMoist = newRoutine.morning.find(s => s.category.includes("moisturizer"));
+        if (amMoist) {
+            amMoist.dosage.tips += " | 建议滴入1-2滴护肤油增强封闭";
+        }
+        // PM Moisturizer
+        const pmMoist = newRoutine.evening.find(s => s.category.includes("moisturizer"));
+        if (pmMoist) {
+            pmMoist.productName += " (加厚)";
+            pmMoist.dosage.amount *= 1.3;
+        }
+        newRoutine.tips.push("💧今日空气极度干燥：建议在面霜中叠加护肤油，或增加保湿精华用量。");
+    } else if (env.humidity > 80 && env.temperature > 28) { // Hot & Humid (Sauna day)
+        // Lighten textures
+        const amMoist = newRoutine.morning.find(s => s.category.includes("moisturizer"));
+        if (amMoist && amMoist.category === "moisturizer_cream") {
+            amMoist.productName = "清爽控油乳液"; // Force swap
+            amMoist.dosage.amount *= 0.5;
+        }
+        newRoutine.tips.push("🌫️今日闷热潮湿：已将面霜调整为清爽乳液，避免闷痘。");
+    }
+
+    // 3. Pollution Defense (AQI)
+    if (env.aqi > 150) { // Unhealthy
+        // Force Deep Cleanse in PM
+        const pmCleanser = newRoutine.evening.find(s => s.category.includes("cleanser"));
+        if (pmCleanser) {
+            pmCleanser.title = "深层清洁 (抗污染)";
+            pmCleanser.productName = "排浊洁面 / 洁颜油";
+            pmCleanser.dosage.tips = "仔细揉搓发际线和鼻翼，清除PM2.5颗粒";
+        }
+        // Add Antioxidant boost in AM
+        newRoutine.tips.push("🌫️今日空气重度污染：PM2.5微粒易附着，晚间清洁至关重要，建议配合洁面仪。");
+    }
+
+    return { daily: newRoutine, special: newSpecial };
+}
+
 
 /**
  * Create a simple step object
@@ -420,9 +509,10 @@ export function generateSkincareRoutines(
     skinType: string,
     climate: ClimateType,
     goldStandardData?: any,
-    bioFactors?: BioFactors // Add optional argument
+    bioFactors?: BioFactors, // Add optional argument
+    envData?: EnvironmentData // Add optional argument
 ): any {
-    const scientific = generateScientificRoutine(skinType, climate, goldStandardData, bioFactors);
+    const scientific = generateScientificRoutine(skinType, climate, goldStandardData, bioFactors, envData);
 
     // Convert to Old Format for UI
     // Old Format: { professional: { morning: { steps: [] }, evening: { steps: [] } } }

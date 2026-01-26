@@ -205,6 +205,20 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
         loadClientData();
     }, [initialData, router, trackResultView, toast]);
 
+    // --- Mock Environment Data (Phase 3 Simulation) ---
+    // In production, this would fetch from a weather API based on lat/long
+    const envData = useMemo(() => {
+        // Randomly simulate a "Bad Skin Day" scenario for demo
+        // Scenario: High UV, Dry Air, Moderate Pollution
+        return {
+            uvIndex: 9,          // High UV -> Needs 1.5x Sunscreen
+            humidity: 25,        // Very Dry -> Needs Oil
+            aqi: 160,            // Unhealthy -> Needs Deep Cleanse
+            temperature: 22,
+            location: "北京市 朝阳区 (模拟定位)"
+        };
+    }, []);
+
     // Derived Routine Data
     const routineData = useMemo(() => {
         if (!result || !result.skinProfile) return null;
@@ -227,15 +241,20 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                     if (sleepVal.includes("poor") || sleepVal.includes("差") || sleepVal.includes("less")) bioFactors.sleepQuality = "poor";
                     else if (sleepVal.includes("good") || sleepVal.includes("好")) bioFactors.sleepQuality = "good";
                     else bioFactors.sleepQuality = "fair";
+
+                    // Check for menstrual cycle answer if added
+                    // Assuming key logic similar to above
+                    if (answers.menstrualCycle === "luteal") bioFactors.menstrualPhase = "luteal";
                 }
             } catch (e) {
                 console.error("Failed to parse bio-factors", e);
             }
         }
 
-        const allRoutines = generateSkincareRoutines(result.skinProfile.type, climate, faceAnalysis || undefined, bioFactors);
+        // Pass EnvData to generator
+        const allRoutines = generateSkincareRoutines(result.skinProfile.type, climate, faceAnalysis || undefined, bioFactors, envData);
         return allRoutines['professional'];
-    }, [result, userLocation, faceAnalysis]);
+    }, [result, userLocation, faceAnalysis, envData]);
 
     // Actions
     const handleShare = async () => {
@@ -521,8 +540,58 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                 </aside>
 
                 {/* Right Column: Detailed Analysis & Routine */}
-                <div className={styles.contentArea}>
+                <div className="flex flex-col gap-6">
 
+                    {/* --- 0. ENVIRONMENT DASHBOARD (NEW) --- */}
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl p-5 shadow-sm">
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+                            <div className="flex items-center gap-2 text-indigo-900 font-bold">
+                                <span className="text-xl">📍</span>
+                                <span>{envData.location}</span>
+                                <span className="text-xs bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full ml-2">实时环境监测中</span>
+                            </div>
+                            <div className="flex gap-4 text-sm font-medium text-gray-700 bg-white/60 px-4 py-2 rounded-full">
+                                <div className="flex items-center gap-1">
+                                    <span>☀️</span>
+                                    <span>UV: <span className="text-red-500 font-bold">{envData.uvIndex}</span> (极强)</span>
+                                </div>
+                                <div className="w-px bg-gray-300 h-4 self-center"></div>
+                                <div className="flex items-center gap-1">
+                                    <span>💧</span>
+                                    <span>湿度: <span className="text-amber-600 font-bold">{envData.humidity}%</span> (干燥)</span>
+                                </div>
+                                <div className="w-px bg-gray-300 h-4 self-center"></div>
+                                <div className="flex items-center gap-1">
+                                    <span>🌫️</span>
+                                    <span>AQI: <span className="text-purple-600 font-bold">{envData.aqi}</span> (中度污染)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Dynamic Alerts */}
+                        <div className="space-y-2">
+                            {envData.uvIndex >= 8 && (
+                                <div className="flex items-start gap-2 text-xs md:text-sm text-red-700 bg-red-50 border border-red-100 px-3 py-2 rounded-lg">
+                                    <span className="shrink-0 mt-0.5">⚠️</span>
+                                    <span><b>紫外线红色预警：</b>今日UV极高，系统已将您的防晒用量调至 1.5倍，并建议每2小时补涂。</span>
+                                </div>
+                            )}
+                            {envData.humidity < 30 && (
+                                <div className="flex items-start gap-2 text-xs md:text-sm text-amber-800 bg-amber-50 border border-amber-100 px-3 py-2 rounded-lg">
+                                    <span className="shrink-0 mt-0.5">💧</span>
+                                    <span><b>极度干燥预警：</b>空气湿度过低，系统建议在面霜中滴入护肤油以增强封闭性。</span>
+                                </div>
+                            )}
+                            {envData.aqi > 150 && (
+                                <div className="flex items-start gap-2 text-xs md:text-sm text-purple-800 bg-purple-50 border border-purple-100 px-3 py-2 rounded-lg">
+                                    <span className="shrink-0 mt-0.5">🌫️</span>
+                                    <span><b>空气污染防御：</b>PM2.5浓度较高，系统已将晚间洁面调整为“深层清洁/排浊”模式。</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* 1. Condition Summary (Original) */}
                     {/* 1. Radar Analysis */}
                     {/* 1. Radar Analysis (Interactive) or Fallback */}
                     {/* 1. Radar Analysis (Unified Container) */}

@@ -65,4 +65,19 @@ const hasCycleTip = cycleTips.some((t: string) => t.includes("生理期") || t.i
 console.log("Contains Salicylic Acid (BHA)?", hasBHA_Cycle); // Should be YES
 console.log("Contains Cycle Logic Tip?", hasCycleTip); // Should be YES
 
+
+console.log("\n--- Test Case 6: Environmental Defense (High UV / Dry) ---");
+const mockEnv = {
+    uvIndex: 9,
+    humidity: 20,
+    aqi: 160,
+    temperature: 25,
+    location: "Test City"
+};
+const routineEnv = generateSkincareRoutines("dry", "S1", mockAging, undefined, mockEnv);
+const envTips = routineEnv.professional.morning.tips.concat(routineEnv.professional.evening.tips);
+console.log("Contains High UV Warning?", envTips.some((t: string) => t.includes("紫外线预警")));
+console.log("Contains Dry Warning?", envTips.some((t: string) => t.includes("空气极度干燥")));
+console.log("Contains Pollution Warning?", envTips.some((t: string) => t.includes("空气重度污染")));
+
 console.log("\n=== Logic Verification Complete ===");
