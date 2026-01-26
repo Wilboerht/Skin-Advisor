@@ -70,6 +70,7 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
         price: initialData?.price || "",
         description: initialData?.description || "",
         image: initialData?.image || "",
+        stock: initialData?.stock || 0,
     });
 
     const [keyIngredients, setKeyIngredients] = useState<string[]>(initialData?.keyIngredients || []);
@@ -187,6 +188,17 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
                                 type="text"
                                 value={formData.price}
                                 onChange={e => setFormData({ ...formData, price: e.target.value })}
+                                className="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900 sm:text-sm p-2 border"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700">Stock</label>
+                            <input
+                                required
+                                type="number"
+                                min="0"
+                                value={formData.stock}
+                                onChange={e => setFormData({ ...formData, stock: parseInt(e.target.value) || 0 })}
                                 className="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900 sm:text-sm p-2 border"
                             />
                         </div>

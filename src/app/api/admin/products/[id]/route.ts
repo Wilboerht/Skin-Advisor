@@ -40,6 +40,7 @@ export async function PUT(
                 benefits: body.benefits,
                 sortOrder: body.sortOrder,
                 active: body.active,
+                stock: body.stock,
             }
         });
 

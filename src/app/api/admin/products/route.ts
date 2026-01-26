@@ -29,6 +29,7 @@ export async function POST(request: Request) {
                 benefits: body.benefits || [],
                 sortOrder: body.sortOrder || 0,
                 active: body.active ?? true,
+                stock: body.stock || 0,
             }
         });
         return NextResponse.json(product);
