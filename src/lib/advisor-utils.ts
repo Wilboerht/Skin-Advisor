@@ -395,7 +395,7 @@ export async function matchProducts(
             category: "洁面",
             image: "/images/products/cleanser.png",
             reason: "温和清洁，不伤肤质",
-            price: "¥129"
+            price: "¥168"
         },
         {
             id: "p2",
@@ -403,7 +403,7 @@ export async function matchProducts(
             category: "精华",
             image: "/images/products/serum.png",
             reason: "深层修护，针对老化迹象",
-            price: "¥399"
+            price: "¥498"
         },
         {
             id: "p3",
@@ -411,7 +411,7 @@ export async function matchProducts(
             category: "面霜",
             image: "/images/products/cream.png",
             reason: "锁水保湿，滋养肌肤",
-            price: "¥359"
+            price: "¥428"
         },
         {
             id: "p4",
@@ -419,7 +419,7 @@ export async function matchProducts(
             category: "防晒",
             image: "/images/products/sunscreen.png",
             reason: "全波段防护，清爽不油腻",
-            price: "¥169"
+            price: "¥198"
         },
         {
             id: "p5",
@@ -427,7 +427,7 @@ export async function matchProducts(
             category: "爽肤水",
             image: "/images/products/toner.png",
             reason: "疏通毛孔，改善痘痘",
-            price: "¥189"
+            price: "¥228"
         }
     ];
 

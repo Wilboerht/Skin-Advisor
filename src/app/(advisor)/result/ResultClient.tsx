@@ -353,7 +353,7 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                         />
                         {/* Hidden Side Angles */}
                         <div className={sidebarStyles.profileExpander}>
-                            {['left', 'right', 'tzone'].map((angle, idx) => (
+                            {['left', 'right', 'chin'].map((angle, idx) => (
                                 <img
                                     key={angle}
                                     // Try to get from local storage or fallback to main image/placeholder
@@ -479,7 +479,7 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                             <div className={styles.sectionTitle}>
                                 <div className="flex items-center gap-3">
                                     <ScanFace className="w-5 h-5 text-gray-700" />
-                                    <span className="text-lg font-semibold text-gray-900">八维深度分析</span>
+                                    <span className="text-lg font-semibold text-gray-900">十二维深度分析</span>
                                 </div>
                             </div>
 
@@ -930,16 +930,19 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
 
                     {/* Minimal Footer Text */}
                     <div className="text-center">
-                        <div className="flex justify-center items-center gap-4 text-[11px] text-gray-400 mb-2">
-                            <a href="https://demo.myskin.today/terms" target="_blank" rel="noopener noreferrer" className="hover:text-gray-600 transition-colors">
-                                服务条款
-                            </a>
-                            <span className="text-gray-200">|</span>
-                            <a href="https://demo.myskin.today/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-gray-600 transition-colors">
-                                隐私政策
-                            </a>
+                        <div className="flex flex-col md:flex-row justify-center items-center gap-2 md:gap-6 text-xs text-gray-500 mb-3">
+                            <span className="opacity-80">© {new Date().getFullYear()} MySkin.Today™. All rights reserved.</span>
+                            <span className="hidden md:inline text-gray-300">•</span>
+                            <div className="flex gap-4 font-medium">
+                                <a href="https://demo.myskin.today/terms" target="_blank" rel="noopener noreferrer" className="hover:text-gray-900 transition-colors">
+                                    服务条款
+                                </a>
+                                <a href="https://demo.myskin.today/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-gray-900 transition-colors">
+                                    隐私政策
+                                </a>
+                            </div>
                         </div>
-                        <p className="text-[10px] text-gray-300">
+                        <p className="text-xs text-gray-400 opacity-75">
                             *AI 分析结果受图像质量影响仅供参考，不构成医疗诊断建议
                         </p>
                     </div>
