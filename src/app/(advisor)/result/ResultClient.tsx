@@ -209,10 +209,11 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
     const routineData = useMemo(() => {
         if (!result || !result.skinProfile) return null;
         const climate = getClimateByRegion(userLocation?.province, userLocation?.city);
-        const allRoutines = generateSkincareRoutines(result.skinProfile.type, climate);
+        // Pass faceAnalysis (Gold Standard Data) to the generator
+        const allRoutines = generateSkincareRoutines(result.skinProfile.type, climate, faceAnalysis || undefined);
         // Default to 'professional' level routines for the report
         return allRoutines['professional'];
-    }, [result, userLocation]);
+    }, [result, userLocation, faceAnalysis]);
 
     // Actions
     const handleShare = async () => {
