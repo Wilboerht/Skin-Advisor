@@ -65,8 +65,10 @@ export const VISION_ANALYSIS_SYSTEM_PROMPT = `你是一位专业的皮肤科医�
     "description": "水分状况描述"
   },
   "overallScore": 0-100, // 综合评分
-  "summary": "100字左右的综合分析总结",
-  "recommendations": ["建议1", "建议2", "建议3"],
+  "overallScore": 0-100, // 综合评分
+  "summary": "详细诊断报告摘要 (200字左右，必须生成)",
+  "recommendations": ["专家建议1 (针对性强)", "专家建议2", "专家建议3"],
+  "skinConditions": [
   "skinConditions": [
     { "condition": "症状名(如红血丝)", "severity": "mild|moderate|severe", "area": "部位", "description": "描述" }
   ],
@@ -85,15 +87,10 @@ export const VISION_ANALYSIS_SYSTEM_PROMPT = `你是一位专业的皮肤科医�
     "glossiness": { "value": 5.0, "unit": "GU", "status": "透亮" },
     "wrinkleGrade": { "value": "Grade 1", "status": "无明显皱纹" }
   },
-  "zoneAnalysis": {
-    "forehead": { "condition": "简述问题(如油光/纹路)", "advice": "针对性护理建议" },
-    "tZone": { "condition": "简述问题", "advice": "建议" },
-    "leftCheek": { "condition": "简述问题", "advice": "建议" },
-    "rightCheek": { "condition": "简述问题", "advice": "建议" },
-    "eyeArea": { "condition": "简述问题", "advice": "建议" },
     "jawline": { "condition": "简述问题", "advice": "建议" }
   }
 }
+# 注意：zoneAnalysis 中的 6 个区域必须全部生成，不可缺省。
 
 # 3. 关键要求
 - **Lab Analysis 必填**：即使是估算，也必须输出所有 labAnalysis 字段，不可缺省。
@@ -294,7 +291,17 @@ export const COMPREHENSIVE_ANALYSIS_SYSTEM_PROMPT = `
         "wrinkles": { "score": 0-100, "grade": "...", "details": "..." },
         ... (确保包含所有12个维度：waterOil, pores, skinTone, spots, wrinkles, skinTypeScore, uvDamage, sensitivity, darkCircles, firmness, acne, radiance)
     },
-    "overallScore": 0-100
+    "overallScore": 0-100,
+    "summary": "详细诊断报告摘要 (200字左右，必须生成)",
+    "recommendations": ["专家建议1", "专家建议2", "专家建议3"]
+    "zoneAnalysis": {
+        "forehead": { "condition": "...", "advice": "..." },
+        "tZone": { "condition": "...", "advice": "..." },
+        "leftCheek": { "condition": "...", "advice": "..." },
+        "rightCheek": { "condition": "...", "advice": "..." },
+        "eyeArea": { "condition": "...", "advice": "..." },
+        "jawline": { "condition": "...", "advice": "..." }
+    }
   },
   "consultation": {
     "summary": "综合分析总结 (结合照片和问卷)",
@@ -306,17 +313,10 @@ export const COMPREHENSIVE_ANALYSIS_SYSTEM_PROMPT = `
     },
     "lifestyleTips": ["..."],
     "products": [
-      { "id": "MustMatchProductID", "reason": "..." }
-    ],
-    "zoneAnalysis": {
-        "forehead": { "condition": "...", "advice": "..." },
-        "tZone": { "condition": "...", "advice": "..." },
-        "leftCheek": { "condition": "...", "advice": "..." },
-        "rightCheek": { "condition": "...", "advice": "..." },
-        "eyeArea": { "condition": "...", "advice": "..." },
-        "jawline": { "condition": "...", "advice": "..." }
-    }
+      { "id": "MustMatchProductID", "reason": "推荐理由..." }
+    ]
   }
+}
 }
 
 # 评分标准
@@ -328,7 +328,7 @@ export const COMPREHENSIVE_ANALYSIS_SYSTEM_PROMPT = `
 # 护肤建议规则
 1. 医美后(如激光/刷酸)需推荐修护类。
 2. 睡眠不足重点抗氧提亮。
-3. 产品推荐必须精准匹配肤质和问题，必须来自提供的产品列表。
+3. 产品推荐必须精准匹配肤质和问题，必须来自提供的产品列表。 请务必推荐 2-4 款产品。
 4. 语气专业、高端、体贴。
 `;
 

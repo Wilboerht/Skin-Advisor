@@ -134,6 +134,24 @@ const SCIENTIFIC_PRODUCTS: Record<ProductCategory, ScientificProduct> = {
 // 2. Helper Logic
 // ============================================================================
 
+// Enhanced Normalization
+export function normalizeSkinType(input: string = ""): SkinType {
+    const normalized = input.toLowerCase().trim();
+
+    // Direct Hit
+    if (SKIN_TYPE_MAP[normalized]) return SKIN_TYPE_MAP[normalized];
+
+    // Fuzzy Search
+    if (normalized.includes("oil") || normalized.includes("油")) return "oily";
+    if (normalized.includes("dry") || normalized.includes("干")) return "dry";
+    if (normalized.includes("sensit") || normalized.includes("敏")) return "sensitive";
+    if (normalized.includes("norm") || normalized.includes("中性")) return "normal";
+    if (normalized.includes("comb") || normalized.includes("混合")) return "combination_oily";
+
+    // Default Fallback
+    return "combination_oily";
+}
+
 export const SKIN_TYPE_MAP: Record<string, SkinType> = {
     oily: "oily",
     combination: "combination_oily",
@@ -142,12 +160,16 @@ export const SKIN_TYPE_MAP: Record<string, SkinType> = {
     combination_dry: "combination_dry",
     dry: "dry",
     sensitive: "sensitive",
-    // Fallback mapping
-    "油性肌肤": "oily",
+    // Fallback mapping (keep likely keys)
+    "油性": "oily",
+    "油性皮肤": "oily",
     "混合性偏油": "combination_oily",
-    "中性肌肤": "normal",
+    "中性": "normal",
+    "中性皮肤": "normal",
     "混合性偏干": "combination_dry",
-    "干性肌肤": "dry",
+    "干性": "dry",
+    "干性皮肤": "dry",
+    "敏感": "sensitive",
     "敏感肌": "sensitive",
 };
 
@@ -215,7 +237,7 @@ export function generateScientificRoutine(
 ): { daily: DailyRoutine; special: string[] } {
 
     // 1. Parse Input
-    const sType = SKIN_TYPE_MAP[skinTypeRaw] || "normal";
+    const sType = normalizeSkinType(skinTypeRaw);
     const isSensitive = sType === "sensitive" || (goldStandardData?.dimensions?.sensitivity?.score ?? 100) < 60;
     const isOily = ["oily", "combination_oily"].includes(sType);
     const isDry = ["dry", "combination_dry"].includes(sType);
