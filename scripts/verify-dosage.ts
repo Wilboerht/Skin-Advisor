@@ -46,4 +46,23 @@ const hasRetinolA = pmStepsAging.some((s: any) => s.description.includes("Retino
 console.log("Contains Retinol?", hasRetinolA); // Should be YES
 console.log("Step Descriptions:", pmStepsAging.map((s: any) => s.description));
 
+console.log("\n--- Test Case 4: High Stress (Cortisol Defense) ---");
+const routineStress = generateSkincareRoutines("oily", "S2", mockAcne, { stressLevel: "high", sleepQuality: "poor" });
+const pmStepsStress = routineStress.professional.evening.steps;
+const hasRepairStress = pmStepsStress.some((s: any) => s.category === "serum_repair" || s.description.includes("Stress Defense"));
+const stressTips = routineStress.professional.morning.tips;
+console.log("Contains Stress Defense Repair Step?", hasRepairStress); // Should be YES
+console.log("Specific Stress Tip Found?", stressTips.some((t: string) => t.includes("压力对抗")));
+
+console.log("\n--- Test Case 5: Luteal Phase (Hormonal Defense) ---");
+// Use mockAging which has robust sensitivity score (90), so it won't trigger Sensitive Mode override
+const routineCycle = generateSkincareRoutines("combination", "S1", mockAging, { menstrualPhase: "luteal" } as any);
+const pmStepsCycle = routineCycle.professional.evening.steps;
+const hasBHA_Cycle = pmStepsCycle.some((s: any) => s.description.includes("Salicylic Acid"));
+const cycleTips = routineCycle.professional.evening.tips;
+const hasCycleTip = cycleTips.some((t: string) => t.includes("生理期") || t.includes("黄体期"));
+
+console.log("Contains Salicylic Acid (BHA)?", hasBHA_Cycle); // Should be YES
+console.log("Contains Cycle Logic Tip?", hasCycleTip); // Should be YES
+
 console.log("\n=== Logic Verification Complete ===");

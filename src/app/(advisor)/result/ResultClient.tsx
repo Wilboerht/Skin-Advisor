@@ -209,9 +209,31 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
     const routineData = useMemo(() => {
         if (!result || !result.skinProfile) return null;
         const climate = getClimateByRegion(userLocation?.province, userLocation?.city);
-        // Pass faceAnalysis (Gold Standard Data) to the generator
-        const allRoutines = generateSkincareRoutines(result.skinProfile.type, climate, faceAnalysis || undefined);
-        // Default to 'professional' level routines for the report
+
+        // Recover Bio-Factors from LocalStorage (Questionnaire Answers)
+        let bioFactors: any = {};
+        if (typeof window !== 'undefined') {
+            try {
+                const answersStr = localStorage.getItem("advisor_answers");
+                if (answersStr) {
+                    const answers = JSON.parse(answersStr);
+                    const stressVal = JSON.stringify(answers.stressLevel || "").toLowerCase();
+                    const sleepVal = JSON.stringify(answers.sleepQuality || "").toLowerCase();
+
+                    if (stressVal.includes("high") || stressVal.includes("大") || stressVal.includes("强")) bioFactors.stressLevel = "high";
+                    else if (stressVal.includes("low") || stressVal.includes("小")) bioFactors.stressLevel = "low";
+                    else bioFactors.stressLevel = "medium";
+
+                    if (sleepVal.includes("poor") || sleepVal.includes("差") || sleepVal.includes("less")) bioFactors.sleepQuality = "poor";
+                    else if (sleepVal.includes("good") || sleepVal.includes("好")) bioFactors.sleepQuality = "good";
+                    else bioFactors.sleepQuality = "fair";
+                }
+            } catch (e) {
+                console.error("Failed to parse bio-factors", e);
+            }
+        }
+
+        const allRoutines = generateSkincareRoutines(result.skinProfile.type, climate, faceAnalysis || undefined, bioFactors);
         return allRoutines['professional'];
     }, [result, userLocation, faceAnalysis]);
 

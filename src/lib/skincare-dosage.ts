@@ -192,13 +192,25 @@ export interface DailyRoutine {
     tips: string[];
 }
 
+/** 
+ * Bio-Rhythm Factors 
+ * - Stress/Sleep -> Cortisol levels -> Barrier health
+ * - Cycle -> Hormonal fluctuations -> Sebum/Sensitivity
+ */
+export interface BioFactors {
+    stressLevel: "low" | "medium" | "high";
+    sleepQuality: "good" | "fair" | "poor";
+    menstrualPhase?: "follicular" | "ovulation" | "luteal" | "menstrual"; // Optional
+}
+
 /**
  * Main Algorithm Entry Point
  */
 export function generateScientificRoutine(
     skinTypeRaw: string,
     climateCode: ClimateType,
-    goldStandardData?: FaceAnalysisResult
+    goldStandardData?: FaceAnalysisResult,
+    bioFactors?: BioFactors
 ): { daily: DailyRoutine; special: string[] } {
 
     // 1. Parse Input
@@ -210,6 +222,11 @@ export function generateScientificRoutine(
     const hasAgingRisk = (goldStandardData?.dimensions?.wrinkles?.score ?? 100) < 65 || (goldStandardData?.labAnalysis?.glogau?.value === "Type III");
     const hasPigmentRisk = (goldStandardData?.dimensions?.spots?.score ?? 100) < 70;
 
+    // --- BIO-RHYTHM ANALYSIS ---
+    const isHighStress = bioFactors?.stressLevel === "high" || bioFactors?.sleepQuality === "poor";
+    const isLutealPhase = bioFactors?.menstrualPhase === "luteal"; // PMS week -> High Sebum
+    const isFollicularPhase = bioFactors?.menstrualPhase === "follicular"; // Estrogen high -> Best time for actives
+
     // 2. Tolerance Check
     // If sensitive or high erythema, drop to LOW tolerance
     let tolerance: ToleranceLevel = "medium";
@@ -217,6 +234,11 @@ export function generateScientificRoutine(
     if ((goldStandardData?.labAnalysis?.erythema?.value ?? 0) > 350) tolerance = "low";
     // If very resilient (Oil + No Sensitivity + Good Barrier), allow High
     if (isOily && !isSensitive && (goldStandardData?.dimensions?.skinTypeScore.score ?? 0) > 85) tolerance = "high";
+
+    // [CORTISOL DEFENSE] High Stress -> Lower Tolerance & Inflammation Risk
+    if (isHighStress) {
+        tolerance = tolerance === "high" ? "medium" : "low"; // Downgrade tolerance
+    }
 
     // 3. Build Core Routine Slots
     const morningSteps: ScientificStep[] = [];
@@ -281,9 +303,10 @@ export function generateScientificRoutine(
         });
     } else {
         // Active Selection
-        if (hasAcneRisk) {
+        if (hasAcneRisk || isLutealPhase) {
+            // [CYCLE SYNC] Luteal Phase -> Proactively use BHA even if acne not severe yet
             nightActive = ACTIVE_INGREDIENTS["salicylic_acid"];
-            nightTag = "Anti-Acne";
+            nightTag = isLutealPhase ? "Hormonal Defense" : "Anti-Acne";
         } else if (hasAgingRisk) {
             nightActive = ACTIVE_INGREDIENTS["retinol"];
             nightTag = "Anti-Aging";
@@ -318,6 +341,19 @@ export function generateScientificRoutine(
         }
     }
 
+    // [CORTISOL DEFENSE] If High Stress, ADD a Repair step even if using actives (Sandwich method or overlaid)
+    // Or replace moisturizer with Repair Cream
+    if (isHighStress && !eveningSteps.find(s => s.category === "serum_repair")) {
+        eveningSteps.push({
+            order: eveningSteps.length + 1,
+            title: "压力舒缓",
+            productName: "神经酰胺修护精华",
+            category: "serum_repair",
+            activeInfo: { ingredient: "Ceramides", concentration: "High", tag: "Stress Defense" },
+            dosage: { amount: 2, unit: "pump", tips: "对抗皮质醇引起的屏障受损" }
+        });
+    }
+
     // E3. Moisturize
     eveningSteps.push(createStep(eveningSteps.length + 1,
         isOily ? "moisturizer_lotion" : "moisturizer_cream",
@@ -335,6 +371,8 @@ export function generateScientificRoutine(
         `当前耐受度设定: ${tolerance === 'low' ? '低 (新手/敏感)' : tolerance === 'medium' ? '中 (进阶)' : '高 (耐受)'}`,
         isSensitive ? "检测到敏感迹象，已自动降级酸类/A醇浓度，主打修护维稳。" : "",
         hasAcneRisk ? "针对皮脂活跃/卟啉问题，夜间增加了酸类调理步骤。" : "",
+        isHighStress ? "[压力对抗模式已开启] 检测到高压力/睡眠不足，算法已自动降低刺激性成分浓度，并增加神经酰胺修护步骤，防止'压力痘'。" : "",
+        isLutealPhase ? "[生理期黄体期] 检测到处于黄体期，皮脂分泌将增加，算法已提前部署水杨酸进行控油防御。" : "",
         "早C晚A是经典搭配，但请严格注意防晒，否则功效归零。"
     ].filter(Boolean);
 
@@ -378,8 +416,13 @@ function createStep(order: number, cat: ProductCategory, sType: string, climate:
 // 4. Backwards Compatibility Wrapper (Important for existing UI)
 // ============================================================================
 
-export function generateSkincareRoutines(skinType: string, climate: ClimateType, goldStandardData?: any): any {
-    const scientific = generateScientificRoutine(skinType, climate, goldStandardData);
+export function generateSkincareRoutines(
+    skinType: string,
+    climate: ClimateType,
+    goldStandardData?: any,
+    bioFactors?: BioFactors // Add optional argument
+): any {
+    const scientific = generateScientificRoutine(skinType, climate, goldStandardData, bioFactors);
 
     // Convert to Old Format for UI
     // Old Format: { professional: { morning: { steps: [] }, evening: { steps: [] } } }
