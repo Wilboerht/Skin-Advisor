@@ -288,7 +288,8 @@ async function main() {
                 keyIngredients: p.keyIngredients,
                 suitableSkinTypes: p.suitableSkinTypes,
                 benefits: p.benefits,
-                active: true
+                active: true,
+                stock: 100 // Default stock
             },
             create: {
                 id: p.id,
@@ -301,7 +302,8 @@ async function main() {
                 keyIngredients: p.keyIngredients,
                 suitableSkinTypes: p.suitableSkinTypes,
                 benefits: p.benefits,
-                active: true
+                active: true,
+                stock: 100 // Default stock
             }
         });
     }

@@ -228,6 +228,86 @@ function generateSmartReason(
 }
 
 /**
+ * Pre-filter products for AI context (RAG Lite)
+ * Returns top N products based on heuristic scoring to save tokens
+ */
+export async function getCandidateProducts(
+    answers: QuestionnaireAnswers,
+    concerns: string[],
+    limit: number = 20
+): Promise<any[]> {
+    try {
+        // 1. Fetch Active & In-Stock Products
+        const allProducts = await prisma.product.findMany({
+            where: {
+                active: true,
+                stock: { gt: 0 } // Stock Check
+            }
+        });
+
+        if (allProducts.length === 0) return [];
+
+        const skinType = answers.skinType || "combination";
+
+        // 2. Score using our heuristic engine
+        let scored = allProducts.map(p => {
+            const { score } = calculateScore(p, skinType, concerns, answers);
+            return { ...p, _score: score };
+        });
+
+        // 3. Inject Forced Rules (Hard Rules)
+        const activeRules = await prisma.recommendationRule.findMany({
+            where: { active: true },
+            orderBy: { priority: 'desc' }
+        });
+
+        // Simple Rule Engine
+        const forcedProductIds = new Set<string>();
+
+        for (const rule of activeRules) {
+            const conditions = rule.conditions as any; // { skinType: ['oily'] }
+            let match = true;
+
+            // Check Skin Type Condition
+            if (conditions?.skinType && Array.isArray(conditions.skinType)) {
+                if (!conditions.skinType.includes(skinType)) match = false;
+            }
+
+            // Check Concern Condition
+            if (match && conditions?.concern && Array.isArray(conditions.concern)) {
+                // If user has ANY of the rule's target concerns
+                const hasConcern = concerns.some(c => conditions.concern.includes(c));
+                if (!hasConcern) match = false;
+            }
+
+            if (match) {
+                // Rule Matched! Add products to forced list
+                if (Array.isArray(rule.productIds)) {
+                    rule.productIds.forEach((id: any) => forcedProductIds.add(String(id)));
+                }
+            }
+        }
+
+        // Boost forced products score to ensure they are in top list
+        scored = scored.map(p => {
+            if (forcedProductIds.has(p.id)) {
+                return { ...p, _score: p._score + 1000 }; // Massive boost
+            }
+            return p;
+        });
+
+        // 4. Sort & Slice
+        scored.sort((a, b) => b._score - a._score);
+
+        return scored.slice(0, limit);
+
+    } catch (e) {
+        console.error("Candidate selection error:", e);
+        return [];
+    }
+}
+
+/**
  * Recommend products based on user profile using Database (Enhanced)
  */
 export async function recommendProducts(
@@ -237,7 +317,10 @@ export async function recommendProducts(
     try {
         // 1. Fetch all active products
         const allProducts = await prisma.product.findMany({
-            where: { active: true }
+            where: {
+                active: true,
+                stock: { gt: 0 }
+            }
         });
 
         if (allProducts.length === 0) {

@@ -70,7 +70,7 @@ interface ResultClientProps {
 export default function ResultClient({ id, initialData }: ResultClientProps) {
     const router = useRouter();
     const toast = useToast();
-    const { trackResultView, trackResultShare } = useAdvisorAnalytics();
+    const { trackResultView, trackResultShare, trackProductClick } = useAdvisorAnalytics();
 
     // Data State
     const [result, setResult] = useState<ComprehensiveResult | null>(initialData?.result || null);
@@ -1072,7 +1072,12 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                         {result.products && result.products.length > 0 ? (
                             <div className={styles.productGrid}>
                                 {result.products.map(product => (
-                                    <Link key={product.id} href={`/products/${product.id}`} className={styles.productCard}>
+                                    <Link
+                                        key={product.id}
+                                        href={`/products/${product.id}`}
+                                        className={styles.productCard}
+                                        onClick={() => trackProductClick(product.id, product.name)}
+                                    >
                                         <div className={styles.productImgArea}>
                                             <img src={product.image} alt={product.name} className={styles.productImg} />
                                         </div>

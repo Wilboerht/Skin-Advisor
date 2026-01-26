@@ -8,7 +8,7 @@ import { getSkinTypeLabel } from "@/lib/advisor-utils";
 // import { PRODUCTS_CATALOG } from "@/config/products"; // Deprecated, use DB or matchProducts
 import { determineSkinType, identifyConcerns } from "@/lib/advisor-utils";
 import { AnalyzeRequestSchema } from "@/lib/schemas";
-import { recommendProducts } from "@/lib/recommendations";
+import { recommendProducts, getCandidateProducts } from "@/lib/recommendations";
 import { resolveIPLocation } from "@/lib/geoip";
 import { getSession } from "@/lib/auth";
 
@@ -123,10 +123,9 @@ export async function POST(request: NextRequest) {
         }
 
         // 5. 构建 AI 提示词与调用
-        // FETCH PRODUCTS FROM DB
-        const availableProducts = await prisma.product.findMany({
-            where: { active: true }
-        });
+        // FETCH PRODUCTS (Candidate Selection / RAG Lite)
+        const concerns = identifyConcerns(answers as any); // Pre-calculate concerns
+        const candidateProducts = await getCandidateProducts(answers as any, concerns, 20); // Top 20
 
         // Resolve Skin Type (Priority: Face Analysis > User Answer)
         const finalSkinType = determineSkinType(answers, (faceAnalysis as any) || undefined);
@@ -143,7 +142,7 @@ export async function POST(request: NextRequest) {
                 dimensions: faceAnalysis.dimensions,
                 overallScore: faceAnalysis.overallScore
             } : undefined,
-            products: availableProducts
+            products: candidateProducts
         });
 
         const systemPrompt = "你是一位专业的皮肤专家，请根据用户数据生成 JSON 格式的护肤报告。";
@@ -168,11 +167,12 @@ export async function POST(request: NextRequest) {
 
         // 6. 补全产品详情
         let finalProducts: any[] = [];
-        const concerns = identifyConcerns(answers as any);
+        // reusable concerns already defined above
 
         if (resultJson.products && Array.isArray(resultJson.products)) {
             const mappedProducts = resultJson.products.map((p: any) => {
-                const catalogProduct = availableProducts.find((cp: any) => cp.id === p.id);
+                // strict match against candidate pool to enforce RAG boundaries
+                const catalogProduct = candidateProducts.find((cp: any) => cp.id === p.id);
                 if (catalogProduct) {
                     return {
                         ...p,

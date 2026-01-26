@@ -24,6 +24,7 @@ const EventSchema = z.object({
         "analysis_complete",       // 分析完成
         "result_view",             // 查看结果
         "result_share",            // 分享结果
+        "product_click",           // 点击产品
     ]),
     data: z.record(z.string(), z.unknown()).optional(), // 附加数据
     timestamp: z.string().optional(),

@@ -49,6 +49,7 @@ model AdvisorSession {
   // ===== 分析结果 =====
   analysisSource  String?   // ai | fallback
   analysisResult  Json?     // 分析结果快照
+  interactions    Json?     // 用户交互记录 (如点击产品)
   
   // ===== 分享状态 =====
   resultShared    Boolean   @default(false)
@@ -161,6 +162,7 @@ model Product {
   suitableSkinTypes Json     // string[] 适用肤质
   benefits          Json     // string[] 主要功效
   active            Boolean  @default(true)
+  stock             Int      @default(100) // Default stock
   featured          Boolean  @default(false)
   sortOrder         Int      @default(0)
   createdAt         DateTime @default(now())
