@@ -27,7 +27,7 @@ async function fetchQWeather(endpoint: string, params: Record<string, string>) {
     try {
         const res = await fetch(url, { next: { revalidate: 1800 } }); // Cache for 30 mins
         if (!res.ok) {
-            console.error(`QWeather API Error: ${res.status} ${res.statusText}`);
+            console.warn(`QWeather API Failed: ${res.status} (${url})`); // Warn instead of Error
             return null;
         }
         const data = await res.json();
@@ -50,7 +50,7 @@ export async function getSkinEnvData(locationInput: string): Promise<SkinEnvData
         humidity: 45,
         aqi: 75,
         temperature: 20,
-        location: locationInput || "北京市 (模拟)",
+        location: locationInput || "标准测试环境",
         weatherText: "多云",
         isRealData: false
     };

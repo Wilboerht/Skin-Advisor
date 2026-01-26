@@ -233,7 +233,16 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                 // Handle legacy string case
                 query = userLocation;
             } else {
-                query = "北京市";
+                // No location available, use generic fallback immediately
+                setEnvData({
+                    uvIndex: 5,
+                    humidity: 45,
+                    aqi: 50,
+                    temperature: 22,
+                    location: "标准参考环境",
+                    isRealData: false
+                });
+                return;
             }
 
             try {
