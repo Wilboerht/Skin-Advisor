@@ -778,6 +778,48 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                                 </div>
                             ) : null}
 
+                            {/* 4. Zone Analysis Grid (Explicitly Added) */}
+                            {faceAnalysis?.zoneAnalysis && (
+                                <div className="mb-8">
+                                    <h4 className="text-base font-medium text-gray-900 mb-4 border-b border-gray-200 pb-2">
+                                        4、区域重点关注 (Area Focus)
+                                    </h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        {Object.entries({
+                                            forehead: "额头区域",
+                                            tZone: "T字区域",
+                                            leftCheek: "左脸颊",
+                                            rightCheek: "右脸颊",
+                                            eyeArea: "眼周",
+                                            jawline: "下颌线"
+                                        }).map(([key, label]) => {
+                                            // @ts-ignore
+                                            const zoneData = faceAnalysis.zoneAnalysis[key];
+                                            if (!zoneData) return null;
+                                            return (
+                                                <div key={key} className="bg-white border text-left border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <h5 className="font-semibold text-gray-800 text-sm">{label}</h5>
+                                                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full max-w-[100px] truncate">
+                                                            {zoneData.condition}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-xs text-gray-500 mb-2 leading-snug min-h-[2.5em] line-clamp-2">
+                                                        {zoneData.condition}
+                                                    </p>
+                                                    <div className="mt-2 pt-2 border-t border-dashed border-gray-100">
+                                                        <p className="text-xs text-emerald-700 leading-snug">
+                                                            <span className="font-medium mr-1">建议:</span>
+                                                            {zoneData.advice}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Lab-Grade Analysis Metrics */}
                             <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden font-sans">
                                 <div
@@ -937,58 +979,7 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                         </div>
                     </div>
 
-                    {/* 2. Zone Analysis */}
-                    {/* 2. Zone Analysis */}
-                    <div className={`${styles.analysisGrid} ${styles.fadeInUp} border-0 shadow-sm`}>
-                        <div className={styles.sectionTitle}>
-                            <div className="flex items-center gap-3">
-                                <Search className="w-5 h-5 text-gray-700" />
-                                <span className="text-lg font-semibold text-gray-900">区域重点关注</span>
-                            </div>
-                        </div>
 
-                        {faceAnalysis?.zoneAnalysis ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {(['forehead', 'tZone', 'leftCheek', 'rightCheek', 'eyeArea', 'jawline'] as const).map(zone => {
-                                    // @ts-ignore
-                                    const data = faceAnalysis.zoneAnalysis?.[zone];
-                                    const labels: Record<string, string> = {
-                                        forehead: "额头 (Forehead)", tZone: "T区 (T-Zone)", leftCheek: "左颊 (L. Cheek)",
-                                        rightCheek: "右颊 (R. Cheek)", eyeArea: "眼周 (Eye Area)", jawline: "下颌 (Jawline)"
-                                    };
-
-                                    return (
-                                        <div key={zone} className="border border-gray-100 rounded-xl p-4 bg-gray-50/50 hover:bg-white hover:shadow-sm transition-all duration-200">
-                                            <div className="text-sm font-semibold text-gray-900 mb-2 border-b border-gray-200 pb-2">
-                                                {labels[zone]}
-                                            </div>
-
-                                            <div className="space-y-3">
-                                                <div>
-                                                    <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block mb-0.5">诊断发现</span>
-                                                    <p className="text-[13px] text-gray-700 leading-snug">
-                                                        {data?.condition || "无明显异常"}
-                                                    </p>
-                                                </div>
-                                                <div>
-                                                    <span className="text-[11px] font-bold text-amber-500 uppercase tracking-wider block mb-0.5">护理建议</span>
-                                                    <p className="text-[13px] text-gray-600 leading-snug">
-                                                        {data?.advice || "保持日常清洁与保湿"}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        ) : (
-                            <div className="p-8 text-center bg-white">
-                                <div className="text-[14px] leading-relaxed text-gray-700">
-                                    需配合面部扫描以解锁区域分析
-                                </div>
-                            </div>
-                        )}
-                    </div>
 
                     {/* 3. Routine */}
                     {/* 3. Routine */}

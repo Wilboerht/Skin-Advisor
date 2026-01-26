@@ -625,7 +625,7 @@
 
 /* Timeline Layout */
 .routineBody {
-    padding: 0;
+    padding: 24px;
     background: white;
 }
 
@@ -647,26 +647,31 @@
 .timelineStep {
     display: flex;
     gap: 16px;
-    padding: 16px 20px;
-    background: #FAFAFA;
-    border: 1px solid #F0F0F0;
-    border-radius: 8px;
-    transition: all 0.2s ease;
+    padding: 18px 24px;
+    background: #F9FAFB;
+    /* Light premium gray for contrast */
+    border: 1px solid #F0F0F2;
+    border-radius: 12px;
+    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
     align-items: flex-start;
     margin-bottom: 0;
 }
 
-
+.timelineStep:hover {
+    border-color: #D4D4D4;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    transform: translateY(-1px);
+}
 
 /* Numbered Badge instead of specific Dot */
 .timelineDot {
     flex-shrink: 0;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: #EBEBEB;
-    color: #787774;
-    font-size: 12px;
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #F5F5F3;
+    color: #555555;
+    font-size: 13px;
     font-weight: 600;
     display: flex;
     align-items: center;
