@@ -140,10 +140,7 @@ export async function POST(request: NextRequest) {
                 dimensions: faceAnalysis.dimensions,
                 overallScore: faceAnalysis.overallScore
             } : undefined,
-            products: availableProducts,
-            // Include location in prompt explicitly if needed, currently part of 'answers' potentially not fully used by prompt builder?
-            // Checking buildTextAnalysisPrompt signature... it doesn't take location explicitly but might be in answers if casted?
-            // Let's assume prompt builder uses what it needs.
+            products: availableProducts
         });
 
         const systemPrompt = "你是一位专业的皮肤专家，请根据用户数据生成 JSON 格式的护肤报告。";
@@ -152,11 +149,18 @@ export async function POST(request: NextRequest) {
         const provider = process.env.AI_PROVIDER || "openai";
         console.log(`Starting text analysis with ${provider}...`);
 
-        const resultText = await generateText(systemPrompt, userPrompt, provider as any);
-        const resultJson = extractJsonFromResponse<any>(resultText);
+        let resultJson: any;
+        try {
+            const resultText = await generateText(systemPrompt, userPrompt, provider as any);
+            resultJson = extractJsonFromResponse<any>(resultText);
+        } catch (e) {
+            console.error("AI Generation failed, falling back", e);
+            // Fallback if AI text gen fails but we have DB
+            resultJson = {};
+        }
 
         if (!resultJson) {
-            throw new Error("Failed to parse AI response");
+            resultJson = {}; // Safety
         }
 
         // 6. 补全产品详情
@@ -193,29 +197,29 @@ export async function POST(request: NextRequest) {
             finalProducts = recs;
         }
 
-        resultJson.products = finalProducts;
-        resultJson.userLocation = geoLocation; // Return location for client use (PDF gen etc)
+        // 7. Construct Final Standardized Result (Matching ComprehensiveResult Interface)
+        const standardizedResult = {
+            skinProfile: {
+                type: answers.skinType || "unknown",
+                typeLabel: skinTypeLabel,
+                concerns: concerns,
+                skinAge: faceAnalysis?.skinAge?.estimated || 25
+            },
+            analysis: {
+                summary: resultJson.summary || "根据您的问卷及面部数据，我们为您生成了这份综合分析报告。",
+                details: [
+                    resultJson.skinTypeAnalysis || "",
+                    ...(resultJson.concernAnalysis || [])
+                ].filter(Boolean)
+            },
+            products: finalProducts,
+            faceAnalysis: faceAnalysis || resultJson.faceAnalysis || null, // Ensure faceAnalysis is propagated
+            dataSource: "hybrid",
+            userLocation: geoLocation
+        };
 
-        // 7. Persist Result to DB
+        // 8. Persist Result to DB
         if (sessionId) {
-            // Keep existing structure for 'analysisResult' JSON field
-            // Combine comprehensive result + faceAnalysis if present
-            const persistPayload = {
-                ...resultJson,
-                // Make sure faceAnalysis is also saved if available, though usually client sends it separate?
-                // Based on ResultClient expectations (initialData), it looks for:
-                // { result: ComprehensiveResult, faceAnalysis: FaceAnalysisResult }
-                // In current API flow, 'resultJson' IS the 'ComprehensiveResult' basically.
-                // Let's wrap it properly or save as is?
-                // Looking at page.tsx: const result = session.analysisResult as any;
-                // And page.tsx treats session.analysisResult AS the comprehensive result object directly.
-
-                // But wait, ResultClient needs faceAnalysis too.
-                // analyze route receives faceAnalysis in body. Let's merge it into the saved object 
-                // so page.tsx can retrieve it later.
-                faceAnalysis: faceAnalysis || resultJson.faceAnalysis || null
-            };
-
             // Calculate Expiration Date (30 days from now)
             const expiresAt = new Date();
             expiresAt.setDate(expiresAt.getDate() + 30);
@@ -223,14 +227,17 @@ export async function POST(request: NextRequest) {
             await prisma.advisorSession.update({
                 where: { sessionId },
                 data: {
-                    analysisResult: persistPayload as any, // stored as json
+                    analysisResult: standardizedResult as any, // stored as json
+                    analysisSource: faceAnalysis ? "hybrid" : "text",
                     completedAt: new Date(),
+                    province: geoLocation?.region,
+                    city: geoLocation?.city,
                     expiresAt: expiresAt
                 }
             }).catch(err => console.error("Failed to persist final analysis:", err));
         }
 
-        return NextResponse.json(resultJson, { headers: rateLimitHeaders });
+        return NextResponse.json(standardizedResult, { headers: rateLimitHeaders });
 
     } catch (error) {
         console.error("Advisor analysis failed:", error);

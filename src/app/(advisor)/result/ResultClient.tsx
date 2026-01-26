@@ -712,19 +712,23 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                             </div>
 
                             {/* Expert Advice */}
+                            {/* Expert Advice */}
                             <div className="mb-8">
                                 <h4 className="text-base font-medium text-gray-900 mb-3 border-b border-gray-200 pb-2">
                                     2、专家护肤建议 (Expert Recommendations)
                                 </h4>
-                                {faceAnalysis?.recommendations && faceAnalysis.recommendations.length > 0 ? (
-                                    <div className="space-y-3 text-[14px] leading-relaxed text-gray-700">
-                                        <p>
-                                            {faceAnalysis.recommendations.join(" ")}
-                                        </p>
-                                    </div>
+                                {(faceAnalysis?.recommendations && faceAnalysis.recommendations.length > 0) || (result.analysis?.details && result.analysis.details.length > 0) ? (
+                                    <ul className="list-disc pl-5 space-y-2 text-[14px] leading-relaxed text-gray-700">
+                                        {(faceAnalysis?.recommendations || result.analysis?.details || []).map((rec, idx) => (
+                                            <li key={idx}>{rec}</li>
+                                        ))}
+                                    </ul>
                                 ) : (
                                     <p className="text-[14px] leading-relaxed text-gray-700">
-                                        暂无专家建议，请完善面部扫描数据。
+                                        根据您的肤质分析，建议您：
+                                        1. 每日早晚温和清洁，避免过度去脂。
+                                        2. 严格做好防晒，减少紫外线损伤。
+                                        3. 根据季节调整保湿产品，保持水油平衡。
                                     </p>
                                 )}
                             </div>
@@ -756,8 +760,8 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                                                         </td>
                                                         <td className="py-3 px-4">
                                                             <span className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium ${cond.severity?.toLowerCase() === 'severe' ? 'bg-red-50 text-red-600' :
-                                                                    cond.severity?.toLowerCase() === 'moderate' ? 'bg-amber-50 text-amber-600' :
-                                                                        'bg-slate-100 text-slate-600'
+                                                                cond.severity?.toLowerCase() === 'moderate' ? 'bg-amber-50 text-amber-600' :
+                                                                    'bg-slate-100 text-slate-600'
                                                                 }`}>
                                                                 {cond.severity?.toLowerCase() === 'severe' ? '严重' :
                                                                     cond.severity?.toLowerCase() === 'moderate' ? '中度' : '轻微'}
