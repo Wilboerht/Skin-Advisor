@@ -166,24 +166,23 @@ export function SkincareDashboard({ routineData }: SkincareDashboardProps) {
             {/* ===== LEFT SIDEBAR: Navigation & Calendar ===== */}
             <aside className="w-[340px] flex-shrink-0 border-r border-[#E9E9E7] bg-[#FAFAFA] flex flex-col relative z-20">
                 {/* Branding Area */}
-                <div className="p-8 pb-4">
-                    <div className="flex items-center gap-3 mb-1.5">
-                        <div className="w-10 h-10 flex-shrink-0">
+                <div className="px-8 h-[100px] flex items-center border-b border-[#E9E9E7]">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 flex-shrink-0">
                             <Image
                                 src="/apple-touch-icon.png"
                                 alt="Logo"
-                                width={40}
-                                height={40}
+                                width={48}
+                                height={48}
                                 className="w-full h-full object-contain"
                             />
                         </div>
-                        <h2 className="text-lg font-bold text-[#37352F] tracking-tight">护肤指挥中心</h2>
+                        <h2 className="text-2xl font-bold text-[#37352F] tracking-tight">护肤指挥中心</h2>
                     </div>
-                    <p className="text-[11px] text-[#787774] font-medium uppercase tracking-[0.1em] ml-1">Skincare Command Center</p>
                 </div>
 
                 {/* Calendar Section */}
-                <div className="flex-1 overflow-y-auto px-6 py-4 scrollbar-hide">
+                <div className="flex-1 overflow-y-auto px-8 pt-6 pb-4 scrollbar-hide">
                     <div className="mb-8">
                         {/* Month Nav */}
                         <div className="flex items-center justify-between mb-6 px-1">
@@ -311,19 +310,7 @@ export function SkincareDashboard({ routineData }: SkincareDashboardProps) {
             <main className="flex-1 flex flex-col h-full bg-white overflow-hidden relative">
 
                 {/* 1. Integrated Header: Simplified & Clean */}
-                <header className="flex-shrink-0 bg-white border-b border-[#E9E9E7] px-10 py-7 flex items-center justify-between z-20">
-                    <div>
-                        <h2 className="text-xl font-bold text-[#37352F]">
-                            {isToday ? '今日任务' : formatDate(selectedDate)}
-                        </h2>
-                        <div className="flex items-center gap-2 mt-1">
-                            <span className="text-xs text-[#787774] font-medium">
-                                {activeTab === 'morning' ? '早间防护 · 晨起护理' : '晚间修护 · 深度滋养'}
-                            </span>
-                            {isToday && <span className="w-1 h-1 rounded-full bg-[#448361] animate-pulse" />}
-                        </div>
-                    </div>
-
+                <header className="flex-shrink-0 bg-white border-b border-[#E9E9E7] px-10 h-[100px] flex items-center justify-between z-20">
                     <div className="flex items-center gap-10">
                         {/* Minimalist Tab Switcher */}
                         <div className="bg-[#F1F1EF] p-1 rounded-xl flex items-center border border-[#E9E9E7]/50">
@@ -367,7 +354,9 @@ export function SkincareDashboard({ routineData }: SkincareDashboardProps) {
                             </svg>
                             <span className="text-[10px] font-bold text-[#37352F]">{progress}%</span>
                         </div>
+                    </div>
 
+                    <div className="flex items-center">
                         <div className="w-8" /> {/* Spacer for external Close button */}
                     </div>
                 </header>
