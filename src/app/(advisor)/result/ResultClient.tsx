@@ -1155,23 +1155,17 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                     {/* Routine Dashboard Modal */}
                     {isRoutineModalOpen && routineData && (
                         <div className="fixed inset-0 z-[150] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-                            <div className="bg-[#F7F7F7] w-full max-w-2xl max-h-[90vh] rounded-xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
-                                {/* Modal Header */}
-                                <div className="bg-white px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
-                                    <div className="flex items-center gap-2">
-                                        <FlaskConical className="w-5 h-5 text-gray-700" />
-                                        <h3 className="font-bold text-gray-900">我的护肤控制台</h3>
-                                    </div>
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); setIsRoutineModalOpen(false); }}
-                                        className="p-2 -mr-2 text-gray-400 hover:text-gray-900 rounded-full hover:bg-gray-100 transition-colors"
-                                    >
-                                        <X className="w-5 h-5" />
-                                    </button>
-                                </div>
+                            <div className="bg-white w-full max-w-[1200px] h-[85vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 relative ring-1 ring-black/5">
+                                {/* Close Button (Absolute & Floating for style) */}
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); setIsRoutineModalOpen(false); }}
+                                    className="absolute top-5 right-5 z-50 p-2 bg-white/90 hover:bg-gray-100/50 text-gray-400 hover:text-gray-900 rounded-full backdrop-blur-md transition-all border border-transparent hover:border-gray-200 hover:shadow-sm"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
 
-                                {/* Modal Body (Scrollable) */}
-                                <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
+                                {/* Modal Body (Pass-through layout) */}
+                                <div className="flex-1 overflow-hidden relative flex flex-col bg-gray-50">
                                     <SkincareDashboard routineData={routineData} />
                                 </div>
                             </div>

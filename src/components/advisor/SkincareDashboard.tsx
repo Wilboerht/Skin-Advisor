@@ -1,11 +1,13 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
+import Image from 'next/image';
 import {
     Calendar as CalendarIcon,
     CheckCircle2,
     Circle,
     Play,
     Info,
+    ChevronLeft,
     ChevronRight,
     Moon,
     Sun,
@@ -37,6 +39,7 @@ export function SkincareDashboard({ routineData }: SkincareDashboardProps) {
     const [completedSteps, setCompletedSteps] = useState<Record<string, boolean>>({}); // Key: "YYYY-MM-DD_stepId"
     const [isImmersiveOpen, setIsImmersiveOpen] = useState(false);
     const [activeTab, setActiveTab] = useState<'morning' | 'evening'>('morning'); // Morning logic is simple, Evening has cycling
+    const [currentMonth, setCurrentMonth] = useState<Date>(new Date()); // For calendar navigation
 
     // Initialize Cycle Start Date & Load Progress
     useEffect(() => {
@@ -113,6 +116,44 @@ export function SkincareDashboard({ routineData }: SkincareDashboardProps) {
         return days;
     }, [cycleStartDate, routineData.cycling]);
 
+    // Generate Monthly Calendar Grid Data
+    const monthCalendarData = useMemo(() => {
+        if (!cycleStartDate) return { weeks: [], weekDays: ['日', '一', '二', '三', '四', '五', '六'] };
+
+        const year = currentMonth.getFullYear();
+        const month = currentMonth.getMonth();
+
+        // First day of month & total days
+        const firstDayOfMonth = new Date(year, month, 1);
+        const lastDayOfMonth = new Date(year, month + 1, 0);
+        const daysInMonth = lastDayOfMonth.getDate();
+        const startDayOfWeek = firstDayOfMonth.getDay(); // 0=Sunday
+
+        // Build grid: 6 weeks max (42 cells)
+        const cells: Array<{ date: Date | null; cycleDay: number; cycleInfo: CyclingDay | undefined }> = [];
+
+        // Leading empty cells
+        for (let i = 0; i < startDayOfWeek; i++) {
+            cells.push({ date: null, cycleDay: 0, cycleInfo: undefined });
+        }
+
+        // Actual days
+        for (let day = 1; day <= daysInMonth; day++) {
+            const d = new Date(year, month, day);
+            const cDay = getCycleDayForDate(d, cycleStartDate);
+            const cycle = routineData.cycling?.find(c => c.day === cDay);
+            cells.push({ date: d, cycleDay: cDay, cycleInfo: cycle });
+        }
+
+        // Split into weeks (7 days each)
+        const weeks: typeof cells[] = [];
+        for (let i = 0; i < cells.length; i += 7) {
+            weeks.push(cells.slice(i, i + 7));
+        }
+
+        return { weeks, weekDays: ['日', '一', '二', '三', '四', '五', '六'] };
+    }, [cycleStartDate, currentMonth, routineData.cycling]);
+
     // Completion Status
     const completedCount = effectiveSteps.reduce((acc, _, idx) => {
         const key = `${selectedDate.toISOString().slice(0, 10)}_${activeTab}_${idx}`;
@@ -121,198 +162,354 @@ export function SkincareDashboard({ routineData }: SkincareDashboardProps) {
     const progress = Math.round((completedCount / effectiveSteps.length) * 100);
 
     return (
-        <div className="flex flex-col gap-6">
+        <div className="flex h-full w-full bg-[#fdfdfd] overflow-hidden select-none">
+            {/* ===== LEFT SIDEBAR: Navigation & Calendar ===== */}
+            <aside className="w-[340px] flex-shrink-0 border-r border-[#E9E9E7] bg-[#FAFAFA] flex flex-col relative z-20">
+                {/* Branding Area */}
+                <div className="p-8 pb-4">
+                    <div className="flex items-center gap-3 mb-1.5">
+                        <div className="w-10 h-10 flex-shrink-0">
+                            <Image
+                                src="/apple-touch-icon.png"
+                                alt="Logo"
+                                width={40}
+                                height={40}
+                                className="w-full h-full object-contain"
+                            />
+                        </div>
+                        <h2 className="text-lg font-bold text-[#37352F] tracking-tight">护肤指挥中心</h2>
+                    </div>
+                    <p className="text-[11px] text-[#787774] font-medium uppercase tracking-[0.1em] ml-1">Skincare Command Center</p>
+                </div>
 
-            {/* 1. Tab Switcher (Morning / Evening) */}
-            <div className="bg-white p-1 rounded-xl border border-gray-100 flex shadow-sm w-fit mx-auto mb-2">
-                <button
-                    onClick={() => setActiveTab('morning')}
-                    className={`px-5 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all ${activeTab === 'morning' ? 'bg-amber-50 text-amber-700 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
-                >
-                    <Sun className="w-4 h-4" /> 早间防护
-                </button>
-                <div className="w-px bg-gray-200 my-1 mx-1" />
-                <button
-                    onClick={() => setActiveTab('evening')}
-                    className={`px-5 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all ${activeTab === 'evening' ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
-                >
-                    <Moon className="w-4 h-4" /> 晚间修护
-                </button>
-            </div>
-
-            {/* 2. Calendar Strip (Only relevant for evening usually, but good to show context always) */}
-            {activeTab === 'evening' && (
-                <div className="overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
-                    <div className="flex gap-3 min-w-max mx-auto">
-                        {calendarDays.map((item, idx) => {
-                            const isSelected = item.date.toDateString() === selectedDate.toDateString();
-                            const isTodayItem = item.date.toDateString() === today.toDateString();
-
-                            // Determine dot color
-                            let dotClass = 'bg-gray-300';
-                            if (item.cycleInfo?.phase === 'exfoliate') dotClass = CYCLE_DOTS.exfoliate;
-                            if (item.cycleInfo?.phase === 'retinoid') dotClass = CYCLE_DOTS.retinoid;
-                            if (item.cycleInfo?.phase === 'recovery') dotClass = CYCLE_DOTS.recovery;
-
-                            return (
+                {/* Calendar Section */}
+                <div className="flex-1 overflow-y-auto px-6 py-4 scrollbar-hide">
+                    <div className="mb-8">
+                        {/* Month Nav */}
+                        <div className="flex items-center justify-between mb-6 px-1">
+                            <h3 className="text-[15px] font-bold text-[#37352F]">
+                                {currentMonth.getFullYear()}年{currentMonth.getMonth() + 1}月
+                            </h3>
+                            <div className="flex gap-1">
                                 <button
-                                    key={idx}
-                                    onClick={() => setSelectedDate(item.date)}
-                                    className={`flex flex-col items-center gap-2 p-3 rounded-2xl min-w-[70px] border transition-all ${isSelected ? 'bg-blue-50 border-blue-200 shadow-sm scale-105' : 'bg-white border-gray-100 text-gray-400 hover:border-gray-200'}`}
+                                    onClick={() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}
+                                    className="p-1.5 rounded-lg hover:bg-[#F1F1EF] text-[#787774] hover:text-[#37352F] transition-all border border-transparent hover:border-[#E9E9E7]"
                                 >
-                                    <span className="text-[10px] font-medium uppercase tracking-wider opacity-60">
-                                        {isTodayItem ? '今天' : ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][item.date.getDay()]}
-                                    </span>
-                                    <span className={`text-lg font-bold ${isSelected ? 'text-blue-900' : 'text-gray-700'}`}>
-                                        {item.date.getDate()}
-                                    </span>
-                                    <div className={`w-1.5 h-1.5 rounded-full ${dotClass}`} />
+                                    <ChevronLeft className="w-4 h-4" />
                                 </button>
-                            );
-                        })}
+                                <button
+                                    onClick={() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}
+                                    className="p-1.5 rounded-lg hover:bg-[#F1F1EF] text-[#787774] hover:text-[#37352F] transition-all border border-transparent hover:border-[#E9E9E7]"
+                                >
+                                    <ChevronRight className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Weekday Grid */}
+                        <div className="grid grid-cols-7 mb-3">
+                            {['日', '一', '二', '三', '四', '五', '六'].map((day, idx) => (
+                                <div key={idx} className="text-center text-[10px] font-bold text-[#D4D4D2] uppercase tracking-widest">
+                                    {day}
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Calendar Grid */}
+                        <div className="space-y-1.5">
+                            {monthCalendarData.weeks.map((week, weekIdx) => (
+                                <div key={weekIdx} className="grid grid-cols-7 gap-1.5">
+                                    {week.map((cell, dayIdx) => {
+                                        if (!cell.date) return <div key={dayIdx} className="aspect-square" />;
+
+                                        const isSelected = cell.date.toDateString() === selectedDate.toDateString();
+                                        const isTodayCell = cell.date.toDateString() === today.toDateString();
+                                        const cellDateOnly = new Date(cell.date.getFullYear(), cell.date.getMonth(), cell.date.getDate());
+                                        const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                                        const isPast = cellDateOnly < todayDateOnly;
+
+                                        // Completion Logic
+                                        const dateKey = cell.date.toISOString().slice(0, 10);
+                                        const hasAnyCompletion = Object.keys(completedSteps).some(
+                                            key => key.startsWith(dateKey) && completedSteps[key]
+                                        );
+
+                                        // Color Coding
+                                        let dotClass = '';
+                                        if (activeTab === 'evening' && cell.cycleInfo) {
+                                            dotClass = CYCLE_DOTS[cell.cycleInfo.phase] || '';
+                                        } else if (activeTab === 'morning') {
+                                            dotClass = 'bg-amber-400';
+                                        }
+
+                                        return (
+                                            <button
+                                                key={dayIdx}
+                                                onClick={() => setSelectedDate(cell.date!)}
+                                                className={`
+                                                    relative aspect-square flex flex-col items-center justify-center rounded-xl transition-all duration-300
+                                                    ${isSelected
+                                                        ? 'bg-[#E6F3F7] text-[#337EA9] font-bold shadow-sm ring-1 ring-[#337EA9]/40 scale-105'
+                                                        : isTodayCell
+                                                            ? 'bg-[#F1F1EF] text-[#37352F] font-bold'
+                                                            : 'text-[#787774] hover:bg-[#F1F1EF]'
+                                                    }
+                                                `}
+                                            >
+                                                <span className="text-[13px] relative z-10">{cell.date.getDate()}</span>
+
+                                                {/* Status Dot/Indicator */}
+                                                <div className="absolute bottom-1.5 flex gap-0.5">
+                                                    {isPast && hasAnyCompletion ? (
+                                                        <div className={`w-1 h-1 rounded-full ${isSelected ? 'bg-[#337EA9]' : 'bg-[#448361]'}`} />
+                                                    ) : dotClass ? (
+                                                        <div className={`w-1 h-1 rounded-full ${isSelected ? 'bg-[#337EA9]' : dotClass}`} />
+                                                    ) : null}
+                                                </div>
+
+                                                {/* Selected Glow */}
+                                                {isSelected && (
+                                                    <div className="absolute inset-0 rounded-xl bg-[#337EA9]/5"></div>
+                                                )}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Stats or Legend (Optional footer of sidebar) */}
+                    <div className="mt-auto pt-6 border-t border-[#E9E9E7]">
+                        <div className="bg-[#F1F1EF]/50 rounded-2xl p-4 border border-[#E9E9E7]/50">
+                            <h4 className="text-[11px] font-bold text-[#787774] uppercase tracking-widest mb-3">周期图例</h4>
+                            <div className="space-y-2.5">
+                                {activeTab === 'evening' ? (
+                                    <>
+                                        <div className="flex items-center gap-2.5 text-[12px] text-[#37352F]">
+                                            <div className="w-2 h-2 rounded-full bg-[#D44C47]" /> <span>深度焕肤夜</span>
+                                        </div>
+                                        <div className="flex items-center gap-2.5 text-[12px] text-[#37352F]">
+                                            <div className="w-2 h-2 rounded-full bg-[#D9730D]" /> <span>抗老维A夜</span>
+                                        </div>
+                                        <div className="flex items-center gap-2.5 text-[12px] text-[#37352F]">
+                                            <div className="w-2 h-2 rounded-full bg-[#448361]" /> <span>舒缓修护夜</span>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="flex items-center gap-2.5 text-[12px] text-[#37352F]">
+                                        <div className="w-2 h-2 rounded-full bg-[#CB912F]" /> <span>日常日间防护</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </div>
-            )}
+            </aside>
 
-            {/* 3. Today's Focus Card */}
-            <div className="bg-white rounded-lg border border-gray-200 shadow-[0_2px_8px_rgba(0,0,0,0.04)] overflow-hidden p-6 relative">
-                {activeTab === 'evening' && currentCycleInfo ? (
-                    <div className="flex flex-col gap-4">
-                        <div className="flex items-start justify-between">
+            {/* ===== RIGHT CONTENT AREA: Tasks & Details ===== */}
+            <main className="flex-1 flex flex-col h-full bg-white overflow-hidden relative">
+
+                {/* 1. Integrated Header: Simplified & Clean */}
+                <header className="flex-shrink-0 bg-white border-b border-[#E9E9E7] px-10 py-7 flex items-center justify-between z-20">
+                    <div>
+                        <h2 className="text-xl font-bold text-[#37352F]">
+                            {isToday ? '今日任务' : formatDate(selectedDate)}
+                        </h2>
+                        <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs text-[#787774] font-medium">
+                                {activeTab === 'morning' ? '早间防护 · 晨起护理' : '晚间修护 · 深度滋养'}
+                            </span>
+                            {isToday && <span className="w-1 h-1 rounded-full bg-[#448361] animate-pulse" />}
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-10">
+                        {/* Minimalist Tab Switcher */}
+                        <div className="bg-[#F1F1EF] p-1 rounded-xl flex items-center border border-[#E9E9E7]/50">
+                            <button
+                                onClick={() => setActiveTab('morning')}
+                                className={`
+                                    flex items-center gap-2 px-5 py-2 rounded-lg text-xs font-bold transition-all
+                                    ${activeTab === 'morning' ? 'bg-white text-[#37352F] shadow-sm' : 'text-[#787774] hover:text-[#37352F]'}
+                                `}
+                            >
+                                <Sun className={`w-3.5 h-3.5 ${activeTab === 'morning' ? 'text-[#D9730D]' : ''}`} />
+                                <span>早间</span>
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('evening')}
+                                className={`
+                                    flex items-center gap-2 px-5 py-2 rounded-lg text-xs font-bold transition-all
+                                    ${activeTab === 'evening' ? 'bg-white text-[#37352F] shadow-sm' : 'text-[#787774] hover:text-[#37352F]'}
+                                `}
+                            >
+                                <Moon className={`w-3.5 h-3.5 ${activeTab === 'evening' ? 'text-[#337EA9]' : ''}`} />
+                                <span>晚间</span>
+                            </button>
+                        </div>
+
+                        {/* Minimalist Progress Circle */}
+                        <div className="relative w-11 h-11 flex items-center justify-center">
+                            <svg className="absolute inset-0 w-full h-full -rotate-90">
+                                <circle cx="22" cy="22" r="19" fill="transparent" stroke="#F1F1EF" strokeWidth="2.5" />
+                                <circle
+                                    cx="22" cy="22" r="19"
+                                    fill="transparent"
+                                    stroke="currentColor"
+                                    strokeWidth="2.5"
+                                    className="text-[#37352F]"
+                                    strokeDasharray={119.3}
+                                    strokeDashoffset={119.3 - (119.3 * progress) / 100}
+                                    strokeLinecap="round"
+                                    style={{ transition: 'stroke-dashoffset 1s ease-in-out' }}
+                                />
+                            </svg>
+                            <span className="text-[10px] font-bold text-[#37352F]">{progress}%</span>
+                        </div>
+
+                        <div className="w-8" /> {/* Spacer for external Close button */}
+                    </div>
+                </header>
+
+                {/* 2. Scrollable Body */}
+                <div className="flex-1 overflow-y-auto px-10 py-8 scrollbar-hide">
+
+                    {/* 2. Refined Phase Focus Area */}
+                    <div className="mb-12 flex items-center justify-between px-2 group">
+                        <div className="flex items-center gap-6">
+                            <div className={`
+                                w-16 h-16 rounded-[22px] flex items-center justify-center transition-all duration-500 shadow-sm
+                                ${activeTab === 'evening'
+                                    ? (currentCycleInfo?.phase === 'exfoliate' ? 'bg-[#F9F2F5] text-[#C14C8A] shadow-[#F9F2F5]/50' : currentCycleInfo?.phase === 'retinoid' ? 'bg-[#FAEBDD] text-[#D9730D] shadow-[#FAEBDD]/50' : 'bg-[#EDF3EC] text-[#448361] shadow-[#EDF3EC]/50')
+                                    : 'bg-[#FBF3DB] text-[#CB912F] shadow-[#FBF3DB]/50'
+                                }
+                            `}>
+                                {activeTab === 'evening' ? (
+                                    <>
+                                        {currentCycleInfo?.phase === 'exfoliate' && <Sparkles className="w-7 h-7" />}
+                                        {currentCycleInfo?.phase === 'retinoid' && <Moon className="w-7 h-7" />}
+                                        {currentCycleInfo?.phase === 'recovery' && <BatteryCharging className="w-7 h-7" />}
+                                    </>
+                                ) : (
+                                    <Sun className="w-7 h-7" />
+                                )}
+                            </div>
                             <div>
-                                <div className="flex items-center gap-2 mb-3">
-                                    <span className={`px-2 py-0.5 rounded text-[11px] font-mono uppercase tracking-wider border ${CYCLE_COLORS[currentCycleInfo.phase] || 'bg-gray-100 text-gray-600 border-gray-200'}`}>
-                                        {currentCycleInfo.title || '常规护理'}
-                                    </span>
-                                    <span className="text-xs font-mono text-gray-400">
-                                        {formatDate(selectedDate)}
-                                    </span>
-                                </div>
-                                <h3 className="text-lg font-bold text-gray-900 leading-snug tracking-tight">
-                                    {currentCycleInfo.phase === 'exfoliate' && "✨ 今晚任务：深度焕肤"}
-                                    {currentCycleInfo.phase === 'retinoid' && "🌙 今晚任务：抗老维A"}
-                                    {currentCycleInfo.phase === 'recovery' && "💧 今晚任务：舒缓修护"}
+                                <p className="text-[10px] font-bold text-[#787774] uppercase tracking-[0.15em] mb-1">Current Focus</p>
+                                <h3 className="text-2xl font-bold text-[#37352F] tracking-tight">
+                                    {activeTab === 'evening' ? (currentCycleInfo?.title || '常规修护方案') : '晨间全效防护'}
                                 </h3>
                             </div>
-                            {/* Icon Decoration */}
-                            <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 border border-gray-100">
-                                {currentCycleInfo.phase === 'exfoliate' && <Sparkles className="w-5 h-5 text-red-400" />}
-                                {currentCycleInfo.phase === 'retinoid' && <Moon className="w-5 h-5 text-orange-400" />}
-                                {currentCycleInfo.phase === 'recovery' && <BatteryCharging className="w-5 h-5 text-green-500" />}
-                            </div>
                         </div>
-                        <p className="text-gray-600 text-[13px] leading-relaxed font-sans">
-                            {currentCycleInfo.phase === 'exfoliate' && "使用酸类产品剥脱老废角质，疏通毛孔。可能会有轻微刺痛，属正常现象。"}
-                            {currentCycleInfo.phase === 'retinoid' && "使用视黄醇（A醇）促进胶原蛋白再生。初次使用建议混合面霜，注意避光。"}
-                            {currentCycleInfo.phase === 'recovery' && "给皮肤放个假。停用猛药，只进行基础保湿和屏障修复，让肌肤自我愈合。"}
-                        </p>
-                    </div>
-                ) : (
-                    <div className="flex flex-col gap-2">
-                        <div className="flex items-center gap-2 mb-1">
-                            <span className="px-2 py-0.5 rounded text-[11px] font-mono uppercase tracking-wider border bg-amber-50 text-amber-700 border-amber-200">
-                                早间防护
-                            </span>
-                            <span className="text-xs font-mono text-gray-400">
-                                {formatDate(selectedDate)}
-                            </span>
-                        </div>
-                        <h3 className="text-lg font-bold text-gray-900 tracking-tight">☀️ 开启元气满满的一天</h3>
-                        <p className="text-gray-600 text-[13px] font-sans">重点在于清洁、抗氧化与防晒，抵御外界紫外线与污染侵害。</p>
-                    </div>
-                )}
 
-                {/* Primary Action */}
-                {isToday && (
-                    <button
-                        onClick={() => setIsImmersiveOpen(true)}
-                        className="mt-6 w-full py-3 bg-gray-900 hover:bg-black text-white rounded-md font-medium text-sm shadow-sm transition-all active:scale-[0.99] flex items-center justify-center gap-2 group"
-                    >
-                        <Play className="w-3.5 h-3.5 fill-current group-hover:scale-110 transition-transform" />
-                        现在开始跟练
-                    </button>
-                )}
-            </div>
-
-            {/* 4. Checklist Routine */}
-            <div className="bg-white rounded-lg border border-gray-200 shadow-[0_2px_8px_rgba(0,0,0,0.04)] overflow-hidden">
-                <div className="p-4 border-b border-gray-100 bg-gray-50/30 flex justify-between items-center">
-                    <h4 className="font-semibold text-gray-900 text-sm tracking-tight">护肤步骤清单</h4>
-                    <span className="text-xs font-mono text-gray-500">{progress}% 完成</span>
-                </div>
-                <div className="divide-y divide-gray-100">
-                    {effectiveSteps.map((step, idx) => {
-                        const dateKey = selectedDate.toISOString().slice(0, 10);
-                        const key = `${dateKey}_${activeTab}_${idx}`;
-                        const isDone = !!completedSteps[key];
-
-                        return (
-                            <div
-                                key={idx}
-                                className={`p-4 flex items-start gap-4 transition-colors ${isDone ? 'bg-gray-50/50' : 'hover:bg-gray-50'}`}
+                        {isToday && (
+                            <button
+                                onClick={() => setIsImmersiveOpen(true)}
+                                className="group/btn flex items-center gap-4 pl-7 pr-2.5 py-2.5 rounded-[20px] bg-white border border-[#E9E9E7] hover:border-[#37352F] transition-all duration-300 active:scale-95 shadow-sm hover:shadow-md"
                             >
-                                {/* Checkbox */}
-                                <button
-                                    onClick={() => isToday && toggleStep(idx)}
-                                    disabled={!isToday}
-                                    className={`mt-0.5 shrink-0 transition-colors ${!isToday ? 'cursor-default opacity-50' : 'cursor-pointer'}`}
-                                >
-                                    {isDone ? (
-                                        <CheckCircle2 className="w-5 h-5 text-gray-800 fill-gray-100" />
-                                    ) : (
-                                        <Circle className="w-5 h-5 text-gray-300 hover:text-gray-500" />
-                                    )}
-                                </button>
-
-                                {/* Content */}
-                                <div className={`flex-1 transition-opacity ${isDone ? 'opacity-40' : 'opacity-100'}`}>
-                                    <div className="flex justify-between items-start mb-1">
-                                        <h5 className={`text-sm font-medium ${isDone ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
-                                            {step.name}
-                                        </h5>
-                                        <span className="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded font-mono">
-                                            {step.duration}
-                                        </span>
-                                    </div>
-                                    <p className="text-xs text-gray-500 mb-2 leading-relaxed line-clamp-2">
-                                        {step.description}
-                                    </p>
-                                    {step.dosage && (
-                                        <div className="inline-flex items-center gap-1.5 text-[11px] text-gray-600 font-medium bg-gray-50 border border-gray-100 px-2 py-0.5 rounded">
-                                            <Info className="w-3 h-3 text-gray-400" />
-                                            {step.dosage.description}
-                                        </div>
-                                    )}
+                                <span className="text-xs font-bold text-[#37352F]">沉浸跟练</span>
+                                <div className="w-9 h-9 rounded-[14px] bg-[#37352F] flex items-center justify-center text-white transition-transform group-hover/btn:scale-105">
+                                    <Play className="w-3.5 h-3.5 fill-white" />
                                 </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            </div>
+                            </button>
+                        )}
+                    </div>
 
-            {/* Immersive Player Portal */}
-            {isImmersiveOpen && (
-                <ImmersiveRoutinePlayer
-                    steps={effectiveSteps}
-                    title={activeTab === 'evening' ? `晚间护肤 · ${currentCycleInfo?.title || '常规'}` : '早间护肤 Routine'}
-                    onClose={() => setIsImmersiveOpen(false)}
-                    onComplete={() => {
-                        // Mark all as done
-                        effectiveSteps.forEach((_, idx) => {
-                            // Use dateKey of Today, assume user is checking out today's routine
-                            // But actually `selectedDate` might be different, but button is only shown if isToday.
-                            // So safely use `today` or `selectedDate` which is confirmed today.
-                            const dateKey = selectedDate.toISOString().slice(0, 10);
-                            const key = `${dateKey}_${activeTab}_${idx}`;
-                            setCompletedSteps(prev => ({ ...prev, [key]: true }));
-                        });
-                        // Save immediately
-                        // Wait for state update? No, we need to manually doing it since setState is async
-                        // We can just rely on user seeing them all checked after closing
-                        setIsImmersiveOpen(false);
-                    }}
-                />
-            )}
+                    {/* 3. Refined Task List (Seamless & Elegant) */}
+                    <div className="space-y-6">
+                        <div className="flex items-center justify-between px-2 mb-2">
+                            <h4 className="text-[10px] font-bold text-[#787774] uppercase tracking-[0.2em] flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-[#D4D4D2]" />
+                                步骤清单 · {effectiveSteps.length} Steps
+                            </h4>
+                            <div className="flex items-center gap-1.5 text-[10px] font-bold text-[#787774]">
+                                <span>预计耗时</span>
+                                <span className="text-[#37352F] border-l border-[#E9E9E7] pl-2 ml-1">
+                                    {effectiveSteps.reduce((acc, curr) => acc + (parseInt(curr.duration) || 0), 0)} MINS
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col">
+                            {effectiveSteps.map((step, idx) => {
+                                const dateKey = selectedDate.toISOString().slice(0, 10);
+                                const key = `${dateKey}_${activeTab}_${idx}`;
+                                const isDone = !!completedSteps[key];
+
+                                return (
+                                    <div
+                                        key={idx}
+                                        className={`
+                                            group relative flex items-center gap-6 px-4 py-5 transition-all duration-300
+                                            ${idx !== effectiveSteps.length - 1 ? 'border-b border-[#F1F1EF]' : ''}
+                                            ${isDone ? 'opacity-40' : 'hover:bg-[#F1F1EF]/50 cursor-pointer'}
+                                        `}
+                                        onClick={() => isToday && toggleStep(idx)}
+                                    >
+                                        {/* Minimal Number Indicator */}
+                                        <div className="relative w-8 flex flex-col items-center">
+                                            <span className={`text-lg font-mono font-bold transition-colors ${isDone ? 'text-[#448361]' : 'text-[#D4D4D2] group-hover:text-[#37352F]'}`}>
+                                                {isDone ? <CheckCircle2 className="w-5 h-5 mx-auto" /> : String(idx + 1).padStart(2, '0')}
+                                            </span>
+                                            {/* Vertical line connecting numbers */}
+                                            {idx !== effectiveSteps.length - 1 && (
+                                                <div className="absolute top-8 w-[1px] h-10 bg-[#E9E9E7]" />
+                                            )}
+                                        </div>
+
+                                        {/* Content */}
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-3 mb-1">
+                                                <h5 className={`font-bold text-[15px] tracking-tight ${isDone ? 'text-[#787774] line-through' : 'text-[#37352F]'}`}>
+                                                    {step.name}
+                                                </h5>
+                                                {!isDone && (
+                                                    <span className="text-[10px] font-bold text-[#D4D4D2] uppercase letter-spacing-widest">
+                                                        {step.duration}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <p className={`text-[13px] leading-relaxed line-clamp-1 font-medium ${isDone ? 'text-[#D4D4D2]' : 'text-[#787774]'}`}>
+                                                {step.description}
+                                            </p>
+                                        </div>
+
+                                        {/* Dosage/Info Badge */}
+                                        {step.dosage && !isDone && (
+                                            <div className="flex flex-col items-end gap-1 shrink-0">
+                                                <div className="px-3 py-1 bg-[#F1F1EF] rounded-full border border-[#E9E9E7] text-[10px] font-bold text-[#787774] transition-colors group-hover:bg-[#37352F] group-hover:text-white group-hover:border-[#37352F]">
+                                                    {step.dosage.description}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Interactive Glow on Hover */}
+                                        <div className="absolute left-0 w-1 h-0 bg-[#37352F] transition-all duration-300 group-hover:h-1/2 top-1/2 -translate-y-1/2 rounded-r-full" />
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Immersive Player Portal */}
+                {isImmersiveOpen && (
+                    <ImmersiveRoutinePlayer
+                        steps={effectiveSteps}
+                        title={activeTab === 'evening' ? `晚间护肤 · ${currentCycleInfo?.title || '常规'}` : '早间护肤 Routine'}
+                        onClose={() => setIsImmersiveOpen(false)}
+                        onComplete={() => {
+                            effectiveSteps.forEach((_, idx) => {
+                                const dateKey = selectedDate.toISOString().slice(0, 10);
+                                const key = `${dateKey}_${activeTab}_${idx}`;
+                                setCompletedSteps(prev => ({ ...prev, [key]: true }));
+                            });
+                            setIsImmersiveOpen(false);
+                        }}
+                    />
+                )}
+            </main>
         </div>
     );
 }
