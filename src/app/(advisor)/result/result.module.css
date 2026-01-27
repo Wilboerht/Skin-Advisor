@@ -630,86 +630,263 @@
 }
 
 
-/* --- Skincare Routine Redesign --- */
+/* --- Skincare Routine: Expandable Accordion --- */
 .timeline {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
     padding: 0;
-}
-
-/* Remove old timeline lines */
-.timeline::before,
-.timelineStep:not(:last-child)::after {
-    display: none;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    overflow: visible;
 }
 
 .timelineStep {
-    display: flex;
-    gap: 16px;
-    padding: 18px 24px;
-    background: #F9FAFB;
-    /* Light premium gray for contrast */
-    border: 1px solid #F0F0F2;
+    /* Base Card Style */
+    background: #FFFFFF;
+    border: 1px solid #E9E9E7;
     border-radius: 12px;
-    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
-    align-items: flex-start;
+    padding: 0;
+    /* Let children handle padding */
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    /* Stack header and body */
+    align-items: stretch;
+    cursor: pointer;
+    overflow: hidden;
     margin-bottom: 0;
+    position: relative;
 }
 
-.timelineStep:hover {
+.timelineStep:not(.active):hover {
     border-color: #D4D4D4;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
     transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
 }
 
-/* Numbered Badge instead of specific Dot */
+.timelineStep.active {
+    border-color: #337EA9;
+    box-shadow: 0 4px 16px rgba(51, 126, 169, 0.08);
+}
+
+/* Header Row (Always visible) */
+.stepHeaderRow {
+    display: flex;
+    align-items: center;
+    padding: 16px 20px;
+    gap: 16px;
+    width: 100%;
+    background: #fff;
+    transition: background 0.2s;
+}
+
+.timelineStep.active .stepHeaderRow {
+    background: #Fbfbfb;
+    /* Subtle active bg */
+}
+
+/* Number badge */
 .timelineDot {
     flex-shrink: 0;
-    width: 26px;
-    height: 26px;
-    border-radius: 8px;
-    background: #F5F5F3;
-    color: #555555;
-    font-size: 13px;
-    font-weight: 600;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #F0F6FA;
+    color: #337EA9;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 14px;
+    font-weight: 700;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-top: 2px;
-    /* Reset old styles */
-    border: none;
-    position: static;
-    box-shadow: none;
+    border: 1px solid #E1EDF5;
+    transition: all 0.2s;
 }
 
-
-
-/* Content Area */
-.stepContent {
-    flex: 1;
+.timelineStep.active .timelineDot {
+    background: #337EA9;
+    color: #fff;
+    border-color: #337EA9;
 }
 
-.stepHeader {
+/* Expand Icon (Right) */
+.expandIcon {
+    margin-left: auto;
+    color: #999;
+    transition: transform 0.3s ease;
+}
+
+.timelineStep.active .expandIcon {
+    transform: rotate(180deg);
+    color: #337EA9;
+}
+
+/* Collapsed Content Body */
+.stepBody {
+    display: none;
+    padding: 0 20px 20px 64px;
+    /* Indent under the number */
+    background: #Fbfbfb;
+    /* Same as header active bg */
+    border-top: 1px solid transparent;
+}
+
+.timelineStep.active .stepBody {
+    display: block;
+    animation: slideDown 0.3s ease-out forwards;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Typography needed for header */
+.stepTitleGroup {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 6px;
-    flex-wrap: nowrap;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
 }
 
-/* Make EN name subtler next to title or below */
+.stepName {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1A1A1A;
+}
+
 .stepEnName {
-    font-size: 0.75rem;
-    color: #A0A0A0;
+    font-size: 11px;
+    color: #999;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    margin-top: 2px;
+    font-weight: 500;
+}
+
+/* Tags in header */
+.durationBadge {
+    font-size: 11px;
+    color: #787774;
+    background: #F0F0F2;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 8px;
+    line-height: normal;
 }
 
 
-.stepDosageIcon {
-    font-size: 1rem;
+
+/* --- Skin Cycling Schedule Grid --- */
+.cyclingGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px dashed #E9E9E7;
+}
+
+@media (max-width: 640px) {
+    .cyclingGrid {
+        grid-template-columns: 1fr 1fr;
+        /* 2x2 for mobile */
+    }
+}
+
+.cycleCard {
+    background: #FFFFFF;
+    border: 1px solid #E9E9E7;
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Day Label */
+.cycleDay {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #999;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+}
+
+/* Phase Title */
+.cycleTitle {
+    font-size: 14px;
+    font-weight: 600;
+    color: #37352F;
+    margin-bottom: 4px;
+}
+
+/* Ingredient Tag */
+.cycleIngredient {
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: #F0F0F2;
+    color: #555;
+    font-weight: 500;
+}
+
+/* Color Coding based on Phase */
+/* Exfoliation - Purple */
+.cycleCard.active_b {
+    border-color: #E9D5FF;
+    background: #FAF5FF;
+}
+
+.cycleCard.active_b .cycleDay {
+    color: #A855F7;
+}
+
+.cycleCard.active_b .cycleIngredient {
+    background: #F3E8FF;
+    color: #9333EA;
+}
+
+/* Retinoid - Orange/Amber */
+.cycleCard.active_a {
+    border-color: #FED7AA;
+    background: #FFF7ED;
+}
+
+.cycleCard.active_a .cycleDay {
+    color: #F97316;
+}
+
+.cycleCard.active_a .cycleIngredient {
+    background: #FFEDD5;
+    color: #EA580C;
+}
+
+/* Recovery - Green/Teal */
+.cycleCard.recovery {
+    border-color: #CCFBF1;
+    background: #F0FDFA;
+}
+
+.cycleCard.recovery .cycleDay {
+    color: #14B8A6;
+}
+
+.cycleCard.recovery .cycleIngredient {
+    background: #E0F2F1;
+    color: #0F766E;
 }
 
 

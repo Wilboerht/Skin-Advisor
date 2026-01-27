@@ -28,7 +28,7 @@ export type ToleranceLevel = "low" | "medium" | "high";
 export interface ActiveIngredient {
     name: string;
     nameEn: string;
-    type: "retinoid" | "acid" | "antioxidant" | "peptide" | "soothing" | "barrier";
+    type: "retinoid" | "acid" | "antioxidant" | "peptide" | "soothing" | "barrier" | "brightening";
     concentrations: {
         low: string;    // e.g. "0.05%"
         medium: string; // e.g. "0.1%"
@@ -37,64 +37,140 @@ export interface ActiveIngredient {
     conflicts: string[]; // List of ingredient types it conflicts with
     timeOfDay: "morning" | "evening" | "both";
     frequency: string; // Default frequency description
+    safety?: {
+        pregnancyUnsafe?: boolean; // Default false
+        sensitiveCaution?: boolean; // Default false
+    };
 }
 
 export const ACTIVE_INGREDIENTS: Record<string, ActiveIngredient> = {
+    // --- CLASS A: RETINOIDS (Anti-Aging) ---
     retinol: {
         name: "视黄醇 (A醇)",
         nameEn: "Retinol",
         type: "retinoid",
         concentrations: { low: "0.05%", medium: "0.1%", high: "0.3%" },
-        conflicts: ["acid", "vitC_high_dose"], // Avoid strong acids
+        conflicts: ["acid", "vitC_high_dose", "copper_peptide"],
         timeOfDay: "evening",
-        frequency: "晚间使用，需建立耐受"
+        frequency: "晚间使用，需建立耐受",
+        safety: { pregnancyUnsafe: true, sensitiveCaution: true }
     },
+
+    // --- CLASS B: ACIDS (Exfoliation) ---
     salicylic_acid: {
         name: "水杨酸 (BHA)",
         nameEn: "Salicylic Acid",
         type: "acid",
         concentrations: { low: "0.5%", medium: "1.0%", high: "2.0%" },
-        conflicts: ["retinoid", "acid"],
-        timeOfDay: "evening", // Usually evening for leave-on
-        frequency: "局部点涂或隔夜使用"
+        conflicts: ["retinoid", "acid", "peptide"],
+        timeOfDay: "evening",
+        frequency: "局部点涂或隔夜使用",
+        safety: { pregnancyUnsafe: true } // High dose oral is unsafe, topical is debated but usually advised to avoid >2%
     },
     glycolic_acid: {
         name: "果酸 (AHA)",
         nameEn: "Glycolic Acid",
         type: "acid",
         concentrations: { low: "5%", medium: "8%", high: "10%" },
-        conflicts: ["retinoid"],
+        conflicts: ["retinoid", "peptide"],
         timeOfDay: "evening",
-        frequency: "每周2-3次，晚间使用"
+        frequency: "每周2-3次，晚间使用",
+        safety: { sensitiveCaution: true }
     },
+    azelaic_acid: {
+        name: "壬二酸",
+        nameEn: "Azelaic Acid",
+        type: "acid",
+        concentrations: { low: "10%", medium: "15%", high: "20%" },
+        conflicts: [], // Very stable, generally compatible
+        timeOfDay: "both",
+        frequency: "早晚皆可，局部使用",
+        safety: { sensitiveCaution: true } // Can itch
+    },
+
+    // --- CLASS C: VITAMINS & ANTIOXIDANTS ---
     vitamin_c: {
         name: "维C (L-AA)",
         nameEn: "Vitamin C",
         type: "antioxidant",
         concentrations: { low: "5%", medium: "10%", high: "15%" },
-        conflicts: ["retinoid"], // Direct layering conflict often cited, though debate exists. Keeping safe.
+        conflicts: ["retinoid", "copper_peptide"],
         timeOfDay: "morning",
-        frequency: "晨间使用，抗氧提亮"
+        frequency: "晨间使用，抗氧提亮",
+        safety: { sensitiveCaution: true }
     },
     niacinamide: {
         name: "烟酰胺 (B3)",
         nameEn: "Niacinamide",
         type: "barrier",
         concentrations: { low: "2%", medium: "5%", high: "10%" },
-        conflicts: [], // Very safe
+        conflicts: ["acid"], // Avoiding low pH flush
         timeOfDay: "both",
         frequency: "早晚皆可"
     },
+
+    // --- CLASS D: BRIGHTENING SPECIALISTS ---
+    tranexamic_acid: {
+        name: "传明酸",
+        nameEn: "Tranexamic Acid",
+        type: "brightening",
+        concentrations: { low: "2%", medium: "3%", high: "5%" },
+        conflicts: [],
+        timeOfDay: "both",
+        frequency: "专注于顽固色斑区域"
+    },
+    arbutin: {
+        name: "α-熊果苷",
+        nameEn: "Alpha-Arbutin",
+        type: "brightening",
+        concentrations: { low: "1%", medium: "2%", high: "3%" },
+        conflicts: [],
+        timeOfDay: "both",
+        frequency: "温和美白"
+    },
+
+    // --- CLASS E: REPAIR & PEPTIDES ---
     peptides: {
         name: "胜肽复合物",
         nameEn: "Peptides",
         type: "peptide",
         concentrations: { low: "ppm级", medium: "3%", high: "10%" },
-        conflicts: ["acid"], // Acid can hydrolyze peptides
+        conflicts: ["acid", "vitC_high_dose"],
         timeOfDay: "both",
         frequency: "早晚皆可"
+    },
+    copper_peptide: {
+        name: "蓝铜胜肽",
+        nameEn: "GHK-Cu",
+        type: "peptide",
+        concentrations: { low: "0.1%", medium: "0.2%", high: "0.5%" },
+        conflicts: ["acid", "retinoid", "vitamin_c"], // Very fragile
+        timeOfDay: "evening",
+        frequency: "修护期使用，避开强功效"
+    },
+    proxylane: {
+        name: "玻色因",
+        nameEn: "Pro-Xylane",
+        type: "peptide", // Loosely categorized for logic, technically sugar derivative
+        concentrations: { low: "10%", medium: "30%", high: "50%" },
+        conflicts: [],
+        timeOfDay: "both",
+        frequency: "温和抗老，无需建立耐受"
     }
 };
+
+/**
+ * Skin Cycling Phases (V3.0)
+ */
+export type CyclePhase = "active_a" | "active_b" | "recovery" | "maintenance";
+
+export interface SkinCycleDay {
+    day: number;
+    phase: CyclePhase;
+    title: string;
+    focus: string; // e.g. "Exfoliation Night"
+    activeIngredient?: string; // key from ACTIVE_INGREDIENTS
+}
 
 /** Product Categories (Refined) */
 export type ProductCategory =
@@ -228,196 +304,255 @@ export interface BioFactors {
 /**
  * Main Algorithm Entry Point
  */
+export interface Contraindications {
+    pregnancy?: boolean;
+    breastfeeding?: boolean;
+    rosacea?: boolean; // 玫瑰痤疮
+    eczema?: boolean;  // 湿疹
+}
+
+/**
+ * Main Algorithm Entry Point V3.0
+ */
 export function generateScientificRoutine(
     skinTypeRaw: string,
     climateCode: ClimateType,
     goldStandardData?: FaceAnalysisResult,
     bioFactors?: BioFactors,
-    envData?: EnvironmentData
-): { daily: DailyRoutine; special: string[] } {
+    envData?: EnvironmentData,
+    contraindications?: Contraindications // New
+): { daily: DailyRoutine; cycling?: SkinCycleDay[]; special: string[] } {
 
-    // 1. Parse Input
+    // 1. Diagnosis & Profiling
     const sType = normalizeSkinType(skinTypeRaw);
-    const isSensitive = sType === "sensitive" || (goldStandardData?.dimensions?.sensitivity?.score ?? 100) < 60;
+    let isSensitive = sType === "sensitive" || (goldStandardData?.dimensions?.sensitivity?.score ?? 100) < 60;
     const isOily = ["oily", "combination_oily"].includes(sType);
     const isDry = ["dry", "combination_dry"].includes(sType);
+
     const hasAcneRisk = (goldStandardData?.dimensions?.acne?.score ?? 100) < 65 || (goldStandardData?.labAnalysis?.porphyrins?.value ?? 0) > 20;
     const hasAgingRisk = (goldStandardData?.dimensions?.wrinkles?.score ?? 100) < 65 || (goldStandardData?.labAnalysis?.glogau?.value === "Type III");
     const hasPigmentRisk = (goldStandardData?.dimensions?.spots?.score ?? 100) < 70;
+    const hasRedness = (goldStandardData?.dimensions?.sensitivity?.score ?? 100) < 50;
 
-    // --- BIO-RHYTHM ANALYSIS ---
+    // --- BIO-RHYTHM ---
     const isHighStress = bioFactors?.stressLevel === "high" || bioFactors?.sleepQuality === "poor";
-    const isLutealPhase = bioFactors?.menstrualPhase === "luteal"; // PMS week -> High Sebum
-    const isFollicularPhase = bioFactors?.menstrualPhase === "follicular"; // Estrogen high -> Best time for actives
+    const isLutealPhase = bioFactors?.menstrualPhase === "luteal";
 
-    // 2. Tolerance Check
-    // If sensitive or high erythema, drop to LOW tolerance
+    // --- SAFETY CHECK (Pregnancy/Sensitive) ---
+    const isPregnancySafeMode = contraindications?.pregnancy || contraindications?.breastfeeding;
+    if (contraindications?.rosacea || contraindications?.eczema) isSensitive = true; // Force sensitive mode
+
+    // 2. Tolerance Determination
     let tolerance: ToleranceLevel = "medium";
     if (isSensitive) tolerance = "low";
     if ((goldStandardData?.labAnalysis?.erythema?.value ?? 0) > 350) tolerance = "low";
-    // If very resilient (Oil + No Sensitivity + Good Barrier), allow High
-    if (isOily && !isSensitive && (goldStandardData?.dimensions?.skinTypeScore.score ?? 0) > 85) tolerance = "high";
+    if (isOily && !isSensitive && !isPregnancySafeMode && (goldStandardData?.dimensions?.skinTypeScore.score ?? 0) > 85) tolerance = "high";
+    if (isHighStress && tolerance === "high") tolerance = "medium"; // Stress downgrades tolerance
 
-    // [CORTISOL DEFENSE] High Stress -> Lower Tolerance & Inflammation Risk
-    if (isHighStress) {
-        tolerance = tolerance === "high" ? "medium" : "low"; // Downgrade tolerance
-    }
-
-    // --- ENVIRONMENT MODIFIER LOGIC (PHASE 3) ---
-    // This runs slightly later in the pipeline but we check data here
-
-    // 3. Build Core Routine Slots
+    // 3. Build Routine Slots
     const morningSteps: ScientificStep[] = [];
     const eveningSteps: ScientificStep[] = [];
+    const cyclingSchedule: SkinCycleDay[] = []; // V3 Feature
 
     // --- MORNING ---
-
     // M1. Cleanse
     morningSteps.push(createStep(1,
-        isOily && !isSensitive ? "cleanser_deep" : "cleanser_gentle",
+        (isOily && !isSensitive) ? "cleanser_deep" : "cleanser_gentle",
         sType, climateCode
     ));
 
-    // M2. Treat (Antioxidant / Vitamin C)
-    const vitC = ACTIVE_INGREDIENTS["vitamin_c"];
+    // M2. Treat (Antioxidant / Brightening)
+    // Preference: Vitamin C (Standard) -> Niacinamide (If sensitive to C) -> Azelaic (If Rosacea)
+    let dayActive = ACTIVE_INGREDIENTS["vitamin_c"];
+    let dayTag = "Brightening";
+
+    if (contraindications?.rosacea || hasRedness) {
+        dayActive = ACTIVE_INGREDIENTS["azelaic_acid"]; // Azelaic is gold standard for redness
+        dayTag = "Anti-Redness";
+    } else if (isSensitive) {
+        dayActive = ACTIVE_INGREDIENTS["niacinamide"]; // Safer alternative
+        dayTag = "Barrier Support";
+    }
+
     morningSteps.push({
         order: 2,
-        title: "抗氧防护",
-        productName: `${vitC.name}精华`,
+        title: "日间防护",
+        productName: `${dayActive.name}精华`,
         category: "serum_antiox",
         activeInfo: {
-            ingredient: vitC.nameEn,
-            concentration: vitC.concentrations[tolerance], // Dynamic Concentration
-            tag: "Brightening"
+            ingredient: dayActive.nameEn,
+            concentration: dayActive.concentrations[tolerance],
+            tag: dayTag
         },
         dosage: { amount: 2, unit: "pump", tips: "全脸按压，注意颈部" }
     });
 
-    // M3. Moisturize (Optional for very oily in humid)
+    // M3. Moisturize (Skip if very oily/humid)
     if (!(isOily && (climateCode === "S2" || climateCode === "A2"))) {
-        morningSteps.push(createStep(3,
-            isDry ? "moisturizer_cream" : "moisturizer_lotion",
-            sType, climateCode
-        ));
+        morningSteps.push(createStep(3, isDry ? "moisturizer_cream" : "moisturizer_lotion", sType, climateCode));
     }
 
-    // M4. Protect (Sunscreen is MANDATORY)
+    // M4. Sunscreen
     morningSteps.push(createStep(morningSteps.length + 1, "sunscreen", sType, climateCode));
 
 
-    // --- EVENING ---
+    // --- EVENING (Standard Routine + Cycling Logic) ---
 
     // E1. Cleanse
-    eveningSteps.push(createStep(1,
-        isDry ? "cleanser_gentle" : "cleanser_deep", // Deep cleanse at night usually ok unless very dry
-        sType, climateCode
-    ));
+    eveningSteps.push(createStep(1, isDry ? "cleanser_gentle" : "cleanser_deep", sType, climateCode));
 
-    // E2. Treat (Targeted Activity) --> THE ALGORITHM CORE
+    // E2. MAIN ACTIVE SELECTION (The Brain)
+    // Strategy: Determine the "Star Ingredient" for the user's primary concern
     let nightActive: ActiveIngredient | null = null;
+    let nightActive2: ActiveIngredient | null = null; // Secondary (Synergy)
     let nightTag = "Repair";
+    let cycleType: "retinoid" | "acid" | "repair" = "repair";
 
-    // Decision Tree Priority: Sensitivity > Acne > Aging > Pigment > Hydration
-    if (isSensitive) {
-        // Repair Mode (No actives, just soothing)
+    // A. ACNE PATHWAY
+    if (hasAcneRisk || isLutealPhase) {
+        cycleType = "acid";
+        if (isPregnancySafeMode) {
+            nightActive = ACTIVE_INGREDIENTS["azelaic_acid"]; // Safe for pregnancy acne
+            nightTag = "Safe Acne Control";
+        } else {
+            nightActive = ACTIVE_INGREDIENTS["salicylic_acid"];
+            nightTag = "Pore Clearing";
+        }
+    }
+    // B. AGING PATHWAY
+    else if (hasAgingRisk) {
+        cycleType = "retinoid";
+        if (isPregnancySafeMode) {
+            nightActive = ACTIVE_INGREDIENTS["peptides"]; // Safe alternative
+            nightTag = "Safe Anti-Aging";
+            nightActive2 = ACTIVE_INGREDIENTS["proxylane"]; // Boost
+        } else if (isSensitive) {
+            nightActive = ACTIVE_INGREDIENTS["proxylane"]; // Gentle alternative
+            nightTag = "Gentle Firming";
+        } else {
+            nightActive = ACTIVE_INGREDIENTS["retinol"];
+            nightActive2 = ACTIVE_INGREDIENTS["niacinamide"]; // Buffer
+            nightTag = "Collagen Boost";
+        }
+    }
+    // C. PIGMENT PATHWAY
+    else if (hasPigmentRisk) {
+        cycleType = "acid"; // Glycolic usually
+        nightActive = ACTIVE_INGREDIENTS["tranexamic_acid"]; // Pigment specialist
+        // Add Glycolic if not sensitive/pregnant
+        if (!isSensitive) {
+            nightActive2 = ACTIVE_INGREDIENTS["glycolic_acid"];
+        }
+        nightTag = "Spot Correction";
+    }
+    // D. BARRIER/MAINTENANCE
+    else {
+        cycleType = "repair";
+        nightActive = ACTIVE_INGREDIENTS["niacinamide"];
+        nightActive2 = ACTIVE_INGREDIENTS["peptides"];
+        nightTag = "Barrier Strengthening";
+    }
+
+    // --- CONSTRUCT PM STEPS ---
+
+    // Step: Exfoliation Tone (Optional)
+    if (cycleType === "retinoid" && tolerance === "high") {
+        // Only high tolerance gets acid + retinol (on different nights ideally, but simplified here)
+        // Actually, V3 uses Cycling, so we define the "Standard Night" as the Active Night
+    }
+
+    if (nightActive) {
         eveningSteps.push({
             order: 2,
-            title: "屏障修护",
-            productName: "B5/积雪草修护精华",
-            category: "serum_repair",
-            dosage: { amount: 2, unit: "pump", tips: "厚涂舒缓，避免刺激" }
+            title: "核心修护",
+            productName: `${nightActive.name}精华`,
+            category: "serum_active",
+            activeInfo: {
+                ingredient: nightActive.nameEn,
+                concentration: nightActive.concentrations[tolerance],
+                tag: nightTag
+            },
+            dosage: {
+                amount: nightActive.type === "acid" ? 5 : 2,
+                unit: nightActive.type === "acid" ? "drops" : "pump",
+                tips: nightActive.frequency
+            }
         });
-    } else {
-        // Active Selection
-        if (hasAcneRisk || isLutealPhase) {
-            // [CYCLE SYNC] Luteal Phase -> Proactively use BHA even if acne not severe yet
-            nightActive = ACTIVE_INGREDIENTS["salicylic_acid"];
-            nightTag = isLutealPhase ? "Hormonal Defense" : "Anti-Acne";
-        } else if (hasAgingRisk) {
-            nightActive = ACTIVE_INGREDIENTS["retinol"];
-            nightTag = "Anti-Aging";
-        } else if (hasPigmentRisk) {
-            nightActive = ACTIVE_INGREDIENTS["niacinamide"]; // Niacinamide safer here mixed with others, or Glycolic
-            if (tolerance !== "low") nightActive = ACTIVE_INGREDIENTS["glycolic_acid"];
-            nightTag = "Brightening";
-        } else {
-            // Maintenance
-            nightActive = ACTIVE_INGREDIENTS["niacinamide"];
-            nightTag = "Maintenance";
-        }
-
-        // Add Active Step
-        if (nightActive) {
-            eveningSteps.push({
-                order: 2,
-                title: "夜间焕肤",
-                productName: `${nightActive.name}精华`,
-                category: "serum_active",
-                activeInfo: {
-                    ingredient: nightActive.nameEn,
-                    concentration: nightActive.concentrations[tolerance],
-                    tag: nightTag
-                },
-                dosage: {
-                    amount: nightActive.type === "acid" ? 5 : 2,
-                    unit: nightActive.type === "acid" ? "drops" : "pump",
-                    tips: nightActive.frequency
-                }
-            });
-        }
     }
 
-    // [CORTISOL DEFENSE] If High Stress, ADD a Repair step even if using actives (Sandwich method or overlaid)
-    // Or replace moisturizer with Repair Cream
-    if (isHighStress && !eveningSteps.find(s => s.category === "serum_repair")) {
+    // Step: Synergy Layering (Cocktail)
+    if (nightActive2) {
         eveningSteps.push({
-            order: eveningSteps.length + 1,
-            title: "压力舒缓",
-            productName: "神经酰胺修护精华",
-            category: "serum_repair",
-            activeInfo: { ingredient: "Ceramides", concentration: "High", tag: "Stress Defense" },
-            dosage: { amount: 2, unit: "pump", tips: "对抗皮质醇引起的屏障受损" }
+            order: 3,
+            title: "效力叠加",
+            productName: `${nightActive2.name}精华`,
+            category: "serum_active",
+            activeInfo: {
+                ingredient: nightActive2.nameEn,
+                concentration: nightActive2.concentrations[tolerance],
+                tag: "Synergy Boost"
+            },
+            dosage: { amount: 1, unit: "pump", tips: "叠加使用，增强效果" }
         });
     }
 
-    // E3. Moisturize
+    // Step: Moisturize/Seal
     eveningSteps.push(createStep(eveningSteps.length + 1,
-        isOily ? "moisturizer_lotion" : "moisturizer_cream",
+        (isDry || isHighStress) ? "moisturizer_cream" : "moisturizer_lotion",
         sType, climateCode
     ));
 
-    // Special Care Tips
+
+    // --- 4. SKIN CYCLING GENERATION (V3 Exclusive) ---
+    // Classic 4-Day Cycle: Exfoliate -> Retinoid -> Recover -> Recover
+
+    // Day 1: Exfoliation
+    let d1Active = "glycolic_acid";
+    if (hasAcneRisk) d1Active = "salicylic_acid";
+    if (isSensitive) d1Active = "azelaic_acid"; // Gentler
+
+    // Day 2: Retinoid
+    let d2Active = "retinol";
+    if (isPregnancySafeMode || isSensitive) d2Active = "peptides"; // Alternative
+
+    cyclingSchedule.push(
+        { day: 1, phase: "active_b", title: "焕肤夜 (Exfoliation)", focus: "疏通毛孔/剥脱角质", activeIngredient: d1Active },
+        { day: 2, phase: "active_a", title: "维A夜 (Retinoid)", focus: "胶原再生/抗老", activeIngredient: d2Active },
+        { day: 3, phase: "recovery", title: "修护夜 (Recovery)", focus: "屏障休息/深度补水", activeIngredient: "niacinamide" }, // Use B3 or nothing
+        { day: 4, phase: "recovery", title: "修护夜 (Recovery)", focus: "屏障休息/深度补水", activeIngredient: "peptides" }
+    );
+
+
+    // Special Tips
     const special: string[] = [];
     if (hasAcneRisk && !isSensitive) special.push("每周使用1次深层清洁泥膜 (T区)");
     if (isDry) special.push("每周2-3次 保湿面膜 (B5/玻尿酸)");
-    if (hasAgingRisk) special.push("建议定期进行医美项目如热玛吉或光子嫩肤 (需咨询医师)");
+    if (isPregnancySafeMode) special.push("⚠️ 已自动开启[孕期安全模式]：屏蔽所有A醇、高浓度水杨酸，替换为胜肽与玻色因。");
+    if (hasAgingRisk) special.push("建议配合家用射频仪，每周2次 (非酸类使用日)");
+
 
     // Tips Generation
     let tips = [
         `当前耐受度设定: ${tolerance === 'low' ? '低 (新手/敏感)' : tolerance === 'medium' ? '中 (进阶)' : '高 (耐受)'}`,
         isSensitive ? "检测到敏感迹象，已自动降级酸类/A醇浓度，主打修护维稳。" : "",
-        hasAcneRisk ? "针对皮脂活跃/卟啉问题，夜间增加了酸类调理步骤。" : "",
-        isHighStress ? "[压力对抗模式已开启] 检测到高压力/睡眠不足，算法已自动降低刺激性成分浓度，并增加神经酰胺修护步骤，防止'压力痘'。" : "",
-        isLutealPhase ? "[生理期黄体期] 检测到处于黄体期，皮脂分泌将增加，算法已提前部署水杨酸进行控油防御。" : "",
-        "早C晚A是经典搭配，但请严格注意防晒，否则功效归零。"
+        isHighStress ? "[压力对抗模式已开启] 晚间方案已强化神经酰胺修护，防止'压力痘'。" : "",
+        cycleType === "retinoid" ? "已为您开启[早C晚A]经典抗老模式。" : "",
+        "推荐采用 [Skin Cycling] 4天循环护肤法（见下方周期表）。"
     ].filter(Boolean);
 
-    // Apply Environmental Adjustments if provided
+    // Env Adjustments
     if (envData) {
         const { daily: adjDaily, special: adjSpecial } = applyEnvironmentalAdjustments(
             { morning: morningSteps, evening: eveningSteps, tips },
             special,
             envData
         );
-        return { daily: adjDaily, special: adjSpecial };
+        return { daily: adjDaily, cycling: cyclingSchedule, special: adjSpecial };
     }
 
     return {
-        daily: {
-            morning: morningSteps,
-            evening: eveningSteps,
-            tips
-        },
+        daily: { morning: morningSteps, evening: eveningSteps, tips },
+        cycling: cyclingSchedule,
         special
     }
 }
@@ -568,7 +703,8 @@ export function generateSkincareRoutines(
                 steps: convertSteps(scientific.daily.evening),
                 totalDuration: "10分钟",
                 tips: scientific.daily.tips
-            }
+            },
+            cycling: scientific.cycling
         },
         // Fill others simply
         daily: { morning: {}, evening: {} },

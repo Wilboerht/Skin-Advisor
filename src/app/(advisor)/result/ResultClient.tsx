@@ -19,7 +19,11 @@ import {
     AlertCircle,
     FlaskConical,
     Link as LinkIcon,
-    X
+    X,
+    MapPin,
+    Droplets,
+    Wind,
+    Play // Import Play icon
 } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useToast } from "@/components/ui/Toast";
@@ -35,6 +39,7 @@ import { ShareRewardBanner } from "@/components/advisor/ShareRewardBanner";
 // Import the new CSS Module
 import styles from "./result.module.css";
 import sidebarStyles from "./sidebar.module.css";
+import { SkincareDashboard } from "@/components/advisor/SkincareDashboard";
 
 // Types
 export interface ComprehensiveResult {
@@ -77,6 +82,7 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
     const [result, setResult] = useState<ComprehensiveResult | null>(initialData?.result || null);
     const [faceAnalysis, setFaceAnalysis] = useState<FaceAnalysisResult | null>(initialData?.faceAnalysis || null);
     const [userImage, setUserImage] = useState<string | undefined>(undefined);
+    const [sideImages, setSideImages] = useState<Record<string, string>>({});
     const [userLocation, setUserLocation] = useState<{ province?: string; city?: string; lat?: number; lon?: number } | null>(null);
 
     // UI State
@@ -87,6 +93,9 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
     // New State for interactivity
     const [activeDimension, setActiveDimension] = useState<SkinDimensionKey | null>(null);
     const [showLabData, setShowLabData] = useState(false);
+    const [activeStepIndex, setActiveStepIndex] = useState<number | null>(0);
+    const [selectedCycleDay, setSelectedCycleDay] = useState<number>(1);
+    const [isRoutineModalOpen, setIsRoutineModalOpen] = useState(false);
 
     // Set default active dimension once data is loaded
     useEffect(() => {
@@ -138,6 +147,7 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                 if (imgStr) {
                     const images = JSON.parse(imgStr);
                     if (images.front) setUserImage(images.front);
+                    setSideImages(images);
                 }
 
                 if (locationStr) {
@@ -450,7 +460,7 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                                 // But typically we should use state. Let's add state logic or just manipulate DOM (bad practice).
                                 // Actually, let's just make it a controlled component or hack the display style.
                                 // Better: I will use state.
-                                const el = (e.target as HTMLElement).closest('.group');
+                                const el = (e.target as HTMLElement).closest('.group') as HTMLElement;
                                 if (el) el.style.display = 'none';
                             }}
                             className="absolute right-4 top-3 p-1 rounded-full hover:bg-red-100 text-red-500 transition-colors"
@@ -512,16 +522,7 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                                     key={angle}
                                     // Try to get from local storage or fallback to main image/placeholder
                                     // note: real app should store these in state
-                                    src={(() => {
-                                        if (typeof window !== 'undefined') {
-                                            const saved = localStorage.getItem("advisor_face_images");
-                                            if (saved) {
-                                                const parsed = JSON.parse(saved);
-                                                return parsed[angle] || userImage || "/images/default-avatar.png";
-                                            }
-                                        }
-                                        return userImage || "/images/default-avatar.png";
-                                    })()}
+                                    src={sideImages[angle] || userImage || "/images/default-avatar.png"}
                                     alt={`Angle ${angle}`}
                                     className={sidebarStyles.sideAngleIcon}
                                     style={{ transitionDelay: `${idx * 50}ms` }}
@@ -635,51 +636,78 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                 <div className="flex flex-col gap-6">
 
                     {/* --- 0. ENVIRONMENT DASHBOARD (NEW) --- */}
-                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl p-5 shadow-sm">
-                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
-                            <div className="flex items-center gap-2 text-indigo-900 font-bold">
-                                <span className="text-xl">📍</span>
-                                <span>{envData.location}</span>
+                    {/* --- 0. ENVIRONMENT DASHBOARD (NEW) --- */}
+                    <div className="rounded-2xl bg-white border border-gray-100 shadow-sm p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        {/* Location - clean and simple */}
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
+                                <MapPin className="w-5 h-5" />
                             </div>
-                            <div className="flex gap-4 text-sm font-medium text-gray-700 bg-white/60 px-4 py-2 rounded-full">
-                                <div className="flex items-center gap-1">
-                                    <span>☀️</span>
-                                    <span>UV: <span className="text-red-500 font-bold">{envData.uvIndex}</span> (极强)</span>
-                                </div>
-                                <div className="w-px bg-gray-300 h-4 self-center"></div>
-                                <div className="flex items-center gap-1">
-                                    <span>💧</span>
-                                    <span>湿度: <span className="text-amber-600 font-bold">{envData.humidity}%</span> (干燥)</span>
-                                </div>
-                                <div className="w-px bg-gray-300 h-4 self-center"></div>
-                                <div className="flex items-center gap-1">
-                                    <span>🌫️</span>
-                                    <span>AQI: <span className="text-purple-600 font-bold">{envData.aqi}</span> (中度污染)</span>
-                                </div>
+                            <div>
+                                <div className="text-xs text-gray-400 font-medium uppercase tracking-wider">当前环境</div>
+                                <div className="font-semibold text-gray-900">{envData.location}</div>
                             </div>
                         </div>
 
-                        {/* Dynamic Alerts */}
-                        <div className="space-y-2">
-                            {envData.uvIndex >= 8 && (
-                                <div className="flex items-start gap-2 text-xs md:text-sm text-red-700 bg-red-50 border border-red-100 px-3 py-2 rounded-lg">
-                                    <span className="shrink-0 mt-0.5">⚠️</span>
-                                    <span><b>紫外线红色预警：</b>今日UV极高，系统已将您的防晒用量调至 1.5倍，并建议每2小时补涂。</span>
+                        {/* Metrics */}
+                        <div className="flex items-center justify-between gap-4 md:gap-8 flex-1 md:flex-none">
+                            {/* UV */}
+                            <div className="text-right flex-1 md:flex-auto">
+                                <div className="text-xs text-gray-400 mb-0.5 flex items-center justify-end gap-1">
+                                    <Sun className="w-3 h-3" /> UV指数
                                 </div>
-                            )}
-                            {envData.humidity < 30 && (
-                                <div className="flex items-start gap-2 text-xs md:text-sm text-amber-800 bg-amber-50 border border-amber-100 px-3 py-2 rounded-lg">
-                                    <span className="shrink-0 mt-0.5">💧</span>
-                                    <span><b>极度干燥预警：</b>空气湿度过低，系统建议在面霜中滴入护肤油以增强封闭性。</span>
+                                <div className="font-mono text-lg font-medium text-gray-900 leading-none">
+                                    {envData.uvIndex} <span className="text-xs text-gray-400 font-sans ml-0.5">
+                                        {envData.uvIndex <= 2 ? "(低)" : envData.uvIndex <= 5 ? "(中)" : envData.uvIndex <= 7 ? "(高)" : "(极强)"}
+                                    </span>
                                 </div>
-                            )}
-                            {envData.aqi > 150 && (
-                                <div className="flex items-start gap-2 text-xs md:text-sm text-purple-800 bg-purple-50 border border-purple-100 px-3 py-2 rounded-lg">
-                                    <span className="shrink-0 mt-0.5">🌫️</span>
-                                    <span><b>空气污染防御：</b>PM2.5浓度较高，系统已将晚间洁面调整为“深层清洁/排浊”模式。</span>
+                            </div>
+
+                            {/* Humidity */}
+                            <div className="text-right border-l border-gray-100 pl-4 md:pl-8 flex-1 md:flex-auto">
+                                <div className="text-xs text-gray-400 mb-0.5 flex items-center justify-end gap-1">
+                                    <Droplets className="w-3 h-3" /> 湿度
                                 </div>
-                            )}
+                                <div className="font-mono text-lg font-medium text-gray-900 leading-none">
+                                    {envData.humidity}% <span className="text-xs text-gray-400 font-sans ml-0.5">
+                                        {envData.humidity < 40 ? "(干燥)" : envData.humidity > 70 ? "(潮湿)" : "(适宜)"}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* AQI */}
+                            <div className="text-right border-l border-gray-100 pl-4 md:pl-8 flex-1 md:flex-auto">
+                                <div className="text-xs text-gray-400 mb-0.5 flex items-center justify-end gap-1">
+                                    <Wind className="w-3 h-3" /> 空气
+                                </div>
+                                <div className="font-mono text-lg font-medium text-gray-900 leading-none">
+                                    {envData.aqi} <span className="text-xs text-gray-400 font-sans ml-0.5">
+                                        {envData.aqi <= 50 ? "(优)" : envData.aqi <= 100 ? "(良)" : "(差)"}
+                                    </span>
+                                </div>
+                            </div>
                         </div>
+                    </div>
+                    {/* Dynamic Alerts */}
+                    <div className="space-y-2">
+                        {envData.uvIndex >= 8 && (
+                            <div className="flex items-start gap-2 text-xs md:text-sm text-red-700 bg-red-50 border border-red-100 px-3 py-2 rounded-lg">
+                                <span className="shrink-0 mt-0.5">⚠️</span>
+                                <span><b>紫外线红色预警：</b>今日UV极高，系统已将您的防晒用量调至 1.5倍，并建议每2小时补涂。</span>
+                            </div>
+                        )}
+                        {envData.humidity < 30 && (
+                            <div className="flex items-start gap-2 text-xs md:text-sm text-amber-800 bg-amber-50 border border-amber-100 px-3 py-2 rounded-lg">
+                                <span className="shrink-0 mt-0.5">💧</span>
+                                <span><b>极度干燥预警：</b>空气湿度过低，系统建议在面霜中滴入护肤油以增强封闭性。</span>
+                            </div>
+                        )}
+                        {envData.aqi > 150 && (
+                            <div className="flex items-start gap-2 text-xs md:text-sm text-purple-800 bg-purple-50 border border-purple-100 px-3 py-2 rounded-lg">
+                                <span className="shrink-0 mt-0.5">🌫️</span>
+                                <span><b>空气污染防御：</b>PM2.5浓度较高，系统已将晚间洁面调整为“深层清洁/排浊”模式。</span>
+                            </div>
+                        )}
                     </div>
 
                     {/* 1. Condition Summary (Original) */}
@@ -1074,83 +1102,82 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
 
                     {/* 3. Routine */}
                     {/* 3. Routine */}
-                    <div className={`${styles.routineCard} ${styles.fadeInUp} border-0 shadow-sm`}>
-                        {/* Header with Title and Toggle */}
-                        <div className={styles.routineHeader}>
+                    {/* 3. Routine */}
+                    {/* 3. Routine Summary Card & Modal */}
+                    {/* 3. Routine Summary Card & Modal */}
+                    <div className={`${styles.analysisGrid} ${styles.fadeInUp} border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer group`} onClick={() => setIsRoutineModalOpen(true)}>
+                        {/* Standard Header */}
+                        <div className={styles.sectionTitle}>
                             <div className="flex items-center gap-3">
                                 <FlaskConical className="w-5 h-5 text-gray-700" />
                                 <span className="text-lg font-semibold text-gray-900">科学护肤方案</span>
                             </div>
-
-                            {/* Segmented Control */}
-                            {routineData && (
-                                <div className={styles.toggleContainer}>
-                                    <div
-                                        className={`${styles.toggleBtn} ${activeRoutineTab === 'morning' ? styles.active : ''}`}
-                                        onClick={() => setActiveRoutineTab('morning')}
-                                    >
-                                        <Sun className="w-3.5 h-3.5" />
-                                        早间防护
-                                    </div>
-                                    <div
-                                        className={`${styles.toggleBtn} ${activeRoutineTab === 'evening' ? styles.active : ''}`}
-                                        onClick={() => setActiveRoutineTab('evening')}
-                                    >
-                                        <Moon className="w-3.5 h-3.5" />
-                                        晚间修护
-                                    </div>
-                                </div>
-                            )}
+                            <div className="flex items-center gap-2">
+                                <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-600 group-hover:bg-gray-200 group-hover:text-gray-900 transition-colors">
+                                    点击展开详情
+                                </span>
+                            </div>
                         </div>
 
-                        {/* Timeline Body or Empty State */}
-                        <div className={styles.routineBody}>
-                            {routineData ? (
-                                <div className={styles.timeline}>
-                                    {routineData[activeRoutineTab].steps.map((step: any, idx: number) => (
-                                        <div key={idx} className={styles.timelineStep}>
-                                            <div className={styles.timelineDot}>
-                                                {idx + 1}
-                                            </div>
+                        {/* Card Body - Preview Content */}
+                        <div className="p-8">
+                            <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+                                <div className="flex-1">
+                                    <h4 className="text-base font-medium text-gray-900 mb-3 border-b border-gray-200 pb-2">
+                                        Skin Cycling 28天焕肤计划
+                                    </h4>
 
-                                            <div className={styles.stepContent}>
-                                                <div className={styles.stepHeader}>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-[15px] font-medium text-gray-900">{step.name}</span>
-                                                        <span className={styles.stepEnName}>{step.nameEn}</span>
-                                                    </div>
-                                                    <div className="text-xs text-gray-400 font-mono bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
-                                                        {step.duration}
-                                                    </div>
-                                                </div>
+                                    <p className="text-[14px] leading-relaxed text-gray-700 mb-4">
+                                        基于您的肤质分析，为您定制了包含 <span className="font-semibold text-gray-900">“焕肤夜 - 维A夜 - 修护夜”</span> 的循环护理方案。
+                                    </p>
 
-                                                <p className="text-[14px] leading-relaxed text-gray-700 mb-3">
-                                                    {step.description}
-                                                </p>
-
-                                                {step.dosage && (
-                                                    <div className="w-fit">
-                                                        <div className="flex items-center gap-1.5 text-xs text-blue-600 bg-blue-50/50 border border-blue-100 px-2 py-1 rounded w-fit">
-                                                            <span className="text-[10px]">💧</span>
-                                                            <span className="border-b border-dashed border-blue-400">{step.dosage.description}</span>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
+                                    {/* Tonight Recommendation */}
+                                    <div className="flex items-center gap-2 text-[13px] pt-3 mt-1 border-t border-dashed border-gray-100">
+                                        <div className="flex items-center justify-center w-5 h-5 rounded-full bg-indigo-50 text-indigo-600">
+                                            <Moon className="w-3 h-3" />
                                         </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="p-8 text-center bg-white">
-                                    <div className="text-[14px] leading-relaxed text-gray-700">
-                                        暂无定制方案，建议完善肤质信息
+                                        <span className="text-gray-600">
+                                            今晚建议：<span className="text-gray-900 font-medium">{activeRoutineTab === 'evening' ? '针对性护理' : '基础防护'}</span>
+                                        </span>
                                     </div>
                                 </div>
-                            )}
+
+                                {/* Call to Action - Subtle Chevron */}
+                                <div className="shrink-0 hidden sm:flex">
+                                    <div className="w-10 h-10 rounded-full bg-white border border-gray-100 flex items-center justify-center text-gray-400 shadow-sm group-hover:bg-gray-50 group-hover:text-gray-900 group-hover:border-gray-200 group-hover:scale-105 transition-all duration-300">
+                                        <ChevronRight className="w-5 h-5 ml-0.5" />
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    {/* 4. Products */}
+                    {/* Routine Dashboard Modal */}
+                    {isRoutineModalOpen && routineData && (
+                        <div className="fixed inset-0 z-[150] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+                            <div className="bg-[#F7F7F7] w-full max-w-2xl max-h-[90vh] rounded-xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+                                {/* Modal Header */}
+                                <div className="bg-white px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
+                                    <div className="flex items-center gap-2">
+                                        <FlaskConical className="w-5 h-5 text-gray-700" />
+                                        <h3 className="font-bold text-gray-900">我的护肤控制台</h3>
+                                    </div>
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); setIsRoutineModalOpen(false); }}
+                                        className="p-2 -mr-2 text-gray-400 hover:text-gray-900 rounded-full hover:bg-gray-100 transition-colors"
+                                    >
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </div>
+
+                                {/* Modal Body (Scrollable) */}
+                                <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
+                                    <SkincareDashboard routineData={routineData} />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* 4. Products */}
                     <div className={`${styles.analysisGrid} ${styles.fadeInUp} border-0 shadow-sm`}>
                         <div className={styles.sectionTitle}>
@@ -1194,13 +1221,8 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                             </div>
                         )}
                     </div>
-
-                    {/* Footer Actions */}
-                    {/* Footer Actions */}
-
-
                 </div>
-            </main>
+            </main >
 
             {/* Global Footer */}
             <footer className="w-full bg-[#FAFAFA] border-t border-gray-100 mt-0 py-12">

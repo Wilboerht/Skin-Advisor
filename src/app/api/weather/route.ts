@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSkinEnvData } from "@/lib/qweather";
 
-export const runtime = "edge"; // fast response
+export const runtime = "nodejs"; // more stable for local dev fetch
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
