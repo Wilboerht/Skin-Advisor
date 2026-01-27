@@ -166,18 +166,18 @@ export function SkincareDashboard({ routineData }: SkincareDashboardProps) {
             {/* ===== LEFT SIDEBAR: Navigation & Calendar ===== */}
             <aside className="w-[340px] flex-shrink-0 border-r border-[#E9E9E7] bg-[#FAFAFA] flex flex-col relative z-20">
                 {/* Branding Area */}
-                <div className="px-8 h-[100px] flex items-center border-b border-[#E9E9E7]">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 flex-shrink-0">
+                <div className="px-8 h-[88px] flex items-center border-b border-[#E9E9E7]">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 flex-shrink-0">
                             <Image
                                 src="/apple-touch-icon.png"
                                 alt="Logo"
-                                width={48}
-                                height={48}
+                                width={40}
+                                height={40}
                                 className="w-full h-full object-contain"
                             />
                         </div>
-                        <h2 className="text-2xl font-bold text-[#37352F] tracking-tight">护肤指挥中心</h2>
+                        <h2 className="text-[19px] font-bold text-[#37352F] tracking-tight">护肤指挥中心</h2>
                     </div>
                 </div>
 
@@ -208,7 +208,7 @@ export function SkincareDashboard({ routineData }: SkincareDashboardProps) {
                         {/* Weekday Grid */}
                         <div className="grid grid-cols-7 mb-3">
                             {['日', '一', '二', '三', '四', '五', '六'].map((day, idx) => (
-                                <div key={idx} className="text-center text-[10px] font-bold text-[#D4D4D2] uppercase tracking-widest">
+                                <div key={idx} className="text-center text-[11px] font-bold text-[#787774]/50 uppercase tracking-widest">
                                     {day}
                                 </div>
                             ))}
@@ -255,7 +255,7 @@ export function SkincareDashboard({ routineData }: SkincareDashboardProps) {
                                                     }
                                                 `}
                                             >
-                                                <span className="text-[13px] relative z-10">{cell.date.getDate()}</span>
+                                                <span className="text-[14px] relative z-10">{cell.date.getDate()}</span>
 
                                                 {/* Status Dot/Indicator */}
                                                 <div className="absolute bottom-1.5 flex gap-0.5">
@@ -310,14 +310,14 @@ export function SkincareDashboard({ routineData }: SkincareDashboardProps) {
             <main className="flex-1 flex flex-col h-full bg-white overflow-hidden relative">
 
                 {/* 1. Integrated Header: Simplified & Clean */}
-                <header className="flex-shrink-0 bg-white border-b border-[#E9E9E7] px-10 h-[100px] flex items-center justify-between z-20">
+                <header className="flex-shrink-0 bg-white border-b border-[#E9E9E7] px-10 h-[88px] flex items-center justify-between z-20">
                     <div className="flex items-center gap-10">
                         {/* Minimalist Tab Switcher */}
                         <div className="bg-[#F1F1EF] p-1 rounded-xl flex items-center border border-[#E9E9E7]/50">
                             <button
                                 onClick={() => setActiveTab('morning')}
                                 className={`
-                                    flex items-center gap-2 px-5 py-2 rounded-lg text-xs font-bold transition-all
+                                    flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold transition-all
                                     ${activeTab === 'morning' ? 'bg-white text-[#37352F] shadow-sm' : 'text-[#787774] hover:text-[#37352F]'}
                                 `}
                             >
@@ -327,7 +327,7 @@ export function SkincareDashboard({ routineData }: SkincareDashboardProps) {
                             <button
                                 onClick={() => setActiveTab('evening')}
                                 className={`
-                                    flex items-center gap-2 px-5 py-2 rounded-lg text-xs font-bold transition-all
+                                    flex items-center gap-2 px-5 py-2 rounded-lg text-[13px] font-bold transition-all
                                     ${activeTab === 'evening' ? 'bg-white text-[#37352F] shadow-sm' : 'text-[#787774] hover:text-[#37352F]'}
                                 `}
                             >
@@ -352,7 +352,7 @@ export function SkincareDashboard({ routineData }: SkincareDashboardProps) {
                                     style={{ transition: 'stroke-dashoffset 1s ease-in-out' }}
                                 />
                             </svg>
-                            <span className="text-[10px] font-bold text-[#37352F]">{progress}%</span>
+                            <span className="text-[11px] font-bold text-[#37352F] font-mono">{progress}%</span>
                         </div>
                     </div>
 
@@ -365,28 +365,28 @@ export function SkincareDashboard({ routineData }: SkincareDashboardProps) {
                 <div className="flex-1 overflow-y-auto px-10 py-8 scrollbar-hide">
 
                     {/* 2. Refined Phase Focus Area */}
-                    <div className="mb-12 flex items-center justify-between px-2 group">
-                        <div className="flex items-center gap-6">
+                    <div className="mb-10 flex items-center justify-between px-1">
+                        <div className="flex items-center gap-5">
                             <div className={`
-                                w-16 h-16 rounded-[22px] flex items-center justify-center transition-all duration-500 shadow-sm
+                                w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500
                                 ${activeTab === 'evening'
-                                    ? (currentCycleInfo?.phase === 'exfoliate' ? 'bg-[#F9F2F5] text-[#C14C8A] shadow-[#F9F2F5]/50' : currentCycleInfo?.phase === 'retinoid' ? 'bg-[#FAEBDD] text-[#D9730D] shadow-[#FAEBDD]/50' : 'bg-[#EDF3EC] text-[#448361] shadow-[#EDF3EC]/50')
-                                    : 'bg-[#FBF3DB] text-[#CB912F] shadow-[#FBF3DB]/50'
+                                    ? (currentCycleInfo?.phase === 'exfoliate' ? 'bg-[#F9F2F5] text-[#C14C8A]' : currentCycleInfo?.phase === 'retinoid' ? 'bg-[#FAEBDD] text-[#D9730D]' : 'bg-[#EDF3EC] text-[#448361]')
+                                    : 'bg-[#FBF3DB] text-[#CB912F]'
                                 }
                             `}>
                                 {activeTab === 'evening' ? (
                                     <>
-                                        {currentCycleInfo?.phase === 'exfoliate' && <Sparkles className="w-7 h-7" />}
-                                        {currentCycleInfo?.phase === 'retinoid' && <Moon className="w-7 h-7" />}
-                                        {currentCycleInfo?.phase === 'recovery' && <BatteryCharging className="w-7 h-7" />}
+                                        {currentCycleInfo?.phase === 'exfoliate' && <Sparkles size={24} strokeWidth={2.5} />}
+                                        {currentCycleInfo?.phase === 'retinoid' && <Moon size={24} strokeWidth={2.5} />}
+                                        {currentCycleInfo?.phase === 'recovery' && <BatteryCharging size={24} strokeWidth={2.5} />}
                                     </>
                                 ) : (
-                                    <Sun className="w-7 h-7" />
+                                    <Sun size={24} strokeWidth={2.5} />
                                 )}
                             </div>
-                            <div>
-                                <p className="text-[10px] font-bold text-[#787774] uppercase tracking-[0.15em] mb-1">Current Focus</p>
-                                <h3 className="text-2xl font-bold text-[#37352F] tracking-tight">
+                            <div className="flex flex-col">
+                                <span className="text-[11px] font-bold text-[#787774] uppercase tracking-widest mb-0.5 opacity-50">Current Focus</span>
+                                <h3 className="text-[22px] font-bold text-[#37352F] tracking-tight leading-tight">
                                     {activeTab === 'evening' ? (currentCycleInfo?.title || '常规修护方案') : '晨间全效防护'}
                                 </h3>
                             </div>
@@ -395,33 +395,35 @@ export function SkincareDashboard({ routineData }: SkincareDashboardProps) {
                         {isToday && (
                             <button
                                 onClick={() => setIsImmersiveOpen(true)}
-                                className="group/btn flex items-center gap-4 pl-7 pr-2.5 py-2.5 rounded-[20px] bg-white border border-[#E9E9E7] hover:border-[#37352F] transition-all duration-300 active:scale-95 shadow-sm hover:shadow-md"
+                                className="group/btn flex items-center gap-4 pl-8 pr-3 py-3 rounded-full bg-white border border-[#E9E9E7] hover:border-[#37352F] transition-all duration-500 active:scale-95 shadow-sm hover:shadow-xl hover:-translate-y-0.5"
                             >
-                                <span className="text-xs font-bold text-[#37352F]">沉浸跟练</span>
-                                <div className="w-9 h-9 rounded-[14px] bg-[#37352F] flex items-center justify-center text-white transition-transform group-hover/btn:scale-105">
-                                    <Play className="w-3.5 h-3.5 fill-white" />
+                                <span className="text-sm font-bold text-[#37352F] tracking-tight">沉浸跟练</span>
+                                <div className="w-10 h-10 rounded-full bg-[#37352F] flex items-center justify-center text-white transition-all group-hover/btn:scale-110 group-hover/btn:rotate-[360deg]">
+                                    <Play className="w-4 h-4 fill-white ml-0.5" />
                                 </div>
                             </button>
                         )}
                     </div>
 
                     {/* 3. Refined Task List (Seamless & Elegant) */}
-                    <div className="space-y-6">
+                    <div className="space-y-4">
                         <div className="flex items-center justify-between px-2 mb-2">
-                            <h4 className="text-[10px] font-bold text-[#787774] uppercase tracking-[0.2em] flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 rounded-full bg-[#D4D4D2]" />
+                            <h4 className="text-[11px] font-bold text-[#787774] uppercase tracking-[0.2em] flex items-center gap-2.5">
+                                <div className="w-1.5 h-1.5 rounded-full bg-[#337EA9]" />
                                 步骤清单 · {effectiveSteps.length} Steps
                             </h4>
-                            <div className="flex items-center gap-1.5 text-[10px] font-bold text-[#787774]">
-                                <span>预计耗时</span>
-                                <span className="text-[#37352F] border-l border-[#E9E9E7] pl-2 ml-1">
-                                    {effectiveSteps.reduce((acc, curr) => acc + (parseInt(curr.duration) || 0), 0)} MINS
-                                </span>
+                            <div className="flex items-center gap-4 text-[11px] font-bold text-[#787774]">
+                                <div className="flex items-center gap-1.5">
+                                    <span className="opacity-40 font-medium">预计耗时</span>
+                                    <span className="text-[#37352F] font-mono">
+                                        {effectiveSteps.reduce((acc, curr) => acc + (parseInt(curr.duration) || 0), 0)} MINS
+                                    </span>
+                                </div>
                             </div>
                         </div>
 
                         <div className="flex flex-col">
-                            {effectiveSteps.map((step, idx) => {
+                            {effectiveSteps.map((step: RoutineStep, idx: number) => {
                                 const dateKey = selectedDate.toISOString().slice(0, 10);
                                 const key = `${dateKey}_${activeTab}_${idx}`;
                                 const isDone = !!completedSteps[key];
@@ -430,51 +432,59 @@ export function SkincareDashboard({ routineData }: SkincareDashboardProps) {
                                     <div
                                         key={idx}
                                         className={`
-                                            group relative flex items-center gap-6 px-4 py-5 transition-all duration-300
+                                            group relative flex items-start gap-6 px-4 py-5 transition-all duration-300
                                             ${idx !== effectiveSteps.length - 1 ? 'border-b border-[#F1F1EF]' : ''}
-                                            ${isDone ? 'opacity-40' : 'hover:bg-[#F1F1EF]/50 cursor-pointer'}
+                                            ${isDone ? 'opacity-30' : 'hover:bg-[#F9F9F8] cursor-pointer rounded-xl'}
                                         `}
                                         onClick={() => isToday && toggleStep(idx)}
                                     >
-                                        {/* Minimal Number Indicator */}
-                                        <div className="relative w-8 flex flex-col items-center">
-                                            <span className={`text-lg font-mono font-bold transition-colors ${isDone ? 'text-[#448361]' : 'text-[#D4D4D2] group-hover:text-[#37352F]'}`}>
-                                                {isDone ? <CheckCircle2 className="w-5 h-5 mx-auto" /> : String(idx + 1).padStart(2, '0')}
-                                            </span>
-                                            {/* Vertical line connecting numbers */}
+                                        {/* Timeline Indicator */}
+                                        <div className="relative w-8 flex flex-col items-center flex-shrink-0">
+                                            {/* Vertical line - spans from top to bottom of the step */}
                                             {idx !== effectiveSteps.length - 1 && (
-                                                <div className="absolute top-8 w-[1px] h-10 bg-[#E9E9E7]" />
+                                                <div className="absolute top-10 -bottom-5 w-[1px] bg-[#F1F1EF]" />
                                             )}
+
+                                            <div className="relative z-10 pt-1">
+                                                {isDone ? (
+                                                    <div className="w-8 h-8 rounded-full bg-[#EDF3EC] text-[#448361] flex items-center justify-center shadow-sm">
+                                                        <CheckCircle2 size={16} />
+                                                    </div>
+                                                ) : (
+                                                    <div className="w-8 h-8 rounded-full bg-transparent text-[#D4D4D2] flex items-center justify-center border border-transparent group-hover:border-[#F1F1EF] group-hover:bg-white group-hover:text-[#37352F] transition-all duration-300">
+                                                        <span className="text-[13px] font-mono font-bold tracking-tighter">
+                                                            {String(idx + 1).padStart(2, '0')}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
 
-                                        {/* Content */}
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-3 mb-1">
-                                                <h5 className={`font-bold text-[15px] tracking-tight ${isDone ? 'text-[#787774] line-through' : 'text-[#37352F]'}`}>
+                                        {/* Content Area */}
+                                        <div className="flex-1 min-w-0 pt-0.5">
+                                            <div className="flex items-center gap-2.5 mb-1">
+                                                <h5 className={`font-bold text-[16px] tracking-tight transition-all ${isDone ? 'text-[#787774] line-through' : 'text-[#37352F]'}`}>
                                                     {step.name}
                                                 </h5>
                                                 {!isDone && (
-                                                    <span className="text-[10px] font-bold text-[#D4D4D2] uppercase letter-spacing-widest">
+                                                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#F1F1EF] text-[#787774] opacity-80">
                                                         {step.duration}
                                                     </span>
                                                 )}
                                             </div>
-                                            <p className={`text-[13px] leading-relaxed line-clamp-1 font-medium ${isDone ? 'text-[#D4D4D2]' : 'text-[#787774]'}`}>
+                                            <p className={`text-[14px] leading-relaxed transition-all ${isDone ? 'text-[#D4D4D2]' : 'text-[#787774]'} line-clamp-2`}>
                                                 {step.description}
                                             </p>
                                         </div>
 
-                                        {/* Dosage/Info Badge */}
+                                        {/* Dosage Badge */}
                                         {step.dosage && !isDone && (
-                                            <div className="flex flex-col items-end gap-1 shrink-0">
-                                                <div className="px-3 py-1 bg-[#F1F1EF] rounded-full border border-[#E9E9E7] text-[10px] font-bold text-[#787774] transition-colors group-hover:bg-[#37352F] group-hover:text-white group-hover:border-[#37352F]">
+                                            <div className="shrink-0 pt-1">
+                                                <div className="px-4 py-2 bg-[#F1F1EF]/50 rounded-lg text-[11px] font-bold text-[#787774] border border-transparent transition-all group-hover:bg-white group-hover:border-[#E9E9E7] group-hover:shadow-sm">
                                                     {step.dosage.description}
                                                 </div>
                                             </div>
                                         )}
-
-                                        {/* Interactive Glow on Hover */}
-                                        <div className="absolute left-0 w-1 h-0 bg-[#37352F] transition-all duration-300 group-hover:h-1/2 top-1/2 -translate-y-1/2 rounded-r-full" />
                                     </div>
                                 );
                             })}
