@@ -1,8 +1,10 @@
 
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
+// 本地开发使用 SQLite，部署时需要切换到 postgresql
 datasource db {
   provider = "sqlite"
 }

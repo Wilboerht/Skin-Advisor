@@ -1,0 +1,54 @@
+﻿
+> skin-advisor-standalone@0.1.0 build
+> next build
+
+鈻?Next.js 16.1.4 (Turbopack)
+- Environments: .env
+
+node.exe : 鈿?The "middleware" file convention is deprecate
+d. Please use "proxy" instead. Learn more: https://nextjs.
+org/docs/messages/middleware-to-proxy
+所在位置 行:1 字符: 1
++ & "D:\Program Files\nodejs/node.exe" "D:\Program Files\n
+odejs\node_gl ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (鈿?The "middl 
+   ewa...leware-to-proxy:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  Creating an optimized production build ...
+鉁?Compiled successfully in 27.8s
+  Running TypeScript ...
+  Collecting page data using 15 workers ...
+鈩癸笍 [2026-01-28T11:02:11.016Z] [AI] AI Queue initialized
+   {
+     "maxConcurrent": 10
+   }
+鈩癸笍 [2026-01-28T11:02:11.022Z] [AI] AI Queue initialized
+   {
+     "maxConcurrent": 3
+   }
+鈩癸笍 [2026-01-28T11:02:11.023Z] [AI] AI Queue initialized
+   {
+     "maxConcurrent": 10
+   }
+Error [PrismaClientInitializationError]: The Driver Adapte
+r `@prisma/adapter-libsql`, based on `sqlite`, is not comp
+atible with the provider `postgres` specified in the Prism
+a schema.
+    at <unknown> (C:\Users\hongk\Desktop\skin-advisor-stan
+dalone\.next\server\chunks\_19ff6117._.js:1:25790)
+    at <unknown> (C:\Users\hongk\Desktop\skin-advisor-stan
+dalone\.next\server\chunks\_19ff6117._.js:1:25824) {
+  clientVersion: '7.3.0',
+  errorCode: undefined,
+  retryable: undefined
+}
+
+> Build error occurred
+Error: Failed to collect page data for /api/admin/auth/log
+in
+    at ignore-listed frames {
+  type: 'Error'
+}

@@ -71,16 +71,16 @@ export function useAsyncAnalysis() {
                             finalData = processed.imageData;
 
                             try {
-                                // Upload to OSS if available
-                                const { uploadImageToOSS } = await import("@/lib/oss-upload-client");
+                                // Upload to cloud storage (Supabase > OSS)
+                                const { uploadImage } = await import("@/lib/upload-client");
                                 const blob = await (await fetch(finalData)).blob();
-                                const url = await uploadImageToOSS(blob, "face-front.jpg");
+                                const url = await uploadImage(blob, "face-front.jpg");
                                 if (url) {
                                     finalData = url;
-                                    console.log("Uploaded to OSS:", url);
+                                    console.log("Uploaded to cloud storage:", url);
                                 }
-                            } catch (ossError) {
-                                console.warn("OSS Upload failed, using base64", ossError);
+                            } catch (uploadError) {
+                                console.warn("Cloud upload failed, using base64", uploadError);
                             }
                         }
                         visionImages.push({ data: finalData, angle: 'front' });

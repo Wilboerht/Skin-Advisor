@@ -11,7 +11,9 @@
   "dependencies": {
     "@libsql/client": "^0.17.0",
     "@prisma/adapter-libsql": "^7.3.0",
+    "@prisma/adapter-pg": "^7.3.0",
     "@prisma/client": "^7.3.0",
+    "@supabase/supabase-js": "^2.93.2",
     "@types/bcryptjs": "^2.4.6",
     "@types/geoip-lite": "^1.4.4",
     "@types/jsonwebtoken": "^9.0.10",
@@ -30,6 +32,7 @@
     "next": "16.1.4",
     "next-view-transitions": "^0.3.5",
     "openai": "^6.16.0",
+    "pg": "^8.17.2",
     "proxy-agent": "^5.0.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -41,6 +44,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/pg": "^8.16.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
