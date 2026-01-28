@@ -11,7 +11,9 @@ export interface RoutineStep {
         unit: string;
         description: string;
         productName: string;
+        usageGuide?: string;
     };
+    detailedInstructions?: string[];
 }
 
 export interface CyclingDay {
