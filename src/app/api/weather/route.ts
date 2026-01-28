@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
 
     // Race the API call against a 5-second timeout to guarantee fast response
     const timeoutPromise = new Promise<typeof fallbackData>((resolve) => {
-        setTimeout(() => resolve(fallbackData), 12000);
+        setTimeout(() => resolve(fallbackData), 5000);
     });
 
     try {

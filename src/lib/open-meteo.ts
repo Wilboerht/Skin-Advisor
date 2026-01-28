@@ -61,7 +61,7 @@ async function geocodeCity(cityName: string): Promise<{ lat: number; lon: number
 
         // Setup timeout
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 seconds timeout
+        const timeoutId = setTimeout(() => controller.abort(), 4000); // 4 seconds timeout
 
         try {
             const res = await fetch(url, {
@@ -99,7 +99,7 @@ async function fetchWeather(lat: number, lon: number): Promise<WeatherResult | n
 
         // Setup timeout
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 seconds timeout
+        const timeoutId = setTimeout(() => controller.abort(), 4000); // 4 seconds timeout
 
         try {
             const res = await fetch(url, {
