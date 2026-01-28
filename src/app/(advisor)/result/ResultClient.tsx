@@ -1345,31 +1345,57 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
 
                                 {/* Card Body - Preview Content */}
                                 <div className="p-8">
-                                    <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
-                                        <div className="flex-1">
+                                    <div className="flex flex-col gap-8">
+                                        {/* Section 1: Theory */}
+                                        <div>
                                             <h4 className="text-base font-medium text-gray-900 mb-3 border-b border-gray-200 pb-2">
-                                                Skin Cycling 28天焕肤计划
+                                                1、方案原理 (Mechanism)
                                             </h4>
-
-                                            <p className="text-[14px] leading-relaxed text-gray-700 mb-4">
-                                                基于您的肤质分析，为您定制了包含 <span className="font-semibold text-gray-900">“焕肤夜 - 维A夜 - 修护夜”</span> 的循环护理方案。
+                                            <p className="text-[14px] leading-relaxed text-gray-700">
+                                                基于您的肤质，为您定制 <span className="font-semibold text-gray-900">“Skin Cycling 28天循环”</span>。
+                                                通过 <span className="bg-gray-100 text-gray-700 px-1 py-0.5 rounded text-xs mx-1">焕肤</span>
+                                                <span className="text-gray-400">→</span>
+                                                <span className="bg-gray-100 text-gray-700 px-1 py-0.5 rounded text-xs mx-1">维A</span>
+                                                <span className="text-gray-400">→</span>
+                                                <span className="bg-gray-100 text-gray-700 px-1 py-0.5 rounded text-xs mx-1">修护</span>
+                                                的周期交替，平衡功效与耐受性。
                                             </p>
-
-                                            {/* Tonight Recommendation */}
-                                            <div className="flex items-center gap-2 text-[13px] pt-3 mt-1 border-t border-dashed border-gray-100">
-                                                <div className="flex items-center justify-center w-5 h-5 rounded-full bg-indigo-50 text-indigo-600">
-                                                    <Moon className="w-3 h-3" />
-                                                </div>
-                                                <span className="text-gray-600">
-                                                    今晚建议：<span className="text-gray-900 font-medium">{activeRoutineTab === 'evening' ? '针对性护理' : '基础防护'}</span>
-                                                </span>
-                                            </div>
                                         </div>
 
-                                        {/* Call to Action - Subtle Chevron */}
-                                        <div className="shrink-0 hidden sm:flex">
-                                            <div className="w-10 h-10 rounded-full bg-white border border-gray-100 flex items-center justify-center text-gray-400 shadow-sm group-hover:bg-gray-50 group-hover:text-gray-900 group-hover:border-gray-200 group-hover:scale-105 transition-all duration-300">
-                                                <ChevronRight className="w-5 h-5 ml-0.5" />
+                                        {/* Section 2: Tonight's Action - Zone Card Style */}
+                                        <div>
+                                            <h4 className="text-base font-medium text-gray-900 mb-3 border-b border-gray-200 pb-2">
+                                                2、今晚执行 (Tonight's Action)
+                                            </h4>
+
+                                            <div className="bg-white border text-left border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer group-hover:border-indigo-200 group-hover:shadow-indigo-50/50">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="bg-indigo-50 text-indigo-600 p-1 rounded-md">
+                                                            <Moon className="w-3.5 h-3.5" />
+                                                        </div>
+                                                        <h5 className="font-semibold text-gray-900 text-sm">
+                                                            {activeRoutineTab === 'evening' ? '针对性护理' : '基础防护'}
+                                                        </h5>
+                                                    </div>
+                                                    <span className={`text-xs px-2 py-0.5 rounded-full border ${activeRoutineTab === 'evening' ? 'bg-indigo-50 text-indigo-700 border-indigo-100' : 'bg-green-50 text-emerald-700 border-green-100'}`}>
+                                                        {activeRoutineTab === 'evening' ? 'High Impact' : 'Recovery'}
+                                                    </span>
+                                                </div>
+
+                                                <p className="text-xs text-gray-500 mb-3 leading-relaxed">
+                                                    {activeRoutineTab === 'evening'
+                                                        ? '今晚是功效护理的关键节点，请严格按照步骤使用活性成分，注意建立耐受。'
+                                                        : '今晚重点在于屏障修护与补水，给肌肤充分的休息时间，避免叠加刺激性产品。'}
+                                                </p>
+
+                                                <div className="pt-3 border-t border-dashed border-gray-100 flex items-center justify-between">
+                                                    <p className="text-xs text-gray-700 leading-snug">
+                                                        <span className="font-medium mr-1 text-gray-900">核心任务:</span>
+                                                        {activeRoutineTab === 'evening' ? '抗皱 / 焕肤 / 控油' : '保湿 / 舒缓 / 修红'}
+                                                    </p>
+                                                    <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-indigo-400 transition-colors" />
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
