@@ -26,16 +26,7 @@ export interface Question {
 }
 
 export const DEFAULT_QUESTIONS: Question[] = [
-    {
-        id: "q0",
-        fieldName: "gender",
-        question: "您的性别是？",
-        type: "single",
-        options: [
-            { value: "female", label: "女性" },
-            { value: "male", label: "男性" },
-        ],
-    },
+
     {
         id: "q1",
         fieldName: "skinType",

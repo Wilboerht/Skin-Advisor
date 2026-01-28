@@ -79,17 +79,24 @@ export default function QuestionsPage() {
             const savedAnswers = localStorage.getItem("advisor_answers");
             const savedGender = localStorage.getItem("advisor_gender");
 
+            let initialAnswers = {};
             if (savedAnswers) {
-                setAnswers(JSON.parse(savedAnswers));
+                initialAnswers = JSON.parse(savedAnswers);
             }
+
             if (savedGender === "female" || savedGender === "male") {
                 setGender(savedGender);
+                // Ensure gender is in answers so dependsOn logic works
+                initialAnswers = { ...initialAnswers, gender: savedGender };
             }
+
+            setAnswers(initialAnswers);
         } catch (e) { console.error(e); }
     }, []);
 
     const handleGenderSelect = (selectedGender: "female" | "male") => {
         setGender(selectedGender);
+        setAnswers(prev => ({ ...prev, gender: selectedGender }));
         localStorage.setItem("advisor_gender", selectedGender);
         // 追踪问卷开始（从选择性别开始算）
         if (!hasTrackedStart.current) {
