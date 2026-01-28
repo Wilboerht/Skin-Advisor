@@ -206,7 +206,7 @@ export function SkincareDashboard({ routineData }: SkincareDashboardProps) {
                 </div>
 
                 {/* Calendar Section */}
-                <div className="flex-1 overflow-y-auto px-8 pt-6 pb-4 scrollbar-hide">
+                <div className="flex-1 overflow-y-auto px-8 pt-6 pb-4 scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     <div className="mb-8">
                         {/* Month Nav */}
                         <div className="flex items-center justify-between mb-6 px-1">
@@ -391,7 +391,7 @@ export function SkincareDashboard({ routineData }: SkincareDashboardProps) {
                 </header>
 
                 {/* 2. Scrollable Body */}
-                <div className="flex-1 overflow-y-auto px-10 py-8 scrollbar-hide">
+                <div className="flex-1 overflow-y-auto px-10 py-8 scrollbar-hide space-y-8 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
 
                     {/* 2. Refined Phase Focus Area */}
                     <div className="mb-10 flex items-center justify-between px-1">

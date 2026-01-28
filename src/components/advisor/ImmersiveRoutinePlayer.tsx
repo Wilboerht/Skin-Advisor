@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, ChevronLeft, ChevronRight, Play, Check, Clock, Info, ArrowRight, Repeat, Droplets, Pause } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Play, Check, Clock, Info, ArrowRight, Repeat, Droplets, Pause, Beaker, Volume2, Maximize2 } from 'lucide-react';
 import Image from "next/image";
 import { RoutineStep } from '@/lib/routine-helpers';
 import { cn } from "@/lib/utils";
@@ -58,33 +58,27 @@ export function ImmersiveRoutinePlayer({ steps, title, onClose, onComplete }: Im
 
     if (isComplete) {
         return (
-            <div className="fixed inset-0 z-[200] bg-black flex flex-col items-center justify-center animate-in fade-in duration-700">
-                {/* Background Ambient */}
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-gray-800 via-black to-black opacity-80" />
-
+            <div className="fixed inset-0 z-[200] bg-white flex flex-col items-center justify-center animate-in fade-in duration-700">
                 <div className="relative z-10 flex flex-col items-center max-w-md w-full p-8 text-center">
-                    <div className="w-24 h-24 mb-8 relative group cursor-pointer" onClick={onComplete}>
-                        <div className="absolute inset-0 bg-blue-500 blur-2xl opacity-20 group-hover:opacity-40 transition-opacity duration-500 rounded-full" />
-                        <div className="relative w-full h-full bg-gradient-to-tr from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-2xl ring-1 ring-white/10 group-hover:scale-105 transition-transform duration-300">
-                            <Check className="w-10 h-10 text-white" strokeWidth={3} />
-                        </div>
+                    <div className="w-24 h-24 mb-8 bg-black text-white rounded-full flex items-center justify-center shadow-2xl">
+                        <Check className="w-10 h-10" strokeWidth={3} />
                     </div>
 
-                    <h2 className="text-4xl font-bold text-white mb-4 tracking-tight">Routine Complete</h2>
-                    <p className="text-gray-400 text-lg mb-12 leading-relaxed font-light">
-                        今日护肤任务圆满完成。<br />坚持就是胜利，肌肤若光。
+                    <h2 className="text-3xl font-bold text-gray-900 mb-4 tracking-tight">Routine Completed</h2>
+                    <p className="text-gray-500 text-base mb-12 leading-relaxed">
+                        坚持就是胜利，肌肤若光。
                     </p>
 
                     <button
                         onClick={onComplete}
-                        className="w-full h-14 bg-white text-black rounded-full font-semibold text-lg hover:bg-gray-100 transform hover:-translate-y-1 transition-all shadow-[0_0_20px_-5px_rgba(255,255,255,0.3)]"
+                        className="w-full h-14 bg-black text-white rounded-full font-bold text-lg hover:opacity-90 transition-all shadow-xl"
                     >
                         完成打卡
                     </button>
 
                     <button
                         onClick={() => { setIsComplete(false); setCurrentStepIndex(0); }}
-                        className="mt-6 text-gray-500 hover:text-white transition-colors flex items-center gap-2 text-sm font-medium"
+                        className="mt-6 text-gray-400 hover:text-gray-900 transition-colors flex items-center gap-2 text-sm font-medium"
                     >
                         <Repeat size={14} /> 再次浏览
                     </button>
@@ -94,183 +88,165 @@ export function ImmersiveRoutinePlayer({ steps, title, onClose, onComplete }: Im
     }
 
     return (
-        <div className="fixed inset-0 z-[200] bg-black flex flex-col lg:flex-row h-[100dvh] w-screen overflow-hidden animate-in fade-in duration-300 font-sans text-gray-900">
+        <div className="fixed inset-0 z-[200] flex flex-col lg:flex-row h-[100dvh] w-screen overflow-hidden animate-in fade-in duration-300 font-sans text-gray-900 bg-[#F5F5F7]">
 
-            {/* --- LEFT COLUMN: IMMERSIVE MEDIA --- */}
-            <div className="relative flex-1 bg-black h-[45vh] lg:h-full lg:min-w-[400px] lg:max-w-[calc(100vw-500px)] xl:max-w-[calc(100vw-600px)] flex flex-col justify-center items-center overflow-hidden group select-none">
+            {/* --- TOP BAR (Only Visible on Mobile) OR GLOBAL CLOSE --- */}
+            <div className="absolute top-0 left-0 w-full z-50 p-6 flex justify-between items-center lg:hidden pointer-events-none">
+                <button
+                    onClick={onClose}
+                    className="pointer-events-auto w-10 h-10 bg-white/80 backdrop-blur shadow-sm rounded-full flex items-center justify-center text-gray-600"
+                >
+                    <X className="w-5 h-5" />
+                </button>
+            </div>
 
-                {/* Media Container */}
-                <div className="relative w-full h-full">
+            {/* --- LEFT COLUMN: STUDIO MEDIA (Light Gray Background) --- */}
+            <div className="relative flex-1 bg-[#F0F1F3] h-[40vh] lg:h-full flex flex-col justify-center items-center p-6 lg:p-16">
+
+                {/* Desktop Close Button (Floating Top Left) */}
+                <button
+                    onClick={onClose}
+                    className="hidden lg:flex absolute top-8 left-8 z-50 w-12 h-12 bg-white hover:bg-gray-100 shadow-sm rounded-full items-center justify-center text-gray-900 transition-all active:scale-95"
+                >
+                    <X className="w-6 h-6" />
+                </button>
+
+                {/* Video Player Card */}
+                <div className="relative w-full max-w-5xl aspect-video bg-black rounded-3xl overflow-hidden shadow-2xl shadow-gray-200/50 ring-1 ring-black/5 group">
                     <Image
-                        src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?q=80&w=2070&auto=format&fit=crop"
-                        alt="Tutorial Aesthetics"
+                        src="https://images.unsplash.com/photo-1556228578-8d8448ad114f?q=80&w=2070&auto=format&fit=crop"
+                        alt="Tutorial Video"
                         className={cn(
-                            "w-full h-full object-cover transition-transform duration-[2s] ease-out opacity-60",
-                            isPlaying ? "scale-105" : "scale-100"
+                            "w-full h-full object-cover transition-transform duration-700",
+                            isPlaying ? "scale-105 opacity-100" : "scale-100 opacity-90"
                         )}
                         width={1920}
                         height={1080}
                         priority
                     />
 
-                    {/* Cinematic Gradients */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-80" />
-                    <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-transparent" />
-
-                    {/* Centered Play Control */}
-                    <div className="absolute inset-0 flex items-center justify-center">
+                    {/* Video Controls Overlay */}
+                    <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors flex items-center justify-center">
                         <button
                             onClick={() => setIsPlaying(!isPlaying)}
-                            className="group/btn relative flex items-center justify-center w-20 h-20 lg:w-24 lg:h-24 transition-transform duration-300 active:scale-95"
+                            className="w-20 h-20 bg-white/20 backdrop-blur-md border border-white/40 rounded-full flex items-center justify-center text-white hover:scale-110 hover:bg-white/30 transition-all shadow-lg"
                         >
-                            <div className="absolute inset-0 bg-white/10 backdrop-blur-md rounded-full border border-white/20 group-hover/btn:bg-white/20 transition-colors" />
                             {isPlaying ? (
-                                <Pause className="w-8 h-8 lg:w-10 lg:h-10 text-white relative z-10 fill-white" />
+                                <Pause className="w-8 h-8 fill-white" />
                             ) : (
-                                <Play className="w-8 h-8 lg:w-10 lg:h-10 text-white relative z-10 fill-white ml-1" />
+                                <Play className="w-8 h-8 fill-white ml-1" />
                             )}
                         </button>
                     </div>
 
-                    {/* Bottom Info Overlay */}
-                    <div className="absolute bottom-10 left-10 right-10 flex items-end justify-between text-white">
-                        <div>
-                            <div className="flex items-center gap-3 mb-3">
-                                <span className={cn(
-                                    "px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wider uppercase border",
-                                    "bg-white/10 border-white/20 backdrop-blur-sm text-white"
-                                )}>
-                                    {currentStep.category || 'Step'}
-                                </span>
-                                <div className="flex items-center gap-1.5 text-xs font-medium text-white/80 bg-black/40 px-2.5 py-1 rounded-md backdrop-blur-sm">
-                                    <Clock size={12} />
-                                    <span>2 mins</span>
-                                </div>
-                            </div>
-                            <h2 className="text-3xl lg:text-4xl font-bold tracking-tight text-white mb-1 shadow-black drop-shadow-lg">
-                                {currentStep.name}
-                            </h2>
-                            <p className="text-white/60 text-lg font-light tracking-wide">
-                                {currentStep.nameEn || 'Skincare Routine'}
-                            </p>
+                    {/* Bottom Bar inside Video */}
+                    <div className="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-black/60 to-transparent flex items-end justify-between text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <div className="flex items-center gap-4">
+                            <button className="hover:text-gray-200"><Volume2 size={20} /></button>
+                            <div className="text-xs font-medium font-mono">00:00 / 02:15</div>
                         </div>
+                        <button className="hover:text-gray-200"><Maximize2 size={20} /></button>
                     </div>
                 </div>
 
-                {/* Back Button (Mobile/Desktop) */}
-                <button
-                    onClick={onClose}
-                    className="absolute top-6 left-6 z-50 p-2.5 bg-black/20 backdrop-blur-md text-white/70 hover:text-white hover:bg-white/10 rounded-full border border-white/10 transition-all hover:rotate-90 duration-500"
-                >
-                    <X className="w-5 h-5" />
-                </button>
+                {/* Caption / Context underneath */}
+                <div className="mt-8 text-center lg:text-left w-full max-w-5xl flex items-center justify-between text-gray-400">
+                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest">
+                        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                        Immersive Mode
+                    </div>
+                    <span className="text-xs font-mono hidden lg:block">AI SKINCARE ADVISOR v2.0</span>
+                </div>
             </div>
 
-            {/* --- RIGHT COLUMN: CONTENT & CONTROLS --- */}
-            <div className="w-full lg:w-[500px] xl:w-[600px] bg-white h-auto lg:h-full flex flex-col shrink-0 relative z-20 shadow-[-20px_0_40px_-10px_rgba(0,0,0,0.2)]">
+            {/* --- RIGHT COLUMN: INTERACTIVE PANEL (White) --- */}
+            <div className="w-full lg:w-[480px] xl:w-[550px] bg-white h-auto lg:h-full flex flex-col shrink-0 relative z-20 shadow-xl border-l border-gray-100">
 
-                {/* Progress Header */}
-                <div className="px-8 py-6 border-b border-gray-50 flex items-center justify-between bg-white/80 backdrop-blur sticky top-0 z-10">
-                    <div className="flex flex-col">
-                        <span className="text-[10px] uppercase tracking-[0.2em] text-gray-400 font-semibold mb-1">
+                {/* --- HEADER --- */}
+                <div className="px-10 py-8 bg-white flex flex-col border-b border-dashed border-gray-100">
+                    <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-bold text-blue-600 uppercase tracking-widest">
+                            Step {currentStepIndex + 1} of {totalSteps}
+                        </span>
+                        <span className="px-2 py-1 rounded bg-gray-100 text-[10px] font-bold text-gray-500 uppercase">
                             {title}
                         </span>
-                        <div className="flex items-baseline gap-1">
-                            <span className="text-2xl font-bold text-gray-900">{currentStepIndex + 1}</span>
-                            <span className="text-base text-gray-400 font-medium">/ {totalSteps}</span>
-                        </div>
                     </div>
-                    {/* Progress Bar Mini */}
-                    <div className="w-24 h-1 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
                         <div
-                            className="h-full bg-black transition-all duration-500 ease-out"
+                            className="h-full bg-blue-600 transition-all duration-500 ease-out rounded-full"
                             style={{ width: `${progress}%` }}
                         />
                     </div>
                 </div>
 
-                {/* Scrollable Content */}
-                <div className="flex-1 overflow-y-auto px-8 py-8 space-y-10 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                {/* --- SCROLLABLE CONTENT --- */}
+                <div className="flex-1 overflow-y-auto px-10 py-8 space-y-8 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
 
-                    {/* Dosage Card - Refined */}
-                    {currentStep.dosage && (
-                        <div className="group relative overflow-hidden rounded-2xl bg-[#F8F9FA] border border-gray-100 p-6 transition-all hover:shadow-md hover:border-gray-200">
-                            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                                <Droplets className="w-24 h-24 rotate-12" />
-                            </div>
-
-                            <div className="flex items-start gap-5 relative z-10">
-                                <div className="w-12 h-12 rounded-xl bg-white shadow-sm border border-gray-100 flex items-center justify-center shrink-0 text-blue-600">
-                                    <Droplets size={24} strokeWidth={1.5} />
-                                </div>
-                                <div>
-                                    <h4 className="text-sm font-semibold text-gray-900 mb-1 flex items-center gap-2">
-                                        推荐用量
-                                        <span className="text-[10px] font-normal text-gray-400 px-1.5 py-0.5 rounded-full bg-gray-100 border border-gray-200">Laboratory Suggested</span>
-                                    </h4>
-                                    <p className="text-lg text-gray-800 font-medium">
-                                        {currentStep.dosage.description}
-                                    </p>
-                                    {(currentStep.dosage as any)?.usageGuide && (
-                                        <div className="mt-3 flex items-start gap-2 text-xs text-gray-500 bg-white/50 p-2 rounded-lg border border-gray-100/50">
-                                            <Info size={14} className="mt-0.5 text-blue-500 shrink-0" />
-                                            <span className="leading-relaxed">{(currentStep.dosage as any).usageGuide}</span>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Description - Editorial Style */}
-                    <div className="space-y-4">
-                        <p className="text-xl text-gray-600 leading-relaxed font-serif italic">
-                            "{currentStep.description}"
-                        </p>
+                    {/* Title Section */}
+                    <div>
+                        <h2 className="text-3xl font-extrabold text-gray-900 leading-tight mb-2">
+                            {currentStep.name}
+                        </h2>
+                        {currentStep.nameEn && (
+                            <p className="text-lg text-gray-400 font-medium">{currentStep.nameEn}</p>
+                        )}
                     </div>
 
-                    {/* Step-by-Step Instructions - Timeline */}
-                    {currentStep.detailedInstructions && currentStep.detailedInstructions.length > 0 && (
-                        <div>
-                            <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-6 flex items-center gap-2">
-                                <span className="w-8 h-[1px] bg-gray-200"></span>
-                                Steps
-                            </h4>
-                            <div className="relative pl-2 space-y-8">
-                                {/* Connecting Line */}
-                                <div className="absolute left-[19px] top-2 bottom-4 w-0.5 bg-gray-100" />
+                    {/* Step Description */}
+                    <div className="text-base text-gray-600 leading-7 font-medium">
+                        {currentStep.description}
+                    </div>
 
-                                {currentStep.detailedInstructions.map((instr, i) => (
-                                    <div key={i} className="relative flex gap-6 items-start group">
-                                        {/* Timeline Dot */}
-                                        <div className="relative z-10 w-10 h-10 rounded-full border-2 border-white bg-gray-50 text-gray-400 text-sm font-bold flex items-center justify-center shrink-0 shadow-sm transition-all duration-300 group-hover:bg-black group-hover:text-white group-hover:scale-110">
-                                            {i + 1}
-                                        </div>
-
-                                        {/* Text */}
-                                        <div className="pt-1.5 flex-1 p-3 -mt-2.5 rounded-xl transition-colors hover:bg-gray-50">
-                                            <p className="text-base text-gray-700 leading-7 font-medium">
-                                                {instr}
-                                            </p>
-                                        </div>
-                                    </div>
-                                ))}
+                    {/* Scientific Dosage Card */}
+                    {currentStep.dosage && (
+                        <div className="flex gap-4 p-5 rounded-2xl bg-blue-50 border border-blue-100/50 items-stretch">
+                            <div className="w-1 bg-blue-500 rounded-full dark:bg-blue-400"></div>
+                            <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <Beaker size={16} className="text-blue-600" strokeWidth={2.5} />
+                                    <span className="text-xs font-bold text-blue-700 uppercase tracking-wider">Lab Format</span>
+                                </div>
+                                <div className="text-sm font-semibold text-gray-900">
+                                    {currentStep.dosage.description}
+                                </div>
+                                <div className="text-xs text-blue-600/70 mt-1 leading-relaxed">
+                                    {(currentStep.dosage as any)?.usageGuide || 'Apply evenly across target area.'}
+                                </div>
                             </div>
                         </div>
                     )}
+
+                    {/* Instructions List */}
+                    {currentStep.detailedInstructions && currentStep.detailedInstructions.length > 0 && (
+                        <div className="space-y-6 pt-4 border-t border-gray-100">
+                            {currentStep.detailedInstructions.map((instr, i) => (
+                                <div key={i} className="flex gap-4 group">
+                                    <div className="flex flex-col items-center gap-1">
+                                        <span className="flex items-center justify-center w-7 h-7 rounded-full bg-gray-100 border border-gray-200 text-gray-600 text-xs font-bold shadow-sm group-hover:bg-black group-hover:text-white group-hover:border-black transition-colors">
+                                            {i + 1}
+                                        </span>
+                                        {/* Vertical line logic if needed, but clean gap is better for this look */}
+                                    </div>
+                                    <p className="text-sm text-gray-700 leading-7 mt-0.5 group-hover:text-gray-900 transition-colors">
+                                        {instr}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
                 </div>
 
-                {/* Footer Controls - Floating Feel */}
-                <div className="p-6 border-t border-gray-100 bg-white sticky bottom-0 z-20">
+                {/* --- FOOTER CONTROLS --- */}
+                <div className="p-8 bg-white border-t border-gray-100">
                     <div className="flex items-center gap-4">
                         <button
                             onClick={handlePrev}
                             disabled={currentStepIndex === 0}
                             className={cn(
-                                "w-14 h-14 flex items-center justify-center rounded-full border border-gray-200 text-gray-600 transition-all",
-                                currentStepIndex === 0
-                                    ? "opacity-30 cursor-not-allowed"
-                                    : "hover:bg-gray-50 hover:border-black hover:text-black active:scale-95"
+                                "w-14 h-14 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 transition-all hover:border-gray-300 hover:bg-gray-50",
+                                currentStepIndex === 0 && "opacity-40 cursor-not-allowed hover:bg-transparent"
                             )}
                         >
                             <ChevronLeft size={24} />
@@ -278,15 +254,17 @@ export function ImmersiveRoutinePlayer({ steps, title, onClose, onComplete }: Im
 
                         <button
                             onClick={handleNext}
-                            className="flex-1 h-14 bg-black text-white rounded-full font-bold text-lg hover:bg-gray-900 shadow-lg shadow-gray-200 hover:shadow-xl hover:shadow-gray-300 transition-all active:scale-[0.98] flex items-center justify-center gap-2 group overflow-hidden relative"
+                            className="flex-1 h-14 bg-gray-900 text-white rounded-full font-bold text-lg hover:bg-black shadow-lg shadow-gray-200 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2"
                         >
-                            <span className="relative z-10 flex items-center gap-2">
-                                {currentStepIndex === totalSteps - 1 ? (
-                                    <>Finish Routine <Check className="w-5 h-5" /></>
-                                ) : (
-                                    <>Next Step <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" /></>
-                                )}
-                            </span>
+                            {currentStepIndex === totalSteps - 1 ? (
+                                <>
+                                    Complete Analysis <Check size={20} />
+                                </>
+                            ) : (
+                                <>
+                                    Next Step <ArrowRight size={20} />
+                                </>
+                            )}
                         </button>
                     </div>
                 </div>
