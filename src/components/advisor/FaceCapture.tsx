@@ -412,57 +412,38 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modelsLoaded, isAllCaptured, calculateHeadPose, currentStep]);
 
-  /* 播放快门音效 - 更清脆的版本 */
-  const playShutterSound = useCallback(() => {
-    if (isMuted) return;
+  /* 语音播报函数 */
+  const speak = useCallback((text: string) => {
+    if (isMuted || typeof window === 'undefined') return;
     try {
-      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioContext) return;
+      // 取消正在播放的语音
+      window.speechSynthesis.cancel();
 
-      const ctx = new AudioContext();
-
-      // 创建主振荡器 (高音)
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      // 使用更高的频率 (C6 ~ E6)，声音更"亮"
-      // 加上微小的频率衰减，模拟敲击玻璃的质感
-      const now = ctx.currentTime;
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(1200, now);
-      osc.frequency.exponentialRampToValueAtTime(800, now + 0.15); // 微弱的降调增加打击感
-
-      // 更短促的包络 (Crisp Envelope)
-      gain.gain.setValueAtTime(0, now);
-      gain.gain.linearRampToValueAtTime(0.15, now + 0.01); // 极快起音
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2); // 快速消逝
-
-      osc.start(now);
-      osc.stop(now + 0.25);
-
-      // (可选) 增加一个极短的高频泛音，增加"晶莹剔透"的感觉
-      const osc2 = ctx.createOscillator();
-      const gain2 = ctx.createGain();
-      osc2.connect(gain2);
-      gain2.connect(ctx.destination);
-
-      osc2.type = 'sine';
-      osc2.frequency.setValueAtTime(2400, now); // 2倍频
-
-      gain2.gain.setValueAtTime(0, now);
-      gain2.gain.linearRampToValueAtTime(0.05, now + 0.01);
-      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
-
-      osc2.start(now);
-      osc2.stop(now + 0.15);
-
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "zh-CN"; // 中文
+      utterance.rate = 1.0;
+      utterance.volume = 1.0;
+      
+      window.speechSynthesis.speak(utterance);
     } catch (e) {
-      console.error("Audio play failed", e);
+      console.error("Speech synthesis failed", e);
     }
   }, [isMuted]);
+
+  // 监听步骤变化并播报语音指令
+  useEffect(() => {
+    if (isAllCaptured || isLoading) return;
+
+    const instruction = CAPTURE_STEPS.find(s => s.step === currentStep)?.instruction;
+    if (instruction) {
+      // 首次加载或切换步骤时播报
+      // 稍微延迟确保用户准备好
+      const timer = setTimeout(() => {
+        speak(instruction);
+      }, 600);
+      return () => clearTimeout(timer);
+    }
+  }, [currentStep, isAllCaptured, isLoading, speak]);
 
   /**
    * 获取下一步骤
@@ -573,7 +554,8 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
     }));
 
     // 播放音效
-    playShutterSound();
+    // 播报反馈
+    speak("好");
 
     stableCountRef.current = 0;
     faceBoxRef.current = null; // 重置面部框

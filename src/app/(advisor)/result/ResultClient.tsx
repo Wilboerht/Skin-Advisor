@@ -39,6 +39,10 @@ import { ShareRewardBanner } from "@/components/advisor/ShareRewardBanner";
 import styles from "./result.module.css";
 import sidebarStyles from "./sidebar.module.css";
 import { SkincareDashboard } from "@/components/advisor/SkincareDashboard";
+import { ProductRecommendationSection } from "@/components/advisor/ProductRecommendationSection";
+import type { ProductCardData } from "@/components/advisor/ProductCard";
+import { addProductToRoutine } from "@/lib/routine-products";
+import { WishlistNavButton } from "@/components/advisor/WishlistNavButton";
 
 // Types
 export interface ComprehensiveResult {
@@ -483,6 +487,7 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                         </div>
                     </div>
                     <div className={styles.headerActions}>
+                        <WishlistNavButton className="mr-2" />
                         <button onClick={handleShare} className={styles.actionBtn}>
                             <Share2 className="w-4 h-4" />
                             分享
@@ -1166,49 +1171,47 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                         </div>
                     )}
 
-                    {/* 4. Products */}
-                    <div className={`${styles.analysisGrid} ${styles.fadeInUp} border-0 shadow-sm`}>
-                        <div className={styles.sectionTitle}>
-                            <div className="flex items-center gap-3">
-                                <Gift className="w-5 h-5 text-gray-700" />
-                                <span className="text-lg font-semibold text-gray-900">甄选产品推荐</span>
-                            </div>
-                        </div>
-
-                        {result.products && result.products.length > 0 ? (
-                            <div className={styles.productGrid}>
-                                {result.products.map(product => (
-                                    <Link
-                                        key={product.id}
-                                        href={`/products/${product.id}`}
-                                        className={styles.productCard}
-                                        onClick={() => trackProductClick(product.id, product.name)}
-                                    >
-                                        <div className={styles.productImgArea}>
-                                            <img src={product.image} alt={product.name} className={styles.productImg} />
-                                        </div>
-                                        <div className={styles.productMeta}>
-                                            <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1 block">{product.category}</span>
-                                            <h4 className="text-[15px] font-semibold text-gray-900 mb-1 leading-snug line-clamp-2">{product.name}</h4>
-                                            <div className="text-[13px] text-gray-600 leading-relaxed mb-3 line-clamp-2">
-                                                推荐理由：{product.reason}
-                                            </div>
-                                            <div className="mt-auto pt-3 border-t border-gray-100 flex justify-between items-center text-xs font-medium text-gray-900">
-                                                <span>{product.price || '查看详情'}</span>
-                                                <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
-                                            </div>
-                                        </div>
-                                    </Link>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="p-8 text-center bg-white">
-                                <div className="text-[14px] leading-relaxed text-gray-700">
-                                    暂无针对性产品推荐，请咨询护肤专家。
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                    {/* 4. Products - 新版按步骤分组推荐 */}
+                    <ProductRecommendationSection
+                        products={(result.products || []).map(p => ({
+                            id: p.id,
+                            name: p.name,
+                            nameEn: p.nameEn,
+                            category: p.category,
+                            image: p.image,
+                            price: p.price || '',
+                            reason: p.reason,
+                            keyIngredients: [], // 从数据库获取
+                            benefits: [], // 从数据库获取
+                        } as ProductCardData))}
+                        isLoading={loading}
+                        envData={{
+                            uvIndex: envData.uvIndex,
+                            humidity: envData.humidity,
+                            aqi: envData.aqi
+                        }}
+                        faceAnalysis={faceAnalysis}
+                        onAddToRoutine={(productId) => {
+                            const product = result.products?.find(p => p.id === productId);
+                            if (product) {
+                                addProductToRoutine({
+                                    id: product.id,
+                                    name: product.name,
+                                    category: product.category,
+                                    image: product.image,
+                                }, 'both');
+                                toast.success(`${product.name} 已加入今日护肤流程`);
+                            }
+                        }}
+                        onProductClick={(productId) => {
+                            const product = result.products?.find(p => p.id === productId);
+                            if (product) {
+                                trackProductClick(productId, product.name);
+                            }
+                            router.push(`/products/${productId}`);
+                        }}
+                        className={styles.fadeInUp}
+                    />
                 </div>
             </main >
 

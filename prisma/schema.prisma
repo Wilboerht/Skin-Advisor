@@ -147,6 +147,7 @@ model User {
   // Relations
   advisorSessions AdvisorSession[]
   shareRewards    ShareReward[]
+  wishlists       Wishlist[]
 }
 
 // 产品库
@@ -167,6 +168,41 @@ model Product {
   sortOrder         Int      @default(0)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+
+  // ===== 新增字段 =====
+  step              String?  // 护肤步骤: cleanser, toner, serum, eye_cream, cream, sunscreen, mask, oil
+  howToUse          String?  // 使用方法说明
+  affiliateLinks    Json?    // 电商链接 { taobao: "", jd: "", xiaohongshu: "", douyin: "" }
+  ingredientDetails Json?    // 详细成分解读 [{ name: "烟酰胺", effect: "美白提亮", concentration: "5%" }]
+  
+  // Relations
+  wishlistItems     WishlistItem[]
+}
+
+// 心愿单
+model Wishlist {
+  id        String         @id @default(cuid())
+  userId    String?        // 已登录用户关联
+  guestId   String?        // 未登录用户 (localStorage fingerprint)
+  user      User?          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     WishlistItem[]
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@unique([userId])
+  @@index([guestId])
+}
+
+model WishlistItem {
+  id         String   @id @default(cuid())
+  wishlistId String
+  wishlist   Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  addedAt    DateTime @default(now())
+  note       String?  // 用户备注
+
+  @@unique([wishlistId, productId])
 }
 
 // 分享领奖记录

@@ -60,6 +60,20 @@ function TagInput({
     );
 }
 
+// 护肤步骤选项
+const STEP_OPTIONS = [
+    { value: 'cleanser', label: '洁面' },
+    { value: 'toner', label: '化妆水' },
+    { value: 'essence', label: '精华液' },
+    { value: 'serum', label: '精华' },
+    { value: 'eye_cream', label: '眼霜' },
+    { value: 'cream', label: '面霜' },
+    { value: 'sunscreen', label: '防晒' },
+    { value: 'mask', label: '面膜' },
+    { value: 'oil', label: '护肤油' },
+    { value: 'other', label: '其他' },
+];
+
 export default function ProductForm({ initialData }: { initialData?: any }) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
@@ -71,6 +85,16 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
         description: initialData?.description || "",
         image: initialData?.image || "",
         stock: initialData?.stock || 0,
+        step: initialData?.step || "",
+        howToUse: initialData?.howToUse || "",
+    });
+
+    // 电商链接
+    const [affiliateLinks, setAffiliateLinks] = useState({
+        taobao: initialData?.affiliateLinks?.taobao || "",
+        jd: initialData?.affiliateLinks?.jd || "",
+        xiaohongshu: initialData?.affiliateLinks?.xiaohongshu || "",
+        douyin: initialData?.affiliateLinks?.douyin || "",
     });
 
     const [keyIngredients, setKeyIngredients] = useState<string[]>(initialData?.keyIngredients || []);
@@ -98,11 +122,18 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
         e.preventDefault();
         setLoading(true);
 
+        // 过滤空的电商链接
+        const filteredLinks: Record<string, string> = {};
+        Object.entries(affiliateLinks).forEach(([key, value]) => {
+            if (value.trim()) filteredLinks[key] = value.trim();
+        });
+
         const payload = {
             ...formData,
             keyIngredients,
             benefits,
             suitableSkinTypes,
+            affiliateLinks: Object.keys(filteredLinks).length > 0 ? filteredLinks : null,
         };
 
         try {
@@ -202,6 +233,29 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
                                 className="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900 sm:text-sm p-2 border"
                             />
                         </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700">护肤步骤</label>
+                            <select
+                                value={formData.step}
+                                onChange={e => setFormData({ ...formData, step: e.target.value })}
+                                className="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900 sm:text-sm p-2 border bg-white"
+                            >
+                                <option value="">选择步骤...</option>
+                                {STEP_OPTIONS.map(opt => (
+                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700">使用方法</label>
+                        <textarea
+                            rows={2}
+                            value={formData.howToUse}
+                            onChange={e => setFormData({ ...formData, howToUse: e.target.value })}
+                            placeholder="例：取适量于掌心，轻拍于面部..."
+                            className="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900 sm:text-sm p-2 border"
+                        />
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-slate-700">Description</label>
@@ -260,6 +314,53 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
                                     {opt.label}
                                 </button>
                             ))}
+                        </div>
+                    </div>
+
+                    {/* 电商链接 */}
+                    <div className="pt-4 border-t border-slate-200">
+                        <label className="block text-sm font-medium text-slate-700 mb-3">电商购买链接</label>
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-2">
+                                <span className="w-20 text-sm text-slate-600">🛒 淘宝</span>
+                                <input
+                                    type="url"
+                                    value={affiliateLinks.taobao}
+                                    onChange={e => setAffiliateLinks({ ...affiliateLinks, taobao: e.target.value })}
+                                    placeholder="https://..."
+                                    className="flex-1 rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900 sm:text-sm p-2 border"
+                                />
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="w-20 text-sm text-slate-600">📦 京东</span>
+                                <input
+                                    type="url"
+                                    value={affiliateLinks.jd}
+                                    onChange={e => setAffiliateLinks({ ...affiliateLinks, jd: e.target.value })}
+                                    placeholder="https://..."
+                                    className="flex-1 rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900 sm:text-sm p-2 border"
+                                />
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="w-20 text-sm text-slate-600">📕 小红书</span>
+                                <input
+                                    type="url"
+                                    value={affiliateLinks.xiaohongshu}
+                                    onChange={e => setAffiliateLinks({ ...affiliateLinks, xiaohongshu: e.target.value })}
+                                    placeholder="https://..."
+                                    className="flex-1 rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900 sm:text-sm p-2 border"
+                                />
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="w-20 text-sm text-slate-600">🎵 抖音</span>
+                                <input
+                                    type="url"
+                                    value={affiliateLinks.douyin}
+                                    onChange={e => setAffiliateLinks({ ...affiliateLinks, douyin: e.target.value })}
+                                    placeholder="https://..."
+                                    className="flex-1 rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900 sm:text-sm p-2 border"
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
