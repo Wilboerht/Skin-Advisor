@@ -264,7 +264,7 @@ export async function POST(request: NextRequest) {
         });
 
     } catch (error) {
-        aiLogger.error("Chat Stream API Error", error);
+        aiLogger.error("Chat Stream API Error", error as any);
         return NextResponse.json({ error: "AI Service Error" }, { status: 500 });
     }
 }

@@ -219,11 +219,24 @@ export async function POST(request: NextRequest) {
             }
 
             case "result_view": {
-                await prisma.advisorSession.update({
+                // 使用 upsert 避免通过分享链接直接访问时找不到记录
+                await prisma.advisorSession.upsert({
                     where: { sessionId },
-                    data: {
+                    update: {
                         resultViewedAt: now,
                         completedAt: now,
+                    },
+                    create: {
+                        sessionId,
+                        startedAt: now,
+                        resultViewedAt: now,
+                        completedAt: now,
+                        userAgent: clientInfo.userAgent,
+                        ip: clientInfo.ip,
+                        referrer: clientInfo.referer,
+                        deviceType: clientInfo.deviceType,
+                        browser: clientInfo.browser,
+                        os: clientInfo.os,
                     },
                 });
                 break;

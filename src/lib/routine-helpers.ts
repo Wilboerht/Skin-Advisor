@@ -7,7 +7,7 @@ export interface RoutineStep {
     duration: string;
     description: string;
     dosage?: {
-        dosage: string;
+        dosage: string | number;
         unit: string;
         description: string;
         productName: string;
@@ -16,7 +16,7 @@ export interface RoutineStep {
 
 export interface CyclingDay {
     day: number;
-    phase: 'exfoliate' | 'retinoid' | 'recovery';
+    phase: 'exfoliate' | 'retinoid' | 'recovery' | 'maintenance';
     title: string;
     activeIngredient?: string;
     description?: string;
@@ -80,13 +80,15 @@ export function getCycleDayForDate(targetDate: Date, cycleStartDate: Date): numb
 }
 
 export const CYCLE_COLORS = {
-    exfoliate: 'bg-red-50 text-red-600 border-red-200',
-    retinoid: 'bg-orange-50 text-orange-600 border-orange-200',
-    recovery: 'bg-green-50 text-green-600 border-green-200',
+    exfoliate: 'bg-[#F9F2F5] text-[#C14C8A] border-[#F9F2F5]',
+    retinoid: 'bg-[#FAEBDD] text-[#D9730D] border-[#FAEBDD]',
+    recovery: 'bg-[#EDF3EC] text-[#448361] border-[#EDF3EC]',
+    maintenance: 'bg-[#FBF3DB] text-[#CB912F] border-[#FBF3DB]',
 };
 
 export const CYCLE_DOTS = {
-    exfoliate: 'bg-red-500',
-    retinoid: 'bg-orange-500',
-    recovery: 'bg-green-500',
+    exfoliate: 'bg-[#D44C47]',
+    retinoid: 'bg-[#D9730D]',
+    recovery: 'bg-[#448361]',
+    maintenance: 'bg-[#CB912F]',
 };

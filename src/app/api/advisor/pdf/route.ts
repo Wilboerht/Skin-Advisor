@@ -278,8 +278,9 @@ export async function POST(request: NextRequest) {
             doc.text(`${levelMeta.nameEn} Care - ${levelMeta.desc} (${climateInfo?.name || "标准"} 适配)`, marginX, y);
             y += 8;
 
-            ["morning", "evening"].forEach(scenario => {
-                const r = levelData[scenario as any];
+            (["morning", "evening"] as const).forEach(scenario => {
+                const scenarioKey = scenario as import("@/lib/skincare-dosage").RoutineScenario;
+                const r = levelData[scenarioKey];
                 if (r && r.steps.length > 0) {
                     ensureSpace(30);
 
@@ -287,7 +288,7 @@ export async function POST(request: NextRequest) {
                     doc.setFontSize(11);
                     doc.setTextColor(...rgb(gold)); // Use Gold for Scenario Title
                     doc.setFont("NotoSansSC", "bold"); // Fake bold if possible or just color
-                    const scenarioKey = scenario as import("@/lib/skincare-dosage").RoutineScenario;
+
                     const sName = SCENARIO_LABELS[scenarioKey]?.name || scenario;
                     const sEn = SCENARIO_LABELS[scenarioKey]?.nameEn || "";
                     doc.text(`${sName} / ${sEn}`, marginX, y);

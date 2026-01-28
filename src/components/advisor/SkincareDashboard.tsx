@@ -13,8 +13,12 @@ import {
     Sun,
     BatteryCharging,
     Sparkles,
-    ShieldCheck
+    ShieldCheck,
+    ChevronDown,
+    ChevronUp,
+    Video
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     getEffectiveSteps,
     getCycleDayForDate,
@@ -40,6 +44,7 @@ export function SkincareDashboard({ routineData }: SkincareDashboardProps) {
     const [isImmersiveOpen, setIsImmersiveOpen] = useState(false);
     const [activeTab, setActiveTab] = useState<'morning' | 'evening'>('morning'); // Morning logic is simple, Evening has cycling
     const [currentMonth, setCurrentMonth] = useState<Date>(new Date()); // For calendar navigation
+    const [expandedStep, setExpandedStep] = useState<number | null>(null);
 
     // Initialize Cycle Start Date & Load Progress
     useEffect(() => {
@@ -154,12 +159,31 @@ export function SkincareDashboard({ routineData }: SkincareDashboardProps) {
         return { weeks, weekDays: ['日', '一', '二', '三', '四', '五', '六'] };
     }, [cycleStartDate, currentMonth, routineData.cycling]);
 
-    // Completion Status
+    // Today's Global Progress (for Header)
+    const todayProgress = useMemo(() => {
+        const todayStr = today.toISOString().slice(0, 10);
+        const todayCDay = cycleStartDate ? getCycleDayForDate(today, cycleStartDate) : 1;
+        const todayBase = activeTab === 'morning' ? routineData.morning.steps : routineData.evening.steps;
+        const todayEff = getEffectiveSteps(todayBase, routineData.cycling, todayCDay, activeTab === 'evening');
+        const todayDone = todayEff.reduce((acc, _, idx) => {
+            const key = `${todayStr}_${activeTab}_${idx}`;
+            return acc + (completedSteps[key] ? 1 : 0);
+        }, 0);
+        return todayEff.length > 0 ? Math.round((todayDone / todayEff.length) * 100) : 0;
+    }, [today, cycleStartDate, routineData, activeTab, completedSteps]);
+
+    const progressMessage = useMemo(() => {
+        if (todayProgress === 0) return "新的一天，从呵护肌肤开始 ✨";
+        if (todayProgress < 100) return "进行中，离美肌更近一步 💪";
+        return "今日任务已满分完成，太棒了 🌟";
+    }, [todayProgress]);
+
+    // Current Context Progress
     const completedCount = effectiveSteps.reduce((acc, _, idx) => {
         const key = `${selectedDate.toISOString().slice(0, 10)}_${activeTab}_${idx}`;
         return acc + (completedSteps[key] ? 1 : 0);
     }, 0);
-    const progress = Math.round((completedCount / effectiveSteps.length) * 100);
+    const progress = effectiveSteps.length > 0 ? Math.round((completedCount / effectiveSteps.length) * 100) : 0;
 
     return (
         <div className="flex h-full w-full bg-[#fdfdfd] overflow-hidden select-none">
@@ -259,11 +283,9 @@ export function SkincareDashboard({ routineData }: SkincareDashboardProps) {
 
                                                 {/* Status Dot/Indicator */}
                                                 <div className="absolute bottom-1.5 flex gap-0.5">
-                                                    {isPast && hasAnyCompletion ? (
-                                                        <div className={`w-1 h-1 rounded-full ${isSelected ? 'bg-[#337EA9]' : 'bg-[#448361]'}`} />
-                                                    ) : dotClass ? (
+                                                    {dotClass && (
                                                         <div className={`w-1 h-1 rounded-full ${isSelected ? 'bg-[#337EA9]' : dotClass}`} />
-                                                    ) : null}
+                                                    )}
                                                 </div>
 
                                                 {/* Selected Glow */}
@@ -336,23 +358,30 @@ export function SkincareDashboard({ routineData }: SkincareDashboardProps) {
                             </button>
                         </div>
 
-                        {/* Minimalist Progress Circle */}
-                        <div className="relative w-11 h-11 flex items-center justify-center">
-                            <svg className="absolute inset-0 w-full h-full -rotate-90">
-                                <circle cx="22" cy="22" r="19" fill="transparent" stroke="#F1F1EF" strokeWidth="2.5" />
-                                <circle
-                                    cx="22" cy="22" r="19"
-                                    fill="transparent"
-                                    stroke="currentColor"
-                                    strokeWidth="2.5"
-                                    className="text-[#37352F]"
-                                    strokeDasharray={119.3}
-                                    strokeDashoffset={119.3 - (119.3 * progress) / 100}
-                                    strokeLinecap="round"
-                                    style={{ transition: 'stroke-dashoffset 1s ease-in-out' }}
-                                />
-                            </svg>
-                            <span className="text-[11px] font-bold text-[#37352F] font-mono">{progress}%</span>
+                        {/* Today's Global Progress */}
+                        <div className="flex items-center gap-4">
+                            <div className="relative w-11 h-11 flex items-center justify-center">
+                                <svg className="absolute inset-0 w-full h-full -rotate-90">
+                                    <circle cx="22" cy="22" r="19" fill="transparent" stroke="#F1F1EF" strokeWidth="2.5" />
+                                    <circle
+                                        cx="22" cy="22" r="19"
+                                        fill="transparent"
+                                        stroke="#337EA9"
+                                        strokeWidth="2.5"
+                                        strokeDasharray={119.3}
+                                        strokeDashoffset={119.3 - (119.3 * todayProgress) / 100}
+                                        strokeLinecap="round"
+                                        style={{ transition: 'stroke-dashoffset 1s ease-in-out' }}
+                                    />
+                                </svg>
+                                <span className="text-[11px] font-bold text-[#37352F] font-mono">{todayProgress}%</span>
+                            </div>
+                            <div className="flex flex-col items-start">
+                                <span className="text-[11px] font-bold text-[#37352F] tracking-tight">今日进度</span>
+                                <span className="text-[11px] text-[#787774] font-medium opacity-60">
+                                    {progressMessage}
+                                </span>
+                            </div>
                         </div>
                     </div>
 
@@ -395,11 +424,11 @@ export function SkincareDashboard({ routineData }: SkincareDashboardProps) {
                         {isToday && (
                             <button
                                 onClick={() => setIsImmersiveOpen(true)}
-                                className="group/btn flex items-center gap-4 pl-8 pr-3 py-3 rounded-full bg-white border border-[#E9E9E7] hover:border-[#37352F] transition-all duration-500 active:scale-95 shadow-sm hover:shadow-xl hover:-translate-y-0.5"
+                                className="group/btn flex items-center gap-3.5 pl-6 pr-1.5 py-1.5 rounded-full bg-white border border-[#E9E9E7] hover:border-[#37352F] transition-all duration-500 active:scale-[0.98] shadow-[0_2px_10px_rgba(0,0,0,0.03)] hover:shadow-[0_10px_20px_rgba(0,0,0,0.06)]"
                             >
-                                <span className="text-sm font-bold text-[#37352F] tracking-tight">沉浸跟练</span>
-                                <div className="w-10 h-10 rounded-full bg-[#37352F] flex items-center justify-center text-white transition-all group-hover/btn:scale-110 group-hover/btn:rotate-[360deg]">
-                                    <Play className="w-4 h-4 fill-white ml-0.5" />
+                                <span className="text-[14px] font-bold text-[#37352F] tracking-tight ml-1">开始跟练</span>
+                                <div className="w-9 h-9 rounded-full bg-[#37352F] flex items-center justify-center text-white transition-all duration-500 group-hover/btn:scale-105 group-hover/btn:shadow-[0_5px_15px_rgba(0,0,0,0.12)]">
+                                    <Play className="w-3.5 h-3.5 fill-current text-white translate-x-0.5" />
                                 </div>
                             </button>
                         )}
@@ -429,86 +458,167 @@ export function SkincareDashboard({ routineData }: SkincareDashboardProps) {
                                 const isDone = !!completedSteps[key];
 
                                 return (
-                                    <div
-                                        key={idx}
-                                        className={`
-                                            group relative flex items-start gap-6 px-4 py-5 transition-all duration-300
-                                            ${idx !== effectiveSteps.length - 1 ? 'border-b border-[#F1F1EF]' : ''}
-                                            ${isDone ? 'opacity-30' : 'hover:bg-[#F9F9F8] cursor-pointer rounded-xl'}
-                                        `}
-                                        onClick={() => isToday && toggleStep(idx)}
-                                    >
-                                        {/* Timeline Indicator */}
-                                        <div className="relative w-8 flex flex-col items-center flex-shrink-0">
-                                            {/* Vertical line - spans from top to bottom of the step */}
-                                            {idx !== effectiveSteps.length - 1 && (
-                                                <div className="absolute top-10 -bottom-5 w-[1px] bg-[#F1F1EF]" />
-                                            )}
-
-                                            <div className="relative z-10 pt-1">
-                                                {isDone ? (
-                                                    <div className="w-8 h-8 rounded-full bg-[#EDF3EC] text-[#448361] flex items-center justify-center shadow-sm">
-                                                        <CheckCircle2 size={16} />
-                                                    </div>
-                                                ) : (
-                                                    <div className="w-8 h-8 rounded-full bg-transparent text-[#D4D4D2] flex items-center justify-center border border-transparent group-hover:border-[#F1F1EF] group-hover:bg-white group-hover:text-[#37352F] transition-all duration-300">
-                                                        <span className="text-[13px] font-mono font-bold tracking-tighter">
-                                                            {String(idx + 1).padStart(2, '0')}
-                                                        </span>
-                                                    </div>
+                                    <React.Fragment key={idx}>
+                                        <div
+                                            className={`
+                                                group relative flex items-start gap-6 px-4 py-5 transition-all duration-300
+                                                ${idx !== effectiveSteps.length - 1 && expandedStep !== idx ? 'border-b border-[#F1F1EF]' : ''}
+                                                ${isDone ? 'opacity-40' : 'hover:bg-[#F9F9F8] cursor-pointer'}
+                                                ${expandedStep === idx ? 'bg-[#F9F9F8] rounded-t-2xl' : 'rounded-xl'}
+                                            `}
+                                            onClick={() => isToday && setExpandedStep(expandedStep === idx ? null : idx)}
+                                        >
+                                            {/* Timeline Indicator */}
+                                            <div className="relative w-8 flex flex-col items-center flex-shrink-0">
+                                                {/* Vertical line - spans from top to bottom of the step */}
+                                                {idx !== effectiveSteps.length - 1 && (
+                                                    <div className={`absolute top-10 -bottom-5 w-[1px] ${expandedStep === idx ? 'bg-transparent' : 'bg-[#F1F1EF]'}`} />
                                                 )}
-                                            </div>
-                                        </div>
 
-                                        {/* Content Area */}
-                                        <div className="flex-1 min-w-0 pt-0.5">
-                                            <div className="flex items-center gap-2.5 mb-1">
-                                                <h5 className={`font-bold text-[16px] tracking-tight transition-all ${isDone ? 'text-[#787774] line-through' : 'text-[#37352F]'}`}>
-                                                    {step.name}
-                                                </h5>
-                                                {!isDone && (
-                                                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#F1F1EF] text-[#787774] opacity-80">
-                                                        {step.duration}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <p className={`text-[14px] leading-relaxed transition-all ${isDone ? 'text-[#D4D4D2]' : 'text-[#787774]'} line-clamp-2`}>
-                                                {step.description}
-                                            </p>
-                                        </div>
-
-                                        {/* Dosage Badge */}
-                                        {step.dosage && !isDone && (
-                                            <div className="shrink-0 pt-1">
-                                                <div className="px-4 py-2 bg-[#F1F1EF]/50 rounded-lg text-[11px] font-bold text-[#787774] border border-transparent transition-all group-hover:bg-white group-hover:border-[#E9E9E7] group-hover:shadow-sm">
-                                                    {step.dosage.description}
+                                                <div className="relative z-10 pt-1">
+                                                    <div
+                                                        className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            if (isToday) toggleStep(idx);
+                                                        }}
+                                                    >
+                                                        {isDone ? (
+                                                            <div className="w-8 h-8 rounded-full bg-[#EDF3EC] text-[#448361] flex items-center justify-center shadow-sm hover:scale-110 transition-transform">
+                                                                <CheckCircle2 size={16} />
+                                                            </div>
+                                                        ) : (
+                                                            <div className="w-8 h-8 rounded-full bg-transparent text-[#D4D4D2] flex items-center justify-center border border-transparent group-hover:border-[#F1F1EF] group-hover:bg-white group-hover:text-[#37352F] transition-all duration-300">
+                                                                <span className="text-[13px] font-mono font-bold tracking-tighter">
+                                                                    {String(idx + 1).padStart(2, '0')}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
-                                        )}
-                                    </div>
+
+                                            {/* Content Area */}
+                                            <div className="flex-1 min-w-0 pt-0.5">
+                                                <div className="flex items-center gap-2.5 mb-1">
+                                                    <h5 className={`font-bold text-[16px] tracking-tight transition-all ${isDone ? 'text-[#787774] line-through' : 'text-[#37352F]'}`}>
+                                                        {step.name}
+                                                    </h5>
+                                                    {!isDone && (
+                                                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#F1F1EF] text-[#787774] opacity-80">
+                                                            {step.duration}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <p className={`text-[14px] leading-relaxed transition-all ${isDone ? 'text-[#D4D4D2]' : 'text-[#787774]'} ${expandedStep === idx ? '' : 'line-clamp-1'}`}>
+                                                    {step.description}
+                                                </p>
+                                            </div>
+
+                                            {/* Right Side: Dosage or Chevron */}
+                                            <div className="flex items-center gap-3 shrink-0 pt-1">
+                                                {step.dosage && !isDone && expandedStep !== idx && (
+                                                    <div className="px-4 py-2 bg-[#F1F1EF]/50 rounded-lg text-[11px] font-bold text-[#787774]">
+                                                        {step.dosage.description}
+                                                    </div>
+                                                )}
+                                                <div className={`transition-transform duration-500 ${expandedStep === idx ? 'rotate-180 text-[#37352F]' : 'text-[#D4D4D2] opacity-40'}`}>
+                                                    <ChevronDown size={18} />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Expanded Details Section */}
+                                        <AnimatePresence>
+                                            {expandedStep === idx && (
+                                                <motion.div
+                                                    initial={{ height: 0, opacity: 0 }}
+                                                    animate={{ height: 'auto', opacity: 1 }}
+                                                    exit={{ height: 0, opacity: 0 }}
+                                                    transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+                                                    className="overflow-hidden bg-[#F9F9F8] rounded-b-2xl mb-4"
+                                                >
+                                                    <div className="pl-18 pr-6 pb-8 pt-2 flex flex-col gap-6">
+                                                        {/* Media Preview Area */}
+                                                        <div className="relative aspect-video rounded-2xl overflow-hidden bg-[#F1F1EF] border border-[#E9E9E7] group/media">
+                                                            <div className="absolute inset-0 flex items-center justify-center z-10">
+                                                                <div className="flex flex-col items-center gap-3 text-[#A1A19E] group-hover/media:text-[#37352F] transition-colors duration-500">
+                                                                    <div className="w-12 h-12 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center shadow-sm">
+                                                                        <Video size={24} />
+                                                                    </div>
+                                                                    <span className="text-[10px] font-bold uppercase tracking-[0.2em]">View Tutorial Guide</span>
+                                                                </div>
+                                                            </div>
+                                                            <Image
+                                                                src={`https://images.unsplash.com/photo-1556228720-195a672e8a03?q=80&w=800&auto=format&fit=crop`}
+                                                                alt="tutorial"
+                                                                className="w-full h-full object-cover opacity-60 group-hover/media:scale-105 transition-transform duration-[2s]"
+                                                                width={800}
+                                                                height={450}
+                                                            />
+                                                        </div>
+
+                                                        {/* Step Details List */}
+                                                        <div className="space-y-5">
+                                                            <h6 className="text-[11px] font-bold text-[#787774] uppercase tracking-[0.2em] flex items-center gap-2.5">
+                                                                <div className="w-1.5 h-1.5 rounded-full bg-[#37352F]" />
+                                                                具体步骤与细节
+                                                            </h6>
+                                                            <div className="grid grid-cols-1 gap-4 pl-1">
+                                                                {[
+                                                                    "取适量产品于掌心，均匀点涂在额头、两颊及下巴区域。",
+                                                                    "由内向外、由下向上顺着皮肤纹理轻轻划圈按摩至吸收。",
+                                                                    "针对T区或毛孔粗大区域可适当增加用量，轻轻按压。",
+                                                                    "待产品完全吸收（约30秒）后，再进行下一步护肤操作。"
+                                                                ].map((instr, i) => (
+                                                                    <div key={i} className="flex gap-4 items-start group/instr">
+                                                                        <span className="text-[11px] font-mono font-bold text-[#A1A19E] pt-1 group-hover/instr:text-[#37352F] transition-colors">{String(i + 1).padStart(2, '0')}</span>
+                                                                        <p className="text-[14px] text-[#37352F] leading-relaxed font-medium">
+                                                                            {instr}
+                                                                        </p>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Extra Advice */}
+                                                        <div className="p-5 rounded-2xl bg-white border border-[#E9E9E7] shadow-sm">
+                                                            <div className="flex items-center gap-2.5 mb-2.5 text-[#337EA9]">
+                                                                <Info size={16} strokeWidth={2.5} />
+                                                                <span className="text-[13px] font-bold tracking-tight">护肤实验室建议</span>
+                                                            </div>
+                                                            <p className="text-[13px] text-[#787774] leading-relaxed text-pretty">
+                                                                {(step.dosage as any)?.usageGuide || step.description}。建议在皮肤微湿状态下使用以锁住水分，如有任何不适请立即停用。
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </React.Fragment>
                                 );
                             })}
                         </div>
                     </div>
                 </div>
-
-                {/* Immersive Player Portal */}
-                {isImmersiveOpen && (
-                    <ImmersiveRoutinePlayer
-                        steps={effectiveSteps}
-                        title={activeTab === 'evening' ? `晚间护肤 · ${currentCycleInfo?.title || '常规'}` : '早间护肤 Routine'}
-                        onClose={() => setIsImmersiveOpen(false)}
-                        onComplete={() => {
-                            effectiveSteps.forEach((_, idx) => {
-                                const dateKey = selectedDate.toISOString().slice(0, 10);
-                                const key = `${dateKey}_${activeTab}_${idx}`;
-                                setCompletedSteps(prev => ({ ...prev, [key]: true }));
-                            });
-                            setIsImmersiveOpen(false);
-                        }}
-                    />
-                )}
             </main>
+
+            {/* Immersive Player Portal */}
+            {isImmersiveOpen && (
+                <ImmersiveRoutinePlayer
+                    steps={effectiveSteps}
+                    title={activeTab === 'evening' ? `晚间护肤 · ${currentCycleInfo?.title || '常规'}` : '早间护肤 Routine'}
+                    onClose={() => setIsImmersiveOpen(false)}
+                    onComplete={() => {
+                        effectiveSteps.forEach((_, idx) => {
+                            const dateKey = selectedDate.toISOString().slice(0, 10);
+                            const key = `${dateKey}_${activeTab}_${idx}`;
+                            setCompletedSteps(prev => ({ ...prev, [key]: true }));
+                        });
+                        setIsImmersiveOpen(false);
+                    }}
+                />
+            )}
         </div>
     );
 }

@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     try {
         // 1. 简单的身份/频率检查
         const ip = getClientIP(request);
-        const limitParams = await rateLimit(ip + ":oss-sign", 5, 60000); // 1分钟5次
+        const limitParams = await rateLimit(ip + ":oss-sign", "oss-sign", { maxRequests: 5 });
         if (!limitParams.success) {
             return NextResponse.json({ error: "请求过于频繁" }, { status: 429 });
         }

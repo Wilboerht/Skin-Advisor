@@ -22,7 +22,6 @@ import {
     X,
     MapPin,
     Droplets,
-    Wind,
     Play // Import Play icon
 } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
@@ -222,7 +221,7 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
     const [envData, setEnvData] = useState({
         uvIndex: 0,
         humidity: 50,
-        aqi: 50,
+        aqi: 50, // Added AQI
         temperature: 20,
         location: "定位中...",
         isRealData: false
@@ -254,7 +253,7 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                 setEnvData({
                     uvIndex: 5,
                     humidity: 45,
-                    aqi: 50,
+                    aqi: 75, // Default AQI
                     temperature: 22,
                     location: "通用环境",
                     isRealData: false
@@ -675,17 +674,18 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                                 </div>
                             </div>
 
-                            {/* AQI */}
+                            {/* AQI (New) */}
                             <div className="text-right border-l border-gray-100 pl-4 md:pl-8 flex-1 md:flex-auto">
                                 <div className="text-xs text-gray-400 mb-0.5 flex items-center justify-end gap-1">
-                                    <Wind className="w-3 h-3" /> 空气
+                                    <Activity className="w-3 h-3" /> AQI
                                 </div>
                                 <div className="font-mono text-lg font-medium text-gray-900 leading-none">
-                                    {envData.aqi} <span className="text-xs text-gray-400 font-sans ml-0.5">
-                                        {envData.aqi <= 50 ? "(优)" : envData.aqi <= 100 ? "(良)" : "(差)"}
+                                    {envData.aqi || '-'} <span className="text-xs text-gray-400 font-sans ml-0.5">
+                                        {(envData.aqi || 0) <= 50 ? "(优)" : (envData.aqi || 0) <= 100 ? "(良)" : "(差)"}
                                     </span>
                                 </div>
                             </div>
+
                         </div>
                     </div>
                     {/* Dynamic Alerts */}
@@ -700,12 +700,6 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                             <div className="flex items-start gap-2 text-xs md:text-sm text-amber-800 bg-amber-50 border border-amber-100 px-3 py-2 rounded-lg">
                                 <span className="shrink-0 mt-0.5">💧</span>
                                 <span><b>极度干燥预警：</b>空气湿度过低，系统建议在面霜中滴入护肤油以增强封闭性。</span>
-                            </div>
-                        )}
-                        {envData.aqi > 150 && (
-                            <div className="flex items-start gap-2 text-xs md:text-sm text-purple-800 bg-purple-50 border border-purple-100 px-3 py-2 rounded-lg">
-                                <span className="shrink-0 mt-0.5">🌫️</span>
-                                <span><b>空气污染防御：</b>PM2.5浓度较高，系统已将晚间洁面调整为“深层清洁/排浊”模式。</span>
                             </div>
                         )}
                     </div>

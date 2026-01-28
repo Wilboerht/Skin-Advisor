@@ -10,8 +10,9 @@ const updateSchema = z.object({
 
 export async function PATCH(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    props: { params: Promise<{ id: string }> }
 ) {
+    const params = await props.params;
     try {
         const body = await request.json();
         const validation = updateSchema.safeParse(body);

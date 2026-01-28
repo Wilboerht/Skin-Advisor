@@ -18,8 +18,34 @@ import { FaceAnalysisResult } from "./advisor-utils";
 
 export type ClimateType = "W1" | "A2" | "S1" | "A1" | "S2" | "M1";
 export type SkinType = "oily" | "combination_oily" | "normal" | "combination_dry" | "dry" | "sensitive";
-export type RoutineLevel = "basic" | "advanced" | "pro"; // Simplified levels
-export type RoutineScenario = "morning" | "evening";
+export type RoutineLevel = "daily" | "professional" | "ultimate";
+export type RoutineScenario = "morning" | "evening" | "home" | "travel";
+
+export interface SkincareRoutineStep {
+    order: number;
+    name: string;
+    nameEn?: string;
+    category: ProductCategory;
+    duration: string;
+    description: string;
+    dosage?: {
+        dosage: string;
+        unit: string;
+        description: string;
+        productName: string;
+    };
+    frequency?: string;
+    tips?: string[];
+}
+
+
+export interface SkincareRoutine {
+    level: string;
+    scenario: string;
+    steps: SkincareRoutineStep[];
+    totalDuration: string;
+    tips: string[];
+}
 
 /** Ingredient Safety/Tolerance Level */
 export type ToleranceLevel = "low" | "medium" | "high";
@@ -162,7 +188,7 @@ export const ACTIVE_INGREDIENTS: Record<string, ActiveIngredient> = {
 /**
  * Skin Cycling Phases (V3.0)
  */
-export type CyclePhase = "active_a" | "active_b" | "recovery" | "maintenance";
+export type CyclePhase = "exfoliate" | "retinoid" | "recovery" | "maintenance";
 
 export interface SkinCycleDay {
     day: number;
@@ -516,8 +542,8 @@ export function generateScientificRoutine(
     if (isPregnancySafeMode || isSensitive) d2Active = "peptides"; // Alternative
 
     cyclingSchedule.push(
-        { day: 1, phase: "active_b", title: "焕肤夜 (Exfoliation)", focus: "疏通毛孔/剥脱角质", activeIngredient: d1Active },
-        { day: 2, phase: "active_a", title: "维A夜 (Retinoid)", focus: "胶原再生/抗老", activeIngredient: d2Active },
+        { day: 1, phase: "exfoliate", title: "焕肤夜 (Exfoliation)", focus: "疏通毛孔/剥脱角质", activeIngredient: d1Active },
+        { day: 2, phase: "retinoid", title: "维A夜 (Retinoid)", focus: "胶原再生/抗老", activeIngredient: d2Active },
         { day: 3, phase: "recovery", title: "修护夜 (Recovery)", focus: "屏障休息/深度补水", activeIngredient: "niacinamide" }, // Use B3 or nothing
         { day: 4, phase: "recovery", title: "修护夜 (Recovery)", focus: "屏障休息/深度补水", activeIngredient: "peptides" }
     );
@@ -563,7 +589,7 @@ export function generateScientificRoutine(
 export interface EnvironmentData {
     uvIndex: number;          // 0-11+
     humidity: number;         // Percentage 0-100
-    aqi: number;              // 0-500
+    aqi?: number;             // 0-500 (optional, not all APIs provide this)
     temperature: number;      // Celsius
     location?: string;
 }
@@ -615,8 +641,8 @@ function applyEnvironmentalAdjustments(
         newRoutine.tips.push("🌫️今日闷热潮湿：已将面霜调整为清爽乳液，避免闷痘。");
     }
 
-    // 3. Pollution Defense (AQI)
-    if (env.aqi > 150) { // Unhealthy
+    // 3. Pollution Defense (AQI) - only if available
+    if (env.aqi && env.aqi > 150) { // Unhealthy
         // Force Deep Cleanse in PM
         const pmCleanser = newRoutine.evening.find(s => s.category.includes("cleanser"));
         if (pmCleanser) {
@@ -666,13 +692,10 @@ export function generateSkincareRoutines(
     skinType: string,
     climate: ClimateType,
     goldStandardData?: any,
-    bioFactors?: BioFactors, // Add optional argument
-    envData?: EnvironmentData // Add optional argument
-): any {
+    bioFactors?: BioFactors,
+    envData?: EnvironmentData
+): Record<RoutineLevel, Record<RoutineScenario, SkincareRoutine> & { cycling?: SkinCycleDay[] }> {
     const scientific = generateScientificRoutine(skinType, climate, goldStandardData, bioFactors, envData);
-
-    // Convert to Old Format for UI
-    // Old Format: { professional: { morning: { steps: [] }, evening: { steps: [] } } }
 
     const convertSteps = (sciSteps: ScientificStep[]) => sciSteps.map(s => ({
         order: s.order,
@@ -681,33 +704,120 @@ export function generateSkincareRoutines(
         duration: "1分钟",
         description: s.dosage.tips + (s.activeInfo ? ` [重点成分: ${s.activeInfo.ingredient} ${s.activeInfo.concentration}]` : ""),
         dosage: {
-            dosage: s.dosage.amount,
+            dosage: String(s.dosage.amount),
             unit: s.dosage.unit,
             description: s.activeInfo ? `浓度 ${s.activeInfo.concentration}` : "标准用量",
             productName: s.productName
         }
     }));
 
+    const createRoutine = (level: string, scenario: string, steps: ScientificStep[], duration: string): SkincareRoutine => ({
+        level,
+        scenario,
+        steps: convertSteps(steps),
+        totalDuration: duration,
+        tips: scientific.daily.tips
+    });
+
+    const morningRoutine = createRoutine("professional", "morning", scientific.daily.morning, "5分钟");
+    const eveningRoutine = createRoutine("professional", "evening", scientific.daily.evening, "10分钟");
+
+    // Fallback/Clone for other scenarios for now
+    const homeRoutine = { ...eveningRoutine, scenario: "home", totalDuration: "15分钟" };
+    const travelRoutine = { ...morningRoutine, scenario: "travel", totalDuration: "3分钟" };
+
+    const fullSet = {
+        morning: morningRoutine,
+        evening: eveningRoutine,
+        home: homeRoutine,
+        travel: travelRoutine,
+        cycling: scientific.cycling
+    };
+
     return {
-        professional: {
-            morning: {
-                level: "professional",
-                scenario: "morning",
-                steps: convertSteps(scientific.daily.morning),
-                totalDuration: "5分钟",
-                tips: scientific.daily.tips
-            },
-            evening: {
-                level: "professional",
-                scenario: "evening",
-                steps: convertSteps(scientific.daily.evening),
-                totalDuration: "10分钟",
-                tips: scientific.daily.tips
-            },
-            cycling: scientific.cycling
-        },
-        // Fill others simply
-        daily: { morning: {}, evening: {} },
-        ultimate: { morning: {}, evening: {} }
+        professional: fullSet,
+        daily: fullSet, // Placeholder
+        ultimate: fullSet // Placeholder
     };
 }
+
+// ============================================================================
+// 5. Exports for PDF Generation & Legacy Support (Re-added)
+// ============================================================================
+
+export const LEVEL_LABELS: Record<string, { name: string; nameEn: string; desc: string }> = {
+    daily: { name: "基础日常", nameEn: "Essential", desc: "高性价比的基础维稳方案，适合年轻肌肤或预算有限时。" },
+    professional: { name: "专家进阶", nameEn: "Professional", desc: "针对问题肌肤定制的科学功效方案，兼顾效果与安全性。" },
+    ultimate: { name: "极致奢护", nameEn: "Ultimate", desc: "多维度、高精度的全方位抗衰方案，追求极致肤感与效果。" }
+};
+
+export const SCENARIO_LABELS: Record<RoutineScenario, { name: string; nameEn: string }> = {
+    morning: { name: "晨间唤醒", nameEn: "Morning Routine" },
+    evening: { name: "晚间修护", nameEn: "Evening Routine" },
+    home: { name: "居家护理", nameEn: "Home Spa" },
+    travel: { name: "差旅急救", nameEn: "Travel Care" }
+};
+
+export const REGION_CLIMATE_MAP: Record<ClimateType, { name: string; description: string; skincareFocus: string[] }> = {
+    W1: {
+        name: "寒冷干燥 (Cold Dry)",
+        description: "典型特征：低温、低湿、风大。皮肤易干裂、敏感。",
+        skincareFocus: ["高封闭性保湿（面霜/油）", "舒缓修护", "避免过度清洁"]
+    },
+    A2: {
+        name: "凉爽湿润 (Cool Humid)",
+        description: "典型特征：气温适中，湿度较高。无论南北方春秋季常见。",
+        skincareFocus: ["水油平衡", "温和代谢", "适度防晒"]
+    },
+    A1: {
+        name: "炎热干燥 (Hot Dry)",
+        description: "典型特征：日照强烈，空气干燥。西北地区或干燥夏季。",
+        skincareFocus: ["强效补水", "高倍防晒", "抗氧化"]
+    },
+    S2: {
+        name: "炎热潮湿 (Hot Humid)",
+        description: "典型特征：高温高湿，易出汗出油。华南地区或夏季。",
+        skincareFocus: ["控油清爽", "疏通毛孔", "防晒防水"]
+    },
+    M1: {
+        name: "高原气候 (Highland)",
+        description: "典型特征：紫外线极强，昼夜温差大。西南/西北高海拔。",
+        skincareFocus: ["严密硬防晒", "强韧屏障", "滋润修护"]
+    },
+    S1: {
+        name: "温和气候 (Moderate)",
+        description: "典型特征：无极端天气，体感舒适。理想的护肤环境。",
+        skincareFocus: ["日常基础护理", "抗初老", "美白提亮"]
+    }
+};
+
+/**
+ * Adjust climate based on current month (Simple heuristic)
+ */
+export function adjustClimateForSeason(base: ClimateType): ClimateType {
+    try {
+        const month = new Date().getMonth() + 1; // 1-12
+        // Summer correction
+        if (month >= 6 && month <= 8) {
+            if (base === "W1") return "S1"; // Cold->Moderate
+            if (base === "S1") return "S2"; // Moderate->HotHumid
+        }
+        // Winter correction
+        if (month >= 11 || month <= 2) {
+            if (base === "S2") return "S1"; // HotHumid->Moderate
+            if (base === "S1") return "W1"; // Moderate->Cold
+        }
+        return base;
+    } catch (e) {
+        return base;
+    }
+}
+
+export const CLIMATE_LABELS: Record<ClimateType, string> = {
+    W1: "寒冷干燥 (Cold Dry)",
+    A2: "凉爽湿润 (Cool Humid)",
+    A1: "炎热干燥 (Hot Dry)",
+    S2: "炎热潮湿 (Hot Humid)",
+    M1: "高原气候 (Highland)",
+    S1: "温和气候 (Moderate)"
+};

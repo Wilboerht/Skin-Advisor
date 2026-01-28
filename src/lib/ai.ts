@@ -387,7 +387,7 @@ export async function analyzeWithAI(
 
         return result;
     } catch (error) {
-        aiLogger.error("AI Analysis Failed", error);
+        aiLogger.error("AI Analysis Failed", error as any);
         throw error;
     }
 }
@@ -423,18 +423,18 @@ export function fallbackAnalysis(answers: QuestionnaireAnswers): FaceAnalysisRes
             result.dimensions.wrinkles.details = "需关注细纹生成";
         }
         if (c === "acne" || c === "pores") {
-            result.dimensions.acneRisk.score = 60;
-            result.dimensions.acneRisk.grade = "average";
+            result.dimensions.acne.score = 60;
+            result.dimensions.acne.grade = "average";
             result.dimensions.pores.score = 60;
             result.dimensions.pores.grade = "average";
         }
         if (c === "dullness" || c === "spots") {
             result.dimensions.spots.score = 65;
-            result.dimensions.texture.score = 65;
+            result.dimensions.radiance.score = 65;
         }
         if (c === "sensitivity") {
-            result.dimensions.redAreas.score = 60;
-            result.dimensions.redAreas.grade = "average";
+            result.dimensions.sensitivity.score = 60;
+            result.dimensions.sensitivity.grade = "average";
             result.skinType.type = "sensitive";
         }
     });

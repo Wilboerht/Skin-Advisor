@@ -26,8 +26,8 @@ interface SkinRadarChartProps {
 
 /** 8 个维度的顺序 */
 const DIMENSION_ORDER: SkinDimensionKey[] = [
-    "spots", "wrinkles", "texture", "pores",
-    "uvDamage", "brownSpots", "redAreas", "acneRisk"
+    "spots", "wrinkles", "firmness", "pores",
+    "uvDamage", "skinTone", "sensitivity", "acne"
 ];
 
 /** 获取分数对应的颜色 */

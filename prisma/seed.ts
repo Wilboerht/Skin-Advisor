@@ -1,13 +1,7 @@
 // Prisma 7.x 导入方式
-import { PrismaClient } from ".prisma/client";
+import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient({
-    datasources: {
-        db: {
-            url: "file:../dev.db"
-        }
-    }
-});
+const prisma = new PrismaClient();
 
 const DEFAULT_QUESTIONS = [
     {

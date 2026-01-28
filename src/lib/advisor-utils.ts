@@ -13,6 +13,16 @@ export interface DimensionScore {
 export interface ZoneData {
     condition: string; // 该区域存在的问题
     advice: string;    // 针对该区域的建议
+    // 详细指标 (0-100, 这里的含义根据具体指标而定，通常用于计算热力图)
+    wrinkles?: number;
+    oil?: number;
+    texture?: number;
+    pores?: number;
+    spots?: number;
+    redness?: number;
+    darkCircles?: number;
+    firmness?: number;
+    contour?: number;
 }
 
 export interface ZoneAnalysis {
@@ -173,6 +183,14 @@ export function getDefaultFaceAnalysisResult(): FaceAnalysisResult {
         ],
         skinConditions: [],
         priorityAreas: ["pores", "radiance"],
+        zoneAnalysis: {
+            forehead: { condition: "轻微出油", advice: "注意控油", wrinkles: 10, oil: 60, texture: 80 },
+            tZone: { condition: "毛孔粗大", advice: "使用水杨酸", oil: 70, pores: 40 },
+            leftCheek: { condition: "健康", advice: "保持现状", spots: 10, redness: 20, texture: 90 },
+            rightCheek: { condition: "健康", advice: "保持现状", spots: 10, redness: 20, texture: 90 },
+            eyeArea: { condition: "轻微黑眼圈", advice: "使用眼霜", wrinkles: 20, darkCircles: 40, firmness: 80 },
+            jawline: { condition: "紧致", advice: "无需特殊护理", firmness: 90, contour: 85 }
+        },
         labAnalysis: {
             skinPh: { value: 5.5, range: "4.5-5.5", status: "正常" },
             tewl: { value: 8.5, unit: "g/m²/h", status: "正常" },

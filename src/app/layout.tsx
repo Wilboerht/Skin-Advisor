@@ -13,6 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"),
   title: "NIHPLOD Skin Advisor - AI 智能护肤顾问",
   description: "基于 AI 面部识别技术的专业护肤分析与定制化方案推荐",
   icons: {

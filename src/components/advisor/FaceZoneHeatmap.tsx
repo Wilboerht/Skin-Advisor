@@ -56,36 +56,45 @@ export function FaceZoneHeatmap({ zoneAnalysis }: FaceZoneHeatmapProps) {
     // 计算每个区域的分数、等级和描述
     const getZoneData = (zone: ZoneKey): { level: HeatLevel; score: number; condition: string } => {
         let score = 50;
+        const defaultScore = 50;
 
         switch (zone) {
             case "forehead": {
                 const fh = zoneAnalysis.forehead;
-                score = (fh.wrinkles + fh.oil + (100 - fh.texture)) / 3;
+                // 使用默认值处理可能缺失的属性
+                const wrinkles = fh.wrinkles ?? 0; // 皱纹越少分越低? 实际上 Heatmap 逻辑不明，假设 lower is better or higher is better? 
+                // 原代码: score = (fh.wrinkles + fh.oil + (100 - fh.texture)) / 3;
+                // getHeatLevel 里: isPositive=false (默认) -> normalized = value. <30 good, <50 normal.
+                // 意味着 value 越小越好?
+                // 假设输入数据 0-100.
+                score = ((fh.wrinkles ?? defaultScore) + (fh.oil ?? defaultScore) + (100 - (fh.texture ?? defaultScore))) / 3;
                 return { level: getHeatLevel(score), score: Math.round(100 - score), condition: fh.condition };
             }
             case "tZone": {
                 const tz = zoneAnalysis.tZone;
-                score = (tz.oil + tz.pores) / 2;
+                score = ((tz.oil ?? defaultScore) + (tz.pores ?? defaultScore)) / 2;
                 return { level: getHeatLevel(score), score: Math.round(100 - score), condition: tz.condition };
             }
             case "leftCheek": {
                 const lc = zoneAnalysis.leftCheek;
-                score = (lc.spots + lc.redness + (100 - lc.texture)) / 3;
+                score = ((lc.spots ?? defaultScore) + (lc.redness ?? defaultScore) + (100 - (lc.texture ?? defaultScore))) / 3;
                 return { level: getHeatLevel(score), score: Math.round(100 - score), condition: lc.condition };
             }
             case "rightCheek": {
                 const rc = zoneAnalysis.rightCheek;
-                score = (rc.spots + rc.redness + (100 - rc.texture)) / 3;
+                score = ((rc.spots ?? defaultScore) + (rc.redness ?? defaultScore) + (100 - (rc.texture ?? defaultScore))) / 3;
                 return { level: getHeatLevel(score), score: Math.round(100 - score), condition: rc.condition };
             }
             case "eyeArea": {
                 const ea = zoneAnalysis.eyeArea;
-                score = (ea.wrinkles + ea.darkCircles + (100 - ea.firmness)) / 3;
+                score = ((ea.wrinkles ?? defaultScore) + (ea.darkCircles ?? defaultScore) + (100 - (ea.firmness ?? defaultScore))) / 3;
                 return { level: getHeatLevel(score), score: Math.round(100 - score), condition: ea.condition };
             }
             case "jawline": {
                 const jl = zoneAnalysis.jawline;
-                score = (jl.firmness + jl.contour) / 2;
+                score = ((jl.firmness ?? defaultScore) + (jl.contour ?? defaultScore)) / 2;
+                // jawline uses isPositive=true for getHeatLevel in original code (meaning higher score is better before normalization?)
+                // Original: return { level: getHeatLevel(score, true), score: Math.round(score), condition: jl.condition };
                 return { level: getHeatLevel(score, true), score: Math.round(score), condition: jl.condition };
             }
             default:

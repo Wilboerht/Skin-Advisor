@@ -50,13 +50,20 @@ async function fetchQWeather(endpoint: string, params: Record<string, string>) {
     const baseUrl = endpoint.includes("city/lookup") ? BASE_URL_GEO : BASE_URL_API;
     const url = `${baseUrl}/${endpoint}?${searchParams.toString()}`;
 
+    // 3. Setup fast timeout (3 seconds) to avoid blocking page load
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+
     try {
         const res = await fetch(url, {
             headers: {
                 "Authorization": `Bearer ${token}`
             },
-            next: { revalidate: 1800 }
+            next: { revalidate: 1800 },
+            signal: controller.signal
         });
+
+        clearTimeout(timeoutId);
 
         if (!res.ok) {
             console.warn(`QWeather API Failed: ${res.status} (${url})`);
@@ -70,7 +77,13 @@ async function fetchQWeather(endpoint: string, params: Record<string, string>) {
         }
         return data;
     } catch (e) {
-        console.error("QWeather Fetch Failed", e);
+        clearTimeout(timeoutId);
+        // Suppress abort errors, just log warning
+        if (e instanceof Error && e.name === 'AbortError') {
+            console.warn(`QWeather timeout (3s): ${endpoint}`);
+        } else {
+            console.warn("QWeather Fetch Failed:", e instanceof Error ? e.message : e);
+        }
         return null;
     }
 }

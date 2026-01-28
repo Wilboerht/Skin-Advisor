@@ -72,8 +72,8 @@ export const ShareImageRequestSchema = z.object({
     skinType: z.string().optional(),
     date: z.string().optional(),
     summary: z.string().optional(),
-    radarData: z.record(z.any()).optional(), // 维度数据
-    dimensions: z.record(z.any()).optional(),
+    radarData: z.record(z.string(), z.any()).optional(), // 维度数据
+    dimensions: z.record(z.string(), z.any()).optional(),
     userInfo: z.object({
         name: z.string().optional(),
         avatar: z.string().optional()
