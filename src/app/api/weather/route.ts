@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 // 使用 Open-Meteo (免费、无需 API Key)
 // 如需切换回和风天气，将下面的 import 改为 "@/lib/qweather"
-import { getSkinEnvData } from "@/lib/qweather";
+import { getSkinEnvData } from "@/lib/open-meteo";
 
 export const runtime = "nodejs"; // more stable for local dev fetch
 

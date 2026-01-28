@@ -589,7 +589,7 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
             </header>
 
             {/* Validation Warning Banner */}
-            {faceAnalysis?.validation && (!faceAnalysis.validation.isValid || faceAnalysis.validation.message) && (
+            {faceAnalysis?.validation && !faceAnalysis.validation.isValid && (
                 <div className="w-full bg-red-50 border-b border-red-100 relative group z-[90]">
                     <div className="max-w-[1440px] mx-auto px-4 py-3 pr-10 flex items-start gap-3">
                         <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
