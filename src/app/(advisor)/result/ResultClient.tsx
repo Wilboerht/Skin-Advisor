@@ -45,6 +45,7 @@ import { ProductRecommendationSection } from "@/components/advisor/ProductRecomm
 import type { ProductCardData } from "@/components/advisor/ProductCard";
 import { addProductToRoutine } from "@/lib/routine-products";
 import { WishlistNavButton } from "@/components/advisor/WishlistNavButton";
+import { SaveReportBanner } from "@/components/advisor/SaveReportBanner";
 
 // Types
 export interface ComprehensiveResult {
@@ -1512,6 +1513,9 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                             />
                         )
                     }
+
+                    {/* Save Report Banner for unauthenticated users */}
+                    <SaveReportBanner />
                 </div>)}
         </>
     );

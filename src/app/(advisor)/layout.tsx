@@ -1,6 +1,7 @@
 "use client";
 
 import { LazyMotion, domAnimation } from "framer-motion";
+import { ToastProvider } from "@/components/ui/Toast";
 
 export default function AdvisorLayout({
     children,
@@ -9,9 +10,11 @@ export default function AdvisorLayout({
 }) {
     return (
         <LazyMotion features={domAnimation}>
-            <div className="w-full min-h-screen">
-                {children}
-            </div>
+            <ToastProvider>
+                <div className="w-full min-h-screen">
+                    {children}
+                </div>
+            </ToastProvider>
         </LazyMotion>
     );
 }

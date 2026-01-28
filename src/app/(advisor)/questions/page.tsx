@@ -78,6 +78,7 @@ export default function QuestionsPage() {
         try {
             const savedAnswers = localStorage.getItem("advisor_answers");
             const savedGender = localStorage.getItem("advisor_gender");
+            const savedStep = localStorage.getItem("advisor_step");
 
             let initialAnswers = {};
             if (savedAnswers) {
@@ -91,8 +92,39 @@ export default function QuestionsPage() {
             }
 
             setAnswers(initialAnswers);
+
+            // Restore step index (after next render when questions are filtered)
+            if (savedStep) {
+                const stepIndex = parseInt(savedStep, 10);
+                if (!isNaN(stepIndex) && stepIndex >= 0) {
+                    setTimeout(() => setCurrentStepIndex(stepIndex), 0);
+                }
+            }
         } catch (e) { console.error(e); }
     }, []);
+
+    // 自动保存答案和步骤
+    useEffect(() => {
+        if (Object.keys(answers).length > 0) {
+            localStorage.setItem("advisor_answers", JSON.stringify(answers));
+        }
+        if (gender) {
+            localStorage.setItem("advisor_step", String(currentStepIndex));
+        }
+    }, [answers, currentStepIndex, gender]);
+
+    // 浏览器关闭/刷新提示
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (gender && Object.keys(answers).length > 0) {
+                e.preventDefault();
+                // Modern browsers ignore custom message but still show prompt
+                return '';
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [gender, answers]);
 
     const handleGenderSelect = (selectedGender: "female" | "male") => {
         setGender(selectedGender);
@@ -148,6 +180,8 @@ export default function QuestionsPage() {
         } else {
             // 完成，保存并跳转
             localStorage.setItem("advisor_answers", JSON.stringify(currentAnswers));
+            // 清除进度索引（已完成）
+            localStorage.removeItem("advisor_step");
             trackQuestionnaireComplete(currentAnswers);
             router.push("/face-scan");
         }
@@ -313,7 +347,7 @@ export default function QuestionsPage() {
                         >
                             <h3 className="text-xl font-serif text-[#1A1A1A] mb-2">结束测试？</h3>
                             <p className="text-sm text-[#5E5E5E] mb-8 font-light">
-                                当前进度将不会被保存。
+                                您的进度已自动保存，下次可继续。
                             </p>
                             <div className="flex flex-col gap-3">
                                 <button

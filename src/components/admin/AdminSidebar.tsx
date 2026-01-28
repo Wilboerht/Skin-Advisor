@@ -13,15 +13,19 @@ import {
     FileText,
     ChevronLeft,
     ChevronRight,
+    Users,
+    Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const MENU_ITEMS = [
     { href: "/admin", label: "Overview", icon: LayoutDashboard },
     { href: "/admin/products", label: "Products", icon: Package },
+    { href: "/admin/users", label: "Users", icon: Users },
     { href: "/admin/questions", label: "Questions", icon: FileText },
     { href: "/admin/rewards", label: "Rewards", icon: Gift },
     { href: "/admin/settings", label: "Settings", icon: Settings },
+    { href: "/admin/audit-logs", label: "Audit Logs", icon: Shield },
 ];
 
 export default function AdminSidebar() {
@@ -37,31 +41,31 @@ export default function AdminSidebar() {
     return (
         <div
             className={cn(
-                "flex h-full flex-col bg-white text-slate-700 shadow-sm z-20 transition-all duration-300 ease-in-out border-r border-slate-200",
+                "flex h-full flex-col bg-[#FDFBF7] text-[#1A1A1A] z-20 transition-all duration-300 ease-in-out border-r border-[#1A1A1A]/5",
                 collapsed ? "w-20" : "w-64"
             )}
         >
-            <div className={cn("flex h-20 items-center px-6 gap-3 border-b border-slate-100", collapsed ? "justify-center px-0" : "")}>
+            <div className={cn("flex h-20 items-center px-6 gap-3 border-b border-[#1A1A1A]/5", collapsed ? "justify-center px-0" : "")}>
                 <div className="flex items-center justify-center shrink-0">
                     <Image
                         src="/logo-myskin-today.svg"
                         alt="MySkin.Today"
                         width={32}
                         height={32}
-                        className="h-8 w-auto"
+                        className="h-8 w-auto opacity-90"
                     />
                 </div>
                 {!collapsed && (
                     <div className="animate-in fade-in duration-300 overflow-hidden whitespace-nowrap">
-                        <span className="block text-sm font-bold tracking-tight text-slate-900">MySkin.Today</span>
-                        <span className="block text-[10px] font-medium text-slate-400 tracking-wider uppercase">Admin Console</span>
+                        <span className="block text-sm font-bold tracking-tight text-[#1A1A1A]">MySkin.Today</span>
+                        <span className="block text-[10px] font-medium text-[#1A1A1A]/40 tracking-wider uppercase">Admin Console</span>
                     </div>
                 )}
             </div>
 
             <nav className="flex-1 space-y-1 px-3 py-6">
                 {!collapsed && (
-                    <div className="px-3 mb-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 animate-in fade-in duration-300">
+                    <div className="px-3 mb-3 text-[10px] font-bold uppercase tracking-wider text-[#1A1A1A]/40 animate-in fade-in duration-300">
                         Navigation
                     </div>
                 )}
@@ -72,15 +76,15 @@ export default function AdminSidebar() {
                             key={item.href}
                             href={item.href}
                             className={cn(
-                                "group flex items-center rounded-md px-3 py-2 text-sm font-medium transition-all duration-200",
+                                "group flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
                                 isActive
-                                    ? "bg-slate-100 text-slate-900 shadow-sm ring-1 ring-slate-200"
-                                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-900",
+                                    ? "bg-[#1A1A1A]/5 text-[#1A1A1A]"
+                                    : "text-[#1A1A1A]/60 hover:bg-[#1A1A1A]/5 hover:text-[#1A1A1A]",
                                 collapsed ? "justify-center" : ""
                             )}
                             title={collapsed ? item.label : undefined}
                         >
-                            <item.icon className={cn("h-5 w-5 flex-shrink-0 transition-colors", isActive ? "text-slate-900" : "text-slate-400 group-hover:text-slate-700", collapsed ? "mr-0" : "mr-3")} />
+                            <item.icon className={cn("h-4 w-4 flex-shrink-0 transition-colors", isActive ? "text-[#1A1A1A]" : "text-[#1A1A1A]/60 group-hover:text-[#1A1A1A]", collapsed ? "mr-0" : "mr-3")} />
                             {!collapsed && (
                                 <span className="animate-in fade-in duration-200">{item.label}</span>
                             )}
@@ -89,11 +93,11 @@ export default function AdminSidebar() {
                 })}
             </nav>
 
-            <div className="px-3 pb-2 pt-2 border-t border-slate-100">
+            <div className="px-3 pb-2 pt-2 border-t border-[#1A1A1A]/5">
                 <button
                     onClick={() => setCollapsed(!collapsed)}
                     className={cn(
-                        "flex w-full items-center rounded-md px-3 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-colors",
+                        "flex w-full items-center rounded-lg px-3 py-2 text-xs font-medium text-[#1A1A1A]/50 hover:bg-[#1A1A1A]/5 hover:text-[#1A1A1A] transition-colors",
                         collapsed ? "justify-center" : ""
                     )}
                     title={collapsed ? "Expand" : "Collapse"}
@@ -107,12 +111,12 @@ export default function AdminSidebar() {
                 <button
                     onClick={handleLogout}
                     className={cn(
-                        "flex w-full items-center rounded-md px-3 py-2 text-sm font-medium text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors",
+                        "flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium text-[#1A1A1A]/60 hover:bg-[#1A1A1A]/5 hover:text-red-600 transition-colors",
                         collapsed ? "justify-center" : ""
                     )}
                     title={collapsed ? "Sign Out" : undefined}
                 >
-                    <LogOut className={cn("h-5 w-5", collapsed ? "mr-0" : "mr-3")} />
+                    <LogOut className={cn("h-4 w-4", collapsed ? "mr-0" : "mr-3")} />
                     {!collapsed && <span>Sign Out</span>}
                 </button>
             </div>

@@ -133,6 +133,27 @@ model AdminUser {
   role      String   @default("admin") // super_admin, editor
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
+  auditLogs AdminAuditLog[]
+}
+
+// 管理员操作审计日志
+model AdminAuditLog {
+  id          String   @id @default(cuid())
+  adminId     String?
+  admin       AdminUser? @relation(fields: [adminId], references: [id], onDelete: SetNull)
+  action      String   // create, update, delete, login, logout, batch_delete, etc.
+  resource    String   // Product, Question, Reward, Settings, etc.
+  resourceId  String?  // ID of affected resource (if applicable)
+  details     Json?    // Additional details (old value, new value, etc.)
+  ip          String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  @@index([adminId])
+  @@index([action])
+  @@index([resource])
+  @@index([createdAt])
 }
 
 // 普通用户 (C端)

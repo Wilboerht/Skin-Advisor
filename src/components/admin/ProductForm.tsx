@@ -6,6 +6,10 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Upload, X, Plus, Loader2 } from "lucide-react";
 import { uploadImageToOSS } from "@/lib/oss-upload-client";
+import { IngredientSelector } from "./IngredientSelector";
+import { STAR_INGREDIENTS } from "@/config/ingredients";
+import { RoutineSimulator } from "./RoutineSimulator";
+import { useToast } from "@/components/ui/Toast";
 
 // Simple Tag Input Component
 function TagInput({
@@ -76,6 +80,7 @@ const STEP_OPTIONS = [
 
 export default function ProductForm({ initialData }: { initialData?: any }) {
     const router = useRouter();
+    const toast = useToast();
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
         name: initialData?.name || "",
@@ -97,7 +102,14 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
         douyin: initialData?.affiliateLinks?.douyin || "",
     });
 
-    const [keyIngredients, setKeyIngredients] = useState<string[]>(initialData?.keyIngredients || []);
+    // keyIngredients 现在存储成分 ID 列表
+    const [keyIngredientIds, setKeyIngredientIds] = useState<string[]>(
+        // 兼容旧数据：如果 initialData 是字符串名称，尝试转换为 ID
+        (initialData?.keyIngredients || []).map((item: string) => {
+            const found = STAR_INGREDIENTS.find(i => i.id === item || i.name === item);
+            return found?.id || item;
+        })
+    );
     const [benefits, setBenefits] = useState<string[]>(initialData?.benefits || []);
     const [suitableSkinTypes, setSuitableSkinTypes] = useState<string[]>(initialData?.suitableSkinTypes || []);
 
@@ -112,7 +124,7 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
             const url = await uploadImageToOSS(file);
             setFormData(prev => ({ ...prev, image: url }));
         } catch (err) {
-            alert("Upload failed");
+            toast.error("Upload failed");
         } finally {
             setLoading(false);
         }
@@ -128,9 +140,10 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
             if (value.trim()) filteredLinks[key] = value.trim();
         });
 
+        // 将成分 ID 转换为保存格式（ID 列表）
         const payload = {
             ...formData,
-            keyIngredients,
+            keyIngredients: keyIngredientIds,
             benefits,
             suitableSkinTypes,
             affiliateLinks: Object.keys(filteredLinks).length > 0 ? filteredLinks : null,
@@ -151,10 +164,11 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
 
             if (!res.ok) throw new Error("Failed to save");
 
+            toast.success(initialData?.id ? "Product updated" : "Product created");
             router.push("/admin/products");
             router.refresh();
         } catch (err) {
-            alert("Error saving product");
+            toast.error("Error saving product");
         } finally {
             setLoading(false);
         }
@@ -267,6 +281,14 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
                             className="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900 sm:text-sm p-2 border"
                         />
                     </div>
+
+                    <div className="pt-2">
+                        <RoutineSimulator
+                            currentStep={formData.step}
+                            productName={formData.name}
+                            productType="both"
+                        />
+                    </div>
                 </div>
 
                 {/* Image & Tags */}
@@ -295,7 +317,7 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
                         </div>
                     </div>
 
-                    <TagInput label="Key Ingredients" values={keyIngredients} onChange={setKeyIngredients} />
+                    <IngredientSelector selectedIds={keyIngredientIds} onChange={setKeyIngredientIds} />
                     <TagInput label="Benefits" values={benefits} onChange={setBenefits} />
 
                     <div>

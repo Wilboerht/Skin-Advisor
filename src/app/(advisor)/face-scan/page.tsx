@@ -7,9 +7,11 @@ import { m } from "framer-motion";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
+import { useToast } from "@/components/ui/Toast";
 
 export default function FaceScanPage() {
     const router = useRouter();
+    const toast = useToast();
     const { trackFaceScanStart, trackFaceScanComplete } = useAdvisorAnalytics();
     const hasTrackedStart = useRef(false);
 
@@ -42,7 +44,7 @@ export default function FaceScanPage() {
                 trackFaceScanComplete();
                 router.push("/analyzing");
             } catch (e2) {
-                alert("您的设备存储空间不足，无法保存照片。");
+                toast.error("您的设备存储空间不足，无法保存照片。");
             }
         }
     };

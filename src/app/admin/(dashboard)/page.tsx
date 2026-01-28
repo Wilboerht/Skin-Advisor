@@ -2,6 +2,7 @@
 import prisma from "@/lib/prisma";
 import Link from "next/link";
 import { Package, Gift } from "lucide-react";
+import { DashboardCharts } from "@/components/admin/charts/DashboardCharts";
 
 export default async function AdminDashboard() {
     const productCount = await prisma.product.count();
@@ -10,61 +11,70 @@ export default async function AdminDashboard() {
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             <div>
-                <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Overview</h1>
-                <p className="text-slate-500 text-sm mt-1">Snapshot of your advisor performance</p>
+                <h1 className="text-3xl font-serif text-[#1A1A1A]">Overview</h1>
+                <p className="text-[#1A1A1A]/60 text-sm mt-1">Snapshot of your advisor performance</p>
             </div>
 
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {/* Product Stats */}
                 <Link href="/admin/products" className="block group">
-                    <div className="overflow-hidden rounded-2xl bg-white p-6 shadow-sm border border-slate-100 transition-all duration-200 hover:shadow-lg hover:border-blue-100 hover:-translate-y-0.5">
-                        <div className="flex items-center justify-between">
+                    <div className="overflow-hidden rounded-2xl bg-white p-6 border border-[#1A1A1A]/5 transition-all duration-300 hover:shadow-lg hover:border-[#1A1A1A]/20 hover:-translate-y-0.5 relative">
+                        <div className="flex items-center justify-between relative z-10">
                             <div>
-                                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Total Products</p>
-                                <p className="text-3xl font-bold text-slate-900">{productCount}</p>
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-[#1A1A1A]/40 mb-2">Total Products</p>
+                                <p className="text-4xl font-serif text-[#1A1A1A]">{productCount}</p>
                             </div>
-                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition-colors group-hover:bg-blue-600 group-hover:text-white">
-                                <Package className="h-6 w-6" />
+                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#3D4430]/5 text-[#3D4430] transition-transform group-hover:scale-110">
+                                <Package className="h-5 w-5" />
                             </div>
                         </div>
-                        <div className="mt-4 flex items-center gap-2 text-xs font-medium text-slate-400">
-                            <span className="text-emerald-500">Active Catalog</span>
+                        <div className="mt-6 flex items-center gap-2 text-xs font-medium text-[#1A1A1A]/40">
+                            <span className="flex items-center gap-1.5 text-[#3D4430]">
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#3D4430]"></span>
+                                Active Catalog
+                            </span>
                         </div>
                     </div>
                 </Link>
 
                 {/* Reward Stats */}
                 <Link href="/admin/rewards" className="block group">
-                    <div className="overflow-hidden rounded-2xl bg-white p-6 shadow-sm border border-slate-100 transition-all duration-200 hover:shadow-lg hover:border-pink-100 hover:-translate-y-0.5">
-                        <div className="flex items-center justify-between">
+                    <div className="overflow-hidden rounded-2xl bg-white p-6 border border-[#1A1A1A]/5 transition-all duration-300 hover:shadow-lg hover:border-[#1A1A1A]/20 hover:-translate-y-0.5 relative">
+                        <div className="flex items-center justify-between relative z-10">
                             <div>
-                                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Pending Rewards</p>
-                                <p className="text-3xl font-bold text-slate-900">{rewardCount}</p>
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-[#1A1A1A]/40 mb-2">Pending Rewards</p>
+                                <p className="text-4xl font-serif text-[#1A1A1A]">{rewardCount}</p>
                             </div>
-                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-pink-50 text-pink-600 transition-colors group-hover:bg-pink-600 group-hover:text-white">
-                                <Gift className="h-6 w-6" />
+                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#C19F70]/10 text-[#C19F70] transition-transform group-hover:scale-110">
+                                <Gift className="h-5 w-5" />
                             </div>
                         </div>
-                        <div className="mt-4 flex items-center gap-2 text-xs font-medium text-slate-400">
-                            <span className="text-orange-500">Needs Fulfilment</span>
+                        <div className="mt-6 flex items-center gap-2 text-xs font-medium text-[#1A1A1A]/40">
+                            <span className="flex items-center gap-1.5 text-[#C19F70]">
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#C19F70]"></span>
+                                Needs Fulfillment
+                            </span>
                         </div>
                     </div>
                 </Link>
             </div>
 
+            {/* Charts Section */}
+            <DashboardCharts />
+
             {productCount === 0 && (
-                <div className="rounded-2xl border border-amber-200/60 bg-amber-50/50 p-8 text-center sm:text-left shadow-sm">
+                <div className="rounded-2xl border border-[#C19F70]/20 bg-[#C19F70]/5 p-8 text-center sm:text-left">
                     <div className="flex flex-col sm:flex-row items-center gap-6">
-                        <div className="h-16 w-16 bg-amber-100 rounded-full flex items-center justify-center shrink-0 text-amber-600">
-                            <Package className="w-8 h-8" />
+                        <div className="h-14 w-14 bg-[#C19F70]/10 rounded-full flex items-center justify-center shrink-0 text-[#C19F70]">
+                            <Package className="w-6 h-6" />
                         </div>
                         <div className="flex-1">
-                            <h3 className="text-lg font-bold text-amber-900">Initialize Your Catalog</h3>
-                            <p className="mt-1 text-sm text-amber-800/80 leading-relaxed max-w-2xl">
+                            <h3 className="text-lg font-serif text-[#1A1A1A]">Initialize Your Catalog</h3>
+                            <p className="mt-1 text-sm text-[#1A1A1A]/60 leading-relaxed max-w-2xl">
                                 The database seems to be empty. You can run the setup script to seed standard skincare products and questions.
                             </p>
                         </div>
-                        <a href="/api/admin/setup" target="_blank" className="rounded-lg bg-amber-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 shadow-md shadow-amber-900/10 hover:shadow-lg transition-all">
+                        <a href="/api/admin/setup" target="_blank" className="rounded-full bg-[#1A1A1A] px-6 py-3 text-xs font-bold tracking-widest text-white hover:bg-[#3D4430] transition-all uppercase">
                             Run Setup / Seed Data
                         </a>
                     </div>
