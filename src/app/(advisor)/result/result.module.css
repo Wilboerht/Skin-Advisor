@@ -46,7 +46,7 @@
     backdrop-filter: blur(4px);
     border-bottom: 1px solid var(--notion-border);
     position: sticky;
-    top: 73px;
+    top: 72px;
     z-index: 100;
     width: 100%;
 }
@@ -115,6 +115,7 @@
 
 .headerActions {
     display: flex;
+    align-items: center;
     gap: 8px;
 }
 
