@@ -683,8 +683,8 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                                     <ChevronRight className="w-5 h-5 rotate-180" />
                                 </button>
                                 <div className={styles.brandWrapper}>
-                                    <h1 className={styles.brandName}>Skin Advisor</h1>
-                                    <span className={styles.reportType}>Professional Analysis</span>
+                                    <h1 className={styles.brandName}>智能测肤</h1>
+                                    <span className={styles.reportType}>专业分析报告</span>
                                 </div>
                             </div>
                             <div className={styles.headerActions}>
