@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
 
         // 1. 速率限制
         const ip = request.headers.get("x-forwarded-for") || "127.0.0.1";
-        const limit = await rateLimit(`face-analyze-${ip}`, "face-analyze"); // 1小时5次
+        const limit = await rateLimit(`face-analyze-${ip}`, "face-analyze", { maxRequests: 60 }); // Increased for testing
 
         const rateLimitHeaders = {
             "X-RateLimit-Limit": String(limit.limit),

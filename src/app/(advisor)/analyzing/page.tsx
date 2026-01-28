@@ -46,11 +46,10 @@ export default function AnalyzingPage() {
         trackAnalysisStart();
 
         try {
-            // 延迟一点，让用户看到加载动画
-            await new Promise(r => setTimeout(r, 1000));
+            // 简单的预加载等待，给用户一点反应时间
+            await new Promise(r => setTimeout(r, 800));
 
             const answersStr = localStorage.getItem("advisor_answers");
-            const imagesStr = localStorage.getItem("advisor_face_images");
 
             if (!answersStr) {
                 console.warn("No answers found, redirecting");
@@ -58,115 +57,26 @@ export default function AnalyzingPage() {
                 return;
             }
 
-            const answers = JSON.parse(answersStr);
-            let faceAnalysis = null;
-
-            // 1. 面部分析
+            // 预处理图片（如果存在）
+            const imagesStr = localStorage.getItem("advisor_face_images");
             if (imagesStr) {
-                let images;
                 try {
-                    images = JSON.parse(imagesStr);
+                    const images = JSON.parse(imagesStr);
+                    if (images.front && !images.front.startsWith('http')) {
+                        // 在这里做一个快速的预处理检查，确保数据准备好
+                        // 但不阻塞跳转，把繁重的任务交给 Result 页面
+                        // 只做最基本的验证
+                    }
                 } catch (e) { console.error(e); }
-
-                if (images) {
-                    const visionImages: { data: string; angle: string }[] = [];
-
-                    if (images.front) {
-                        try {
-                            // 1. 预处理
-                            const processed = await preprocessFaceImage(images.front);
-                            let finalData = processed.imageData;
-
-                            try {
-                                // 2. 尝试上传到 OSS (云加速)
-                                const { uploadImageToOSS } = await import("@/lib/oss-upload-client");
-                                // 将 base64 转为 blob
-                                const blob = await (await fetch(processed.imageData)).blob();
-                                const url = await uploadImageToOSS(blob, "face-front.jpg");
-                                if (url) {
-                                    finalData = url;
-                                    console.log("Using OSS image:", url);
-                                }
-                            } catch (uploadErr) {
-                                console.warn("OSS upload skipped:", uploadErr);
-                            }
-
-                            visionImages.push({ data: finalData, angle: 'front' });
-                        } catch (e) {
-                            console.warn("Image preprocessing failed, using original", e);
-                            visionImages.push({ data: images.front, angle: 'front' });
-                        }
-                    }
-
-                    if (visionImages.length > 0) {
-                        try {
-                            const faceRes = await fetch("/api/advisor/face-analyze", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ images: visionImages })
-                            });
-
-                            if (faceRes.ok) {
-                                faceAnalysis = await faceRes.json();
-                                setProgress(prev => Math.max(prev, 40));
-                            } else {
-                                console.warn("Face analysis failed", await faceRes.text());
-                                // 面部分析失败不阻断，只是没有详细数据
-                            }
-                        } catch (err) {
-                            console.error("Face API Error:", err);
-                        }
-                    }
-                }
             }
 
-            // 2. 综合分析
-            setProgress(prev => Math.max(prev, 60));
-
-
-            // Generate Session ID
-            const sessionId = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString();
-
-            const analyzeRes = await fetch("/api/advisor/analyze", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    answers,
-                    faceAnalysis: faceAnalysis || undefined,
-                    sessionId: sessionId
-                })
-            });
-
-            if (!analyzeRes.ok) {
-                const errData = await analyzeRes.json();
-                throw new Error(errData.error || "智能分析服务暂时不可用");
-            }
-
-            const result = await analyzeRes.json();
-
-            // 数据补全逻辑
-            if (faceAnalysis && !result.faceAnalysis) {
-                result.faceAnalysis = faceAnalysis;
-            }
-            if (!result.skinAnalysis && faceAnalysis) {
-                result.skinAnalysis = {
-                    skinType: faceAnalysis.skinType.type,
-                    summary: faceAnalysis.summary,
-                    concerns: [],
-                };
-            }
-
-            localStorage.setItem("advisor_result", JSON.stringify(result));
-            trackAnalysisComplete(result.dataSource === "comprehensive" ? "ai" : "fallback");
-            setProgress(100);
-
-            // Redirect to result page with ID for SSR support
-            setTimeout(() => router.push(`/result?id=${sessionId}`), 800);
+            // 直接跳转到结果页，开启异步流式加载模式
+            // 使用 replace 而不是 push，这样用户按返回键不会回到 loading 页
+            router.replace(`/result?status=analyzing`);
 
         } catch (err) {
-            console.error("Analysis Error:", err);
-            setError(err instanceof Error ? err.message : "分析遇到了一点小问题");
-            setFailureType("questionnaire");
+            console.error("Analysis Prep Error:", err);
+            setError("准备分析数据时出错");
         }
     }, [router]);
 

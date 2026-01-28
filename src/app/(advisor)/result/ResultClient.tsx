@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, useRef, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useAsyncAnalysis } from "@/hooks/useAsyncAnalysis";
 import { Link } from "next-view-transitions";
 import Image from "next/image";
 import {
@@ -173,6 +174,10 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                     const advisorResultStr = localStorage.getItem("advisor_result");
 
                     if (!advisorResultStr) {
+                        // If we are in async analyzing mode, don't redirect yet
+                        if (searchParams.get('status') === 'analyzing') {
+                            return;
+                        }
                         router.replace("/questions");
                         return;
                     }
@@ -180,18 +185,22 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                     const advisorResult = JSON.parse(advisorResultStr);
 
                     // Reconstruct ComprehensiveResult
+                    // Handle both new flat structure (route.ts) and legacy nested structure
+                    const skinProfile = advisorResult.skinProfile || advisorResult.skinAnalysis;
+                    const analysis = advisorResult.analysis || advisorResult.skinAnalysis;
+
                     setResult({
                         skinProfile: {
-                            type: advisorResult.skinAnalysis?.skinType || "combination",
-                            typeLabel: advisorResult.skinAnalysis?.skinTypeLabel || "混合性肌肤",
-                            concerns: advisorResult.skinAnalysis?.concerns || [],
-                            skinAge: advisorResult.skinAnalysis?.skinAge,
+                            type: skinProfile?.type || skinProfile?.skinType || "combination",
+                            typeLabel: skinProfile?.typeLabel || skinProfile?.skinTypeLabel || "混合性肌肤",
+                            concerns: skinProfile?.concerns || [],
+                            skinAge: skinProfile?.skinAge,
                         },
                         analysis: {
-                            summary: advisorResult.skinAnalysis?.summary || "分析完成。",
-                            details: advisorResult.skinAnalysis?.details || [],
+                            summary: analysis?.summary || "分析完成。",
+                            details: analysis?.details || [],
                         },
-                        dataSource: advisorResult.source === "ai" ? "comprehensive" : "questionnaire",
+                        dataSource: advisorResult.dataSource || (advisorResult.source === "ai" ? "comprehensive" : "questionnaire"),
                         products: advisorResult.products || []
                     });
 
@@ -419,16 +428,119 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
 
 
 
-    if (loading || !result) {
+    // --- Async Analysis Integration ---
+    const searchParams = useSearchParams(); // Needs wrapping in Suspense boundary in parent, but Next.js 15+ allows it in client components usually
+    const { runAnalysis, analysisState } = useAsyncAnalysis();
+
+    // Trigger Async Analysis
+    // Trigger Async Analysis
+    useEffect(() => {
+        const status = searchParams.get('status');
+        // Only trigger if we are in 'analyzing' mode, no result yet, and not already running/error
+        if (status === 'analyzing' && !result && analysisState.status === 'idle') {
+            const execute = async () => {
+                try {
+                    const { result: newResult, faceAnalysis: newFace } = await runAnalysis();
+                    setResult(newResult);
+                    if (newFace) setFaceAnalysis(newFace);
+                    // Clear param
+                    router.replace('/result', { scroll: false });
+                } catch (e: any) {
+                    console.error("Async analysis error caught in component:", e);
+                    // We do NOT redirect here anymore. We let the UI show the error state.
+                    // toast.error(e.message || "分析失败，请重试"); 
+                }
+            };
+            execute();
+        }
+    }, [searchParams, result, analysisState.status, runAnalysis, router]);
+
+    // Error State
+    if (analysisState.status === 'error') {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-[#FAFAFA]">
-                <div className="text-center">
-                    <Activity className="w-10 h-10 text-gray-400 animate-pulse mx-auto mb-4" />
-                    <p className="text-gray-500 font-medium">正在生成您的专业报告...</p>
+            <div className="flex flex-col items-center justify-center min-h-screen bg-[#FAFAFA] p-4">
+                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 max-w-md w-full text-center">
+                    <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <AlertCircle className="w-8 h-8 text-red-500" />
+                    </div>
+                    <h2 className="text-xl font-bold text-gray-900 mb-2">分析遇到了一些问题</h2>
+                    <p className="text-gray-500 mb-8 leading-relaxed">
+                        {analysisState.error || "服务器暂时无法响应，请稍后再试。"}
+                    </p>
+                    <div className="flex flex-col gap-3">
+                        <button
+                            onClick={() => window.location.reload()}
+                            className="w-full py-3 bg-black text-white rounded-xl font-medium hover:bg-gray-800 transition-colors"
+                        >
+                            重试分析
+                        </button>
+                        <button
+                            onClick={() => router.push('/questions')}
+                            className="w-full py-3 bg-transparent text-gray-500 rounded-xl font-medium hover:bg-gray-50 transition-colors"
+                        >
+                            返回重新测试
+                        </button>
+                    </div>
                 </div>
             </div>
         );
     }
+
+    // Enhanced Skeleton Loading State
+    const isAsyncAnalyzing = searchParams.get('status') === 'analyzing' || analysisState.status !== 'idle';
+
+    if (loading || (!result && isAsyncAnalyzing)) {
+        const statusText = analysisState.status === 'analyzing_face' ? '正在进行面部高精度扫描...' :
+            analysisState.status === 'analyzing_skin' ? '正在生成智能护肤方案...' :
+                '正在加载您的专业报告...';
+
+        return (
+            <div className={styles.container}>
+                {/* Skeleton Header */}
+                <div className="w-full bg-white border-b border-[#E9E9E7] sticky top-0 z-[101]">
+                    <div className="w-full max-w-[1440px] mx-auto px-4 py-1 flex items-center justify-start">
+                        <div className="w-16 h-16 bg-gray-100 animate-pulse rounded-full" />
+                    </div>
+                </div>
+
+                <div className={styles.main}>
+                    {/* Skeleton Sidebar */}
+                    <aside className={sidebarStyles.summaryCard}>
+                        <div className="flex flex-col items-center gap-4 mb-6">
+                            <div className="w-24 h-24 rounded-full bg-gray-200 animate-pulse" />
+                            <div className="h-6 w-32 bg-gray-200 animate-pulse rounded" />
+                        </div>
+                        <div className="space-y-4 w-full">
+                            {[1, 2, 3, 4, 5].map(i => (
+                                <div key={i} className="h-10 w-full bg-gray-100 animate-pulse rounded" />
+                            ))}
+                        </div>
+                    </aside>
+
+                    {/* Skeleton Content */}
+                    <div className="flex flex-col gap-6 w-full">
+                        {/* Status Indicator */}
+                        <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl flex items-center gap-3 animate-pulse">
+                            <Activity className="w-5 h-5 text-blue-500 animate-spin" />
+                            <span className="text-blue-700 font-medium">{statusText}</span>
+                            <div className="ml-auto text-blue-400 text-sm">{analysisState.progress}%</div>
+                        </div>
+
+                        {/* Environment Skeleton */}
+                        <div className="h-24 bg-white rounded-2xl border border-gray-100 animate-pulse" />
+
+                        {/* Radar Skeleton */}
+                        <div className="h-[400px] bg-white rounded-2xl border border-gray-100 animate-pulse flex items-center justify-center">
+                            <span className="text-gray-300">Analysis Visualization Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // Fallback for no result (e.g. direct access without data)
+    if (!result) return null;
 
     return (
         <div className={styles.container}>
@@ -445,34 +557,6 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                     </div>
                 </div>
             </div>
-
-            {/* Validation Warning Banner */}
-            {faceAnalysis?.validation && (!faceAnalysis.validation.isValid || faceAnalysis.validation.message) && (
-                <div className="w-full bg-red-50 border-b border-red-100 relative group">
-                    <div className="max-w-[1440px] mx-auto px-4 py-3 pr-10 flex items-start gap-3">
-                        <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
-                        <div className="flex-1">
-                            <h4 className="text-sm font-semibold text-red-900 mb-0.5">照片质量提示</h4>
-                            <p className="text-sm text-red-700 leading-relaxed">
-                                {faceAnalysis.validation.message}
-                            </p>
-                        </div>
-                        <button
-                            onClick={(e) => {
-                                // Since we don't have a specific state for hiding this yet, we can't persist the hide easily without state.
-                                // But typically we should use state. Let's add state logic or just manipulate DOM (bad practice).
-                                // Actually, let's just make it a controlled component or hack the display style.
-                                // Better: I will use state.
-                                const el = (e.target as HTMLElement).closest('.group') as HTMLElement;
-                                if (el) el.style.display = 'none';
-                            }}
-                            className="absolute right-4 top-3 p-1 rounded-full hover:bg-red-100 text-red-500 transition-colors"
-                        >
-                            <X className="w-4 h-4" />
-                        </button>
-                    </div>
-                </div>
-            )}
 
             {/* Header */}
             <header className={styles.header}>
@@ -503,6 +587,30 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                     </div>
                 </div>
             </header>
+
+            {/* Validation Warning Banner */}
+            {faceAnalysis?.validation && (!faceAnalysis.validation.isValid || faceAnalysis.validation.message) && (
+                <div className="w-full bg-red-50 border-b border-red-100 relative group z-[90]">
+                    <div className="max-w-[1440px] mx-auto px-4 py-3 pr-10 flex items-start gap-3">
+                        <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                            <h4 className="text-sm font-semibold text-red-900 mb-0.5">照片质量提示</h4>
+                            <p className="text-sm text-red-700 leading-relaxed">
+                                {faceAnalysis.validation.message}
+                            </p>
+                        </div>
+                        <button
+                            onClick={(e) => {
+                                const el = (e.target as HTMLElement).closest('.group') as HTMLElement;
+                                if (el) el.style.display = 'none';
+                            }}
+                            className="absolute right-4 top-3 p-1 rounded-full hover:bg-red-100 text-red-500 transition-colors"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Main Content */}
             <main className={styles.main}>
@@ -870,10 +978,10 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                                             <tbody className="divide-y divide-gray-100">
                                                 {faceAnalysis.skinConditions.map((cond, idx) => (
                                                     <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
-                                                        <td className="py-3 px-4 font-semibold text-gray-900">
+                                                        <td className="py-3 px-4 text-gray-600 text-[13px]">
                                                             {cond.condition}
                                                         </td>
-                                                        <td className="py-3 px-4 text-gray-600">
+                                                        <td className="py-3 px-4 text-gray-600 text-[13px]">
                                                             {cond.area}
                                                         </td>
                                                         <td className="py-3 px-4">
