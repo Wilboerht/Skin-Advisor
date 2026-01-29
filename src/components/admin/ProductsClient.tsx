@@ -31,7 +31,9 @@ import {
     Loader2,
     CheckSquare,
     Square,
-    Copy
+    Copy,
+    AlertTriangle,
+    Filter
 } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
@@ -136,11 +138,24 @@ function SortableProductRow({
             </td>
             <td className="px-4 py-4 whitespace-nowrap">
                 <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${product.active
-                        ? 'bg-emerald-50 text-emerald-700'
-                        : 'bg-slate-100 text-slate-500'
+                    ? 'bg-emerald-50 text-emerald-700'
+                    : 'bg-slate-100 text-slate-500'
                     }`}>
                     {product.active ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
                     {product.active ? '上架' : '下架'}
+                </span>
+            </td>
+            <td className="px-4 py-4 whitespace-nowrap">
+                <span className={`inline-flex items-center gap-1 text-sm font-medium ${product.stock <= 0
+                    ? 'text-red-600'
+                    : product.stock <= 10
+                        ? 'text-amber-600'
+                        : 'text-slate-600'
+                    }`}>
+                    {product.stock <= 10 && product.stock > 0 && (
+                        <AlertTriangle className="w-3.5 h-3.5" />
+                    )}
+                    {product.stock <= 0 ? '已售罄' : product.stock}
                 </span>
             </td>
             <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
@@ -184,6 +199,28 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
         id: null,
         batch: false
     });
+
+    // P7.10 Filters
+    const [categoryFilter, setCategoryFilter] = useState<string>("all");
+    const [statusFilter, setStatusFilter] = useState<string>("all");
+    const [stockFilter, setStockFilter] = useState<string>("all");
+
+    // Get unique categories
+    const categories = [...new Set(initialProducts.map(p => p.category))];
+
+    // Filter products
+    const filteredProducts = products.filter(p => {
+        if (categoryFilter !== "all" && p.category !== categoryFilter) return false;
+        if (statusFilter === "active" && !p.active) return false;
+        if (statusFilter === "inactive" && p.active) return false;
+        if (stockFilter === "low" && p.stock > 10) return false;
+        if (stockFilter === "out" && p.stock > 0) return false;
+        return true;
+    });
+
+    // Count low stock items
+    const lowStockCount = products.filter(p => p.stock <= 10 && p.stock > 0).length;
+    const outOfStockCount = products.filter(p => p.stock <= 0).length;
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -234,10 +271,10 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
     };
 
     const handleSelectAll = () => {
-        if (selectedIds.length === products.length) {
+        if (selectedIds.length === filteredProducts.length) {
             setSelectedIds([]);
         } else {
-            setSelectedIds(products.map(p => p.id));
+            setSelectedIds(filteredProducts.map(p => p.id));
         }
     };
 
@@ -308,7 +345,18 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900 tracking-tight">产品管理</h1>
                     <p className="text-slate-500 text-sm mt-1">
-                        拖拽调整排序 · 已选 {selectedIds.length} 项
+                        共 {products.length} 个产品
+                        {lowStockCount > 0 && (
+                            <span className="ml-2 text-amber-600">
+                                <AlertTriangle className="w-3.5 h-3.5 inline mr-0.5" />
+                                {lowStockCount} 库存预警
+                            </span>
+                        )}
+                        {outOfStockCount > 0 && (
+                            <span className="ml-2 text-red-600">
+                                {outOfStockCount} 已售罄
+                            </span>
+                        )}
                         {saving && <span className="ml-2 text-amber-600">保存中...</span>}
                     </p>
                 </div>
@@ -319,6 +367,50 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                     <Plus className="mr-2 h-4 w-4" />
                     添加产品
                 </Link>
+            </div>
+
+            {/* P7.10 Filter Controls */}
+            <div className="flex flex-wrap items-center gap-3 p-4 bg-white rounded-xl border border-slate-200">
+                <Filter className="w-4 h-4 text-slate-400" />
+                <select
+                    value={categoryFilter}
+                    onChange={(e) => setCategoryFilter(e.target.value)}
+                    className="px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-slate-300"
+                >
+                    <option value="all">所有分类</option>
+                    {categories.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                </select>
+                <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-slate-300"
+                >
+                    <option value="all">所有状态</option>
+                    <option value="active">已上架</option>
+                    <option value="inactive">已下架</option>
+                </select>
+                <select
+                    value={stockFilter}
+                    onChange={(e) => setStockFilter(e.target.value)}
+                    className="px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-slate-300"
+                >
+                    <option value="all">所有库存</option>
+                    <option value="low">库存预警 (≤10)</option>
+                    <option value="out">已售罄</option>
+                </select>
+                {(categoryFilter !== "all" || statusFilter !== "all" || stockFilter !== "all") && (
+                    <button
+                        onClick={() => { setCategoryFilter("all"); setStatusFilter("all"); setStockFilter("all"); }}
+                        className="px-3 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-700"
+                    >
+                        清除筛选
+                    </button>
+                )}
+                <span className="ml-auto text-xs text-slate-400">
+                    显示 {filteredProducts.length} / {products.length}
+                </span>
             </div>
 
             {/* Batch Actions Bar */}
@@ -372,7 +464,7 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                             <th className="px-2 py-3 w-10"></th>
                             <th className="px-2 py-3 w-10">
                                 <button onClick={handleSelectAll} className="text-slate-400 hover:text-slate-600">
-                                    {selectedIds.length === products.length && products.length > 0 ? (
+                                    {selectedIds.length === filteredProducts.length && filteredProducts.length > 0 ? (
                                         <CheckSquare className="w-5 h-5" />
                                     ) : (
                                         <Square className="w-5 h-5" />
@@ -384,6 +476,7 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                             <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">分类</th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">价格</th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">状态</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">库存</th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">操作</th>
                         </tr>
                     </thead>
@@ -394,10 +487,10 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                             onDragEnd={handleDragEnd}
                         >
                             <SortableContext
-                                items={products.map(p => p.id)}
+                                items={filteredProducts.map(p => p.id)}
                                 strategy={verticalListSortingStrategy}
                             >
-                                {products.map((product) => (
+                                {filteredProducts.map((product) => (
                                     <SortableProductRow
                                         key={product.id}
                                         product={product}

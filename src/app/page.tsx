@@ -8,6 +8,7 @@ import Image from "next/image";
 import { ArrowRight, Loader2, MapPin, User, ClipboardList } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
+import { SkincareReminder } from "@/components/advisor/SkincareReminder";
 
 export default function Home() {
   const router = useRouter();
@@ -169,6 +170,13 @@ export default function Home() {
                   <ClipboardList className="w-4 h-4" />
                   <span>查看历史分析记录</span>
                 </Link>
+              )}
+
+              {/* Skincare Reminder for Logged-in Users */}
+              {user && (
+                <div className="mt-4">
+                  <SkincareReminder />
+                </div>
               )}
             </div>
 

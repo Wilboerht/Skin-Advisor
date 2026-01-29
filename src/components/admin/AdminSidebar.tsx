@@ -15,6 +15,7 @@ import {
     ChevronRight,
     Users,
     Shield,
+    Download,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +33,12 @@ export default function AdminSidebar() {
     const pathname = usePathname();
     const router = useRouter();
     const [collapsed, setCollapsed] = useState(false);
+    const [showExportMenu, setShowExportMenu] = useState(false);
+
+    const handleExport = (type: string) => {
+        window.open(`/api/admin/export?type=${type}`, "_blank");
+        setShowExportMenu(false);
+    };
 
     const handleLogout = async () => {
         await fetch("/api/admin/auth/logout", { method: "POST" });
@@ -91,6 +98,46 @@ export default function AdminSidebar() {
                         </Link>
                     );
                 })}
+
+                {/* Export Dropdown */}
+                <div className="relative mt-4 pt-4 border-t border-[#1A1A1A]/5">
+                    {!collapsed && (
+                        <div className="px-3 mb-2 text-[10px] font-bold uppercase tracking-wider text-[#1A1A1A]/40 animate-in fade-in duration-300">
+                            Export Data
+                        </div>
+                    )}
+                    <button
+                        onClick={() => setShowExportMenu(!showExportMenu)}
+                        className={cn(
+                            "group flex items-center rounded-lg px-3 py-2 text-sm font-medium text-[#1A1A1A]/60 hover:bg-[#1A1A1A]/5 hover:text-[#1A1A1A] transition-colors w-full",
+                            collapsed ? "justify-center" : ""
+                        )}
+                        title={collapsed ? "Export" : undefined}
+                    >
+                        <Download className={cn("h-4 w-4", collapsed ? "mr-0" : "mr-3")} />
+                        {!collapsed && <span>Export</span>}
+                    </button>
+
+                    {showExportMenu && (
+                        <div className={cn(
+                            "absolute z-20 bg-white border border-[#1A1A1A]/10 rounded-lg shadow-lg py-1 w-40",
+                            collapsed ? "left-20 bottom-0" : "left-3 bottom-full mb-1"
+                        )}>
+                            <button onClick={() => handleExport("products")} className="w-full px-3 py-2 text-left text-sm hover:bg-[#1A1A1A]/5">
+                                Products
+                            </button>
+                            <button onClick={() => handleExport("users")} className="w-full px-3 py-2 text-left text-sm hover:bg-[#1A1A1A]/5">
+                                Users
+                            </button>
+                            <button onClick={() => handleExport("sessions")} className="w-full px-3 py-2 text-left text-sm hover:bg-[#1A1A1A]/5">
+                                Sessions
+                            </button>
+                            <button onClick={() => handleExport("rewards")} className="w-full px-3 py-2 text-left text-sm hover:bg-[#1A1A1A]/5">
+                                Rewards
+                            </button>
+                        </div>
+                    )}
+                </div>
             </nav>
 
             <div className="px-3 pb-2 pt-2 border-t border-[#1A1A1A]/5">
