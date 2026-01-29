@@ -541,7 +541,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                         className="fixed inset-0 z-[200] bg-[#FDFBF7] flex flex-col items-center justify-center overflow-hidden"
                     >
                         {/* Background Decor */}
-                        <div className="absolute inset-0 bg-[url('/grid-pattern.png')] opacity-[0.03] pointer-events-none" style={{ backgroundSize: '40px 40px' }} />
+                        <div className="absolute inset-0 pointer-events-none opacity-[0.05]" style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
                         <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-[#E8DCC6] opacity-30 blur-[120px] rounded-full pointer-events-none" />
                         <div className="absolute bottom-[-10%] right-[-5%] w-[500px] h-[500px] bg-[#D4B78F] opacity-20 blur-[100px] rounded-full pointer-events-none" />
 
@@ -598,7 +598,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     />
 
                                     {/* Tech Grid Overlay */}
-                                    <div className="absolute inset-0 bg-[url('/grid-pattern.png')] opacity-10 mix-blend-multiply" style={{ backgroundSize: '20px 20px' }} />
+                                    <div className="absolute inset-0 opacity-10 mix-blend-multiply" style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
                                 </div>
 
                                 {/* Floating Badges - Left */}

@@ -423,7 +423,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
       utterance.lang = "zh-CN"; // 中文
       utterance.rate = 1.0;
       utterance.volume = 1.0;
-      
+
       window.speechSynthesis.speak(utterance);
     } catch (e) {
       console.error("Speech synthesis failed", e);
@@ -469,7 +469,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
     const videoWidth = video.videoWidth;
     const videoHeight = video.videoHeight;
 
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
     let imageData: string;
@@ -632,7 +632,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
     canvas.width = 100; // 小尺寸用于快速分析
     canvas.height = 75;
 
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
     ctx.drawImage(video, 0, 0, 100, 75);
