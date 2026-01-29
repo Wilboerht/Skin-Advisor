@@ -48,19 +48,16 @@ export default function FaceScanPage() {
         return clearedSomething;
     };
 
-    const handleCaptureComplete = (images: FaceCaptureImages) => {
-        // 保存图片到 local storage 供分析页使用
-        const saveImages = (data: any): boolean => {
-            try {
-                localStorage.setItem("advisor_face_images", JSON.stringify(data));
-                return true;
-            } catch {
-                return false;
-            }
-        };
+    const handleCaptureComplete = async (images: FaceCaptureImages) => {
+        // Import advisorStorage dynamically to avoid SSR issues
+        const { advisorStorage } = await import("@/lib/advisor-storage");
 
-        // 尝试保存完整数据
-        if (saveImages(images)) {
+        // 尝试保存完整数据（优先 IndexedDB，fallback localStorage）
+        toast.info("正在保存图片...");
+
+        const success = await advisorStorage.saveFaceImages(images);
+
+        if (success) {
             trackFaceScanComplete();
             router.push("/analyzing");
             return;
@@ -68,9 +65,12 @@ export default function FaceScanPage() {
 
         // 存储失败，先清理旧数据再重试
         console.warn("Storage full, attempting cleanup...");
-        toast.info("正在优化存储空间...");
+        toast.warning("正在优化存储空间...");
 
-        if (clearOldStorageData() && saveImages(images)) {
+        await advisorStorage.clearAll();
+
+        const retrySuccess = await advisorStorage.saveFaceImages(images);
+        if (retrySuccess) {
             trackFaceScanComplete();
             router.push("/analyzing");
             return;
@@ -78,7 +78,8 @@ export default function FaceScanPage() {
 
         // 仍然失败，尝试只保存正面照
         console.warn("Still full, trying front-only...");
-        if (saveImages({ front: images.front })) {
+        const frontOnlySuccess = await advisorStorage.saveFaceImages({ front: images.front });
+        if (frontOnlySuccess) {
             toast.warning("仅保存了正面照片");
             trackFaceScanComplete();
             router.push("/analyzing");

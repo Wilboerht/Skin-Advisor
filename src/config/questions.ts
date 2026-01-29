@@ -47,13 +47,13 @@ export const DEFAULT_QUESTIONS: Question[] = [
         subtext: "可多选 (最多3项)",
         type: "multiple",
         options: [
-            { value: "aging", label: "细纹/松弛" },
-            { value: "acne", label: "痘痘/粉刺" },
-            { value: "spots", label: "色斑/暗沉" },
-            { value: "pores", label: "毛孔粗大" },
-            { value: "dryness", label: "干燥缺水" },
-            { value: "sensitivity", label: "敏感/泛红" },
-            { value: "dark_circles", label: "黑眼圈/眼袋" },
+            { value: "aging", label: "细纹/松弛", description: "眼周、法令纹、嘴角纹路" },
+            { value: "acne", label: "痘痘/粉刺", description: "闭口、黑头、炎症痘" },
+            { value: "spots", label: "色斑/暗沉", description: "雀斑、晒斑、肤色不均" },
+            { value: "pores", label: "毛孔粗大", description: "T区或面颊毛孔明显" },
+            { value: "dryness", label: "干燥缺水", description: "紧绷、起皮、卡粉" },
+            { value: "sensitivity", label: "敏感/泛红", description: "易过敏、发红、刺痛" },
+            { value: "dark_circles", label: "黑眼圈/眼袋", description: "眼周暗沉、浮肿" },
         ],
     },
 
@@ -92,10 +92,10 @@ export const DEFAULT_QUESTIONS: Question[] = [
         question: "近三个月是否做过光电/酸类医美项目？",
         type: "single",
         options: [
-            { value: "none", label: "无" },
-            { value: "laser", label: "光子/激光类" },
-            { value: "acid", label: "刷酸/焕肤类" },
-            { value: "injection", label: "注射/微针类" },
+            { value: "none", label: "无", description: "近期未做过任何医美项目" },
+            { value: "laser", label: "光子/激光类", description: "光子嫩肤、热玛吉、点阵等" },
+            { value: "acid", label: "刷酸/焕肤类", description: "果酸、水杨酸、壬二酸等" },
+            { value: "injection", label: "注射/微针类", description: "水光针、微针、肉毒等" },
         ],
         dependsOn: {
             // Complex logic not fully supported by simple type, 
@@ -111,9 +111,9 @@ export const DEFAULT_QUESTIONS: Question[] = [
         question: "您最近的睡眠质量如何？",
         type: "single",
         options: [
-            { value: "good", label: "很好 (精力充沛)" },
-            { value: "fair", label: "一般 (偶尔疲劳)" },
-            { value: "poor", label: "较差 (经常熬夜/失眠)" },
+            { value: "good", label: "很好 (精力充沛)", description: "每晚睡眠质量高，旨起精神充沛" },
+            { value: "fair", label: "一般 (偶尔疲劳)", description: "睡眠质量起伏不定" },
+            { value: "poor", label: "较差 (经常熬夜/失眠)", description: "睡眠不足、6小时，或难以入睡" },
         ],
     },
     {
@@ -122,9 +122,9 @@ export const DEFAULT_QUESTIONS: Question[] = [
         question: "您最近的工作/生活压力感受？",
         type: "single",
         options: [
-            { value: "low", label: "轻松 (无明显压力)" },
-            { value: "medium", label: "适中 (有一定压力)" },
-            { value: "high", label: "很大 (焦虑/紧绷)" },
+            { value: "low", label: "轻松 (无明显压力)", description: "心情平静，生活规律" },
+            { value: "medium", label: "适中 (有一定压力)", description: "正常工作学习压力" },
+            { value: "high", label: "很大 (焦虑/紧绷)", description: "经常感到焦虑或情绪波动" },
         ],
     },
     {
@@ -134,10 +134,10 @@ export const DEFAULT_QUESTIONS: Question[] = [
         subtext: "用于精准匹配'生理期护肤'模式",
         type: "single",
         options: [
-            { value: "na", label: "不适用" },
-            { value: "menstrual", label: "经期中 (第1-7天)" },
-            { value: "follicular", label: "滤泡期 (经后一周/状态好)" },
-            { value: "luteal", label: "黄体期 (经前一周/易冒痘)" },
+            { value: "na", label: "不适用", description: "男性或绝经期等" },
+            { value: "menstrual", label: "经期中 (第1-7天)", description: "肌肤敏感期，需温和护理" },
+            { value: "follicular", label: "滤泡期 (经后一周/状态好)", description: "肌肤状态最佳，适合精细护理" },
+            { value: "luteal", label: "黄体期 (经前一周/易冒痘)", description: "油脂分泌增加，注意清洁" },
         ],
         dependsOn: {
             field: "gender",

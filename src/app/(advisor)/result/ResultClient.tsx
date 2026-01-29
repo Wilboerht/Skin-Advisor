@@ -145,17 +145,26 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
     // Initialize & Restore Data
     useEffect(() => {
         const loadClientData = async () => {
-            // 1. Recover Images & Location from LocalStorage
+            // 1. Recover Images & Location using hybrid storage
             try {
-                const imgStr = localStorage.getItem("advisor_face_images");
-                const locationStr = localStorage.getItem("userRegion");
+                // Dynamically import to avoid SSR issues
+                const { advisorStorage } = await import("@/lib/advisor-storage");
+                const images = await advisorStorage.getFaceImages();
 
-                if (imgStr) {
-                    const images = JSON.parse(imgStr);
+                if (images) {
                     if (images.front) setUserImage(images.front);
                     setSideImages(images);
+                } else {
+                    // Fallback: try legacy localStorage directly
+                    const imgStr = localStorage.getItem("advisor_face_images");
+                    if (imgStr) {
+                        const legacyImages = JSON.parse(imgStr);
+                        if (legacyImages.front) setUserImage(legacyImages.front);
+                        setSideImages(legacyImages);
+                    }
                 }
 
+                const locationStr = localStorage.getItem("userRegion");
                 if (locationStr) {
                     try {
                         // Attempt to parse if it's JSON, otherwise treat as string
@@ -166,7 +175,7 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
                     }
                 }
             } catch (e) {
-                console.error("Local storage error:", e);
+                console.error("Storage load error:", e);
             }
 
             // 2. If no initialData (Client-side nav), recover from LS
