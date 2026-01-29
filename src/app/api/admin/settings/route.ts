@@ -15,11 +15,29 @@ export async function GET() {
 
         // Merge with environment defaults
         const merged = {
+            // AI Model
             aiProvider: settingsMap.aiProvider || process.env.AI_PROVIDER || 'openai',
             aiModel: settingsMap.aiModel || process.env.OPENAI_API_MODEL || 'gpt-4o',
             systemPrompt: settingsMap.systemPrompt || 'You are an expert dermatologist and skincare formulations chemist. Analyze the user\'s skin data scientifically and recommend precise active ingredients.',
             strictJsonMode: settingsMap.strictJsonMode ?? true,
             visionAnalysis: settingsMap.visionAnalysis ?? true,
+
+            // AI Parameters
+            temperature: settingsMap.temperature ?? 0.7,
+            maxTokens: settingsMap.maxTokens ?? 4096,
+            topP: settingsMap.topP ?? 0.95,
+
+            // Analysis Sensitivity
+            skinIssueThreshold: settingsMap.skinIssueThreshold ?? 50,
+            acneSensitivity: settingsMap.acneSensitivity ?? 50,
+            wrinkleSensitivity: settingsMap.wrinkleSensitivity ?? 50,
+            pigmentSensitivity: settingsMap.pigmentSensitivity ?? 50,
+
+            // Feature Flags
+            enableDetailedAnalysis: settingsMap.enableDetailedAnalysis ?? true,
+            enableProductRecommendations: settingsMap.enableProductRecommendations ?? true,
+            enableRoutineSuggestions: settingsMap.enableRoutineSuggestions ?? true,
+
             ...settingsMap
         };
 

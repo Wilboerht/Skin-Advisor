@@ -13,7 +13,11 @@ import {
     Package,
     Settings,
     Gift,
-    FileQuestion
+    FileQuestion,
+    Calendar,
+    Filter,
+    X,
+    ChevronDown
 } from "lucide-react";
 
 interface AuditLog {
@@ -27,6 +31,18 @@ interface AuditLog {
     ip: string | null;
     userAgent: string | null;
     createdAt: string;
+}
+
+interface AdminOption {
+    id: string;
+    username: string;
+    name: string | null;
+}
+
+interface FilterOptions {
+    admins: AdminOption[];
+    actions: string[];
+    resources: string[];
 }
 
 const ACTION_ICONS: Record<string, any> = {
@@ -67,20 +83,84 @@ const ACTION_COLORS: Record<string, string> = {
     reward_rejected: "bg-red-100 text-red-700",
 };
 
+const TIME_PRESETS = [
+    { label: "全部", value: "all" },
+    { label: "今天", value: "today" },
+    { label: "过去7天", value: "7days" },
+    { label: "过去30天", value: "30days" },
+    { label: "自定义", value: "custom" },
+];
+
 export default function AuditLogsClient() {
     const [logs, setLogs] = useState<AuditLog[]>([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const [total, setTotal] = useState(0);
+
+    // Filters
+    const [filterOptions, setFilterOptions] = useState<FilterOptions>({ admins: [], actions: [], resources: [] });
+    const [selectedAdmin, setSelectedAdmin] = useState<string>("all");
+    const [selectedAction, setSelectedAction] = useState<string>("all");
+    const [selectedResource, setSelectedResource] = useState<string>("all");
+    const [timePreset, setTimePreset] = useState<string>("all");
+    const [startDate, setStartDate] = useState<string>("");
+    const [endDate, setEndDate] = useState<string>("");
+    const [showFilters, setShowFilters] = useState(false);
+
+    const getDateRangeFromPreset = (preset: string) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        switch (preset) {
+            case "today":
+                return { start: today.toISOString().split('T')[0], end: today.toISOString().split('T')[0] };
+            case "7days": {
+                const start = new Date(today);
+                start.setDate(start.getDate() - 6);
+                return { start: start.toISOString().split('T')[0], end: today.toISOString().split('T')[0] };
+            }
+            case "30days": {
+                const start = new Date(today);
+                start.setDate(start.getDate() - 29);
+                return { start: start.toISOString().split('T')[0], end: today.toISOString().split('T')[0] };
+            }
+            default:
+                return { start: "", end: "" };
+        }
+    };
 
     const fetchLogs = async () => {
         setLoading(true);
         try {
-            const res = await fetch(`/api/admin/audit-logs?page=${page}&limit=30`);
+            const params = new URLSearchParams({
+                page: page.toString(),
+                limit: "30",
+            });
+
+            if (selectedAdmin !== "all") params.append("adminId", selectedAdmin);
+            if (selectedAction !== "all") params.append("action", selectedAction);
+            if (selectedResource !== "all") params.append("resource", selectedResource);
+
+            // Handle date range
+            if (timePreset === "custom") {
+                if (startDate) params.append("startDate", startDate);
+                if (endDate) params.append("endDate", endDate);
+            } else if (timePreset !== "all") {
+                const dateRange = getDateRangeFromPreset(timePreset);
+                if (dateRange.start) params.append("startDate", dateRange.start);
+                if (dateRange.end) params.append("endDate", dateRange.end);
+            }
+
+            const res = await fetch(`/api/admin/audit-logs?${params.toString()}`);
             const data = await res.json();
             if (data.success) {
                 setLogs(data.data);
                 setTotalPages(data.pagination.totalPages);
+                setTotal(data.pagination.total);
+                if (data.filters) {
+                    setFilterOptions(data.filters);
+                }
             }
         } catch (e) {
             console.error(e);
@@ -91,7 +171,19 @@ export default function AuditLogsClient() {
 
     useEffect(() => {
         fetchLogs();
-    }, [page]);
+    }, [page, selectedAdmin, selectedAction, selectedResource, timePreset, startDate, endDate]);
+
+    const clearFilters = () => {
+        setSelectedAdmin("all");
+        setSelectedAction("all");
+        setSelectedResource("all");
+        setTimePreset("all");
+        setStartDate("");
+        setEndDate("");
+        setPage(1);
+    };
+
+    const hasActiveFilters = selectedAdmin !== "all" || selectedAction !== "all" || selectedResource !== "all" || timePreset !== "all";
 
     const formatTime = (dateStr: string) => {
         const date = new Date(dateStr);
@@ -131,17 +223,214 @@ export default function AuditLogsClient() {
                         <Shield className="w-6 h-6" />
                         审计日志
                     </h1>
-                    <p className="text-slate-500 text-sm mt-1">查看管理员操作记录</p>
+                    <p className="text-slate-500 text-sm mt-1">
+                        查看管理员操作记录
+                        {total > 0 && <span className="ml-2 text-slate-400">· 共 {total} 条记录</span>}
+                    </p>
                 </div>
-                <button
-                    onClick={() => fetchLogs()}
-                    disabled={loading}
-                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
-                >
-                    <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                    刷新
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => setShowFilters(!showFilters)}
+                        className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${hasActiveFilters || showFilters
+                                ? 'bg-slate-900 text-white'
+                                : 'text-slate-700 bg-white border border-slate-200 hover:bg-slate-50'
+                            }`}
+                    >
+                        <Filter className="w-4 h-4" />
+                        筛选器
+                        {hasActiveFilters && (
+                            <span className="bg-white/20 text-xs px-1.5 py-0.5 rounded-full">
+                                {[selectedAdmin !== "all", selectedAction !== "all", selectedResource !== "all", timePreset !== "all"].filter(Boolean).length}
+                            </span>
+                        )}
+                    </button>
+                    <button
+                        onClick={() => fetchLogs()}
+                        disabled={loading}
+                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+                    >
+                        <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                        刷新
+                    </button>
+                </div>
             </div>
+
+            {/* Filter Panel */}
+            {showFilters && (
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 animate-in slide-in-from-top-2 duration-200">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                            <Filter className="w-4 h-4" />
+                            筛选条件
+                        </h3>
+                        {hasActiveFilters && (
+                            <button
+                                onClick={clearFilters}
+                                className="text-xs text-slate-500 hover:text-slate-700 flex items-center gap-1"
+                            >
+                                <X className="w-3 h-3" />
+                                清除筛选
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {/* Time Range */}
+                        <div>
+                            <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5">
+                                <Calendar className="w-3 h-3 inline mr-1" />
+                                时间范围
+                            </label>
+                            <select
+                                value={timePreset}
+                                onChange={(e) => {
+                                    setTimePreset(e.target.value);
+                                    if (e.target.value !== "custom") {
+                                        setStartDate("");
+                                        setEndDate("");
+                                    }
+                                    setPage(1);
+                                }}
+                                className="w-full rounded-lg border-slate-200 text-sm bg-slate-50/50 focus:ring-slate-500/20 focus:border-slate-500 py-2"
+                            >
+                                {TIME_PRESETS.map((preset) => (
+                                    <option key={preset.value} value={preset.value}>
+                                        {preset.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Admin Filter */}
+                        <div>
+                            <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5">
+                                <User className="w-3 h-3 inline mr-1" />
+                                管理员
+                            </label>
+                            <select
+                                value={selectedAdmin}
+                                onChange={(e) => { setSelectedAdmin(e.target.value); setPage(1); }}
+                                className="w-full rounded-lg border-slate-200 text-sm bg-slate-50/50 focus:ring-slate-500/20 focus:border-slate-500 py-2"
+                            >
+                                <option value="all">全部管理员</option>
+                                {filterOptions.admins.map((admin) => (
+                                    <option key={admin.id} value={admin.id}>
+                                        {admin.name || admin.username}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Action Filter */}
+                        <div>
+                            <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5">
+                                操作类型
+                            </label>
+                            <select
+                                value={selectedAction}
+                                onChange={(e) => { setSelectedAction(e.target.value); setPage(1); }}
+                                className="w-full rounded-lg border-slate-200 text-sm bg-slate-50/50 focus:ring-slate-500/20 focus:border-slate-500 py-2"
+                            >
+                                <option value="all">全部操作</option>
+                                {filterOptions.actions.map((action) => (
+                                    <option key={action} value={action}>
+                                        {getActionLabel(action)}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Resource Filter */}
+                        <div>
+                            <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5">
+                                资源类型
+                            </label>
+                            <select
+                                value={selectedResource}
+                                onChange={(e) => { setSelectedResource(e.target.value); setPage(1); }}
+                                className="w-full rounded-lg border-slate-200 text-sm bg-slate-50/50 focus:ring-slate-500/20 focus:border-slate-500 py-2"
+                            >
+                                <option value="all">全部资源</option>
+                                {filterOptions.resources.map((resource) => (
+                                    <option key={resource} value={resource}>
+                                        {resource}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Custom Date Range */}
+                    {timePreset === "custom" && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 pt-4 border-t border-slate-100">
+                            <div>
+                                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5">
+                                    开始日期
+                                </label>
+                                <input
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) => { setStartDate(e.target.value); setPage(1); }}
+                                    className="w-full rounded-lg border-slate-200 text-sm bg-slate-50/50 focus:ring-slate-500/20 focus:border-slate-500 py-2"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5">
+                                    结束日期
+                                </label>
+                                <input
+                                    type="date"
+                                    value={endDate}
+                                    onChange={(e) => { setEndDate(e.target.value); setPage(1); }}
+                                    className="w-full rounded-lg border-slate-200 text-sm bg-slate-50/50 focus:ring-slate-500/20 focus:border-slate-500 py-2"
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Active Filters Summary */}
+                    {hasActiveFilters && (
+                        <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-slate-100">
+                            {timePreset !== "all" && (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 text-slate-700 text-xs">
+                                    <Calendar className="w-3 h-3" />
+                                    {TIME_PRESETS.find(p => p.value === timePreset)?.label}
+                                    {timePreset === "custom" && startDate && `: ${startDate}`}
+                                    {timePreset === "custom" && endDate && ` ~ ${endDate}`}
+                                    <button onClick={() => { setTimePreset("all"); setStartDate(""); setEndDate(""); }} className="ml-1 hover:text-slate-900">
+                                        <X className="w-3 h-3" />
+                                    </button>
+                                </span>
+                            )}
+                            {selectedAdmin !== "all" && (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 text-slate-700 text-xs">
+                                    <User className="w-3 h-3" />
+                                    {filterOptions.admins.find(a => a.id === selectedAdmin)?.name || filterOptions.admins.find(a => a.id === selectedAdmin)?.username}
+                                    <button onClick={() => setSelectedAdmin("all")} className="ml-1 hover:text-slate-900">
+                                        <X className="w-3 h-3" />
+                                    </button>
+                                </span>
+                            )}
+                            {selectedAction !== "all" && (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 text-slate-700 text-xs">
+                                    {getActionLabel(selectedAction)}
+                                    <button onClick={() => setSelectedAction("all")} className="ml-1 hover:text-slate-900">
+                                        <X className="w-3 h-3" />
+                                    </button>
+                                </span>
+                            )}
+                            {selectedResource !== "all" && (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 text-slate-700 text-xs">
+                                    {selectedResource}
+                                    <button onClick={() => setSelectedResource("all")} className="ml-1 hover:text-slate-900">
+                                        <X className="w-3 h-3" />
+                                    </button>
+                                </span>
+                            )}
+                        </div>
+                    )}
+                </div>
+            )}
 
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                 {loading && logs.length === 0 ? (
