@@ -8,17 +8,13 @@ const submitSchema = z.object({
     address: z.string().min(1, "收货地址不能为空"),
     shareProofUrl: z.string().min(1, "必须上传截图证据"),
     skinScore: z.number().optional(),
-    percentile: z.number().optional()
+    percentile: z.number().optional(),
+    campaignId: z.string().optional()
 });
 
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-
-        // 兼容旧前端字段映射 (如果前端尚未更新)
-        // 假设 contact 可能是 "{name} {phone}" 或只传了 phone
-        // 这里我们优先取标准字段，如果没有标准字段，尝试从 contact 解析 (但这不可靠)
-        // 强制要求前端传标准字段
 
         const validation = submitSchema.safeParse(body);
 
@@ -29,51 +25,88 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const { name, phone, address, shareProofUrl, skinScore, percentile } = validation.data;
+        const { name, phone, address, shareProofUrl, skinScore, percentile, campaignId } = validation.data;
 
-        // 检查是否重复提交 (例如同手机号近期提交过?)
-        // 暂时不做严格限制，或者检查 status=pending 的
-        const existing = await prisma.shareReward.findFirst({
-            where: {
-                phone: phone,
-                status: "pending"
-            }
-        });
-
-        if (existing) {
-            // 可以选择更新或者拒绝。这里选择更新截图? 或者返回错误。
-            // 为简单起见，允许覆盖或返回已存在
-            /*
-            return NextResponse.json({
-                success: true,
-                data: existing,
-                message: "Request already pending"
+        // 查找当前活动（如果没有指定campaignId，自动查找活动中的活动）
+        let activeCampaignId = campaignId;
+        if (!activeCampaignId) {
+            const now = new Date();
+            const activeCampaign = await prisma.campaign.findFirst({
+                where: {
+                    isActive: true,
+                    startDate: { lte: now },
+                    endDate: { gte: now }
+                },
+                select: { id: true, maxParticipants: true, currentParticipants: true }
             });
-            */
-            // 或者创建一个新的
+            
+            if (activeCampaign) {
+                // 检查活动是否已满
+                if (activeCampaign.maxParticipants && 
+                    activeCampaign.currentParticipants >= activeCampaign.maxParticipants) {
+                    return NextResponse.json({
+                        success: false,
+                        error: "活动名额已满，感谢您的参与！"
+                    }, { status: 400 });
+                }
+                activeCampaignId = activeCampaign.id;
+            }
         }
 
-        const submission = await prisma.shareReward.create({
-            data: {
-                name,
-                phone,
-                address,
-                shareProofUrl,
-                skinScore: skinScore || 0,
-                percentile: percentile || 0,
-                status: "pending"
+        // 检查是否重复提交 (同一活动同一手机号)
+        if (activeCampaignId) {
+            const existing = await prisma.shareReward.findFirst({
+                where: {
+                    phone: phone,
+                    campaignId: activeCampaignId,
+                    status: { in: ["pending", "approved", "shipped"] }
+                }
+            });
+
+            if (existing) {
+                return NextResponse.json({
+                    success: false,
+                    error: "您已经参与过本次活动，请勿重复提交"
+                }, { status: 400 });
             }
+        }
+
+        // 使用事务创建记录并更新活动参与人数
+        const submission = await prisma.$transaction(async (tx) => {
+            const reward = await tx.shareReward.create({
+                data: {
+                    name,
+                    phone,
+                    address,
+                    shareProofUrl,
+                    skinScore: skinScore || 0,
+                    percentile: percentile || 0,
+                    status: "pending",
+                    campaignId: activeCampaignId || null
+                }
+            });
+
+            // 更新活动参与人数
+            if (activeCampaignId) {
+                await tx.campaign.update({
+                    where: { id: activeCampaignId },
+                    data: { currentParticipants: { increment: 1 } }
+                });
+            }
+
+            return reward;
         });
 
         return NextResponse.json({
             success: true,
-            data: submission
+            data: submission,
+            message: "提交成功！我们会尽快审核您的申请"
         });
 
     } catch (error) {
         console.error("Submission failed:", error);
         return NextResponse.json(
-            { success: false, error: "Internal server error" },
+            { success: false, error: "提交失败，请稍后重试" },
             { status: 500 }
         );
     }

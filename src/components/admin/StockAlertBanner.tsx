@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { AlertTriangle, X, Bell, BellOff } from "lucide-react";
+import { useToast } from "@/components/ui/Toast";
 
 interface LowStockProduct {
     id: string;
@@ -22,6 +23,9 @@ export function StockAlertBanner() {
     const [notificationsEnabled, setNotificationsEnabled] = useState(false);
     const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | null>(null);
 
+    // 使用 toast，注意 useToast() 返回的是 toast 对象（success/error/info/warning）
+    const toast = useToast();
+
     useEffect(() => {
         // Check notification permission
         if (typeof window !== "undefined" && "Notification" in window) {
@@ -34,12 +38,27 @@ export function StockAlertBanner() {
         // Fetch stock data
         const fetchStockData = async () => {
             try {
+                // 1. Fetch settings for threshold
+                let threshold = 10;
+                try {
+                    const settingsRes = await fetch('/api/admin/settings');
+                    if (settingsRes.ok) {
+                        const settingsData = await settingsRes.json();
+                        if (settingsData.success && settingsData.data.stockAlertThreshold) {
+                            threshold = settingsData.data.stockAlertThreshold;
+                        }
+                    }
+                } catch (e) {
+                    console.warn("Failed to fetch settings, utilizing default threshold 10");
+                }
+
+                // 2. Fetch products
                 const res = await fetch('/api/admin/products');
                 if (res.ok) {
                     const products = await res.json();
                     const productsList = Array.isArray(products) ? products : (products.data || []);
 
-                    const lowStock = productsList.filter((p: any) => p.stock > 0 && p.stock <= 10);
+                    const lowStock = productsList.filter((p: any) => p.stock > 0 && p.stock <= threshold);
                     const outOfStock = productsList.filter((p: any) => p.stock <= 0);
 
                     const alertData: StockAlertData = {
@@ -54,7 +73,18 @@ export function StockAlertBanner() {
 
                     setData(alertData);
 
-                    // Send browser notification if enabled and there are issues
+                    // 3. Logic: Show Toast Notification on Initial Load (Session based)
+                    // 使用 sessionStorage 避免每次刷新都弹窗，但如果是新打开的 tab 会弹
+                    const hasShownToast = sessionStorage.getItem("stock_alert_toast_shown");
+                    if (!hasShownToast && (alertData.lowStockCount > 0 || alertData.outOfStockCount > 0)) {
+                        toast.error(
+                            `库存警报: ${alertData.outOfStockCount}个售罄, ${alertData.lowStockCount}个不足 (阈值: ${threshold})`,
+                            8000 // Long duration
+                        );
+                        sessionStorage.setItem("stock_alert_toast_shown", "true");
+                    }
+
+                    // 4. Send browser notification if enabled
                     if (
                         localStorage.getItem("stock_notifications") === "enabled" &&
                         Notification.permission === "granted" &&
@@ -82,7 +112,7 @@ export function StockAlertBanner() {
         // Refresh every 5 minutes
         const interval = setInterval(fetchStockData, 5 * 60 * 1000);
         return () => clearInterval(interval);
-    }, []);
+    }, [toast]);
 
     const requestNotificationPermission = async () => {
         if (!("Notification" in window)) {
@@ -155,27 +185,27 @@ export function StockAlertBanner() {
                     <button
                         onClick={toggleNotifications}
                         className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${notificationsEnabled
-                                ? "bg-white/20 hover:bg-white/30"
-                                : "bg-white/10 hover:bg-white/20"
+                            ? "bg-white/20 hover:bg-white/30"
+                            : "bg-white/10 hover:bg-white/20"
                             }`}
                         title={notificationsEnabled ? "关闭推送通知" : "开启推送通知"}
                     >
                         {notificationsEnabled ? (
                             <>
                                 <Bell className="h-3.5 w-3.5" />
-                                <span>通知已开启</span>
+                                <span className="hidden sm:inline">通知已开启</span>
                             </>
                         ) : (
                             <>
                                 <BellOff className="h-3.5 w-3.5" />
-                                <span>开启通知</span>
+                                <span className="hidden sm:inline">开启通知</span>
                             </>
                         )}
                     </button>
 
                     <Link
                         href="/admin/products?filter=low"
-                        className="rounded-lg bg-white px-4 py-1.5 text-sm font-medium text-slate-900 shadow-sm hover:bg-white/90 transition-colors"
+                        className="rounded-lg bg-white px-4 py-1.5 text-sm font-medium text-slate-900 shadow-sm hover:bg-white/90 transition-colors whitespace-nowrap"
                     >
                         立即处理
                     </Link>

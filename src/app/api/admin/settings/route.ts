@@ -43,6 +43,8 @@ export async function GET(request: NextRequest) {
             enableProductRecommendations: settingsMap.enableProductRecommendations ?? true,
             enableRoutineSuggestions: settingsMap.enableRoutineSuggestions ?? true,
 
+            // Inventory
+            stockAlertThreshold: settingsMap.stockAlertThreshold ?? 10,
             ...settingsMap
         };
 

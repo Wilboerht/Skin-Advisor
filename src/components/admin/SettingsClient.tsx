@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Save, Loader2, RefreshCw, Key, MessageSquare, Monitor, Database, Shield, CheckCircle, Sliders, Activity, Zap, AlertTriangle, Info } from "lucide-react";
+import { Save, Loader2, RefreshCw, Key, MessageSquare, Monitor, Database, Shield, CheckCircle, Sliders, Activity, Zap, AlertTriangle, Info, Package } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 
 interface SettingsData {
@@ -27,6 +27,9 @@ interface SettingsData {
     enableDetailedAnalysis: boolean;
     enableProductRecommendations: boolean;
     enableRoutineSuggestions: boolean;
+
+    // Inventory Management
+    stockAlertThreshold: number; // Products below this level trigger alerts
 }
 
 const DEFAULT_SETTINGS: SettingsData = {
@@ -45,6 +48,7 @@ const DEFAULT_SETTINGS: SettingsData = {
     enableDetailedAnalysis: true,
     enableProductRecommendations: true,
     enableRoutineSuggestions: true,
+    stockAlertThreshold: 10,
 };
 
 export default function SettingsClient() {
@@ -417,6 +421,40 @@ export default function SettingsClient() {
                                 >
                                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${settings.enableRoutineSuggestions ? 'translate-x-6' : 'translate-x-1'}`} />
                                 </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Inventory Management */}
+                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center gap-2">
+                            <Package className="h-4 w-4 text-slate-500" />
+                            <h3 className="font-semibold text-slate-700 text-sm uppercase tracking-wide">库存管理</h3>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div>
+                                <div className="flex items-center justify-between mb-2">
+                                    <label className="text-sm font-medium text-slate-700">低库存预警阈值</label>
+                                    <span className="text-sm font-mono text-slate-600 bg-slate-100 px-2 py-0.5 rounded">{settings.stockAlertThreshold || 10}件</span>
+                                </div>
+                                <input
+                                    type="range"
+                                    min="1"
+                                    max="50"
+                                    step="1"
+                                    value={settings.stockAlertThreshold || 10}
+                                    onChange={(e) => setSettings({ ...settings, stockAlertThreshold: parseInt(e.target.value) })}
+                                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                                />
+                                <div className="flex justify-between text-xs text-slate-400 mt-1">
+                                    <span>较少 (1)</span>
+                                    <span>推荐 (10)</span>
+                                    <span>较多 (50)</span>
+                                </div>
+                                <p className="text-xs text-slate-500 mt-2 flex items-start gap-1">
+                                    <Info className="h-3 w-3 mt-0.5 shrink-0" />
+                                    当产品库存低于此数量时，系统将发送预警通知并显示警告
+                                </p>
                             </div>
                         </div>
                     </div>
