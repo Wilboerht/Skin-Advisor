@@ -11,6 +11,21 @@ interface ImmersiveRoutinePlayerProps {
     onComplete: () => void;
 }
 
+
+// Helper to get relevant background image based on step type
+const getStepImage = (stepName: string) => {
+    const name = stepName.toLowerCase();
+    if (name.includes('洁面') || name.includes('cleans') || name.includes('洗')) return "https://images.unsplash.com/photo-1556228720-1957be83d09a?q=80&w=2000&auto=format&fit=crop"; // Facial cleanser
+    if (name.includes('水') || name.includes('toner')) return "https://images.unsplash.com/photo-1616683693504-3ea7e9ad6fec?q=80&w=2000&auto=format&fit=crop"; // Water/Splash
+    if (name.includes('精华') || name.includes('serum')) return "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?q=80&w=2000&auto=format&fit=crop"; // Serum dropper
+    if (name.includes('眼') || name.includes('eye')) return "https://images.unsplash.com/photo-1515688594390-b649af70d282?q=80&w=2000&auto=format&fit=crop"; // Eye care
+    if (name.includes('霜') || name.includes('cream') || name.includes('乳')) return "https://images.unsplash.com/photo-1629198688000-71f23e745b6e?q=80&w=2000&auto=format&fit=crop"; // Cream texture
+    if (name.includes('防晒') || name.includes('sun')) return "https://images.unsplash.com/photo-1571781565036-d3f7595ca3e4?q=80&w=2000&auto=format&fit=crop"; // Sunscreen
+    if (name.includes('面膜') || name.includes('mask')) return "https://images.unsplash.com/photo-1596755389378-c31d21fd1273?q=80&w=2000&auto=format&fit=crop"; // Mask
+    // Default Spa/Clean aesthetic
+    return "https://images.unsplash.com/photo-1556228578-8d8448ad114f?q=80&w=2070&auto=format&fit=crop";
+};
+
 export function ImmersiveRoutinePlayer({ steps, title, onClose, onComplete }: ImmersiveRoutinePlayerProps) {
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
     const [isComplete, setIsComplete] = useState(false);
@@ -114,7 +129,7 @@ export function ImmersiveRoutinePlayer({ steps, title, onClose, onComplete }: Im
                 {/* Video Player Card */}
                 <div className="relative w-full max-w-5xl aspect-video bg-black rounded-3xl overflow-hidden shadow-2xl shadow-gray-200/50 ring-1 ring-black/5 group">
                     <Image
-                        src="https://images.unsplash.com/photo-1556228578-8d8448ad114f?q=80&w=2070&auto=format&fit=crop"
+                        src={getStepImage(currentStep.name)}
                         alt="Tutorial Video"
                         className={cn(
                             "w-full h-full object-cover transition-transform duration-700",

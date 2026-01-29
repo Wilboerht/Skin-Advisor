@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-// 使用 Open-Meteo (免费、无需 API Key)
-// 如需切换回和风天气，将下面的 import 改为 "@/lib/qweather"
-import { getSkinEnvData } from "@/lib/open-meteo";
+import { getSkinEnvData as getOpenMeteoData } from "@/lib/open-meteo";
+import { getSkinEnvData as getQWeatherData } from "@/lib/qweather";
 
-export const runtime = "nodejs"; // more stable for local dev fetch
+export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
@@ -16,7 +15,6 @@ export async function GET(req: NextRequest) {
     let locationQuery = city;
     if (!locationQuery && lat && lon) {
         // Round to 2 decimals for cache friendliness
-        // Open-Meteo 使用 lat,lon 格式，这里保持 lon,lat 格式在 lib 中处理
         locationQuery = `${parseFloat(lon).toFixed(2)},${parseFloat(lat).toFixed(2)}`;
     }
 
@@ -24,7 +22,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: "Missing location parameter" }, { status: 400 });
     }
 
-    // Fallback data to return if weather API is unreachable
+    // Fallback data
     const fallbackData = {
         uvIndex: 5,
         humidity: 50,
@@ -35,19 +33,37 @@ export async function GET(req: NextRequest) {
         isRealData: false
     };
 
-    // Race the API call against a 5-second timeout to guarantee fast response
-    const timeoutPromise = new Promise<typeof fallbackData>((resolve) => {
-        setTimeout(() => resolve(fallbackData), 5000);
-    });
-
     try {
-        const data = await Promise.race([
-            getSkinEnvData(locationQuery),
-            timeoutPromise
-        ]);
-        return NextResponse.json(data);
+        // Strategy: 
+        // 1. Try QWeather (Best for China, accurate AQI)
+        // 2. Fallback to Open-Meteo (Global, Free, Reliable)
+        // 3. Fallback to Mock
+
+        // Try QWeather
+        try {
+            const data = await getQWeatherData(locationQuery);
+            if (data.isRealData) {
+                return NextResponse.json(data);
+            }
+        } catch (e) {
+            console.warn("QWeather attempt failed, falling back to Open-Meteo:", e);
+        }
+
+        // Try Open-Meteo
+        try {
+            const data = await getOpenMeteoData(locationQuery);
+            if (data.isRealData) {
+                return NextResponse.json(data);
+            }
+        } catch (e) {
+            console.warn("Open-Meteo attempt failed, falling back to static:", e);
+        }
+
+        // If all fail
+        return NextResponse.json(fallbackData);
+
     } catch (e) {
-        console.warn("Weather API route error:", e);
+        console.error("Weather Route Critical Error:", e);
         return NextResponse.json(fallbackData);
     }
 }

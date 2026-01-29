@@ -239,9 +239,8 @@ export default function ResultClient({ id, initialData }: ResultClientProps) {
         loadClientData();
     }, [initialData, router, trackResultView, toast]);
 
-    // --- Mock Environment Data (Phase 3 Simulation) ---
-    // In production, this would fetch from a weather API based on lat/long
-    // --- Real Environment Data Integration ---
+    // --- Environment Data Integration ---
+    // Fetches from /api/weather which handles QWeather/Open-Meteo fallback
     const [envData, setEnvData] = useState({
         uvIndex: 0,
         humidity: 50,

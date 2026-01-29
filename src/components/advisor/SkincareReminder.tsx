@@ -79,7 +79,56 @@ export function SkincareReminder() {
         return () => clearInterval(interval);
     }, [settings, permission]);
 
+
+    // Helper to convert VAPID key
+    const urlBase64ToUint8Array = (base64String: string) => {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+        for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+    };
+
+    // Register Service Worker
+    useEffect(() => {
+        if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+            navigator.serviceWorker.register("/sw.js")
+                .then(registration => {
+                    console.log("SW registered:", registration);
+                })
+                .catch(err => console.error("SW registration failed:", err));
+        }
+    }, []);
+
+    const subscribeToPush = async () => {
+        if (!("serviceWorker" in navigator)) return;
+
+        try {
+            const registration = await navigator.serviceWorker.ready;
+            const sub = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!)
+            });
+
+            // Send to backend
+            await fetch("/api/push/subscribe", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ subscription: sub, userAgent: navigator.userAgent })
+            });
+
+            return sub;
+        } catch (e) {
+            console.error("Push subscription failed", e);
+            throw e;
+        }
+    };
+
     const showNotification = (type: "morning" | "evening") => {
+        // Fallback to local if permission granted but SW fetch failed or just local logic
         if (permission !== "granted") return;
 
         const title = type === "morning" ? "☀️ 早安护肤提醒" : "🌙 晚间护肤提醒";
@@ -87,16 +136,7 @@ export function SkincareReminder() {
             ? "开始新的一天！别忘了做好防晒和基础护理 ✨"
             : "辛苦一天了！卸妆清洁后开始你的晚间护理吧 🌸";
 
-        const notification = new Notification(title, {
-            body,
-            icon: "/logo-myskin-today.svg",
-            tag: `skincare-${type}`,
-        });
-
-        notification.onclick = () => {
-            window.focus();
-            notification.close();
-        };
+        new Notification(title, { body, icon: "/logo-myskin-today.svg" });
     };
 
     const requestPermission = async () => {
@@ -110,8 +150,15 @@ export function SkincareReminder() {
             setPermission(result);
 
             if (result === "granted") {
-                toast.success("通知权限已开启！");
-                setSettings(prev => ({ ...prev, enabled: true }));
+                toast.success("通知权限已开启！正在注册推送服务...");
+                try {
+                    await subscribeToPush();
+                    toast.success("推送服务连接成功！");
+                    setSettings(prev => ({ ...prev, enabled: true }));
+                } catch (e) {
+                    toast.error("推送服务连接失败，仅启用本地通知");
+                    setSettings(prev => ({ ...prev, enabled: true }));
+                }
             } else if (result === "denied") {
                 toast.error("通知权限被拒绝，请在浏览器设置中开启");
             }
@@ -125,17 +172,47 @@ export function SkincareReminder() {
             requestPermission();
         } else {
             setSettings(prev => ({ ...prev, enabled: !prev.enabled }));
+            if (!settings.enabled && permission === "granted") {
+                // Re-subscribe just in case
+                subscribeToPush().catch(console.error);
+            }
             toast.success(settings.enabled ? "护肤提醒已关闭" : "护肤提醒已开启");
         }
     };
 
-    const testNotification = () => {
+    const testNotification = async () => {
         if (permission !== "granted") {
             requestPermission();
             return;
         }
-        showNotification("morning");
-        toast.success("测试通知已发送");
+
+        // Try active SW push first
+        try {
+            const registration = await navigator.serviceWorker.getRegistration();
+            const sub = await registration?.pushManager.getSubscription();
+
+            if (sub) {
+                toast.info("正在发送测试推送...");
+                const res = await fetch("/api/push/send-test", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        endpoint: sub.endpoint,
+                        title: "测试推送",
+                        message: "这是一条来自 Service Worker 的测试推送！"
+                    })
+                });
+                if (res.ok) toast.success("测试推送已发送！");
+                else throw new Error("API Error");
+            } else {
+                showNotification("morning");
+                toast.success("本地测试通知已发送 (SW未订阅)");
+            }
+        } catch (e) {
+            // Fallback
+            showNotification("morning");
+            toast.success("本地测试通知已发送 (Fallback)");
+        }
     };
 
     if (permission === "unsupported") {

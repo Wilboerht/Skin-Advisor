@@ -89,6 +89,28 @@ export function LowStockAlert() {
                     </div>
                 ))}
             </div>
+            <div className="mt-4 pt-4 border-t border-amber-200/50 flex justify-end">
+                <button
+                    onClick={async () => {
+                        try {
+                            // Using send-test as a generic 'notify admin' endpoint for now
+                            await fetch("/api/push/send-test", {
+                                method: "POST",
+                                body: JSON.stringify({
+                                    title: "库存紧急预警",
+                                    message: `现有 ${products.length} 款产品库存低于 10 件，请及时补货。`
+                                })
+                            });
+                            alert("已发送预警推送给所有订阅管理员");
+                        } catch (e) {
+                            alert("推送发送失败");
+                        }
+                    }}
+                    className="text-xs font-bold text-amber-700 bg-amber-100 px-3 py-1.5 rounded-full hover:bg-amber-200 transition-colors"
+                >
+                    📢 推送通知给管理员
+                </button>
+            </div>
         </div>
     );
 }

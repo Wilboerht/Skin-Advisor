@@ -170,6 +170,7 @@ model User {
   advisorSessions AdvisorSession[]
   shareRewards    ShareReward[]
   wishlists       Wishlist[]
+  pushSubscriptions PushSubscription[]
 }
 
 // 产品库
@@ -266,5 +267,17 @@ model Campaign {
   updatedAt           DateTime      @updatedAt
 
   rewards             ShareReward[]
+}
+
+// Web Push 订阅
+model PushSubscription {
+  id        String   @id @default(cuid())
+  endpoint  String   @unique
+  keys      Json     // { p256dh: string, auth: string }
+  userId    String?  // Optional: Link to logged-in user
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
