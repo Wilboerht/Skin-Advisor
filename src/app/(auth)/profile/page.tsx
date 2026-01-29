@@ -30,21 +30,13 @@ export default function ProfilePage() {
         const fetchHistory = async () => {
             if (!user) return;
             try {
-                // In a real app we would have an API endpoint like /api/advisor/history
-                // For now, let's just use local storage or mock, 
-                // BUT wait, I implemented userId in AdvisorSession so I CAN fetch it.
-                // I need an API endpoint for fetching history.
-
-                // Let's create a quick fetch to a new endpoint or update /api/auth/me to return it?
-                // Better to have /api/advisor/history
-
                 const res = await fetch("/api/advisor/history");
                 if (res.ok) {
                     const data = await res.json();
                     setAuditHistory(data.history);
                 }
             } catch (e) {
-                console.error(e);
+                console.error("History fetch error:", e);
             } finally {
                 setLoadingHistory(false);
             }

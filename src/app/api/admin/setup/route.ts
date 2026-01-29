@@ -27,7 +27,26 @@ export async function GET() {
         let productMsg = `Found ${productCount} existing products.`;
 
         if (productCount === 0) {
-            productMsg = "No products found in database (Manual entry required via CMS).";
+            console.log("Seeding products...");
+            for (const p of PRODUCTS_CATALOG) {
+                await prisma.product.create({
+                    data: {
+                        name: p.name,
+                        nameEn: p.nameEn,
+                        category: p.category,
+                        image: p.image,
+                        price: p.price,
+                        description: p.description,
+                        keyIngredients: p.keyIngredients,
+                        suitableSkinTypes: p.suitableSkinTypes,
+                        benefits: p.benefits,
+                        active: true,
+                        stock: 100,
+                        featured: false
+                    }
+                });
+            }
+            productMsg = `Seeded ${PRODUCTS_CATALOG.length} products successfully.`;
         }
 
         // 3. Populate Questions (Optional - avoiding duplicates)

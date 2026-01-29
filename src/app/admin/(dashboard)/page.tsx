@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Package, Gift } from "lucide-react";
 import { DashboardCharts } from "@/components/admin/charts/DashboardCharts";
 import { LowStockAlert } from "@/components/admin/LowStockAlert";
+import { SetupButton } from "@/components/admin/SetupButton";
 
 export default async function AdminDashboard() {
     const productCount = await prisma.product.count();
@@ -79,9 +80,7 @@ export default async function AdminDashboard() {
                                 The database seems to be empty. You can run the setup script to seed standard skincare products and questions.
                             </p>
                         </div>
-                        <a href="/api/admin/setup" target="_blank" className="rounded-full bg-[#1A1A1A] px-6 py-3 text-xs font-bold tracking-widest text-white hover:bg-[#3D4430] transition-all uppercase">
-                            Run Setup / Seed Data
-                        </a>
+                        <SetupButton />
                     </div>
                 </div>
             )}
