@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
     Gift,
@@ -36,7 +36,20 @@ interface Campaign {
     isFull: boolean;
 }
 
+// Main page component wrapped with Suspense
 export default function ShareRewardPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex min-h-screen items-center justify-center bg-[#F0EDE1]">
+                <Loader2 className="h-8 w-8 animate-spin text-[#3D4430]" />
+            </div>
+        }>
+            <ShareRewardContent />
+        </Suspense>
+    );
+}
+
+function ShareRewardContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const toast = useToast();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAsyncAnalysis } from "@/hooks/useAsyncAnalysis";
 import { Link } from "next-view-transitions";
@@ -79,7 +79,20 @@ interface ResultClientProps {
     } | null;
 }
 
-export default function ResultClient({ id, initialData }: ResultClientProps) {
+// Wrapper component with Suspense for useSearchParams
+export default function ResultClient(props: ResultClientProps) {
+    return (
+        <Suspense fallback={
+            <div className="flex min-h-screen items-center justify-center bg-[#FDFBF7]">
+                <ScanFace className="w-12 h-12 text-[#D4B78F] animate-pulse" />
+            </div>
+        }>
+            <ResultClientContent {...props} />
+        </Suspense>
+    );
+}
+
+function ResultClientContent({ id, initialData }: ResultClientProps) {
     const router = useRouter();
     const toast = useToast();
     const { trackResultView, trackResultShare, trackProductClick } = useAdvisorAnalytics();
