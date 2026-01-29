@@ -1,10 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { X, CheckCircle, AlertCircle, Info } from "lucide-react";
+import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-export type ToastType = "success" | "error" | "info";
+export type ToastType = "success" | "error" | "info" | "warning";
 
 export interface Toast {
     id: string;
@@ -19,6 +19,7 @@ interface ToastContextType {
         success: (message: string, duration?: number) => void;
         error: (message: string, duration?: number) => void;
         info: (message: string, duration?: number) => void;
+        warning: (message: string, duration?: number) => void;
     };
     removeToast: (id: string) => void;
 }
@@ -51,6 +52,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             success: (message: string, duration?: number) => addToast(message, "success", duration),
             error: (message: string, duration?: number) => addToast(message, "error", duration),
             info: (message: string, duration?: number) => addToast(message, "info", duration),
+            warning: (message: string, duration?: number) => addToast(message, "warning", duration),
         }),
         [addToast]
     );
@@ -84,11 +86,14 @@ function ToastContainer({
                             ? "bg-white/90 border-green-200 text-green-800"
                             : t.type === "error"
                                 ? "bg-white/90 border-red-200 text-red-800"
-                                : "bg-white/90 border-blue-200 text-slate-800"
+                                : t.type === "warning"
+                                    ? "bg-white/90 border-amber-200 text-amber-800"
+                                    : "bg-white/90 border-blue-200 text-slate-800"
                             }`}
                     >
                         {t.type === "success" && <CheckCircle className="h-5 w-5 text-green-500 shrink-0" />}
                         {t.type === "error" && <AlertCircle className="h-5 w-5 text-red-500 shrink-0" />}
+                        {t.type === "warning" && <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />}
                         {t.type === "info" && <Info className="h-5 w-5 text-blue-500 shrink-0" />}
 
                         <p className="flex-1 text-sm font-medium">{t.message}</p>

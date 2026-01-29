@@ -258,9 +258,17 @@ export default function AnalyzingPage() {
                             style={{ width: "50%" }}
                         />
                     </div>
-                    <span className="text-sm font-light tracking-wider text-brand-charcoal/50">
-                        {Math.round(Math.min(progress, 100))}%
-                    </span>
+                    <div className="flex items-center justify-between">
+                        <span className="text-sm font-light tracking-wider text-brand-charcoal/50">
+                            {Math.round(Math.min(progress, 100))}%
+                        </span>
+                        <span className="text-xs text-brand-charcoal/40">
+                            {progress < 30 && "预计 15-20 秒"}
+                            {progress >= 30 && progress < 60 && "预计 10-15 秒"}
+                            {progress >= 60 && progress < 85 && "预计 5-10 秒"}
+                            {progress >= 85 && "即将完成..."}
+                        </span>
+                    </div>
                 </div>
 
                 {/* 排队信息 */}

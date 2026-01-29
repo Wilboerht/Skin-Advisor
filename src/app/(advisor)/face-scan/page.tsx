@@ -29,24 +29,64 @@ export default function FaceScanPage() {
         }
     }, [trackFaceScanStart, router]);
 
-    const handleCaptureComplete = (images: FaceCaptureImages) => {
-        // 保存图片到 local storage 供分析页使用
-        try {
-            localStorage.setItem("advisor_face_images", JSON.stringify(images));
-            trackFaceScanComplete();
-            router.push("/analyzing");
-        } catch (e) {
-            console.error("Storage full, clearing old data");
-            localStorage.removeItem("advisor_face_images");
-            // 尝试只存一张
-            try {
-                localStorage.setItem("advisor_face_images", JSON.stringify({ front: images.front }));
-                trackFaceScanComplete();
-                router.push("/analyzing");
-            } catch (e2) {
-                toast.error("您的设备存储空间不足，无法保存照片。");
+    // 清理旧的本地存储数据以释放空间
+    const clearOldStorageData = () => {
+        const keysToTry = [
+            "advisor_result",        // 旧的分析结果（最大）
+            "advisor_face_images",   // 旧的面部图片
+            "advisor_step",          // 步骤索引
+        ];
+
+        let clearedSomething = false;
+        for (const key of keysToTry) {
+            if (localStorage.getItem(key)) {
+                localStorage.removeItem(key);
+                clearedSomething = true;
+                console.log(`Cleared ${key} to free up space`);
             }
         }
+        return clearedSomething;
+    };
+
+    const handleCaptureComplete = (images: FaceCaptureImages) => {
+        // 保存图片到 local storage 供分析页使用
+        const saveImages = (data: any): boolean => {
+            try {
+                localStorage.setItem("advisor_face_images", JSON.stringify(data));
+                return true;
+            } catch {
+                return false;
+            }
+        };
+
+        // 尝试保存完整数据
+        if (saveImages(images)) {
+            trackFaceScanComplete();
+            router.push("/analyzing");
+            return;
+        }
+
+        // 存储失败，先清理旧数据再重试
+        console.warn("Storage full, attempting cleanup...");
+        toast.info("正在优化存储空间...");
+
+        if (clearOldStorageData() && saveImages(images)) {
+            trackFaceScanComplete();
+            router.push("/analyzing");
+            return;
+        }
+
+        // 仍然失败，尝试只保存正面照
+        console.warn("Still full, trying front-only...");
+        if (saveImages({ front: images.front })) {
+            toast.warning("仅保存了正面照片");
+            trackFaceScanComplete();
+            router.push("/analyzing");
+            return;
+        }
+
+        // 最终失败
+        toast.error("存储空间不足，请清理浏览器缓存后重试");
     };
 
     return (

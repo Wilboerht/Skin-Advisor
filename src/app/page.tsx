@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Link } from "next-view-transitions";
 import { m, AnimatePresence, LazyMotion, domAnimation } from "framer-motion";
 import Image from "next/image";
-import { ArrowRight, Loader2, MapPin, User } from "lucide-react";
+import { ArrowRight, Loader2, MapPin, User, ClipboardList } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -159,6 +159,17 @@ export default function Home() {
                   </>
                 )}
               </button>
+
+              {/* History Entry for Logged-in Users */}
+              {user && (
+                <Link
+                  href="/profile"
+                  className="mt-4 inline-flex items-center gap-2 text-sm text-[#3D4430]/60 hover:text-[#3D4430] transition-colors"
+                >
+                  <ClipboardList className="w-4 h-4" />
+                  <span>查看历史分析记录</span>
+                </Link>
+              )}
             </div>
 
             {/* Minimal Footer Info */}
