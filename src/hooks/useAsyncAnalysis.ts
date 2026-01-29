@@ -44,7 +44,7 @@ export function useAsyncAnalysis() {
 
         try {
             const answersStr = localStorage.getItem("advisor_answers");
-            const imagesStr = localStorage.getItem("advisor_face_images");
+
 
             if (!answersStr) {
                 throw new Error("Missing answer data");
@@ -53,12 +53,18 @@ export function useAsyncAnalysis() {
 
             // 1. Face Analysis
             let faceAnalysis = null;
-            if (imagesStr) {
+
+            // Use advisorStorage to get images (supports IndexedDB)
+            const { advisorStorage } = await import("@/lib/advisor-storage");
+            const images = await advisorStorage.getFaceImages();
+
+            // if (imagesStr) { -> Handled by checking if images is not null
+            if (images) {
                 setAnalysisState({ status: 'analyzing_face', progress: 30, error: null });
-                let images: any = {};
-                try {
-                    images = JSON.parse(imagesStr);
-                } catch (e) { console.error(e); }
+                // let images: any = {}; -> Already have images object
+                // try {
+                //     images = JSON.parse(imagesStr);
+                // } catch (e) { console.error(e); }
 
                 if (images && images.front) {
                     const visionImages = [];
