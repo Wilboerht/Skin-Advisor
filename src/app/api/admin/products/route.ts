@@ -1,9 +1,15 @@
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { verifyAdminSession, logAdminAction, getClientInfo } from "@/lib/admin-auth";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
     try {
+        const admin = await verifyAdminSession();
+        if (!admin) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
         const products = await prisma.product.findMany({
             orderBy: { sortOrder: 'asc' }
         });
@@ -13,9 +19,16 @@ export async function GET() {
     }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
     try {
+        const admin = await verifyAdminSession();
+        if (!admin) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
         const body = await request.json();
+        const clientInfo = getClientInfo(request);
+
         const product = await prisma.product.create({
             data: {
                 name: body.name,
@@ -32,6 +45,17 @@ export async function POST(request: Request) {
                 stock: body.stock || 0,
             }
         });
+
+        // Log audit
+        await logAdminAction({
+            adminId: admin.adminId,
+            action: "create",
+            resource: "Product",
+            resourceId: product.id,
+            details: { name: product.name, category: product.category },
+            ...clientInfo
+        });
+
         return NextResponse.json(product);
     } catch (error) {
         console.error(error);

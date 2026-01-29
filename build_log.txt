@@ -1,0 +1,45 @@
+﻿
+> skin-advisor-standalone@0.1.0 build
+> next build
+
+鈻?Next.js 16.1.4 (Turbopack)
+- Environments: .env
+
+node.exe : 鈿?The "middleware" file convention is d
+eprecated. Please use "proxy" instead. Learn more:
+ https://nextjs.org/docs/messages/middleware-to-pr
+oxy
+所在位置 行:1 字符: 1
++ & "D:\Program Files\nodejs/node.exe" "D:\Program
+ Files\nodejs\node_gl ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (鈿?Th 
+   e "middlewa...leware-to-proxy:String) [], Rem  
+  oteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  Creating an optimized production build ...
+鉁?Compiled successfully in 30.2s
+  Running TypeScript ...
+Failed to compile.
+
+./src/app/admin/(dashboard)/campaigns/[id]/edit/pa
+ge.tsx:14:35
+Type error: Property 'campaign' does not exist on 
+type 'PrismaClient<{ adapter: PrismaLibSql; }, nev
+er, DefaultArgs>'.
+
+[0m [90m 12 |[39m }) {
+ [90m 13 |[39m     [36mconst[39m { id } [33m=
+[39m [36mawait[39m params[33m;[39m
+[31m[1m>[22m[39m[90m 14 |[39m     [36mconst
+[39m campaign [33m=[39m [36mawait[39m prisma
+[33m.[39mcampaign[33m.[39mfindUnique({
+ [90m    |[39m                                  
+ [31m[1m^[22m[39m
+ [90m 15 |[39m         where[33m:[39m { id }
+ [90m 16 |[39m     })[33m;[39m
+ [90m 17 |[39m[0m
+Next.js build worker exited with code: 1 and signa
+l: null

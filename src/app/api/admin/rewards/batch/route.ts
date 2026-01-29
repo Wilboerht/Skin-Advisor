@@ -1,12 +1,19 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { verifyAdminSession, logAdminAction, getClientInfo } from "@/lib/admin-auth";
 
 // POST - Batch update rewards
 export async function POST(request: NextRequest) {
     try {
+        const admin = await verifyAdminSession();
+        if (!admin) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
         const body = await request.json();
         const { ids, action, trackingNo } = body;
+        const clientInfo = getClientInfo(request);
 
         if (!ids || !Array.isArray(ids) || ids.length === 0) {
             return NextResponse.json(
@@ -59,6 +66,19 @@ export async function POST(request: NextRequest) {
                 });
                 break;
         }
+
+        // Log audit for batch operation
+        await logAdminAction({
+            adminId: admin.adminId,
+            action: `batch_${action}`,
+            resource: "ShareReward",
+            details: {
+                affectedIds: ids,
+                count: result?.count || 0,
+                trackingNo: action === 'ship' ? trackingNo : undefined
+            },
+            ...clientInfo
+        });
 
         return NextResponse.json({
             success: true,

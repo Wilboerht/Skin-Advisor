@@ -1,10 +1,15 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { verifyAdminSession, logAdminAction, getClientInfo } from "@/lib/admin-auth";
 
 // GET all settings
-export async function GET() {
+export async function GET(request: NextRequest) {
     try {
+        const admin = await verifyAdminSession();
+        if (!admin) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
         const settings = await prisma.setting.findMany();
 
         // Convert to key-value object
@@ -54,8 +59,14 @@ export async function GET() {
 // PATCH update settings
 export async function PATCH(request: NextRequest) {
     try {
+        const admin = await verifyAdminSession();
+        if (!admin) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
         const body = await request.json();
         const updates = body.settings;
+        const clientInfo = getClientInfo(request);
 
         if (!updates || typeof updates !== 'object') {
             return NextResponse.json(
@@ -63,6 +74,13 @@ export async function PATCH(request: NextRequest) {
                 { status: 400 }
             );
         }
+
+        // Get old values for audit
+        const oldSettings = await prisma.setting.findMany({
+            where: { key: { in: Object.keys(updates) } }
+        });
+        const oldValuesMap: Record<string, any> = {};
+        oldSettings.forEach(s => { oldValuesMap[s.key] = s.value; });
 
         // Upsert each setting
         for (const [key, value] of Object.entries(updates)) {
@@ -72,6 +90,22 @@ export async function PATCH(request: NextRequest) {
                 create: { key, value: value as any },
             });
         }
+
+        // Log audit
+        await logAdminAction({
+            adminId: admin.adminId,
+            action: "update",
+            resource: "Settings",
+            details: {
+                changedKeys: Object.keys(updates),
+                changes: Object.entries(updates).map(([key, newValue]) => ({
+                    key,
+                    oldValue: oldValuesMap[key],
+                    newValue
+                }))
+            },
+            ...clientInfo
+        });
 
         return NextResponse.json({ success: true });
     } catch (error) {

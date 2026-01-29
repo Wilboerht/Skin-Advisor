@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import Link from "next/link";
 import { Package, Gift } from "lucide-react";
 import { DashboardCharts } from "@/components/admin/charts/DashboardCharts";
+import { LowStockAlert } from "@/components/admin/LowStockAlert";
 
 export default async function AdminDashboard() {
     const productCount = await prisma.product.count();
@@ -58,6 +59,10 @@ export default async function AdminDashboard() {
                     </div>
                 </Link>
             </div>
+
+
+            {/* Low Stock Alert Section */}
+            <LowStockAlert />
 
             {/* Charts Section */}
             <DashboardCharts />
