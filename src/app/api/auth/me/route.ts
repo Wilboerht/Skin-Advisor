@@ -23,8 +23,8 @@ export async function GET(req: NextRequest) {
         where: { id: payload.sub as string }
     });
 
-    if (!dbUser) {
-        // User indicates in token but not in DB -> Invalid
+    if (!dbUser || dbUser.role === 'disabled') {
+        // User not in DB or Disabled by Admin -> Invalid
         const response = NextResponse.json({ user: null });
         response.cookies.delete("auth_token");
         return response;

@@ -37,8 +37,18 @@ export async function GET(
             },
             _count: {
                 select: { advisorSessions: true, shareRewards: true, wishlists: true }
-            }
-        }
+            },
+            wishlists: {
+                include: {
+                    items: {
+                        include: {
+                            product: true
+                        }
+                    }
+                }
+            },
+            reminderSettings: true
+        } as any
     });
 
     if (!user) {

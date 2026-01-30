@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Search, MoreHorizontal, User as UserIcon, Shield, ShieldOff, Trash2, Eye, Loader2, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { UserDetailModal } from "./UserDetailModal";
 
 interface User {
     id: string;
@@ -39,6 +40,9 @@ export function UsersClient() {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [actionLoading, setActionLoading] = useState(false);
     const [showDropdown, setShowDropdown] = useState<string | null>(null);
+
+    // Add state for detail modal
+    const [detailUser, setDetailUser] = useState<string | null>(null);
 
     const toast = useToast();
 
@@ -202,8 +206,8 @@ export function UsersClient() {
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${user.role === "disabled"
-                                                    ? "bg-red-50 text-red-600"
-                                                    : "bg-green-50 text-green-600"
+                                                ? "bg-red-50 text-red-600"
+                                                : "bg-green-50 text-green-600"
                                                 }`}>
                                                 {user.role === "disabled" ? "Disabled" : "Active"}
                                             </span>
@@ -233,6 +237,16 @@ export function UsersClient() {
                                             {/* Dropdown Menu */}
                                             {showDropdown === user.id && (
                                                 <div className="absolute right-6 top-full mt-1 z-10 bg-white border border-[#1A1A1A]/10 rounded-lg shadow-lg py-1 w-40">
+                                                    <button
+                                                        onClick={() => {
+                                                            setDetailUser(user.id);
+                                                            setShowDropdown(null);
+                                                        }}
+                                                        className="w-full px-3 py-2 text-left text-sm hover:bg-[#1A1A1A]/5 flex items-center gap-2"
+                                                    >
+                                                        <Eye className="w-4 h-4 text-slate-500" />
+                                                        <span>View Details</span>
+                                                    </button>
                                                     <button
                                                         onClick={() => handleToggleStatus(user)}
                                                         className="w-full px-3 py-2 text-left text-sm hover:bg-[#1A1A1A]/5 flex items-center gap-2"
@@ -309,6 +323,12 @@ export function UsersClient() {
                 confirmText="Delete"
                 variant="danger"
                 loading={actionLoading}
+            />
+
+            <UserDetailModal
+                isOpen={!!detailUser}
+                onClose={() => setDetailUser(null)}
+                userId={detailUser}
             />
         </div>
     );
