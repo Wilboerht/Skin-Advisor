@@ -1,0 +1,9 @@
+
+// 天气缓存 (解决 Serverless 冷启动慢的问题)
+model WeatherCache {
+  id        String   @id @default(cuid())
+  locationKey String @unique // "121.39,31.25"
+  data      String   // JSON stringified SkinEnvData
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+}

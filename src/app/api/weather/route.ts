@@ -4,6 +4,8 @@ import { getSkinEnvData as getQWeatherData } from "@/lib/qweather";
 
 export const runtime = "nodejs";
 
+import prisma from "@/lib/prisma";
+
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const city = searchParams.get("city");
@@ -12,14 +14,40 @@ export async function GET(req: NextRequest) {
     const lat = searchParams.get("lat");
     const lon = searchParams.get("lon");
 
+    // Unified Location Key
     let locationQuery = city;
+    let cacheKey = city;
+
     if (!locationQuery && lat && lon) {
-        // Round to 2 decimals for cache friendliness
-        locationQuery = `${parseFloat(lon).toFixed(2)},${parseFloat(lat).toFixed(2)}`;
+        // Round to 2 decimals for cache friendliness and API stability
+        const latFixed = parseFloat(lat).toFixed(2);
+        const lonFixed = parseFloat(lon).toFixed(2);
+        locationQuery = `${lonFixed},${latFixed}`;
+        cacheKey = `${lonFixed},${latFixed}`;
     }
 
     if (!locationQuery) {
         return NextResponse.json({ error: "Missing location parameter" }, { status: 400 });
+    }
+
+    // 0. Cache Layer Check
+    try {
+        if (cacheKey) {
+            const cached = await prisma.weatherCache.findUnique({
+                where: { locationKey: cacheKey }
+            });
+
+            if (cached && cached.expiresAt > new Date()) {
+                const data = JSON.parse(cached.data);
+                // Return cached data
+                return NextResponse.json(data, {
+                    headers: { 'X-Weather-Cache': 'HIT' }
+                });
+            }
+        }
+    } catch (dbError) {
+        console.warn("Weather DB Cache Read Failed:", dbError);
+        // Continue to fetch...
     }
 
     // Fallback data
@@ -35,11 +63,11 @@ export async function GET(req: NextRequest) {
 
     // Race with a global timeout of 8 seconds
     try {
-        const result = await Promise.race([
+        const resultResponse = await Promise.race([
             (async () => {
                 // Try QWeather
                 try {
-                    const data = await getQWeatherData(locationQuery);
+                    const data = await getQWeatherData(locationQuery!);
                     if (data.isRealData) return NextResponse.json(data);
                 } catch (e) {
                     console.warn("QWeather attempt failed:", e);
@@ -47,7 +75,7 @@ export async function GET(req: NextRequest) {
 
                 // Try Open-Meteo
                 try {
-                    const data = await getOpenMeteoData(locationQuery);
+                    const data = await getOpenMeteoData(locationQuery!);
                     if (data.isRealData) return NextResponse.json(data);
                 } catch (e) {
                     console.warn("Open-Meteo attempt failed:", e);
@@ -63,7 +91,31 @@ export async function GET(req: NextRequest) {
             )
         ]);
 
-        return result;
+        // Write to Cache if successful
+        try {
+            const resultData = await resultResponse.json();
+            if (resultData.isRealData && cacheKey) {
+                await prisma.weatherCache.upsert({
+                    where: { locationKey: cacheKey },
+                    create: {
+                        locationKey: cacheKey,
+                        data: JSON.stringify(resultData),
+                        expiresAt: new Date(Date.now() + 60 * 60 * 1000) // 1 hour
+                    },
+                    update: {
+                        data: JSON.stringify(resultData),
+                        expiresAt: new Date(Date.now() + 60 * 60 * 1000)
+                    }
+                });
+            }
+            // Need to return a fresh response because .json() consumes the body
+            return NextResponse.json(resultData, {
+                headers: { 'X-Weather-Cache': 'MISS' }
+            });
+        } catch (cacheError) {
+            console.warn("Weather DB Cache Write Failed:", cacheError);
+            return resultResponse;
+        }
 
     } catch (e) {
         console.error("Weather Route Critical Error:", e);

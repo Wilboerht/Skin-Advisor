@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FaceCapture, type FaceCaptureImages } from "@/components/advisor/FaceCapture";
 import { m } from "framer-motion";
@@ -14,6 +14,7 @@ export default function FaceScanPage() {
     const toast = useToast();
     const { trackFaceScanStart, trackFaceScanComplete } = useAdvisorAnalytics();
     const hasTrackedStart = useRef(false);
+    const [hasStarted, setHasStarted] = useState(false);
 
     useEffect(() => {
         // 校验是否有问卷数据
@@ -23,6 +24,8 @@ export default function FaceScanPage() {
             return;
         }
 
+        // 仅当用户点击开始后，才追踪 "Start" 事件? 或者进入页面就算?
+        // 保持原有逻辑，进入页面就算 Start，因为这代表漏斗的一层转化
         if (!hasTrackedStart.current) {
             trackFaceScanStart();
             hasTrackedStart.current = true;
@@ -109,8 +112,54 @@ export default function FaceScanPage() {
             </div>
 
             {/* The "Mirror" Container */}
-            <div className="relative w-full max-w-[480px] aspect-[3/4] max-h-[80vh] bg-black rounded-[2rem] overflow-hidden shadow-2xl ring-8 ring-white/50 z-10">
-                <FaceCapture onCapture={handleCaptureComplete} />
+            <div className="relative w-full max-w-[480px] aspect-[3/4] max-h-[80vh] bg-black rounded-[2rem] overflow-hidden shadow-2xl ring-8 ring-white/50 z-10 flex flex-col">
+                {!hasStarted ? (
+                    // Guide / Permission Request Screen
+                    <div className="flex-1 flex flex-col items-center justify-center bg-[#1A1A1A] p-8 text-white text-center">
+                        <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center mb-6">
+                            <span className="text-3xl">📸</span>
+                        </div>
+
+                        <h2 className="font-serif text-2xl mb-2">Ready for Analysis?</h2>
+                        <p className="text-white/60 text-sm mb-8 px-4">
+                            For the most accurate AI results, please follow these tips:
+                        </p>
+
+                        <div className="space-y-4 w-full max-w-xs mb-10">
+                            <div className="flex items-center gap-4 text-left bg-white/5 p-3 rounded-xl">
+                                <span className="text-xl">💄</span>
+                                <div>
+                                    <p className="text-sm font-medium">No Makeup</p>
+                                    <p className="text-xs text-white/40">Natural skin for best results</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-4 text-left bg-white/5 p-3 rounded-xl">
+                                <span className="text-xl">👓</span>
+                                <div>
+                                    <p className="text-sm font-medium">Remove Glasses</p>
+                                    <p className="text-xs text-white/40">Avoid glare and obstruction</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-4 text-left bg-white/5 p-3 rounded-xl">
+                                <span className="text-xl">💡</span>
+                                <div>
+                                    <p className="text-sm font-medium">Good Lighting</p>
+                                    <p className="text-xs text-white/40">Bright, even light on face</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={() => setHasStarted(true)}
+                            className="w-full bg-white text-black py-4 rounded-xl font-medium tracking-wide hover:bg-[#F0F0F0] active:scale-[0.98] transition-all shadow-lg shadow-white/10"
+                        >
+                            Start Camera
+                        </button>
+                    </div>
+                ) : (
+                    // Real Camera Component
+                    <FaceCapture onCapture={handleCaptureComplete} />
+                )}
             </div>
 
             {/* Bottom Note */}

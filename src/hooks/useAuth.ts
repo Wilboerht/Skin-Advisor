@@ -67,6 +67,11 @@ export function useAuth() {
         if (!res.ok) throw new Error("Registration failed");
         const data = await res.json();
         setUser(data.user);
+
+        // Sync wishlist on register too (in case they added items before registering)
+        if (data.user?.id) {
+            syncWishlistToServer({ userId: data.user.id });
+        }
     };
 
     const logout = async () => {
