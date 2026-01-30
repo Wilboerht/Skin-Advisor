@@ -1,9 +1,28 @@
 /**
  * Prisma 配置文件
  * Prisma 7.x 使用 prisma.config.ts 管理数据源配置
+ * 
+ * 本地开发: 自动使用 SQLite (file:./prisma/dev.db)
+ * 生产环境: 使用 Supabase PostgreSQL (通过环境变量)
  */
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
+
+// 获取数据库 URL
+const getDatabaseUrl = () => {
+  // 优先使用 DIRECT_URL（用于 Prisma CLI 操作）
+  if (process.env.DIRECT_URL) {
+    return process.env.DIRECT_URL;
+  }
+
+  // 其次使用 DATABASE_URL
+  if (process.env.DATABASE_URL) {
+    return process.env.DATABASE_URL;
+  }
+
+  // 默认: 本地 SQLite
+  return "file:./prisma/dev.db";
+};
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
@@ -11,8 +30,6 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    // 使用 DIRECT_URL 用于 CLI 操作 (migrations)
-    // 运行时的 PrismaClient 仍使用 DATABASE_URL
-    url: process.env.DIRECT_URL || process.env.DATABASE_URL || "file:./prisma/dev.db",
+    url: getDatabaseUrl(),
   },
 });

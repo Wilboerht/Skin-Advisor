@@ -41,6 +41,70 @@ interface GeocodingResult {
     }>;
 }
 
+interface NominatimResult {
+    address?: {
+        city?: string;
+        town?: string;
+        village?: string;
+        county?: string;
+        state?: string;
+        province?: string;
+        country?: string;
+    };
+    display_name?: string;
+}
+
+/**
+ * 反向地理编码：通过坐标获取位置名称
+ * 使用 Nominatim (OpenStreetMap) 免费 API
+ */
+async function reverseGeocode(lat: number, lon: number): Promise<string | null> {
+    try {
+        const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=zh`;
+
+        // Setup timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 seconds timeout
+
+        try {
+            const res = await fetch(url, {
+                headers: {
+                    // Nominatim requires a User-Agent
+                    'User-Agent': 'MySkin.Today/1.0 (skincare-advisor-app)'
+                },
+                next: { revalidate: 86400 }, // 缓存1天
+                signal: controller.signal
+            });
+
+            if (!res.ok) return null;
+
+            const data: NominatimResult = await res.json();
+            if (!data.address) return null;
+
+            const addr = data.address;
+            // Try to build a nice location name
+            const city = addr.city || addr.town || addr.village || addr.county || '';
+            const state = addr.state || addr.province || '';
+
+            if (state && city) {
+                return `${state} ${city}`;
+            } else if (city) {
+                return city;
+            } else if (state) {
+                return state;
+            }
+
+            return null;
+        } finally {
+            clearTimeout(timeoutId);
+        }
+    } catch (e) {
+        // Silently fail, will use fallback name
+        console.warn("Reverse geocoding failed:", e instanceof Error ? e.message : e);
+        return null;
+    }
+}
+
 interface WeatherResult {
     current?: {
         temperature_2m?: number;
@@ -169,6 +233,12 @@ export async function getSkinEnvData(locationInput: string): Promise<SkinEnvData
                 // 两个都在合理范围内，默认假设是 lon,lat
                 lon = num1;
                 lat = num2;
+            }
+
+            // 尝试反向地理编码获取真实地名
+            const reverseName = await reverseGeocode(lat, lon);
+            if (reverseName) {
+                displayName = reverseName;
             }
         } else {
             // 城市名查询

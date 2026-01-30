@@ -41,6 +41,57 @@ async function getAuthToken(): Promise<string> {
     }
 }
 
+interface NominatimResult {
+    address?: {
+        city?: string;
+        town?: string;
+        village?: string;
+        county?: string;
+        state?: string;
+        province?: string;
+    };
+}
+
+/**
+ * 反向地理编码：通过坐标获取位置名称 (Nominatim/OSM)
+ */
+async function reverseGeocode(lat: number, lon: number): Promise<string | null> {
+    try {
+        const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=zh`;
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+        try {
+            const res = await fetch(url, {
+                headers: { 'User-Agent': 'MySkin.Today/1.0' },
+                next: { revalidate: 86400 },
+                signal: controller.signal
+            });
+
+            if (!res.ok) return null;
+
+            const data: NominatimResult = await res.json();
+            if (!data.address) return null;
+
+            const addr = data.address;
+            const city = addr.city || addr.town || addr.village || addr.county || '';
+            const state = addr.state || addr.province || '';
+
+            if (state && city) return `${state} ${city}`;
+            if (city) return city;
+            if (state) return state;
+
+            return null;
+        } finally {
+            clearTimeout(timeoutId);
+        }
+    } catch (e) {
+        console.warn("Reverse geocoding failed:", e instanceof Error ? e.message : e);
+        return null;
+    }
+}
+
 async function fetchQWeather(endpoint: string, params: Record<string, string>) {
     // 1. Generate Token
     const token = await getAuthToken();
@@ -124,7 +175,19 @@ export async function getSkinEnvData(locationInput: string): Promise<SkinEnvData
                     // Coordinate query for lookup failed (maybe ocean/remote?)
                     // We can still try querying weather with raw coords
                     locationQuery = locationInput;
-                    displayName = "当前位置"; // Don't show coords string
+
+                    // 尝试反向地理编码获取真实地名
+                    const coordParts = locationInput.split(',').map(parseFloat);
+                    if (coordParts.length === 2) {
+                        // QWeather uses lon,lat format, but we need lat,lon for Nominatim
+                        const [num1, num2] = coordParts;
+                        const lat = Math.abs(num1) > 90 ? num2 : num1;
+                        const lon = Math.abs(num1) > 90 ? num1 : num2;
+                        const reverseName = await reverseGeocode(lat, lon);
+                        displayName = reverseName || "当前位置";
+                    } else {
+                        displayName = "当前位置";
+                    }
                 } else {
                     // Name query failed (e.g. "Mars"), cannot proceed
                     return fallbackData;
@@ -134,7 +197,18 @@ export async function getSkinEnvData(locationInput: string): Promise<SkinEnvData
             // Network or 404 error during lookup
             if (isCoordinate) {
                 locationQuery = locationInput;
-                displayName = "当前位置";
+
+                // 尝试反向地理编码获取真实地名
+                const coordParts = locationInput.split(',').map(parseFloat);
+                if (coordParts.length === 2) {
+                    const [num1, num2] = coordParts;
+                    const lat = Math.abs(num1) > 90 ? num2 : num1;
+                    const lon = Math.abs(num1) > 90 ? num1 : num2;
+                    const reverseName = await reverseGeocode(lat, lon);
+                    displayName = reverseName || "当前位置";
+                } else {
+                    displayName = "当前位置";
+                }
             } else {
                 return fallbackData;
             }
