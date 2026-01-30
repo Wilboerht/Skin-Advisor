@@ -171,6 +171,7 @@ model User {
   shareRewards    ShareReward[]
   wishlists       Wishlist[]
   pushSubscriptions PushSubscription[]
+  reminderSettings  ReminderSettings?
 }
 
 // 产品库
@@ -279,5 +280,20 @@ model PushSubscription {
   userAgent String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// 护肤提醒设置
+model ReminderSettings {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enabled         Boolean  @default(false)
+  morningTime     String   @default("07:30")
+  eveningTime     String   @default("21:00")
+  morningEnabled  Boolean  @default(true)
+  eveningEnabled  Boolean  @default(true)
+  timezone        String   @default("Asia/Shanghai")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 

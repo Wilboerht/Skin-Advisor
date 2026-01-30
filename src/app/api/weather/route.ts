@@ -33,34 +33,37 @@ export async function GET(req: NextRequest) {
         isRealData: false
     };
 
+    // Race with a global timeout of 8 seconds
     try {
-        // Strategy: 
-        // 1. Try QWeather (Best for China, accurate AQI)
-        // 2. Fallback to Open-Meteo (Global, Free, Reliable)
-        // 3. Fallback to Mock
+        const result = await Promise.race([
+            (async () => {
+                // Try QWeather
+                try {
+                    const data = await getQWeatherData(locationQuery);
+                    if (data.isRealData) return NextResponse.json(data);
+                } catch (e) {
+                    console.warn("QWeather attempt failed:", e);
+                }
 
-        // Try QWeather
-        try {
-            const data = await getQWeatherData(locationQuery);
-            if (data.isRealData) {
-                return NextResponse.json(data);
-            }
-        } catch (e) {
-            console.warn("QWeather attempt failed, falling back to Open-Meteo:", e);
-        }
+                // Try Open-Meteo
+                try {
+                    const data = await getOpenMeteoData(locationQuery);
+                    if (data.isRealData) return NextResponse.json(data);
+                } catch (e) {
+                    console.warn("Open-Meteo attempt failed:", e);
+                }
 
-        // Try Open-Meteo
-        try {
-            const data = await getOpenMeteoData(locationQuery);
-            if (data.isRealData) {
-                return NextResponse.json(data);
-            }
-        } catch (e) {
-            console.warn("Open-Meteo attempt failed, falling back to static:", e);
-        }
+                return NextResponse.json(fallbackData);
+            })(),
+            new Promise<NextResponse>((resolve) =>
+                setTimeout(() => {
+                    console.error("Weather API Global Timeout (8s)");
+                    resolve(NextResponse.json(fallbackData));
+                }, 8000)
+            )
+        ]);
 
-        // If all fail
-        return NextResponse.json(fallbackData);
+        return result;
 
     } catch (e) {
         console.error("Weather Route Critical Error:", e);

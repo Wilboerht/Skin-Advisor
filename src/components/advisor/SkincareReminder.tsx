@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Bell, BellOff, Clock, Moon, Sun, Check, X } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
+import { useAuth } from "@/hooks/useAuth";
 
 interface ReminderSettings {
     enabled: boolean;
@@ -23,24 +24,24 @@ const DEFAULT_SETTINGS: ReminderSettings = {
 const STORAGE_KEY = "skincare_reminder_settings";
 
 export function SkincareReminder() {
+    const { user } = useAuth();
     const [settings, setSettings] = useState<ReminderSettings>(DEFAULT_SETTINGS);
     const [permission, setPermission] = useState<NotificationPermission | "unsupported">("default");
     const [isOpen, setIsOpen] = useState(false);
     const toast = useToast();
 
-    // Load settings on mount
+    // Load settings logic
     useEffect(() => {
         if (typeof window === "undefined") return;
 
-        // Check notification support
+        // Check rights
         if (!("Notification" in window)) {
             setPermission("unsupported");
             return;
         }
-
         setPermission(Notification.permission);
 
-        // Load saved settings
+        // 1. Try load from localStorage first (fast)
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
             try {
@@ -49,13 +50,49 @@ export function SkincareReminder() {
                 console.error("Failed to parse reminder settings");
             }
         }
-    }, []);
+
+        // 2. If logged in, fetch from server (authoritative)
+        if (user) {
+            fetch("/api/user/reminder")
+                .then(res => res.json())
+                .then(data => {
+                    if (data.settings) {
+                        // Merge or overwrite? Let's overwrite for consistency across devices
+                        const serverSettings = {
+                            enabled: data.settings.enabled,
+                            morningTime: data.settings.morningTime,
+                            eveningTime: data.settings.eveningTime,
+                            morningEnabled: data.settings.morningEnabled,
+                            eveningEnabled: data.settings.eveningEnabled,
+                        };
+                        setSettings(serverSettings);
+                        // Also update local cache
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(serverSettings));
+                    }
+                })
+                .catch(err => console.error("Failed to fetch settings", err));
+        }
+    }, [user]);
 
     // Save settings when changed
     useEffect(() => {
         if (typeof window === "undefined") return;
+
+        // Local save
         localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-    }, [settings]);
+
+        // Server save (debounce could be better, but simple is ok for now)
+        if (user) {
+            const timer = setTimeout(() => {
+                fetch("/api/user/reminder", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(settings)
+                }).catch(err => console.error("Failed to save settings", err));
+            }, 1000);
+            return () => clearTimeout(timer);
+        }
+    }, [settings, user]);
 
     // Schedule reminders
     useEffect(() => {

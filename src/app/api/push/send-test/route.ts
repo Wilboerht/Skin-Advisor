@@ -54,7 +54,24 @@ export async function POST(req: NextRequest) {
         );
 
         // Clean up invalid subscriptions (410 Gone)
-        // ... (Simplified for this step)
+        const failed = results
+            .map((r, i) => ({ result: r, index: i }))
+            .filter(item => item.result.status === 'rejected');
+
+        const invalidEndpoints: string[] = [];
+        failed.forEach(({ result, index }) => {
+            const reason = (result as PromiseRejectedResult).reason;
+            if (reason?.statusCode === 410 || reason?.statusCode === 404) {
+                invalidEndpoints.push(subscriptions[index].endpoint);
+            }
+        });
+
+        if (invalidEndpoints.length > 0) {
+            await (prisma as any).pushSubscription.deleteMany({
+                where: { endpoint: { in: invalidEndpoints } }
+            });
+            console.log(`Cleaned up ${invalidEndpoints.length} invalid subscriptions`);
+        }
 
         return NextResponse.json({
             success: true,

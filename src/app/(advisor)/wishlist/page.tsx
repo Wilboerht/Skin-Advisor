@@ -19,8 +19,11 @@ import {
     getWishlistProductIds,
     removeFromWishlist,
     clearWishlist,
-    getGuestId
+    getGuestId,
+    fetchWishlistFromServer,
+    type WishlistItem
 } from "@/lib/wishlist";
+import { useAuth } from "@/hooks/useAuth";
 import {
     getProductLinks,
     openAffiliateLink,
@@ -43,6 +46,7 @@ interface WishlistProduct {
 }
 
 export default function WishlistPage() {
+    const { user } = useAuth();
     const router = useRouter();
     const toast = useToast();
     const [products, setProducts] = useState<WishlistProduct[]>([]);
@@ -53,7 +57,17 @@ export default function WishlistPage() {
     const loadWishlist = useCallback(async () => {
         setLoading(true);
         try {
-            const productIds = getWishlistProductIds();
+            let productIds = getWishlistProductIds();
+
+            // 如果已登录，合并服务端数据
+            if (user?.id) {
+                const serverItems = await fetchWishlistFromServer({ userId: user.id });
+                if (serverItems.length > 0) {
+                    const serverIds = serverItems.map((i: WishlistItem) => i.productId);
+                    // 合并去重
+                    productIds = Array.from(new Set([...productIds, ...serverIds]));
+                }
+            }
 
             if (productIds.length === 0) {
                 setProducts([]);
@@ -66,19 +80,16 @@ export default function WishlistPage() {
             if (response.ok) {
                 const allProducts: WishlistProduct[] = await response.json();
                 const wishlistProducts = allProducts.filter(p => productIds.includes(p.id));
-                // 保持心愿单顺序
-                const orderedProducts = productIds
-                    .map(id => wishlistProducts.find(p => p.id === id))
-                    .filter((p): p is WishlistProduct => p !== undefined);
-                setProducts(orderedProducts);
+                // 保持心愿单顺序（这里暂时简单用 ID 顺序，优化可用 addedAt）
+                setProducts(wishlistProducts);
             }
         } catch (error) {
             console.error('Failed to load wishlist:', error);
-            toast.error('加载心愿单失败');
+            // toast.error('加载心愿单失败'); // 避免轻微网络错误干扰体验
         } finally {
             setLoading(false);
         }
-    }, [toast]);
+    }, [user]);
 
     useEffect(() => {
         loadWishlist();

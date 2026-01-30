@@ -1,5 +1,6 @@
 
 import { useState, useEffect, createContext, useContext } from 'react';
+import { syncWishlistToServer } from '@/lib/wishlist';
 
 interface User {
     id: string;
@@ -50,6 +51,11 @@ export function useAuth() {
         if (!res.ok) throw new Error("Login failed");
         const data = await res.json();
         setUser(data.user);
+
+        // Sync wishlist
+        if (data.user?.id) {
+            syncWishlistToServer({ userId: data.user.id });
+        }
     };
 
     const register = async (userData: any) => {

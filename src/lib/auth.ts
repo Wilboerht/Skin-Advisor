@@ -15,11 +15,11 @@ export async function verifyPassword(plain: string, hashed: string): Promise<boo
     return compare(plain, hashed);
 }
 
-export async function signToken(payload: any): Promise<string> {
+export async function signToken(payload: any, expiresIn: string | number = '7d'): Promise<string> {
     return new SignJWT(payload)
         .setProtectedHeader({ alg: 'HS256' })
         .setIssuedAt()
-        .setExpirationTime('7d') // 7 days session
+        .setExpirationTime(expiresIn)
         .sign(JWT_SECRET);
 }
 

@@ -7,6 +7,7 @@
 export interface SkinEnvData {
     uvIndex: number;
     humidity: number;
+    aqi: number;
     temperature: number;
     location: string;
     weatherText?: string;
@@ -30,247 +31,120 @@ const WEATHER_CODES: Record<number, string> = {
     96: "雷暴", 99: "雷暴冰雹"
 };
 
-interface GeocodingResult {
-    results?: Array<{
-        id: number;
-        name: string;
-        latitude: number;
-        longitude: number;
-        country: string;
-        admin1?: string;
-    }>;
+function getWeatherDescription(code?: number): string {
+    if (code === undefined) return "未知";
+    return WEATHER_CODES[code] || "未知";
 }
 
-interface NominatimResult {
-    address?: {
-        city?: string;
-        town?: string;
-        village?: string;
-        county?: string;
-        state?: string;
-        province?: string;
-        country?: string;
-    };
-    display_name?: string;
-}
-
-/**
- * 反向地理编码：通过坐标获取位置名称
- * 使用 Nominatim (OpenStreetMap) 免费 API
- */
-async function reverseGeocode(lat: number, lon: number): Promise<string | null> {
+// Helper for fetch with timeout
+async function fetchWithTimeout(url: string, timeout = 5000) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
     try {
-        const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=zh`;
-
-        // Setup timeout
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 seconds timeout
-
-        try {
-            const res = await fetch(url, {
-                headers: {
-                    // Nominatim requires a User-Agent
-                    'User-Agent': 'MySkin.Today/1.0 (skincare-advisor-app)'
-                },
-                next: { revalidate: 86400 }, // 缓存1天
-                signal: controller.signal
-            });
-
-            if (!res.ok) return null;
-
-            const data: NominatimResult = await res.json();
-            if (!data.address) return null;
-
-            const addr = data.address;
-            // Try to build a nice location name
-            const city = addr.city || addr.town || addr.village || addr.county || '';
-            const state = addr.state || addr.province || '';
-
-            if (state && city) {
-                return `${state} ${city}`;
-            } else if (city) {
-                return city;
-            } else if (state) {
-                return state;
-            }
-
-            return null;
-        } finally {
-            clearTimeout(timeoutId);
-        }
+        const response = await fetch(url, {
+            signal: controller.signal,
+            next: { revalidate: 3600 } // Cache for 1 hour
+        });
+        clearTimeout(id);
+        return response;
     } catch (e) {
-        // Silently fail, will use fallback name
-        console.warn("Reverse geocoding failed:", e instanceof Error ? e.message : e);
-        return null;
+        clearTimeout(id);
+        throw e;
     }
 }
 
-interface WeatherResult {
-    current?: {
-        temperature_2m?: number;
-        relative_humidity_2m?: number;
-        weather_code?: number;
-    };
-    daily?: {
-        uv_index_max?: number[];
-    };
-}
-
-/**
- * 通过城市名获取坐标
- */
-async function geocodeCity(cityName: string): Promise<{ lat: number; lon: number; name: string } | null> {
-    try {
-        const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cityName)}&count=1&language=zh&format=json`;
-
-        // Setup timeout
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 4000); // 4 seconds timeout
-
-        try {
-            const res = await fetch(url, {
-                next: { revalidate: 86400 }, // 缓存1天
-                signal: controller.signal
-            });
-
-            if (!res.ok) return null;
-
-            const data: GeocodingResult = await res.json();
-            if (!data.results || data.results.length === 0) return null;
-
-            const city = data.results[0];
-            return {
-                lat: city.latitude,
-                lon: city.longitude,
-                name: city.admin1 ? `${city.admin1} ${city.name}` : city.name
-            };
-        } finally {
-            clearTimeout(timeoutId);
-        }
-    } catch (e) {
-        console.error("Open-Meteo Geocoding failed:", e);
-        return null;
-    }
-}
-
-/**
- * 获取天气数据
- */
-async function fetchWeather(lat: number, lon: number): Promise<WeatherResult | null> {
-    try {
-        // 请求当前天气和今日UV指数
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,weather_code&daily=uv_index_max&timezone=auto&forecast_days=1`;
-
-        // Setup timeout
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 4000); // 4 seconds timeout
-
-        try {
-            const res = await fetch(url, {
-                next: { revalidate: 1800 }, // 缓存30分钟
-                signal: controller.signal
-            });
-
-            if (!res.ok) {
-                console.warn(`Open-Meteo API Failed: ${res.status}`);
-                return null;
-            }
-
-            return await res.json();
-        } finally {
-            clearTimeout(timeoutId);
-        }
-    } catch (e) {
-        // Don't log abortion errors as errors, just warnings or ignore
-        if (e instanceof Error && e.name === 'AbortError') {
-            console.warn("Open-Meteo Weather fetch timed out (4s)");
-        } else {
-            console.error("Open-Meteo Weather fetch failed:", e);
-        }
-        return null;
-    }
-}
-
-/**
- * 获取护肤相关环境数据
- */
 export async function getSkinEnvData(locationInput: string): Promise<SkinEnvData> {
-    // 默认回退数据
-    const fallbackData: SkinEnvData = {
-        uvIndex: 5,
-        humidity: 45,
-        temperature: 20,
-        location: "通用环境",
-        weatherText: "多云",
+    // Default Mock Data
+    const mockData: SkinEnvData = {
+        uvIndex: 3,
+        humidity: 55,
+        aqi: 50,
+        temperature: 22,
+        location: "环境数据(模拟)",
+        weatherText: "晴",
         isRealData: false
     };
 
-    if (!locationInput || locationInput === "标准测试环境" || locationInput === "通用环境") {
-        return fallbackData;
-    }
+    if (!locationInput) return mockData;
 
     try {
-        let lat: number, lon: number;
-        let displayName = "当前位置";
+        // 1. Resolve Coordinates
+        let lat = 31.23, lon = 121.47; // Default Shanghai
+        let locationName = locationInput;
 
-        // 检查是否为坐标格式 (lon,lat 或 lat,lon)
-        const coordMatch = locationInput.match(/^([-\d.]+)[,，]([-\d.]+)$/);
+        // Check if input is "lon,lat" or "lat,lon"
+        const coords = locationInput.split(",");
 
-        if (coordMatch) {
-            // 解析坐标 - 假设是 lon,lat 格式（和风天气格式）
-            const num1 = parseFloat(coordMatch[1]);
-            const num2 = parseFloat(coordMatch[2]);
+        if (coords.length === 2) {
+            const num1 = parseFloat(coords[0]);
+            const num2 = parseFloat(coords[1]);
 
-            // 判断哪个是经度哪个是纬度（中国经度 73-135，纬度 3-54）
-            if (Math.abs(num1) > 90) {
-                // num1 > 90 说明是经度
-                lon = num1;
-                lat = num2;
-            } else if (Math.abs(num2) > 90) {
-                lon = num2;
-                lat = num1;
+            // Simple heuristic to detect lat/lon vs lon/lat:
+            // Lat is -90 to 90. Lon is -180 to 180.
+            // If num1 > 90 or < -90, it MUST be longitude.
+            if (num1 > 90 || num1 < -90) {
+                lon = num1; lat = num2;
             } else {
-                // 两个都在合理范围内，默认假设是 lon,lat
-                lon = num1;
-                lat = num2;
+                // But wait, our route.ts constructs "lon,lat".
+                lon = num1; lat = num2;
             }
 
-            // 尝试反向地理编码获取真实地名
-            const reverseName = await reverseGeocode(lat, lon);
-            if (reverseName) {
-                displayName = reverseName;
+            // Reverse Geocode name if input is coordinates
+            try {
+                // Nominatim Reverse (Free, Rate limited)
+                // Use shorter timeout for address lookup
+                const geoUrl = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=zh`;
+                const geoRes = await fetchWithTimeout(geoUrl, 3000);
+                if (geoRes.ok) {
+                    const geoJson = await geoRes.json();
+                    locationName = geoJson.address.city || geoJson.address.town || geoJson.address.county || "当前位置";
+                } else {
+                    locationName = "当前位置";
+                }
+            } catch (e) {
+                locationName = "当前位置";
             }
-        } else {
-            // 城市名查询
-            const geoResult = await geocodeCity(locationInput);
-            if (!geoResult) {
-                return fallbackData;
-            }
-            lat = geoResult.lat;
-            lon = geoResult.lon;
-            displayName = geoResult.name;
         }
 
-        // 获取天气数据
-        const weather = await fetchWeather(lat, lon);
-        if (!weather || !weather.current) {
-            return fallbackData;
+        // 2. Fetch Weather Data (Open-Meteo)
+        // https://open-meteo.com/en/docs
+        const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,weather_code,is_day&daily=uv_index_max&timezone=auto&forecast_days=1`;
+        const airUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=european_aqi&timezone=auto`;
+
+        // Parallel fetch with timeout
+        const [weatherRes, airRes] = await Promise.allSettled([
+            fetchWithTimeout(weatherUrl, 5000),
+            fetchWithTimeout(airUrl, 5000)
+        ]);
+
+        if (weatherRes.status === 'rejected') throw weatherRes.reason;
+
+        const weatherResVal = (weatherRes as PromiseFulfilledResult<Response>).value;
+        if (!weatherResVal.ok) throw new Error(`Weather API Error: ${weatherResVal.status}`);
+
+        const weatherData = await weatherResVal.json();
+
+        let aqi = 50;
+        if (airRes.status === 'fulfilled' && airRes.value.ok) {
+            const airData = await airRes.value.json();
+            aqi = airData.current?.european_aqi || 50;
         }
 
-        const current = weather.current;
-        const uvMax = weather.daily?.uv_index_max?.[0] ?? 5;
+        const current = weatherData.current;
+        const daily = weatherData.daily;
 
         return {
-            uvIndex: Math.round(uvMax),
-            humidity: current.relative_humidity_2m ?? 50,
-            temperature: Math.round(current.temperature_2m ?? 20),
-            location: displayName,
-            weatherText: WEATHER_CODES[current.weather_code ?? 0] || "未知",
+            uvIndex: daily?.uv_index_max?.[0] ?? 0,
+            humidity: current?.relative_humidity_2m ?? 50,
+            aqi: aqi, // Open-Meteo AQI is European scale usually, roughly map to US/CN
+            temperature: current?.temperature_2m ?? 20,
+            location: locationName,
+            weatherText: getWeatherDescription(current?.weather_code),
             isRealData: true
         };
 
     } catch (e) {
-        console.error("Critical error in getSkinEnvData:", e);
-        return fallbackData;
+        console.error("Open-Meteo Fetch Failed:", e instanceof Error ? e.message : String(e));
+        return mockData;
     }
 }

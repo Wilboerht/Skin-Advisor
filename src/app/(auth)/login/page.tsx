@@ -88,6 +88,15 @@ export default function LoginPage() {
                         </div>
                     </div>
 
+                    <div className="flex justify-end mt-2">
+                        <Link
+                            href="/forgot-password"
+                            className="text-xs text-[#8C8C8C] hover:text-[#1A1A1A] transition-colors"
+                        >
+                            忘记密码？
+                        </Link>
+                    </div>
+
                     <div className="pt-2">
                         <button
                             type="submit"
