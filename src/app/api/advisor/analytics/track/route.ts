@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
+import { getSession } from "@/lib/auth";
 
 // 事件类型定义
 const EventSchema = z.object({
@@ -116,6 +117,13 @@ export async function POST(request: NextRequest) {
                 { success: false, error: { message: "参数错误", details: result.error.issues } },
                 { status: 400 }
             );
+        }
+
+        // 只有已登录用户才保存追踪数据到数据库
+        const user = await getSession();
+        if (!user) {
+            // 未登录用户直接返回成功，但不保存数据
+            return NextResponse.json({ success: true });
         }
 
         const { sessionId, event, data } = result.data;

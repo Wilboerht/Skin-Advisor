@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { z } from "zod";
+import { getSession } from "@/lib/auth";
 
 const submitSchema = z.object({
     name: z.string().min(1, "姓名不能为空"),
@@ -14,6 +15,15 @@ const submitSchema = z.object({
 
 export async function POST(request: NextRequest) {
     try {
+        // 只有登录用户才能提交分享奖励
+        const user = await getSession();
+        if (!user) {
+            return NextResponse.json(
+                { success: false, error: "请先登录后再参与活动" },
+                { status: 401 }
+            );
+        }
+
         const body = await request.json();
 
         const validation = submitSchema.safeParse(body);
@@ -39,10 +49,10 @@ export async function POST(request: NextRequest) {
                 },
                 select: { id: true, maxParticipants: true, currentParticipants: true }
             });
-            
+
             if (activeCampaign) {
                 // 检查活动是否已满
-                if (activeCampaign.maxParticipants && 
+                if (activeCampaign.maxParticipants &&
                     activeCampaign.currentParticipants >= activeCampaign.maxParticipants) {
                     return NextResponse.json({
                         success: false,

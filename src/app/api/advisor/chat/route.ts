@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateText, extractJson, isAIEnabled, getAISettings, getApiKeysForProvider, createOpenAIClient } from "@/lib/ai";
 import prisma from "@/lib/prisma";
 import { ChatRequestSchema } from "@/lib/schemas";
+import { getSession } from "@/lib/auth";
 
-// 聊天 API (DB Persisted)
+// 聊天 API (DB Persisted for logged-in users only)
 // Note: Ensure `npx prisma generate` is run if types are missing
 
 export async function POST(request: NextRequest) {
@@ -33,11 +34,14 @@ export async function POST(request: NextRequest) {
 
         const { message, context, sessionId } = validation.data;
 
-        // Rate Limiting (10 messages per minute per session)
-        // Rate Limiting (10 messages per minute per session)
+        // 检查用户登录状态
+        const user = await getSession();
+        const isLoggedIn = !!user;
+
+        // Rate Limiting (10 messages per minute per session) - 只对已登录用户检查
         let rateLimitRemaining = 10;
 
-        if (sessionId) {
+        if (sessionId && isLoggedIn) {
             const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
             const recentMessages = await prisma.conversationMessage.count({
                 where: {
@@ -72,9 +76,9 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // 保存用户消息
+        // 保存用户消息（仅限已登录用户）
         let conversationId = null;
-        if (sessionId) {
+        if (sessionId && isLoggedIn) {
             try {
                 // 查找或创建对话
                 let conversation = await prisma.conversation.findFirst({
@@ -214,6 +218,12 @@ export async function GET(request: NextRequest) {
 
     if (!sessionId) {
         return NextResponse.json({ success: false, error: "Missing sessionId" }, { status: 400 });
+    }
+
+    // 未登录用户返回空历史记录
+    const user = await getSession();
+    if (!user) {
+        return NextResponse.json({ success: true, history: [] });
     }
 
     try {

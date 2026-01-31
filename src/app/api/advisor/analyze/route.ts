@@ -57,10 +57,11 @@ export async function POST(request: NextRequest) {
             answers.location = `${geoLocation.region || ''} ${geoLocation.city || ''}`.trim();
         }
 
-        // 3. 保存会话记录 (异步，不阻塞)
+        // 3. 检查用户登录状态
         const user = await getSession();
 
-        if (sessionId) {
+        // 只有已登录用户才保存会话记录到数据库
+        if (sessionId && user) {
             prisma.advisorSession.upsert({
                 where: { sessionId },
                 update: {
@@ -72,7 +73,7 @@ export async function POST(request: NextRequest) {
                     province: geoLocation?.region,
                     city: geoLocation?.city,
                     ip: ip, // Note: Should hash IP in production for privacy
-                    userId: user?.id
+                    userId: user.id
                 },
                 create: {
                     sessionId,
@@ -83,7 +84,7 @@ export async function POST(request: NextRequest) {
                     province: geoLocation?.region,
                     city: geoLocation?.city,
                     ip: ip,
-                    userId: user?.id
+                    userId: user.id
                 }
             }).catch((err: unknown) => console.error("Session save error:", err));
         }
@@ -250,8 +251,8 @@ export async function POST(request: NextRequest) {
             userLocation: geoLocation
         };
 
-        // 8. Persist Result to DB
-        if (sessionId) {
+        // 8. Persist Result to DB (only for logged-in users)
+        if (sessionId && user) {
             // Calculate Expiration Date (30 days from now)
             const expiresAt = new Date();
             expiresAt.setDate(expiresAt.getDate() + 30);

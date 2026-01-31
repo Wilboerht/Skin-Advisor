@@ -9,9 +9,11 @@ import { ArrowRight, Loader2, MapPin, User, ClipboardList } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
 import { SkincareReminder } from "@/components/advisor/SkincareReminder";
+import { useToast } from "@/components/ui/Toast";
 
 export default function Home() {
   const router = useRouter();
+  const toast = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const { initSession } = useAdvisorAnalytics();
   const { user } = useAuth();
@@ -22,9 +24,27 @@ export default function Home() {
     router.prefetch("/questions");
   }, [initSession, router]);
 
+  // Nickname & Avatar states
+  const [showNicknameModal, setShowNicknameModal] = useState(false);
+  const [nickname, setNickname] = useState("");
+  const [selectedAvatar, setSelectedAvatar] = useState(0);
+
+  // Avatar options (8 placeholders with gradient backgrounds and emoji)
+  const avatarOptions = [
+    { bg: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", emoji: "🌸" },
+    { bg: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)", emoji: "🌺" },
+    { bg: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)", emoji: "🌊" },
+    { bg: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)", emoji: "🌿" },
+    { bg: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)", emoji: "🌻" },
+    { bg: "linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)", emoji: "🦋" },
+    { bg: "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)", emoji: "🍑" },
+    { bg: "linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%)", emoji: "💎" },
+  ];
+
   // Location/Region states
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [showRegionSelectModal, setShowRegionSelectModal] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
 
   // Region options
   const regionOptions = [
@@ -50,7 +70,7 @@ export default function Home() {
   };
 
   const handleLocationAccept = async () => {
-    setShowLocationModal(false);
+    setIsLocating(true);
     if ("geolocation" in navigator) {
       try {
         const position = await new Promise<GeolocationPosition>((resolve, reject) => {
@@ -66,12 +86,20 @@ export default function Home() {
           lon: position.coords.longitude
         }));
         sessionStorage.setItem("locationConsent", "granted");
+
+        // 成功获取定位后，关闭弹窗并开始
+        setShowLocationModal(false);
+        setIsLocating(false);
         startNewTest();
       } catch (error) {
         console.warn("Geolocation failed", error);
+        setIsLocating(false);
+        setShowLocationModal(false);
         setShowRegionSelectModal(true);
       }
     } else {
+      setIsLocating(false);
+      setShowLocationModal(false);
       setShowRegionSelectModal(true);
     }
   };
@@ -96,8 +124,29 @@ export default function Home() {
   };
 
   const handleStart = () => {
+    // If user is logged in and has a name, skip nickname modal
+    if (user?.name) {
+      localStorage.setItem("advisor_nickname", user.name);
+      setShowLocationModal(true);
+    } else {
+      setShowNicknameModal(true);
+    }
+  };
+
+  const handleNicknameSubmit = () => {
+    if (!nickname.trim()) {
+      toast.error("请输入您的昵称");
+      return;
+    }
+    // Save nickname and avatar to localStorage
+    localStorage.setItem("advisor_nickname", nickname.trim());
+    localStorage.setItem("advisor_avatar", String(selectedAvatar));
+    setShowNicknameModal(false);
+    // Proceed to location modal
     setShowLocationModal(true);
   };
+
+
 
   return (
     <LazyMotion features={domAnimation}>
@@ -191,6 +240,94 @@ export default function Home() {
         </div>
 
         {/* Modals - Simplified Styles */}
+
+        {/* Nickname Modal */}
+        <AnimatePresence>
+          {showNicknameModal && (
+            <m.div
+              className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <m.div
+                className="absolute inset-0 bg-[#FDFBF7]/80 backdrop-blur-sm"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              />
+
+              <m.div
+                className="relative z-10 w-full max-w-sm bg-white shadow-[0_20px_40px_-10px_rgba(0,0,0,0.05)] border border-[#3D4430]/5 p-8 text-center"
+                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              >
+                {/* Selected Avatar Display */}
+                <div className="flex justify-center mb-4">
+                  <div
+                    className="w-20 h-20 rounded-full flex items-center justify-center text-3xl shadow-lg transition-all duration-300"
+                    style={{ background: avatarOptions[selectedAvatar].bg }}
+                  >
+                    {avatarOptions[selectedAvatar].emoji}
+                  </div>
+                </div>
+
+                <h3 className="mb-2 text-xl font-serif text-[#1A1A1A]">
+                  您好，请问怎么称呼？
+                </h3>
+
+                <p className="mb-5 text-sm text-[#5E5E5E] leading-relaxed font-light">
+                  选择头像，输入昵称，让报告更有温度
+                </p>
+
+                {/* Avatar Selection Grid */}
+                <div className="grid grid-cols-4 gap-3 mb-5">
+                  {avatarOptions.map((avatar, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setSelectedAvatar(index)}
+                      className={`w-12 h-12 rounded-full flex items-center justify-center text-lg transition-all duration-200 ${selectedAvatar === index
+                        ? 'ring-2 ring-[#1A1A1A] ring-offset-2 scale-110'
+                        : 'hover:scale-105 opacity-70 hover:opacity-100'
+                        }`}
+                      style={{ background: avatar.bg }}
+                    >
+                      {avatar.emoji}
+                    </button>
+                  ))}
+                </div>
+
+                <input
+                  type="text"
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                  placeholder="输入您的昵称"
+                  maxLength={20}
+                  className="w-full px-4 py-3 mb-5 text-center text-[#1A1A1A] bg-[#FDFBF7] border border-[#3D4430]/10 rounded-lg focus:outline-none focus:border-[#3D4430]/30 focus:ring-2 focus:ring-[#3D4430]/5 transition-all placeholder:text-[#3D4430]/30"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleNicknameSubmit();
+                    }
+                  }}
+                  autoFocus
+                />
+
+                <div className="space-y-3">
+                  <button
+                    onClick={handleNicknameSubmit}
+                    className="w-full bg-[#1A1A1A] text-[#FDFBF7] py-3 text-sm font-medium hover:bg-[#3D4430] transition-colors"
+                  >
+                    继续
+                  </button>
+                </div>
+              </m.div>
+            </m.div>
+          )}
+        </AnimatePresence>
+
+        {/* Location Modal */}
         <AnimatePresence>
           {showLocationModal && (
             <m.div
@@ -229,9 +366,15 @@ export default function Home() {
                 <div className="space-y-3">
                   <button
                     onClick={handleLocationAccept}
-                    className="w-full bg-[#1A1A1A] text-[#FDFBF7] py-3 text-sm font-medium hover:bg-[#3D4430] transition-colors"
+                    disabled={isLocating}
+                    className="w-full bg-[#1A1A1A] text-[#FDFBF7] py-3 text-sm font-medium hover:bg-[#3D4430] transition-colors flex items-center justify-center disabled:opacity-70 disabled:cursor-wait"
                   >
-                    允许访问
+                    {isLocating ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        正在定位...
+                      </>
+                    ) : "允许访问"}
                   </button>
 
                   <button
@@ -309,6 +452,6 @@ export default function Home() {
         </AnimatePresence>
 
       </main>
-    </LazyMotion>
+    </LazyMotion >
   );
 }

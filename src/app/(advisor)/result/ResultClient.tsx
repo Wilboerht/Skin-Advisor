@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useToast } from "@/components/ui/Toast";
+import { useAuth } from "@/hooks/useAuth";
 import type { FaceAnalysisResult, ZoneAnalysis } from "@/lib/advisor-utils";
 import { DIMENSION_LABELS, SkinDimensionKey, getDefaultFaceAnalysisResult } from "@/lib/advisor-utils";
 import { getDimensionAdvice } from "@/lib/advice-utils";
@@ -96,6 +97,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const router = useRouter();
     const toast = useToast();
     const { trackResultView, trackResultShare, trackProductClick } = useAdvisorAnalytics();
+    const { user } = useAuth();
 
     // Data State
     const [result, setResult] = useState<ComprehensiveResult | null>(initialData?.result || null);
@@ -103,6 +105,20 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const [userImage, setUserImage] = useState<string | undefined>(undefined);
     const [sideImages, setSideImages] = useState<Record<string, string>>({});
     const [userLocation, setUserLocation] = useState<{ province?: string; city?: string; lat?: number; lon?: number } | null>(null);
+    const [userNickname, setUserNickname] = useState<string>("护肤达人");
+    const [userAvatar, setUserAvatar] = useState<number>(0);
+
+    // Avatar options (Same as page.tsx)
+    const avatarOptions = [
+        { bg: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", emoji: "🌸" },
+        { bg: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)", emoji: "🌺" },
+        { bg: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)", emoji: "🌊" },
+        { bg: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)", emoji: "🌿" },
+        { bg: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)", emoji: "🌻" },
+        { bg: "linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)", emoji: "🦋" },
+        { bg: "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)", emoji: "🍑" },
+        { bg: "linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%)", emoji: "💎" },
+    ];
 
     // UI State
     const [activeRoutineTab, setActiveRoutineTab] = useState<'morning' | 'evening'>('morning');
@@ -186,6 +202,16 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     } catch {
                         setUserLocation({ province: locationStr });
                     }
+                }
+
+                // Restore Nickname & Avatar
+                const storedNickname = localStorage.getItem("advisor_nickname");
+                if (storedNickname) setUserNickname(storedNickname);
+
+                const storedAvatar = localStorage.getItem("advisor_avatar");
+                if (storedAvatar) {
+                    const idx = parseInt(storedAvatar);
+                    if (!isNaN(idx) && idx >= 0 && idx < 8) setUserAvatar(idx);
                 }
             } catch (e) {
                 console.error("Storage load error:", e);
@@ -446,6 +472,9 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         localStorage.removeItem("advisor_gender");
         localStorage.removeItem("advisor_face_images");
         localStorage.removeItem("advisor_result");
+        // localStorage.removeItem("advisor_nickname");
+        // localStorage.removeItem("advisor_avatar");
+        localStorage.removeItem("advisor_step");
         router.push("/questions");
     };
 
@@ -783,6 +812,21 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             </div>
                             <h1 className={sidebarStyles.pageTitle}>肌肤诊断报告</h1>
 
+                            {/* User Profile Header */}
+                            <div className="flex flex-col items-center mb-6">
+                                <div
+                                    className="w-20 h-20 rounded-full flex items-center justify-center text-3xl shadow-lg border-4 border-white mb-3"
+                                    style={{ background: avatarOptions[userAvatar]?.bg || avatarOptions[0].bg }}
+                                >
+                                    {avatarOptions[userAvatar]?.emoji || avatarOptions[0].emoji}
+                                </div>
+                                <h3 className="text-lg font-serif font-medium text-gray-900">{userNickname}</h3>
+                                <div className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                                    AI 分析完成
+                                </div>
+                            </div>
+
                             {/* Properties List */}
                             <div className={sidebarStyles.propertyList}>
                                 <div className={sidebarStyles.propertyRow}>
@@ -870,17 +914,19 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 </div>
                             </div>
 
-                            {/* Reward Link */}
-                            <Link href="/share-reward" className={sidebarStyles.linkBlock}>
-                                <div className={sidebarStyles.linkIconBox}>
-                                    <Gift size={18} />
-                                </div>
-                                <div className={sidebarStyles.linkContent}>
-                                    <div className={sidebarStyles.linkTitle}>领取专属好礼</div>
-                                    <div className={sidebarStyles.linkDesc}>您的评分超越了 90% 的用户</div>
-                                </div>
-                                <ChevronRight size={14} className="text-gray-400" />
-                            </Link>
+                            {/* Reward Link - Only for logged in users */}
+                            {user && (
+                                <Link href="/share-reward" className={sidebarStyles.linkBlock}>
+                                    <div className={sidebarStyles.linkIconBox}>
+                                        <Gift size={18} />
+                                    </div>
+                                    <div className={sidebarStyles.linkContent}>
+                                        <div className={sidebarStyles.linkTitle}>领取专属好礼</div>
+                                        <div className={sidebarStyles.linkDesc}>您的评分超越了 90% 的用户</div>
+                                    </div>
+                                    <ChevronRight size={14} className="text-gray-400" />
+                                </Link>
+                            )}
                         </aside>
 
                         {/* Right Column: Detailed Analysis & Routine */}

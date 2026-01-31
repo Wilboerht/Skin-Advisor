@@ -1,6 +1,7 @@
 
 import { useState, useCallback } from 'react';
 import { useAdvisorAnalytics } from './useAdvisorAnalytics';
+import { useAuth } from './useAuth';
 import { preprocessFaceImage } from '@/lib/image-processing';
 import { useRouter } from 'next/navigation';
 
@@ -36,6 +37,7 @@ export function useAsyncAnalysis() {
         error: null
     });
     const { trackAnalysisStart, trackAnalysisComplete } = useAdvisorAnalytics();
+    const { user } = useAuth();
     const router = useRouter();
 
     const runAnalysis = useCallback(async () => {
@@ -77,13 +79,17 @@ export function useAsyncAnalysis() {
                             finalData = processed.imageData;
 
                             try {
-                                // Upload to cloud storage (Supabase > OSS)
-                                const { uploadImage } = await import("@/lib/upload-client");
-                                const blob = await (await fetch(finalData)).blob();
-                                const url = await uploadImage(blob, "face-front.jpg");
-                                if (url) {
-                                    finalData = url;
-                                    console.log("Uploaded to cloud storage:", url);
+                                // Upload to cloud storage (only for logged-in users)
+                                if (user) {
+                                    const { uploadImage } = await import("@/lib/upload-client");
+                                    const blob = await (await fetch(finalData)).blob();
+                                    const url = await uploadImage(blob, "face-front.jpg");
+                                    if (url) {
+                                        finalData = url;
+                                        console.log("Uploaded to cloud storage:", url);
+                                    }
+                                } else {
+                                    console.log("Guest user, skipping cloud upload");
                                 }
                             } catch (uploadError) {
                                 console.warn("Cloud upload failed, using base64", uploadError);
@@ -117,7 +123,7 @@ export function useAsyncAnalysis() {
                                 if (faceRes.status === 503 || faceRes.status === 504) { // This case should ideally be caught by fetchWithRetry
                                     throw new Error("AI 服务暂时繁忙，请稍后重试");
                                 }
-                                throw new Error(errorData.error || errorData.message || "面部分析失败");
+                                throw new Error(errorData.message || errorData.error || "面部分析失败");
                             }
                         } catch (e: any) {
                             console.error("Face analysis fetch failed", e);
@@ -171,7 +177,7 @@ export function useAsyncAnalysis() {
             setAnalysisState({ status: 'error', progress: 0, error: e.message || "Unknown error" });
             throw e;
         }
-    }, [trackAnalysisStart, trackAnalysisComplete]);
+    }, [trackAnalysisStart, trackAnalysisComplete, user]);
 
     return { runAnalysis, analysisState };
 }

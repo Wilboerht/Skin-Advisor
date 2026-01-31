@@ -17,8 +17,11 @@ export default function QuestionsPage() {
     const [answers, setAnswers] = useState<Record<string, any>>({});
     const [direction, setDirection] = useState(0);
     const [showExitConfirm, setShowExitConfirm] = useState(false);
+    const [showResumeModal, setShowResumeModal] = useState(false);
+    const [hasSavedProgress, setHasSavedProgress] = useState(false);
     const { trackQuestionnaireStart, trackQuestionnaireComplete } = useAdvisorAnalytics();
     const hasTrackedStart = useRef(false);
+    const hasCheckedResume = useRef(false);
 
     // 过滤问题逻辑
     const allQuestions = DEFAULT_QUESTIONS;
@@ -73,8 +76,29 @@ export default function QuestionsPage() {
         return () => window.removeEventListener("keydown", handleKeyDown);
     }, [currentStepIndex, answers, gender]); // 依赖项
 
-    // 恢复之前的状态
+    // 检测是否有保存的进度
     useEffect(() => {
+        if (hasCheckedResume.current) return;
+        hasCheckedResume.current = true;
+
+        try {
+            const savedAnswers = localStorage.getItem("advisor_answers");
+            const savedGender = localStorage.getItem("advisor_gender");
+            const savedStep = localStorage.getItem("advisor_step");
+
+            // 检查是否有有效的保存进度（至少有性别或已回答的问题）
+            const hasProgress = savedGender || (savedAnswers && Object.keys(JSON.parse(savedAnswers)).length > 0);
+
+            if (hasProgress && savedStep) {
+                // 有未完成的测试，显示选择弹窗
+                setHasSavedProgress(true);
+                setShowResumeModal(true);
+            }
+        } catch (e) { console.error(e); }
+    }, []);
+
+    // 恢复之前的状态（用户选择继续时调用）
+    const resumeSavedProgress = () => {
         try {
             const savedAnswers = localStorage.getItem("advisor_answers");
             const savedGender = localStorage.getItem("advisor_gender");
@@ -101,7 +125,26 @@ export default function QuestionsPage() {
                 }
             }
         } catch (e) { console.error(e); }
-    }, []);
+
+        setShowResumeModal(false);
+    };
+
+    // 重新开始（清除保存的进度）
+    const startFresh = () => {
+        localStorage.removeItem("advisor_answers");
+        localStorage.removeItem("advisor_gender");
+        localStorage.removeItem("advisor_step");
+        localStorage.removeItem("advisor_face_images");
+        localStorage.removeItem("advisor_result");
+        // 保留昵称和头像，因为这可能是刚才在首页设置的
+        // localStorage.removeItem("advisor_nickname");
+        // localStorage.removeItem("advisor_avatar");
+
+        setGender(null);
+        setAnswers({});
+        setCurrentStepIndex(0);
+        setShowResumeModal(false);
+    };
 
     // 自动保存答案和步骤
     useEffect(() => {
@@ -304,7 +347,7 @@ export default function QuestionsPage() {
                     <div className="w-10 h-10 rounded-full border border-[#1A1A1A]/10 flex items-center justify-center group-hover:bg-[#1A1A1A] group-hover:border-[#1A1A1A] transition-all">
                         <ChevronLeft className="h-4 w-4 group-hover:text-white transition-colors" />
                     </div>
-                    {/* <span className="hidden sm:inline-block tracking-wide">Back</span> */}
+                    <span className="tracking-wide">上一题</span>
                 </button>
 
                 {/* Next Button (Only for multiple choice or explicit action) */}
@@ -361,6 +404,48 @@ export default function QuestionsPage() {
                                     className="w-full py-2 text-xs text-[#1A1A1A]/40 hover:text-[#1A1A1A] transition-colors"
                                 >
                                     确认退出
+                                </button>
+                            </div>
+                        </m.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Resume Progress Modal */}
+            <AnimatePresence>
+                {showResumeModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <m.div
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-[#FDFBF7]/90 backdrop-blur-sm"
+                        />
+                        <m.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="relative w-full max-w-sm bg-white p-8 shadow-2xl border border-[#1A1A1A]/5 text-center"
+                        >
+                            <div className="w-12 h-12 rounded-full bg-[#F5F3EF] flex items-center justify-center mx-auto mb-4">
+                                <svg className="w-6 h-6 text-[#3D4430]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <h3 className="text-xl font-serif text-[#1A1A1A] mb-2">检测到未完成的测试</h3>
+                            <p className="text-sm text-[#5E5E5E] mb-8 font-light">
+                                您上次的测试进度已保存，<br />是否继续完成？
+                            </p>
+                            <div className="flex flex-col gap-3">
+                                <button
+                                    onClick={resumeSavedProgress}
+                                    className="w-full bg-[#1A1A1A] text-white py-3 text-sm font-medium hover:bg-[#3D4430] transition-colors"
+                                >
+                                    继续上次测试
+                                </button>
+                                <button
+                                    onClick={startFresh}
+                                    className="w-full py-2 text-xs text-[#1A1A1A]/40 hover:text-[#1A1A1A] transition-colors"
+                                >
+                                    重新开始
                                 </button>
                             </div>
                         </m.div>
