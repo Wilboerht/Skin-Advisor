@@ -35,14 +35,15 @@ npm run dev
 
 **Build Command:**
 ```bash
-node scripts/prepare-production.js && npx prisma generate && npx prisma db push && next build
+node scripts/prepare-production.js && next build
 ```
 
-这个命令会自动：
-1. 将 Prisma schema 的 provider 从 `sqlite` 切换为 `postgresql`
-2. 生成新的 Prisma 客户端
-3. 同步数据库结构到 Supabase
-4. 构建 Next.js 应用
+`prepare-production.js` 脚本会自动：
+1. 验证环境变量
+2. 将 Prisma schema 的 provider 切换为 `postgresql`
+3. 执行 `prisma generate`
+4. 执行 `prisma db push` 同步数据库结构
+5. 恢复运行时配置
 
 ### 3. 部署
 

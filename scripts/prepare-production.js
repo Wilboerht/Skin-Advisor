@@ -111,7 +111,7 @@ try {
 console.log('⚙️ 执行 prisma db push...');
 console.log('   📡 连接到: ' + process.env.DIRECT_URL.replace(/:[^:@]+@/, ':****@').substring(0, 60) + '...');
 try {
-  execSync('npx prisma db push --skip-generate', {
+  execSync('npx prisma db push', {
     stdio: 'inherit',
     cwd: path.join(__dirname, '..')
   });
