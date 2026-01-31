@@ -485,11 +485,14 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const { runAnalysis, analysisState } = useAsyncAnalysis();
 
     // Trigger Async Analysis
-    // Trigger Async Analysis
+    const analysisStartedRef = useRef(false);
     useEffect(() => {
         const status = searchParams.get('status');
         // Only trigger if we are in 'analyzing' mode, no result yet, and not already running/error
         if (status === 'analyzing' && !result && analysisState.status === 'idle') {
+            if (analysisStartedRef.current) return;
+            analysisStartedRef.current = true;
+
             const execute = async () => {
                 try {
                     const { result: newResult, faceAnalysis: newFace } = await runAnalysis();
@@ -812,20 +815,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             </div>
                             <h1 className={sidebarStyles.pageTitle}>肌肤诊断报告</h1>
 
-                            {/* User Profile Header */}
-                            <div className="flex flex-col items-center mb-6">
-                                <div
-                                    className="w-20 h-20 rounded-full flex items-center justify-center text-3xl shadow-lg border-4 border-white mb-3"
-                                    style={{ background: avatarOptions[userAvatar]?.bg || avatarOptions[0].bg }}
-                                >
-                                    {avatarOptions[userAvatar]?.emoji || avatarOptions[0].emoji}
-                                </div>
-                                <h3 className="text-lg font-serif font-medium text-gray-900">{userNickname}</h3>
-                                <div className="text-xs text-gray-400 mt-1 flex items-center gap-1">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                                    AI 分析完成
-                                </div>
-                            </div>
+
 
                             {/* Properties List */}
                             <div className={sidebarStyles.propertyList}>

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Link } from "next-view-transitions";
 import { m, AnimatePresence, LazyMotion, domAnimation } from "framer-motion";
 import Image from "next/image";
-import { ArrowRight, Loader2, MapPin, User, ClipboardList } from "lucide-react";
+import { ArrowRight, Loader2, MapPin, User, ClipboardList, X } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
 import { SkincareReminder } from "@/components/advisor/SkincareReminder";
@@ -255,6 +255,7 @@ export default function Home() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
+                onClick={() => setShowNicknameModal(false)}
               />
 
               <m.div
@@ -264,6 +265,13 @@ export default function Home() {
                 exit={{ opacity: 0, scale: 0.95, y: 10 }}
                 transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
               >
+                <button
+                  onClick={() => setShowNicknameModal(false)}
+                  className="absolute top-4 right-4 text-[#1A1A1A]/30 hover:text-[#1A1A1A] transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+
                 {/* Selected Avatar Display */}
                 <div className="flex justify-center mb-4">
                   <div

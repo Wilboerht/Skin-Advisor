@@ -15,6 +15,7 @@ export default function FaceScanPage() {
     const { trackFaceScanStart, trackFaceScanComplete } = useAdvisorAnalytics();
     const hasTrackedStart = useRef(false);
     const [hasStarted, setHasStarted] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         // 校验是否有问卷数据
@@ -52,6 +53,9 @@ export default function FaceScanPage() {
     };
 
     const handleCaptureComplete = async (images: FaceCaptureImages) => {
+        if (isSubmitting) return;
+        setIsSubmitting(true);
+
         // Import advisorStorage dynamically to avoid SSR issues
         const { advisorStorage } = await import("@/lib/advisor-storage");
 
