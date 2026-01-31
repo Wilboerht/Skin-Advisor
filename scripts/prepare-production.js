@@ -18,18 +18,20 @@ const CONFIG_PATH = path.join(__dirname, '..', 'prisma.config.ts');
 
 console.log('🚀 准备生产环境...\n');
 
-// 1. 修改 schema.prisma 的 provider
+// 1. 修改 schema.prisma 的 datasource 块
 console.log('📝 更新 prisma/schema.prisma...');
 let schemaContent = fs.readFileSync(SCHEMA_PATH, 'utf-8');
 
-// 替换 provider
+// 替换整个 datasource 块 (Prisma 7.x: url 在 prisma.config.ts 中配置)
 schemaContent = schemaContent.replace(
-    /provider\s*=\s*"sqlite"/,
-    'provider = "postgresql"'
+  /datasource\s+db\s*\{[^}]*\}/s,
+  `datasource db {
+  provider = "postgresql"
+}`
 );
 
 fs.writeFileSync(SCHEMA_PATH, schemaContent, 'utf-8');
-console.log('   ✅ provider 已切换为 postgresql\n');
+console.log('   ✅ datasource 已切换为 postgresql\n');
 
 // 2. 更新 prisma.config.ts
 console.log('📝 更新 prisma.config.ts...');
@@ -46,7 +48,10 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
+    // 应用运行时使用 DATABASE_URL (Pooler)
     url: process.env.DATABASE_URL,
+    // Prisma CLI 操作使用 DIRECT_URL (直连)
+    directUrl: process.env.DIRECT_URL,
   },
 });
 `;
