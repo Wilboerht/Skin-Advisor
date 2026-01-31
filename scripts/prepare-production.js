@@ -18,6 +18,21 @@ const CONFIG_PATH = path.join(__dirname, '..', 'prisma.config.ts');
 
 console.log('🚀 准备生产环境...\n');
 
+// 0. 验证必要的环境变量
+console.log('🔍 检查环境变量...');
+if (!process.env.DATABASE_URL) {
+  console.error('   ❌ 错误: DATABASE_URL 环境变量未设置！');
+  process.exit(1);
+}
+if (!process.env.DIRECT_URL) {
+  console.error('   ❌ 错误: DIRECT_URL 环境变量未设置！');
+  console.error('   💡 提示: DIRECT_URL 应该使用端口 5432 (直连)，例如:');
+  console.error('      postgresql://user:pass@host:5432/postgres');
+  process.exit(1);
+}
+console.log('   ✅ DATABASE_URL: ' + process.env.DATABASE_URL.substring(0, 50) + '...');
+console.log('   ✅ DIRECT_URL: ' + process.env.DIRECT_URL.substring(0, 50) + '...\n');
+
 // 1. 修改 schema.prisma 的 datasource 块
 console.log('📝 更新 prisma/schema.prisma...');
 let schemaContent = fs.readFileSync(SCHEMA_PATH, 'utf-8');
