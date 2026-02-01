@@ -15,12 +15,19 @@ export default async function SharePage(props: SharePageProps) {
         return notFound();
     }
 
-    // Fetch ONLY safe public data
+    // Fetch ONLY safe public data (including user info for display)
     const session = await prisma.advisorSession.findUnique({
         where: { sessionId: id },
         select: {
             analysisResult: true,
-            expiresAt: true
+            expiresAt: true,
+            city: true,
+            province: true,
+            user: {
+                select: {
+                    name: true
+                }
+            }
         }
     });
 
@@ -45,10 +52,21 @@ export default async function SharePage(props: SharePageProps) {
         skinType: result.skinProfile?.typeLabel || "未知肤质",
         skinAge: result.skinProfile?.skinAge || 25,
         dimensions: result.faceAnalysis?.dimensions || {}, // Needed for chart
-        publishDate: new Date().toLocaleDateString()
+        publishDate: new Date().toLocaleDateString(),
+        // User info for display (prioritize nickname from analysisResult)
+        nickname: result.nickname || session.user?.name || generateRandomNickname(),
+        city: result.userLocation?.city || session.city || session.province || "未知城市",
+        isGuest: !session.user
     };
 
     return <ShareLandingClient data={safeData} />;
+}
+
+// Generate random fun nickname for guests
+function generateRandomNickname(): string {
+    const adjectives = ["可爱的", "阳光", "元气", "甜美", "活力", "清新", "温柔", "俏皮"];
+    const nouns = ["小可爱", "宝贝", "达人", "精灵", "女神", "仙子", "小天使", "小公主"];
+    return adjectives[Math.floor(Math.random() * adjectives.length)] + nouns[Math.floor(Math.random() * nouns.length)];
 }
 
 export async function generateMetadata(props: SharePageProps): Promise<Metadata> {

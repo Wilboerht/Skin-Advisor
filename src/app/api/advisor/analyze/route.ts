@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const { answers, faceAnalysis, sessionId } = result.data;
+        const { answers, faceAnalysis, sessionId, nickname } = result.data;
 
         // 注入地理位置 (如果用户未提供)
         if (!answers.location && geoLocation) {
@@ -248,7 +248,8 @@ export async function POST(request: NextRequest) {
             products: finalProducts,
             faceAnalysis: finalFaceAnalysis, // Ensure faceAnalysis is propagated
             dataSource: "hybrid",
-            userLocation: geoLocation
+            userLocation: geoLocation,
+            nickname: nickname || "护肤达人" // Include user nickname for sharing
         };
 
         // 8. Persist Result to DB (all users including guests)

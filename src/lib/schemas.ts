@@ -13,6 +13,7 @@ export const SessionIdSchema = z.string().min(1, "Session ID 不能为空");
 
 export const AnalyzeRequestSchema = z.object({
     sessionId: SessionIdSchema.optional(), // 可选，如果客户端已生成
+    nickname: z.string().max(50).optional(), // 用户昵称
 
     // 问卷答案
     answers: z.object({

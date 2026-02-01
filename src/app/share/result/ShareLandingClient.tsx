@@ -2,167 +2,305 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
-import { motion } from "framer-motion";
-import { ScanFace, ArrowRight, Lock, Activity, Sparkles, ShieldCheck } from "lucide-react";
-// import { Button } from "@/components/ui/button"; // Removed to fix import error
-import { ScientificRadarChart } from "@/components/advisor/ScientificRadarChart";
+import { motion, AnimatePresence } from "framer-motion";
 
+// Types
 interface ShareLandingProps {
     data: {
         score: number;
         skinType: string;
         skinAge: number;
-        dimensions: any; // Minimal dimension scores for chart
+        dimensions: any;
         publishDate: string;
+        nickname: string;
+        city: string;
+        isGuest: boolean;
     }
 }
 
 export default function ShareLandingClient({ data }: ShareLandingProps) {
     const router = useRouter();
     const [mounted, setMounted] = useState(false);
+    const [activeTab, setActiveTab] = useState<'score' | 'pop'>('score');
+    const [showModal, setShowModal] = useState(false);
+    const [comment, setComment] = useState("");
+
+    // Random comments from reference
+    const comments = [
+        "报告评语：您的肌肤细腻度很高，几乎看不见毛孔，水油平衡状态非常理想，请继续保持现有的基础护肤流程！",
+        "报告评语：肤色匀净度极佳，近期防晒工作做得非常到位。眼周状态紧致，是实至名归的素颜女神候选人。",
+        "报告评语：整体状态非常健康，胶原蛋白感十足。建议在接下来的换季期加强补水，让肌肤屏障更加稳固。",
+        "报告评语：水油平衡控制得很好，即使是素颜也散发着自然的光泽感。当前排名反映了你极佳的保养习惯。"
+    ];
 
     useEffect(() => {
         setMounted(true);
+        setComment(comments[Math.floor(Math.random() * comments.length)]);
     }, []);
 
-    // Animation variants
-    const containerVariants = {
-        hidden: { opacity: 0 },
-        visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
+    // Animation Variants
+    const revealVariants = {
+        hidden: { opacity: 0, y: 30 },
+        visible: (i: number) => ({
+            opacity: 1,
+            y: 0,
+            transition: { delay: i * 0.1, duration: 0.8, ease: [0.23, 1, 0.32, 1] as any } // cubic-bezier matching ref
+        })
     };
 
-    const itemVariants = {
-        hidden: { y: 20, opacity: 0 },
-        visible: { y: 0, opacity: 1 }
-    };
+    if (!mounted) return null;
 
     return (
-        <div className="min-h-screen bg-[#FAFAFA] text-gray-900 pb-24">
-            {/* Minimal Header */}
-            <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
-                <div className="max-w-md mx-auto px-4 h-14 flex items-center justify-center relative">
-                    <div className="font-bold text-lg tracking-tight flex items-center gap-2">
-                        <span className="text-xl">✨</span> MySkin.Today
-                    </div>
-                </div>
-            </header>
+        <div className="min-h-screen bg-[#F0EDE1] font-sans text-[#333] p-5 flex justify-center items-start md:items-center overflow-x-hidden">
+            <style jsx global>{`
+                :root {
+                    --primary-bg: #F0EDE1;
+                    --accent-yellow: #FFD700;
+                    --accent-blue: #00263e;
+                    --glass-white: rgba(255, 255, 255, 0.4);
+                    --glass-border: rgba(255, 255, 255, 0.6);
+                }
+                .glass-module {
+                    background: var(--glass-white);
+                    backdrop-filter: blur(12px);
+                    -webkit-backdrop-filter: blur(12px);
+                    border: 1px solid var(--glass-border);
+                    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
+                }
+                .glass-module:hover {
+                    transform: translateY(-4px);
+                    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.06);
+                }
+            `}</style>
 
-            <main className="max-w-md mx-auto px-4 pt-8">
+            <div className="w-full max-w-[1100px] grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                {/* 1. Challenge Module */}
                 <motion.div
-                    variants={containerVariants}
+                    custom={1}
                     initial="hidden"
                     animate="visible"
-                    className="space-y-6"
+                    variants={revealVariants}
+                    className="glass-module rounded-[32px] p-[30px] flex flex-col transition-all duration-400 relative overflow-hidden"
                 >
-                    {/* 1. Hero / Score Card */}
-                    <motion.div variants={itemVariants} className="text-center space-y-2">
-                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/5 text-xs font-medium text-gray-600">
-                            <ShieldCheck className="w-3.5 h-3.5" />
-                            专业 AI 肤质检测报告
-                        </div>
-                        <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600">
-                            您的好友收到了一份<br />实验室级肤质报告
-                        </h1>
-                    </motion.div>
+                    <span className="inline-block px-4 py-1.5 rounded-full text-sm font-semibold mb-5 bg-[#FFD700] text-black w-fit">
+                        测肤大挑战
+                    </span>
 
-                    {/* Score Circle */}
-                    <motion.div variants={itemVariants} className="relative py-6 flex justify-center">
-                        <div className="w-40 h-40 rounded-full border-4 border-white shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] bg-gradient-to-b from-white to-gray-50 flex flex-col items-center justify-center relative overflow-hidden">
-                            <div className="absolute inset-0 bg-gradient-to-tr from-emerald-50/50 to-transparent pointer-events-none" />
-                            <span className="text-sm text-gray-400 font-medium uppercase tracking-wider mb-1">Skin Score</span>
-                            <span className={`text-5xl font-bold font-mono tracking-tighter ${data.score >= 80 ? 'text-emerald-600' : data.score >= 60 ? 'text-amber-600' : 'text-rose-600'
-                                }`}>
-                                {data.score}
-                            </span>
-                            <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-100/50 text-emerald-700 text-[10px] font-bold">
-                                <Sparkles className="w-3 h-3" />
-                                超越 90% 用户
-                            </div>
-                        </div>
-
-                        {/* Decorative background elements */}
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-emerald-400/10 rounded-full blur-3xl -z-10" />
-                    </motion.div>
-
-                    {/* Key Stats Grid */}
-                    <motion.div variants={itemVariants} className="grid grid-cols-2 gap-3">
-                        <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-1">
-                            <span className="text-xs text-gray-400 uppercase">肤质类型</span>
-                            <span className="font-semibold text-lg text-gray-900">{data.skinType}</span>
-                        </div>
-                        <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-1">
-                            <span className="text-xs text-gray-400 uppercase">肌龄检测</span>
-                            <span className="font-semibold text-lg text-gray-900">{data.skinAge} <span className="text-xs font-normal text-gray-400">岁</span></span>
-                        </div>
-                    </motion.div>
-
-                    {/* Radar Chart (Simplified/Non-interactive) */}
-                    <motion.div variants={itemVariants} className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 relative overflow-hidden">
-                        <div className="text-center mb-4">
-                            <h3 className="font-semibold text-gray-900">十二维肤质图谱</h3>
-                        </div>
-                        <div className="h-[250px] pointer-events-none opacity-90 scale-95">
-                            <ScientificRadarChart
-                                dimensions={data.dimensions}
-                                activeDimension={null} // No highlight
-                                onDimensionSelect={() => { }}
+                    <div className="flex items-center gap-4 mb-6">
+                        <div className="w-20 h-20 rounded-3xl bg-[#eee] border-[3px] border-white overflow-hidden relative">
+                            {/* Dynamic Avatar using nickname as seed */}
+                            <img
+                                src={`https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(data.nickname)}`}
+                                alt="Avatar"
+                                className="w-full h-full object-cover"
                             />
                         </div>
-
-                        {/* "Unlock" Overlay Hint */}
-                        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white via-white/80 to-transparent flex items-end justify-center pb-6">
-                            <span className="text-xs font-mono text-gray-400 uppercase tracking-widest">Analysis Visualization</span>
+                        <div className="flex flex-col">
+                            <h2 className="text-2xl font-bold mb-1">{data.nickname}</h2>
+                            <p className="text-sm text-[#666]">{data.isGuest ? "临时用户" : "注册用户"} · {data.city}</p>
                         </div>
-                    </motion.div>
+                    </div>
 
-                    {/* Blurred/Locked Content Teaser */}
-                    <motion.div variants={itemVariants} className="relative group">
-                        <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-10 rounded-3xl flex flex-col items-center justify-center text-center p-6 border border-white/50">
-                            <div className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center mb-3 shadow-xl">
-                                <Lock className="w-5 h-5" />
-                            </div>
-                            <h3 className="text-lg font-bold text-gray-900 mb-1">查看完整深度报告</h3>
-                            <p className="text-sm text-gray-600 mb-4 max-w-[200px]">
-                                解锁包含痘痘、皱纹、黑眼圈在内的 12 项详细实验室数据
-                            </p>
-                        </div>
+                    <div className="bg-black/5 p-5 rounded-3xl mb-6 text-center">
+                        <span className="text-sm text-[#666] block mb-1">当前全国排名</span>
+                        <span className="text-4xl font-extrabold text-black block">168</span>
+                        <p className="font-semibold text-[#27ae60] mt-2 text-sm">超越了全国 84% 的用户</p>
+                    </div>
 
-                        {/* Fake Content Behind Blur */}
-                        <div className="bg-white p-6 rounded-3xl border border-gray-100 space-y-4 filter blur-sm select-none opacity-50">
-                            <div className="h-4 bg-gray-100 rounded w-3/4"></div>
-                            <div className="h-4 bg-gray-100 rounded w-1/2"></div>
-                            <div className="h-24 bg-gray-50 rounded-xl"></div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="h-16 bg-gray-100 rounded-xl"></div>
-                                <div className="h-16 bg-gray-100 rounded-xl"></div>
-                            </div>
-                        </div>
-                    </motion.div>
+                    <div className="text-base leading-[1.6] text-[#444] p-4 border-l-4 border-[#FFD700] bg-white/30 mb-[30px] rounded-r-xl min-h-[80px]">
+                        {comment}
+                    </div>
 
-                </motion.div>
-            </main>
-
-            {/* Bottom CTA */}
-            <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-100 p-4 pb-8 z-50 shadow-[0_-5px_20px_-5px_rgba(0,0,0,0.05)]">
-                <div className="max-w-md mx-auto flex flex-col gap-3">
                     <button
-                        onClick={() => router.push('/questions')}
-                        className="w-full h-14 rounded-full text-lg font-semibold bg-black text-white hover:bg-gray-800 shadow-lg hover:shadow-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                        onClick={() => setShowModal(true)}
+                        className="w-full py-[18px] bg-black text-white rounded-[20px] text-base font-semibold transition-transform active:scale-[0.98] hover:bg-[#333]"
                     >
-                        <ScanFace className="w-5 h-5" />
-                        立即免费测肤
-                        <ArrowRight className="w-5 h-5 opacity-60" />
+                        分享我的战报
                     </button>
-                    <p className="text-center text-[10px] text-gray-400">
-                        * 已有 10,000+ 用户生成了专业报告
+                    <p className="mt-[15px] text-[13px] text-[#666] text-center">
+                        邀请好友开启素颜测肤大对决，提升人气分，赢取限时好礼。
                     </p>
-                </div>
+                </motion.div>
+
+                {/* 2. Leaderboard Module */}
+                <motion.div
+                    custom={2}
+                    initial="hidden"
+                    animate="visible"
+                    variants={revealVariants}
+                    className="glass-module rounded-[32px] p-[30px] flex flex-col transition-all duration-400 relative overflow-hidden"
+                >
+                    <div className="flex gap-2.5 mb-[25px]">
+                        <div
+                            onClick={() => setActiveTab('score')}
+                            className={`px-5 py-2.5 rounded-xl cursor-pointer font-semibold text-[15px] transition-all border border-transparent flex items-center gap-1.5 
+                                ${activeTab === 'score' ? 'bg-white border-[rgba(255,255,255,0.6)] shadow-sm' : 'bg-black/3 hover:bg-black/5'}`}
+                        >
+                            测肤排行
+                        </div>
+                        <div
+                            onClick={() => setActiveTab('pop')}
+                            className={`px-5 py-2.5 rounded-xl cursor-pointer font-semibold text-[15px] transition-all border border-transparent flex items-center gap-1.5 
+                                ${activeTab === 'pop' ? 'bg-white border-[rgba(255,255,255,0.6)] shadow-sm' : 'bg-black/3 hover:bg-black/5'}`}
+                        >
+                            人气排行 <span className="text-[#FF4D4F]">🔥</span>
+                        </div>
+                    </div>
+
+                    <div className="flex-grow flex flex-col">
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={activeTab}
+                                initial={{ opacity: 0, x: 10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -10 }}
+                                transition={{ duration: 0.2 }}
+                                className="flex flex-col"
+                            >
+                                {activeTab === 'score' ? (
+                                    <>
+                                        {/* Score Rank Items */}
+                                        {[
+                                            { rank: '01', name: '林舒涵', loc: '上海市', score: '98.5', color: '#D4AF37' },
+                                            { rank: '02', name: '陈子墨', loc: '杭州市', score: '97.2', color: '#A8A8A8' },
+                                            { rank: '03', name: '苏小北', loc: '成都市', score: '96.8', color: '#B08D57' },
+                                            { rank: '04', name: '王若曦', loc: '深圳市', score: '95.4', color: '#999' },
+                                            { rank: '05', name: '张清扬', loc: '广州市', score: '94.9', color: '#999' },
+                                        ].map((item, idx) => (
+                                            <div key={idx} className="flex items-center py-3 border-b border-black/5 last:border-0 hover:bg-white/20 transition-colors px-2 rounded-lg">
+                                                <span className="w-[30px] font-extrabold text-lg" style={{ color: item.color }}>{item.rank}</span>
+                                                <img src={`https://api.dicebear.com/9.x/avataaars/svg?seed=${item.name}`} className="w-11 h-11 rounded-xl mx-3 bg-gray-200" alt="avatar" />
+                                                <div className="flex-grow">
+                                                    <p className="font-semibold text-[15px]">{item.name}</p>
+                                                    <p className="text-xs text-[#666]">{item.loc}</p>
+                                                </div>
+                                                <span className="font-bold text-lg text-[#00263e]">{item.score}</span>
+                                            </div>
+                                        ))}
+                                    </>
+                                ) : (
+                                    <>
+                                        {/* Pop Rank Items */}
+                                        {[
+                                            { rank: '01', name: '小圆子', loc: '北京市', score: '1.2w 🔥', color: '#D4AF37' },
+                                            { rank: '02', name: 'Lily_W', loc: '南京市', score: '9.8k 🔥', color: '#A8A8A8' },
+                                            { rank: '03', name: '是阿星呀', loc: '西安市', score: '8.5k 🔥', color: '#B08D57' },
+                                        ].map((item, idx) => (
+                                            <div key={idx} className="flex items-center py-3 border-b border-black/5 last:border-0 hover:bg-white/20 transition-colors px-2 rounded-lg">
+                                                <span className="w-[30px] font-extrabold text-lg" style={{ color: item.color }}>{item.rank}</span>
+                                                <img src={`https://api.dicebear.com/9.x/avataaars/svg?seed=${item.name}`} className="w-11 h-11 rounded-xl mx-3 bg-gray-200" alt="avatar" />
+                                                <div className="flex-grow">
+                                                    <p className="font-semibold text-[15px]">{item.name}</p>
+                                                    <p className="text-xs text-[#666]">{item.loc}</p>
+                                                </div>
+                                                <span className="font-bold text-lg text-[#FF4D4F]">{item.score}</span>
+                                            </div>
+                                        ))}
+                                    </>
+                                )}
+                            </motion.div>
+                        </AnimatePresence>
+                    </div>
+
+                    <div className="mt-5 pt-5 border-t border-dashed border-black/10 text-center text-sm text-[#666]">
+                        已有 3,208+ 人参与本赛季挑战
+                    </div>
+                </motion.div>
+
+                {/* 3. Report Module (Full Width on Desktop) */}
+                <motion.div
+                    custom={3}
+                    initial="hidden"
+                    animate="visible"
+                    variants={revealVariants}
+                    className="glass-module rounded-[32px] p-[30px] flex flex-col transition-all duration-400 relative overflow-hidden min-h-[300px] md:col-span-2"
+                >
+                    <span className="inline-block px-4 py-1.5 rounded-full text-sm font-semibold mb-5 bg-[#00263e] text-white w-fit">
+                        专业报告
+                    </span>
+                    <h3 className="mb-5 text-xl font-bold">个性化完整版测肤报告</h3>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mt-5">
+                        <div className="bg-white/50 p-5 rounded-[20px] text-center">
+                            <p className="text-[28px] font-extrabold mb-1.5">{data.skinAge || 22}岁</p>
+                            <p className="text-[13px] text-[#666]">肌肤年龄</p>
+                        </div>
+                        <div className="bg-white/50 p-5 rounded-[20px] text-center">
+                            <p className="text-[28px] font-extrabold mb-1.5 text-[#E67E22]">{data.skinType || '中性'}</p>
+                            <p className="text-[13px] text-[#666]">肤质类型</p>
+                        </div>
+                        <div className="bg-white/50 p-5 rounded-[20px] text-center">
+                            <p className="text-[28px] font-extrabold mb-1.5">良好</p>
+                            <p className="text-[13px] text-[#666]">毛孔状态</p>
+                        </div>
+                        <div className="bg-white/50 p-5 rounded-[20px] text-center">
+                            <p className="text-[28px] font-extrabold mb-1.5">轻度</p>
+                            <p className="text-[13px] text-[#666]">黑眼圈指数</p>
+                        </div>
+                    </div>
+
+                    {/* Fold Overlay */}
+                    <div className="absolute bottom-0 left-0 right-0 h-[150px] bg-gradient-to-b from-transparent to-[var(--glass-white)] flex items-end justify-center pb-[30px] backdrop-blur-[4px]">
+                        <button
+                            onClick={() => router.push('/login')}
+                            className="bg-[#00263e] text-white px-[30px] py-[12px] rounded-full border-none font-semibold cursor-pointer shadow-[0_10px_20px_rgba(0,38,62,0.2)] hover:scale-105 transition-transform"
+                        >
+                            登录查看完整专业报告
+                        </button>
+                    </div>
+                </motion.div>
+
             </div>
+
+            {/* Modal */}
+            <AnimatePresence>
+                {showModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm flex justify-center items-center"
+                        onClick={() => setShowModal(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.8, opacity: 0 }}
+                            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                            className="bg-[#F0EDE1] w-[90%] max-w-[400px] rounded-[32px] p-[40px] text-center transform scale-90"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <h2 className="text-xl font-bold mb-[15px] leading-relaxed">
+                                您的当前数据已入选<br />素颜测肤排位全国较前排名
+                            </h2>
+                            <p className="text-[#666] mb-[30px] text-[15px] leading-relaxed">
+                                在赛季结束之前有概率获得礼品，请选择后续操作。
+                            </p>
+                            <div className="flex flex-col gap-3">
+                                <button
+                                    onClick={() => router.push('/login')}
+                                    className="p-4 rounded-2xl border-none font-semibold cursor-pointer transition-colors bg-[#00263e] text-white hover:bg-[#003859]"
+                                >
+                                    登录更新本次报告
+                                </button>
+                                <button
+                                    onClick={() => router.push('/register')}
+                                    className="p-4 rounded-2xl font-semibold cursor-pointer transition-colors bg-white border border-[#ddd] text-[#333] hover:bg-gray-50"
+                                >
+                                    注册账号获得更多权益
+                                </button>
+                                <button
+                                    onClick={() => setShowModal(false)}
+                                    className="p-2 rounded-2xl bg-transparent text-[#888] underline text-[13px] hover:text-[#555]"
+                                >
+                                    不注册，只想晒下战报
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
-
-// Simple Button Component inline if shadcn is not available (To be safe)
-// Or I'll just use simple HTML button with standard tailwind classes in the JSX above if I'm not sure about 'components/ui/button' existence.
-// I will check for components/ui/button existence first or just implement standard button handling to avoid errors.

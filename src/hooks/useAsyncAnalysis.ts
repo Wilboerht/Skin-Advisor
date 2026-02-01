@@ -145,13 +145,17 @@ export function useAsyncAnalysis() {
             // 2. Comprehensive Analysis (Text)
             const sessionId = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString();
 
+            // Get user nickname from localStorage
+            const nickname = localStorage.getItem("advisor_nickname") || "护肤达人";
+
             const analyzeRes = await fetchWithRetry("/api/advisor/analyze", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     answers,
                     faceAnalysis: faceAnalysis || undefined,
-                    sessionId: sessionId
+                    sessionId: sessionId,
+                    nickname: nickname
                 })
             });
 
