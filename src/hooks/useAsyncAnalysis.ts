@@ -163,7 +163,8 @@ export function useAsyncAnalysis() {
                 result.faceAnalysis = faceAnalysis;
             }
 
-            // Save Result
+            // Save Result (include sessionId for sharing recovery)
+            result.sessionId = sessionId;
             localStorage.setItem("advisor_result", JSON.stringify(result));
             trackAnalysisComplete(result.dataSource === "comprehensive" ? "ai" : "fallback");
 

@@ -107,6 +107,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const [userLocation, setUserLocation] = useState<{ province?: string; city?: string; lat?: number; lon?: number } | null>(null);
     const [userNickname, setUserNickname] = useState<string>("护肤达人");
     const [userAvatar, setUserAvatar] = useState<number>(0);
+    // Session ID for sharing - initialized from props or will be set after analysis
+    const [sessionId, setSessionId] = useState<string | undefined>(id);
 
     // Avatar options (Same as page.tsx)
     const avatarOptions = [
@@ -258,6 +260,11 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                         setFaceAnalysis(advisorResult.faceAnalysis);
                     }
 
+                    // Restore sessionId for sharing
+                    if (advisorResult.sessionId) {
+                        setSessionId(advisorResult.sessionId);
+                    }
+
                 } catch (e) {
                     console.error("Failed to restore result:", e);
                     toast.error("数据加载失败");
@@ -393,11 +400,17 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
     // Actions
     const handleShare = async () => {
-        console.log("Handle share clicked");
+        console.log("Handle share clicked, sessionId:", sessionId);
+
+        if (!sessionId) {
+            toast.error("分享链接生成中，请稍后再试");
+            return;
+        }
+
         try {
             // Point to the PUBLIC share landing page
             const url = generateShareUrl("/share/result", {
-                id: id || "",
+                id: sessionId,
                 ref: "social_share"
             });
             console.log("Generated share URL:", url);
@@ -416,10 +429,15 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     };
 
     const handleSaveLink = async () => {
+        if (!sessionId) {
+            toast.error("链接生成中，请稍后再试");
+            return;
+        }
+
         try {
             // "Save Link" keeps the PRIVATE result page link (for self)
             const url = generateShareUrl("/result", {
-                id: id || "",
+                id: sessionId,
                 ref: "save_link"
             });
             const success = await copyToClipboard(url);
@@ -495,11 +513,15 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
             const execute = async () => {
                 try {
-                    const { result: newResult, faceAnalysis: newFace } = await runAnalysis();
+                    const { result: newResult, faceAnalysis: newFace, sessionId: newSessionId } = await runAnalysis();
                     setResult(newResult);
                     if (newFace) setFaceAnalysis(newFace);
-                    // Clear param
-                    router.replace('/result', { scroll: false });
+                    // Save sessionId for sharing
+                    if (newSessionId) {
+                        setSessionId(newSessionId);
+                    }
+                    // Update URL with sessionId for bookmark/refresh support
+                    router.replace(`/result?id=${newSessionId}`, { scroll: false });
                 } catch (e: any) {
                     console.error("Async analysis error caught in component:", e);
                     // We do NOT redirect here anymore. We let the UI show the error state.

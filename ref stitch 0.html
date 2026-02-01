@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>活力几何版素颜排位赛报告</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "bg-page": "#F0EDE1", // Requested background
+                        "bg-card": "#ffffff",
+                        "geo-yellow": "#FFE17D",
+                        "geo-green": "#C4F0C5", 
+                        "geo-blue": "#C4E1F0",
+                        "geo-pink": "#F0C4D9",
+                        "text-primary": "#1A1A1A",
+                        "text-secondary": "#666666",
+                        "accent-dark": "#161513",
+                    },
+                    fontFamily: {
+                        "sans": ["Noto Sans SC", "sans-serif"],
+                        "number": ["Space Grotesk", "sans-serif"],
+                    },
+                    borderRadius: {
+                        "xl": "1rem",
+                        "2xl": "1.5rem",
+                        "3xl": "2rem",
+                        "4xl": "2.5rem",
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: "Noto Sans SC", sans-serif;
+            background-color: #F0EDE1;}
+        .font-number {
+            font-family: "Space Grotesk", "Noto Sans SC", sans-serif;
+        }.ranking-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .ranking-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .ranking-scroll::-webkit-scrollbar-thumb {
+            background-color: #d1d5db;
+            border-radius: 20px;
+        }.geo-pattern {
+            background-image: radial-gradient(#000000 1px, transparent 1px);
+            background-size: 20px 20px;
+            opacity: 0.05;
+        }
+    </style>
+</head>
+<body class="bg-bg-page text-text-primary min-h-screen flex flex-col antialiased">
+<header class="sticky top-0 z-50 px-6 lg:px-10 py-4 bg-bg-page/90 backdrop-blur-md">
+<div class="max-w-7xl mx-auto bg-white rounded-full px-6 py-3 shadow-sm border border-white/60 flex items-center justify-between">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-3 cursor-pointer group">
+<div class="size-10 bg-black rounded-full flex items-center justify-center text-white transform group-hover:rotate-12 transition-transform duration-300">
+<span class="material-symbols-outlined">face_retouching_natural</span>
+</div>
+<h2 class="text-lg font-black tracking-tight">AI美肤</h2>
+</div>
+<div class="hidden md:flex items-center bg-gray-100 rounded-full px-5 h-10 w-72 transition-all focus-within:ring-2 focus-within:ring-black/5 hover:bg-gray-50">
+<span class="material-symbols-outlined text-gray-400 text-[20px]">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-full ml-2 placeholder-gray-400" placeholder="搜索护肤成分、用户..."/>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<nav class="hidden md:flex items-center gap-6 font-bold text-sm text-gray-500">
+<a class="hover:text-black transition-colors" href="#">首页</a>
+<a class="hover:text-black transition-colors" href="#">社区</a>
+<a class="text-black bg-geo-yellow px-4 py-1.5 rounded-full transform -rotate-1 hover:rotate-0 transition-transform shadow-sm border border-black/5" href="#">我的报告</a>
+</nav>
+<div class="flex items-center gap-3 pl-4 border-l border-gray-200">
+<div class="size-10 rounded-full bg-cover bg-center border-2 border-white shadow-md cursor-pointer" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBC5mgyjM7h2qdXFvLDznberMdeIhwGx1MESnLZB3xrruHYCdnAscBklVw3gGlQPK04hi66VDwLXLl4jLrs4O9m6NbSi-tdeiMG2ZZkrRsoV_5F4MfgGTSHHzzVe7AY3vomfNC6V9Ch7pAv1qchNzQzsZ8tTp2SC8Ck-d611IRhxtWf--k7XTvSSaHP-gxL1hscBmF6LBju74QiE3ej7Yz4YsNjXVTCzNckNlVd9_HX_lNw8JMHVjaF6TA7AnK0ljWgBGmyi90g6w");'></div>
+</div>
+</div>
+</div>
+</header>
+<main class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<section class="lg:col-span-7 bg-bg-card rounded-4xl p-8 lg:p-10 shadow-lg shadow-black/5 border border-white relative overflow-hidden flex flex-col justify-between group">
+<div class="absolute top-0 right-0 w-64 h-64 bg-geo-yellow rounded-full blur-3xl opacity-40 translate-x-1/3 -translate-y-1/3"></div>
+<div class="absolute bottom-0 left-0 w-72 h-72 bg-geo-blue rounded-full blur-3xl opacity-30 -translate-x-1/4 translate-y-1/4"></div>
+<div class="absolute top-1/2 left-1/2 w-48 h-48 bg-geo-pink rounded-full blur-2xl opacity-20 transform -translate-x-1/2 -translate-y-1/2"></div>
+<div class="absolute inset-0 geo-pattern pointer-events-none"></div>
+<div class="relative z-10 flex flex-col h-full gap-8">
+<div class="space-y-6">
+<div class="inline-flex items-center gap-2 bg-geo-yellow border-2 border-black text-black px-4 py-1.5 rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transform -rotate-2 hover:rotate-0 transition-all duration-300 w-fit">
+<span class="material-symbols-outlined text-[18px]">trophy</span>
+<span class="text-sm font-black tracking-wide">本周挑战</span>
+</div>
+<div>
+<h1 class="text-4xl md:text-5xl font-black text-black leading-[1.2] mb-4">
+                            测肤大挑战
+                        </h1>
+<p class="text-text-secondary text-lg font-medium leading-relaxed max-w-md">
+                            哇！你的肌肤状态简直太棒了！<br/>
+                            你的素颜评分超越了全国 <span class="inline-block bg-black text-white px-2 py-0.5 transform -rotate-1 font-number rounded">84%</span> 的用户。
+                        </p>
+</div>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mt-auto">
+<div class="bg-white/60 backdrop-blur-sm border-2 border-gray-100 p-5 rounded-2xl flex flex-col gap-2 hover:border-geo-green hover:bg-geo-green/20 transition-all group/card">
+<div class="size-10 bg-geo-green rounded-xl flex items-center justify-center mb-2 group-hover/card:scale-110 transition-transform">
+<span class="material-symbols-outlined text-green-800">face</span>
+</div>
+<h3 class="font-bold text-lg text-black">Kiki</h3>
+<p class="text-xs font-bold text-gray-400 uppercase tracking-wider">当前用户</p>
+</div>
+<div class="bg-white/60 backdrop-blur-sm border-2 border-gray-100 p-5 rounded-2xl flex flex-col gap-2 hover:border-geo-blue hover:bg-geo-blue/20 transition-all group/card">
+<div class="size-10 bg-geo-blue rounded-full flex items-center justify-center mb-2 group-hover/card:scale-110 transition-transform">
+<span class="material-symbols-outlined text-blue-800">leaderboard</span>
+</div>
+<h3 class="font-bold text-lg text-black font-number">NO. 168</h3>
+<p class="text-xs font-bold text-gray-400 uppercase tracking-wider">全国排名</p>
+</div>
+<div class="bg-black text-white p-5 rounded-2xl flex flex-col gap-2 shadow-xl relative overflow-hidden group/card">
+<div class="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full blur-xl transform translate-x-1/2 -translate-y-1/2"></div>
+<div class="size-10 bg-white/20 rounded-lg rotate-3 flex items-center justify-center mb-2 group-hover/card:rotate-12 transition-transform">
+<span class="material-symbols-outlined">trending_up</span>
+</div>
+<h3 class="font-bold text-lg font-number">Top 5%</h3>
+<p class="text-xs font-bold text-white/60 uppercase tracking-wider">击败用户</p>
+</div>
+</div>
+<div class="pt-2">
+<button class="w-full sm:w-auto bg-black hover:bg-gray-800 text-white px-8 py-4 rounded-xl font-bold text-base transition-all shadow-lg flex items-center justify-center gap-3 active:scale-95">
+<span>分享我的战绩</span>
+<span class="material-symbols-outlined text-geo-yellow">ios_share</span>
+</button>
+</div>
+</div>
+</section>
+<section class="lg:col-span-5 bg-white rounded-4xl shadow-sm border border-white/60 overflow-hidden flex flex-col min-h-[500px]">
+<div class="p-6 pb-2">
+<div class="flex items-center bg-gray-100 p-1.5 rounded-2xl w-fit">
+<button class="px-5 py-2.5 bg-white rounded-xl shadow-sm text-black font-bold text-sm transition-all">
+                        肤质评分榜
+                    </button>
+<button class="px-5 py-2.5 text-gray-500 hover:text-black font-bold text-sm transition-all">
+                        人气榜单
+                    </button>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto ranking-scroll p-6 space-y-3">
+<div class="flex items-center justify-between p-3 bg-gradient-to-r from-yellow-50 to-white border border-yellow-100 rounded-2xl group cursor-pointer hover:shadow-md transition-all">
+<div class="flex items-center gap-4">
+<div class="relative">
+<div class="size-12 rounded-full bg-cover bg-center border-2 border-white shadow-sm" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCYwgDiLq2NmYU7cGohi_39nI6N8HL9zYNuelkZUCJj_Vn6JI61VSAhTHc8lNEz97_mMoeq_zqYqvc9MAQCVsQfY9e2ukgtnE3Vbl9uo_1ruxcc9j-142H4YdQml19YDVlrvXTQ1PS6ArU_lEqWRn1N-i41f9kBwSSqtgT-LRUsKYQcpicG-5pthpNRnmQ5jR5UL05vWUfG9hFlQl2drUu8FtQJhhPLhTIhz-e-UG9w3pCZVYufa-eCpRHMwbz3m4mONV-z2uDdyw");'></div>
+<div class="absolute -top-1 -left-1 size-6 bg-yellow-400 text-white rounded-lg rotate-12 flex items-center justify-center text-xs font-black border-2 border-white shadow-sm z-10">1</div>
+</div>
+<div>
+<span class="font-bold text-black block">Amy</span>
+<span class="text-xs text-gray-400 font-medium">上海市</span>
+</div>
+</div>
+<div class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-lg font-number font-bold text-lg">98</div>
+</div>
+<div class="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-white border border-gray-100 rounded-2xl group cursor-pointer hover:shadow-md transition-all">
+<div class="flex items-center gap-4">
+<div class="relative">
+<div class="size-12 rounded-full bg-cover bg-center border-2 border-white shadow-sm" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAvxf8h_3Ki6sJb8xvGdwKX2Ue6gkF6CT7uBiJKgaQtJubqGqggVFE7xyHOeuHrH8R4Yk0d_52wKf5r1yBBT5GbozCC5vhp0FyJkECPshqhX2Cohk4anym945hXfxPhwElpXCCwMwLhCdVaSqbzc_tmsCSYHw_Ae2VkPdXC0tFU_yyR8NINLxT5jlwDIchZ-BWsU7jn1hq1_2Nhyqtz8c0w86Gan_D4uH7Ea6_ACQJE3SDLE-5KBCksRH5ylNDNyKRyHueGUan7xw");'></div>
+<div class="absolute -top-1 -left-1 size-6 bg-gray-300 text-white rounded-lg -rotate-6 flex items-center justify-center text-xs font-black border-2 border-white shadow-sm z-10">2</div>
+</div>
+<div>
+<span class="font-bold text-black block">Lisa</span>
+<span class="text-xs text-gray-400 font-medium">北京市</span>
+</div>
+</div>
+<div class="bg-gray-100 text-gray-600 px-3 py-1 rounded-lg font-number font-bold text-lg">96</div>
+</div>
+<div class="flex items-center justify-between p-3 bg-gradient-to-r from-orange-50 to-white border border-orange-100 rounded-2xl group cursor-pointer hover:shadow-md transition-all">
+<div class="flex items-center gap-4">
+<div class="relative">
+<div class="size-12 rounded-full bg-cover bg-center border-2 border-white shadow-sm" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCn308bBG90IAA7DVcNoJc5BA40-CNPFYnaqB7z2PnehFEa8R4kQD5JZEPsIfSldsZ3VmzkLuVl3Re2KWKTRQI72lsmlxWLMDlID6JlR4Ik9ybAwq-xnYiPC7mEoklmipzgQhx8VP062KVChTQnykbJgB_h0zX81A1Wesv7yvvWvBFpprqj8juFRsq7zOokOJn0Z1WBTfsc18thebQ5W3Y3vN_pYll4WdfMWc_mAIzxQygMbRsLQ9A39jClVcWVPUmsYvhhotG0fw");'></div>
+<div class="absolute -top-1 -left-1 size-6 bg-orange-300 text-white rounded-lg rotate-3 flex items-center justify-center text-xs font-black border-2 border-white shadow-sm z-10">3</div>
+</div>
+<div>
+<span class="font-bold text-black block">Coco</span>
+<span class="text-xs text-gray-400 font-medium">杭州市</span>
+</div>
+</div>
+<div class="bg-orange-100 text-orange-700 px-3 py-1 rounded-lg font-number font-bold text-lg">95</div>
+</div>
+<div class="flex items-center justify-between p-3 hover:bg-gray-50 rounded-2xl transition-colors cursor-pointer group border border-transparent hover:border-gray-100">
+<div class="flex items-center gap-4">
+<div class="relative">
+<div class="size-12 rounded-full bg-cover bg-center grayscale opacity-80" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCU5oRgP1PJjhrk-dlYZ0tEwsPji-RmfxL-umUcvYr4FR1DQy-lLFkSyb_530RaCp-JihwF6XsR0hBtxRGw5odlHkSzO3f4aWE1CkJxl993D76uT0YufjN7MBo7SCldRE7lP2HaCHlYrFqR6wxY9ORrQdIDgDkTBg_kVLoEHq2ieNkgvvX-h4KN-8XklgIKoPQiEKp7C4WsYMCzVwMgp_HHptiD2_shReCBqXfzECh7vqFbCaPFIYpyWj-4NG_UIHpO2jZ8cLrGlA");'></div>
+<div class="absolute -top-1 -left-1 size-5 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center text-[10px] font-bold border-2 border-white">4</div>
+</div>
+<div>
+<span class="font-bold text-gray-700 block">Yuki</span>
+<span class="text-xs text-gray-400 font-medium">深圳市</span>
+</div>
+</div>
+<div class="text-gray-400 font-number font-bold text-lg">92</div>
+</div>
+<div class="flex items-center justify-between p-3 hover:bg-gray-50 rounded-2xl transition-colors cursor-pointer group border border-transparent hover:border-gray-100">
+<div class="flex items-center gap-4">
+<div class="relative">
+<div class="size-12 rounded-full bg-cover bg-center grayscale opacity-80" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDt5FLlsDae7P9bdYe9lRTnb1EpSOTCXqKTpmm8yuHHwRePaoUfcqxy5uyYthB2-bvqVvy_0AbrBAcwqef1T6M2Ol6_j-R1UU7uVoBi3PWivFw0-DX8AxpDGfhR7dm4VYaRVEYUxewbr9UqlyQXApul8XUvJBB0mkTboM8bsji0mBeKQWlSZyuXNPQupY6eTcxEK4xTWuDI9Y7cnJSqxZ14e70DYErRm80l5ADEOtfw3ncpLb-MdijK9g_y3kCaPd48UZANgV43Cg");'></div>
+<div class="absolute -top-1 -left-1 size-5 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center text-[10px] font-bold border-2 border-white">5</div>
+</div>
+<div>
+<span class="font-bold text-gray-700 block">Mia</span>
+<span class="text-xs text-gray-400 font-medium">成都市</span>
+</div>
+</div>
+<div class="text-gray-400 font-number font-bold text-lg">90</div>
+</div>
+</div>
+</section>
+<section class="lg:col-span-12 bg-white rounded-4xl p-8 lg:p-10 shadow-sm border border-white relative overflow-hidden flex flex-col md:flex-row gap-10">
+<div class="absolute -bottom-24 -right-24 size-64 bg-geo-blue rounded-full blur-3xl opacity-30"></div>
+<div class="w-full md:w-1/4 flex flex-col gap-5 z-10">
+<div class="bg-black text-white text-[10px] font-black tracking-widest px-3 py-1.5 rounded uppercase w-fit transform -rotate-2">
+                    专业版
+                </div>
+<h2 class="text-3xl font-black text-black leading-tight">
+                    12维深度<br/>肌肤检测报告
+                </h2>
+<p class="text-gray-500 text-sm font-medium leading-relaxed">
+                    基于千万级亚洲肌肤数据库，全方位解析您的肌肤问题。
+                </p>
+<button class="mt-2 bg-black text-white px-6 py-4 rounded-xl font-bold text-sm hover:scale-105 transition-transform flex items-center justify-center gap-3 w-full shadow-xl">
+<span>解锁完整报告</span>
+<span class="material-symbols-outlined text-sm">lock_open</span>
+</button>
+</div>
+<div class="w-full md:w-3/4 grid grid-cols-2 md:grid-cols-4 gap-5 z-10">
+<div class="bg-gray-50 rounded-2xl p-5 flex flex-col justify-between h-36 relative overflow-hidden group hover:bg-blue-50 transition-colors border-2 border-transparent hover:border-blue-100 cursor-pointer">
+<div class="absolute -right-4 -top-4 size-20 bg-blue-100 rounded-full opacity-50 group-hover:scale-125 transition-transform duration-500"></div>
+<div class="relative flex justify-between items-start">
+<span class="text-gray-500 text-xs font-bold uppercase tracking-wider">水分含量</span>
+<span class="material-symbols-outlined text-blue-500">water_drop</span>
+</div>
+<div class="relative">
+<span class="text-3xl font-number font-bold text-black">34<span class="text-sm text-gray-400 ml-1">%</span></span>
+<div class="w-full bg-gray-200 h-2 rounded-full mt-3 overflow-hidden">
+<div class="bg-blue-500 h-full rounded-full" style="width: 34%"></div>
+</div>
+</div>
+</div>
+<div class="bg-gray-50 rounded-2xl p-5 flex flex-col justify-between h-36 relative overflow-hidden group hover:bg-pink-50 transition-colors border-2 border-transparent hover:border-pink-100 cursor-pointer">
+<div class="absolute -right-4 -top-4 size-20 bg-pink-100 rounded-full opacity-50 group-hover:scale-125 transition-transform duration-500"></div>
+<div class="relative flex justify-between items-start">
+<span class="text-gray-500 text-xs font-bold uppercase tracking-wider">肌肤年龄</span>
+<span class="material-symbols-outlined text-pink-500">face</span>
+</div>
+<div class="relative">
+<span class="text-3xl font-number font-bold text-black">18<span class="text-sm text-gray-400 ml-1">岁</span></span>
+<p class="text-xs text-green-600 font-bold mt-2 bg-green-100 w-fit px-2 py-0.5 rounded-md">-4 岁</p>
+</div>
+</div>
+<div class="bg-gray-50 rounded-2xl p-5 flex flex-col justify-between h-36 relative overflow-hidden group hover:bg-yellow-50 transition-colors border-2 border-transparent hover:border-yellow-100 cursor-pointer">
+<div class="absolute -right-4 -top-4 size-20 bg-yellow-100 rounded-full opacity-50 group-hover:scale-125 transition-transform duration-500"></div>
+<div class="relative flex justify-between items-start">
+<span class="text-gray-500 text-xs font-bold uppercase tracking-wider">油脂分泌</span>
+<span class="material-symbols-outlined text-yellow-600">opacity</span>
+</div>
+<div class="relative">
+<span class="text-lg font-bold text-black">T区偏油</span>
+<div class="flex gap-1.5 mt-3">
+<div class="h-2 w-full bg-yellow-400 rounded-full"></div>
+<div class="h-2 w-full bg-yellow-400 rounded-full"></div>
+<div class="h-2 w-full bg-gray-200 rounded-full"></div>
+</div>
+</div>
+</div>
+<div class="bg-white rounded-2xl p-5 flex flex-col items-center justify-center h-36 relative border-2 border-dashed border-gray-300 group hover:border-black transition-colors cursor-pointer">
+<div class="absolute inset-0 bg-gray-50/50"></div>
+<div class="relative z-10 flex flex-col items-center">
+<div class="size-10 bg-black rounded-lg rotate-3 flex items-center justify-center shadow-lg mb-3 group-hover:rotate-0 transition-transform">
+<span class="material-symbols-outlined text-white text-xl">lock</span>
+</div>
+<span class="text-xs font-bold text-black">9项数据待解锁</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+
+</body></html>
