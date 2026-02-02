@@ -4,7 +4,8 @@ import { syncWishlistToServer } from '@/lib/wishlist';
 
 interface User {
     id: string;
-    email: string;
+    email?: string | null;
+    phone?: string | null;
     name?: string;
     role: string;
 }

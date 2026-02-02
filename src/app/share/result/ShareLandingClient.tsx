@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuthModal } from "@/components/auth/AuthModalContext";
+import { useAuth } from "@/hooks/useAuth";
 
 // Types
 interface LeaderboardEntry {
@@ -42,6 +44,8 @@ interface ShareLandingProps {
 
 export default function ShareLandingClient({ data }: ShareLandingProps) {
     const router = useRouter();
+    const { openAuthModal } = useAuthModal();
+    const { user } = useAuth();
     const [mounted, setMounted] = useState(false);
     const [activeTab, setActiveTab] = useState<'score' | 'pop'>('score');
     const [showModal, setShowModal] = useState(false);
@@ -152,7 +156,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                             </div>
                             <div className="flex flex-col">
                                 <h2 className="text-2xl font-bold mb-1">{data.nickname}</h2>
-                                <p className="text-sm text-[#666]">{data.isGuest ? "临时用户" : "注册用户"} · {data.city}</p>
+                                <p className="text-sm text-[#666]">{data.isGuest ? "临时用户 · " : ""}{data.city}</p>
                             </div>
                         </div>
 
@@ -286,48 +290,66 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                         </div>
                     </motion.div>
 
-                    {/* 3. Report Module (Full Width on Desktop) */}
-                    <motion.div
-                        custom={3}
-                        initial="hidden"
-                        animate="visible"
-                        variants={revealVariants}
-                        className="glass-module rounded-[32px] p-[30px] flex flex-col transition-all duration-400 relative overflow-hidden min-h-[300px] md:col-span-2"
-                    >
-                        <span className="inline-block px-4 py-1.5 rounded-full text-sm font-semibold mb-5 bg-[#00263e] text-white w-fit">
-                            专业报告
-                        </span>
-                        <h3 className="mb-5 text-xl font-bold">个性化完整版测肤报告</h3>
-
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mt-5">
-                            <div className="bg-white/50 p-5 rounded-[20px] text-center">
-                                <p className="text-[28px] font-extrabold mb-1.5">{data.skinAge || 22}岁</p>
-                                <p className="text-[13px] text-[#666]">肌肤年龄</p>
-                            </div>
-                            <div className="bg-white/50 p-5 rounded-[20px] text-center">
-                                <p className="text-[28px] font-extrabold mb-1.5 text-[#E67E22]">{data.skinType || '中性'}</p>
-                                <p className="text-[13px] text-[#666]">肤质类型</p>
-                            </div>
-                            <div className="bg-white/50 p-5 rounded-[20px] text-center">
-                                <p className="text-[28px] font-extrabold mb-1.5">良好</p>
-                                <p className="text-[13px] text-[#666]">毛孔状态</p>
-                            </div>
-                            <div className="bg-white/50 p-5 rounded-[20px] text-center">
-                                <p className="text-[28px] font-extrabold mb-1.5">轻度</p>
-                                <p className="text-[13px] text-[#666]">黑眼圈指数</p>
-                            </div>
-                        </div>
-
-                        {/* Fold Overlay */}
-                        <div className="absolute bottom-0 left-0 right-0 h-[150px] bg-gradient-to-b from-transparent to-[var(--glass-white)] flex items-end justify-center pb-[30px] backdrop-blur-[4px]">
+                    {/* 3. Report Module / Back Button */}
+                    {user ? (
+                        <motion.div
+                            custom={3}
+                            initial="hidden"
+                            animate="visible"
+                            variants={revealVariants}
+                            className="glass-module rounded-[32px] p-[30px] flex flex-col items-center justify-center transition-all duration-400 md:col-span-2"
+                        >
+                            <p className="text-[#666] mb-4">您已登录，可以查看完整报告</p>
                             <button
-                                onClick={() => router.push('/login')}
+                                onClick={() => router.push(`/result?id=${data.sessionId}`)}
                                 className="bg-[#00263e] text-white px-[30px] py-[12px] rounded-full border-none font-semibold cursor-pointer shadow-[0_10px_20px_rgba(0,38,62,0.2)] hover:scale-105 transition-transform"
                             >
-                                登录查看完整专业报告
+                                回到报告
                             </button>
-                        </div>
-                    </motion.div>
+                        </motion.div>
+                    ) : (
+                        <motion.div
+                            custom={3}
+                            initial="hidden"
+                            animate="visible"
+                            variants={revealVariants}
+                            className="glass-module rounded-[32px] p-[30px] flex flex-col transition-all duration-400 relative overflow-hidden min-h-[300px] md:col-span-2"
+                        >
+                            <span className="inline-block px-4 py-1.5 rounded-full text-sm font-semibold mb-5 bg-[#00263e] text-white w-fit">
+                                专业报告
+                            </span>
+                            <h3 className="mb-5 text-xl font-bold">个性化完整版测肤报告</h3>
+
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mt-5">
+                                <div className="bg-white/50 p-5 rounded-[20px] text-center">
+                                    <p className="text-[28px] font-extrabold mb-1.5">{data.skinAge || 22}岁</p>
+                                    <p className="text-[13px] text-[#666]">肌肤年龄</p>
+                                </div>
+                                <div className="bg-white/50 p-5 rounded-[20px] text-center">
+                                    <p className="text-[28px] font-extrabold mb-1.5 text-[#E67E22]">{data.skinType || '中性'}</p>
+                                    <p className="text-[13px] text-[#666]">肤质类型</p>
+                                </div>
+                                <div className="bg-white/50 p-5 rounded-[20px] text-center">
+                                    <p className="text-[28px] font-extrabold mb-1.5">良好</p>
+                                    <p className="text-[13px] text-[#666]">毛孔状态</p>
+                                </div>
+                                <div className="bg-white/50 p-5 rounded-[20px] text-center">
+                                    <p className="text-[28px] font-extrabold mb-1.5">轻度</p>
+                                    <p className="text-[13px] text-[#666]">黑眼圈指数</p>
+                                </div>
+                            </div>
+
+                            {/* Fold Overlay */}
+                            <div className="absolute bottom-0 left-0 right-0 h-[150px] bg-gradient-to-b from-transparent to-[var(--glass-white)] flex items-end justify-center pb-[30px] backdrop-blur-[4px]">
+                                <button
+                                    onClick={() => openAuthModal('login')}
+                                    className="bg-[#00263e] text-white px-[30px] py-[12px] rounded-full border-none font-semibold cursor-pointer shadow-[0_10px_20px_rgba(0,38,62,0.2)] hover:scale-105 transition-transform"
+                                >
+                                    登录查看完整专业报告
+                                </button>
+                            </div>
+                        </motion.div>
+                    )}
 
                 </div>
             </div>
@@ -358,13 +380,19 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                             </p>
                             <div className="flex flex-col gap-3">
                                 <button
-                                    onClick={() => router.push('/login')}
+                                    onClick={() => {
+                                        setShowModal(false);
+                                        openAuthModal('login');
+                                    }}
                                     className="p-4 rounded-2xl border-none font-semibold cursor-pointer transition-colors bg-[#00263e] text-white hover:bg-[#003859]"
                                 >
                                     登录更新本次报告
                                 </button>
                                 <button
-                                    onClick={() => router.push('/register')}
+                                    onClick={() => {
+                                        setShowModal(false);
+                                        openAuthModal('register');
+                                    }}
                                     className="p-4 rounded-2xl font-semibold cursor-pointer transition-colors bg-white border border-[#ddd] text-[#333] hover:bg-gray-50"
                                 >
                                     注册账号获得更多权益

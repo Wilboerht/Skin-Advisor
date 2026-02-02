@@ -158,7 +158,8 @@ model AdminAuditLog {
 // 普通用户 (C端)
 model User {
   id              String           @id @default(cuid())
-  email           String           @unique
+  email           String?          @unique
+  phoneNumber     String?          @unique
   password        String
   name            String?
   role            String           @default("user")

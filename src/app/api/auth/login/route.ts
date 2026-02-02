@@ -5,41 +5,41 @@ import { verifyPassword, signToken } from "@/lib/auth";
 import { z } from "zod";
 
 const LoginSchema = z.object({
-    email: z.string().email(),
+    phone: z.string().min(1),
     password: z.string().min(1)
 });
 
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { email, password } = LoginSchema.parse(body);
+        const { phone, password } = LoginSchema.parse(body);
 
-        // Find User
+        // Find User by Phone
         const user = await prisma.user.findUnique({
-            where: { email }
+            where: { phoneNumber: phone }
         });
 
         if (!user) {
-            return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+            return NextResponse.json({ error: "账号或密码错误" }, { status: 401 });
         }
 
         // Verify Password
         const isValid = await verifyPassword(password, user.password);
         if (!isValid) {
-            return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+            return NextResponse.json({ error: "账号或密码错误" }, { status: 401 });
         }
 
         // Sign Token
         const token = await signToken({
             sub: user.id,
-            email: user.email,
+            phone: user.phoneNumber,
             name: user.name,
             role: user.role
         });
 
         // Response
         const response = NextResponse.json({
-            user: { id: user.id, email: user.email, name: user.name, role: user.role }
+            user: { id: user.id, phone: user.phoneNumber, name: user.name, role: user.role }
         });
 
         response.cookies.set("auth_token", token, {

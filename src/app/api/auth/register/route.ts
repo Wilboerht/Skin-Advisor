@@ -5,46 +5,48 @@ import { hashPassword, signToken } from "@/lib/auth";
 import { z } from "zod";
 
 const RegisterSchema = z.object({
-    email: z.string().email(),
-    password: z.string().min(6),
+    phone: z.string().min(11, "手机号格式不正确"),
+    password: z.string().min(6, "密码至少6位"),
     name: z.string().min(2).optional()
 });
 
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { email, password, name } = RegisterSchema.parse(body);
+        const { phone, password, name } = RegisterSchema.parse(body);
 
         // Check if user exists
         const existing = await prisma.user.findUnique({
-            where: { email }
+            where: { phoneNumber: phone }
         });
 
         if (existing) {
-            return NextResponse.json({ error: "User already exists" }, { status: 400 });
+            return NextResponse.json({ error: "用户已存在" }, { status: 400 });
         }
 
         // Create User
+        // Note: email is optional now, we leave it null for phone registration
         const hashedPassword = await hashPassword(password);
         const user = await prisma.user.create({
             data: {
-                email,
+                phoneNumber: phone,
                 password: hashedPassword,
-                name: name || email.split('@')[0]
+                name: name || `User_${phone.slice(-4)}`,
+                role: "user"
             }
         });
 
         // Sign Token
         const token = await signToken({
             sub: user.id,
-            email: user.email,
+            phone: user.phoneNumber,
             name: user.name,
             role: user.role
         });
 
         // Return response with cookie
         const response = NextResponse.json({
-            user: { id: user.id, email: user.email, name: user.name, role: user.role }
+            user: { id: user.id, phone: user.phoneNumber, name: user.name, role: user.role }
         });
 
         response.cookies.set("auth_token", token, {

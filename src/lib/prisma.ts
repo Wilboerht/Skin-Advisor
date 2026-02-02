@@ -13,7 +13,12 @@ const prismaClientSingleton = () => {
     const { Pool } = require("pg");
     const { PrismaPg } = require("@prisma/adapter-pg");
 
-    const pool = new Pool({ connectionString: url });
+    const pool = new Pool({
+        connectionString: url,
+        max: 5, // Limit connections to prevent pool exhaustion
+        idleTimeoutMillis: 30000, // Close idle connections after 30s
+        connectionTimeoutMillis: 10000, // Timeout if can't connect in 10s
+    });
     const adapter = new PrismaPg(pool);
     return new PrismaClient({ adapter });
 };

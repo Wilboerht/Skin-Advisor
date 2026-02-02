@@ -33,6 +33,9 @@ import { ViewTransitions } from "next-view-transitions";
 
 import { ToastProvider } from "@/components/ui/Toast";
 
+import { AuthModalProvider } from "@/components/auth/AuthModalContext";
+import { AuthModal } from "@/components/auth/AuthModal";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -45,7 +48,10 @@ export default function RootLayout({
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
           <ToastProvider>
-            {children}
+            <AuthModalProvider>
+              {children}
+              <AuthModal />
+            </AuthModalProvider>
           </ToastProvider>
         </body>
       </html>

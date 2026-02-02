@@ -10,9 +10,11 @@ import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
 import { SkincareReminder } from "@/components/advisor/SkincareReminder";
 import { useToast } from "@/components/ui/Toast";
+import { useAuthModal } from "@/components/auth/AuthModalContext";
 
 export default function Home() {
   const router = useRouter();
+  const { openAuthModal } = useAuthModal();
   const toast = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const { initSession } = useAdvisorAnalytics();
@@ -24,22 +26,9 @@ export default function Home() {
     router.prefetch("/questions");
   }, [initSession, router]);
 
-  // Nickname & Avatar states
+  // Nickname state
   const [showNicknameModal, setShowNicknameModal] = useState(false);
   const [nickname, setNickname] = useState("");
-  const [selectedAvatar, setSelectedAvatar] = useState(0);
-
-  // Avatar options (8 placeholders with gradient backgrounds and emoji)
-  const avatarOptions = [
-    { bg: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", emoji: "🌸" },
-    { bg: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)", emoji: "🌺" },
-    { bg: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)", emoji: "🌊" },
-    { bg: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)", emoji: "🌿" },
-    { bg: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)", emoji: "🌻" },
-    { bg: "linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)", emoji: "🦋" },
-    { bg: "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)", emoji: "🍑" },
-    { bg: "linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%)", emoji: "💎" },
-  ];
 
   // Location/Region states
   const [showLocationModal, setShowLocationModal] = useState(false);
@@ -138,9 +127,8 @@ export default function Home() {
       toast.error("请输入您的昵称");
       return;
     }
-    // Save nickname and avatar to localStorage
+    // Save nickname to localStorage
     localStorage.setItem("advisor_nickname", nickname.trim());
-    localStorage.setItem("advisor_avatar", String(selectedAvatar));
     setShowNicknameModal(false);
     // Proceed to location modal
     setShowLocationModal(true);
@@ -162,9 +150,12 @@ export default function Home() {
               <span>{user.name || '我的档案'}</span>
             </Link>
           ) : (
-            <Link href="/login" className="flex items-center gap-2 text-sm font-medium text-[#3D4430]/80 hover:text-[#1A1A1A] transition-colors tracking-wide">
+            <button
+              onClick={() => openAuthModal('login')}
+              className="flex items-center gap-2 text-sm font-medium text-[#3D4430]/80 hover:text-[#1A1A1A] transition-colors tracking-wide bg-transparent border-none cursor-pointer"
+            >
               <span>登录 / 注册</span>
-            </Link>
+            </button>
           )}
         </div>
 
@@ -272,40 +263,13 @@ export default function Home() {
                   <X className="w-5 h-5" />
                 </button>
 
-                {/* Selected Avatar Display */}
-                <div className="flex justify-center mb-4">
-                  <div
-                    className="w-20 h-20 rounded-full flex items-center justify-center text-3xl shadow-lg transition-all duration-300"
-                    style={{ background: avatarOptions[selectedAvatar].bg }}
-                  >
-                    {avatarOptions[selectedAvatar].emoji}
-                  </div>
-                </div>
-
                 <h3 className="mb-2 text-xl font-serif text-[#1A1A1A]">
                   您好，请问怎么称呼？
                 </h3>
 
-                <p className="mb-5 text-sm text-[#5E5E5E] leading-relaxed font-light">
-                  选择头像，输入昵称，让报告更有温度
+                <p className="mb-8 text-sm text-[#5E5E5E] leading-relaxed font-light">
+                  输入昵称，让报告更有温度
                 </p>
-
-                {/* Avatar Selection Grid */}
-                <div className="grid grid-cols-4 gap-3 mb-5">
-                  {avatarOptions.map((avatar, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setSelectedAvatar(index)}
-                      className={`w-12 h-12 rounded-full flex items-center justify-center text-lg transition-all duration-200 ${selectedAvatar === index
-                        ? 'ring-2 ring-[#1A1A1A] ring-offset-2 scale-110'
-                        : 'hover:scale-105 opacity-70 hover:opacity-100'
-                        }`}
-                      style={{ background: avatar.bg }}
-                    >
-                      {avatar.emoji}
-                    </button>
-                  ))}
-                </div>
 
                 <input
                   type="text"

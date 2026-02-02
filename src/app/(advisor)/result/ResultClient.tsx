@@ -106,21 +106,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const [sideImages, setSideImages] = useState<Record<string, string>>({});
     const [userLocation, setUserLocation] = useState<{ province?: string; city?: string; lat?: number; lon?: number } | null>(null);
     const [userNickname, setUserNickname] = useState<string>("护肤达人");
-    const [userAvatar, setUserAvatar] = useState<number>(0);
     // Session ID for sharing - initialized from props or will be set after analysis
     const [sessionId, setSessionId] = useState<string | undefined>(id);
-
-    // Avatar options (Same as page.tsx)
-    const avatarOptions = [
-        { bg: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", emoji: "🌸" },
-        { bg: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)", emoji: "🌺" },
-        { bg: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)", emoji: "🌊" },
-        { bg: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)", emoji: "🌿" },
-        { bg: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)", emoji: "🌻" },
-        { bg: "linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)", emoji: "🦋" },
-        { bg: "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)", emoji: "🍑" },
-        { bg: "linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%)", emoji: "💎" },
-    ];
 
     // UI State
     const [activeRoutineTab, setActiveRoutineTab] = useState<'morning' | 'evening'>('morning');
@@ -206,15 +193,9 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     }
                 }
 
-                // Restore Nickname & Avatar
+                // Restore Nickname
                 const storedNickname = localStorage.getItem("advisor_nickname");
                 if (storedNickname) setUserNickname(storedNickname);
-
-                const storedAvatar = localStorage.getItem("advisor_avatar");
-                if (storedAvatar) {
-                    const idx = parseInt(storedAvatar);
-                    if (!isNaN(idx) && idx >= 0 && idx < 8) setUserAvatar(idx);
-                }
             } catch (e) {
                 console.error("Storage load error:", e);
             }
@@ -310,7 +291,14 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 const lonFixed = Number(userLocation.lon).toFixed(2);
                 query = `${lonFixed},${latFixed}`;
             } else if (userLocation?.city) {
-                query = `${userLocation.province || ''}${userLocation.city}`;
+                // Avoid duplication in query
+                const p = userLocation.province || '';
+                const c = userLocation.city;
+                if (p && c.startsWith(p)) {
+                    query = c;
+                } else {
+                    query = `${p}${c}`;
+                }
             } else if (userLocation?.province) {
                 // If only province (e.g. manual select might be loose), try it
                 query = userLocation.province;
@@ -332,6 +320,13 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
             // Prevent duplicate fetches
             if (query === lastFetchedQuery.current) return;
+
+            // Optimization: If we already have real data for this exact location, skip fetch
+            if (envData.isRealData && envData.location === query) {
+                lastFetchedQuery.current = query;
+                return;
+            }
+
             lastFetchedQuery.current = query;
 
             try {
@@ -399,7 +394,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     }, [result, userLocation, faceAnalysis, envData]);
 
     // Actions
-    const handleShare = async () => {
+    const handleShare = () => {
         console.log("Handle share clicked, sessionId:", sessionId);
 
         if (!sessionId) {
@@ -407,25 +402,9 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             return;
         }
 
-        try {
-            // Point to the PUBLIC share landing page
-            const url = generateShareUrl("/share/result", {
-                id: sessionId,
-                ref: "social_share"
-            });
-            console.log("Generated share URL:", url);
-            const success = await copyToClipboard(url);
-
-            if (success) {
-                toast.success("分享链接已复制！");
-                trackResultShare("link");
-            } else {
-                toast.error("复制失败，请尝试手动复制");
-            }
-        } catch (e) {
-            console.error("Share error:", e);
-            toast.error("分享功能出现异常");
-        }
+        // Navigate directly to the share page
+        trackResultShare("link");
+        router.push(`/share/result?id=${sessionId}&ref=social_share`);
     };
 
     const handleSaveLink = async () => {
@@ -835,7 +814,9 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     ))}
                                 </div>
                             </div>
-                            <h1 className={sidebarStyles.pageTitle}>肌肤诊断报告</h1>
+                            <h1 className={sidebarStyles.pageTitle}>
+                                {userNickname}{/[A-Za-z0-9]$/.test(userNickname) ? ' ' : ''}的肌肤诊断报告
+                            </h1>
 
 
 

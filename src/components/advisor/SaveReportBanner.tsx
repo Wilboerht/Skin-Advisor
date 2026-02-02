@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Link } from "next-view-transitions";
+// import { Link } from "next-view-transitions";
 import { m, AnimatePresence } from "framer-motion";
 import { Sparkles, X, ArrowRight } from "lucide-react";
+import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { useAuth } from "@/hooks/useAuth";
 
 interface SaveReportBannerProps {
@@ -12,6 +13,7 @@ interface SaveReportBannerProps {
 
 export function SaveReportBanner({ className = "" }: SaveReportBannerProps) {
     const { user, loading } = useAuth();
+    const { openAuthModal } = useAuthModal();
     const [dismissed, setDismissed] = useState(false);
     const [showBanner, setShowBanner] = useState(false);
 
@@ -56,13 +58,13 @@ export function SaveReportBanner({ className = "" }: SaveReportBannerProps) {
 
                             {/* Right: Actions */}
                             <div className="flex items-center gap-2 shrink-0">
-                                <Link
-                                    href="/register?from=result"
+                                <button
+                                    onClick={() => openAuthModal("register")}
                                     className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#37352F] text-white text-[13px] font-medium rounded-lg hover:bg-[#2F2F2F] transition-colors"
                                 >
                                     <span>免费注册</span>
                                     <ArrowRight className="w-3.5 h-3.5" />
-                                </Link>
+                                </button>
                                 <button
                                     onClick={() => setDismissed(true)}
                                     className="w-8 h-8 flex items-center justify-center rounded-lg text-[#B4B4B4] hover:text-[#787774] hover:bg-[#F7F6F3] transition-colors"

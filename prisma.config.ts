@@ -5,8 +5,11 @@
  * 本地开发: 自动使用 SQLite (file:./prisma/dev.db)
  * 生产环境: 使用 Supabase PostgreSQL (通过环境变量)
  */
-import "dotenv/config";
+import { config } from "dotenv";
 import { defineConfig } from "prisma/config";
+
+// 优先加载 .env.local
+config({ path: ".env.local" });
 
 // 获取数据库 URL
 const getDatabaseUrl = () => {
