@@ -326,8 +326,8 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                                     <span className="text-sm font-semibold text-zinc-900 truncate">
                                         {user?.name}
                                     </span>
-                                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
-                                        {user?.role === 'admin' ? 'Admin' : 'Member'}
+                                    <span className="text-[10px] font-bold text-zinc-400 tracking-widest">
+                                        {user?.role === 'admin' ? '管理员' : '正式会员'}
                                     </span>
                                 </div>
                             </div>
@@ -416,7 +416,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                                                 {user?.name?.[0]?.toUpperCase() || "👤"}
                                             </div>
                                             <h4 className="text-xl font-bold text-zinc-900">{user?.name}</h4>
-                                            <p className="text-xs text-zinc-400 mt-1 uppercase tracking-widest font-bold">Standard Member</p>
+                                            <p className="text-xs text-zinc-400 mt-1 tracking-widest font-bold">正式会员</p>
                                         </div>
 
                                         <div className="space-y-6">
@@ -469,7 +469,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                                                                 <span className="text-[10px] text-zinc-400 font-medium italic">您已获得正式会员权限</span>
                                                             </div>
                                                         </div>
-                                                        <span className="px-2 py-0.5 bg-zinc-100 rounded text-[10px] font-bold text-zinc-600 border border-zinc-200">OFFICIAL</span>
+                                                        <span className="px-2 py-0.5 bg-zinc-100 rounded text-[10px] font-bold text-zinc-600 border border-zinc-200">正式</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -488,7 +488,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                                         {loadingHistory ? (
                                             <div className="h-full flex flex-col items-center justify-center text-zinc-300 gap-3">
                                                 <Loader2 className="w-6 h-6 animate-spin" />
-                                                <span className="text-[10px] font-bold uppercase tracking-widest">Loading Records...</span>
+                                                <span className="text-[10px] font-bold tracking-widest">加载中...</span>
                                             </div>
                                         ) : auditHistory.length === 0 ? (
                                             <div className="h-full flex flex-col items-center justify-center text-center p-8">
