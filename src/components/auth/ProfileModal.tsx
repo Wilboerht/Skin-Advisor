@@ -305,101 +305,95 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
                     />
 
-                    {/* Horizontal Dashboard Modal */}
+                    {/* Main Container */}
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        transition={{ duration: 0.4, ease: [0.19, 1, 0.22, 1] }}
-                        className="relative z-10 w-full max-w-[900px] h-auto min-h-[600px] max-h-[90vh] bg-white rounded-3xl overflow-hidden flex shadow-2xl shadow-[#3D4430]/10 flex-col md:flex-row border border-[#E6E2D6]"
+                        initial={{ opacity: 0, scale: 0.98, y: 10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.98, y: 10 }}
+                        transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+                        className="relative z-10 w-full max-w-[840px] h-[600px] bg-white rounded-2xl overflow-hidden flex shadow-2xl shadow-black/10 flex-col md:flex-row border border-zinc-200"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        {/* --- LEFT SIDEBAR (Light/Beige) --- */}
-                        <div className="w-full md:w-[280px] bg-[#F5F2EA] text-[#3D4430] p-8 flex flex-col items-center flex-shrink-0 relative border-r border-[#E6E2D6]/50">
+                        {/* --- LEFT SIDEBAR (Notion Style) --- */}
+                        <div className="w-full md:w-[240px] bg-zinc-50/80 backdrop-blur-sm p-6 flex flex-col flex-shrink-0 border-r border-zinc-200/50">
 
-                            {/* Avatar Area */}
-                            <div className="mt-8 mb-4 relative">
-                                <div className="w-24 h-24 rounded-full bg-white border border-[#E6E2D6] flex items-center justify-center text-3xl font-serif text-[#3D4430] shadow-sm">
-                                    {user?.name?.[0]?.toUpperCase() || <UserIcon size={32} />}
+                            {/* User Profile Summary */}
+                            <div className="flex items-center gap-3 px-2 mb-8 mt-2">
+                                <div className="w-10 h-10 rounded-full bg-zinc-200 flex items-center justify-center text-zinc-600 font-medium text-sm border border-zinc-300/50 overflow-hidden">
+                                    {user?.name?.[0]?.toUpperCase() || <UserIcon size={18} />}
                                 </div>
-                                <div className="absolute bottom-0 right-0 bg-[#C9A86C] text-white p-1.5 rounded-full border-2 border-[#F5F2EA]">
-                                    <Sparkles size={12} fill="currentColor" />
+                                <div className="flex flex-col min-w-0">
+                                    <span className="text-sm font-semibold text-zinc-900 truncate">
+                                        {user?.name}
+                                    </span>
+                                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+                                        {user?.role === 'admin' ? 'Admin' : 'Member'}
+                                    </span>
                                 </div>
                             </div>
 
-                            <h2 className="text-xl font-serif tracking-wide text-center px-2 truncate w-full text-[#3D4430] mt-2">
-                                {user?.name}
-                            </h2>
-                            <p className="text-xs uppercase tracking-[0.25em] text-[#8C8C8C] mt-2 mb-10 font-medium">
-                                {user?.role === 'admin' ? '管理员' : '正式会员'}
-                            </p>
-
                             {/* Navigation Menu */}
-                            <div className="w-full space-y-2 flex-1">
+                            <div className="w-full space-y-1 flex-1">
+                                <p className="px-3 mb-2 text-[11px] font-bold text-zinc-400 uppercase tracking-wider">个人设置</p>
                                 <button
                                     onClick={() => setActiveTab('profile')}
-                                    className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold tracking-wider uppercase transition-all ${activeTab === 'profile'
-                                        ? "bg-white text-[#3D4430] shadow-sm ring-1 ring-[#E6E2D6] translate-x-1"
-                                        : "text-[#8C8C8C] hover:text-[#3D4430] hover:bg-white/50 hover:translate-x-1"
+                                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all ${activeTab === 'profile'
+                                        ? "bg-zinc-200/60 text-zinc-900 font-medium"
+                                        : "text-zinc-500 hover:bg-zinc-200/40 hover:text-zinc-900"
                                         }`}
                                 >
                                     <User size={16} />
-                                    <span>我的资料</span>
+                                    <span>账户资料</span>
                                 </button>
                                 <button
                                     onClick={() => setActiveTab('history')}
-                                    className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold tracking-wider uppercase transition-all ${activeTab === 'history'
-                                        ? "bg-white text-[#3D4430] shadow-sm ring-1 ring-[#E6E2D6] translate-x-1"
-                                        : "text-[#8C8C8C] hover:text-[#3D4430] hover:bg-white/50 hover:translate-x-1"
+                                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all ${activeTab === 'history'
+                                        ? "bg-zinc-200/60 text-zinc-900 font-medium"
+                                        : "text-zinc-500 hover:bg-zinc-200/40 hover:text-zinc-900"
                                         }`}
                                 >
                                     <LayoutGrid size={16} />
-                                    <span>历史记录</span>
+                                    <span>测评记录</span>
                                 </button>
                                 {notificationPermission !== "unsupported" && (
                                     <button
                                         onClick={() => setActiveTab('reminder')}
-                                        className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold tracking-wider uppercase transition-all ${activeTab === 'reminder'
-                                            ? "bg-white text-[#3D4430] shadow-sm ring-1 ring-[#E6E2D6] translate-x-1"
-                                            : "text-[#8C8C8C] hover:text-[#3D4430] hover:bg-white/50 hover:translate-x-1"
+                                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all ${activeTab === 'reminder'
+                                            ? "bg-zinc-200/60 text-zinc-900 font-medium"
+                                            : "text-zinc-500 hover:bg-zinc-200/40 hover:text-zinc-900"
                                             }`}
                                     >
                                         <Bell size={16} />
                                         <span>护肤提醒</span>
                                         {reminderSettings.enabled && (
-                                            <span className="ml-auto w-2 h-2 rounded-full bg-green-500" />
+                                            <span className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
                                         )}
                                     </button>
                                 )}
                             </div>
 
-                            {/* Logout at Bottom */}
-                            <button
-                                onClick={handleLogout}
-                                className="w-full flex items-center gap-3 px-4 py-3.5 text-[#8C8C8C] hover:text-red-500 hover:bg-red-50 rounded-xl transition-all text-sm font-medium mt-auto hover:translate-x-1"
-                            >
-                                <LogOut size={16} />
-                                <span>退出登录</span>
-                            </button>
+                            {/* Bottom Actions */}
+                            <div className="pt-4 border-t border-zinc-200/50 mt-auto">
+                                <button
+                                    onClick={handleLogout}
+                                    className="w-full flex items-center gap-3 px-3 py-2 text-zinc-500 hover:text-red-500 hover:bg-red-50/50 rounded-lg transition-all text-sm"
+                                >
+                                    <LogOut size={16} />
+                                    <span>退出登录</span>
+                                </button>
+                            </div>
                         </div>
 
-                        {/* --- RIGHT CONTENT (Light) --- */}
-                        <div className="flex-1 bg-[#FDFBF7] flex flex-col relative min-h-0">
-
+                        {/* --- RIGHT CONTENT AREA --- */}
+                        <div className="flex-1 bg-white flex flex-col min-h-0 relative">
                             {/* Header Bar */}
-                            <div className="h-16 border-b border-[#E6E2D6] flex items-center justify-between px-8 bg-white/50 backdrop-blur-sm sticky top-0 z-20">
-                                <h3 className="text-sm font-bold text-[#1A1A1A] uppercase tracking-widest flex items-center gap-2">
-                                    {activeTab === 'profile' ? (
-                                        <>个人资料</>
-                                    ) : activeTab === 'history' ? (
-                                        <>测评记录</>
-                                    ) : (
-                                        <>护肤提醒设置</>
-                                    )}
+                            <div className="h-14 flex items-center justify-between px-8 border-b border-zinc-100 sticky top-0 bg-white/80 backdrop-blur-md z-20">
+                                <h3 className="text-sm font-semibold text-zinc-900">
+                                    {activeTab === 'profile' ? '账户资料' : activeTab === 'history' ? '测评记录' : '护肤提醒'}
                                 </h3>
                                 <button
                                     onClick={onClose}
-                                    className="w-8 h-8 rounded-full flex items-center justify-center text-[#1A1A1A]/20 hover:text-[#1A1A1A] hover:bg-[#1A1A1A]/5 transition-all"
+                                    className="p-1 rounded-md hover:bg-zinc-100 text-zinc-400 hover:text-zinc-900 transition-colors"
                                 >
                                     <X size={18} />
                                 </button>
@@ -408,63 +402,82 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                             {/* Scrollable Content Area */}
                             <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-white">
 
-                                {/* PROFILE CONTENT */}
+                                {/* PROFILE CONTENT (Apple Style Grouped List) */}
                                 {activeTab === 'profile' && (
                                     <motion.div
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ duration: 0.3 }}
-                                        className="max-w-lg space-y-8"
+                                        className="max-w-2xl mx-auto space-y-8"
                                     >
-                                        {/* Name Input */}
-                                        <div className="space-y-4">
-                                            <div className="flex justify-between items-end">
-                                                <label className="text-xs font-bold text-[#8C8C8C] uppercase tracking-wider">
-                                                    昵称
-                                                </label>
-                                                {isSaving && <span className="text-xs text-[#C9A86C] flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> 保存中</span>}
+                                        {/* Avatar Section (Notion-like Huge Icon/Emoji) */}
+                                        <div className="flex flex-col items-center py-4">
+                                            <div className="w-20 h-20 rounded-full bg-zinc-100 border-4 border-white shadow-sm flex items-center justify-center text-3xl mb-3">
+                                                {user?.name?.[0]?.toUpperCase() || "👤"}
                                             </div>
-                                            <div className="relative group">
-                                                <input
-                                                    type="text"
-                                                    value={editName}
-                                                    onChange={(e) => setEditName(e.target.value)}
-                                                    onBlur={handleSaveProfile}
-                                                    className="w-full bg-[#FAF9F6] border border-[#E6E2D6] rounded-xl px-6 py-4 text-[#1A1A1A] font-medium transition-all focus:border-[#C9A86C] focus:ring-4 focus:ring-[#C9A86C]/5 outline-none text-lg"
-                                                    placeholder="请输入您的昵称"
-                                                />
-                                            </div>
-                                            <p className="text-xs text-[#8C8C8C]/80">
-                                                这是一个公开显示的名称，您可以随时更改。
-                                            </p>
+                                            <h4 className="text-xl font-bold text-zinc-900">{user?.name}</h4>
+                                            <p className="text-xs text-zinc-400 mt-1 uppercase tracking-widest font-bold">Standard Member</p>
                                         </div>
 
-                                        {/* Info Grid */}
-                                        <div className="grid grid-cols-2 gap-4 pt-4">
-                                            <div className="bg-[#FAF9F6] p-5 rounded-xl border border-[#E6E2D6] space-y-2 hover:border-[#C9A86C]/30 transition-colors">
-                                                <div className="text-xs font-bold text-[#8C8C8C] uppercase tracking-wider mb-2">
-                                                    绑定手机
-                                                </div>
-                                                <div className="flex items-center gap-2 text-[#1A1A1A] font-medium">
-                                                    <Smartphone size={16} className="text-[#C9A86C]" />
-                                                    <span className="truncate">{user?.phone || "暂无手机号"}</span>
+                                        <div className="space-y-6">
+                                            {/* Group 1: Identity */}
+                                            <div>
+                                                <h5 className="px-4 mb-2 text-[11px] font-bold text-zinc-400 uppercase tracking-wider">个人信息</h5>
+                                                <div className="bg-zinc-50/50 rounded-2xl border border-zinc-200/60 overflow-hidden">
+                                                    {/* Row: Name */}
+                                                    <div className="px-4 py-4 flex items-center justify-between bg-white border-b border-zinc-100">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-xs font-bold text-zinc-400 uppercase tracking-tight mb-0.5">昵称</span>
+                                                            <input
+                                                                type="text"
+                                                                value={editName}
+                                                                onChange={(e) => setEditName(e.target.value)}
+                                                                onBlur={handleSaveProfile}
+                                                                className="text-sm font-medium text-zinc-900 bg-transparent outline-none focus:text-blue-600 transition-colors w-full"
+                                                                placeholder="设置您的昵称"
+                                                            />
+                                                        </div>
+                                                        {isSaving ? (
+                                                            <Loader2 size={14} className="animate-spin text-zinc-400" />
+                                                        ) : (
+                                                            <ChevronRight size={14} className="text-zinc-300" />
+                                                        )}
+                                                    </div>
+
+                                                    {/* Row: Phone */}
+                                                    <div className="px-4 py-4 flex items-center justify-between bg-white">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-xs font-bold text-zinc-400 uppercase tracking-tight mb-0.5">绑定手机</span>
+                                                            <span className="text-sm font-medium text-zinc-900">{user?.phone || "未绑定手机"}</span>
+                                                        </div>
+                                                        <Smartphone size={16} className="text-zinc-300" />
+                                                    </div>
                                                 </div>
                                             </div>
 
-                                            <div className="bg-[#FAF9F6] p-5 rounded-xl border border-[#E6E2D6] space-y-2 hover:border-[#C9A86C]/30 transition-colors">
-                                                <div className="text-xs font-bold text-[#8C8C8C] uppercase tracking-wider mb-2">
-                                                    当前身份
-                                                </div>
-                                                <div className="flex items-center gap-2 text-[#1A1A1A] font-medium">
-                                                    <Sparkles size={16} className="text-[#C9A86C]" />
-                                                    <span>{user?.role === 'admin' ? '管理员' : '正式会员'}</span>
+                                            {/* Group 2: Account Level */}
+                                            <div>
+                                                <h5 className="px-4 mb-2 text-[11px] font-bold text-zinc-400 uppercase tracking-wider">账户权限</h5>
+                                                <div className="bg-zinc-50/50 rounded-2xl border border-zinc-200/60 overflow-hidden">
+                                                    <div className="px-4 py-4 flex items-center justify-between bg-white">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-8 h-8 rounded-lg bg-zinc-900 flex items-center justify-center text-white">
+                                                                <Sparkles size={14} fill="currentColor" />
+                                                            </div>
+                                                            <div className="flex flex-col">
+                                                                <span className="text-sm font-semibold text-zinc-900">会员等级</span>
+                                                                <span className="text-[10px] text-zinc-400 font-medium italic">您已获得正式会员权限</span>
+                                                            </div>
+                                                        </div>
+                                                        <span className="px-2 py-0.5 bg-zinc-100 rounded text-[10px] font-bold text-zinc-600 border border-zinc-200">OFFICIAL</span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </motion.div>
                                 )}
 
-                                {/* HISTORY CONTENT (GRID LAYOUT) */}
+                                {/* HISTORY CONTENT (Notion Gallery Style) */}
                                 {activeTab === 'history' && (
                                     <motion.div
                                         initial={{ opacity: 0, y: 10 }}
@@ -473,31 +486,31 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                                         className="h-full"
                                     >
                                         {loadingHistory ? (
-                                            <div className="h-full flex flex-col items-center justify-center text-[#1A1A1A]/20 gap-3">
-                                                <Loader2 className="w-8 h-8 animate-spin" />
-                                                <span className="text-xs font-medium uppercase tracking-widest">加载中...</span>
+                                            <div className="h-full flex flex-col items-center justify-center text-zinc-300 gap-3">
+                                                <Loader2 className="w-6 h-6 animate-spin" />
+                                                <span className="text-[10px] font-bold uppercase tracking-widest">Loading Records...</span>
                                             </div>
                                         ) : auditHistory.length === 0 ? (
                                             <div className="h-full flex flex-col items-center justify-center text-center p-8">
-                                                <div className="w-20 h-20 bg-[#FDFBF7] rounded-full flex items-center justify-center mb-6 shadow-sm border border-[#E6E2D6]">
-                                                    <Clock className="w-8 h-8 text-[#1A1A1A]/10" />
+                                                <div className="w-16 h-16 bg-zinc-50 rounded-2xl flex items-center justify-center mb-4 border border-zinc-100">
+                                                    <Clock className="w-6 h-6 text-zinc-300" />
                                                 </div>
-                                                <h4 className="text-[#1A1A1A] font-serif text-lg mb-2">暂无记录</h4>
-                                                <p className="text-[#8C8C8C] text-sm max-w-[200px] mb-8">
-                                                    您还没有进行过皮肤测评。开始您的第一次分析吧。
+                                                <h4 className="text-zinc-900 font-bold mb-1">暂无测评记录</h4>
+                                                <p className="text-zinc-400 text-xs mb-6 max-w-[200px]">
+                                                    开始您的第一次 AI 皮肤分析，记录您的护肤历程。
                                                 </p>
                                                 <button
                                                     onClick={() => {
                                                         onClose();
                                                         router.push("/questions");
                                                     }}
-                                                    className="px-8 py-3 bg-[#1A1A1A] text-white rounded-xl text-xs font-bold tracking-widest uppercase hover:bg-[#333] transition-colors"
+                                                    className="px-6 py-2 bg-zinc-900 text-white rounded-lg text-xs font-bold hover:bg-zinc-800 transition-colors"
                                                 >
-                                                    开始测评
+                                                    立即测速
                                                 </button>
                                             </div>
                                         ) : (
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4">
+                                            <div className="grid grid-cols-2 gap-4 pb-4">
                                                 {auditHistory.map((session, i) => (
                                                     <Link
                                                         href={`/result?id=${session.sessionId}`}
@@ -505,42 +518,33 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                                                         className="group"
                                                     >
                                                         <motion.div
-                                                            initial={{ opacity: 0, scale: 0.9 }}
-                                                            animate={{ opacity: 1, scale: 1 }}
+                                                            initial={{ opacity: 0, y: 10 }}
+                                                            animate={{ opacity: 1, y: 0 }}
                                                             transition={{ delay: i * 0.05 }}
-                                                            className="bg-white p-5 rounded-2xl border border-[#E6E2D6] hover:border-[#C9A86C]/50 hover:shadow-xl hover:shadow-[#C9A86C]/5 transition-all duration-300 relative overflow-hidden h-full flex flex-col justify-between group-hover:-translate-y-1"
+                                                            className="bg-white p-5 rounded-2xl border border-zinc-200 hover:border-zinc-400 hover:shadow-sm transition-all duration-200 h-full flex flex-col gap-3 relative"
                                                         >
-                                                            {/* Top Info */}
-                                                            <div>
-                                                                <div className="flex justify-between items-start mb-3">
-                                                                    <div className="flex items-center gap-1.5 text-xs font-bold text-[#8C8C8C] uppercase tracking-wider bg-[#F5F5F5] px-2 py-1 rounded-md group-hover:bg-[#C9A86C]/10 group-hover:text-[#C9A86C] transition-colors">
-                                                                        <Calendar size={10} />
-                                                                        {new Date(session.completedAt).toLocaleDateString()}
-                                                                    </div>
-                                                                    <div className={`text-lg font-bold font-serif ${session.analysisResult?.faceAnalysis?.overallScore >= 80 ? 'text-green-600' :
-                                                                        session.analysisResult?.faceAnalysis?.overallScore >= 60 ? 'text-[#C9A86C]' : 'text-red-500'
-                                                                        }`}>
-                                                                        {session.analysisResult?.faceAnalysis?.overallScore}
-                                                                        <span className="text-xs font-sans font-normal text-[#1A1A1A]/20 ml-0.5">分</span>
-                                                                    </div>
+                                                            <div className="flex justify-between items-start">
+                                                                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider px-2 py-0.5 bg-zinc-50 rounded">
+                                                                    {new Date(session.completedAt).toLocaleDateString()}
+                                                                </span>
+                                                                <div className="text-2xl font-bold tracking-tighter text-zinc-900">
+                                                                    {session.analysisResult?.faceAnalysis?.overallScore || '--'}
+                                                                    <span className="text-[10px] text-zinc-300 ml-0.5 font-normal">pts</span>
                                                                 </div>
-
-                                                                <h4 className="text-base font-bold text-[#1A1A1A] mb-1">
-                                                                    {session.analysisResult?.skinProfile?.typeLabel || "肤质类型"}
-                                                                </h4>
-                                                                <p className="text-xs text-[#8C8C8C] line-clamp-1">
-                                                                    点击查看详细分析报告...
-                                                                </p>
                                                             </div>
 
-                                                            {/* Bottom Action */}
-                                                            <div className="mt-4 pt-4 border-t border-[#F5F5F5] flex justify-between items-center">
-                                                                <span className="text-xs text-[#1A1A1A]/30 font-medium">
-                                                                    {new Date(session.completedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                                </span>
-                                                                <div className="w-6 h-6 rounded-full bg-[#F5F5F5] flex items-center justify-center text-[#1A1A1A]/20 group-hover:bg-[#1A1A1A] group-hover:text-white transition-all">
-                                                                    <ChevronRight size={14} />
+                                                            <div className="mt-auto">
+                                                                <h4 className="text-sm font-bold text-zinc-900 group-hover:text-blue-600 transition-colors">
+                                                                    {session.analysisResult?.skinProfile?.typeLabel || "皮肤深度分析"}
+                                                                </h4>
+                                                                <div className="flex items-center gap-2 mt-1">
+                                                                    <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                                                                    <span className="text-[10px] text-zinc-400">已生成详细报告</span>
                                                                 </div>
+                                                            </div>
+
+                                                            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                <ChevronRight size={14} className="text-zinc-400" />
                                                             </div>
                                                         </motion.div>
                                                     </Link>
@@ -550,135 +554,106 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                                     </motion.div>
                                 )}
 
-                                {/* REMINDER SETTINGS CONTENT */}
+                                {/* REMINDER SETTINGS (iOS Style) */}
                                 {activeTab === 'reminder' && (
                                     <motion.div
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ duration: 0.3 }}
-                                        className="max-w-lg space-y-6"
+                                        className="max-w-2xl mx-auto space-y-8"
                                     >
-                                        {/* Enable Toggle */}
-                                        <div className="flex items-center justify-between p-5 bg-[#FAF9F6] rounded-xl border border-[#E6E2D6]">
-                                            <div className="flex items-center gap-3">
-                                                {reminderSettings.enabled ? (
-                                                    <div className="w-10 h-10 rounded-full bg-[#3D4430]/10 flex items-center justify-center">
-                                                        <Bell className="w-5 h-5 text-[#3D4430]" />
-                                                    </div>
-                                                ) : (
-                                                    <div className="w-10 h-10 rounded-full bg-[#1A1A1A]/5 flex items-center justify-center">
-                                                        <BellOff className="w-5 h-5 text-[#1A1A1A]/40" />
-                                                    </div>
-                                                )}
-                                                <div>
-                                                    <span className="text-sm font-bold text-[#1A1A1A]">开启提醒</span>
-                                                    <p className="text-xs text-[#8C8C8C] mt-0.5">
-                                                        {reminderSettings.enabled ? "提醒已开启" : "提醒已关闭"}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <button
-                                                onClick={toggleReminderEnabled}
-                                                className={`w-12 h-6 rounded-full transition-all relative ${reminderSettings.enabled ? "bg-[#3D4430]" : "bg-[#1A1A1A]/20"
-                                                    }`}
-                                            >
-                                                <span
-                                                    className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${reminderSettings.enabled ? "translate-x-7" : "translate-x-1"
-                                                        }`}
-                                                />
-                                            </button>
-                                        </div>
-
-                                        {/* Time Settings */}
-                                        <div className="space-y-4">
-                                            <h4 className="text-xs font-bold text-[#8C8C8C] uppercase tracking-wider">
-                                                提醒时间
-                                            </h4>
-
-                                            {/* Morning */}
-                                            <div className={`p-5 rounded-xl border transition-all ${reminderSettings.morningEnabled
-                                                ? "border-[#E6E2D6] bg-[#FAF9F6]"
-                                                : "border-[#E6E2D6]/50 bg-[#FAF9F6]/50 opacity-60"
-                                                }`}
-                                            >
-                                                <div className="flex items-center justify-between mb-4">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
-                                                            <Sun className="w-4 h-4 text-amber-500" />
+                                        <div className="space-y-6">
+                                            {/* Group 1: General Toggle */}
+                                            <div>
+                                                <h5 className="px-4 mb-2 text-[11px] font-bold text-zinc-400 uppercase tracking-wider">全局设置</h5>
+                                                <div className="bg-white rounded-2xl border border-zinc-200 overflow-hidden">
+                                                    <div className="px-4 py-4 flex items-center justify-between">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${reminderSettings.enabled ? 'bg-blue-500 text-white' : 'bg-zinc-100 text-zinc-400'}`}>
+                                                                <Bell size={16} />
+                                                            </div>
+                                                            <div className="flex flex-col">
+                                                                <span className="text-sm font-semibold text-zinc-900">开启护肤提醒</span>
+                                                                <span className="text-[10px] text-zinc-400 font-medium">在设定的时间通过浏览器通知您</span>
+                                                            </div>
                                                         </div>
-                                                        <span className="font-medium text-[#1A1A1A]">早间提醒</span>
+                                                        <button
+                                                            onClick={toggleReminderEnabled}
+                                                            className={`w-11 h-6 rounded-full transition-colors relative duration-200 ease-in-out ${reminderSettings.enabled ? 'bg-[#34C759]' : 'bg-zinc-200'}`}
+                                                        >
+                                                            <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200 ${reminderSettings.enabled ? 'translate-x-[20px]' : 'translate-x-0'}`} />
+                                                        </button>
                                                     </div>
-                                                    <button
-                                                        onClick={() => saveReminderSettings({ ...reminderSettings, morningEnabled: !reminderSettings.morningEnabled })}
-                                                        className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${reminderSettings.morningEnabled
-                                                            ? "bg-[#3D4430] border-[#3D4430] text-white"
-                                                            : "border-[#1A1A1A]/20"
-                                                            }`}
-                                                    >
-                                                        {reminderSettings.morningEnabled && <Check className="w-3 h-3" />}
-                                                    </button>
                                                 </div>
-                                                <input
-                                                    type="time"
-                                                    value={reminderSettings.morningTime}
-                                                    onChange={(e) => saveReminderSettings({ ...reminderSettings, morningTime: e.target.value })}
-                                                    disabled={!reminderSettings.morningEnabled}
-                                                    className="w-full px-4 py-3 text-sm border border-[#E6E2D6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3D4430]/20 focus:border-[#3D4430] disabled:opacity-50 bg-white"
-                                                />
                                             </div>
 
-                                            {/* Evening */}
-                                            <div className={`p-5 rounded-xl border transition-all ${reminderSettings.eveningEnabled
-                                                ? "border-[#E6E2D6] bg-[#FAF9F6]"
-                                                : "border-[#E6E2D6]/50 bg-[#FAF9F6]/50 opacity-60"
-                                                }`}
-                                            >
-                                                <div className="flex items-center justify-between mb-4">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
-                                                            <Moon className="w-4 h-4 text-indigo-500" />
+                                            {/* Group 2: Time Settings */}
+                                            <div>
+                                                <h5 className="px-4 mb-2 text-[11px] font-bold text-zinc-400 uppercase tracking-wider">提醒计划</h5>
+                                                <div className="bg-white rounded-2xl border border-zinc-200 overflow-hidden divide-y divide-zinc-100">
+                                                    {/* Morning Row */}
+                                                    <div className={`px-4 py-4 flex items-center justify-between transition-opacity ${reminderSettings.morningEnabled ? 'opacity-100' : 'opacity-40'}`}>
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-8 h-8 rounded-lg bg-orange-100 text-orange-500 flex items-center justify-center">
+                                                                <Sun size={16} />
+                                                            </div>
+                                                            <div className="flex flex-col">
+                                                                <span className="text-sm font-semibold text-zinc-900">早间护肤</span>
+                                                                <input
+                                                                    type="time"
+                                                                    value={reminderSettings.morningTime}
+                                                                    onChange={(e) => saveReminderSettings({ ...reminderSettings, morningTime: e.target.value })}
+                                                                    className="text-[10px] font-bold text-blue-600 bg-transparent outline-none p-0 cursor-pointer"
+                                                                />
+                                                            </div>
                                                         </div>
-                                                        <span className="font-medium text-[#1A1A1A]">晚间提醒</span>
+                                                        <button
+                                                            onClick={() => saveReminderSettings({ ...reminderSettings, morningEnabled: !reminderSettings.morningEnabled })}
+                                                            className={`w-11 h-6 rounded-full transition-colors relative duration-200 ease-in-out ${reminderSettings.morningEnabled ? 'bg-[#34C759]' : 'bg-zinc-200'}`}
+                                                        >
+                                                            <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200 ${reminderSettings.morningEnabled ? 'translate-x-[20px]' : 'translate-x-0'}`} />
+                                                        </button>
                                                     </div>
-                                                    <button
-                                                        onClick={() => saveReminderSettings({ ...reminderSettings, eveningEnabled: !reminderSettings.eveningEnabled })}
-                                                        className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${reminderSettings.eveningEnabled
-                                                            ? "bg-[#3D4430] border-[#3D4430] text-white"
-                                                            : "border-[#1A1A1A]/20"
-                                                            }`}
-                                                    >
-                                                        {reminderSettings.eveningEnabled && <Check className="w-3 h-3" />}
-                                                    </button>
+
+                                                    {/* Evening Row */}
+                                                    <div className={`px-4 py-4 flex items-center justify-between transition-opacity ${reminderSettings.eveningEnabled ? 'opacity-100' : 'opacity-40'}`}>
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                                                                <Moon size={16} />
+                                                            </div>
+                                                            <div className="flex flex-col">
+                                                                <span className="text-sm font-semibold text-zinc-900">晚间护肤</span>
+                                                                <input
+                                                                    type="time"
+                                                                    value={reminderSettings.eveningTime}
+                                                                    onChange={(e) => saveReminderSettings({ ...reminderSettings, eveningTime: e.target.value })}
+                                                                    className="text-[10px] font-bold text-blue-600 bg-transparent outline-none p-0 cursor-pointer"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => saveReminderSettings({ ...reminderSettings, eveningEnabled: !reminderSettings.eveningEnabled })}
+                                                            className={`w-11 h-6 rounded-full transition-colors relative duration-200 ease-in-out ${reminderSettings.eveningEnabled ? 'bg-[#34C759]' : 'bg-zinc-200'}`}
+                                                        >
+                                                            <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200 ${reminderSettings.eveningEnabled ? 'translate-x-[20px]' : 'translate-x-0'}`} />
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                                <input
-                                                    type="time"
-                                                    value={reminderSettings.eveningTime}
-                                                    onChange={(e) => saveReminderSettings({ ...reminderSettings, eveningTime: e.target.value })}
-                                                    disabled={!reminderSettings.eveningEnabled}
-                                                    className="w-full px-4 py-3 text-sm border border-[#E6E2D6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3D4430]/20 focus:border-[#3D4430] disabled:opacity-50 bg-white"
-                                                />
                                             </div>
-                                        </div>
 
-                                        {/* Test Button */}
-                                        <button
-                                            onClick={testNotification}
-                                            className="w-full px-6 py-4 text-sm font-bold text-[#3D4430] bg-[#3D4430]/10 rounded-xl hover:bg-[#3D4430]/20 transition-colors"
-                                        >
-                                            发送测试通知
-                                        </button>
-
-                                        {notificationPermission === "denied" && (
-                                            <div className="p-4 bg-red-50 border border-red-100 rounded-xl">
-                                                <p className="text-sm text-red-600 text-center">
-                                                    通知权限被拒绝，请在浏览器设置中开启
+                                            {/* Test Section */}
+                                            <div className="flex flex-col items-center gap-4 py-4">
+                                                <button
+                                                    onClick={testNotification}
+                                                    className="text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors"
+                                                >
+                                                    发送测试通知
+                                                </button>
+                                                <p className="text-[10px] text-zinc-400 max-w-[260px] text-center italic">
+                                                    如果无法收到通知，请检查浏览器地址栏左侧的“权限设置”是否已允许通知权限。
                                                 </p>
                                             </div>
-                                        )}
-
-                                        <p className="text-xs text-[#8C8C8C] text-center pt-4">
-                                            提醒会在设定时间通过浏览器通知发送给您
-                                        </p>
+                                        </div>
                                     </motion.div>
                                 )}
                             </div>
