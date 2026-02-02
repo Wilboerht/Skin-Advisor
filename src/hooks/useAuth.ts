@@ -1,5 +1,5 @@
 
-import { useState, useEffect, createContext, useContext } from 'react';
+import { useState, useEffect } from 'react';
 import { syncWishlistToServer } from '@/lib/wishlist';
 
 interface User {
@@ -10,20 +10,48 @@ interface User {
     role: string;
 }
 
-interface AuthContextType {
-    user: User | null;
-    loading: boolean;
-    login: (data: any) => Promise<void>;
-    register: (data: any) => Promise<void>;
-    logout: () => Promise<void>;
+const AUTH_CACHE_KEY = 'auth_user_cache';
+const AUTH_CACHE_EXPIRY_KEY = 'auth_user_cache_expiry';
+const CACHE_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+// Get cached user from localStorage
+function getCachedUser(): User | null {
+    if (typeof window === 'undefined') return null;
+    try {
+        const expiry = localStorage.getItem(AUTH_CACHE_EXPIRY_KEY);
+        if (expiry && Date.now() > parseInt(expiry, 10)) {
+            // Cache expired
+            localStorage.removeItem(AUTH_CACHE_KEY);
+            localStorage.removeItem(AUTH_CACHE_EXPIRY_KEY);
+            return null;
+        }
+        const cached = localStorage.getItem(AUTH_CACHE_KEY);
+        return cached ? JSON.parse(cached) : null;
+    } catch {
+        return null;
+    }
 }
 
-// Global state using SWR or Context is common. Here's a simple context.
-// In a real app, use SWR/TanStack Query for /api/auth/me
+// Set user cache
+function setCachedUser(user: User | null) {
+    if (typeof window === 'undefined') return;
+    try {
+        if (user) {
+            localStorage.setItem(AUTH_CACHE_KEY, JSON.stringify(user));
+            localStorage.setItem(AUTH_CACHE_EXPIRY_KEY, String(Date.now() + CACHE_DURATION_MS));
+        } else {
+            localStorage.removeItem(AUTH_CACHE_KEY);
+            localStorage.removeItem(AUTH_CACHE_EXPIRY_KEY);
+        }
+    } catch {
+        // Ignore storage errors
+    }
+}
 
 export function useAuth() {
-    const [user, setUser] = useState<User | null>(null);
-    const [loading, setLoading] = useState(true);
+    // Initialize with cached user for instant display
+    const [user, setUser] = useState<User | null>(() => getCachedUser());
+    const [loading, setLoading] = useState(() => getCachedUser() === null);
 
     useEffect(() => {
         checkSession();
@@ -35,9 +63,14 @@ export function useAuth() {
             if (res.ok) {
                 const data = await res.json();
                 setUser(data.user);
+                setCachedUser(data.user);
+            } else {
+                setUser(null);
+                setCachedUser(null);
             }
         } catch (e) {
             console.error("Session check failed", e);
+            // Keep cached user on network error
         } finally {
             setLoading(false);
         }
@@ -52,6 +85,7 @@ export function useAuth() {
         if (!res.ok) throw new Error("Login failed");
         const data = await res.json();
         setUser(data.user);
+        setCachedUser(data.user);
 
         // Sync wishlist
         if (data.user?.id) {
@@ -68,6 +102,7 @@ export function useAuth() {
         if (!res.ok) throw new Error("Registration failed");
         const data = await res.json();
         setUser(data.user);
+        setCachedUser(data.user);
 
         // Sync wishlist on register too (in case they added items before registering)
         if (data.user?.id) {
@@ -78,6 +113,7 @@ export function useAuth() {
     const logout = async () => {
         await fetch("/api/auth/logout", { method: "POST" });
         setUser(null);
+        setCachedUser(null);
     };
 
     return { user, loading, login, register, logout, refresh: checkSession };
