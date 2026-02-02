@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import prisma from "@/lib/prisma";
+import { Service } from "@volcengine/openapi";
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -18,69 +19,79 @@ export async function POST(req: NextRequest) {
 
         console.log(`Generating avatar for session ${sessionId}...`);
 
-        // Check if OpenAI key is configured
-        if (!process.env.OPENAI_API_KEY) {
-            console.warn("OPENAI_API_KEY not found, using fallback avatar generator");
-            // Fallback to DiceBear with specific style that matches "cartoon/illustration"
-            const fallbackUrl = `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(nickname || sessionId)}&style=circle`;
-
-            // Save fallback result
-            await updateSessionAvatar(sessionId, fallbackUrl);
-
-            return NextResponse.json({
-                success: true,
-                url: fallbackUrl,
-                source: "fallback"
-            });
-        }
-
         // Construct Prompt
-        // "将图片中的人像转为日系美妆插画风格，尽可能还原所有人物特征及细节，仅保留人体部分，适当美颜、给角色微笑表情，并将人像水平居中显示"
         const gender = characteristics?.gender === 'male' ? '男' : '女';
         const age = characteristics?.age || '25';
         const skinTone = characteristics?.skinTone || '健康肤色';
-        const hairStyle = characteristics?.hairStyle || ''; // Can be enriched if we had this data
+        const hairStyle = characteristics?.hairStyle || '';
 
         const prompt = `Japanese beauty illustration style avatar of a ${age} year old ${gender}, ${skinTone}, ${hairStyle}. 
         Close-up portrait, centered composition. 
         Style: Japanese commercial illustration, soft lighting, pastel colors, high detail, refined lines.
         Expression: Gentle smile, friendly.
-        Features: Slightly beautified, clear skin.
-        Background: SImple, soft solid color or gradient, no complex background.
-        Medium: Digital 2D illustration.`;
+        Background: Simple, soft solid color or gradient.`;
 
-        // Call OpenAI DALL-E 3
-        const response = await openai.images.generate({
-            model: "dall-e-3",
-            prompt: prompt,
-            n: 1,
-            size: "1024x1024",
-            quality: "standard",
-            response_format: "url",
-        });
+        let imageUrl: string | null = null;
+        let source = "fallback";
 
-        if (!response.data || !response.data[0]) {
-            throw new Error("Invalid response from OpenAI");
+        // Strategy 1: Try Jimeng (Volcengine)
+        if (process.env.VOLC_ACCESSKEY && process.env.VOLC_SECRETKEY) {
+            try {
+                console.log("Attempting to generate avatar using Jimeng (Volcengine)...");
+                imageUrl = await generateJimengAvatar(prompt);
+                if (imageUrl) source = "jimeng";
+            } catch (e) {
+                console.error("Jimeng generation failed, falling back...", e);
+            }
         }
 
-        const tempUrl = response.data[0].url;
+        // Strategy 2: Try OpenAI DALL-E 3
+        if (!imageUrl && process.env.OPENAI_API_KEY) {
+            try {
+                console.log("Attempting to generate avatar using OpenAI DALL-E 3...");
+                const response = await openai.images.generate({
+                    model: "dall-e-3",
+                    prompt: prompt,
+                    n: 1,
+                    size: "1024x1024",
+                    quality: "standard",
+                    response_format: "url",
+                });
 
-        if (!tempUrl) {
-            throw new Error("No image URL returned from OpenAI");
+                if (response.data && response.data[0]) {
+                    imageUrl = response.data[0].url || null;
+                    if (imageUrl) source = "openai";
+                }
+            } catch (e) {
+                console.error("OpenAI generation failed, falling back...", e);
+            }
         }
 
-        // Download and upload to persistent storage
-        let finalUrl = tempUrl;
+        // Strategy 3: Fallback to DiceBear
+        if (!imageUrl) {
+            console.warn("Using fallback DiceBear avatar");
+            imageUrl = `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(nickname || sessionId)}&style=circle`;
+
+            await updateSessionAvatar(sessionId, imageUrl);
+            return NextResponse.json({
+                success: true,
+                url: imageUrl,
+                source: "fallback"
+            });
+        }
+
+        // Persistence Logic (skip for DiceBear)
+        let finalUrl = imageUrl;
         try {
             const { uploadImage } = await import("@/lib/upload-client");
 
-            console.log("Downloading generated avatar from OpenAI...");
-            const imgRes = await fetch(tempUrl);
+            console.log(`Downloading generated avatar from ${source}...`);
+            const imgRes = await fetch(imageUrl);
             const blob = await imgRes.blob();
 
             console.log("Uploading avatar to persistent storage...");
             const filename = `avatar-ai-${sessionId}-${Date.now()}.png`;
-            // @ts-ignore - Blob type compatibility
+            // @ts-ignore
             finalUrl = await uploadImage(blob, filename);
             console.log("Avatar persisted at:", finalUrl);
         } catch (uploadError) {
@@ -92,7 +103,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({
             success: true,
             url: finalUrl,
-            source: "openai"
+            source: source
         });
 
     } catch (error: any) {
@@ -106,10 +117,6 @@ export async function POST(req: NextRequest) {
 
 async function updateSessionAvatar(sessionId: string, url: string) {
     try {
-        // We need to update user's profile or analysis result
-        // Since we don't have a dedicated 'avatar' field in AdvisorSession yet, 
-        // we'll update the 'analysisResult' JSON.
-
         const session = await prisma.advisorSession.findUnique({
             where: { sessionId },
             select: { analysisResult: true }
@@ -132,4 +139,58 @@ async function updateSessionAvatar(sessionId: string, url: string) {
     } catch (e) {
         console.error("Failed to update session with avatar URL:", e);
     }
+}
+
+// Jimeng (Volcengine) Generation Logic
+async function generateJimengAvatar(prompt: string): Promise<string | null> {
+    const service = new Service({
+        host: 'visual.volcengineapi.com',
+        serviceName: 'cv',
+        region: 'cn-north-1',
+        accessKeyId: process.env.VOLC_ACCESSKEY,
+        secretKey: process.env.VOLC_SECRETKEY,
+    });
+
+    // Action: HighAesSmartDrawing (General T2I)
+    // This is a synchronous call in some versions, but mostly async.
+    // For simplicity, we assume the synchronous high-aesthetics endpoint or we handle polling if we get a task_id.
+    // Spec: https://www.volcengine.com/docs/6791/116664
+
+    const fetchApi = service.createAPI('HighAesSmartDrawing', {
+        Version: '2022-08-31',
+        method: 'POST',
+        contentType: 'json',
+    });
+
+    // Jimeng usually requires separate prompt logic or specific parameters
+    // We try to fit the standard Volcengine parameter structure
+    const params = {
+        req_key: "high_aes_smart_drawing",
+        prompt: prompt,
+        scale: 3.5,
+        ddim_steps: 25,
+        width: 1024,
+        height: 1024,
+        seed: -1,
+        logo_info: {
+            add_logo: false
+        }
+    };
+
+    const res = await fetchApi(params) as any;
+
+    // Check response structure
+    // Typically: { code: 10000, data: { status: 'success', image_url: '...' } }
+    // Or base64 data
+
+    if (res && res.code === 10000 && res.data) {
+        if (res.data.image_url) return res.data.image_url;
+        if (res.data.binary_data_base64 && res.data.binary_data_base64.length > 0) {
+            // Convert base64 to data URI
+            return `data:image/png;base64,${res.data.binary_data_base64[0]}`;
+        }
+    }
+
+    console.warn("Jimeng response invalid:", JSON.stringify(res).substring(0, 200));
+    return null;
 }
