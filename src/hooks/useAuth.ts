@@ -49,11 +49,18 @@ function setCachedUser(user: User | null) {
 }
 
 export function useAuth() {
-    // Initialize with cached user for instant display
-    const [user, setUser] = useState<User | null>(() => getCachedUser());
-    const [loading, setLoading] = useState(() => getCachedUser() === null);
+    // Always start with null to avoid hydration mismatch
+    const [user, setUser] = useState<User | null>(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        // Client-side only: Try to load cached user first for instant display
+        const cachedUser = getCachedUser();
+        if (cachedUser) {
+            setUser(cachedUser);
+            setLoading(false);
+        }
+        // Then validate with server
         checkSession();
     }, []);
 
