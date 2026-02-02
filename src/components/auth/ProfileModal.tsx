@@ -6,7 +6,20 @@ import { useToast } from "@/components/ui/Toast";
 import { Link } from "next-view-transitions";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, LogOut, User as UserIcon, Clock, ChevronRight, Loader2, Save, Smartphone, Sparkles, User, LayoutGrid, Calendar, Bell, BellOff, Sun, Moon, Check } from "lucide-react";
+import { X, LogOut, User as UserIcon, Clock, ChevronRight, Loader2, Save, Smartphone, Sparkles, User, LayoutGrid, Calendar, Bell, BellOff, Sun, Moon, Check, Heart, Trash2, ShoppingCart, Package } from "lucide-react";
+import Image from "next/image";
+import {
+    getWishlistProductIds,
+    removeFromWishlist,
+    clearWishlist,
+    fetchWishlistFromServer,
+    type WishlistItem
+} from "@/lib/wishlist";
+import {
+    getProductLinks,
+    openAffiliateLink,
+    EcommercePlatform
+} from "@/lib/affiliate-links";
 
 interface HistorySession {
     sessionId: string;
@@ -35,6 +48,18 @@ const DEFAULT_REMINDER_SETTINGS: ReminderSettings = {
     eveningEnabled: true,
 };
 
+interface WishlistProduct {
+    id: string;
+    name: string;
+    nameEn?: string | null;
+    category: string;
+    image: string;
+    price: string;
+    description?: string;
+    step?: string | null;
+    affiliateLinks?: Record<string, string> | null;
+}
+
 const REMINDER_STORAGE_KEY = "skincare_reminder_settings";
 
 export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
@@ -43,7 +68,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
     const toast = useToast();
 
     // UI State
-    const [activeTab, setActiveTab] = useState<'profile' | 'history' | 'reminder'>('profile');
+    const [activeTab, setActiveTab] = useState<'profile' | 'history' | 'reminder' | 'wishlist'>('profile');
 
     // Reminder State
     const [reminderSettings, setReminderSettings] = useState<ReminderSettings>(DEFAULT_REMINDER_SETTINGS);
@@ -56,6 +81,11 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
     // Profile Edit State
     const [editName, setEditName] = useState("");
     const [isSaving, setIsSaving] = useState(false);
+
+    // Wishlist State
+    const [wishlistProducts, setWishlistProducts] = useState<WishlistProduct[]>([]);
+    const [loadingWishlist, setLoadingWishlist] = useState(false);
+    const [removingWishlistItem, setRemovingWishlistItem] = useState<string | null>(null);
 
     // Initialize data
     useEffect(() => {
@@ -114,8 +144,44 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                 }
             };
             fetchHistory();
+
+            // Load Wishlist data
+            const loadWishlist = async () => {
+                if (activeTab !== 'wishlist') return;
+                setLoadingWishlist(true);
+                try {
+                    let productIds = getWishlistProductIds();
+                    // Merge server data if logged in
+                    if (user?.id) {
+                        try {
+                            const serverItems = await fetchWishlistFromServer({ userId: user.id });
+                            if (serverItems.length > 0) {
+                                const serverIds = serverItems.map((i: WishlistItem) => i.productId);
+                                productIds = Array.from(new Set([...productIds, ...serverIds]));
+                            }
+                        } catch (e) { console.error("Wishlist sync error", e) }
+                    }
+
+                    if (productIds.length === 0) {
+                        setWishlistProducts([]);
+                        return;
+                    }
+
+                    const response = await fetch('/api/admin/products');
+                    if (response.ok) {
+                        const allProducts: WishlistProduct[] = await response.json();
+                        const items = allProducts.filter(p => productIds.includes(p.id));
+                        setWishlistProducts(items);
+                    }
+                } catch (e) {
+                    console.error("Wishlist load error", e);
+                } finally {
+                    setLoadingWishlist(false);
+                }
+            };
+            loadWishlist();
         }
-    }, [isOpen, user]);
+    }, [isOpen, user, activeTab]);
 
     const handleSaveProfile = async () => {
         if (!editName.trim()) {
@@ -153,6 +219,38 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
             onClose();
         } catch (e) {
             toast.error("退出失败");
+        }
+    };
+
+    // --- Wishlist Functions ---
+    const handleRemoveWishlist = async (productId: string) => {
+        setRemovingWishlistItem(productId);
+        // Add small delay for animation
+        await new Promise(r => setTimeout(r, 300));
+        removeFromWishlist(productId);
+        setWishlistProducts(prev => prev.filter(p => p.id !== productId));
+        setRemovingWishlistItem(null);
+        toast.success('已移出心愿单');
+    };
+
+    const handleClearWishlist = () => {
+        if (confirm('确定要清空心愿单吗？')) {
+            clearWishlist();
+            setWishlistProducts([]);
+            toast.success('心愿单已清空');
+        }
+    };
+
+    const handleBuyProduct = (product: WishlistProduct, platform?: EcommercePlatform) => {
+        const links = getProductLinks(product.affiliateLinks);
+        if (links.length === 0) {
+            onClose(); // Close modal to navigate
+            router.push(`/products/${product.id}`);
+            return;
+        }
+        const link = platform ? links.find(l => l.platform === platform) : links[0];
+        if (link) {
+            openAffiliateLink(link.url, product.id, link.platform);
         }
     };
 
@@ -362,6 +460,16 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                                     <LayoutGrid size={16} />
                                     <span>测评记录</span>
                                 </button>
+                                <button
+                                    onClick={() => setActiveTab('wishlist')}
+                                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all ${activeTab === 'wishlist'
+                                        ? "bg-zinc-200/60 text-zinc-900 font-medium"
+                                        : "text-zinc-500 hover:bg-zinc-200/40 hover:text-zinc-900"
+                                        }`}
+                                >
+                                    <Heart size={16} />
+                                    <span>我的心愿单</span>
+                                </button>
                                 {notificationPermission !== "unsupported" && (
                                     <button
                                         onClick={() => setActiveTab('reminder')}
@@ -396,7 +504,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                             {/* Header Bar */}
                             <div className="h-14 flex items-center justify-between px-8 border-b border-zinc-100 sticky top-0 bg-white/80 backdrop-blur-md z-20">
                                 <h3 className="text-base font-bold text-zinc-900">
-                                    {activeTab === 'profile' ? '账户资料' : activeTab === 'history' ? '测评记录' : '护肤提醒'}
+                                    {activeTab === 'profile' ? '账户资料' : activeTab === 'history' ? '测评记录' : activeTab === 'wishlist' ? '我的心愿单' : '护肤提醒'}
                                 </h3>
                                 <button
                                     onClick={onClose}
@@ -556,6 +664,117 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                                                         </motion.div>
                                                     </Link>
                                                 ))}
+                                            </div>
+                                        )}
+                                    </motion.div>
+                                )}
+
+                                {/* REMINDER SETTINGS (iOS Style) */}
+                                {activeTab === 'wishlist' && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.3 }}
+                                        className="h-full"
+                                    >
+                                        {loadingWishlist ? (
+                                            <div className="h-full flex flex-col items-center justify-center text-zinc-300 gap-3">
+                                                <Loader2 className="w-6 h-6 animate-spin" />
+                                                <span className="text-[10px] font-bold tracking-widest">加载中...</span>
+                                            </div>
+                                        ) : wishlistProducts.length === 0 ? (
+                                            <div className="h-full flex flex-col items-center justify-center text-center p-8">
+                                                <div className="w-16 h-16 bg-zinc-50 rounded-2xl flex items-center justify-center mb-4 border border-zinc-100">
+                                                    <Heart className="w-6 h-6 text-zinc-300" />
+                                                </div>
+                                                <h4 className="text-zinc-900 font-bold mb-1">心愿单是空的</h4>
+                                                <p className="text-zinc-400 text-xs mb-6 max-w-[200px]">
+                                                    浏览产品时点击 ❤️ 收藏您喜欢的产品。
+                                                </p>
+                                                <button
+                                                    onClick={() => {
+                                                        onClose();
+                                                        router.push("/result");
+                                                    }}
+                                                    className="px-6 py-2 bg-zinc-900 text-white rounded-lg text-xs font-bold hover:bg-zinc-800 transition-colors"
+                                                >
+                                                    去逛逛
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-4 pb-4">
+                                                <div className="flex items-center justify-between px-1">
+                                                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                                                        {wishlistProducts.length} ITEMS
+                                                    </span>
+                                                    <button
+                                                        onClick={handleClearWishlist}
+                                                        className="text-[10px] font-bold text-zinc-400 hover:text-red-500 flex items-center gap-1 transition-colors"
+                                                    >
+                                                        <Trash2 size={12} />
+                                                        清空
+                                                    </button>
+                                                </div>
+
+                                                <div className="grid grid-cols-1 gap-3">
+                                                    {wishlistProducts.map((product) => (
+                                                        <motion.div
+                                                            key={product.id}
+                                                            layout
+                                                            initial={{ opacity: 0, y: 10 }}
+                                                            animate={{
+                                                                opacity: removingWishlistItem === product.id ? 0.5 : 1,
+                                                                y: 0,
+                                                                scale: removingWishlistItem === product.id ? 0.98 : 1
+                                                            }}
+                                                            className="bg-white p-3 rounded-xl border border-zinc-100 shadow-sm flex gap-3 group hover:border-zinc-300 transition-colors"
+                                                        >
+                                                            {/* Product Image */}
+                                                            <div className="w-20 h-20 bg-zinc-50 rounded-lg flex-shrink-0 relative overflow-hidden">
+                                                                <Image
+                                                                    src={product.image}
+                                                                    alt={product.name}
+                                                                    fill
+                                                                    className="object-cover"
+                                                                    sizes="80px"
+                                                                />
+                                                            </div>
+
+                                                            {/* Info */}
+                                                            <div className="flex-1 flex flex-col min-w-0 py-0.5">
+                                                                <div className="flex justify-between items-start gap-2">
+                                                                    <div>
+                                                                        <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-400 block mb-0.5">
+                                                                            {product.category}
+                                                                        </span>
+                                                                        <h4 className="text-sm font-bold text-zinc-900 line-clamp-1 group-hover:text-blue-600 transition-colors cursor-pointer" onClick={() => { onClose(); router.push(`/products/${product.id}`); }}>
+                                                                            {product.name}
+                                                                        </h4>
+                                                                    </div>
+                                                                    <button
+                                                                        onClick={() => handleRemoveWishlist(product.id)}
+                                                                        className="text-zinc-300 hover:text-red-500 transition-colors p-1 -mr-1"
+                                                                    >
+                                                                        <X size={14} />
+                                                                    </button>
+                                                                </div>
+
+                                                                <div className="mt-auto flex items-center justify-between">
+                                                                    <span className="text-sm font-semibold text-zinc-900">
+                                                                        {product.price}
+                                                                    </span>
+                                                                    <button
+                                                                        onClick={() => handleBuyProduct(product)}
+                                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 text-white rounded-full text-[10px] font-bold hover:bg-zinc-800 transition-colors"
+                                                                    >
+                                                                        <ShoppingCart size={12} />
+                                                                        购买
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </motion.div>
+                                                    ))}
+                                                </div>
                                             </div>
                                         )}
                                     </motion.div>
