@@ -318,15 +318,15 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                         <div className="w-full md:w-[240px] bg-zinc-50/80 backdrop-blur-sm p-6 flex flex-col flex-shrink-0 border-r border-zinc-200/50">
 
                             {/* User Profile Summary */}
-                            <div className="flex items-center gap-3 px-2 mb-8 mt-2">
-                                <div className="w-10 h-10 rounded-full bg-zinc-200 flex items-center justify-center text-zinc-600 font-medium text-sm border border-zinc-300/50 overflow-hidden">
-                                    {user?.name?.[0]?.toUpperCase() || <UserIcon size={18} />}
+                            <div className="flex items-center gap-4 px-2 mb-8 mt-4">
+                                <div className="w-12 h-12 rounded-full bg-zinc-200 flex items-center justify-center text-zinc-600 font-bold text-lg border border-zinc-300/50 overflow-hidden">
+                                    {user?.name?.[0]?.toUpperCase() || <UserIcon size={20} />}
                                 </div>
                                 <div className="flex flex-col min-w-0">
-                                    <span className="text-sm font-semibold text-zinc-900 truncate">
+                                    <span className="text-base font-bold text-zinc-900 truncate">
                                         {user?.name}
                                     </span>
-                                    <span className="text-[10px] font-bold text-zinc-400 tracking-widest">
+                                    <span className="text-[11px] font-bold text-zinc-400 tracking-widest">
                                         {user?.role === 'admin' ? '管理员' : '正式会员'}
                                     </span>
                                 </div>
@@ -388,7 +388,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                         <div className="flex-1 bg-white flex flex-col min-h-0 relative">
                             {/* Header Bar */}
                             <div className="h-14 flex items-center justify-between px-8 border-b border-zinc-100 sticky top-0 bg-white/80 backdrop-blur-md z-20">
-                                <h3 className="text-sm font-semibold text-zinc-900">
+                                <h3 className="text-base font-bold text-zinc-900">
                                     {activeTab === 'profile' ? '账户资料' : activeTab === 'history' ? '测评记录' : '护肤提醒'}
                                 </h3>
                                 <button
@@ -408,24 +408,24 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ duration: 0.3 }}
-                                        className="max-w-2xl mx-auto space-y-8"
+                                        className="max-w-lg mx-auto space-y-5 h-full flex flex-col justify-center"
                                     >
-                                        {/* Avatar Section (Notion-like Huge Icon/Emoji) */}
-                                        <div className="flex flex-col items-center py-4">
-                                            <div className="w-20 h-20 rounded-full bg-zinc-100 border-4 border-white shadow-sm flex items-center justify-center text-3xl mb-3">
+                                        {/* Avatar Section (Compacted) */}
+                                        <div className="flex flex-col items-center py-1">
+                                            <div className="w-18 h-18 rounded-full bg-zinc-100 border-4 border-white shadow-sm flex items-center justify-center text-3xl mb-2">
                                                 {user?.name?.[0]?.toUpperCase() || "👤"}
                                             </div>
-                                            <h4 className="text-xl font-bold text-zinc-900">{user?.name}</h4>
-                                            <p className="text-xs text-zinc-400 mt-1 tracking-widest font-bold">正式会员</p>
+                                            <h4 className="text-lg font-bold text-zinc-900">{user?.name}</h4>
+                                            <p className="text-[10px] text-zinc-400 mt-0.5 tracking-widest font-bold">正式会员</p>
                                         </div>
 
-                                        <div className="space-y-6">
+                                        <div className="space-y-4">
                                             {/* Group 1: Identity */}
                                             <div>
-                                                <h5 className="px-4 mb-2 text-[11px] font-bold text-zinc-400 uppercase tracking-wider">个人信息</h5>
-                                                <div className="bg-zinc-50/50 rounded-2xl border border-zinc-200/60 overflow-hidden">
+                                                <h5 className="px-4 mb-1.5 text-[11px] font-bold text-zinc-400 uppercase tracking-wider">个人信息</h5>
+                                                <div className="bg-zinc-50/50 rounded-xl border border-zinc-200/60 overflow-hidden">
                                                     {/* Row: Name */}
-                                                    <div className="px-4 py-4 flex items-center justify-between bg-white border-b border-zinc-100">
+                                                    <div className="px-4 py-3 flex items-center justify-between bg-white border-b border-zinc-100">
                                                         <div className="flex flex-col">
                                                             <span className="text-xs font-bold text-zinc-400 uppercase tracking-tight mb-0.5">昵称</span>
                                                             <input
@@ -445,7 +445,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                                                     </div>
 
                                                     {/* Row: Phone */}
-                                                    <div className="px-4 py-4 flex items-center justify-between bg-white">
+                                                    <div className="px-4 py-3 flex items-center justify-between bg-white">
                                                         <div className="flex flex-col">
                                                             <span className="text-xs font-bold text-zinc-400 uppercase tracking-tight mb-0.5">绑定手机</span>
                                                             <span className="text-sm font-medium text-zinc-900">{user?.phone || "未绑定手机"}</span>
@@ -457,9 +457,9 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
 
                                             {/* Group 2: Account Level */}
                                             <div>
-                                                <h5 className="px-4 mb-2 text-[11px] font-bold text-zinc-400 uppercase tracking-wider">账户权限</h5>
-                                                <div className="bg-zinc-50/50 rounded-2xl border border-zinc-200/60 overflow-hidden">
-                                                    <div className="px-4 py-4 flex items-center justify-between bg-white">
+                                                <h5 className="px-4 mb-1.5 text-[11px] font-bold text-zinc-400 uppercase tracking-wider">账户权限</h5>
+                                                <div className="bg-zinc-50/50 rounded-xl border border-zinc-200/60 overflow-hidden">
+                                                    <div className="px-4 py-3 flex items-center justify-between bg-white">
                                                         <div className="flex items-center gap-3">
                                                             <div className="w-8 h-8 rounded-lg bg-zinc-900 flex items-center justify-center text-white">
                                                                 <Sparkles size={14} fill="currentColor" />
@@ -603,7 +603,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                                                                     type="time"
                                                                     value={reminderSettings.morningTime}
                                                                     onChange={(e) => saveReminderSettings({ ...reminderSettings, morningTime: e.target.value })}
-                                                                    className="text-[10px] font-bold text-blue-600 bg-transparent outline-none p-0 cursor-pointer"
+                                                                    className="text-sm font-bold text-blue-600 bg-transparent outline-none p-0 cursor-pointer"
                                                                 />
                                                             </div>
                                                         </div>
@@ -627,7 +627,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                                                                     type="time"
                                                                     value={reminderSettings.eveningTime}
                                                                     onChange={(e) => saveReminderSettings({ ...reminderSettings, eveningTime: e.target.value })}
-                                                                    className="text-[10px] font-bold text-blue-600 bg-transparent outline-none p-0 cursor-pointer"
+                                                                    className="text-sm font-bold text-blue-600 bg-transparent outline-none p-0 cursor-pointer"
                                                                 />
                                                             </div>
                                                         </div>
