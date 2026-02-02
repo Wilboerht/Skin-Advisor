@@ -5,6 +5,22 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 
 // Types
+interface LeaderboardEntry {
+    rank: number;
+    nickname: string;
+    city: string;
+    score: number;
+    sessionId: string;
+}
+
+interface PopularityEntry {
+    rank: number;
+    nickname: string;
+    city: string;
+    popularity: number;
+    sessionId: string;
+}
+
 interface ShareLandingProps {
     data: {
         score: number;
@@ -15,6 +31,12 @@ interface ShareLandingProps {
         nickname: string;
         city: string;
         isGuest: boolean;
+        // New rank-related fields
+        sessionId: string;
+        userRank: number;
+        userPercentile: number;
+        totalParticipants: number;
+        generatedAvatar?: string;
     }
 }
 
@@ -25,6 +47,12 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
     const [showModal, setShowModal] = useState(false);
     const [comment, setComment] = useState("");
 
+    // Leaderboard state
+    const [scoreRanking, setScoreRanking] = useState<LeaderboardEntry[]>([]);
+    const [popularityRanking, setPopularityRanking] = useState<PopularityEntry[]>([]);
+    const [totalParticipants, setTotalParticipants] = useState(data.totalParticipants);
+    const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(true);
+
     // Random comments from reference
     const comments = [
         "报告评语：您的肌肤细腻度很高，几乎看不见毛孔，水油平衡状态非常理想，请继续保持现有的基础护肤流程！",
@@ -33,10 +61,32 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
         "报告评语：水油平衡控制得很好，即使是素颜也散发着自然的光泽感。当前排名反映了你极佳的保养习惯。"
     ];
 
+    // Fetch leaderboard data
     useEffect(() => {
         setMounted(true);
         setComment(comments[Math.floor(Math.random() * comments.length)]);
-    }, []);
+
+        // Fetch leaderboard from API
+        async function fetchLeaderboard() {
+            try {
+                const res = await fetch(`/api/advisor/leaderboard?limit=5&sessionId=${data.sessionId}`);
+                if (res.ok) {
+                    const result = await res.json();
+                    setScoreRanking(result.scoreRanking || []);
+                    setPopularityRanking(result.popularityRanking || []);
+                    if (result.totalParticipants) {
+                        setTotalParticipants(result.totalParticipants);
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to fetch leaderboard:", error);
+            } finally {
+                setIsLoadingLeaderboard(false);
+            }
+        }
+
+        fetchLeaderboard();
+    }, [data.sessionId]);
 
     // Animation Variants
     const revealVariants = {
@@ -89,9 +139,9 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
 
                     <div className="flex items-center gap-4 mb-6">
                         <div className="w-20 h-20 rounded-3xl bg-[#eee] border-[3px] border-white overflow-hidden relative">
-                            {/* Dynamic Avatar using nickname as seed */}
+                            {/* Dynamic Avatar: Prioritize AI generated, fallback to DiceBear */}
                             <img
-                                src={`https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(data.nickname)}`}
+                                src={data.generatedAvatar || `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(data.nickname)}`}
                                 alt="Avatar"
                                 className="w-full h-full object-cover"
                             />
@@ -104,8 +154,8 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
 
                     <div className="bg-black/5 p-5 rounded-3xl mb-6 text-center">
                         <span className="text-sm text-[#666] block mb-1">当前全国排名</span>
-                        <span className="text-4xl font-extrabold text-black block">168</span>
-                        <p className="font-semibold text-[#27ae60] mt-2 text-sm">超越了全国 84% 的用户</p>
+                        <span className="text-4xl font-extrabold text-black block">{data.userRank}</span>
+                        <p className="font-semibold text-[#27ae60] mt-2 text-sm">超越了全国 {data.userPercentile}% 的用户</p>
                     </div>
 
                     <div className="text-base leading-[1.6] text-[#444] p-4 border-l-4 border-[#FFD700] bg-white/30 mb-[30px] rounded-r-xl min-h-[80px]">
@@ -158,45 +208,69 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                                 transition={{ duration: 0.2 }}
                                 className="flex flex-col"
                             >
-                                {activeTab === 'score' ? (
-                                    <>
-                                        {/* Score Rank Items */}
-                                        {[
-                                            { rank: '01', name: '林舒涵', loc: '上海市', score: '98.5', color: '#D4AF37' },
-                                            { rank: '02', name: '陈子墨', loc: '杭州市', score: '97.2', color: '#A8A8A8' },
-                                            { rank: '03', name: '苏小北', loc: '成都市', score: '96.8', color: '#B08D57' },
-                                            { rank: '04', name: '王若曦', loc: '深圳市', score: '95.4', color: '#999' },
-                                            { rank: '05', name: '张清扬', loc: '广州市', score: '94.9', color: '#999' },
-                                        ].map((item, idx) => (
-                                            <div key={idx} className="flex items-center py-3 border-b border-black/5 last:border-0 hover:bg-white/20 transition-colors px-2 rounded-lg">
-                                                <span className="w-[30px] font-extrabold text-lg" style={{ color: item.color }}>{item.rank}</span>
-                                                <img src={`https://api.dicebear.com/9.x/avataaars/svg?seed=${item.name}`} className="w-11 h-11 rounded-xl mx-3 bg-gray-200" alt="avatar" />
+                                {isLoadingLeaderboard ? (
+                                    // Loading skeleton
+                                    <div className="space-y-3">
+                                        {[1, 2, 3, 4, 5].map((i) => (
+                                            <div key={i} className="flex items-center py-3 px-2 animate-pulse">
+                                                <div className="w-[30px] h-6 bg-gray-200 rounded" />
+                                                <div className="w-11 h-11 rounded-xl mx-3 bg-gray-200" />
                                                 <div className="flex-grow">
-                                                    <p className="font-semibold text-[15px]">{item.name}</p>
-                                                    <p className="text-xs text-[#666]">{item.loc}</p>
+                                                    <div className="h-4 bg-gray-200 rounded w-20 mb-1" />
+                                                    <div className="h-3 bg-gray-200 rounded w-16" />
                                                 </div>
-                                                <span className="font-bold text-lg text-[#00263e]">{item.score}</span>
+                                                <div className="h-5 bg-gray-200 rounded w-12" />
                                             </div>
                                         ))}
+                                    </div>
+                                ) : activeTab === 'score' ? (
+                                    <>
+                                        {/* Score Rank Items */}
+                                        {scoreRanking.length > 0 ? scoreRanking.map((item, idx) => {
+                                            const rankColors = ['#D4AF37', '#A8A8A8', '#B08D57', '#999', '#999'];
+                                            return (
+                                                <div key={item.sessionId} className="flex items-center py-3 border-b border-black/5 last:border-0 hover:bg-white/20 transition-colors px-2 rounded-lg">
+                                                    <span className="w-[30px] font-extrabold text-lg" style={{ color: rankColors[idx] || '#999' }}>
+                                                        {String(item.rank).padStart(2, '0')}
+                                                    </span>
+                                                    <img src={`https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(item.nickname)}`} className="w-11 h-11 rounded-xl mx-3 bg-gray-200" alt="avatar" />
+                                                    <div className="flex-grow">
+                                                        <p className="font-semibold text-[15px]">{item.nickname}</p>
+                                                        <p className="text-xs text-[#666]">{item.city}</p>
+                                                    </div>
+                                                    <span className="font-bold text-lg text-[#00263e]">{item.score}</span>
+                                                </div>
+                                            );
+                                        }) : (
+                                            <div className="text-center py-8 text-gray-500">暂无排行数据</div>
+                                        )}
                                     </>
                                 ) : (
                                     <>
                                         {/* Pop Rank Items */}
-                                        {[
-                                            { rank: '01', name: '小圆子', loc: '北京市', score: '1.2w 🔥', color: '#D4AF37' },
-                                            { rank: '02', name: 'Lily_W', loc: '南京市', score: '9.8k 🔥', color: '#A8A8A8' },
-                                            { rank: '03', name: '是阿星呀', loc: '西安市', score: '8.5k 🔥', color: '#B08D57' },
-                                        ].map((item, idx) => (
-                                            <div key={idx} className="flex items-center py-3 border-b border-black/5 last:border-0 hover:bg-white/20 transition-colors px-2 rounded-lg">
-                                                <span className="w-[30px] font-extrabold text-lg" style={{ color: item.color }}>{item.rank}</span>
-                                                <img src={`https://api.dicebear.com/9.x/avataaars/svg?seed=${item.name}`} className="w-11 h-11 rounded-xl mx-3 bg-gray-200" alt="avatar" />
-                                                <div className="flex-grow">
-                                                    <p className="font-semibold text-[15px]">{item.name}</p>
-                                                    <p className="text-xs text-[#666]">{item.loc}</p>
+                                        {popularityRanking.length > 0 ? popularityRanking.map((item, idx) => {
+                                            const rankColors = ['#D4AF37', '#A8A8A8', '#B08D57', '#999', '#999'];
+                                            const formatPopularity = (num: number) => {
+                                                if (num >= 10000) return `${(num / 10000).toFixed(1)}w`;
+                                                if (num >= 1000) return `${(num / 1000).toFixed(1)}k`;
+                                                return String(num);
+                                            };
+                                            return (
+                                                <div key={item.sessionId} className="flex items-center py-3 border-b border-black/5 last:border-0 hover:bg-white/20 transition-colors px-2 rounded-lg">
+                                                    <span className="w-[30px] font-extrabold text-lg" style={{ color: rankColors[idx] || '#999' }}>
+                                                        {String(item.rank).padStart(2, '0')}
+                                                    </span>
+                                                    <img src={`https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(item.nickname)}`} className="w-11 h-11 rounded-xl mx-3 bg-gray-200" alt="avatar" />
+                                                    <div className="flex-grow">
+                                                        <p className="font-semibold text-[15px]">{item.nickname}</p>
+                                                        <p className="text-xs text-[#666]">{item.city}</p>
+                                                    </div>
+                                                    <span className="font-bold text-lg text-[#FF4D4F]">{formatPopularity(item.popularity)} 🔥</span>
                                                 </div>
-                                                <span className="font-bold text-lg text-[#FF4D4F]">{item.score}</span>
-                                            </div>
-                                        ))}
+                                            );
+                                        }) : (
+                                            <div className="text-center py-8 text-gray-500">暂无人气数据</div>
+                                        )}
                                     </>
                                 )}
                             </motion.div>
@@ -204,7 +278,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                     </div>
 
                     <div className="mt-5 pt-5 border-t border-dashed border-black/10 text-center text-sm text-[#666]">
-                        已有 3,208+ 人参与本赛季挑战
+                        已有 {totalParticipants.toLocaleString()}+ 人参与本赛季挑战
                     </div>
                 </motion.div>
 

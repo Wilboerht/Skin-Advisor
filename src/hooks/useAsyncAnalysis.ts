@@ -172,6 +172,22 @@ export function useAsyncAnalysis() {
             localStorage.setItem("advisor_result", JSON.stringify(result));
             trackAnalysisComplete(result.dataSource === "comprehensive" ? "ai" : "fallback");
 
+            // Trigger background avatar generation (Fire and Forget)
+            fetch("/api/advisor/avatar/generate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    sessionId: sessionId,
+                    nickname: nickname,
+                    characteristics: {
+                        age: result.skinProfile?.skinAge || 25,
+                        gender: 'female', // Default or extract from answers if available
+                        skinTone: 'healthy',
+                        hairStyle: ''
+                    }
+                })
+            }).catch(err => console.error("Background avatar generation trigger failed", err));
+
             setAnalysisState({ status: 'completed', progress: 100, error: null });
 
             // Return data to caller
