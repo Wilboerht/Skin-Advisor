@@ -33,6 +33,7 @@ export async function GET(req: NextRequest) {
     const user = {
         id: dbUser.id,
         email: dbUser.email,
+        phone: dbUser.phoneNumber,
         name: dbUser.name,
         role: dbUser.role
     };
@@ -68,4 +69,65 @@ export async function GET(req: NextRequest) {
     }
 
     return response;
+}
+
+export async function PUT(req: NextRequest) {
+    try {
+        const cookieStore = await cookies();
+        const token = cookieStore.get('auth_token')?.value;
+
+        if (!token) {
+            return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+        }
+
+        const payload = await verifyToken(token);
+        if (!payload?.sub) {
+            return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+        }
+
+        const { name } = await req.json();
+
+        if (!name || typeof name !== 'string' || name.trim().length < 2) {
+            return NextResponse.json({ error: "Name must be at least 2 characters" }, { status: 400 });
+        }
+
+        const user = await prisma.user.update({
+            where: { id: payload.sub as string },
+            data: { name: name.trim() }
+        });
+
+        // Also update the token with new name if we want, or just let next refresh handle it.
+        // But for UI consistency on refresh, we might not update token immediately unless we re-sign.
+        // Re-signing token to keep data fresh:
+        const newToken = await signToken({
+            sub: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role
+        }, '7d');
+
+        const response = NextResponse.json({
+            success: true,
+            user: {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                role: user.role
+            }
+        });
+
+        response.cookies.set("auth_token", newToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            maxAge: 60 * 60 * 24 * 7,
+            path: "/"
+        });
+
+        return response;
+
+    } catch (error) {
+        console.error("Profile update error", error);
+        return NextResponse.json({ error: "Failed to update profile" }, { status: 500 });
+    }
 }

@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { SkincareReminder } from "@/components/advisor/SkincareReminder";
 import { useToast } from "@/components/ui/Toast";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
+import { ProfileModal } from "@/components/auth/ProfileModal";
 
 export default function Home() {
   const router = useRouter();
@@ -34,6 +35,7 @@ export default function Home() {
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [showRegionSelectModal, setShowRegionSelectModal] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   // Region options
   const regionOptions = [
@@ -145,10 +147,13 @@ export default function Home() {
         {/* Auth Navigation */}
         <div className="absolute top-6 right-6 z-50">
           {user ? (
-            <Link href="/profile" className="flex items-center gap-2 text-[#3D4430]/80 hover:text-[#1A1A1A] transition-colors text-sm font-medium tracking-wide">
+            <button
+              onClick={() => setShowProfileModal(true)}
+              className="flex items-center gap-2 text-[#3D4430]/80 hover:text-[#1A1A1A] transition-colors text-sm font-medium tracking-wide bg-transparent border-none cursor-pointer"
+            >
               <User className="w-4 h-4" />
               <span>{user.name || '我的档案'}</span>
-            </Link>
+            </button>
           ) : (
             <button
               onClick={() => openAuthModal('login')}
@@ -182,7 +187,7 @@ export default function Home() {
               融合视觉分析与专家级诊疗建议，<br />为您提供科学、严谨的定制化护肤方案。
             </p>
 
-            <div className="delay-200 animate-fade-in-up opacity-0" style={{ animationFillMode: 'forwards' }}>
+            <div className="delay-200 animate-fade-in-up opacity-0 flex flex-col items-center gap-8" style={{ animationFillMode: 'forwards' }}>
               <button
                 onClick={handleStart}
                 disabled={isLoading}
@@ -201,27 +206,23 @@ export default function Home() {
                 )}
               </button>
 
-              {/* History Entry for Logged-in Users */}
+              {/* Secondary Actions for Logged-in Users */}
               {user && (
-                <Link
-                  href="/profile"
-                  className="mt-4 inline-flex items-center gap-2 text-sm text-[#3D4430]/60 hover:text-[#3D4430] transition-colors"
-                >
-                  <ClipboardList className="w-4 h-4" />
-                  <span>查看历史分析记录</span>
-                </Link>
-              )}
-
-              {/* Skincare Reminder for Logged-in Users */}
-              {user && (
-                <div className="mt-4">
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => setShowProfileModal(true)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all bg-[#1A1A1A]/5 text-[#1A1A1A]/60 hover:bg-[#1A1A1A]/10 border-none cursor-pointer"
+                  >
+                    <ClipboardList className="w-4 h-4" />
+                    <span>历史记录</span>
+                  </button>
                   <SkincareReminder />
                 </div>
               )}
             </div>
 
-            {/* Minimal Footer Info */}
-            <div className="fixed bottom-8 left-0 w-full text-center">
+            {/* Minimal Footer Info - Moved to flow to prevent overlap */}
+            <div className="mt-16 text-center animate-fade-in-up delay-300 opacity-0" style={{ animationFillMode: 'forwards' }}>
               <p className="text-[10px] text-[#3D4430]/20 font-mono uppercase tracking-widest">
                 AI Powered Analysis
               </p>
@@ -229,6 +230,8 @@ export default function Home() {
 
           </div>
         </div>
+
+
 
         {/* Modals - Simplified Styles */}
 
@@ -423,7 +426,11 @@ export default function Home() {
           )}
         </AnimatePresence>
 
-      </main>
+        <ProfileModal
+          isOpen={showProfileModal}
+          onClose={() => setShowProfileModal(false)}
+        />
+      </main >
     </LazyMotion >
   );
 }
