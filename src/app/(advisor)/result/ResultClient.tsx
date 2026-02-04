@@ -748,10 +748,12 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     <Share2 className="w-4 h-4" />
                                     分享
                                 </button>
-                                <button onClick={handleSaveLink} className={styles.actionBtn}>
-                                    <LinkIcon className="w-4 h-4" />
-                                    保存结果链接
-                                </button>
+                                {user && (
+                                    <button onClick={handleSaveLink} className={styles.actionBtn}>
+                                        <LinkIcon className="w-4 h-4" />
+                                        保存结果链接
+                                    </button>
+                                )}
                                 <button onClick={handleDownload} className={`${styles.actionBtn} ${styles.primaryActionBtn}`}>
                                     <Download className="w-4 h-4" />
                                     下载报告

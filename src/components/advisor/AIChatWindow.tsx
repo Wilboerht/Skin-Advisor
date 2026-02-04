@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Send, User, ChevronDown, ChevronUp, Sparkles, Loader2, X } from "lucide-react";
+import { Send, User, ChevronDown, ChevronUp, Sparkles, Loader2, X, LogIn } from "lucide-react";
 import { m, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
+import { useAuthModal } from "@/components/auth/AuthModalContext";
 
 interface Message {
     id: string;
@@ -21,12 +23,14 @@ interface AIChatWindowProps {
 }
 
 export function AIChatWindow({ skinType, concerns, summary, sessionId }: AIChatWindowProps) {
+    const { user } = useAuth();
+    const { openAuthModal } = useAuthModal();
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([
         {
             id: "welcome",
             role: "assistant",
-            content: "您好！我是您的专属 AI 护肤顾问。基于您的肤质分析报告，您有什么想进一步了解的吗？比如：“适合我的防晒霜怎么选？”或“如何改善T区出油？”",
+            content: `您好！我是您的专属 AI 护肤顾问。基于您的肤质分析报告，您有什么想进一步了解的吗？比如："适合我的防晒霜怎么选？"或"如何改善T区出油？"`,
             createdAt: Date.now()
         }
     ]);
@@ -45,9 +49,9 @@ export function AIChatWindow({ skinType, concerns, summary, sessionId }: AIChatW
         }
     }, [messages, isOpen]);
 
-    // Load history
+    // Load history (only for logged-in users)
     useEffect(() => {
-        if (isOpen && sessionId && !hasLoadedHistory.current) {
+        if (isOpen && sessionId && user && !hasLoadedHistory.current) {
             hasLoadedHistory.current = true;
             fetch(`/api/advisor/chat?sessionId=${sessionId}`)
                 .then(res => res.json())
@@ -64,7 +68,17 @@ export function AIChatWindow({ skinType, concerns, summary, sessionId }: AIChatW
                 })
                 .catch(err => console.error("Failed to load chat history", err));
         }
-    }, [isOpen, sessionId]);
+    }, [isOpen, sessionId, user]);
+
+    // Handle floating button click
+    const handleFloatingButtonClick = () => {
+        if (!user) {
+            // Show login prompt for guests
+            openAuthModal('login');
+            return;
+        }
+        setIsOpen(true);
+    };
 
     const handleSendMessage = async () => {
         if (!inputValue.trim() || isLoading) return;
@@ -152,16 +166,17 @@ export function AIChatWindow({ skinType, concerns, summary, sessionId }: AIChatW
             {/* 悬浮球开关 */}
             {!isOpen && (
                 <button
-                    onClick={() => setIsOpen(true)}
+                    onClick={handleFloatingButtonClick}
                     className="fixed bottom-24 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-brand-charcoal text-white shadow-lg transition-transform hover:scale-110 sm:bottom-8 sm:right-8"
+                    title={user ? "AI 护肤顾问" : "登录后使用 AI 顾问"}
                 >
                     <Sparkles className="h-6 w-6" />
                 </button>
             )}
 
-            {/* 聊天窗口 */}
+            {/* 聊天窗口 - 只有登录用户可以打开 */}
             <AnimatePresence>
-                {isOpen && (
+                {isOpen && user && (
                     <m.div
                         initial={{ opacity: 0, y: 20, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
