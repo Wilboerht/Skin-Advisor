@@ -9,7 +9,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, LogOut, User as UserIcon, Clock, ChevronRight, Loader2, Save, Smartphone, Sparkles, User, LayoutGrid, Calendar, Bell, BellOff, Sun, Moon, Check, Heart, Trash2, ShoppingCart, Package } from "lucide-react";
 import Image from "next/image";
 import {
-    getWishlistProductIds,
     removeFromWishlist,
     clearWishlist,
     fetchWishlistFromServer,
@@ -145,33 +144,25 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
             };
             fetchHistory();
 
-            // Load Wishlist data
+            // Load Wishlist data (only for logged-in users)
             const loadWishlist = async () => {
-                if (activeTab !== 'wishlist') return;
+                if (activeTab !== 'wishlist' || !user?.id) return;
                 setLoadingWishlist(true);
                 try {
-                    let productIds = getWishlistProductIds();
-                    // Merge server data if logged in
-                    if (user?.id) {
-                        try {
-                            const serverItems = await fetchWishlistFromServer({ userId: user.id });
-                            if (serverItems.length > 0) {
-                                const serverIds = serverItems.map((i: WishlistItem) => i.productId);
-                                productIds = Array.from(new Set([...productIds, ...serverIds]));
-                            }
-                        } catch (e) { console.error("Wishlist sync error", e) }
-                    }
+                    // Fetch wishlist from server
+                    const serverItems = await fetchWishlistFromServer({ userId: user.id });
+                    const productIds = serverItems.map((i: WishlistItem) => i.productId);
 
                     if (productIds.length === 0) {
                         setWishlistProducts([]);
                         return;
                     }
 
-                    const response = await fetch('/api/admin/products');
+                    // Use public products API
+                    const response = await fetch(`/api/products?ids=${productIds.join(',')}`);
                     if (response.ok) {
-                        const allProducts: WishlistProduct[] = await response.json();
-                        const items = allProducts.filter(p => productIds.includes(p.id));
-                        setWishlistProducts(items);
+                        const products: WishlistProduct[] = await response.json();
+                        setWishlistProducts(products);
                     }
                 } catch (e) {
                     console.error("Wishlist load error", e);
@@ -224,20 +215,46 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
 
     // --- Wishlist Functions ---
     const handleRemoveWishlist = async (productId: string) => {
+        if (!user?.id) return;
         setRemovingWishlistItem(productId);
-        // Add small delay for animation
-        await new Promise(r => setTimeout(r, 300));
-        removeFromWishlist(productId);
-        setWishlistProducts(prev => prev.filter(p => p.id !== productId));
-        setRemovingWishlistItem(null);
-        toast.success('已移出心愿单');
+        try {
+            // Sync to server first
+            await fetch(`/api/wishlist?productId=${productId}&userId=${user.id}`, {
+                method: 'DELETE'
+            });
+            // Small delay for animation
+            await new Promise(r => setTimeout(r, 300));
+            removeFromWishlist(productId);
+            setWishlistProducts(prev => prev.filter(p => p.id !== productId));
+            toast.success('已移出心愿单');
+        } catch (e) {
+            console.error('Failed to remove from wishlist:', e);
+            toast.error('移除失败，请重试');
+        } finally {
+            setRemovingWishlistItem(null);
+        }
     };
 
-    const handleClearWishlist = () => {
-        if (confirm('确定要清空心愿单吗？')) {
+    const handleClearWishlist = async () => {
+        if (!user?.id) return;
+        if (!confirm('确定要清空心愿单吗？')) return;
+
+        try {
+            // Delete all items from server
+            const productIds = wishlistProducts.map(p => p.id);
+            await Promise.all(
+                productIds.map(productId =>
+                    fetch(`/api/wishlist?productId=${productId}&userId=${user.id}`, {
+                        method: 'DELETE'
+                    })
+                )
+            );
             clearWishlist();
             setWishlistProducts([]);
             toast.success('心愿单已清空');
+        } catch (e) {
+            console.error('Failed to clear wishlist:', e);
+            toast.error('清空失败，请重试');
         }
     };
 

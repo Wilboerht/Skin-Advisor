@@ -16,10 +16,8 @@ import {
     Share2
 } from "lucide-react";
 import {
-    getWishlistProductIds,
     removeFromWishlist,
     clearWishlist,
-    getGuestId,
     fetchWishlistFromServer,
     type WishlistItem
 } from "@/lib/wishlist";
@@ -53,21 +51,19 @@ export default function WishlistPage() {
     const [loading, setLoading] = useState(true);
     const [removing, setRemoving] = useState<string | null>(null);
 
-    // 加载心愿单产品
+    // 加载心愿单产品（仅登录用户）
     const loadWishlist = useCallback(async () => {
+        if (!user?.id) {
+            setProducts([]);
+            setLoading(false);
+            return;
+        }
+
         setLoading(true);
         try {
-            let productIds = getWishlistProductIds();
-
-            // 如果已登录，合并服务端数据
-            if (user?.id) {
-                const serverItems = await fetchWishlistFromServer({ userId: user.id });
-                if (serverItems.length > 0) {
-                    const serverIds = serverItems.map((i: WishlistItem) => i.productId);
-                    // 合并去重
-                    productIds = Array.from(new Set([...productIds, ...serverIds]));
-                }
-            }
+            // 从服务器获取心愿单
+            const serverItems = await fetchWishlistFromServer({ userId: user.id });
+            const productIds = serverItems.map((i: WishlistItem) => i.productId);
 
             if (productIds.length === 0) {
                 setProducts([]);
@@ -75,17 +71,14 @@ export default function WishlistPage() {
                 return;
             }
 
-            // 从 API 获取产品详情
-            const response = await fetch('/api/admin/products');
+            // 使用公开 API 获取产品详情
+            const response = await fetch(`/api/products?ids=${productIds.join(',')}`);
             if (response.ok) {
-                const allProducts: WishlistProduct[] = await response.json();
-                const wishlistProducts = allProducts.filter(p => productIds.includes(p.id));
-                // 保持心愿单顺序（这里暂时简单用 ID 顺序，优化可用 addedAt）
+                const wishlistProducts: WishlistProduct[] = await response.json();
                 setProducts(wishlistProducts);
             }
         } catch (error) {
             console.error('Failed to load wishlist:', error);
-            // toast.error('加载心愿单失败'); // 避免轻微网络错误干扰体验
         } finally {
             setLoading(false);
         }
@@ -101,24 +94,50 @@ export default function WishlistPage() {
     }, [loadWishlist]);
 
     // 移除产品
-    const handleRemove = useCallback((productId: string) => {
+    const handleRemove = useCallback(async (productId: string) => {
+        if (!user?.id) return;
         setRemoving(productId);
-        setTimeout(() => {
+        try {
+            // 同步到服务器
+            await fetch(`/api/wishlist?productId=${productId}&userId=${user.id}`, {
+                method: 'DELETE'
+            });
+            // 延迟更新UI以展示动画
+            await new Promise(r => setTimeout(r, 300));
             removeFromWishlist(productId);
             setProducts(prev => prev.filter(p => p.id !== productId));
-            setRemoving(null);
             toast.success('已从心愿单移除');
-        }, 300);
-    }, [toast]);
+        } catch (error) {
+            console.error('Failed to remove from wishlist:', error);
+            toast.error('移除失败，请重试');
+        } finally {
+            setRemoving(null);
+        }
+    }, [user, toast]);
 
     // 清空心愿单
-    const handleClearAll = useCallback(() => {
-        if (confirm('确定要清空心愿单吗？')) {
+    const handleClearAll = useCallback(async () => {
+        if (!user?.id) return;
+        if (!confirm('确定要清空心愿单吗？')) return;
+
+        try {
+            // 删除服务器上的所有项目
+            const productIds = products.map(p => p.id);
+            await Promise.all(
+                productIds.map(productId =>
+                    fetch(`/api/wishlist?productId=${productId}&userId=${user.id}`, {
+                        method: 'DELETE'
+                    })
+                )
+            );
             clearWishlist();
             setProducts([]);
             toast.success('心愿单已清空');
+        } catch (error) {
+            console.error('Failed to clear wishlist:', error);
+            toast.error('清空失败，请重试');
         }
-    }, [toast]);
+    }, [user, products, toast]);
 
     // 购买产品
     const handleBuy = useCallback((product: WishlistProduct, platform?: EcommercePlatform) => {
@@ -161,7 +180,25 @@ export default function WishlistPage() {
 
             {/* Main Content */}
             <main className="max-w-4xl mx-auto px-4 py-6">
-                {loading ? (
+                {!user ? (
+                    // 未登录状态
+                    <div className="text-center py-16">
+                        <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gray-100 flex items-center justify-center">
+                            <Heart className="w-10 h-10 text-gray-300" />
+                        </div>
+                        <h2 className="text-lg font-semibold text-gray-900 mb-2">登录后查看心愿单</h2>
+                        <p className="text-sm text-gray-500 mb-6">
+                            登录后即可收藏喜欢的产品
+                        </p>
+                        <Link
+                            href="/result"
+                            className="inline-flex items-center gap-2 px-6 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-full hover:bg-gray-800 transition-colors"
+                        >
+                            <Package className="w-4 h-4" />
+                            去逛逛
+                        </Link>
+                    </div>
+                ) : loading ? (
                     // 加载状态
                     <div className="space-y-4">
                         {[1, 2, 3].map(i => (

@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { Link } from "next-view-transitions";
 import { Heart } from "lucide-react";
-import { getWishlistCount } from "@/lib/wishlist";
+import { getWishlistCount, fetchWishlistFromServer, type WishlistItem } from "@/lib/wishlist";
+import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 
 interface WishlistNavButtonProps {
@@ -12,30 +13,55 @@ interface WishlistNavButtonProps {
 }
 
 export function WishlistNavButton({ className, showCount = true }: WishlistNavButtonProps) {
+    const { user } = useAuth();
     const [count, setCount] = useState(0);
     const [isAnimating, setIsAnimating] = useState(false);
 
     useEffect(() => {
-        // 初始化
-        setCount(getWishlistCount());
+        if (!user?.id) {
+            setCount(0);
+            return;
+        }
+
+        // 从服务器获取心愿单数量
+        const loadCount = async () => {
+            try {
+                const items = await fetchWishlistFromServer({ userId: user.id });
+                setCount(items.length);
+            } catch (e) {
+                console.error('Failed to load wishlist count:', e);
+                setCount(0);
+            }
+        };
+
+        loadCount();
 
         // 监听更新
         const handleUpdate = (e: CustomEvent) => {
-            const newCount = getWishlistCount();
-
             if (e.detail.action === 'add') {
                 setIsAnimating(true);
                 setTimeout(() => setIsAnimating(false), 300);
+                setCount(prev => prev + 1);
+            } else if (e.detail.action === 'remove') {
+                setCount(prev => Math.max(0, prev - 1));
+            } else if (e.detail.action === 'clear') {
+                setCount(0);
+            } else {
+                // Reload from server for other actions
+                loadCount();
             }
-
-            setCount(newCount);
         };
 
         window.addEventListener('wishlist-updated', handleUpdate as EventListener);
         return () => {
             window.removeEventListener('wishlist-updated', handleUpdate as EventListener);
         };
-    }, []);
+    }, [user]);
+
+    // 未登录用户不显示此按钮
+    if (!user) {
+        return null;
+    }
 
     return (
         <Link
