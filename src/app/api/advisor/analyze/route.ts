@@ -211,6 +211,11 @@ export async function POST(request: NextRequest) {
                 finalFaceAnalysis.recommendations = [];
             }
 
+            // Preserve gender if available in original input
+            if (faceAnalysis?.gender && !finalFaceAnalysis.gender) {
+                finalFaceAnalysis.gender = faceAnalysis.gender;
+            }
+
             // If recommendations are empty or we have better ones from text analysis
             if (resultJson.lifestyleTips && Array.isArray(resultJson.lifestyleTips)) {
                 // Clean up duplicates if any

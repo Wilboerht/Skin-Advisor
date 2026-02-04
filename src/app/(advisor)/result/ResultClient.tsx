@@ -131,7 +131,10 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         if (!loading && result && faceAnalysis) {
             // Check Mismatch: Social Female vs Bio Male (High Confidence)
             const isSocialFemale = socialGender === 'female';
-            const isBioMale = (faceAnalysis as any)?.gender?.value === 'male' && ((faceAnalysis as any)?.gender?.confidence || 0) > 0.95;
+            const faGenderVal = (faceAnalysis as any)?.gender?.value;
+            const faGenderConf = (faceAnalysis as any)?.gender?.confidence || 0;
+
+            const isBioMale = faGenderVal === 'male' && faGenderConf > 0.80;
 
             // Check if user has already dismissed or accepted this
             const hasAck = localStorage.getItem('advisor_gender_mismatch_ack');
@@ -985,47 +988,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     </div>
                                 </div>
 
-                                {/* --- Adaptive Gender Tuning (New) --- */}
-                                {socialGender === 'female' && (faceAnalysis as any)?.gender?.value === 'male' && ((faceAnalysis as any)?.gender?.confidence || 0) > 0.9 && (
-                                    <div className="mt-2 text-left">
-                                        <div
-                                            className={sidebarStyles.adaptiveToggle}
-                                            onClick={(e) => {
-                                                const content = e.currentTarget.nextElementSibling as HTMLElement;
-                                                const isActive = content.style.display !== 'none';
-                                                content.style.display = isActive ? 'none' : 'block';
-                                                e.currentTarget.classList.toggle(sidebarStyles.adaptiveToggleActive, !isActive);
-                                            }}
-                                        >
-                                            <Sparkles size={12} className="text-amber-500" />
-                                            <span>Adaptive Mode On</span>
-                                            <ChevronRight size={10} className="opacity-50" />
-                                        </div>
 
-                                        {/* Hidden Content */}
-                                        <div className={sidebarStyles.adaptiveContent} style={{ display: 'none' }}>
-                                            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Mixed Profile Activated</div>
-                                            <div className={sidebarStyles.adaptiveRow}>
-                                                <span className={sidebarStyles.propertyIcon}>⚧</span>
-                                                <div>
-                                                    <span className={sidebarStyles.mixedDataPill}>Social: Female</span>
-                                                    <span className={sidebarStyles.mixedDataPill}>Bio: Male</span>
-                                                </div>
-                                            </div>
-                                            <div className={sidebarStyles.adaptiveRow}>
-                                                <span className={sidebarStyles.propertyIcon}>⚡</span>
-                                                <span>已增强 T区控油权重 (+20%)</span>
-                                            </div>
-                                            <div className={sidebarStyles.adaptiveRow}>
-                                                <span className={sidebarStyles.propertyIcon}>📅</span>
-                                                <span>已屏蔽生理周期激素逻辑</span>
-                                            </div>
-                                            <p className="text-[10px] text-gray-400 mt-2 pt-2 border-t border-gray-100 leading-relaxed">
-                                                系统基于您的双重画像（问卷意愿+面部生理特征）为您定制了 <span className="text-amber-600 font-medium">混合护效方案</span>。
-                                            </p>
-                                        </div>
-                                    </div>
-                                )}
 
                                 <div className={sidebarStyles.propertyRow}>
                                     <div className={sidebarStyles.propertyLabel}>
@@ -1045,6 +1008,17 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         )}
                                     </div>
                                 </div>
+
+                                {/* --- Adaptive Gender Tuning (Text Only) --- */}
+                                {socialGender === 'female' && (faceAnalysis as any)?.gender?.value === 'male' && ((faceAnalysis as any)?.gender?.confidence || 0) > 0.80 && (
+                                    <div className="mt-3 px-3 py-2 bg-amber-50 rounded-lg border border-amber-100 flex items-start gap-2">
+                                        <Sparkles size={14} className="text-amber-500 mt-0.5 shrink-0" />
+                                        <p className="text-xs text-amber-800 leading-relaxed">
+                                            检测到生理特征差异，已自动启用<span className="font-semibold">混合分析模式</span>，优化控油与激素逻辑。
+                                        </p>
+                                    </div>
+                                )}
+
                             </div>
 
                             <div className={sidebarStyles.divider} />

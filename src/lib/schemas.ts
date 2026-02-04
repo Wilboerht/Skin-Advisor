@@ -45,6 +45,10 @@ export const AnalyzeRequestSchema = z.object({
             confidence: z.number().optional(),
             description: z.string().optional()
         }).optional(),
+        gender: z.object({
+            value: z.enum(["male", "female"]),
+            confidence: z.number()
+        }).optional(),
         dimensions: z.record(z.string(), z.any()).optional(),
         overallScore: z.number().optional(),
         skinAge: z.object({

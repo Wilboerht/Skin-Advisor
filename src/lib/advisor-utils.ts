@@ -55,6 +55,10 @@ export interface FaceAnalysisResult {
         estimated: number;
         factors: string[];
     };
+    gender?: {
+        value: "male" | "female";
+        confidence: number;
+    };
     dimensions: {
         waterOil: DimensionScore; // 01 水油平衡
         pores: DimensionScore; // 02 毛孔状态
@@ -159,6 +163,8 @@ export function getDefaultFaceAnalysisResult(): FaceAnalysisResult {
         validation: { isValid: true, message: "默认分析" },
         skinType: { type: "combination", confidence: 0.8, description: "混合性肌肤" },
         skinAge: { estimated: 25, factors: [] },
+        // MOCK: Default to male to test conflict logic if using default data
+        gender: { value: "male", confidence: 0.98 },
         dimensions: {
             waterOil: { score: 72, grade: "average", details: "T区偏油，U区适中" },
             pores: { score: 70, grade: "average", details: "鼻翼两侧毛孔明显" },
