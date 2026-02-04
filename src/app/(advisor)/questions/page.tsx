@@ -186,12 +186,29 @@ export default function QuestionsPage() {
         const newAnswers = { ...answers };
 
         if (currentQuestion.type === "multiple") {
-            const currentVal = (newAnswers[currentQuestion.fieldName] as string[]) || [];
-            if (currentVal.includes(value)) {
-                newAnswers[currentQuestion.fieldName] = currentVal.filter((v: string) => v !== value);
+            let currentVal = (newAnswers[currentQuestion.fieldName] as string[]) || [];
+            const exclusiveValues = ["unknown", "none"];
+
+            if (exclusiveValues.includes(value)) {
+                // 如果选择了互斥选项（如“不太清楚”或“无”），则清空其他选项，仅保留该选项
+                // 如果该选项已被选中，则取消选中
+                if (currentVal.includes(value)) {
+                    newAnswers[currentQuestion.fieldName] = [];
+                } else {
+                    newAnswers[currentQuestion.fieldName] = [value];
+                }
             } else {
-                if (currentVal.length < 3) { // 最多选3个
-                    newAnswers[currentQuestion.fieldName] = [...currentVal, value];
+                // 如果选择了普通选项
+                // 1. 先清除互斥选项
+                currentVal = currentVal.filter(v => !exclusiveValues.includes(v));
+
+                // 2. 正常的 toggle 逻辑
+                if (currentVal.includes(value)) {
+                    newAnswers[currentQuestion.fieldName] = currentVal.filter((v: string) => v !== value);
+                } else {
+                    if (currentVal.length < 3) { // 最多选3个
+                        newAnswers[currentQuestion.fieldName] = [...currentVal, value];
+                    }
                 }
             }
         } else {

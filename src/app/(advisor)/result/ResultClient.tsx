@@ -525,10 +525,10 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     </p>
                     <div className="flex flex-col gap-3">
                         <button
-                            onClick={() => window.location.reload()}
+                            onClick={() => router.push('/face-scan')}
                             className="w-full py-3 bg-black text-white rounded-xl font-medium hover:bg-gray-800 transition-colors"
                         >
-                            重试分析
+                            重新拍摄
                         </button>
                         <button
                             onClick={() => router.push('/questions')}
