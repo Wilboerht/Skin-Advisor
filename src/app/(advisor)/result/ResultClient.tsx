@@ -788,24 +788,24 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 <div className="flex flex-col items-center text-center gap-5 mb-6">
                                     <div className="text-[42px] leading-none mb-1">⚠️</div>
                                     <div className="space-y-1.5">
-                                        <h3 className="text-[18px] font-bold text-[#37352F] tracking-tight">数据逻辑冲突校验</h3>
-                                        <p className="text-[13px] text-[#787774] font-medium">Physiological Conflict Detected</p>
+                                        <h3 className="text-[18px] font-bold text-[#37352F] tracking-tight">测前信息准确性提示</h3>
+                                        <p className="text-[13px] text-[#787774] font-medium">Data Accuracy Verification</p>
                                     </div>
                                 </div>
 
                                 <div className="space-y-6">
                                     <p className="text-[14px] text-[#37352F] leading-[1.8] text-justify px-1">
-                                        系统监测到您的<span className="font-semibold bg-[#F1F1EF] px-1.5 py-0.5 rounded text-[#37352F] mx-1 border border-[#E9E9E7]">面部生理特征</span>（如皮脂腺/毛孔分布）
-                                        与您填写的<span className="font-semibold bg-[#F1F1EF] px-1.5 py-0.5 rounded text-[#37352F] mx-1 border border-[#E9E9E7]">性别 (女)</span> 存在显著数据差异。
+                                        为了确保报告建议的严谨性，智能识别引擎对多维数据进行了对冲校验，发现当前的<span className="font-semibold bg-[#F1F1EF] px-1.5 py-0.5 rounded text-[#37352F] mx-1 border border-[#E9E9E7]">底层算法数据模型</span>
+                                        与您在问卷中选择的<span className="font-semibold bg-[#F1F1EF] px-1.5 py-0.5 rounded text-[#37352F] mx-1 border border-[#E9E9E7]">性别选项 (女)</span> 存在一定程度的不一致。
                                     </p>
 
                                     {/* Notion Callout Block - Yellow */}
                                     <div className="bg-[#FBF3DB] bg-opacity-50 p-4 rounded-lg flex items-start gap-3.5 border border-[#FBF3DB]/60">
-                                        <span className="text-[16px] shrink-0 mt-0.5">🛡️</span>
+                                        <span className="text-[16px] shrink-0 mt-0.5">💡</span>
                                         <div className="space-y-2 text-[13px] text-[#37352F] leading-relaxed">
-                                            <p className="opacity-90">若继续，可能导致激素调节类产品（如生理期控油）推荐逻辑偏差。</p>
+                                            <p className="opacity-90">这可能会影响为您匹配<span className="font-bold">“针对性护肤方案”</span>的精准度，导致分析结论与您的实际肤感产生偏差。</p>
                                             <div className="h-px bg-[#37352F]/5 w-full my-1"></div>
-                                            <p className="opacity-90">误操作？<span className="font-semibold text-[#D9730D]">本次重新校准不消耗次数</span>。</p>
+                                            <p className="opacity-90">建议核实信息以获得更准确的建议。若是填写有误？<span className="font-semibold text-[#D9730D]">本次重新填写不消耗测试次数</span>。</p>
                                         </div>
                                     </div>
 
