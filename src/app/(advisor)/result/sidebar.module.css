@@ -280,3 +280,68 @@
         width: 100px;
     }
 }
+
+/* --- Adaptive Gender Tuning Toggle --- */
+.adaptiveToggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background-color: #F0F0EE;
+    /* Notion default gray bg */
+    color: #787774;
+    font-size: 0.75rem;
+    cursor: help;
+    transition: all 0.2s;
+    user-select: none;
+    border: 1px solid transparent;
+}
+
+.adaptiveToggle:hover {
+    background-color: #EBEBE9;
+    color: #37352F;
+}
+
+.adaptiveToggleActive {
+    background-color: #E3E2E0;
+    /* Slightly darker */
+    color: #37352F;
+    border-color: #D3D3D3;
+}
+
+.adaptiveContent {
+    background: white;
+    margin-top: 8px;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #E9E9E7;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.adaptiveRow {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 0.75rem;
+    color: #37352F;
+    line-height: 1.5;
+}
+
+.adaptiveRow:last-child {
+    margin-bottom: 0;
+}
+
+.mixedDataPill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 4px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-family: monospace;
+    background: #F7F7F5;
+    color: #787774;
+    border: 1px solid #E9E9E7;
+}

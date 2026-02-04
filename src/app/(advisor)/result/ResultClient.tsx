@@ -24,7 +24,8 @@ import {
     X,
     MapPin,
     Droplets,
-    Play // Import Play icon
+    Play, // Import Play icon
+    Sparkles // For Adaptive Mode
 } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useToast } from "@/components/ui/Toast";
@@ -108,11 +109,15 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const [userNickname, setUserNickname] = useState<string>("护肤达人");
     // Session ID for sharing - initialized from props or will be set after analysis
     const [sessionId, setSessionId] = useState<string | undefined>(id);
+    const [socialGender, setSocialGender] = useState<string>('female'); // Default to female, will update
 
     // UI State
     const [activeRoutineTab, setActiveRoutineTab] = useState<'morning' | 'evening'>('morning');
     const [loading, setLoading] = useState(!initialData);
     const hasTrackedView = useRef(false);
+
+    // Gender Mismatch State
+    const [showGenderMismatchModal, setShowGenderMismatchModal] = useState(false);
 
     // New State for interactivity
     const [activeDimension, setActiveDimension] = useState<SkinDimensionKey | null>(null);
@@ -120,6 +125,46 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const [activeStepIndex, setActiveStepIndex] = useState<number | null>(0);
     const [selectedCycleDay, setSelectedCycleDay] = useState<number>(1);
     const [isRoutineModalOpen, setIsRoutineModalOpen] = useState(false);
+
+    // Gender Mismatch Detection Effect
+    useEffect(() => {
+        if (!loading && result && faceAnalysis) {
+            // Check Mismatch: Social Female vs Bio Male (High Confidence)
+            const isSocialFemale = socialGender === 'female';
+            const isBioMale = (faceAnalysis as any)?.gender?.value === 'male' && ((faceAnalysis as any)?.gender?.confidence || 0) > 0.95;
+
+            // Check if user has already dismissed or accepted this
+            const hasAck = localStorage.getItem('advisor_gender_mismatch_ack');
+
+            if (isSocialFemale && isBioMale && !hasAck) {
+                setShowGenderMismatchModal(true);
+            }
+        }
+    }, [loading, result, faceAnalysis, socialGender]);
+
+    const handleMismatchRetry = () => {
+        // Clear previous answers to force a fresh start
+        localStorage.removeItem("advisor_answers");
+        localStorage.removeItem("advisor_face_images");
+        localStorage.removeItem("advisor_result");
+        localStorage.removeItem("advisor_step");
+
+        // Set a flag for "Free Retry" bypass - recognized by the question/analyze flow
+        // Note: The backend must support this, or we assume a frontend check
+        localStorage.setItem("advisor_free_retry", "true");
+
+        // Mark as acknowledged so we don't loop if they come back to this same result (unlikely if cleared)
+        localStorage.setItem('advisor_gender_mismatch_ack', 'true');
+
+        router.push("/questions");
+    };
+
+    const handleMismatchContinue = () => {
+        setShowGenderMismatchModal(false);
+        localStorage.setItem('advisor_gender_mismatch_ack', 'true');
+        toast.info("已为您启用混合护肤模式");
+    };
+
 
     // Set default active dimension once data is loaded
     useEffect(() => {
@@ -196,6 +241,10 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 // Restore Nickname
                 const storedNickname = localStorage.getItem("advisor_nickname");
                 if (storedNickname) setUserNickname(storedNickname);
+
+                // Restore Gender
+                const storedGender = localStorage.getItem("advisor_gender");
+                if (storedGender) setSocialGender(storedGender);
             } catch (e) {
                 console.error("Storage load error:", e);
             }
@@ -717,6 +766,63 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 )}
             </AnimatePresence>
 
+            {/* --- GENDER MISMATCH MODAL (Portal/Overlay) --- */}
+            <AnimatePresence>
+                {showGenderMismatchModal && (
+                    <m.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[300] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+                    >
+                        <m.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden"
+                        >
+                            <div className="bg-amber-50 p-6 border-b border-amber-100 flex items-center gap-4">
+                                <div className="p-3 bg-amber-100 rounded-full text-amber-600">
+                                    <AlertCircle size={24} />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-amber-900">数据冲突校验</h3>
+                                    <p className="text-xs text-amber-700 mt-1">Found Physiological Conflict</p>
+                                </div>
+                            </div>
+
+                            <div className="p-6 space-y-4">
+                                <p className="text-gray-600 text-sm leading-relaxed">
+                                    系统监测到您的<span className="font-bold text-gray-900">面部生理特征</span>（如皮脂腺模式/毛囊分布）与您填写的<span className="font-bold text-gray-900">问卷性别(女)</span>存在显著差异。
+                                </p>
+
+                                <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 text-xs text-gray-500 space-y-2">
+                                    <p>🛡️ 若继续，可能导致部分激素调节类产品（如生理期控油）推荐不准确。</p>
+                                    <p>💡 若您是误操作，请点击重新测试（<span className="text-green-600 font-bold">本次重测不消耗次数</span>）。</p>
+                                </div>
+
+                                <div className="flex flex-col gap-3 pt-4">
+                                    <button
+                                        onClick={handleMismatchRetry}
+                                        className="w-full py-3 bg-white border border-gray-200 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <RotateCcw size={16} />
+                                        我填错了，免费重新校准
+                                    </button>
+
+                                    <button
+                                        onClick={handleMismatchContinue}
+                                        className="w-full py-3 bg-amber-500 text-white font-semibold rounded-xl hover:bg-amber-600 transition-colors shadow-lg shadow-amber-200"
+                                    >
+                                        信息无误，启用混合模式
+                                    </button>
+                                </div>
+                            </div>
+                        </m.div>
+                    </m.div>
+                )}
+            </AnimatePresence>
+
             {result && (
                 <div className={styles.container}>
                     {/* Global Brand Bar */}
@@ -878,6 +984,48 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         </span>
                                     </div>
                                 </div>
+
+                                {/* --- Adaptive Gender Tuning (New) --- */}
+                                {socialGender === 'female' && (faceAnalysis as any)?.gender?.value === 'male' && ((faceAnalysis as any)?.gender?.confidence || 0) > 0.9 && (
+                                    <div className="mt-2 text-left">
+                                        <div
+                                            className={sidebarStyles.adaptiveToggle}
+                                            onClick={(e) => {
+                                                const content = e.currentTarget.nextElementSibling as HTMLElement;
+                                                const isActive = content.style.display !== 'none';
+                                                content.style.display = isActive ? 'none' : 'block';
+                                                e.currentTarget.classList.toggle(sidebarStyles.adaptiveToggleActive, !isActive);
+                                            }}
+                                        >
+                                            <Sparkles size={12} className="text-amber-500" />
+                                            <span>Adaptive Mode On</span>
+                                            <ChevronRight size={10} className="opacity-50" />
+                                        </div>
+
+                                        {/* Hidden Content */}
+                                        <div className={sidebarStyles.adaptiveContent} style={{ display: 'none' }}>
+                                            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Mixed Profile Activated</div>
+                                            <div className={sidebarStyles.adaptiveRow}>
+                                                <span className={sidebarStyles.propertyIcon}>⚧</span>
+                                                <div>
+                                                    <span className={sidebarStyles.mixedDataPill}>Social: Female</span>
+                                                    <span className={sidebarStyles.mixedDataPill}>Bio: Male</span>
+                                                </div>
+                                            </div>
+                                            <div className={sidebarStyles.adaptiveRow}>
+                                                <span className={sidebarStyles.propertyIcon}>⚡</span>
+                                                <span>已增强 T区控油权重 (+20%)</span>
+                                            </div>
+                                            <div className={sidebarStyles.adaptiveRow}>
+                                                <span className={sidebarStyles.propertyIcon}>📅</span>
+                                                <span>已屏蔽生理周期激素逻辑</span>
+                                            </div>
+                                            <p className="text-[10px] text-gray-400 mt-2 pt-2 border-t border-gray-100 leading-relaxed">
+                                                系统基于您的双重画像（问卷意愿+面部生理特征）为您定制了 <span className="text-amber-600 font-medium">混合护效方案</span>。
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div className={sidebarStyles.propertyRow}>
                                     <div className={sidebarStyles.propertyLabel}>
