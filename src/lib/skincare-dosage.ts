@@ -406,6 +406,7 @@ export interface BioFactors {
     stressLevel: "low" | "medium" | "high";
     sleepQuality: "good" | "fair" | "poor";
     menstrualPhase?: "follicular" | "ovulation" | "luteal" | "menstrual"; // Optional
+    gender?: "female" | "male"; // Added for Silent Correction
 }
 
 /**
@@ -443,7 +444,34 @@ export function generateScientificRoutine(
 
     // --- BIO-RHYTHM ---
     const isHighStress = bioFactors?.stressLevel === "high" || bioFactors?.sleepQuality === "poor";
-    const isLutealPhase = bioFactors?.menstrualPhase === "luteal";
+    // Check luteal phase initially
+    let isLutealPhase = bioFactors?.menstrualPhase === "luteal";
+
+    // --- 2. Silent Gender Correction Logic (Hybrid & Prompt Strategy) ---
+    // If User says "Female" but AI strongly suggests "Male" (e.g. Transgender, or just physiological differences)
+    // We keep Social Identity (Labels, UI) as "Female", but adjust biological parameters (Oil, Cycle)
+    let genderAdjustmentLog: string[] = [];
+
+    // Check AI detected gender from goldStandardData (Face Analysis Result)
+    const isBiologicalMale = (goldStandardData as any)?.gender?.value === 'male' && ((goldStandardData as any)?.gender?.confidence || 0) > 0.9;
+
+    // Check Social Gender from BioFactors (Questionnaire)
+    const isSocialFemale = bioFactors?.gender === 'female';
+
+    if (isSocialFemale && isBiologicalMale) {
+        // A. Oil Control Boost (Male skin tends to be oilier)
+        if (!isDry && !isSensitive) {
+            // We can simulate this by potentially modifying tolerance or isOily flags if they were mutable, 
+            // but here we just log it and can use the flag downstream if needed.
+            // For now, let's treat it as a strong hint to suppress luteal phase logic which is female-specific.
+        }
+
+        // B. Suppress Menstrual Cycle Logic (Males don't have luteal phases)
+        if (isLutealPhase) {
+            isLutealPhase = false; // Override locally
+            genderAdjustmentLog.push("Detected physiological male traits: Suppressed menstrual cycle adjustments.");
+        }
+    }
 
     // --- SAFETY CHECK (Pregnancy/Sensitive) ---
     const isPregnancySafeMode = contraindications?.pregnancy || contraindications?.breastfeeding;

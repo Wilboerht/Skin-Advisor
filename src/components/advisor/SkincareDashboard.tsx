@@ -413,11 +413,41 @@ export function SkincareDashboard({ routineData }: SkincareDashboardProps) {
                                     <Sun size={24} strokeWidth={2.5} />
                                 )}
                             </div>
-                            <div className="flex flex-col">
-                                <span className="text-[11px] font-bold text-[#787774] uppercase tracking-widest mb-0.5 opacity-50">Current Focus</span>
+                            <div className="flex flex-col relative group/tooltip">
+                                <span className="text-[11px] font-bold text-[#787774] uppercase tracking-widest mb-0.5 opacity-50 flex items-center gap-1 cursor-help">
+                                    Current Focus
+                                    <Info size={12} className="opacity-70 group-hover/tooltip:opacity-100 transition-opacity" />
+                                </span>
                                 <h3 className="text-[22px] font-bold text-[#37352F] tracking-tight leading-tight">
                                     {activeTab === 'evening' ? (currentCycleInfo?.title || '常规修护方案') : '晨间全效防护'}
                                 </h3>
+
+                                {/* Tooltip for Skin Cycling */}
+                                <div className="absolute top-full left-0 mt-3 w-80 p-5 bg-white rounded-xl shadow-xl border border-gray-100 opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-300 z-50 pointer-events-none group-hover/tooltip:pointer-events-auto transform translate-y-2 group-hover/tooltip:translate-y-0">
+                                    <div className="text-sm space-y-3">
+                                        <h4 className="font-bold text-gray-900 flex items-center gap-2">
+                                            <Sparkles className="w-4 h-4 text-amber-500" />
+                                            双重周期逻辑解析
+                                        </h4>
+                                        <div className="space-y-3 text-gray-600 text-xs leading-relaxed">
+                                            <p>
+                                                <strong className="text-gray-900">28天生物钟：</strong>
+                                                并非死板的倒计时，而是配合您皮肤细胞28天的平均代谢周期（Turnover Rate）设定的“疗程观察窗口”。
+                                            </p>
+                                            <p>
+                                                <strong className="text-gray-900">Skin Cycling 4天循环：</strong>
+                                                嵌套在28天内的执行法则（焕肤-维A-修护-修护）。
+                                            </p>
+                                            <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                                <p className="mb-1 font-medium text-gray-900">“同型不同质”的个性化定制：</p>
+                                                <p>虽然大家的时间表看起来一样，但系统已根据您的肤质为您定制了完全不同的<span className="text-amber-600 font-medium">活性成分浓度</span>与<span className="text-amber-600 font-medium">修护强度</span>。</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Arrow */}
+                                    <div className="absolute top-[-6px] left-6 w-3 h-3 bg-white border-t border-l border-gray-100 transform rotate-45"></div>
+                                </div>
                             </div>
                         </div>
 

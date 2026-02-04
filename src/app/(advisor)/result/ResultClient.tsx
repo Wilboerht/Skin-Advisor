@@ -382,6 +382,9 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     // Check for menstrual cycle answer if added
                     // Assuming key logic similar to above
                     if (answers.menstrualCycle === "luteal") bioFactors.menstrualPhase = "luteal";
+
+                    // Map Gender for Silent Correction Logic
+                    if (answers.gender) bioFactors.gender = answers.gender;
                 }
             } catch (e) {
                 console.error("Failed to parse bio-factors", e);
