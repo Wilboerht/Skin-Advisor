@@ -136,10 +136,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
             const isBioMale = faGenderVal === 'male' && faGenderConf > 0.80;
 
-            // Check if user has already dismissed or accepted this
-            const hasAck = localStorage.getItem('advisor_gender_mismatch_ack');
-
-            if (isSocialFemale && isBioMale && !hasAck) {
+            // Always show mismatch modal if detected, per user request
+            if (isSocialFemale && isBioMale) {
                 setShowGenderMismatchModal(true);
             }
         }
@@ -769,56 +767,65 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 )}
             </AnimatePresence>
 
-            {/* --- GENDER MISMATCH MODAL (Portal/Overlay) --- */}
+            {/* --- GENDER MISMATCH MODAL (Notion Style) --- */}
             <AnimatePresence>
                 {showGenderMismatchModal && (
                     <m.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[300] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+                        className="fixed inset-0 z-[300] bg-[#191919]/40 backdrop-blur-[2px] flex items-center justify-center p-4"
                     >
                         <m.div
-                            initial={{ scale: 0.95, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.95, opacity: 0 }}
-                            className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden"
+                            initial={{ scale: 0.95, opacity: 0, y: 8 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.95, opacity: 0, y: 8 }}
+                            transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                            className="bg-white rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] w-full max-w-[420px] overflow-hidden border border-[#E9E9E7]"
                         >
-                            <div className="bg-amber-50 p-6 border-b border-amber-100 flex items-center gap-4">
-                                <div className="p-3 bg-amber-100 rounded-full text-amber-600">
-                                    <AlertCircle size={24} />
-                                </div>
-                                <div>
-                                    <h3 className="text-lg font-bold text-amber-900">数据冲突校验</h3>
-                                    <p className="text-xs text-amber-700 mt-1">Found Physiological Conflict</p>
-                                </div>
-                            </div>
-
-                            <div className="p-6 space-y-4">
-                                <p className="text-gray-600 text-sm leading-relaxed">
-                                    系统监测到您的<span className="font-bold text-gray-900">面部生理特征</span>（如皮脂腺模式/毛囊分布）与您填写的<span className="font-bold text-gray-900">问卷性别(女)</span>存在显著差异。
-                                </p>
-
-                                <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 text-xs text-gray-500 space-y-2">
-                                    <p>🛡️ 若继续，可能导致部分激素调节类产品（如生理期控油）推荐不准确。</p>
-                                    <p>💡 若您是误操作，请点击重新测试（<span className="text-green-600 font-bold">本次重测不消耗次数</span>）。</p>
+                            <div className="p-8">
+                                {/* Header with Emoji */}
+                                <div className="flex flex-col items-center text-center gap-5 mb-6">
+                                    <div className="text-[42px] leading-none mb-1">⚠️</div>
+                                    <div className="space-y-1.5">
+                                        <h3 className="text-[18px] font-bold text-[#37352F] tracking-tight">数据逻辑冲突校验</h3>
+                                        <p className="text-[13px] text-[#787774] font-medium">Physiological Conflict Detected</p>
+                                    </div>
                                 </div>
 
-                                <div className="flex flex-col gap-3 pt-4">
-                                    <button
-                                        onClick={handleMismatchRetry}
-                                        className="w-full py-3 bg-white border border-gray-200 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
-                                    >
-                                        <RotateCcw size={16} />
-                                        我填错了，免费重新校准
-                                    </button>
+                                <div className="space-y-6">
+                                    <p className="text-[14px] text-[#37352F] leading-[1.8] text-justify px-1">
+                                        系统监测到您的<span className="font-semibold bg-[#F1F1EF] px-1.5 py-0.5 rounded text-[#37352F] mx-1 border border-[#E9E9E7]">面部生理特征</span>（如皮脂腺/毛孔分布）
+                                        与您填写的<span className="font-semibold bg-[#F1F1EF] px-1.5 py-0.5 rounded text-[#37352F] mx-1 border border-[#E9E9E7]">性别 (女)</span> 存在显著数据差异。
+                                    </p>
 
-                                    <button
-                                        onClick={handleMismatchContinue}
-                                        className="w-full py-3 bg-amber-500 text-white font-semibold rounded-xl hover:bg-amber-600 transition-colors shadow-lg shadow-amber-200"
-                                    >
-                                        信息无误，启用混合模式
-                                    </button>
+                                    {/* Notion Callout Block - Yellow */}
+                                    <div className="bg-[#FBF3DB] bg-opacity-50 p-4 rounded-lg flex items-start gap-3.5 border border-[#FBF3DB]/60">
+                                        <span className="text-[16px] shrink-0 mt-0.5">🛡️</span>
+                                        <div className="space-y-2 text-[13px] text-[#37352F] leading-relaxed">
+                                            <p className="opacity-90">若继续，可能导致激素调节类产品（如生理期控油）推荐逻辑偏差。</p>
+                                            <div className="h-px bg-[#37352F]/5 w-full my-1"></div>
+                                            <p className="opacity-90">误操作？<span className="font-semibold text-[#D9730D]">本次重新校准不消耗次数</span>。</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Actions */}
+                                    <div className="flex flex-col gap-3 pt-2">
+                                        <button
+                                            onClick={handleMismatchContinue}
+                                            className="w-full h-11 bg-[#37352F] text-white text-[14px] font-medium rounded-[6px] hover:bg-[#2C2C2C] active:scale-[0.99] transition-all flex items-center justify-center gap-2 shadow-sm"
+                                        >
+                                            <span>信息无误</span>
+                                        </button>
+
+                                        <button
+                                            onClick={handleMismatchRetry}
+                                            className="w-full h-11 bg-transparent text-[#787774] text-[14px] font-medium rounded-[6px] hover:bg-[#F1F1EF] hover:text-[#37352F] active:bg-[#E9E9E7] transition-all flex items-center justify-center gap-2"
+                                        >
+                                            <RotateCcw size={14} strokeWidth={2.5} />
+                                            <span>我填错了，重新填写</span>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </m.div>
