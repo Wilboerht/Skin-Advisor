@@ -375,7 +375,7 @@ export default function QuestionsPage() {
                             disabled={isNextDisabled()}
                             className="bg-[#1A1A1A] text-white px-8 py-2.5 rounded-full text-sm font-medium tracking-wide hover:bg-[#3D4430] disabled:opacity-20 disabled:cursor-not-allowed transition-all"
                         >
-                            Next Step
+                            下一步
                         </button>
                     )}
                     {/* Fallback for last step is handled by auto-submit, but we can keep a manual button if stuck */}
