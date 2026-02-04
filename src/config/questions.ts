@@ -35,7 +35,8 @@ export const DEFAULT_QUESTIONS: Question[] = [
         options: [
             { value: "dry", label: "干性 (紧绷、脱皮)", description: "洗脸后感觉紧绷，易脱皮" },
             { value: "oily", label: "油性 (全脸泛油)", description: "T区和脸颊都容易出油" },
-            { value: "combination", label: "混合性 (T区油两颊干)", description: "T区油腻，脸颊干燥" },
+            { value: "combination_dry", label: "混干性 (T区油两颊干)", description: "T区油腻，脸颊干燥" },
+            { value: "combination_oily", label: "混油性 (T区油两颊不干)", description: "T区出油，脸颊不干/偏油" },
             { value: "sensitive", label: "敏感 (易泛红)", description: "容易泛红、刺痛、过敏" },
             { value: "normal", label: "中性 (水油平衡)", description: "不油不干，状态稳定" },
         ],
@@ -144,5 +145,44 @@ export const DEFAULT_QUESTIONS: Question[] = [
             value: "female",
             operator: "equals"
         }
-    }
+    },
+    {
+        id: "q9",
+        fieldName: "currentRoutine",
+        question: "您的护肤习惯是？",
+        type: "single",
+        options: [
+            { value: "beginner", label: "几乎不护肤", description: "很少护肤或随意护肤" },
+            { value: "basic", label: "简易打理", description: "仅进行 1-2 步基础护理（如只涂面霜）" },
+            { value: "intermediate", label: "认真对待", description: "追求合适的产品、使用步骤和方法，偶尔使用居家美容仪器" },
+            { value: "expert", label: "专业护理", description: "定期或不定期的进行医美或专业院线级护理" },
+        ],
+    },
+    {
+        id: "q10",
+        fieldName: "allergies",
+        question: "你有以下过敏情况吗？",
+        subtext: "多选 (无可跳过或选没有)",
+        type: "multiple",
+        options: [
+            { value: "none", label: "没有过敏史", description: "从未对护肤品或成分过敏" },
+            { value: "fragrance", label: "香精过敏", description: "对护肤品中的\"香精\"成分敏感" },
+            { value: "alcohol", label: "酒精过敏", description: "对\"乙醇\"、\"变性乙醇\"等成分敏感" },
+            { value: "acids", label: "酸类不耐受", description: "使用水杨酸、果酸等产品易刺痛泛红" },
+            { value: "multiple", label: "多种过敏", description: "对多种成分或产品类型有过过敏反应" },
+            { value: "unknown", label: "不太清楚", description: "不确定自己对哪些成分过敏" },
+        ],
+    },
+    {
+        id: "q11",
+        fieldName: "budget",
+        question: "您的护肤预算是？",
+        type: "single",
+        options: [
+            { value: "budget", label: "追求性价比", description: "注重性价比，单品 500元以内" },
+            { value: "mid", label: "中等预算", description: "兼顾成分与价格，单品 300-1000元" },
+            { value: "premium", label: "品质优先", description: "追求卓越功效，单品 800-2000元" },
+            { value: "luxury", label: "不设上限", description: "顶级奢华体验，不设预算上限" },
+        ],
+    },
 ];

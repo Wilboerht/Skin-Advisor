@@ -31,6 +31,8 @@ const SKIN_TYPE_LABELS: Record<string, { label: string; emoji: string }> = {
   dry: { label: "干性肌肤", emoji: "🏜️" },
   oily: { label: "油性肌肤", emoji: "💧" },
   combination: { label: "混合性肌肤", emoji: "⚖️" },
+  combination_dry: { label: "混干性肌肤", emoji: "⚖️" },
+  combination_oily: { label: "混油性肌肤", emoji: "⚖️" },
   normal: { label: "中性肌肤", emoji: "✨" },
   sensitive: { label: "敏感性肌肤", emoji: "🌸" },
 };

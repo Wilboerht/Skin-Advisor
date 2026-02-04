@@ -146,6 +146,8 @@ export function getSkinTypeLabel(type: string): string {
         dry: "干性肌肤",
         oily: "油性肌肤",
         combination: "混合性肌肤",
+        combination_dry: "混干性肌肤",
+        combination_oily: "混油性肌肤",
         sensitive: "敏感肌肤",
         normal: "中性肌肤",
     };
@@ -219,7 +221,7 @@ export interface QuestionnaireAnswers {
     ageRange?: string;
     gender?: string;
     currentRoutine?: string;
-    allergies?: string;
+    allergies?: string | string[];
     budget?: string;
     pregnancyStatus?: string;
     medicationHistory?: string;
