@@ -58,7 +58,7 @@ export async function GET(
     return NextResponse.json(user);
 }
 
-// PATCH /api/admin/users/[id] - Update user (disable/enable, update role)
+// PATCH /api/admin/users/[id] - Update user (disable/enable, update role, dailyTestLimit)
 export async function PATCH(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
@@ -70,7 +70,7 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await request.json();
-    const { role, name } = body;
+    const { role, name, dailyTestLimit } = body;
 
     const user = await prisma.user.findUnique({ where: { id } });
     if (!user) {
@@ -80,6 +80,7 @@ export async function PATCH(
     const updateData: any = {};
     if (role !== undefined) updateData.role = role;
     if (name !== undefined) updateData.name = name;
+    if (dailyTestLimit !== undefined) updateData.dailyTestLimit = dailyTestLimit;
 
     const updatedUser = await prisma.user.update({
         where: { id },
@@ -93,7 +94,12 @@ export async function PATCH(
         action: "update",
         resource: "User",
         resourceId: id,
-        details: { previousRole: user.role, newRole: role },
+        details: {
+            previousRole: user.role,
+            newRole: role,
+            previousDailyTestLimit: (user as any).dailyTestLimit,
+            newDailyTestLimit: dailyTestLimit
+        },
         ...clientInfo,
     });
 

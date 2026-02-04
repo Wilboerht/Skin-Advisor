@@ -1,19 +1,23 @@
 
-import { X, Clock, ShoppingBag, Bell, Calendar, Smartphone, MapPin } from "lucide-react";
+import { X, Clock, ShoppingBag, Bell, Calendar, Smartphone, MapPin, Settings, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
+import { useToast } from "@/components/ui/Toast";
 
 interface UserDetailModalProps {
     isOpen: boolean;
     onClose: () => void;
     userId: string | null;
+    onUpdate?: () => void;
 }
 
 interface UserDetail {
     id: string;
     email: string;
+    phoneNumber?: string;
     name: string | null;
     role: string;
+    dailyTestLimit: number;
     createdAt: string;
     advisorSessions: any[];
     shareRewards: any[];
@@ -35,11 +39,18 @@ interface UserDetail {
         enabled: boolean;
         pushEnabled: boolean;
     } | null;
+    _count?: {
+        testRecords?: number;
+    };
 }
 
-export function UserDetailModal({ isOpen, onClose, userId }: UserDetailModalProps) {
+export function UserDetailModal({ isOpen, onClose, userId, onUpdate }: UserDetailModalProps) {
     const [user, setUser] = useState<UserDetail | null>(null);
     const [loading, setLoading] = useState(false);
+    const [editingLimit, setEditingLimit] = useState(false);
+    const [newLimit, setNewLimit] = useState(1);
+    const [saving, setSaving] = useState(false);
+    const toast = useToast();
 
     useEffect(() => {
         if (isOpen && userId) {
@@ -48,13 +59,40 @@ export function UserDetailModal({ isOpen, onClose, userId }: UserDetailModalProp
                 .then(res => res.json())
                 .then(data => {
                     setUser(data);
+                    setNewLimit(data.dailyTestLimit || 1);
                 })
                 .catch(console.error)
                 .finally(() => setLoading(false));
         } else {
             setUser(null);
+            setEditingLimit(false);
         }
     }, [isOpen, userId]);
+
+    const handleSaveLimit = async () => {
+        if (!user) return;
+        setSaving(true);
+        try {
+            const res = await fetch(`/api/admin/users/${user.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ dailyTestLimit: newLimit })
+            });
+            if (res.ok) {
+                const updated = await res.json();
+                setUser({ ...user, dailyTestLimit: updated.dailyTestLimit });
+                setEditingLimit(false);
+                toast.success('测试次数限制已更新');
+                onUpdate?.();
+            } else {
+                toast.error('更新失败');
+            }
+        } catch (err) {
+            toast.error('网络错误');
+        } finally {
+            setSaving(false);
+        }
+    };
 
     if (!isOpen) return null;
 
@@ -85,7 +123,7 @@ export function UserDetailModal({ isOpen, onClose, userId }: UserDetailModalProp
                         {/* Header */}
                         <div>
                             <h2 className="text-2xl font-serif text-slate-900">{user.name || "Anonymous User"}</h2>
-                            <p className="text-slate-500 font-mono text-sm mt-1">{user.email}</p>
+                            <p className="text-slate-500 font-mono text-sm mt-1">{user.email || user.phoneNumber}</p>
                             <div className="flex items-center gap-3 mt-4">
                                 <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${user.role === 'disabled' ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
                                     {user.role}
@@ -94,6 +132,59 @@ export function UserDetailModal({ isOpen, onClose, userId }: UserDetailModalProp
                                     <Clock className="w-3 h-3" />
                                     Joined {new Date(user.createdAt).toLocaleDateString()}
                                 </span>
+                            </div>
+                        </div>
+
+                        {/* Test Limit Settings */}
+                        <div className="bg-amber-50 rounded-xl p-5 border border-amber-100">
+                            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                <Settings className="w-4 h-4" /> 测试次数限制
+                            </h3>
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-slate-600">每日测试次数上限</p>
+                                    <p className="text-xs text-slate-400 mt-1">默认为 1 次，可为特定用户调整</p>
+                                </div>
+                                {editingLimit ? (
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            max="100"
+                                            value={newLimit}
+                                            onChange={(e) => setNewLimit(Math.max(1, parseInt(e.target.value) || 1))}
+                                            className="w-20 px-3 py-1.5 border border-slate-200 rounded-lg text-center text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                                        />
+                                        <button
+                                            onClick={handleSaveLimit}
+                                            disabled={saving}
+                                            className="px-3 py-1.5 bg-amber-500 text-white text-sm rounded-lg hover:bg-amber-600 disabled:opacity-50 flex items-center gap-1"
+                                        >
+                                            {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                                            保存
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setEditingLimit(false);
+                                                setNewLimit(user.dailyTestLimit || 1);
+                                            }}
+                                            className="px-3 py-1.5 text-slate-500 text-sm hover:bg-slate-100 rounded-lg"
+                                        >
+                                            取消
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-2xl font-bold text-amber-600">{user.dailyTestLimit || 1}</span>
+                                        <span className="text-sm text-slate-500">次/天</span>
+                                        <button
+                                            onClick={() => setEditingLimit(true)}
+                                            className="px-3 py-1.5 text-amber-600 text-sm border border-amber-200 rounded-lg hover:bg-amber-100"
+                                        >
+                                            修改
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </div>
 

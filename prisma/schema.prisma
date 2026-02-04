@@ -163,6 +163,7 @@ model User {
   password        String
   name            String?
   role            String           @default("user")
+  dailyTestLimit  Int              @default(1) // 每日测试次数限制，管理员可调整
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   
@@ -172,6 +173,57 @@ model User {
   wishlists       Wishlist[]
   pushSubscriptions PushSubscription[]
   reminderSettings  ReminderSettings?
+  testRecords       TestRecord[]
+}
+
+// 测试次数记录
+model TestRecord {
+  id        String   @id @default(cuid())
+  userId    String?  // 登录用户
+  guestId   String?  // 游客 (浏览器指纹)
+  testDate  DateTime @default(now()) // 测试日期
+  sessionId String?  // 关联的会话ID
+  
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, testDate])
+  @@index([guestId, testDate])
+}
+
+// 游客使用记录 - 多维度防滥用
+model GuestUsage {
+  id            String   @id @default(cuid())
+  
+  // ===== 多维度标识 =====
+  ipAddress     String   // IP 地址
+  cookieId      String?  // Cookie 标识
+  fingerprint   String?  // 浏览器指纹
+  
+  // ===== 使用统计 =====
+  testCount     Int      @default(0)     // 总测试次数
+  todayCount    Int      @default(0)     // 今日测试次数
+  lastTestAt    DateTime?                // 最后测试时间
+  lastResetDate DateTime @default(now()) // 上次重置日期 (每日重置todayCount)
+  
+  // ===== 设备信息 =====
+  userAgent     String?  // User-Agent
+  deviceType    String?  // desktop | mobile | tablet
+  browser       String?  // 浏览器类型
+  os            String?  // 操作系统
+  
+  // ===== 风险标记 =====
+  riskScore     Int      @default(0)     // 风险分数 (0-100)
+  isBlocked     Boolean  @default(false) // 是否被封禁
+  blockedReason String?                  // 封禁原因
+  blockedAt     DateTime?                // 封禁时间
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([ipAddress])
+  @@index([cookieId])
+  @@index([fingerprint])
+  @@index([lastTestAt])
 }
 
 // 产品库

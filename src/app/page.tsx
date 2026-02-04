@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Link } from "next-view-transitions";
 import { m, AnimatePresence, LazyMotion, domAnimation } from "framer-motion";
@@ -12,6 +12,7 @@ import { SkincareReminder } from "@/components/advisor/SkincareReminder";
 import { useToast } from "@/components/ui/Toast";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { ProfileModal } from "@/components/auth/ProfileModal";
+import { getGuestIdentity, type GuestIdentity } from "@/lib/guest-identity";
 
 export default function Home() {
   const router = useRouter();
@@ -47,9 +48,10 @@ export default function Home() {
     { group: "高原", regions: ["西藏", "青海"] },
   ];
 
+
   /* --- Handlers --- */
 
-  const startNewTest = () => {
+  const startNewTest = useCallback(() => {
     // Clear previous advisor state to ensure fresh start
     localStorage.removeItem("advisor_answers");
     localStorage.removeItem("advisor_gender");
@@ -58,7 +60,7 @@ export default function Home() {
 
     setIsLoading(true);
     router.push("/questions");
-  };
+  }, [router]);
 
   const handleLocationAccept = async () => {
     setIsLocating(true);
@@ -81,7 +83,7 @@ export default function Home() {
         // 成功获取定位后，关闭弹窗并开始
         setShowLocationModal(false);
         setIsLocating(false);
-        startNewTest();
+        recordAndStartTest();
       } catch (error) {
         console.warn("Geolocation failed", error);
         setIsLocating(false);
@@ -99,22 +101,118 @@ export default function Home() {
     setShowRegionSelectModal(false);
     sessionStorage.setItem("locationConsent", "granted");
     localStorage.setItem("userRegion", JSON.stringify({ province: region, city: region }));
-    startNewTest();
+    recordAndStartTest();
   };
 
   const handleSkipRegionSelect = () => {
     setShowRegionSelectModal(false);
     sessionStorage.setItem("locationConsent", "declined");
-    startNewTest();
+    recordAndStartTest();
   };
 
   const handleLocationDecline = () => {
     setShowLocationModal(false);
     sessionStorage.setItem("locationConsent", "declined");
-    startNewTest();
+    recordAndStartTest();
   };
 
-  const handleStart = () => {
+  // Test limit state
+  const [testLimitInfo, setTestLimitInfo] = useState<{
+    canTest: boolean;
+    usedCount: number;
+    dailyLimit: number;
+    remaining: number;
+    isBlocked?: boolean;
+    blockReason?: string | null;
+  } | null>(null);
+  const [checkingLimit, setCheckingLimit] = useState(false);
+  const [showLimitModal, setShowLimitModal] = useState(false);
+  const [guestIdentity, setGuestIdentity] = useState<GuestIdentity | null>(null);
+
+  // Initialize guest identity on mount
+  useEffect(() => {
+    const initGuestIdentity = async () => {
+      try {
+        const identity = await getGuestIdentity();
+        setGuestIdentity(identity);
+      } catch (error) {
+        console.error('Failed to get guest identity:', error);
+      }
+    };
+    initGuestIdentity();
+  }, []);
+
+  // Check test limit with multi-factor identity
+  const checkTestLimit = useCallback(async () => {
+    setCheckingLimit(true);
+    try {
+      // Get fresh identity if not available
+      let identity = guestIdentity;
+      if (!identity) {
+        identity = await getGuestIdentity();
+        setGuestIdentity(identity);
+      }
+
+      const params = new URLSearchParams();
+      params.set('cookieId', identity.cookieId);
+      if (identity.fingerprint) {
+        params.set('fingerprint', identity.fingerprint);
+      }
+
+      const res = await fetch(`/api/advisor/test-limit?${params.toString()}`);
+      if (res.ok) {
+        const data = await res.json();
+        setTestLimitInfo(data);
+
+        // Check if blocked
+        if (data.isBlocked) {
+          return false;
+        }
+        return data.canTest;
+      }
+      return true; // Allow on error
+    } catch (err) {
+      console.error("Failed to check test limit:", err);
+      return true; // Allow on error
+    } finally {
+      setCheckingLimit(false);
+    }
+  }, [guestIdentity]);
+
+  // Record test and start with multi-factor identity
+  const recordAndStartTest = useCallback(async () => {
+    try {
+      // Get fresh identity if not available
+      let identity = guestIdentity;
+      if (!identity) {
+        identity = await getGuestIdentity();
+        setGuestIdentity(identity);
+      }
+
+      const sessionId = localStorage.getItem("advisor_session_id");
+      await fetch("/api/advisor/test-limit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cookieId: identity.cookieId,
+          fingerprint: identity.fingerprint,
+          sessionId
+        })
+      });
+    } catch (err) {
+      console.error("Failed to record test:", err);
+    }
+    startNewTest();
+  }, [guestIdentity, startNewTest]);
+
+  const handleStart = async () => {
+    // Check test limit first
+    const canTest = await checkTestLimit();
+    if (!canTest) {
+      setShowLimitModal(true);
+      return;
+    }
+
     // If user is logged in and has a name, skip nickname modal
     if (user?.name) {
       localStorage.setItem("advisor_nickname", user.name);
@@ -419,6 +517,79 @@ export default function Home() {
                     className="text-xs text-[#3D4430]/30 hover:text-[#3D4430] transition-colors"
                   >
                     跳过
+                  </button>
+                </div>
+              </m.div>
+            </m.div>
+          )}
+        </AnimatePresence>
+
+        {/* Test Limit Modal */}
+        <AnimatePresence>
+          {showLimitModal && (
+            <m.div
+              className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <m.div
+                className="absolute inset-0 bg-[#FDFBF7]/80 backdrop-blur-sm"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowLimitModal(false)}
+              />
+
+              <m.div
+                className="relative z-10 w-full max-w-sm bg-white shadow-[0_20px_40px_-10px_rgba(0,0,0,0.05)] border border-[#3D4430]/5 p-8 text-center"
+                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <button
+                  onClick={() => setShowLimitModal(false)}
+                  className="absolute top-4 right-4 text-[#1A1A1A]/30 hover:text-[#1A1A1A] transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+
+                <div className="flex justify-center mb-6 text-amber-500">
+                  <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+
+                <h3 className="mb-2 text-xl font-serif text-[#1A1A1A]">
+                  今日测试次数已用完
+                </h3>
+
+                <p className="mb-6 text-sm text-[#5E5E5E] leading-relaxed font-light">
+                  {user ? (
+                    <>您今日的 {testLimitInfo?.dailyLimit || 1} 次测试机会已全部使用，请明天再来</>
+                  ) : (
+                    <>游客每天仅有 1 次测试机会<br />登录后可获得更多测试次数</>
+                  )}
+                </p>
+
+                <div className="space-y-3">
+                  {!user && (
+                    <button
+                      onClick={() => {
+                        setShowLimitModal(false);
+                        openAuthModal('login');
+                      }}
+                      className="w-full bg-[#1A1A1A] text-[#FDFBF7] py-3 text-sm font-medium hover:bg-[#3D4430] transition-colors"
+                    >
+                      登录 / 注册
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setShowLimitModal(false)}
+                    className="w-full py-2 text-xs text-[#3D4430]/40 hover:text-[#3D4430] transition-colors bg-transparent"
+                  >
+                    我知道了
                   </button>
                 </div>
               </m.div>
