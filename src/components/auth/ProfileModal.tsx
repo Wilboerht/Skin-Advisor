@@ -649,7 +649,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                                                             </div>
 
                                                             <div className="mt-auto">
-                                                                <h4 className="text-sm font-bold text-zinc-900 group-hover:text-blue-600 transition-colors">
+                                                                <h4 className="text-sm font-bold text-zinc-900">
                                                                     {session.analysisResult?.skinProfile?.typeLabel || "皮肤深度分析"}
                                                                 </h4>
                                                                 <div className="flex items-center gap-2 mt-1">
@@ -658,9 +658,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                                                                 </div>
                                                             </div>
 
-                                                            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                <ChevronRight size={14} className="text-zinc-400" />
-                                                            </div>
+
                                                         </motion.div>
                                                     </Link>
                                                 ))}
