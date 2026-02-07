@@ -268,24 +268,24 @@ export default function Home() {
           <div className="animate-fade-in-up">
             <div className="mb-8">
               <Image
-                src="/logo-myskin-today.svg"
-                alt="MySkin.Today"
+                src="/partner-nihplod.webp"
+                alt="NIHPLOD 旎柏"
                 width={300}
                 height={90}
                 priority
-                className="h-24 w-auto mx-auto opacity-80"
+                className="h-14 w-auto mx-auto opacity-80"
               />
             </div>
 
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-serif text-[#1A1A1A] mb-8 leading-tight tracking-tight">
-              专属您的<br className="sm:hidden" />护肤专家
+              AI 智能<br className="sm:hidden" />精准护肤
             </h1>
 
             <p className="text-[#5C5855] leading-loose mb-12 max-w-md mx-auto font-light text-sm md:text-base delay-100 animate-fade-in-up opacity-0" style={{ animationFillMode: 'forwards' }}>
-              融合视觉分析与专家级诊疗建议，<br />为您提供科学、严谨的定制化护肤方案。
+              源自摩纳哥真脂质体科技，结合 AI 深度视觉分析。<br />为您量身打造科学、精准的肌肤护理方案，唤醒肌肤本源之美。
             </p>
 
-            <div className="delay-200 animate-fade-in-up opacity-0 flex flex-col items-center gap-8" style={{ animationFillMode: 'forwards' }}>
+            <div className="delay-200 animate-fade-in-up opacity-0 flex flex-col items-center gap-6" style={{ animationFillMode: 'forwards' }}>
               <button
                 onClick={handleStart}
                 disabled={isLoading}
@@ -294,35 +294,46 @@ export default function Home() {
                 {isLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>正在开启...</span>
+                    <span>正在连接...</span>
                   </>
                 ) : (
                   <>
-                    <span>开始测评</span>
+                    <span>开启定制之旅</span>
                     <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1" />
                   </>
                 )}
               </button>
 
-              {/* Secondary Actions for Logged-in Users */}
-              {user && (
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={() => setShowProfileModal(true)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all bg-[#1A1A1A]/5 text-[#1A1A1A]/60 hover:bg-[#1A1A1A]/10 border-none cursor-pointer"
-                  >
-                    <ClipboardList className="w-4 h-4" />
-                    <span>历史记录</span>
-                  </button>
-                  <SkincareReminder />
-                </div>
-              )}
+              {/* Secondary Actions */}
+              <div className="flex flex-wrap justify-center items-center gap-3">
+                {/* Leaderboard Button - Always Visible */}
+                <button
+                  className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all bg-[#1A1A1A]/5 text-[#1A1A1A]/60 hover:bg-[#1A1A1A]/10 border-none cursor-pointer"
+                >
+                  <span className="text-base">🏆</span>
+                  <span>肌肤评分榜</span>
+                </button>
+
+                {/* Logged-in User Actions */}
+                {user && (
+                  <>
+                    <button
+                      onClick={() => setShowProfileModal(true)}
+                      className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all bg-[#1A1A1A]/5 text-[#1A1A1A]/60 hover:bg-[#1A1A1A]/10 border-none cursor-pointer"
+                    >
+                      <ClipboardList className="w-4 h-4" />
+                      <span>历史记录</span>
+                    </button>
+                    <SkincareReminder />
+                  </>
+                )}
+              </div>
             </div>
 
             {/* Minimal Footer Info - Moved to flow to prevent overlap */}
             <div className="mt-16 text-center animate-fade-in-up delay-300 opacity-0" style={{ animationFillMode: 'forwards' }}>
               <p className="text-[10px] text-[#3D4430]/20 font-mono uppercase tracking-widest">
-                AI Powered Analysis
+                Powered by MySkin Today™ Tech
               </p>
             </div>
 
