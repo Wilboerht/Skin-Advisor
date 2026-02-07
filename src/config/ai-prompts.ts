@@ -211,7 +211,10 @@ export function buildTextAnalysisPrompt(params: {
     gt8: "8小时以上 (充足)",
     "6-8": "6-8小时 (正常)",
     lt6: "6小时以下 (不足)",
-    irregular: "作息不规律"
+    irregular: "作息不规律",
+    good: "很好 (精力充沛)",
+    fair: "一般 (偶尔疲劳)",
+    poor: "较差 (经常熬夜/失眠)"
   };
 
   const medicalText = medicalBeautyMap[params.medicalBeauty || "none"] || params.medicalBeauty || "无";

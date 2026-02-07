@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
             ageRange: answers.ageRange,
             concerns: answers.concerns,
             medicalBeauty: (answers as any).medicalBeauty,
-            sleep: (answers as any).sleep,
+            sleep: (answers as any).sleepQuality,
             faceAnalysis: faceAnalysis ? {
                 skinType: faceAnalysis.skinType as any,
                 dimensions: faceAnalysis.dimensions,

@@ -888,7 +888,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
             />
             <div className="absolute inset-0 flex flex-col items-center justify-center z-10">
               <div className="h-16 w-16 mb-6 rounded-full border-4 border-white/20 border-t-white animate-spin" />
-              <p className="text-xl font-medium text-white tracking-widest">ANALYZING</p>
+              <p className="text-xl font-medium text-white tracking-widest">正在分析</p>
             </div>
           </div>
         )}
@@ -951,7 +951,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
             className="text-center mb-4"
           >
             <h3 className="text-2xl md:text-3xl font-serif text-white mb-2 drop-shadow-md">
-              {isInCooldown ? "请稍候..." : currentStepConfig?.instruction}
+              {isInCooldown ? "请保持..." : currentStepConfig?.instruction}
             </h3>
 
             {/* 辅助状态：光线 和 自动拍照提示 */}
@@ -961,12 +961,12 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
                 {lightLevel === 'low' || lightLevel === 'too_dark' ? (
                   <>
                     <SunDim className="w-4 h-4 text-yellow-300" />
-                    <span className="text-yellow-100">Light is Low</span>
+                    <span className="text-yellow-100">光线不足</span>
                   </>
                 ) : (
                   <>
                     <Sun className="w-4 h-4" />
-                    <span>Lighting Good</span>
+                    <span>光线良好</span>
                   </>
                 )}
               </div>
@@ -976,7 +976,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
                   "w-2 h-2 rounded-full",
                   faceStatus === 'ready' ? "bg-green-400 animate-pulse" : "bg-white/40"
                 )} />
-                <span>Auto Capture</span>
+                <span>自动拍摄</span>
               </div>
             </div>
           </m.div>
@@ -999,7 +999,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
       {isLoading && (
         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black">
           <div className="h-10 w-10 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-          <p className="mt-4 text-white/50 text-sm tracking-widest uppercase">Initializing Camera</p>
+          <p className="mt-4 text-white/50 text-sm tracking-widest uppercase">正在启动摄像头</p>
         </div>
       )}
 
@@ -1007,13 +1007,13 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
       {error && (
         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/90 p-8 text-center">
           <AlertCircle className="h-12 w-12 text-red-400 mb-4" />
-          <h3 className="text-white text-lg font-medium mb-2">Camera Error</h3>
+          <h3 className="text-white text-lg font-medium mb-2">摄像头错误</h3>
           <p className="text-white/60 max-w-md">{error}</p>
           <button
             onClick={() => window.location.reload()}
             className="mt-8 px-8 py-3 bg-white text-black rounded-full text-sm font-medium hover:bg-gray-200 transition-colors"
           >
-            Retry
+            重试
           </button>
         </div>
       )}

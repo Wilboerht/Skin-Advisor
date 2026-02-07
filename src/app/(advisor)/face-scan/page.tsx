@@ -106,13 +106,13 @@ export default function FaceScanPage() {
                     className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/50 text-[#1A1A1A]/60 hover:bg-white hover:text-[#1A1A1A] hover:shadow-sm transition-all border border-[#1A1A1A]/5"
                 >
                     <ChevronLeft className="h-4 w-4" />
-                    <span className="text-xs font-medium tracking-wide">BACK</span>
+                    <span className="text-xs font-medium tracking-wide">返回</span>
                 </Link>
             </div>
 
             {/* Title - Only visible on large screens when not capturing */}
             <div className="absolute top-8 text-center hidden md:block z-0">
-                <h1 className="font-serif text-xl text-[#1A1A1A]/80 tracking-wide">AI Skin Analysis</h1>
+                <h1 className="font-serif text-xl text-[#1A1A1A]/80 tracking-wide">AI 皮肤分析</h1>
             </div>
 
             {/* The "Mirror" Container */}
@@ -124,31 +124,31 @@ export default function FaceScanPage() {
                             <span className="text-3xl">📸</span>
                         </div>
 
-                        <h2 className="font-serif text-2xl mb-2">Ready for Analysis?</h2>
+                        <h2 className="font-serif text-2xl mb-2">准备好开始分析了吗？</h2>
                         <p className="text-white/60 text-sm mb-8 px-4">
-                            For the most accurate AI results, please follow these tips:
+                            为了通过 AI 获得最准确的结果，请遵循以下建议：
                         </p>
 
                         <div className="space-y-4 w-full max-w-xs mb-10">
                             <div className="flex items-center gap-4 text-left bg-white/5 p-3 rounded-xl">
                                 <span className="text-xl">💄</span>
                                 <div>
-                                    <p className="text-sm font-medium">No Makeup</p>
-                                    <p className="text-xs text-white/40">Natural skin for best results</p>
+                                    <p className="text-sm font-medium">素颜状态</p>
+                                    <p className="text-xs text-white/40">保持皮肤自然状态，结果更准确</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-4 text-left bg-white/5 p-3 rounded-xl">
                                 <span className="text-xl">👓</span>
                                 <div>
-                                    <p className="text-sm font-medium">Remove Glasses</p>
-                                    <p className="text-xs text-white/40">Avoid glare and obstruction</p>
+                                    <p className="text-sm font-medium">摘下眼镜</p>
+                                    <p className="text-xs text-white/40">避免反光和遮挡</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-4 text-left bg-white/5 p-3 rounded-xl">
                                 <span className="text-xl">💡</span>
                                 <div>
-                                    <p className="text-sm font-medium">Good Lighting</p>
-                                    <p className="text-xs text-white/40">Bright, even light on face</p>
+                                    <p className="text-sm font-medium">光线充足</p>
+                                    <p className="text-xs text-white/40">保持面部光线明亮均匀</p>
                                 </div>
                             </div>
                         </div>
@@ -157,7 +157,7 @@ export default function FaceScanPage() {
                             onClick={() => setHasStarted(true)}
                             className="w-full bg-white text-black py-4 rounded-xl font-medium tracking-wide hover:bg-[#F0F0F0] active:scale-[0.98] transition-all shadow-lg shadow-white/10"
                         >
-                            Start Camera
+                            开启摄像头
                         </button>
                     </div>
                 ) : (
@@ -168,7 +168,7 @@ export default function FaceScanPage() {
 
             {/* Bottom Note */}
             <p className="mt-8 text-xs text-[#1A1A1A]/30 text-center font-light tracking-wider uppercase">
-                Privacy Protected • Bank-grade Security
+                隐私保护 • 数据安全加密
             </p>
         </div>
     );
