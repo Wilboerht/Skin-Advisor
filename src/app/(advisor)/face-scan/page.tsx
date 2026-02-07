@@ -38,7 +38,7 @@ export default function FaceScanPage() {
         setIsSubmitting(true);
 
         const { advisorStorage } = await import("@/lib/advisor-storage");
-        toast.info("正在保存图片...");
+
 
         const success = await advisorStorage.saveFaceImages(images);
 

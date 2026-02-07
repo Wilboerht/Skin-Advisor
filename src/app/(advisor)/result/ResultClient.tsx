@@ -48,6 +48,7 @@ import type { ProductCardData } from "@/components/advisor/ProductCard";
 import { addProductToRoutine } from "@/lib/routine-products";
 import { WishlistNavButton } from "@/components/advisor/WishlistNavButton";
 import { SaveReportBanner } from "@/components/advisor/SaveReportBanner";
+import { AnalyzingOverlay } from "@/components/advisor/AnalyzingOverlay";
 
 // Types
 export interface ComprehensiveResult {
@@ -619,151 +620,11 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         <>
             <AnimatePresence mode="wait">
                 {showLoading && (
-                    <m.div
-                        key="loading-overlay"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0, transition: { duration: 0.8, ease: "easeInOut" } }}
-                        className="fixed inset-0 z-[200] bg-[#FDFBF7] flex flex-col items-center justify-center overflow-hidden"
-                    >
-                        {/* Background Decor */}
-                        <div className="absolute inset-0 pointer-events-none opacity-[0.05]" style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-                        <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-[#E8DCC6] opacity-30 blur-[120px] rounded-full pointer-events-none" />
-                        <div className="absolute bottom-[-10%] right-[-5%] w-[500px] h-[500px] bg-[#D4B78F] opacity-20 blur-[100px] rounded-full pointer-events-none" />
-
-                        {/* Main Scanner Container */}
-                        <div className="relative z-10 flex flex-col items-center w-full max-w-md px-6">
-
-                            {/* Scanner Visual */}
-                            <div className="relative w-80 h-80 mb-14">
-                                {/* Outer Rotating Rings */}
-                                <m.div
-                                    className="absolute inset-0 border border-dashed border-[#D4B78F]/60 rounded-full"
-                                    animate={{ rotate: 360 }}
-                                    transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-                                />
-                                <m.div
-                                    className="absolute inset-6 border border-[#D4B78F]/30 rounded-full"
-                                    animate={{ scale: [1, 1.05, 1], rotate: -180 }}
-                                    transition={{
-                                        scale: { duration: 4, repeat: Infinity, ease: "easeInOut" },
-                                        rotate: { duration: 20, repeat: Infinity, ease: "linear" }
-                                    }}
-                                />
-                                <m.div
-                                    className="absolute inset-[-12px] border border-[#D4B78F]/10 rounded-full"
-                                    animate={{ rotate: -360 }}
-                                    transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-                                />
-
-                                {/* Profile Image / Center */}
-                                <div className="absolute inset-8 rounded-full overflow-hidden bg-white shadow-[0_8px_30px_rgba(212,183,143,0.15)] border-4 border-white flex items-center justify-center relative z-20">
-                                    {userImage ? (
-                                        <div className="relative w-full h-full">
-                                            <Image
-                                                src={userImage}
-                                                alt="Analyzing"
-                                                fill
-                                                className="object-cover opacity-95 scale-105"
-                                            />
-                                            {/* Scan Overlay - "Sonar" effect */}
-                                            <div className="absolute inset-0 bg-[#D4B78F]/10 mix-blend-overlay" />
-                                        </div>
-                                    ) : (
-                                        <div className="w-full h-full bg-[#FAFAFA] flex items-center justify-center">
-                                            <ScanFace className="w-28 h-28 text-[#D4B78F]/40" strokeWidth={1} />
-                                        </div>
-                                    )}
-
-                                    {/* Scanning Light Beam */}
-                                    <m.div
-                                        className="absolute w-full h-[40%] bg-gradient-to-b from-transparent via-[#D4B78F]/20 to-transparent"
-                                        animate={{ top: ['-100%', '200%'] }}
-                                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                                        style={{ transform: 'skewY(-10deg)', filter: 'blur(4px)' }}
-                                    />
-
-                                    {/* Tech Grid Overlay */}
-                                    <div className="absolute inset-0 opacity-10 mix-blend-multiply" style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
-                                </div>
-
-                                {/* Floating Badges - Left */}
-                                <m.div
-                                    className="absolute -left-8 bottom-16 bg-white/95 backdrop-blur-md shadow-lg border border-white/50 px-4 py-2 rounded-2xl flex items-center gap-2.5 z-30"
-                                    initial={{ x: -30, opacity: 0 }}
-                                    animate={{ x: 0, opacity: 1, y: [0, -5, 0] }}
-                                    transition={{
-                                        x: { delay: 0.2, duration: 0.5 },
-                                        y: { duration: 4, repeat: Infinity, ease: "easeInOut" }
-                                    }}
-                                >
-                                    <div className="w-8 h-8 rounded-full bg-[#FFF8F0] flex items-center justify-center">
-                                        <Search className="w-4 h-4 text-[#C19F70]" />
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Features</span>
-                                        <span className="text-xs font-bold text-gray-700">150+ 特征点</span>
-                                    </div>
-                                </m.div>
-
-                                {/* Floating Badges - Right */}
-                                <m.div
-                                    className="absolute -right-6 top-16 bg-white/95 backdrop-blur-md shadow-lg border border-white/50 px-4 py-2 rounded-2xl flex items-center gap-2.5 z-30"
-                                    initial={{ x: 30, opacity: 0 }}
-                                    animate={{ x: 0, opacity: 1, y: [0, 5, 0] }}
-                                    transition={{
-                                        x: { delay: 0.4, duration: 0.5 },
-                                        y: { duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }
-                                    }}
-                                >
-                                    <div className="w-8 h-8 rounded-full bg-[#FFF8F0] flex items-center justify-center">
-                                        <Activity className="w-4 h-4 text-[#C19F70]" />
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Status</span>
-                                        <span className="text-xs font-bold text-gray-700">AI 分析中</span>
-                                    </div>
-                                </m.div>
-                            </div>
-
-                            {/* Status Text & Progress */}
-                            <div className="flex flex-col items-center gap-6 w-full max-w-sm">
-                                <m.div
-                                    key={detailStatus}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="text-center"
-                                >
-                                    <h2 className="text-2xl font-light text-[#2C2C2C] tracking-wide mb-1">
-                                        {detailStatus}
-                                    </h2>
-                                </m.div>
-
-                                <div className="w-full space-y-2">
-                                    <div className="w-full h-1.5 bg-[#E9E9E7] rounded-full overflow-hidden relative shadow-inner">
-                                        <m.div
-                                            className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-[#D4B78F] to-[#B08D55] shadow-[0_0_10px_rgba(212,183,143,0.5)]"
-                                            initial={{ width: 0 }}
-                                            animate={{ width: `${Math.max(5, analysisState.progress)}%` }}
-                                            transition={{ type: "spring", stiffness: 40, damping: 20 }}
-                                        />
-                                    </div>
-
-                                    <div className="flex justify-between w-full text-[10px] text-gray-400 font-mono tracking-widest uppercase">
-                                        <span>AI Processing</span>
-                                        <span>{Math.round(analysisState.progress)}%</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Footer Tip */}
-                            <div className="absolute bottom-12 text-center px-6">
-                                <p className="text-sm text-[#8A8A8A] font-light leading-relaxed">
-                                    "您的肌肤独一无二，我们正在为您量身定制方案"
-                                </p>
-                            </div>
-                        </div>
-                    </m.div>
+                    <AnalyzingOverlay
+                        key="analyzing-overlay"
+                        progress={analysisState.progress}
+                        userImage={userImage}
+                    />
                 )}
             </AnimatePresence>
 
