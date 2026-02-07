@@ -320,6 +320,52 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
   }, []);
 
   /**
+   * 检查面部是否在椭圆框内
+   * 椭圆框尺寸与 FaceScanOverlay 保持一致：宽度65%，高度70%
+   */
+  const isFaceInEllipse = useCallback((
+    faceBox: { x: number; y: number; width: number; height: number },
+    videoWidth: number,
+    videoHeight: number
+  ): boolean => {
+    // 椭圆参数（与 FaceScanOverlay 一致）
+    const ellipseWidthRatio = 0.65;
+    const ellipseHeightRatio = 0.70;
+
+    // 椭圆中心（视频中心）
+    const ellipseCenterX = videoWidth / 2;
+    const ellipseCenterY = videoHeight / 2;
+
+    // 椭圆半轴
+    const ellipseA = (videoWidth * ellipseWidthRatio) / 2;  // 水平半轴
+    const ellipseB = (videoHeight * ellipseHeightRatio) / 2; // 垂直半轴
+
+    // 面部的四个角点
+    const faceCorners = [
+      { x: faceBox.x, y: faceBox.y },                                     // 左上
+      { x: faceBox.x + faceBox.width, y: faceBox.y },                    // 右上
+      { x: faceBox.x, y: faceBox.y + faceBox.height },                   // 左下
+      { x: faceBox.x + faceBox.width, y: faceBox.y + faceBox.height },   // 右下
+    ];
+
+    // 检查所有角点是否都在椭圆内
+    // 椭圆方程: (x-cx)²/a² + (y-cy)²/b² <= 1
+    for (const corner of faceCorners) {
+      const normalizedX = (corner.x - ellipseCenterX) / ellipseA;
+      const normalizedY = (corner.y - ellipseCenterY) / ellipseB;
+      const ellipseValue = normalizedX * normalizedX + normalizedY * normalizedY;
+
+      // 如果任何角点在椭圆外，返回 false
+      // 使用 0.95 而不是 1.0 来留一点边距，确保视觉上看起来完全在框内
+      if (ellipseValue > 0.95) {
+        return false;
+      }
+    }
+
+    return true;
+  }, []);
+
+  /**
    * 检测面部和头部朝向
    */
   const detectFace = useCallback(async () => {
@@ -348,24 +394,18 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
         // 保存面部检测框用于裁剪
         faceBoxRef.current = { x: box.x, y: box.y, width: box.width, height: box.height };
 
-        // 面部中心点
-        const faceCenterX = box.x + box.width / 2;
-        const faceCenterY = box.y + box.height / 2;
+        // 检查面部是否在椭圆框内（精确检测）
+        const isInEllipse = isFaceInEllipse(
+          { x: box.x, y: box.y, width: box.width, height: box.height },
+          videoWidth,
+          videoHeight
+        );
 
-        // 视频中心点
-        const videoCenterX = videoWidth / 2;
-        const videoCenterY = videoHeight / 2;
-
-        // 检查面部是否在中心区域（允许45%的偏移 - 几乎只要在画面里就行）
-        const offsetX = Math.abs(faceCenterX - videoCenterX) / videoWidth;
-        const offsetY = Math.abs(faceCenterY - videoCenterY) / videoHeight;
-
-        // 检查面部大小是否合适
-        const faceRatio = box.height / videoHeight;
-
-        // 大幅放宽限制，只要检测到脸且大概在中间即可
-        const isCentered = offsetX < 0.45 && offsetY < 0.45;
-        const isSizeOk = faceRatio > 0.15 && faceRatio < 0.9;
+        // 检查面部大小是否合适（相对于椭圆大小）
+        const ellipseHeight = videoHeight * 0.70;
+        const faceToEllipseRatio = box.height / ellipseHeight;
+        // 面部应该占椭圆高度的 30%-90%
+        const isSizeOk = faceToEllipseRatio > 0.30 && faceToEllipseRatio < 0.90;
 
         // 计算头部朝向 (传入 currentStep 以优化判定逻辑)
         const headPose = calculateHeadPose(detection.landmarks, currentStep);
@@ -374,7 +414,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
         // 检查当前头部朝向是否匹配当前步骤
         const isPoseCorrect = headPose === currentStep;
 
-        if (isCentered && isSizeOk && isPoseCorrect) {
+        if (isInEllipse && isSizeOk && isPoseCorrect) {
           stableCountRef.current += 1;
           setFaceStatus("found");
 
@@ -410,7 +450,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
       console.error("Face detection error:", err);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modelsLoaded, isAllCaptured, calculateHeadPose, currentStep]);
+  }, [modelsLoaded, isAllCaptured, calculateHeadPose, currentStep, isFaceInEllipse]);
 
   /* 语音播报函数 */
   const speak = useCallback((text: string) => {
