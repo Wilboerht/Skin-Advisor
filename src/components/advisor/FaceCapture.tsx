@@ -298,9 +298,9 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
 
     if (targetStep === 'chin') {
       // 必须有明显抬头特征
-      // 收紧 tiltRatio 阈值 (< 0.28)，需要真正的抬头动作
+      // 收紧 tiltRatio 阈值 (< 0.20)，需要真正的抬头动作 (原 0.28)
       // 同时要求头部基本正对镜头（不要偏转太厉害）
-      if (tiltRatio < 0.28 && Math.abs(noseOffsetRatio) < 0.30) {
+      if (tiltRatio < 0.20 && Math.abs(noseOffsetRatio) < 0.30) {
         return "chin";
       }
     }
@@ -379,9 +379,9 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
           setFaceStatus("found");
 
           // chin 步骤需要更多稳定帧数，防止误触发
-          // 普通步骤: 4帧约0.8秒, chin步骤: 6帧约1.2秒
-          const requiredFrames = currentStep === 'chin' ? 6 : 4;
-          const progressFrames = currentStep === 'chin' ? 7 : 5;
+          // 普通步骤: 4帧约0.8秒, chin步骤: 12帧约2.4秒
+          const requiredFrames = currentStep === 'chin' ? 12 : 4;
+          const progressFrames = currentStep === 'chin' ? 15 : 5;
 
           // 更新稳定进度
           setStabilityProgress(Math.min(100, (stableCountRef.current / progressFrames) * 100));
