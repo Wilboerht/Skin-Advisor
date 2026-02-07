@@ -121,6 +121,9 @@ export default function FaceScanPage() {
                     setHasStarted(true);
                     setIsModalOpen(false);
                 }}
+                onCancel={() => {
+                    router.push("/questions");
+                }}
             />
         </div>
     );
