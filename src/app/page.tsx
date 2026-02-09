@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Link } from "next-view-transitions";
 import { m, AnimatePresence, LazyMotion, domAnimation } from "framer-motion";
 import Image from "next/image";
-import { ArrowRight, Loader2, MapPin, User, ClipboardList, X } from "lucide-react";
+import { ArrowRight, ArrowLeft, Loader2, MapPin, User, ClipboardList, X } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
 import { SkincareReminder } from "@/components/advisor/SkincareReminder";
@@ -241,6 +241,17 @@ export default function Home() {
       <div className="texture-overlay"></div>
 
       <main className="relative w-full h-screen bg-[#FDFBF7] text-[#2D2A26] overflow-hidden flex flex-col items-center justify-center selection:bg-[#3D4430] selection:text-white">
+
+        {/* Official Website Link */}
+        <div className="absolute top-6 left-6 z-50">
+          <a
+            href="https://demo.nihplod.cn"
+            className="flex items-center gap-2 text-[#3D4430]/80 hover:text-[#1A1A1A] transition-colors text-sm font-medium tracking-wide bg-transparent border-none cursor-pointer no-underline"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>返回官网</span>
+          </a>
+        </div>
 
         {/* Auth Navigation */}
         <div className="absolute top-6 right-6 z-50">
