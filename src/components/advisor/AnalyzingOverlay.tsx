@@ -454,10 +454,9 @@ export function AnalyzingOverlay({ progress, userImage }: AnalyzingOverlayProps)
             </div>
 
             {/* 3. Analysis Icons Row (9 Metrics) */}
-            {/* 3. Analysis Icons Row (9 Metrics) */}
             <div className="absolute bottom-24 w-full px-4 overflow-hidden">
                 <m.div
-                    className="flex flex-wrap items-center justify-center gap-3 md:gap-6"
+                    className="flex flex-wrap items-center justify-center gap-4 md:gap-8"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5, duration: 0.8 }}
@@ -467,36 +466,51 @@ export function AnalyzingOverlay({ progress, userImage }: AnalyzingOverlayProps)
                         IconHydration, IconSunDamage, IconRedness,
                         IconAcne, IconWrinkles, IconTexture
                     ].map((Icon, i) => {
-                        // Calculate if this step is "active" or "completed" based on progress
-                        // Spreading 9 icons over ~90% progress (0-90)
-                        const isActive = progress > (i * 10) + 5;
+                        // Current active index based on progress (0-100 mapped to 0-8)
+                        // We use a slightly different mapping to ensure the last icon gets its turn
+                        const currentIndex = Math.min(8, Math.floor(progress / 11));
+                        const isCurrent = i === currentIndex;
+                        const isPassed = i <= currentIndex;
 
                         return (
                             <m.div
                                 key={i}
                                 initial={{ opacity: 0, scale: 0.5 }}
                                 animate={{
-                                    opacity: isActive ? 1 : 0.3,
-                                    scale: isActive ? 1.1 : 0.9,
-                                    borderColor: isActive ? "rgba(212, 183, 143, 1)" : "rgba(212, 183, 143, 0.3)",
-                                    backgroundColor: isActive ? "rgba(212, 183, 143, 0.1)" : "rgba(212, 183, 143, 0.02)"
+                                    opacity: isPassed ? 1 : 0.4,
+                                    scale: isCurrent ? 1.3 : 1, // Slightly larger when active
+                                    y: isCurrent ? -10 : 0,     // Base lift when active
                                 }}
-                                transition={{ duration: 0.4 }}
-                                className="w-8 h-8 md:w-10 md:h-10 rounded-full border border-dashed flex items-center justify-center relative group"
+                                transition={{
+                                    opacity: { duration: 0.3 },
+                                    scale: { type: "spring", stiffness: 300, damping: 20 },
+                                    y: { duration: 0.2 }
+                                }}
+                                className="relative flex items-center justify-center"
                             >
-                                <Icon
-                                    className={`w-4 h-4 md:w-5 md:h-5 transition-colors duration-300 ${isActive ? "text-[#D4B78F]" : "text-[#D4B78F]/40"
-                                        }`}
-                                />
+                                <m.div
+                                    animate={isCurrent ? {
+                                        y: [0, -15, 0],
+                                    } : {}}
+                                    transition={{
+                                        duration: 0.8,
+                                        repeat: Infinity,
+                                        ease: "circOut", // More jumpy feel
+                                        times: [0, 0.5, 1]
+                                    }}
+                                    className="[&_svg]:w-10 [&_svg]:h-10 md:[&_svg]:w-14 md:[&_svg]:h-14 drop-shadow-sm"
+                                >
+                                    <Icon />
+                                </m.div>
 
-                                {/* Active Glow Effect */}
-                                {isActive && (
+                                {/* Optional: Tiny indicator dot below active item */}
+                                {isCurrent && (
                                     <m.div
-                                        layoutId="active-glow"
-                                        className="absolute inset-0 rounded-full bg-[#D4B78F]/20 blur-sm"
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        exit={{ opacity: 0 }}
+                                        layoutId="active-dot"
+                                        className="absolute -bottom-4 w-1.5 h-1.5 rounded-full bg-[#D4B78F]"
+                                        initial={{ opacity: 0, scale: 0 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        transition={{ duration: 0.2 }}
                                     />
                                 )}
                             </m.div>
