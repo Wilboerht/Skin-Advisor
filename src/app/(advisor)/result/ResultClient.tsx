@@ -129,22 +129,20 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const [selectedCycleDay, setSelectedCycleDay] = useState<number>(1);
     const [isRoutineModalOpen, setIsRoutineModalOpen] = useState(false);
 
-    // Gender Mismatch Detection Effect
+    // Gender Mismatch Detection Effect (handles all directions)
+    const isGenderMismatch = useMemo(() => {
+        if (!faceAnalysis) return false;
+        const faGenderVal = (faceAnalysis as any)?.gender?.value;
+        const faGenderConf = (faceAnalysis as any)?.gender?.confidence || 0;
+        // Mismatch = questionnaire gender differs from detected gender with high confidence
+        return faGenderVal && faGenderConf > 0.80 && faGenderVal !== socialGender;
+    }, [faceAnalysis, socialGender]);
+
     useEffect(() => {
-        if (!loading && result && faceAnalysis) {
-            // Check Mismatch: Social Female vs Bio Male (High Confidence)
-            const isSocialFemale = socialGender === 'female';
-            const faGenderVal = (faceAnalysis as any)?.gender?.value;
-            const faGenderConf = (faceAnalysis as any)?.gender?.confidence || 0;
-
-            const isBioMale = faGenderVal === 'male' && faGenderConf > 0.80;
-
-            // Always show mismatch modal if detected, per user request
-            if (isSocialFemale && isBioMale) {
-                setShowGenderMismatchModal(true);
-            }
+        if (!loading && result && faceAnalysis && isGenderMismatch) {
+            setShowGenderMismatchModal(true);
         }
-    }, [loading, result, faceAnalysis, socialGender]);
+    }, [loading, result, faceAnalysis, isGenderMismatch]);
 
     const handleMismatchRetry = () => {
         // Clear previous answers to force a fresh start
@@ -688,7 +686,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 <div className="space-y-6">
                                     <p className="text-[14px] text-[#37352F] leading-[1.8] text-justify px-1">
                                         为了确保报告建议的严谨性，智能识别引擎对多维数据进行了对冲校验，发现当前的<span className="font-semibold bg-[#F1F1EF] px-1.5 py-0.5 rounded text-[#37352F] mx-1 border border-[#E9E9E7]">底层算法数据模型</span>
-                                        与您在问卷中选择的<span className="font-semibold bg-[#F1F1EF] px-1.5 py-0.5 rounded text-[#37352F] mx-1 border border-[#E9E9E7]">性别选项 (女)</span> 存在一定程度的不一致。
+                                        与您在问卷中选择的<span className="font-semibold bg-[#F1F1EF] px-1.5 py-0.5 rounded text-[#37352F] mx-1 border border-[#E9E9E7]">性别选项 ({socialGender === 'male' ? '男' : '女'})</span> 存在一定程度的不一致。
                                     </p>
 
                                     {/* Notion Callout Block - Yellow */}
@@ -909,7 +907,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 </div>
 
                                 {/* --- Adaptive Gender Tuning (Text Only) --- */}
-                                {socialGender === 'female' && (faceAnalysis as any)?.gender?.value === 'male' && ((faceAnalysis as any)?.gender?.confidence || 0) > 0.80 && (
+                                {isGenderMismatch && (
                                     <div className="mt-3 px-3 py-2 bg-amber-50 rounded-lg border border-amber-100 flex items-start gap-2">
                                         <Sparkles size={14} className="text-amber-500 mt-0.5 shrink-0" />
                                         <p className="text-xs text-amber-800 leading-relaxed">
