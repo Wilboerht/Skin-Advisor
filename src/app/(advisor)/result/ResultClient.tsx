@@ -99,7 +99,9 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const router = useRouter();
     const toast = useToast();
     const { trackResultView, trackResultShare, trackProductClick } = useAdvisorAnalytics();
-    const { user } = useAuth();
+    const { user, loading: authLoading } = useAuth();
+    const searchParams = useSearchParams();
+    const { runAnalysis, analysisState } = useAsyncAnalysis();
 
     // Data State
     const [result, setResult] = useState<ComprehensiveResult | null>(initialData?.result || null);
@@ -317,6 +319,21 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         loadClientData();
     }, [initialData, router, trackResultView, toast]);
 
+    // --- Guest Protection Guard ---
+    // Prevent direct access to full report by guests via URL
+    useEffect(() => {
+        // Skip if still loading auth/data or essential data missing
+        if (loading || authLoading || !result || !sessionId) return;
+
+        // Skip if currently running analysis (handled by specific analysis effect)
+        if (searchParams.get('status') === 'analyzing') return;
+
+        // If Guest accessing full report -> Redirect to Share Page (Simplified)
+        if (!user) {
+            router.replace(`/share/result?id=${sessionId}`);
+        }
+    }, [user, authLoading, loading, result, sessionId, searchParams, router]);
+
     // --- Environment Data Integration ---
     // Fetches from /api/weather which handles QWeather/Open-Meteo fallback
     const [envData, setEnvData] = useState({
@@ -532,8 +549,11 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
 
     // --- Async Analysis Integration ---
-    const searchParams = useSearchParams(); // Needs wrapping in Suspense boundary in parent, but Next.js 15+ allows it in client components usually
-    const { runAnalysis, analysisState } = useAsyncAnalysis();
+    // searchParams and useAsyncAnalysis are declared at the top of the component
+
+    // Track user state for async access
+    const userRef = useRef(user);
+    useEffect(() => { userRef.current = user; }, [user]);
 
     // Trigger Async Analysis
     const analysisStartedRef = useRef(false);
@@ -547,12 +567,23 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             const execute = async () => {
                 try {
                     const { result: newResult, faceAnalysis: newFace, sessionId: newSessionId } = await runAnalysis();
-                    setResult(newResult);
-                    if (newFace) setFaceAnalysis(newFace);
+
                     // Save sessionId for sharing
                     if (newSessionId) {
                         setSessionId(newSessionId);
                     }
+
+                    // CHECK GUEST STATUS: Redirect to simplified report
+                    // Use ref to get fresh state (closure might have stale user)
+                    if (!userRef.current) {
+                        // Small delay to ensure session is saved on server (though await runAnalysis should handle it)
+                        router.replace(`/share/result?id=${newSessionId}`);
+                        return;
+                    }
+
+                    setResult(newResult);
+                    if (newFace) setFaceAnalysis(newFace);
+
                     // Update URL with sessionId for bookmark/refresh support
                     router.replace(`/result?id=${newSessionId}`, { scroll: false });
                 } catch (e: any) {

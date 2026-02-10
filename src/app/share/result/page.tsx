@@ -93,6 +93,38 @@ export default async function SharePage(props: SharePageProps) {
     // Calculate user's actual rank
     const rankInfo = await calculateUserRank(id, userScore);
 
+    // --- Build Guest Simplified Analysis ---
+    const fullSummary = result.analysis?.summary || result.skinAnalysis?.summary || "";
+    // Truncate summary to ~80 chars for guest teaser
+    const truncatedSummary = fullSummary.length > 80
+        ? fullSummary.substring(0, 80) + "..."
+        : fullSummary;
+
+    const concerns: string[] = result.skinProfile?.concerns || result.skinAnalysis?.concerns || [];
+
+    // Extract a few recommendations/tips (max 3)
+    const allTips: string[] = result.faceAnalysis?.recommendations || [];
+    const briefTips = allTips.slice(0, 3);
+
+    // If no tips from faceAnalysis, generate generic ones based on skin type
+    const skinTypeKey = result.skinProfile?.type || result.skinAnalysis?.skinType || "combination";
+    const genericTips: Record<string, string[]> = {
+        oily: ["建议使用温和氨基酸洁面", "注意日常控油补水", "选择清爽质地的护肤品"],
+        dry: ["加强保湿屏障修复", "避免过度清洁", "使用含神经酰胺的面霜"],
+        combination: ["T区控油，两颊保湿", "选择平衡型护肤品", "注意分区护理"],
+        sensitive: ["避免含酒精的产品", "加强屏障修复", "选择低刺激性配方"],
+        normal: ["保持现有良好习惯", "注意日常防晒", "定期做深层清洁"],
+    };
+    const finalTips = briefTips.length > 0 ? briefTips : (genericTips[skinTypeKey] || genericTips.combination);
+
+    const guestAnalysis = {
+        summary: truncatedSummary,
+        concerns: concerns.slice(0, 4), // max 4 concerns
+        tips: finalTips,
+        skinTypeKey,
+        hydrationLevel: result.faceAnalysis?.hydration?.level || null,
+    };
+
     // Construct Safe Data Payload (No PPI, no photos)
     const safeData = {
         score: userScore,
@@ -109,7 +141,9 @@ export default async function SharePage(props: SharePageProps) {
         sessionId: id,
         userRank: rankInfo.rank,
         userPercentile: rankInfo.percentile,
-        totalParticipants: rankInfo.totalParticipants
+        totalParticipants: rankInfo.totalParticipants,
+        // Guest simplified analysis
+        guestAnalysis,
     };
 
     return <ShareLandingClient data={safeData} />;

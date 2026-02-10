@@ -2,13 +2,29 @@
 import { Metadata } from "next";
 import ResultClient from "./ResultClient";
 import prisma from "@/lib/prisma";
+import { getSession } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
 export default async function ResultPage(props: {
-    searchParams: Promise<{ id?: string }>;
+    searchParams: Promise<{ id?: string; status?: string }>;
 }) {
     const searchParams = await props.searchParams;
     const id = searchParams.id;
+    const status = searchParams.status;
     let initialData = null;
+
+    // --- Server-Side Guest Protection ---
+    // Check if user is logged in BEFORE fetching any sensitive data.
+    // If guest has an id (trying to access a specific report), redirect to share page.
+    // Exception: status=analyzing means analysis is in progress (no data yet),
+    // the client-side will handle the redirect after analysis completes.
+    if (id && status !== 'analyzing') {
+        const user = await getSession();
+        if (!user) {
+            // Guest trying to access full report → redirect to simplified share page
+            redirect(`/share/result?id=${id}`);
+        }
+    }
 
     if (id) {
         try {
@@ -26,9 +42,6 @@ export default async function ResultPage(props: {
                 // Check Expiration
                 if (session.expiresAt && new Date() > new Date(session.expiresAt)) {
                     console.log(`Session ${id} expired at ${session.expiresAt}`);
-                    // Return null or specific expired state
-                    // Ideally we could redirect or show an expired state component
-                    // For now, let's treat it as not found so it falls back appropriately
                     initialData = null;
                 } else {
                     const result = session.analysisResult as any;

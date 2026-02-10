@@ -39,6 +39,14 @@ interface ShareLandingProps {
         userPercentile: number;
         totalParticipants: number;
         generatedAvatar?: string;
+        // Guest simplified analysis
+        guestAnalysis?: {
+            summary: string;
+            concerns: string[];
+            tips: string[];
+            skinTypeKey: string;
+            hydrationLevel: string | null;
+        };
     }
 }
 
@@ -307,46 +315,145 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                                 回到报告
                             </button>
                         </motion.div>
-                    ) : (
+                    ) : null}
+
+                    {/* 4. Guest Simplified Analysis (New) */}
+                    {data.isGuest && data.guestAnalysis && (
                         <motion.div
                             custom={3}
                             initial="hidden"
                             animate="visible"
                             variants={revealVariants}
-                            className="glass-module rounded-[32px] p-[30px] flex flex-col transition-all duration-400 relative overflow-hidden min-h-[300px] md:col-span-2"
+                            className="glass-module rounded-[32px] p-[30px] flex flex-col transition-all duration-400 md:col-span-2 relative overflow-hidden"
                         >
                             <span className="inline-block px-4 py-1.5 rounded-full text-sm font-semibold mb-5 bg-[#00263e] text-white w-fit">
-                                专业报告
+                                初步诊断
                             </span>
-                            <h3 className="mb-5 text-xl font-bold">个性化完整版测肤报告</h3>
 
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mt-5">
-                                <div className="bg-white/50 p-5 rounded-[20px] text-center">
-                                    <p className="text-[28px] font-extrabold mb-1.5">{data.skinAge || 22}岁</p>
-                                    <p className="text-[13px] text-[#666]">肌肤年龄</p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                                <div>
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                                        <span className="text-2xl">🔍</span>
+                                        肤质概览
+                                    </h3>
+                                    <div className="bg-white/40 rounded-2xl p-5 space-y-4">
+                                        <div className="flex justify-between items-center border-b border-black/5 pb-3">
+                                            <span className="text-[#666]">肤质类型</span>
+                                            <span className="font-bold text-lg">{data.skinType}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center border-b border-black/5 pb-3">
+                                            <span className="text-[#666]">肌龄检测</span>
+                                            <span className="font-bold text-lg">{data.skinAge}岁</span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-[#666]">主要关注</span>
+                                            <div className="flex gap-2">
+                                                {data.guestAnalysis.concerns.map(c => (
+                                                    <span key={c} className="text-xs bg-[#FF4D4F]/10 text-[#FF4D4F] px-2 py-1 rounded-md font-medium">
+                                                        {c}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="bg-white/50 p-5 rounded-[20px] text-center">
-                                    <p className="text-[28px] font-extrabold mb-1.5 text-[#E67E22]">{data.skinType || '中性'}</p>
-                                    <p className="text-[13px] text-[#666]">肤质类型</p>
-                                </div>
-                                <div className="bg-white/50 p-5 rounded-[20px] text-center">
-                                    <p className="text-[28px] font-extrabold mb-1.5">良好</p>
-                                    <p className="text-[13px] text-[#666]">毛孔状态</p>
-                                </div>
-                                <div className="bg-white/50 p-5 rounded-[20px] text-center">
-                                    <p className="text-[28px] font-extrabold mb-1.5">轻度</p>
-                                    <p className="text-[13px] text-[#666]">黑眼圈指数</p>
+
+                                <div>
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                                        <span className="text-2xl">📝</span>
+                                        分析摘要
+                                    </h3>
+                                    <div className="bg-white/40 rounded-2xl p-5 h-full relative">
+                                        <p className="text-[#444] leading-relaxed relative z-10">
+                                            {data.guestAnalysis.summary}
+                                        </p>
+                                        <div className="absolute inset-0 bg-gradient-to-t from-white/80 to-transparent z-0 rounded-2xl pointer-events-none" />
+                                        <div className="absolute bottom-3 right-4 z-20">
+                                            <button
+                                                onClick={() => openAuthModal('register')}
+                                                className="text-[#00263e] text-xs font-bold hover:underline"
+                                            >
+                                                查看完整分析 →
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* Fold Overlay */}
-                            <div className="absolute bottom-0 left-0 right-0 h-[150px] bg-gradient-to-b from-transparent to-[var(--glass-white)] flex items-end justify-center pb-[30px] backdrop-blur-[4px]">
-                                <button
-                                    onClick={() => openAuthModal('login')}
-                                    className="bg-[#00263e] text-white px-[30px] py-[12px] rounded-full border-none font-semibold cursor-pointer shadow-[0_10px_20px_rgba(0,38,62,0.2)] hover:scale-105 transition-transform"
-                                >
-                                    登录查看完整专业报告
-                                </button>
+                            {/* Tips Teaser */}
+                            <div className="bg-[#00263e]/5 rounded-2xl p-5">
+                                <h4 className="font-bold flex items-center gap-2 mb-3 text-[#00263e]">
+                                    <span>💡</span> 护肤小贴士
+                                </h4>
+                                <ul className="space-y-2">
+                                    {data.guestAnalysis.tips.map((tip, i) => (
+                                        <li key={i} className="flex items-start gap-2 text-sm text-[#444]">
+                                            <span className="text-[#00263e] mt-1">•</span>
+                                            <span>{tip}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {/* 5. Locked Full Report Teaser (Guest Only) */}
+                    {data.isGuest && (
+                        <motion.div
+                            custom={4}
+                            initial="hidden"
+                            animate="visible"
+                            variants={revealVariants}
+                            className="glass-module rounded-[32px] p-0 flex flex-col transition-all duration-400 md:col-span-2 relative overflow-hidden min-h-[400px]"
+                        >
+                            {/* Blurred Content Background used as teaser */}
+                            <div className="absolute inset-0 p-8 filter blur-[8px] opacity-60 pointer-events-none select-none overflow-hidden">
+                                <div className="flex justify-between items-end mb-8">
+                                    <div className="w-1/2 h-8 bg-black/10 rounded-lg"></div>
+                                    <div className="w-20 h-20 bg-green-500/20 rounded-full"></div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4 mb-8">
+                                    <div className="h-32 bg-white/50 rounded-2xl"></div>
+                                    <div className="h-32 bg-white/50 rounded-2xl"></div>
+                                </div>
+                                <div className="h-60 bg-white/50 rounded-2xl mb-4"></div>
+                                <div className="space-y-4">
+                                    <div className="h-12 bg-black/5 rounded-xl"></div>
+                                    <div className="h-12 bg-black/5 rounded-xl"></div>
+                                    <div className="h-12 bg-black/5 rounded-xl"></div>
+                                </div>
+                            </div>
+
+                            {/* Lock Overlay */}
+                            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-gradient-to-b from-white/30 to-white/90 p-8 text-center">
+                                <div className="w-16 h-16 bg-[#00263e] rounded-full flex items-center justify-center mb-6 shadow-xl text-white">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                </div>
+
+                                <h3 className="text-2xl font-bold text-[#1A1A1A] mb-3">解锁 30+ 页完整专业报告</h3>
+                                <p className="text-[#666] max-w-md mb-8 leading-relaxed">
+                                    注册账户即可永久保存您的测肤数据，解锁十二维深度分析雷达图、
+                                    个性化护肤方案生成、以及成分级产品推荐。
+                                </p>
+
+                                <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
+                                    <button
+                                        onClick={() => openAuthModal('register')}
+                                        className="flex-1 py-4 bg-[#00263e] text-white rounded-xl font-bold text-base shadow-lg hover:bg-[#003859] hover:scale-[1.02] transition-all"
+                                    >
+                                        立即注册解锁
+                                    </button>
+                                    <button
+                                        onClick={() => openAuthModal('login')}
+                                        className="flex-1 py-4 bg-white border border-gray-200 text-[#333] rounded-xl font-bold text-base shadow-sm hover:bg-gray-50 transition-all"
+                                    >
+                                        已有账号登录
+                                    </button>
+                                </div>
+
+                                <p className="mt-6 text-xs text-[#999] bg-white/50 px-3 py-1 rounded-full">
+                                    🎁 新用户注册限时解锁所有高级功能
+                                </p>
                             </div>
                         </motion.div>
                     )}
