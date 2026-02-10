@@ -330,7 +330,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                                 初步诊断
                             </span>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                                 <div>
                                     <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
                                         <span className="text-2xl">🔍</span>
@@ -363,7 +363,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                                         <span className="text-2xl">📝</span>
                                         分析摘要
                                     </h3>
-                                    <div className="bg-white/40 rounded-2xl p-5 h-full relative">
+                                    <div className="bg-white/40 rounded-2xl p-5 relative">
                                         <p className="text-[#444] leading-relaxed relative z-10">
                                             {data.guestAnalysis.summary}
                                         </p>
@@ -459,6 +459,10 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                     )}
 
                 </div>
+                {/* Footer */}
+                <div className="w-full text-center py-8 text-[#999] text-xs font-medium opacity-80">
+                    © 2026 NIHPLOD. All Rights Reserved.
+                </div>
             </div>
 
             {/* Modal */}
@@ -515,6 +519,6 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                     </motion.div>
                 )}
             </AnimatePresence>
-        </div>
+        </div >
     );
 }

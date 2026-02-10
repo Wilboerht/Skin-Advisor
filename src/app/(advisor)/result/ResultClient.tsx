@@ -1570,7 +1570,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             {/* Minimal Footer Text */}
                             <div className="text-center">
                                 <div className="flex flex-col md:flex-row justify-center items-center gap-2 md:gap-6 text-xs text-gray-500 mb-3">
-                                    <span className="opacity-80">© {new Date().getFullYear()} MySkin.Today™. All rights reserved.</span>
+                                    <span className="opacity-80">© 2026 NIHPLOD. All Rights Reserved.</span>
                                     <span className="hidden md:inline text-gray-300">•</span>
                                     <div className="flex gap-4 font-medium">
                                         <a href="https://demo.myskin.today/terms" target="_blank" rel="noopener noreferrer" className="hover:text-gray-900 transition-colors">
