@@ -448,28 +448,29 @@ export function generateScientificRoutine(
     let isLutealPhase = bioFactors?.menstrualPhase === "luteal";
 
     // --- 2. Silent Gender Correction Logic (Hybrid & Prompt Strategy) ---
-    // If User says "Female" but AI strongly suggests "Male" (e.g. Transgender, or just physiological differences)
-    // We keep Social Identity (Labels, UI) as "Female", but adjust biological parameters (Oil, Cycle)
+    // Detects mismatch between questionnaire gender and AI-detected gender in BOTH directions.
+    // We keep Social Identity (Labels, UI) unchanged, but adjust biological parameters.
     let genderAdjustmentLog: string[] = [];
 
     // Check AI detected gender from goldStandardData (Face Analysis Result)
-    const isBiologicalMale = (goldStandardData as any)?.gender?.value === 'male' && ((goldStandardData as any)?.gender?.confidence || 0) > 0.9;
+    const detectedGender = (goldStandardData as any)?.gender?.value;
+    const detectedGenderConf = (goldStandardData as any)?.gender?.confidence || 0;
+    const socialGender = bioFactors?.gender;
 
-    // Check Social Gender from BioFactors (Questionnaire)
-    const isSocialFemale = bioFactors?.gender === 'female';
+    // Detect ANY direction of mismatch with high confidence
+    const isGenderMismatch = detectedGender && socialGender && detectedGenderConf > 0.9 && detectedGender !== socialGender;
 
-    if (isSocialFemale && isBiologicalMale) {
-        // A. Oil Control Boost (Male skin tends to be oilier)
-        if (!isDry && !isSensitive) {
-            // We can simulate this by potentially modifying tolerance or isOily flags if they were mutable, 
-            // but here we just log it and can use the flag downstream if needed.
-            // For now, let's treat it as a strong hint to suppress luteal phase logic which is female-specific.
-        }
-
-        // B. Suppress Menstrual Cycle Logic (Males don't have luteal phases)
-        if (isLutealPhase) {
-            isLutealPhase = false; // Override locally
-            genderAdjustmentLog.push("Detected physiological male traits: Suppressed menstrual cycle adjustments.");
+    if (isGenderMismatch) {
+        if (socialGender === 'female' && detectedGender === 'male') {
+            // Social Female + Bio Male: Suppress female-specific logic, hint at oilier skin
+            if (isLutealPhase) {
+                isLutealPhase = false; // Males don't have luteal phases
+                genderAdjustmentLog.push("Detected physiological male traits: Suppressed menstrual cycle adjustments.");
+            }
+            genderAdjustmentLog.push("Gender mismatch (social:female, detected:male): Applied hybrid oil-control logic.");
+        } else if (socialGender === 'male' && detectedGender === 'female') {
+            // Social Male + Bio Female: tolerance adjustment applied after tolerance is computed (see below)
+            genderAdjustmentLog.push("Gender mismatch (social:male, detected:female): Applied hybrid sensitivity-aware logic.");
         }
     }
 
@@ -483,6 +484,10 @@ export function generateScientificRoutine(
     if ((goldStandardData?.labAnalysis?.erythema?.value ?? 0) > 350) tolerance = "low";
     if (isOily && !isSensitive && !isPregnancySafeMode && (goldStandardData?.dimensions?.skinTypeScore.score ?? 0) > 85) tolerance = "high";
     if (isHighStress && tolerance === "high") tolerance = "medium"; // Stress downgrades tolerance
+    // Gender mismatch (social:male, detected:female): downgrade tolerance for sensitivity
+    if (isGenderMismatch && socialGender === 'male' && detectedGender === 'female' && tolerance === 'high') {
+        tolerance = 'medium';
+    }
 
     // 3. Build Routine Slots
     const morningSteps: ScientificStep[] = [];

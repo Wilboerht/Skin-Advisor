@@ -173,6 +173,7 @@ export function useAsyncAnalysis() {
             trackAnalysisComplete(result.dataSource === "comprehensive" ? "ai" : "fallback");
 
             // Trigger background avatar generation (Fire and Forget)
+            const storedGender = localStorage.getItem("advisor_gender") || answers?.gender || 'female';
             fetch("/api/advisor/avatar/generate", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -181,7 +182,7 @@ export function useAsyncAnalysis() {
                     nickname: nickname,
                     characteristics: {
                         age: result.skinProfile?.skinAge || 25,
-                        gender: 'female', // Default or extract from answers if available
+                        gender: storedGender,
                         skinTone: 'healthy',
                         hairStyle: ''
                     }
