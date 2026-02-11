@@ -59,6 +59,8 @@ export function FaceAnalysisOverlay({
     const [activeLayer, setActiveLayer] = useState<0 | 1>(0);
     // 用于在 effect 内部逻辑判断当前绘制目标层，避免 activeLayer 成为 effect 依赖导致死循环
     const activeLayerLogicRef = useRef<0 | 1>(0);
+    // 缓存三角形数据，避免每次维度切换都重新获取
+    const trianglesRef = useRef<[number, number, number][] | null>(null);
 
     // 1. 初始化与检测
     useEffect(() => {
@@ -69,11 +71,17 @@ export function FaceAnalysisOverlay({
         const runDetection = async () => {
             if (!imgRef.current) return;
 
-            // 确保图片已加载
+            // 确保图片已加载 (处理加载失败的情况)
             if (!imgRef.current.complete) {
-                await new Promise((resolve) => {
-                    imgRef.current!.onload = resolve;
-                });
+                try {
+                    await new Promise<void>((resolve, reject) => {
+                        imgRef.current!.onload = () => resolve();
+                        imgRef.current!.onerror = () => reject(new Error("Image failed to load"));
+                    });
+                } catch (err) {
+                    console.error("[Overlay] Image load failed:", err);
+                    return;
+                }
             }
 
             if (cancelled) return;
@@ -83,6 +91,8 @@ export function FaceAnalysisOverlay({
             // 这里我们让 canvas 分辨率等于图片自然分辨率，通过 CSS 布局缩放
             const naturalWidth = imgRef.current.naturalWidth;
             const naturalHeight = imgRef.current.naturalHeight;
+
+            if (naturalWidth === 0 || naturalHeight === 0) return; // 图片无效
 
             setCanvasSize({ width: naturalWidth, height: naturalHeight });
 
@@ -129,19 +139,24 @@ export function FaceAnalysisOverlay({
         ctx.clearRect(0, 0, width, height);
 
         const landmarks = meshResult.landmarks;
+        const landmarkCount = landmarks.length;
 
-        // 获取三角形连接数据
-        const connections = FaceLandmarker.FACE_LANDMARKS_TESSELATION;
-
-        // 关键步骤：基于拓扑自动填充映射表空洞，确保热力图饱满
-        refineVertexMap(connections);
-
-        // 重建三角形
-        const triangles = buildMeshTriangles(connections);
+        // 获取/缓存三角形数据 (仅首次计算)
+        if (!trianglesRef.current) {
+            const connections = FaceLandmarker.FACE_LANDMARKS_TESSELATION;
+            // 基于拓扑自动填充映射表空洞，确保热力图饱满
+            refineVertexMap(connections);
+            // 重建三角形
+            trianglesRef.current = buildMeshTriangles(connections);
+        }
+        const triangles = trianglesRef.current;
 
         ctx.save();
         // 渲染三角形
         triangles.forEach(([i1, i2, i3]) => {
+            // 越界保护：确保索引在 landmarks 范围内
+            if (i1 >= landmarkCount || i2 >= landmarkCount || i3 >= landmarkCount) return;
+
             const p1 = landmarks[i1];
             const p2 = landmarks[i2];
             const p3 = landmarks[i3];
@@ -150,10 +165,8 @@ export function FaceAnalysisOverlay({
             const zone = getTriangleZone(i1, i2, i3);
             if (!zone) return;
 
-            // 获取该区域的分数
-            const zoneKey = zone as ZoneKey;
-            const currentZoneData = zoneAnalysis[zoneKey];
-
+            // 获取该区域的分数 (zone 已是 ZoneKey，无需额外断言)
+            const currentZoneData = zoneAnalysis[zone];
             if (!currentZoneData) return;
 
             const score = getZoneScore(currentZoneData, activeDimension);
@@ -219,20 +232,21 @@ export function FaceAnalysisOverlay({
             ctx.lineCap = "round";
             ctx.lineJoin = "round";
 
+            const landmarkCount = landmarks.length;
+
             contourConnections.forEach(connectionList => {
                 if (!connectionList) return;
 
                 ctx.beginPath();
                 connectionList.forEach(({ start, end }) => {
+                    // 越界保护
+                    if (start >= landmarkCount || end >= landmarkCount) return;
+
                     const p1 = landmarks[start];
                     const p2 = landmarks[end];
-                    // 这里我们为了性能，不合并路径，而是画线段
-                    // 对于闭合轮廓，DrawLines 会更佳，但 Connection 列表通常是线段集合
+
                     ctx.moveTo(p1.x * width, p1.y * height);
                     ctx.lineTo(p2.x * width, p2.y * height);
-
-                    // 优化：也可以先把所有点连成 Path 再 Stroke，但 Connection 顺序不一定是连续的
-                    // 这里直接画线段集
                 });
                 ctx.stroke();
             });
@@ -297,7 +311,8 @@ export function FaceAnalysisOverlay({
             onClick={handleInteraction}
         >
             {/* 原始图片 */}
-            <img // eslint-disable-next-line @next/next/no-img-element
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
                 ref={imgRef}
                 src={imageUrl}
                 alt="Analysis Target"

@@ -26,12 +26,14 @@ export function DimensionSwitcher({
     className
 }: DimensionSwitcherProps) {
     return (
-        <div className={cn("flex flex-wrap items-center gap-2 p-1", className)}>
+        <div role="tablist" aria-label="分析维度切换" className={cn("flex flex-wrap items-center gap-2 p-1", className)}>
             {DIMENSIONS.map((dim) => {
                 const isActive = activeDimension === dim.key;
                 return (
                     <button
                         key={dim.key}
+                        role="tab"
+                        aria-selected={isActive}
                         onClick={() => onChange(dim.key)}
                         className={cn(
                             "relative px-3 py-1.5 text-xs font-medium transition-all duration-300 rounded-full select-none outline-none",
