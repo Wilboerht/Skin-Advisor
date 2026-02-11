@@ -8,7 +8,9 @@ import {
     VISION_ANALYSIS_USER_PROMPT,
     CLAUDE_VISION_PROMPT,
     QWEN_VISION_PROMPT,
+    VIP_ANALYSIS_INSTRUCTION,
 } from "@/config/ai-prompts";
+import { getSession, isVipCheck } from "@/lib/auth";
 import { rateLimit } from "@/lib/ratelimit";
 import { aiLogger } from "@/lib/logger";
 import { getDefaultFaceAnalysisResult } from "@/lib/advisor-utils";
@@ -183,6 +185,17 @@ export async function POST(request: NextRequest) {
         } else if (provider === "qwen") {
             systemPrompt = QWEN_VISION_PROMPT;
         }
+
+        // --- VIP Prompt Injection ---
+        const session = await getSession();
+        // Use shared isVipCheck which validates role + vipExpiresAt expiration
+        const isVip = isVipCheck(session);
+
+        if (isVip && VIP_ANALYSIS_INSTRUCTION) {
+            systemPrompt += `\n\n${VIP_ANALYSIS_INSTRUCTION}`;
+            aiLogger.info(`[FaceAnalyze] VIP mode activated for user ${session?.id}`);
+        }
+        // ----------------------------
 
         let acquired = false;
         try {

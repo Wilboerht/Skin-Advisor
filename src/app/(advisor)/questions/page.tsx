@@ -23,6 +23,12 @@ export default function QuestionsPage() {
     const hasTrackedStart = useRef(false);
     const hasCheckedResume = useRef(false);
 
+    // 追踪答题质量
+    const sessionStartTime = useRef(Date.now());
+    const startStepIndex = useRef(0);
+    const [showQualityWarning, setShowQualityWarning] = useState(false);
+    const [pendingAnswers, setPendingAnswers] = useState<Record<string, any> | null>(null);
+
     // 过滤问题逻辑
     const allQuestions = DEFAULT_QUESTIONS;
     const questions = allQuestions.filter(q => {
@@ -121,7 +127,12 @@ export default function QuestionsPage() {
             if (savedStep) {
                 const stepIndex = parseInt(savedStep, 10);
                 if (!isNaN(stepIndex) && stepIndex >= 0) {
-                    setTimeout(() => setCurrentStepIndex(stepIndex), 0);
+                    setTimeout(() => {
+                        setCurrentStepIndex(stepIndex);
+                        // 重置质量检测计时器
+                        sessionStartTime.current = Date.now();
+                        startStepIndex.current = stepIndex;
+                    }, 0);
                 }
             }
         } catch (e) { console.error(e); }
@@ -144,6 +155,10 @@ export default function QuestionsPage() {
         setAnswers({});
         setCurrentStepIndex(0);
         setShowResumeModal(false);
+
+        // 重置计时器
+        sessionStartTime.current = Date.now();
+        startStepIndex.current = 0;
     };
 
     // 自动保存答案和步骤
@@ -177,6 +192,8 @@ export default function QuestionsPage() {
         if (!hasTrackedStart.current) {
             trackQuestionnaireStart();
             hasTrackedStart.current = true;
+            // 记录开始时间
+            sessionStartTime.current = Date.now();
         }
     };
 
@@ -232,18 +249,41 @@ export default function QuestionsPage() {
         setCurrentStepIndex(prev => prev + 1);
     };
 
+    // 真正执行提交的逻辑
+    const processSubmission = (finalAnswers: any) => {
+        localStorage.setItem("advisor_answers", JSON.stringify(finalAnswers));
+        // 清除进度索引（已完成）
+        localStorage.removeItem("advisor_step");
+        trackQuestionnaireComplete(finalAnswers);
+        router.push("/face-scan");
+    };
+
     // 辅助函数：处理带特定答案的完成逻辑
     const handleNextWithAnswers = (currentAnswers: any) => {
         if (currentStepIndex < questions.length - 1) {
             setDirection(1);
             setCurrentStepIndex(prev => prev + 1);
         } else {
-            // 完成，保存并跳转
-            localStorage.setItem("advisor_answers", JSON.stringify(currentAnswers));
-            // 清除进度索引（已完成）
-            localStorage.removeItem("advisor_step");
-            trackQuestionnaireComplete(currentAnswers);
-            router.push("/face-scan");
+            // 到达最后一题，触发完成逻辑
+            // 1. 质量检测：计算耗时
+            const now = Date.now();
+            const timeSpent = now - sessionStartTime.current;
+            const questionsAnsweredInSession = currentStepIndex - startStepIndex.current + 1;
+
+            // 规则：如果在本次会话中回答了超过 3 题，且平均每题耗时少于 1.5 秒
+            // 或者：如果回答了超过 5 题且总耗时少于 6 秒 (极速盲点)
+            const avgTime = timeSpent / questionsAnsweredInSession;
+            const isTooFast = (questionsAnsweredInSession >= 3 && avgTime < 1500) ||
+                (questionsAnsweredInSession >= 5 && timeSpent < 6000);
+
+            if (isTooFast) {
+                setPendingAnswers(currentAnswers);
+                setShowQualityWarning(true);
+                return;
+            }
+
+            // 正常提交
+            processSubmission(currentAnswers);
         }
     }
 
@@ -421,6 +461,54 @@ export default function QuestionsPage() {
                                     className="w-full py-2 text-xs text-[#1A1A1A]/40 hover:text-[#1A1A1A] transition-colors"
                                 >
                                     确认退出
+                                </button>
+                            </div>
+                        </m.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Quality Check Modal */}
+            <AnimatePresence>
+                {showQualityWarning && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <m.div
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-[#FDFBF7]/90 backdrop-blur-sm"
+                            onClick={() => setShowQualityWarning(false)}
+                        />
+                        <m.div
+                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                            className="relative w-full max-w-sm bg-white p-8 shadow-2xl border border-[#1A1A1A]/5 text-center"
+                        >
+                            <div className="w-12 h-12 rounded-full bg-[#F5F3EF] flex items-center justify-center mx-auto mb-4">
+                                <span className="text-2xl">🤔</span>
+                            </div>
+                            <h3 className="text-xl font-serif text-[#1A1A1A] mb-2">确认提交？</h3>
+                            <p className="text-sm text-[#5E5E5E] mb-6 font-light leading-relaxed">
+                                我们检测到您的填写速度较快。<br />
+                                为了确保 AI 能为您提供精准的护肤建议，建议您再次核对您的回答。
+                            </p>
+                            <div className="flex flex-col gap-3">
+                                <button
+                                    onClick={() => {
+                                        setShowQualityWarning(false);
+                                        // 重置计时以免再次触发（给用户机会快速通过）
+                                        sessionStartTime.current = Date.now();
+                                        startStepIndex.current = currentStepIndex;
+                                        if (pendingAnswers) processSubmission(pendingAnswers);
+                                    }}
+                                    className="w-full bg-[#1A1A1A] text-white py-3 text-sm font-medium hover:bg-[#3D4430] transition-colors"
+                                >
+                                    我已确认无误，提交
+                                </button>
+                                <button
+                                    onClick={() => setShowQualityWarning(false)}
+                                    className="w-full py-2 text-xs text-[#1A1A1A]/40 hover:text-[#1A1A1A] transition-colors"
+                                >
+                                    返回检查
                                 </button>
                             </div>
                         </m.div>

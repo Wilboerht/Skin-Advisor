@@ -49,6 +49,7 @@ import { addProductToRoutine } from "@/lib/routine-products";
 import { WishlistNavButton } from "@/components/advisor/WishlistNavButton";
 import { SaveReportBanner } from "@/components/advisor/SaveReportBanner";
 import { AnalyzingOverlay } from "@/components/advisor/AnalyzingOverlay";
+import { VIPAnalysisSection } from "@/components/advisor/VIPAnalysisSection";
 
 // Types
 export interface ComprehensiveResult {
@@ -1018,6 +1019,13 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     </div>
                                 )}
                             </div>
+
+                            {/* --- VIP AR ANALYSIS SECTION --- */}
+                            <VIPAnalysisSection
+                                imageUrl={userImage || undefined}
+                                zoneAnalysis={faceAnalysis?.zoneAnalysis}
+                                className={styles.fadeInUp}
+                            />
 
                             {/* 1. Condition Summary (Original) */}
                             {/* 1. Radar Analysis */}

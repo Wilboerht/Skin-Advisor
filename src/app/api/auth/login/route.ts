@@ -34,12 +34,19 @@ export async function POST(req: NextRequest) {
             sub: user.id,
             phone: user.phoneNumber,
             name: user.name,
-            role: user.role
+            role: user.role,
+            vipExpiresAt: user.vipExpiresAt
         });
 
         // Response
         const response = NextResponse.json({
-            user: { id: user.id, phone: user.phoneNumber, name: user.name, role: user.role }
+            user: {
+                id: user.id,
+                phone: user.phoneNumber,
+                name: user.name,
+                role: user.role,
+                vipExpiresAt: user.vipExpiresAt
+            }
         });
 
         response.cookies.set("auth_token", token, {

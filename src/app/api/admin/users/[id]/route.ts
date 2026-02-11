@@ -70,7 +70,7 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await request.json();
-    const { role, name, dailyTestLimit } = body;
+    const { role, name, dailyTestLimit, vipExpiresAt } = body;
 
     const user = await prisma.user.findUnique({ where: { id } });
     if (!user) {
@@ -81,6 +81,10 @@ export async function PATCH(
     if (role !== undefined) updateData.role = role;
     if (name !== undefined) updateData.name = name;
     if (dailyTestLimit !== undefined) updateData.dailyTestLimit = dailyTestLimit;
+    if (vipExpiresAt !== undefined) {
+        // Support null (clear expiration = permanent VIP) or ISO date string
+        updateData.vipExpiresAt = vipExpiresAt ? new Date(vipExpiresAt) : null;
+    }
 
     const updatedUser = await prisma.user.update({
         where: { id },
@@ -98,7 +102,9 @@ export async function PATCH(
             previousRole: user.role,
             newRole: role,
             previousDailyTestLimit: (user as any).dailyTestLimit,
-            newDailyTestLimit: dailyTestLimit
+            newDailyTestLimit: dailyTestLimit,
+            previousVipExpiresAt: user.vipExpiresAt,
+            newVipExpiresAt: vipExpiresAt
         },
         ...clientInfo,
     });

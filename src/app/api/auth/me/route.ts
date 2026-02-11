@@ -35,7 +35,8 @@ export async function GET(req: NextRequest) {
         email: dbUser.email,
         phone: dbUser.phoneNumber,
         name: dbUser.name,
-        role: dbUser.role
+        role: dbUser.role,
+        vipExpiresAt: dbUser.vipExpiresAt
     };
 
     const response = NextResponse.json({ user });
@@ -53,7 +54,8 @@ export async function GET(req: NextRequest) {
             sub: user.id,
             email: user.email,
             name: user.name,
-            role: user.role
+            role: user.role,
+            vipExpiresAt: user.vipExpiresAt
         }, '7d');
 
         response.cookies.set("auth_token", newToken, {
@@ -103,7 +105,8 @@ export async function PUT(req: NextRequest) {
             sub: user.id,
             email: user.email,
             name: user.name,
-            role: user.role
+            role: user.role,
+            vipExpiresAt: user.vipExpiresAt
         }, '7d');
 
         const response = NextResponse.json({
@@ -112,7 +115,8 @@ export async function PUT(req: NextRequest) {
                 id: user.id,
                 email: user.email,
                 name: user.name,
-                role: user.role
+                role: user.role,
+                vipExpiresAt: user.vipExpiresAt
             }
         });
 

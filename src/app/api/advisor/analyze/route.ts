@@ -12,15 +12,27 @@ import { recommendProducts, getCandidateProducts } from "@/lib/recommendations";
 import { resolveIPLocation } from "@/lib/geoip";
 import { getSession } from "@/lib/auth";
 
+import { checkUsageLimit, recordUsage } from "@/lib/usage-limit";
+
 export async function POST(request: NextRequest) {
     try {
-        // 1. 速率限制 & 地理位置
+        // 1. 解析与验证
+        const body = await request.json();
+
+        // 2. 检查使用限制 (Guest/Member/VIP)
+        const usageLimit = await checkUsageLimit(request, body);
+        if (!usageLimit.canTest) {
+            return NextResponse.json(
+                { error: usageLimit.error || "您已达到今日测试上限" },
+                { status: 429 }
+            );
+        }
+
+        // 3. 速率限制 (保留基础防刷)
         const ip = request.headers.get("x-forwarded-for") || "127.0.0.1";
-        const limit = await rateLimit(`advisor-analyze-${ip}`, "comprehensive-analyze", { maxRequests: 10 });
+        const limit = await rateLimit(`advisor-analyze-${ip}`, "comprehensive-analyze", { maxRequests: 20 });
 
-        // 尝试获取位置
         const geoLocation = resolveIPLocation(ip);
-
         const rateLimitHeaders = {
             "X-RateLimit-Limit": String(limit.limit),
             "X-RateLimit-Remaining": String(limit.remaining),
@@ -34,10 +46,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // 2. 解析与验证
-        const body = await request.json();
-
-        // 使用 Zod 验证
+        // 4. 使用 Zod 验证
         const result = AnalyzeRequestSchema.safeParse(body);
         if (!result.success) {
             console.error("Analyze validation error:", JSON.stringify(result.error.flatten(), null, 2));
@@ -52,12 +61,17 @@ export async function POST(request: NextRequest) {
 
         const { answers, faceAnalysis, sessionId, nickname } = result.data;
 
+        // 5. 记录使用次数
+        if (sessionId) {
+            await recordUsage(request, sessionId, body);
+        }
+
         // 注入地理位置 (如果用户未提供)
         if (!answers.location && geoLocation) {
             answers.location = `${geoLocation.region || ''} ${geoLocation.city || ''}`.trim();
         }
 
-        // 3. 检查用户登录状态
+        // 6. 检查用户登录状态
         const user = await getSession();
 
         // 保存会话记录到数据库（所有用户，包括访客）

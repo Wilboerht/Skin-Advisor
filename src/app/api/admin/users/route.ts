@@ -30,6 +30,8 @@ export async function GET(request: NextRequest) {
         where.role = "user";
     } else if (status === "inactive") {
         where.role = "disabled";
+    } else if (status === "vip") {
+        where.role = "vip";
     }
 
     const [users, total] = await Promise.all([

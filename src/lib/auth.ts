@@ -37,6 +37,7 @@ export interface SessionUser {
     email: string;
     name?: string;
     role: string;
+    vipExpiresAt?: string | null; // ISO Date string
 }
 
 export async function getSession(): Promise<SessionUser | null> {
@@ -52,6 +53,28 @@ export async function getSession(): Promise<SessionUser | null> {
         id: payload.sub as string,
         email: payload.email as string,
         name: payload.name as string,
-        role: payload.role as string || 'user'
+        role: payload.role as string || 'user',
+        vipExpiresAt: payload.vipExpiresAt || null
     };
+}
+
+/**
+ * 判断用户是否为有效的 VIP
+ */
+export function isVipCheck(user: { role?: string; vipExpiresAt?: string | null | Date } | null | undefined): boolean {
+    if (!user) return false;
+    // 1. Check role
+    if (user.role === 'vip') {
+        // 2. Check expiration if present
+        if (user.vipExpiresAt) {
+            return new Date(user.vipExpiresAt).getTime() > Date.now();
+        }
+        // If no expiry set but role is vip, assume permanent or indefinite vip for now (or treat as valid)
+        return true;
+    }
+    // Admin is also considered VIP for testing purposes? Or strictly separate?
+    // Usually admin has all access, but for explicit "VIP feature" check:
+    if (user.role === 'admin' || user.role === 'super_admin') return true;
+
+    return false;
 }

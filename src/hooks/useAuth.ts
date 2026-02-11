@@ -8,37 +8,72 @@ interface User {
     phone?: string | null;
     name?: string;
     role: string;
+    vipExpiresAt?: string | null;
 }
 
 const AUTH_CACHE_KEY = 'auth_user_cache';
 const AUTH_CACHE_EXPIRY_KEY = 'auth_user_cache_expiry';
 const CACHE_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
 
+/**
+ * 检查缓存中的 VIP 用户是否已过期
+ * 如果 role='vip' 且 vipExpiresAt 已过去，返回 true（需要刷新）
+ */
+function isCachedVipExpired(user: User): boolean {
+    if (user.role !== 'vip') return false;
+    if (!user.vipExpiresAt) return false; // 无过期时间 = 永久 VIP
+    return new Date(user.vipExpiresAt).getTime() <= Date.now();
+}
+
 // Get cached user from localStorage
-function getCachedUser(): User | null {
-    if (typeof window === 'undefined') return null;
+function getCachedUser(): { user: User | null; needsRefresh: boolean } {
+    if (typeof window === 'undefined') return { user: null, needsRefresh: false };
     try {
         const expiry = localStorage.getItem(AUTH_CACHE_EXPIRY_KEY);
         if (expiry && Date.now() > parseInt(expiry, 10)) {
             // Cache expired
             localStorage.removeItem(AUTH_CACHE_KEY);
             localStorage.removeItem(AUTH_CACHE_EXPIRY_KEY);
-            return null;
+            return { user: null, needsRefresh: false };
         }
         const cached = localStorage.getItem(AUTH_CACHE_KEY);
-        return cached ? JSON.parse(cached) : null;
+        if (!cached) return { user: null, needsRefresh: false };
+
+        const user: User = JSON.parse(cached);
+
+        // 检查：如果缓存的 VIP 用户已过期，仍然返回用户数据（避免闪烁）
+        // 但标记需要立即向服务端确认
+        if (isCachedVipExpired(user)) {
+            return { user, needsRefresh: true };
+        }
+
+        return { user, needsRefresh: false };
     } catch {
-        return null;
+        return { user: null, needsRefresh: false };
     }
 }
 
-// Set user cache
+// Set user cache (VIP 用户的缓存有效期 = min(24h, VIP到期时间))
 function setCachedUser(user: User | null) {
     if (typeof window === 'undefined') return;
     try {
         if (user) {
             localStorage.setItem(AUTH_CACHE_KEY, JSON.stringify(user));
-            localStorage.setItem(AUTH_CACHE_EXPIRY_KEY, String(Date.now() + CACHE_DURATION_MS));
+
+            // VIP 用户：缓存有效期不超过 VIP 到期时间
+            let cacheDuration = CACHE_DURATION_MS;
+            if (user.role === 'vip' && user.vipExpiresAt) {
+                const vipRemainingMs = new Date(user.vipExpiresAt).getTime() - Date.now();
+                if (vipRemainingMs > 0) {
+                    // 缓存不超过 VIP 到期时间 (取较短者)
+                    cacheDuration = Math.min(cacheDuration, vipRemainingMs);
+                } else {
+                    // VIP 已过期，缓存立即过期 (下次读取会触发刷新)
+                    cacheDuration = 0;
+                }
+            }
+
+            localStorage.setItem(AUTH_CACHE_EXPIRY_KEY, String(Date.now() + cacheDuration));
         } else {
             localStorage.removeItem(AUTH_CACHE_KEY);
             localStorage.removeItem(AUTH_CACHE_EXPIRY_KEY);
@@ -55,10 +90,13 @@ export function useAuth() {
 
     useEffect(() => {
         // Client-side only: Try to load cached user first for instant display
-        const cachedUser = getCachedUser();
+        const { user: cachedUser, needsRefresh } = getCachedUser();
         if (cachedUser) {
             setUser(cachedUser);
-            setLoading(false);
+            // 如果 VIP 已过期，保持 loading 状态以阻止 VIP UI 闪烁
+            if (!needsRefresh) {
+                setLoading(false);
+            }
         }
         // Then validate with server
         checkSession();
@@ -123,5 +161,13 @@ export function useAuth() {
         setCachedUser(null);
     };
 
-    return { user, loading, login, register, logout, refresh: checkSession };
+    const isVip = !!(
+        user &&
+        (
+            (user.role === 'vip' && (!user.vipExpiresAt || new Date(user.vipExpiresAt).getTime() > Date.now())) ||
+            ['admin', 'super_admin'].includes(user.role)
+        )
+    );
+
+    return { user, isVip, loading, login, register, logout, refresh: checkSession };
 }
