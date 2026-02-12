@@ -1,16 +1,6 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"),
@@ -32,6 +22,8 @@ export const metadata: Metadata = {
 import { ViewTransitions } from "next-view-transitions";
 
 import { ToastProvider } from "@/components/ui/Toast";
+import { UserProvider } from "@/components/auth/UserProvider";
+
 
 import { AuthModalProvider } from "@/components/auth/AuthModalContext";
 import { AuthModal } from "@/components/auth/AuthModal";
@@ -45,14 +37,16 @@ export default function RootLayout({
     <ViewTransitions>
       <html lang="en">
         <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+          className={`antialiased`}
           suppressHydrationWarning
         >
           <ToastProvider>
-            <AuthModalProvider>
-              {children}
-              <AuthModal />
-            </AuthModalProvider>
+            <UserProvider>
+              <AuthModalProvider>
+                {children}
+                <AuthModal />
+              </AuthModalProvider>
+            </UserProvider>
           </ToastProvider>
         </body>
       </html>
