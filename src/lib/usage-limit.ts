@@ -40,13 +40,13 @@ export async function checkUsageLimit(request: NextRequest, body?: any): Promise
             }
         });
 
-        // VIP 限制：每日 5 次
-        const limit = 5;
+        // VIP 限制：每日 100 次（临时放宽）
+        const limit = 100;
         return {
             canTest: count < limit,
             remaining: Math.max(0, limit - count),
             role: 'vip',
-            error: count >= limit ? '您的 VIP 今日测试次数（5次）已用完，请明天再试。' : undefined
+            error: count >= limit ? '您的 VIP 今日测试次数已用完，请明天再试。' : undefined
         };
     }
 
@@ -63,49 +63,51 @@ export async function checkUsageLimit(request: NextRequest, body?: any): Promise
             }
         });
 
-        // 普通用户限制：每日 1 次
-        const limit = 1;
+        // 普通用户限制：每日 100 次（临时放宽）
+        const limit = 100;
         return {
             canTest: count < limit,
             remaining: Math.max(0, limit - count),
             role: 'member',
-            error: count >= limit ? '普通会员每日仅限测试 1 次，升级 VIP 享受每日 5 次深度分析。' : undefined
+            error: count >= limit ? '今日测试次数已用完，请明天再试。' : undefined
         };
     }
 
-    // 3. 如果是访客
+    // 3. 如果是访客 — 每日 100 次（临时放宽）
     const identifiers = extractGuestIdentifiers(request, body);
     const { ipAddress, cookieId, fingerprint } = identifiers;
 
-    // 获取 7 天前的时间
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    // 查询 matching 记录，看过去 7 天是否有测试过
+    // 查询当天的测试次数
     const whereConditions: any[] = [{ ipAddress }];
     if (cookieId) whereConditions.push({ cookieId });
     if (fingerprint) whereConditions.push({ fingerprint });
 
-    const recentTest = await prisma.guestUsage.findFirst({
+    const todayCount = await prisma.guestUsage.findFirst({
         where: {
             OR: whereConditions,
-            lastTestAt: { gte: sevenDaysAgo }
+            lastTestAt: { gte: today }
         },
         orderBy: { lastTestAt: 'desc' }
     });
 
-    if (recentTest && recentTest.lastTestAt) {
+    const count = todayCount?.todayCount || 0;
+    const limit = 100;
+
+    if (count >= limit) {
         return {
             canTest: false,
             remaining: 0,
             role: 'guest',
-            error: '游客模式每周仅限测试 1 次，注册登录后可享受每日测试权益。'
+            error: '今日测试次数已用完，请明天再试。'
         };
     }
 
     return {
         canTest: true,
-        remaining: 1,
+        remaining: Math.max(0, limit - count),
         role: 'guest'
     };
 }

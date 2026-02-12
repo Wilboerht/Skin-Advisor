@@ -15,12 +15,21 @@ export interface AsyncAnalysisState {
 async function fetchWithRetry(url: string, options: RequestInit, retries = 3, backoff = 1000): Promise<Response> {
     try {
         const res = await fetch(url, options);
-        // Retry on Server Errors (5xx) or Rate Limit (429)
-        if (!res.ok && (res.status >= 500 || res.status === 429)) {
+        // 429 is a business logic rejection (usage limit), do NOT retry
+        if (!res.ok && res.status === 429) {
+            const errorData = await res.json().catch(() => ({}));
+            throw new Error(errorData.error || '您已达到测试次数上限');
+        }
+        // Retry only on Server Errors (5xx)
+        if (!res.ok && res.status >= 500) {
             throw new Error(`Request failed: ${res.status}`);
         }
         return res;
-    } catch (err) {
+    } catch (err: any) {
+        // Do NOT retry usage-limit errors (429)
+        if (err.message?.includes('测试次数上限') || err.message?.includes('测试上限')) {
+            throw err;
+        }
         if (retries > 0) {
             console.log(`Retrying ${url}... (${retries} attempts left)`);
             await new Promise(r => setTimeout(r, backoff));
