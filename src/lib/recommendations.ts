@@ -132,15 +132,27 @@ function calculateScore(
     // 4. 预算匹配（权重中等：匹配 +15 分）
     if (answers.budget) {
         const priceRange = BUDGET_TO_PRICE[answers.budget];
-        const productPrice = Number(product.price);
-        if (priceRange && !isNaN(productPrice) && productPrice >= priceRange.min && productPrice <= priceRange.max) {
+        // Strip non-numeric characters (e.g. "¥890" → 890) to avoid NaN
+        const productPrice = Number(String(product.price).replace(/[^0-9.]/g, ''));
+        if (priceRange && !isNaN(productPrice) && productPrice > 0 && productPrice >= priceRange.min && productPrice <= priceRange.max) {
             score += 15;
             reasons.push("符合预算范围");
         }
     }
 
-    // 5. 推荐产品加分（+10 分） (Assuming featured field exists or we simulate it)
-    // if (product.featured) { score += 10; } 
+    // 5. 推荐产品加分（+10 分）
+    if (product.featured) { score += 10; }
+
+    // 5b. 适用肤质直接匹配（+25 分）— 使用结构化 suitableSkinTypes 数据
+    if (skinType) {
+        const suitableTypes: string[] = Array.isArray(product.suitableSkinTypes)
+            ? product.suitableSkinTypes as string[]
+            : [];
+        if (suitableTypes.includes(skinType) || suitableTypes.includes('all')) {
+            score += 25;
+            reasons.push("适用于您的肤质");
+        }
+    }
 
     // 6. 护肤习惯匹配（新增：根据复杂度调整）
     if (answers.currentRoutine) {
@@ -309,19 +321,23 @@ export async function getCandidateProducts(
 
 /**
  * Recommend products based on user profile using Database (Enhanced)
+ * Includes RecommendationRule engine for parity with getCandidateProducts()
  */
 export async function recommendProducts(
     answers: QuestionnaireAnswers,
-    concerns: string[]
+    concerns: string[],
+    preloadedProducts?: any[] // Optional: reuse already-fetched products to avoid duplicate DB query
 ): Promise<ProductRecommendation[]> {
     try {
-        // 1. Fetch all active products
-        const allProducts = await prisma.product.findMany({
-            where: {
-                active: true,
-                stock: { gt: 0 }
-            }
-        });
+        // 1. Use preloaded products if available, otherwise fetch from DB
+        const allProducts = (preloadedProducts && preloadedProducts.length > 0)
+            ? preloadedProducts
+            : await prisma.product.findMany({
+                where: {
+                    active: true,
+                    stock: { gt: 0 }
+                }
+            });
 
         if (allProducts.length === 0) {
             console.warn("No products found in DB");
@@ -331,7 +347,7 @@ export async function recommendProducts(
         const skinType = answers.skinType || "combination";
 
         // 2. Score each product
-        const scored = allProducts.map(p => {
+        let scored = allProducts.map(p => {
             const { score, matchedBenefits } = calculateScore(p, skinType, concerns, answers);
             return {
                 ...p,
@@ -341,10 +357,50 @@ export async function recommendProducts(
             };
         });
 
-        // 3. Sort by score desc
+        // 3. Apply RecommendationRule engine (same logic as getCandidateProducts)
+        try {
+            const activeRules = await prisma.recommendationRule.findMany({
+                where: { active: true },
+                orderBy: { priority: 'desc' }
+            });
+
+            const forcedProductIds = new Set<string>();
+
+            for (const rule of activeRules) {
+                const conditions = rule.conditions as any;
+                let match = true;
+
+                if (conditions?.skinType && Array.isArray(conditions.skinType)) {
+                    if (!conditions.skinType.includes(skinType)) match = false;
+                }
+
+                if (match && conditions?.concern && Array.isArray(conditions.concern)) {
+                    const hasConcern = concerns.some(c => conditions.concern.includes(c));
+                    if (!hasConcern) match = false;
+                }
+
+                if (match && Array.isArray(rule.productIds)) {
+                    rule.productIds.forEach((id: any) => forcedProductIds.add(String(id)));
+                }
+            }
+
+            // Boost forced products
+            if (forcedProductIds.size > 0) {
+                scored = scored.map(p => {
+                    if (forcedProductIds.has(p.id)) {
+                        return { ...p, rawScore: p.rawScore + 1000 };
+                    }
+                    return p;
+                });
+            }
+        } catch (ruleErr) {
+            console.warn("RecommendationRule query failed (non-fatal):", ruleErr);
+        }
+
+        // 4. Sort by score desc
         scored.sort((a, b) => b.rawScore - a.rawScore);
 
-        // 4. Select Top N (e.g. 6)
+        // 5. Select Top N (e.g. 6)
         const top = scored.slice(0, 6);
 
         return top.map((p, index) => ({

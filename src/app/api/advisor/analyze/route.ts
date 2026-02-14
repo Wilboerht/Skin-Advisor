@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateText, isAIEnabled, fallbackAnalysis } from "@/lib/ai";
-import { extractJsonFromResponse, matchProducts } from "@/lib/advisor-utils";
+import { extractJsonFromResponse } from "@/lib/advisor-utils";
 import { buildTextAnalysisPrompt } from "@/config/ai-prompts";
 import { rateLimit } from "@/lib/ratelimit";
 import prisma from "@/lib/prisma";
@@ -198,7 +198,9 @@ export async function POST(request: NextRequest) {
                         category: catalogProduct.category,
                         image: catalogProduct.image,
                         price: catalogProduct.price,
-                        description: catalogProduct.description
+                        description: catalogProduct.description,
+                        keyIngredients: catalogProduct.keyIngredients || [],
+                        benefits: catalogProduct.benefits || []
                     };
                 }
                 return null;
@@ -212,7 +214,8 @@ export async function POST(request: NextRequest) {
         // 如果 AI 没返回有效产品 (或映射全失败)，使用推荐算法兜底
         if (finalProducts.length === 0) {
             console.log("AI products invalid/empty, using recommendation engine fallback");
-            const recs = await recommendProducts(answers as any, concerns);
+            // Pass candidateProducts to avoid duplicate DB query
+            const recs = await recommendProducts(answers as any, concerns, candidateProducts);
             finalProducts = recs;
         }
 

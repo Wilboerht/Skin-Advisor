@@ -71,6 +71,8 @@ export interface ComprehensiveResult {
         reason: string;
         image: string;
         price?: string;
+        keyIngredients?: string[];
+        benefits?: string[];
     }>;
     dataSource: "comprehensive" | "questionnaire";
 }
@@ -1565,8 +1567,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     image: p.image,
                                     price: p.price || '',
                                     reason: p.reason,
-                                    keyIngredients: [], // 从数据库获取
-                                    benefits: [], // 从数据库获取
+                                    keyIngredients: p.keyIngredients || [],
+                                    benefits: p.benefits || [],
                                 } as ProductCardData))}
                                 isLoading={loading}
                                 envData={{
