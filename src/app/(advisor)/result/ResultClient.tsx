@@ -945,6 +945,18 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     <ChevronRight size={14} className="text-gray-400" />
                                 </Link>
                             )}
+
+                            {/* Leaderboard Link - Always visible */}
+                            <Link href="/leaderboard" className={sidebarStyles.linkBlock}>
+                                <div className={sidebarStyles.linkIconBox}>
+                                    <span className="text-lg">🏆</span>
+                                </div>
+                                <div className={sidebarStyles.linkContent}>
+                                    <div className={sidebarStyles.linkTitle}>肌肤评分榜</div>
+                                    <div className={sidebarStyles.linkDesc}>查看本赛季全国排名</div>
+                                </div>
+                                <ChevronRight size={14} className="text-gray-400" />
+                            </Link>
                         </aside>
 
                         {/* Right Column: Detailed Analysis & Routine */}

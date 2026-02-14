@@ -319,7 +319,8 @@ export default function Home() {
               <div className="flex flex-wrap justify-center items-center gap-3">
                 {/* Leaderboard Button - Always Visible */}
                 <button
-                  className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all bg-[#1A1A1A]/5 text-[#1A1A1A]/60 hover:bg-[#1A1A1A]/10 border-none cursor-pointer"
+                  onClick={() => router.push('/leaderboard')}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all bg-[#1A1A1A]/5 text-[#1A1A1A]/60 hover:bg-[#1A1A1A]/10 border-none cursor-pointer hover:scale-105 active:scale-95"
                 >
                   <span className="text-base">🏆</span>
                   <span>肌肤评分榜</span>

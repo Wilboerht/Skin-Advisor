@@ -65,18 +65,62 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
     const [totalParticipants, setTotalParticipants] = useState(data.totalParticipants);
     const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(true);
 
-    // Random comments from reference
-    const comments = [
-        "报告评语：您的肌肤细腻度很高，几乎看不见毛孔，水油平衡状态非常理想，请继续保持现有的基础护肤流程！",
-        "报告评语：肤色匀净度极佳，近期防晒工作做得非常到位。眼周状态紧致，是实至名归的素颜女神候选人。",
-        "报告评语：整体状态非常健康，胶原蛋白感十足。建议在接下来的换季期加强补水，让肌肤屏障更加稳固。",
-        "报告评语：水油平衡控制得很好，即使是素颜也散发着自然的光泽感。当前排名反映了你极佳的保养习惯。"
-    ];
+    // Generate dynamic comment based on user's actual analysis data
+    function generateComment(): string {
+        const { score, skinType, userPercentile } = data;
+        const concerns = data.guestAnalysis?.concerns || [];
+
+        // Score-based praise
+        let scorePraise = "";
+        if (score >= 90) {
+            scorePraise = "您的肌肤状态极为出色，各项指标均处于优秀区间";
+        } else if (score >= 80) {
+            scorePraise = "您的肌肤底子非常好，整体状态健康且有光泽";
+        } else if (score >= 70) {
+            scorePraise = "您的肌肤状态良好，略有需要关注的细节";
+        } else if (score >= 60) {
+            scorePraise = "您的肌肤有一定的提升空间，建议关注日常护理";
+        } else {
+            scorePraise = "您的肌肤正需要更多呵护，科学护肤可以带来显著改善";
+        }
+
+        // Concern-based advice
+        let concernAdvice = "";
+        if (concerns.length > 0) {
+            const concernMap: Record<string, string> = {
+                "毛孔": "建议定期做深层清洁，搭配收敛水能有效改善毛孔问题",
+                "痘痘": "注意温和清洁并避免挤压，含水杨酸的产品可以帮助控制痘痘",
+                "暗沉": "加强防晒与使用含维C的精华，有助于提亮肤色",
+                "干燥": "加强保湿屏障修复，含神经酰胺的面霜值得尝试",
+                "皱纹": "建议加入含视黄醇的精华，帮助促进胶原蛋白生成",
+                "色斑": "防晒是淡斑的基础，搭配烟酰胺精华效果更佳",
+                "敏感": "选择低刺激性配方，避免含酒精和香精的产品",
+                "黑眼圈": "改善睡眠质量的同时，含咖啡因的眼霜可以淡化黑眼圈",
+                "出油": "控油的关键不是过度清洁，而是做好补水平衡",
+            };
+            const matched = concerns.find(c => concernMap[c]);
+            if (matched) {
+                concernAdvice = `。${concernMap[matched]}`;
+            }
+        }
+
+        // Percentile-based closing
+        let closing = "";
+        if (userPercentile >= 90) {
+            closing = "。您的护肤习惯值得所有人学习！";
+        } else if (userPercentile >= 70) {
+            closing = "。继续保持，您已经走在大多数人前面了。";
+        } else {
+            closing = "。坚持科学护肤，排名提升指日可待。";
+        }
+
+        return `报告评语：${scorePraise}，检测肤质为${skinType}${concernAdvice}${closing}`;
+    }
 
     // Fetch leaderboard data
     useEffect(() => {
         setMounted(true);
-        setComment(comments[Math.floor(Math.random() * comments.length)]);
+        setComment(generateComment());
 
         // Fetch leaderboard from API
         async function fetchLeaderboard() {

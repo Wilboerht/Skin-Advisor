@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 
-// Types for leaderboard
+// ===== Types =====
 interface LeaderboardEntry {
     rank: number;
     nickname: string;
@@ -15,7 +15,7 @@ interface PopularityEntry {
     rank: number;
     nickname: string;
     city: string;
-    popularity: number; // View count or share count
+    popularity: number;
     sessionId: string;
 }
 
@@ -29,11 +29,142 @@ interface LeaderboardResponse {
     };
 }
 
+interface ScoredSession {
+    sessionId: string;
+    nickname: string;
+    city: string;
+    score: number;
+    popularity: number;
+}
+
+// ===== In-Memory Cache (5 min TTL) =====
+const CACHE_TTL_MS = 5 * 60 * 1000;
+let cachedSessions: ScoredSession[] | null = null;
+let cacheTimestamp = 0;
+
+function isCacheValid(): boolean {
+    return cachedSessions !== null && (Date.now() - cacheTimestamp) < CACHE_TTL_MS;
+}
+
+// ===== Deterministic Hash =====
+// Stable hash based on string input, always returns the same value for same input
+function deterministicHash(str: string): number {
+    let hash = 5381;
+    for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) + hash) + str.charCodeAt(i);
+        hash = hash & hash; // Convert to 32-bit integer
+    }
+    return Math.abs(hash);
+}
+
+// ===== Deterministic Popularity =====
+// Uses real signals (share status, recency) + stable session hash
+// Result is consistent across API calls — no more random jitter
+function calculatePopularity(
+    sessionId: string,
+    resultShared: boolean,
+    createdAt: Date
+): number {
+    // 1. Base score: deterministic hash mapped to 100–2100 range
+    const baseScore = (deterministicHash(sessionId) % 2000) + 100;
+
+    // 2. Share bonus: sharing is a real user action, reward it heavily
+    const shareBonus = resultShared ? 3000 : 0;
+
+    // 3. Recency bonus: newer sessions get up to +500, decaying linearly over 30 days
+    const ageDays = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
+    const recencyBonus = Math.max(0, Math.round(500 * (1 - ageDays / 30)));
+
+    return baseScore + shareBonus + recencyBonus;
+}
+
+// ===== Deterministic Nickname Generator =====
+function generateRandomNickname(seed: string): string {
+    const adjectives = ["可爱的", "阳光", "元气", "甜美", "活力", "清新", "温柔", "俏皮", "优雅", "时尚"];
+    const nouns = ["小可爱", "宝贝", "达人", "精灵", "女神", "仙子", "小天使", "小公主", "少女", "美眉"];
+
+    const hash = deterministicHash(seed);
+    return adjectives[hash % adjectives.length] + nouns[(hash >> 4) % nouns.length];
+}
+
+// ===== Data Loading with Cache =====
+async function loadScoredSessions(): Promise<ScoredSession[]> {
+    // Return cached data if still valid
+    if (isCacheValid()) {
+        return cachedSessions!;
+    }
+
+    // Fetch from database
+    const sessions = await prisma.advisorSession.findMany({
+        where: {
+            analysisResult: {
+                not: Prisma.JsonNull
+            },
+            createdAt: {
+                gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+            }
+        },
+        select: {
+            sessionId: true,
+            analysisResult: true,
+            city: true,
+            province: true,
+            resultShared: true,
+            createdAt: true,
+            user: {
+                select: {
+                    name: true
+                }
+            }
+        },
+        orderBy: {
+            createdAt: "desc"
+        }
+    });
+
+    // Process sessions
+    const scoredSessions = sessions
+        .map(session => {
+            const result = session.analysisResult as any;
+            if (!result) return null;
+
+            const score = result.faceAnalysis?.overallScore || result.skinAnalysis?.score || null;
+            if (score === null) return null;
+
+            // Nickname priority: analysisResult.nickname > user.name > deterministic random
+            const nickname = result.nickname || session.user?.name || generateRandomNickname(session.sessionId);
+            const city = result.userLocation?.city || session.city || session.province || "未知城市";
+
+            // Deterministic popularity — stable across refreshes
+            const popularity = calculatePopularity(
+                session.sessionId,
+                session.resultShared,
+                session.createdAt
+            );
+
+            return {
+                sessionId: session.sessionId,
+                nickname,
+                city,
+                score: typeof score === "number" ? score : parseFloat(score) || 0,
+                popularity
+            };
+        })
+        .filter(Boolean) as ScoredSession[];
+
+    // Update cache
+    cachedSessions = scoredSessions;
+    cacheTimestamp = Date.now();
+
+    return scoredSessions;
+}
+
+// ===== API Handler =====
 /**
  * GET /api/advisor/leaderboard
- * 
+ *
  * Query params:
- * - limit: number of entries to return (default 10)
+ * - limit: number of entries to return (default 10, max 50)
  * - sessionId: current user's session ID to calculate their rank
  */
 export async function GET(req: NextRequest) {
@@ -42,82 +173,23 @@ export async function GET(req: NextRequest) {
         const limit = Math.min(parseInt(searchParams.get("limit") || "10"), 50);
         const currentSessionId = searchParams.get("sessionId");
 
-        // Fetch all sessions with valid analysis results for score ranking
-        // We need to filter sessions that have overallScore in their analysisResult
-        const sessions = await prisma.advisorSession.findMany({
-            where: {
-                analysisResult: {
-                    not: Prisma.JsonNull
-                },
-                // Only include sessions from last 30 days for freshness
-                createdAt: {
-                    gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-                }
-            },
-            select: {
-                sessionId: true,
-                analysisResult: true,
-                city: true,
-                province: true,
-                resultShared: true,
-                user: {
-                    select: {
-                        name: true
-                    }
-                }
-            },
-            orderBy: {
-                createdAt: "desc"
-            }
-        });
+        // Load data (from cache or database)
+        const scoredSessions = await loadScoredSessions();
 
-        // Process and score sessions
-        const scoredSessions = sessions
-            .map(session => {
-                const result = session.analysisResult as any;
-                if (!result) return null;
-
-                const score = result.faceAnalysis?.overallScore || result.skinAnalysis?.score || null;
-                if (score === null) return null;
-
-                // Generate nickname priority: result.nickname > user.name > random
-                const nickname = result.nickname || session.user?.name || generateRandomNickname(session.sessionId);
-                const city = result.userLocation?.city || session.city || session.province || "未知城市";
-
-                // Popularity score: shared = bonus points (simplified model)
-                const popularityBase = Math.floor(Math.random() * 5000) + 100; // Base views simulation
-                const shareBonus = session.resultShared ? 3000 : 0;
-
-                return {
-                    sessionId: session.sessionId,
-                    nickname,
-                    city,
-                    score: typeof score === "number" ? score : parseFloat(score) || 0,
-                    popularity: popularityBase + shareBonus
-                };
-            })
-            .filter(Boolean) as Array<{
-                sessionId: string;
-                nickname: string;
-                city: string;
-                score: number;
-                popularity: number;
-            }>;
-
-        // Sort by score (descending)
-        const scoreRanked = [...scoredSessions]
+        // Sort by score (descending) and take top N
+        const scoreRanked: LeaderboardEntry[] = [...scoredSessions]
             .sort((a, b) => b.score - a.score)
             .slice(0, limit)
             .map((entry, idx) => ({
                 rank: idx + 1,
                 nickname: entry.nickname,
                 city: entry.city,
-                score: Math.round(entry.score * 10) / 10, // Round to 1 decimal
+                score: Math.round(entry.score * 10) / 10,
                 sessionId: entry.sessionId
             }));
 
-        // Sort by popularity (descending)
-        const popularityRanked = [...scoredSessions]
+        // Sort by popularity (descending) and take top N
+        const popularityRanked: PopularityEntry[] = [...scoredSessions]
             .sort((a, b) => b.popularity - a.popularity)
             .slice(0, limit)
             .map((entry, idx) => ({
@@ -148,7 +220,12 @@ export async function GET(req: NextRequest) {
             userRank
         };
 
-        return NextResponse.json(response);
+        // HTTP cache: CDN caches 5 min, allows stale-while-revalidate for 1 min beyond that
+        return NextResponse.json(response, {
+            headers: {
+                "Cache-Control": "public, s-maxage=300, stale-while-revalidate=60"
+            }
+        });
     } catch (error) {
         console.error("Leaderboard API Error:", error);
         return NextResponse.json(
@@ -156,20 +233,4 @@ export async function GET(req: NextRequest) {
             { status: 500 }
         );
     }
-}
-
-// Deterministic random nickname based on session ID seed
-function generateRandomNickname(seed: string): string {
-    const adjectives = ["可爱的", "阳光", "元气", "甜美", "活力", "清新", "温柔", "俏皮", "优雅", "时尚"];
-    const nouns = ["小可爱", "宝贝", "达人", "精灵", "女神", "仙子", "小天使", "小公主", "少女", "美眉"];
-
-    // Simple hash from seed
-    let hash = 0;
-    for (let i = 0; i < seed.length; i++) {
-        hash = ((hash << 5) - hash) + seed.charCodeAt(i);
-        hash = hash & hash;
-    }
-    hash = Math.abs(hash);
-
-    return adjectives[hash % adjectives.length] + nouns[(hash >> 4) % nouns.length];
 }

@@ -8,24 +8,31 @@ interface SharePageProps {
     searchParams: Promise<{ id?: string }>;
 }
 
-// Calculate user's rank among all sessions
-async function calculateUserRank(sessionId: string, userScore: number) {
-    // Count sessions with higher scores (within last 30 days for relevance)
-    const higherScoreCount = await prisma.advisorSession.count({
-        where: {
-            analysisResult: {
-                not: Prisma.JsonNull
-            },
-            createdAt: {
-                gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-            },
-            sessionId: {
-                not: sessionId
+// Calculate user's rank by calling the leaderboard API logic internally
+// This ensures the share page and the leaderboard page use the exact same ranking
+async function calculateUserRank(sessionId: string, _userScore: number) {
+    try {
+        // Use the same base URL for internal API call
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+        const res = await fetch(`${baseUrl}/api/advisor/leaderboard?limit=50&sessionId=${sessionId}`, {
+            cache: "no-store"
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            if (data.userRank) {
+                return {
+                    rank: data.userRank.rank,
+                    percentile: data.userRank.percentile,
+                    totalParticipants: data.totalParticipants
+                };
             }
         }
-    });
+    } catch (error) {
+        console.error("Failed to fetch rank from leaderboard API:", error);
+    }
 
-    // Get total count
+    // Fallback: get total count and estimate based on score
     const totalCount = await prisma.advisorSession.count({
         where: {
             analysisResult: {
@@ -37,15 +44,13 @@ async function calculateUserRank(sessionId: string, userScore: number) {
         }
     });
 
-    // Estimate rank based on score percentile (simplified)
-    // In reality, we'd need to parse JSON to compare, but Prisma doesn't support this well
-    // So we use a reasonable approximation based on the score
-    const estimatedPercentile = Math.min(99, Math.max(1, Math.round(userScore)));
-    const estimatedRank = Math.max(1, Math.round(totalCount * (100 - estimatedPercentile) / 100));
+    // Clamp score to reasonable percentile range (60-95)
+    const clampedPercentile = Math.min(95, Math.max(60, Math.round(_userScore)));
+    const estimatedRank = Math.max(1, Math.round(totalCount * (100 - clampedPercentile) / 100));
 
     return {
         rank: estimatedRank,
-        percentile: estimatedPercentile,
+        percentile: clampedPercentile,
         totalParticipants: totalCount
     };
 }
