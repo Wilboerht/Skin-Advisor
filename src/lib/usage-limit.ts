@@ -146,12 +146,20 @@ export async function recordUsage(request: NextRequest, sessionId: string, body?
 
             const now = new Date();
             if (existing) {
+                // Check if todayCount needs daily reset
+                const lastReset = existing.lastResetDate || existing.lastTestAt;
+                const todayStart = new Date();
+                todayStart.setHours(0, 0, 0, 0);
+                const needsReset = !lastReset || lastReset < todayStart;
+
                 await prisma.guestUsage.update({
                     where: { id: existing.id },
                     data: {
                         lastTestAt: now,
                         testCount: { increment: 1 },
-                        todayCount: { increment: 1 },
+                        // Reset todayCount to 1 if it's a new day, otherwise increment
+                        todayCount: needsReset ? 1 : { increment: 1 },
+                        lastResetDate: needsReset ? todayStart : undefined,
                         ipAddress,
                         cookieId: cookieId || existing.cookieId,
                         fingerprint: fingerprint || existing.fingerprint,

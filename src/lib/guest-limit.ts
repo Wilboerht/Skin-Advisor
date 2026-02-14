@@ -1,12 +1,13 @@
 import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
+import { hashIP } from '@/lib/privacy';
 
 // 默认游客每日测试次数限制
 export const DEFAULT_GUEST_LIMIT = 100;
 
 // 游客身份标识
 export interface GuestIdentifiers {
-    ipAddress: string;
+    ipAddress: string;  // Always hashed — never stores raw IP
     cookieId: string | null;
     fingerprint: string | null;
     userAgent: string | null;
@@ -26,6 +27,7 @@ export interface GuestLimitCheckResult {
 
 /**
  * 从请求中提取游客标识
+ * Note: IP address is hashed before returning for privacy compliance.
  */
 export function extractGuestIdentifiers(request: NextRequest, body?: {
     cookieId?: string;
@@ -35,12 +37,15 @@ export function extractGuestIdentifiers(request: NextRequest, body?: {
     // 获取 IP 地址
     const forwardedFor = request.headers.get('x-forwarded-for');
     const realIp = request.headers.get('x-real-ip');
-    let ipAddress = forwardedFor?.split(',')[0]?.trim() || realIp || '0.0.0.0';
+    let rawIp = forwardedFor?.split(',')[0]?.trim() || realIp || '0.0.0.0';
 
     // 如果是本地开发环境的回环地址,使用特殊标记
-    if (ipAddress === '::1' || ipAddress === '127.0.0.1') {
-        ipAddress = `local_${Date.now().toString(36)}`;
+    if (rawIp === '::1' || rawIp === '127.0.0.1') {
+        rawIp = `local_${Date.now().toString(36)}`;
     }
+
+    // Hash the IP for privacy — raw IP is never stored or returned
+    const ipAddress = hashIP(rawIp);
 
     // 获取其他标识
     const userAgent = request.headers.get('user-agent');

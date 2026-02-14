@@ -3,9 +3,23 @@ import { compare, hash } from 'bcryptjs';
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 
-const JWT_SECRET = new TextEncoder().encode(
-    process.env.JWT_SECRET || 'fallback_secret_key_change_me_in_prod'
-);
+function getJwtSecret(): Uint8Array {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+        if (process.env.NODE_ENV === 'production') {
+            throw new Error(
+                '🔴 CRITICAL: JWT_SECRET environment variable is not set. ' +
+                'Refusing to start in production with a hardcoded secret. ' +
+                'Set JWT_SECRET in your environment variables.'
+            );
+        }
+        // Development fallback only — never used in production
+        console.warn('⚠️  JWT_SECRET not set — using development fallback. Do NOT use in production.');
+    }
+    return new TextEncoder().encode(secret || 'dev_only_fallback_secret_not_for_production');
+}
+
+const JWT_SECRET = getJwtSecret();
 
 export async function hashPassword(plain: string): Promise<string> {
     return hash(plain, 12);

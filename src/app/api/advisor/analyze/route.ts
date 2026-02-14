@@ -11,6 +11,7 @@ import { AnalyzeRequestSchema } from "@/lib/schemas";
 import { recommendProducts, getCandidateProducts } from "@/lib/recommendations";
 import { resolveIPLocation } from "@/lib/geoip";
 import { getSession } from "@/lib/auth";
+import { hashIP } from "@/lib/privacy";
 
 import { checkUsageLimit, recordUsage } from "@/lib/usage-limit";
 
@@ -76,7 +77,7 @@ export async function POST(request: NextRequest) {
 
         // 保存会话记录到数据库（所有用户，包括访客）
         if (sessionId) {
-            prisma.advisorSession.upsert({
+            await prisma.advisorSession.upsert({
                 where: { sessionId },
                 update: {
                     answers,
@@ -86,7 +87,7 @@ export async function POST(request: NextRequest) {
                     // Save Geo Info
                     province: geoLocation?.region,
                     city: geoLocation?.city,
-                    ip: ip, // Note: Should hash IP in production for privacy
+                    ip: hashIP(ip),
                     userId: user?.id || null
                 },
                 create: {
@@ -97,7 +98,7 @@ export async function POST(request: NextRequest) {
                     completedAt: new Date(),
                     province: geoLocation?.region,
                     city: geoLocation?.city,
-                    ip: ip,
+                    ip: hashIP(ip),
                     userId: user?.id || null
                 }
             }).catch((err: unknown) => console.error("Session save error:", err));

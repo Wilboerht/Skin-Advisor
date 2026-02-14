@@ -1,58 +1,11 @@
 import { Metadata } from "next";
 import ShareLandingClient from "./ShareLandingClient";
 import prisma from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
 import { notFound } from "next/navigation";
+import { calculateUserRank, generateRandomNickname } from "@/lib/leaderboard";
 
 interface SharePageProps {
     searchParams: Promise<{ id?: string }>;
-}
-
-// Calculate user's rank by calling the leaderboard API logic internally
-// This ensures the share page and the leaderboard page use the exact same ranking
-async function calculateUserRank(sessionId: string, _userScore: number) {
-    try {
-        // Use the same base URL for internal API call
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-        const res = await fetch(`${baseUrl}/api/advisor/leaderboard?limit=50&sessionId=${sessionId}`, {
-            cache: "no-store"
-        });
-
-        if (res.ok) {
-            const data = await res.json();
-            if (data.userRank) {
-                return {
-                    rank: data.userRank.rank,
-                    percentile: data.userRank.percentile,
-                    totalParticipants: data.totalParticipants
-                };
-            }
-        }
-    } catch (error) {
-        console.error("Failed to fetch rank from leaderboard API:", error);
-    }
-
-    // Fallback: get total count and estimate based on score
-    const totalCount = await prisma.advisorSession.count({
-        where: {
-            analysisResult: {
-                not: Prisma.JsonNull
-            },
-            createdAt: {
-                gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-            }
-        }
-    });
-
-    // Clamp score to reasonable percentile range (60-95)
-    const clampedPercentile = Math.min(95, Math.max(60, Math.round(_userScore)));
-    const estimatedRank = Math.max(1, Math.round(totalCount * (100 - clampedPercentile) / 100));
-
-    return {
-        rank: estimatedRank,
-        percentile: clampedPercentile,
-        totalParticipants: totalCount
-    };
 }
 
 export default async function SharePage(props: SharePageProps) {
@@ -138,7 +91,7 @@ export default async function SharePage(props: SharePageProps) {
         dimensions: result.faceAnalysis?.dimensions || {}, // Needed for chart
         publishDate: new Date().toLocaleDateString(),
         // User info for display (prioritize nickname from analysisResult)
-        nickname: result.nickname || session.user?.name || generateRandomNickname(),
+        nickname: result.nickname || session.user?.name || generateRandomNickname(id),
         generatedAvatar: result.generatedAvatar || null,
         city: result.userLocation?.city || session.city || session.province || "未知城市",
         isGuest: !session.user,
@@ -154,12 +107,6 @@ export default async function SharePage(props: SharePageProps) {
     return <ShareLandingClient data={safeData} />;
 }
 
-// Generate random fun nickname for guests
-function generateRandomNickname(): string {
-    const adjectives = ["可爱的", "阳光", "元气", "甜美", "活力", "清新", "温柔", "俏皮"];
-    const nouns = ["小可爱", "宝贝", "达人", "精灵", "女神", "仙子", "小天使", "小公主"];
-    return adjectives[Math.floor(Math.random() * adjectives.length)] + nouns[Math.floor(Math.random() * nouns.length)];
-}
 
 export async function generateMetadata(props: SharePageProps): Promise<Metadata> {
     const searchParams = await props.searchParams;

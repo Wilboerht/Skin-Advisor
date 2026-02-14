@@ -320,18 +320,37 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
     // --- Guest Protection Guard ---
     // Prevent direct access to full report by guests via URL
+    // Extra safety: track if auth has been stable (not just "finished loading once")
+    const authStableRef = useRef(false);
+    useEffect(() => {
+        if (!authLoading) {
+            // Give auth one tick to settle before marking stable
+            const timer = setTimeout(() => { authStableRef.current = true; }, 100);
+            return () => clearTimeout(timer);
+        } else {
+            authStableRef.current = false;
+        }
+    }, [authLoading]);
+
     useEffect(() => {
         // Skip if still loading auth/data or essential data missing
         if (loading || authLoading || !result || !sessionId) return;
 
+        // Skip if auth hasn't stabilized yet (prevent premature redirect)
+        if (!authStableRef.current) return;
+
         // Skip if currently running analysis (handled by specific analysis effect)
         if (searchParams.get('status') === 'analyzing') return;
 
-        // If Guest accessing full report -> Redirect to Share Page (Simplified)
+        // Skip if result was loaded from this device's localStorage
+        // (same device = session owner, no need to restrict even if auth fails)
+        if (!initialData && localStorage.getItem("advisor_result")) return;
+
+        // If Guest accessing full report via URL -> Redirect to Share Page (Simplified)
         if (!user) {
             router.replace(`/share/result?id=${sessionId}`);
         }
-    }, [user, authLoading, loading, result, sessionId, searchParams, router]);
+    }, [user, authLoading, loading, result, sessionId, searchParams, router, initialData]);
 
     // --- Environment Data Integration ---
     // Fetches from /api/weather which handles QWeather/Open-Meteo fallback
@@ -534,7 +553,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         }
     };
 
-    const handleRetake = () => {
+    const handleRetake = async () => {
         localStorage.removeItem("advisor_answers");
         localStorage.removeItem("advisor_gender");
         localStorage.removeItem("advisor_face_images");
@@ -542,6 +561,15 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         // localStorage.removeItem("advisor_nickname");
         // localStorage.removeItem("advisor_avatar");
         localStorage.removeItem("advisor_step");
+
+        // Clear IndexedDB face images & cached results
+        try {
+            const { advisorStorage } = await import("@/lib/advisor-storage");
+            await advisorStorage.clearAll();
+        } catch (e) {
+            console.error("Failed to clear IndexedDB:", e);
+        }
+
         router.push("/questions");
     };
 
