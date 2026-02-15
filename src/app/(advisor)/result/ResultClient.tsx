@@ -36,6 +36,7 @@ import { getDimensionAdvice } from "@/lib/advice-utils";
 import { ScientificRadarChart } from "@/components/advisor/ScientificRadarChart";
 import { generateSkincareRoutines, getClimateByRegion } from "@/lib/skincare-dosage";
 import { copyToClipboard, generateShareUrl } from "@/lib/share";
+import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { AIChatWindow } from "@/components/advisor/AIChatWindow";
 import { ShareRewardBanner } from "@/components/advisor/ShareRewardBanner";
 
@@ -103,6 +104,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const toast = useToast();
     const { trackResultView, trackResultShare, trackProductClick } = useAdvisorAnalytics();
     const { user, loading: authLoading } = useAuth();
+    const { openAuthModal } = useAuthModal();
     const searchParams = useSearchParams();
     const { runAnalysis, analysisState } = useAsyncAnalysis();
 
@@ -143,7 +145,11 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
     useEffect(() => {
         if (!loading && result && faceAnalysis && isGenderMismatch) {
-            setShowGenderMismatchModal(true);
+            // Check if user already acknowledged the mismatch (prevents modal reappearing on refresh)
+            const acked = typeof window !== 'undefined' && localStorage.getItem('advisor_gender_mismatch_ack') === 'true';
+            if (!acked) {
+                setShowGenderMismatchModal(true);
+            }
         }
     }, [loading, result, faceAnalysis, isGenderMismatch]);
 
@@ -181,7 +187,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         }
     }, [faceAnalysis]);
 
-    // Helper for Lab Report
     // Helper for Lab Report
     const renderLabRow = (param: string, value: string, ref: string, status: string) => {
         // Determine status color based on keywords
@@ -367,6 +372,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
     // Prevent infinite loop by tracking the last fetched query
     const lastFetchedQuery = useRef<string>("");
+    const envDataRef = useRef(envData);
+    useEffect(() => { envDataRef.current = envData; }, [envData]);
 
     useEffect(() => {
         // Fetch Weather Data
@@ -409,8 +416,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             // Prevent duplicate fetches
             if (query === lastFetchedQuery.current) return;
 
-            // Optimization: If we already have real data for this exact location, skip fetch
-            if (envData.isRealData && envData.location === query) {
+            // Use ref to avoid stale closure (envData not in deps to prevent infinite loops)
+            if (envDataRef.current.isRealData && envDataRef.current.location === query) {
                 lastFetchedQuery.current = query;
                 return;
             }
@@ -444,13 +451,10 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         }
     }, [userLocation]);
 
-    // Derived Routine Data
-    const routineData = useMemo(() => {
-        if (!result || !result.skinProfile) return null;
-        const climate = getClimateByRegion(userLocation?.province, userLocation?.city);
-
-        // Recover Bio-Factors from LocalStorage (Questionnaire Answers)
-        let bioFactors: any = {};
+    // Recover Bio-Factors from LocalStorage (Questionnaire Answers)
+    // Extracted outside useMemo so handleDownload can reuse the same data for PDF consistency
+    const bioFactors = useMemo(() => {
+        const factors: any = {};
         if (typeof window !== 'undefined') {
             try {
                 const answersStr = localStorage.getItem("advisor_answers");
@@ -459,30 +463,33 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     const stressVal = JSON.stringify(answers.stressLevel || "").toLowerCase();
                     const sleepVal = JSON.stringify(answers.sleepQuality || "").toLowerCase();
 
-                    if (stressVal.includes("high") || stressVal.includes("大") || stressVal.includes("强")) bioFactors.stressLevel = "high";
-                    else if (stressVal.includes("low") || stressVal.includes("小")) bioFactors.stressLevel = "low";
-                    else bioFactors.stressLevel = "medium";
+                    if (stressVal.includes("high") || stressVal.includes("大") || stressVal.includes("强")) factors.stressLevel = "high";
+                    else if (stressVal.includes("low") || stressVal.includes("小")) factors.stressLevel = "low";
+                    else factors.stressLevel = "medium";
 
-                    if (sleepVal.includes("poor") || sleepVal.includes("差") || sleepVal.includes("less")) bioFactors.sleepQuality = "poor";
-                    else if (sleepVal.includes("good") || sleepVal.includes("好")) bioFactors.sleepQuality = "good";
-                    else bioFactors.sleepQuality = "fair";
+                    if (sleepVal.includes("poor") || sleepVal.includes("差") || sleepVal.includes("less")) factors.sleepQuality = "poor";
+                    else if (sleepVal.includes("good") || sleepVal.includes("好")) factors.sleepQuality = "good";
+                    else factors.sleepQuality = "fair";
 
-                    // Check for menstrual cycle answer if added
-                    // Assuming key logic similar to above
-                    if (answers.menstrualCycle === "luteal") bioFactors.menstrualPhase = "luteal";
-
-                    // Map Gender for Silent Correction Logic
-                    if (answers.gender) bioFactors.gender = answers.gender;
+                    if (answers.menstrualCycle === "luteal") factors.menstrualPhase = "luteal";
+                    if (answers.gender) factors.gender = answers.gender;
                 }
             } catch (e) {
                 console.error("Failed to parse bio-factors", e);
             }
         }
+        return factors;
+    }, []);
+
+    // Derived Routine Data
+    const routineData = useMemo(() => {
+        if (!result || !result.skinProfile) return null;
+        const climate = getClimateByRegion(userLocation?.province, userLocation?.city);
 
         // Pass EnvData to generator
         const allRoutines = generateSkincareRoutines(result.skinProfile.type, climate, faceAnalysis || undefined, bioFactors, envData);
         return allRoutines['professional'];
-    }, [result, userLocation, faceAnalysis, envData]);
+    }, [result, userLocation, faceAnalysis, envData, bioFactors]);
 
     // Actions
     const handleShare = () => {
@@ -524,6 +531,14 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
     const handleDownload = async () => {
         if (!result) return;
+
+        // PDF 下载限制为登录功能 — 作为注册钩子
+        if (!user) {
+            toast.info("注册后即可下载完整 PDF 报告");
+            openAuthModal("register");
+            return;
+        }
+
         toast.info("正在生成 PDF 报告...");
         try {
             const response = await fetch("/api/advisor/pdf", {
@@ -533,7 +548,9 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     skinProfile: result.skinProfile,
                     analysis: result.analysis,
                     faceAnalysis: faceAnalysis,
-                    location: userLocation
+                    location: userLocation,
+                    bioFactors: bioFactors,
+                    envData: envData
                 })
             });
 
@@ -563,6 +580,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         // localStorage.removeItem("advisor_nickname");
         // localStorage.removeItem("advisor_avatar");
         localStorage.removeItem("advisor_step");
+        localStorage.removeItem("advisor_gender_mismatch_ack");
+        localStorage.removeItem("advisor_free_retry");
 
         // Clear IndexedDB face images & cached results
         try {
@@ -656,7 +675,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         );
     }
 
-    // Enhanced Loading State
     // Enhanced Loading State
     const isAsyncAnalyzing = searchParams.get('status') === 'analyzing' || analysisState.status !== 'idle';
     const showLoading = loading || (!result && isAsyncAnalyzing);
@@ -970,7 +988,11 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     </div>
                                     <div className={sidebarStyles.linkContent}>
                                         <div className={sidebarStyles.linkTitle}>领取专属好礼</div>
-                                        <div className={sidebarStyles.linkDesc}>您的评分超越了 90% 的用户</div>
+                                        <div className={sidebarStyles.linkDesc}>
+                                            {faceAnalysis?.overallScore
+                                                ? `综合评分 ${faceAnalysis.overallScore} · 分享赢好礼`
+                                                : '分享测肤结果赢好礼'}
+                                        </div>
                                     </div>
                                     <ChevronRight size={14} className="text-gray-400" />
                                 </Link>
@@ -992,8 +1014,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                         {/* Right Column: Detailed Analysis & Routine */}
                         <div className="flex flex-col gap-6">
 
-                            {/* --- 0. ENVIRONMENT DASHBOARD (NEW) --- */}
-                            {/* --- 0. ENVIRONMENT DASHBOARD (NEW) --- */}
+                            {/* --- 0. ENVIRONMENT DASHBOARD --- */}
                             <div className="rounded-2xl bg-white border border-gray-100 shadow-sm p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
                                 {/* Location - clean and simple */}
                                 <div className="flex items-center gap-3">
@@ -1459,10 +1480,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
 
 
-                            {/* 3. Routine */}
-                            {/* 3. Routine */}
-                            {/* 3. Routine */}
-                            {/* 3. Routine Summary Card & Modal */}
                             {/* 3. Routine Summary Card & Modal */}
                             <div className={`${styles.analysisGrid} ${styles.fadeInUp} border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer group`} onClick={() => setIsRoutineModalOpen(true)}>
                                 {/* Standard Header */}
@@ -1594,7 +1611,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     if (product) {
                                         trackProductClick(productId, product.name);
                                     }
-                                    router.push(`/products/${productId}`);
+                                    // Note: Product detail page not implemented yet.
+                                    // Purchase action is handled via affiliate link buttons on the ProductCard.
                                 }}
                                 className={styles.fadeInUp}
                             />
@@ -1643,7 +1661,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 skinType={result.skinProfile?.typeLabel || '未知'}
                                 concerns={result.skinProfile?.concerns || []}
                                 summary={result.analysis?.summary || ''}
-                                sessionId={id}
+                                sessionId={sessionId}
                             />
                         )
                     }

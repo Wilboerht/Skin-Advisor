@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import { Link } from "next-view-transitions";
-import { ArrowLeft, Loader2, Mail, CheckCircle } from "lucide-react";
+import { ArrowLeft, Loader2, Phone, CheckCircle } from "lucide-react";
 import { m } from "framer-motion";
 import { useToast } from "@/components/ui/Toast";
 
 export default function ForgotPasswordPage() {
-    const [email, setEmail] = useState("");
+    const [phone, setPhone] = useState("");
     const [loading, setLoading] = useState(false);
     const [submitted, setSubmitted] = useState(false);
     const toast = useToast();
@@ -20,14 +20,14 @@ export default function ForgotPasswordPage() {
             const res = await fetch("/api/auth/forgot-password", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email })
+                body: JSON.stringify({ phone })
             });
             const data = await res.json();
 
             if (!res.ok) throw new Error(data.error || "请求失败");
 
             setSubmitted(true);
-            toast.success("重置邮件已发送");
+            toast.success("重置验证码已发送");
         } catch (error: any) {
             toast.error(error.message);
         } finally {
@@ -51,7 +51,7 @@ export default function ForgotPasswordPage() {
                 <div className="text-center mb-8">
                     <h1 className="font-serif text-2xl text-[#1A1A1A] mb-2">找回密码</h1>
                     <p className="text-[#8C8C8C] text-sm">
-                        请输入您的注册邮箱，我们将向您发送重置密码的链接。
+                        请输入您的注册手机号，我们将向您发送重置密码的验证码。
                     </p>
                 </div>
 
@@ -60,10 +60,10 @@ export default function ForgotPasswordPage() {
                         <div className="mx-auto w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mb-4">
                             <CheckCircle className="w-8 h-8 text-green-500" />
                         </div>
-                        <h3 className="text-lg font-medium text-[#1A1A1A] mb-2">邮件已发送</h3>
+                        <h3 className="text-lg font-medium text-[#1A1A1A] mb-2">验证码已发送</h3>
                         <p className="text-[#8C8C8C] text-sm mb-6">
-                            我们已向 <strong>{email}</strong> 发送了重置链接。<br />
-                            请查收邮件（开发环境请查看控制台）。
+                            我们已向 <strong>{phone}</strong> 发送了重置验证码。<br />
+                            请查收短信（开发环境请查看控制台）。
                         </p>
                         <button
                             onClick={() => setSubmitted(false)}
@@ -76,17 +76,17 @@ export default function ForgotPasswordPage() {
                     <form onSubmit={handleSubmit} className="space-y-5">
                         <div>
                             <label className="block text-sm font-medium text-[#4A4A4A] mb-1.5 ml-1">
-                                邮箱地址
+                                手机号
                             </label>
                             <div className="relative">
-                                <Mail className="absolute left-4 top-3.5 text-[#8C8C8C] w-5 h-5" />
+                                <Phone className="absolute left-4 top-3.5 text-[#8C8C8C] w-5 h-5" />
                                 <input
-                                    type="email"
+                                    type="tel"
                                     required
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    value={phone}
+                                    onChange={(e) => setPhone(e.target.value)}
                                     className="w-full pl-11 pr-4 py-3 rounded-xl border border-[#E0E0E0] bg-[#FAFAFA] text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#C9A86C]/20 focus:border-[#C9A86C] transition-all"
-                                    placeholder="name@example.com"
+                                    placeholder="请输入手机号"
                                 />
                             </div>
                         </div>
@@ -99,7 +99,7 @@ export default function ForgotPasswordPage() {
                             {loading ? (
                                 <Loader2 className="w-5 h-5 animate-spin" />
                             ) : (
-                                "发送重置链接"
+                                "发送验证码"
                             )}
                         </button>
                     </form>

@@ -58,7 +58,7 @@ import { resolveIPLocation } from "@/lib/geoip";
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        let { skinProfile, analysis, faceAnalysis, userImage, location } = body;
+        let { skinProfile, analysis, faceAnalysis, userImage, location, bioFactors, envData } = body;
 
         // Auto-detect location if missing
         if (!location || (!location.province && !location.city)) {
@@ -226,7 +226,10 @@ export async function POST(request: NextRequest) {
 
         const routines = generateSkincareRoutines(
             skinProfile?.type || "combination",
-            climateCode
+            climateCode,
+            faceAnalysis || undefined,
+            bioFactors || undefined,
+            envData || undefined
         );
 
         // 3.1 环境适配说明 (Climate Adaptation Section)

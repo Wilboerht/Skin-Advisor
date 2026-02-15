@@ -64,6 +64,11 @@ function ShareRewardContent() {
     const [submitting, setSubmitting] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [success, setSuccess] = useState(false);
+    const [existingSubmission, setExistingSubmission] = useState<{
+        id: string;
+        status: string;
+        createdAt: string;
+    } | null>(null);
 
     // Form State
     const [formData, setFormData] = useState({
@@ -74,15 +79,29 @@ function ShareRewardContent() {
     const [proofImage, setProofImage] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Fetch Active Campaign
+    // Fetch Active Campaign + check existing submission status
     useEffect(() => {
-        const fetchCampaign = async () => {
+        const fetchCampaignAndStatus = async () => {
             try {
                 const res = await fetch("/api/advisor/share-reward/active");
                 const data = await res.json();
 
                 if (data.success && data.data) {
                     setCampaign(data.data);
+
+                    // Check if user already submitted for this campaign
+                    const savedPhone = localStorage.getItem("share_reward_phone");
+                    if (savedPhone) {
+                        try {
+                            const statusRes = await fetch(
+                                `/api/advisor/share-reward/status?phone=${encodeURIComponent(savedPhone)}&campaignId=${data.data.id}`
+                            );
+                            const statusData = await statusRes.json();
+                            if (statusData.success && statusData.data) {
+                                setExistingSubmission(statusData.data);
+                            }
+                        } catch { /* ignore status check failure */ }
+                    }
                 }
             } catch (error) {
                 console.error("Failed to fetch campaign", error);
@@ -92,7 +111,7 @@ function ShareRewardContent() {
             }
         };
 
-        fetchCampaign();
+        fetchCampaignAndStatus();
     }, [toast]);
 
     // Handlers
@@ -150,6 +169,9 @@ function ShareRewardContent() {
             const data = await res.json();
 
             if (data.success) {
+                // Save phone for future status checks
+                localStorage.setItem("share_reward_phone", formData.phone);
+                setExistingSubmission(data.data);
                 setSuccess(true);
                 toast.success("提交成功！");
                 window.scrollTo({ top: 0, behavior: "smooth" });
@@ -171,7 +193,23 @@ function ShareRewardContent() {
         );
     }
 
-    if (success) {
+    // Render submission status badge
+    const renderStatusBadge = (status: string) => {
+        const statusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
+            pending: { label: "审核中", color: "bg-amber-100 text-amber-700", icon: <Clock className="w-4 h-4" /> },
+            approved: { label: "已通过", color: "bg-emerald-100 text-emerald-700", icon: <CheckCircle className="w-4 h-4" /> },
+            shipped: { label: "已发货", color: "bg-blue-100 text-blue-700", icon: <Gift className="w-4 h-4" /> },
+            rejected: { label: "未通过", color: "bg-red-100 text-red-700", icon: <AlertCircle className="w-4 h-4" /> }
+        };
+        const config = statusConfig[status] || statusConfig.pending;
+        return (
+            <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium ${config.color}`}>
+                {config.icon} {config.label}
+            </span>
+        );
+    };
+
+    if (success || existingSubmission) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-[#F0EDE1] p-4">
                 <motion.div
@@ -182,11 +220,24 @@ function ShareRewardContent() {
                     <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
                         <CheckCircle className="h-10 w-10" />
                     </div>
-                    <h2 className="text-2xl font-serif font-bold text-[#1A1A1A]">申请提交成功!</h2>
+                    <h2 className="text-2xl font-serif font-bold text-[#1A1A1A]">
+                        {success ? "申请提交成功!" : "您已提交申请"}
+                    </h2>
                     <p className="mt-4 text-[#5E5E5E]">
                         我们会尽快审核您的截图凭证。<br />
                         审核通过后，奖品将寄送至您填写的地址。
                     </p>
+                    {existingSubmission && (
+                        <div className="mt-6 p-4 rounded-xl bg-gray-50 border border-gray-100">
+                            <p className="text-xs text-gray-500 mb-2">申请状态</p>
+                            {renderStatusBadge(existingSubmission.status)}
+                            {existingSubmission.createdAt && (
+                                <p className="text-xs text-gray-400 mt-2">
+                                    提交时间：{new Date(existingSubmission.createdAt).toLocaleString("zh-CN")}
+                                </p>
+                            )}
+                        </div>
+                    )}
                     <div className="mt-8 space-y-3">
                         <Link
                             href="/"

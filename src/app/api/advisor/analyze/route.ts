@@ -17,19 +17,25 @@ import { checkUsageLimit, recordUsage } from "@/lib/usage-limit";
 
 export async function POST(request: NextRequest) {
     try {
-        // 1. 解析与验证
+        // 1. 解析请求体
         const body = await request.json();
 
-        // 2. 检查使用限制 (Guest/Member/VIP)
-        const usageLimit = await checkUsageLimit(request, body);
-        if (!usageLimit.canTest) {
+        // 2. 使用 Zod 验证（先验证再扣额度，避免无效请求浪费配额）
+        const result = AnalyzeRequestSchema.safeParse(body);
+        if (!result.success) {
+            console.error("Analyze validation error:", JSON.stringify(result.error.flatten(), null, 2));
             return NextResponse.json(
-                { error: usageLimit.error || "您已达到今日测试上限" },
-                { status: 429 }
+                {
+                    error: "请求参数错误",
+                    details: result.error.flatten().fieldErrors
+                },
+                { status: 400 }
             );
         }
 
-        // 3. 速率限制 (保留基础防刷)
+        const { answers, faceAnalysis, sessionId, nickname, freeRetry } = result.data;
+
+        // 3. 速率限制 (基础防刷) — 即使免费重试也需要基础限流
         const ip = request.headers.get("x-forwarded-for") || "127.0.0.1";
         const limit = await rateLimit(`advisor-analyze-${ip}`, "comprehensive-analyze", { maxRequests: 20 });
 
@@ -47,23 +53,20 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // 4. 使用 Zod 验证
-        const result = AnalyzeRequestSchema.safeParse(body);
-        if (!result.success) {
-            console.error("Analyze validation error:", JSON.stringify(result.error.flatten(), null, 2));
-            return NextResponse.json(
-                {
-                    error: "请求参数错误",
-                    details: result.error.flatten().fieldErrors
-                },
-                { status: 400 }
-            );
+        // 4. 检查使用限制 (Guest/Member/VIP)
+        // freeRetry = 性别不匹配后的免费重试，跳过额度检查
+        if (!freeRetry) {
+            const usageLimit = await checkUsageLimit(request, body);
+            if (!usageLimit.canTest) {
+                return NextResponse.json(
+                    { error: usageLimit.error || "您已达到今日测试上限" },
+                    { status: 429 }
+                );
+            }
         }
 
-        const { answers, faceAnalysis, sessionId, nickname } = result.data;
-
-        // 5. 记录使用次数
-        if (sessionId) {
+        // 5. 记录使用次数（验证通过后才扣额度，免费重试不扣）
+        if (sessionId && !freeRetry) {
             await recordUsage(request, sessionId, body);
         }
 

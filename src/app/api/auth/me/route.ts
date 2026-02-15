@@ -32,8 +32,8 @@ export async function GET(req: NextRequest) {
 
     const user = {
         id: dbUser.id,
-        email: dbUser.email,
-        phone: dbUser.phoneNumber,
+        email: dbUser.email || null,
+        phone: dbUser.phoneNumber || null,
         name: dbUser.name,
         role: dbUser.role,
         vipExpiresAt: dbUser.vipExpiresAt
@@ -52,7 +52,8 @@ export async function GET(req: NextRequest) {
         // Issue new token
         const newToken = await signToken({
             sub: user.id,
-            email: user.email,
+            email: user.email || undefined,
+            phone: user.phone || undefined,
             name: user.name,
             role: user.role,
             vipExpiresAt: user.vipExpiresAt
@@ -103,7 +104,8 @@ export async function PUT(req: NextRequest) {
         // Re-signing token to keep data fresh:
         const newToken = await signToken({
             sub: user.id,
-            email: user.email,
+            email: user.email || undefined,
+            phone: user.phoneNumber || undefined,
             name: user.name,
             role: user.role,
             vipExpiresAt: user.vipExpiresAt

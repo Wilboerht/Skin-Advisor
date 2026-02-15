@@ -48,7 +48,8 @@ export async function verifyToken(token: string): Promise<any> {
 
 export interface SessionUser {
     id: string;
-    email: string;
+    email?: string | null;
+    phone?: string | null;
     name?: string;
     role: string;
     vipExpiresAt?: string | null; // ISO Date string
@@ -65,7 +66,8 @@ export async function getSession(): Promise<SessionUser | null> {
 
     return {
         id: payload.sub as string,
-        email: payload.email as string,
+        email: (payload.email as string) || null,
+        phone: (payload.phone as string) || null,
         name: payload.name as string,
         role: payload.role as string || 'user',
         vipExpiresAt: payload.vipExpiresAt || null

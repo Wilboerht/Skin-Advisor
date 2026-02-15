@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/components/ui/Toast";
 
 // Types
 interface LeaderboardEntry {
@@ -54,6 +55,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
     const router = useRouter();
     const { openAuthModal } = useAuthModal();
     const { user } = useAuth();
+    const toast = useToast();
     const [mounted, setMounted] = useState(false);
     const [activeTab, setActiveTab] = useState<'score' | 'pop'>('score');
     const [showModal, setShowModal] = useState(false);
@@ -527,6 +529,9 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                             className="bg-[#F0EDE1] w-[90%] max-w-[400px] rounded-[32px] p-[40px] text-center transform scale-90"
                             onClick={(e) => e.stopPropagation()}
                         >
+                            <div className="flex justify-center mb-6">
+                                <img src="/partner-nihplod.webp" alt="NIHPLOD" className="h-11 object-contain" />
+                            </div>
                             <h2 className="text-xl font-bold mb-[15px] leading-relaxed">
                                 您的当前数据已入选<br />素颜测肤排位全国较前排名
                             </h2>
@@ -553,7 +558,29 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                                     注册账号获得更多权益
                                 </button>
                                 <button
-                                    onClick={() => setShowModal(false)}
+                                    onClick={async () => {
+                                        setShowModal(false);
+                                        // 尝试调用原生分享
+                                        if (navigator.share) {
+                                            try {
+                                                await navigator.share({
+                                                    title: '我的AI测肤战报',
+                                                    text: `我在Skin Advisor获得了${data.score}分，击败了${data.userPercentile}%的用户！`,
+                                                    url: window.location.href,
+                                                });
+                                                return;
+                                            } catch (err) {
+                                                // 分享取消或失败，回退到复制链接
+                                            }
+                                        }
+                                        // 回退方案：复制链接
+                                        try {
+                                            await navigator.clipboard.writeText(window.location.href);
+                                            toast.success("链接已复制，快去分享给好友吧！");
+                                        } catch (err) {
+                                            toast.error("复制失败，请手动复制浏览器链接");
+                                        }
+                                    }}
                                     className="p-2 rounded-2xl bg-transparent text-[#888] underline text-[13px] hover:text-[#555]"
                                 >
                                     不注册，只想晒下战报

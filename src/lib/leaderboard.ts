@@ -107,7 +107,8 @@ export async function loadScoredSessions(): Promise<ScoredSession[]> {
         },
         orderBy: {
             createdAt: "desc"
-        }
+        },
+        take: 500 // Cap to prevent unbounded memory growth
     });
 
     const scoredSessions = sessions

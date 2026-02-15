@@ -38,25 +38,38 @@ export async function PUT(
         const body = await request.json();
         const clientInfo = getClientInfo(request);
 
-        // Get old product for audit log
+        // Get old product for audit log and existence check
         const oldProduct = await prisma.product.findUnique({ where: { id } });
+        if (!oldProduct) {
+            return NextResponse.json({ error: "Product not found" }, { status: 404 });
+        }
+
+        // Build update data — only include fields that are explicitly provided
+        // This prevents accidentally nullifying fields when doing partial updates
+        const allowedFields = [
+            'name', 'nameEn', 'category', 'image', 'price', 'description',
+            'keyIngredients', 'suitableSkinTypes', 'benefits', 'sortOrder',
+            'active', 'stock', 'featured', 'step', 'howToUse',
+            'affiliateLinks', 'ingredientDetails'
+        ];
+
+        const updateData: Record<string, any> = {};
+        for (const field of allowedFields) {
+            if (body[field] !== undefined) {
+                updateData[field] = body[field];
+            }
+        }
+
+        if (Object.keys(updateData).length === 0) {
+            return NextResponse.json(
+                { error: "No valid fields to update" },
+                { status: 400 }
+            );
+        }
 
         const product = await prisma.product.update({
             where: { id },
-            data: {
-                name: body.name,
-                nameEn: body.nameEn,
-                category: body.category,
-                image: body.image,
-                price: body.price,
-                description: body.description,
-                keyIngredients: body.keyIngredients,
-                suitableSkinTypes: body.suitableSkinTypes,
-                benefits: body.benefits,
-                sortOrder: body.sortOrder,
-                active: body.active,
-                stock: body.stock,
-            }
+            data: updateData
         });
 
         // Log audit
@@ -66,9 +79,9 @@ export async function PUT(
             resource: "Product",
             resourceId: id,
             details: {
-                oldName: oldProduct?.name,
-                newName: body.name,
-                changes: Object.keys(body)
+                oldName: oldProduct.name,
+                newName: updateData.name || oldProduct.name,
+                changes: Object.keys(updateData)
             },
             ...clientInfo
         });

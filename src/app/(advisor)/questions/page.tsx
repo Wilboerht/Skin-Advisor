@@ -29,8 +29,29 @@ export default function QuestionsPage() {
     const [showQualityWarning, setShowQualityWarning] = useState(false);
     const [pendingAnswers, setPendingAnswers] = useState<Record<string, any> | null>(null);
 
-    // 过滤问题逻辑
-    const allQuestions = DEFAULT_QUESTIONS;
+    // 从 API 获取问题列表（数据库优先，静态降级）
+    const [allQuestions, setAllQuestions] = useState<Question[]>(DEFAULT_QUESTIONS);
+    const hasFetchedQuestions = useRef(false);
+
+    useEffect(() => {
+        if (hasFetchedQuestions.current) return;
+        hasFetchedQuestions.current = true;
+
+        const fetchQuestions = async () => {
+            try {
+                const res = await fetch("/api/advisor/questions");
+                if (res.ok) {
+                    const data: Question[] = await res.json();
+                    if (Array.isArray(data) && data.length > 0) {
+                        setAllQuestions(data);
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to fetch questions from API, using defaults:", e);
+            }
+        };
+        fetchQuestions();
+    }, []);
     const questions = allQuestions.filter(q => {
         // 1. 性别过滤
         if (gender === "male" && q.fieldName === "pregnancy") {

@@ -22,6 +22,23 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // Batch size limit to prevent accidental mass operations
+        const MAX_BATCH_SIZE = 100;
+        if (ids.length > MAX_BATCH_SIZE) {
+            return NextResponse.json(
+                { success: false, error: `Batch size exceeds limit of ${MAX_BATCH_SIZE}` },
+                { status: 400 }
+            );
+        }
+
+        // Validate all IDs are strings
+        if (!ids.every((id: any) => typeof id === 'string' && id.length > 0)) {
+            return NextResponse.json(
+                { success: false, error: "Invalid ID format" },
+                { status: 400 }
+            );
+        }
+
         const validActions = ['approve', 'reject', 'ship', 'delete'];
         if (!validActions.includes(action)) {
             return NextResponse.json(

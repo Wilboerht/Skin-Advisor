@@ -1,24 +1,39 @@
 
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 import { PRODUCTS_CATALOG } from "@/config/products";
+import { verifyAdminSession } from "@/lib/admin-auth";
 
 export async function GET() {
     try {
-        // 1. Check/Create Admin User
+        // Setup is only unauthenticated if no admin exists at all (first-time initialization)
         const adminCount = await prisma.adminUser.count();
+
+        if (adminCount > 0) {
+            // If admins already exist, require authentication
+            const admin = await verifyAdminSession();
+            if (!admin) {
+                return NextResponse.json(
+                    { error: "Unauthorized. Setup requires admin authentication when admins already exist." },
+                    { status: 401 }
+                );
+            }
+        }
+
         let adminMsg = "Admin user already exists.";
 
         if (adminCount === 0) {
+            const hashedPassword = await bcrypt.hash("admin123", 12);
             await prisma.adminUser.create({
                 data: {
                     username: "admin",
-                    password: "admin123", // In a real app, hash this!
+                    password: hashedPassword,
                     name: "System Admin",
                     role: "super_admin"
                 }
             });
-            adminMsg = "Created default admin (admin/admin123).";
+            adminMsg = "Created default admin (admin/admin123). Please change your password immediately.";
         }
 
 
@@ -48,10 +63,6 @@ export async function GET() {
             }
             productMsg = `Seeded ${PRODUCTS_CATALOG.length} products successfully.`;
         }
-
-        // 3. Populate Questions (Optional - avoiding duplicates)
-        // For now, we assume questions are still static config or we'll migrate them later if requested.
-        // The user specifically asked to "make data alive", products are the most obvious target.
 
         return NextResponse.json({
             success: true,

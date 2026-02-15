@@ -21,6 +21,23 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // Size limit to prevent excessive transaction load
+        const MAX_REORDER_SIZE = 500;
+        if (orderedIds.length > MAX_REORDER_SIZE) {
+            return NextResponse.json(
+                { success: false, error: `Reorder list exceeds limit of ${MAX_REORDER_SIZE}` },
+                { status: 400 }
+            );
+        }
+
+        // Validate all IDs are strings
+        if (!orderedIds.every((id: any) => typeof id === 'string' && id.length > 0)) {
+            return NextResponse.json(
+                { success: false, error: "Invalid ID format in orderedIds" },
+                { status: 400 }
+            );
+        }
+
         // Update sortOrder for each product
         await prisma.$transaction(
             orderedIds.map((id: string, index: number) =>

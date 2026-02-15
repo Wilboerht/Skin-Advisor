@@ -1,9 +1,15 @@
 
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { verifyAdminSession } from "@/lib/admin-auth";
 
 export async function POST(req: Request) {
     try {
+        const admin = await verifyAdminSession();
+        if (!admin) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
         const { updates } = await req.json();
 
         // Transactional update

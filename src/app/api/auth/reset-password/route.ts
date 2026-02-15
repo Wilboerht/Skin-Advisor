@@ -20,12 +20,13 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "重置链接已失效" }, { status: 400 });
         }
 
-        const email = payload.email;
-        if (!email) {
+        // Use user ID (sub) from token — works regardless of email/phone auth
+        const userId = payload.sub as string;
+        if (!userId) {
             return NextResponse.json({ error: "Token 无效" }, { status: 400 });
         }
 
-        const user = await prisma.user.findUnique({ where: { email } });
+        const user = await prisma.user.findUnique({ where: { id: userId } });
         if (!user) {
             return NextResponse.json({ error: "用户不存在" }, { status: 404 });
         }
@@ -44,3 +45,4 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "服务器内部错误" }, { status: 500 });
     }
 }
+

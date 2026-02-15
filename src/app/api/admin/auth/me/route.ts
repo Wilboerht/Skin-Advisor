@@ -1,19 +1,9 @@
 
 import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
-import { cookies } from "next/headers";
+import { verifyAdminSession } from "@/lib/admin-auth";
 
 export async function GET() {
-    const cookieStore = await cookies();
-    const sessionId = cookieStore.get("admin_session")?.value;
-
-    if (!sessionId) {
-        return NextResponse.json({ authenticated: false }, { status: 401 });
-    }
-
-    const admin = await prisma.adminUser.findUnique({
-        where: { id: sessionId }
-    });
+    const admin = await verifyAdminSession();
 
     if (!admin) {
         return NextResponse.json({ authenticated: false }, { status: 401 });
@@ -22,8 +12,8 @@ export async function GET() {
     return NextResponse.json({
         authenticated: true,
         user: {
-            id: admin.id,
-            name: admin.name,
+            id: admin.adminId,
+            name: admin.username,
             username: admin.username,
             role: admin.role
         }

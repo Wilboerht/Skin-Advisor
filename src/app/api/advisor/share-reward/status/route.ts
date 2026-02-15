@@ -1,27 +1,54 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { getSession } from "@/lib/auth";
 
+/**
+ * GET /api/advisor/share-reward/status
+ * 
+ * Check the status of the current user's share reward submission.
+ * Requires authentication. Returns minimal data (status only, no personal info).
+ */
 export async function GET(request: NextRequest) {
     try {
+        // Require authentication
+        const user = await getSession();
+        if (!user) {
+            return NextResponse.json(
+                { success: false, error: "请先登录" },
+                { status: 401 }
+            );
+        }
+
         const { searchParams } = new URL(request.url);
         const campaignId = searchParams.get("campaignId");
-        const contact = searchParams.get("contact");
+        const phone = searchParams.get("phone");
 
-        if (!campaignId || !contact) {
+        if (!phone) {
             return NextResponse.json(
-                { success: false, error: "Missing parameters" },
+                { success: false, error: "缺少手机号参数" },
                 { status: 400 }
             );
         }
 
+        const whereClause: any = {
+            phone: phone,
+        };
+
+        // Optionally filter by campaign
+        if (campaignId) {
+            whereClause.campaignId = campaignId;
+        }
+
         const submission = await prisma.shareReward.findFirst({
-            where: {
-                // 如果只提供 phone (作为 contact)
-                phone: contact,
-                // 也可以加 campaignId 限制，如果 schema 支持
-            },
+            where: whereClause,
             orderBy: {
-                createdAt: 'desc'
+                createdAt: "desc"
+            },
+            select: {
+                id: true,
+                status: true,
+                createdAt: true,
+                // Don't leak personal info (name, phone, address)
             }
         });
 
@@ -32,7 +59,7 @@ export async function GET(request: NextRequest) {
     } catch (error) {
         console.error("Status check failed:", error);
         return NextResponse.json(
-            { success: false, error: "Internal server error" },
+            { success: false, error: "查询失败" },
             { status: 500 }
         );
     }

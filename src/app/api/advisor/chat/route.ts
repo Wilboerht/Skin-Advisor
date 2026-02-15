@@ -3,6 +3,7 @@ import { generateText, extractJson, isAIEnabled, getAISettings, getApiKeysForPro
 import prisma from "@/lib/prisma";
 import { ChatRequestSchema } from "@/lib/schemas";
 import { getSession } from "@/lib/auth";
+import { rateLimit } from "@/lib/ratelimit";
 
 // 聊天 API (DB Persisted for logged-in users only)
 // Note: Ensure `npx prisma generate` is run if types are missing
@@ -38,7 +39,33 @@ export async function POST(request: NextRequest) {
         const user = await getSession();
         const isLoggedIn = !!user;
 
-        // Rate Limiting (10 messages per minute per session) - 只对已登录用户检查
+        // IP-based Rate Limiting for ALL users (prevents guest abuse of AI API tokens)
+        const ip = request.headers.get("x-forwarded-for") || "127.0.0.1";
+        const ipLimit = await rateLimit(`chat-${ip}`, "chat", { maxRequests: isLoggedIn ? 20 : 5 });
+
+        if (!ipLimit.success) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    error: "发送太频繁，请稍后再试",
+                    rateLimit: {
+                        limit: ipLimit.limit,
+                        remaining: 0,
+                        reset: ipLimit.reset
+                    }
+                },
+                {
+                    status: 429,
+                    headers: {
+                        "X-RateLimit-Limit": String(ipLimit.limit),
+                        "X-RateLimit-Remaining": "0",
+                        "X-RateLimit-Reset": String(ipLimit.reset)
+                    }
+                }
+            );
+        }
+
+        // DB-based Rate Limiting (10 messages per minute per session) - 已登录用户额外检查
         let rateLimitRemaining = 10;
 
         if (sessionId && isLoggedIn) {

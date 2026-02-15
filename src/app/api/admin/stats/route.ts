@@ -1,9 +1,14 @@
 
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { verifyAdminSession } from "@/lib/admin-auth";
 
 export async function GET() {
     try {
+        const admin = await verifyAdminSession();
+        if (!admin) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
         // ===== 基础统计 =====
         const [
             totalUsers,
@@ -19,32 +24,26 @@ export async function GET() {
             prisma.advisorSession.count({ where: { completedAt: { not: null } } }),
         ]);
 
-        // ===== 肤质分布 (从已完成的分析结果中提取) =====
-        const sessionsWithSkinType = await prisma.advisorSession.findMany({
-            where: {
-                NOT: { analysisResult: { equals: undefined } }
-            },
-            select: {
-                analysisResult: true
-            },
-            take: 1000 // Limit for performance
-        });
+        // ===== 肤质分布 (使用 SQL 在数据库端聚合，避免全表加载到内存) =====
+        const skinTypeRaw = await prisma.$queryRaw<Array<{ skin_type: string; count: bigint }>>`
+            SELECT 
+                LOWER("analysisResult"->>'skinType') as skin_type,
+                COUNT(*) as count
+            FROM "AdvisorSession"
+            WHERE "analysisResult" IS NOT NULL 
+              AND "analysisResult"->>'skinType' IS NOT NULL
+            GROUP BY LOWER("analysisResult"->>'skinType')
+        `;
 
+        const validSkinTypes = ['dry', 'oily', 'combination', 'sensitive', 'normal'];
         const skinTypeCount: Record<string, number> = {
-            'dry': 0,
-            'oily': 0,
-            'combination': 0,
-            'sensitive': 0,
-            'normal': 0
+            'dry': 0, 'oily': 0, 'combination': 0, 'sensitive': 0, 'normal': 0
         };
 
-        sessionsWithSkinType.forEach(session => {
-            const result = session.analysisResult as any;
-            if (result?.skinType) {
-                const type = result.skinType.toLowerCase();
-                if (skinTypeCount[type] !== undefined) {
-                    skinTypeCount[type]++;
-                }
+        skinTypeRaw.forEach(row => {
+            const type = row.skin_type;
+            if (type && validSkinTypes.includes(type)) {
+                skinTypeCount[type] = Number(row.count);
             }
         });
 
@@ -54,22 +53,23 @@ export async function GET() {
             fill: getSkinTypeColor(name)
         }));
 
-        // ===== 周趋势 (最近7天每天的测肤次数) =====
+        // ===== 周趋势 (使用 SQL 在数据库端按日期分组) =====
         const now = new Date();
         const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-        const recentSessions = await prisma.advisorSession.findMany({
-            where: {
-                createdAt: { gte: weekAgo }
-            },
-            select: {
-                createdAt: true,
-                completedAt: true
-            }
-        });
+        const weeklyRaw = await prisma.$queryRaw<Array<{ day: Date; started: bigint; completed: bigint }>>`
+            SELECT 
+                DATE("createdAt") as day,
+                COUNT(*) as started,
+                COUNT("completedAt") as completed
+            FROM "AdvisorSession"
+            WHERE "createdAt" >= ${weekAgo}
+            GROUP BY DATE("createdAt")
+            ORDER BY day
+        `;
 
-        const weeklyData: Record<string, { started: number; completed: number }> = {};
         const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const weeklyData: Record<string, { started: number; completed: number }> = {};
 
         // Initialize all 7 days
         for (let i = 6; i >= 0; i--) {
@@ -78,13 +78,11 @@ export async function GET() {
             weeklyData[dayName] = { started: 0, completed: 0 };
         }
 
-        recentSessions.forEach(s => {
-            const dayName = days[new Date(s.createdAt).getDay()];
+        weeklyRaw.forEach(row => {
+            const dayName = days[new Date(row.day).getDay()];
             if (weeklyData[dayName]) {
-                weeklyData[dayName].started++;
-                if (s.completedAt) {
-                    weeklyData[dayName].completed++;
-                }
+                weeklyData[dayName].started = Number(row.started);
+                weeklyData[dayName].completed = Number(row.completed);
             }
         });
 

@@ -89,6 +89,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
   const [modelsLoaded, setModelsLoaded] = useState(false);
   const [faceApiLoaded, setFaceApiLoaded] = useState(false);
   const [isAllCaptured, setIsAllCaptured] = useState(false);
+  const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const faceApiRef = useRef<any>(null);
   // 保存最新的面部检测框，用于裁剪
@@ -776,6 +777,16 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
     loadFaceApi();
   }, [loadFaceApi]);
 
+  // 检测是否有多个摄像头
+  useEffect(() => {
+    navigator.mediaDevices.enumerateDevices().then(devices => {
+      const videoInputs = devices.filter(d => d.kind === 'videoinput');
+      setHasMultipleCameras(videoInputs.length > 1);
+    }).catch(() => {
+      setHasMultipleCameras(false);
+    });
+  }, []);
+
   // 初始化摄像头
   useEffect(() => {
     initCamera();
@@ -1069,12 +1080,14 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
           >
             {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
           </button>
-          <button
-            onClick={toggleCamera}
-            className="p-3 rounded-full bg-black/20 border border-white/10 text-white hover:bg-black/40 backdrop-blur-md transition-all"
-          >
-            <RefreshCw className="w-5 h-5" />
-          </button>
+          {hasMultipleCameras && (
+            <button
+              onClick={toggleCamera}
+              className="p-3 rounded-full bg-black/20 border border-white/10 text-white hover:bg-black/40 backdrop-blur-md transition-all"
+            >
+              <RefreshCw className="w-5 h-5" />
+            </button>
+          )}
         </div>
       )}
 

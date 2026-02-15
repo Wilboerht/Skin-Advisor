@@ -39,9 +39,9 @@ export function extractGuestIdentifiers(request: NextRequest, body?: {
     const realIp = request.headers.get('x-real-ip');
     let rawIp = forwardedFor?.split(',')[0]?.trim() || realIp || '0.0.0.0';
 
-    // 如果是本地开发环境的回环地址,使用特殊标记
+    // 如果是本地开发环境的回环地址,使用固定标记（保证同一设备的限制一致性）
     if (rawIp === '::1' || rawIp === '127.0.0.1') {
-        rawIp = `local_${Date.now().toString(36)}`;
+        rawIp = 'local_dev_loopback';
     }
 
     // Hash the IP for privacy — raw IP is never stored or returned

@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useAdvisorAnalytics } from './useAdvisorAnalytics';
 import { useAuth } from './useAuth';
 import { preprocessFaceImage } from '@/lib/image-processing';
@@ -157,6 +157,13 @@ export function useAsyncAnalysis() {
             // Get user nickname from localStorage
             const nickname = localStorage.getItem("advisor_nickname") || "护肤达人";
 
+            // Check if this is a free retry (gender mismatch retry — won't consume quota)
+            const isFreeRetry = localStorage.getItem("advisor_free_retry") === "true";
+            // Clear immediately so it can only be used once
+            if (isFreeRetry) {
+                localStorage.removeItem("advisor_free_retry");
+            }
+
             const analyzeRes = await fetchWithRetry("/api/advisor/analyze", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -164,7 +171,8 @@ export function useAsyncAnalysis() {
                     answers,
                     faceAnalysis: faceAnalysis || undefined,
                     sessionId: sessionId,
-                    nickname: nickname
+                    nickname: nickname,
+                    ...(isFreeRetry ? { freeRetry: true } : {})
                 })
             });
 
@@ -209,6 +217,41 @@ export function useAsyncAnalysis() {
             throw e;
         }
     }, [trackAnalysisStart, trackAnalysisComplete, user]);
+
+    // Fake progress animation to fill the gaps between milestones
+    useEffect(() => {
+        let interval: any;
+
+        if (['preparing', 'analyzing_face', 'analyzing_skin'].includes(analysisState.status)) {
+            interval = setInterval(() => {
+                setAnalysisState(prev => {
+                    let target = 0;
+                    let increment = 0;
+
+                    // Configure simulated progress speed for each stage
+                    if (prev.status === 'preparing') {
+                        target = 29;
+                        increment = 1.0; // Fast initial prep
+                    } else if (prev.status === 'analyzing_face') {
+                        target = 59;
+                        increment = 0.3; // Moderate speed for face analysis
+                    } else if (prev.status === 'analyzing_skin') {
+                        target = 98;
+                        increment = 0.15; // Slower for detailed skin analysis (usually takes longer)
+                    }
+
+                    if (prev.progress >= target) return prev;
+
+                    return {
+                        ...prev,
+                        progress: Math.min(prev.progress + increment, target)
+                    };
+                });
+            }, 50);
+        }
+
+        return () => clearInterval(interval);
+    }, [analysisState.status]);
 
     return { runAnalysis, analysisState };
 }

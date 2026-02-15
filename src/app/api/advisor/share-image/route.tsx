@@ -1,7 +1,7 @@
 
 import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
-import fs from 'fs';
+import fs from 'fs/promises';
 import path from 'path';
 import prisma from "@/lib/prisma";
 
@@ -52,9 +52,8 @@ export async function GET(req: NextRequest) {
         let fontData: Buffer | null = null;
         try {
             const fontPath = path.join(process.cwd(), 'public/fonts/NotoSansSC-Regular.ttf');
-            if (fs.existsSync(fontPath)) {
-                fontData = fs.readFileSync(fontPath);
-            }
+            await fs.access(fontPath);
+            fontData = await fs.readFile(fontPath);
         } catch (e) {
             console.error("Font load failed:", e);
         }
