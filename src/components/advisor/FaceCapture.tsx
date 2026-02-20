@@ -1060,14 +1060,22 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
       {error && (
         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/90 p-8 text-center">
           <AlertCircle className="h-12 w-12 text-red-400 mb-4" />
-          <h3 className="text-white text-lg font-medium mb-2">摄像头错误</h3>
-          <p className="text-white/60 max-w-md">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-8 px-8 py-3 bg-white text-black rounded-full text-sm font-medium hover:bg-gray-200 transition-colors"
-          >
-            重试
-          </button>
+          <h3 className="text-white text-lg font-medium mb-2">摄像头访问失败</h3>
+          <p className="text-white/60 max-w-md mb-8">{error}</p>
+          <div className="flex gap-4">
+            <button
+              onClick={() => window.location.href = '/questions'}
+              className="px-8 py-3 bg-white/10 border border-white/20 text-white rounded-full text-sm font-medium hover:bg-white/20 backdrop-blur-sm transition-colors"
+            >
+              返回上一页
+            </button>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-8 py-3 bg-white text-black rounded-full text-sm font-medium hover:bg-gray-200 shadow-xl transition-colors"
+            >
+              刷新重试
+            </button>
+          </div>
         </div>
       )}
 

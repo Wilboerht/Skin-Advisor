@@ -112,7 +112,15 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel }: ScanGuideModalPr
                             {/* Actions */}
                             <div className="pt-4 flex flex-col gap-4">
                                 <button
-                                    onClick={onConfirm}
+                                    onClick={() => {
+                                        // 关键体验修复：利用用户的首次显式点击解锁 iOS Safari 的语音合成引擎
+                                        if (typeof window !== 'undefined' && window.speechSynthesis) {
+                                            const wakeUpStr = new SpeechSynthesisUtterance('');
+                                            wakeUpStr.volume = 0;
+                                            window.speechSynthesis.speak(wakeUpStr);
+                                        }
+                                        onConfirm();
+                                    }}
                                     className="w-full h-12 rounded-xl bg-[#3D4430] hover:bg-[#2A3020] text-[#F0EDE1] text-[15px] font-medium tracking-wide shadow-sm transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2 group"
                                 >
                                     <span>我已准备好</span>

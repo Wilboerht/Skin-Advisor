@@ -20,8 +20,16 @@ export default function FaceScanPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
-        // 校验是否有问卷数据
-        const answers = localStorage.getItem("advisor_answers");
+        // 校验是否有问卷数据 (增加对无痕模式及禁用Storage时的异常处理)
+        let answers = null;
+        try {
+            answers = localStorage.getItem("advisor_answers");
+        } catch (e) {
+            console.warn("Storage API disabled or unavailable", e);
+            // 兜底策略：如果浏览器彻底禁用了 Storage，跳过校验直接放行，避免无限拦截造成死循环
+            answers = "fallback_allowed";
+        }
+
         if (!answers) {
             router.replace("/questions");
             return;
