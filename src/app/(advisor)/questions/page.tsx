@@ -15,6 +15,7 @@ export default function QuestionsPage() {
     const [gender, setGender] = useState<"female" | "male" | null>(null);
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
     const [answers, setAnswers] = useState<Record<string, any>>({});
+    const [committedAnswers, setCommittedAnswers] = useState<Record<string, any>>({});
     const [direction, setDirection] = useState(0);
     const [showExitConfirm, setShowExitConfirm] = useState(false);
     const [showResumeModal, setShowResumeModal] = useState(false);
@@ -52,37 +53,32 @@ export default function QuestionsPage() {
         };
         fetchQuestions();
     }, []);
-    const questions = allQuestions.filter(q => {
-        // 1. 性别过滤
-        if (gender === "male" && q.fieldName === "pregnancy") {
-            return false;
-        }
+    const getFilteredQuestions = (currentAnswers: Record<string, any>, currentGender: typeof gender) => {
+        return allQuestions.filter(q => {
+            if (currentGender === "male" && q.fieldName === "pregnancy") return false;
 
-        // 2. 依赖过滤 (dependsOn)
-        if (q.dependsOn) {
-            const dependencyAnswer = answers[q.dependsOn.field];
+            if (q.dependsOn) {
+                const dependencyAnswer = currentAnswers[q.dependsOn.field];
+                if (!dependencyAnswer) return false;
 
-            // 如果依赖的问题还没回答，暂不显示（等待回答后通过重渲染显示）
-            if (!dependencyAnswer) return false;
+                const { value, operator } = q.dependsOn;
 
-            const { value, operator } = q.dependsOn;
-
-            if (operator === 'notEquals') {
-                return dependencyAnswer !== value;
-            } else if (operator === 'contains') {
-                return Array.isArray(dependencyAnswer) && dependencyAnswer.includes(value as string);
-            } else {
-                // Default equals (supports string or array of allowed strings)
-                if (Array.isArray(value)) {
-                    return value.includes(dependencyAnswer);
+                if (operator === 'notEquals') {
+                    return dependencyAnswer !== value;
+                } else if (operator === 'contains') {
+                    return Array.isArray(dependencyAnswer) && dependencyAnswer.includes(value as string);
+                } else {
+                    if (Array.isArray(value)) {
+                        return value.includes(dependencyAnswer);
+                    }
+                    return dependencyAnswer === value;
                 }
-                return dependencyAnswer === value;
             }
-        }
+            return true;
+        });
+    };
 
-        return true;
-    });
-
+    const questions = getFilteredQuestions(committedAnswers, gender);
     const currentQuestion = questions[currentStepIndex];
 
     // 4. 确保 stepIndex 有效
@@ -143,6 +139,7 @@ export default function QuestionsPage() {
             }
 
             setAnswers(initialAnswers);
+            setCommittedAnswers(initialAnswers);
 
             // Restore step index (after next render when questions are filtered)
             if (savedStep) {
@@ -174,10 +171,13 @@ export default function QuestionsPage() {
 
         setGender(null);
         setAnswers({});
+        setCommittedAnswers({});
         setCurrentStepIndex(0);
         setShowResumeModal(false);
+        setPendingAnswers(null);
+        setShowQualityWarning(false);
 
-        // 重置计时器
+        // 重置防刷检测相关的计时器与索引
         sessionStartTime.current = Date.now();
         startStepIndex.current = 0;
     };
@@ -192,18 +192,8 @@ export default function QuestionsPage() {
         }
     }, [answers, currentStepIndex, gender]);
 
-    // 浏览器关闭/刷新提示
-    useEffect(() => {
-        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-            if (gender && Object.keys(answers).length > 0) {
-                e.preventDefault();
-                // Modern browsers ignore custom message but still show prompt
-                return '';
-            }
-        };
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-    }, [gender, answers]);
+    // Removed `beforeunload` listener since the application continuously auto-saves progress.
+    // Prompting users aggressively when we already have an effective "Resume Test" feature feels intrusive.
 
     const handleGenderSelect = (selectedGender: "female" | "male") => {
         setGender(selectedGender);
@@ -228,13 +218,13 @@ export default function QuestionsPage() {
             const exclusiveValues = ["unknown", "none"];
 
             if (exclusiveValues.includes(value)) {
-                // 如果选择了互斥选项（如“不太清楚”或“无”），则清空其他选项，仅保留该选项
-                // 如果该选项已被选中，则取消选中
-                if (currentVal.includes(value)) {
-                    newAnswers[currentQuestion.fieldName] = [];
-                } else {
-                    newAnswers[currentQuestion.fieldName] = [value];
-                }
+                // 如果选择了互斥选项（如“不太清楚”或“无”），仅保留该选项
+                newAnswers[currentQuestion.fieldName] = [value];
+
+                // 互斥选项视作单选，选完后给个小延迟自动跳转
+                setTimeout(() => {
+                    handleNextWithAnswers(newAnswers);
+                }, 300);
             } else {
                 // 如果选择了普通选项
                 // 1. 先清除互斥选项
@@ -253,21 +243,11 @@ export default function QuestionsPage() {
             newAnswers[currentQuestion.fieldName] = value;
             // 单选自动跳转
             setTimeout(() => {
-                if (currentStepIndex < questions.length - 1) {
-                    handleNextWithDelay(newAnswers);
-                } else {
-                    // 如果单选且是最后一题，也自动完成
-                    handleNextWithAnswers(newAnswers);
-                }
+                handleNextWithAnswers(newAnswers);
             }, 300);
         }
 
         setAnswers(newAnswers);
-    };
-
-    const handleNextWithDelay = (currentAnswers: any) => {
-        setDirection(1);
-        setCurrentStepIndex(prev => prev + 1);
     };
 
     // 真正执行提交的逻辑
@@ -281,10 +261,13 @@ export default function QuestionsPage() {
 
     // 辅助函数：处理带特定答案的完成逻辑
     const handleNextWithAnswers = (currentAnswers: any) => {
-        if (currentStepIndex < questions.length - 1) {
+        const nextQs = getFilteredQuestions(currentAnswers, gender);
+        if (currentStepIndex < nextQs.length - 1) {
+            setCommittedAnswers(currentAnswers);
             setDirection(1);
             setCurrentStepIndex(prev => prev + 1);
         } else {
+            setCommittedAnswers(currentAnswers);
             // 到达最后一题，触发完成逻辑
             // 1. 质量检测：计算耗时
             const now = Date.now();

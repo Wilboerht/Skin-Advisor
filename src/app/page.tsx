@@ -3,16 +3,46 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Link } from "next-view-transitions";
-import { m, AnimatePresence, LazyMotion, domAnimation } from "framer-motion";
+import { LazyMotion, domAnimation } from "framer-motion";
 import Image from "next/image";
-import { ArrowRight, ArrowLeft, Loader2, MapPin, User, ClipboardList, X } from "lucide-react";
+import { ArrowRight, ArrowLeft, Loader2, MapPin, User, ClipboardList } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
-import { SkincareReminder } from "@/components/advisor/SkincareReminder";
 import { useToast } from "@/components/ui/Toast";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
-import { ProfileModal } from "@/components/auth/ProfileModal";
 import { getGuestIdentity, type GuestIdentity } from "@/lib/guest-identity";
+import dynamic from "next/dynamic";
+
+const ProfileModal = dynamic(() => import("@/components/auth/ProfileModal").then((mod) => mod.ProfileModal), { ssr: false });
+const SkincareReminder = dynamic(() => import("@/components/advisor/SkincareReminder").then((mod) => mod.SkincareReminder), { ssr: false });
+const BaseModal = dynamic(() => import("@/components/ui/BaseModal").then((mod) => mod.BaseModal), { ssr: false });
+const OnboardingFlowModal = dynamic(() => import("@/components/advisor/OnboardingFlowModal").then((mod) => mod.OnboardingFlowModal), { ssr: false });
+
+// Safe storage helper to prevent QuotaExceededError or Privacy Mode crashes
+const safeStorage = {
+  get: (key: string) => {
+    try { return localStorage.getItem(key); } catch (e) { return null; }
+  },
+  set: (key: string, value: string) => {
+    try { localStorage.setItem(key, value); } catch (e) { console.warn("Failed to write to localStorage", e); }
+  },
+  remove: (key: string) => {
+    try { localStorage.removeItem(key); } catch (e) { console.warn("Failed to remove from localStorage", e); }
+  },
+  setSession: (key: string, value: string) => {
+    try { sessionStorage.setItem(key, value); } catch (e) { console.warn("Failed to write to sessionStorage", e); }
+  }
+};
+
+// Region options
+const regionOptions = [
+  { group: "华北/东北", regions: ["北京", "天津", "河北", "山西", "内蒙古", "黑龙江", "吉林", "辽宁"] },
+  { group: "华东", regions: ["上海", "江苏", "浙江", "山东", "安徽", "江西"] },
+  { group: "华南", regions: ["广东", "广西", "海南", "福建", "台湾"] },
+  { group: "华中/西南", regions: ["湖北", "湖南", "河南", "四川", "重庆", "贵州", "云南"] },
+  { group: "西北", regions: ["陕西", "甘肃", "宁夏", "新疆"] },
+  { group: "高原", regions: ["西藏", "青海"] },
+];
 
 export default function Home() {
   const router = useRouter();
@@ -29,34 +59,23 @@ export default function Home() {
   }, [initSession, router]);
 
   // Nickname state
-  const [showNicknameModal, setShowNicknameModal] = useState(false);
+  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
   const [nickname, setNickname] = useState("");
 
   // Location/Region states
-  const [showLocationModal, setShowLocationModal] = useState(false);
-  const [showRegionSelectModal, setShowRegionSelectModal] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
 
-  // Region options
-  const regionOptions = [
-    { group: "华北/东北", regions: ["北京", "天津", "河北", "山西", "内蒙古", "黑龙江", "吉林", "辽宁"] },
-    { group: "华东", regions: ["上海", "江苏", "浙江", "山东", "安徽", "江西"] },
-    { group: "华南", regions: ["广东", "广西", "海南", "福建", "台湾"] },
-    { group: "华中/西南", regions: ["湖北", "湖南", "河南", "四川", "重庆", "贵州", "云南"] },
-    { group: "西北", regions: ["陕西", "甘肃", "宁夏", "新疆"] },
-    { group: "高原", regions: ["西藏", "青海"] },
-  ];
-
+  // Region options moved outside component
 
   /* --- Handlers --- */
 
   const startNewTest = useCallback(() => {
     // Clear previous advisor state to ensure fresh start
-    localStorage.removeItem("advisor_answers");
-    localStorage.removeItem("advisor_gender");
-    localStorage.removeItem("advisor_face_images");
-    localStorage.removeItem("advisor_result");
+    safeStorage.remove("advisor_answers");
+    safeStorage.remove("advisor_gender");
+    safeStorage.remove("advisor_face_images");
+    safeStorage.remove("advisor_result");
 
     setIsLoading(true);
     router.push("/questions");
@@ -74,45 +93,45 @@ export default function Home() {
           });
         });
 
-        localStorage.setItem("userRegion", JSON.stringify({
+        safeStorage.set("userRegion", JSON.stringify({
           lat: position.coords.latitude,
           lon: position.coords.longitude
         }));
-        sessionStorage.setItem("locationConsent", "granted");
+        safeStorage.setSession("locationConsent", "granted");
 
         // 成功获取定位后，关闭弹窗并开始
-        setShowLocationModal(false);
+        setShowOnboardingModal(false);
         setIsLocating(false);
         recordAndStartTest();
       } catch (error) {
         console.warn("Geolocation failed", error);
         setIsLocating(false);
-        setShowLocationModal(false);
-        setShowRegionSelectModal(true);
+        setShowOnboardingModal(false);
+        // Note: The OnboardingModal will automatically transition to Region Select on fail.
       }
     } else {
       setIsLocating(false);
-      setShowLocationModal(false);
-      setShowRegionSelectModal(true);
+      setShowOnboardingModal(false);
     }
   };
 
   const handleRegionSelect = (region: string) => {
-    setShowRegionSelectModal(false);
-    sessionStorage.setItem("locationConsent", "granted");
-    localStorage.setItem("userRegion", JSON.stringify({ province: region, city: region }));
+    setShowOnboardingModal(false); // Make sure this is closed too just in case
+    safeStorage.setSession("locationConsent", "granted");
+    safeStorage.set("userRegion", JSON.stringify({ province: region, city: region }));
     recordAndStartTest();
   };
 
   const handleSkipRegionSelect = () => {
-    setShowRegionSelectModal(false);
-    sessionStorage.setItem("locationConsent", "declined");
+    setShowOnboardingModal(false);
+    safeStorage.setSession("locationConsent", "declined");
     recordAndStartTest();
   };
 
   const handleLocationDecline = () => {
-    setShowLocationModal(false);
-    sessionStorage.setItem("locationConsent", "declined");
+    // Declining loc will naturally open Region Select, but handled by OnboardingFlowModal now implicitly via callback
+    setShowOnboardingModal(false);
+    safeStorage.setSession("locationConsent", "declined");
     recordAndStartTest();
   };
 
@@ -189,7 +208,7 @@ export default function Home() {
         setGuestIdentity(identity);
       }
 
-      const sessionId = localStorage.getItem("advisor_session_id");
+      const sessionId = safeStorage.get("advisor_session_id");
       await fetch("/api/advisor/test-limit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -215,10 +234,14 @@ export default function Home() {
 
     // If user is logged in and has a name, skip nickname modal
     if (user?.name) {
-      localStorage.setItem("advisor_nickname", user.name);
-      setShowLocationModal(true);
+      safeStorage.set("advisor_nickname", user.name);
+      // Wait, we need a way to open onboarding modal but skip nickname if already set...
+      // Or simply just rely on OnboardingFlowModal to manage step 1 vs 2?
+      // For now, OnboardingFlowModal always defaults to nickname step. Let's set the component prop or state!
+      // Since it's refactored, let's just showOnboardingModal always, and it handles it! 
+      setShowOnboardingModal(true);
     } else {
-      setShowNicknameModal(true);
+      setShowOnboardingModal(true);
     }
   };
 
@@ -228,10 +251,7 @@ export default function Home() {
       return;
     }
     // Save nickname to localStorage
-    localStorage.setItem("advisor_nickname", nickname.trim());
-    setShowNicknameModal(false);
-    // Proceed to location modal
-    setShowLocationModal(true);
+    safeStorage.set("advisor_nickname", nickname.trim());
   };
 
 
@@ -299,10 +319,10 @@ export default function Home() {
             <div className="delay-200 animate-fade-in-up opacity-0 flex flex-col items-center gap-6" style={{ animationFillMode: 'forwards' }}>
               <button
                 onClick={handleStart}
-                disabled={isLoading}
-                className="group relative inline-flex items-center justify-center gap-3 bg-[#1A1A1A] text-[#FDFBF7] px-8 py-3.5 rounded-full text-sm tracking-wide font-medium hover:bg-[#3D4430] transition-all duration-500 shadow-xl shadow-[#1A1A1A]/5 disabled:opacity-70 disabled:cursor-not-allowed"
+                disabled={isLoading || checkingLimit}
+                className="group relative inline-flex items-center justify-center gap-3 bg-[#1A1A1A] text-[#FDFBF7] px-8 py-3.5 rounded-full text-sm tracking-wide font-medium hover:bg-[#3D4430] transition-all duration-500 shadow-xl shadow-[#1A1A1A]/5 disabled:opacity-70 disabled:cursor-not-allowed border-none cursor-pointer"
               >
-                {isLoading ? (
+                {isLoading || checkingLimit ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
                     <span>正在连接...</span>
@@ -356,269 +376,65 @@ export default function Home() {
 
         {/* Modals - Simplified Styles */}
 
-        {/* Nickname Modal */}
-        <AnimatePresence>
-          {showNicknameModal && (
-            <m.div
-              className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              <m.div
-                className="absolute inset-0 bg-[#FDFBF7]/80 backdrop-blur-sm"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setShowNicknameModal(false)}
-              />
-
-              <m.div
-                className="relative z-10 w-full max-w-sm bg-white shadow-[0_20px_40px_-10px_rgba(0,0,0,0.05)] border border-[#3D4430]/5 p-8 text-center"
-                initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-              >
-                <button
-                  onClick={() => setShowNicknameModal(false)}
-                  className="absolute top-4 right-4 text-[#1A1A1A]/30 hover:text-[#1A1A1A] transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-
-                <h3 className="mb-2 text-xl font-serif text-[#1A1A1A]">
-                  您好，请问怎么称呼？
-                </h3>
-
-                <p className="mb-8 text-sm text-[#5E5E5E] leading-relaxed font-light">
-                  输入昵称，让报告更有温度
-                </p>
-
-                <input
-                  type="text"
-                  value={nickname}
-                  onChange={(e) => setNickname(e.target.value)}
-                  placeholder="输入您的昵称"
-                  maxLength={20}
-                  className="w-full px-4 py-3 mb-5 text-center text-[#1A1A1A] bg-[#FDFBF7] border border-[#3D4430]/10 rounded-lg focus:outline-none focus:border-[#3D4430]/30 focus:ring-2 focus:ring-[#3D4430]/5 transition-all placeholder:text-[#3D4430]/30"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      handleNicknameSubmit();
-                    }
-                  }}
-                  autoFocus
-                />
-
-                <div className="space-y-3">
-                  <button
-                    onClick={handleNicknameSubmit}
-                    className="w-full bg-[#1A1A1A] text-[#FDFBF7] py-3 text-sm font-medium hover:bg-[#3D4430] transition-colors"
-                  >
-                    继续
-                  </button>
-                </div>
-              </m.div>
-            </m.div>
-          )}
-        </AnimatePresence>
-
-        {/* Location Modal */}
-        <AnimatePresence>
-          {showLocationModal && (
-            <m.div
-              className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              <m.div
-                className="absolute inset-0 bg-[#FDFBF7]/80 backdrop-blur-sm"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setShowLocationModal(false)}
-              />
-
-              <m.div
-                className="relative z-10 w-full max-w-sm bg-white shadow-[0_20px_40px_-10px_rgba(0,0,0,0.05)] border border-[#3D4430]/5 p-8 text-center"
-                initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-              >
-                <div className="flex justify-center mb-6 text-[#3D4430]">
-                  <MapPin className="h-6 w-6 opacity-80" />
-                </div>
-
-                <h3 className="mb-4 text-xl font-serif text-[#1A1A1A]">
-                  开启定位服务
-                </h3>
-
-                <p className="mb-8 text-sm text-[#5E5E5E] leading-relaxed font-light">
-                  我们需要分析您所在地区的气候环境，<br />为肤质判断提供依据。
-                </p>
-
-                <div className="space-y-3">
-                  <button
-                    onClick={handleLocationAccept}
-                    disabled={isLocating}
-                    className="w-full bg-[#1A1A1A] text-[#FDFBF7] py-3 text-sm font-medium hover:bg-[#3D4430] transition-colors flex items-center justify-center disabled:opacity-70 disabled:cursor-wait"
-                  >
-                    {isLocating ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        正在定位...
-                      </>
-                    ) : "允许访问"}
-                  </button>
-
-                  <button
-                    onClick={handleLocationDecline}
-                    className="w-full py-2 text-xs text-[#3D4430]/40 hover:text-[#3D4430] transition-colors bg-transparent"
-                  >
-                    暂不提供
-                  </button>
-                </div>
-              </m.div>
-            </m.div>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {showRegionSelectModal && (
-            <m.div
-              className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              <m.div
-                className="absolute inset-0 bg-[#FDFBF7]/80 backdrop-blur-sm"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={handleSkipRegionSelect}
-              />
-
-              <m.div
-                className="relative z-10 w-full max-w-sm bg-white shadow-[0_20px_40px_-10px_rgba(0,0,0,0.05)] border border-[#3D4430]/5 flex flex-col max-h-[70vh]"
-                initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-              >
-                <div className="p-6 pb-2 text-center shrink-0">
-                  <h3 className="text-lg font-serif text-[#1A1A1A]">选择地区</h3>
-                  <p className="text-xs text-[#5E5E5E] mt-2 font-light">手动选择您所在的区域</p>
-                </div>
-
-                <div className="overflow-y-auto px-6 py-2 custom-scrollbar flex-1">
-                  {regionOptions.map((group) => (
-                    <div key={group.group} className="mb-6 last:mb-2">
-                      <div className="text-[10px] font-bold text-[#3D4430]/30 uppercase tracking-widest mb-3 text-center">
-                        {group.group}
-                      </div>
-                      <div className="flex flex-wrap gap-2 justify-center">
-                        {group.regions.map((region) => (
-                          <button
-                            key={region}
-                            onClick={() => handleRegionSelect(region)}
-                            className="px-3 py-1.5 bg-[#FDFBF7] text-xs text-[#5E5E5E] hover:bg-[#3D4430] hover:text-white transition-all duration-300 min-w-[3rem]"
-                          >
-                            {region}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="p-4 shrink-0 text-center border-t border-[#3D4430]/5">
-                  <button
-                    onClick={handleSkipRegionSelect}
-                    className="text-xs text-[#3D4430]/30 hover:text-[#3D4430] transition-colors"
-                  >
-                    跳过
-                  </button>
-                </div>
-              </m.div>
-            </m.div>
-          )}
-        </AnimatePresence>
+        <OnboardingFlowModal
+          isOpen={showOnboardingModal}
+          onClose={() => setShowOnboardingModal(false)}
+          nickname={nickname}
+          setNickname={setNickname}
+          onNicknameSubmit={handleNicknameSubmit}
+          isLocating={isLocating}
+          onLocationAccept={handleLocationAccept}
+          onLocationDecline={handleLocationDecline}
+          onSkipLocation={handleSkipRegionSelect}
+          onRegionSelect={handleRegionSelect}
+          regionOptions={regionOptions}
+        />
 
         {/* Test Limit Modal */}
-        <AnimatePresence>
-          {showLimitModal && (
-            <m.div
-              className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              <m.div
-                className="absolute inset-0 bg-[#FDFBF7]/80 backdrop-blur-sm"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setShowLimitModal(false)}
-              />
+        <BaseModal
+          isOpen={showLimitModal}
+          onClose={() => setShowLimitModal(false)}
+          showCloseButton
+          className="p-8 text-center"
+        >
+          <div className="flex justify-center mb-6 text-amber-500">
+            <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
 
-              <m.div
-                className="relative z-10 w-full max-w-sm bg-white shadow-[0_20px_40px_-10px_rgba(0,0,0,0.05)] border border-[#3D4430]/5 p-8 text-center"
-                initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          <h3 className="mb-2 text-xl font-serif text-[#1A1A1A]">
+            今日测试次数已用完
+          </h3>
+
+          <p className="mb-6 text-sm text-[#5E5E5E] leading-relaxed font-light">
+            {user ? (
+              <>您今日的 {testLimitInfo?.dailyLimit || 1} 次测试机会已全部使用，请明天再来</>
+            ) : (
+              <>游客每天仅有 1 次测试机会<br />登录后可获得更多测试次数</>
+            )}
+          </p>
+
+          <div className="space-y-3">
+            {!user && (
+              <button
+                onClick={() => {
+                  setShowLimitModal(false);
+                  openAuthModal('login');
+                }}
+                className="w-full bg-[#1A1A1A] text-[#FDFBF7] py-3 text-sm font-medium hover:bg-[#3D4430] transition-colors border-none cursor-pointer"
               >
-                <button
-                  onClick={() => setShowLimitModal(false)}
-                  className="absolute top-4 right-4 text-[#1A1A1A]/30 hover:text-[#1A1A1A] transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-
-                <div className="flex justify-center mb-6 text-amber-500">
-                  <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                </div>
-
-                <h3 className="mb-2 text-xl font-serif text-[#1A1A1A]">
-                  今日测试次数已用完
-                </h3>
-
-                <p className="mb-6 text-sm text-[#5E5E5E] leading-relaxed font-light">
-                  {user ? (
-                    <>您今日的 {testLimitInfo?.dailyLimit || 1} 次测试机会已全部使用，请明天再来</>
-                  ) : (
-                    <>游客每天仅有 1 次测试机会<br />登录后可获得更多测试次数</>
-                  )}
-                </p>
-
-                <div className="space-y-3">
-                  {!user && (
-                    <button
-                      onClick={() => {
-                        setShowLimitModal(false);
-                        openAuthModal('login');
-                      }}
-                      className="w-full bg-[#1A1A1A] text-[#FDFBF7] py-3 text-sm font-medium hover:bg-[#3D4430] transition-colors"
-                    >
-                      登录 / 注册
-                    </button>
-                  )}
-                  <button
-                    onClick={() => setShowLimitModal(false)}
-                    className="w-full py-2 text-xs text-[#3D4430]/40 hover:text-[#3D4430] transition-colors bg-transparent"
-                  >
-                    我知道了
-                  </button>
-                </div>
-              </m.div>
-            </m.div>
-          )}
-        </AnimatePresence>
+                登录 / 注册
+              </button>
+            )}
+            <button
+              onClick={() => setShowLimitModal(false)}
+              className="w-full py-2 text-xs text-[#3D4430]/40 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
+            >
+              我知道了
+            </button>
+          </div>
+        </BaseModal>
 
         <ProfileModal
           isOpen={showProfileModal}
