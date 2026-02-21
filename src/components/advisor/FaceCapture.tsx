@@ -65,6 +65,8 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
   const faceDetectionRef = useRef<number | null>(null);
   const stableCountRef = useRef<number>(0);
   const cooldownRef = useRef<boolean>(false); // 步骤切换冷却标志
+  const lastSpeakTimeRef = useRef<number>(0); // 语音防抖时间戳
+  const lastSpokenPhraseRef = useRef<string>(""); // 避免短时间内重复播报同一句话
 
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [capturedImages, setCapturedImages] = useState<Record<CaptureStep, string | null>>({
@@ -368,6 +370,24 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
     return true;
   }, []);
 
+  /* 语音播报函数 */
+  const speak = useCallback((text: string) => {
+    if (isMuted || typeof window === 'undefined') return;
+    try {
+      // 取消正在播放的语音
+      window.speechSynthesis.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "zh-CN"; // 中文
+      utterance.rate = 1.0;
+      utterance.volume = 1.0;
+
+      window.speechSynthesis.speak(utterance);
+    } catch (e) {
+      console.error("Speech synthesis failed", e);
+    }
+  }, [isMuted]);
+
   /**
    * 检测面部和头部朝向
    */
@@ -435,13 +455,69 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
           if (stableCountRef.current >= requiredFrames) {
             setFaceStatus("ready");
             setStabilityProgress(100);
+
+            // 重要：标记正在执行成功操作，避免被语音打断
+            const now = Date.now();
+            lastSpeakTimeRef.current = now + 1500; // 锁定后续 1.5 秒的普通提示音，把舞台留给 "好"
+
             // 拍照
             takePhotoAuto();
+          } else if (stableCountRef.current === 1) { // 刚达到正确姿势的第一帧，给正面反馈
+            const now = Date.now();
+            if (now - lastSpeakTimeRef.current > 2000 && lastSpokenPhraseRef.current !== "保持") {
+              speak("很好，请保持");
+              lastSpeakTimeRef.current = now;
+              lastSpokenPhraseRef.current = "保持";
+            }
           }
         } else {
           stableCountRef.current = 0;
           setStabilityProgress(0);
           setFaceStatus("detecting");
+
+          // ---- 添加语音纠错与进度指导反馈 (Throttle 冷却期 3.5秒) ----
+          const now = Date.now();
+          if (now - lastSpeakTimeRef.current > 3500) {
+            let feedback = "";
+
+            // 1. 距离和位置优先级最高被检测
+            if (!isInEllipse) {
+              feedback = "请将面部移至引导框内";
+            } else if (!isSizeOk) {
+              const ellipseHeight = videoHeight * 0.70;
+              const faceToEllipseRatio = box.height / ellipseHeight;
+              if (faceToEllipseRatio < 0.30) {
+                feedback = "太远了，请稍微靠近屏幕";
+              } else if (faceToEllipseRatio >= 0.90) {
+                feedback = "太近了，请稍微远离屏幕";
+              }
+            } else if (!isPoseCorrect) {
+              // 2. 动线进度反馈（“差一点”与“刚刚好”）
+              // 我们通过判断目标方向的进度来给微调建议
+              if (currentStep === "left" && headPose !== "left") {
+                feedback = "请再向左转头一点点";
+              } else if (currentStep === "right" && headPose !== "right") {
+                feedback = "请再向右转头一点点";
+              } else if (currentStep === "chin" && headPose !== "chin") {
+                feedback = "请再稍微抬起一点下颚";
+              } else if (currentStep === "front" && headPose !== "front") {
+                feedback = "请正对镜头，不要偏转或歪头";
+              }
+            }
+
+            // 执行反馈播报并记录防抖标志
+            if (feedback && feedback !== lastSpokenPhraseRef.current) {
+              speak(feedback);
+              lastSpeakTimeRef.current = now;
+              lastSpokenPhraseRef.current = feedback;
+            } else if (feedback) {
+              // 如果是重复的话术，延长一点冷却时间避免显得太啰嗦，比如5秒后再说
+              if (now - lastSpeakTimeRef.current > 5000) {
+                speak(feedback);
+                lastSpeakTimeRef.current = now;
+              }
+            }
+          }
         }
       } else {
         stableCountRef.current = 0;
@@ -453,25 +529,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
       console.error("Face detection error:", err);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modelsLoaded, isAllCaptured, calculateHeadPose, currentStep, isFaceInEllipse]);
-
-  /* 语音播报函数 */
-  const speak = useCallback((text: string) => {
-    if (isMuted || typeof window === 'undefined') return;
-    try {
-      // 取消正在播放的语音
-      window.speechSynthesis.cancel();
-
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = "zh-CN"; // 中文
-      utterance.rate = 1.0;
-      utterance.volume = 1.0;
-
-      window.speechSynthesis.speak(utterance);
-    } catch (e) {
-      console.error("Speech synthesis failed", e);
-    }
-  }, [isMuted]);
+  }, [modelsLoaded, isAllCaptured, calculateHeadPose, currentStep, isFaceInEllipse, speak]);
 
   // 监听步骤变化并播报语音指令
   useEffect(() => {
@@ -483,6 +541,8 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
       // 稍微延迟确保用户准备好
       const timer = setTimeout(() => {
         speak(instruction);
+        lastSpeakTimeRef.current = Date.now(); // 重置防抖计时器
+        lastSpokenPhraseRef.current = instruction;
       }, 600);
       return () => clearTimeout(timer);
     }
