@@ -3,7 +3,7 @@
 import { motion as m, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { Sparkles } from "lucide-react";
+import { Sparkles, X } from "lucide-react";
 
 // --- Custom SVG Icons (Placeholders for your SVGs) ---
 // Each component accepts `className` to handle sizing and color changes
@@ -300,17 +300,28 @@ const IconTexture = ({ className }: { className?: string }) => (
 interface AnalyzingOverlayProps {
     progress: number;
     userImage?: string;
+    onCancel?: () => void;
 }
 
-export function AnalyzingOverlay({ progress, userImage }: AnalyzingOverlayProps) {
+export function AnalyzingOverlay({ progress, userImage, onCancel }: AnalyzingOverlayProps) {
     const [activeIconIndex, setActiveIconIndex] = useState(0);
+    const [showCancel, setShowCancel] = useState(false);
 
     // Cycle through icons for "loading" animation
     useEffect(() => {
         const interval = setInterval(() => {
             setActiveIconIndex((prev) => (prev + 1) % 9);
         }, 800); // Slower speed
-        return () => clearInterval(interval);
+
+        // Show cancel button after 15 seconds to prevent users getting stuck
+        const timeoutId = setTimeout(() => {
+            setShowCancel(true);
+        }, 15000);
+
+        return () => {
+            clearInterval(interval);
+            clearTimeout(timeoutId);
+        };
     }, []);
 
     // Dynamic status messages based on progress
@@ -330,6 +341,22 @@ export function AnalyzingOverlay({ progress, userImage }: AnalyzingOverlayProps)
             exit={{ opacity: 0, transition: { duration: 0.8 } }}
             className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-[#FDFBF7] overflow-hidden"
         >
+            {/* Elegant Cancel Button (appears after 15 seconds) */}
+            <AnimatePresence>
+                {showCancel && onCancel && (
+                    <m.button
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 1, ease: "easeInOut" }}
+                        onClick={onCancel}
+                        className="absolute top-8 right-8 z-50 flex items-center justify-center w-10 h-10 rounded-full bg-black/5 hover:bg-black/10 backdrop-blur-sm transition-colors text-[#5A5A5A]"
+                        aria-label="Cancel analysis"
+                    >
+                        <X className="w-5 h-5 stroke-[1.5]" />
+                    </m.button>
+                )}
+            </AnimatePresence>
             {/* 1. Background Ambience - Soft, Organic, High-end Spa feel */}
             <div className="absolute inset-0 pointer-events-none">
                 {/* Warm light leak from top-left */}
@@ -456,9 +483,11 @@ export function AnalyzingOverlay({ progress, userImage }: AnalyzingOverlayProps)
                     </div>
 
                     {/* Percentage */}
-                    <span className="text-xs text-[#9A9A9A] font-mono tracking-widest">
-                        {Math.round(progress)}%
-                    </span>
+                    <div className="w-12 text-center">
+                        <span className="text-xs text-[#9A9A9A] font-mono tracking-widest">
+                            {Math.round(progress)}%
+                        </span>
+                    </div>
                 </div>
 
             </div>
@@ -466,7 +495,7 @@ export function AnalyzingOverlay({ progress, userImage }: AnalyzingOverlayProps)
             {/* 3. Analysis Icons Row (9 Metrics) */}
             <div className="absolute bottom-24 w-full px-4 z-50">
                 <m.div
-                    className="flex flex-wrap items-center justify-center gap-4 md:gap-8"
+                    className="flex flex-wrap items-center justify-center gap-4 md:gap-8 max-w-2xl mx-auto"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5, duration: 0.8 }}
@@ -481,22 +510,24 @@ export function AnalyzingOverlay({ progress, userImage }: AnalyzingOverlayProps)
                         return (
                             <m.div
                                 key={i}
-                                className="relative flex items-center justify-center top-4"
+                                className={`relative flex items-center justify-center top-4 ${isCurrent ? 'block' : 'hidden md:flex'}`}
                                 animate={isCurrent ? {
                                     scale: [1, 1.25, 1],
                                     y: [0, -12, 0],
-                                    filter: "brightness(1)"
+                                    filter: "brightness(1)",
+                                    opacity: 1
                                 } : {
                                     scale: 1,
                                     y: 0,
-                                    filter: "brightness(1)",
+                                    filter: "brightness(0.7)",
+                                    opacity: 0.5
                                 }}
                                 transition={{
                                     duration: 0.6,
                                     ease: "easeInOut"
                                 }}
                             >
-                                <div className="[&_svg]:w-10 [&_svg]:h-10 md:[&_svg]:w-14 md:[&_svg]:h-14 drop-shadow-sm transition-all duration-300">
+                                <div className="[&_svg]:w-12 [&_svg]:h-12 md:[&_svg]:w-14 md:[&_svg]:h-14 drop-shadow-sm transition-all duration-300">
                                     <Icon />
                                 </div>
                             </m.div>

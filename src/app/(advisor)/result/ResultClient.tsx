@@ -692,6 +692,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                         key="analyzing-overlay"
                         progress={analysisState.progress}
                         userImage={userImage}
+                        onCancel={() => router.push('/questions')}
                     />
                 )}
             </AnimatePresence>
