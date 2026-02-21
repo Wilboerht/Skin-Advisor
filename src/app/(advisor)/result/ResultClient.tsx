@@ -355,7 +355,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
         // If Guest accessing full report via URL -> Redirect to Share Page (Simplified)
         if (!user) {
-            router.replace(`/share/result?id=${sessionId}`);
+            router.replace(`/report/guest?id=${sessionId}`);
         }
     }, [user, authLoading, loading, result, sessionId, searchParams, router, initialData]);
 
@@ -502,7 +502,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
         // Navigate directly to the share page
         trackResultShare("link");
-        router.push(`/share/result?id=${sessionId}&ref=social_share`);
+        router.push(`/report/guest?id=${sessionId}&ref=social_share`);
     };
 
     const handleSaveLink = async () => {
@@ -625,7 +625,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     // Use ref to get fresh state (closure might have stale user)
                     if (!userRef.current) {
                         // Small delay to ensure session is saved on server (though await runAnalysis should handle it)
-                        router.replace(`/share/result?id=${newSessionId}`);
+                        router.replace(`/report/guest?id=${newSessionId}`);
                         return;
                     }
 

@@ -4,11 +4,11 @@ import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { calculateUserRank, generateRandomNickname } from "@/lib/leaderboard";
 
-interface SharePageProps {
+interface GuestReportPageProps {
     searchParams: Promise<{ id?: string }>;
 }
 
-export default async function SharePage(props: SharePageProps) {
+export default async function GuestReportPage(props: GuestReportPageProps) {
     const searchParams = await props.searchParams;
     const { id } = searchParams;
 
@@ -108,7 +108,7 @@ export default async function SharePage(props: SharePageProps) {
 }
 
 
-export async function generateMetadata(props: SharePageProps): Promise<Metadata> {
+export async function generateMetadata(props: GuestReportPageProps): Promise<Metadata> {
     const searchParams = await props.searchParams;
     const { id } = searchParams;
 

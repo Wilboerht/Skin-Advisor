@@ -22,7 +22,7 @@ export default async function ResultPage(props: {
         const user = await getSession();
         if (!user) {
             // Guest trying to access full report → redirect to simplified share page
-            redirect(`/share/result?id=${id}`);
+            redirect(`/report/guest?id=${id}`);
         }
     }
 
