@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/Toast";
+import { ChevronLeft } from "lucide-react";
 
 // Types
 interface LeaderboardEntry {
@@ -181,9 +182,16 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                 }
             `}</style>
 
-            <div className="w-full max-w-[1100px] flex flex-col gap-6">
-                <div className="flex justify-center">
-                    <img src="/partner-nihplod.webp" alt="Partner Logo" className="h-10 md:h-14 object-contain opacity-90" />
+            <div className="w-full max-w-[1100px] flex flex-col gap-6 pt-4 md:pt-0">
+                <div className="flex justify-center relative items-center">
+                    <button
+                        onClick={() => router.push('/')}
+                        className="absolute left-0 w-10 h-10 flex items-center justify-center rounded-full bg-white/40 hover:bg-white/70 backdrop-blur-md transition-all text-[#333] shadow-sm border border-white/50 z-10"
+                        aria-label="Back to home"
+                    >
+                        <ChevronLeft className="w-5 h-5" strokeWidth={2.5} />
+                    </button>
+                    <img src="/partner-nihplod.webp" alt="Partner Logo" className="h-9 md:h-12 object-contain opacity-90" />
                 </div>
                 <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-6">
 
@@ -275,13 +283,13 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                                         <div className="space-y-3">
                                             {[1, 2, 3, 4, 5].map((i) => (
                                                 <div key={i} className="flex items-center py-3 px-2 animate-pulse">
-                                                    <div className="w-[30px] h-6 bg-gray-200 rounded" />
-                                                    <div className="w-11 h-11 rounded-xl mx-3 bg-gray-200" />
+                                                    <div className="w-[30px] h-6 bg-black/5 rounded" />
+                                                    <div className="w-11 h-11 rounded-xl mx-3 bg-black/5" />
                                                     <div className="flex-grow">
-                                                        <div className="h-4 bg-gray-200 rounded w-20 mb-1" />
-                                                        <div className="h-3 bg-gray-200 rounded w-16" />
+                                                        <div className="h-4 bg-black/5 rounded w-20 mb-1" />
+                                                        <div className="h-3 bg-black/5 rounded w-16" />
                                                     </div>
-                                                    <div className="h-5 bg-gray-200 rounded w-12" />
+                                                    <div className="h-5 bg-black/5 rounded w-12" />
                                                 </div>
                                             ))}
                                         </div>
@@ -450,7 +458,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                             initial="hidden"
                             animate="visible"
                             variants={revealVariants}
-                            className="glass-module rounded-[32px] p-0 flex flex-col transition-all duration-400 md:col-span-2 relative overflow-hidden min-h-[400px]"
+                            className="glass-module rounded-[32px] p-0 flex flex-col transition-all duration-400 md:col-span-2 relative overflow-hidden"
                         >
                             {/* Blurred Content Background used as teaser */}
                             <div className="absolute inset-0 p-8 filter blur-[8px] opacity-60 pointer-events-none select-none overflow-hidden">
@@ -470,8 +478,8 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                                 </div>
                             </div>
 
-                            {/* Lock Overlay */}
-                            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-gradient-to-b from-white/30 to-white/90 p-8 text-center">
+                            {/* Lock Overlay Content */}
+                            <div className="relative z-10 flex flex-col items-center justify-center bg-gradient-to-b from-white/30 to-white/90 p-10 md:p-16 text-center w-full min-h-[400px]">
                                 <div className="w-16 h-16 bg-[#00263e] rounded-full flex items-center justify-center mb-6 shadow-xl text-white">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                                 </div>
@@ -491,14 +499,14 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                                     </button>
                                     <button
                                         onClick={() => openAuthModal('login')}
-                                        className="flex-1 py-4 bg-white border border-gray-200 text-[#333] rounded-xl font-bold text-base shadow-sm hover:bg-gray-50 transition-all"
+                                        className="flex-1 py-4 bg-white/80 backdrop-blur-sm border border-black/10 text-[#333] rounded-xl font-bold text-base shadow-sm hover:bg-white transition-all"
                                     >
                                         已有账号登录
                                     </button>
                                 </div>
 
-                                <p className="mt-6 text-xs text-[#999] bg-white/50 px-3 py-1 rounded-full">
-                                    🎁 新用户注册限时解锁所有高级功能
+                                <p className="mt-8 text-[13px] text-[#888] font-medium bg-black/5 px-4 py-2 rounded-full inline-flex items-center gap-2">
+                                    <span>🎁</span> 新用户注册限时解锁高级功能
                                 </p>
                             </div>
                         </motion.div>
@@ -538,24 +546,24 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                             <p className="text-[#666] mb-[30px] text-[15px] leading-relaxed">
                                 在赛季结束之前有概率获得礼品，请选择后续操作。
                             </p>
-                            <div className="flex flex-col gap-3">
-                                <button
-                                    onClick={() => {
-                                        setShowModal(false);
-                                        openAuthModal('login');
-                                    }}
-                                    className="p-4 rounded-2xl border-none font-semibold cursor-pointer transition-colors bg-[#00263e] text-white hover:bg-[#003859]"
-                                >
-                                    登录更新本次报告
-                                </button>
+                            <div className="flex flex-col gap-4">
                                 <button
                                     onClick={() => {
                                         setShowModal(false);
                                         openAuthModal('register');
                                     }}
-                                    className="p-4 rounded-2xl font-semibold cursor-pointer transition-colors bg-white border border-[#ddd] text-[#333] hover:bg-gray-50"
+                                    className="py-[18px] px-6 rounded-[20px] border-none font-bold text-[16px] cursor-pointer transition-transform active:scale-[0.98] bg-[#00263e] text-white hover:bg-[#003859] shadow-lg flex items-center justify-center gap-2"
                                 >
-                                    注册账号获得更多权益
+                                    <span>🎁</span> 立即注册，解锁报告
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setShowModal(false);
+                                        openAuthModal('login');
+                                    }}
+                                    className="py-[18px] px-6 rounded-[20px] font-bold text-[15px] cursor-pointer transition-transform active:scale-[0.98] bg-white/60 backdrop-blur-md border border-white/80 text-[#333] hover:bg-white flex items-center justify-center"
+                                >
+                                    已有账号，一键登录
                                 </button>
                                 <button
                                     onClick={async () => {
@@ -581,9 +589,9 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                                             toast.error("复制失败，请手动复制浏览器链接");
                                         }
                                     }}
-                                    className="p-2 rounded-2xl bg-transparent text-[#888] underline text-[13px] hover:text-[#555]"
+                                    className="pt-2 pb-1 bg-transparent text-[#888] underline text-[14px] hover:text-[#555] font-medium"
                                 >
-                                    不注册，只想晒下战报
+                                    暂不注册，仅分享战报
                                 </button>
                             </div>
                         </motion.div>
