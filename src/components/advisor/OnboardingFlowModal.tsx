@@ -63,18 +63,13 @@ export function OnboardingFlowModal({
 
     // Handle location accept wrapper
     const handleLocationAcceptWrapper = async () => {
-        // call the passed function but we also want to catch if it fails and show the fallback
-        // Since `onLocationAccept` handles the fallback by setting `showRegionSelectModal` in parent,
-        // we need to adapt our component to catch errors or we can just pass the failure state down.
-        // Wait, let's keep it simple: the parent can pass `onFallback` or we handle fallback if locator fails.
-        // Let's modify handleLocationAccept here:
-        onLocationAccept();
-        // actually the parent function currently handles the success/failure logic.
-        // We will need to adjust the parent's handleLocationAccept to trigger fallback here instead.
-        // Easiest is to pass a fallback callback to the parent, or check if parent sets showRegionSelectModal.
-        // Let's assume parent sets showRegionSelectModal=true when location fails.
-        // We can just rely on a prop for that or handle it entirely in this component.
-    }
+        try {
+            await onLocationAccept();
+        } catch (e) {
+            // If location fails (e.g. denied or no support), show manual region select
+            setShowRegionSelectModal(true);
+        }
+    };
 
     return (
         <>
@@ -84,14 +79,8 @@ export function OnboardingFlowModal({
                 showCloseButton
                 className="p-8 text-center"
             >
-                <div className="relative min-h-[300px] flex flex-col justify-center">
-                    {/* Step Indicator */}
-                    <div className="absolute top-0 left-0 w-full flex justify-center gap-2 mb-8">
-                        <div className={`h-1.5 rounded-full transition-all duration-300 ${step === 'nickname' ? 'w-8 bg-[#3D4430]' : 'w-2 bg-[#3D4430]/20'}`} />
-                        <div className={`h-1.5 rounded-full transition-all duration-300 ${step === 'location' ? 'w-8 bg-[#3D4430]' : 'w-2 bg-[#3D4430]/20'}`} />
-                    </div>
-
-                    <div className="mt-8">
+                <div className="relative min-h-[280px] flex flex-col">
+                    <div className="flex-1 flex flex-col justify-center py-2">
                         <AnimatePresence mode="wait">
                             {step === "nickname" && (
                                 <m.div
@@ -158,7 +147,7 @@ export function OnboardingFlowModal({
 
                                     <div className="space-y-3">
                                         <button
-                                            onClick={onLocationAccept}
+                                            onClick={handleLocationAcceptWrapper}
                                             disabled={isLocating}
                                             className="w-full bg-[#1A1A1A] text-[#FDFBF7] py-3 text-sm font-medium hover:bg-[#3D4430] transition-colors flex items-center justify-center disabled:opacity-70 disabled:cursor-wait border-none cursor-pointer"
                                         >
@@ -180,6 +169,12 @@ export function OnboardingFlowModal({
                                 </m.div>
                             )}
                         </AnimatePresence>
+                    </div>
+
+                    {/* Step Indicator */}
+                    <div className="flex justify-center items-center gap-2 pt-6 pb-1">
+                        <div className={`rounded-full transition-all duration-500 ${step === 'nickname' ? 'h-1.5 w-6 bg-[#3D4430]' : 'h-1.5 w-1.5 bg-[#3D4430]/15 hover:bg-[#3D4430]/30'}`} />
+                        <div className={`rounded-full transition-all duration-500 ${step === 'location' ? 'h-1.5 w-6 bg-[#3D4430]' : 'h-1.5 w-1.5 bg-[#3D4430]/15 hover:bg-[#3D4430]/30'}`} />
                     </div>
                 </div>
             </BaseModal>

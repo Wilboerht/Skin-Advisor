@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Link } from "next-view-transitions";
-import { LazyMotion, domAnimation } from "framer-motion";
+import { LazyMotion, domAnimation, AnimatePresence, m } from "framer-motion";
 import Image from "next/image";
 import { ArrowRight, ArrowLeft, Loader2, MapPin, User, ClipboardList } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
@@ -102,21 +102,22 @@ export default function Home() {
         // 成功获取定位后，关闭弹窗并开始
         setShowOnboardingModal(false);
         setIsLocating(false);
+        setIsLoading(true);
         recordAndStartTest();
       } catch (error) {
         console.warn("Geolocation failed", error);
         setIsLocating(false);
-        setShowOnboardingModal(false);
-        // Note: The OnboardingModal will automatically transition to Region Select on fail.
+        throw error; // Let OnboardingFlowModal handle the fallback
       }
     } else {
       setIsLocating(false);
-      setShowOnboardingModal(false);
+      throw new Error("No geolocation support");
     }
   };
 
   const handleRegionSelect = (region: string) => {
     setShowOnboardingModal(false); // Make sure this is closed too just in case
+    setIsLoading(true);
     safeStorage.setSession("locationConsent", "granted");
     safeStorage.set("userRegion", JSON.stringify({ province: region, city: region }));
     recordAndStartTest();
@@ -124,15 +125,14 @@ export default function Home() {
 
   const handleSkipRegionSelect = () => {
     setShowOnboardingModal(false);
+    setIsLoading(true);
     safeStorage.setSession("locationConsent", "declined");
     recordAndStartTest();
   };
 
   const handleLocationDecline = () => {
     // Declining loc will naturally open Region Select, but handled by OnboardingFlowModal now implicitly via callback
-    setShowOnboardingModal(false);
     safeStorage.setSession("locationConsent", "declined");
-    recordAndStartTest();
   };
 
   // Test limit state
@@ -258,6 +258,21 @@ export default function Home() {
 
   return (
     <LazyMotion features={domAnimation}>
+      {/* Full Screen Loading Overlay to cover Next.js chunk fetching gap */}
+      <AnimatePresence>
+        {isLoading && (
+          <m.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[9999] bg-[#FDFBF7] flex flex-col items-center justify-center pointer-events-none"
+          >
+            <Loader2 className="w-10 h-10 text-[#3D4430] animate-spin mb-6" />
+            <p className="text-[#5E5E5E] text-[15px] font-medium tracking-wide">即将进入 AI 问卷...</p>
+          </m.div>
+        )}
+      </AnimatePresence>
+
       <div className="texture-overlay"></div>
 
       <main className="relative w-full h-screen bg-[#FDFBF7] text-[#2D2A26] overflow-hidden flex flex-col items-center justify-center selection:bg-[#3D4430] selection:text-white">
