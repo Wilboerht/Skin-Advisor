@@ -53,7 +53,13 @@ export function useAsyncAnalysis() {
         setAnalysisState({ status: 'preparing', progress: 10, error: null });
         trackAnalysisStart();
 
-        try {
+        const timeoutPromise = new Promise<{ result: any, faceAnalysis: any, sessionId: string }>((_, reject) => {
+            setTimeout(() => {
+                reject(new Error("分析超时 (120秒)。请检查网络连接后重试。"));
+            }, 120 * 1000); // 2 minutes
+        });
+
+        const analysisPromise = async () => {
             const answersStr = localStorage.getItem("advisor_answers");
 
 
@@ -210,9 +216,12 @@ export function useAsyncAnalysis() {
 
             // Return data to caller
             return { result, faceAnalysis, sessionId };
+        };
 
+        try {
+            return await Promise.race([analysisPromise(), timeoutPromise]);
         } catch (e: any) {
-            console.error("Analysis failed", e);
+            console.error("Analysis failed:", e);
             setAnalysisState({ status: 'error', progress: 0, error: e.message || "Unknown error" });
             throw e;
         }

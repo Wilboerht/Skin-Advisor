@@ -679,17 +679,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const isAsyncAnalyzing = searchParams.get('status') === 'analyzing' || analysisState.status !== 'idle';
     const showLoading = loading || (!result && isAsyncAnalyzing);
 
-    // Determine detailed status message based on progress
-    let detailStatus = "正在初始化分析引擎...";
-    if (analysisState.progress < 30) {
-        detailStatus = "正在扫描面部特征点...";
-    } else if (analysisState.progress < 60) {
-        detailStatus = "正在分析皮肤纹理与光泽...";
-    } else if (analysisState.progress < 85) {
-        detailStatus = "正在识别关键区域问题...";
-    } else {
-        detailStatus = "正在生成专业护肤报告...";
-    }
+
 
     // Fallback if truly nothing to show (not loading, no result)
     if (!result && !showLoading) return null;
