@@ -2,11 +2,22 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useSpring, useTransform } from "framer-motion";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/Toast";
 import { ChevronLeft } from "lucide-react";
+
+function AnimatedNumber({ value, suffix = "" }: { value: number, suffix?: string }) {
+    const spring = useSpring(0, { bounce: 0, duration: 2000 });
+    const display = useTransform(spring, (current) => Math.round(current) + suffix);
+
+    useEffect(() => {
+        spring.set(value);
+    }, [spring, value]);
+
+    return <motion.span>{display}</motion.span>;
+}
 
 // Types
 interface LeaderboardEntry {
@@ -57,10 +68,8 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
     const { openAuthModal } = useAuthModal();
     const { user } = useAuth();
     const toast = useToast();
-    const [mounted, setMounted] = useState(false);
     const [activeTab, setActiveTab] = useState<'score' | 'pop'>('score');
     const [showModal, setShowModal] = useState(false);
-    const [comment, setComment] = useState("");
 
     // Leaderboard state
     const [scoreRanking, setScoreRanking] = useState<LeaderboardEntry[]>([]);
@@ -120,11 +129,10 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
         return `报告评语：${scorePraise}，检测肤质为${skinType}${concernAdvice}${closing}`;
     }
 
+    const comment = generateComment();
+
     // Fetch leaderboard data
     useEffect(() => {
-        setMounted(true);
-        setComment(generateComment());
-
         // Fetch leaderboard from API
         async function fetchLeaderboard() {
             try {
@@ -156,8 +164,6 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
             transition: { delay: i * 0.1, duration: 0.8, ease: [0.23, 1, 0.32, 1] as any } // cubic-bezier matching ref
         })
     };
-
-    if (!mounted) return null;
 
     return (
         <div className="min-h-screen bg-[#F0EDE1] font-sans text-[#333] p-5 flex justify-center items-start md:items-center overflow-x-hidden">
@@ -224,8 +230,10 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
 
                         <div className="bg-black/5 p-5 rounded-3xl mb-6 text-center">
                             <span className="text-sm text-[#666] block mb-1">当前全国排名</span>
-                            <span className="text-4xl font-extrabold text-black block">{data.userRank}</span>
-                            <p className="font-semibold text-[#27ae60] mt-2 text-sm">超越了全国 {data.userPercentile}% 的用户</p>
+                            <span className="text-4xl font-extrabold text-black block">
+                                <AnimatedNumber value={data.userRank} />
+                            </span>
+                            <p className="font-semibold text-[#27ae60] mt-2 text-sm">超越了全国 <AnimatedNumber value={data.userPercentile} suffix="%" /> 的用户</p>
                         </div>
 
                         <div className="text-base leading-[1.6] text-[#444] p-4 border-l-4 border-[#FFD700] bg-white/30 mb-[30px] rounded-r-xl min-h-[80px]">
