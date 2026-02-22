@@ -118,7 +118,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const videoConstraints: MediaTrackConstraints & { advanced?: any[] } = {
           facingMode,
-          width: { ideal: 1280 },
+          width: { ideal: 1080 },
           height: { ideal: 720 },
           advanced: [
             { beautificationMode: "off" },
@@ -138,7 +138,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
         mediaStream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode,
-            width: { ideal: 1280 },
+            width: { ideal: 1080 },
             height: { ideal: 720 },
           },
         });
@@ -635,7 +635,8 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
         ctx.drawImage(video, cropX, cropY, cropWidth, cropHeight, 0, 0, outputWidth, outputHeight);
       }
 
-      imageData = canvas.toDataURL("image/jpeg", 0.92);
+      // Encode with standard quality to reduce base64 size for the API
+      imageData = canvas.toDataURL("image/jpeg", 0.75);
     } else {
       // 没有面部检测框，使用原始方式
       canvas.width = videoWidth;
@@ -647,7 +648,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
       }
 
       ctx.drawImage(video, 0, 0);
-      imageData = canvas.toDataURL("image/jpeg", 0.9);
+      imageData = canvas.toDataURL("image/jpeg", 0.75);
     }
 
     // 保存当前步骤的照片

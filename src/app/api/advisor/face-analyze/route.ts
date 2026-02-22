@@ -103,7 +103,18 @@ export async function POST(request: NextRequest) {
                     return null;
                 }
             } else if (imgData.startsWith('data:')) {
-                return imgData; // Return base64 as is for now
+                if (compress) {
+                    try {
+                        const base64Data = imgData.split(',')[1];
+                        mimeType = imgData.split(';')[0].split(':')[1] || 'image/jpeg';
+                        buffer = Buffer.from(base64Data, 'base64');
+                    } catch (e: any) {
+                        aiLogger.warn("Failed to decode base64 image for compression", { error: e.message });
+                        return imgData; // fallback
+                    }
+                } else {
+                    return imgData; // Return base64 as is if not compressing
+                }
             } else {
                 return imgData; // Return as is
             }
@@ -165,8 +176,8 @@ export async function POST(request: NextRequest) {
             return loadedCoordinates;
         };
 
-        // Initial Load (Raw Quality)
-        let validImages = await loadImages(false);
+        // Initial Load (Compressed Quality to prevent Payload Too Large & reduce latency)
+        let validImages = await loadImages(true);
 
         if (validImages.length === 0) {
             return NextResponse.json({ error: "无有效图片数据" }, { status: 400 });

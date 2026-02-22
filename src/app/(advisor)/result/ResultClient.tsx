@@ -103,7 +103,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const router = useRouter();
     const toast = useToast();
     const { trackResultView, trackResultShare, trackProductClick } = useAdvisorAnalytics();
-    const { user, loading: authLoading } = useAuth();
+    const { user, loading: authLoading, isInitialized: authInitialized } = useAuth();
     const { openAuthModal } = useAuthModal();
     const searchParams = useSearchParams();
     const { runAnalysis, analysisState } = useAsyncAnalysis();
@@ -328,24 +328,9 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
     // --- Guest Protection Guard ---
     // Prevent direct access to full report by guests via URL
-    // Extra safety: track if auth has been stable (not just "finished loading once")
-    const authStableRef = useRef(false);
-    useEffect(() => {
-        if (!authLoading) {
-            // Give auth one tick to settle before marking stable
-            const timer = setTimeout(() => { authStableRef.current = true; }, 100);
-            return () => clearTimeout(timer);
-        } else {
-            authStableRef.current = false;
-        }
-    }, [authLoading]);
-
     useEffect(() => {
         // Skip if still loading auth/data or essential data missing
-        if (loading || authLoading || !result || !sessionId) return;
-
-        // Skip if auth hasn't stabilized yet (prevent premature redirect)
-        if (!authStableRef.current) return;
+        if (loading || authLoading || !authInitialized || !result || !sessionId) return;
 
         // Skip if currently running analysis (handled by specific analysis effect)
         if (searchParams.get('status') === 'analyzing') return;
@@ -356,9 +341,10 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
         // If Guest accessing full report via URL -> Redirect to Share Page (Simplified)
         if (!user) {
+            setIsRedirecting(true);
             router.replace(`/report/guest?id=${sessionId}`);
         }
-    }, [user, authLoading, loading, result, sessionId, searchParams, router, initialData]);
+    }, [user, authLoading, authInitialized, loading, result, sessionId, searchParams, router, initialData]);
 
     // --- Environment Data Integration ---
     // Fetches from /api/weather which handles QWeather/Open-Meteo fallback

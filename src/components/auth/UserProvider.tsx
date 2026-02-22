@@ -18,6 +18,7 @@ interface AuthContextType {
     user: User | null;
     isVip: boolean;
     loading: boolean;
+    isInitialized: boolean;
     login: (credentials: any) => Promise<void>;
     register: (userData: any) => Promise<void>;
     logout: () => Promise<void>;
@@ -89,6 +90,7 @@ const UserContext = createContext<AuthContextType | undefined>(undefined);
 export function UserProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
+    const [isInitialized, setIsInitialized] = useState(false);
 
     // Initial Load
     useEffect(() => {
@@ -117,6 +119,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
             console.error("Session check failed", e);
         } finally {
             setLoading(false);
+            setIsInitialized(true);
         }
     }, []);
 
@@ -170,6 +173,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         user,
         isVip,
         loading,
+        isInitialized,
         login,
         register,
         logout,

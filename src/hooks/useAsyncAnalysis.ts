@@ -245,8 +245,11 @@ export function useAsyncAnalysis() {
                         target = 59;
                         increment = 0.3; // Moderate speed for face analysis
                     } else if (prev.status === 'analyzing_skin') {
-                        target = 98;
-                        increment = 0.15; // Slower for detailed skin analysis (usually takes longer)
+                        target = 99;
+                        // Slow down even more as it gets closer to 99
+                        if (prev.progress >= 98) increment = 0.02;
+                        else if (prev.progress > 90) increment = 0.05;
+                        else increment = 0.15;
                     }
 
                     if (prev.progress >= target) return prev;

@@ -329,6 +329,7 @@ export function AnalyzingOverlay({ progress, userImage, onCancel }: AnalyzingOve
         if (p < 30) return "正在识别面部特征...";
         if (p < 60) return "正在分析肌肤纹理...";
         if (p < 85) return "正在比对医学数据库...";
+        if (p >= 98) return "AI仍在深度解码您的肌肤纹理...";
         return "正在生成专业报告...";
     };
 
