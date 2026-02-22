@@ -53,10 +53,6 @@ export default async function GuestReportPage(props: GuestReportPageProps) {
 
     // --- Build Guest Simplified Analysis ---
     const fullSummary = result.analysis?.summary || result.skinAnalysis?.summary || "";
-    // Truncate summary to ~80 chars for guest teaser
-    const truncatedSummary = fullSummary.length > 80
-        ? fullSummary.substring(0, 80) + "..."
-        : fullSummary;
 
     const concerns: string[] = result.skinProfile?.concerns || result.skinAnalysis?.concerns || [];
 
@@ -76,7 +72,7 @@ export default async function GuestReportPage(props: GuestReportPageProps) {
     const finalTips = briefTips.length > 0 ? briefTips : (genericTips[skinTypeKey] || genericTips.combination);
 
     const guestAnalysis = {
-        summary: truncatedSummary,
+        summary: fullSummary,
         concerns: concerns.slice(0, 4), // max 4 concerns
         tips: finalTips,
         skinTypeKey,

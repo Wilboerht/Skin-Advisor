@@ -426,10 +426,12 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                                         分析摘要
                                     </h3>
                                     <div className="bg-white/40 rounded-2xl p-5 relative">
-                                        <p className="text-[#444] leading-relaxed relative z-10">
-                                            {data.guestAnalysis.summary}
-                                        </p>
-                                        <div className="absolute inset-0 bg-gradient-to-t from-white/80 to-transparent z-0 rounded-2xl pointer-events-none" />
+                                        <div className="text-[#444] leading-relaxed relative z-10 text-sm h-[63px]">
+                                            <p className="line-clamp-3">
+                                                {data.guestAnalysis.summary}
+                                            </p>
+                                        </div>
+                                        <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-[#F0EDE1]/80 to-transparent z-0 rounded-b-2xl pointer-events-none" />
                                         <div className="absolute bottom-3 right-4 z-20">
                                             <button
                                                 onClick={() => openAuthModal('register')}
