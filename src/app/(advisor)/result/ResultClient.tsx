@@ -123,6 +123,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const [activeRoutineTab, setActiveRoutineTab] = useState<'morning' | 'evening'>('morning');
     const [loading, setLoading] = useState(!initialData);
     const hasTrackedView = useRef(false);
+    const [isRedirecting, setIsRedirecting] = useState(false);
 
     // Gender Mismatch State
     const [showGenderMismatchModal, setShowGenderMismatchModal] = useState(false);
@@ -624,6 +625,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     // CHECK GUEST STATUS: Redirect to simplified report
                     // Use ref to get fresh state (closure might have stale user)
                     if (!userRef.current) {
+                        setIsRedirecting(true);
                         // Small delay to ensure session is saved on server (though await runAnalysis should handle it)
                         router.replace(`/report/guest?id=${newSessionId}`);
                         return;
@@ -677,7 +679,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
     // Enhanced Loading State
     const isAsyncAnalyzing = searchParams.get('status') === 'analyzing' || analysisState.status !== 'idle';
-    const showLoading = loading || (!result && isAsyncAnalyzing);
+    const showLoading = loading || (!result && isAsyncAnalyzing) || isRedirecting;
 
 
 
