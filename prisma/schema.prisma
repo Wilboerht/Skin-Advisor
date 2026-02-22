@@ -162,6 +162,12 @@ model User {
   phoneNumber     String?          @unique
   password        String
   name            String?
+  
+  // 微信授权相关字段
+  wechatOpenId    String?          @unique
+  wechatUnionId   String?          @unique
+  avatarUrl       String?
+
   role            String           @default("user") // user, vip, disabled
   vipExpiresAt    DateTime?        // VIP 会员过期时间
   dailyTestLimit  Int              @default(1) // 每日测试次数限制，管理员可调整
