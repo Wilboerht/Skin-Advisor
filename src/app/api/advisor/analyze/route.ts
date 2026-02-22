@@ -14,6 +14,7 @@ import { getSession } from "@/lib/auth";
 import { hashIP } from "@/lib/privacy";
 
 import { checkUsageLimit, recordUsage } from "@/lib/usage-limit";
+import { sendSkinReportTemplateMessage } from "@/lib/wechat";
 
 export async function POST(request: NextRequest) {
     try {
@@ -295,6 +296,36 @@ export async function POST(request: NextRequest) {
                     expiresAt: expiresAt
                 }
             }).catch(err => console.error("Failed to persist final analysis:", err));
+
+            // ====== 微信公众号推送逻辑 ======
+            if (user?.id) {
+                // 如果用户登录了，去查一次他的真实 OpenID
+                const dbUser = await prisma.user.findUnique({
+                    where: { id: user.id },
+                    select: { wechatOpenId: true }
+                });
+
+                if (dbUser?.wechatOpenId) {
+                    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://advisor.nihplod.cn";
+
+                    // 决定分数和核心问题
+                    const score = faceAnalysis?.overallScore || 85;
+                    let primaryConcern = "肤色暗沉或不均";
+                    if (concerns && concerns.length > 0) {
+                        primaryConcern = concerns.join("、");
+                    }
+
+                    // 异步触发，绝不阻塞前端响应时间
+                    sendSkinReportTemplateMessage(
+                        dbUser.wechatOpenId,
+                        {
+                            score: score,
+                            primaryConcern: primaryConcern,
+                        },
+                        `${baseUrl}/report/${sessionId}` // 这个分享页是现成的
+                    ).catch(err => console.error("微信推送执行异常:", err));
+                }
+            }
         }
 
         return NextResponse.json(standardizedResult, { headers: rateLimitHeaders });
