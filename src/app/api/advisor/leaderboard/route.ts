@@ -33,10 +33,12 @@ export async function GET(req: NextRequest) {
         const limit = Math.min(parseInt(searchParams.get("limit") || "10"), 50);
         const currentSessionId = searchParams.get("sessionId");
 
-        // Load data from DB directly
-        const scoreRanked = await loadTopScores(limit);
-        const popularityRanked = await loadTopPopularity(limit);
-        const totalParticipants = await getTotalParticipants();
+        // 并行加载所有数据
+        const [scoreRanked, popularityRanked, totalParticipants] = await Promise.all([
+            loadTopScores(limit),
+            loadTopPopularity(limit),
+            getTotalParticipants(),
+        ]);
 
         // Calculate current user's rank if sessionId provided
         let userRank: LeaderboardResponse["userRank"] = undefined;

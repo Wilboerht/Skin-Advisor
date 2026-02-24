@@ -3,7 +3,6 @@
  * to avoid self-referencing HTTP fetches.
  */
 import prisma from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
 import { unstable_cache } from "next/cache";
 
 // ===== Types =====
@@ -59,13 +58,14 @@ export function generateRandomNickname(seed: string): string {
 // ===== Database Direct Queries =====
 export const loadTopScores = unstable_cache(
     async (limit: number = 50): Promise<LeaderboardEntry[]> => {
-        // 强制使用 DB 级别的 SORT 以防内存溢出，直接从 JSON 中解析分数
+        // 优化版：只 SELECT 排行榜需要的字段，避免拉取整个 analysisResult JSON 大对象
         const rows = await prisma.$queryRaw<any[]>`
             SELECT 
                 s."sessionId",
                 s."city",
                 s."province",
-                s."analysisResult",
+                s."analysisResult"->>'nickname' as "resultNickname",
+                s."analysisResult"->'userLocation'->>'city' as "resultCity",
                 u."name" as "userName",
                 COALESCE(
                     NULLIF(TRIM(s."analysisResult"->'faceAnalysis'->>'overallScore'), ''),
@@ -81,12 +81,11 @@ export const loadTopScores = unstable_cache(
         `;
 
         return rows.map((row, idx) => {
-            const result = typeof row.analysisResult === 'string' ? JSON.parse(row.analysisResult) : (row.analysisResult || {});
-            const hasRealNickname = !!(result.nickname || row.userName);
-            const hasRealCity = !!(result.userLocation?.city || row.city || row.province);
+            const hasRealNickname = !!(row.resultNickname || row.userName);
+            const hasRealCity = !!(row.resultCity || row.city || row.province);
 
-            const nickname = hasRealNickname ? (result.nickname || row.userName) : generateRandomNickname(row.sessionId);
-            const city = hasRealCity ? (result.userLocation?.city || row.city || row.province) : "未知城市";
+            const nickname = hasRealNickname ? (row.resultNickname || row.userName) : generateRandomNickname(row.sessionId);
+            const city = hasRealCity ? (row.resultCity || row.city || row.province) : "未知城市";
 
             return {
                 rank: idx + 1,
@@ -103,13 +102,14 @@ export const loadTopScores = unstable_cache(
 
 export const loadTopPopularity = unstable_cache(
     async (limit: number = 50): Promise<PopularityEntry[]> => {
-        // 强制使用 DB 级别的 SORT 处理人气计算，保证性能与全量数据正确性
+        // 优化版：只 SELECT 排行榜需要的字段
         const rows = await prisma.$queryRaw<any[]>`
             SELECT 
                 s."sessionId",
                 s."city",
                 s."province",
-                s."analysisResult",
+                s."analysisResult"->>'nickname' as "resultNickname",
+                s."analysisResult"->'userLocation'->>'city' as "resultCity",
                 u."name" as "userName",
                 (
                     100 +
@@ -127,12 +127,11 @@ export const loadTopPopularity = unstable_cache(
         `;
 
         return rows.map((row, idx) => {
-            const result = typeof row.analysisResult === 'string' ? JSON.parse(row.analysisResult) : (row.analysisResult || {});
-            const hasRealNickname = !!(result.nickname || row.userName);
-            const hasRealCity = !!(result.userLocation?.city || row.city || row.province);
+            const hasRealNickname = !!(row.resultNickname || row.userName);
+            const hasRealCity = !!(row.resultCity || row.city || row.province);
 
-            const nickname = hasRealNickname ? (result.nickname || row.userName) : generateRandomNickname(row.sessionId);
-            const city = hasRealCity ? (result.userLocation?.city || row.city || row.province) : "未知城市";
+            const nickname = hasRealNickname ? (row.resultNickname || row.userName) : generateRandomNickname(row.sessionId);
+            const city = hasRealCity ? (row.resultCity || row.city || row.province) : "未知城市";
 
             return {
                 rank: idx + 1,

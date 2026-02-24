@@ -46,23 +46,13 @@ export default function LeaderboardPageClient({
     const [userRankInfo, setUserRankInfo] = useState<{ rank: number, percentile: number } | null>(null);
     const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
 
-    // Fetch leaderboard data (client-side override to get user's specific rank / fresh data)
-    const fetchLeaderboard = async (showLoadingFlag = true) => {
+    // Fetch full leaderboard data (only when server data is unavailable)
+    const fetchLeaderboard = async () => {
         try {
-            if (showLoadingFlag) setIsLoading(true);
+            setIsLoading(true);
             setError(null);
 
-            let sessionId = null;
-            try {
-                const result = await advisorStorage.getResult();
-                if (result && result.sessionId) {
-                    sessionId = result.sessionId;
-                    setCurrentSessionId(sessionId);
-                }
-            } catch (e) {
-                console.error("Failed to get sessionId from storage", e);
-            }
-
+            const sessionId = await getSessionId();
             const query = sessionId ? `?limit=50&sessionId=${sessionId}` : `?limit=50`;
             const res = await fetch(`/api/advisor/leaderboard${query}`);
             if (res.ok) {
@@ -78,20 +68,54 @@ export default function LeaderboardPageClient({
             }
         } catch (error) {
             console.error("Failed to fetch leaderboard:", error);
-            // Only set error if we don't have initial data to fall back on
-            if (scoreRanking.length === 0) {
-                setError("无法连接到服务器，请检查网络后重试");
-            }
+            setError("无法连接到服务器，请检查网络后重试");
         } finally {
             setIsLoading(false);
         }
     };
 
+    // 轻量级请求：只获取当前用户的排名信息，不重新拉取排行榜数据
+    const fetchUserRankOnly = async () => {
+        const sessionId = await getSessionId();
+        if (!sessionId) return;
+
+        try {
+            const res = await fetch(`/api/advisor/leaderboard?limit=1&sessionId=${sessionId}`);
+            if (res.ok) {
+                const result = await res.json();
+                if (result.userRank) {
+                    setUserRankInfo(result.userRank);
+                }
+            }
+        } catch (e) {
+            console.error("Failed to fetch user rank:", e);
+        }
+    };
+
+    // 从本地存储获取 sessionId 的工具函数
+    const getSessionId = async (): Promise<string | null> => {
+        try {
+            const result = await advisorStorage.getResult();
+            if (result && result.sessionId) {
+                setCurrentSessionId(result.sessionId);
+                return result.sessionId;
+            }
+        } catch (e) {
+            console.error("Failed to get sessionId from storage", e);
+        }
+        return null;
+    };
+
     useEffect(() => {
-        // Automatically fetch to get the user's sessionId rank & fresh scores
-        // But don't trigger the skeleton screen if we already have server data
         const hasInitialData = initialScoreRanking.length > 0;
-        fetchLeaderboard(!hasInitialData);
+
+        if (hasInitialData) {
+            // 服务端已提供排行榜数据，只需轻量获取用户排名
+            fetchUserRankOnly();
+        } else {
+            // 服务端未提供数据（可能加载失败），走完整获取路径
+            fetchLeaderboard();
+        }
     }, []);
 
     return (
@@ -177,7 +201,7 @@ export default function LeaderboardPageClient({
                         <h3 className="text-xl font-bold text-gray-900 mb-2">加载失败</h3>
                         <p className="text-gray-500 mb-8">{error}</p>
                         <button
-                            onClick={() => fetchLeaderboard(true)}
+                            onClick={() => fetchLeaderboard()}
                             className="flex items-center gap-2 px-6 py-3 bg-[#00263e] text-white rounded-xl font-medium hover:bg-black transition-colors"
                         >
                             <RefreshCcw className="w-4 h-4" /> 重新加载

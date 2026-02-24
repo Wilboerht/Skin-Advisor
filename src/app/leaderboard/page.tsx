@@ -18,9 +18,12 @@ export default async function LeaderboardPage() {
     try {
         const limit = 50;
 
-        scoreRanking = await loadTopScores(limit);
-        popularityRanking = await loadTopPopularity(limit);
-        totalParticipants = await getTotalParticipants();
+        // 并行执行所有查询，避免串行等待
+        [scoreRanking, popularityRanking, totalParticipants] = await Promise.all([
+            loadTopScores(limit),
+            loadTopPopularity(limit),
+            getTotalParticipants(),
+        ]);
 
     } catch (e) {
         console.error("Server-side failed to load leaderboard data:", e);

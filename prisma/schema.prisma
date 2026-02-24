@@ -77,6 +77,10 @@ model AdvisorSession {
   user            User?     @relation(fields: [userId], references: [id])
 
   createdAt       DateTime  @default(now())
+
+  // ===== 性能索引 =====
+  @@index([createdAt])           // 排行榜30天时间范围过滤
+  @@index([userId])              // JOIN User 加速
 }
 
 
