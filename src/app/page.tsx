@@ -76,6 +76,8 @@ export default function Home() {
     safeStorage.remove("advisor_gender");
     safeStorage.remove("advisor_face_images");
     safeStorage.remove("advisor_result");
+    safeStorage.remove("advisor_gender_mismatch_ack");
+    safeStorage.remove("advisor_free_retry");
 
     setIsLoading(true);
     router.push("/questions");

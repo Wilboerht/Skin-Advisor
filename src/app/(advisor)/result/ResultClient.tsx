@@ -141,10 +141,12 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         const faGenderVal = (faceAnalysis as any)?.gender?.value;
         const faGenderConf = (faceAnalysis as any)?.gender?.confidence || 0;
         // Mismatch = questionnaire gender differs from detected gender with high confidence
+        console.log('[GenderMismatch] Detection:', { faGenderVal, faGenderConf, socialGender, mismatch: faGenderVal && faGenderConf > 0.80 && faGenderVal !== socialGender });
         return faGenderVal && faGenderConf > 0.80 && faGenderVal !== socialGender;
     }, [faceAnalysis, socialGender]);
 
     useEffect(() => {
+        console.log('[GenderMismatch] Effect:', { loading, hasResult: !!result, hasFace: !!faceAnalysis, isGenderMismatch, acked: localStorage.getItem('advisor_gender_mismatch_ack') });
         if (!loading && result && faceAnalysis && isGenderMismatch) {
             // Check if user already acknowledged the mismatch (prevents modal reappearing on refresh)
             const acked = typeof window !== 'undefined' && localStorage.getItem('advisor_gender_mismatch_ack') === 'true';
@@ -174,7 +176,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const handleMismatchContinue = () => {
         setShowGenderMismatchModal(false);
         localStorage.setItem('advisor_gender_mismatch_ack', 'true');
-        toast.info("已为您启用混合护肤模式");
+        toast.success("确认成功");
     };
 
 
@@ -299,6 +301,14 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                     if (advisorResult.faceAnalysis) {
                         setFaceAnalysis(advisorResult.faceAnalysis);
+                    }
+
+                    // Clear previous gender mismatch ack so modal can re-appear for this session
+                    // (only cleared on fresh load, not on refresh — the ack prevents modal on refresh)
+                    // We check if this is a brand-new result by comparing sessionId
+                    const previousSessionId = sessionId;
+                    if (advisorResult.sessionId && advisorResult.sessionId !== previousSessionId) {
+                        localStorage.removeItem('advisor_gender_mismatch_ack');
                     }
 
                     // Restore sessionId for sharing
@@ -617,6 +627,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                         return;
                     }
 
+                    // Clear previous ack so mismatch modal can re-appear for new analysis
+                    localStorage.removeItem('advisor_gender_mismatch_ack');
                     setResult(newResult);
                     if (newFace) setFaceAnalysis(newFace);
 

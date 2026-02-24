@@ -110,7 +110,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
     const handleMismatchContinue = () => {
         setShowGenderMismatchModal(false);
         localStorage.setItem('advisor_gender_mismatch_ack', 'true');
-        toast.info("已为您启用混合护肤模式");
+        toast.success("确认成功");
     };
 
     const [activeTab, setActiveTab] = useState<'score' | 'pop'>('score');
