@@ -66,11 +66,10 @@ export async function POST(req: NextRequest) {
                 console.error("OpenAI generation failed, falling back...", e);
             }
         }
-
         // Strategy 3: Fallback to DiceBear
         if (!imageUrl) {
             console.warn("Using fallback DiceBear avatar");
-            imageUrl = `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(nickname || sessionId)}&style=circle`;
+            imageUrl = `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(nickname || sessionId)}&style=circle`;
 
             await updateSessionAvatar(sessionId, imageUrl);
             return NextResponse.json({

@@ -328,7 +328,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                             <div className="w-20 h-20 rounded-3xl bg-[#eee] border-[3px] border-white overflow-hidden relative">
                                 {/* Dynamic Avatar: Prioritize AI generated, fallback to DiceBear */}
                                 <img
-                                    src={data.generatedAvatar || `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(data.nickname)}`}
+                                    src={data.generatedAvatar || `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(data.nickname)}`}
                                     alt="Avatar"
                                     className="w-full h-full object-cover"
                                 />
@@ -422,7 +422,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                                                         <span className="w-[30px] font-extrabold text-lg" style={{ color: rankColors[idx] || '#999' }}>
                                                             {String(item.rank).padStart(2, '0')}
                                                         </span>
-                                                        <img src={`https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(item.nickname)}`} className="w-11 h-11 rounded-xl mx-3 bg-gray-200" alt="avatar" />
+                                                        <img src={`https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(item.nickname)}`} className="w-11 h-11 rounded-xl mx-3 bg-gray-200" alt="avatar" />
                                                         <div className="flex-grow">
                                                             <p className="font-semibold text-[15px]">{item.nickname}</p>
                                                             <p className="text-xs text-[#666]">{item.city}</p>
@@ -449,7 +449,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                                                         <span className="w-[30px] font-extrabold text-lg" style={{ color: rankColors[idx] || '#999' }}>
                                                             {String(item.rank).padStart(2, '0')}
                                                         </span>
-                                                        <img src={`https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(item.nickname)}`} className="w-11 h-11 rounded-xl mx-3 bg-gray-200" alt="avatar" />
+                                                        <img src={`https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(item.nickname)}`} className="w-11 h-11 rounded-xl mx-3 bg-gray-200" alt="avatar" />
                                                         <div className="flex-grow">
                                                             <p className="font-semibold text-[15px]">{item.nickname}</p>
                                                             <p className="text-xs text-[#666]">{item.city}</p>

@@ -362,7 +362,7 @@ function PodiumItem({ entry, rank, type, className }: { entry: { nickname: strin
                 <div className={`relative rounded-full p-1 border-2 ${rank === 1 ? 'border-[#FFD700] shadow-[0_0_20px_rgba(255,215,0,0.3)]' : rank === 2 ? 'border-[#C0C0C0]' : 'border-[#CD7F32]'} bg-white`}>
                     <div className={`rounded-full overflow-hidden ${isFirst ? 'w-20 h-20 md:w-24 md:h-24' : 'w-16 h-16 md:w-20 md:h-20'}`}>
                         <img
-                            src={`https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(entry.nickname)}`}
+                            src={`https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(entry.nickname)}`}
                             alt={entry.nickname}
                             loading="lazy"
                             decoding="async"
@@ -410,7 +410,7 @@ function RankListItem({ entry, rank, type }: { entry: { nickname: string, city: 
             {/* Avatar */}
             <div className="w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden bg-gray-100 border border-gray-100 mx-3 md:mx-4 flex-shrink-0">
                 <img
-                    src={`https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(entry.nickname)}`}
+                    src={`https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(entry.nickname)}`}
                     alt={entry.nickname}
                     loading="lazy"
                     decoding="async"
