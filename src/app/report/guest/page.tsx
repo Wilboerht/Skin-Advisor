@@ -49,7 +49,7 @@ export default async function GuestReportPage(props: GuestReportPageProps) {
     const userScore = result.faceAnalysis?.overallScore || result.skinAnalysis?.score || 85;
 
     // Calculate user's actual rank
-    const rankInfo = await calculateUserRank(id, userScore);
+    const rankInfo = await calculateUserRank(id);
 
     // --- Build Guest Simplified Analysis ---
     const fullSummary = result.analysis?.summary || result.skinAnalysis?.summary || "";

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-    loadScoredSessions,
+    loadTopScores,
+    loadTopPopularity,
+    getTotalParticipants,
+    calculateUserRank,
     type LeaderboardEntry,
     type PopularityEntry,
 } from "@/lib/leaderboard";
@@ -30,50 +33,21 @@ export async function GET(req: NextRequest) {
         const limit = Math.min(parseInt(searchParams.get("limit") || "10"), 50);
         const currentSessionId = searchParams.get("sessionId");
 
-        // Load data (from cache or database)
-        const scoredSessions = await loadScoredSessions();
-
-        // Sort by score (descending) and take top N
-        const scoreRanked: LeaderboardEntry[] = [...scoredSessions]
-            .sort((a, b) => b.score - a.score)
-            .slice(0, limit)
-            .map((entry, idx) => ({
-                rank: idx + 1,
-                nickname: entry.nickname,
-                city: entry.city,
-                score: Math.round(entry.score * 10) / 10,
-                sessionId: entry.sessionId
-            }));
-
-        // Sort by popularity (descending) and take top N
-        const popularityRanked: PopularityEntry[] = [...scoredSessions]
-            .sort((a, b) => b.popularity - a.popularity)
-            .slice(0, limit)
-            .map((entry, idx) => ({
-                rank: idx + 1,
-                nickname: entry.nickname,
-                city: entry.city,
-                popularity: entry.popularity,
-                sessionId: entry.sessionId
-            }));
+        // Load data from DB directly
+        const scoreRanked = await loadTopScores(limit);
+        const popularityRanked = await loadTopPopularity(limit);
+        const totalParticipants = await getTotalParticipants();
 
         // Calculate current user's rank if sessionId provided
         let userRank: LeaderboardResponse["userRank"] = undefined;
         if (currentSessionId) {
-            const allScoreRanked = [...scoredSessions].sort((a, b) => b.score - a.score);
-            const userIndex = allScoreRanked.findIndex(s => s.sessionId === currentSessionId);
-
-            if (userIndex !== -1) {
-                const rank = userIndex + 1;
-                const percentile = Math.round(((allScoreRanked.length - rank) / allScoreRanked.length) * 100);
-                userRank = { rank, percentile };
-            }
+            userRank = await calculateUserRank(currentSessionId);
         }
 
         const response: LeaderboardResponse = {
             scoreRanking: scoreRanked,
             popularityRanking: popularityRanked,
-            totalParticipants: scoredSessions.length,
+            totalParticipants: totalParticipants,
             userRank
         };
 

@@ -4,6 +4,7 @@
  */
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+import { unstable_cache } from "next/cache";
 
 // ===== Types =====
 export interface ScoredSession {
@@ -36,15 +37,6 @@ export interface UserRankInfo {
     totalParticipants: number;
 }
 
-// ===== In-Memory Cache (5 min TTL) =====
-const CACHE_TTL_MS = 5 * 60 * 1000;
-let cachedSessions: ScoredSession[] | null = null;
-let cacheTimestamp = 0;
-
-function isCacheValid(): boolean {
-    return cachedSessions !== null && (Date.now() - cacheTimestamp) < CACHE_TTL_MS;
-}
-
 // ===== Deterministic Hash =====
 function deterministicHash(str: string): number {
     let hash = 5381;
@@ -53,19 +45,6 @@ function deterministicHash(str: string): number {
         hash = hash & hash;
     }
     return Math.abs(hash);
-}
-
-// ===== Deterministic Popularity =====
-function calculatePopularity(
-    sessionId: string,
-    resultShared: boolean,
-    createdAt: Date
-): number {
-    const baseScore = (deterministicHash(sessionId) % 2000) + 100;
-    const shareBonus = resultShared ? 3000 : 0;
-    const ageDays = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
-    const recencyBonus = Math.max(0, Math.round(500 * (1 - ageDays / 30)));
-    return baseScore + shareBonus + recencyBonus;
 }
 
 // ===== Deterministic Nickname Generator =====
@@ -77,108 +56,165 @@ export function generateRandomNickname(seed: string): string {
     return adjectives[hash % adjectives.length] + nouns[(hash >> 4) % nouns.length];
 }
 
-// ===== Data Loading with Cache =====
-export async function loadScoredSessions(): Promise<ScoredSession[]> {
-    if (isCacheValid()) {
-        return cachedSessions!;
-    }
+// ===== Database Direct Queries =====
+export const loadTopScores = unstable_cache(
+    async (limit: number = 50): Promise<LeaderboardEntry[]> => {
+        // 强制使用 DB 级别的 SORT 以防内存溢出，直接从 JSON 中解析分数
+        const rows = await prisma.$queryRaw<any[]>`
+            SELECT 
+                s."sessionId",
+                s."city",
+                s."province",
+                s."analysisResult",
+                u."name" as "userName",
+                COALESCE(
+                    NULLIF(TRIM(s."analysisResult"->'faceAnalysis'->>'overallScore'), ''),
+                    NULLIF(TRIM(s."analysisResult"->'skinAnalysis'->>'score'), ''),
+                    '0'
+                )::float as "calculatedScore"
+            FROM "AdvisorSession" s
+            LEFT JOIN "User" u ON s."userId" = u."id"
+            WHERE s."analysisResult" IS NOT NULL
+              AND s."createdAt" >= NOW() - INTERVAL '30 days'
+            ORDER BY "calculatedScore" DESC NULLS LAST
+            LIMIT ${limit}
+        `;
 
-    const sessions = await prisma.advisorSession.findMany({
-        where: {
-            analysisResult: {
-                not: Prisma.JsonNull
-            },
-            createdAt: {
-                gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-            }
-        },
-        select: {
-            sessionId: true,
-            analysisResult: true,
-            city: true,
-            province: true,
-            resultShared: true,
-            createdAt: true,
-            user: {
-                select: {
-                    name: true
-                }
-            }
-        },
-        orderBy: {
-            createdAt: "desc"
-        },
-        take: 500 // Cap to prevent unbounded memory growth
-    });
+        return rows.map((row, idx) => {
+            const result = typeof row.analysisResult === 'string' ? JSON.parse(row.analysisResult) : (row.analysisResult || {});
+            const hasRealNickname = !!(result.nickname || row.userName);
+            const hasRealCity = !!(result.userLocation?.city || row.city || row.province);
 
-    const scoredSessions = sessions
-        .map(session => {
-            const result = session.analysisResult as any;
-            if (!result) return null;
-
-            const score = result.faceAnalysis?.overallScore || result.skinAnalysis?.score || null;
-            if (score === null) return null;
-
-            const nickname = result.nickname || session.user?.name || generateRandomNickname(session.sessionId);
-            const city = result.userLocation?.city || session.city || session.province || "未知城市";
-
-            const popularity = calculatePopularity(
-                session.sessionId,
-                session.resultShared,
-                session.createdAt
-            );
+            const nickname = hasRealNickname ? (result.nickname || row.userName) : generateRandomNickname(row.sessionId);
+            const city = hasRealCity ? (result.userLocation?.city || row.city || row.province) : "未知城市";
 
             return {
-                sessionId: session.sessionId,
+                rank: idx + 1,
+                sessionId: row.sessionId,
                 nickname,
                 city,
-                score: typeof score === "number" ? score : parseFloat(score) || 0,
-                popularity
+                score: Math.round((row.calculatedScore || 0) * 10) / 10
             };
-        })
-        .filter(Boolean) as ScoredSession[];
+        });
+    },
+    ['leaderboard-top-scores'],
+    { revalidate: 300 }
+);
 
-    cachedSessions = scoredSessions;
-    cacheTimestamp = Date.now();
+export const loadTopPopularity = unstable_cache(
+    async (limit: number = 50): Promise<PopularityEntry[]> => {
+        // 强制使用 DB 级别的 SORT 处理人气计算，保证性能与全量数据正确性
+        const rows = await prisma.$queryRaw<any[]>`
+            SELECT 
+                s."sessionId",
+                s."city",
+                s."province",
+                s."analysisResult",
+                u."name" as "userName",
+                (
+                    100 +
+                    CASE WHEN (s."analysisResult"->>'nickname' IS NOT NULL OR s."userId" IS NOT NULL) THEN 50 ELSE 0 END +
+                    CASE WHEN (s."analysisResult"->'userLocation'->>'city' IS NOT NULL OR s."city" IS NOT NULL OR s."province" IS NOT NULL) THEN 50 ELSE 0 END +
+                    CASE WHEN s."resultShared" = true THEN 3000 ELSE 0 END +
+                    GREATEST(0, ROUND(CAST(500 * (1 - EXTRACT(EPOCH FROM (NOW() - s."createdAt")) / (30 * 24 * 3600)) AS NUMERIC), 0))
+                ) as "calculatedPopularity"
+            FROM "AdvisorSession" s
+            LEFT JOIN "User" u ON s."userId" = u."id"
+            WHERE s."analysisResult" IS NOT NULL
+            AND s."createdAt" >= NOW() - INTERVAL '30 days'
+            ORDER BY "calculatedPopularity" DESC NULLS LAST
+            LIMIT ${limit}
+        `;
 
-    return scoredSessions;
-}
+        return rows.map((row, idx) => {
+            const result = typeof row.analysisResult === 'string' ? JSON.parse(row.analysisResult) : (row.analysisResult || {});
+            const hasRealNickname = !!(result.nickname || row.userName);
+            const hasRealCity = !!(result.userLocation?.city || row.city || row.province);
+
+            const nickname = hasRealNickname ? (result.nickname || row.userName) : generateRandomNickname(row.sessionId);
+            const city = hasRealCity ? (result.userLocation?.city || row.city || row.province) : "未知城市";
+
+            return {
+                rank: idx + 1,
+                sessionId: row.sessionId,
+                nickname,
+                city,
+                popularity: parseInt(row.calculatedPopularity) || 0
+            };
+        });
+    },
+    ['leaderboard-top-popularity'],
+    { revalidate: 300 }
+);
+
+export const getTotalParticipants = unstable_cache(
+    async (): Promise<number> => {
+        const result = await prisma.$queryRaw<[{ count: number | bigint }]>`
+            SELECT COUNT(*) as count
+            FROM "AdvisorSession"
+            WHERE "analysisResult" IS NOT NULL
+            AND "createdAt" >= NOW() - INTERVAL '30 days'
+        `;
+        return Number(result[0]?.count || 0);
+    },
+    ['leaderboard-total-participants'],
+    { revalidate: 300 }
+);
 
 // ===== Rank Calculation =====
 /**
- * Calculate the rank of a specific session within the leaderboard.
- * Called directly by server components — no HTTP self-call needed.
+ * Calculate the rank of a specific session within the leaderboard directly from the DB.
  */
-export async function calculateUserRank(sessionId: string, fallbackScore: number): Promise<UserRankInfo> {
+export async function calculateUserRank(sessionId: string): Promise<UserRankInfo> {
     try {
-        const scoredSessions = await loadScoredSessions();
-
-        if (scoredSessions.length === 0) {
+        const total = await getTotalParticipants();
+        if (total === 0) {
             return { rank: 1, percentile: 90, totalParticipants: 1 };
         }
 
-        const allScoreRanked = [...scoredSessions].sort((a, b) => b.score - a.score);
-        const userIndex = allScoreRanked.findIndex(s => s.sessionId === sessionId);
+        // 1. 获取该用户自身的分数
+        const userRow = await prisma.$queryRaw<any[]>`
+            SELECT COALESCE(
+                NULLIF(TRIM("analysisResult"->'faceAnalysis'->>'overallScore'), ''),
+                NULLIF(TRIM("analysisResult"->'skinAnalysis'->>'score'), ''),
+                '0'
+            )::float as "calculatedScore"
+            FROM "AdvisorSession"
+            WHERE "sessionId" = ${sessionId}
+              AND "analysisResult" IS NOT NULL
+            LIMIT 1
+        `;
 
-        if (userIndex !== -1) {
-            const rank = userIndex + 1;
-            const percentile = Math.round(((allScoreRanked.length - rank) / allScoreRanked.length) * 100);
-            return { rank, percentile, totalParticipants: allScoreRanked.length };
+        if (!userRow || userRow.length === 0) {
+            return { rank: total, percentile: 10, totalParticipants: total };
         }
-    } catch (error) {
-        console.error("Failed to calculate rank from scored sessions:", error);
+
+        const userScore = userRow[0].calculatedScore || 0;
+
+        // 2. 统计分数严格大于该用户的人数
+        const higherRow = await prisma.$queryRaw<any[]>`
+            SELECT COUNT(*) as count
+            FROM "AdvisorSession"
+            WHERE "analysisResult" IS NOT NULL
+              AND "createdAt" >= NOW() - INTERVAL '30 days'
+              AND COALESCE(
+                    NULLIF(TRIM("analysisResult"->'faceAnalysis'->>'overallScore'), ''),
+                    NULLIF(TRIM("analysisResult"->'skinAnalysis'->>'score'), ''),
+                    '0'
+                )::float > ${userScore}
+        `;
+
+        const higherCount = Number(higherRow[0]?.count || 0);
+        const rank = higherCount + 1;
+        const percentile = Math.round(((total - rank) / Math.max(total, 1)) * 100);
+
+        return {
+            rank,
+            percentile: Math.max(1, Math.min(99, percentile)), // Cap between 1 and 99
+            totalParticipants: total
+        };
+    } catch (e) {
+        console.error("Failed to calculate user rank via SQL:", e);
+        return { rank: 999, percentile: 10, totalParticipants: 1000 };
     }
-
-    // Fallback: estimate from total count
-    const totalCount = await prisma.advisorSession.count({
-        where: {
-            analysisResult: { not: Prisma.JsonNull },
-            createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
-        }
-    });
-
-    const clampedPercentile = Math.min(95, Math.max(60, Math.round(fallbackScore)));
-    const estimatedRank = Math.max(1, Math.round(totalCount * (100 - clampedPercentile) / 100));
-
-    return { rank: estimatedRank, percentile: clampedPercentile, totalParticipants: totalCount };
 }
