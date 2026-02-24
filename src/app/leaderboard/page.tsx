@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowLeft, Trophy, Flame, MapPin, Crown, Star } from "lucide-react";
+import { ArrowLeft, Trophy, Flame, MapPin, Crown, AlertCircle, RefreshCcw } from "lucide-react";
 import Image from "next/image";
+import { advisorStorage } from "@/lib/advisor-storage";
 
 // Types
 interface LeaderboardEntry {
@@ -30,24 +31,49 @@ export default function LeaderboardPage() {
     const [popularityRanking, setPopularityRanking] = useState<PopularityEntry[]>([]);
     const [totalParticipants, setTotalParticipants] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [userRankInfo, setUserRankInfo] = useState<{ rank: number, percentile: number } | null>(null);
+    const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
 
     // Fetch leaderboard data
-    useEffect(() => {
-        async function fetchLeaderboard() {
+    const fetchLeaderboard = async () => {
+        try {
+            setIsLoading(true);
+            setError(null);
+
+            let sessionId = null;
             try {
-                const res = await fetch(`/api/advisor/leaderboard?limit=50`);
-                if (res.ok) {
-                    const result = await res.json();
-                    setScoreRanking(result.scoreRanking || []);
-                    setPopularityRanking(result.popularityRanking || []);
-                    setTotalParticipants(result.totalParticipants || 0);
+                const result = await advisorStorage.getResult();
+                if (result && result.sessionId) {
+                    sessionId = result.sessionId;
+                    setCurrentSessionId(sessionId);
                 }
-            } catch (error) {
-                console.error("Failed to fetch leaderboard:", error);
-            } finally {
-                setIsLoading(false);
+            } catch (e) {
+                console.error("Failed to get sessionId from storage", e);
             }
+
+            const query = sessionId ? `?limit=50&sessionId=${sessionId}` : `?limit=50`;
+            const res = await fetch(`/api/advisor/leaderboard${query}`);
+            if (res.ok) {
+                const result = await res.json();
+                setScoreRanking(result.scoreRanking || []);
+                setPopularityRanking(result.popularityRanking || []);
+                setTotalParticipants(result.totalParticipants || 0);
+                if (result.userRank) {
+                    setUserRankInfo(result.userRank);
+                }
+            } else {
+                throw new Error("Failed to fetch data");
+            }
+        } catch (error) {
+            console.error("Failed to fetch leaderboard:", error);
+            setError("无法连接到服务器，请检查网络后重试");
+        } finally {
+            setIsLoading(false);
         }
+    };
+
+    useEffect(() => {
         fetchLeaderboard();
     }, []);
 
@@ -126,6 +152,20 @@ export default function LeaderboardPage() {
                         <SkeletonTable />
                         <div className="hidden lg:block"><SkeletonTable /></div>
                     </div>
+                ) : error ? (
+                    <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl shadow-sm border border-gray-100 mx-4 md:mx-0">
+                        <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-6">
+                            <AlertCircle className="w-8 h-8 text-red-500" />
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">加载失败</h3>
+                        <p className="text-gray-500 mb-8">{error}</p>
+                        <button
+                            onClick={fetchLeaderboard}
+                            className="flex items-center gap-2 px-6 py-3 bg-[#00263e] text-white rounded-xl font-medium hover:bg-black transition-colors"
+                        >
+                            <RefreshCcw className="w-4 h-4" /> 重新加载
+                        </button>
+                    </div>
                 ) : (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
 
@@ -188,6 +228,31 @@ export default function LeaderboardPage() {
                     </div>
                 )}
             </main>
+
+            {/* 3. Sticky Footer for User Rank */}
+            {userRankInfo && currentSessionId && (
+                <div className="fixed bottom-0 left-0 right-0 z-50 px-4 py-4 md:py-6 bg-white/95 backdrop-blur-md border-t border-gray-100 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] transform transition-transform duration-500 ease-out translate-y-0">
+                    <div className="max-w-7xl mx-auto flex items-center justify-between">
+                        <div className="flex items-center gap-3 md:gap-4">
+                            <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#00263E] to-[#004A7C] text-white flex justify-center items-center font-bold text-lg md:text-xl font-mono shadow-md border border-white/20">
+                                {userRankInfo.rank > 500 ? '500+' : userRankInfo.rank}
+                            </div>
+                            <div>
+                                <div className="font-bold text-sm md:text-lg text-gray-900 tracking-tight">我的实时排名</div>
+                                <div className="text-xs md:text-sm text-gray-500 mt-0.5">
+                                    击败了 <span className="font-bold text-[#D4AF37] text-sm md:text-base">{userRankInfo.percentile}%</span> 的护肤达人
+                                </div>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => router.push(`/result?id=${currentSessionId}`)}
+                            className="px-4 py-2 md:px-6 md:py-2.5 bg-[#00263E] text-white text-sm md:text-base font-medium rounded-full hover:bg-black transition-colors shadow-md whitespace-nowrap active:scale-95 flex items-center gap-1"
+                        >
+                            <Trophy className="w-4 h-4" /> 查看报告
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
