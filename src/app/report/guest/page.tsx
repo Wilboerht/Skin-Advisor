@@ -3,6 +3,7 @@ import ShareLandingClient from "./ShareLandingClient";
 import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { calculateUserRank, generateRandomNickname } from "@/lib/leaderboard";
+import { getConcernLabel } from "@/lib/advisor-utils";
 
 interface GuestReportPageProps {
     searchParams: Promise<{ id?: string }>;
@@ -55,6 +56,8 @@ export default async function GuestReportPage(props: GuestReportPageProps) {
     const fullSummary = result.analysis?.summary || result.skinAnalysis?.summary || "";
 
     const concerns: string[] = result.skinProfile?.concerns || result.skinAnalysis?.concerns || [];
+    // Convert concern keys (e.g. "hydration") to chinese labels
+    const localizedConcerns = concerns.map(c => getConcernLabel(c));
 
     // Extract a few recommendations/tips (max 3)
     const allTips: string[] = result.faceAnalysis?.recommendations || [];
@@ -73,7 +76,7 @@ export default async function GuestReportPage(props: GuestReportPageProps) {
 
     const guestAnalysis = {
         summary: fullSummary,
-        concerns: concerns.slice(0, 4), // max 4 concerns
+        concerns: localizedConcerns.slice(0, 4), // max 4 concerns
         tips: finalTips,
         skinTypeKey,
         hydrationLevel: result.faceAnalysis?.hydration?.level || null,
