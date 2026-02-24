@@ -79,6 +79,11 @@ export default async function GuestReportPage(props: GuestReportPageProps) {
         hydrationLevel: result.faceAnalysis?.hydration?.level || null,
     };
 
+    // Extract AI-detected gender for mismatch detection on client
+    const detectedGender = result.faceAnalysis?.gender
+        ? { value: result.faceAnalysis.gender.value, confidence: result.faceAnalysis.gender.confidence || 0 }
+        : null;
+
     // Construct Safe Data Payload (No PPI, no photos)
     const safeData = {
         score: userScore,
@@ -96,6 +101,8 @@ export default async function GuestReportPage(props: GuestReportPageProps) {
         userRank: rankInfo.rank,
         userPercentile: rankInfo.percentile,
         totalParticipants: rankInfo.totalParticipants,
+        // Gender mismatch detection
+        detectedGender,
         // Guest simplified analysis
         guestAnalysis,
     };
