@@ -311,7 +311,7 @@ function Podium({ entries, type }: { entries: any[], type: 'score' | 'pop' }) {
     );
 }
 
-function PodiumItem({ entry, rank, type, className }: { entry: any, rank: number, type: 'score' | 'pop', className?: string }) {
+function PodiumItem({ entry, rank, type, className }: { entry: { nickname: string, city: string, score?: number, popularity?: number } | null, rank: number, type: 'score' | 'pop', className?: string }) {
     if (!entry) return <div className={`w-[30%] opacity-0 ${className}`}></div>;
 
     const isFirst = rank === 1;
@@ -363,7 +363,7 @@ function PodiumItem({ entry, rank, type, className }: { entry: any, rank: number
                 </div>
 
                 <div className={`font-black font-mono text-xl md:text-2xl ${scoreColor}`}>
-                    {type === 'score' ? entry.score.toFixed(1) : (entry.popularity >= 1000 ? (entry.popularity / 1000).toFixed(1) + 'k' : entry.popularity)}
+                    {type === 'score' ? (entry.score ?? 0).toFixed(1) : ((entry.popularity ?? 0) >= 1000 ? ((entry.popularity ?? 0) / 1000).toFixed(1) + 'k' : (entry.popularity ?? 0))}
                 </div>
                 <div className="text-[10px] uppercase font-bold tracking-widest opacity-40 mt-1">
                     {type === 'score' ? 'Score' : 'Hot'}
@@ -373,7 +373,7 @@ function PodiumItem({ entry, rank, type, className }: { entry: any, rank: number
     );
 }
 
-function RankListItem({ entry, rank, type }: { entry: any, rank: number, type: 'score' | 'pop' }) {
+function RankListItem({ entry, rank, type }: { entry: { nickname: string, city: string, score?: number, popularity?: number }, rank: number, type: 'score' | 'pop' }) {
     const scoreColor = type === 'score' ? 'text-[#00263e]' : 'text-[#FF4D4F]';
 
     return (
@@ -406,7 +406,7 @@ function RankListItem({ entry, rank, type }: { entry: any, rank: number, type: '
 
             {/* Score */}
             <div className={`font-bold font-mono text-lg md:text-xl ${scoreColor} text-right min-w-[60px]`}>
-                {type === 'score' ? entry.score.toFixed(1) : entry.popularity}
+                {type === 'score' ? (entry.score ?? 0).toFixed(1) : (entry.popularity ?? 0)}
             </div>
         </div>
     );
