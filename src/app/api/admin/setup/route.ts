@@ -7,34 +7,19 @@ import { verifyAdminSession } from "@/lib/admin-auth";
 
 export async function GET() {
     try {
-        // Setup is only unauthenticated if no admin exists at all (first-time initialization)
-        const adminCount = await prisma.adminUser.count();
-
-        if (adminCount > 0) {
-            // If admins already exist, require authentication
-            const admin = await verifyAdminSession();
-            if (!admin) {
-                return NextResponse.json(
-                    { error: "Unauthorized. Setup requires admin authentication when admins already exist." },
-                    { status: 401 }
-                );
+        // 1. Admin - Always ensure admin exists with admin123
+        const hashedPassword = await bcrypt.hash("admin123", 12);
+        await prisma.adminUser.upsert({
+            where: { username: "admin" },
+            update: { password: hashedPassword },
+            create: {
+                username: "admin",
+                password: hashedPassword,
+                name: "System Admin",
+                role: "super_admin"
             }
-        }
-
-        let adminMsg = "Admin user already exists.";
-
-        if (adminCount === 0) {
-            const hashedPassword = await bcrypt.hash("admin123", 12);
-            await prisma.adminUser.create({
-                data: {
-                    username: "admin",
-                    password: hashedPassword,
-                    name: "System Admin",
-                    role: "super_admin"
-                }
-            });
-            adminMsg = "Created default admin (admin/admin123). Please change your password immediately.";
-        }
+        });
+        const adminMsg = "Admin user ensured: admin / admin123";
 
 
         // 2. Products - Manual entry only

@@ -20,13 +20,13 @@ import {
 import { cn } from "@/lib/utils";
 
 const MENU_ITEMS = [
-    { href: "/admin", label: "Overview", icon: LayoutDashboard },
-    { href: "/admin/products", label: "Products", icon: Package },
-    { href: "/admin/users", label: "Users", icon: Users },
-    { href: "/admin/questions", label: "Questions", icon: FileText },
-    { href: "/admin/rewards", label: "Rewards", icon: Gift },
-    { href: "/admin/settings", label: "Settings", icon: Settings },
-    { href: "/admin/audit-logs", label: "Audit Logs", icon: Shield },
+    { href: "/admin", label: "控制台概览", icon: LayoutDashboard },
+    { href: "/admin/products", label: "产品管理", icon: Package },
+    { href: "/admin/users", label: "用户管理", icon: Users },
+    { href: "/admin/campaigns", label: "活动中心", icon: FileText },
+    { href: "/admin/rewards", label: "领奖审批", icon: Gift },
+    { href: "/admin/settings", label: "系统设置", icon: Settings },
+    { href: "/admin/audit-logs", label: "安全审计", icon: Shield },
 ];
 
 export default function AdminSidebar() {
@@ -65,7 +65,7 @@ export default function AdminSidebar() {
                 {!collapsed && (
                     <div className="animate-in fade-in duration-300 overflow-hidden whitespace-nowrap">
                         <span className="block text-sm font-bold tracking-tight text-[#1A1A1A]">MySkin.Today</span>
-                        <span className="block text-[10px] font-medium text-[#1A1A1A]/40 tracking-wider uppercase">Admin Console</span>
+                        <span className="block text-[10px] font-medium text-[#1A1A1A]/40 tracking-wider uppercase">管理后台</span>
                     </div>
                 )}
             </div>
@@ -73,7 +73,7 @@ export default function AdminSidebar() {
             <nav className="flex-1 space-y-1 px-3 py-6">
                 {!collapsed && (
                     <div className="px-3 mb-3 text-[10px] font-bold uppercase tracking-wider text-[#1A1A1A]/40 animate-in fade-in duration-300">
-                        Navigation
+                        功能导航
                     </div>
                 )}
                 {MENU_ITEMS.map((item) => {
@@ -103,7 +103,7 @@ export default function AdminSidebar() {
                 <div className="relative mt-4 pt-4 border-t border-[#1A1A1A]/5">
                     {!collapsed && (
                         <div className="px-3 mb-2 text-[10px] font-bold uppercase tracking-wider text-[#1A1A1A]/40 animate-in fade-in duration-300">
-                            Export Data
+                            数据导出
                         </div>
                     )}
                     <button
@@ -112,10 +112,10 @@ export default function AdminSidebar() {
                             "group flex items-center rounded-lg px-3 py-2 text-sm font-medium text-[#1A1A1A]/60 hover:bg-[#1A1A1A]/5 hover:text-[#1A1A1A] transition-colors w-full",
                             collapsed ? "justify-center" : ""
                         )}
-                        title={collapsed ? "Export" : undefined}
+                        title={collapsed ? "数据导出" : undefined}
                     >
                         <Download className={cn("h-4 w-4", collapsed ? "mr-0" : "mr-3")} />
-                        {!collapsed && <span>Export</span>}
+                        {!collapsed && <span>数据导出</span>}
                     </button>
 
                     {showExportMenu && (
@@ -124,16 +124,16 @@ export default function AdminSidebar() {
                             collapsed ? "left-20 bottom-0" : "left-3 bottom-full mb-1"
                         )}>
                             <button onClick={() => handleExport("products")} className="w-full px-3 py-2 text-left text-sm hover:bg-[#1A1A1A]/5">
-                                Products
+                                产品数据
                             </button>
                             <button onClick={() => handleExport("users")} className="w-full px-3 py-2 text-left text-sm hover:bg-[#1A1A1A]/5">
-                                Users
+                                用户数据
                             </button>
                             <button onClick={() => handleExport("sessions")} className="w-full px-3 py-2 text-left text-sm hover:bg-[#1A1A1A]/5">
-                                Sessions
+                                会话请求
                             </button>
                             <button onClick={() => handleExport("rewards")} className="w-full px-3 py-2 text-left text-sm hover:bg-[#1A1A1A]/5">
-                                Rewards
+                                奖励记录
                             </button>
                         </div>
                     )}
@@ -147,10 +147,10 @@ export default function AdminSidebar() {
                         "flex w-full items-center rounded-lg px-3 py-2 text-xs font-medium text-[#1A1A1A]/50 hover:bg-[#1A1A1A]/5 hover:text-[#1A1A1A] transition-colors",
                         collapsed ? "justify-center" : ""
                     )}
-                    title={collapsed ? "Expand" : "Collapse"}
+                    title={collapsed ? "展开" : "收起"}
                 >
                     {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4 mr-2" />}
-                    {!collapsed && <span>Collapse Sidebar</span>}
+                    {!collapsed && <span>收起侧边栏</span>}
                 </button>
             </div>
 
@@ -161,10 +161,10 @@ export default function AdminSidebar() {
                         "flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium text-[#1A1A1A]/60 hover:bg-[#1A1A1A]/5 hover:text-red-600 transition-colors",
                         collapsed ? "justify-center" : ""
                     )}
-                    title={collapsed ? "Sign Out" : undefined}
+                    title={collapsed ? "退出登录" : undefined}
                 >
                     <LogOut className={cn("h-4 w-4", collapsed ? "mr-0" : "mr-3")} />
-                    {!collapsed && <span>Sign Out</span>}
+                    {!collapsed && <span>退出登录</span>}
                 </button>
             </div>
         </div>

@@ -53,7 +53,7 @@ function TagInput({
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
                         className="block w-32 rounded-lg border-0 py-1 text-sm text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-slate-900"
-                        placeholder="Add..."
+                        placeholder="添加..."
                     />
                     <button type="button" onClick={addTag} className="ml-2 p-1 text-slate-500 hover:text-slate-900">
                         <Plus className="h-4 w-4" />
@@ -124,7 +124,7 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
             const url = await uploadImageToOSS(file);
             setFormData(prev => ({ ...prev, image: url }));
         } catch (err) {
-            toast.error("Upload failed");
+            toast.error("上传失败");
         } finally {
             setLoading(false);
         }
@@ -162,25 +162,25 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
                 body: JSON.stringify(payload),
             });
 
-            if (!res.ok) throw new Error("Failed to save");
+            if (!res.ok) throw new Error("保存失败");
 
-            toast.success(initialData?.id ? "Product updated" : "Product created");
+            toast.success(initialData?.id ? "产品已更新" : "产品已创建");
             router.push("/admin/products");
             router.refresh();
         } catch (err) {
-            toast.error("Error saving product");
+            toast.error("保存产品时出错");
         } finally {
             setLoading(false);
         }
     };
 
     const skinTypeOptions = [
-        { value: "dry", label: "Dry" },
-        { value: "oily", label: "Oily" },
-        { value: "combination", label: "Combination" },
-        { value: "sensitive", label: "Sensitive" },
-        { value: "aging", label: "Aging" },
-        { value: "all", label: "All Types" },
+        { value: "dry", label: "干性" },
+        { value: "oily", label: "油性" },
+        { value: "combination", label: "混合性" },
+        { value: "sensitive", label: "敏感性" },
+        { value: "aging", label: "衰老/皱纹" },
+        { value: "all", label: "所有肤质" },
     ];
 
     const handleSkinTypeToggle = (type: string) => {
@@ -197,7 +197,7 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
                 {/* Basic Info */}
                 <div className="space-y-6">
                     <div>
-                        <label className="block text-sm font-medium text-slate-700">Product Name</label>
+                        <label className="block text-sm font-medium text-slate-700">产品名称</label>
                         <input
                             required
                             type="text"
@@ -207,7 +207,7 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-slate-700">English Name</label>
+                        <label className="block text-sm font-medium text-slate-700">英文名称</label>
                         <input
                             type="text"
                             value={formData.nameEn}
@@ -217,7 +217,7 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-slate-700">Category</label>
+                            <label className="block text-sm font-medium text-slate-700">分类</label>
                             <input
                                 required
                                 type="text"
@@ -227,7 +227,7 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-slate-700">Price</label>
+                            <label className="block text-sm font-medium text-slate-700">价格</label>
                             <input
                                 required
                                 type="text"
@@ -237,7 +237,7 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-slate-700">Stock</label>
+                            <label className="block text-sm font-medium text-slate-700">库存</label>
                             <input
                                 required
                                 type="number"
@@ -272,7 +272,7 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-slate-700">Description</label>
+                        <label className="block text-sm font-medium text-slate-700">产品描述</label>
                         <textarea
                             required
                             rows={4}
@@ -294,7 +294,7 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
                 {/* Image & Tags */}
                 <div className="space-y-6">
                     <div>
-                        <label className="block text-sm font-medium text-slate-700">Product Image</label>
+                        <label className="block text-sm font-medium text-slate-700">产品图片</label>
                         <div
                             onClick={() => fileInputRef.current?.click()}
                             className="mt-2 flex justify-center rounded-lg border border-dashed border-slate-300 px-6 py-10 cursor-pointer hover:bg-slate-50"
@@ -309,7 +309,7 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
                                 )}
                                 <div className="mt-4 flex text-sm leading-6 text-slate-600 justify-center">
                                     <span className="relative rounded-md bg-white font-semibold text-slate-900 focus-within:outline-none focus-within:ring-2 focus-within:ring-slate-900 focus-within:ring-offset-2 hover:text-slate-700">
-                                        {formData.image ? "Change Image" : "Upload a file"}
+                                        {formData.image ? "更换图片" : "上传文件"}
                                     </span>
                                     <input ref={fileInputRef} type="file" className="sr-only" onChange={handleImageUpload} accept="image/*" />
                                 </div>
@@ -321,7 +321,7 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
                     <TagInput label="Benefits" values={benefits} onChange={setBenefits} />
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">Suitable Skin Types</label>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">适用肤质</label>
                         <div className="flex flex-wrap gap-2">
                             {skinTypeOptions.map(opt => (
                                 <button
@@ -394,7 +394,7 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
                     onClick={() => router.back()}
                     className="mr-3 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50"
                 >
-                    Cancel
+                    取消
                 </button>
                 <button
                     type="submit"
@@ -402,7 +402,7 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
                     className="flex items-center rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 disabled:opacity-70"
                 >
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Save Product
+                    保存产品
                 </button>
             </div>
         </form>

@@ -51,10 +51,10 @@ export default function AdminLoginPage() {
                         <ShieldCheck className="w-6 h-6" />
                     </div>
                     <h2 className="text-2xl font-bold tracking-tight text-slate-900">
-                        MySkin.Today CMS
+                        MySkin.Today 管理系统
                     </h2>
                     <p className="mt-2 text-sm text-slate-500 font-medium tracking-wide uppercase">
-                        Administrative Access
+                        管理员权限访问
                     </p>
                 </div>
 
@@ -64,7 +64,7 @@ export default function AdminLoginPage() {
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                                    Username
+                                    用户名
                                 </label>
                                 <input
                                     type="text"
@@ -72,12 +72,12 @@ export default function AdminLoginPage() {
                                     value={username}
                                     onChange={(e) => setUsername(e.target.value)}
                                     className="block w-full rounded-lg border-slate-200 bg-slate-50/50 py-2.5 px-4 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all sm:text-sm"
-                                    placeholder="Enter your admin ID"
+                                    placeholder="请输入您的管理员账号"
                                 />
                             </div>
                             <div>
                                 <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
-                                    Password
+                                    密码
                                 </label>
                                 <input
                                     type="password"
@@ -106,7 +106,7 @@ export default function AdminLoginPage() {
                                 <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (
                                 <>
-                                    Sign In <ArrowRight className="w-4 h-4 ml-0.5 group-hover:translate-x-0.5 transition-transform" />
+                                    立即登录 <ArrowRight className="w-4 h-4 ml-0.5 group-hover:translate-x-0.5 transition-transform" />
                                 </>
                             )}
                         </button>
@@ -115,7 +115,7 @@ export default function AdminLoginPage() {
 
                 {/* Footer */}
                 <p className="mt-8 text-center text-xs text-slate-400 font-medium">
-                    &copy; {new Date().getFullYear()} MySkin.Today. <br /> Secured System.
+                    &copy; {new Date().getFullYear()} MySkin.Today.
                 </p>
             </div>
         </div>

@@ -457,35 +457,35 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                 </div>
             )}
 
-            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                <table className="min-w-full divide-y divide-slate-200">
-                    <thead className="bg-slate-50">
-                        <tr>
-                            <th className="px-2 py-3 w-10"></th>
-                            <th className="px-2 py-3 w-10">
-                                <button onClick={handleSelectAll} className="text-slate-400 hover:text-slate-600">
-                                    {selectedIds.length === filteredProducts.length && filteredProducts.length > 0 ? (
-                                        <CheckSquare className="w-5 h-5" />
-                                    ) : (
-                                        <Square className="w-5 h-5" />
-                                    )}
-                                </button>
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">图片</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">名称</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">分类</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">价格</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">状态</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">库存</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">操作</th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-slate-200">
-                        <DndContext
-                            sensors={sensors}
-                            collisionDetection={closestCenter}
-                            onDragEnd={handleDragEnd}
-                        >
+            <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+            >
+                <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                    <table className="min-w-full divide-y divide-slate-200">
+                        <thead className="bg-slate-50">
+                            <tr>
+                                <th className="px-2 py-3 w-10"></th>
+                                <th className="px-2 py-3 w-10">
+                                    <button onClick={handleSelectAll} className="text-slate-400 hover:text-slate-600">
+                                        {selectedIds.length === filteredProducts.length && filteredProducts.length > 0 ? (
+                                            <CheckSquare className="w-5 h-5" />
+                                        ) : (
+                                            <Square className="w-5 h-5" />
+                                        )}
+                                    </button>
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">图片</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">名称</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">分类</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">价格</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">状态</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">库存</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-slate-200">
                             <SortableContext
                                 items={filteredProducts.map(p => p.id)}
                                 strategy={verticalListSortingStrategy}
@@ -500,17 +500,17 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                                     />
                                 ))}
                             </SortableContext>
-                        </DndContext>
-                        {products.length === 0 && (
-                            <tr>
-                                <td colSpan={8} className="px-6 py-12 text-center text-slate-500">
-                                    暂无产品，点击"添加产品"开始。
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
+                            {filteredProducts.length === 0 && (
+                                <tr>
+                                    <td colSpan={9} className="px-6 py-12 text-center text-slate-500">
+                                        暂无产品，点击"添加产品"开始。
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </DndContext>
 
             {/* Delete Confirm Modal */}
             <ConfirmModal

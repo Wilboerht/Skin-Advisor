@@ -62,7 +62,7 @@ export function UsersClient() {
                 setPagination(data.pagination);
             }
         } catch (error) {
-            toast.error("Failed to load users");
+            toast.error("加载用户失败");
         } finally {
             setLoading(false);
         }
@@ -91,13 +91,13 @@ export function UsersClient() {
                 body: JSON.stringify({ role: newRole }),
             });
             if (res.ok) {
-                toast.success(newRole === "disabled" ? "User disabled" : "User enabled");
+                toast.success(newRole === "disabled" ? "用户已禁用" : "用户已启用");
                 fetchUsers();
             } else {
-                toast.error("Failed to update user");
+                toast.error("更新用户失败");
             }
         } catch (error) {
-            toast.error("Network error");
+            toast.error("网络错误");
         } finally {
             setActionLoading(false);
             setShowDropdown(null);
@@ -112,15 +112,15 @@ export function UsersClient() {
                 method: "DELETE",
             });
             if (res.ok) {
-                toast.success("User deleted");
+                toast.success("用户已删除");
                 setShowDeleteModal(false);
                 setSelectedUser(null);
                 fetchUsers();
             } else {
-                toast.error("Failed to delete user");
+                toast.error("删除用户失败");
             }
         } catch (error) {
-            toast.error("Network error");
+            toast.error("网络错误");
         } finally {
             setActionLoading(false);
         }
@@ -131,9 +131,9 @@ export function UsersClient() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-serif text-[#1A1A1A]">Users</h1>
+                    <h1 className="text-3xl font-serif text-[#1A1A1A]">用户管理</h1>
                     <p className="text-[#1A1A1A]/60 text-sm mt-1">
-                        Manage registered users · {pagination?.total || 0} total
+                        管理注册用户 · 共 {pagination?.total || 0} 人
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -143,9 +143,9 @@ export function UsersClient() {
                         onChange={(e) => { setStatus(e.target.value); setPage(1); }}
                         className="px-3 py-2 bg-white border border-[#1A1A1A]/10 rounded-lg text-sm text-[#1A1A1A] focus:outline-none focus:ring-1 focus:ring-[#1A1A1A]/20"
                     >
-                        <option value="all">All Users</option>
-                        <option value="active">Active</option>
-                        <option value="inactive">Disabled</option>
+                        <option value="all">所有用户</option>
+                        <option value="active">活跃用户</option>
+                        <option value="inactive">已禁用</option>
                     </select>
 
                     {/* Search */}
@@ -153,7 +153,7 @@ export function UsersClient() {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#1A1A1A]/40" />
                         <input
                             type="text"
-                            placeholder="Search users..."
+                            placeholder="搜索用户..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             className="pl-9 pr-4 py-2 bg-white border border-[#1A1A1A]/10 rounded-full text-sm text-[#1A1A1A] placeholder:text-[#1A1A1A]/30 focus:outline-none focus:ring-1 focus:ring-[#1A1A1A]/20 w-full sm:w-64"
@@ -168,13 +168,13 @@ export function UsersClient() {
                     <table className="w-full text-left text-sm">
                         <thead>
                             <tr className="border-b border-[#1A1A1A]/5 text-[#1A1A1A]/40 text-xs font-medium uppercase tracking-wider">
-                                <th className="px-6 py-4 font-normal">User</th>
-                                <th className="px-6 py-4 font-normal">Status</th>
-                                <th className="px-6 py-4 font-normal">Created</th>
-                                <th className="px-6 py-4 font-normal">Last Active</th>
-                                <th className="px-6 py-4 font-normal text-right">Tests</th>
-                                <th className="px-6 py-4 font-normal text-right">Rewards</th>
-                                <th className="px-6 py-4 font-normal text-right">Actions</th>
+                                <th className="px-6 py-4 font-normal">用户</th>
+                                <th className="px-6 py-4 font-normal">状态</th>
+                                <th className="px-6 py-4 font-normal">注册日期</th>
+                                <th className="px-6 py-4 font-normal">最后活跃</th>
+                                <th className="px-6 py-4 font-normal text-right">测试次数</th>
+                                <th className="px-6 py-4 font-normal text-right">领奖次数</th>
+                                <th className="px-6 py-4 font-normal text-right">操作</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-[#1A1A1A]/5">
@@ -187,7 +187,7 @@ export function UsersClient() {
                             ) : users.length === 0 ? (
                                 <tr>
                                     <td colSpan={7} className="px-6 py-12 text-center text-[#1A1A1A]/40">
-                                        No users found.
+                                        未找到符合条件的用户。
                                     </td>
                                 </tr>
                             ) : (
@@ -199,7 +199,7 @@ export function UsersClient() {
                                                     <UserIcon className="w-4 h-4" />
                                                 </div>
                                                 <div>
-                                                    <div className="font-medium text-[#1A1A1A]">{user.name || "Anonymous"}</div>
+                                                    <div className="font-medium text-[#1A1A1A]">{user.name || "匿名用户"}</div>
                                                     <div className="text-xs text-[#1A1A1A]/40">{user.email}</div>
                                                 </div>
                                             </div>
@@ -209,7 +209,7 @@ export function UsersClient() {
                                                 ? "bg-red-50 text-red-600"
                                                 : "bg-green-50 text-green-600"
                                                 }`}>
-                                                {user.role === "disabled" ? "Disabled" : "Active"}
+                                                {user.role === "disabled" ? "已禁用" : "活跃"}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-[#1A1A1A]/60">
@@ -245,7 +245,7 @@ export function UsersClient() {
                                                         className="w-full px-3 py-2 text-left text-sm hover:bg-[#1A1A1A]/5 flex items-center gap-2"
                                                     >
                                                         <Eye className="w-4 h-4 text-slate-500" />
-                                                        <span>View Details</span>
+                                                        <span>查看详情</span>
                                                     </button>
                                                     <button
                                                         onClick={() => handleToggleStatus(user)}
@@ -254,12 +254,12 @@ export function UsersClient() {
                                                         {user.role === "disabled" ? (
                                                             <>
                                                                 <Shield className="w-4 h-4 text-green-600" />
-                                                                <span>Enable</span>
+                                                                <span>启用用户</span>
                                                             </>
                                                         ) : (
                                                             <>
                                                                 <ShieldOff className="w-4 h-4 text-amber-600" />
-                                                                <span>Disable</span>
+                                                                <span>禁用用户</span>
                                                             </>
                                                         )}
                                                     </button>
@@ -272,7 +272,7 @@ export function UsersClient() {
                                                         className="w-full px-3 py-2 text-left text-sm hover:bg-red-50 text-red-600 flex items-center gap-2"
                                                     >
                                                         <Trash2 className="w-4 h-4" />
-                                                        <span>Delete</span>
+                                                        <span>删除用户</span>
                                                     </button>
                                                 </div>
                                             )}
@@ -288,7 +288,7 @@ export function UsersClient() {
                 {pagination && pagination.totalPages > 1 && (
                     <div className="px-6 py-4 border-t border-[#1A1A1A]/5 flex items-center justify-between">
                         <div className="text-sm text-[#1A1A1A]/40">
-                            Showing {((page - 1) * pagination.limit) + 1} to {Math.min(page * pagination.limit, pagination.total)} of {pagination.total}
+                            显示第 {((page - 1) * pagination.limit) + 1} 到 {Math.min(page * pagination.limit, pagination.total)} 条，共 {pagination.total} 条
                         </div>
                         <div className="flex items-center gap-2">
                             <button
@@ -318,9 +318,9 @@ export function UsersClient() {
                 isOpen={showDeleteModal}
                 onClose={() => { setShowDeleteModal(false); setSelectedUser(null); }}
                 onConfirm={handleDelete}
-                title="Delete User"
-                message={`Are you sure you want to delete "${selectedUser?.email}"? This will also delete all their analysis history and cannot be undone.`}
-                confirmText="Delete"
+                title="删除用户"
+                message={`确定要删除用户 "${selectedUser?.email}" 吗？这将同时删除该用户的所有测试历史记录，且操作不可撤销。`}
+                confirmText="删除"
                 variant="danger"
                 loading={actionLoading}
             />

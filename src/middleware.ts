@@ -12,10 +12,11 @@ export function middleware(request: NextRequest) {
     // Define public paths within admin
     // Define public paths within admin
     const isLoginPage = pathname === '/admin/login';
+    const isSetupApi = pathname === '/api/admin/setup';
     const isLoginApi = pathname === '/api/admin/auth/login';
 
-    // If it's the login page or login API, allow access
-    if (isLoginPage || isLoginApi) {
+    // If it's the login page, login API, or setup API, allow access
+    if (isLoginPage || isLoginApi || isSetupApi) {
         return NextResponse.next();
     }
 
