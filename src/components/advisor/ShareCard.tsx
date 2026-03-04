@@ -53,7 +53,7 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
 
         // 预处理图片 URL
         // 注意：standalone 项目可能没有 logo.png 和 qrcode.png，这里可能需要后续处理或替换占位符
-        const logoUrl = useMemo(() => getAbsoluteUrl("/images/logo.png"), []);
+        const logoUrl = useMemo(() => getAbsoluteUrl("/images/NIHPLOD-logo.svg"), []);
         const qrcodeUrl = useMemo(() => getAbsoluteUrl("/images/qrcode.png"), []);
 
         return (

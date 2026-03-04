@@ -770,7 +770,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                         <div className="w-full max-w-[1440px] mx-auto px-4 py-1 flex items-center justify-start">
                             <div className="w-16 h-16 relative">
                                 <Image
-                                    src="/logo-myskin-today.svg"
+                                    src="/images/NIHPLOD-logo.svg"
                                     alt="MySkin.Today"
                                     fill
                                     className="object-contain opacity-90"

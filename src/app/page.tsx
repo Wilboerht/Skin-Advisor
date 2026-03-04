@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Link } from "next-view-transitions";
 import { LazyMotion, domAnimation, AnimatePresence, m } from "framer-motion";
 import Image from "next/image";
-import { ArrowRight, ArrowLeft, Loader2, MapPin, User, ClipboardList } from "lucide-react";
+import { ArrowRight, ArrowLeft, Loader2, MapPin, User, ClipboardList, ChevronDown } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
+import { useLayout } from "@/contexts/LayoutContext";
 import { useToast } from "@/components/ui/Toast";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { getGuestIdentity, type GuestIdentity } from "@/lib/guest-identity";
@@ -17,6 +18,8 @@ const ProfileModal = dynamic(() => import("@/components/auth/ProfileModal").then
 const SkincareReminder = dynamic(() => import("@/components/advisor/SkincareReminder").then((mod) => mod.SkincareReminder), { ssr: false });
 const BaseModal = dynamic(() => import("@/components/ui/BaseModal").then((mod) => mod.BaseModal), { ssr: false });
 const OnboardingFlowModal = dynamic(() => import("@/components/advisor/OnboardingFlowModal").then((mod) => mod.OnboardingFlowModal), { ssr: false });
+const HomepageFooter = dynamic(() => import("@/components/website/HomepageFooter").then((mod) => mod.HomepageFooter), { ssr: false });
+
 
 // Safe storage helper to prevent QuotaExceededError or Privacy Mode crashes
 const safeStorage = {
@@ -51,6 +54,38 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const { initSession } = useAdvisorAnalytics();
   const { user } = useAuth();
+  const { isDrawerOpen, setDrawerOpen } = useLayout();
+  const wave1Ref = useRef<SVGSVGElement>(null);
+  const wave2Ref = useRef<SVGSVGElement>(null);
+  const textureRef = useRef<HTMLDivElement>(null);
+
+  // 首页特殊处理：立即设置抽屉为展开状态
+  useEffect(() => {
+    setDrawerOpen(true);
+  }, [setDrawerOpen]);
+
+  // 鼠标视差效果
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDrawerOpen) return;
+
+      const moveX = (e.clientX - window.innerWidth / 2) * 0.01;
+      const moveY = (e.clientY - window.innerHeight / 2) * 0.01;
+
+      if (wave1Ref.current) {
+        wave1Ref.current.style.transform = `translate(${moveX}px, ${moveY}px)`;
+      }
+      if (wave2Ref.current) {
+        wave2Ref.current.style.transform = `translate(${-moveX}px, ${-moveY}px)`;
+      }
+      if (textureRef.current) {
+        textureRef.current.style.transform = `translate(${moveX * 0.5}px, ${moveY * 0.5}px)`;
+      }
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+    return () => document.removeEventListener("mousemove", handleMouseMove);
+  }, [isDrawerOpen]);
 
   // Initialize session
   useEffect(() => {
@@ -260,7 +295,7 @@ export default function Home() {
 
   return (
     <LazyMotion features={domAnimation}>
-      {/* Full Screen Loading Overlay to cover Next.js chunk fetching gap */}
+      {/* Full Screen Loading Overlay */}
       <AnimatePresence>
         {isLoading && (
           <m.div
@@ -275,189 +310,246 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      <div className="texture-overlay"></div>
-
-      <main className="relative w-full h-screen bg-[#FDFBF7] text-[#2D2A26] overflow-hidden flex flex-col items-center justify-center selection:bg-[#3D4430] selection:text-white">
-
-        {/* Official Website Link */}
-        <div className="absolute top-6 left-6 z-50">
-          <a
-            href="https://demo.nihplod.cn"
-            className="flex items-center gap-2 text-[#3D4430]/80 hover:text-[#1A1A1A] transition-colors text-sm font-medium tracking-wide bg-transparent border-none cursor-pointer no-underline"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>返回官网</span>
-          </a>
-        </div>
-
-        {/* Auth Navigation */}
-        <div className="absolute top-6 right-6 z-50">
-          {user ? (
-            <button
-              onClick={() => setShowProfileModal(true)}
-              className="flex items-center gap-2 text-[#3D4430]/80 hover:text-[#1A1A1A] transition-colors text-sm font-medium tracking-wide bg-transparent border-none cursor-pointer"
+      {/* 内容区域容器 */}
+      <m.div
+        className="safe-area-content !-top-[1px] !pointer-events-none"
+        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+      >
+        {/* 主内容区域 + 展开按钮一体化 */}
+        <m.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+          className="h-full pointer-events-none"
+        >
+          {/* 主内容区域 - 抽屉 + 按钮一体化容器 */}
+          <div className="flex h-full flex-col items-center pointer-events-none">
+            {/* 主内容区域 - 抽屉 - z-20 Ensure it sits on top of the button */}
+            <m.div
+              className="relative z-20 w-full overflow-hidden rounded-b-2xl bg-[#F0EDE1] lg:rounded-b-3xl pointer-events-auto shadow-2xl"
+              style={{ willChange: "flex-grow, height" }}
+              initial={{ height: 0, flexGrow: 0 }}
+              animate={{
+                flexGrow: isDrawerOpen ? 1 : 0,
+                height: !isDrawerOpen ? 0 : "auto"
+              }}
+              transition={{
+                duration: 1.2,
+                ease: [0.22, 1, 0.36, 1],
+                delay: isDrawerOpen ? 0.3 : 0
+              }}
             >
-              <User className="w-4 h-4" />
-              <span>{user.name || '我的档案'}</span>
+              <div className={`home-container relative h-full w-full transition-opacity duration-500 ${isDrawerOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
+                {/* Texture Overlay */}
+                <div
+                  ref={textureRef}
+                  className="mineral-texture absolute -inset-10 z-0 opacity-40 transition-transform duration-1000 ease-out"
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`
+                  }}
+                />
+
+                {/* Wave Background */}
+                <div className="wave-container pointer-events-none absolute inset-0 z-0">
+                  <svg ref={wave1Ref} className="wave wave-1" viewBox="0 0 1200 120" preserveAspectRatio="none">
+                    <path d="M0,60 C150,110 350,10 500,60 C650,110 850,10 1000,60 C1150,110 1350,10 1500,60" />
+                  </svg>
+                  <svg ref={wave2Ref} className="wave wave-2" viewBox="0 0 1200 120" preserveAspectRatio="none">
+                    <path d="M0,40 C200,90 400,0 600,40 C800,80 1000,0 1200,40" />
+                  </svg>
+                </div>
+
+                {/* Main Content Area */}
+                <main className="main-content relative z-10 flex h-full flex-col items-center justify-center text-center pb-32 lg:pb-24">
+                  {/* Top Navigation Hooks */}
+                  <div className="absolute top-6 left-6 z-50">
+                    <a
+                      href="https://demo.nihplod.cn"
+                      className="flex items-center gap-2 text-[#3D4430]/80 hover:text-[#1A1A1A] transition-colors text-sm font-medium tracking-wide bg-transparent border-none cursor-pointer no-underline"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                      <span>返回官网</span>
+                    </a>
+                  </div>
+
+                  <div className="absolute top-6 right-6 z-50">
+                    {user ? (
+                      <button
+                        onClick={() => setShowProfileModal(true)}
+                        className="flex items-center gap-2 text-[#3D4430]/80 hover:text-[#1A1A1A] transition-colors text-sm font-medium tracking-wide bg-transparent border-none cursor-pointer"
+                      >
+                        <User className="w-4 h-4" />
+                        <span>{user.name || '我的档案'}</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => openAuthModal('login')}
+                        className="flex items-center gap-2 text-sm font-medium text-[#3D4430]/80 hover:text-[#1A1A1A] transition-colors tracking-wide bg-transparent border-none cursor-pointer"
+                      >
+                        <span>登录 / 注册</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Center Brands & AI Actions */}
+                  <div className="z-10 flex flex-col items-center text-center px-6 max-w-3xl mx-auto">
+                    <div className="animate-fade-in-up">
+                      <div className="mb-8">
+                        <Image
+                          src="/partner-nihplod.webp"
+                          alt="NIHPLOD 旎柏"
+                          width={300}
+                          height={90}
+                          priority
+                          className="h-14 w-auto mx-auto opacity-80"
+                        />
+                      </div>
+
+                      <h1 className="text-4xl sm:text-5xl md:text-6xl font-serif text-[#1A1A1A] mb-8 leading-tight tracking-tight">
+                        AI 智能<br className="sm:hidden" />精准护肤
+                      </h1>
+
+                      <p className="text-[#5C5855] leading-loose mb-12 max-w-md mx-auto font-light text-sm md:text-base opacity-0 animate-fade-in-up" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
+                        源自摩纳哥真脂质体科技，结合 AI 深度视觉分析。<br />为您量身打造科学、精准的肌肤护理方案，唤醒肌肤本源之美。
+                      </p>
+
+                      <div className="flex flex-col items-center gap-6 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.4s', animationFillMode: 'forwards' }}>
+                        <button
+                          onClick={handleStart}
+                          disabled={isLoading || checkingLimit}
+                          className="group relative inline-flex items-center justify-center gap-3 bg-[#1A1A1A] text-[#FDFBF7] px-8 py-3.5 rounded-full text-sm tracking-wide font-medium hover:bg-[#3D4430] transition-all duration-500 shadow-xl shadow-[#1A1A1A]/5 disabled:opacity-70 disabled:cursor-not-allowed border-none cursor-pointer"
+                        >
+                          {isLoading || checkingLimit ? (
+                            <>
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              <span>正在连接...</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>开启定制之旅</span>
+                              <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1" />
+                            </>
+                          )}
+                        </button>
+
+                        <div className="flex flex-wrap justify-center items-center gap-3">
+                          <button
+                            onClick={() => router.push('/leaderboard')}
+                            className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all bg-[#1A1A1A]/5 text-[#1A1A1A]/60 hover:bg-[#1A1A1A]/10 border-none cursor-pointer hover:scale-105 active:scale-95"
+                          >
+                            <span className="text-base">🏆</span>
+                            <span>肌肤评分榜</span>
+                          </button>
+
+                          {user && (
+                            <>
+                              <button
+                                onClick={() => setShowProfileModal(true)}
+                                className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all bg-[#1A1A1A]/5 text-[#1A1A1A]/60 hover:bg-[#1A1A1A]/10 border-none cursor-pointer"
+                              >
+                                <ClipboardList className="w-4 h-4" />
+                                <span>历史记录</span>
+                              </button>
+                              <SkincareReminder />
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="mt-16 text-center opacity-0 animate-fade-in-up" style={{ animationDelay: '0.6s', animationFillMode: 'forwards' }}>
+                        <p className="text-[10px] text-[#3D4430]/20 font-mono uppercase tracking-widest">
+                          Powered by MySkin Today™ Tech
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Homepage Footer */}
+                  <HomepageFooter />
+                </main>
+              </div>
+            </m.div>
+
+            {/* Drawer Toggle Button */}
+            <button
+              onClick={() => setDrawerOpen(!isDrawerOpen)}
+              className="group -mt-[1px] relative z-30 flex items-center justify-center rounded-b-2xl bg-[#F0EDE1] px-10 py-3 shadow-[0_10px_20px_-5px_rgba(0,0,0,0.1)] transition-all hover:shadow-[0_15px_25px_-5px_rgba(0,0,0,0.15)] lg:px-14 lg:py-3.5 overflow-hidden pointer-events-auto border-none outline-none"
+            >
+              <div className="texture-overlay absolute inset-0" />
+              <m.div
+                className="relative z-10 flex flex-col items-center"
+                animate={{ rotate: isDrawerOpen ? 180 : 0 }}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <ChevronDown className="h-7 w-7 text-brand-gold lg:h-8 lg:w-8" />
+                <ChevronDown className="-mt-5 h-7 w-7 text-brand-gold lg:h-8 lg:w-8" />
+              </m.div>
             </button>
+          </div>
+        </m.div>
+      </m.div>
+
+      {/* Modals */}
+      <OnboardingFlowModal
+        isOpen={showOnboardingModal}
+        onClose={() => setShowOnboardingModal(false)}
+        nickname={nickname}
+        setNickname={setNickname}
+        onNicknameSubmit={handleNicknameSubmit}
+        isLocating={isLocating}
+        onLocationAccept={handleLocationAccept}
+        onLocationDecline={handleLocationDecline}
+        onSkipLocation={handleSkipRegionSelect}
+        onRegionSelect={handleRegionSelect}
+        regionOptions={regionOptions}
+      />
+
+      <BaseModal
+        isOpen={showLimitModal}
+        onClose={() => setShowLimitModal(false)}
+        showCloseButton
+        className="p-8 text-center"
+      >
+        <div className="flex justify-center mb-6 text-amber-500">
+          <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        <h3 className="mb-2 text-xl font-serif text-[#1A1A1A]">今日测试次数已用完</h3>
+        <p className="mb-6 text-sm text-[#5E5E5E] leading-relaxed font-light">
+          {user ? (
+            <>您今日的 {testLimitInfo?.dailyLimit || 1} 次测试机会已全部使用，请明天再来</>
           ) : (
+            <>游客每天仅有 1 次测试机会<br />登录后可获得更多测试次数</>
+          )}
+        </p>
+        <div className="space-y-3">
+          {!user && (
             <button
-              onClick={() => openAuthModal('login')}
-              className="flex items-center gap-2 text-sm font-medium text-[#3D4430]/80 hover:text-[#1A1A1A] transition-colors tracking-wide bg-transparent border-none cursor-pointer"
+              onClick={() => {
+                setShowLimitModal(false);
+                openAuthModal('login');
+              }}
+              className="w-full bg-[#1A1A1A] text-[#FDFBF7] py-3 text-sm font-medium hover:bg-[#3D4430] transition-colors border-none cursor-pointer"
             >
-              <span>登录 / 注册</span>
+              登录 / 注册
             </button>
           )}
+          <button
+            onClick={() => setShowLimitModal(false)}
+            className="w-full py-2 text-xs text-[#3D4430]/40 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
+          >
+            我知道了
+          </button>
         </div>
+      </BaseModal>
 
-        {/* Center Content */}
-        <div className="z-10 flex flex-col items-center text-center px-6 max-w-3xl mx-auto">
-
-          <div className="animate-fade-in-up">
-            <div className="mb-8">
-              <Image
-                src="/partner-nihplod.webp"
-                alt="NIHPLOD 旎柏"
-                width={300}
-                height={90}
-                priority
-                className="h-14 w-auto mx-auto opacity-80"
-              />
-            </div>
-
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-serif text-[#1A1A1A] mb-8 leading-tight tracking-tight">
-              AI 智能<br className="sm:hidden" />精准护肤
-            </h1>
-
-            <p className="text-[#5C5855] leading-loose mb-12 max-w-md mx-auto font-light text-sm md:text-base delay-100 animate-fade-in-up opacity-0" style={{ animationFillMode: 'forwards' }}>
-              源自摩纳哥真脂质体科技，结合 AI 深度视觉分析。<br />为您量身打造科学、精准的肌肤护理方案，唤醒肌肤本源之美。
-            </p>
-
-            <div className="delay-200 animate-fade-in-up opacity-0 flex flex-col items-center gap-6" style={{ animationFillMode: 'forwards' }}>
-              <button
-                onClick={handleStart}
-                disabled={isLoading || checkingLimit}
-                className="group relative inline-flex items-center justify-center gap-3 bg-[#1A1A1A] text-[#FDFBF7] px-8 py-3.5 rounded-full text-sm tracking-wide font-medium hover:bg-[#3D4430] transition-all duration-500 shadow-xl shadow-[#1A1A1A]/5 disabled:opacity-70 disabled:cursor-not-allowed border-none cursor-pointer"
-              >
-                {isLoading || checkingLimit ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>正在连接...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>开启定制之旅</span>
-                    <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1" />
-                  </>
-                )}
-              </button>
-
-              {/* Secondary Actions */}
-              <div className="flex flex-wrap justify-center items-center gap-3">
-                {/* Leaderboard Button - Always Visible */}
-                <button
-                  onClick={() => router.push('/leaderboard')}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all bg-[#1A1A1A]/5 text-[#1A1A1A]/60 hover:bg-[#1A1A1A]/10 border-none cursor-pointer hover:scale-105 active:scale-95"
-                >
-                  <span className="text-base">🏆</span>
-                  <span>肌肤评分榜</span>
-                </button>
-
-                {/* Logged-in User Actions */}
-                {user && (
-                  <>
-                    <button
-                      onClick={() => setShowProfileModal(true)}
-                      className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all bg-[#1A1A1A]/5 text-[#1A1A1A]/60 hover:bg-[#1A1A1A]/10 border-none cursor-pointer"
-                    >
-                      <ClipboardList className="w-4 h-4" />
-                      <span>历史记录</span>
-                    </button>
-                    <SkincareReminder />
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Minimal Footer Info - Moved to flow to prevent overlap */}
-            <div className="mt-16 text-center animate-fade-in-up delay-300 opacity-0" style={{ animationFillMode: 'forwards' }}>
-              <p className="text-[10px] text-[#3D4430]/20 font-mono uppercase tracking-widest">
-                Powered by MySkin Today™ Tech
-              </p>
-            </div>
-
-          </div>
-        </div>
-
-
-
-        {/* Modals - Simplified Styles */}
-
-        <OnboardingFlowModal
-          isOpen={showOnboardingModal}
-          onClose={() => setShowOnboardingModal(false)}
-          nickname={nickname}
-          setNickname={setNickname}
-          onNicknameSubmit={handleNicknameSubmit}
-          isLocating={isLocating}
-          onLocationAccept={handleLocationAccept}
-          onLocationDecline={handleLocationDecline}
-          onSkipLocation={handleSkipRegionSelect}
-          onRegionSelect={handleRegionSelect}
-          regionOptions={regionOptions}
-        />
-
-        {/* Test Limit Modal */}
-        <BaseModal
-          isOpen={showLimitModal}
-          onClose={() => setShowLimitModal(false)}
-          showCloseButton
-          className="p-8 text-center"
-        >
-          <div className="flex justify-center mb-6 text-amber-500">
-            <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-          </div>
-
-          <h3 className="mb-2 text-xl font-serif text-[#1A1A1A]">
-            今日测试次数已用完
-          </h3>
-
-          <p className="mb-6 text-sm text-[#5E5E5E] leading-relaxed font-light">
-            {user ? (
-              <>您今日的 {testLimitInfo?.dailyLimit || 1} 次测试机会已全部使用，请明天再来</>
-            ) : (
-              <>游客每天仅有 1 次测试机会<br />登录后可获得更多测试次数</>
-            )}
-          </p>
-
-          <div className="space-y-3">
-            {!user && (
-              <button
-                onClick={() => {
-                  setShowLimitModal(false);
-                  openAuthModal('login');
-                }}
-                className="w-full bg-[#1A1A1A] text-[#FDFBF7] py-3 text-sm font-medium hover:bg-[#3D4430] transition-colors border-none cursor-pointer"
-              >
-                登录 / 注册
-              </button>
-            )}
-            <button
-              onClick={() => setShowLimitModal(false)}
-              className="w-full py-2 text-xs text-[#3D4430]/40 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
-            >
-              我知道了
-            </button>
-          </div>
-        </BaseModal>
-
-        <ProfileModal
-          isOpen={showProfileModal}
-          onClose={() => setShowProfileModal(false)}
-        />
-      </main >
-    </LazyMotion >
+      <ProfileModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+      />
+    </LazyMotion>
   );
 }

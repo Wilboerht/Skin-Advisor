@@ -1,4 +1,6 @@
 
+export const dynamic = "force-dynamic";
+
 import { redirect } from "next/navigation";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import { ToastProvider } from "@/components/ui/Toast";

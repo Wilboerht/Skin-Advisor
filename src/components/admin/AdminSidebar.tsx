@@ -55,7 +55,7 @@ export default function AdminSidebar() {
             <div className={cn("flex h-20 items-center px-6 gap-3 border-b border-[#1A1A1A]/5", collapsed ? "justify-center px-0" : "")}>
                 <div className="flex items-center justify-center shrink-0">
                     <Image
-                        src="/logo-myskin-today.svg"
+                        src="/images/NIHPLOD-logo.svg"
                         alt="MySkin.Today"
                         width={32}
                         height={32}

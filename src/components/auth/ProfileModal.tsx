@@ -376,7 +376,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
             ? "开始新的一天！别忘了做好防晒和基础护理 ✨"
             : "辛苦一天了！卸妆清洁后开始你的晚间护理吧 🌸";
 
-        new Notification(title, { body, icon: "/logo-myskin-today.svg" });
+        new Notification(title, { body, icon: "/images/NIHPLOD-logo.svg" });
     };
 
     const testNotification = async () => {

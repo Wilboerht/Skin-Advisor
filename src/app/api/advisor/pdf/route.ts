@@ -16,6 +16,7 @@ let cachedFontBase64: string | null = null;
 let cachedLogoBase64: string | null = null;
 let cachedQrcodeBase64: string | null = null;
 let jsPDFModule: typeof import("jspdf") | null = null;
+let sharpModule: typeof import("sharp") | null = null;
 
 async function loadResources() {
     if (!jsPDFModule) jsPDFModule = await import("jspdf");
@@ -30,8 +31,15 @@ async function loadResources() {
     }
 
     if (!cachedLogoBase64) {
-        const logoPath = path.join(process.cwd(), "public", "images", "logo.png");
-        if (fs.existsSync(logoPath)) cachedLogoBase64 = fs.readFileSync(logoPath).toString("base64");
+        const logoPath = path.join(process.cwd(), "public", "images", "NIHPLOD-logo.svg");
+        if (fs.existsSync(logoPath)) {
+            if (!sharpModule) sharpModule = (await import("sharp")).default;
+            const svgBuffer = fs.readFileSync(logoPath);
+            const pngBuffer = await sharpModule(svgBuffer)
+                .png()
+                .toBuffer();
+            cachedLogoBase64 = pngBuffer.toString("base64");
+        }
     }
 
     if (!cachedQrcodeBase64) {

@@ -27,6 +27,7 @@ import { UserProvider } from "@/components/auth/UserProvider";
 
 import { AuthModalProvider } from "@/components/auth/AuthModalContext";
 import { AuthModal } from "@/components/auth/AuthModal";
+import { WebsiteLayoutClient } from "@/components/website/WebsiteLayoutClient";
 
 export default function RootLayout({
   children,
@@ -43,7 +44,15 @@ export default function RootLayout({
           <ToastProvider>
             <UserProvider>
               <AuthModalProvider>
-                {children}
+                <WebsiteLayoutClient>
+                  <main
+                    id="main-content"
+                    tabIndex={-1}
+                    className="relative z-10 pointer-events-none [&>*]:pointer-events-auto min-h-screen"
+                  >
+                    {children}
+                  </main>
+                </WebsiteLayoutClient>
                 <AuthModal />
               </AuthModalProvider>
             </UserProvider>
