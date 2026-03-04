@@ -251,8 +251,10 @@ export async function POST(request: NextRequest) {
             }
 
             case "result_share": {
-                await prisma.advisorSession.update({
-                    where: { sessionId },
+                // 归属校验：只允许 session 真正归属的用户触发分享加分
+                // 若 sessionId 不属于当前登录用户，update 找不到记录会静默失败
+                await prisma.advisorSession.updateMany({
+                    where: { sessionId, userId: user.id },
                     data: {
                         resultShared: true,
                         shareMethod: (data?.method as string) || null,
