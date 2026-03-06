@@ -156,9 +156,9 @@ export function AuthModal() {
                                 {view !== 'forgot_password' ? (
                                     <div className="mb-3 flex justify-center">
                                         <img
-                                            src="/partner-nihplod.webp"
+                                            src="/NIHPLOD-logo.svg"
                                             alt="NIHPLOD"
-                                            className="h-10 object-contain opacity-90"
+                                            className="h-8.5 object-contain opacity-90"
                                         />
                                     </div>
                                 ) : (

@@ -141,11 +141,11 @@ export default function LeaderboardPageClient({
                             <span className="font-medium tracking-wide">返回首页</span>
                         </button>
                         <Image
-                            src="/partner-nihplod.webp"
+                            src="/NIHPLOD-logo.svg"
                             alt="NIHPLOD"
                             width={120}
                             height={40}
-                            className="h-8 w-auto brightness-0 invert opacity-90"
+                            className="h-7 w-auto brightness-0 invert opacity-90"
                         />
                         <div className="w-24"></div> {/* Spacer */}
                     </div>

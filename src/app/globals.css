@@ -53,6 +53,18 @@
     }
   }
 
+  @keyframes floatBadge {
+
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+
+    50% {
+      transform: translateY(-5px);
+    }
+  }
+
   /* Legacy Colors (Keep for other pages) */
   --color-brand-gold: #C9A86C;
   --color-brand-gold-light: #D4B77A;
@@ -386,4 +398,36 @@
   width: 100%;
   height: 100%;
   z-index: 1;
+}
+
+/* Clean White Glass Style - Secondary (Default) */
+.glass-premium {
+  background-color: rgba(255, 255, 255, 0.35) !important;
+  color: #3D4430 !important;
+  border: 0.5px solid rgba(255, 255, 255, 0.5) !important;
+  backdrop-filter: blur(12px) !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02) !important;
+}
+
+/* Premium Taupe Glass Style - Primary (Matches Kinetic BG but a bit more vibrant) */
+.glass-premium-primary {
+  background-color: rgba(162, 148, 134, 0.35) !important;
+  /* Slightly brighter and more vivid taupe */
+  color: #1A1A1A !important;
+  /* Sharper text for better contrast */
+  border: 0.5px solid rgba(162, 148, 134, 0.5) !important;
+  backdrop-filter: blur(8px) !important;
+  box-shadow: 0 4px 25px rgba(162, 148, 134, 0.2) !important;
+}
+
+.glass-premium-primary:hover {
+  background-color: rgba(162, 148, 134, 0.5) !important;
+  transform: scale(1.02);
+}
+
+.glass-premium:hover {
+  background-color: rgba(255, 255, 255, 0.55) !important;
+  color: #1A1A1A !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.04) !important;
 }

@@ -308,7 +308,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                     >
                         <ChevronLeft className="w-5 h-5" strokeWidth={2.5} />
                     </button>
-                    <img src="/partner-nihplod.webp" alt="Partner Logo" className="h-9 md:h-12 object-contain opacity-90" />
+                    <img src="/NIHPLOD-logo.svg" alt="Partner Logo" className="h-8 md:h-10 object-contain opacity-90" />
                 </div>
                 <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-6">
 
@@ -659,7 +659,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                             onClick={(e) => e.stopPropagation()}
                         >
                             <div className="flex justify-center mb-6">
-                                <img src="/partner-nihplod.webp" alt="NIHPLOD" className="h-11 object-contain" />
+                                <img src="/NIHPLOD-logo.svg" alt="NIHPLOD" className="h-9.5 object-contain" />
                             </div>
                             <h2 className="text-xl font-bold mb-[15px] leading-relaxed">
                                 您的当前数据已入选<br />素颜测肤排位全国较前排名
