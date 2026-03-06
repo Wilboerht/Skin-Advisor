@@ -42,7 +42,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel }: ScanGuideModalPr
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-[#3D4430]/40 backdrop-blur-sm"
+                        className="fixed inset-0 bg-[#1A1A1A]/10 backdrop-blur-md"
                     />
 
                     {/* Modal Card */}
@@ -51,19 +51,19 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel }: ScanGuideModalPr
                         animate={{ scale: 1, opacity: 1, y: 0 }}
                         exit={{ scale: 0.95, opacity: 0, y: 8 }}
                         transition={{ type: "spring", stiffness: 350, damping: 25 }}
-                        className="relative z-10 bg-[#FBF9F5] rounded-2xl shadow-2xl w-full max-w-[640px] overflow-hidden border border-[#3D4430]/10"
+                        className="relative z-10 bg-[#FDFBF7]/80 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl w-full max-w-[640px] overflow-hidden border border-white/40 ring-1 ring-white/20"
                     >
                         <div className="p-8 pt-10">
                             {/* Header */}
-                            <div className="flex flex-col items-center text-center gap-4 mb-8">
-                                <div className="w-14 h-14 rounded-full bg-[#3D4430]/5 flex items-center justify-center mb-1">
-                                    <ScanFace className="w-7 h-7 text-[#3D4430]" strokeWidth={1.5} />
+                            <div className="flex flex-col items-center text-center gap-4 mb-10">
+                                <div className="w-16 h-16 rounded-full bg-[#4A3728]/5 flex items-center justify-center mb-1 ring-1 ring-[#4A3728]/10 shadow-inner">
+                                    <ScanFace className="w-8 h-8 text-[#4A3728]" strokeWidth={1.2} />
                                 </div>
                                 <div className="space-y-2">
-                                    <h3 className="text-2xl font-serif font-bold text-[#3D4430] tracking-wide">
+                                    <h3 className="text-3xl font-serif text-[#1A1A1A] tracking-tight">
                                         开始面部扫描
                                     </h3>
-                                    <p className="text-sm text-[#3D4430]/60 font-light tracking-wide max-w-xs mx-auto">
+                                    <p className="text-[15px] text-[#4A3728]/60 font-light tracking-wide max-w-xs mx-auto">
                                         为了获得最准确的分析结果，请遵循以下建议
                                     </p>
                                 </div>
@@ -76,17 +76,17 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel }: ScanGuideModalPr
                                     return (
                                         <div
                                             key={index}
-                                            className="flex flex-col h-full p-5 rounded-2xl bg-white border border-[#3D4430]/5 hover:border-[#3D4430]/20 hover:shadow-md transition-all duration-300 group"
+                                            className="flex flex-col h-full p-6 rounded-2xl bg-white/40 border border-[#4A3728]/5 hover:border-[#4A3728]/20 hover:bg-white/60 hover:shadow-xl hover:shadow-[#4A3728]/5 transition-all duration-500 group backdrop-blur-sm"
                                         >
                                             <div className="flex items-start gap-4 mb-auto">
-                                                <div className="flex-shrink-0 w-11 h-11 rounded-full bg-[#3D4430]/5 group-hover:bg-[#3D4430]/10 transition-colors flex items-center justify-center text-[#3D4430]">
+                                                <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-[#4A3728]/5 group-hover:bg-[#4A3728]/10 transition-all duration-500 flex items-center justify-center text-[#4A3728] group-hover:scale-110 shadow-sm border border-white/40">
                                                     <Icon className="w-5 h-5" strokeWidth={1.5} />
                                                 </div>
                                                 <div className="flex-1 pt-1.5">
-                                                    <h4 className="text-base font-bold text-[#3D4430] mb-2 leading-none group-hover:text-[#2A3020] transition-colors">
+                                                    <h4 className="text-base font-semibold text-[#1A1A1A] mb-2 leading-none tracking-wide">
                                                         {item.title}
                                                     </h4>
-                                                    <p className="text-sm text-[#3D4430]/70 leading-relaxed font-normal">
+                                                    <p className="text-[13px] text-[#4A3728]/70 leading-relaxed font-light">
                                                         {item.desc}
                                                     </p>
                                                 </div>
@@ -97,13 +97,13 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel }: ScanGuideModalPr
                             </div>
 
                             {/* Privacy Note - Enhanced Professional Version */}
-                            <div className="mb-10 px-6 py-4 rounded-2xl bg-[#3D4430]/5 border border-[#3D4430]/10 flex items-start gap-4">
-                                <div className="flex-shrink-0 w-9 h-9 rounded-full bg-white flex items-center justify-center shadow-sm">
-                                    <ShieldCheck className="w-5 h-5 text-[#3D4430]" strokeWidth={2} />
+                            <div className="mb-10 px-6 py-5 rounded-[1.5rem] bg-[#4A3728]/5 border border-[#4A3728]/10 flex items-start gap-4">
+                                <div className="flex-shrink-0 w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center shadow-sm border border-white/40">
+                                    <ShieldCheck className="w-5 h-5 text-[#4A3728]" strokeWidth={1.5} />
                                 </div>
                                 <div className="space-y-1.5 flex-1">
-                                    <h5 className="text-[14px] font-bold text-[#3D4430] leading-none tracking-wide">隐私安全与数据保护</h5>
-                                    <p className="text-[12px] text-[#3D4430]/60 leading-relaxed font-normal">
+                                    <h5 className="text-[14px] font-semibold text-[#1A1A1A] leading-none tracking-wide">隐私安全与数据保护</h5>
+                                    <p className="text-[12px] text-[#4A3728]/50 leading-relaxed font-light">
                                         您的面部图像经由端端加密技术安全传输，仅供 AI 皮肤分析模型进行生物特征实时提取。分析任务完成后，原始图像将立即从所有计算节点中永久移除并销毁。我们严格遵守中华人民共和国《个人信息保护法》(PIPL) 及行业安全标准，绝不存储、转卖或向第三方公开您的影像数据。
                                     </p>
                                 </div>
@@ -121,7 +121,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel }: ScanGuideModalPr
                                         }
                                         onConfirm();
                                     }}
-                                    className="w-full h-12 rounded-xl bg-[#3D4430] hover:bg-[#2A3020] text-[#F0EDE1] text-[15px] font-medium tracking-wide shadow-sm transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2 group"
+                                    className="w-full h-14 rounded-full bg-[#4A3728]/95 backdrop-blur-md hover:bg-[#4A3728] text-[#FDFBF7] text-[15px] font-bold tracking-[0.2em] shadow-xl hover:shadow-[#4A3728]/30 transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-2 group border border-white/20"
                                 >
                                     <span>我已准备好</span>
                                     <Check className="w-4 h-4 opacity-70 group-hover:opacity-100 transition-opacity" />
@@ -130,7 +130,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel }: ScanGuideModalPr
                                 {onCancel && (
                                     <button
                                         onClick={onCancel}
-                                        className="w-full h-10 rounded-full text-[#3D4430]/30 hover:text-[#3D4430]/60 text-[13px] font-medium tracking-[0.15em] transition-all duration-300 flex items-center justify-center group"
+                                        className="w-full h-10 rounded-full text-[#4A3728]/40 hover:text-[#4A3728] text-[13px] font-medium tracking-[0.2em] transition-all duration-300 flex items-center justify-center group"
                                     >
                                         <span className="relative">
                                             暂不测试，退出

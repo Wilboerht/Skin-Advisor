@@ -80,47 +80,75 @@ export default function FaceScanPage() {
     };
 
     return (
-        <div className="relative min-h-screen w-full bg-transparent flex flex-col items-center justify-center p-4">
-            {/* Floating Back Button */}
-            <div className="absolute top-6 left-6 z-[110]">
-                <Link
-                    href="/questions"
-                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/50 text-[#1A1A1A]/60 hover:bg-white hover:text-[#1A1A1A] hover:shadow-sm transition-all border border-[#1A1A1A]/5"
-                >
-                    <ChevronLeft className="h-4 w-4" />
-                    <span className="text-xs font-medium tracking-wide">返回</span>
-                </Link>
-            </div>
+        <div className="relative min-h-screen w-full bg-transparent flex flex-col items-center p-4">
+            {/* Top Navigation Bar: 90% Width */}
+            <div className="absolute top-0 left-0 w-full flex justify-center z-[110]">
+                <div className="w-[90%] py-8 flex items-center justify-between">
+                    <Link
+                        href="/questions"
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/40 backdrop-blur-md text-[#1A1A1A]/60 hover:bg-white/80 hover:text-[#1A1A1A] hover:shadow-xl transition-all border border-white/40 shadow-sm"
+                    >
+                        <ChevronLeft className="h-4 w-4" />
+                        <span className="text-xs font-bold tracking-widest uppercase">返回</span>
+                    </Link>
 
-            {/* Title - Only visible on large screens when not capturing */}
-            <div className="absolute top-8 text-center hidden md:block z-0">
-                <h1 className="font-serif text-xl text-[#1A1A1A]/80 tracking-wide">AI 皮肤分析</h1>
-            </div>
-
-            {/* The "Mirror" Container */}
-            <div className="relative w-full max-w-[480px] aspect-[3/4] max-h-[80vh] bg-black rounded-[2rem] overflow-hidden shadow-2xl ring-8 ring-white/50 z-10 flex flex-col">
-                {!hasStarted ? (
-                    // Camera Placeholder when modal is open
-                    <div className="flex-1 flex flex-col items-center justify-center bg-[#1A1A1A] text-white/20 p-8 text-center">
-                        <m.div
-                            animate={{ opacity: [0.3, 0.6, 0.3], scale: [1, 1.05, 1] }}
-                            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                            className="w-20 h-20 rounded-full border-2 border-white/10 flex items-center justify-center mb-4"
-                        >
-                            <Camera className="h-8 w-8" />
-                        </m.div>
-                        <p className="text-xs font-light tracking-widest uppercase opacity-40">Ready to Scan</p>
+                    {/* Centered Brand Logo */}
+                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none flex items-center justify-center">
+                        <img
+                            src="/NIHPLOD-logo.svg"
+                            alt="NIHPLOD 旎柏"
+                            className="h-7 md:h-8 object-contain opacity-90 mix-blend-multiply"
+                        />
                     </div>
-                ) : (
-                    // Real Camera Component
-                    <FaceCapture onCapture={handleCaptureComplete} />
-                )}
+
+                    {/* Placeholder to maintain flex balance */}
+                    <div className="w-10 h-10" />
+                </div>
             </div>
 
-            {/* Bottom Note */}
-            <p className="mt-8 text-xs text-[#1A1A1A]/30 text-center font-light tracking-wider uppercase">
-                隐私保护 • 数据安全加密
-            </p>
+            {/* Main Content: Mirror Container pushed to center */}
+            <div className="flex-1 flex flex-col items-center justify-center w-full pt-24">
+                <div className="relative w-full max-w-[480px] aspect-[3/4] max-h-[70vh] bg-black rounded-[2rem] overflow-hidden shadow-2xl ring-8 ring-white/50 z-10 flex flex-col">
+                    {!hasStarted ? (
+                        // Camera Placeholder when modal is open
+                        <div className="flex-1 flex flex-col items-center justify-center bg-[#1A1A1A] text-white/20 p-8 text-center">
+                            <m.div
+                                animate={{ opacity: [0.3, 0.6, 0.3], scale: [1, 1.05, 1] }}
+                                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                                className="w-20 h-20 rounded-full border-2 border-white/10 flex items-center justify-center mb-4"
+                            >
+                                <Camera className="h-8 w-8" />
+                            </m.div>
+                            <p className="text-xs font-light tracking-widest uppercase opacity-40">Ready to Scan</p>
+                        </div>
+                    ) : (
+                        // Real Camera Component
+                        <FaceCapture onCapture={handleCaptureComplete} />
+                    )}
+                </div>
+            </div>
+
+            {/* Footer with Copyright & Registration */}
+            <m.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5, duration: 1 }}
+                className="mt-8 flex flex-col items-center pb-8"
+            >
+                <div className="flex flex-col items-center gap-1 opacity-40">
+                    <p className="text-[10px] sm:text-[11px] font-light tracking-widest text-[#1A1A1A]">
+                        &copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.
+                    </p>
+                    <div className="flex items-center justify-center gap-3 text-[9px] sm:text-[10px] font-light text-[#1A1A1A]">
+                        <a href="https://beian.miit.gov.cn/" target="_blank" className="hover:text-brand-gold transition-colors">沪ICP备2024043916号-1</a>
+                        <span className="opacity-20">|</span>
+                        <a href="#" className="flex items-center gap-1 hover:text-brand-gold transition-colors">
+                            <img src="/images/beian.webp" alt="" className="w-3 h-3 opacity-80" />
+                            <span>沪公网安备 31011502019404号</span>
+                        </a>
+                    </div>
+                </div>
+            </m.div>
 
             {/* Prep Guide Modal */}
             <ScanGuideModal
