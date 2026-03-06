@@ -80,7 +80,7 @@ export default function FaceScanPage() {
     };
 
     return (
-        <div className="relative min-h-screen w-full bg-[#FDFBF7] flex flex-col items-center justify-center p-4">
+        <div className="relative min-h-screen w-full bg-transparent flex flex-col items-center justify-center p-4">
             {/* Floating Back Button */}
             <div className="absolute top-6 left-6 z-[110]">
                 <Link

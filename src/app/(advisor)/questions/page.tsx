@@ -357,9 +357,9 @@ export default function QuestionsPage() {
         <div className="min-h-screen bg-transparent flex flex-col items-center relative overflow-x-hidden text-[#1A1A1A]">
 
             {/* Top Bar: Progress & Exit */}
-            <div className="w-full max-w-5xl mx-auto px-6 py-8 flex items-center justify-between z-20 shrink-0">
+            <div className="w-[90%] mx-auto py-8 flex items-center justify-between z-20 shrink-0">
                 <div className="w-12 h-12 flex items-center justify-center">
-                    <span className="text-xs font-bold tracking-widest opacity-20">0{currentStepIndex + 1}</span>
+                    <span className="text-xs font-bold tracking-widest text-[#4A3728]/50">0{currentStepIndex + 1}</span>
                 </div>
 
                 <div className="flex-1 max-w-xs mx-auto px-4 opacity-0 sm:opacity-100 transition-opacity">
@@ -368,14 +368,14 @@ export default function QuestionsPage() {
 
                 <button
                     onClick={() => setShowExitConfirm(true)}
-                    className="group w-12 h-12 flex items-center justify-end text-[#1A1A1A]/20 hover:text-[#1A1A1A] transition-colors"
+                    className="group w-12 h-12 flex items-center justify-end text-[#4A3728]/50 hover:text-[#4A3728] transition-colors"
                 >
-                    <X className="h-6 w-6 transition-transform group-hover:rotate-90 duration-500" />
+                    <LogOut className="h-5 w-5 transition-transform group-hover:translate-x-1 duration-300" />
                 </button>
             </div>
 
             {/* Main Content Area */}
-            <div className="flex-1 w-full max-w-5xl mx-auto px-6 flex flex-col justify-center pb-8 z-10 min-h-0">
+            <div className="flex-1 w-full max-w-5xl mx-auto px-6 flex flex-col justify-center z-10 min-h-0">
                 <AnimatePresence mode="wait" custom={direction}>
                     <m.div
                         key={currentStepIndex}
@@ -396,48 +396,48 @@ export default function QuestionsPage() {
                 </AnimatePresence>
             </div>
 
-            {/* Bottom Navigation */}
-            <div className="w-full max-w-5xl mx-auto px-6 pb-12 flex justify-between items-center z-20 shrink-0 h-16">
+            {/* Ghost footer to balance the top bar height for perfect centering between Header and Bottom Buttons */}
+            <div className="h-[112px] shrink-0 pointer-events-none" aria-hidden="true" />
 
-                {/* Back Button */}
+            {/* Floating Navigation Controls */}
+            {/* Left Corner: Back */}
+            <div className="fixed bottom-8 left-[5%] lg:bottom-12 z-30">
                 <button
                     onClick={handleBack}
-                    className={`glass-premium px-8 py-2.5 rounded-full text-sm font-semibold tracking-widest hover:scale-[1.05] transition-all shadow-lg active:scale-95 ${currentStepIndex === 0 && !gender
-                        ? "opacity-0 pointer-events-none"
-                        : "text-[#1A1A1A]"
-                        }`}
+                    className={cn(
+                        "glass-premium px-6 sm:px-8 py-3 rounded-full text-sm font-semibold tracking-widest hover:scale-110 active:scale-95 transition-all duration-500 shadow-xl border border-white/40 flex items-center gap-2",
+                        (currentStepIndex === 0 && !gender) ? "opacity-0 pointer-events-none translate-y-4" : "opacity-100 translate-y-0"
+                    )}
                 >
-                    上一题
+                    <ChevronLeft className="h-4 w-4" />
+                    <span className="hidden sm:inline">上一题</span>
                 </button>
+            </div>
 
-                {/* Next Button (Only for multiple choice or explicit action) */}
-                <div className="h-10 flex items-center">
-                    {currentQuestion.type === "multiple" && (
-                        <button
+            {/* Right Corner: Next */}
+            <div className="fixed bottom-8 right-[5%] lg:bottom-12 z-30">
+                <AnimatePresence>
+                    {((currentQuestion.type === "multiple") || (currentStepIndex === questions.length - 1 && !isNextDisabled())) && (
+                        <m.button
+                            initial={{ opacity: 0, scale: 0.8, x: 20 }}
+                            animate={{ opacity: 1, scale: 1, x: 0 }}
+                            exit={{ opacity: 0, scale: 0.8, x: 20 }}
+                            whileHover={!isNextDisabled() ? { scale: 1.05, y: -2 } : {}}
+                            whileTap={!isNextDisabled() ? { scale: 0.95 } : {}}
                             onClick={handleNext}
                             disabled={isNextDisabled()}
                             className={cn(
-                                "px-10 py-3 rounded-full text-sm font-bold tracking-[0.2em] transition-all duration-300 shadow-lg active:scale-95 flex items-center gap-2 backdrop-blur-md border",
+                                "px-8 sm:px-10 py-3.5 sm:py-4 rounded-full text-sm font-bold tracking-[0.2em] transition-all duration-500 shadow-2xl flex items-center gap-3 backdrop-blur-xl border",
                                 isNextDisabled()
-                                    ? "bg-[#1A1A1A]/5 text-[#1A1A1A]/20 cursor-not-allowed border-transparent"
-                                    : "bg-[#4A3728]/90 text-[#FDFBF7] border-white/20 hover:bg-[#4A3728] hover:scale-105 hover:shadow-[0_20px_40px_-12px_rgba(74,55,40,0.4)]"
+                                    ? "bg-white/40 text-[#1A1A1A]/10 cursor-not-allowed border-white/20"
+                                    : "bg-[#4A3728]/95 text-[#FDFBF7] border-white/20 hover:bg-[#4A3728] hover:shadow-[0_20px_50px_-12px_rgba(74,55,40,0.5)]"
                             )}
                         >
-                            <span>{currentStepIndex === questions.length - 1 ? "查看报告" : "下一步"}</span>
-                            {!isNextDisabled() && <ChevronRight className="w-4 h-4" />}
-                        </button>
+                            <span>{currentStepIndex === questions.length - 1 ? "面部检测" : "下一步"}</span>
+                            {!isNextDisabled() && <ChevronRight className="h-5 w-5" />}
+                        </m.button>
                     )}
-                    {/* Fallback for last step is handled by auto-submit, but we can keep a manual button if stuck */}
-                    {currentQuestion.type !== "multiple" && currentStepIndex === questions.length - 1 && !isNextDisabled() && (
-                        <button
-                            onClick={handleNext}
-                            className="bg-[#4A3728]/90 text-[#FDFBF7] px-10 py-3 rounded-full text-sm font-bold tracking-[0.2em] hover:bg-[#4A3728] transition-all shadow-lg hover:scale-105 active:scale-95 flex items-center gap-2 backdrop-blur-md border border-white/20"
-                        >
-                            <span>查看报告</span>
-                            <ChevronRight className="w-4 h-4" />
-                        </button>
-                    )}
-                </div>
+                </AnimatePresence>
             </div>
 
             {/* Simple Exit Modal */}
