@@ -42,7 +42,7 @@ export function OptionCard({
             className={cn(
                 "group relative w-full rounded-2xl text-left transition-all duration-300 border px-6 py-5 flex items-center gap-5 backdrop-blur-md",
                 isSelected
-                    ? "bg-[#3D4430]/15 border-[#3D4430]/60 text-[#1A1A1A] shadow-xl shadow-[#3D4430]/10 scale-[1.02] ring-1 ring-[#3D4430]/10"
+                    ? "bg-[#1A1A1A]/5 border-[#1A1A1A]/30 text-[#1A1A1A] shadow-xl shadow-[#1A1A1A]/5 scale-[1.02] ring-1 ring-[#1A1A1A]/5"
                     : "glass-premium border-white/40 text-[#1A1A1A] hover:border-white/60 hover:scale-[1.01] shadow-sm hover:shadow-md"
             )}
         >
@@ -61,14 +61,14 @@ export function OptionCard({
             <div className="flex-1 min-w-0">
                 <p className={cn(
                     "text-base font-semibold tracking-wide mb-0.5",
-                    isSelected ? "text-[#3D4430]" : "text-[#1A1A1A]"
+                    isSelected ? "text-[#1A1A1A]" : "text-[#1A1A1A]"
                 )}>
                     {label}
                 </p>
                 {description && (
                     <p className={cn(
                         "text-xs font-light leading-relaxed",
-                        isSelected ? "text-[#3D4430]/70" : "text-[#5E5E5E]"
+                        isSelected ? "text-[#1A1A1A]/70" : "text-[#5E5E5E]"
                     )}>
                         {description}
                     </p>
@@ -79,7 +79,7 @@ export function OptionCard({
             <div className={cn(
                 "w-5 h-5 rounded-full border flex items-center justify-center transition-all duration-300",
                 isSelected
-                    ? "border-[#3D4430] bg-[#3D4430] text-white"
+                    ? "border-[#1A1A1A] bg-[#1A1A1A] text-white"
                     : "border-[#E5E5E5] group-hover:border-[#1A1A1A]/30"
             )}>
                 {isSelected && <Check className="w-3 h-3" strokeWidth={3} />}

@@ -9,6 +9,7 @@ import { GenderSelection } from "@/components/advisor/GenderSelection";
 import { m, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, X, LogOut } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
+import { cn } from "@/lib/utils";
 
 export default function QuestionsPage() {
     const router = useRouter();
@@ -415,18 +416,25 @@ export default function QuestionsPage() {
                         <button
                             onClick={handleNext}
                             disabled={isNextDisabled()}
-                            className="glass-premium-primary text-[#1A1A1A] px-8 py-2.5 rounded-full text-sm font-semibold tracking-widest hover:scale-[1.05] disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-lg active:scale-95"
+                            className={cn(
+                                "px-10 py-3 rounded-full text-sm font-bold tracking-[0.2em] transition-all duration-300 shadow-lg active:scale-95 flex items-center gap-2",
+                                isNextDisabled()
+                                    ? "bg-[#1A1A1A]/5 text-[#1A1A1A]/20 cursor-not-allowed border border-[#1A1A1A]/5"
+                                    : "bg-[#1A1A1A] text-[#FDFBF7] hover:bg-[#2C2C2C] hover:scale-105 hover:shadow-[0_20px_40px_-12px_rgba(0,0,0,0.2)]"
+                            )}
                         >
-                            {currentStepIndex === questions.length - 1 ? "查看报告" : "下一步"}
+                            <span>{currentStepIndex === questions.length - 1 ? "查看报告" : "下一步"}</span>
+                            {!isNextDisabled() && <ChevronRight className="w-4 h-4" />}
                         </button>
                     )}
                     {/* Fallback for last step is handled by auto-submit, but we can keep a manual button if stuck */}
                     {currentQuestion.type !== "multiple" && currentStepIndex === questions.length - 1 && !isNextDisabled() && (
                         <button
                             onClick={handleNext}
-                            className="text-sm font-bold text-[#1A1A1A] border-b-2 border-brand-gold/40 pb-0.5 hover:border-brand-gold transition-all tracking-widest uppercase"
+                            className="bg-[#1A1A1A] text-[#FDFBF7] px-10 py-3 rounded-full text-sm font-bold tracking-[0.2em] hover:bg-[#2C2C2C] transition-all shadow-lg hover:scale-105 active:scale-95 flex items-center gap-2"
                         >
-                            查看报告
+                            <span>查看报告</span>
+                            <ChevronRight className="w-4 h-4" />
                         </button>
                     )}
                 </div>
@@ -497,7 +505,7 @@ export default function QuestionsPage() {
                                 <h3 className="text-2xl font-serif text-[#1A1A1A] mb-3 tracking-tight">确认提交？</h3>
                                 <p className="text-[14px] text-[#5E5E5E] mb-10 font-light leading-relaxed px-4">
                                     我们检测到您的填写速度较快。<br />
-                                    建议您再次核对，确保 AI 能为您提供<span className="text-[#3D4430] font-medium">最精准</span>的分析结果。
+                                    建议您再次核对，确保 AI 能为您提供<span className="text-[#1A1A1A] font-medium">最精准</span>的分析结果。
                                 </p>
                                 <div className="flex flex-col gap-4">
                                     <button

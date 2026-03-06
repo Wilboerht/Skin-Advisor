@@ -61,7 +61,7 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
 
                     <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none" />
                     <div className="absolute right-6 top-6 opacity-0 transition-opacity group-hover:opacity-100">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#3D4430] text-white shadow-md">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#1A1A1A] text-white shadow-md">
                             <Check className="h-4 w-4" />
                         </div>
                     </div>
@@ -80,7 +80,7 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
 
                     <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none" />
                     <div className="absolute right-6 top-6 opacity-0 transition-opacity group-hover:opacity-100">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#3D4430] text-white shadow-md">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#1A1A1A] text-white shadow-md">
                             <Check className="h-4 w-4" />
                         </div>
                     </div>
