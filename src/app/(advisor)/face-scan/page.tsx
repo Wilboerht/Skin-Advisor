@@ -82,8 +82,8 @@ export default function FaceScanPage() {
     return (
         <div className="relative min-h-screen w-full bg-transparent flex flex-col items-center p-4">
             {/* Top Navigation Bar: 90% Width */}
-            <div className="absolute top-0 left-0 w-full flex justify-center z-[110]">
-                <div className="w-[90%] py-8 flex items-center justify-between">
+            <header className="w-full flex justify-center z-[110] shrink-0">
+                <div className="w-[90%] py-6 flex items-center justify-between relative">
                     <Link
                         href="/questions"
                         className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/40 backdrop-blur-md text-[#1A1A1A]/60 hover:bg-white/80 hover:text-[#1A1A1A] hover:shadow-xl transition-all border border-white/40 shadow-sm"
@@ -104,10 +104,10 @@ export default function FaceScanPage() {
                     {/* Placeholder to maintain flex balance */}
                     <div className="w-10 h-10" />
                 </div>
-            </div>
+            </header>
 
             {/* Main Content: Mirror Container pushed to center */}
-            <div className="flex-1 flex flex-col items-center justify-center w-full pt-24">
+            <div className="flex-1 flex flex-col items-center justify-center w-full min-h-0">
                 <div className="relative w-full max-w-[480px] aspect-[3/4] max-h-[70vh] bg-black rounded-[2rem] overflow-hidden shadow-2xl ring-8 ring-white/50 z-10 flex flex-col">
                     {!hasStarted ? (
                         // Camera Placeholder when modal is open
@@ -133,7 +133,7 @@ export default function FaceScanPage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.5, duration: 1 }}
-                className="mt-8 flex flex-col items-center pb-8"
+                className="flex flex-col items-center py-6 shrink-0"
             >
                 <div className="flex flex-col items-center gap-1 opacity-40">
                     <p className="text-[10px] sm:text-[11px] font-light tracking-widest text-[#1A1A1A]">
