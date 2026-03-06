@@ -51,17 +51,18 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
                 <m.button
                     variants={item}
                     onClick={() => onSelect("female")}
-                    className="group relative flex flex-col items-center overflow-hidden rounded-2xl border border-[#3D4430]/10 bg-white p-6 text-left transition-all hover:border-[#3D4430] hover:bg-[#3D4430]/5 hover:shadow-lg active:scale-[0.98]"
+                    className="glass-premium group relative flex flex-col items-center overflow-hidden rounded-2xl border border-white/40 p-8 text-center transition-all hover:scale-[1.02] active:scale-[0.98]"
                 >
-                    <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#F0EDE1] text-3xl transition-transform group-hover:scale-110">
+                    <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-white/50 text-4xl shadow-sm transition-transform group-hover:scale-110">
                         👩
                     </div>
-                    <h3 className="mb-1 font-serif text-lg font-medium text-[#1A1A1A]">女性</h3>
-                    <p className="text-xs text-[#5E5E5E]">Female</p>
+                    <h3 className="mb-1 font-serif text-xl font-medium text-[#1A1A1A]">女性</h3>
+                    <p className="text-xs tracking-widest text-[#5E5E5E] uppercase opacity-60">Female</p>
 
-                    <div className="absolute right-4 top-4 opacity-0 transition-opacity group-hover:opacity-100">
-                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#3D4430] text-white">
-                            <Check className="h-3.5 w-3.5" />
+                    <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none" />
+                    <div className="absolute right-6 top-6 opacity-0 transition-opacity group-hover:opacity-100">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#3D4430] text-white shadow-md">
+                            <Check className="h-4 w-4" />
                         </div>
                     </div>
                 </m.button>
@@ -69,17 +70,18 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
                 <m.button
                     variants={item}
                     onClick={() => onSelect("male")}
-                    className="group relative flex flex-col items-center overflow-hidden rounded-2xl border border-[#3D4430]/10 bg-white p-6 text-left transition-all hover:border-[#3D4430] hover:bg-[#3D4430]/5 hover:shadow-lg active:scale-[0.98]"
+                    className="glass-premium group relative flex flex-col items-center overflow-hidden rounded-2xl border border-white/40 p-8 text-center transition-all hover:scale-[1.02] active:scale-[0.98]"
                 >
-                    <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#F0EDE1] text-3xl transition-transform group-hover:scale-110">
+                    <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-white/50 text-4xl shadow-sm transition-transform group-hover:scale-110">
                         👨
                     </div>
-                    <h3 className="mb-1 font-serif text-lg font-medium text-[#1A1A1A]">男性</h3>
-                    <p className="text-xs text-[#5E5E5E]">Male</p>
+                    <h3 className="mb-1 font-serif text-xl font-medium text-[#1A1A1A]">男性</h3>
+                    <p className="text-xs tracking-widest text-[#5E5E5E] uppercase opacity-60">Male</p>
 
-                    <div className="absolute right-4 top-4 opacity-0 transition-opacity group-hover:opacity-100">
-                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#3D4430] text-white">
-                            <Check className="h-3.5 w-3.5" />
+                    <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none" />
+                    <div className="absolute right-6 top-6 opacity-0 transition-opacity group-hover:opacity-100">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#3D4430] text-white shadow-md">
+                            <Check className="h-4 w-4" />
                         </div>
                     </div>
                 </m.button>

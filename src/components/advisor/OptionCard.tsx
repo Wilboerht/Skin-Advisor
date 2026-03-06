@@ -40,12 +40,13 @@ export function OptionCard({
             whileHover={{ y: -2 }}
             whileTap={{ scale: 0.98 }}
             className={cn(
-                "group relative w-full rounded-xl text-left transition-all duration-300 border px-6 py-5 flex items-center gap-5",
+                "group relative w-full rounded-2xl text-left transition-all duration-300 border px-6 py-5 flex items-center gap-5 backdrop-blur-md",
                 isSelected
-                    ? "bg-[#1A1A1A] border-[#1A1A1A] text-[#FDFBF7]"
-                    : "bg-white border-[#E5E5E5] text-[#1A1A1A] hover:border-[#1A1A1A]"
+                    ? "bg-[#3D4430]/15 border-[#3D4430]/60 text-[#1A1A1A] shadow-xl shadow-[#3D4430]/10 scale-[1.02] ring-1 ring-[#3D4430]/10"
+                    : "glass-premium border-white/40 text-[#1A1A1A] hover:border-white/60 hover:scale-[1.01] shadow-sm hover:shadow-md"
             )}
         >
+            <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none" />
             {/* Emoji - Simplified */}
             {emoji && (
                 <div className={cn(
@@ -59,15 +60,15 @@ export function OptionCard({
             {/* Text Content */}
             <div className="flex-1 min-w-0">
                 <p className={cn(
-                    "text-base font-medium tracking-wide mb-0.5",
-                    isSelected ? "text-[#FDFBF7]" : "text-[#1A1A1A]"
+                    "text-base font-semibold tracking-wide mb-0.5",
+                    isSelected ? "text-[#3D4430]" : "text-[#1A1A1A]"
                 )}>
                     {label}
                 </p>
                 {description && (
                     <p className={cn(
                         "text-xs font-light leading-relaxed",
-                        isSelected ? "text-[#FDFBF7]/60" : "text-[#5E5E5E]"
+                        isSelected ? "text-[#3D4430]/70" : "text-[#5E5E5E]"
                     )}>
                         {description}
                     </p>
@@ -78,7 +79,7 @@ export function OptionCard({
             <div className={cn(
                 "w-5 h-5 rounded-full border flex items-center justify-center transition-all duration-300",
                 isSelected
-                    ? "border-white/20 bg-white/10 text-white"
+                    ? "border-[#3D4430] bg-[#3D4430] text-white"
                     : "border-[#E5E5E5] group-hover:border-[#1A1A1A]/30"
             )}>
                 {isSelected && <Check className="w-3 h-3" strokeWidth={3} />}

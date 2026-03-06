@@ -330,9 +330,10 @@ export default function QuestionsPage() {
 
                     <button
                         onClick={() => router.push("/")}
-                        className="fixed bottom-8 text-xs text-[#1A1A1A]/40 hover:text-[#1A1A1A] transition-colors tracking-widest uppercase font-medium"
+                        className="fixed bottom-8 flex items-center gap-2 text-xs text-[#1A1A1A]/40 hover:text-[#1A1A1A] transition-colors tracking-widest uppercase font-medium"
                     >
-                        CANCEL
+                        <LogOut size={12} strokeWidth={2.5} />
+                        退出测试
                     </button>
                 </m.div>
             </AnimatePresence>
@@ -400,15 +401,12 @@ export default function QuestionsPage() {
                 {/* Back Button */}
                 <button
                     onClick={handleBack}
-                    className={`group flex items-center gap-3 text-sm font-medium transition-all duration-300 ${currentStepIndex === 0 && !gender
+                    className={`glass-premium px-8 py-2.5 rounded-full text-sm font-semibold tracking-widest hover:scale-[1.05] transition-all shadow-lg active:scale-95 ${currentStepIndex === 0 && !gender
                         ? "opacity-0 pointer-events-none"
-                        : "text-[#1A1A1A]/40 hover:text-[#1A1A1A]"
+                        : "text-[#1A1A1A]"
                         }`}
                 >
-                    <div className="w-10 h-10 rounded-full border border-[#1A1A1A]/10 flex items-center justify-center group-hover:bg-[#1A1A1A] group-hover:border-[#1A1A1A] transition-all">
-                        <ChevronLeft className="h-4 w-4 group-hover:text-white transition-colors" />
-                    </div>
-                    <span className="tracking-wide">上一题</span>
+                    上一题
                 </button>
 
                 {/* Next Button (Only for multiple choice or explicit action) */}
@@ -417,18 +415,18 @@ export default function QuestionsPage() {
                         <button
                             onClick={handleNext}
                             disabled={isNextDisabled()}
-                            className="bg-[#1A1A1A] text-white px-8 py-2.5 rounded-full text-sm font-medium tracking-wide hover:bg-[#3D4430] disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+                            className="glass-premium-primary text-[#1A1A1A] px-8 py-2.5 rounded-full text-sm font-semibold tracking-widest hover:scale-[1.05] disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-lg active:scale-95"
                         >
-                            下一步
+                            {currentStepIndex === questions.length - 1 ? "查看报告" : "下一步"}
                         </button>
                     )}
                     {/* Fallback for last step is handled by auto-submit, but we can keep a manual button if stuck */}
                     {currentQuestion.type !== "multiple" && currentStepIndex === questions.length - 1 && !isNextDisabled() && (
                         <button
                             onClick={handleNext}
-                            className="text-sm font-medium text-[#1A1A1A] border-b border-[#1A1A1A] pb-0.5 hover:opacity-50 transition-opacity"
+                            className="text-sm font-bold text-[#1A1A1A] border-b-2 border-brand-gold/40 pb-0.5 hover:border-brand-gold transition-all tracking-widest uppercase"
                         >
-                            Finish
+                            查看报告
                         </button>
                     )}
                 </div>
@@ -447,25 +445,29 @@ export default function QuestionsPage() {
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
-                            className="relative w-full max-w-sm bg-white p-8 shadow-2xl border border-[#1A1A1A]/5 text-center"
+                            className="relative w-full max-w-sm glass-premium p-10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] border border-white/50 text-center rounded-[2.5rem] overflow-hidden"
                         >
-                            <h3 className="text-xl font-serif text-[#1A1A1A] mb-2">结束测试？</h3>
-                            <p className="text-sm text-[#5E5E5E] mb-8 font-light">
-                                您的进度已自动保存，下次可继续。
-                            </p>
-                            <div className="flex flex-col gap-3">
-                                <button
-                                    onClick={() => setShowExitConfirm(false)}
-                                    className="w-full bg-[#1A1A1A] text-white py-3 text-sm font-medium hover:bg-[#3D4430] transition-colors"
-                                >
-                                    继续测试
-                                </button>
-                                <button
-                                    onClick={() => router.push("/")}
-                                    className="w-full py-2 text-xs text-[#1A1A1A]/40 hover:text-[#1A1A1A] transition-colors"
-                                >
-                                    确认退出
-                                </button>
+                            <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none" />
+                            <div className="relative z-10">
+                                <h3 className="text-2xl font-serif text-[#1A1A1A] mb-3 tracking-tight">结束测试？</h3>
+                                <p className="text-sm text-[#5E5E5E] mb-10 font-light leading-relaxed">
+                                    您的进度已自动保存，<br />下次返回可直接从此处继续。
+                                </p>
+                                <div className="flex flex-col gap-4">
+                                    <button
+                                        onClick={() => setShowExitConfirm(false)}
+                                        className="glass-premium-primary w-full py-4 text-[15px] font-bold tracking-widest hover:scale-[1.02] transition-all rounded-full shadow-md"
+                                    >
+                                        继续测试
+                                    </button>
+                                    <button
+                                        onClick={() => router.push("/")}
+                                        className="w-full py-2 flex items-center justify-center gap-2 text-xs text-[#1A1A1A]/40 hover:text-[#1A1A1A] transition-colors tracking-[0.2em] font-medium"
+                                    >
+                                        <LogOut size={12} strokeWidth={2.5} />
+                                        退出测试
+                                    </button>
+                                </div>
                             </div>
                         </m.div>
                     </div>
@@ -485,35 +487,37 @@ export default function QuestionsPage() {
                             initial={{ opacity: 0, scale: 0.95, y: 10 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                            className="relative w-full max-w-sm bg-white p-8 shadow-2xl border border-[#1A1A1A]/5 text-center"
+                            className="relative w-full max-w-[400px] glass-premium p-10 shadow-[0_32px_64px_-16px_rgba(162,148,134,0.2)] border border-white/50 text-center rounded-[2.5rem] overflow-hidden"
                         >
-                            <div className="w-12 h-12 rounded-full bg-[#F5F3EF] flex items-center justify-center mx-auto mb-4">
-                                <span className="text-2xl">🤔</span>
-                            </div>
-                            <h3 className="text-xl font-serif text-[#1A1A1A] mb-2">确认提交？</h3>
-                            <p className="text-sm text-[#5E5E5E] mb-6 font-light leading-relaxed">
-                                我们检测到您的填写速度较快。<br />
-                                为了确保 AI 能为您提供精准的护肤建议，建议您再次核对您的回答。
-                            </p>
-                            <div className="flex flex-col gap-3">
-                                <button
-                                    onClick={() => {
-                                        setShowQualityWarning(false);
-                                        // 重置计时以免再次触发（给用户机会快速通过）
-                                        sessionStartTime.current = Date.now();
-                                        startStepIndex.current = currentStepIndex;
-                                        if (pendingAnswers) processSubmission(pendingAnswers);
-                                    }}
-                                    className="w-full bg-[#1A1A1A] text-white py-3 text-sm font-medium hover:bg-[#3D4430] transition-colors"
-                                >
-                                    我已确认无误，提交
-                                </button>
-                                <button
-                                    onClick={() => setShowQualityWarning(false)}
-                                    className="w-full py-2 text-xs text-[#1A1A1A]/40 hover:text-[#1A1A1A] transition-colors"
-                                >
-                                    返回检查
-                                </button>
+                            <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none" />
+                            <div className="relative z-10">
+                                <div className="w-16 h-16 rounded-full bg-white/40 flex items-center justify-center mx-auto mb-6 shadow-inner">
+                                    <span className="text-3xl text-[#8B7355]">🤔</span>
+                                </div>
+                                <h3 className="text-2xl font-serif text-[#1A1A1A] mb-3 tracking-tight">确认提交？</h3>
+                                <p className="text-[14px] text-[#5E5E5E] mb-10 font-light leading-relaxed px-4">
+                                    我们检测到您的填写速度较快。<br />
+                                    建议您再次核对，确保 AI 能为您提供<span className="text-[#3D4430] font-medium">最精准</span>的分析结果。
+                                </p>
+                                <div className="flex flex-col gap-4">
+                                    <button
+                                        onClick={() => {
+                                            setShowQualityWarning(false);
+                                            sessionStartTime.current = Date.now();
+                                            startStepIndex.current = currentStepIndex;
+                                            if (pendingAnswers) processSubmission(pendingAnswers);
+                                        }}
+                                        className="glass-premium-primary w-full py-4 text-[15px] font-bold tracking-widest hover:scale-[1.02] transition-all rounded-full shadow-md"
+                                    >
+                                        我已确认，去提交
+                                    </button>
+                                    <button
+                                        onClick={() => setShowQualityWarning(false)}
+                                        className="w-full py-2 text-xs text-[#1A1A1A]/40 hover:text-[#1A1A1A] transition-colors tracking-[0.2em] font-medium"
+                                    >
+                                        返回检查
+                                    </button>
+                                </div>
                             </div>
                         </m.div>
                     </div>
@@ -532,30 +536,33 @@ export default function QuestionsPage() {
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
-                            className="relative w-full max-w-sm bg-white p-8 shadow-2xl border border-[#1A1A1A]/5 text-center"
+                            className="relative w-full max-w-[400px] glass-premium p-10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] border border-white/50 text-center rounded-[2.5rem] overflow-hidden"
                         >
-                            <div className="w-12 h-12 rounded-full bg-[#F5F3EF] flex items-center justify-center mx-auto mb-4">
-                                <svg className="w-6 h-6 text-[#3D4430]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
-                            <h3 className="text-xl font-serif text-[#1A1A1A] mb-2">检测到未完成的测试</h3>
-                            <p className="text-sm text-[#5E5E5E] mb-8 font-light">
-                                您上次的测试进度已保存，<br />是否继续完成？
-                            </p>
-                            <div className="flex flex-col gap-3">
-                                <button
-                                    onClick={resumeSavedProgress}
-                                    className="w-full bg-[#1A1A1A] text-white py-3 text-sm font-medium hover:bg-[#3D4430] transition-colors"
-                                >
-                                    继续上次测试
-                                </button>
-                                <button
-                                    onClick={startFresh}
-                                    className="w-full py-2 text-xs text-[#1A1A1A]/40 hover:text-[#1A1A1A] transition-colors"
-                                >
-                                    重新开始
-                                </button>
+                            <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none" />
+                            <div className="relative z-10">
+                                <div className="w-16 h-16 rounded-full bg-white/40 flex items-center justify-center mx-auto mb-6 shadow-inner">
+                                    <svg className="w-8 h-8 text-[#3D4430]/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                                <h3 className="text-2xl font-serif text-[#1A1A1A] mb-3 tracking-tight">未完成的测试</h3>
+                                <p className="text-[14px] text-[#5E5E5E] mb-10 font-light leading-relaxed">
+                                    为您自动找回了上次的进度，<br />是否立即继续完成？
+                                </p>
+                                <div className="flex flex-col gap-4">
+                                    <button
+                                        onClick={resumeSavedProgress}
+                                        className="glass-premium-primary w-full py-4 text-[15px] font-bold tracking-widest hover:scale-[1.02] transition-all rounded-full shadow-md"
+                                    >
+                                        继续上次测试
+                                    </button>
+                                    <button
+                                        onClick={startFresh}
+                                        className="w-full py-2 text-xs text-[#1A1A1A]/40 hover:text-[#1A1A1A] transition-colors tracking-[0.2em] font-medium"
+                                    >
+                                        重新开始
+                                    </button>
+                                </div>
                             </div>
                         </m.div>
                     </div>
