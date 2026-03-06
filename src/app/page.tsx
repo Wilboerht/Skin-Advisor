@@ -361,7 +361,7 @@ export default function Home() {
                         width={240}
                         height={72}
                         priority
-                        className="h-8 md:h-9 object-contain opacity-90 mix-blend-multiply"
+                        className="h-6 md:h-7 object-contain opacity-90 mix-blend-multiply"
                       />
                     </div>
 
