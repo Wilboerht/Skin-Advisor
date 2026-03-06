@@ -98,25 +98,23 @@ export function OnboardingFlowModal({
                                     exit={{ opacity: 0, x: 20 }}
                                     transition={{ duration: 0.3 }}
                                 >
-                                    <div className="flex justify-center mb-10">
-                                        <div className="relative flex items-center justify-center h-16 w-16 rounded-full bg-[#3D4430]/5 border border-[#3D4430]/5 ring-1 ring-[#3D4430]/5 shadow-inner">
-                                            <svg
-                                                viewBox="0 0 24 24"
-                                                className="h-8 w-8 text-[#3D4430] opacity-60"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeWidth="1"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                style={{ transform: 'rotate(8deg)' }}
-                                            >
-                                                {/* Balanced Logo-style Hand */}
-                                                <path d="M7 11V7a2 2 0 0 1 4 0v4" />
-                                                <path d="M11 10V6a2 2 0 0 1 4 0v4" />
-                                                <path d="M15 11V8a2 2 0 0 1 4 0v6a8 8 0 0 1-8 8h-1c-3.5 0-6-2.5-6-6v-2a2 2 0 0 1 4 0v2" />
-                                                <path d="M4 14.5c0-1 1-2 2-1.5" />
-                                            </svg>
-                                        </div>
+                                    <div className="flex justify-center mb-8 text-[#3D4430]">
+                                        <svg
+                                            viewBox="0 0 40 40"
+                                            className="h-10 w-10 opacity-70"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="1.2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            style={{ transform: 'rotate(10deg)' }}
+                                        >
+                                            <path d="M14 28.5C14 28.5 15.5 33 20 33C24.5 33 26 28.5 26 28.5" />
+                                            <path d="M14 28.5V17.5C14 15.5 15.5 14.5 16 14.5C16.5 14.5 18 15.5 18 17.5V23.5" />
+                                            <path d="M18 23.5V11.5C18 9.5 19.5 8.5 20 8.5C20.5 8.5 22 9.5 22 11.5V23.5" />
+                                            <path d="M22 23.5V13.5C22 11.5 23.5 10.5 24 10.5C24.5 10.5 26 11.5 26 13.5V28.5" />
+                                            <path d="M14 24.5C14 24.5 12 24.5 9.5 22.5C7 20.5 8.5 18.5 9 18.5C9.5 18.5 14 21.5 14 23.5" />
+                                        </svg>
                                     </div>
 
                                     <h3 className="mb-2 text-xl font-serif text-[#1A1A1A]">
