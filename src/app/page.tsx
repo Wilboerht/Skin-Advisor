@@ -54,13 +54,14 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const { initSession } = useAdvisorAnalytics();
   const { user } = useAuth();
-  const { isDrawerOpen, setDrawerOpen } = useLayout();
+  const { isDrawerOpen, setDrawerOpen, showBento, setShowBento } = useLayout();
   const textureRef = useRef<HTMLDivElement>(null);
 
-  // 首页特殊处理：立即设置抽屉为展开状态
+  // 首页特殊处理：立即设置抽屉为展开状态，并隐藏便当盒
   useEffect(() => {
     setDrawerOpen(true);
-  }, [setDrawerOpen]);
+    setShowBento(false);
+  }, [setDrawerOpen, setShowBento]);
 
   // 鼠标视差效果
   useEffect(() => {
@@ -458,7 +459,17 @@ export default function Home() {
 
             {/* Drawer Toggle Button */}
             <button
-              onClick={() => setDrawerOpen(!isDrawerOpen)}
+              onClick={() => {
+                if (!isDrawerOpen) {
+                  // 展开：隐藏便当盒
+                  setShowBento(false);
+                  setDrawerOpen(true);
+                } else {
+                  // 收起：显示便当盒
+                  setDrawerOpen(false);
+                  setShowBento(true);
+                }
+              }}
               className="group -mt-[1px] relative z-30 flex items-center justify-center rounded-b-2xl bg-[#F0EDE1] px-10 py-3 shadow-[0_10px_20px_-5px_rgba(0,0,0,0.1)] transition-all hover:shadow-[0_15px_25px_-5px_rgba(0,0,0,0.15)] lg:px-14 lg:py-3.5 overflow-hidden pointer-events-auto border-none outline-none"
             >
               <div className="texture-overlay absolute inset-0" />

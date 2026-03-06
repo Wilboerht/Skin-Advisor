@@ -11,17 +11,21 @@ interface LayoutContextType {
     isNavMenuOpen: boolean;
     /** 设置底部导航菜单展开状态 */
     setNavMenuOpen: (isOpen: boolean) => void;
+    /** 是否显示便当盒背景（仅手动点击收起按钮时为 true） */
+    showBento: boolean;
+    /** 设置便当盒背景可见性 */
+    setShowBento: (show: boolean) => void;
 }
 
 const LayoutContext = createContext<LayoutContextType | undefined>(undefined);
 
 export function LayoutProvider({ children }: { children: ReactNode }) {
-    // 默认为 true，因为大多数页面加载时抽屉都会自动展开
     const [isDrawerOpen, setDrawerOpen] = useState(true);
     const [isNavMenuOpen, setNavMenuOpen] = useState(false);
+    const [showBento, setShowBento] = useState(false);
 
     return (
-        <LayoutContext.Provider value={{ isDrawerOpen, setDrawerOpen, isNavMenuOpen, setNavMenuOpen }}>
+        <LayoutContext.Provider value={{ isDrawerOpen, setDrawerOpen, isNavMenuOpen, setNavMenuOpen, showBento, setShowBento }}>
             {children}
         </LayoutContext.Provider>
     );
