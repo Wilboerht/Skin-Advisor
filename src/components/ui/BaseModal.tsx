@@ -46,7 +46,7 @@ export function BaseModal({
                         {showCloseButton && onClose && (
                             <button
                                 onClick={onClose}
-                                className="absolute top-4 right-4 z-20 text-[#1A1A1A]/30 hover:text-[#1A1A1A] transition-colors bg-transparent border-none cursor-pointer"
+                                className="absolute top-6 right-6 z-20 text-[#1A1A1A]/30 hover:text-[#1A1A1A] transition-colors bg-transparent border-none cursor-pointer"
                             >
                                 <X className="w-5 h-5" />
                             </button>
