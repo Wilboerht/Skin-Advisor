@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Link } from "next-view-transitions";
 import { LazyMotion, domAnimation, AnimatePresence, m } from "framer-motion";
 import Image from "next/image";
-import { ArrowRight, ArrowLeft, Loader2, MapPin, User, ClipboardList, ChevronDown } from "lucide-react";
+import { ArrowRight, House, Loader2, MapPin, User, ClipboardList, ChevronDown } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
 import { useLayout } from "@/contexts/LayoutContext";
@@ -349,12 +349,12 @@ export default function Home() {
                       href="https://demo.nihplod.cn"
                       className="glass-premium group flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full text-sm font-medium tracking-wide no-underline cursor-pointer relative z-10 transition-all duration-300"
                     >
-                      <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+                      <House className="w-4 h-4 transition-transform group-hover:scale-110" />
                       <span className="hidden sm:inline">返回官网</span>
                     </a>
 
                     {/* Centered Logo */}
-                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none flex items-center justify-center">
                       <Image
                         src="/NIHPLOD-logo.svg"
                         alt="NIHPLOD 旎柏"
