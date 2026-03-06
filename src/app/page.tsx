@@ -55,8 +55,6 @@ export default function Home() {
   const { initSession } = useAdvisorAnalytics();
   const { user } = useAuth();
   const { isDrawerOpen, setDrawerOpen } = useLayout();
-  const wave1Ref = useRef<SVGSVGElement>(null);
-  const wave2Ref = useRef<SVGSVGElement>(null);
   const textureRef = useRef<HTMLDivElement>(null);
 
   // 首页特殊处理：立即设置抽屉为展开状态
@@ -72,12 +70,6 @@ export default function Home() {
       const moveX = (e.clientX - window.innerWidth / 2) * 0.01;
       const moveY = (e.clientY - window.innerHeight / 2) * 0.01;
 
-      if (wave1Ref.current) {
-        wave1Ref.current.style.transform = `translate(${moveX}px, ${moveY}px)`;
-      }
-      if (wave2Ref.current) {
-        wave2Ref.current.style.transform = `translate(${-moveX}px, ${-moveY}px)`;
-      }
       if (textureRef.current) {
         textureRef.current.style.transform = `translate(${moveX * 0.5}px, ${moveY * 0.5}px)`;
       }
@@ -349,20 +341,10 @@ export default function Home() {
                   }}
                 />
 
-                {/* Wave Background */}
-                <div className="wave-container pointer-events-none absolute inset-0 z-0">
-                  <svg ref={wave1Ref} className="wave wave-1" viewBox="0 0 1200 120" preserveAspectRatio="none">
-                    <path d="M0,60 C150,110 350,10 500,60 C650,110 850,10 1000,60 C1150,110 1350,10 1500,60" />
-                  </svg>
-                  <svg ref={wave2Ref} className="wave wave-2" viewBox="0 0 1200 120" preserveAspectRatio="none">
-                    <path d="M0,40 C200,90 400,0 600,40 C800,80 1000,0 1200,40" />
-                  </svg>
-                </div>
-
                 {/* Main Content Area */}
-                <main className="main-content relative z-10 flex h-full flex-col items-center justify-center text-center pb-32 lg:pb-24">
+                <main className="main-content relative z-10 w-full flex h-full flex-col items-center justify-center text-center pb-32 lg:pb-24">
                   {/* Top Navigation Hooks */}
-                  <div className="absolute top-6 left-6 z-50">
+                  <div className="absolute top-6 left-1/2 -translate-x-1/2 w-[90%] flex items-center justify-between z-50">
                     <a
                       href="https://demo.nihplod.cn"
                       className="flex items-center gap-2 text-[#3D4430]/80 hover:text-[#1A1A1A] transition-colors text-sm font-medium tracking-wide bg-transparent border-none cursor-pointer no-underline"
@@ -370,9 +352,7 @@ export default function Home() {
                       <ArrowLeft className="w-4 h-4" />
                       <span>返回官网</span>
                     </a>
-                  </div>
 
-                  <div className="absolute top-6 right-6 z-50">
                     {user ? (
                       <button
                         onClick={() => setShowProfileModal(true)}
