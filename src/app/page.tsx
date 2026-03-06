@@ -261,13 +261,12 @@ export default function Home() {
       return;
     }
 
+    // 进入问卷时收起抽屉
+    setDrawerOpen(false);
+
     // If user is logged in and has a name, skip nickname modal
     if (user?.name) {
       safeStorage.set("advisor_nickname", user.name);
-      // Wait, we need a way to open onboarding modal but skip nickname if already set...
-      // Or simply just rely on OnboardingFlowModal to manage step 1 vs 2?
-      // For now, OnboardingFlowModal always defaults to nickname step. Let's set the component prop or state!
-      // Since it's refactored, let's just showOnboardingModal always, and it handles it! 
       setShowOnboardingModal(true);
     } else {
       setShowOnboardingModal(true);

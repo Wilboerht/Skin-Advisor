@@ -7,6 +7,7 @@ interface BaseModalProps {
     onClose?: () => void;
     children: React.ReactNode;
     className?: string;
+    backdropClassName?: string;
     showCloseButton?: boolean;
 }
 
@@ -14,7 +15,8 @@ export function BaseModal({
     isOpen,
     onClose,
     children,
-    className = "p-8 text-center",
+    className = "p-8 text-center bg-white",
+    backdropClassName = "bg-[#FDFBF7]/80 backdrop-blur-sm",
     showCloseButton = false,
 }: BaseModalProps) {
     return (
@@ -27,7 +29,7 @@ export function BaseModal({
                     exit={{ opacity: 0 }}
                 >
                     <m.div
-                        className="absolute inset-0 bg-[#FDFBF7]/80 backdrop-blur-sm"
+                        className={`absolute inset-0 ${backdropClassName}`}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
@@ -35,7 +37,7 @@ export function BaseModal({
                     />
 
                     <m.div
-                        className={`relative z-10 w-full max-w-sm bg-white shadow-[0_20px_40px_-10px_rgba(0,0,0,0.05)] border border-[#3D4430]/5 ${className}`}
+                        className={`relative z-10 w-full max-w-sm shadow-[0_20px_40px_-10px_rgba(0,0,0,0.05)] border border-[#3D4430]/5 ${className}`}
                         initial={{ opacity: 0, scale: 0.95, y: 10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 10 }}

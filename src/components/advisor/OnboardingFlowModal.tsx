@@ -77,7 +77,8 @@ export function OnboardingFlowModal({
                 isOpen={isOpen && !showRegionSelectModal}
                 onClose={onClose}
                 showCloseButton
-                className="p-10 text-center rounded-[2.5rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] overflow-hidden border border-[#3D4430]/10 ring-1 ring-white/20"
+                backdropClassName="bg-black/5 backdrop-blur-[2px]"
+                className="p-10 text-center rounded-[2.5rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] overflow-hidden border border-white/20 ring-1 ring-white/10 bg-[#FDFBF7]/80 backdrop-blur-2xl"
             >
                 {/* Texture Overlay in Modal */}
                 <div
@@ -206,7 +207,8 @@ export function OnboardingFlowModal({
             <BaseModal
                 isOpen={showRegionSelectModal}
                 onClose={handleSkipRegion}
-                className="flex flex-col max-h-[70vh] p-0 rounded-[2rem] shadow-2xl overflow-hidden"
+                backdropClassName="bg-black/5 backdrop-blur-[2px]"
+                className="flex flex-col max-h-[70vh] p-0 rounded-[2rem] shadow-2xl overflow-hidden bg-[#FDFBF7]/90 backdrop-blur-2xl"
             >
                 {/* Texture Overlay */}
                 <div
