@@ -497,39 +497,49 @@ export default function Home() {
         isOpen={showLimitModal}
         onClose={() => setShowLimitModal(false)}
         showCloseButton
-        className="p-8 text-center"
+        className="p-10 text-center rounded-[2rem] shadow-2xl overflow-hidden"
       >
-        <div className="flex justify-center mb-6 text-amber-500">
-          <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-        </div>
-        <h3 className="mb-2 text-xl font-serif text-[#1A1A1A]">今日测试次数已用完</h3>
-        <p className="mb-6 text-sm text-[#5E5E5E] leading-relaxed font-light">
-          {user ? (
-            <>您今日的 {testLimitInfo?.dailyLimit || 1} 次测试机会已全部使用，请明天再来</>
-          ) : (
-            <>游客每天仅有 1 次测试机会<br />登录后可获得更多测试次数</>
-          )}
-        </p>
-        <div className="space-y-3">
-          {!user && (
+        {/* Texture Overlay */}
+        <div
+          className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`
+          }}
+        />
+
+        <div className="relative z-10">
+          <div className="flex justify-center mb-6 text-amber-500/80">
+            <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h3 className="mb-3 text-xl font-serif text-[#1A1A1A] tracking-tight">今日测试次数已用完</h3>
+          <p className="mb-8 text-[14px] text-[#5E5E5E] leading-relaxed font-light">
+            {user ? (
+              <>您今日的 {testLimitInfo?.dailyLimit || 1} 次测试机会已全部使用，请明天再来</>
+            ) : (
+              <>游客每天仅有 1 次测试机会<br />登录后可获得更多测试次数</>
+            )}
+          </p>
+          <div className="space-y-4">
+            {!user && (
+              <button
+                onClick={() => {
+                  setShowLimitModal(false);
+                  openAuthModal('login');
+                }}
+                className="glass-premium-primary w-full py-3.5 rounded-full text-[15px] tracking-[0.2em] font-medium transition-all duration-300 border-none cursor-pointer outline-none"
+              >
+                登录 / 注册
+              </button>
+            )}
             <button
-              onClick={() => {
-                setShowLimitModal(false);
-                openAuthModal('login');
-              }}
-              className="w-full bg-[#1A1A1A] text-[#FDFBF7] py-3 text-sm font-medium hover:bg-[#3D4430] transition-colors border-none cursor-pointer"
+              onClick={() => setShowLimitModal(false)}
+              className="w-full py-2 text-[13px] tracking-widest text-[#3D4430]/40 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
             >
-              登录 / 注册
+              我知道了
             </button>
-          )}
-          <button
-            onClick={() => setShowLimitModal(false)}
-            className="w-full py-2 text-xs text-[#3D4430]/40 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
-          >
-            我知道了
-          </button>
+          </div>
         </div>
       </BaseModal>
 

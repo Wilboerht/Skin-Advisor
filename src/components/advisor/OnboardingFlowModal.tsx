@@ -77,8 +77,16 @@ export function OnboardingFlowModal({
                 isOpen={isOpen && !showRegionSelectModal}
                 onClose={onClose}
                 showCloseButton
-                className="p-8 text-center"
+                className="p-10 text-center rounded-[2rem] shadow-2xl overflow-hidden"
             >
+                {/* Texture Overlay in Modal */}
+                <div
+                    className="texture-overlay absolute inset-0 opacity-[0.03]"
+                    style={{
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`
+                    }}
+                />
+
                 <div className="relative min-h-[280px] flex flex-col">
                     <div className="flex-1 flex flex-col justify-center py-2">
                         <AnimatePresence mode="wait">
@@ -104,7 +112,7 @@ export function OnboardingFlowModal({
                                         onChange={(e) => setNickname(e.target.value)}
                                         placeholder="输入您的昵称"
                                         maxLength={20}
-                                        className="w-full px-4 py-3 mb-5 text-center text-[#1A1A1A] bg-[#FDFBF7] border border-[#3D4430]/10 rounded-lg focus:outline-none focus:border-[#3D4430]/30 focus:ring-2 focus:ring-[#3D4430]/5 transition-all placeholder:text-[#3D4430]/30"
+                                        className="w-full px-6 py-4 mb-6 text-center text-[#1A1A1A] bg-[#FDFBF7] border border-[#3D4430]/10 rounded-full focus:outline-none focus:border-[#3D4430]/30 transition-all placeholder:text-[#3D4430]/20 text-[15px] tracking-wide"
                                         onKeyDown={(e) => {
                                             if (e.key === 'Enter') {
                                                 handleNicknameNext();
@@ -117,7 +125,7 @@ export function OnboardingFlowModal({
                                         <button
                                             onClick={handleNicknameNext}
                                             disabled={!nickname.trim()}
-                                            className="w-full bg-[#1A1A1A] text-[#FDFBF7] py-3 text-sm font-medium hover:bg-[#3D4430] transition-colors disabled:opacity-50 disabled:cursor-not-allowed border-none cursor-pointer"
+                                            className="glass-premium-primary w-full py-3.5 rounded-full text-[15px] tracking-[0.2em] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-300 border-none outline-none"
                                         >
                                             下一步
                                         </button>
@@ -149,11 +157,11 @@ export function OnboardingFlowModal({
                                         <button
                                             onClick={handleLocationAcceptWrapper}
                                             disabled={isLocating}
-                                            className="w-full bg-[#1A1A1A] text-[#FDFBF7] py-3 text-sm font-medium hover:bg-[#3D4430] transition-colors flex items-center justify-center disabled:opacity-70 disabled:cursor-wait border-none cursor-pointer"
+                                            className="glass-premium-primary w-full py-3.5 rounded-full text-[15px] tracking-[0.2em] font-medium flex items-center justify-center disabled:opacity-70 disabled:cursor-wait border-none cursor-pointer transition-all duration-300 outline-none"
                                         >
                                             {isLocating ? (
                                                 <>
-                                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                    <Loader2 className="w-5 h-5 mr-3 animate-spin" />
                                                     正在定位...
                                                 </>
                                             ) : "允许访问"}
@@ -161,7 +169,7 @@ export function OnboardingFlowModal({
 
                                         <button
                                             onClick={handleDecline}
-                                            className="w-full py-2 text-xs text-[#3D4430]/40 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
+                                            className="w-full py-3 text-[13px] tracking-widest text-[#3D4430]/40 hover:text-[#3D4430] transition-all duration-300 bg-transparent border-none cursor-pointer"
                                         >
                                             暂不提供
                                         </button>
@@ -183,8 +191,16 @@ export function OnboardingFlowModal({
             <BaseModal
                 isOpen={showRegionSelectModal}
                 onClose={handleSkipRegion}
-                className="flex flex-col max-h-[70vh] p-0"
+                className="flex flex-col max-h-[70vh] p-0 rounded-[2rem] shadow-2xl overflow-hidden"
             >
+                {/* Texture Overlay */}
+                <div
+                    className="texture-overlay absolute inset-0 opacity-[0.02] pointer-events-none"
+                    style={{
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`
+                    }}
+                />
+
                 <div className="p-6 pb-2 text-center shrink-0">
                     <h3 className="text-lg font-serif text-[#1A1A1A]">选择地区</h3>
                     <p className="text-xs text-[#5E5E5E] mt-2 font-light">手动选择您所在的区域</p>
@@ -201,7 +217,7 @@ export function OnboardingFlowModal({
                                     <button
                                         key={region}
                                         onClick={() => handleRegionOption(region)}
-                                        className="px-3 py-1.5 bg-[#FDFBF7] text-xs text-[#5E5E5E] hover:bg-[#3D4430] hover:text-white transition-all duration-300 min-w-[3rem] border-none cursor-pointer"
+                                        className="glass-premium px-5 py-2.5 rounded-full text-xs transition-all duration-300 min-w-[5rem] border-none cursor-pointer hover:scale-105 active:scale-95"
                                     >
                                         {region}
                                     </button>
