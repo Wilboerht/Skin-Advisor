@@ -480,7 +480,10 @@ export default function Home() {
       {/* Modals */}
       <OnboardingFlowModal
         isOpen={showOnboardingModal}
-        onClose={() => setShowOnboardingModal(false)}
+        onClose={() => {
+          setShowOnboardingModal(false);
+          setDrawerOpen(true);
+        }}
         nickname={nickname}
         setNickname={setNickname}
         onNicknameSubmit={handleNicknameSubmit}
