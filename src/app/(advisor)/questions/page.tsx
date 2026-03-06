@@ -417,10 +417,10 @@ export default function QuestionsPage() {
                             onClick={handleNext}
                             disabled={isNextDisabled()}
                             className={cn(
-                                "px-10 py-3 rounded-full text-sm font-bold tracking-[0.2em] transition-all duration-300 shadow-lg active:scale-95 flex items-center gap-2",
+                                "px-10 py-3 rounded-full text-sm font-bold tracking-[0.2em] transition-all duration-300 shadow-lg active:scale-95 flex items-center gap-2 backdrop-blur-md border",
                                 isNextDisabled()
-                                    ? "bg-[#1A1A1A]/5 text-[#1A1A1A]/20 cursor-not-allowed border border-[#1A1A1A]/5"
-                                    : "bg-[#1A1A1A] text-[#FDFBF7] hover:bg-[#2C2C2C] hover:scale-105 hover:shadow-[0_20px_40px_-12px_rgba(0,0,0,0.2)]"
+                                    ? "bg-[#1A1A1A]/5 text-[#1A1A1A]/20 cursor-not-allowed border-transparent"
+                                    : "bg-[#4A3728]/90 text-[#FDFBF7] border-white/20 hover:bg-[#4A3728] hover:scale-105 hover:shadow-[0_20px_40px_-12px_rgba(74,55,40,0.4)]"
                             )}
                         >
                             <span>{currentStepIndex === questions.length - 1 ? "查看报告" : "下一步"}</span>
@@ -431,7 +431,7 @@ export default function QuestionsPage() {
                     {currentQuestion.type !== "multiple" && currentStepIndex === questions.length - 1 && !isNextDisabled() && (
                         <button
                             onClick={handleNext}
-                            className="bg-[#1A1A1A] text-[#FDFBF7] px-10 py-3 rounded-full text-sm font-bold tracking-[0.2em] hover:bg-[#2C2C2C] transition-all shadow-lg hover:scale-105 active:scale-95 flex items-center gap-2"
+                            className="bg-[#4A3728]/90 text-[#FDFBF7] px-10 py-3 rounded-full text-sm font-bold tracking-[0.2em] hover:bg-[#4A3728] transition-all shadow-lg hover:scale-105 active:scale-95 flex items-center gap-2 backdrop-blur-md border border-white/20"
                         >
                             <span>查看报告</span>
                             <ChevronRight className="w-4 h-4" />
