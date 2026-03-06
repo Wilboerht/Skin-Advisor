@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { BaseModal } from "@/components/ui/BaseModal";
-import { Loader2, MapPin } from "lucide-react";
+import { Loader2, MapPin, Hand } from "lucide-react";
 import { AnimatePresence, m } from "framer-motion";
 
 interface OnboardingFlowProps {
@@ -77,7 +77,7 @@ export function OnboardingFlowModal({
                 isOpen={isOpen && !showRegionSelectModal}
                 onClose={onClose}
                 showCloseButton
-                className="p-10 text-center rounded-[2rem] shadow-2xl overflow-hidden"
+                className="p-10 text-center rounded-[2.5rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] overflow-hidden border border-[#3D4430]/10 ring-1 ring-white/20"
             >
                 {/* Texture Overlay in Modal */}
                 <div
@@ -98,6 +98,27 @@ export function OnboardingFlowModal({
                                     exit={{ opacity: 0, x: 20 }}
                                     transition={{ duration: 0.3 }}
                                 >
+                                    <div className="flex justify-center mb-10">
+                                        <div className="relative flex items-center justify-center h-16 w-16 rounded-full bg-[#3D4430]/5 border border-[#3D4430]/5 ring-1 ring-[#3D4430]/5 shadow-inner">
+                                            <svg
+                                                viewBox="0 0 24 24"
+                                                className="h-8 w-8 text-[#3D4430] opacity-60"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="1"
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                style={{ transform: 'rotate(8deg)' }}
+                                            >
+                                                {/* Balanced Logo-style Hand */}
+                                                <path d="M7 11V7a2 2 0 0 1 4 0v4" />
+                                                <path d="M11 10V6a2 2 0 0 1 4 0v4" />
+                                                <path d="M15 11V8a2 2 0 0 1 4 0v6a8 8 0 0 1-8 8h-1c-3.5 0-6-2.5-6-6v-2a2 2 0 0 1 4 0v2" />
+                                                <path d="M4 14.5c0-1 1-2 2-1.5" />
+                                            </svg>
+                                        </div>
+                                    </div>
+
                                     <h3 className="mb-2 text-xl font-serif text-[#1A1A1A]">
                                         您好，请问怎么称呼？
                                     </h3>
@@ -125,7 +146,7 @@ export function OnboardingFlowModal({
                                         <button
                                             onClick={handleNicknameNext}
                                             disabled={!nickname.trim()}
-                                            className="glass-premium-primary w-full py-3.5 rounded-full text-[15px] tracking-[0.2em] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-300 border-none outline-none"
+                                            className="glass-premium-primary w-full py-4 rounded-full text-[15px] tracking-[0.2em] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-300 border border-white/10 ring-1 ring-[#3D4430]/5 outline-none hover:shadow-lg active:scale-95"
                                         >
                                             下一步
                                         </button>
@@ -157,7 +178,7 @@ export function OnboardingFlowModal({
                                         <button
                                             onClick={handleLocationAcceptWrapper}
                                             disabled={isLocating}
-                                            className="glass-premium-primary w-full py-3.5 rounded-full text-[15px] tracking-[0.2em] font-medium flex items-center justify-center disabled:opacity-70 disabled:cursor-wait border-none cursor-pointer transition-all duration-300 outline-none"
+                                            className="glass-premium-primary w-full py-4 rounded-full text-[15px] tracking-[0.2em] font-medium flex items-center justify-center disabled:opacity-70 disabled:cursor-wait border border-white/10 ring-1 ring-[#3D4430]/5 cursor-pointer transition-all duration-300 outline-none hover:shadow-lg active:scale-95"
                                         >
                                             {isLocating ? (
                                                 <>
@@ -179,11 +200,7 @@ export function OnboardingFlowModal({
                         </AnimatePresence>
                     </div>
 
-                    {/* Step Indicator */}
-                    <div className="flex justify-center items-center gap-2 pt-6 pb-1">
-                        <div className={`rounded-full transition-all duration-500 ${step === 'nickname' ? 'h-1.5 w-6 bg-[#3D4430]' : 'h-1.5 w-1.5 bg-[#3D4430]/15 hover:bg-[#3D4430]/30'}`} />
-                        <div className={`rounded-full transition-all duration-500 ${step === 'location' ? 'h-1.5 w-6 bg-[#3D4430]' : 'h-1.5 w-1.5 bg-[#3D4430]/15 hover:bg-[#3D4430]/30'}`} />
-                    </div>
+
                 </div>
             </BaseModal>
 
