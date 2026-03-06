@@ -347,99 +347,102 @@ export default function Home() {
                   <div className="absolute top-6 left-1/2 -translate-x-1/2 w-[90%] flex items-center justify-between z-50">
                     <a
                       href="https://demo.nihplod.cn"
-                      className="flex items-center gap-2 text-[#3D4430]/80 hover:text-[#1A1A1A] transition-colors text-sm font-medium tracking-wide bg-transparent border-none cursor-pointer no-underline"
+                      className="group flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-white/30 backdrop-blur-md border border-white/40 text-[#3D4430] hover:text-[#1A1A1A] hover:bg-white/50 shadow-sm hover:shadow transition-all duration-300 text-sm font-medium tracking-wide no-underline cursor-pointer relative z-10"
                     >
-                      <ArrowLeft className="w-4 h-4" />
-                      <span>返回官网</span>
+                      <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+                      <span className="hidden sm:inline">返回官网</span>
                     </a>
 
-                    {user ? (
-                      <button
-                        onClick={() => setShowProfileModal(true)}
-                        className="flex items-center gap-2 text-[#3D4430]/80 hover:text-[#1A1A1A] transition-colors text-sm font-medium tracking-wide bg-transparent border-none cursor-pointer"
-                      >
-                        <User className="w-4 h-4" />
-                        <span>{user.name || '我的档案'}</span>
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => openAuthModal('login')}
-                        className="flex items-center gap-2 text-sm font-medium text-[#3D4430]/80 hover:text-[#1A1A1A] transition-colors tracking-wide bg-transparent border-none cursor-pointer"
-                      >
-                        <span>登录 / 注册</span>
-                      </button>
-                    )}
+                    {/* Centered Logo */}
+                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none mt-1">
+                      <Image
+                        src="/partner-nihplod.webp"
+                        alt="NIHPLOD 旎柏"
+                        width={240}
+                        height={72}
+                        priority
+                        className="h-10 md:h-12 w-auto opacity-80 mix-blend-multiply"
+                      />
+                    </div>
+
+                    <div className="relative z-10">
+                      {user ? (
+                        <button
+                          onClick={() => setShowProfileModal(true)}
+                          className="group flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-white/30 backdrop-blur-md border border-white/40 text-[#3D4430] hover:text-[#1A1A1A] hover:bg-white/50 shadow-sm hover:shadow transition-all duration-300 text-sm font-medium tracking-wide cursor-pointer"
+                        >
+                          <User className="w-4 h-4 transition-transform group-hover:scale-110" />
+                          <span className="hidden sm:inline">{user.name || '我的档案'}</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => openAuthModal('login')}
+                          className="group flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-white/30 backdrop-blur-md border border-white/40 text-[#3D4430] hover:text-[#1A1A1A] hover:bg-white/50 shadow-sm hover:shadow transition-all duration-300 text-sm font-medium tracking-wide cursor-pointer"
+                        >
+                          <User className="w-4 h-4 transition-transform group-hover:scale-110" />
+                          <span className="hidden sm:inline">登录 / 注册</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Center Brands & AI Actions */}
-                  <div className="z-10 flex flex-col items-center text-center px-6 max-w-3xl mx-auto">
+                  {/* Center AI Actions */}
+                  <div className="z-10 flex flex-col items-center text-center px-6 max-w-3xl mx-auto pt-6 lg:pt-10">
                     <div className="animate-fade-in-up">
-                      <div className="mb-8">
-                        <Image
-                          src="/partner-nihplod.webp"
-                          alt="NIHPLOD 旎柏"
-                          width={300}
-                          height={90}
-                          priority
-                          className="h-14 w-auto mx-auto opacity-80"
-                        />
-                      </div>
-
-                      <h1 className="text-4xl sm:text-5xl md:text-6xl font-serif text-[#1A1A1A] mb-8 leading-tight tracking-tight">
+                      <h1 className="text-4xl sm:text-5xl md:text-6xl font-serif text-transparent bg-clip-text bg-gradient-to-r from-[#1A1A1A] via-[#3D4430] to-[#1A1A1A] mb-8 leading-tight tracking-[0.02em] font-medium">
                         AI 智能<br className="sm:hidden" />精准护肤
                       </h1>
 
-                      <p className="text-[#5C5855] leading-loose mb-12 max-w-md mx-auto font-light text-sm md:text-base opacity-0 animate-fade-in-up" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
-                        源自摩纳哥真脂质体科技，结合 AI 深度视觉分析。<br />为您量身打造科学、精准的肌肤护理方案，唤醒肌肤本源之美。
+                      <p className="text-[#5C5855]/90 leading-loose mb-14 max-w-md mx-auto font-light text-[15px] opacity-0 animate-fade-in-up tracking-wide" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
+                        源自摩纳哥真脂质体科技，结合 AI 深度视觉分析。<br />为您量身打造科学、精准的<span className="text-[#3D4430] font-medium">肌肤护理方案</span>，唤醒肌肤本源之美。
                       </p>
 
-                      <div className="flex flex-col items-center gap-6 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.4s', animationFillMode: 'forwards' }}>
+                      <div className="flex flex-col items-center gap-8 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.4s', animationFillMode: 'forwards' }}>
                         <button
                           onClick={handleStart}
                           disabled={isLoading || checkingLimit}
-                          className="group relative inline-flex items-center justify-center gap-3 bg-[#1A1A1A] text-[#FDFBF7] px-8 py-3.5 rounded-full text-sm tracking-wide font-medium hover:bg-[#3D4430] transition-all duration-500 shadow-xl shadow-[#1A1A1A]/5 disabled:opacity-70 disabled:cursor-not-allowed border-none cursor-pointer"
+                          className="group relative inline-flex items-center justify-center bg-gradient-to-b from-[#2A2A2A] to-[#1A1A1A] text-[#FDFBF7] px-10 py-4 rounded-full text-[15px] tracking-widest font-medium hover:from-[#3D4430] hover:to-[#2C3222] transition-all duration-500 shadow-[0_8px_30px_rgb(26,26,26,0.2)] hover:shadow-[0_12px_40px_rgb(61,68,48,0.3)] disabled:opacity-70 disabled:cursor-not-allowed border border-white/10 overflow-hidden cursor-pointer"
                         >
-                          {isLoading || checkingLimit ? (
-                            <>
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                              <span>正在连接...</span>
-                            </>
-                          ) : (
-                            <>
-                              <span>开启定制之旅</span>
-                              <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1" />
-                            </>
-                          )}
+                          <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                          <div className="relative flex items-center gap-3">
+                            {isLoading || checkingLimit ? (
+                              <>
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                                <span>正在连接...</span>
+                              </>
+                            ) : (
+                              <>
+                                <span>开启定制之旅</span>
+                                <ArrowRight className="w-5 h-5 transition-transform duration-500 group-hover:translate-x-1.5" />
+                              </>
+                            )}
+                          </div>
                         </button>
 
-                        <div className="flex flex-wrap justify-center items-center gap-3">
+                        <div className="flex flex-wrap justify-center items-center gap-4 bg-white/20 backdrop-blur-md px-6 py-2.5 rounded-full border border-white/40 shadow-sm">
                           <button
                             onClick={() => router.push('/leaderboard')}
-                            className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all bg-[#1A1A1A]/5 text-[#1A1A1A]/60 hover:bg-[#1A1A1A]/10 border-none cursor-pointer hover:scale-105 active:scale-95"
+                            className="flex items-center gap-2 text-[13px] font-medium transition-all text-[#3D4430]/70 hover:text-[#1A1A1A] border-none bg-transparent cursor-pointer hover:scale-105 active:scale-95"
                           >
-                            <span className="text-base">🏆</span>
-                            <span>肌肤评分榜</span>
+                            <span className="text-[15px]">🏆</span>
+                            <span className="tracking-wide">肌肤评分榜</span>
                           </button>
 
                           {user && (
                             <>
+                              <div className="w-[1px] h-3.5 bg-[#3D4430]/20 mx-1" />
                               <button
                                 onClick={() => setShowProfileModal(true)}
-                                className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all bg-[#1A1A1A]/5 text-[#1A1A1A]/60 hover:bg-[#1A1A1A]/10 border-none cursor-pointer"
+                                className="flex items-center gap-2 text-[13px] font-medium transition-all text-[#3D4430]/70 hover:text-[#1A1A1A] border-none bg-transparent cursor-pointer hover:scale-105"
                               >
-                                <ClipboardList className="w-4 h-4" />
-                                <span>历史记录</span>
+                                <ClipboardList className="w-3.5 h-3.5" />
+                                <span className="tracking-wide">历史记录</span>
                               </button>
+                              <div className="w-[1px] h-3.5 bg-[#3D4430]/20 mx-1" />
                               <SkincareReminder />
                             </>
                           )}
                         </div>
-                      </div>
-
-                      <div className="mt-16 text-center opacity-0 animate-fade-in-up" style={{ animationDelay: '0.6s', animationFillMode: 'forwards' }}>
-                        <p className="text-[10px] text-[#3D4430]/20 font-mono uppercase tracking-widest">
-                          Powered by MySkin Today™ Tech
-                        </p>
                       </div>
                     </div>
                   </div>
