@@ -5,26 +5,29 @@ export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
 
-        // 代理到官网密码登录接口
         const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";
-        const officialResponse = await fetch(`${officialApiUrl}/api/auth/login-password`, {
+
+        // Pass the request holding the wechat_bind_token cookie
+        const cookieHeader = req.headers.get("cookie") || "";
+
+        const officialResponse = await fetch(`${officialApiUrl}/api/auth/wechat/bind`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
+                "Cookie": cookieHeader
             },
-            body: JSON.stringify(body) // { phone, password }
+            body: JSON.stringify(body)
         });
 
         const responseData = await officialResponse.json();
 
         if (!officialResponse.ok || !responseData.success) {
             return NextResponse.json(
-                { error: responseData.error?.message || "登录失败" },
-                { status: officialResponse.status || 401 }
+                { error: responseData.error?.message || "绑定失败" },
+                { status: officialResponse.status || 400 }
             );
         }
 
-        // 获取并透传官网的 Cookie
         const setCookieHeader = officialResponse.headers.get("Set-Cookie");
         const userPayload = responseData.data.user;
 
@@ -48,7 +51,7 @@ export async function POST(req: NextRequest) {
             create: {
                 id: userPayload.id,
                 phoneNumber: userPayload.phone,
-                password: "", // Local password isn't used
+                password: "",
                 name: userPayload.nickname || userPayload.phone,
                 avatarUrl: userPayload.avatar || null,
                 role: "user"
@@ -57,22 +60,26 @@ export async function POST(req: NextRequest) {
 
         const response = NextResponse.json({
             user: {
-                ...responseData.data.user,
-                // 确保我们返回的字段名和原先系统要求的对齐
-                phone: responseData.data.user.phone,
-                name: responseData.data.user.nickname || responseData.data.user.phone,
+                ...userPayload,
+                name: userPayload.nickname || userPayload.phone,
                 role: "user"
             }
         });
 
         if (setCookieHeader) {
-            response.headers.set('Set-Cookie', setCookieHeader);
+            // Need to handle multiple Set-Cookie headers properly. fetch().headers returns multiple joined by comma, which is buggy for set-cookie.
+            // But we typically only set USER_COOKIE_NAME and clear wechat_bind_token. 
+            // In Next.js App router, we can iterate over the headers.
+            const rawSetCookies = officialResponse.headers.getSetCookie();
+            rawSetCookies.forEach(cookie => {
+                response.headers.append('Set-Cookie', cookie);
+            });
         }
 
         return response;
 
     } catch (e) {
-        console.error("Login Proxy Error", e);
+        console.error("Bind Proxy Error", e);
         return NextResponse.json({ error: "应用系统异常，请稍后重试" }, { status: 500 });
     }
 }

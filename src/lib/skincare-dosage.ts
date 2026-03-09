@@ -458,7 +458,9 @@ export function generateScientificRoutine(
     const socialGender = bioFactors?.gender;
 
     // Detect ANY direction of mismatch with high confidence
-    const isGenderMismatch = detectedGender && socialGender && detectedGenderConf > 0.9 && detectedGender !== socialGender;
+    // Normalize confidence (handle both 0-1 and 0-100)
+    const normalizedConf = detectedGenderConf > 1 ? detectedGenderConf / 100 : detectedGenderConf;
+    const isGenderMismatch = detectedGender && socialGender && normalizedConf > 0.9 && detectedGender !== socialGender;
 
     if (isGenderMismatch) {
         if (socialGender === 'female' && detectedGender === 'male') {

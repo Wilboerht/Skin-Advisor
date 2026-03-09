@@ -1,76 +1,85 @@
-
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { hashPassword, signToken } from "@/lib/auth";
-import { z } from "zod";
-
-const RegisterSchema = z.object({
-    phone: z.string().min(11, "手机号格式不正确"),
-    password: z.string().min(6, "密码至少6位"),
-    name: z.string().min(2).optional()
-});
 
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { phone, password, name } = RegisterSchema.parse(body);
 
-        // Check if user exists
-        const existing = await prisma.user.findUnique({
-            where: { phoneNumber: phone }
+        // 官网注册接口需要: phone, code, password, confirmPassword
+        // 我们在这个 proxy 里包装一层
+        const registerPayload = {
+            ...body,
+            // 后端帮它补齐两次密码验证
+            confirmPassword: body.password || "",
+        };
+
+        const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";
+        const officialResponse = await fetch(`${officialApiUrl}/api/auth/register`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(registerPayload)
         });
 
-        if (existing) {
-            return NextResponse.json({ error: "用户已存在" }, { status: 400 });
+        const responseData = await officialResponse.json();
+
+        // 无论何种错误，透传给前端
+        if (!officialResponse.ok || !responseData.success) {
+            return NextResponse.json(
+                { error: responseData.error?.message || "注册失败" },
+                { status: officialResponse.status || 400 }
+            );
         }
 
-        // Create User
-        // Note: email is optional now, we leave it null for phone registration
-        const hashedPassword = await hashPassword(password);
-        const user = await prisma.user.create({
-            data: {
-                phoneNumber: phone,
-                password: hashedPassword,
-                name: name || `User_${phone.slice(-4)}`,
+        // 获取并透传官网的 Cookie (含 Domain信息)
+        const setCookieHeader = officialResponse.headers.get("Set-Cookie");
+        const userPayload = responseData.data.user;
+
+        // Prevent unique constraint collision if the phone exists on a different ID locally
+        const existingByPhone = await prisma.user.findUnique({ where: { phoneNumber: userPayload.phone } });
+        if (existingByPhone && existingByPhone.id !== userPayload.id) {
+            await prisma.user.update({
+                where: { id: existingByPhone.id },
+                data: { phoneNumber: `merged_${existingByPhone.id}_${userPayload.phone}` }
+            });
+        }
+
+        // Upsert user into local database
+        await prisma.user.upsert({
+            where: { id: userPayload.id },
+            update: {
+                phoneNumber: userPayload.phone,
+                name: userPayload.nickname || userPayload.phone,
+                avatarUrl: userPayload.avatar || null,
+            },
+            create: {
+                id: userPayload.id,
+                phoneNumber: userPayload.phone,
+                password: "", // Local password isn't used
+                name: userPayload.nickname || userPayload.phone,
+                avatarUrl: userPayload.avatar || null,
                 role: "user"
             }
         });
 
-        // Sign Token
-        const token = await signToken({
-            sub: user.id,
-            phone: user.phoneNumber,
-            name: user.name,
-            role: user.role,
-            vipExpiresAt: user.vipExpiresAt
-        });
-
-        // Return response with cookie
         const response = NextResponse.json({
             user: {
-                id: user.id,
-                phone: user.phoneNumber,
-                name: user.name,
-                role: user.role,
-                vipExpiresAt: user.vipExpiresAt
+                ...responseData.data.user,
+                phone: responseData.data.user.phone,
+                name: responseData.data.user.nickname || responseData.data.user.phone,
+                role: "user"
             }
         });
 
-        response.cookies.set("auth_token", token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
-            maxAge: 60 * 60 * 24 * 7, // 7 days
-            path: "/"
-        });
+        if (setCookieHeader) {
+            response.headers.set('Set-Cookie', setCookieHeader);
+        }
 
         return response;
 
-    } catch (e: any) {
-        if (e instanceof z.ZodError) {
-            return NextResponse.json({ error: "Invalid input", details: e.issues }, { status: 400 });
-        }
-        console.error("Register Error", e);
-        return NextResponse.json({ error: "Registration failed" }, { status: 500 });
+    } catch (e) {
+        console.error("Register Proxy Error", e);
+        return NextResponse.json({ error: "应用系统异常，请稍后重试" }, { status: 500 });
     }
 }

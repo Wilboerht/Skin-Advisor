@@ -129,8 +129,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(credentials)
         });
-        if (!res.ok) throw new Error("Login failed");
         const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Login failed");
+
         setUser(data.user);
         setCachedUser(data.user);
 
@@ -145,8 +146,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(userData)
         });
-        if (!res.ok) throw new Error("Registration failed");
         const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Registration failed");
+
         setUser(data.user);
         setCachedUser(data.user);
 

@@ -43,7 +43,7 @@ export const VISION_ANALYSIS_SYSTEM_PROMPT = `你是一位专业的皮肤科医�
   },
   "gender": {
     "value": "male|female",
-    "confidence": 0-100
+    "confidence": 0.0-1.0
   },
   "skinAge": {
     "estimated": number, // 预估肌龄
@@ -138,8 +138,8 @@ export const CLAUDE_VISION_PROMPT = `
 # 输出格式 (Strict JSON Only)
 {
   "validation": { "isValid": true, "message": "..." },
-  "skinType": { "type": "...", "confidence": 90 },
-  "gender": { "value": "male|female", "confidence": 95 },
+  "skinType": { "type": "...", "confidence": 0.95 },
+  "gender": { "value": "male|female", "confidence": 0.98 },
   "skinAge": { "estimated": 25, "factors": ["..."] },
   "dimensions": {
      "waterOil": { "score": 85, "grade": "good", "details": "..." },
@@ -292,8 +292,8 @@ export const COMPREHENSIVE_ANALYSIS_SYSTEM_PROMPT = `
 {
   "faceAnalysis": {
     "validation": { "isValid": boolean, "message": "..." },
-    "skinType": { "type": "dry|oily|...", "confidence": 0-100 },
-    "gender": { "value": "male|female", "confidence": 0-100 },
+    "skinType": { "type": "dry|oily|...", "confidence": 0.0-1.0 },
+    "gender": { "value": "male|female", "confidence": 0.0-1.0 },
     "skinAge": { "estimated": number, "factors": [] },
     "dimensions": {
         "spots": { "score": 0-100, "grade": "...", "details": "..." },

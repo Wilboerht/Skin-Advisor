@@ -306,9 +306,11 @@ interface AnalyzingOverlayProps {
 export function AnalyzingOverlay({ progress, userImage, onCancel }: AnalyzingOverlayProps) {
     const [activeIconIndex, setActiveIconIndex] = useState(0);
     const [showCancel, setShowCancel] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
 
     // Cycle through icons for "loading" animation
     useEffect(() => {
+        setIsMounted(true);
         const interval = setInterval(() => {
             setActiveIconIndex((prev) => (prev + 1) % 9);
         }, 800); // Slower speed
@@ -433,7 +435,7 @@ export function AnalyzingOverlay({ progress, userImage, onCancel }: AnalyzingOve
                     </div>
 
                     {/* Floating particles */}
-                    {[...Array(6)].map((_, i) => (
+                    {isMounted && [...Array(6)].map((_, i) => (
                         <m.div
                             key={`p-${i}`}
                             className="absolute w-1.5 h-1.5 bg-[#D4B78F] rounded-full"

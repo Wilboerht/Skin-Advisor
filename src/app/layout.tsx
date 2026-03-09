@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import "./globals.css";
 
 
@@ -53,7 +54,9 @@ export default function RootLayout({
                     {children}
                   </main>
                 </WebsiteLayoutClient>
-                <AuthModal />
+                <Suspense fallback={null}>
+                  <AuthModal />
+                </Suspense>
               </AuthModalProvider>
             </UserProvider>
           </ToastProvider>

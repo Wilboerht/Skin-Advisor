@@ -72,7 +72,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
     const toast = useToast();
 
     // Gender Mismatch Detection
-    const [socialGender, setSocialGender] = useState<string>('female');
+    const [socialGender, setSocialGender] = useState<string>(''); // Initialize empty to avoid flash mismatch
     const [showGenderMismatchModal, setShowGenderMismatchModal] = useState(false);
 
     // Read questionnaire gender from localStorage (available when guest just completed analysis on this device)
@@ -83,9 +83,13 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
 
     // Gender Mismatch Detection
     const isGenderMismatch = useMemo(() => {
-        if (!data.detectedGender) return false;
+        if (!data.detectedGender || !socialGender) return false;
         const { value: detectedVal, confidence: detectedConf } = data.detectedGender;
-        return detectedVal && detectedConf > 0.80 && detectedVal !== socialGender;
+
+        // Normalize confidence
+        const normalizedConf = detectedConf > 1 ? detectedConf / 100 : detectedConf;
+
+        return detectedVal && normalizedConf > 0.85 && detectedVal !== socialGender;
     }, [data.detectedGender, socialGender]);
 
     useEffect(() => {

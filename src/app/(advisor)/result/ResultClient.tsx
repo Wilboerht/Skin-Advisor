@@ -117,7 +117,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const [userNickname, setUserNickname] = useState<string>("护肤达人");
     // Session ID for sharing - initialized from props or will be set after analysis
     const [sessionId, setSessionId] = useState<string | undefined>(id);
-    const [socialGender, setSocialGender] = useState<string>('female'); // Default to female, will update
+    const [socialGender, setSocialGender] = useState<string>(''); // Initialize empty to avoid flash mismatch
 
     // UI State
     const [activeRoutineTab, setActiveRoutineTab] = useState<'morning' | 'evening'>('morning');
@@ -135,14 +135,17 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const [selectedCycleDay, setSelectedCycleDay] = useState<number>(1);
     const [isRoutineModalOpen, setIsRoutineModalOpen] = useState(false);
 
-    // Gender Mismatch Detection Effect (handles all directions)
     const isGenderMismatch = useMemo(() => {
-        if (!faceAnalysis) return false;
+        if (!faceAnalysis || !socialGender) return false;
         const faGenderVal = (faceAnalysis as any)?.gender?.value;
         const faGenderConf = (faceAnalysis as any)?.gender?.confidence || 0;
+
+        // Normalize confidence (handle both 0-1 and 0-100)
+        const normalizedConf = faGenderConf > 1 ? faGenderConf / 100 : faGenderConf;
+
         // Mismatch = questionnaire gender differs from detected gender with high confidence
-        console.log('[GenderMismatch] Detection:', { faGenderVal, faGenderConf, socialGender, mismatch: faGenderVal && faGenderConf > 0.80 && faGenderVal !== socialGender });
-        return faGenderVal && faGenderConf > 0.80 && faGenderVal !== socialGender;
+        console.log('[GenderMismatch] Detection:', { faGenderVal, faGenderConf, normalizedConf, socialGender, mismatch: faGenderVal && normalizedConf > 0.85 && faGenderVal !== socialGender });
+        return faGenderVal && normalizedConf > 0.85 && faGenderVal !== socialGender;
     }, [faceAnalysis, socialGender]);
 
     useEffect(() => {

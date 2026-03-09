@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState } from "react";
 
-export type AuthView = "login" | "register" | "forgot_password";
+export type AuthView = "login" | "register" | "forgot_password" | "wechat_bind";
 
 interface AuthModalContextType {
     isOpen: boolean;

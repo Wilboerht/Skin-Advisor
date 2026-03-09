@@ -505,7 +505,7 @@ export default function QuestionsPage() {
                                 <h3 className="text-2xl font-serif text-[#1A1A1A] mb-3 tracking-tight">确认提交？</h3>
                                 <p className="text-[14px] text-[#5E5E5E] mb-10 font-light leading-relaxed px-4">
                                     我们检测到您的填写速度较快。<br />
-                                    建议您再次核对，确保 AI 能为您提供<span className="text-[#1A1A1A] font-medium">最精准</span>的分析结果。
+                                    建议您再次核对，确保 AI 能为您提供<span className="text-[#1A1A1A] font-medium"> 最精准 </span>的分析结果。
                                 </p>
                                 <div className="flex flex-col gap-4">
                                     <button
