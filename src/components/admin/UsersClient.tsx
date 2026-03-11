@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Search, MoreHorizontal, User as UserIcon, Shield, ShieldOff, Trash2, Eye, Loader2, ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { Search, MoreHorizontal, User as UserIcon, Shield, ShieldOff, Trash2, Eye, Loader2, ChevronLeft, ChevronRight, Download, ChevronDown } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { UserDetailModal } from "./UserDetailModal";
@@ -129,55 +129,73 @@ export function UsersClient() {
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-serif text-[#1A1A1A]">用户管理</h1>
-                    <p className="text-[#1A1A1A]/60 text-sm mt-1">
+                    <h1 className="text-2xl font-bold text-slate-900 tracking-tight">用户管理</h1>
+                    <p className="text-slate-500 text-sm mt-1">
                         管理注册用户 · 共 {pagination?.total || 0} 人
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
-                    {/* Status Filter */}
-                    <select
-                        value={status}
-                        onChange={(e) => { setStatus(e.target.value); setPage(1); }}
-                        className="px-3 py-2 bg-white border border-[#1A1A1A]/10 rounded-lg text-sm text-[#1A1A1A] focus:outline-none focus:ring-1 focus:ring-[#1A1A1A]/20"
+                    <button
+                        className="flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 transition-colors"
+                        onClick={() => {/* Add export logic if needed or leave as is */}}
                     >
-                        <option value="all">所有用户</option>
-                        <option value="active">活跃用户</option>
-                        <option value="inactive">已禁用</option>
-                    </select>
-
-                    {/* Search */}
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#1A1A1A]/40" />
-                        <input
-                            type="text"
-                            placeholder="搜索用户..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            className="pl-9 pr-4 py-2 bg-white border border-[#1A1A1A]/10 rounded-full text-sm text-[#1A1A1A] placeholder:text-[#1A1A1A]/30 focus:outline-none focus:ring-1 focus:ring-[#1A1A1A]/20 w-full sm:w-64"
-                        />
-                    </div>
+                        <Download className="mr-2 h-4 w-4" />
+                        导出用户
+                    </button>
                 </div>
             </div>
 
+            {/* Filter Bar */}
+            <div className="flex flex-wrap items-center gap-3 p-4 bg-white rounded-xl border border-slate-200">
+                <Search className="w-4 h-4 text-slate-400" />
+                <div className="relative flex-1 sm:flex-none">
+                    <input
+                        type="text"
+                        placeholder="搜索用户姓名或邮箱..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="block w-full sm:w-64 rounded-lg border-slate-200 bg-slate-50/50 py-1.5 px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-400 focus:ring-0 transition-all"
+                    />
+                </div>
+                
+                <div className="h-4 w-px bg-slate-200 mx-1 hidden sm:block"></div>
+
+                <div className="relative min-w-[140px]">
+                    <select
+                        value={status}
+                        onChange={(e) => { setStatus(e.target.value); setPage(1); }}
+                        className="w-full pl-3 pr-10 py-1.5 text-sm border border-slate-200 rounded-lg bg-white hover:bg-slate-50 hover:border-slate-300 focus:outline-none focus:ring-1 focus:ring-slate-300 transition-all cursor-pointer appearance-none"
+                    >
+                        <option value="all">所有用户状态</option>
+                        <option value="active">活跃用户</option>
+                        <option value="disabled">已禁用</option>
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                </div>
+
+                <span className="ml-auto text-xs text-slate-400">
+                    显示 {users.length} 条数据
+                </span>
+            </div>
+
             {/* Table */}
-            <div className="bg-white rounded-2xl border border-[#1A1A1A]/5 overflow-hidden">
+            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                        <thead>
-                            <tr className="border-b border-[#1A1A1A]/5 text-[#1A1A1A]/40 text-xs font-medium uppercase tracking-wider">
-                                <th className="px-6 py-4 font-normal">用户</th>
-                                <th className="px-6 py-4 font-normal">状态</th>
-                                <th className="px-6 py-4 font-normal">注册日期</th>
-                                <th className="px-6 py-4 font-normal">最后活跃</th>
-                                <th className="px-6 py-4 font-normal text-right">测试次数</th>
-                                <th className="px-6 py-4 font-normal text-right">领奖次数</th>
-                                <th className="px-6 py-4 font-normal text-right">操作</th>
+                    <table className="min-w-full divide-y divide-slate-200">
+                        <thead className="bg-slate-50">
+                            <tr>
+                                <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">用户</th>
+                                <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">状态</th>
+                                <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">注册日期</th>
+                                <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">最后活跃</th>
+                                <th className="px-6 py-4 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">测试次数</th>
+                                <th className="px-6 py-4 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">领奖次数</th>
+                                <th className="px-6 py-4 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">操作</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-[#1A1A1A]/5">
+                        <tbody className="bg-white divide-y divide-slate-200">
                             {loading ? (
                                 <tr>
                                     <td colSpan={7} className="px-6 py-12 text-center">
@@ -192,44 +210,44 @@ export function UsersClient() {
                                 </tr>
                             ) : (
                                 users.map((user) => (
-                                    <tr key={user.id} className="group hover:bg-[#FDFBF7] transition-colors">
+                                    <tr key={user.id} className="group hover:bg-slate-50 transition-colors">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-[#1A1A1A]/5 flex items-center justify-center text-[#1A1A1A]/60">
+                                                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
                                                     <UserIcon className="w-4 h-4" />
                                                 </div>
                                                 <div>
-                                                    <div className="font-medium text-[#1A1A1A]">{user.name || "匿名用户"}</div>
-                                                    <div className="text-xs text-[#1A1A1A]/40">{user.email}</div>
+                                                    <div className="font-medium text-slate-900">{user.name || "匿名用户"}</div>
+                                                    <div className="text-xs text-slate-500">{user.email}</div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${user.role === "disabled"
                                                 ? "bg-red-50 text-red-600"
-                                                : "bg-green-50 text-green-600"
+                                                : "bg-emerald-50 text-emerald-700"
                                                 }`}>
-                                                {user.role === "disabled" ? "已禁用" : "活跃"}
+                                                {user.role === "disabled" ? "已禁用" : "处于活跃状态"}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 text-[#1A1A1A]/60">
+                                        <td className="px-6 py-4 text-slate-600">
                                             {new Date(user.createdAt).toLocaleDateString()}
                                         </td>
-                                        <td className="px-6 py-4 text-[#1A1A1A]/60">
+                                        <td className="px-6 py-4 text-slate-600">
                                             {user.advisorSessions[0]
                                                 ? new Date(user.advisorSessions[0].createdAt).toLocaleDateString()
                                                 : "-"}
                                         </td>
-                                        <td className="px-6 py-4 text-right tabular-nums text-[#1A1A1A]">
+                                        <td className="px-6 py-4 text-right tabular-nums text-slate-900">
                                             {user._count.advisorSessions}
                                         </td>
-                                        <td className="px-6 py-4 text-right tabular-nums text-[#1A1A1A]">
+                                        <td className="px-6 py-4 text-right tabular-nums text-slate-900">
                                             {user._count.shareRewards}
                                         </td>
                                         <td className="px-6 py-4 text-right relative">
                                             <button
                                                 onClick={() => setShowDropdown(showDropdown === user.id ? null : user.id)}
-                                                className="p-2 text-[#1A1A1A]/40 hover:text-[#1A1A1A] transition-colors rounded-full hover:bg-[#1A1A1A]/5"
+                                                className="p-2 text-slate-400 hover:text-slate-600 transition-colors rounded-full hover:bg-slate-100"
                                             >
                                                 <MoreHorizontal className="w-4 h-4" />
                                             </button>
@@ -286,25 +304,25 @@ export function UsersClient() {
 
                 {/* Pagination */}
                 {pagination && pagination.totalPages > 1 && (
-                    <div className="px-6 py-4 border-t border-[#1A1A1A]/5 flex items-center justify-between">
-                        <div className="text-sm text-[#1A1A1A]/40">
+                    <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/30">
+                        <div className="text-sm text-slate-500">
                             显示第 {((page - 1) * pagination.limit) + 1} 到 {Math.min(page * pagination.limit, pagination.total)} 条，共 {pagination.total} 条
                         </div>
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={() => setPage(p => Math.max(1, p - 1))}
                                 disabled={page === 1}
-                                className="p-2 rounded-lg border border-[#1A1A1A]/10 hover:bg-[#1A1A1A]/5 disabled:opacity-40 disabled:cursor-not-allowed"
+                                className="p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                             >
                                 <ChevronLeft className="w-4 h-4" />
                             </button>
-                            <span className="text-sm text-[#1A1A1A]/60 px-3">
+                            <span className="text-sm font-medium text-slate-600 px-3">
                                 {page} / {pagination.totalPages}
                             </span>
                             <button
                                 onClick={() => setPage(p => Math.min(pagination.totalPages, p + 1))}
                                 disabled={page === pagination.totalPages}
-                                className="p-2 rounded-lg border border-[#1A1A1A]/10 hover:bg-[#1A1A1A]/5 disabled:opacity-40 disabled:cursor-not-allowed"
+                                className="p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                             >
                                 <ChevronRight className="w-4 h-4" />
                             </button>

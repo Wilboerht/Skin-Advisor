@@ -33,7 +33,8 @@ import {
     Square,
     Copy,
     AlertTriangle,
-    Filter
+    Filter,
+    ChevronDown
 } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
@@ -372,34 +373,48 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
             {/* P7.10 Filter Controls */}
             <div className="flex flex-wrap items-center gap-3 p-4 bg-white rounded-xl border border-slate-200">
                 <Filter className="w-4 h-4 text-slate-400" />
-                <select
-                    value={categoryFilter}
-                    onChange={(e) => setCategoryFilter(e.target.value)}
-                    className="px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-slate-300"
-                >
-                    <option value="all">所有分类</option>
-                    {categories.map(cat => (
-                        <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                </select>
-                <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-slate-300"
-                >
-                    <option value="all">所有状态</option>
-                    <option value="active">已上架</option>
-                    <option value="inactive">已下架</option>
-                </select>
-                <select
-                    value={stockFilter}
-                    onChange={(e) => setStockFilter(e.target.value)}
-                    className="px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-slate-300"
-                >
-                    <option value="all">所有库存</option>
-                    <option value="low">库存预警 (≤10)</option>
-                    <option value="out">已售罄</option>
-                </select>
+                {/* Category Filter */}
+                <div className="relative min-w-[140px]">
+                    <select
+                        value={categoryFilter}
+                        onChange={(e) => setCategoryFilter(e.target.value)}
+                        className="w-full pl-3 pr-10 py-1.5 text-sm border border-slate-200 rounded-lg bg-white hover:bg-slate-50 hover:border-slate-300 focus:outline-none focus:ring-1 focus:ring-slate-300 transition-all cursor-pointer appearance-none"
+                    >
+                        <option value="all">所有分类</option>
+                        {categories.map(cat => (
+                            <option key={cat} value={cat}>{cat}</option>
+                        ))}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                </div>
+
+                {/* Status Filter */}
+                <div className="relative min-w-[120px]">
+                    <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="w-full pl-3 pr-10 py-1.5 text-sm border border-slate-200 rounded-lg bg-white hover:bg-slate-50 hover:border-slate-300 focus:outline-none focus:ring-1 focus:ring-slate-300 transition-all cursor-pointer appearance-none"
+                    >
+                        <option value="all">所有状态</option>
+                        <option value="active">已上架</option>
+                        <option value="inactive">已下架</option>
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                </div>
+
+                {/* Stock Filter */}
+                <div className="relative min-w-[140px]">
+                    <select
+                        value={stockFilter}
+                        onChange={(e) => setStockFilter(e.target.value)}
+                        className="w-full pl-3 pr-10 py-1.5 text-sm border border-slate-200 rounded-lg bg-white hover:bg-slate-50 hover:border-slate-300 focus:outline-none focus:ring-1 focus:ring-slate-300 transition-all cursor-pointer appearance-none"
+                    >
+                        <option value="all">所有库存</option>
+                        <option value="low">库存预警 (≤10)</option>
+                        <option value="out">已售罄</option>
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                </div>
                 {(categoryFilter !== "all" || statusFilter !== "all" || stockFilter !== "all") && (
                     <button
                         onClick={() => { setCategoryFilter("all"); setStatusFilter("all"); setStockFilter("all"); }}

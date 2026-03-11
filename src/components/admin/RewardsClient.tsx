@@ -80,12 +80,7 @@ export default function RewardsClient({ initialRewards }: RewardsClientProps) {
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-900 tracking-tight">奖赏管理</h1>
-                    <p className="text-slate-500 text-sm mt-1">管理用户分享奖赏申请与发货状态</p>
-                </div>
-            </div>
+
 
             <RewardsToolbar
                 totalCount={rewards.length}

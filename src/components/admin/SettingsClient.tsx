@@ -104,104 +104,106 @@ export default function SettingsClient() {
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500 max-w-4xl">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900 tracking-tight">系统设置</h1>
-                    <p className="text-slate-500 text-sm mt-1">配置 AI 参数和系统偏好</p>
+                    <p className="text-slate-500 text-sm mt-1">配置 AI 核心参数与系统运行偏好</p>
                 </div>
                 <button
                     onClick={handleSave}
                     disabled={saving}
-                    className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-slate-800 transition-colors disabled:opacity-70"
+                    className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
                 >
                     {saving ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : saved ? (
                         <CheckCircle className="mr-2 h-4 w-4 text-emerald-400" />
                     ) : (
-                        <Save className="mr-2 h-4 w-4" />
+                        <Save className="mr-2 h-4 w-4 group-hover:scale-110 transition-transform" />
                     )}
-                    {saved ? '已保存' : '保存更改'}
+                    {saved ? '设置已保存' : '提交更改'}
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Left Column: AI Configuration */}
-                <div className="lg:col-span-2 space-y-6">
+                <div className="lg:col-span-2 space-y-8">
                     {/* Model Settings */}
                     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                        <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center gap-2">
+                        <div className="px-6 py-4 bg-slate-50/50 border-b border-slate-100 flex items-center gap-2">
                             <Monitor className="h-4 w-4 text-slate-500" />
                             <h3 className="font-semibold text-slate-700 text-sm uppercase tracking-wide">AI 模型配置</h3>
                         </div>
-                        <div className="p-6 space-y-5">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="p-6 space-y-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5">AI 服务商</label>
+                                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-0.5">AI 服务商</label>
                                     <select
                                         value={settings.aiProvider}
                                         onChange={(e) => setSettings({ ...settings, aiProvider: e.target.value })}
-                                        className="w-full rounded-lg border-slate-200 text-sm bg-slate-50/50 focus:ring-slate-500/20 focus:border-slate-500 py-2.5"
+                                        className="w-full rounded-lg border-slate-200 text-sm bg-slate-50/30 focus:bg-white focus:ring-4 focus:ring-slate-500/5 focus:border-slate-400 py-2.5 transition-all"
                                     >
-                                        <option value="openai">OpenAI (GPT-4)</option>
-                                        <option value="anthropic">Anthropic (Claude)</option>
+                                        <option value="openai">OpenAI (推荐)</option>
+                                        <option value="anthropic">Anthropic</option>
                                         <option value="azure">Azure OpenAI</option>
                                         <option value="deepseek">DeepSeek</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5">模型版本</label>
+                                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-0.5">模型版本</label>
                                     <input
                                         type="text"
                                         value={settings.aiModel}
                                         onChange={(e) => setSettings({ ...settings, aiModel: e.target.value })}
-                                        className="w-full rounded-lg border-slate-200 text-sm bg-slate-50/50 focus:ring-slate-500/20 focus:border-slate-500 py-2"
+                                        className="w-full rounded-lg border-slate-200 text-sm bg-slate-50/30 focus:bg-white focus:ring-4 focus:ring-slate-500/5 focus:border-slate-400 py-2.5 transition-all"
                                     />
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5">系统提示词 / 人设</label>
+                                <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-0.5">系统提示词 / AI 人设</label>
                                 <textarea
                                     value={settings.systemPrompt}
                                     onChange={(e) => setSettings({ ...settings, systemPrompt: e.target.value })}
-                                    className="w-full rounded-lg border-slate-200 text-sm bg-slate-50/50 focus:ring-slate-500/20 focus:border-slate-500 min-h-[120px] p-3"
-                                    placeholder="You are an expert dermatologist..."
+                                    className="w-full rounded-lg border-slate-200 text-sm bg-slate-50/30 focus:bg-white focus:ring-4 focus:ring-slate-500/5 focus:border-slate-400 min-h-[140px] p-3 transition-all leading-relaxed"
+                                    placeholder="You are an expert dermatologist specializing in skincare routine optimization..."
                                 />
-                                <p className="text-xs text-slate-400 mt-1.5 flex items-center gap-1">
-                                    <MessageSquare className="h-3 w-3" />
-                                    此提示词将指导 AI 顾问的语气和专业程度
-                                </p>
+                                <div className="mt-2 flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-lg">
+                                    <MessageSquare className="h-3.5 w-3.5 text-slate-400" />
+                                    <p className="text-[11px] text-slate-500 font-medium">
+                                        此提示词将作为 AI 顾问的核心逻辑基础，直接决定诊断建议的专业度。
+                                    </p>
+                                </div>
                             </div>
 
                             <div className="space-y-4 pt-4 border-t border-slate-100">
-                                <div className="flex items-center justify-between">
+                                <div className="flex items-center justify-between group">
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-700">严格 JSON 模式</label>
-                                        <p className="text-xs text-slate-500">强制 AI 只返回有效 JSON（推荐）</p>
+                                        <label className="block text-sm font-semibold text-slate-800">严格 JSON 模式</label>
+                                        <p className="text-xs text-slate-500">强制 AI 只返回结构化数据（系统稳定性核心）</p>
                                     </div>
                                     <button
                                         type="button"
                                         onClick={() => setSettings({ ...settings, strictJsonMode: !settings.strictJsonMode })}
-                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${settings.strictJsonMode ? 'bg-slate-900' : 'bg-slate-200'
+                                        className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${settings.strictJsonMode ? 'bg-slate-900' : 'bg-slate-200'
                                             }`}
                                     >
-                                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${settings.strictJsonMode ? 'translate-x-6' : 'translate-x-1'
+                                        <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform duration-200 ${settings.strictJsonMode ? 'translate-x-[22px]' : 'translate-x-1'
                                             }`} />
                                     </button>
                                 </div>
-                                <div className="flex items-center justify-between">
+                                <div className="flex items-center justify-between group">
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-700">视觉分析</label>
-                                        <p className="text-xs text-slate-500">启用分析用户上传的照片</p>
+                                        <label className="block text-sm font-semibold text-slate-800">视觉分析</label>
+                                        <p className="text-xs text-slate-500">启用多模态图像识别处理（启用 GPT-4o 视觉能力）</p>
                                     </div>
                                     <button
                                         type="button"
                                         onClick={() => setSettings({ ...settings, visionAnalysis: !settings.visionAnalysis })}
-                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${settings.visionAnalysis ? 'bg-slate-900' : 'bg-slate-200'
+                                        className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${settings.visionAnalysis ? 'bg-slate-900' : 'bg-slate-200'
                                             }`}
                                     >
-                                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${settings.visionAnalysis ? 'translate-x-6' : 'translate-x-1'
+                                        <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform duration-200 ${settings.visionAnalysis ? 'translate-x-[22px]' : 'translate-x-1'
                                             }`} />
                                     </button>
                                 </div>
@@ -427,15 +429,18 @@ export default function SettingsClient() {
 
                     {/* Inventory Management */}
                     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                        <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center gap-2">
+                        <div className="px-6 py-4 bg-slate-50/50 border-b border-slate-100 flex items-center gap-2">
                             <Package className="h-4 w-4 text-slate-500" />
                             <h3 className="font-semibold text-slate-700 text-sm uppercase tracking-wide">库存管理</h3>
                         </div>
-                        <div className="p-6 space-y-4">
+                        <div className="p-6 space-y-6">
                             <div>
-                                <div className="flex items-center justify-between mb-2">
-                                    <label className="text-sm font-medium text-slate-700">低库存预警阈值</label>
-                                    <span className="text-sm font-mono text-slate-600 bg-slate-100 px-2 py-0.5 rounded">{settings.stockAlertThreshold || 10}件</span>
+                                <div className="flex items-center justify-between mb-4">
+                                    <div>
+                                        <label className="text-sm font-bold text-slate-800">低库存预警阈值</label>
+                                        <p className="text-xs text-slate-500">当库存低于此数值时，侧边栏和产品列表将显示红色警告</p>
+                                    </div>
+                                    <span className="text-sm font-mono font-bold text-amber-600 bg-amber-50 px-3 py-1 rounded-full border border-amber-100">{settings.stockAlertThreshold || 10} 件</span>
                                 </div>
                                 <input
                                     type="range"
@@ -444,17 +449,13 @@ export default function SettingsClient() {
                                     step="1"
                                     value={settings.stockAlertThreshold || 10}
                                     onChange={(e) => setSettings({ ...settings, stockAlertThreshold: parseInt(e.target.value) })}
-                                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                                    className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-slate-900"
                                 />
-                                <div className="flex justify-between text-xs text-slate-400 mt-1">
-                                    <span>较少 (1)</span>
-                                    <span>推荐 (10)</span>
-                                    <span>较多 (50)</span>
+                                <div className="flex justify-between text-[10px] font-bold text-slate-300 mt-2 px-1 uppercase tracking-widest">
+                                    <span>极少 (1)</span>
+                                    <span>常规 (10)</span>
+                                    <span>充足 (50)</span>
                                 </div>
-                                <p className="text-xs text-slate-500 mt-2 flex items-start gap-1">
-                                    <Info className="h-3 w-3 mt-0.5 shrink-0" />
-                                    当产品库存低于此数量时，系统将发送预警通知并显示警告
-                                </p>
                             </div>
                         </div>
                     </div>

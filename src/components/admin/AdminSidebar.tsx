@@ -23,7 +23,6 @@ const MENU_ITEMS = [
     { href: "/admin/products", label: "产品管理", icon: Package },
     { href: "/admin/users", label: "用户管理", icon: Users },
     { href: "/admin/campaigns", label: "活动中心", icon: FileText },
-    { href: "/admin/rewards", label: "领奖审批", icon: Gift },
     { href: "/admin/settings", label: "系统设置", icon: Settings },
     { href: "/admin/audit-logs", label: "安全审计", icon: Shield },
 ];
@@ -148,12 +147,12 @@ export default function AdminSidebar() {
                 <button
                     onClick={() => setCollapsed(!collapsed)}
                     className={cn(
-                        "flex w-full items-center rounded-lg px-3 py-2 text-xs font-medium text-[#1A1A1A]/50 hover:bg-[#1A1A1A]/5 hover:text-[#1A1A1A] transition-colors",
+                        "flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium text-[#1A1A1A]/60 hover:bg-[#1A1A1A]/5 hover:text-[#1A1A1A] transition-colors",
                         collapsed ? "justify-center" : ""
                     )}
                     title={collapsed ? "展开" : "收起"}
                 >
-                    {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4 mr-2" />}
+                    {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4 mr-3" />}
                     {!collapsed && <span>收起侧边栏</span>}
                 </button>
             </div>
