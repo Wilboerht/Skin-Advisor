@@ -133,12 +133,8 @@ export default function CampaignsClient({ initialRewards }: CampaignsClientProps
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center h-[60vh] animate-in fade-in duration-500">
-                <div className="relative">
-                    <div className="h-12 w-12 rounded-full border-4 border-slate-100 border-t-slate-900 animate-spin" />
-                    <LayoutDashboard className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-                </div>
-                <p className="mt-4 text-sm font-medium text-slate-500">正在筹备活动数据...</p>
+            <div className="flex items-center justify-center h-64 animate-in fade-in duration-500">
+                <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
             </div>
         );
     }

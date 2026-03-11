@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -16,8 +16,10 @@ import {
     Users,
     Shield,
     Download,
+    Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
 const MENU_ITEMS = [
     { href: "/admin/products", label: "产品管理", icon: Package },
@@ -32,6 +34,23 @@ export default function AdminSidebar() {
     const router = useRouter();
     const [collapsed, setCollapsed] = useState(false);
     const [showExportMenu, setShowExportMenu] = useState(false);
+    const exportMenuRef = useRef<HTMLDivElement>(null);
+
+    // Close export menu when clicking outside
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
+                setShowExportMenu(false);
+            }
+        }
+
+        if (showExportMenu) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [showExportMenu]);
 
     const handleExport = (type: string) => {
         window.open(`/api/admin/export?type=${type}`, "_blank");
@@ -102,44 +121,59 @@ export default function AdminSidebar() {
                     );
                 })}
 
-                {/* Export Dropdown */}
-                <div className="relative mt-4 pt-4 border-t border-[#1A1A1A]/5">
+                {/* Export Actions - Refined Liquid Glass */}
+                <div className="mt-4 pt-4 border-t border-[#1A1A1A]/5">
                     {!collapsed && (
                         <div className="px-3 mb-2 text-[10px] font-bold uppercase tracking-wider text-[#1A1A1A]/40 animate-in fade-in duration-300">
                             数据导出
                         </div>
                     )}
-                    <button
-                        onClick={() => setShowExportMenu(!showExportMenu)}
-                        className={cn(
-                            "group flex items-center rounded-lg px-3 py-2 text-sm font-medium text-[#1A1A1A]/60 hover:bg-[#1A1A1A]/5 hover:text-[#1A1A1A] transition-colors w-full",
-                            collapsed ? "justify-center" : ""
-                        )}
-                        title={collapsed ? "数据导出" : undefined}
-                    >
-                        <Download className={cn("h-4 w-4", collapsed ? "mr-0" : "mr-3")} />
-                        {!collapsed && <span>数据导出</span>}
-                    </button>
+                    <div className="relative px-3" ref={exportMenuRef}>
+                        <button
+                            onClick={() => setShowExportMenu(!showExportMenu)}
+                            className={cn(
+                                "group flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 w-full",
+                                showExportMenu 
+                                    ? "bg-slate-900/10 text-slate-900 ring-1 ring-slate-950/5 shadow-sm" 
+                                    : "text-[#1A1A1A]/60 hover:bg-[#1A1A1A]/5 hover:text-[#1A1A1A]",
+                                collapsed ? "justify-center" : ""
+                            )}
+                            title={collapsed ? "数据导出" : undefined}
+                        >
+                            <Download className={cn("h-4 w-4 transition-transform duration-300", showExportMenu ? "scale-110" : "", collapsed ? "" : "mr-3")} />
+                            {!collapsed && <span>数据报表</span>}
+                        </button>
 
-                    {showExportMenu && (
-                        <div className={cn(
-                            "absolute z-20 bg-white border border-[#1A1A1A]/10 rounded-lg shadow-lg py-1 w-40",
-                            collapsed ? "left-20 bottom-0" : "left-3 bottom-full mb-1"
-                        )}>
-                            <button onClick={() => handleExport("products")} className="w-full px-3 py-2 text-left text-sm hover:bg-[#1A1A1A]/5">
-                                产品数据
-                            </button>
-                            <button onClick={() => handleExport("users")} className="w-full px-3 py-2 text-left text-sm hover:bg-[#1A1A1A]/5">
-                                用户数据
-                            </button>
-                            <button onClick={() => handleExport("sessions")} className="w-full px-3 py-2 text-left text-sm hover:bg-[#1A1A1A]/5">
-                                会话请求
-                            </button>
-                            <button onClick={() => handleExport("rewards")} className="w-full px-3 py-2 text-left text-sm hover:bg-[#1A1A1A]/5">
-                                奖励记录
-                            </button>
-                        </div>
-                    )}
+                        <AnimatePresence>
+                            {showExportMenu && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    className={cn(
+                                        "absolute z-50 bg-white/60 backdrop-blur-3xl border border-white/80 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.08)] py-1.5 w-44 overflow-hidden",
+                                        collapsed ? "left-16 bottom-0" : "left-0 bottom-full mb-2"
+                                    )}
+                                >
+                                    {[
+                                        { id: 'products', label: '产品数据报表', icon: Package },
+                                        { id: 'users', label: '用户增长数据', icon: Users },
+                                        { id: 'sessions', label: '诊断请求记录', icon: Activity },
+                                        { id: 'rewards', label: '礼等核销清单', icon: Gift },
+                                    ].map((item) => (
+                                        <button
+                                            key={item.id}
+                                            onClick={() => handleExport(item.id)}
+                                            className="group w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm font-bold text-slate-600 hover:bg-white hover:text-slate-900 transition-all active:scale-[0.98]"
+                                        >
+                                            <item.icon className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 group-hover:text-indigo-500 transition-colors" />
+                                            {item.label}
+                                        </button>
+                                    ))}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
                 </div>
             </nav>
 
