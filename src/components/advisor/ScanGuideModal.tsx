@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, Sparkles, Glasses, Sun, Smartphone, ScanFace, ShieldCheck } from "lucide-react";
+import { Check, Sparkles, Glasses, Sun, Smartphone, ScanFace } from "lucide-react";
 
 interface ScanGuideModalProps {
     isOpen: boolean;
@@ -94,19 +94,6 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel }: ScanGuideModalPr
                                         </div>
                                     );
                                 })}
-                            </div>
-
-                            {/* Privacy Note - Enhanced Professional Version */}
-                            <div className="mb-10 px-6 py-5 rounded-[1.5rem] bg-[#4A3728]/5 border border-[#4A3728]/10 flex items-start gap-4">
-                                <div className="flex-shrink-0 w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center shadow-sm border border-white/40">
-                                    <ShieldCheck className="w-5 h-5 text-[#4A3728]" strokeWidth={1.5} />
-                                </div>
-                                <div className="space-y-1.5 flex-1">
-                                    <h5 className="text-[14px] font-semibold text-[#1A1A1A] leading-none tracking-wide">隐私安全与数据保护</h5>
-                                    <p className="text-[12px] text-[#4A3728]/50 leading-relaxed font-light">
-                                        您的面部图像经由端端加密技术安全传输，仅供 AI 皮肤分析模型进行生物特征实时提取。分析任务完成后，原始图像将立即从所有计算节点中永久移除并销毁。我们严格遵守中华人民共和国《个人信息保护法》(PIPL) 及行业安全标准，绝不存储、转卖或向第三方公开您的影像数据。
-                                    </p>
-                                </div>
                             </div>
 
                             {/* Actions */}
