@@ -69,6 +69,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
   const lastSpokenPhraseRef = useRef<string>(""); // 避免短时间内重复播报同一句话
 
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const [capturedImages, setCapturedImages] = useState<Record<CaptureStep, string | null>>({
     front: null,
     left: null,
@@ -107,8 +108,12 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
 
     try {
       // 先停止现有流
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+      }
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
       }
 
       let mediaStream: MediaStream;
@@ -170,6 +175,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
         }
       }
 
+      streamRef.current = mediaStream;
       setStream(mediaStream);
 
       if (videoRef.current) {
@@ -707,10 +713,14 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
       }
 
       // 停止摄像头
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
-        setStream(null);
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
       }
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+      setStream(null);
 
       // 直接调用 onCapture，传递所有四张照片
       const allImages: FaceCaptureImages = {
@@ -853,12 +863,17 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
     initCamera();
 
     return () => {
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
+      // 彻底清理：停止所有轨道并释放引用
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [facingMode]);
+  }, [facingMode, initCamera]);
 
   // 面部检测循环
   useEffect(() => {

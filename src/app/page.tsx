@@ -347,39 +347,29 @@ export default function Home() {
                   <div className="absolute top-6 left-1/2 -translate-x-1/2 w-[90%] flex items-center justify-between z-50">
                     <a
                       href="https://demo.nihplod.cn"
-                      className="glass-premium group flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full text-sm font-medium tracking-wide no-underline cursor-pointer relative z-10 transition-all duration-300"
+                      className="group flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-medium tracking-[0.2em] uppercase text-[#3D4430]/40 hover:text-[#3D4430] hover:bg-white/40 border border-[#3D4430]/10 hover:border-[#3D4430]/20 transition-all duration-500 backdrop-blur-sm no-underline cursor-pointer relative z-10"
                     >
-                      <House className="w-4 h-4 transition-transform group-hover:scale-110" />
+                      <House className="w-3.5 h-3.5 transition-transform group-hover:scale-110 opacity-70 group-hover:opacity-100" />
                       <span className="hidden sm:inline">返回官网</span>
                     </a>
 
-                    {/* Centered Logo */}
-                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none flex items-center justify-center">
-                      <Image
-                        src="/NIHPLOD-logo.svg"
-                        alt="NIHPLOD 旎柏"
-                        width={240}
-                        height={72}
-                        priority
-                        className="h-6 md:h-7 object-contain opacity-90 mix-blend-multiply"
-                      />
-                    </div>
+
 
                     <div className="relative z-10">
                       {user ? (
                         <button
                           onClick={() => setShowProfileModal(true)}
-                          className="glass-premium group flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full text-sm font-medium tracking-wide cursor-pointer transition-all duration-300"
+                          className="group flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-medium tracking-[0.2em] uppercase text-[#3D4430]/40 hover:text-[#3D4430] hover:bg-white/40 border border-[#3D4430]/10 hover:border-[#3D4430]/20 transition-all duration-500 backdrop-blur-sm cursor-pointer"
                         >
-                          <User className="w-4 h-4 transition-transform group-hover:scale-110" />
+                          <User className="w-3.5 h-3.5 transition-transform group-hover:scale-110 opacity-70 group-hover:opacity-100" />
                           <span className="hidden sm:inline">{user.name || '我的档案'}</span>
                         </button>
                       ) : (
                         <button
                           onClick={() => openAuthModal('login')}
-                          className="glass-premium group flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full text-sm font-medium tracking-wide cursor-pointer transition-all duration-300"
+                          className="group flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-medium tracking-[0.2em] uppercase text-[#3D4430]/40 hover:text-[#3D4430] hover:bg-white/40 border border-[#3D4430]/10 hover:border-[#3D4430]/20 transition-all duration-500 backdrop-blur-sm cursor-pointer"
                         >
-                          <User className="w-4 h-4 transition-transform group-hover:scale-110" />
+                          <User className="w-3.5 h-3.5 transition-transform group-hover:scale-110 opacity-70 group-hover:opacity-100" />
                           <span className="hidden sm:inline">登录 / 注册</span>
                         </button>
                       )}
@@ -387,8 +377,18 @@ export default function Home() {
                   </div>
 
                   {/* Center AI Actions */}
-                  <div className="z-10 flex flex-col items-center text-center px-6 max-w-3xl mx-auto pt-6 lg:pt-10">
-                    <div className="animate-fade-in-up">
+                  <div className="z-10 flex flex-col items-center text-center px-6 max-w-3xl mx-auto pt-4 lg:pt-8">
+                    <div className="animate-fade-in-up flex flex-col items-center border-[0px] border-red-500">
+                      {/* Logo (Moved from top bar) */}
+                      <Image
+                        src="/NIHPLOD-logo.svg"
+                        alt="NIHPLOD 旎柏"
+                        width={260}
+                        height={78}
+                        priority
+                        className="h-8 sm:h-9 md:h-12 object-contain opacity-90 mix-blend-multiply mb-8 md:mb-10"
+                      />
+                      
                       <h1 className="text-4xl sm:text-5xl md:text-6xl font-serif text-[#1A1A1A] mb-8 leading-tight tracking-tight">
                         AI 智能<br className="sm:hidden" />精准护肤
                       </h1>

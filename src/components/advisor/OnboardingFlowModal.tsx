@@ -4,6 +4,7 @@ import { useState } from "react";
 import { BaseModal } from "@/components/ui/BaseModal";
 import { Loader2, MapPin, Hand } from "lucide-react";
 import { AnimatePresence, m } from "framer-motion";
+import Image from "next/image";
 
 interface OnboardingFlowProps {
     isOpen: boolean;
@@ -99,23 +100,15 @@ export function OnboardingFlowModal({
                                     exit={{ opacity: 0, x: 20 }}
                                     transition={{ duration: 0.3 }}
                                 >
-                                    <div className="flex justify-center mb-8 text-[#3D4430]">
-                                        <svg
-                                            viewBox="0 0 40 40"
-                                            className="h-10 w-10 opacity-70"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            strokeWidth="1.2"
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            style={{ transform: 'rotate(10deg)' }}
-                                        >
-                                            <path d="M14 28.5C14 28.5 15.5 33 20 33C24.5 33 26 28.5 26 28.5" />
-                                            <path d="M14 28.5V17.5C14 15.5 15.5 14.5 16 14.5C16.5 14.5 18 15.5 18 17.5V23.5" />
-                                            <path d="M18 23.5V11.5C18 9.5 19.5 8.5 20 8.5C20.5 8.5 22 9.5 22 11.5V23.5" />
-                                            <path d="M22 23.5V13.5C22 11.5 23.5 10.5 24 10.5C24.5 10.5 26 11.5 26 13.5V28.5" />
-                                            <path d="M14 24.5C14 24.5 12 24.5 9.5 22.5C7 20.5 8.5 18.5 9 18.5C9.5 18.5 14 21.5 14 23.5" />
-                                        </svg>
+                                    <div className="flex justify-center mb-6 text-[#3D4430]">
+                                        <Image
+                                            src="/images/wave-bye.svg"
+                                            alt="Wave"
+                                            width={36}
+                                            height={36}
+                                            className="opacity-80"
+                                            priority
+                                        />
                                     </div>
 
                                     <h3 className="mb-2 text-xl font-serif text-[#1A1A1A]">
@@ -162,7 +155,7 @@ export function OnboardingFlowModal({
                                     transition={{ duration: 0.3 }}
                                 >
                                     <div className="flex justify-center mb-6 text-[#3D4430]">
-                                        <MapPin className="h-6 w-6 opacity-80" />
+                                        <MapPin className="h-9 w-9 opacity-80" />
                                     </div>
 
                                     <h3 className="mb-4 text-xl font-serif text-[#1A1A1A]">
