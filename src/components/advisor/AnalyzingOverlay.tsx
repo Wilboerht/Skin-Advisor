@@ -498,7 +498,7 @@ export function AnalyzingOverlay({ progress, userImage, onCancel }: AnalyzingOve
             {/* 3. Analysis Icons Row (9 Metrics) */}
             <div className="absolute bottom-24 w-full px-4 z-50">
                 <m.div
-                    className="flex flex-wrap items-center justify-center gap-4 md:gap-8 max-w-2xl mx-auto"
+                    className="flex flex-wrap md:flex-nowrap items-center justify-center gap-3 sm:gap-4 md:gap-6 max-w-[95vw] sm:max-w-2xl mx-auto"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5, duration: 0.8 }}
@@ -513,24 +513,24 @@ export function AnalyzingOverlay({ progress, userImage, onCancel }: AnalyzingOve
                         return (
                             <m.div
                                 key={i}
-                                className={`relative flex items-center justify-center top-4 ${isCurrent ? 'block' : 'hidden md:flex'}`}
+                                className="relative flex items-center justify-center"
                                 animate={isCurrent ? {
-                                    scale: [1, 1.25, 1],
-                                    y: [0, -12, 0],
-                                    filter: "brightness(1)",
+                                    scale: [1, 1.2, 1],
+                                    y: [0, -8, 0],
+                                    filter: "brightness(1.1)",
                                     opacity: 1
                                 } : {
-                                    scale: 1,
+                                    scale: 0.9,
                                     y: 0,
-                                    filter: "brightness(0.7)",
-                                    opacity: 0.5
+                                    filter: "brightness(0.85)",
+                                    opacity: 0.4
                                 }}
                                 transition={{
-                                    duration: 0.6,
+                                    duration: 0.8,
                                     ease: "easeInOut"
                                 }}
                             >
-                                <div className="[&_svg]:w-12 [&_svg]:h-12 md:[&_svg]:w-14 md:[&_svg]:h-14 drop-shadow-sm transition-all duration-300">
+                                <div className="[&_svg]:w-9 [&_svg]:h-9 sm:[&_svg]:w-11 sm:[&_svg]:h-11 md:[&_svg]:w-12 md:[&_svg]:h-12 drop-shadow-sm transition-all duration-300">
                                     <Icon />
                                 </div>
                             </m.div>
