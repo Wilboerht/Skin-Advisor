@@ -90,37 +90,39 @@ export default function RewardsClient({ initialRewards }: RewardsClientProps) {
                 allSelected={selectedIds.length === rewards.length && rewards.length > 0}
             />
 
-            <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+            <div className="rounded-[32px] border-[1.5px] border-white/60 bg-white/40 backdrop-blur-3xl shadow-[0_32px_100px_rgba(0,0,0,0.05),inset_0_2px_10px_rgba(255,255,255,0.4)] overflow-hidden">
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                        <thead className="bg-slate-50 text-slate-700">
+                    <table className="w-full text-left text-sm divide-y divide-white/20">
+                        <thead className="bg-white/30 border-b border-white/20 text-slate-700">
                             <tr>
-                                <th className="px-4 py-4 w-12">
-                                    <button
-                                        onClick={handleSelectAll}
-                                        className="text-slate-400 hover:text-slate-600"
-                                    >
-                                        {selectedIds.length === rewards.length && rewards.length > 0 ? (
-                                            <CheckSquare className="w-5 h-5" />
-                                        ) : (
-                                            <Square className="w-5 h-5" />
-                                        )}
-                                    </button>
+                                <th className="px-4 py-4 w-12 align-middle">
+                                    <div className="flex items-center justify-center">
+                                        <button
+                                            onClick={handleSelectAll}
+                                            className="text-slate-400 hover:text-slate-600"
+                                        >
+                                            {selectedIds.length === rewards.length && rewards.length > 0 ? (
+                                                <CheckSquare className="w-5 h-5" />
+                                            ) : (
+                                                <Square className="w-5 h-5" />
+                                            )}
+                                        </button>
+                                    </div>
                                 </th>
-                                <th className="px-6 py-4 font-semibold w-64">用户信息</th>
-                                <th className="px-6 py-4 font-semibold">肤质评分</th>
-                                <th className="px-6 py-4 font-semibold">分享截图</th>
-                                <th className="px-6 py-4 font-semibold">状态</th>
-                                <th className="px-6 py-4 font-semibold">申请时间</th>
-                                <th className="px-6 py-4 font-semibold text-right">操作</th>
+                                <th className="px-6 py-4 font-semibold w-64 align-middle">用户信息</th>
+                                <th className="px-6 py-4 font-semibold align-middle">肤质评分</th>
+                                <th className="px-6 py-4 font-semibold align-middle">分享截图</th>
+                                <th className="px-6 py-4 font-semibold align-middle">状态</th>
+                                <th className="px-6 py-4 font-semibold align-middle">申请时间</th>
+                                <th className="px-6 py-4 font-semibold text-right align-middle">操作</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-200">
+                        <tbody className="divide-y divide-white/20">
                             {rewards.length === 0 ? (
                                 <tr>
                                     <td colSpan={7} className="px-6 py-16 text-center text-slate-500">
                                         <div className="flex flex-col items-center justify-center">
-                                            <div className="h-12 w-12 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+                                            <div className="h-12 w-12 bg-white/30 rounded-full flex items-center justify-center mb-4">
                                                 <Gift className="h-6 w-6 text-slate-400" />
                                             </div>
                                             <p className="text-base font-medium text-slate-900">暂无奖赏申请</p>
@@ -132,22 +134,24 @@ export default function RewardsClient({ initialRewards }: RewardsClientProps) {
                                 rewards.map((reward) => (
                                     <tr
                                         key={reward.id}
-                                        className={`hover:bg-slate-50 transition-colors group ${selectedIds.includes(reward.id) ? 'bg-slate-50' : ''
+                                        className={`hover:bg-white/20 transition-colors group ${selectedIds.includes(reward.id) ? 'bg-white/30' : ''
                                             }`}
                                     >
-                                        <td className="px-4 py-4">
-                                            <button
-                                                onClick={() => handleToggleSelect(reward.id)}
-                                                className="text-slate-400 hover:text-slate-600"
-                                            >
-                                                {selectedIds.includes(reward.id) ? (
-                                                    <CheckSquare className="w-5 h-5 text-slate-900" />
-                                                ) : (
-                                                    <Square className="w-5 h-5" />
-                                                )}
-                                            </button>
+                                        <td className="px-4 py-4 align-middle">
+                                            <div className="flex items-center justify-center">
+                                                <button
+                                                    onClick={() => handleToggleSelect(reward.id)}
+                                                    className="text-slate-400 hover:text-slate-600"
+                                                >
+                                                    {selectedIds.includes(reward.id) ? (
+                                                        <CheckSquare className="w-5 h-5 text-slate-900" />
+                                                    ) : (
+                                                        <Square className="w-5 h-5" />
+                                                    )}
+                                                </button>
+                                            </div>
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-6 py-4 align-middle">
                                             <div className="flex flex-col">
                                                 <span className="font-semibold text-slate-900">{reward.name}</span>
                                                 <span className="text-slate-500 text-xs mt-0.5">{reward.phone}</span>
@@ -156,7 +160,7 @@ export default function RewardsClient({ initialRewards }: RewardsClientProps) {
                                                 </span>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-6 py-4 align-middle">
                                             {reward.skinScore ? (
                                                 <div className="flex items-center gap-2">
                                                     <span className={`font-mono font-bold ${reward.skinScore >= 80 ? 'text-emerald-600' :
@@ -172,7 +176,7 @@ export default function RewardsClient({ initialRewards }: RewardsClientProps) {
                                                 <span className="text-slate-400">-</span>
                                             )}
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-6 py-4 align-middle">
                                             {reward.shareProofUrl ? (
                                                 <a
                                                     href={reward.shareProofUrl}
@@ -187,7 +191,7 @@ export default function RewardsClient({ initialRewards }: RewardsClientProps) {
                                                 <span className="text-slate-400 text-xs">无截图</span>
                                             )}
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-6 py-4 align-middle">
                                             {getStatusBadge(reward.status)}
                                             {reward.trackingNo && (
                                                 <div className="text-[10px] font-mono text-slate-500 mt-1 flex items-center gap-1">
@@ -196,14 +200,16 @@ export default function RewardsClient({ initialRewards }: RewardsClientProps) {
                                                 </div>
                                             )}
                                         </td>
-                                        <td className="px-6 py-4 text-xs text-slate-500">
+                                        <td className="px-6 py-4 text-xs text-slate-500 align-middle">
                                             {new Date(reward.createdAt).toLocaleDateString()}
                                             <span className="block text-[10px] text-slate-400">
                                                 {new Date(reward.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <RewardActions reward={reward} />
+                                        <td className="px-6 py-4 text-right align-middle">
+                                            <div className="flex justify-end items-center">
+                                                <RewardActions reward={reward} />
+                                            </div>
                                         </td>
                                     </tr>
                                 ))

@@ -304,7 +304,7 @@ export default function AuditLogsClient() {
 
             {/* Filter Bar - Users Management Style */}
             <div className="space-y-3">
-                <div className="flex flex-wrap items-center gap-4 p-4 bg-white rounded-xl border border-slate-200 shadow-sm transition-all">
+                <div className="flex flex-wrap items-center gap-4 p-4 bg-white/40 backdrop-blur-3xl rounded-2xl border-[1.5px] border-white/70 shadow-[0_20px_60px_rgba(0,0,0,0.03),inset_0_1px_5px_rgba(255,255,255,0.4)] transition-all">
                     <div className="flex items-center gap-3 px-2 text-slate-400">
                         <Filter className="w-4 h-4" />
                     </div>
@@ -425,7 +425,7 @@ export default function AuditLogsClient() {
                 )}
             </div>
 
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="bg-white/40 backdrop-blur-3xl rounded-[32px] border-[1.5px] border-white/60 shadow-[0_32px_100px_rgba(0,0,0,0.05),inset_0_2px_10px_rgba(255,255,255,0.4)] overflow-hidden">
                 {loading && logs.length === 0 ? (
                     <div className="flex items-center justify-center h-64">
                         <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
@@ -436,7 +436,7 @@ export default function AuditLogsClient() {
                         <p>暂无审计日志</p>
                     </div>
                 ) : (
-                    <div className="divide-y divide-slate-100">
+                    <div className="divide-y divide-white/20">
                         {logs.map((log) => {
                             const ActionIcon = ACTION_ICONS[log.action] || Edit;
                             const ResourceIcon = RESOURCE_ICONS[log.resource] || Package;

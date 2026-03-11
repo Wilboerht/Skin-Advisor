@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { format } from "date-fns";
+import { motion, AnimatePresence } from "framer-motion";
 
 import RewardsClient from "./RewardsClient";
 
@@ -161,29 +162,39 @@ export default function CampaignsClient({ initialRewards }: CampaignsClientProps
             </div>
 
             {/* Tabs Controller */}
-            <div className="flex items-center gap-1 p-1 bg-slate-100/80 rounded-xl w-fit border border-slate-200/50">
+            <div className="flex items-center gap-1 p-1 bg-white/40 backdrop-blur-xl rounded-2xl w-fit border-[1.5px] border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.05),inset_0_1px_5px_rgba(255,255,255,0.4)]">
                 <button
                     onClick={() => setActiveTab("campaigns")}
                     className={cn(
-                        "flex items-center gap-2 px-6 py-2 text-sm font-bold rounded-lg transition-all",
-                        activeTab === "campaigns"
-                            ? "bg-white text-slate-900 shadow-sm border border-slate-200/50"
-                            : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
+                        "flex items-center gap-2 px-6 py-2.5 text-sm font-bold rounded-xl transition-all relative group",
+                        activeTab === "campaigns" ? "text-slate-900" : "text-slate-500 hover:text-slate-700"
                     )}
                 >
-                    <LayoutDashboard className="w-4 h-4" />
+                    {activeTab === "campaigns" && (
+                        <motion.div
+                            layoutId="activeTabBackground"
+                            className="absolute inset-0 bg-white shadow-sm border border-white/40 backdrop-blur-sm rounded-xl -z-10"
+                            transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                        />
+                    )}
+                    <LayoutDashboard className={cn("w-4 h-4 transition-colors", activeTab === "campaigns" ? "text-slate-900" : "text-slate-400 group-hover:text-slate-600")} />
                     活动概览
                 </button>
                 <button
                     onClick={() => setActiveTab("rewards")}
                     className={cn(
-                        "flex items-center gap-2 px-6 py-2 text-sm font-bold rounded-lg transition-all relative",
-                        activeTab === "rewards"
-                            ? "bg-white text-slate-900 shadow-sm border border-slate-200/50"
-                            : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
+                        "flex items-center gap-2 px-6 py-2.5 text-sm font-bold rounded-xl transition-all relative group",
+                        activeTab === "rewards" ? "text-slate-900" : "text-slate-500 hover:text-slate-700"
                     )}
                 >
-                    <Gift className="w-4 h-4" />
+                    {activeTab === "rewards" && (
+                        <motion.div
+                            layoutId="activeTabBackground"
+                            className="absolute inset-0 bg-white shadow-sm border border-white/40 backdrop-blur-sm rounded-xl -z-10"
+                            transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                        />
+                    )}
+                    <Gift className={cn("w-4 h-4 transition-colors", activeTab === "rewards" ? "text-slate-900" : "text-slate-400 group-hover:text-slate-600")} />
                     领奖审批
                     {initialRewards.filter(r => r.status === 'pending').length > 0 && (
                         <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white ring-2 ring-white">
@@ -193,134 +204,153 @@ export default function CampaignsClient({ initialRewards }: CampaignsClientProps
                 </button>
             </div>
 
-            {activeTab === "campaigns" ? (
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                    {campaigns.map((campaign) => (
-                        <div
-                            key={campaign.id}
-                            className={`group relative flex flex-col overflow-hidden rounded-xl border bg-white shadow-sm transition-all hover:shadow-md ${campaign.isActive ? 'border-emerald-200 ring-1 ring-emerald-500/20' : 'border-slate-200'
-                                }`}
-                        >
-                            <div className="p-5">
-                                <div className="flex items-start justify-between">
-                                    <div className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${campaign.isActive
+            <AnimatePresence mode="wait">
+                {activeTab === "campaigns" ? (
+                    <motion.div
+                        key="campaigns-tab"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.3 }}
+                        className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
+                    >
+                        {campaigns.map((campaign) => (
+                            <div
+                                key={campaign.id}
+                                className={`group relative flex flex-col overflow-hidden rounded-[32px] border-[1.5px] bg-white/40 backdrop-blur-3xl transition-all hover:shadow-xl ${campaign.isActive ? 'border-emerald-200 ring-4 ring-emerald-500/10' : 'border-white/60 shadow-[0_32px_100px_rgba(0,0,0,0.05),inset_0_2px_10px_rgba(255,255,255,0.4)]'
+                                    }`}
+                            >
+                                <div className="p-5">
+                                    <div className="flex items-start justify-between">
+                                        <div className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${campaign.isActive
                                             ? 'bg-emerald-50 text-emerald-700'
                                             : 'bg-slate-100 text-slate-500'
-                                        }`}>
-                                        {campaign.isActive ? '进行中' : '已结束'}
-                                    </div>
-                                    <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                                        <Link
-                                            href={`/admin/campaigns/${campaign.id}/edit`}
-                                            className="rounded p-1.5 text-slate-400 hover:bg-slate-50 hover:text-slate-600"
-                                            title="编辑"
-                                        >
-                                            <Edit className="h-4 w-4" />
-                                        </Link>
-                                        <button
-                                            onClick={() => setDeleteConfirm({ show: true, id: campaign.id })}
-                                            className="rounded p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
-                                            title="删除"
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <h3 className="mt-3 text-lg font-semibold text-slate-900 line-clamp-1" title={campaign.name}>
-                                    {campaign.name}
-                                </h3>
-                                <p className="mt-1 text-sm text-slate-500 line-clamp-2 h-10" title={campaign.description || ''}>
-                                    {campaign.description || "暂无描述"}
-                                </p>
-
-                                <div className="mt-6 grid grid-cols-2 gap-4 border-t border-slate-100 pt-4">
-                                    <div>
-                                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">周期</p>
-                                        <div className="mt-1 flex items-center gap-1.5 text-sm text-slate-700">
-                                            <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                                            <span>
-                                                {format(new Date(campaign.startDate), 'MM/dd')} - {format(new Date(campaign.endDate), 'MM/dd')}
-                                            </span>
+                                            }`}>
+                                            {campaign.isActive ? '进行中' : '已结束'}
+                                        </div>
+                                        <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                                            <Link
+                                                href={`/admin/campaigns/${campaign.id}/edit`}
+                                                className="rounded p-1.5 text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+                                                title="编辑"
+                                            >
+                                                <Edit className="h-4 w-4" />
+                                            </Link>
+                                            <button
+                                                onClick={() => setDeleteConfirm({ show: true, id: campaign.id })}
+                                                className="rounded p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                                                title="删除"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </button>
                                         </div>
                                     </div>
-                                    <div>
-                                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">奖励</p>
-                                        <div className="mt-1 flex items-center gap-1.5 text-sm text-slate-700">
-                                            <Gift className="h-3.5 w-3.5 text-slate-400" />
-                                            <span className="capitalize">{campaign.rewardType}</span>
-                                        </div>
-                                    </div>
-                                </div>
 
-                                <div className="mt-4">
-                                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5 flex justify-between">
-                                        <span>参与进度</span>
-                                        {campaign.maxParticipants && (
-                                            <span>{Math.round((campaign.currentParticipants / campaign.maxParticipants) * 100)}%</span>
-                                        )}
+                                    <h3 className="mt-3 text-lg font-semibold text-slate-900 line-clamp-1" title={campaign.name}>
+                                        {campaign.name}
+                                    </h3>
+                                    <p className="mt-1 text-sm text-slate-500 line-clamp-2 h-10" title={campaign.description || ''}>
+                                        {campaign.description || "暂无描述"}
                                     </p>
-                                    <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-                                        <div
-                                            className={`h-full rounded-full ${paramsToColor(campaign)}`}
-                                            style={{
-                                                width: `${campaign.maxParticipants ? Math.min((campaign.currentParticipants / campaign.maxParticipants) * 100, 100) : 0}%`
-                                            }}
-                                        />
+
+                                    <div className="mt-6 grid grid-cols-2 gap-4 border-t border-white/20 pt-4">
+                                        <div className="flex flex-col justify-center items-start">
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">活动周期</p>
+                                            <div className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+                                                <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                                                <span>
+                                                    {format(new Date(campaign.startDate), 'MM/dd')} - {format(new Date(campaign.endDate), 'MM/dd')}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col justify-center items-start">
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">奖励类型</p>
+                                            <div className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+                                                <Gift className="h-3.5 w-3.5 text-slate-400" />
+                                                <span className="capitalize">{campaign.rewardType}</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="mt-1.5 flex items-center justify-between text-xs text-slate-500">
-                                        <span className="flex items-center gap-1">
-                                            <Users className="h-3 w-3" />
-                                            {campaign.currentParticipants} 人已参与
-                                        </span>
-                                        {campaign.maxParticipants && (
-                                            <span>上限 {campaign.maxParticipants}</span>
-                                        )}
+
+                                    <div className="mt-4">
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 flex justify-between">
+                                            <span>参与进度</span>
+                                            {campaign.maxParticipants && (
+                                                <span>{Math.round((campaign.currentParticipants / campaign.maxParticipants) * 100)}%</span>
+                                            )}
+                                        </p>
+                                        <div className="h-2 w-full overflow-hidden rounded-full bg-white/20 backdrop-blur-sm border border-white/20">
+                                            <div
+                                                className={`h-full rounded-full transition-all duration-1000 ${paramsToColor(campaign)}`}
+                                                style={{
+                                                    width: `${campaign.maxParticipants ? Math.min((campaign.currentParticipants / campaign.maxParticipants) * 100, 100) : 0}%`
+                                                }}
+                                            />
+                                        </div>
+                                        <div className="mt-1.5 flex items-center justify-between text-[11px] font-medium text-slate-500">
+                                            <span className="flex items-center gap-1">
+                                                <Users className="h-3 w-3" />
+                                                {campaign.currentParticipants} 人已参与
+                                            </span>
+                                            {campaign.maxParticipants && (
+                                                <span>上限 {campaign.maxParticipants}</span>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            {/* Action Footer */}
-                            <div className="flex border-t border-slate-100 bg-slate-50/50 p-3">
-                                <button
-                                    onClick={() => toggleStatus(campaign.id, campaign.isActive, campaign.name)}
-                                    className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition-colors ${campaign.isActive
-                                            ? "bg-white text-slate-700 shadow-sm border border-slate-200 hover:bg-slate-50"
-                                            : "bg-slate-900 text-white hover:bg-slate-800"
-                                        }`}
-                                >
-                                    {campaign.isActive ? (
-                                        <>
-                                            <XCircle className="h-4 w-4" />
-                                            停止活动
-                                        </>
-                                    ) : (
-                                        <>
-                                            <CheckCircle className="h-4 w-4" />
-                                            启用活动
-                                        </>
-                                    )}
-                                </button>
+                                <div className="flex border-t border-white/20 bg-white/20 p-4">
+                                    <button
+                                        onClick={() => toggleStatus(campaign.id, campaign.isActive, campaign.name)}
+                                        className={`flex flex-1 items-center justify-center gap-2 rounded-2xl py-2.5 text-sm font-bold transition-all ${campaign.isActive
+                                            ? "bg-white/80 text-slate-700 shadow-sm border border-white/60 hover:bg-white"
+                                            : "bg-slate-900 text-white shadow-lg hover:shadow-slate-900/40"
+                                            }`}
+                                    >
+                                        {campaign.isActive ? (
+                                            <>
+                                                <XCircle className="h-4 w-4" />
+                                                停止活动
+                                            </>
+                                        ) : (
+                                            <>
+                                                <CheckCircle className="h-4 w-4" />
+                                                启用活动
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        ))}
 
-                    <Link
-                        href="/admin/campaigns/new"
-                        className="group relative flex flex-col items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 p-6 text-center transition-all hover:border-slate-300 hover:bg-slate-100"
+                        <motion.div
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                        >
+                            <Link
+                                href="/admin/campaigns/new"
+                                className="group relative flex flex-col items-center justify-center h-full min-h-[300px] overflow-hidden rounded-[32px] border-[1.5px] border-dashed border-white/60 bg-white/20 backdrop-blur-xl p-6 text-center transition-all hover:bg-white/40 shadow-[inset_0_2px_10px_rgba(255,255,255,0.4)]"
+                            >
+                                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/50 border border-white/60 shadow-sm group-hover:scale-110 transition-transform">
+                                    <Plus className="h-8 w-8 text-slate-400 group-hover:text-slate-900 transition-colors" />
+                                </div>
+                                <h3 className="mt-6 text-base font-bold text-slate-900">创建新活动</h3>
+                                <p className="mt-1 text-sm text-slate-500 px-4">配置新的营销活动和奖励规则</p>
+                            </Link>
+                        </motion.div>
+                    </motion.div>
+                ) : (
+                    <motion.div
+                        key="rewards-tab"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.3 }}
                     >
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm">
-                            <Plus className="h-6 w-6 text-slate-400 group-hover:text-slate-600" />
-                        </div>
-                        <h3 className="mt-4 text-sm font-medium text-slate-900">创建新活动</h3>
-                        <p className="mt-1 text-sm text-slate-500">配置新的营销活动和奖励规则</p>
-                    </Link>
-                </div>
-            ) : (
-                <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-                    <RewardsClient initialRewards={initialRewards} />
-                </div>
-            )}
+                        <RewardsClient initialRewards={initialRewards} />
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             <ConfirmModal
                 isOpen={deleteConfirm.show}

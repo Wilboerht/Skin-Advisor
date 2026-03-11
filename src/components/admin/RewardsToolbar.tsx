@@ -5,6 +5,7 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Download, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { motion } from "framer-motion";
 
 interface RewardsToolbarProps {
     totalCount: number;
@@ -109,9 +110,9 @@ export function RewardsToolbar({
     return (
         <>
             <div className="space-y-4">
-                {/* Filter Row */}
+                {/* Filter Row - Liquid Glass Upgrade */}
                 <div className="flex flex-wrap gap-3 items-center">
-                    <div className="flex gap-1 bg-slate-100 rounded-lg p-1">
+                    <div className="flex gap-1 bg-white/40 backdrop-blur-xl rounded-2xl p-1 border border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.05)]">
                         {[
                             { value: 'all', label: '全部' },
                             { value: 'pending', label: '待审核' },
@@ -122,11 +123,18 @@ export function RewardsToolbar({
                             <button
                                 key={opt.value}
                                 onClick={() => handleStatusChange(opt.value)}
-                                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${currentStatus === opt.value
-                                    ? 'bg-white text-slate-900 shadow-sm'
-                                    : 'text-slate-600 hover:text-slate-900'
+                                className={`px-4 py-1.5 text-xs font-bold rounded-xl transition-all relative group ${currentStatus === opt.value
+                                    ? 'text-slate-900'
+                                    : 'text-slate-500 hover:text-slate-900'
                                     }`}
                             >
+                                {currentStatus === opt.value && (
+                                    <motion.div
+                                        layoutId="activeFilter"
+                                        className="absolute inset-0 bg-white shadow-sm border border-white/40 rounded-xl -z-10"
+                                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                                    />
+                                )}
                                 {opt.label}
                             </button>
                         ))}
@@ -137,41 +145,44 @@ export function RewardsToolbar({
                     <button
                         onClick={handleExport}
                         disabled={exporting}
-                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold text-slate-700 bg-white/40 backdrop-blur-xl border border-white/60 rounded-xl hover:bg-white/60 transition-all shadow-sm"
                     >
                         {exporting ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
-                            <Download className="w-4 h-4" />
+                            <Download className="w-4 h-4 shadow-sm" />
                         )}
                         导出 CSV
                     </button>
                 </div>
 
-                {/* Batch Actions (when items selected) */}
+                {/* Batch Actions (when items selected) - Floating Liquid Glass */}
                 {selectedIds.length > 0 && (
-                    <div className="flex items-center gap-3 p-3 bg-slate-900 text-white rounded-lg animate-in slide-in-from-top-2 duration-200">
-                        <span className="text-sm font-medium">
-                            已选择 {selectedIds.length} 条记录
-                        </span>
+                    <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 p-3 bg-white/40 backdrop-blur-3xl rounded-[32px] border-[1.5px] border-white/60 shadow-[0_40px_100px_rgba(0,0,0,0.1),inset_0_2px_10px_rgba(255,255,255,0.4)] animate-in fade-in slide-in-from-bottom-10 duration-500 w-full max-w-xl ring-1 ring-white/20">
+                        <div className="absolute -inset-4 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 blur-3xl -z-10 opacity-70" />
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-900/5 rounded-full border border-slate-900/10">
+                            <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                                已选择 {selectedIds.length} 条记录
+                            </span>
+                        </div>
                         <div className="flex-1" />
                         <button
                             onClick={() => handleBatchAction('approve')}
                             disabled={batchLoading !== null}
-                            className="px-3 py-1.5 text-xs font-medium bg-emerald-600 hover:bg-emerald-700 rounded transition-colors"
+                            className="px-4 py-2 text-xs font-bold bg-emerald-500/10 text-emerald-700 border border-emerald-500/20 hover:bg-emerald-500/20 rounded-2xl transition-all shadow-sm active:scale-95"
                         >
                             {batchLoading === 'approve' ? '处理中...' : '批量通过'}
                         </button>
                         <button
                             onClick={() => handleBatchAction('reject')}
                             disabled={batchLoading !== null}
-                            className="px-3 py-1.5 text-xs font-medium bg-red-600 hover:bg-red-700 rounded transition-colors"
+                            className="px-4 py-2 text-xs font-bold bg-rose-500/10 text-rose-700 border border-rose-500/20 hover:bg-rose-500/20 rounded-2xl transition-all shadow-sm active:scale-95"
                         >
                             {batchLoading === 'reject' ? '处理中...' : '批量拒绝'}
                         </button>
                         <button
                             onClick={onClearSelection}
-                            className="px-3 py-1.5 text-xs font-medium text-white/70 hover:text-white"
+                            className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-slate-900 transition-colors"
                         >
                             取消选择
                         </button>

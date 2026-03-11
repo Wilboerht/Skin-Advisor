@@ -61,45 +61,45 @@ export function ConfirmModal({
         <AnimatePresence>
             {isOpen && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center">
-                    {/* Backdrop */}
+                     {/* Backdrop */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                        className="absolute inset-0 bg-slate-900/30 backdrop-blur-md"
                     />
 
-                    {/* Modal */}
+                    {/* Modal - Liquid Glass Upgrade */}
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95, y: 10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                        transition={{ type: "spring", duration: 0.3 }}
-                        className="relative z-10 w-full max-w-md mx-4 bg-white rounded-2xl shadow-2xl overflow-hidden"
+                        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                        className="relative z-10 w-full max-w-sm mx-4 bg-white/60 backdrop-blur-3xl rounded-[32px] border-[1.5px] border-white/70 shadow-[0_40px_100px_rgba(0,0,0,0.1),inset_0_2px_10px_rgba(255,255,255,0.4)] overflow-hidden"
                     >
                         {/* Close Button */}
                         <button
                             onClick={onClose}
                             disabled={isLoading}
-                            className="absolute top-4 right-4 p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-50"
+                            className="absolute top-5 right-5 p-1.5 rounded-full text-slate-400 hover:text-slate-900 hover:bg-white/50 transition-all disabled:opacity-50"
                         >
                             <X className="w-5 h-5" />
                         </button>
 
-                        <div className="p-6">
+                        <div className="p-8">
                             {/* Icon */}
-                            <div className={`w-12 h-12 rounded-full ${styles.icon} flex items-center justify-center mx-auto mb-4`}>
-                                <AlertTriangle className="w-6 h-6" />
+                            <div className={`w-16 h-16 rounded-2xl ${styles.icon.split(' ')[0]} bg-opacity-20 flex items-center justify-center mx-auto mb-6 shadow-sm border-[1px] ${styles.icon.split(' ')[1].replace('text-', 'border-').replace('600', '200')}`}>
+                                <AlertTriangle className={`w-8 h-8 ${styles.icon.split(' ')[1]}`} />
                             </div>
 
                             {/* Title */}
-                            <h3 className="text-lg font-bold text-slate-900 text-center mb-2">
+                            <h3 className="text-xl font-bold text-slate-900 text-center mb-3 tracking-tight">
                                 {title}
                             </h3>
 
                             {/* Message */}
-                            <p className="text-sm text-slate-500 text-center mb-6 leading-relaxed">
+                            <p className="text-sm font-medium text-slate-500 text-center mb-8 leading-relaxed px-2">
                                 {message}
                             </p>
 
@@ -108,14 +108,14 @@ export function ConfirmModal({
                                 <button
                                     onClick={onClose}
                                     disabled={isLoading}
-                                    className="flex-1 px-4 py-2.5 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50"
+                                    className="flex-1 px-4 py-3 text-sm font-bold text-slate-600 bg-white/40 hover:bg-white/60 border border-white/60 rounded-2xl transition-all shadow-sm disabled:opacity-50"
                                 >
                                     {cancelText}
                                 </button>
                                 <button
                                     onClick={handleConfirm}
                                     disabled={isLoading}
-                                    className={`flex-1 px-4 py-2.5 text-sm font-medium text-white rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-70 ${styles.button}`}
+                                    className={`flex-1 px-4 py-3 text-sm font-bold text-white rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-70 ${styles.button}`}
                                 >
                                     {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
                                     {confirmText}

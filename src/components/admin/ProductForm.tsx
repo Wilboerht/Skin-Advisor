@@ -192,7 +192,7 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-8 bg-white p-8 rounded-xl shadow-sm border border-slate-200">
+        <form onSubmit={handleSubmit} className="space-y-8 bg-white/40 backdrop-blur-3xl p-10 rounded-[32px] shadow-[0_32px_100px_rgba(0,0,0,0.05),inset_0_2px_10px_rgba(255,255,255,0.5)] border-[1.5px] border-white/60 animate-in fade-in zoom-in-95 duration-1000">
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 {/* Basic Info */}
                 <div className="space-y-6">

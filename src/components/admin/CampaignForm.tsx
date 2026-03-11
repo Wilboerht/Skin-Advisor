@@ -142,7 +142,7 @@ export default function CampaignForm({ initialData, isEdit = false }: CampaignFo
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
                 {/* Main Info */}
                 <div className="lg:col-span-2 space-y-6">
-                    <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <div className="rounded-[28px] border-[1.5px] border-white/60 bg-white/40 backdrop-blur-3xl p-8 shadow-[0_32px_100px_rgba(0,0,0,0.05),inset_0_2px_10px_rgba(255,255,255,0.4)]">
                         <h2 className="text-base font-semibold text-slate-900 mb-4">基本信息</h2>
                         <div className="space-y-4">
                             <div>
@@ -211,7 +211,7 @@ export default function CampaignForm({ initialData, isEdit = false }: CampaignFo
                         </div>
                     </div>
 
-                    <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <div className="rounded-[28px] border-[1.5px] border-white/60 bg-white/40 backdrop-blur-3xl p-8 shadow-[0_32px_100px_rgba(0,0,0,0.05),inset_0_2px_10px_rgba(255,255,255,0.4)]">
                         <h2 className="text-base font-semibold text-slate-900 mb-4">奖励设置</h2>
                         <div className="space-y-4">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -278,7 +278,7 @@ export default function CampaignForm({ initialData, isEdit = false }: CampaignFo
 
                 {/* Sidebar */}
                 <div className="space-y-6">
-                    <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <div className="rounded-[28px] border-[1.5px] border-white/60 bg-white/40 backdrop-blur-3xl p-8 shadow-[0_32px_100px_rgba(0,0,0,0.05),inset_0_2px_10px_rgba(255,255,255,0.4)]">
                         <h2 className="text-base font-semibold text-slate-900 mb-4">状态设置</h2>
 
                         <div className="flex items-center justify-between pb-4 border-b border-slate-100">

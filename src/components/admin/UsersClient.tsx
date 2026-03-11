@@ -148,7 +148,7 @@ export function UsersClient() {
             </div>
 
             {/* Filter Bar */}
-            <div className="flex flex-wrap items-center gap-3 p-4 bg-white rounded-xl border border-slate-200">
+            <div className="flex flex-wrap items-center gap-3 p-4 bg-white/40 backdrop-blur-3xl rounded-2xl border-[1.5px] border-white/70 shadow-[0_20px_60px_rgba(0,0,0,0.03),inset_0_1px_5px_rgba(255,255,255,0.4)] transition-all">
                 <Search className="w-4 h-4 text-slate-400" />
                 <div className="relative flex-1 sm:flex-none">
                     <input
@@ -181,21 +181,21 @@ export function UsersClient() {
             </div>
 
             {/* Table */}
-            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+            <div className="overflow-hidden rounded-[32px] border-[1.5px] border-white/60 bg-white/40 backdrop-blur-3xl shadow-[0_32px_100px_rgba(0,0,0,0.05),inset_0_2px_10px_rgba(255,255,255,0.4)]">
                 <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-slate-200">
-                        <thead className="bg-slate-50">
+                    <table className="min-w-full divide-y divide-white/20">
+                        <thead className="bg-white/30 border-b border-white/20">
                             <tr>
-                                <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">用户</th>
-                                <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">状态</th>
-                                <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">注册日期</th>
-                                <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">最后活跃</th>
-                                <th className="px-6 py-4 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">测试次数</th>
-                                <th className="px-6 py-4 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">领奖次数</th>
-                                <th className="px-6 py-4 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">操作</th>
+                                <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">用户</th>
+                                <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">状态</th>
+                                <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">注册日期</th>
+                                <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">最后活跃</th>
+                                <th className="px-6 py-4 text-right text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">测试次数</th>
+                                <th className="px-6 py-4 text-right text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">领奖次数</th>
+                                <th className="px-6 py-4 text-right text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">操作</th>
                             </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-slate-200">
+                        <tbody className="divide-y divide-white/20">
                             {loading ? (
                                 <tr>
                                     <td colSpan={7} className="px-6 py-12 text-center">
@@ -210,19 +210,19 @@ export function UsersClient() {
                                 </tr>
                             ) : (
                                 users.map((user) => (
-                                    <tr key={user.id} className="group hover:bg-slate-50 transition-colors">
-                                        <td className="px-6 py-4">
+                                    <tr key={user.id} className="group hover:bg-white/20 transition-colors">
+                                        <td className="px-6 py-4 align-middle">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
+                                                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 shrink-0">
                                                     <UserIcon className="w-4 h-4" />
                                                 </div>
-                                                <div>
-                                                    <div className="font-medium text-slate-900">{user.name || "匿名用户"}</div>
-                                                    <div className="text-xs text-slate-500">{user.email}</div>
+                                                <div className="min-w-0">
+                                                    <div className="font-medium text-slate-900 truncate">{user.name || "匿名用户"}</div>
+                                                    <div className="text-xs text-slate-500 truncate">{user.email}</div>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-6 py-4 align-middle">
                                             <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${user.role === "disabled"
                                                 ? "bg-red-50 text-red-600"
                                                 : "bg-emerald-50 text-emerald-700"
@@ -230,27 +230,29 @@ export function UsersClient() {
                                                 {user.role === "disabled" ? "已禁用" : "处于活跃状态"}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 text-slate-600">
+                                        <td className="px-6 py-4 text-slate-600 align-middle">
                                             {new Date(user.createdAt).toLocaleDateString()}
                                         </td>
-                                        <td className="px-6 py-4 text-slate-600">
+                                        <td className="px-6 py-4 text-slate-600 align-middle">
                                             {user.advisorSessions[0]
                                                 ? new Date(user.advisorSessions[0].createdAt).toLocaleDateString()
                                                 : "-"}
                                         </td>
-                                        <td className="px-6 py-4 text-right tabular-nums text-slate-900">
+                                        <td className="px-6 py-4 text-right tabular-nums text-slate-900 align-middle">
                                             {user._count.advisorSessions}
                                         </td>
-                                        <td className="px-6 py-4 text-right tabular-nums text-slate-900">
+                                        <td className="px-6 py-4 text-right tabular-nums text-slate-900 align-middle">
                                             {user._count.shareRewards}
                                         </td>
-                                        <td className="px-6 py-4 text-right relative">
-                                            <button
-                                                onClick={() => setShowDropdown(showDropdown === user.id ? null : user.id)}
-                                                className="p-2 text-slate-400 hover:text-slate-600 transition-colors rounded-full hover:bg-slate-100"
-                                            >
-                                                <MoreHorizontal className="w-4 h-4" />
-                                            </button>
+                                        <td className="px-6 py-4 text-right relative align-middle">
+                                            <div className="flex justify-end items-center h-full">
+                                                <button
+                                                    onClick={() => setShowDropdown(showDropdown === user.id ? null : user.id)}
+                                                    className="p-2 text-slate-400 hover:text-slate-600 transition-colors rounded-full hover:bg-slate-100"
+                                                >
+                                                    <MoreHorizontal className="w-4 h-4" />
+                                                </button>
+                                            </div>
 
                                             {/* Dropdown Menu */}
                                             {showDropdown === user.id && (

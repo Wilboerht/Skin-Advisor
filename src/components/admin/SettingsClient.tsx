@@ -129,8 +129,8 @@ export default function SettingsClient() {
                 {/* Left Column: AI Configuration */}
                 <div className="lg:col-span-2 space-y-8">
                     {/* Model Settings */}
-                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                        <div className="px-6 py-4 bg-slate-50/50 border-b border-slate-100 flex items-center gap-2">
+                    <div className="bg-white/40 backdrop-blur-3xl rounded-[32px] border-[1.5px] border-white/60 shadow-[0_32px_100px_rgba(0,0,0,0.05),inset_0_2px_10px_rgba(255,255,255,0.4)] overflow-hidden">
+                        <div className="px-6 py-5 bg-white/30 border-b border-white/20 flex items-center gap-2">
                             <Monitor className="h-4 w-4 text-slate-500" />
                             <h3 className="font-semibold text-slate-700 text-sm uppercase tracking-wide">AI 模型配置</h3>
                         </div>
@@ -212,8 +212,8 @@ export default function SettingsClient() {
                     </div>
 
                     {/* AI Parameters */}
-                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                        <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center gap-2">
+                    <div className="bg-white/40 backdrop-blur-3xl rounded-[32px] border-[1.5px] border-white/60 shadow-[0_32px_100px_rgba(0,0,0,0.05),inset_0_2px_10px_rgba(255,255,255,0.4)] overflow-hidden">
+                        <div className="px-6 py-5 bg-white/30 border-b border-white/20 flex items-center gap-2">
                             <Sliders className="h-4 w-4 text-slate-500" />
                             <h3 className="font-semibold text-slate-700 text-sm uppercase tracking-wide">模型参数</h3>
                         </div>
@@ -291,8 +291,8 @@ export default function SettingsClient() {
                     </div>
 
                     {/* Analysis Sensitivity */}
-                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                        <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center gap-2">
+                    <div className="bg-white/40 backdrop-blur-3xl rounded-[32px] border-[1.5px] border-white/60 shadow-[0_32px_100px_rgba(0,0,0,0.05),inset_0_2px_10px_rgba(255,255,255,0.4)] overflow-hidden">
+                        <div className="px-6 py-5 bg-white/30 border-b border-white/20 flex items-center gap-2">
                             <Activity className="h-4 w-4 text-slate-500" />
                             <h3 className="font-semibold text-slate-700 text-sm uppercase tracking-wide">分析灵敏度</h3>
                         </div>
@@ -379,8 +379,8 @@ export default function SettingsClient() {
                     </div>
 
                     {/* Feature Toggles */}
-                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                        <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center gap-2">
+                    <div className="bg-white/40 backdrop-blur-3xl rounded-[32px] border-[1.5px] border-white/60 shadow-[0_32px_100px_rgba(0,0,0,0.05),inset_0_2px_10px_rgba(255,255,255,0.4)] overflow-hidden">
+                        <div className="px-6 py-5 bg-white/30 border-b border-white/20 flex items-center gap-2">
                             <Zap className="h-4 w-4 text-slate-500" />
                             <h3 className="font-semibold text-slate-700 text-sm uppercase tracking-wide">功能开关</h3>
                         </div>
@@ -461,8 +461,8 @@ export default function SettingsClient() {
                     </div>
 
                     {/* API Keys */}
-                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                        <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center gap-2">
+                    <div className="bg-white/40 backdrop-blur-3xl rounded-[32px] border-[1.5px] border-white/60 shadow-[0_32px_100px_rgba(0,0,0,0.05),inset_0_2px_10px_rgba(255,255,255,0.4)] overflow-hidden">
+                        <div className="px-6 py-5 bg-white/30 border-b border-white/20 flex items-center gap-2">
                             <Key className="h-4 w-4 text-slate-500" />
                             <h3 className="font-semibold text-slate-700 text-sm uppercase tracking-wide">API 密钥</h3>
                         </div>
@@ -487,8 +487,8 @@ export default function SettingsClient() {
 
                 {/* Right Column: System Stats */}
                 <div className="space-y-6">
-                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                        <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center gap-2">
+                    <div className="bg-white/40 backdrop-blur-3xl rounded-[32px] border-[1.5px] border-white/60 shadow-[0_32px_100px_rgba(0,0,0,0.05),inset_0_2px_10px_rgba(255,255,255,0.4)] overflow-hidden">
+                        <div className="px-6 py-5 bg-white/30 border-b border-white/20 flex items-center gap-2">
                             <Database className="h-4 w-4 text-slate-500" />
                             <h3 className="font-semibold text-slate-700 text-sm uppercase tracking-wide">系统状态</h3>
                         </div>
@@ -520,8 +520,8 @@ export default function SettingsClient() {
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                        <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center gap-2">
+                    <div className="bg-white/40 backdrop-blur-3xl rounded-[32px] border-[1.5px] border-white/60 shadow-[0_32px_100px_rgba(0,0,0,0.05),inset_0_2px_10px_rgba(255,255,255,0.4)] overflow-hidden">
+                        <div className="px-6 py-5 bg-white/30 border-b border-white/20 flex items-center gap-2">
                             <Shield className="h-4 w-4 text-slate-500" />
                             <h3 className="font-semibold text-slate-700 text-sm uppercase tracking-wide">管理员访问</h3>
                         </div>

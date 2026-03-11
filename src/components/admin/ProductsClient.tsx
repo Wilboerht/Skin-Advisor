@@ -86,31 +86,35 @@ function SortableProductRow({
         <tr
             ref={setNodeRef}
             style={style}
-            className={`hover:bg-slate-50 transition-colors ${isSelected ? 'bg-slate-50' : ''}`}
+            className={`hover:bg-white/20 transition-colors ${isSelected ? 'bg-white/30' : ''}`}
         >
-            <td className="px-2 py-4 w-10">
-                <button
-                    {...attributes}
-                    {...listeners}
-                    className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 p-1"
-                >
-                    <GripVertical className="w-4 h-4" />
-                </button>
+            <td className="px-2 py-4 w-10 align-middle">
+                <div className="flex items-center justify-center">
+                    <button
+                        {...attributes}
+                        {...listeners}
+                        className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 p-1"
+                    >
+                        <GripVertical className="w-4 h-4" />
+                    </button>
+                </div>
             </td>
-            <td className="px-2 py-4 w-10">
-                <button
-                    onClick={() => onSelect(product.id)}
-                    className="text-slate-400 hover:text-slate-600"
-                >
-                    {isSelected ? (
-                        <CheckSquare className="w-5 h-5 text-slate-900" />
-                    ) : (
-                        <Square className="w-5 h-5" />
-                    )}
-                </button>
+            <td className="px-2 py-4 w-10 align-middle">
+                <div className="flex items-center justify-center">
+                    <button
+                        onClick={() => onSelect(product.id)}
+                        className="text-slate-400 hover:text-slate-600"
+                    >
+                        {isSelected ? (
+                            <CheckSquare className="w-5 h-5 text-slate-900" />
+                        ) : (
+                            <Square className="w-5 h-5" />
+                        )}
+                    </button>
+                </div>
             </td>
-            <td className="px-4 py-4 whitespace-nowrap">
-                <div className="relative h-12 w-12 overflow-hidden rounded-lg border border-slate-100 bg-slate-50">
+            <td className="px-4 py-4 whitespace-nowrap align-middle">
+                <div className="relative h-12 w-12 overflow-hidden rounded-lg border border-slate-100 bg-slate-50 mx-auto sm:mx-0">
                     <img
                         src={product.image}
                         alt={product.name}
@@ -118,7 +122,7 @@ function SortableProductRow({
                     />
                 </div>
             </td>
-            <td className="px-4 py-4">
+            <td className="px-4 py-4 align-middle">
                 <div className="flex items-center gap-2">
                     <div>
                         <div className="text-sm font-medium text-slate-900">{product.name}</div>
@@ -129,15 +133,15 @@ function SortableProductRow({
                     )}
                 </div>
             </td>
-            <td className="px-4 py-4 whitespace-nowrap">
+            <td className="px-4 py-4 whitespace-nowrap align-middle">
                 <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700">
                     {product.category}
                 </span>
             </td>
-            <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-600">
+            <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-600 align-middle">
                 {product.price}
             </td>
-            <td className="px-4 py-4 whitespace-nowrap">
+            <td className="px-4 py-4 whitespace-nowrap align-middle">
                 <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${product.active
                     ? 'bg-emerald-50 text-emerald-700'
                     : 'bg-slate-100 text-slate-500'
@@ -146,7 +150,7 @@ function SortableProductRow({
                     {product.active ? '上架' : '下架'}
                 </span>
             </td>
-            <td className="px-4 py-4 whitespace-nowrap">
+            <td className="px-4 py-4 whitespace-nowrap align-middle">
                 <span className={`inline-flex items-center gap-1 text-sm font-medium ${product.stock <= 0
                     ? 'text-red-600'
                     : product.stock <= 10
@@ -159,7 +163,7 @@ function SortableProductRow({
                     {product.stock <= 0 ? '已售罄' : product.stock}
                 </span>
             </td>
-            <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+            <td className="px-4 py-4 whitespace-nowrap text-sm font-medium align-middle">
                 <div className="flex items-center gap-1">
                     <Link
                         href={`/admin/products/${product.id}/edit`}
@@ -371,7 +375,7 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
             </div>
 
             {/* P7.10 Filter Controls */}
-            <div className="flex flex-wrap items-center gap-3 p-4 bg-white rounded-xl border border-slate-200">
+            <div className="flex flex-wrap items-center gap-3 p-4 bg-white/40 backdrop-blur-3xl rounded-2xl border-[1.5px] border-white/70 shadow-[0_20px_60px_rgba(0,0,0,0.03),inset_0_1px_5px_rgba(255,255,255,0.4)] transition-all">
                 <Filter className="w-4 h-4 text-slate-400" />
                 {/* Category Filter */}
                 <div className="relative min-w-[140px]">
@@ -428,44 +432,47 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                 </span>
             </div>
 
-            {/* Batch Actions Bar */}
+            {/* Batch Actions Bar - Floating Liquid Glass */}
             {selectedIds.length > 0 && (
-                <div className="flex items-center gap-3 p-3 bg-slate-900 text-white rounded-lg animate-in slide-in-from-top-2 duration-200">
-                    <span className="text-sm font-medium">
-                        已选择 {selectedIds.length} 个产品
-                    </span>
+                <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 p-3 bg-white/40 backdrop-blur-3xl rounded-[32px] border-[1.5px] border-white/60 shadow-[0_40px_100px_rgba(0,0,0,0.1),inset_0_2px_10px_rgba(255,255,255,0.4)] animate-in fade-in slide-in-from-bottom-10 duration-500 w-full max-w-2xl ring-1 ring-white/20">
+                    <div className="absolute -inset-4 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 blur-3xl -z-10 opacity-70" />
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-900/5 rounded-full border border-slate-900/10">
+                        <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                            已选择 {selectedIds.length} 个产品
+                        </span>
+                    </div>
                     <div className="flex-1" />
                     <button
                         onClick={() => handleBatchAction('activate')}
                         disabled={batchLoading !== null}
-                        className="px-3 py-1.5 text-xs font-medium bg-emerald-600 hover:bg-emerald-700 rounded transition-colors"
+                        className="px-4 py-2 text-xs font-bold bg-emerald-500/10 text-emerald-700 border border-emerald-500/20 hover:bg-emerald-500/20 rounded-2xl transition-all shadow-sm active:scale-95"
                     >
                         {batchLoading === 'activate' ? <Loader2 className="w-4 h-4 animate-spin" /> : '批量上架'}
                     </button>
                     <button
                         onClick={() => handleBatchAction('deactivate')}
                         disabled={batchLoading !== null}
-                        className="px-3 py-1.5 text-xs font-medium bg-slate-600 hover:bg-slate-700 rounded transition-colors"
+                        className="px-4 py-2 text-xs font-bold bg-slate-900/5 text-slate-700 border border-slate-900/10 hover:bg-slate-900/10 rounded-2xl transition-all shadow-sm active:scale-95"
                     >
                         {batchLoading === 'deactivate' ? <Loader2 className="w-4 h-4 animate-spin" /> : '批量下架'}
                     </button>
                     <button
                         onClick={() => handleBatchAction('feature')}
                         disabled={batchLoading !== null}
-                        className="px-3 py-1.5 text-xs font-medium bg-amber-600 hover:bg-amber-700 rounded transition-colors"
+                        className="px-4 py-2 text-xs font-bold bg-amber-500/10 text-amber-700 border border-amber-500/20 hover:bg-amber-500/20 rounded-2xl transition-all shadow-sm active:scale-95"
                     >
                         {batchLoading === 'feature' ? <Loader2 className="w-4 h-4 animate-spin" /> : '设为推荐'}
                     </button>
                     <button
                         onClick={() => setDeleteConfirm({ show: true, id: null, batch: true })}
                         disabled={batchLoading !== null}
-                        className="px-3 py-1.5 text-xs font-medium bg-red-600 hover:bg-red-700 rounded transition-colors"
+                        className="px-4 py-2 text-xs font-bold bg-rose-500/10 text-rose-700 border border-rose-500/20 hover:bg-rose-500/20 rounded-2xl transition-all shadow-sm active:scale-95"
                     >
                         批量删除
                     </button>
                     <button
                         onClick={() => setSelectedIds([])}
-                        className="px-3 py-1.5 text-xs font-medium text-white/70 hover:text-white"
+                        className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-slate-900 transition-colors"
                     >
                         取消
                     </button>
@@ -477,27 +484,29 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                 collisionDetection={closestCenter}
                 onDragEnd={handleDragEnd}
             >
-                <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                    <table className="min-w-full divide-y divide-slate-200">
-                        <thead className="bg-slate-50">
+                <div className="overflow-hidden rounded-[32px] border-[1.5px] border-white/60 bg-white/40 backdrop-blur-3xl shadow-[0_32px_100px_rgba(0,0,0,0.05),inset_0_2px_10px_rgba(255,255,255,0.4)]">
+                    <table className="min-w-full divide-y divide-white/20">
+                        <thead className="bg-white/30 border-b border-white/20">
                             <tr>
-                                <th className="px-2 py-3 w-10"></th>
-                                <th className="px-2 py-3 w-10">
-                                    <button onClick={handleSelectAll} className="text-slate-400 hover:text-slate-600">
-                                        {selectedIds.length === filteredProducts.length && filteredProducts.length > 0 ? (
-                                            <CheckSquare className="w-5 h-5" />
-                                        ) : (
-                                            <Square className="w-5 h-5" />
-                                        )}
-                                    </button>
+                                <th className="px-2 py-4 w-10 align-middle"></th>
+                                <th className="px-2 py-4 w-10 align-middle">
+                                    <div className="flex items-center justify-center">
+                                        <button onClick={handleSelectAll} className="text-slate-400 hover:text-slate-600">
+                                            {selectedIds.length === filteredProducts.length && filteredProducts.length > 0 ? (
+                                                <CheckSquare className="w-5 h-5 text-slate-900" />
+                                            ) : (
+                                                <Square className="w-5 h-5" />
+                                            )}
+                                        </button>
+                                    </div>
                                 </th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">图片</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">名称</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">分类</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">价格</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">状态</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">库存</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">操作</th>
+                                <th className="px-4 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">图片</th>
+                                <th className="px-4 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">名称</th>
+                                <th className="px-4 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">分类</th>
+                                <th className="px-4 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">价格</th>
+                                <th className="px-4 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">状态</th>
+                                <th className="px-4 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">库存</th>
+                                <th className="px-4 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">操作</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-slate-200">
