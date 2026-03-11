@@ -24,7 +24,7 @@ export default function AdminLoginPage() {
             });
 
             if (res.ok) {
-                router.push("/admin");
+                router.push("/admin/products");
             } else {
                 const data = await res.json();
                 setError(data.error || "Login failed");
@@ -46,16 +46,16 @@ export default function AdminLoginPage() {
 
             <div className="w-full max-w-sm z-10 animate-in fade-in zoom-in-95 duration-500">
                 {/* Brand Header */}
-                <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-slate-900 text-white shadow-lg shadow-slate-200 mb-6">
-                        <ShieldCheck className="w-6 h-6" />
-                    </div>
-                    <h2 className="text-2xl font-bold tracking-tight text-slate-900">
-                        MySkin.Today 管理系统
+                <div className="flex items-center justify-center gap-4 mb-10">
+                    <img 
+                        src="/NIHPLOD-logo.svg" 
+                        alt="NIHPLOD Logo" 
+                        className="w-auto h-6"
+                    />
+                    <div className="w-px h-5 bg-slate-300"></div>
+                    <h2 className="text-xl font-medium text-slate-900 tracking-tight">
+                        护肤顾问管理系统
                     </h2>
-                    <p className="mt-2 text-sm text-slate-500 font-medium tracking-wide uppercase">
-                        管理员权限访问
-                    </p>
                 </div>
 
                 {/* Login Card */}
@@ -111,11 +111,35 @@ export default function AdminLoginPage() {
                             )}
                         </button>
                     </form>
+
+                    {/* Default Credentials Tip */}
+                    <div className="mt-6 pt-6 border-t border-slate-100">
+                        <div className="flex items-start gap-3 p-3 rounded-lg bg-blue-50/50 border border-blue-100/50">
+                            <div className="mt-0.5 text-blue-500">
+                                <ShieldCheck className="w-4 h-4" />
+                            </div>
+                            <div>
+                                <p className="text-[11px] font-bold text-blue-700 uppercase tracking-wider mb-1">
+                                    默认管理账号 (开发/测试用)
+                                </p>
+                                <div className="space-y-0.5">
+                                    <p className="text-xs text-blue-600 flex items-center justify-between">
+                                        <span className="opacity-70">账号:</span>
+                                        <code className="bg-white px-1.5 py-0.5 rounded border border-blue-100 font-mono font-bold">admin</code>
+                                    </p>
+                                    <p className="text-xs text-blue-600 flex items-center justify-between">
+                                        <span className="opacity-70">密码:</span>
+                                        <code className="bg-white px-1.5 py-0.5 rounded border border-blue-100 font-mono font-bold">admin123</code>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Footer */}
                 <p className="mt-8 text-center text-xs text-slate-400 font-medium">
-                    &copy; {new Date().getFullYear()} MySkin.Today.
+                    &copy; {new Date().getFullYear()} NIHPLOD. All rights reserved.
                 </p>
             </div>
         </div>

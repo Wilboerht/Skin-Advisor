@@ -20,7 +20,6 @@ import {
 import { cn } from "@/lib/utils";
 
 const MENU_ITEMS = [
-    { href: "/admin", label: "控制台概览", icon: LayoutDashboard },
     { href: "/admin/products", label: "产品管理", icon: Package },
     { href: "/admin/users", label: "用户管理", icon: Users },
     { href: "/admin/campaigns", label: "活动中心", icon: FileText },
@@ -52,22 +51,27 @@ export default function AdminSidebar() {
                 collapsed ? "w-20" : "w-64"
             )}
         >
-            <div className={cn("flex h-20 items-center px-6 gap-3 border-b border-[#1A1A1A]/5", collapsed ? "justify-center px-0" : "")}>
-                <div className="flex items-center justify-center shrink-0">
-                    <Image
-                        src="/images/NIHPLOD-logo.svg"
-                        alt="MySkin.Today"
-                        width={32}
-                        height={32}
-                        className="h-8 w-auto opacity-90"
-                    />
-                </div>
-                {!collapsed && (
-                    <div className="animate-in fade-in duration-300 overflow-hidden whitespace-nowrap">
-                        <span className="block text-sm font-bold tracking-tight text-[#1A1A1A]">MySkin.Today</span>
-                        <span className="block text-[10px] font-medium text-[#1A1A1A]/40 tracking-wider uppercase">管理后台</span>
+            <div className={cn("flex h-20 items-center justify-center border-b border-[#1A1A1A]/5 px-2")}>
+                <div className="flex items-center gap-2.5 overflow-hidden">
+                    <div className="flex items-center justify-center shrink-0">
+                        <img
+                            src="/NIHPLOD-logo.svg"
+                            alt="NIHPLOD"
+                            className={cn(
+                                "w-auto transition-all duration-300",
+                                collapsed ? "h-4" : "h-[21px]"
+                            )}
+                        />
                     </div>
-                )}
+                    {!collapsed && (
+                        <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-300 shrink-0">
+                            <div className="w-px h-3.5 bg-slate-300"></div>
+                            <span className="text-[13px] font-medium tracking-tight text-[#1A1A1A] whitespace-nowrap">
+                                护肤顾问管理系统
+                            </span>
+                        </div>
+                    )}
+                </div>
             </div>
 
             <nav className="flex-1 space-y-1 px-3 py-6">
