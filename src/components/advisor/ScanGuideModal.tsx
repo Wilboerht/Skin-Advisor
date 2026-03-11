@@ -51,11 +51,11 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel }: ScanGuideModalPr
                         animate={{ scale: 1, opacity: 1, y: 0 }}
                         exit={{ scale: 0.95, opacity: 0, y: 8 }}
                         transition={{ type: "spring", stiffness: 350, damping: 25 }}
-                        className="relative z-10 bg-[#FDFBF7]/80 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl w-full max-w-[640px] overflow-hidden border border-white/40 ring-1 ring-white/20"
+                        className="relative z-10 bg-[#FDFBF7]/85 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl w-full max-w-[560px] overflow-hidden border border-white/40 ring-1 ring-white/20"
                     >
-                        <div className="p-8 pt-10">
+                        <div className="p-7 pt-9">
                             {/* Header */}
-                            <div className="flex flex-col items-center text-center gap-4 mb-10">
+                            <div className="flex flex-col items-center text-center gap-4 mb-8">
                                 <div className="w-16 h-16 rounded-full bg-[#4A3728]/5 flex items-center justify-center mb-1 ring-1 ring-[#4A3728]/10 shadow-inner">
                                     <ScanFace className="w-8 h-8 text-[#4A3728]" strokeWidth={1.2} />
                                 </div>
@@ -70,16 +70,16 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel }: ScanGuideModalPr
                             </div>
 
                             {/* Checklist Content */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 items-stretch">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mb-6 items-stretch">
                                 {guideItems.map((item, index) => {
                                     const Icon = item.icon;
                                     return (
                                         <div
                                             key={index}
-                                            className="flex flex-col h-full p-6 rounded-2xl bg-white/40 border border-[#4A3728]/5 hover:border-[#4A3728]/20 hover:bg-white/60 hover:shadow-xl hover:shadow-[#4A3728]/5 transition-all duration-500 group backdrop-blur-sm"
+                                            className="flex flex-col h-full p-5 rounded-2xl bg-white/40 border border-[#4A3728]/5 hover:border-[#4A3728]/20 hover:bg-white/60 hover:shadow-xl hover:shadow-[#4A3728]/5 transition-all duration-500 group backdrop-blur-sm"
                                         >
-                                            <div className="flex items-start gap-4 mb-auto">
-                                                <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-[#4A3728]/5 group-hover:bg-[#4A3728]/10 transition-all duration-500 flex items-center justify-center text-[#4A3728] group-hover:scale-110 shadow-sm border border-white/40">
+                                            <div className="flex items-start gap-3.5 mb-auto">
+                                                <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-[#4A3728]/5 group-hover:bg-[#4A3728]/10 transition-all duration-500 flex items-center justify-center text-[#4A3728] group-hover:scale-110 shadow-sm border border-white/40">
                                                     <Icon className="w-5 h-5" strokeWidth={1.5} />
                                                 </div>
                                                 <div className="flex-1 pt-1.5">
@@ -97,7 +97,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel }: ScanGuideModalPr
                             </div>
 
                             {/* Actions */}
-                            <div className="pt-4 flex flex-col gap-4">
+                            <div className="pt-2 flex flex-col gap-3">
                                 <button
                                     onClick={() => {
                                         // 关键体验修复：利用用户的首次显式点击解锁 iOS Safari 的语音合成引擎
