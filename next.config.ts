@@ -9,6 +9,10 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'wp-cdn.4ce.cn',
+      },
+      {
+        protocol: 'https',
         hostname: '*.supabase.co',
       },
     ],

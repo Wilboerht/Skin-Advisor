@@ -14,12 +14,19 @@ export async function GET(req: NextRequest) {
 
     try {
         const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";
+        
+        // Add a timeout to prevent long hangs if the official API is unreachable
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+
         const officialResponse = await fetch(`${officialApiUrl}/api/auth/me`, {
             method: "GET",
             headers: {
                 "Cookie": allCookies
-            }
+            },
+            signal: controller.signal
         });
+        clearTimeout(timeoutId);
 
         const data = await officialResponse.json();
 
