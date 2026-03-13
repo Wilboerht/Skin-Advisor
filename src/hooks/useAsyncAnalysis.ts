@@ -50,7 +50,7 @@ export function useAsyncAnalysis() {
     const router = useRouter();
 
     const runAnalysis = useCallback(async () => {
-        setAnalysisState({ status: 'preparing', progress: 10, error: null });
+        setAnalysisState({ status: 'preparing', progress: 5, error: null });
         trackAnalysisStart();
 
         const timeoutPromise = new Promise<{ result: any, faceAnalysis: any, sessionId: string }>((_, reject) => {
@@ -77,12 +77,9 @@ export function useAsyncAnalysis() {
 
             // if (imagesStr) { -> Handled by checking if images is not null
             if (images) {
-                setAnalysisState({ status: 'analyzing_face', progress: 30, error: null });
-                // let images: any = {}; -> Already have images object
-                // try {
-                //     images = JSON.parse(imagesStr);
-                // } catch (e) { console.error(e); }
-
+                // Slower stage transition: only bump slightly if needed
+                setAnalysisState(prev => ({ ...prev, status: 'analyzing_face', progress: Math.max(prev.progress, 15) }));
+                
                 if (images && images.front) {
                     const visionImages = [];
                     // Preprocess
@@ -155,7 +152,8 @@ export function useAsyncAnalysis() {
                 }
             }
 
-            setAnalysisState({ status: 'analyzing_skin', progress: 60, error: null });
+            // Bump to next major phase smoothly
+            setAnalysisState(prev => ({ ...prev, status: 'analyzing_skin', progress: Math.max(prev.progress, 40) }));
 
             // 2. Comprehensive Analysis (Text)
             const sessionId = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString();
@@ -238,18 +236,21 @@ export function useAsyncAnalysis() {
                     let increment = 0;
 
                     // Configure simulated progress speed for each stage
+                    // This creates a perceived smooth movement even when APIs take time
                     if (prev.status === 'preparing') {
-                        target = 29;
-                        increment = 1.0; // Fast initial prep
+                        target = 14;
+                        increment = 0.4; // 1s to reach 14%
                     } else if (prev.status === 'analyzing_face') {
-                        target = 59;
-                        increment = 0.3; // Moderate speed for face analysis
+                        target = 39;
+                        increment = 0.15; // 8s to reach 39%
                     } else if (prev.status === 'analyzing_skin') {
                         target = 99;
-                        // Slow down even more as it gets closer to 99
-                        if (prev.progress >= 98) increment = 0.02;
-                        else if (prev.progress > 90) increment = 0.05;
-                        else increment = 0.15;
+                        // Logarithmic-like slowdown for long waits (LLM phase)
+                        const remaining = target - prev.progress;
+                        if (remaining > 30) increment = 0.12;
+                        else if (remaining > 10) increment = 0.05;
+                        else if (remaining > 2) increment = 0.01;
+                        else increment = 0.002; // Crawl slowly at the end
                     }
 
                     if (prev.progress >= target) return prev;
@@ -259,7 +260,7 @@ export function useAsyncAnalysis() {
                         progress: Math.min(prev.progress + increment, target)
                     };
                 });
-            }, 50);
+            }, 60); // Slightly slower tick
         }
 
         return () => clearInterval(interval);

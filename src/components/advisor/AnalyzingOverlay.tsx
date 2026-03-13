@@ -327,11 +327,11 @@ export function AnalyzingOverlay({ progress, userImage, onCancel }: AnalyzingOve
 
     // Dynamic status messages based on progress
     const getStatusText = (p: number) => {
-        if (p < 30) return "正在识别面部特征...";
-        if (p < 60) return "正在分析肌肤纹理...";
-        if (p < 85) return "正在比对医学数据库...";
-        if (p >= 98) return "AI仍在深度解码您的肌肤纹理...";
-        return "正在生成专业报告...";
+        if (p < 20) return "正在识别面部特征...";
+        if (p < 40) return "正在进行多维智能分析...";
+        if (p < 70) return "正在比对医学临床数据库...";
+        if (p < 98) return "正在生成专属于您的护肤方案...";
+        return "AI仍在深度解码您的肌肤纹理...";
     };
 
     const statusText = getStatusText(progress);
