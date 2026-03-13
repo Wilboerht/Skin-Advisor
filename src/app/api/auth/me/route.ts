@@ -28,6 +28,12 @@ export async function GET(req: NextRequest) {
         });
         clearTimeout(timeoutId);
 
+        const contentType = officialResponse.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+            console.error("Official API returned non-JSON response", await officialResponse.text());
+            return NextResponse.json({ user: null });
+        }
+
         const data = await officialResponse.json();
 
         if (!officialResponse.ok || !data.success) {

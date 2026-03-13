@@ -431,6 +431,55 @@
   right: -200px;
   animation: kinetic-float-1 20s ease-in-out infinite;
 }
+/* ========== 自定义彩色卡片样式 - Apple 玻璃感设计 ========== */
+
+.kinetic-cell-yellow {
+    background: linear-gradient(135deg, rgba(250, 231, 171, 0.12) 0%, rgba(250, 231, 171, 0.05) 100%);
+    backdrop-filter: blur(25px) saturate(180%);
+    -webkit-backdrop-filter: blur(25px) saturate(180%);
+    border: none !important;
+    box-shadow: 
+      0 8px 32px 0 rgba(0, 0, 0, 0.1),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.15),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.3);
+}
+
+.kinetic-cell-yellow:hover {
+    background: rgba(250, 231, 171, 0.2) !important;
+}
+
+.kinetic-cell-yellow .kinetic-name,
+.kinetic-cell-yellow .kinetic-desc {
+    color: #ffffff !important;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1) !important;
+}
+
+.kinetic-cell-orange {
+    background: linear-gradient(135deg, rgba(225, 186, 161, 0.12) 0%, rgba(225, 186, 161, 0.05) 100%);
+    backdrop-filter: blur(25px) saturate(180%);
+    -webkit-backdrop-filter: blur(25px) saturate(180%);
+    border: none !important;
+    box-shadow: 
+      0 8px 32px 0 rgba(0, 0, 0, 0.1),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.15),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.3);
+}
+
+.kinetic-cell-orange:hover {
+    background: rgba(225, 186, 161, 0.2) !important;
+}
+
+.kinetic-cell-orange .kinetic-name,
+.kinetic-cell-orange .kinetic-desc {
+    color: #ffffff !important;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1) !important;
+}
+
+.kinetic-text-cell {
+    background: rgba(20, 20, 20, 0.8);
+    backdrop-filter: blur(10px);
+    justify-content: center;
+}
 
 .kinetic-glow-2 {
   width: 500px;
@@ -472,7 +521,8 @@
 .kinetic-cell {
   position: relative;
   aspect-ratio: 1 / 1;
-  background: #151515;
+  background: rgba(21, 21, 21, 0.4);
+  backdrop-filter: blur(10px);
   border-radius: var(--kinetic-border-radius);
   overflow: hidden;
   display: flex;
@@ -508,7 +558,7 @@
 }
 
 .kinetic-text-cell {
-  background: #111;
+  background: transparent;
   justify-content: center;
 }
 

@@ -104,7 +104,7 @@ export function BentoBackground() {
                         {/* Row 1, Col 2: 文字卡 */}
                         <div
                             ref={(el) => addCellRef(el, 1)}
-                            className="kinetic-cell kinetic-text-cell"
+                            className="kinetic-cell kinetic-text-cell kinetic-cell-yellow"
                         >
                             <div className="kinetic-name" style={{ marginBottom: '12px', lineHeight: '1.3' }}>更少步骤<br />更多呵护</div>
                             <div className="kinetic-desc" style={{ fontSize: '13px', lineHeight: '1.5', letterSpacing: '0.05em', textTransform: 'none', fontWeight: 400, opacity: 0.8 }}>美丽不该复杂，<br />专注美好生活</div>
@@ -154,7 +154,7 @@ export function BentoBackground() {
                         {/* Row 2, Col 3: 文字卡 */}
                         <div
                             ref={(el) => addCellRef(el, 4)}
-                            className="kinetic-cell kinetic-text-cell"
+                            className="kinetic-cell kinetic-text-cell kinetic-cell-orange"
                         >
                             <div className="kinetic-name">逆转时光</div>
                             <div className="kinetic-desc" style={{ fontSize: '13px', letterSpacing: '0.05em', textTransform: 'none', fontWeight: 400, opacity: 0.8 }}>REVERSE TIME</div>
