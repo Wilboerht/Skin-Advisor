@@ -227,7 +227,7 @@ export function OnboardingFlowModal({
                                     </div>
 
                                     <h3 className="mb-4 text-xl font-serif text-[#1A1A1A]">
-                                        确认合规申明
+                                        服务确认与授权
                                     </h3>
 
                                     <div className="bg-[#FDFBF7]/50 rounded-2xl p-6 mb-8 border border-[#3D4430]/5 text-left">
