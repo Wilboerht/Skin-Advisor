@@ -248,6 +248,26 @@
   .animate-float-premium {
     animation: floatBadge 4s ease-in-out infinite;
   }
+
+  /* Custom Scrollbar - Minimalist & Premium */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(139, 115, 85, 0.15);
+    border-radius: 10px;
+    transition: all 0.3s ease;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(139, 115, 85, 0.3);
+  }
 }
 
   @keyframes floatBadge {

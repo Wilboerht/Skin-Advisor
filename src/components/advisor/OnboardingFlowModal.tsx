@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { BaseModal } from "@/components/ui/BaseModal";
-import { Loader2, MapPin, Hand, ArrowRight } from "lucide-react";
+import { Loader2, MapPin, ShieldCheck, ArrowRight } from "lucide-react";
 import { AnimatePresence, m } from "framer-motion";
 import Image from "next/image";
 
@@ -174,8 +174,8 @@ export function OnboardingFlowModal({
                                     exit={{ opacity: 0, x: 20 }}
                                     transition={{ duration: 0.3 }}
                                 >
-                                    <div className="flex justify-center mb-6 text-[#3D4430]">
-                                        <MapPin className="h-9 w-9 opacity-80" />
+                                    <div className="flex justify-center mb-6 text-[#8B7355]">
+                                        <MapPin className="h-9 w-9 opacity-90" strokeWidth={1.2} />
                                     </div>
 
                                     <h3 className="mb-4 text-xl font-serif text-[#1A1A1A]">
@@ -207,7 +207,7 @@ export function OnboardingFlowModal({
 
                                         <button
                                             onClick={handleDecline}
-                                            className="w-full py-3 text-[13px] tracking-widest text-[#3D4430]/40 hover:text-[#3D4430] transition-all duration-300 bg-transparent border-none cursor-pointer"
+                                            className="w-full py-2 text-[12px] tracking-widest text-[#3D4430]/30 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
                                         >
                                             手动选择地区
                                         </button>
@@ -222,8 +222,8 @@ export function OnboardingFlowModal({
                                     animate={{ opacity: 1, scale: 1 }}
                                     transition={{ duration: 0.4 }}
                                 >
-                                    <div className="flex justify-center mb-6 text-[#3D4430]">
-                                        <Hand className="h-9 w-9 opacity-80" />
+                                    <div className="flex justify-center mb-6 text-[#8B7355]">
+                                        <ShieldCheck className="h-9 w-9 opacity-90 transition-all duration-700" strokeWidth={1.2} />
                                     </div>
 
                                     <h3 className="mb-4 text-xl font-serif text-[#1A1A1A]">
@@ -282,34 +282,38 @@ export function OnboardingFlowModal({
             <BaseModal
                 isOpen={showRegionSelectModal}
                 onClose={() => setShowRegionSelectModal(false)}
-                backdropClassName="bg-black/5 backdrop-blur-[2px]"
-                className="flex flex-col max-h-[70vh] p-0 rounded-[2rem] shadow-2xl overflow-hidden bg-[#FDFBF7]/90 backdrop-blur-2xl"
+                backdropClassName="bg-black/5 backdrop-blur-[4px]"
+                className="flex flex-col max-h-[80vh] p-0 rounded-[2.5rem] shadow-[0_30px_70px_-20px_rgba(0,0,0,0.15)] overflow-hidden bg-[#FDFBF7]/90 backdrop-blur-3xl border border-white/40"
             >
                 {/* Texture Overlay */}
                 <div
-                    className="texture-overlay absolute inset-0 opacity-[0.02] pointer-events-none"
+                    className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none"
                     style={{
                         backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`
                     }}
                 />
 
-                <div className="p-6 pb-2 text-center shrink-0">
-                    <h3 className="text-lg font-serif text-[#1A1A1A]">选择地区</h3>
-                    <p className="text-xs text-[#5E5E5E] mt-2 font-light">手动选择您所在的区域</p>
+                <div className="p-8 pb-4 text-center shrink-0 relative">
+                    <h3 className="text-xl font-serif text-[#1A1A1A] tracking-wider">选择所在地区</h3>
+                    <p className="text-[13px] text-[#5E5E5E] mt-2 font-light opacity-80">根据当地气候为您提供更精准的分析建议</p>
                 </div>
 
-                <div className="overflow-y-auto px-6 py-2 custom-scrollbar flex-1">
+                <div className="overflow-y-auto px-8 py-4 custom-scrollbar flex-1 relative">
                     {regionOptions.map((group) => (
-                        <div key={group.group} className="mb-6 last:mb-2">
-                            <div className="text-[10px] font-bold text-[#3D4430]/30 uppercase tracking-widest mb-3 text-center">
-                                {group.group}
+                        <div key={group.group} className="mb-8 last:mb-2">
+                            <div className="flex items-center gap-4 mb-4">
+                                <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-[#8B7355]/10"></div>
+                                <span className="text-[11px] font-bold text-[#8B7355]/60 uppercase tracking-[0.25em]">
+                                    {group.group}
+                                </span>
+                                <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-[#8B7355]/10"></div>
                             </div>
-                            <div className="flex flex-wrap gap-2 justify-center">
+                            <div className="grid grid-cols-3 gap-3">
                                 {group.regions.map((region) => (
                                     <button
                                         key={region}
                                         onClick={() => handleRegionOption(region)}
-                                        className="glass-premium px-5 py-2.5 rounded-full text-xs transition-all duration-300 min-w-[5rem] border-none cursor-pointer hover:scale-105 active:scale-95"
+                                        className="py-3 px-2 rounded-xl text-[13px] text-[#3D4430] bg-white/40 hover:bg-[#8B7355]/10 hover:text-[#8B7355] border border-[#3D4430]/5 hover:border-[#8B7355]/20 transition-all duration-300 font-medium active:scale-95"
                                     >
                                         {region}
                                     </button>
@@ -319,10 +323,10 @@ export function OnboardingFlowModal({
                     ))}
                 </div>
 
-                <div className="p-4 shrink-0 text-center border-t border-[#3D4430]/5">
+                <div className="p-6 shrink-0 text-center relative border-t border-[#3D4430]/5">
                     <button
                         onClick={handleSkipRegion}
-                        className="text-xs text-[#3D4430]/30 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
+                        className="text-[12px] tracking-[0.15em] text-[#3D4430]/30 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
                     >
                         暂不提供
                     </button>
