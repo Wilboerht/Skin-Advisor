@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { BaseModal } from "@/components/ui/BaseModal";
-import { Loader2, MapPin, Hand } from "lucide-react";
+import { Loader2, MapPin, Hand, ArrowRight } from "lucide-react";
 import { AnimatePresence, m } from "framer-motion";
 import Image from "next/image";
 
@@ -157,9 +157,10 @@ export function OnboardingFlowModal({
                                         <button
                                             onClick={handleNicknameNext}
                                             disabled={!nickname.trim()}
-                                            className="glass-premium-primary w-full py-4 rounded-full text-[15px] tracking-[0.2em] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-300 border border-white/10 ring-1 ring-[#3D4430]/5 outline-none hover:shadow-lg active:scale-95"
+                                            className="group inline-flex items-center gap-2 py-2 text-[15px] tracking-[0.2em] font-medium text-[#8B7355] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all duration-300 bg-transparent border-none outline-none mx-auto"
                                         >
-                                            下一步
+                                            <span>下一步</span>
+                                            <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
                                         </button>
                                     </div>
                                 </m.div>
@@ -189,7 +190,7 @@ export function OnboardingFlowModal({
                                         <button
                                             onClick={handleLocationAcceptWrapper}
                                             disabled={isLocating}
-                                            className="glass-premium-primary w-full py-4 rounded-full text-[15px] tracking-[0.2em] font-medium flex items-center justify-center disabled:opacity-70 disabled:cursor-wait border border-white/10 ring-1 ring-[#3D4430]/5 cursor-pointer transition-all duration-300 outline-none hover:shadow-lg active:scale-95"
+                                            className="glass-premium-primary px-12 py-4 rounded-full text-[15px] tracking-[0.2em] font-medium flex items-center justify-center disabled:opacity-70 disabled:cursor-wait border border-white/10 ring-1 ring-[#3D4430]/5 cursor-pointer transition-all duration-300 outline-none hover:shadow-lg active:scale-95 mx-auto"
                                         >
                                             {isLocating ? (
                                                 <>
@@ -246,13 +247,14 @@ export function OnboardingFlowModal({
                                         </label>
                                     </div>
 
-                                    <div className="space-y-3">
+                                    <div className="flex flex-col items-center space-y-3">
                                         <button
                                             onClick={handleLegalSubmit}
                                             disabled={!isAgreed}
-                                            className="glass-premium-primary w-full py-4 rounded-full text-[15px] tracking-[0.2em] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-300 border border-white/10 ring-1 ring-[#3D4430]/5 outline-none hover:shadow-lg active:scale-95"
+                                            className="group inline-flex items-center gap-2 py-2 text-[15px] tracking-[0.2em] font-medium text-[#8B7355] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all duration-300 bg-transparent border-none outline-none"
                                         >
-                                            开始测试
+                                            <span>开始测试</span>
+                                            <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
                                         </button>
                                         
                                         <button
