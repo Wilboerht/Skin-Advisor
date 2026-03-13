@@ -50,7 +50,7 @@ export function useAsyncAnalysis() {
     const router = useRouter();
 
     const runAnalysis = useCallback(async () => {
-        setAnalysisState({ status: 'preparing', progress: 5, error: null });
+        setAnalysisState({ status: 'preparing', progress: 2, error: null });
         trackAnalysisStart();
 
         const timeoutPromise = new Promise<{ result: any, faceAnalysis: any, sessionId: string }>((_, reject) => {
@@ -77,8 +77,8 @@ export function useAsyncAnalysis() {
 
             // if (imagesStr) { -> Handled by checking if images is not null
             if (images) {
-                // Slower stage transition: only bump slightly if needed
-                setAnalysisState(prev => ({ ...prev, status: 'analyzing_face', progress: Math.max(prev.progress, 15) }));
+                // Slower stage transition: avoid manual jump, just update status
+                setAnalysisState(prev => ({ ...prev, status: 'analyzing_face' }));
                 
                 if (images && images.front) {
                     const visionImages = [];
@@ -152,8 +152,8 @@ export function useAsyncAnalysis() {
                 }
             }
 
-            // Bump to next major phase smoothly
-            setAnalysisState(prev => ({ ...prev, status: 'analyzing_skin', progress: Math.max(prev.progress, 40) }));
+            // Bump to next major phase smoothly: avoid manual jump
+            setAnalysisState(prev => ({ ...prev, status: 'analyzing_skin' }));
 
             // 2. Comprehensive Analysis (Text)
             const sessionId = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString();
@@ -239,18 +239,18 @@ export function useAsyncAnalysis() {
                     // This creates a perceived smooth movement even when APIs take time
                     if (prev.status === 'preparing') {
                         target = 14;
-                        increment = 0.4; // 1s to reach 14%
+                        increment = 0.12; // Slower start
                     } else if (prev.status === 'analyzing_face') {
                         target = 39;
-                        increment = 0.15; // 8s to reach 39%
+                        increment = 0.08; // Even more gradual
                     } else if (prev.status === 'analyzing_skin') {
                         target = 99;
                         // Logarithmic-like slowdown for long waits (LLM phase)
                         const remaining = target - prev.progress;
-                        if (remaining > 30) increment = 0.12;
-                        else if (remaining > 10) increment = 0.05;
-                        else if (remaining > 2) increment = 0.01;
-                        else increment = 0.002; // Crawl slowly at the end
+                        if (remaining > 50) increment = 0.15; // Faster if we are still far (skipped earlier phases)
+                        else if (remaining > 20) increment = 0.06;
+                        else if (remaining > 5) increment = 0.02;
+                        else increment = 0.005; // Crawl slowly at the end
                     }
 
                     if (prev.progress >= target) return prev;
