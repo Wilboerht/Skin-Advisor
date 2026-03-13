@@ -500,7 +500,7 @@ export default function QuestionsPage() {
                             <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none" />
                             <div className="relative z-10">
                                 <div className="w-16 h-16 rounded-full bg-[#8B7355]/5 flex items-center justify-center mx-auto mb-6">
-                                    <AlertTriangle className="w-8 h-8 text-[#8B7355]/60" strokeWidth={1} />
+                                    <span className="text-3xl">🤔</span>
                                 </div>
                                 <h3 className="text-2xl font-serif text-[#1A1A1A] mb-3 tracking-tight">确认提交？</h3>
                                 <p className="text-[14px] text-[#5E5E5E] mb-10 font-light leading-relaxed px-4">
