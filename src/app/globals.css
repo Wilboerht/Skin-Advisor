@@ -207,7 +207,54 @@
     transform: translateY(-4px);
     box-shadow: 0 16px 32px rgba(61, 68, 48, 0.08);
   }
+
+  /* Glass Premium Design System */
+  .glass-premium {
+    background: rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.04);
+    transition: all 0.5s var(--transition-smooth);
+  }
+
+  .glass-premium-primary {
+    position: relative;
+    background-color: rgba(139, 115, 85, 0.06); /* 减弱黄色感：使用极淡的暖棕色调 */
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #8B7355; /* 暖棕金文本 */
+    border: 0.5px solid rgba(139, 115, 85, 0.3);
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.02);
+    font-weight: 500;
+    letter-spacing: 0.2em; /* 增加字间距提升奢侈品感 */
+    transition: all 0.5s var(--transition-smooth);
+    animation: floatBadge 4s ease-in-out infinite; /* 加入漂浮动画 */
+    overflow: hidden;
+  }
+
+  .glass-premium-primary:hover:not(:disabled) {
+    background-color: rgba(139, 115, 85, 0.12);
+    border-color: rgba(139, 115, 85, 0.5);
+    color: #725d43;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(139, 115, 85, 0.1);
+  }
+
+  .glass-premium-primary:active:not(:disabled) {
+    transform: translateY(0) scale(0.98);
+    opacity: 0.8;
+  }
 }
+
+  @keyframes floatBadge {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-6px); /* 略微明显的上下漂浮感 */
+    }
+  }
 
 @utility delay-100 {
   animation-delay: 0.1s;
