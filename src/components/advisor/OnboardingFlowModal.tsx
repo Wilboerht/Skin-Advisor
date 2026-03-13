@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { BaseModal } from "@/components/ui/BaseModal";
-import { Loader2, MapPin, ShieldCheck, ArrowRight } from "lucide-react";
+import { Loader2, MapPin, ShieldCheck, ArrowRight, ChevronLeft } from "lucide-react";
 import { AnimatePresence, m } from "framer-motion";
 import Image from "next/image";
 
@@ -294,6 +294,13 @@ export function OnboardingFlowModal({
                 />
 
                 <div className="p-8 pb-4 text-center shrink-0 relative">
+                    <button
+                        onClick={() => setShowRegionSelectModal(false)}
+                        className="absolute left-6 top-8 p-2 text-[#3D4430]/40 hover:text-[#3D4430] transition-colors rounded-full hover:bg-[#8B7355]/5 flex items-center justify-center border-none cursor-pointer"
+                        title="返回"
+                    >
+                        <ChevronLeft className="w-5 h-5" strokeWidth={1.5} />
+                    </button>
                     <h3 className="text-xl font-serif text-[#1A1A1A] tracking-wider">选择所在地区</h3>
                     <p className="text-[13px] text-[#5E5E5E] mt-2 font-light opacity-80">根据当地气候为您提供更精准的分析建议</p>
                 </div>

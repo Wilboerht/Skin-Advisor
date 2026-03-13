@@ -7,7 +7,7 @@ import { QuestionStep } from "@/components/advisor/QuestionStep";
 import { ProgressBar } from "@/components/advisor/ProgressBar";
 import { GenderSelection } from "@/components/advisor/GenderSelection";
 import { m, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, X, LogOut } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, LogOut, ArrowRight, AlertTriangle, ShieldCheck, History } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { cn } from "@/lib/utils";
 
@@ -461,19 +461,19 @@ export default function QuestionsPage() {
                                 <p className="text-sm text-[#5E5E5E] mb-10 font-light leading-relaxed">
                                     您的进度已自动保存，<br />下次返回可直接从此处继续。
                                 </p>
-                                <div className="flex flex-col gap-4">
+                                <div className="flex flex-col items-center gap-5">
                                     <button
                                         onClick={() => setShowExitConfirm(false)}
-                                        className="glass-premium-primary w-full py-4 text-[15px] font-bold tracking-widest hover:scale-[1.02] transition-all rounded-full shadow-md"
+                                        className="group inline-flex items-center gap-2 py-2 text-[15px] tracking-[0.2em] font-medium text-[#8B7355] cursor-pointer transition-all duration-300 bg-transparent border-none outline-none"
                                     >
-                                        继续测试
+                                        <span className="border-b border-[#8B7355]/30 pb-0.5 group-hover:border-[#8B7355] transition-colors">继续测试</span>
+                                        <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
                                     </button>
                                     <button
                                         onClick={() => router.push("/")}
-                                        className="w-full py-2 flex items-center justify-center gap-2 text-xs text-[#1A1A1A]/40 hover:text-[#1A1A1A] transition-colors tracking-[0.2em] font-medium"
+                                        className="text-[12px] tracking-[0.15em] text-[#3D4430]/30 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
                                     >
-                                        <LogOut size={12} strokeWidth={2.5} />
-                                        退出测试
+                                        退出并返回首页
                                     </button>
                                 </div>
                             </div>
@@ -499,15 +499,15 @@ export default function QuestionsPage() {
                         >
                             <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none" />
                             <div className="relative z-10">
-                                <div className="w-16 h-16 rounded-full bg-white/40 flex items-center justify-center mx-auto mb-6 shadow-inner">
-                                    <span className="text-3xl text-[#8B7355]">🤔</span>
+                                <div className="w-16 h-16 rounded-full bg-[#8B7355]/5 flex items-center justify-center mx-auto mb-6">
+                                    <AlertTriangle className="w-8 h-8 text-[#8B7355]/60" strokeWidth={1} />
                                 </div>
                                 <h3 className="text-2xl font-serif text-[#1A1A1A] mb-3 tracking-tight">确认提交？</h3>
                                 <p className="text-[14px] text-[#5E5E5E] mb-10 font-light leading-relaxed px-4">
                                     我们检测到您的填写速度较快。<br />
                                     建议您再次核对，确保 AI 能为您提供<span className="text-[#1A1A1A] font-medium"> 最精准 </span>的分析结果。
                                 </p>
-                                <div className="flex flex-col gap-4">
+                                <div className="flex flex-col items-center gap-5">
                                     <button
                                         onClick={() => {
                                             setShowQualityWarning(false);
@@ -515,13 +515,14 @@ export default function QuestionsPage() {
                                             startStepIndex.current = currentStepIndex;
                                             if (pendingAnswers) processSubmission(pendingAnswers);
                                         }}
-                                        className="glass-premium-primary w-full py-4 text-[15px] font-bold tracking-widest hover:scale-[1.02] transition-all rounded-full shadow-md"
+                                        className="group inline-flex items-center gap-2 py-2 text-[15px] tracking-[0.2em] font-medium text-[#8B7355] cursor-pointer transition-all duration-300 bg-transparent border-none outline-none"
                                     >
-                                        我已确认，去提交
+                                        <span className="border-b border-[#8B7355]/30 pb-0.5 group-hover:border-[#8B7355] transition-colors">我已确认，去提交</span>
+                                        <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
                                     </button>
                                     <button
                                         onClick={() => setShowQualityWarning(false)}
-                                        className="w-full py-2 text-xs text-[#1A1A1A]/40 hover:text-[#1A1A1A] transition-colors tracking-[0.2em] font-medium"
+                                        className="text-[12px] tracking-[0.15em] text-[#3D4430]/30 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
                                     >
                                         返回检查
                                     </button>
@@ -548,27 +549,26 @@ export default function QuestionsPage() {
                         >
                             <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none" />
                             <div className="relative z-10">
-                                <div className="w-16 h-16 rounded-full bg-white/40 flex items-center justify-center mx-auto mb-6 shadow-inner">
-                                    <svg className="w-8 h-8 text-[#3D4430]/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
+                                <div className="w-16 h-16 rounded-full bg-[#8B7355]/5 flex items-center justify-center mx-auto mb-6">
+                                    <History className="w-8 h-8 text-[#8B7355]/60" strokeWidth={1} />
                                 </div>
                                 <h3 className="text-2xl font-serif text-[#1A1A1A] mb-3 tracking-tight">未完成的测试</h3>
                                 <p className="text-[14px] text-[#5E5E5E] mb-10 font-light leading-relaxed">
                                     为您自动找回了上次的进度，<br />是否立即继续完成？
                                 </p>
-                                <div className="flex flex-col gap-4">
+                                <div className="flex flex-col items-center gap-5">
                                     <button
                                         onClick={resumeSavedProgress}
-                                        className="glass-premium-primary w-full py-4 text-[15px] font-bold tracking-widest hover:scale-[1.02] transition-all rounded-full shadow-md"
+                                        className="group inline-flex items-center gap-2 py-2 text-[15px] tracking-[0.2em] font-medium text-[#8B7355] cursor-pointer transition-all duration-300 bg-transparent border-none outline-none"
                                     >
-                                        继续上次测试
+                                        <span className="border-b border-[#8B7355]/30 pb-0.5 group-hover:border-[#8B7355] transition-colors">继续上次测试</span>
+                                        <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
                                     </button>
                                     <button
                                         onClick={startFresh}
-                                        className="w-full py-2 text-xs text-[#1A1A1A]/40 hover:text-[#1A1A1A] transition-colors tracking-[0.2em] font-medium"
+                                        className="text-[12px] tracking-[0.15em] text-[#3D4430]/30 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
                                     >
-                                        重新开始
+                                        暂时不用，重新开始
                                     </button>
                                 </div>
                             </div>
