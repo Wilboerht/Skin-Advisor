@@ -239,9 +239,9 @@ export function OnboardingFlowModal({
                                             </div>
                                             <span className="text-[13px] text-[#5E5E5E] leading-relaxed font-light select-none">
                                                 我已年满 14 周岁（未满 14 周岁已获得监护人许可），且已阅读并同意我们的
-                                                <a href="/docs/privacy-policy" target="_blank" className="text-[#3D4430] font-medium underline underline-offset-4 mx-1">隐私政策</a>
+                                                <a href="https://demo.nihplod.cn/docs/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-[#3D4430] font-medium underline underline-offset-4 mx-1">隐私政策</a>
                                                 与
-                                                <a href="/docs/terms-of-service" target="_blank" className="text-[#3D4430] font-medium underline underline-offset-4 mx-1">服务条款</a>。
+                                                <a href="https://demo.nihplod.cn/docs/terms-of-service" target="_blank" rel="noopener noreferrer" className="text-[#3D4430] font-medium underline underline-offset-4 mx-1">服务条款</a>。
                                             </span>
                                         </label>
                                     </div>
