@@ -18,9 +18,10 @@ interface OnboardingFlowProps {
     onSkipLocation: () => void;
     onRegionSelect: (region: string) => void;
     regionOptions: { group: string; regions: string[] }[];
+    isLoggedIn: boolean;
 }
 
-type Step = "nickname" | "location";
+type Step = "nickname" | "location" | "legal";
 
 export function OnboardingFlowModal({
     isOpen,
@@ -33,12 +34,12 @@ export function OnboardingFlowModal({
     onLocationDecline,
     onSkipLocation,
     onRegionSelect,
-    regionOptions
+    regionOptions,
+    isLoggedIn
 }: OnboardingFlowProps) {
     const [step, setStep] = useState<Step>("nickname");
-
     const [showRegionSelectModal, setShowRegionSelectModal] = useState(false);
-
+    const [isAgreed, setIsAgreed] = useState(false);
 
     const handleNicknameNext = () => {
         if (!nickname.trim()) return;
@@ -48,28 +49,46 @@ export function OnboardingFlowModal({
 
     const handleDecline = () => {
         onLocationDecline();
-        // Do not close onboarding here, let the handler decide (or open region select)
         setShowRegionSelectModal(true);
     }
 
     const handleSkipRegion = () => {
         setShowRegionSelectModal(false);
-        onSkipLocation();
+        if (isLoggedIn) {
+            onSkipLocation();
+        } else {
+            setStep("legal");
+        }
     }
 
     const handleRegionOption = (region: string) => {
         setShowRegionSelectModal(false);
         onRegionSelect(region);
+        if (isLoggedIn) {
+            onSkipLocation();
+        } else {
+            setStep("legal");
+        }
     }
 
     // Handle location accept wrapper
     const handleLocationAcceptWrapper = async () => {
         try {
             await onLocationAccept();
+            if (isLoggedIn) {
+                onSkipLocation();
+            } else {
+                setStep("legal");
+            }
         } catch (e) {
             // If location fails (e.g. denied or no support), show manual region select
             setShowRegionSelectModal(true);
         }
+    };
+
+    const handleLegalSubmit = () => {
+        if (!isAgreed) return;
+        onSkipLocation(); // Reuse this as the final trigger for page.tsx to start test
     };
 
     return (
@@ -77,7 +96,7 @@ export function OnboardingFlowModal({
             <BaseModal
                 isOpen={isOpen && !showRegionSelectModal}
                 onClose={onClose}
-                showCloseButton
+                showCloseButton={step !== "legal"}
                 backdropClassName="bg-black/5 backdrop-blur-[2px]"
                 className="p-10 text-center rounded-[2.5rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] overflow-hidden border border-white/20 ring-1 ring-white/10 bg-[#FDFBF7]/80 backdrop-blur-2xl"
             >
@@ -89,7 +108,7 @@ export function OnboardingFlowModal({
                     }}
                 />
 
-                <div className="relative min-h-[280px] flex flex-col">
+                <div className="relative min-h-[320px] flex flex-col">
                     <div className="flex-1 flex flex-col justify-center py-2">
                         <AnimatePresence mode="wait">
                             {step === "nickname" && (
@@ -184,7 +203,63 @@ export function OnboardingFlowModal({
                                             onClick={handleDecline}
                                             className="w-full py-3 text-[13px] tracking-widest text-[#3D4430]/40 hover:text-[#3D4430] transition-all duration-300 bg-transparent border-none cursor-pointer"
                                         >
-                                            暂不提供
+                                            手动选择地区
+                                        </button>
+                                    </div>
+                                </m.div>
+                            )}
+
+                            {step === "legal" && (
+                                <m.div
+                                    key="step-legal"
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ duration: 0.4 }}
+                                >
+                                    <div className="flex justify-center mb-6 text-[#3D4430]">
+                                        <Hand className="h-9 w-9 opacity-80" />
+                                    </div>
+
+                                    <h3 className="mb-4 text-xl font-serif text-[#1A1A1A]">
+                                        确认合规申明
+                                    </h3>
+
+                                    <div className="bg-[#FDFBF7]/50 rounded-2xl p-6 mb-8 border border-[#3D4430]/5 text-left">
+                                        <label className="flex items-start gap-3 cursor-pointer group">
+                                            <div className="mt-1 relative flex items-center">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={isAgreed}
+                                                    onChange={(e) => setIsAgreed(e.target.checked)}
+                                                    className="sr-only"
+                                                />
+                                                <div className={`w-5 h-5 rounded border transition-all duration-300 flex items-center justify-center ${isAgreed ? 'bg-[#8B7355] border-[#8B7355]' : 'bg-transparent border-[#8B7355]/20 group-hover:border-[#8B7355]/40'}`}>
+                                                    {isAgreed && <m.svg initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></m.svg>}
+                                                </div>
+                                            </div>
+                                            <span className="text-[13px] text-[#5E5E5E] leading-relaxed font-light select-none">
+                                                我已年满 14 周岁（未满 14 周岁已获得监护人许可），且已阅读并同意我们的
+                                                <a href="/docs/privacy-policy" target="_blank" className="text-[#3D4430] font-medium underline underline-offset-4 mx-1">隐私政策</a>
+                                                与
+                                                <a href="/docs/terms-of-service" target="_blank" className="text-[#3D4430] font-medium underline underline-offset-4 mx-1">服务条款</a>。
+                                            </span>
+                                        </label>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <button
+                                            onClick={handleLegalSubmit}
+                                            disabled={!isAgreed}
+                                            className="glass-premium-primary w-full py-4 rounded-full text-[15px] tracking-[0.2em] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-300 border border-white/10 ring-1 ring-[#3D4430]/5 outline-none hover:shadow-lg active:scale-95"
+                                        >
+                                            开始测试
+                                        </button>
+                                        
+                                        <button
+                                            onClick={onClose}
+                                            className="w-full py-2 text-[12px] tracking-widest text-[#3D4430]/30 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
+                                        >
+                                            暂不测试
                                         </button>
                                     </div>
                                 </m.div>
@@ -199,7 +274,7 @@ export function OnboardingFlowModal({
             {/* Region Select Modal Overlay (Fallback) */}
             <BaseModal
                 isOpen={showRegionSelectModal}
-                onClose={handleSkipRegion}
+                onClose={() => setShowRegionSelectModal(false)}
                 backdropClassName="bg-black/5 backdrop-blur-[2px]"
                 className="flex flex-col max-h-[70vh] p-0 rounded-[2rem] shadow-2xl overflow-hidden bg-[#FDFBF7]/90 backdrop-blur-2xl"
             >
@@ -242,7 +317,7 @@ export function OnboardingFlowModal({
                         onClick={handleSkipRegion}
                         className="text-xs text-[#3D4430]/30 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
                     >
-                        跳过
+                        暂不提供
                     </button>
                 </div>
             </BaseModal>

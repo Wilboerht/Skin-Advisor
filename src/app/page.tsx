@@ -128,12 +128,7 @@ export default function Home() {
           lon: position.coords.longitude
         }));
         safeStorage.setSession("locationConsent", "granted");
-
-        // 成功获取定位后，关闭弹窗并开始
-        setShowOnboardingModal(false);
         setIsLocating(false);
-        setIsLoading(true);
-        recordAndStartTest();
       } catch (error) {
         console.warn("Geolocation failed", error);
         setIsLocating(false);
@@ -146,17 +141,21 @@ export default function Home() {
   };
 
   const handleRegionSelect = (region: string) => {
-    setShowOnboardingModal(false); // Make sure this is closed too just in case
-    setIsLoading(true);
     safeStorage.setSession("locationConsent", "granted");
     safeStorage.set("userRegion", JSON.stringify({ province: region, city: region }));
-    recordAndStartTest();
+    // Do not close or start test here, let legal step handle it
   };
 
   const handleSkipRegionSelect = () => {
+    // This is now repurposed as the FINAL completion handler from the Legal step
     setShowOnboardingModal(false);
     setIsLoading(true);
-    safeStorage.setSession("locationConsent", "declined");
+    
+    // Ensure consent is recorded if not already set by location/region steps
+    if (!sessionStorage.getItem("locationConsent")) {
+        safeStorage.setSession("locationConsent", "declined");
+    }
+    
     recordAndStartTest();
   };
 
@@ -504,6 +503,7 @@ export default function Home() {
         onSkipLocation={handleSkipRegionSelect}
         onRegionSelect={handleRegionSelect}
         regionOptions={regionOptions}
+        isLoggedIn={!!user}
       />
 
       <BaseModal
