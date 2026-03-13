@@ -229,7 +229,6 @@
     font-weight: 500;
     letter-spacing: 0.2em; /* 增加字间距提升奢侈品感 */
     transition: all 0.5s var(--transition-smooth);
-    animation: floatBadge 4s ease-in-out infinite; /* 加入漂浮动画 */
     overflow: hidden;
   }
 
@@ -244,6 +243,10 @@
   .glass-premium-primary:active:not(:disabled) {
     transform: translateY(0) scale(0.98);
     opacity: 0.8;
+  }
+
+  .animate-float-premium {
+    animation: floatBadge 4s ease-in-out infinite;
   }
 }
 

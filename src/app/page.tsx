@@ -400,7 +400,7 @@ export default function Home() {
                         <button
                           onClick={handleStart}
                           disabled={isLoading || checkingLimit}
-                          className="glass-premium-primary group relative inline-flex items-center justify-center gap-3 px-10 py-3.5 rounded-full text-[15px] tracking-widest font-medium disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer transition-all duration-300"
+                          className="glass-premium-primary animate-float-premium group relative inline-flex items-center justify-center gap-3 px-10 py-3.5 rounded-full text-[15px] tracking-widest font-medium disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer transition-all duration-300"
                         >
                           {isLoading || checkingLimit ? (
                             <>
