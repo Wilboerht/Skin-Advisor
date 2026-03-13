@@ -324,9 +324,8 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
       const normalizedY = (corner.y - ellipseCenterY) / ellipseB;
       const ellipseValue = normalizedX * normalizedX + normalizedY * normalizedY;
 
-      // 如果任何角点在椭圆外，返回 false
-      // 使用 0.95 而不是 1.0 来留一点边距，确保视觉上看起来完全在框内
-      if (ellipseValue > 0.95) {
+      // 使用 1.1 而不是 1.0 来显著增加容错率，只要大致在框内即可
+      if (ellipseValue > 1.1) {
         return false;
       }
     }
@@ -391,8 +390,8 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
         // 检查面部大小是否合适（相对于椭圆大小）
         const ellipseHeight = videoHeight * 0.70;
         const faceToEllipseRatio = box.height / ellipseHeight;
-        // 面部应该占椭圆高度的 30%-90%
-        const isSizeOk = faceToEllipseRatio > 0.30 && faceToEllipseRatio < 0.90;
+        // 面部应该占椭圆高度的 25%-95% (放宽容错率)
+        const isSizeOk = faceToEllipseRatio > 0.25 && faceToEllipseRatio < 0.95;
 
         // 计算头部朝向 (传入 currentStep 以优化判定逻辑)
         const headPose = calculateHeadPose(detection.landmarks, currentStep);
@@ -405,10 +404,9 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
           stableCountRef.current += 1;
           setFaceStatus("found");
 
-          // chin 步骤需要更多稳定帧数，防止误触发
-          // 普通步骤: 4帧约0.8秒, chin步骤: 12帧约2.4秒
-          const requiredFrames = currentStep === 'chin' ? 12 : 4;
-          const progressFrames = currentStep === 'chin' ? 15 : 5;
+          // chin 步骤需要稍多帧数，但降低了要求以提高容错 (12->8)
+          const requiredFrames = currentStep === 'chin' ? 8 : 4;
+          const progressFrames = currentStep === 'chin' ? 10 : 5;
 
           // 更新稳定进度
           setStabilityProgress(Math.min(100, (stableCountRef.current / progressFrames) * 100));
@@ -439,33 +437,53 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
           setStabilityProgress(0);
           setFaceStatus("detecting");
 
-          // ---- 添加语音纠错与进度指导反馈 (Throttle 冷却期 3.5秒) ----
+          // ---- 添加语音纠错与进度指导反馈 (Throttle 冷却期 4秒) ----
           const now = Date.now();
-          if (now - lastSpeakTimeRef.current > 3500) {
+          if (now - lastSpeakTimeRef.current > 4000) {
             let feedback = "";
 
-            // 1. 距离和位置优先级最高被检测
-            if (!isInEllipse) {
-              feedback = "请将面部移至引导框内";
-            } else if (!isSizeOk) {
-              const ellipseHeight = videoHeight * 0.70;
-              const faceToEllipseRatio = box.height / ellipseHeight;
-              if (faceToEllipseRatio < 0.30) {
-                feedback = "太远了，请稍微靠近屏幕";
-              } else if (faceToEllipseRatio >= 0.90) {
-                feedback = "太近了，请稍微远离屏幕";
+            // 1. 距离反馈（最高优先级）
+            const ellipseHeight = videoHeight * 0.70;
+            const faceToEllipseRatio = box.height / ellipseHeight;
+            
+            if (faceToEllipseRatio < 0.25) {
+              feedback = "请稍微靠近屏幕";
+            } else if (faceToEllipseRatio >= 0.95) {
+              feedback = "请稍微远离屏幕";
+            } 
+            // 2. 位置反馈（次高优先级）
+            else if (!isInEllipse) {
+              const ellipseCenterX = videoWidth / 2;
+              const ellipseCenterY = videoHeight / 2;
+              const faceCenterX = box.x + box.width / 2;
+              const faceCenterY = box.y + box.height / 2;
+              
+              const deltaX = faceCenterX - ellipseCenterX;
+              const deltaY = faceCenterY - ellipseCenterY;
+              
+              // 镜像模式下的左右判定
+              const isUser = facingMode === "user";
+              
+              if (Math.abs(deltaX) > Math.abs(deltaY) * 1.2) {
+                if (isUser) {
+                  feedback = deltaX > 0 ? "请向左移动一点" : "请向右移动一点";
+                } else {
+                  feedback = deltaX > 0 ? "请向右移动一点" : "请向左移动一点";
+                }
+              } else {
+                feedback = deltaY > 0 ? "请向上移动一点" : "请向下移动一点";
               }
-            } else if (!isPoseCorrect) {
-              // 2. 动线进度反馈（“差一点”与“刚刚好”）
-              // 我们通过判断目标方向的进度来给微调建议
-              if (currentStep === "left" && headPose !== "left") {
-                feedback = "请再向左转头一点点";
-              } else if (currentStep === "right" && headPose !== "right") {
-                feedback = "请再向右转头一点点";
-              } else if (currentStep === "chin" && headPose !== "chin") {
-                feedback = "请再稍微抬起一点下颚";
-              } else if (currentStep === "front" && headPose !== "front") {
-                feedback = "请正对镜头，不要偏转或歪头";
+            } 
+            // 3. 姿态反馈
+            else if (!isPoseCorrect) {
+              if (currentStep === "left") {
+                feedback = "请再向左边转一点头";
+              } else if (currentStep === "right") {
+                feedback = "请再向右边转一点头";
+              } else if (currentStep === "chin") {
+                feedback = "请再稍微抬起一点下巴";
+              } else if (currentStep === "front") {
+                feedback = "请正对镜头，微调头部位姿";
               }
             }
 
