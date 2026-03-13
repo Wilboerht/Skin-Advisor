@@ -43,6 +43,7 @@ export function KineticBackground() {
 
             <div ref={glow1Ref} className="kinetic-glow kinetic-glow-1" />
             <div ref={glow2Ref} className="kinetic-glow kinetic-glow-2" />
+            <div className="kinetic-glow kinetic-glow-3" />
 
             {/* 全局背景水印 - 复刻原版静态配置 */}
             <div className="kinetic-watermark">

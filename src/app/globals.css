@@ -114,7 +114,7 @@
   }
 
   body {
-    background-color: var(--color-cream);
+    background-color: #FAF8F5;
     color: var(--color-text-primary);
     font-family: var(--font-sans);
     overflow-x: hidden;
@@ -137,7 +137,7 @@
 @layer components {
   .texture-overlay {
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-    opacity: 0.15;
+    opacity: 0.05;
     pointer-events: none;
   }
 
@@ -360,7 +360,7 @@
 /* ========== Graphite Kinetic Grid 全局背景 (nihplod.cn 复刻版) ========== */
 
 :root {
-  --kinetic-bg: rgb(142, 128, 114);
+  --kinetic-bg: rgb(155, 141, 128); /* 调回中性色调，使明度介入之前两次调整之间 */
   --kinetic-accent: #333333;
   --kinetic-text-primary: #ffffff;
   --kinetic-text-secondary: #a1a1a1;
@@ -378,12 +378,26 @@
   pointer-events: none;
 }
 
+/* 微弱的扫描线效果 - 复刻原版氛围 */
+.kinetic-background-wrapper::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(0deg,
+      transparent,
+      transparent 2px,
+      rgba(255, 255, 255, 0.01) 2px,
+      rgba(255, 255, 255, 0.01) 4px);
+  pointer-events: none;
+}
+
+
 /* 底层纯色背景 + 白色渐变遮罩 */
 .kinetic-bg-base {
   position: absolute;
   inset: 0;
   background-color: var(--kinetic-bg);
-  background-image: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.6) 0%, transparent 100%);
+  background-image: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.35) 0%, transparent 100%);
   pointer-events: none;
 }
 
@@ -419,7 +433,7 @@
   position: absolute;
   border-radius: 50%;
   filter: blur(80px);
-  opacity: 0.15;
+  opacity: 0.15; /* 恢复暗部光晕的强度，使四个角有更明显的深邃感 */
   pointer-events: none;
 }
 
@@ -445,12 +459,33 @@
 @keyframes kinetic-float-1 {
   0%, 100% { transform: translate(0, 0) scale(1); }
   25% { transform: translate(50px, 30px) scale(1.1); }
+  50% { transform: translate(20px, -20px) scale(0.95); }
+  75% { transform: translate(-30px, 40px) scale(1.05); }
 }
 
 @keyframes kinetic-float-2 {
   0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(-40px, -30px) scale(1.08); }
+  33% { transform: translate(-40px, -30px) scale(1.08); }
+  66% { transform: translate(30px, 20px) scale(0.92); }
 }
+
+@keyframes kinetic-float-3 {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.08; }
+  50% { transform: translate(-50%, -50%) scale(1.3); opacity: 0.12; }
+}
+
+/* 第三处中心光晕 - 复刻原版细节 */
+.kinetic-glow-3 {
+  width: 400px;
+  height: 400px;
+  background: var(--kinetic-accent);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: kinetic-float-3 30s ease-in-out infinite;
+  opacity: 0.08;
+}
+
 
 /* 网格容器 */
 .kinetic-container {
