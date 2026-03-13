@@ -114,7 +114,7 @@
   }
 
   body {
-    background-color: #FAF8F5;
+    background-color: var(--color-cream);
     color: var(--color-text-primary);
     font-family: var(--font-sans);
     overflow-x: hidden;
@@ -137,7 +137,7 @@
 @layer components {
   .texture-overlay {
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-    opacity: 0.05;
+    opacity: 0.15;
     pointer-events: none;
   }
 
@@ -360,7 +360,7 @@
 /* ========== Graphite Kinetic Grid 全局背景 (nihplod.cn 复刻版) ========== */
 
 :root {
-  --kinetic-bg: rgb(155, 141, 128); /* 调回中性色调，使明度介入之前两次调整之间 */
+  --kinetic-bg: rgb(142, 128, 114);
   --kinetic-accent: #333333;
   --kinetic-text-primary: #ffffff;
   --kinetic-text-secondary: #a1a1a1;
@@ -397,7 +397,7 @@
   position: absolute;
   inset: 0;
   background-color: var(--kinetic-bg);
-  background-image: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.5) 0%, transparent 100%);
+  background-image: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.6) 0%, transparent 100%);
   pointer-events: none;
 }
 
@@ -433,7 +433,7 @@
   position: absolute;
   border-radius: 50%;
   filter: blur(80px);
-  opacity: 0.15; /* 恢复暗部光晕的强度，使四个角有更明显的深邃感 */
+  opacity: 0.15;
   pointer-events: none;
 }
 
