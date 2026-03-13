@@ -159,7 +159,7 @@ export function OnboardingFlowModal({
                                             disabled={!nickname.trim()}
                                             className="group inline-flex items-center gap-2 py-2 text-[15px] tracking-[0.2em] font-medium text-[#8B7355] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all duration-300 bg-transparent border-none outline-none mx-auto"
                                         >
-                                            <span>下一步</span>
+                                            <span className="border-b border-[#8B7355]/30 pb-0.5 group-hover:border-[#8B7355] transition-colors">下一步</span>
                                             <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
                                         </button>
                                     </div>
@@ -190,14 +190,19 @@ export function OnboardingFlowModal({
                                         <button
                                             onClick={handleLocationAcceptWrapper}
                                             disabled={isLocating}
-                                            className="glass-premium-primary px-12 py-4 rounded-full text-[15px] tracking-[0.2em] font-medium flex items-center justify-center disabled:opacity-70 disabled:cursor-wait border border-white/10 ring-1 ring-[#3D4430]/5 cursor-pointer transition-all duration-300 outline-none hover:shadow-lg active:scale-95 mx-auto"
+                                            className="group inline-flex items-center gap-2 py-2 text-[15px] tracking-[0.2em] font-medium text-[#8B7355] disabled:opacity-30 disabled:cursor-wait cursor-pointer transition-all duration-300 bg-transparent border-none outline-none mx-auto"
                                         >
                                             {isLocating ? (
                                                 <>
                                                     <Loader2 className="w-5 h-5 mr-3 animate-spin" />
-                                                    正在定位...
+                                                    <span>正在定位...</span>
                                                 </>
-                                            ) : "允许访问"}
+                                            ) : (
+                                                <>
+                                                    <span className="border-b border-[#8B7355]/30 pb-0.5 group-hover:border-[#8B7355] transition-colors">允许访问</span>
+                                                    <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+                                                </>
+                                            )}
                                         </button>
 
                                         <button
@@ -253,7 +258,7 @@ export function OnboardingFlowModal({
                                             disabled={!isAgreed}
                                             className="group inline-flex items-center gap-2 py-2 text-[15px] tracking-[0.2em] font-medium text-[#8B7355] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all duration-300 bg-transparent border-none outline-none"
                                         >
-                                            <span>开始测试</span>
+                                            <span className="border-b border-[#8B7355]/30 pb-0.5 group-hover:border-[#8B7355] transition-colors">开始测试</span>
                                             <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
                                         </button>
                                         
