@@ -90,7 +90,7 @@ export function BentoBackground() {
                         >
                             <Link href="#" className="absolute inset-0 z-20" aria-label="了解产品" />
                             <Image
-                                src="https://wp-cdn.4ce.cn/v2/vmQtAla.jpeg"
+                                src="/images/kinetic-story.jpg"
                                 alt="Brand Story"
                                 fill
                                 className="kinetic-cell-image transition-all duration-500 group-hover:grayscale-0"
