@@ -3,7 +3,7 @@
 import { motion as m, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { Sparkles, X } from "lucide-react";
+import { Sparkles, X, LogOut } from "lucide-react";
 
 // --- Custom SVG Icons (Placeholders for your SVGs) ---
 // Each component accepts `className` to handle sizing and color changes
@@ -315,10 +315,9 @@ export function AnalyzingOverlay({ progress, userImage, onCancel }: AnalyzingOve
             setActiveIconIndex((prev) => (prev + 1) % 9);
         }, 800); // Slower speed
 
-        // Show cancel button after 15 seconds to prevent users getting stuck
         const timeoutId = setTimeout(() => {
             setShowCancel(true);
-        }, 15000);
+        }, 5000); // Reduced to 5s for better UX as requested
 
         return () => {
             clearInterval(interval);
@@ -353,10 +352,13 @@ export function AnalyzingOverlay({ progress, userImage, onCancel }: AnalyzingOve
                         exit={{ opacity: 0 }}
                         transition={{ duration: 1, ease: "easeInOut" }}
                         onClick={onCancel}
-                        className="absolute top-8 right-8 z-50 flex items-center justify-center w-10 h-10 rounded-full bg-black/5 hover:bg-black/10 backdrop-blur-sm transition-colors text-[#5A5A5A]"
-                        aria-label="Cancel analysis"
+                        className="absolute top-8 right-8 z-50 flex items-center gap-2 transition-all group text-[#5A5A5A]/60 hover:text-[#1A1A1A]"
+                        aria-label="Exit analysis"
                     >
-                        <X className="w-5 h-5 stroke-[1.5]" />
+                        <span className="text-[12px] font-medium tracking-[0.2em] transition-colors">
+                            退出测试
+                        </span>
+                        <LogOut className="w-4 h-4 opacity-40 group-hover:opacity-100 transition-opacity" strokeWidth={1.5} />
                     </m.button>
                 )}
             </AnimatePresence>

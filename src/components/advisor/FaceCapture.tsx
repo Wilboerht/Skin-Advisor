@@ -118,76 +118,34 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
 
       let mediaStream: MediaStream;
 
-      try {
-        // 尝试优先使用高级约束（禁用美颜）
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const videoConstraints: MediaTrackConstraints & { advanced?: any[] } = {
+      const requestedConstraints = {
+        video: {
           facingMode,
-          width: { ideal: 1080 },
-          height: { ideal: 720 },
-          advanced: [
-            { beautificationMode: "off" },
-            { imageEnhancement: false },
-            { autoBeautify: false },
-            { faceBeautification: false },
-            { skinSmoothing: false },
-          ],
-        };
-
-        mediaStream = await navigator.mediaDevices.getUserMedia({
-          video: videoConstraints,
-        });
-      } catch (err) {
-        console.warn("Advanced camera constraints failed, retrying with basic constraints:", err);
-        // 降级策略：使用基础约束
-        mediaStream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode,
-            width: { ideal: 1080 },
-            height: { ideal: 720 },
-          },
-        });
-      }
-
-      // 获取视频轨道并尝试应用更多约束
-      const videoTrack = mediaStream.getVideoTracks()[0];
-      if (videoTrack) {
-        try {
-          // 获取当前轨道能力
-          const capabilities = videoTrack.getCapabilities?.();
-
-          // 尝试应用额外的约束来禁用美颜
-          // 不同设备/浏览器支持的约束可能不同
-          const constraintsToApply: MediaTrackConstraints = {};
-
-          // @ts-expect-error - 检查并应用非标准约束
-          if (capabilities?.beautificationMode) {
-            // @ts-expect-error - 非标准约束
-            constraintsToApply.beautificationMode = "off";
-          }
-
-          if (Object.keys(constraintsToApply).length > 0) {
-            await videoTrack.applyConstraints(constraintsToApply);
-          }
-        } catch {
-          // 如果应用约束失败，继续使用现有流
-          console.log("Note: Some camera constraints not supported on this device");
+          width: { ideal: 1280 }, // Use 1280 for better compatibility than 1080
+          height: { ideal: 720 }
         }
+      };
+
+      mediaStream = await navigator.mediaDevices.getUserMedia(requestedConstraints);
+      console.log("Camera stream obtained:", mediaStream.id, mediaStream.getVideoTracks()[0].label);
+
+      // Try to apply advanced constraints after stream is obtained
+      try {
+        const videoTrack = mediaStream.getVideoTracks()[0];
+        if (videoTrack) {
+          await videoTrack.applyConstraints({
+            advanced: [
+              { beautificationMode: "off" } as any,
+              { imageEnhancement: false } as any
+            ]
+          });
+        }
+      } catch (e) {
+        console.warn("Could not apply beautification constraints:", e);
       }
 
       streamRef.current = mediaStream;
       setStream(mediaStream);
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-        try {
-          await videoRef.current.play();
-        } catch (playErr) {
-          console.warn("Video playback failed but stream is active:", playErr);
-          // 忽略播放中断等非致命错误，只要流可以正常获取即可
-        }
-      }
-
       setIsLoading(false);
     } catch (err) {
       console.error("Camera error:", err);
@@ -215,7 +173,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
       setError(errorMessage);
       setIsLoading(false);
     }
-  }, [facingMode, stream]);
+  }, [facingMode]); // Removed stream dependency
 
   /**
    * 加载 face-api.js 和模型
@@ -858,6 +816,16 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
     });
   }, []);
 
+  // Separate Effect to bind stream to video element
+  useEffect(() => {
+    if (stream && videoRef.current) {
+      videoRef.current.srcObject = stream;
+      videoRef.current.play().catch(e => {
+        console.warn("Video play error (handled):", e);
+      });
+    }
+  }, [stream]);
+
   // 初始化摄像头
   useEffect(() => {
     initCamera();
@@ -1005,7 +973,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
             muted
             className={cn(
               "h-full w-full object-cover",
-              facingMode === "user" && "-scale-x-100"
+              facingMode === "user" && "scale-x-[-1]"
             )}
           />
         ) : (
