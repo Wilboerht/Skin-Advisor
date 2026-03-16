@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "next-view-transitions";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
@@ -15,17 +15,46 @@ export default function RegisterPage() {
     const toast = useToast();
 
     const [name, setName] = useState("");
-    const [email, setEmail] = useState("");
+    const [phone, setPhone] = useState("");
+    const [code, setCode] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
+    const [sendingCode, setSendingCode] = useState(false);
+    const [cooldown, setCooldown] = useState(0);
     const [showPassword, setShowPassword] = useState(false);
+
+    useEffect(() => {
+        if (!cooldown) return;
+        const timer = setInterval(() => setCooldown((c) => Math.max(c - 1, 0)), 1000);
+        return () => clearInterval(timer);
+    }, [cooldown]);
+
+    const sendCode = async () => {
+        if (cooldown || !phone) return;
+        setSendingCode(true);
+        try {
+            const res = await fetch("/api/auth/send-code", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ phone })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "验证码发送失败");
+            toast.success("验证码已发送");
+            setCooldown(60);
+        } catch (err: any) {
+            toast.error(err.message || "验证码发送失败");
+        } finally {
+            setSendingCode(false);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
 
         try {
-            await register({ name, email, password });
+            await register({ name, phone, code, password });
             toast.success("注册成功！");
             router.push("/"); // Redirect to home
         } catch (err) {
@@ -67,16 +96,40 @@ export default function RegisterPage() {
 
                     <div>
                         <label className="block text-sm font-medium text-[#4A4A4A] mb-1.5 ml-1">
-                            邮箱
+                            手机号
                         </label>
                         <input
-                            type="email"
+                            type="tel"
                             required
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
                             className="w-full px-4 py-3 rounded-xl border border-[#E0E0E0] bg-[#FAFAFA] text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#C9A86C]/20 focus:border-[#C9A86C] transition-all"
-                            placeholder="your@email.com"
+                            placeholder="请输入手机号"
                         />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-[#4A4A4A] mb-1.5 ml-1">
+                            验证码
+                        </label>
+                        <div className="flex gap-3">
+                            <input
+                                type="text"
+                                required
+                                value={code}
+                                onChange={(e) => setCode(e.target.value)}
+                                className="w-full px-4 py-3 rounded-xl border border-[#E0E0E0] bg-[#FAFAFA] text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#C9A86C]/20 focus:border-[#C9A86C] transition-all"
+                                placeholder="短信验证码"
+                            />
+                            <button
+                                type="button"
+                                onClick={sendCode}
+                                disabled={sendingCode || cooldown > 0 || !phone}
+                                className="px-4 whitespace-nowrap rounded-xl border border-[#C9A86C] text-[#C9A86C] font-medium hover:bg-[#C9A86C]/10 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                            >
+                                {sendingCode ? "发送中..." : cooldown ? `${cooldown}s` : "获取验证码"}
+                            </button>
+                        </div>
                     </div>
 
                     <div>

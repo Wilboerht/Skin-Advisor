@@ -24,8 +24,9 @@ export async function POST(req: NextRequest) {
             response.headers.set("Set-Cookie", setCookieHeader);
         }
 
-        // 为了平滑过渡，我们也顺手清除遗留的 auth_token
+        // 为了平滑过渡，我们也顺手清除遗留的 auth_token / user_token
         response.cookies.delete("auth_token");
+        response.cookies.delete("user_token");
 
         return response;
     } catch (e) {

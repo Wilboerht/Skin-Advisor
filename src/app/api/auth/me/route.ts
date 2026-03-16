@@ -2,6 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
 
+function mirrorOfficialSessionCookie(officialResponse: Response, response: NextResponse) {
+    const setCookieHeader = officialResponse.headers.get("set-cookie");
+    if (!setCookieHeader) return;
+    const firstPair = setCookieHeader.split(";")[0];
+    const [cookieName, cookieValue] = firstPair.split("=");
+    if (!cookieName || !cookieValue) return;
+    response.cookies.set(cookieName, cookieValue, {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 30
+    });
+}
+
 export async function GET(req: NextRequest) {
     const cookieStore = await cookies();
     // 官网下发的是 user_token 或者 auth_token，但统一通过 cookie 转发
@@ -69,7 +83,7 @@ export async function GET(req: NextRequest) {
             }
         });
 
-        return NextResponse.json({
+        const response = NextResponse.json({
             user: {
                 ...data.data.user,
                 phone: data.data.user.phone,
@@ -77,6 +91,10 @@ export async function GET(req: NextRequest) {
                 role: "user"
             }
         });
+
+        mirrorOfficialSessionCookie(officialResponse, response);
+
+        return response;
 
     } catch (e) {
         console.error("Me GET Proxy Error", e);

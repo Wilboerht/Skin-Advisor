@@ -14,7 +14,7 @@ export default function LoginPage() {
     const { login } = useAuth();
     const toast = useToast();
 
-    const [email, setEmail] = useState("");
+    const [phone, setPhone] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
@@ -24,7 +24,7 @@ export default function LoginPage() {
         setLoading(true);
 
         try {
-            await login({ email, password });
+            await login({ phone, password });
             toast.success("欢迎回来！");
             router.push("/"); // Redirect to home or previous page
         } catch (err) {
@@ -53,15 +53,15 @@ export default function LoginPage() {
                 <form onSubmit={handleSubmit} className="space-y-5">
                     <div>
                         <label className="block text-sm font-medium text-[#4A4A4A] mb-1.5 ml-1">
-                            邮箱
+                            手机号
                         </label>
                         <input
-                            type="email"
+                            type="tel"
                             required
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
                             className="w-full px-4 py-3 rounded-xl border border-[#E0E0E0] bg-[#FAFAFA] text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#C9A86C]/20 focus:border-[#C9A86C] transition-all"
-                            placeholder="your@email.com"
+                            placeholder="请输入手机号"
                         />
                     </div>
 

@@ -1,7 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
-import { signToken } from "@/lib/auth";
-
 export async function POST(req: NextRequest) {
     try {
         const { phone } = await req.json();
@@ -10,23 +7,23 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "手机号不能为空" }, { status: 400 });
         }
 
-        const user = await prisma.user.findUnique({ where: { phoneNumber: phone } });
-        if (!user) {
-            // 返回成功以防止手机号枚举攻击
-            return NextResponse.json({ success: true, message: "验证码已发送" });
-        }
+        // 调用官网验证码发送接口（同注册/登录的验证码入口）
+        const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";
+        const officialResponse = await fetch(`${officialApiUrl}/api/auth/send-code`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ phone })
+        });
 
-        // 生成重置 Token (1小时有效) - 这里实际场景可能生成4-6位数字验证码存Redis
-        // 为了简化，我们还是生成 Token URL 方式，或者简单的验证码逻辑
-        const resetToken = await signToken({ sub: user.id, phone: user.phoneNumber, type: "reset" }, "1h");
+        const responseData = await officialResponse.json();
 
-        // 构造重置链接
-        const origin = req.headers.get("origin") || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-        const resetLink = `${origin}/reset-password?token=${resetToken}`;
-
-        // TODO: 正式环境应通过短信/邮件发送此链接
-        if (process.env.NODE_ENV === 'development') {
-            console.log(`[Auth] Password reset link for ${phone}: ${resetLink}`);
+        if (!officialResponse.ok || !responseData.success) {
+            return NextResponse.json(
+                { error: responseData.error?.message || "发送验证码失败" },
+                { status: officialResponse.status || 400 }
+            );
         }
 
         return NextResponse.json({ success: true, message: "验证码已发送" });

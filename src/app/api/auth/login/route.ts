@@ -1,9 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
+function mirrorOfficialSessionCookie(officialResponse: Response, response: NextResponse) {
+    const setCookieHeader = officialResponse.headers.get("set-cookie");
+    if (!setCookieHeader) return;
+
+    const firstPair = setCookieHeader.split(";")[0];
+    const [cookieName, cookieValue] = firstPair.split("=");
+    if (!cookieName || !cookieValue) return;
+
+    // Re-issue cookie on our domain so browsers accept it regardless of the official domain
+    response.cookies.set(cookieName, cookieValue, {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 30 // 30 days
+    });
+}
+
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
+        if (!body.phone || !body.password) {
+            return NextResponse.json(
+                { error: "缺少手机号或密码" },
+                { status: 400 }
+            );
+        }
 
         // 代理到官网密码登录接口
         const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";
@@ -25,7 +48,6 @@ export async function POST(req: NextRequest) {
         }
 
         // 获取并透传官网的 Cookie
-        const setCookieHeader = officialResponse.headers.get("Set-Cookie");
         const userPayload = responseData.data.user;
 
         // Prevent unique constraint collision if the phone exists on a different ID locally
@@ -65,9 +87,7 @@ export async function POST(req: NextRequest) {
             }
         });
 
-        if (setCookieHeader) {
-            response.headers.set('Set-Cookie', setCookieHeader);
-        }
+        mirrorOfficialSessionCookie(officialResponse, response);
 
         return response;
 

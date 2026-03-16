@@ -4,6 +4,10 @@ export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
 
+        if (!body.phone || !body.code || !body.password) {
+            return NextResponse.json({ error: "缺少必填项" }, { status: 400 });
+        }
+
         const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";
 
         // 我们代理到官网重置密码 API
@@ -17,7 +21,7 @@ export async function POST(req: NextRequest) {
                 phone: body.phone,
                 code: body.code,
                 password: body.password,
-                confirmPassword: body.password // We can send identical passwords to bypass the schema
+                confirmPassword: body.password
             })
         });
 
