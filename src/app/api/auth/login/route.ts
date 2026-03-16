@@ -18,6 +18,22 @@ function mirrorOfficialSessionCookie(officialResponse: Response, response: NextR
     });
 }
 
+async function parseOfficialJson(officialResponse: Response) {
+    const contentType = officialResponse.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) {
+        const text = await officialResponse.text();
+        console.error("Official API returned non-JSON response", text.slice(0, 300));
+        return null;
+    }
+    try {
+        return await officialResponse.json();
+    } catch (err) {
+        const text = await officialResponse.text();
+        console.error("Official API JSON parse failed", text.slice(0, 300));
+        return null;
+    }
+}
+
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
@@ -38,7 +54,14 @@ export async function POST(req: NextRequest) {
             body: JSON.stringify(body) // { phone, password }
         });
 
-        const responseData = await officialResponse.json();
+        const responseData = await parseOfficialJson(officialResponse);
+
+        if (!responseData) {
+            return NextResponse.json(
+                { error: "登录失败：上游服务响应异常" },
+                { status: 502 }
+            );
+        }
 
         if (!officialResponse.ok || !responseData.success) {
             return NextResponse.json(
