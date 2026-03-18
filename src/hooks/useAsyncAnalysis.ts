@@ -70,6 +70,7 @@ export function useAsyncAnalysis() {
 
             // 1. Face Analysis
             let faceAnalysis = null;
+            let frontPhotoForAvatar: string | null = null;
 
             // Use advisorStorage to get images (supports IndexedDB)
             const { advisorStorage } = await import("@/lib/advisor-storage");
@@ -108,9 +109,11 @@ export function useAsyncAnalysis() {
                             }
                         }
                         visionImages.push({ data: finalData, angle: 'front' });
+                        frontPhotoForAvatar = finalData;
                     } catch (e) {
                         console.warn("Preprocessing failed", e);
                         visionImages.push({ data: images.front, angle: 'front' });
+                        frontPhotoForAvatar = images.front;
                     }
 
                     if (visionImages.length > 0) {
@@ -201,6 +204,7 @@ export function useAsyncAnalysis() {
                 body: JSON.stringify({
                     sessionId: sessionId,
                     nickname: nickname,
+                    frontPhoto: frontPhotoForAvatar,
                     characteristics: {
                         age: result.skinProfile?.skinAge || 25,
                         gender: storedGender,

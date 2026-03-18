@@ -11,7 +11,7 @@ const openai = new OpenAI({
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { sessionId, characteristics, nickname } = body;
+        const { sessionId, characteristics, nickname, frontPhoto } = body;
 
         if (!sessionId) {
             return NextResponse.json({ error: "Missing sessionId" }, { status: 400 });
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
         if (process.env.VOLC_ACCESSKEY && process.env.VOLC_SECRETKEY) {
             try {
                 console.log("Attempting to generate avatar using Jimeng (Volcengine)...");
-                imageUrl = await generateJimengAvatar(prompt);
+                imageUrl = await generateJimengAvatar(prompt, frontPhoto);
                 if (imageUrl) source = "jimeng";
             } catch (e) {
                 console.error("Jimeng generation failed, falling back...", e);
@@ -141,7 +141,7 @@ async function updateSessionAvatar(sessionId: string, url: string) {
 }
 
 // Jimeng (Volcengine) Generation Logic
-async function generateJimengAvatar(prompt: string): Promise<string | null> {
+async function generateJimengAvatar(prompt: string, frontPhoto?: string | null): Promise<string | null> {
     const service = new Service({
         host: 'visual.volcengineapi.com',
         serviceName: 'cv',
@@ -163,7 +163,7 @@ async function generateJimengAvatar(prompt: string): Promise<string | null> {
 
     // Jimeng usually requires separate prompt logic or specific parameters
     // We try to fit the standard Volcengine parameter structure
-    const params = {
+    const params: any = {
         req_key: "high_aes_smart_drawing",
         prompt: prompt,
         scale: 3.5,
@@ -175,6 +175,19 @@ async function generateJimengAvatar(prompt: string): Promise<string | null> {
             add_logo: false
         }
     };
+
+    // If we have a front photo, use it for img2img (Image to Image generation)
+    if (frontPhoto) {
+        if (frontPhoto.startsWith('http')) {
+            params.image_urls = [frontPhoto];
+            // Optionally set image strength/weight here if the API allows e.g. params.strength = 0.5;
+        } else if (frontPhoto.startsWith('data:image/')) {
+            const base64Data = frontPhoto.split(',')[1];
+            if (base64Data) {
+                params.binary_data_base64 = [base64Data];
+            }
+        }
+    }
 
     const res = await fetchApi(params) as any;
 
