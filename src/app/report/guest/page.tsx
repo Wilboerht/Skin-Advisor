@@ -2,7 +2,6 @@ import { Metadata } from "next";
 import ShareLandingClient from "./ShareLandingClient";
 import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import { calculateUserRank, generateRandomNickname } from "@/lib/leaderboard";
 import { getConcernLabel } from "@/lib/advisor-utils";
 
 interface GuestReportPageProps {
@@ -49,9 +48,6 @@ export default async function GuestReportPage(props: GuestReportPageProps) {
     const result = session.analysisResult as any;
     const userScore = result.faceAnalysis?.overallScore || result.skinAnalysis?.score || 85;
 
-    // Calculate user's actual rank
-    const rankInfo = await calculateUserRank(id);
-
     // --- Build Guest Simplified Analysis ---
     const fullSummary = result.analysis?.summary || result.skinAnalysis?.summary || "";
 
@@ -95,15 +91,12 @@ export default async function GuestReportPage(props: GuestReportPageProps) {
         dimensions: result.faceAnalysis?.dimensions || {}, // Needed for chart
         publishDate: new Date().toLocaleDateString(),
         // User info for display (prioritize nickname from analysisResult)
-        nickname: result.nickname || session.user?.name || generateRandomNickname(id),
+        nickname: result.nickname || session.user?.name || `用户${id.substring(0, 8)}`,
         generatedAvatar: result.generatedAvatar || null,
         city: result.userLocation?.city || session.city || session.province || "未知城市",
         isGuest: !session.user,
-        // Add rank info
+        // Session ID
         sessionId: id,
-        userRank: rankInfo.rank,
-        userPercentile: rankInfo.percentile,
-        totalParticipants: rankInfo.totalParticipants,
         // Gender mismatch detection
         detectedGender,
         // Guest simplified analysis
