@@ -20,16 +20,13 @@ export async function POST(req: NextRequest) {
         console.log(`Generating avatar for session ${sessionId}...`);
 
         // Construct Prompt
-        const gender = characteristics?.gender === 'male' ? '男' : '女';
+        const gender = characteristics?.gender === 'male' ? 'male' : 'female';
         const age = characteristics?.age || '25';
-        const skinTone = characteristics?.skinTone || '健康肤色';
+        const skinTone = characteristics?.skinTone || 'healthy skin tone';
         const hairStyle = characteristics?.hairStyle || '';
 
-        const prompt = `Japanese beauty illustration style avatar of a ${age} year old ${gender}, ${skinTone}, ${hairStyle}. 
-        Close-up portrait, centered composition. 
-        Style: Japanese commercial illustration, soft lighting, pastel colors, high detail, refined lines.
-        Expression: Gentle smile, friendly.
-        Background: Simple, soft solid color or gradient.`;
+        const prompt = `Transform the person in the image into Japanese beauty makeup illustration style. Retain all facial features and details as accurately as possible while incorporating their unique characteristics as a ${age} year old ${gender}. Keep only the upper body/bust. Apply subtle beauty enhancements, add a friendly smile expression, and center the character horizontally. Style: Japanese commercial beauty illustration, soft lighting, pastel colors, high detail, refined lines. Expression: Warm, approachable, smile. Background: Simple, soft solid color or gradient. Professional quality.`;
+
 
         let imageUrl: string | null = null;
         let source = "fallback";
