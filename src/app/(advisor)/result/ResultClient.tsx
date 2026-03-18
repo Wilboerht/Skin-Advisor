@@ -113,6 +113,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const [faceAnalysis, setFaceAnalysis] = useState<FaceAnalysisResult | null>(initialData?.faceAnalysis || null);
     const [userImage, setUserImage] = useState<string | undefined>(undefined);
     const [sideImages, setSideImages] = useState<Record<string, string>>({});
+    const [generatedAvatar, setGeneratedAvatar] = useState<string | null>((initialData?.result as any)?.generatedAvatar || null);
+    const [isAvatarLoading, setIsAvatarLoading] = useState(!(initialData?.result as any)?.generatedAvatar);
     const [userLocation, setUserLocation] = useState<{ province?: string; city?: string; lat?: number; lon?: number } | null>(null);
     const [userNickname, setUserNickname] = useState<string>("护肤达人");
     // Session ID for sharing - initialized from props or will be set after analysis
@@ -338,6 +340,41 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
         loadClientData();
     }, [initialData, router, trackResultView, toast]);
+
+    // --- Avatar Polling ---
+    // Poll for avatar generation if we don't have one yet
+    useEffect(() => {
+        if (!sessionId || generatedAvatar || !isAvatarLoading) {
+            return;
+        }
+
+        const pollAvatar = async () => {
+            try {
+                const response = await fetch(`/api/advisor/avatar/status?sessionId=${sessionId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.generatedAvatar) {
+                        setGeneratedAvatar(data.generatedAvatar);
+                        setIsAvatarLoading(false);
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to poll avatar:", err);
+            }
+        };
+
+        // Poll every 2 seconds for up to 2 minutes
+        const pollInterval = setInterval(pollAvatar, 2000);
+        const pollTimeout = setTimeout(() => {
+            clearInterval(pollInterval);
+            setIsAvatarLoading(false);
+        }, 120000);
+
+        return () => {
+            clearInterval(pollInterval);
+            clearTimeout(pollTimeout);
+        };
+    }, [sessionId, generatedAvatar, isAvatarLoading]);
 
     // --- Guest Protection Guard ---
     // Prevent direct access to full report by guests via URL
@@ -845,28 +882,37 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                         <aside className={sidebarStyles.summaryCard}>
                             {/* Icon & Title */}
                             <div className={sidebarStyles.pageIconWrapper}>
-                                <img
-                                    src={userImage || "/images/default-avatar.png"}
-                                    alt="Front"
-                                    className={sidebarStyles.pageIcon}
-                                    onError={(e) => {
-                                        (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=User&background=random&color=fff`;
-                                    }}
-                                />
-                                {/* Hidden Side Angles */}
-                                <div className={sidebarStyles.profileExpander}>
-                                    {['left', 'right', 'chin'].map((angle, idx) => (
-                                        <img
-                                            key={angle}
-                                            // Try to get from local storage or fallback to main image/placeholder
-                                            // note: real app should store these in state
-                                            src={sideImages[angle] || userImage || "/images/default-avatar.png"}
+                                {/* Avatar Display with Loading State */}
+                                <div className="relative">
+                                    <img
+                                        src={generatedAvatar || userImage || "/images/default-avatar.png"}
+                                        alt="AI Generated Avatar"
+                                        className={sidebarStyles.pageIcon}
+                                        onError={(e) => {
+                                            (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=User&background=random&color=fff`;
+                                        }}
+                                    />
+                                    {/* Loading Spinner Overlay */}
+                                    {isAvatarLoading && (
+                                        <div className="absolute inset-0 bg-white/50 backdrop-blur-sm rounded-full flex items-center justify-center">
+                                            <div className="w-8 h-8 border-4 border-gray-200 border-t-[#D4B78F] rounded-full animate-spin" />
+                                        </div>
+                                    )}
+                                </div>
+                                {/* Hidden Side Angles - Only show if we have original photos, hide when showing AI avatar */}
+                                {!generatedAvatar && (
+                                    <div className={sidebarStyles.profileExpander}>
+                                        {['left', 'right', 'chin'].map((angle, idx) => (
+                                            <img
+                                                key={angle}
+                                                src={sideImages[angle] || userImage || "/images/default-avatar.png"}
                                             alt={`Angle ${angle}`}
                                             className={sidebarStyles.sideAngleIcon}
                                             style={{ transitionDelay: `${idx * 50}ms` }}
                                         />
                                     ))}
                                 </div>
+                                )}
                             </div>
                             <h1 className={sidebarStyles.pageTitle}>
                                 {userNickname}{/[A-Za-z0-9]$/.test(userNickname) ? ' ' : ''}的肌肤诊断报告
