@@ -389,7 +389,7 @@ export default function Home() {
                       />
                       
                       <h1 className="text-4xl sm:text-5xl md:text-6xl font-serif text-[#1A1A1A] mb-8 leading-tight tracking-tight">
-                        AI 智能<br className="sm:hidden" />精准护肤
+                        AI 智能<br className="sm:hidden" />测肤
                       </h1>
 
                       <p className="text-[#5C5855]/90 leading-loose mb-14 max-w-xl mx-auto font-light text-[16px] opacity-0 animate-fade-in-up tracking-wide" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
@@ -416,18 +416,6 @@ export default function Home() {
                         </button>
 
                         <div className="flex flex-wrap justify-center items-center gap-10">
-                          <button
-                            onClick={() => router.push('/leaderboard')}
-                            className="group relative flex items-center gap-2 text-[13px] font-medium text-[#8B7355] transition-all duration-300 cursor-pointer border-none bg-transparent hover:-translate-y-0.5"
-                          >
-                            <span className="text-[15px] transition-transform group-hover:scale-110">🏆</span>
-                            <span className="tracking-widest">肌肤评分榜</span>
-                            {/* Base Line */}
-                            <div className="absolute -bottom-1 left-0 w-full h-[0.5px] bg-[#8B7355]/10" />
-                            {/* Animated Line */}
-                            <div className="absolute -bottom-1 left-1/2 w-0 h-[1px] bg-[#8B7355] transition-all duration-500 ease-out group-hover:w-full group-hover:left-0" />
-                          </button>
-
                           {user && (
                             <div className="flex items-center gap-8">
                               <button
