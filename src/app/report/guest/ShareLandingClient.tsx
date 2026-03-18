@@ -19,23 +19,6 @@ function AnimatedNumber({ value, suffix = "" }: { value: number, suffix?: string
     return <motion.span>{display}</motion.span>;
 }
 
-// Types
-interface LeaderboardEntry {
-    rank: number;
-    nickname: string;
-    city: string;
-    score: number;
-    sessionId: string;
-}
-
-interface PopularityEntry {
-    rank: number;
-    nickname: string;
-    city: string;
-    popularity: number;
-    sessionId: string;
-}
-
 interface ShareLandingProps {
     data: {
         score: number;
@@ -117,14 +100,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
         toast.success("确认成功");
     };
 
-    const [activeTab, setActiveTab] = useState<'score' | 'pop'>('score');
     const [showModal, setShowModal] = useState(false);
-
-    // Leaderboard state
-    const [scoreRanking, setScoreRanking] = useState<LeaderboardEntry[]>([]);
-    const [popularityRanking, setPopularityRanking] = useState<PopularityEntry[]>([]);
-    const [totalParticipants, setTotalParticipants] = useState(data.totalParticipants);
-    const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(true);
 
     // Generate dynamic comment based on user's actual analysis data
     function generateComment(): string {
@@ -179,30 +155,6 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
     }
 
     const comment = generateComment();
-
-    // Fetch leaderboard data
-    useEffect(() => {
-        // Fetch leaderboard from API
-        async function fetchLeaderboard() {
-            try {
-                const res = await fetch(`/api/advisor/leaderboard?limit=5&sessionId=${data.sessionId}`);
-                if (res.ok) {
-                    const result = await res.json();
-                    setScoreRanking(result.scoreRanking || []);
-                    setPopularityRanking(result.popularityRanking || []);
-                    if (result.totalParticipants) {
-                        setTotalParticipants(result.totalParticipants);
-                    }
-                }
-            } catch (error) {
-                console.error("Failed to fetch leaderboard:", error);
-            } finally {
-                setIsLoadingLeaderboard(false);
-            }
-        }
-
-        fetchLeaderboard();
-    }, [data.sessionId]);
 
     // Animation Variants
     const revealVariants = {
@@ -303,7 +255,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                 )}
             </AnimatePresence>
 
-            <div className="w-full max-w-[1100px] flex flex-col gap-6 pt-4 md:pt-0">
+            <div className="w-full max-w-[600px] flex flex-col gap-6 pt-4 md:pt-0">
                 <div className="flex justify-center relative items-center">
                     <button
                         onClick={() => router.push('/')}
@@ -314,7 +266,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                     </button>
                     <img src="/NIHPLOD-logo.svg" alt="Partner Logo" className="h-8 md:h-10 object-contain opacity-90" />
                 </div>
-                <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="w-full flex flex-col gap-6">
 
                     {/* 1. Challenge Module */}
                     <motion.div
@@ -362,127 +314,18 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                             分享我的战报
                         </button>
                         <p className="mt-[15px] text-[13px] text-[#666] text-center">
-                            邀请好友开启素颜测肤大对决，提升人气分，赢取限时好礼。
+                            邀请好友开启素颜测肤大对决，赢取限时好礼。
                         </p>
-                    </motion.div>
-
-                    {/* 2. Leaderboard Module */}
-                    <motion.div
-                        custom={2}
-                        initial="hidden"
-                        animate="visible"
-                        variants={revealVariants}
-                        className="glass-module rounded-[32px] p-[30px] flex flex-col transition-all duration-400 relative overflow-hidden"
-                    >
-                        <div className="flex gap-2.5 mb-[25px]">
-                            <div
-                                onClick={() => setActiveTab('score')}
-                                className={`px-5 py-2.5 rounded-xl cursor-pointer font-semibold text-[15px] transition-all border border-transparent flex items-center gap-1.5 
-                                ${activeTab === 'score' ? 'bg-white border-[rgba(255,255,255,0.6)] shadow-sm' : 'bg-black/3 hover:bg-black/5'}`}
-                            >
-                                测肤排行
-                            </div>
-                            <div
-                                onClick={() => setActiveTab('pop')}
-                                className={`px-5 py-2.5 rounded-xl cursor-pointer font-semibold text-[15px] transition-all border border-transparent flex items-center gap-1.5 
-                                ${activeTab === 'pop' ? 'bg-white border-[rgba(255,255,255,0.6)] shadow-sm' : 'bg-black/3 hover:bg-black/5'}`}
-                            >
-                                人气排行 <span className="text-[#FF4D4F]">🔥</span>
-                            </div>
-                        </div>
-
-                        <div className="flex-grow flex flex-col">
-                            <AnimatePresence mode="wait">
-                                <motion.div
-                                    key={activeTab}
-                                    initial={{ opacity: 0, x: 10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -10 }}
-                                    transition={{ duration: 0.2 }}
-                                    className="flex flex-col"
-                                >
-                                    {isLoadingLeaderboard ? (
-                                        // Loading skeleton
-                                        <div className="space-y-3">
-                                            {[1, 2, 3, 4, 5].map((i) => (
-                                                <div key={i} className="flex items-center py-3 px-2 animate-pulse">
-                                                    <div className="w-[30px] h-6 bg-black/5 rounded" />
-                                                    <div className="w-11 h-11 rounded-xl mx-3 bg-black/5" />
-                                                    <div className="flex-grow">
-                                                        <div className="h-4 bg-black/5 rounded w-20 mb-1" />
-                                                        <div className="h-3 bg-black/5 rounded w-16" />
-                                                    </div>
-                                                    <div className="h-5 bg-black/5 rounded w-12" />
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : activeTab === 'score' ? (
-                                        <>
-                                            {/* Score Rank Items */}
-                                            {scoreRanking.length > 0 ? scoreRanking.map((item, idx) => {
-                                                const rankColors = ['#D4AF37', '#A8A8A8', '#B08D57', '#999', '#999'];
-                                                return (
-                                                    <div key={item.sessionId} className="flex items-center py-3 border-b border-black/5 last:border-0 hover:bg-white/20 transition-colors px-2 rounded-lg">
-                                                        <span className="w-[30px] font-extrabold text-lg" style={{ color: rankColors[idx] || '#999' }}>
-                                                            {String(item.rank).padStart(2, '0')}
-                                                        </span>
-                                                        <img src={`https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(item.nickname)}`} className="w-11 h-11 rounded-xl mx-3 bg-gray-200" alt="avatar" />
-                                                        <div className="flex-grow">
-                                                            <p className="font-semibold text-[15px]">{item.nickname}</p>
-                                                            <p className="text-xs text-[#666]">{item.city}</p>
-                                                        </div>
-                                                        <span className="font-bold text-lg text-[#00263e]">{item.score}</span>
-                                                    </div>
-                                                );
-                                            }) : (
-                                                <div className="text-center py-8 text-gray-500">暂无排行数据</div>
-                                            )}
-                                        </>
-                                    ) : (
-                                        <>
-                                            {/* Pop Rank Items */}
-                                            {popularityRanking.length > 0 ? popularityRanking.map((item, idx) => {
-                                                const rankColors = ['#D4AF37', '#A8A8A8', '#B08D57', '#999', '#999'];
-                                                const formatPopularity = (num: number) => {
-                                                    if (num >= 10000) return `${(num / 10000).toFixed(1)}w`;
-                                                    if (num >= 1000) return `${(num / 1000).toFixed(1)}k`;
-                                                    return String(num);
-                                                };
-                                                return (
-                                                    <div key={item.sessionId} className="flex items-center py-3 border-b border-black/5 last:border-0 hover:bg-white/20 transition-colors px-2 rounded-lg">
-                                                        <span className="w-[30px] font-extrabold text-lg" style={{ color: rankColors[idx] || '#999' }}>
-                                                            {String(item.rank).padStart(2, '0')}
-                                                        </span>
-                                                        <img src={`https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(item.nickname)}`} className="w-11 h-11 rounded-xl mx-3 bg-gray-200" alt="avatar" />
-                                                        <div className="flex-grow">
-                                                            <p className="font-semibold text-[15px]">{item.nickname}</p>
-                                                            <p className="text-xs text-[#666]">{item.city}</p>
-                                                        </div>
-                                                        <span className="font-bold text-lg text-[#FF4D4F]">{formatPopularity(item.popularity)} 🔥</span>
-                                                    </div>
-                                                );
-                                            }) : (
-                                                <div className="text-center py-8 text-gray-500">暂无人气数据</div>
-                                            )}
-                                        </>
-                                    )}
-                                </motion.div>
-                            </AnimatePresence>
-                        </div>
-
-                        <div className="mt-5 pt-5 border-t border-dashed border-black/10 text-center text-sm text-[#666]">
-                            已有 {totalParticipants.toLocaleString()}+ 人参与本赛季挑战
-                        </div>
                     </motion.div>
 
                     {/* 3. Report Module / Back Button */}
                     {user ? (
                         <motion.div
-                            custom={3}
+                            custom={2}
                             initial="hidden"
                             animate="visible"
                             variants={revealVariants}
-                            className="glass-module rounded-[32px] p-[30px] flex flex-col items-center justify-center transition-all duration-400 md:col-span-2"
+                            className="glass-module rounded-[32px] p-[30px] flex flex-col items-center justify-center transition-all duration-400"
                         >
                             <p className="text-[#666] mb-4">您已登录，可以查看完整报告</p>
                             <button
@@ -497,11 +340,11 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                     {/* 4. Guest Simplified Analysis (New) */}
                     {data.isGuest && data.guestAnalysis && (
                         <motion.div
-                            custom={3}
+                            custom={2}
                             initial="hidden"
                             animate="visible"
                             variants={revealVariants}
-                            className="glass-module rounded-[32px] p-[30px] flex flex-col transition-all duration-400 md:col-span-2 relative overflow-hidden"
+                            className="glass-module rounded-[32px] p-[30px] flex flex-col transition-all duration-400"
                         >
                             <span className="inline-block px-4 py-1.5 rounded-full text-sm font-semibold mb-5 bg-[#00263e] text-white w-fit">
                                 初步诊断
