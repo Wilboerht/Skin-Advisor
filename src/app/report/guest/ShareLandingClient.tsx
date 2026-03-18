@@ -29,11 +29,7 @@ interface ShareLandingProps {
         nickname: string;
         city: string;
         isGuest: boolean;
-        // New rank-related fields
         sessionId: string;
-        userRank: number;
-        userPercentile: number;
-        totalParticipants: number;
         generatedAvatar?: string;
         // Gender mismatch detection
         detectedGender?: { value: string; confidence: number } | null;
@@ -104,7 +100,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
 
     // Generate dynamic comment based on user's actual analysis data
     function generateComment(): string {
-        const { score, skinType, userPercentile } = data;
+        const { score, skinType } = data;
         const concerns = data.guestAnalysis?.concerns || [];
 
         // Score-based praise
@@ -141,14 +137,14 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
             }
         }
 
-        // Percentile-based closing
+        // Score-based closing
         let closing = "";
-        if (userPercentile >= 90) {
-            closing = "。您的护肤习惯值得所有人学习！";
-        } else if (userPercentile >= 70) {
-            closing = "。继续保持，您已经走在大多数人前面了。";
+        if (score >= 85) {
+            closing = "。坚持现有的护肤习惯，您已走在大多数人前面。";
+        } else if (score >= 70) {
+            closing = "。在日常护肤中坚持科学方法，期待下次更高的评分。";
         } else {
-            closing = "。坚持科学护肤，排名提升指日可待。";
+            closing = "。根据建议调整护肤方案，坚持会看到显著改善。";
         }
 
         return `报告评语：${scorePraise}，检测肤质为${skinType}${concernAdvice}${closing}`;
@@ -293,14 +289,6 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                                 <h2 className="text-2xl font-bold mb-1">{data.nickname}</h2>
                                 <p className="text-sm text-[#666]">{data.isGuest ? "临时用户 · " : ""}{data.city}</p>
                             </div>
-                        </div>
-
-                        <div className="bg-black/5 p-5 rounded-3xl mb-6 text-center">
-                            <span className="text-sm text-[#666] block mb-1">当前全国排名</span>
-                            <span className="text-4xl font-extrabold text-black block">
-                                <AnimatedNumber value={data.userRank} />
-                            </span>
-                            <p className="font-semibold text-[#27ae60] mt-2 text-sm">超越了全国 <AnimatedNumber value={data.userPercentile} suffix="%" /> 的用户</p>
                         </div>
 
                         <div className="text-base leading-[1.6] text-[#444] p-4 border-l-4 border-[#FFD700] bg-white/30 mb-[30px] rounded-r-xl min-h-[80px]">
@@ -541,7 +529,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                                             try {
                                                 await navigator.share({
                                                     title: '我的AI测肤战报',
-                                                    text: `我在Skin Advisor获得了${data.score}分，击败了${data.userPercentile}%的用户！`,
+                                                    text: `我在Skin Advisor获得了${data.score}分的肌肤评分！`,
                                                     url: window.location.href,
                                                 });
                                                 return;
