@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { VIPFeatureCard } from "./VIPFeatureCard";
 import type { ZoneAnalysis } from "@/lib/advisor-utils";
+import type { DimensionKey } from "@/lib/face-zones";
 
 // 动态导入 MediaPipe 组件以减少初始包大小，并仅在 VIP 模式下加载
 const FaceAnalysisOverlay = dynamic(
@@ -23,8 +24,6 @@ const DimensionSwitcher = dynamic(
     () => import("@/components/advisor/DimensionSwitcher").then(mod => mod.DimensionSwitcher),
     { ssr: false }
 );
-
-export type DimensionKey = 'overall' | 'oil' | 'wrinkles' | 'spots' | 'acne' | 'darkCircles';
 
 interface VIPAnalysisSectionProps {
     imageUrl?: string;

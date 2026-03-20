@@ -12,11 +12,16 @@ interface DimensionSwitcherProps {
 
 const DIMENSIONS: { key: DimensionKey; label: string }[] = [
     { key: "overall", label: "综合" },
-    { key: "oil", label: "油光" },
-    { key: "wrinkles", label: "皱纹" },
+    { key: "waterOil", label: "水油平衡" },
+    { key: "skinTone", label: "肤色" },
     { key: "spots", label: "色斑" },
-    { key: "acne", label: "痘痘" },
+    { key: "wrinkles", label: "皱纹" },
+    { key: "uvDamage", label: "光老化" },
+    { key: "sensitivity", label: "敏感度" },
     { key: "darkCircles", label: "黑眼圈" },
+    { key: "firmness", label: "弹性" },
+    { key: "acne", label: "痘痘" },
+    { key: "radiance", label: "光泽" },
 ];
 
 export function DimensionSwitcher({

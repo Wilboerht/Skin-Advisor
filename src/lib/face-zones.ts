@@ -17,7 +17,7 @@ import type { ZoneData } from "./advisor-utils";
 
 export type ZoneKey = "forehead" | "tZone" | "leftCheek" | "rightCheek" | "eyeArea" | "jawline";
 
-export type DimensionKey = "overall" | "oil" | "wrinkles" | "spots" | "acne" | "darkCircles";
+export type DimensionKey = "overall" | "waterOil" | "skinTone" | "spots" | "wrinkles" | "uvDamage" | "sensitivity" | "darkCircles" | "firmness" | "acne" | "radiance";
 
 // ============================================================================
 // 2. 顶点 -> 区域映射表 (MediaPipe 478点拓扑)
@@ -359,23 +359,43 @@ export function getZoneScore(zoneData: ZoneData, dimension: DimensionKey): numbe
     const DEFAULT_SCORE = 20;
 
     switch (dimension) {
-        case "oil":
-            // 油分主要看 oil
+        // 新的10维度系统映射到ZoneData
+        case "waterOil":
+            // 水油平衡看 oil
             return zoneData.oil ?? zoneData.texture ?? DEFAULT_SCORE;
+        case "skinTone":
+            // 肤色均匀度看 redness 和 spots
+            return zoneData.redness ?? zoneData.spots ?? DEFAULT_SCORE;
+        case "spots":
+            return zoneData.spots ?? zoneData.redness ?? DEFAULT_SCORE;
         case "wrinkles": {
             if (zoneData.wrinkles != null) return zoneData.wrinkles;
             if (zoneData.firmness != null) return 100 - zoneData.firmness; // firmness 越高越好 -> 反转
             return DEFAULT_SCORE;
         }
-        case "spots":
-            return zoneData.spots ?? zoneData.redness ?? DEFAULT_SCORE;
+        case "uvDamage":
+            // 光老化通常与皱纹、肤色相关
+            return zoneData.wrinkles ?? zoneData.spots ?? DEFAULT_SCORE;
+        case "sensitivity":
+            // 敏感度看 redness
+            return zoneData.redness ?? DEFAULT_SCORE;
+        case "darkCircles":
+            return zoneData.darkCircles ?? DEFAULT_SCORE;
+        case "firmness": {
+            // firmness 越高越好 -> 需要反转显示
+            if (zoneData.firmness != null) return 100 - zoneData.firmness;
+            return 100 - (zoneData.contour ?? 50);
+        }
         case "acne": {
             // 痘痘通常看 spots + redness + texture
             const acneScore = ((zoneData.spots || 0) + (zoneData.redness || 0)) / 2;
             return acneScore || DEFAULT_SCORE;
         }
-        case "darkCircles":
-            return zoneData.darkCircles ?? DEFAULT_SCORE;
+        case "radiance": {
+            // 光泽度是 texture 的反转 (texture 越高越好)
+            if (zoneData.texture != null) return 100 - zoneData.texture;
+            return DEFAULT_SCORE;
+        }
         case "overall":
         default: {
             // 综合评分：取各个维度的最大值 (短板效应)
