@@ -42,7 +42,7 @@ export function OptionCard({
             className={cn(
                 "group relative w-full rounded-2xl text-left transition-all duration-300 border px-6 py-5 flex items-center gap-5 backdrop-blur-md",
                 isSelected
-                    ? "bg-[#FDFBF7] border-[#8B7355] text-[#1A1A1A] shadow-2xl scale-[1.03] ring-1 ring-[#8B7355]/10"
+                    ? "bg-[#FDFBF7]/70 border-[#8B7355] text-[#1A1A1A] shadow-2xl scale-[1.03] ring-1 ring-[#8B7355]/10"
                     : "bg-[#F0EDE1]/55 border-white/60 text-[#1A1A1A] hover:border-white/80 hover:scale-[1.01] shadow-sm hover:shadow-md"
             )}
         >
