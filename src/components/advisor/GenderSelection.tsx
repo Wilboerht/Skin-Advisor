@@ -54,8 +54,8 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
                 >
                     <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none rounded-[1.5rem]" />
                     
-                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-white/40 shadow-inner transition-transform duration-500 group-hover:scale-110">
-                        <Venus className="w-8 h-8 text-[#1A1A1A]" strokeWidth={1.5} />
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-white to-[#F6F1EF] shadow-[inset_0_2px_8px_rgba(183,149,167,0.1)] border border-white transition-all duration-500 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#B795A7]/5">
+                        <Venus className="w-8 h-8 text-[#B795A7]" strokeWidth={1.5} />
                     </div>
 
                     <div className="flex-1 space-y-0.5">
@@ -71,8 +71,8 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
                 >
                     <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none rounded-[1.5rem]" />
                     
-                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-white/40 shadow-inner transition-transform duration-500 group-hover:scale-110">
-                        <Mars className="w-8 h-8 text-[#1A1A1A]" strokeWidth={1.5} />
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-white to-[#F0F2F4] shadow-[inset_0_2px_8px_rgba(94,108,117,0.1)] border border-white transition-all duration-500 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#5E6C75]/5">
+                        <Mars className="w-8 h-8 text-[#5E6C75]" strokeWidth={1.5} />
                     </div>
 
                     <div className="flex-1 space-y-0.5">
