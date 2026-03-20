@@ -33,9 +33,7 @@ const allNavItems: NavItem[] = [
 
 export function BottomNavBar() {
     const pathname = usePathname();
-    const { isDrawerOpen, setDrawerOpen, isNavMenuOpen, setNavMenuOpen: setIsNavMenuOpen } = useLayout();
-    
-    // 适配 skin-advisor-standalone 的 AuthContext
+    const { isDrawerOpen, setDrawerOpen, isNavMenuOpen, setNavMenuOpen: setIsNavMenuOpen, showBento } = useLayout();
     const { user } = useAuth();
     const { isOpen: isAuthModalOpen } = useAuthModal();
 
@@ -60,8 +58,8 @@ export function BottomNavBar() {
 
     const PrimaryIcon = primaryNav.icon;
 
-    // 当抽屉展开或登录弹窗激活时，隐藏导航栏
-    const isVisible = !isDrawerOpen && !isAuthModalOpen;
+    // 当且仅当便当盒展开且登录弹窗未激活时显示
+    const isVisible = showBento && !isAuthModalOpen;
 
     return (
         <>
