@@ -334,7 +334,7 @@ function mapConditionToConcern(condition: string): string | null {
     if (lower.includes("斑") || lower.includes("spot") || lower.includes("色素")) return "spots";
     if (lower.includes("皱") || lower.includes("wrinkle") || lower.includes("纹")) return "wrinkles";
     if (lower.includes("干") || lower.includes("dry") || lower.includes("脱皮")) return "dryness";
-    if (lower.includes("油") || lower.includes("oil")) return "oil_control"; // 或 pores
+    if (lower.includes("油") || lower.includes("oil")) return "oil_control";
     if (lower.includes("红") || lower.includes("sensitive") || lower.includes("敏")) return "sensitivity";
     if (lower.includes("黑眼圈") || lower.includes("dark circle")) return "dark_circles";
     if (lower.includes("暗") || lower.includes("dull")) return "dullness";

@@ -199,7 +199,7 @@ export async function POST(request: NextRequest) {
             drawSection("三、面部维度分析");
             const dims = faceAnalysis.dimensions;
             const labels: Record<string, string> = {
-                spots: "色斑", wrinkles: "皱纹", texture: "纹理", pores: "毛孔",
+                spots: "色斑", wrinkles: "皱纹", texture: "纹理",
                 uvDamage: "光损伤", brownSpots: "棕色斑", redAreas: "红色区", acneRisk: "紫质"
             };
             const gradeLabels: Record<string, string> = {

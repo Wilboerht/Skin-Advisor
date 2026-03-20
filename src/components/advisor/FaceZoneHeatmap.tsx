@@ -71,7 +71,7 @@ export function FaceZoneHeatmap({ zoneAnalysis }: FaceZoneHeatmapProps) {
             }
             case "tZone": {
                 const tz = zoneAnalysis.tZone;
-                // oil: 高=不出油（好）  pores: 高=毛孔小（好）— 均正向
+                // oil: 高=不出油（好）
                 score = ((tz.oil ?? defaultScore) + (tz.texture ?? defaultScore)) / 2;
                 return { level: getHeatLevel(100 - score), score: Math.round(score), condition: tz.condition };
             }

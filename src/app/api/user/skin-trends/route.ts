@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
             scores: recentSessions.map(s => (s.analysisResult as any)?.faceAnalysis?.overallScore || 0),
             dimensions: {
                 wrinkles: recentSessions.map(s => (s.analysisResult as any)?.faceAnalysis?.dimensions?.wrinkles?.score || 0),
-                pores: recentSessions.map(s => (s.analysisResult as any)?.faceAnalysis?.dimensions?.pores?.score || 0),
+                waterOil: recentSessions.map(s => (s.analysisResult as any)?.faceAnalysis?.dimensions?.waterOil?.score || 0),
                 spots: recentSessions.map(s => (s.analysisResult as any)?.faceAnalysis?.dimensions?.spots?.score || 0),
                 texture: recentSessions.map(s => (s.analysisResult as any)?.faceAnalysis?.dimensions?.texture?.score || 0),
             }
