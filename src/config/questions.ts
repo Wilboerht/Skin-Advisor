@@ -49,9 +49,8 @@ export const DEFAULT_QUESTIONS: Question[] = [
         type: "multiple",
         options: [
             { value: "aging", label: "细纹/松弛", description: "眼周、法令纹、嘴角纹路" },
-            { value: "acne", label: "痘痘/粉刺", description: "闭口、黑头、炎症痘" },
+            { value: "acne", label: "痘痘/粉刺", description: "闭口、黑头、炎症痘、毛孔粗糙" },
             { value: "spots", label: "色斑/暗沉", description: "雀斑、晒斑、肤色不均" },
-            { value: "pores", label: "毛孔粗大", description: "T区或面颊毛孔明显" },
             { value: "dryness", label: "干燥缺水", description: "紧绷、起皮、卡粉" },
             { value: "sensitivity", label: "敏感/泛红", description: "易过敏、发红、刺痛" },
             { value: "dark_circles", label: "黑眼圈/眼袋", description: "眼周暗沉、浮肿" },

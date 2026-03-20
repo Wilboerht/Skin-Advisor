@@ -24,10 +24,10 @@ interface SkinRadarChartProps {
     animated?: boolean;
 }
 
-/** 8 个维度的顺序 */
+/** 10 个维度的顺序 */
 const DIMENSION_ORDER: SkinDimensionKey[] = [
-    "spots", "wrinkles", "firmness", "waterOil",
-    "uvDamage", "skinTone", "sensitivity", "acne"
+    "waterOil", "skinTone", "spots", "wrinkles", 
+    "uvDamage", "sensitivity", "darkCircles", "firmness", "acne", "radiance"
 ];
 
 /** 获取分数对应的颜色 */

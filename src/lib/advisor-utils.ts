@@ -391,7 +391,6 @@ export function getConcernLabel(concern: string): string {
         dullness: "暗沉提亮",
         pigmentation: "色素不均",
         hydration: "补水保湿",
-        pores: "毛孔粗大",
         sensitivity: "敏感泛红",
         acne: "痘痘粉刺",
         aging: "延衰抗老",

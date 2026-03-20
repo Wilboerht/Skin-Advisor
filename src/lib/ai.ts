@@ -410,7 +410,7 @@ export function fallbackAnalysis(answers: QuestionnaireAnswers): FaceAnalysisRes
     const concerns = identifyConcerns(answers);
     const concernsMap: Record<string, string> = {
         aging: "抗衰老", wrinkles: "细纹", dullness: "暗沉",
-        dryness: "干燥", acne: "痘痘", pores: "毛孔", sensitivity: "敏感"
+        dryness: "干燥", acne: "痘痘", sensitivity: "敏感"
     };
 
     result.priorityAreas = concerns;
@@ -422,7 +422,7 @@ export function fallbackAnalysis(answers: QuestionnaireAnswers): FaceAnalysisRes
             result.dimensions.wrinkles.grade = "average";
             result.dimensions.wrinkles.details = "需关注细纹生成";
         }
-        if (c === "acne" || c === "pores") {
+        if (c === "acne") {
             result.dimensions.acne.score = 60;
             result.dimensions.acne.grade = "average";
             result.dimensions.waterOil.score = 60;

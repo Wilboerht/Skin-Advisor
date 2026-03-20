@@ -598,7 +598,7 @@ export function SkincareDashboard({ routineData }: SkincareDashboardProps) {
                                                                 {(step.detailedInstructions || [
                                                                     "取适量产品于掌心，均匀点涂在额头、两颊及下巴区域。",
                                                                     "由内向外、由下向上顺着皮肤纹理轻轻划圈按摩至吸收。",
-                                                                    "针对T区或毛孔粗大区域可适当增加用量，轻轻按压。",
+                                                                    "针对T区或出油较多区域可适当增加用量，轻轻按压。",
                                                                     "待产品完全吸收（约30秒）后，再进行下一步护肤操作。"
                                                                 ]).map((instr, i) => (
                                                                     <div key={i} className="flex gap-4 items-start group/instr">
