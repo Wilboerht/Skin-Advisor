@@ -20,7 +20,7 @@ interface ScientificRadarChartProps {
 }
 
 const DIMENSION_ORDER: SkinDimensionKey[] = [
-    'waterOil', 'pores', 'skinTone', 'spots', 'wrinkles', 'skinTypeScore',
+    'waterOil', 'skinTone', 'spots', 'wrinkles', 
     'uvDamage', 'sensitivity', 'darkCircles', 'firmness', 'acne', 'radiance'
 ];
 

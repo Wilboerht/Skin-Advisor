@@ -484,7 +484,7 @@ export function generateScientificRoutine(
     let tolerance: ToleranceLevel = "medium";
     if (isSensitive) tolerance = "low";
     if ((goldStandardData?.labAnalysis?.erythema?.value ?? 0) > 350) tolerance = "low";
-    if (isOily && !isSensitive && !isPregnancySafeMode && (goldStandardData?.dimensions?.skinTypeScore.score ?? 0) > 85) tolerance = "high";
+    if (isOily && !isSensitive && !isPregnancySafeMode && (goldStandardData?.dimensions?.sensitivity.score ?? 0) > 85) tolerance = "high";
     if (isHighStress && tolerance === "high") tolerance = "medium"; // Stress downgrades tolerance
     // Gender mismatch (social:male, detected:female): downgrade tolerance for sensitivity
     if (isGenderMismatch && socialGender === 'male' && detectedGender === 'female' && tolerance === 'high') {

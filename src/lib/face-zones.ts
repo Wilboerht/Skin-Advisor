@@ -17,7 +17,7 @@ import type { ZoneData } from "./advisor-utils";
 
 export type ZoneKey = "forehead" | "tZone" | "leftCheek" | "rightCheek" | "eyeArea" | "jawline";
 
-export type DimensionKey = "overall" | "oil" | "pores" | "wrinkles" | "spots" | "acne" | "darkCircles";
+export type DimensionKey = "overall" | "oil" | "wrinkles" | "spots" | "acne" | "darkCircles";
 
 // ============================================================================
 // 2. 顶点 -> 区域映射表 (MediaPipe 478点拓扑)
@@ -360,10 +360,8 @@ export function getZoneScore(zoneData: ZoneData, dimension: DimensionKey): numbe
 
     switch (dimension) {
         case "oil":
-            // 油分主要看 oil，其次看 pores
-            return zoneData.oil ?? zoneData.pores ?? DEFAULT_SCORE;
-        case "pores":
-            return zoneData.pores ?? zoneData.texture ?? DEFAULT_SCORE;
+            // 油分主要看 oil
+            return zoneData.oil ?? zoneData.texture ?? DEFAULT_SCORE;
         case "wrinkles": {
             if (zoneData.wrinkles != null) return zoneData.wrinkles;
             if (zoneData.firmness != null) return 100 - zoneData.firmness; // firmness 越高越好 -> 反转
@@ -385,7 +383,6 @@ export function getZoneScore(zoneData: ZoneData, dimension: DimensionKey): numbe
                 zoneData.oil || 0,
                 zoneData.wrinkles || 0,
                 zoneData.spots || 0,
-                zoneData.pores || 0,
                 zoneData.redness || 0,
                 zoneData.darkCircles || 0,
                 zoneData.texture ? (100 - zoneData.texture) : 0 // texture 越低越差 -> 分数越高越严重

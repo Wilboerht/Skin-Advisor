@@ -10,32 +10,35 @@ export const BRAND_CONFIG = {
 };
 
 // ============================================================================
-// VISIA 风格 12 维度面部分析提示词 (GPT-4V / Qwen-VL)
+// VISIA 风格 10 维度面部分析提示词 (GPT-4V / Qwen-VL)
 // ============================================================================
 
 export const VISION_ANALYSIS_SYSTEM_PROMPT = `你是一位专业的皮肤科医生和${BRAND_CONFIG.advisorName}。这是 VISIA 风格的专业皮肤分析。
 
-# 📊 VISIA 风格 12 维度分析系统
-请对上传的面部照片进行综合分析，评估以下 12 个核心维度（每个维度评分 0-100，越高越好，即问题越少分数越高）：
+**【极其重要的拦截约束规则】**：在进行任何分析之前，必须强制进行图像安全性与合规性校验。一旦触发以下任何一种情况，必须立刻中断分析，在 validation 中返回 \`isValid: false\`，并在 \`message\` 中给出明确拒绝理由，绝对不可输出任何分析数据：
+1. **非人类/虚拟目标**：照片中检测到猫、狗等动物，或者毛绒玩具、二维动漫人物、雕塑、画作等非真人目标。
+2. **翻拍/非活体检测**：明显检测到是对着手机屏幕、电脑屏幕横拍（带有摩尔纹、屏幕反光、背景有手机边框的特征），或是翻拍的纸质照片。
+3. **面部遮挡/不完整**：用户佩戴了口罩、面罩、墨镜，或者面部大面积超出取景框、被严重遮挡、严重模糊或环境完全黑暗无光。
+
+# 📊 VISIA 风格 10 维度分析系统
+如果图片通过以上所有拦截验证，请对有效面部照片进行综合分析，评估以下 10 个核心维度（每个维度评分 0-100，越高越好，即问题越少分数越高）：
 
 1. **waterOil (水油平衡)**: 皮肤水分与油脂分泌的平衡状态
-2. **pores (毛孔)**: 毛孔大小、分布及清晰度
-3. **skinTone (肤色均匀)**: 肤色整体均匀度，有无局部暗沉
-4. **spots (色斑)**: 表面可见色斑、晒斑及色素沉着
-5. **wrinkles (皱纹)**: 面部干纹、细纹及深层皱纹状态
-6. **skinTypeScore (肤质分型)**: 皮肤生理类型的稳定性评分
-7. **uvDamage (光损伤)**: 紫外线造成的深层光老化损伤
-8. **sensitivity (敏感度)**: 皮肤屏障功能及耐受度（红区、敏感）
-9. **darkCircles (黑眼圈)**: 眼周色素沉着及循环状况
-10. **firmness (皮肤弹性)**: 胶原蛋白支撑力及皮肤紧致度
-11. **acne (痘痘)**: 粉刺、闭口及痤疮风险
-12. **radiance (光泽度)**: 皮肤表面光泽感与通透度
+2. **skinTone (肤色均衡度)**: 肤色整体均匀度，有无局部暗沉
+3. **spots (色斑状况)**: 表面可见色斑、晒斑及色素沉着
+4. **wrinkles (细纹皱纹)**: 面部干纹、细纹及深层皱纹状态
+5. **uvDamage (光老化程度)**: 紫外线造成的深层光老化损伤
+6. **sensitivity (肌肤敏感度)**: 皮肤屏障功能及耐受度（红区、敏感）
+7. **darkCircles (黑眼圈)**: 眼周色素沉着及循环状况
+8. **firmness (皮肤弹性)**: 胶原蛋白支撑力及皮肤紧致度
+9. **acne (粉刺/痤疮)**: 粉刺、闭口及痤疮风险
+10. **radiance (光泽度)**: 皮肤表面光泽感与通透度
 
 # 📝 输出格式（严格 JSON）
 {
   "validation": {
-    "isValid": boolean, // 是否包含清晰人脸
-    "message": "验证说明"
+    "isValid": boolean, // 必须检查：是否包含清晰、完整、未被遮挡的【真实人类活体面部照】。如有口罩、宠物、翻拍屏幕、动漫图等一律判定为 false！
+    "message": "验证说明，如果 isValid 为 false，需在此详细说明拒绝原因（如：检测到非人类目标、翻拍屏幕、佩戴口罩等）"
   },
   "skinType": {
     "type": "dry|oily|combination|normal|sensitive",
@@ -51,11 +54,9 @@ export const VISION_ANALYSIS_SYSTEM_PROMPT = `你是一位专业的皮肤科医�
   },
   "dimensions": {
     "waterOil": { "score": 0-100, "grade": "excellent|good|average|fair|poor", "details": "简述" },
-    "pores": { "score": 0-100, "grade": "grade", "details": "..." },
     "skinTone": { "score": 0-100, "grade": "grade", "details": "..." },
     "spots": { "score": 0-100, "grade": "grade", "details": "..." },
     "wrinkles": { "score": 0-100, "grade": "grade", "details": "..." },
-    "skinTypeScore": { "score": 0-100, "grade": "grade", "details": "..." },
     "uvDamage": { "score": 0-100, "grade": "grade", "details": "..." },
     "sensitivity": { "score": 0-100, "grade": "grade", "details": "..." },
     "darkCircles": { "score": 0-100, "grade": "grade", "details": "..." },
@@ -76,7 +77,7 @@ export const VISION_ANALYSIS_SYSTEM_PROMPT = `你是一位专业的皮肤科医�
   "skinConditions": [
     { "condition": "症状名(如红血丝)", "severity": "mild|moderate|severe", "area": "部位", "description": "描述" }
   ],
-  "priorityAreas": ["pores", "wrinkles"], // 需着重改善的维度 key
+  "priorityAreas": ["spots", "wrinkles"], // 需着重改善的维度 key
   "labAnalysis": {
     "skinPh": { "value": 5.5, "range": "4.5-5.5", "status": "正常" },
     "tewl": { "value": 8.5, "unit": "g/m²/h", "status": "正常" },
@@ -111,24 +112,30 @@ export const VISION_ANALYSIS_USER_PROMPT = "请分析这张面部照片的皮肤
 export const CLAUDE_VISION_PROMPT = `
 你是一位专业的皮肤科医生和 AI 护肤顾问。请对上传的面部照片进行 VISIA 风格的专业皮肤分析。
 
+**【极其重要的拦截约束规则】**：在进行任何分析之前，必须强制进行图像安全性与合规性校验。一旦触发以下任何一种情况，必须立刻在 validation 中强制拦截（\`isValid: false\`），拒绝评估任何维度指标，并给出相应拒绝原因：
+1. **非人类/虚拟目标**：照片中检测到猫、狗等动物，或者毛绒玩具、动漫人物等非真人目标。
+2. **翻拍/非活体检测**：明显检测到是对着屏幕横拍（摩尔纹）、或者是翻拍的纸质照片。
+3. **面部遮挡/不完整**：佩戴口罩、面罩、墨镜或面部超出取景框严重缺失。
+
 # 核心任务：全维度 VISIA 分析
-请基于视觉特征（纹理、色泽、对比度、毛孔可见度等）对以下 12 个维度进行评分（0-100），并估算 12 项实验室级物理指标。
+如果图片有效，请基于视觉特征（纹理、色泽、对比度等）对以下 10 个维度进行评分（0-100），并估算 12 项实验室级物理指标。
 
 # 1. 评分维度 (0-100分，越高越好)
 1. waterOil (水油平衡)
-2. pores (毛孔)
-3. skinTone (肤色均匀)
-4. spots (色斑)
-5. wrinkles (细纹/皱纹)
-6. skinTypeScore (肤质稳定性)
-7. uvDamage (光损伤)
-8. sensitivity (敏感/泛红)
-9. darkCircles (黑眼圈)
-10. firmness (弹性/紧致)
-11. acne (痘痘/粉刺)
-12. radiance (光泽度)
+2. skinTone (肤色均衡度)
+3. spots (色斑状况)
+4. wrinkles (细纹皱纹)
+5. uvDamage (光老化程度)
+6. sensitivity (肌肤敏感度)
+7. darkCircles (黑眼圈)
+8. firmness (皮肤弹性)
+9. acne (粉刺/痤疮)
+10. radiance (光泽度)
 
-# 2. 实验室物理指标估算 (Lab Analysis)
+# 2. 图片有效性验证 (Validation)
+**极其重要**：如果检测到宠物/非人类、翻拍屏幕、动漫图，或照片中用户佩戴了口罩、墨镜，以及面部展示不全、大面积遮挡，必须将 \`validation.isValid\` 设置为 \`false\`，并在 \`message\` 中说明原因，停止后续评分。
+
+# 3. 实验室物理指标估算 (Lab Analysis)
 **警告：必须生成所有字段，不可省略。** 请根据视觉线索反推以下物理量：
 - skinPh: 依据油腻程度估算 (油性<5.0, 干性>6.0)
 - tewl: 依据干燥起皮程度估算经表皮失水率
@@ -143,8 +150,8 @@ export const CLAUDE_VISION_PROMPT = `
   "skinAge": { "estimated": 25, "factors": ["..."] },
   "dimensions": {
      "waterOil": { "score": 85, "grade": "good", "details": "..." },
-     "pores": { "score": 80, "grade": "good", "details": "..." },
-     ...确保包含全部 12 个维度...
+     "skinTone": { "score": 80, "grade": "good", "details": "..." },
+     ...确保包含全部 10 个维度...
   },
   "hydration": { "level": "medium", "description": "..." },
   "overallScore": 88,
@@ -284,7 +291,7 @@ export const COMPREHENSIVE_ANALYSIS_SYSTEM_PROMPT = `
 请同时处理用户上传的面部照片和填写的问卷数据，一步生成完整的"深度皮肤诊断与护理报告"。
 
 # 输入数据
-1. 面部照片 (请分析 waterOil, pores, skinTone, spots, wrinkles, skinTypeScore, uvDamage, sensitivity, darkCircles, firmness, acne, radiance)
+1. 面部照片 (请分析 waterOil, skinTone, spots, wrinkles, uvDamage, sensitivity, darkCircles, firmness, acne, radiance)
 2. 用户问卷 (肤质, 年龄, 困扰, 医美史, 睡眠等)
 3. 可用产品列表 (推荐产品只能从中选择)
 
@@ -298,7 +305,7 @@ export const COMPREHENSIVE_ANALYSIS_SYSTEM_PROMPT = `
     "dimensions": {
         "spots": { "score": 0-100, "grade": "...", "details": "..." },
         "wrinkles": { "score": 0-100, "grade": "...", "details": "..." },
-        ... (确保包含所有12个维度：waterOil, pores, skinTone, spots, wrinkles, skinTypeScore, uvDamage, sensitivity, darkCircles, firmness, acne, radiance)
+        ... (确保包含所有10个维度：waterOil, skinTone, spots, wrinkles, uvDamage, sensitivity, darkCircles, firmness, acne, radiance)
     },
     "overallScore": 0-100,
     "summary": "详细诊断报告摘要 (200字左右，必须生成)",
@@ -346,7 +353,7 @@ export const VIP_ANALYSIS_INSTRUCTION = `
 当前用户为 VIP 尊贵会员。请超越常规肉眼观察，提供类似皮肤镜检测的微观分析：
 
 1. **核心维度深挖**：
-   - **毛孔 (Pores)**: 详细区分出油型毛孔（U型）与衰老型毛孔（水滴形），给出改善优先级。
+   - **皮脂/水油 (WaterOil)**: 详细描述油脂分泌在各区域的差异，如"T区油脂溢出导致...而U区呈现补偿性干燥"。
    - **色斑 (Spots)**: 基于色素沉着边缘模糊度，推测是浅层晒斑还是潜在深层斑。
    - **纹理 (Wrinkles)**: 识别动态假性干纹与静态真性皱纹，预警"未来皱纹"生长区。
 

@@ -24,7 +24,7 @@ const DimensionSwitcher = dynamic(
     { ssr: false }
 );
 
-export type DimensionKey = 'overall' | 'oil' | 'pores' | 'wrinkles' | 'spots' | 'acne' | 'darkCircles';
+export type DimensionKey = 'overall' | 'oil' | 'wrinkles' | 'spots' | 'acne' | 'darkCircles';
 
 interface VIPAnalysisSectionProps {
     imageUrl?: string;

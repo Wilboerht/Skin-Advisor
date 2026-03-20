@@ -1178,7 +1178,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                         <p className="text-xs text-gray-400 font-mono tracking-wide">
                                                             {activeDimension === 'spots' && 'SURFACE PIGMENTATION'}
                                                             {activeDimension === 'wrinkles' && 'FINE LINES & WRINKLES'}
-                                                            {activeDimension === 'pores' && 'PORE VISIBILITY'}
                                                             {activeDimension === 'uvDamage' && 'DEEP SUN DAMAGE'}
                                                             {activeDimension === 'sensitivity' && 'REDNESS & SENSITIVITY'}
                                                             {activeDimension === 'acne' && 'ACNE & SEBUM'}
@@ -1187,7 +1186,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                             {activeDimension === 'firmness' && 'ELASTICITY & FIRMNESS'}
                                                             {activeDimension === 'radiance' && 'SKIN RADIANCE'}
                                                             {activeDimension === 'darkCircles' && 'PERIORBITAL PIGMENTATION'}
-                                                            {activeDimension === 'skinTypeScore' && 'BARRIER STABILITY'}
                                                         </p>
                                                     </div>
                                                     <div className={`text-3xl font-mono font-medium ${faceAnalysis.dimensions[activeDimension].score >= 80 ? 'text-emerald-600' :
@@ -1487,9 +1485,9 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                                                             {renderLabRow("皮肤平滑度 (Roughness Ra)",
                                                                 faceAnalysis?.labAnalysis?.roughness?.value ? `${faceAnalysis.labAnalysis.roughness.value} ${faceAnalysis.labAnalysis.roughness.unit || 'µm'}` :
-                                                                    (faceAnalysis?.dimensions ? `${(5 + (100 - faceAnalysis.dimensions.pores.score) * 0.15).toFixed(1)} µm` : '?'),
+                                                                    (faceAnalysis?.dimensions ? `${(5 + (100 - faceAnalysis.dimensions.firmness.score) * 0.15).toFixed(1)} µm` : '?'),
                                                                 "< 10.0 µm",
-                                                                faceAnalysis?.labAnalysis?.roughness?.status || (faceAnalysis?.dimensions ? (faceAnalysis.dimensions.pores.score < 70 ? '粗糙' : '细腻') : '-'))}
+                                                                faceAnalysis?.labAnalysis?.roughness?.status || (faceAnalysis?.dimensions ? (faceAnalysis.dimensions.firmness.score < 70 ? '粗糙' : '细腻') : '-'))}
 
                                                             {renderLabRow("光泽度指数 (Glossiness GU)",
                                                                 faceAnalysis?.labAnalysis?.glossiness?.value ? `${faceAnalysis.labAnalysis.glossiness.value} ${faceAnalysis.labAnalysis.glossiness.unit || 'GU'}` :

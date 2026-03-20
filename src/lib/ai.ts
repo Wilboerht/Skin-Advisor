@@ -425,8 +425,8 @@ export function fallbackAnalysis(answers: QuestionnaireAnswers): FaceAnalysisRes
         if (c === "acne" || c === "pores") {
             result.dimensions.acne.score = 60;
             result.dimensions.acne.grade = "average";
-            result.dimensions.pores.score = 60;
-            result.dimensions.pores.grade = "average";
+            result.dimensions.waterOil.score = 60;
+            result.dimensions.waterOil.grade = "average";
         }
         if (c === "dullness" || c === "spots") {
             result.dimensions.spots.score = 65;

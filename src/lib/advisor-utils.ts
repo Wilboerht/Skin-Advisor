@@ -17,7 +17,6 @@ export interface ZoneData {
     wrinkles?: number;
     oil?: number;
     texture?: number;
-    pores?: number;
     spots?: number;
     redness?: number;
     darkCircles?: number;
@@ -61,17 +60,15 @@ export interface FaceAnalysisResult {
     };
     dimensions: {
         waterOil: DimensionScore; // 01 水油平衡
-        pores: DimensionScore; // 02 毛孔状态
-        skinTone: DimensionScore; // 03 肤色均匀
-        spots: DimensionScore; // 04 色斑检测
-        wrinkles: DimensionScore; // 05 细纹皱纹
-        skinTypeScore: DimensionScore; // 06 肤质分型 (Score representation of stability/health)
-        uvDamage: DimensionScore; // 07 光老化
-        sensitivity: DimensionScore; // 08 敏感度
-        darkCircles: DimensionScore; // 09 黑眼圈
-        firmness: DimensionScore; // 10 皮肤弹性
-        acne: DimensionScore; // 11 痘痘分析
-        radiance: DimensionScore; // 12 光泽度
+        skinTone: DimensionScore; // 02 肤色均匀度
+        spots: DimensionScore; // 03 色斑状况
+        wrinkles: DimensionScore; // 04 细纹皱纹
+        uvDamage: DimensionScore; // 05 光老化程度
+        sensitivity: DimensionScore; // 06 肌肤敏感度
+        darkCircles: DimensionScore; // 07 黑眼圈
+        firmness: DimensionScore; // 08 皮肤弹性
+        acne: DimensionScore; // 09 粉刺/痤疮
+        radiance: DimensionScore; // 10 光泽度
     };
     hydration: {
         level: string;
@@ -113,26 +110,22 @@ export type SkinDimensionKey = keyof SkinDimensions;
 // 中文映射
 export const DIMENSION_LABELS: Record<string, string> = {
     waterOil: "水油平衡",
-    pores: "毛孔状态",
-    skinTone: "肤色均匀",
-    spots: "色斑检测",
+    skinTone: "肤色均衡度",
+    spots: "色斑状况",
     wrinkles: "细纹皱纹",
-    skinTypeScore: "肤质分型",
-    uvDamage: "光老化",
-    sensitivity: "敏感度",
+    uvDamage: "光老化程度",
+    sensitivity: "肌肤敏感度",
     darkCircles: "黑眼圈",
     firmness: "皮肤弹性",
-    acne: "痘痘分析",
+    acne: "粉刺/痤疮",
     radiance: "光泽度"
 };
 
 export const DIMENSION_DESCRIPTIONS: Record<string, string> = {
     waterOil: "皮肤水分与油脂分泌的平衡状态",
-    pores: "毛孔大小、分布及清晰度",
     skinTone: "肤色整体均匀度，有无局部暗沉",
     spots: "表面可见色斑、晒斑及色素沉着",
     wrinkles: "面部干纹、细纹及深层皱纹状态",
-    skinTypeScore: "皮肤生理类型的稳定性评分",
     uvDamage: "紫外线造成的深层光老化损伤",
     sensitivity: "皮肤屏障功能及耐受度",
     darkCircles: "眼周色素沉着及循环状况",
@@ -167,11 +160,9 @@ export function getDefaultFaceAnalysisResult(): FaceAnalysisResult {
         gender: { value: "male", confidence: 0.98 },
         dimensions: {
             waterOil: { score: 72, grade: "average", details: "T区偏油，U区适中" },
-            pores: { score: 70, grade: "average", details: "鼻翼两侧毛孔明显" },
             skinTone: { score: 75, grade: "good", details: "肤色基本均匀" },
             spots: { score: 78, grade: "good", details: "少量浅层色斑" },
             wrinkles: { score: 85, grade: "excellent", details: "无明显皱纹" },
-            skinTypeScore: { score: 80, grade: "good", details: "肤质较稳定" },
             uvDamage: { score: 75, grade: "good", details: "轻度光老化痕迹" },
             sensitivity: { score: 72, grade: "average", details: "换季易泛红" },
             darkCircles: { score: 68, grade: "fair", details: "有轻微黑眼圈" },
@@ -190,10 +181,10 @@ export function getDefaultFaceAnalysisResult(): FaceAnalysisResult {
             "最后，鉴于光老化迹象初显，请务必全年坚持使用SPF30+以上的防晒霜，以预防紫外线对胶原蛋白的进一步损伤。"
         ],
         skinConditions: [],
-        priorityAreas: ["pores", "radiance"],
+        priorityAreas: ["waterOil", "radiance"],
         zoneAnalysis: {
             forehead: { condition: "轻微出油", advice: "注意控油", wrinkles: 10, oil: 60, texture: 80 },
-            tZone: { condition: "毛孔粗大", advice: "使用水杨酸", oil: 70, pores: 40 },
+            tZone: { condition: "毛孔粗大", advice: "使用水杨酸", oil: 70, texture: 40 },
             leftCheek: { condition: "健康", advice: "保持现状", spots: 10, redness: 20, texture: 90 },
             rightCheek: { condition: "健康", advice: "保持现状", spots: 10, redness: 20, texture: 90 },
             eyeArea: { condition: "轻微黑眼圈", advice: "使用眼霜", wrinkles: 20, darkCircles: 40, firmness: 80 },
@@ -380,7 +371,7 @@ export function identifyConcerns(
         if (faceAnalysis.dimensions) {
             if (faceAnalysis.dimensions.wrinkles.score < 60) concerns.add("wrinkles");
             if (faceAnalysis.dimensions.spots.score < 60) concerns.add("spots");
-            if (faceAnalysis.dimensions.pores.score < 60) concerns.add("pores");
+            if (faceAnalysis.dimensions.waterOil.score < 60) concerns.add("waterOil");
             if (faceAnalysis.dimensions.acne.score < 60) concerns.add("acne");
         }
     }

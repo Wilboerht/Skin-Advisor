@@ -7,11 +7,6 @@ export const DIMENSION_ADVICE: Record<string, { high: string, medium: string, lo
         medium: "局部（如T区）出油或脸颊偏干，建议分区护理。",
         low: "水油严重失衡，可能伴有外油内干或极度干燥脱皮。"
     },
-    pores: {
-        high: "毛孔细腻隐形，堪比婴儿肌。",
-        medium: "T区毛孔肉眼可见，建议使用控油收敛水，做好清洁。",
-        low: "毛孔粗大明显，可能伴有黑头，建议使用水杨酸疏通毛孔。"
-    },
     skinTone: {
         high: "肤色均匀透亮，无明显色差。",
         medium: "嘴角、眼周或鼻翼有轻微暗沉，注意局部提亮。",
@@ -26,11 +21,6 @@ export const DIMENSION_ADVICE: Record<string, { high: string, medium: string, lo
         high: "肌肤紧致饱满，无明显皱纹。",
         medium: "眼周或法令纹处有轻微干纹，注意保湿和抗初老。",
         low: "深层动态纹明显，建议使用视黄醇（A醇）类产品并配合按摩。"
-    },
-    skinTypeScore: {
-        high: "肤质状态非常稳定，屏障功能强。",
-        medium: "肤质偶有波动，受环境影响较大。",
-        low: "肤质状态极不稳定，容易出现各类问题。"
     },
     uvDamage: {
         high: "由于您防护得当，深层光老化程度很低。",

@@ -13,7 +13,6 @@ interface DimensionSwitcherProps {
 const DIMENSIONS: { key: DimensionKey; label: string }[] = [
     { key: "overall", label: "综合" },
     { key: "oil", label: "油光" },
-    { key: "pores", label: "毛孔" },
     { key: "wrinkles", label: "皱纹" },
     { key: "spots", label: "色斑" },
     { key: "acne", label: "痘痘" },

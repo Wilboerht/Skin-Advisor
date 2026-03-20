@@ -25,7 +25,6 @@ import { cn } from "@/lib/utils";
 const DIMENSION_LABELS: Record<string, string> = {
     spots: "色斑",
     wrinkles: "皱纹",
-    pores: "毛孔",
     uvDamage: "光老化",
     sensitivity: "敏感度",
     acne: "痘痘",
@@ -33,8 +32,7 @@ const DIMENSION_LABELS: Record<string, string> = {
     skinTone: "肤色均匀",
     firmness: "紧致度",
     radiance: "光泽度",
-    darkCircles: "黑眼圈",
-    skinTypeScore: "屏障稳定"
+    darkCircles: "黑眼圈"
 };
 
 interface ProductRecommendationSectionProps {
@@ -102,8 +100,8 @@ export function ProductRecommendationSection({
                     '乳液': 'waterOil',
                     '防晒': 'uvDamage',
                     '防晒霜': 'uvDamage',
-                    '洁面': 'pores',
-                    '洁面乳': 'pores',
+                    '洁面': 'waterOil',
+                    '洁面乳': 'waterOil',
                     '眼霜': 'darkCircles',
                     '爽肤水': 'skinTone',
                     '化妆水': 'skinTone',
