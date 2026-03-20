@@ -24,11 +24,11 @@ interface NavItem {
  * 所有导航项 - 完全同步自 nihplod.cn - master
  */
 const allNavItems: NavItem[] = [
-    { href: "/products", label: "探索产品", labelEn: "Products", icon: ShopIcon },
-    { href: "/guide", label: "官方指南", labelEn: "Guide", icon: RitualIcon },
-    { href: "/faq", label: "常见问题", labelEn: "FAQ", icon: FAQIcon },
-    { href: "/about", label: "关于旎柏", labelEn: "About", icon: StoryIcon },
-    { href: "/", label: "首页", labelEn: "Home", icon: HomeIcon },
+    { href: "https://demo.nihplod.cn/products", label: "探索产品", labelEn: "Products", icon: ShoppingBag },
+    { href: "https://demo.nihplod.cn/guide", label: "官方指南", labelEn: "Guide", icon: BookOpen },
+    { href: "https://demo.nihplod.cn/faq", label: "常见问题", labelEn: "FAQ", icon: HelpCircle },
+    { href: "https://demo.nihplod.cn/about", label: "关于旎柏", labelEn: "About", icon: StoryIcon },
+    { href: "/", label: "AI 测肤", labelEn: "Advisor", icon: Home },
 ];
 
 export function BottomNavBar() {
