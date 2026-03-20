@@ -158,7 +158,7 @@ export function BottomNavBar() {
 
                             {/* ================= 桌面端左侧固定导航 (Story - 关于旎柏 - 极简横向锁定) ================= */}
                             {(() => {
-                                const storyItem = allNavItems.find(item => item.href === "/about")!;
+                                const storyItem = allNavItems.find(item => item.labelEn === "About")!;
                                 const Icon = storyItem.icon;
 
                                 return (
@@ -200,7 +200,7 @@ export function BottomNavBar() {
 
                             {/* ================= 桌面端右侧固定导航列表 ================= */}
                             <div className="hidden items-center gap-3 lg:flex lg:gap-[40px]">
-                                {allNavItems.filter(item => item.href !== "/about").map((item) => {
+                                {allNavItems.filter(item => item.labelEn !== "About").map((item) => {
                                     const Icon = item.icon;
                                     const isHome = item.href === "/";
 
