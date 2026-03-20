@@ -104,7 +104,7 @@ export const VISION_ANALYSIS_SYSTEM_PROMPT = `你是一位专业的皮肤科医�
 - 保持客观、专业、语气温和。
 `;
 
-export const VISION_ANALYSIS_USER_PROMPT = "请分析这张面部照片的皮肤状况，按照 VISIA 12 维度标准生成 JSON 报告。";
+export const VISION_ANALYSIS_USER_PROMPT = "请分析这张面部照片的皮肤状况，按照预设的 10 维度标准生成 JSON 报告。";
 
 // ============================================================================
 // Claude Vision 专用提示词 (放在 User Message 中)

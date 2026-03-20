@@ -39,7 +39,7 @@ const IconFaceScan = ({ className }: { className?: string }) => (
     </svg>
 );
 
-const IconPores = ({ className }: { className?: string }) => (
+const IconPigmentation = ({ className }: { className?: string }) => (
     <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="7.59979" y="10.5986" width="32.7998" height="28.1998" fill="url(#paint0_linear_2121_4309)" />
         <path d="M9.42296 10.5499C11.6962 10.2844 15.9983 10 23.9981 10C31.9979 10 36.3 10.2844 38.5732 10.5499C40.0781 10.7256 40.998 11.957 40.998 13.4721V35.9998C40.998 37.6566 39.6548 38.9998 37.998 38.9998H9.99825C8.34139 38.9998 6.99823 37.6566 6.99823 35.9998V13.4721C6.99823 11.957 7.91808 10.7256 9.42296 10.5499Z" stroke="#D6C0AD" strokeWidth="1.60001" />
@@ -517,7 +517,7 @@ export function AnalyzingOverlay({ progress, userImage, onCancel }: AnalyzingOve
                     transition={{ delay: 0.5, duration: 0.8 }}
                 >
                     {[
-                        IconFaceScan, IconPores, IconElasticity,
+                        IconFaceScan, IconPigmentation, IconElasticity,
                         IconHydration, IconSunDamage, IconRedness,
                         IconAcne, IconWrinkles, IconTexture
                     ].map((Icon, i) => {
