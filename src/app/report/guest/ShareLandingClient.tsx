@@ -50,6 +50,17 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
     const { user } = useAuth();
     const toast = useToast();
 
+    // 登录成功后自动跳转到完整报告
+    useEffect(() => {
+        if (user && data.isGuest) {
+            // 延迟100ms确保状态完全更新
+            const timer = setTimeout(() => {
+                router.push(`/result?id=${data.sessionId}`);
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+    }, [user, data.isGuest, data.sessionId, router]);
+
     // Gender Mismatch Detection
     const [socialGender, setSocialGender] = useState<string>(''); // Initialize empty to avoid flash mismatch
     const [showGenderMismatchModal, setShowGenderMismatchModal] = useState(false);
@@ -314,13 +325,8 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                             variants={revealVariants}
                             className="glass-module rounded-[32px] p-[30px] flex flex-col items-center justify-center transition-all duration-400"
                         >
-                            <p className="text-[#666] mb-4">您已登录，可以查看完整报告</p>
-                            <button
-                                onClick={() => router.push(`/result?id=${data.sessionId}`)}
-                                className="bg-[#00263e] text-white px-[30px] py-[12px] rounded-full border-none font-semibold cursor-pointer shadow-[0_10px_20px_rgba(0,38,62,0.2)] hover:scale-105 transition-transform"
-                            >
-                                回到报告
-                            </button>
+                            <p className="text-[#666] mb-4">✓ 登录成功，正在加载完整报告...</p>
+                            <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#00263e] border-t-transparent"></div>
                         </motion.div>
                     ) : null}
 
