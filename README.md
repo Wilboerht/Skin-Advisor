@@ -10,7 +10,7 @@ Built on a modern, scalable architecture, this solution bridges the gap between 
 
 ### Advanced AI Diagnostics
 At the heart of the platform lies a sophisticated facial analysis engine powered by **Face-api.js** and custom deep learning models.
-*   **Multi-Dimensional Analysis**: Quantifies skin health across 12+ metrics including wrinkle depth, pore density, texture quality, and pigmentation.
+*   **Multi-Dimensional Analysis**: Quantifies skin health across 10 dimensions including wrinkle depth, texture quality, and pigmentation.
 *   **Real-Time Processing**: Performs client-side inference for immediate feedback without compromising user privacy or data latency.
 
 ### Intelligent Recommendation Engine

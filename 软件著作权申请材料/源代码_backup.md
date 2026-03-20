@@ -5,7 +5,7 @@
 ## 第1-5页：核心AI分析引擎
 
 **文件**：`src/lib/ai-vision.ts`  
-**功能**：VISIA风格12维度面部分析主函数
+**功能**：MySkin.Technology风格10维度面部分析主函数
 
 ```typescript
 import {
@@ -194,7 +194,7 @@ export function normalizeAnalysisResult(result: any): FaceAnalysisResult {
         result.dimensions = {};
     }
 
-    // 标准化12维度
+    // 标准化10维度
     const dimensions = result.dimensions;
     
     return {
@@ -998,11 +998,11 @@ function getBuiltInTriangles() {
 ## 第36-40页：AI 提示词配置 (后 30 页起始)
 
 **文件**：`src/config/ai-prompts.ts`  
-**功能**：VISIA 风格 12 维度分析 Prompt
+**功能**：MySkin.Technology 风格 10 维度分析 Prompt
 
 ```typescript
 /**
- * AI 提示词配置 (VISIA 风格)
+ * AI 提示词配置 (MySkin.Technology 风格)
  * 提取品牌元素为配置变量，支持作为独立产品输出
  */
 
@@ -1013,12 +1013,12 @@ export const BRAND_CONFIG = {
 };
 
 // ============================================================================
-// VISIA 风格 12 维度面部分析提示词 (GPT-4V / Qwen-VL)
+// MySkin.Technology 风格 10 维度面部分析提示词 (GPT-4V / Qwen-VL)
 // ============================================================================
 
-export const VISION_ANALYSIS_SYSTEM_PROMPT = `你是一位专业的皮肤科医生和${BRAND_CONFIG.advisorName}。这是 VISIA 风格的专业皮肤分析。
+export const VISION_ANALYSIS_SYSTEM_PROMPT = `你是一位专业的皮肤科医生和${BRAND_CONFIG.advisorName}。这是 MySkin.Technology 风格的专业皮肤分析。
 
-# 📊 VISIA 风格 12 维度分析系统
+# 📊 MySkin.Technology 风格 10 维度分析系统
 请对上传的面部照片进行综合分析，评估以下 12 个核心维度（每个维度评分 0-100，越高越好，即问题越少分数越高）：
 
 1. **waterOil (水油平衡)**: 皮肤水分与油脂分泌的平衡状态
@@ -1118,11 +1118,11 @@ export const VISION_ANALYSIS_SYSTEM_PROMPT = `你是一位专业的皮肤科医�
 ## 第41-45页：数据分析结构定义
 
 **文件**：`src/lib/advisor-utils.ts`  
-**功能**：12维度分析结果类型定义
+**功能**：10维度分析结果类型定义
 
 ```typescript
 /**
- * VISIA 风格 8 维度面部分析类型定义
+ * MySkin.Technology 风格 10 维度面部分析类型定义
  */
 
 export interface DimensionScore {
