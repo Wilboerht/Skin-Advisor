@@ -14,7 +14,7 @@ import type { SkinDimensions, SkinDimensionKey } from "@/lib/advisor-utils";
 import { DIMENSION_LABELS } from "@/lib/advisor-utils";
 
 interface SkinRadarChartProps {
-    /** 8 维度评分数据 */
+    /** 10 维度评分数据 */
     dimensions: SkinDimensions;
     /** 图表大小 */
     size?: number;
@@ -126,7 +126,7 @@ function CustomLabel(props: {
 
 
 /**
- * VISIA 风格 8 维度雷达图组件 - 基于 Recharts
+ * MySkin.Technology 10 维度雷达图组件 - 基于 Recharts
  * 高奢金色调、优雅动画、数据点与标签联动
  */
 export function SkinRadarChart({

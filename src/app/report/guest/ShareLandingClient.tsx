@@ -121,7 +121,6 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
         let concernAdvice = "";
         if (concerns.length > 0) {
             const concernMap: Record<string, string> = {
-                "毛孔": "建议定期做深层清洁，搭配收敛水能有效改善毛孔问题",
                 "痘痘": "注意温和清洁并避免挤压，含水杨酸的产品可以帮助控制痘痘",
                 "暗沉": "加强防晒与使用含维C的精华，有助于提亮肤色",
                 "干燥": "加强保湿屏障修复，含神经酰胺的面霜值得尝试",

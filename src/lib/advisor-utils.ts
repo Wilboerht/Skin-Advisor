@@ -1,5 +1,5 @@
 /**
- * VISIA 风格 8 维度面部分析类型定义
+ * MySkin.Technology 专业皆肆分析类形定义
  */
 
 export interface DimensionScore {
