@@ -4,17 +4,39 @@ import prisma from "@/lib/prisma";
 
 function mirrorOfficialSessionCookie(officialResponse: Response, response: NextResponse) {
     const setCookieHeader = officialResponse.headers.get("set-cookie");
-    if (!setCookieHeader) return;
-    const firstPair = setCookieHeader.split(";")[0];
-    const [cookieName, cookieValue] = firstPair.split("=");
-    if (!cookieName || !cookieValue) return;
-    response.cookies.set(cookieName, cookieValue, {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        maxAge: 60 * 60 * 24 * 30
-    });
+    
+    if (!setCookieHeader) {
+        console.warn("⚠️  Official API (me) did NOT return set-cookie header");
+        return;
+    }
+
+    console.log(`📝 Official API (me) returned cookie: ${setCookieHeader.substring(0, 50)}...`);
+
+    // Handle potentially multiple Set-Cookie headers
+    const cookies = setCookieHeader.split(",").map(c => c.trim());
+    
+    for (const cookieStr of cookies) {
+        const eqIdx = cookieStr.indexOf("=");
+        if (eqIdx === -1) continue;
+        
+        const cookieName = cookieStr.substring(0, eqIdx).trim();
+        const rest = cookieStr.substring(eqIdx + 1);
+        const semiIdx = rest.indexOf(";");
+        const cookieValue = (semiIdx === -1 ? rest : rest.substring(0, semiIdx)).trim();
+        
+        if (!cookieName || !cookieValue) continue;
+
+        console.log(`✅ Setting cookie on response (me): ${cookieName}`);
+        response.cookies.set(cookieName, cookieValue, {
+            httpOnly: true,
+            sameSite: "lax",
+            path: "/",
+            secure: process.env.NODE_ENV === "production",
+            maxAge: 60 * 60 * 24 * 30
+        });
+    }
 }
+
 
 export async function GET(req: NextRequest) {
     const cookieStore = await cookies();

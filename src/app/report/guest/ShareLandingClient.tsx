@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, useSpring, useTransform } from "framer-motion";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
@@ -47,19 +47,40 @@ interface ShareLandingProps {
 export default function ShareLandingClient({ data }: ShareLandingProps) {
     const router = useRouter();
     const { openAuthModal } = useAuthModal();
-    const { user } = useAuth();
+    const { user, loading: authLoading } = useAuth();
     const toast = useToast();
+    const [redirectAttempts, setRedirectAttempts] = useState(0);
+    const redirectAttemptTimeRef = useRef<number>(0);
 
     // 登录成功后自动跳转到完整报告
     useEffect(() => {
-        if (user && data.isGuest) {
-            // 延迟100ms确保状态完全更新
+        // 防止无限循环：只在用户已经完全加载且确实存在时才跳转
+        if (!authLoading && user && data.isGuest) {
+            // 防止在短时间内多次尝试重定向（防止循环）
+            const now = Date.now();
+            if (now - redirectAttemptTimeRef.current < 2000) {
+                // 如果2秒内有多次重定向尝试，说明可能陷入循环，放弃
+                if (redirectAttempts >= 2) {
+                    console.error('🔴 Redirect loop detected - aborting auto-redirect');
+                    toast.error("页面加载出现问题，请刷新重试或联系支持");
+                    return;
+                }
+                setRedirectAttempts(prev => prev + 1);
+            } else {
+                // 重置计数
+                setRedirectAttempts(0);
+            }
+            
+            redirectAttemptTimeRef.current = now;
+
+            // 延迟确保状态完全更新，并等待可能的服务端设置完成
             const timer = setTimeout(() => {
+                console.log('✅ Redirecting to full report...');
                 router.push(`/result?id=${data.sessionId}`);
-            }, 100);
+            }, 500); // 增加延迟到500ms确保Cookie设置完毕
             return () => clearTimeout(timer);
         }
-    }, [user, data.isGuest, data.sessionId, router]);
+    }, [user, authLoading, data.isGuest, data.sessionId, router, redirectAttempts, toast]);
 
     // Gender Mismatch Detection
     const [socialGender, setSocialGender] = useState<string>(''); // Initialize empty to avoid flash mismatch

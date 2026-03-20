@@ -3,20 +3,45 @@ import prisma from "@/lib/prisma";
 
 function mirrorOfficialSessionCookie(officialResponse: Response, response: NextResponse) {
     const setCookieHeader = officialResponse.headers.get("set-cookie");
-    if (!setCookieHeader) return;
+    
+    if (!setCookieHeader) {
+        console.warn("⚠️  Official API did NOT return set-cookie header");
+        return;
+    }
 
-    const firstPair = setCookieHeader.split(";")[0];
-    const [cookieName, cookieValue] = firstPair.split("=");
-    if (!cookieName || !cookieValue) return;
+    console.log(`📝 Official API returned cookie: ${setCookieHeader.substring(0, 50)}...`);
 
-    // Re-issue cookie on our domain so browsers accept it regardless of the official domain
-    response.cookies.set(cookieName, cookieValue, {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        maxAge: 60 * 60 * 24 * 30 // 30 days
-    });
+    // Handle potentially multiple Set-Cookie headers (can be comma-separated or multiple)
+    const cookies = setCookieHeader.split(",").map(c => c.trim());
+    
+    for (const cookieStr of cookies) {
+        // Split by first '=' to get name and value+attributes
+        const eqIdx = cookieStr.indexOf("=");
+        if (eqIdx === -1) continue;
+        
+        const cookieName = cookieStr.substring(0, eqIdx).trim();
+        const rest = cookieStr.substring(eqIdx + 1);
+        
+        // Get value (before first semicolon)
+        const semiIdx = rest.indexOf(";");
+        const cookieValue = (semiIdx === -1 ? rest : rest.substring(0, semiIdx)).trim();
+        
+        if (!cookieName || !cookieValue) {
+            console.warn(`⚠️  Skipped invalid cookie pair: ${cookieName}=${cookieValue}`);
+            continue;
+        }
+
+        console.log(`✅ Setting cookie on response: ${cookieName}`);
+        response.cookies.set(cookieName, cookieValue, {
+            httpOnly: true,
+            sameSite: "lax",
+            path: "/",
+            secure: process.env.NODE_ENV === "production",
+            maxAge: 60 * 60 * 24 * 30 // 30 days
+        });
+    }
 }
+
 
 async function parseOfficialJson(officialResponse: Response) {
     const contentType = officialResponse.headers.get("content-type") || "";

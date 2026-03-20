@@ -124,21 +124,37 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const login = useCallback(async (credentials: any) => {
-        const res = await fetch("/api/auth/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(credentials)
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Login failed");
+        try {
+            console.log("🔐 Sending login request to /api/auth/login...");
+            const res = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(credentials),
+                credentials: "include" // 确保Cookie被发送和接收
+            });
+            const data = await res.json();
+            
+            if (!res.ok) {
+                console.error("🔴 Login API returned error:", data.error);
+                throw new Error(data.error || "Login failed");
+            }
 
-        setUser(data.user);
-        setCachedUser(data.user);
+            console.log("✅ Login successful, received user:", data.user?.id);
+            setUser(data.user);
+            setCachedUser(data.user);
 
-        if (data.user?.id) {
-            syncWishlistToServer({ userId: data.user.id });
+            // 立即刷新 session 以确保 Cookie 已正确设置
+            console.log("🔄 Refreshing session to verify cookie...");
+            await checkSession();
+
+            if (data.user?.id) {
+                syncWishlistToServer({ userId: data.user.id });
+            }
+        } catch (err: any) {
+            console.error("🔴 Login failed:", err);
+            throw err;
         }
-    }, []);
+    }, [checkSession]);
 
     const register = useCallback(async (userData: any) => {
         const res = await fetch("/api/auth/register", {

@@ -22,7 +22,10 @@ export default async function ResultPage(props: {
         const user = await getSession();
         if (!user) {
             // Guest trying to access full report → redirect to simplified share page
+            console.warn(`🔴 Unauthenticated access attempt to /result?id=${id} - redirecting to guest page`);
             redirect(`/report/guest?id=${id}`);
+        } else {
+            console.log(`✅ Authenticated user accessing /result?id=${id}`);
         }
     }
 

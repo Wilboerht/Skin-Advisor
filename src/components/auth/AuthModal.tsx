@@ -69,10 +69,13 @@ export function AuthModal() {
         e.preventDefault();
         setLoading(true);
         try {
+            console.log("🔐 Starting login request...");
             await login({ phone: loginPhone, password: loginPassword });
+            console.log("✅ Login successful, closing modal...");
             toast.success("欢迎回来！");
             closeAuthModal();
         } catch (err: any) {
+            console.error("🔴 Login failed:", err.message);
             toast.error(err.message || "登录失败，请检查账号密码");
         } finally {
             setLoading(false);
