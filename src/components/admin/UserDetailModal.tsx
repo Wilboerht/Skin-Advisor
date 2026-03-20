@@ -1,5 +1,5 @@
 
-import { X, Clock, ShoppingBag, Bell, Calendar, Smartphone, MapPin, Settings, Save } from "lucide-react";
+import { X, Clock, ShoppingBag, Calendar, Smartphone, MapPin, Settings, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
@@ -32,13 +32,6 @@ interface UserDetail {
             addedAt: string;
         }[];
     }[];
-    reminderSettings: {
-        morningTime: string;
-        eveningTime: string;
-        days: string;
-        enabled: boolean;
-        pushEnabled: boolean;
-    } | null;
     _count?: {
         testRecords?: number;
     };
@@ -217,43 +210,6 @@ export function UserDetailModal({ isOpen, onClose, userId, onUpdate }: UserDetai
                                     </div>
                                 ) : (
                                     <p className="text-sm text-slate-400 italic">No analysis history</p>
-                                )}
-                            </div>
-
-                            {/* Reminder Settings */}
-                            <div className="bg-slate-50 rounded-xl p-5 border border-slate-100">
-                                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 flex items-center gap-2">
-                                    <Bell className="w-4 h-4" /> Reminders
-                                </h3>
-                                {user.reminderSettings ? (
-                                    <div className="space-y-2 text-sm">
-                                        <div className="flex justify-between">
-                                            <span className="text-slate-500">Status</span>
-                                            <span className={user.reminderSettings.enabled ? "text-green-600" : "text-slate-400"}>
-                                                {user.reminderSettings.enabled ? "Enabled" : "Disabled"}
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-slate-500">Push</span>
-                                            <span className={user.reminderSettings.pushEnabled ? "text-green-600" : "text-slate-400"}>
-                                                {user.reminderSettings.pushEnabled ? "On" : "Off"}
-                                            </span>
-                                        </div>
-                                        {user.reminderSettings.enabled && (
-                                            <>
-                                                <div className="flex justify-between border-t border-slate-200 mt-2 pt-2">
-                                                    <span className="text-slate-500">Morning</span>
-                                                    <span className="font-medium">{user.reminderSettings.morningTime}</span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span className="text-slate-500">Evening</span>
-                                                    <span className="font-medium">{user.reminderSettings.eveningTime}</span>
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <p className="text-sm text-slate-400 italic">No reminders configured</p>
                                 )}
                             </div>
                         </div>

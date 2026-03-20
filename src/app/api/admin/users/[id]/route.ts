@@ -46,8 +46,7 @@ export async function GET(
                         }
                     }
                 }
-            },
-            reminderSettings: true
+            }
         } as any
     });
 

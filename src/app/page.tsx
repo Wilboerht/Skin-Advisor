@@ -15,7 +15,6 @@ import { getGuestIdentity, type GuestIdentity } from "@/lib/guest-identity";
 import dynamic from "next/dynamic";
 
 const ProfileModal = dynamic(() => import("@/components/auth/ProfileModal").then((mod) => mod.ProfileModal), { ssr: false });
-const SkincareReminder = dynamic(() => import("@/components/advisor/SkincareReminder").then((mod) => mod.SkincareReminder), { ssr: false });
 const BaseModal = dynamic(() => import("@/components/ui/BaseModal").then((mod) => mod.BaseModal), { ssr: false });
 const OnboardingFlowModal = dynamic(() => import("@/components/advisor/OnboardingFlowModal").then((mod) => mod.OnboardingFlowModal), { ssr: false });
 const HomepageFooter = dynamic(() => import("@/components/website/HomepageFooter").then((mod) => mod.HomepageFooter), { ssr: false });
@@ -429,8 +428,6 @@ export default function Home() {
                                 {/* Animated Line */}
                                 <div className="absolute -bottom-1 left-1/2 w-0 h-[1px] bg-[#8B7355] transition-all duration-500 ease-out group-hover:w-full group-hover:left-0" />
                               </button>
-                              <div className="w-[1px] h-3 bg-[#8B7355]/10" />
-                              <SkincareReminder />
                             </div>
                           )}
                         </div>
