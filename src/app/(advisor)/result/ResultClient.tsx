@@ -273,52 +273,67 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     setLoading(true);
                     const advisorResultStr = localStorage.getItem("advisor_result");
 
-                    if (!advisorResultStr) {
-                        // If we are in async analyzing mode, don't redirect yet
-                        if (searchParams.get('status') === 'analyzing') {
-                            return;
+                    if (advisorResultStr) {
+                        try {
+                            const advisorResult = JSON.parse(advisorResultStr);
+
+                            // Validate if the result is "fresh" (optional, but good for UX)
+                            const urlSessionId = searchParams.get('id');
+                            if (urlSessionId && advisorResult.sessionId && advisorResult.sessionId !== urlSessionId) {
+                                console.warn("Session ID mismatch in storage, ignoring cached result");
+                            } else {
+                                // Reconstruct ComprehensiveResult
+                                const skinProfile = advisorResult.skinProfile || advisorResult.skinAnalysis;
+                                const analysis = advisorResult.analysis || advisorResult.skinAnalysis;
+
+                                setResult({
+                                    skinProfile: {
+                                        type: skinProfile?.type || skinProfile?.skinType || "combination",
+                                        typeLabel: skinProfile?.typeLabel || skinProfile?.skinTypeLabel || "混合性肌肤",
+                                        concerns: skinProfile?.concerns || [],
+                                        skinAge: skinProfile?.skinAge,
+                                    },
+                                    analysis: {
+                                        summary: analysis?.summary || "分析完成。",
+                                        details: analysis?.details || [],
+                                    },
+                                    dataSource: advisorResult.dataSource || (advisorResult.source === "ai" ? "comprehensive" : "questionnaire"),
+                                    products: advisorResult.products || []
+                                });
+
+                                if (advisorResult.faceAnalysis) {
+                                    setFaceAnalysis(advisorResult.faceAnalysis);
+                                }
+
+                                if (advisorResult.sessionId) {
+                                    setSessionId(advisorResult.sessionId);
+                                }
+
+                                // Handle session management logic (formerly at lines 313+)
+                                const previousSessionId = sessionId;
+                                if (advisorResult.sessionId && advisorResult.sessionId !== previousSessionId) {
+                                    localStorage.removeItem('advisor_gender_mismatch_ack');
+                                }
+
+                                // If we successfully recovered data, remove 'analyzing' status from URL to stop re-analysis
+                                if (searchParams.get('status') === 'analyzing') {
+                                    const params = new URLSearchParams(searchParams.toString());
+                                    params.delete('status');
+                                    if (advisorResult.sessionId) params.set('id', advisorResult.sessionId);
+                                    router.replace(`/result?${params.toString()}`, { scroll: false });
+                                }
+                                setLoading(false);
+                                return; // Successfully recovered
+                            }
+                        } catch (e) {
+                            console.warn("Failed to parse cached result", e);
                         }
+                    }
+
+                    // If no cached result and not in analyzing mode, redirect back
+                    if (searchParams.get('status') !== 'analyzing') {
                         router.replace("/questions");
                         return;
-                    }
-
-                    const advisorResult = JSON.parse(advisorResultStr);
-
-                    // Reconstruct ComprehensiveResult
-                    // Handle both new flat structure (route.ts) and legacy nested structure
-                    const skinProfile = advisorResult.skinProfile || advisorResult.skinAnalysis;
-                    const analysis = advisorResult.analysis || advisorResult.skinAnalysis;
-
-                    setResult({
-                        skinProfile: {
-                            type: skinProfile?.type || skinProfile?.skinType || "combination",
-                            typeLabel: skinProfile?.typeLabel || skinProfile?.skinTypeLabel || "混合性肌肤",
-                            concerns: skinProfile?.concerns || [],
-                            skinAge: skinProfile?.skinAge,
-                        },
-                        analysis: {
-                            summary: analysis?.summary || "分析完成。",
-                            details: analysis?.details || [],
-                        },
-                        dataSource: advisorResult.dataSource || (advisorResult.source === "ai" ? "comprehensive" : "questionnaire"),
-                        products: advisorResult.products || []
-                    });
-
-                    if (advisorResult.faceAnalysis) {
-                        setFaceAnalysis(advisorResult.faceAnalysis);
-                    }
-
-                    // Clear previous gender mismatch ack so modal can re-appear for this session
-                    // (only cleared on fresh load, not on refresh — the ack prevents modal on refresh)
-                    // We check if this is a brand-new result by comparing sessionId
-                    const previousSessionId = sessionId;
-                    if (advisorResult.sessionId && advisorResult.sessionId !== previousSessionId) {
-                        localStorage.removeItem('advisor_gender_mismatch_ack');
-                    }
-
-                    // Restore sessionId for sharing
-                    if (advisorResult.sessionId) {
-                        setSessionId(advisorResult.sessionId);
                     }
 
                 } catch (e) {
@@ -645,6 +660,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     useEffect(() => {
         const status = searchParams.get('status');
         // Only trigger if we are in 'analyzing' mode, no result yet, and not already running/error
+        // Crucial: check 'result' state which might have been populated by loadClientData recovery
         if (status === 'analyzing' && !result && analysisState.status === 'idle') {
             if (analysisStartedRef.current) return;
             analysisStartedRef.current = true;
@@ -662,22 +678,28 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     // Use ref to get fresh state (closure might have stale user)
                     if (!userRef.current) {
                         setIsRedirecting(true);
-                        // Small delay to ensure session is saved on server (though await runAnalysis should handle it)
+                        // Ensure overlay stays while redirecting
                         router.replace(`/report/guest?id=${newSessionId}`);
                         return;
                     }
 
                     // Clear previous ack so mismatch modal can re-appear for new analysis
                     localStorage.removeItem('advisor_gender_mismatch_ack');
+                    
+                    // IMPORTANT: Set result state FIRST before updating URL
                     setResult(newResult);
                     if (newFace) setFaceAnalysis(newFace);
 
-                    // Update URL with sessionId for bookmark/refresh support
-                    router.replace(`/result?id=${newSessionId}`, { scroll: false });
+                    // Small delay to ensure state update is processed before potential route change logic
+                    setTimeout(() => {
+                        // Update URL with sessionId for bookmark/refresh support
+                        router.replace(`/result?id=${newSessionId}`, { scroll: false });
+                    }, 50);
+
                 } catch (e: any) {
                     console.error("Async analysis error caught in component:", e);
-                    // We do NOT redirect here anymore. We let the UI show the error state.
-                    // toast.error(e.message || "分析失败，请重试"); 
+                    // Reset ref so user can retry if they want (though they'd need to re-trigger the effect)
+                    analysisStartedRef.current = false;
                 }
             };
             execute();

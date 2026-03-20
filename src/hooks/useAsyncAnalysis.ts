@@ -55,8 +55,8 @@ export function useAsyncAnalysis() {
 
         const timeoutPromise = new Promise<{ result: any, faceAnalysis: any, sessionId: string }>((_, reject) => {
             setTimeout(() => {
-                reject(new Error("分析超时 (120秒)。请检查网络连接后重试。"));
-            }, 120 * 1000); // 2 minutes
+                reject(new Error("分析超时 (180秒)。请检查网络连接后重试。"));
+            }, 180 * 1000); // 3 minutes
         });
 
         const analysisPromise = async () => {
@@ -248,13 +248,14 @@ export function useAsyncAnalysis() {
                         target = 39;
                         increment = 0.08; // Even more gradual
                     } else if (prev.status === 'analyzing_skin') {
-                        target = 99;
+                        target = 99.5; // Stay just below 100
                         // Logarithmic-like slowdown for long waits (LLM phase)
                         const remaining = target - prev.progress;
-                        if (remaining > 50) increment = 0.15; // Faster if we are still far (skipped earlier phases)
-                        else if (remaining > 20) increment = 0.06;
-                        else if (remaining > 5) increment = 0.02;
-                        else increment = 0.005; // Crawl slowly at the end
+                        if (remaining > 50) increment = 0.15; // Faster if we are still far
+                        else if (remaining > 20) increment = 0.05;
+                        else if (remaining > 5) increment = 0.01;
+                        else if (remaining > 1) increment = 0.002;
+                        else increment = 0.0005; // Extremely slow crawl at the very end
                     }
 
                     if (prev.progress >= target) return prev;
