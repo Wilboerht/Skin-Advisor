@@ -61,14 +61,14 @@ export function OptionCard({
             <div className="flex-1 min-w-0">
                 <p className={cn(
                     "text-base font-semibold tracking-wide mb-0.5",
-                    isSelected ? "text-[#4A3728]" : "text-[#1A1A1A]"
+                    isSelected ? "text-[#8B7355]" : "text-[#1A1A1A]"
                 )}>
                     {label}
                 </p>
                 {description && (
                     <p className={cn(
                         "text-xs font-light leading-relaxed",
-                        isSelected ? "text-[#4A3728]/70" : "text-[#5E5E5E]"
+                        isSelected ? "text-[#8B7355]/70" : "text-[#5E5E5E]"
                     )}>
                         {description}
                     </p>
@@ -79,7 +79,7 @@ export function OptionCard({
             <div className={cn(
                 "w-5 h-5 rounded-full border flex items-center justify-center transition-all duration-300",
                 isSelected
-                    ? "border-[#4A3728] bg-[#4A3728] text-white"
+                    ? "border-[#8B7355] bg-[#8B7355] text-white"
                     : "border-[#E5E5E5] group-hover:border-[#1A1A1A]/30"
             )}>
                 {isSelected && <Check className="w-3 h-3" strokeWidth={3} />}
