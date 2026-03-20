@@ -43,7 +43,7 @@ export function OptionCard({
                 "group relative w-full rounded-2xl text-left transition-all duration-300 border px-6 py-5 flex items-center gap-5 backdrop-blur-md",
                 isSelected
                     ? "bg-[#4A3728]/20 border-[#4A3728]/40 text-[#4A3728] shadow-xl shadow-[#4A3728]/5 scale-[1.02] ring-1 ring-[#4A3728]/5"
-                    : "bg-white/85 border-white/60 text-[#1A1A1A] hover:border-white/80 hover:scale-[1.01] shadow-sm hover:shadow-md"
+                    : "bg-[#F0EDE1]/65 border-white/60 text-[#1A1A1A] hover:border-white/80 hover:scale-[1.01] shadow-sm hover:shadow-md"
             )}
         >
             <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none" />
