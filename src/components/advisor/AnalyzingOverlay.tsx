@@ -489,7 +489,7 @@ export function AnalyzingOverlay({ progress, userImage, onCancel }: AnalyzingOve
                     </div>
 
                     {/* Progress Bar - Minimalist Line */}
-                    <div className="w-full max-w-[240px] relative h-[2px] bg-[#E9E9E7] rounded-full overflow-hidden">
+                    <div className="w-full max-w-[280px] relative h-[4px] bg-[#E9E9E7] rounded-full overflow-hidden">
                         <m.div
                             className="absolute top-0 bottom-0 left-0 bg-[#D4B78F]"
                             initial={{ width: 0 }}
@@ -554,7 +554,7 @@ export function AnalyzingOverlay({ progress, userImage, onCancel }: AnalyzingOve
 
             {/* Footer Branding */}
             <div className="absolute bottom-8 text-center opacity-60">
-                <p className="text-[10px] text-[#8A8A8A] tracking-[0.3em] font-serif uppercase">
+                <p className="text-[10px] text-[#8A8A8A] tracking-[0.15em] font-serif">
                     MySkin Advisor
                 </p>
             </div>
