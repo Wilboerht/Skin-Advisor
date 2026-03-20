@@ -42,7 +42,7 @@ export function OptionCard({
             className={cn(
                 "group relative w-full rounded-2xl text-left transition-all duration-300 border px-6 py-5 flex items-center gap-5 backdrop-blur-md",
                 isSelected
-                    ? "bg-[#8B7355]/15 border-[#8B7355]/50 text-[#8B7355] shadow-xl shadow-[#8B7355]/5 scale-[1.02] ring-1 ring-[#8B7355]/5"
+                    ? "bg-[#FDFBF7] border-[#8B7355] text-[#1A1A1A] shadow-2xl scale-[1.03] ring-1 ring-[#8B7355]/10"
                     : "bg-[#F0EDE1]/55 border-white/60 text-[#1A1A1A] hover:border-white/80 hover:scale-[1.01] shadow-sm hover:shadow-md"
             )}
         >
@@ -61,14 +61,14 @@ export function OptionCard({
             <div className="flex-1 min-w-0">
                 <p className={cn(
                     "text-base font-semibold tracking-wide mb-0.5",
-                    isSelected ? "text-[#8B7355]" : "text-[#1A1A1A]"
+                    "text-[#1A1A1A]"
                 )}>
                     {label}
                 </p>
                 {description && (
                     <p className={cn(
                         "text-xs font-light leading-relaxed",
-                        isSelected ? "text-[#8B7355]/70" : "text-[#5E5E5E]"
+                        isSelected ? "text-[#1A1A1A]/70" : "text-[#5E5E5E]"
                     )}>
                         {description}
                     </p>
