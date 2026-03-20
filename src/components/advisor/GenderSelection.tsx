@@ -1,8 +1,7 @@
 "use client";
 
 import { m } from "framer-motion";
-import { Check } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Venus, Mars } from "lucide-react";
 
 interface GenderSelectionProps {
     onSelect: (gender: "female" | "male") => void;
@@ -51,38 +50,34 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
                 <m.button
                     variants={item}
                     onClick={() => onSelect("female")}
-                    className="glass-premium group relative flex flex-col items-center overflow-hidden rounded-2xl border border-white/40 p-8 text-center transition-all hover:scale-[1.02] active:scale-[0.98]"
+                    className="group relative flex items-center gap-5 rounded-[1.5rem] border border-white/60 bg-[#F0EDE1]/55 px-7 py-6 text-left backdrop-blur-md transition-all duration-500 hover:border-white/80 hover:scale-[1.03] hover:shadow-2xl hover:shadow-[#3D4430]/5 active:scale-[0.98]"
                 >
-                    <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-white/50 text-4xl shadow-sm transition-transform group-hover:scale-110">
-                        👩
+                    <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none rounded-[1.5rem]" />
+                    
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-white/40 shadow-inner transition-transform duration-500 group-hover:scale-110">
+                        <Venus className="w-8 h-8 text-[#1A1A1A]" strokeWidth={1.5} />
                     </div>
-                    <h3 className="mb-1 font-serif text-xl font-medium text-[#1A1A1A]">女性</h3>
-                    <p className="text-xs tracking-widest text-[#5E5E5E] uppercase opacity-60">Female</p>
 
-                    <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none" />
-                    <div className="absolute right-6 top-6 opacity-0 transition-opacity group-hover:opacity-100">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#1A1A1A] text-white shadow-md">
-                            <Check className="h-4 w-4" />
-                        </div>
+                    <div className="flex-1 space-y-0.5">
+                        <h3 className="text-xl font-serif font-medium text-[#1A1A1A]">女性</h3>
+                        <p className="text-[9px] tracking-[0.15em] font-light text-[#5E5E5E] uppercase opacity-60">Female</p>
                     </div>
                 </m.button>
 
                 <m.button
                     variants={item}
                     onClick={() => onSelect("male")}
-                    className="glass-premium group relative flex flex-col items-center overflow-hidden rounded-2xl border border-white/40 p-8 text-center transition-all hover:scale-[1.02] active:scale-[0.98]"
+                    className="group relative flex items-center gap-5 rounded-[1.5rem] border border-white/60 bg-[#F0EDE1]/55 px-7 py-6 text-left backdrop-blur-md transition-all duration-500 hover:border-white/80 hover:scale-[1.03] hover:shadow-2xl hover:shadow-[#3D4430]/5 active:scale-[0.98]"
                 >
-                    <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-white/50 text-4xl shadow-sm transition-transform group-hover:scale-110">
-                        👨
+                    <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none rounded-[1.5rem]" />
+                    
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-white/40 shadow-inner transition-transform duration-500 group-hover:scale-110">
+                        <Mars className="w-8 h-8 text-[#1A1A1A]" strokeWidth={1.5} />
                     </div>
-                    <h3 className="mb-1 font-serif text-xl font-medium text-[#1A1A1A]">男性</h3>
-                    <p className="text-xs tracking-widest text-[#5E5E5E] uppercase opacity-60">Male</p>
 
-                    <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none" />
-                    <div className="absolute right-6 top-6 opacity-0 transition-opacity group-hover:opacity-100">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#1A1A1A] text-white shadow-md">
-                            <Check className="h-4 w-4" />
-                        </div>
+                    <div className="flex-1 space-y-0.5">
+                        <h3 className="text-xl font-serif font-medium text-[#1A1A1A]">男性</h3>
+                        <p className="text-[9px] tracking-[0.15em] font-light text-[#5E5E5E] uppercase opacity-60">Male</p>
                     </div>
                 </m.button>
             </m.div>
