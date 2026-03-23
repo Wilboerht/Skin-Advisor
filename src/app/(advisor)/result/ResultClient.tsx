@@ -115,7 +115,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const [generatedAvatar, setGeneratedAvatar] = useState<string | null>((initialData?.result as any)?.generatedAvatar || null);
     const [isAvatarLoading, setIsAvatarLoading] = useState(!(initialData?.result as any)?.generatedAvatar);
     const [userLocation, setUserLocation] = useState<{ province?: string; city?: string; lat?: number; lon?: number } | null>(null);
-    const [userNickname, setUserNickname] = useState<string>("护肤达人");
+    const [userNickname, setUserNickname] = useState<string>("您");
     // Session ID for sharing - initialized from props or will be set after analysis
     const [sessionId, setSessionId] = useState<string | undefined>(id);
     const [socialGender, setSocialGender] = useState<string>(''); // Initialize empty to avoid flash mismatch

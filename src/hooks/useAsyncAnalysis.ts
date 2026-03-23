@@ -162,7 +162,7 @@ export function useAsyncAnalysis() {
             const sessionId = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString();
 
             // Get user nickname from localStorage
-            const nickname = localStorage.getItem("advisor_nickname") || "护肤达人";
+            const nickname = localStorage.getItem("advisor_nickname") || "您";
 
             // Trigger background avatar generation in PARALLEL with text analysis
             // We do this immediately after face analysis is available
