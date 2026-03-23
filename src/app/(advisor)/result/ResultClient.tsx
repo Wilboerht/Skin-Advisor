@@ -647,6 +647,36 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
 
 
+    // --- Auto-Claim Session ---
+    // Automatically link guest-initiated session to user account once logged in
+    useEffect(() => {
+        if (!user || !sessionId) return;
+        
+        const claimSession = async () => {
+            try {
+                // Check if already claimed this session (to avoid redundant calls)
+                const claimedKey = `claimed_${sessionId}`;
+                if (localStorage.getItem(claimedKey)) return;
+
+                const res = await fetch("/api/advisor/session/claim", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ sessionId })
+                });
+                
+                if (res.ok) {
+                    console.log(`✅ Session ${sessionId} successfully linked to account.`);
+                    localStorage.setItem(claimedKey, 'true');
+                }
+            } catch (err) {
+                console.error("Failed to claim session:", err);
+            }
+        };
+
+        claimSession();
+    }, [user, sessionId]);
+
+
     // --- Async Analysis Integration ---
     // searchParams and useAsyncAnalysis are declared at the top of the component
 
