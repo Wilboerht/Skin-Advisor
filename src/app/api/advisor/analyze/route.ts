@@ -285,11 +285,33 @@ export async function POST(request: NextRequest) {
             const expiresAt = new Date();
             expiresAt.setDate(expiresAt.getDate() + 30);
 
-            await prisma.advisorSession.update({
+            // Fetch existing session first to avoid overwriting parallel avatar data
+            // (Avatar generation might have finished first and saved to DB)
+            const existingSession = await prisma.advisorSession.findUnique({
                 where: { sessionId },
-                data: {
-                    analysisResult: standardizedResult as any, // stored as json
-                    analysisSource: faceAnalysis ? "hybrid" : "text",
+                select: { analysisResult: true }
+            });
+
+            // Merge current results with any existing data (like generatedAvatar)
+            const mergedResult = {
+                ...(existingSession?.analysisResult as any || {}),
+                ...standardizedResult
+            };
+
+            await prisma.advisorSession.upsert({
+                where: { sessionId },
+                update: {
+                    analysisResult: mergedResult as any, // stored as json
+                    analysisSource: "hybrid",
+                    completedAt: new Date(),
+                    province: geoLocation?.region,
+                    city: geoLocation?.city,
+                    expiresAt: expiresAt
+                },
+                create: {
+                    sessionId,
+                    analysisResult: mergedResult as any,
+                    analysisSource: "hybrid",
                     completedAt: new Date(),
                     province: geoLocation?.region,
                     city: geoLocation?.city,

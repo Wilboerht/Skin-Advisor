@@ -115,16 +115,30 @@ async function updateSessionAvatar(sessionId: string, url: string) {
             select: { analysisResult: true }
         });
 
-        if (session?.analysisResult) {
-            const updatedResult = {
-                ...(session.analysisResult as any),
-                generatedAvatar: url
-            };
+        const currentResult = (session?.analysisResult as any) || {};
+        const updatedResult = {
+            ...currentResult,
+            generatedAvatar: url
+        };
 
+        if (session) {
             await prisma.advisorSession.update({
                 where: { sessionId },
                 data: { analysisResult: updatedResult }
             });
+            console.log(`Updated existing session ${sessionId} with avatar`);
+        } else {
+            // If main analysis hasn't created the session yet, we create it with just the avatar
+            // The main analysis will later update it with reports
+            await prisma.advisorSession.create({
+                data: {
+                    sessionId,
+                    analysisResult: updatedResult,
+                    faceScanUsed: true,
+                    startedAt: new Date()
+                }
+            });
+            console.log(`Created new session placeholder for ${sessionId} with avatar`);
         }
     } catch (e) {
         console.error("Failed to update session with avatar URL:", e);
