@@ -263,13 +263,12 @@ export default function Home() {
     // 进入问卷时收起抽屉
     setDrawerOpen(false);
 
-    // If user is logged in and has a name, skip nickname modal
+    // If user is logged in and has a name, pre-fill it and let the modal handle skipping the step
     if (user?.name) {
+      setNickname(user.name);
       safeStorage.set("advisor_nickname", user.name);
-      setShowOnboardingModal(true);
-    } else {
-      setShowOnboardingModal(true);
     }
+    setShowOnboardingModal(true);
   };
 
   const handleNicknameSubmit = () => {
@@ -345,7 +344,7 @@ export default function Home() {
                   <div className="absolute top-6 left-1/2 -translate-x-1/2 w-[90%] flex items-center justify-between z-50">
                     <a
                       href="https://demo.nihplod.cn"
-                      className="group flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-medium tracking-[0.2em] uppercase text-[#3D4430]/40 hover:text-[#3D4430] hover:bg-white/40 border border-[#3D4430]/10 hover:border-[#3D4430]/20 transition-all duration-500 backdrop-blur-sm no-underline cursor-pointer relative z-10"
+                      className="group flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-medium tracking-[0.2em] text-[#3D4430]/40 hover:text-[#3D4430] hover:bg-white/40 border border-[#3D4430]/10 hover:border-[#3D4430]/20 transition-all duration-500 backdrop-blur-sm no-underline cursor-pointer relative z-10"
                     >
                       <House className="w-3.5 h-3.5 transition-transform group-hover:scale-110 opacity-70 group-hover:opacity-100" />
                       <span className="hidden sm:inline">返回官网</span>
@@ -357,7 +356,7 @@ export default function Home() {
                       {user ? (
                         <button
                           onClick={() => setShowProfileModal(true)}
-                          className="group flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-medium tracking-[0.2em] uppercase text-[#3D4430]/40 hover:text-[#3D4430] hover:bg-white/40 border border-[#3D4430]/10 hover:border-[#3D4430]/20 transition-all duration-500 backdrop-blur-sm cursor-pointer"
+                          className="group flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-medium tracking-[0.2em] text-[#3D4430]/40 hover:text-[#3D4430] hover:bg-white/40 border border-[#3D4430]/10 hover:border-[#3D4430]/20 transition-all duration-500 backdrop-blur-sm cursor-pointer"
                         >
                           <User className="w-3.5 h-3.5 transition-transform group-hover:scale-110 opacity-70 group-hover:opacity-100" />
                           <span className="hidden sm:inline">{user.name || '我的档案'}</span>
@@ -365,7 +364,7 @@ export default function Home() {
                       ) : (
                         <button
                           onClick={() => openAuthModal('login')}
-                          className="group flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-medium tracking-[0.2em] uppercase text-[#3D4430]/40 hover:text-[#3D4430] hover:bg-white/40 border border-[#3D4430]/10 hover:border-[#3D4430]/20 transition-all duration-500 backdrop-blur-sm cursor-pointer"
+                          className="group flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-medium tracking-[0.2em] text-[#3D4430]/40 hover:text-[#3D4430] hover:bg-white/40 border border-[#3D4430]/10 hover:border-[#3D4430]/20 transition-all duration-500 backdrop-blur-sm cursor-pointer"
                         >
                           <User className="w-3.5 h-3.5 transition-transform group-hover:scale-110 opacity-70 group-hover:opacity-100" />
                           <span className="hidden sm:inline">登录 / 注册</span>

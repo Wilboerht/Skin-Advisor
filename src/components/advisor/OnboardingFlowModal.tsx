@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { BaseModal } from "@/components/ui/BaseModal";
 import { Loader2, MapPin, ShieldCheck, ArrowRight, ChevronLeft } from "lucide-react";
 import { AnimatePresence, m } from "framer-motion";
@@ -40,6 +40,13 @@ export function OnboardingFlowModal({
     const [step, setStep] = useState<Step>("nickname");
     const [showRegionSelectModal, setShowRegionSelectModal] = useState(false);
     const [isAgreed, setIsAgreed] = useState(false);
+
+    // Reset step when modal opens
+    useEffect(() => {
+        if (isOpen) {
+            setStep(isLoggedIn && nickname ? "location" : "nickname");
+        }
+    }, [isOpen, isLoggedIn, nickname]);
 
     const handleNicknameNext = () => {
         if (!nickname.trim()) return;
