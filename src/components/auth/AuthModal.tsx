@@ -253,7 +253,7 @@ export function AuthModal() {
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 10 }}
                         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                        className="relative z-10 w-full max-w-[400px] bg-[#FDFBF7]/95 backdrop-blur-xl border border-white/60 rounded-[32px] shadow-[0_20px_60px_-10px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col max-h-[90vh]"
+                        className="relative z-10 w-full max-w-[400px] bg-[#FDFBF7]/95 backdrop-blur-xl border border-white/60 rounded-[32px] shadow-[0_20px_60px_-10px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col max-h-[92vh]"
                         onClick={(e: React.MouseEvent) => e.stopPropagation()}
                     >
                         {/* Close Button */}
@@ -276,7 +276,7 @@ export function AuthModal() {
                             </button>
                         )}
 
-                        <div className="overflow-y-auto p-8 pt-10 px-8">
+                        <div className="overflow-y-auto p-6 sm:p-8 pt-8 sm:pt-10">
                             {/* Header */}
                             <div className="text-center mb-8">
                                 {view !== 'forgot_password' && view !== 'wechat_bind' ? (
@@ -284,7 +284,7 @@ export function AuthModal() {
                                         <img
                                             src="/NIHPLOD-logo.svg"
                                             alt="NIHPLOD"
-                                            className="h-8.5 object-contain opacity-90"
+                                            className="h-7 sm:h-8.5 object-contain opacity-90"
                                         />
                                     </div>
                                 ) : (
@@ -308,7 +308,7 @@ export function AuthModal() {
                                             required
                                             value={loginPhone}
                                             onChange={(e) => setLoginPhone(e.target.value)}
-                                            className="w-full px-4 py-3.5 rounded-2xl border border-[#E6E2D6] bg-white/70 text-[#1A1A1A] placeholder:text-[#1A1A1A]/20 focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/5 focus:border-[#1A1A1A]/30 transition-all font-medium"
+                                            className="w-full px-4 py-3 sm:py-3.5 rounded-2xl border border-[#E6E2D6] bg-white/70 text-[#1A1A1A] placeholder:text-[#1A1A1A]/20 focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/5 focus:border-[#1A1A1A]/30 transition-all font-medium"
                                             placeholder="请输入手机号"
                                         />
                                     </div>
@@ -331,7 +331,7 @@ export function AuthModal() {
                                                 required
                                                 value={loginPassword}
                                                 onChange={(e) => setLoginPassword(e.target.value)}
-                                                className="w-full px-4 py-3.5 rounded-2xl border border-[#E6E2D6] bg-white/70 text-[#1A1A1A] placeholder:text-[#1A1A1A]/20 focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/5 focus:border-[#1A1A1A]/30 transition-all pr-12 font-medium"
+                                                className="w-full px-4 py-3 sm:py-3.5 rounded-2xl border border-[#E6E2D6] bg-white/70 text-[#1A1A1A] placeholder:text-[#1A1A1A]/20 focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/5 focus:border-[#1A1A1A]/30 transition-all pr-12 font-medium"
                                                 placeholder="••••••••"
                                             />
                                             <button
@@ -348,7 +348,7 @@ export function AuthModal() {
                                     <button
                                         type="submit"
                                         disabled={loading}
-                                        className="w-full mt-4 bg-[#1A1A1A] text-[#FDFBF7] rounded-2xl py-4 font-semibold tracking-wide hover:bg-[#2C2C2C] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-xl shadow-[#1A1A1A]/10"
+                                        className="w-full mt-2 sm:mt-4 bg-[#1A1A1A] text-[#FDFBF7] rounded-full py-[11px] sm:py-3.5 text-[14px] sm:text-[15px] font-medium tracking-[0.15em] hover:bg-[#2C2C2C] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-xl shadow-[#1A1A1A]/10"
                                     >
                                         {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>登录账户 <ArrowRight className="w-4 h-4" /></>}
                                     </button>
@@ -368,7 +368,7 @@ export function AuthModal() {
                                         type="button"
                                         onClick={handleWechatLogin}
                                         disabled={loading}
-                                        className="w-full py-4 border border-[#E6E2D6] rounded-2xl font-semibold flex items-center justify-center gap-3 transition-all hover:bg-white hover:border-[#1A1A1A]/20 active:scale-[0.98] disabled:opacity-50 shadow-sm"
+                                        className="w-full py-[11px] sm:py-3.5 border border-[#E6E2D6] rounded-full text-[14px] sm:text-[15px] font-medium tracking-[0.15em] flex items-center justify-center gap-3 transition-all hover:bg-white hover:border-[#1A1A1A]/20 active:scale-[0.98] disabled:opacity-50 shadow-sm"
                                     >
                                         <svg className="w-5 h-5 text-[#07C160]" viewBox="0 0 24 24" fill="currentColor">
                                             <path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 0 1 .213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 0 0 .167-.054l1.903-1.114a.864.864 0 0 1 .717-.098 10.16 10.16 0 0 0 2.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178A1.17 1.17 0 0 1 4.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178 1.17 1.17 0 0 1-1.162-1.178c0-.651.52-1.18 1.162-1.18zm5.34 2.867c-1.797-.052-3.746.512-5.28 1.786-1.72 1.428-2.687 3.72-1.78 6.22.942 2.453 3.666 4.229 6.884 4.229.826 0 1.622-.12 2.361-.336a.722.722 0 0 1 .598.082l1.584.926a.272.272 0 0 0 .14.045c.134 0 .24-.11.24-.245 0-.06-.024-.12-.04-.178l-.327-1.233a.582.582 0 0 1-.023-.156.49.49 0 0 1 .201-.398C23.024 18.48 24 16.82 24 14.98c0-3.21-2.931-5.837-6.656-6.088-.182-.013-.373-.027-.545-.035h-.06zm-2.89 3.217c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.97-.982zm4.844 0c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.969-.982z" />
@@ -459,7 +459,7 @@ export function AuthModal() {
                                     <button
                                         type="submit"
                                         disabled={loading}
-                                        className="w-full mt-4 bg-[#C9A86C] text-white rounded-2xl py-4 font-semibold tracking-wide hover:bg-[#B08D55] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-xl shadow-[#C9A86C]/20"
+                                        className="w-full mt-4 bg-[#C9A86C] text-white rounded-full py-[11px] sm:py-3.5 text-[14px] sm:text-[15px] font-medium tracking-[0.15em] hover:bg-[#B08D55] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-xl shadow-[#C9A86C]/20"
                                     >
                                         {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>创建账户 <ArrowRight className="w-4 h-4" /></>}
                                     </button>
@@ -538,7 +538,7 @@ export function AuthModal() {
                                     <button
                                         type="submit"
                                         disabled={loading}
-                                        className="w-full mt-4 bg-[#C9A86C] text-white rounded-2xl py-4 font-semibold tracking-wide hover:bg-[#B08D55] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-xl shadow-[#C9A86C]/20"
+                                        className="w-full mt-4 bg-[#C9A86C] text-white rounded-full py-[11px] sm:py-3.5 text-[14px] sm:text-[15px] font-medium tracking-[0.15em] hover:bg-[#B08D55] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-xl shadow-[#C9A86C]/20"
                                     >
                                         {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>绑定手机号并完成 <CheckCircle className="w-4 h-4" /></>}
                                     </button>
@@ -603,7 +603,7 @@ export function AuthModal() {
                                             <button
                                                 type="submit"
                                                 disabled={loading}
-                                                className="w-full mt-4 bg-[#1A1A1A] text-[#FDFBF7] rounded-2xl py-4 font-semibold tracking-wide hover:bg-[#2C2C2C] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-xl shadow-[#1A1A1A]/10"
+                                                className="w-full mt-4 bg-[#1A1A1A] text-[#FDFBF7] rounded-full py-[11px] sm:py-3.5 text-[14px] sm:text-[15px] font-medium tracking-[0.15em] hover:bg-[#2C2C2C] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-xl shadow-[#1A1A1A]/10"
                                             >
                                                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "完成重置"}
                                             </button>
@@ -632,7 +632,7 @@ export function AuthModal() {
                                             <button
                                                 type="submit"
                                                 disabled={loading}
-                                                className="w-full mt-4 bg-[#1A1A1A] text-[#FDFBF7] rounded-2xl py-4 font-semibold tracking-wide hover:bg-[#2C2C2C] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-xl shadow-[#1A1A1A]/10"
+                                                className="w-full mt-4 bg-[#1A1A1A] text-[#FDFBF7] rounded-full py-[11px] sm:py-3.5 text-[14px] sm:text-[15px] font-medium tracking-[0.15em] hover:bg-[#2C2C2C] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-xl shadow-[#1A1A1A]/10"
                                             >
                                                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "发送验证码"}
                                             </button>

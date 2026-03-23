@@ -383,22 +383,23 @@ export default function Home() {
                         width={260}
                         height={78}
                         priority
-                        className="h-8 sm:h-9 md:h-12 object-contain opacity-90 mix-blend-multiply mb-8 md:mb-10"
+                        className="h-8 sm:h-9 md:h-12 object-contain opacity-90 mix-blend-multiply mb-12 md:mb-16"
                       />
                       
-                      <h1 className="text-4xl sm:text-5xl md:text-6xl font-serif text-[#1A1A1A] mb-8 leading-tight tracking-tight">
-                        AI 智能<br className="sm:hidden" />测肤
+                      <h1 className="text-[32px] sm:text-4xl md:text-5xl font-serif text-[#1A1A1A] mb-8 leading-tight tracking-tight whitespace-nowrap">
+                        AI 智能测肤
                       </h1>
 
-                      <p className="text-[#5C5855]/90 leading-loose mb-14 max-w-xl mx-auto font-light text-[16px] opacity-0 animate-fade-in-up tracking-wide" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
-                        源自摩纳哥真脂质体科技，结合 AI 深度视觉分析。<br />为您量身打造科学、精准的<span className="text-[#3D4430] font-medium">肌肤护理方案</span>，唤醒肌肤本源之美。
+                      <p className="text-[#5C5855]/90 leading-relaxed mb-14 max-w-xl mx-auto font-light text-[16px] opacity-0 animate-fade-in-up tracking-wide" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
+                        源自摩纳哥真脂质体科技，<br className="sm:hidden" />结合 AI 深度视觉分析。<br />
+                        为您量身打造科学、精准的<br className="sm:hidden" /><span className="text-[#3D4430] font-medium">肌肤护理方案</span>，<br className="sm:hidden" />唤醒肌肤本源之美。
                       </p>
 
                       <div className="flex flex-col items-center gap-7 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.4s', animationFillMode: 'forwards' }}>
                         <button
                           onClick={handleStart}
                           disabled={isLoading || checkingLimit}
-                          className="glass-premium-primary animate-float-premium group relative inline-flex items-center justify-center gap-3 px-10 py-3.5 rounded-full text-[15px] tracking-widest font-medium disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer transition-all duration-300"
+                          className="glass-premium-primary animate-float-premium group relative inline-flex items-center justify-center gap-3 px-8 py-3.5 sm:px-10 rounded-full text-[14px] sm:text-[15px] tracking-[0.15em] font-medium disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer transition-all duration-300"
                         >
                           {isLoading || checkingLimit ? (
                             <>
