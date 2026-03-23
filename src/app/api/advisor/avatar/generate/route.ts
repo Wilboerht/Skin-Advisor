@@ -200,7 +200,10 @@ async function generateJimengAvatarAsync(
     }
 
     console.log("Submitting Jimeng async task with req_key:", submitParams.req_key);
-    const submitRes = await submitApi(submitParams) as any;
+    const submitRes = await submitApi(submitParams, {
+        Action: 'CVSync2AsyncSubmitTask',
+        timeout: 60000
+    } as any) as any;
     console.log("Jimeng submit response:", JSON.stringify(submitRes).substring(0, 300));
 
     // Check for success; code 10000 = OK
@@ -225,7 +228,10 @@ async function generateJimengAvatarAsync(
         const resultRes = await getResultApi({
             req_key: submitParams.req_key,
             task_id: taskId,
-        }) as any;
+        }, {
+            Action: 'CVSync2AsyncGetResult',
+            timeout: 15000
+        } as any) as any;
 
         console.log(`Poll ${i + 1}: status=${resultRes?.data?.status}, code=${resultRes?.code}`);
 

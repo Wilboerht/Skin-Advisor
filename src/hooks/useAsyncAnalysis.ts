@@ -164,6 +164,27 @@ export function useAsyncAnalysis() {
             // Get user nickname from localStorage
             const nickname = localStorage.getItem("advisor_nickname") || "护肤达人";
 
+            // Trigger background avatar generation in PARALLEL with text analysis
+            // We do this immediately after face analysis is available
+            const storedGender = localStorage.getItem("advisor_gender") || answers?.gender || 'female';
+            console.log("Starting parallel avatar generation...");
+            fetch("/api/advisor/avatar/generate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    sessionId: sessionId,
+                    nickname: nickname,
+                    frontPhoto: frontPhotoForAvatar,
+                    characteristics: {
+                        age: faceAnalysis?.skinAge?.estimated || 25,
+                        gender: storedGender,
+                        skinTone: 'healthy',
+                        hairStyle: ''
+                    }
+                })
+            }).catch(err => console.error("Background avatar generation trigger failed", err));
+
+
             // Check if this is a free retry (gender mismatch retry — won't consume quota)
             const isFreeRetry = localStorage.getItem("advisor_free_retry") === "true";
             // Clear immediately so it can only be used once
@@ -195,24 +216,6 @@ export function useAsyncAnalysis() {
             result.sessionId = sessionId;
             localStorage.setItem("advisor_result", JSON.stringify(result));
             trackAnalysisComplete(result.dataSource === "comprehensive" ? "ai" : "fallback");
-
-            // Trigger background avatar generation (Fire and Forget)
-            const storedGender = localStorage.getItem("advisor_gender") || answers?.gender || 'female';
-            fetch("/api/advisor/avatar/generate", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    sessionId: sessionId,
-                    nickname: nickname,
-                    frontPhoto: frontPhotoForAvatar,
-                    characteristics: {
-                        age: result.skinProfile?.skinAge || 25,
-                        gender: storedGender,
-                        skinTone: 'healthy',
-                        hairStyle: ''
-                    }
-                })
-            }).catch(err => console.error("Background avatar generation trigger failed", err));
 
             setAnalysisState({ status: 'completed', progress: 100, error: null });
 
