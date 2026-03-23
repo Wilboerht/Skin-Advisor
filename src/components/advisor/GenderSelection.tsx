@@ -50,7 +50,15 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
                 <m.button
                     variants={item}
                     onClick={() => onSelect("female")}
-                    className="group relative flex items-center gap-5 rounded-[1.5rem] border border-white/60 bg-[#F0EDE1]/55 px-7 py-6 text-left backdrop-blur-md transition-all duration-500 hover:border-white/80 hover:scale-[1.03] hover:shadow-2xl hover:shadow-[#3D4430]/5 active:scale-[0.98]"
+                    whileHover={{ y: -6 }}
+                    whileTap={{ scale: 0.98 }}
+                    style={{ 
+                        transform: "translateZ(0)",
+                        backfaceVisibility: "hidden", 
+                        WebkitBackfaceVisibility: "hidden",
+                        perspective: "1000px"
+                    }}
+                    className="group relative flex items-center gap-5 rounded-[1.5rem] border border-white/60 bg-[#F0EDE1]/55 px-7 py-6 text-left backdrop-blur-md transition-all duration-300 hover:border-[#8B7355]/40 hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.05)]"
                 >
                     <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none rounded-[1.5rem]" />
                     
@@ -67,7 +75,15 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
                 <m.button
                     variants={item}
                     onClick={() => onSelect("male")}
-                    className="group relative flex items-center gap-5 rounded-[1.5rem] border border-white/60 bg-[#F0EDE1]/55 px-7 py-6 text-left backdrop-blur-md transition-all duration-500 hover:border-white/80 hover:scale-[1.03] hover:shadow-2xl hover:shadow-[#3D4430]/5 active:scale-[0.98]"
+                    whileHover={{ y: -6 }}
+                    whileTap={{ scale: 0.98 }}
+                    style={{ 
+                        transform: "translateZ(0)",
+                        backfaceVisibility: "hidden", 
+                        WebkitBackfaceVisibility: "hidden",
+                        perspective: "1000px"
+                    }}
+                    className="group relative flex items-center gap-5 rounded-[1.5rem] border border-white/60 bg-[#F0EDE1]/55 px-7 py-6 text-left backdrop-blur-md transition-all duration-300 hover:border-[#8B7355]/40 hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.05)]"
                 >
                     <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none rounded-[1.5rem]" />
                     

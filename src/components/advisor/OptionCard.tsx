@@ -37,13 +37,24 @@ export function OptionCard({
                 delay: index * 0.05,
                 ease: [0.2, 0.8, 0.2, 1], // Power easing
             }}
-            whileHover={{ y: -2 }}
+            whileHover={{ 
+                y: -6, 
+                // Removed scale to prevent text blurring, using purely translation and shadow for elevation
+                transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] } 
+            }}
             whileTap={{ scale: 0.98 }}
+            style={{ 
+                // CRITICAL: Forces the element into its own compositor layer from the start
+                transform: "translateZ(0)",
+                backfaceVisibility: "hidden", 
+                WebkitBackfaceVisibility: "hidden",
+                perspective: "1000px"
+            }}
             className={cn(
-                "group relative w-full rounded-2xl text-left transition-all duration-300 border px-6 py-5 flex items-center gap-5 backdrop-blur-md",
+                "group relative w-full rounded-2xl text-left border px-6 py-5 flex items-center gap-5 backdrop-blur-md transition-[border-color,background-color,box-shadow] duration-300",
                 isSelected
-                    ? "bg-[#FDFBF7]/70 border-[#8B7355] text-[#1A1A1A] shadow-2xl scale-[1.03] ring-1 ring-[#8B7355]/10"
-                    : "bg-[#F0EDE1]/55 border-white/60 text-[#1A1A1A] hover:border-white/80 hover:scale-[1.01] shadow-sm hover:shadow-md"
+                    ? "bg-[#FDFBF7]/85 border-[#8B7355] text-[#1A1A1A] shadow-[0_20px_40px_-15px_rgba(139,115,85,0.2)] ring-1 ring-[#8B7355]/10"
+                    : "bg-[#F0EDE1]/55 border-white/60 text-[#1A1A1A] hover:border-[#8B7355]/40 shadow-sm hover:shadow-[0_15px_30px_-10px_rgba(0,0,0,0.05)]"
             )}
         >
             <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none" />
