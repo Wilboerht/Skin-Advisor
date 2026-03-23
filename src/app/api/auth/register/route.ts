@@ -74,13 +74,19 @@ export async function POST(req: NextRequest) {
         };
 
         const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";
+        
+        // 增加超时间：防止官方服务器（demo子域）响应过慢导致注册挂起
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒超时
+
         const officialResponse = await fetch(`${officialApiUrl}/api/auth/register`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify(registerPayload)
-        });
+            body: JSON.stringify(registerPayload),
+            signal: controller.signal
+        }).finally(() => clearTimeout(timeoutId));
 
         const responseData = await parseOfficialJson(officialResponse);
 

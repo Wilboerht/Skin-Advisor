@@ -71,13 +71,19 @@ export async function POST(req: NextRequest) {
 
         // 代理到官网密码登录接口
         const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";
+        
+        // 增加超时间：防止官方服务器（demo子域）响应过慢导致系统崩溃
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒超时
+
         const officialResponse = await fetch(`${officialApiUrl}/api/auth/login-password`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify(body) // { phone, password }
-        });
+            body: JSON.stringify(body),
+            signal: controller.signal
+        }).finally(() => clearTimeout(timeoutId));
 
         const responseData = await parseOfficialJson(officialResponse);
 

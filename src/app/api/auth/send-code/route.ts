@@ -5,13 +5,19 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
 
         const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";
+        
+        // 增加超时间：防止官方服务器（demo子域）发送验证码脚本响应过慢
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒超时
+
         const officialResponse = await fetch(`${officialApiUrl}/api/auth/send-code`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify(body)
-        });
+            body: JSON.stringify(body),
+            signal: controller.signal
+        }).finally(() => clearTimeout(timeoutId));
 
         const responseData = await officialResponse.json();
 

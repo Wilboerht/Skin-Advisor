@@ -16,20 +16,23 @@ const prismaClientSingleton = () => {
     // 优化 Supabase PostgreSQL 连接池配置
     const pool = new Pool({
         connectionString: url,
-        max: 10, // 增加连接池大小以处理并发请求
-        min: 2, // 保持最少 2 个空闲连接
-        idleTimeoutMillis: 60000, // 空闲连接 60 秒后关闭
-        connectionTimeoutMillis: 30000, // 连接超时增加到 30 秒
-        // 查询超时设置（防止长时间查询卡住）
+        max: 10, 
+        min: 0, // 允许在空闲时完全关闭连接，防止被 Supabase 强行释放时产生报错
+        idleTimeoutMillis: 30000, // 缩短空闲超时到 30 秒
+        connectionTimeoutMillis: 30000, 
         statement_timeout: 30000,
-        // 防止连接被 Supabase 代理意外关闭
         keepAlive: true,
         keepAliveInitialDelayMillis: 10000,
     });
 
     // 监听连接池错误
     pool.on("error", (err: Error) => {
-        console.error("[Prisma Pool] Unexpected error on idle client:", err.message);
+        // 只记录非预期终端错误，连接重置在池中是常见的
+        if (err.message.includes("Connection terminated unexpectedly")) {
+            console.warn("[Prisma Pool] Idle connection closed by server (expected behavior for Supabase/PgBouncer)");
+            return;
+        }
+        console.error("[Prisma Pool] Unexpected error:", err.message);
     });
 
     const adapter = new PrismaPg(pool);

@@ -73,7 +73,7 @@ function ToastContainer({
     removeToast: (id: string) => void;
 }) {
     return (
-        <div className="fixed top-4 left-1/2 z-[9999] flex w-full max-w-sm -translate-x-1/2 flex-col gap-2 px-4 sm:top-6">
+        <div className="fixed top-4 left-1/2 z-[100000] flex w-full max-w-sm -translate-x-1/2 flex-col gap-2 px-4 sm:top-6">
             <AnimatePresence>
                 {toasts.map((t) => (
                     <motion.div

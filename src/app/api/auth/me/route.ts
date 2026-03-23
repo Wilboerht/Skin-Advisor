@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
         
         // Add a timeout to prevent long hangs if the official API is unreachable
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 20000); // Increased to 20 second timeout for demo server stability
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒超时：针对 demo 服务器不稳定的环境
 
         const officialResponse = await fetch(`${officialApiUrl}/api/auth/me`, {
             method: "GET",
