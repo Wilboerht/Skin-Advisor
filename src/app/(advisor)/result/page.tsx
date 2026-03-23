@@ -72,7 +72,7 @@ export async function generateMetadata(props: {
 }): Promise<Metadata> {
     const searchParams = await props.searchParams;
     const id = searchParams.id;
-    let title = "我的专业护肤报告 | MySkin Advisor";
+    let title = "我的专业护肤报告 | MySkinToday Technology";
     let description = "基于 AI 的深度肤质分析，为您定制专属护肤方案。";
     let ogImage = "/images/share-default.jpg"; // Fallback
 

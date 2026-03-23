@@ -118,7 +118,7 @@ export async function generateMetadata(props: GuestReportPageProps): Promise<Met
     });
 
     if (!session?.analysisResult) {
-        return { title: "MySkin Advisor - 专业肤质检测" };
+        return { title: "MySkinToday Technology - 专业肤质检测" };
     }
 
     const result = session.analysisResult as any;
@@ -126,7 +126,7 @@ export async function generateMetadata(props: GuestReportPageProps): Promise<Met
     const skinType = result.skinProfile?.typeLabel || "未知肤质";
 
     return {
-        title: `我的肤质评分 ${score}！快来测测你的 | MySkin Advisor`,
+        title: `我的肤质评分 ${score}！快来测测你的 | MySkinToday Technology`,
         description: `我刚刚完成了实验室级肤质检测，原来我是${skinType}。解锁你的专属护肤方案，点击立即免费测试。`,
     };
 }
