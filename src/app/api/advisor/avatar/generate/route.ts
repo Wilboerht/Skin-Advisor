@@ -71,10 +71,10 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        // Strategy 3: DiceBear fallback
+        // Strategy 3: Standard Placeholder fallback
         if (!imageUrl) {
-            console.warn("All AI providers failed. Using DiceBear fallback.");
-            imageUrl = `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(nickname || sessionId)}&style=circle`;
+            console.warn("All AI providers failed. Using placeholder fallback.");
+            imageUrl = `/user-placeholder.svg`;
 
             await updateSessionAvatar(sessionId, imageUrl);
             return NextResponse.json({ success: true, url: imageUrl, source: "fallback" });

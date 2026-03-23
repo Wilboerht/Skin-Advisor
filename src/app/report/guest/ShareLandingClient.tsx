@@ -309,11 +309,11 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
 
                         <div className="flex items-center gap-4 mb-6">
                             <div className="w-20 h-20 rounded-3xl bg-[#eee] border-[3px] border-white overflow-hidden relative">
-                                {/* Dynamic Avatar: Prioritize AI generated, fallback to DiceBear */}
+                                {/* Dynamic Avatar: Prioritize AI generated, fallback to placeholder */}
                                 <img
-                                    src={data.generatedAvatar || `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(data.nickname)}`}
+                                    src={data.generatedAvatar || `/user-placeholder.svg`}
                                     alt="Avatar"
-                                    className="w-full h-full object-cover"
+                                    className="w-full h-full object-cover p-2 bg-gray-50/50"
                                 />
                             </div>
                             <div className="flex flex-col">

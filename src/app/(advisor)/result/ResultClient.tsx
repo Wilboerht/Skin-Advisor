@@ -907,11 +907,11 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 {/* Avatar Display with Loading State */}
                                 <div className="relative">
                                     <img
-                                        src={generatedAvatar || userImage || "/images/default-avatar.png"}
-                                        alt="AI Generated Avatar"
-                                        className={sidebarStyles.pageIcon}
+                                        src={generatedAvatar || userImage || "/user-placeholder.svg"}
+                                        alt="User Avatar"
+                                        className={sidebarStyles.pageIcon + " bg-gray-50/50 p-1"}
                                         onError={(e) => {
-                                            (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=User&background=random&color=fff`;
+                                            (e.target as HTMLImageElement).src = `/user-placeholder.svg`;
                                         }}
                                     />
                                     {/* Loading Spinner Overlay */}
@@ -927,7 +927,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         {['left', 'right', 'chin'].map((angle, idx) => (
                                             <img
                                                 key={angle}
-                                                src={sideImages[angle] || userImage || "/images/default-avatar.png"}
+                                                src={sideImages[angle] || userImage || "/user-placeholder.svg"}
                                             alt={`Angle ${angle}`}
                                             className={sidebarStyles.sideAngleIcon}
                                             style={{ transitionDelay: `${idx * 50}ms` }}
