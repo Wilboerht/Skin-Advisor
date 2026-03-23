@@ -229,7 +229,6 @@
     font-weight: 500;
     letter-spacing: 0.1em;
     transition: all 0.5s var(--transition-smooth);
-    animation: floatBadge 3s ease-in-out infinite; /* 3s 周期 */
     overflow: hidden;
   }
 
