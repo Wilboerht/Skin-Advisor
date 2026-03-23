@@ -348,7 +348,7 @@ export function AuthModal() {
                                     <button
                                         type="submit"
                                         disabled={loading}
-                                        className="w-full mt-4 sm:mt-6 bg-[#1A1A1A] text-[#FDFBF7] rounded-full py-[11px] sm:py-3.5 text-[14px] sm:text-[15px] font-medium tracking-[0.15em] hover:bg-[#2C2C2C] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-xl shadow-[#1A1A1A]/10"
+                                        className="w-full mt-4 sm:mt-6 glass-premium-primary rounded-full py-[11px] sm:py-3.5 text-[14px] sm:text-[15px] font-medium tracking-[0.15em] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                                     >
                                         {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>登录账户 <ArrowRight className="w-4 h-4" /></>}
                                     </button>
@@ -459,7 +459,7 @@ export function AuthModal() {
                                     <button
                                         type="submit"
                                         disabled={loading}
-                                        className="w-full mt-4 sm:mt-6 bg-[#C9A86C] text-white rounded-full py-[11px] sm:py-3.5 text-[14px] sm:text-[15px] font-medium tracking-[0.15em] hover:bg-[#B08D55] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-xl shadow-[#C9A86C]/20"
+                                        className="w-full mt-4 sm:mt-6 glass-premium-primary rounded-full py-[11px] sm:py-4 text-[14px] sm:text-[15px] font-medium tracking-[0.15em] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                                     >
                                         {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>创建账户 <ArrowRight className="w-4 h-4" /></>}
                                     </button>
@@ -538,7 +538,7 @@ export function AuthModal() {
                                     <button
                                         type="submit"
                                         disabled={loading}
-                                        className="w-full mt-4 sm:mt-6 bg-[#C9A86C] text-white rounded-full py-[11px] sm:py-3.5 text-[14px] sm:text-[15px] font-medium tracking-[0.15em] hover:bg-[#B08D55] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-xl shadow-[#C9A86C]/20"
+                                        className="w-full mt-4 sm:mt-6 glass-premium-primary rounded-full py-[11px] sm:py-3.5 text-[14px] sm:text-[15px] font-medium tracking-[0.15em] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                                     >
                                         {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>绑定手机号并完成 <CheckCircle className="w-4 h-4" /></>}
                                     </button>
@@ -603,7 +603,7 @@ export function AuthModal() {
                                             <button
                                                 type="submit"
                                                 disabled={loading}
-                                                className="w-full mt-4 sm:mt-6 bg-[#1A1A1A] text-[#FDFBF7] rounded-full py-[11px] sm:py-3.5 text-[14px] sm:text-[15px] font-medium tracking-[0.15em] hover:bg-[#2C2C2C] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-xl shadow-[#1A1A1A]/10"
+                                                className="w-full mt-4 sm:mt-6 glass-premium-primary rounded-full py-[11px] sm:py-3.5 text-[14px] sm:text-[15px] font-medium tracking-[0.15em] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                                             >
                                                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "完成重置"}
                                             </button>
@@ -632,7 +632,7 @@ export function AuthModal() {
                                             <button
                                                 type="submit"
                                                 disabled={loading}
-                                                className="w-full mt-4 sm:mt-6 bg-[#1A1A1A] text-[#FDFBF7] rounded-full py-[11px] sm:py-3.5 text-[14px] sm:text-[15px] font-medium tracking-[0.15em] hover:bg-[#2C2C2C] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-xl shadow-[#1A1A1A]/10"
+                                                className="w-full mt-4 sm:mt-6 glass-premium-primary rounded-full py-[11px] sm:py-3.5 text-[14px] sm:text-[15px] font-medium tracking-[0.15em] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                                             >
                                                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "发送验证码"}
                                             </button>
