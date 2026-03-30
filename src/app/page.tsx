@@ -343,7 +343,7 @@ export default function Home() {
                   {/* Top Navigation Hooks */}
                   <div className="absolute top-6 left-1/2 -translate-x-1/2 w-[90%] flex items-center justify-between z-50">
                     <a
-                      href="https://demo.nihplod.cn"
+                      href="https://nihplod.cn"
                       className="group flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-medium tracking-[0.2em] text-[#3D4430]/40 hover:text-[#3D4430] hover:bg-white/40 border border-[#3D4430]/10 hover:border-[#3D4430]/20 transition-all duration-500 backdrop-blur-sm no-underline cursor-pointer relative z-10"
                     >
                       <House className="w-3.5 h-3.5 transition-transform group-hover:scale-110 opacity-70 group-hover:opacity-100" />
