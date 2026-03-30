@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useRef, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -15,11 +15,9 @@ import {
     Activity,
     Search,
     Sun,
-    Moon,
     Gift, // Import Gift icon
     ClipboardList,
     AlertCircle,
-    FlaskConical,
     Link as LinkIcon,
     X,
     MapPin,
@@ -34,7 +32,6 @@ import type { FaceAnalysisResult, ZoneAnalysis } from "@/lib/advisor-utils";
 import { DIMENSION_LABELS, SkinDimensionKey, getDefaultFaceAnalysisResult } from "@/lib/advisor-utils";
 import { getDimensionAdvice } from "@/lib/advice-utils";
 import { ScientificRadarChart } from "@/components/advisor/ScientificRadarChart";
-import { generateSkincareRoutines, getClimateByRegion } from "@/lib/skincare-dosage";
 import { copyToClipboard, generateShareUrl } from "@/lib/share";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { AIChatWindow } from "@/components/advisor/AIChatWindow";
@@ -43,7 +40,6 @@ import { ShareRewardBanner } from "@/components/advisor/ShareRewardBanner";
 // Import the new CSS Module
 import styles from "./result.module.css";
 import sidebarStyles from "./sidebar.module.css";
-import { SkincareDashboard } from "@/components/advisor/SkincareDashboard";
 import { ProductRecommendationSection } from "@/components/advisor/ProductRecommendationSection";
 import type { ProductCardData } from "@/components/advisor/ProductCard";
 import { addProductToRoutine } from "@/lib/routine-products";
@@ -121,7 +117,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const [socialGender, setSocialGender] = useState<string>(''); // Initialize empty to avoid flash mismatch
 
     // UI State
-    const [activeRoutineTab, setActiveRoutineTab] = useState<'morning' | 'evening'>('morning');
     const [loading, setLoading] = useState(!initialData);
     const hasTrackedView = useRef(false);
     const [isRedirecting, setIsRedirecting] = useState(false);
@@ -132,9 +127,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     // New State for interactivity
     const [activeDimension, setActiveDimension] = useState<SkinDimensionKey | null>(null);
     const [showLabData, setShowLabData] = useState(false);
-    const [activeStepIndex, setActiveStepIndex] = useState<number | null>(0);
-    const [selectedCycleDay, setSelectedCycleDay] = useState<number>(1);
-    const [isRoutineModalOpen, setIsRoutineModalOpen] = useState(false);
 
     const isGenderMismatch = useMemo(() => {
         if (!faceAnalysis || !socialGender) return false;
@@ -531,16 +523,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         }
         return factors;
     }, []);
-
-    // Derived Routine Data
-    const routineData = useMemo(() => {
-        if (!result || !result.skinProfile) return null;
-        const climate = getClimateByRegion(userLocation?.province, userLocation?.city);
-
-        // Pass EnvData to generator
-        const allRoutines = generateSkincareRoutines(result.skinProfile.type, climate, faceAnalysis || undefined, bioFactors, envData);
-        return allRoutines['professional'];
-    }, [result, userLocation, faceAnalysis, envData, bioFactors]);
 
     // Actions
     const handleShare = () => {
@@ -1551,100 +1533,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             </div>
 
 
-
-                            {/* 3. Routine Summary Card & Modal */}
-                            <div className={`${styles.analysisGrid} ${styles.fadeInUp} border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer group`} onClick={() => setIsRoutineModalOpen(true)}>
-                                {/* Standard Header */}
-                                <div className={styles.sectionTitle}>
-                                    <div className="flex items-center gap-3">
-                                        <FlaskConical className="w-5 h-5 text-gray-700" />
-                                        <span className="text-lg font-semibold text-gray-900">科学护肤方案</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-600 group-hover:bg-gray-200 group-hover:text-gray-900 transition-colors">
-                                            点击展开详情
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {/* Card Body - Preview Content */}
-                                <div className="p-8">
-                                    <div className="flex flex-col gap-8">
-                                        {/* Section 1: Theory */}
-                                        <div>
-                                            <h4 className="text-base font-medium text-gray-900 mb-3 border-b border-gray-200 pb-2">
-                                                1、方案原理 (Mechanism)
-                                            </h4>
-                                            <p className="text-[14px] leading-relaxed text-gray-700">
-                                                基于您的肤质，为您定制 <span className="font-semibold text-gray-900">“Skin Cycling 28天循环”</span>。
-                                                通过 <span className="bg-gray-100 text-gray-700 px-1 py-0.5 rounded text-xs mx-1">焕肤</span>
-                                                <span className="text-gray-400">→</span>
-                                                <span className="bg-gray-100 text-gray-700 px-1 py-0.5 rounded text-xs mx-1">维A</span>
-                                                <span className="text-gray-400">→</span>
-                                                <span className="bg-gray-100 text-gray-700 px-1 py-0.5 rounded text-xs mx-1">修护</span>
-                                                的周期交替，平衡功效与耐受性。
-                                            </p>
-                                        </div>
-
-                                        {/* Section 2: Tonight's Action - Zone Card Style */}
-                                        <div>
-                                            <h4 className="text-base font-medium text-gray-900 mb-3 border-b border-gray-200 pb-2">
-                                                2、今晚执行 (Tonight's Action)
-                                            </h4>
-
-                                            <div className="bg-white border text-left border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer group-hover:border-indigo-200 group-hover:shadow-indigo-50/50">
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="bg-indigo-50 text-indigo-600 p-1 rounded-md">
-                                                            <Moon className="w-3.5 h-3.5" />
-                                                        </div>
-                                                        <h5 className="font-semibold text-gray-900 text-sm">
-                                                            {activeRoutineTab === 'evening' ? '针对性护理' : '基础防护'}
-                                                        </h5>
-                                                    </div>
-                                                    <span className={`text-xs px-2 py-0.5 rounded-full border ${activeRoutineTab === 'evening' ? 'bg-indigo-50 text-indigo-700 border-indigo-100' : 'bg-green-50 text-emerald-700 border-green-100'}`}>
-                                                        {activeRoutineTab === 'evening' ? 'High Impact' : 'Recovery'}
-                                                    </span>
-                                                </div>
-
-                                                <p className="text-xs text-gray-500 mb-3 leading-relaxed">
-                                                    {activeRoutineTab === 'evening'
-                                                        ? '今晚是功效护理的关键节点，请严格按照步骤使用活性成分，注意建立耐受。'
-                                                        : '今晚重点在于屏障修护与补水，给肌肤充分的休息时间，避免叠加刺激性产品。'}
-                                                </p>
-
-                                                <div className="pt-3 border-t border-dashed border-gray-100 flex items-center justify-between">
-                                                    <p className="text-xs text-gray-700 leading-snug">
-                                                        <span className="font-medium mr-1 text-gray-900">核心任务:</span>
-                                                        {activeRoutineTab === 'evening' ? '抗皱 / 焕肤 / 控油' : '保湿 / 舒缓 / 修红'}
-                                                    </p>
-                                                    <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-indigo-400 transition-colors" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Routine Dashboard Modal */}
-                            {isRoutineModalOpen && routineData && (
-                                <div className="fixed inset-0 z-[150] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-                                    <div className="bg-white w-full max-w-[1200px] h-[85vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 relative ring-1 ring-black/5">
-                                        {/* Close Button (Absolute & Floating for style) */}
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); setIsRoutineModalOpen(false); }}
-                                            className="absolute top-5 right-5 z-50 p-2 bg-white/90 hover:bg-gray-100/50 text-gray-400 hover:text-gray-900 rounded-full backdrop-blur-md transition-all border border-transparent hover:border-gray-200 hover:shadow-sm"
-                                        >
-                                            <X className="w-5 h-5" />
-                                        </button>
-
-                                        {/* Modal Body (Pass-through layout) */}
-                                        <div className="flex-1 overflow-hidden relative flex flex-col bg-gray-50">
-                                            <SkincareDashboard routineData={routineData} />
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
 
                             {/* 4. Products - 新版按步骤分组推荐 */}
                             <ProductRecommendationSection
