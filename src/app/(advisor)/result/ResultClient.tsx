@@ -369,12 +369,12 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             }
         };
 
-        // Poll every 2 seconds for up to 2 minutes
+        // Poll every 2 seconds for up to 90 seconds (aligned with backend timeout)
         const pollInterval = setInterval(pollAvatar, 2000);
         const pollTimeout = setTimeout(() => {
             clearInterval(pollInterval);
             setIsAvatarLoading(false);
-        }, 120000);
+        }, 90000);
 
         return () => {
             clearInterval(pollInterval);

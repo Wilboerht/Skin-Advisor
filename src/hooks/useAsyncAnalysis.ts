@@ -168,21 +168,38 @@ export function useAsyncAnalysis() {
             // We do this immediately after face analysis is available
             const storedGender = localStorage.getItem("advisor_gender") || answers?.gender || 'female';
             console.log("Starting parallel avatar generation...");
-            fetch("/api/advisor/avatar/generate", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    sessionId: sessionId,
-                    nickname: nickname,
-                    frontPhoto: frontPhotoForAvatar,
-                    characteristics: {
-                        age: faceAnalysis?.skinAge?.estimated || 25,
-                        gender: storedGender,
-                        skinTone: 'healthy',
-                        hairStyle: ''
+            (async () => {
+                try {
+                    const response = await fetch("/api/advisor/avatar/generate", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            sessionId: sessionId,
+                            nickname: nickname,
+                            frontPhoto: frontPhotoForAvatar,
+                            characteristics: {
+                                age: faceAnalysis?.skinAge?.estimated || 25,
+                                gender: storedGender,
+                                skinTone: 'healthy',
+                                hairStyle: 'elegant'
+                            }
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success && data.url) {
+                            console.log("Avatar generation completed from source:", data.source);
+                        } else {
+                            console.warn("Avatar generation did not return a valid URL:", data);
+                        }
+                    } else {
+                        console.error("Avatar generation API error:", response.status);
                     }
-                })
-            }).catch(err => console.error("Background avatar generation trigger failed", err));
+                } catch (err) {
+                    console.error("Background avatar generation failed:", err);
+                }
+            })()
 
 
             // Check if this is a free retry (gender mismatch retry — won't consume quota)

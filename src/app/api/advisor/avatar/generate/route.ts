@@ -22,8 +22,10 @@ export async function POST(req: NextRequest) {
         // Build prompt for style transfer
         const gender = characteristics?.gender === 'male' ? 'male' : 'female';
         const age = characteristics?.age || '25';
+        const skinTone = characteristics?.skinTone || 'healthy';
+        const hairStyle = characteristics?.hairStyle || 'elegant';
 
-        const prompt = `Transform the person in the image into a Japanese beauty makeup illustration style. Retain facial features as accurately as possible. Keep only the upper body/bust. Apply subtle beauty enhancements with a warm friendly smile. Style: Japanese commercial beauty illustration, soft lighting, pastel colors, high detail. Background: Simple soft gradient. Keep the same ${gender} person as the original photo, approximate age ${age}.`;
+        const prompt = `Transform the person in the image into a Japanese beauty makeup illustration style. Retain facial features as accurately as possible. Keep only the upper body/bust. Apply subtle beauty enhancements with a warm friendly smile. Skin tone: ${skinTone}. Hair style: ${hairStyle}. Style: Japanese commercial beauty illustration, soft lighting, pastel colors, high detail. Background: Simple soft gradient. Keep the same ${gender} person as the original photo, approximate age ${age}.`;
 
         let imageUrl: string | null = null;
         let source = "fallback";
@@ -33,15 +35,15 @@ export async function POST(req: NextRequest) {
             try {
                 // First attempt: img2img with user face reference
                 if (frontPhoto) {
-                    console.log("Attempting Jimeng img2img (I2ISmartDrawing) with user photo...");
-                    imageUrl = await generateJimengAvatarAsync(prompt, frontPhoto, 'i2i_smart_drawing');
+                    console.log("Attempting Jimeng img2img (jimeng_i2i_v30) with user photo...");
+                    imageUrl = await generateJimengAvatarAsync(prompt, frontPhoto, 'jimeng_i2i_v30');
                     if (imageUrl) source = "jimeng_img2img";
                 }
 
                 // Second attempt: Jimeng text-to-image (no photo needed, more reliable)
                 if (!imageUrl) {
-                    console.log("Attempting Jimeng text-to-image (HighAesSmartDrawing)...");
-                    imageUrl = await generateJimengAvatarAsync(prompt, null, 'high_aes_smart_drawing');
+                    console.log("Attempting Jimeng text-to-image (jimeng_t2i_v30)...");
+                    imageUrl = await generateJimengAvatarAsync(prompt, null, 'jimeng_t2i_v30');
                     if (imageUrl) source = "jimeng_t2i";
                 }
             } catch (e) {
@@ -146,14 +148,16 @@ async function updateSessionAvatar(sessionId: string, url: string) {
 }
 
 // ============================================================================
-// Jimeng (Volcengine) Async Img2Img via CVSync2AsyncSubmitTask + polling
-// Docs: https://www.volcengine.com/docs/6791/1395327
-// req_key: "i2i_smart_drawing" = 即梦图生图3.0智能参考
+// Jimeng (Volcengine) Async Img2Img/T2I via CVSync2AsyncSubmitTask + polling
+// Docs: https://www.volcengine.com/docs/85621/1747301?lang=zh (img2img)
+// Docs: https://www.volcengine.com/docs/85621/1616429?lang=zh (text2img)
+// req_key: "jimeng_i2i_v30" = 即梦图生图3.0智能参考
+// req_key: "jimeng_t2i_v30" = 即梦文生图3.0
 // ============================================================================
 async function generateJimengAvatarAsync(
     prompt: string,
     frontPhoto?: string | null,
-    reqKey: string = 'i2i_smart_drawing'
+    reqKey: string = 'jimeng_t2i_v30'
 ): Promise<string | null> {
     // Trim keys to avoid newline issues from .env parsing
     const accessKeyId = (process.env.VOLC_ACCESSKEY || '').trim();
@@ -182,27 +186,25 @@ async function generateJimengAvatarAsync(
     // Build submit params
     const submitParams: any = {
         req_key: reqKey,
-        prompt: prompt,
-        scale: 3.5,
+        prompt: prompt,  // Recommended: <=120 chars, max 800 chars
+        scale: 0.5,  // Official range: [0, 1], default: 0.5. Text influence: 0.5 = balanced
         seed: -1,
-        logo_info: { add_logo: false },
     };
 
-    // Only add size params for text-to-image mode (img2img infers from input)
-    if (!frontPhoto || reqKey === 'high_aes_smart_drawing') {
-        submitParams.width = 1024;
-        submitParams.height = 1024;
-        submitParams.ddim_steps = 25;
+    // Add width/height: Official range [512, 2016], recommended preset 1328x1328
+    // Note: Final output is "nearest 16-multiple to input", range [512, 1536]
+    if (reqKey === 'jimeng_t2i_v30') {
+        submitParams.width = 1328;
+        submitParams.height = 1328;
+    } else if (reqKey === 'jimeng_i2i_v30') {
+        // For img2img, also set recommended 1:1 aspect ratio
+        // Input image constraint: ratio within 3:1, max 4096x4096, max 4.7MB
+        submitParams.width = 1328;
+        submitParams.height = 1328;
     }
 
-    // For img2img: add strength and reference_mode
-    if (reqKey === 'i2i_smart_drawing') {
-        submitParams.strength = 0.7;    // 0.0-1.0, higher = closer to reference
-        submitParams.reference_mode = 1; // 1 = subject/face reference
-    }
-
-    // Attach user photo as reference image
-    if (frontPhoto) {
+    // Attach user photo as reference image (only for img2img)
+    if (frontPhoto && reqKey === 'jimeng_i2i_v30') {
         if (frontPhoto.startsWith('http')) {
             submitParams.image_urls = [frontPhoto];
         } else if (frontPhoto.startsWith('data:image/')) {
@@ -232,8 +234,8 @@ async function generateJimengAvatarAsync(
 
     console.log(`Jimeng task submitted. task_id=${taskId}. Polling for result...`);
 
-    // Poll for result up to 60 seconds
-    const MAX_POLLS = 20;
+    // Poll for result up to 90 seconds (aligned with frontend timeout)
+    const MAX_POLLS = 30;
     const POLL_INTERVAL_MS = 3000;
 
     for (let i = 0; i < MAX_POLLS; i++) {
@@ -256,13 +258,11 @@ async function generateJimengAvatarAsync(
 
         const status = resultRes.data?.status;
 
-        if (status === 'success' || status === 'done' || status === 'Success' || status === 'SUCCEED') {
+        // Official status: in_queue, generating, done, not_found, expired
+        if (status === 'done') {
             // Extract image URL
             const imgData = resultRes.data;
 
-            if (imgData?.image_url) {
-                return imgData.image_url;
-            }
             if (imgData?.image_urls && imgData.image_urls.length > 0) {
                 return imgData.image_urls[0];
             }
@@ -270,23 +270,18 @@ async function generateJimengAvatarAsync(
                 return `data:image/png;base64,${imgData.binary_data_base64[0]}`;
             }
 
-            // Check nested data
-            if (imgData?.images && imgData.images.length > 0) {
-                return imgData.images[0].url || imgData.images[0].image_url || null;
-            }
-
-            console.warn("Jimeng task succeeded but no image found in response:", JSON.stringify(imgData).substring(0, 300));
+            console.warn("Jimeng task done but no image found in response:", JSON.stringify(imgData).substring(0, 300));
             return null;
         }
 
-        if (status === 'failed' || status === 'error') {
-            throw new Error(`Jimeng task failed: ${JSON.stringify(resultRes.data?.message || resultRes.data).substring(0, 200)}`);
+        if (status === 'not_found' || status === 'expired') {
+            throw new Error(`Jimeng task ${status}`);
         }
 
-        // Statuses like 'running', 'pending', 'waiting' → keep polling
+        // Statuses like in_queue, generating → keep polling
     }
 
-    throw new Error("Jimeng task timed out after polling (60s)");
+    throw new Error("Jimeng task timed out after polling (90s)");
 }
 
 function sleep(ms: number): Promise<void> {
