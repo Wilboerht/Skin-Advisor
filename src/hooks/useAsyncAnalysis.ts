@@ -202,8 +202,17 @@ export function useAsyncAnalysis() {
                             
                             // Validate response
                             if (data.success && data.url && typeof data.url === 'string') {
-                                // Save to DB for persistence (optimized: do not block)
-                                console.log(`[Avatar] ✅ Generation succeeded from ${data.source}`);
+                                // If guest user, store avatar URL in localStorage (client-side only)
+                                if (data.isGuest) {
+                                    try {
+                                        localStorage.setItem(`guest_avatar_${sessionId}`, data.url);
+                                        console.log(`[Avatar] ✅ Guest avatar stored in localStorage from ${data.source}`);
+                                    } catch (e) {
+                                        console.warn("[Avatar] ⚠️  Failed to store guest avatar in localStorage:", e);
+                                    }
+                                } else {
+                                    console.log(`[Avatar] ✅ User avatar generation succeeded from ${data.source}`);
+                                }
                                 break; // Success, exit while loop
                             } else {
                                 console.warn("[Avatar] ❌ Invalid response format:", data);

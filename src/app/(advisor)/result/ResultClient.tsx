@@ -349,6 +349,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
     // --- Avatar Polling ---
     // Poll for avatar generation if we don't have one yet
+    // For guests: also check localStorage first
     // Improved robustness: error handling, retry logic, timeout feedback
     const avatarPollRef = useRef({ failureCount: 0, hasStarted: false });
 
@@ -356,6 +357,21 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         if (!sessionId || generatedAvatar || !isAvatarLoading) {
             avatarPollRef.current.hasStarted = false;
             return;
+        }
+
+        // For guests: try to get avatar from localStorage first
+        if (!user) {
+            try {
+                const guestAvatarUrl = localStorage.getItem(`guest_avatar_${sessionId}`);
+                if (guestAvatarUrl && (guestAvatarUrl.startsWith('http') || guestAvatarUrl.startsWith('data:'))) {
+                    console.log("Avatar loaded from localStorage (guest)");
+                    setGeneratedAvatar(guestAvatarUrl);
+                    setIsAvatarLoading(false);
+                    return;
+                }
+            } catch (e) {
+                console.warn("Failed to read guest avatar from localStorage:", e);
+            }
         }
 
         // Prevent multiple simultaneous polls

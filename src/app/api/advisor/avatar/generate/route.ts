@@ -108,12 +108,31 @@ export async function POST(req: NextRequest) {
         if (!imageUrl) {
             console.warn("⚠️  All AI providers failed. Using placeholder fallback.");
             imageUrl = `/user-placeholder.svg`;
-
-            await updateSessionAvatar(sessionId, imageUrl);
-            return NextResponse.json({ success: true, url: imageUrl, source: "fallback" });
+            source = "fallback";
         }
 
-        // Persist to cloud storage
+        // Check if this is a guest user (no userId) - if so, don't persist avatar to database
+        const session = await prisma.advisorSession.findUnique({
+            where: { sessionId },
+            select: { userId: true }
+        });
+
+        const isGuest = !session?.userId;
+
+        if (isGuest) {
+            console.log(`🎭 Guest user detected (sessionId: ${sessionId}) - avatar will be stored in client localStorage only`);
+            // For guests: return the generated URL (may be temporary)
+            // Frontend will store this in localStorage for session persistence
+            return NextResponse.json({ 
+                success: true, 
+                url: imageUrl, 
+                source, 
+                isGuest: true,
+                storageType: 'client' 
+            });
+        }
+
+        // Persist to cloud storage (only for logged-in users)
         let finalUrl = imageUrl;
         try {
             const { uploadImage } = await import("@/lib/upload-client");
@@ -130,7 +149,13 @@ export async function POST(req: NextRequest) {
 
         await updateSessionAvatar(sessionId, finalUrl);
 
-        return NextResponse.json({ success: true, url: finalUrl, source });
+        return NextResponse.json({ 
+            success: true, 
+            url: finalUrl, 
+            source, 
+            isGuest: false,
+            storageType: 'database'
+        });
 
     } catch (error: any) {
         console.error("Avatar generation error:", error);
