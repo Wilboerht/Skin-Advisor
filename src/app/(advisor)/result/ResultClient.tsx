@@ -468,6 +468,64 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         }
     }, [user, authLoading, authInitialized, loading, result, sessionId, searchParams, router, initialData]);
 
+    // --- Guest Avatar Migration ---
+    // When a guest user logs in, migrate their guest avatar from localStorage to user account
+    const avatarMigrationRef = useRef(false);
+
+    useEffect(() => {
+        if (!sessionId || !user || avatarMigrationRef.current) {
+            return;
+        }
+
+        // Only migrate if we were previously a guest (no user) but now logged in
+        const previousWasGuest = userRef.current === null || userRef.current === undefined;
+        if (!previousWasGuest) {
+            return;
+        }
+
+        // Mark as migration started to prevent duplicate calls
+        avatarMigrationRef.current = true;
+
+        (async () => {
+            try {
+                // Check if there's a guest avatar in localStorage
+                const guestAvatarUrl = localStorage.getItem(`guest_avatar_${sessionId}`);
+                
+                if (guestAvatarUrl) {
+                    console.log("🎭→👤 Found guest avatar, migrating to user account...");
+                    
+                    const response = await fetch("/api/advisor/avatar/migrate-guest", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        credentials: "include",
+                        body: JSON.stringify({
+                            sessionId,
+                            avatarUrl: guestAvatarUrl
+                        })
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success && !data.skipped) {
+                            console.log("✅ Guest avatar successfully migrated to user account");
+                            // Remove from localStorage since it's now stored on server
+                            localStorage.removeItem(`guest_avatar_${sessionId}`);
+                        } else if (data.skipped) {
+                            console.log("ℹ️  User already has a custom avatar, skipping migration");
+                        }
+                    } else {
+                        console.warn("⚠️  Avatar migration failed:", response.status);
+                    }
+                } else {
+                    console.log("ℹ️  No guest avatar found to migrate");
+                }
+            } catch (err) {
+                console.error("❌ Failed to migrate guest avatar:", err);
+                // Non-blocking error - don't show to user, just log
+            }
+        })();
+    }, [sessionId, user]);
+
     // --- Environment Data Integration ---
     // Fetches from /api/weather which handles QWeather/Open-Meteo fallback
     const [envData, setEnvData] = useState({
