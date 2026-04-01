@@ -10,6 +10,7 @@ import { m, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, X, LogOut, ArrowRight, AlertTriangle, ShieldCheck, History } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { cn } from "@/lib/utils";
+import { preloadAllFaceModels } from "@/lib/preload-models";
 
 export default function QuestionsPage() {
     const router = useRouter();
@@ -54,6 +55,13 @@ export default function QuestionsPage() {
         };
         fetchQuestions();
     }, []);
+
+    // 预加载面部识别模型，在用户填问卷时后台加载
+    // 这样当完成问卷进入拍照步骤时，模型就已经就绪，避免用户等待
+    useEffect(() => {
+        preloadAllFaceModels();
+    }, []);
+
     const getFilteredQuestions = (currentAnswers: Record<string, any>, currentGender: typeof gender) => {
         return allQuestions.filter(q => {
             if (currentGender === "male" && q.fieldName === "pregnancy") return false;
