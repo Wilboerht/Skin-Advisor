@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Missing sessionId" }, { status: 400 });
         }
 
-        console.log(`Generating avatar for session ${sessionId}...`);
+        console.log(`🎨 Generating avatar for session ${sessionId}...`);
 
         // Build prompt for style transfer
         const gender = characteristics?.gender === 'male' ? 'male' : 'female';
@@ -35,26 +35,34 @@ export async function POST(req: NextRequest) {
             try {
                 // First attempt: img2img with user face reference
                 if (frontPhoto) {
-                    console.log("Attempting Jimeng img2img (jimeng_i2i_v30) with user photo...");
+                    console.log("📸 Attempting Jimeng img2img (jimeng_i2i_v30) with user photo...");
                     imageUrl = await generateJimengAvatarAsync(prompt, frontPhoto, 'jimeng_i2i_v30');
-                    if (imageUrl) source = "jimeng_img2img";
+                    if (imageUrl) {
+                        console.log("✅ Jimeng img2img succeeded");
+                        source = "jimeng_img2img";
+                    }
                 }
 
                 // Second attempt: Jimeng text-to-image (no photo needed, more reliable)
                 if (!imageUrl) {
-                    console.log("Attempting Jimeng text-to-image (jimeng_t2i_v30)...");
+                    console.log("🎨 Attempting Jimeng text-to-image (jimeng_t2i_v30)...");
                     imageUrl = await generateJimengAvatarAsync(prompt, null, 'jimeng_t2i_v30');
-                    if (imageUrl) source = "jimeng_t2i";
+                    if (imageUrl) {
+                        console.log("✅ Jimeng t2i succeeded");
+                        source = "jimeng_t2i";
+                    }
                 }
             } catch (e) {
-                console.error("Jimeng generation failed, falling back...", e);
+                console.error("❌ Jimeng generation failed, falling back...", e instanceof Error ? e.message : e);
             }
+        } else {
+            console.warn("⚠️  Jimeng 未配置 (VOLC_ACCESSKEY/VOLC_SECRETKEY missing)");
         }
 
         // Strategy 2: Try OpenAI DALL-E 3 (text-to-image fallback)
         if (!imageUrl && process.env.OPENAI_API_KEY) {
             try {
-                console.log("Attempting OpenAI DALL-E 3...");
+                console.log("🎨 Attempting OpenAI DALL-E 3...");
                 const response = await openai.images.generate({
                     model: "dall-e-3",
                     prompt: prompt,
@@ -66,16 +74,21 @@ export async function POST(req: NextRequest) {
 
                 if (response.data && response.data[0]) {
                     imageUrl = response.data[0].url || null;
-                    if (imageUrl) source = "openai";
+                    if (imageUrl) {
+                        console.log("✅ OpenAI DALL-E 3 succeeded");
+                        source = "openai";
+                    }
                 }
             } catch (e) {
-                console.error("OpenAI generation failed:", e);
+                console.error("❌ OpenAI generation failed:", e instanceof Error ? e.message : e);
             }
+        } else if (!imageUrl && !process.env.OPENAI_API_KEY) {
+            console.warn("⚠️  OpenAI 未配置 (OPENAI_API_KEY missing)");
         }
 
         // Strategy 3: Standard Placeholder fallback
         if (!imageUrl) {
-            console.warn("All AI providers failed. Using placeholder fallback.");
+            console.warn("⚠️  All AI providers failed. Using placeholder fallback.");
             imageUrl = `/user-placeholder.svg`;
 
             await updateSessionAvatar(sessionId, imageUrl);
