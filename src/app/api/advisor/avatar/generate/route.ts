@@ -20,12 +20,15 @@ export async function POST(req: NextRequest) {
         console.log(`🎨 Generating avatar for session ${sessionId}...`);
 
         // Build prompt for style transfer
-        const gender = characteristics?.gender === 'male' ? 'male' : 'female';
+        const rawGender = characteristics?.gender;
+        const isMale = rawGender === 'male' || rawGender === '男';
+        const gender = isMale ? 'handsome male (man, boy)' : 'beautiful female (woman, girl)';
         const age = characteristics?.age || '25';
         const skinTone = characteristics?.skinTone || 'healthy';
         const hairStyle = characteristics?.hairStyle || 'elegant';
 
-        const prompt = `Transform the person in the image into a Japanese beauty makeup illustration style. Retain facial features as accurately as possible. Keep only the upper body/bust. Apply subtle beauty enhancements with a warm friendly smile. Skin tone: ${skinTone}. Hair style: ${hairStyle}. Style: Japanese commercial beauty illustration, soft lighting, pastel colors, high detail. Background: Simple soft gradient. Keep the same ${gender} person as the original photo, approximate age ${age}.`;
+        // 强化正脸、无倾斜约束的提示词
+        const prompt = `A strict front-facing portrait of a ${gender}, approximate age ${age}. The face is looking directly and straight at the camera. Perfect symmetrical composition, shoulders completely squared, head totally straight, no head tilt, no side profile. Transform into a Japanese commercial beauty illustration style. Retain original facial features accurately but beautify them. Skin tone: ${skinTone}. Hair style: ${hairStyle}. Features: extremely attractive, warm friendly smile, soft pastel colors, 8k high detail, studio soft lighting. Background: Simple soft gradient.`;
 
         let imageUrl: string | null = null;
         let source = "fallback";
