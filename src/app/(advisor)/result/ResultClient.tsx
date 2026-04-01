@@ -575,41 +575,15 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     }, []);
 
     // Actions
-    const handleShare = () => {
-        console.log("Handle share clicked, sessionId:", sessionId);
-
-        if (!sessionId) {
-            toast.error("分享链接生成中，请稍后再试");
-            return;
-        }
-
-        // Navigate directly to the share page
-        trackResultShare("link");
-        router.push(`/report/guest?id=${sessionId}&ref=social_share`);
-    };
-
-    const handleSaveLink = async () => {
-        if (!sessionId) {
-            toast.error("链接生成中，请稍后再试");
-            return;
-        }
-
-        try {
-            // "Save Link" keeps the PRIVATE result page link (for self)
-            const url = generateShareUrl("/result", {
-                id: sessionId,
-                ref: "save_link"
-            });
-            const success = await copyToClipboard(url);
-            if (success) {
-                toast.success("私密结果链接已保存（有效期30天）");
-            } else {
-                toast.error("保存失败，请重试");
-            }
-        } catch (e) {
-            console.error("Save link error:", e);
-            toast.error("保存功能异常");
-        }
+    // Save result as image for sharing (image generation in progress)
+    const handleSaveImage = async () => {
+        toast.info("结果图片生成功能开发中，敬请期待");
+        // Placeholder for future image generation
+        // Will support:
+        // - Generate beautiful result card image
+        // - Include skin analysis summary
+        // - Add personalized recommendations
+        // - Support download as PNG/JPG
     };
 
     const handleDownload = async () => {
@@ -916,20 +890,16 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             </div>
                             <div className={styles.headerActions}>
                                 <WishlistNavButton className="mr-2" />
-                                <button onClick={handleShare} className={styles.actionBtn}>
+                                <button onClick={handleSaveImage} className={styles.actionBtn} title="保存分析结果为图片">
                                     <Share2 className="w-4 h-4" />
-                                    分享
+                                    保存图片
                                 </button>
                                 {user && (
-                                    <button onClick={handleSaveLink} className={styles.actionBtn}>
-                                        <LinkIcon className="w-4 h-4" />
-                                        保存结果链接
+                                    <button onClick={handleDownload} className={`${styles.actionBtn} ${styles.primaryActionBtn}`}>
+                                        <Download className="w-4 h-4" />
+                                        下载报告
                                     </button>
                                 )}
-                                <button onClick={handleDownload} className={`${styles.actionBtn} ${styles.primaryActionBtn}`}>
-                                    <Download className="w-4 h-4" />
-                                    下载报告
-                                </button>
                             </div>
                         </div>
                     </header>
