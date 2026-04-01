@@ -349,36 +349,86 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
     // --- Avatar Polling ---
     // Poll for avatar generation if we don't have one yet
+    // Improved robustness: error handling, retry logic, timeout feedback
+    const avatarPollRef = useRef({ failureCount: 0, hasStarted: false });
+
     useEffect(() => {
         if (!sessionId || generatedAvatar || !isAvatarLoading) {
+            avatarPollRef.current.hasStarted = false;
             return;
         }
+
+        // Prevent multiple simultaneous polls
+        if (avatarPollRef.current.hasStarted) {
+            return;
+        }
+
+        avatarPollRef.current.hasStarted = true;
+        avatarPollRef.current.failureCount = 0;
 
         const pollAvatar = async () => {
             try {
                 const response = await fetch(`/api/advisor/avatar/status?sessionId=${sessionId}&t=${Date.now()}`);
+                
                 if (response.ok) {
                     const data = await response.json();
-                    if (data.generatedAvatar) {
-                        setGeneratedAvatar(data.generatedAvatar);
-                        setIsAvatarLoading(false);
+                    
+                    // Validate avatar URL format
+                    if (data.generatedAvatar && typeof data.generatedAvatar === 'string') {
+                        // Basic URL validation
+                        if (data.generatedAvatar.startsWith('http') || data.generatedAvatar.startsWith('data:')) {
+                            setGeneratedAvatar(data.generatedAvatar);
+                            setIsAvatarLoading(false);
+                            console.log("Avatar loaded successfully");
+                            return;
+                        }
                     }
+                    
+                    // Reset error count on successful connection
+                    avatarPollRef.current.failureCount = 0;
+                } else if (response.status === 404) {
+                    // SessionID not found (shouldn't happen in normal flow)
+                    console.warn(`Avatar session ${sessionId} not found`);
+                    avatarPollRef.current.failureCount = 999; // Force timeout
+                } else if (response.status >= 500) {
+                    // Server error, increment failure counter
+                    avatarPollRef.current.failureCount++;
+                    console.warn(`Avatar API server error (${response.status}), failures: ${avatarPollRef.current.failureCount}`);
+                } else {
+                    // Other HTTP errors
+                    avatarPollRef.current.failureCount++;
+                    console.warn(`Avatar API error (${response.status})`);
                 }
             } catch (err) {
-                console.error("Failed to poll avatar:", err);
+                avatarPollRef.current.failureCount++;
+                console.error(`Failed to poll avatar (attempt ${avatarPollRef.current.failureCount}):`, err);
+            }
+
+            // Stop after 5 consecutive failures
+            if (avatarPollRef.current.failureCount >= 5) {
+                console.warn("Avatar polling stopped after 5 failures - using fallback");
+                setIsAvatarLoading(false);
             }
         };
 
-        // Poll every 2 seconds for up to 90 seconds (aligned with backend timeout)
-        const pollInterval = setInterval(pollAvatar, 2000);
+        // Poll every 500ms for up to 90 seconds (faster feedback, better UX)
+        // With early exit if too many errors
+        const pollInterval = setInterval(pollAvatar, 500);
         const pollTimeout = setTimeout(() => {
             clearInterval(pollInterval);
-            setIsAvatarLoading(false);
+            if (isAvatarLoading) {
+                console.warn("Avatar generation timeout (90s) - using original photo");
+                setIsAvatarLoading(false);
+            }
         }, 90000);
+        
+        // Immediate first poll to catch avatar if already available
+        pollAvatar();
 
         return () => {
             clearInterval(pollInterval);
             clearTimeout(pollTimeout);
+            avatarPollRef.current.hasStarted = false;
         };
     }, [sessionId, generatedAvatar, isAvatarLoading]);
 
@@ -925,10 +975,11 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                             (e.target as HTMLImageElement).src = `/user-placeholder.svg`;
                                         }}
                                     />
-                                    {/* Loading Spinner Overlay */}
+                                    {/* Loading Spinner Overlay with Status Text */}
                                     {isAvatarLoading && (
-                                        <div className="absolute inset-0 bg-white/50 backdrop-blur-sm rounded-full flex items-center justify-center">
-                                            <div className="w-8 h-8 border-4 border-gray-200 border-t-[#D4B78F] rounded-full animate-spin" />
+                                        <div className="absolute inset-0 bg-white/60 backdrop-blur-sm rounded-full flex flex-col items-center justify-center gap-2">
+                                            <div className="w-8 h-8 border-3 border-gray-100 border-t-[#D4B78F] border-r-[#D4B78F] rounded-full animate-spin" />
+                                            <span className="text-[10px] font-medium text-gray-600 tracking-wide animate-pulse">头像生成中</span>
                                         </div>
                                     )}
                                 </div>
