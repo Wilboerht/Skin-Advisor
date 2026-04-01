@@ -53,7 +53,13 @@ export async function POST(req: NextRequest) {
                     }
                 }
             } catch (e) {
-                console.error("❌ Jimeng generation failed, falling back...", e instanceof Error ? e.message : e);
+                const errorMsg = e instanceof Error ? e.message : String(e);
+                console.error("❌ Jimeng generation failed:", errorMsg);
+                
+                // Log specific error types to help debugging
+                if (errorMsg.includes('Access Denied') || errorMsg.includes('Unauthorized')) {
+                    console.error("⚠️  需要检查 Vercel 环境变量: VOLC_ACCESSKEY, VOLC_SECRETKEY");
+                }
             }
         } else {
             console.warn("⚠️  Jimeng 未配置 (VOLC_ACCESSKEY/VOLC_SECRETKEY missing)");
@@ -176,6 +182,12 @@ async function generateJimengAvatarAsync(
     const accessKeyId = (process.env.VOLC_ACCESSKEY || '').trim();
     const secretKey = (process.env.VOLC_SECRETKEY || '').trim();
 
+    // Validate credentials exist
+    if (!accessKeyId || !secretKey) {
+        console.error("❌ Jimeng credentials missing: VOLC_ACCESSKEY or VOLC_SECRETKEY not configured");
+        throw new Error("Jimeng credentials not configured");
+    }
+
     const service = new Service({
         host: 'visual.volcengineapi.com',
         serviceName: 'cv',
@@ -233,11 +245,24 @@ async function generateJimengAvatarAsync(
         Action: 'CVSync2AsyncSubmitTask',
         timeout: 60000
     } as any) as any;
-    console.log("Jimeng submit response:", JSON.stringify(submitRes).substring(0, 300));
+    
+    const submitResStr = JSON.stringify(submitRes).substring(0, 300);
+    console.log("Jimeng submit response:", submitResStr);
 
     // Check for success; code 10000 = OK
     if (!submitRes || submitRes.code !== 10000) {
-        throw new Error(`Jimeng submit failed: ${JSON.stringify(submitRes?.message || submitRes).substring(0, 200)}`);
+        const errorMsg = submitRes?.message || submitRes;
+        
+        // Provide specific guidance for common errors
+        if (typeof errorMsg === 'string') {
+            if (errorMsg.includes('Access Denied')) {
+                throw new Error(`Jimeng 认证失败（Access Denied）- 检查 VOLC_ACCESSKEY 和 VOLC_SECRETKEY 是否正确配置`);
+            } else if (errorMsg.includes('Unauthorized')) {
+                throw new Error(`Jimeng 权限不足（Unauthorized）- 凭证可能已过期或无权限`);
+            }
+        }
+        
+        throw new Error(`Jimeng submit failed: ${submitResStr}`);
     }
 
     const taskId = submitRes.data?.task_id;
