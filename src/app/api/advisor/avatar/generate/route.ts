@@ -189,13 +189,35 @@ async function generateJimengAvatarAsync(
     reqKey: string = 'jimeng_t2i_v30'
 ): Promise<string | null> {
     // Trim keys to avoid newline issues from .env parsing
-    const accessKeyId = (process.env.VOLC_ACCESSKEY || '').trim();
-    const secretKey = (process.env.VOLC_SECRETKEY || '').trim();
+    const rawAccessKey = (process.env.VOLC_ACCESSKEY || '').trim();
+    const rawSecretKey = (process.env.VOLC_SECRETKEY || '').trim();
 
     // Validate credentials exist
-    if (!accessKeyId || !secretKey) {
+    if (!rawAccessKey || !rawSecretKey) {
         console.error("❌ Jimeng credentials missing: VOLC_ACCESSKEY or VOLC_SECRETKEY not configured");
         throw new Error("Jimeng credentials not configured");
+    }
+
+    // Debug: Log credential format detection
+    console.log(`🔐 Credential inspection:`);
+    console.log(`   VOLC_ACCESSKEY length: ${rawAccessKey.length}`);
+    console.log(`   VOLC_SECRETKEY length: ${rawSecretKey.length}`);
+    console.log(`   VOLC_ACCESSKEY starts with 'AK': ${rawAccessKey.startsWith('AK')}`);
+    
+    // Attempt to decode VOLC_SECRETKEY if it looks like base64
+    let accessKeyId = rawAccessKey;
+    let secretKey = rawSecretKey;
+    
+    try {
+        // Check if VOLC_SECRETKEY is base64 encoded (typical for Volcengine)
+        if (rawSecretKey.match(/^[A-Za-z0-9+/=]+$/) && rawSecretKey.length > 20) {
+            const decoded = Buffer.from(rawSecretKey, 'base64').toString('utf-8');
+            console.log(`   📝 Attempting Base64 decode for VOLC_SECRETKEY...`);
+            console.log(`   📝 Decoded length: ${decoded.length}`);
+            secretKey = decoded;
+        }
+    } catch (decodeError) {
+        console.log(`   ⚠️  Base64 decode failed, using raw value`);
     }
 
     const service = new Service({
