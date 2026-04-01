@@ -57,7 +57,7 @@ import { resolveIPLocation } from "@/lib/geoip";
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        let { skinProfile, analysis, faceAnalysis, userImage, location, bioFactors, envData } = body;
+        let { skinProfile, analysis, faceAnalysis, userImage, location, bioFactors } = body;
 
         // Auto-detect location if missing
         if (!location || (!location.province && !location.city)) {

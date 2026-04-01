@@ -11,7 +11,6 @@ interface StepProductGroupProps {
     step: SkincareStep;
     products: ProductCardData[];
     index?: number;
-    environmentReason?: string | null;
     onAddToRoutine?: (productId: string) => void;
     onProductClick?: (productId: string) => void;
     defaultExpanded?: boolean;
@@ -22,7 +21,6 @@ export function StepProductGroup({
     step,
     products,
     index = 0,
-    environmentReason,
     onAddToRoutine,
     onProductClick,
     defaultExpanded = true,
@@ -74,11 +72,6 @@ export function StepProductGroup({
                             <span className="text-[10px] uppercase tracking-wider text-gray-400">
                                 {stepConfig.labelEn}
                             </span>
-                            {environmentReason && (
-                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 font-medium">
-                                    ⚡ {environmentReason}
-                                </span>
-                            )}
                         </div>
                     </div>
                 </div>

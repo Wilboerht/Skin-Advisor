@@ -29,7 +29,6 @@ export interface ProductCardData {
     benefits?: string[];
     howToUse?: string | null;
     affiliateLinks?: AffiliateLinks | null;
-    environmentBonus?: string | null; // 环境推荐理由
     dimensionLink?: {
         dimension: string;
         score: number;
@@ -43,7 +42,6 @@ interface ProductCardProps {
     onProductClick?: (productId: string) => void;
     variant?: "default" | "compact" | "horizontal";
     showMatchScore?: boolean;
-    showEnvironmentBonus?: boolean;
 }
 
 export function ProductCard({
@@ -52,8 +50,7 @@ export function ProductCard({
     onAddToRoutine,
     onProductClick,
     variant = "default",
-    showMatchScore = true,
-    showEnvironmentBonus = true
+    showMatchScore = true
 }: ProductCardProps) {
     const [imageError, setImageError] = useState(false);
     const [showPlatforms, setShowPlatforms] = useState(false);
@@ -152,15 +149,6 @@ export function ProductCard({
                 ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-300">
                         <ShoppingCart className="w-12 h-12" />
-                    </div>
-                )}
-
-                {/* 环境推荐标签 */}
-                {showEnvironmentBonus && product.environmentBonus && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
-                        <span className="text-[10px] text-white font-medium">
-                            ⚡ {product.environmentBonus}
-                        </span>
                     </div>
                 )}
             </div>

@@ -182,7 +182,6 @@ export function ProductRecommendationSection({
                                     step={step}
                                     products={stepProducts as ProductCardData[]}
                                     index={index}
-                                    environmentReason={null}
                                     onAddToRoutine={onAddToRoutine}
                                     onProductClick={onProductClick}
                                     defaultExpanded={index < 3} // 前3个步骤默认展开
