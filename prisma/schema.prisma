@@ -352,3 +352,27 @@ model WeatherCache {
   expiresAt   DateTime
 }
 
+// 头像生成队列 - 解决火山引擎并发限制问题
+model AvatarQueue {
+  id              String   @id @default(cuid())
+  sessionId       String   @unique
+  status          String   @default("pending") // pending | processing | completed | failed
+  attempts        Int      @default(0)
+  
+  // 生成参数
+  nickname        String?
+  characteristics Json?    // { age, gender, skinTone, hairStyle }
+  frontPhoto      String?  // base64 或 URL
+  
+  // 结果
+  generatedUrl    String?
+  source          String?  // jimeng_i2i | jimeng_t2i | fallback
+  errorMessage    String?
+  
+  // 时间戳
+  createdAt       DateTime @default(now())
+  startedAt       DateTime?
+  completedAt     DateTime?
+  expiresAt       DateTime // 7 天后自动清理
+}
+

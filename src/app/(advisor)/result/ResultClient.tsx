@@ -107,6 +107,11 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const [sideImages, setSideImages] = useState<Record<string, string>>({});
     const [generatedAvatar, setGeneratedAvatar] = useState<string | null>((initialData?.result as any)?.generatedAvatar || null);
     const [isAvatarLoading, setIsAvatarLoading] = useState(!(initialData?.result as any)?.generatedAvatar);
+    const [avatarQueueStatus, setAvatarQueueStatus] = useState<{
+        position?: number;
+        estimatedWaitTime?: number;
+        message?: string;
+    } | null>(null);
     const [userLocation, setUserLocation] = useState<{ province?: string; city?: string; lat?: number; lon?: number } | null>(null);
     const [userNickname, setUserNickname] = useState<string>("您");
     // Session ID for sharing - initialized from props or will be set after analysis
@@ -386,12 +391,22 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 if (response.ok) {
                     const data = await response.json();
                     
+                    // 更新队列状态
+                    if (data.queueStatus && data.queueStatus !== 'completed') {
+                        setAvatarQueueStatus({
+                            position: data.queuePosition,
+                            estimatedWaitTime: data.estimatedWaitTime,
+                            message: data.message
+                        });
+                    }
+                    
                     // Validate avatar URL format
                     if (data.generatedAvatar && typeof data.generatedAvatar === 'string') {
                         // Basic URL validation
                         if (data.generatedAvatar.startsWith('http') || data.generatedAvatar.startsWith('data:')) {
                             setGeneratedAvatar(data.generatedAvatar);
                             setIsAvatarLoading(false);
+                            setAvatarQueueStatus(null);
                             console.log("Avatar loaded successfully");
                             return;
                         }
@@ -424,16 +439,16 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             }
         };
 
-        // Poll every 500ms for up to 90 seconds (faster feedback, better UX)
-        // With early exit if too many errors
-        const pollInterval = setInterval(pollAvatar, 500);
+        // 动态轮询间隔：队列中时较快，已处理时较慢
+        const pollInterval = setInterval(pollAvatar, avatarQueueStatus ? 1000 : 500);
         const pollTimeout = setTimeout(() => {
             clearInterval(pollInterval);
             if (isAvatarLoading) {
-                console.warn("Avatar generation timeout (90s) - using original photo");
+                console.warn("Avatar generation timeout (120s) - using original photo");
                 setIsAvatarLoading(false);
+                setAvatarQueueStatus(null);
             }
-        }, 90000);
+        }, 120000); // 增加到 120 秒，因为可能需要排队
         
         // Immediate first poll to catch avatar if already available
         pollAvatar();
@@ -930,7 +945,16 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     {isAvatarLoading && (
                                         <div className="absolute inset-0 bg-white/60 backdrop-blur-sm rounded-full flex flex-col items-center justify-center gap-2">
                                             <div className="w-8 h-8 border-3 border-gray-100 border-t-[#D4B78F] border-r-[#D4B78F] rounded-full animate-spin" />
-                                            <span className="text-[10px] font-medium text-gray-600 tracking-wide animate-pulse">头像生成中</span>
+                                            <div className="text-center">
+                                                <div className="text-[10px] font-medium text-gray-600 tracking-wide">
+                                                    {avatarQueueStatus?.position ? `队列 #${avatarQueueStatus.position}` : '生成中'}
+                                                </div>
+                                                {avatarQueueStatus?.estimatedWaitTime && (
+                                                    <div className="text-[8px] text-gray-500 mt-0.5">
+                                                        约 {avatarQueueStatus.estimatedWaitTime}秒
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     )}
                                 </div>

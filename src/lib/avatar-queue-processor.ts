@@ -1,0 +1,390 @@
+/**
+ * 头像生成队列处理器
+ * 后台异步处理队列中的头像生成请求
+ */
+
+import prisma from "@/lib/prisma";
+import { Service } from "@volcengine/openapi";
+
+export interface AvatarQueueItem {
+  id: string;
+  sessionId: string;
+  nickname?: string | null;
+  characteristics?: any;
+  frontPhoto?: string | null;
+}
+
+/**
+ * 生成头像的完整逻辑（从 generate/route.ts 迁移）
+ */
+async function generateAvatarImage(
+  frontPhoto: string | null | undefined,
+  characteristics: any,
+  nickname: string
+): Promise<{ url: string; source: string } | null> {
+  // Build prompt
+  const rawGender = characteristics?.gender;
+  const isMale = rawGender === "male" || rawGender === "男";
+  const gender = isMale ? "男" : "女";
+  const age = characteristics?.age || "25";
+  const skinTone = characteristics?.skinTone || "健康肤色";
+  const hairStyle = characteristics?.hairStyle || "日常发型";
+
+  const prompt = `将图片中的人像转为日系美妆插画风格，【核心要求：必须具备极高的人貌相似度，严格保留原照片的五官比例、脸型特征、眼神和发型等所有个人身份细节，仅仅是给照片加上插画滤镜感，绝对不能改变本人的长相特征，要让人能一眼认出就是本人】（性别：${gender}，大约${age}岁，肤色：${skinTone}，发型：${hairStyle}），【构图绝对要求：如果原图中面部特写占比过大，请务必自动缩小人物比例，向外扩展画幅以自然地露出肩膀和上身部分，生成一个标准且构图舒适的半身头像；人物必须严格位于画面的垂直中轴线上，头上需留有适当的背景留白，左右两侧背景留白必须完全对称均等】，必须是标准的正面头像视角，人物的头部和身体都必须笔直正对镜头，绝对不能歪头、侧身或歪着身子，仅保留单一主体人物，【背景绝对规定：彻底清除原图背景！必须是极简的、完全平面的均一单色背景（淡米色或纯白色），背景上绝对不能有任何渐变色、阴影、光斑、线条、纹理、图案或残影，整个背景必须完全是一模一样的纯色】，适当轻度美颜并保留本人原本骨相特色、给角色自然微笑表情`;
+
+  let imageUrl: string | null = null;
+  let source = "fallback";
+
+  // 策略 1: Jimeng img2img
+  if (process.env.VOLC_ACCESSKEY && process.env.VOLC_SECRETKEY) {
+    try {
+      if (frontPhoto) {
+        console.log("📸 Attempting Jimeng img2img...");
+        imageUrl = await generateJimengAvatarAsync(
+          prompt,
+          frontPhoto,
+          "jimeng_i2i_v30"
+        );
+        if (imageUrl) {
+          console.log("✅ Jimeng img2img succeeded");
+          source = "jimeng_i2i";
+          return { url: imageUrl, source };
+        }
+      }
+
+      // 策略 2: Jimeng text2image
+      console.log("🎨 Attempting Jimeng text-to-image...");
+      imageUrl = await generateJimengAvatarAsync(
+        prompt,
+        null,
+        "jimeng_t2i_v30"
+      );
+      if (imageUrl) {
+        console.log("✅ Jimeng t2i succeeded");
+        source = "jimeng_t2i";
+        return { url: imageUrl, source };
+      }
+    } catch (e) {
+      const errorMsg = e instanceof Error ? e.message : String(e);
+      console.error("❌ Jimeng generation failed:", errorMsg);
+
+      if (
+        errorMsg.includes("429") ||
+        errorMsg.includes("限流") ||
+        errorMsg.includes("Quota")
+      ) {
+        console.warn("🔴 Jimeng 已超限，返回占位符");
+        return null; // 让调用方决定处理
+      }
+    }
+  }
+
+  // 降级：使用占位符
+  console.warn("⚠️ All generation strategies failed, using fallback");
+  return { url: "/user-placeholder.svg", source: "fallback" };
+}
+
+/**
+ * Jimeng API 调用
+ */
+async function generateJimengAvatarAsync(
+  prompt: string,
+  frontPhoto: string | null | undefined,
+  reqKey: string
+): Promise<string | null> {
+  const accessKeyId = (process.env.VOLC_ACCESSKEY || "").trim();
+  const secretKeyRaw = (process.env.VOLC_SECRETKEY || "").trim();
+
+  if (!accessKeyId || !secretKeyRaw) {
+    throw new Error("Jimeng credentials not configured");
+  }
+
+  const service = new (Service as any)({
+    host: "cv.volcengineapi.com",
+    region: "cn-beijing",
+    serviceName: "cv",
+  });
+  
+  service.setAccessKeyId(accessKeyId);
+  service.setSecretKey(secretKeyRaw);
+
+  // Build request body
+  const reqBody: any = {
+    req_key: reqKey,
+    prompt: prompt,
+    model_version: "general",
+    return_url: true,
+  };
+
+  // Add image parameter if provided (for img2img)
+  if (frontPhoto && frontPhoto.startsWith("data:")) {
+    // Base64 encoded image
+    reqBody.image_base64 = frontPhoto.split(",")[1];
+  } else if (frontPhoto) {
+    // URL reference
+    reqBody.image_url = frontPhoto;
+  }
+
+  console.log(
+    `[Jimeng] Submitting task: reqKey=${reqKey}, has_image=${!!frontPhoto}`
+  );
+
+  try {
+    // Submit async task
+    const submitRes = await new Promise<any>((resolve, reject) => {
+      service.json("CVSync2AsyncSubmitTask", {}, reqBody, (err: any, data: any) => {
+        if (err) reject(err);
+        else resolve(data);
+      });
+    });
+
+    if (!submitRes || submitRes.error || submitRes.code !== 0) {
+      const error = submitRes?.error || submitRes?.code;
+      throw new Error(`Jimeng submit failed: ${JSON.stringify(error)}`);
+    }
+
+    const reqId = submitRes.data?.req_id;
+    if (!reqId) {
+      throw new Error("No request ID returned from Jimeng submit");
+    }
+
+    console.log(`[Jimeng] Task submitted, reqId=${reqId}, polling for result...`);
+
+    // Poll for result (max 60 seconds)
+    const maxAttempts = 60;
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise((r) => setTimeout(r, 1000)); // Wait 1s between polls
+
+      const queryRes = await new Promise<any>((resolve, reject) => {
+        service.json("CVSync2AsyncGetResult", {}, { req_id: reqId }, (err: any, data: any) => {
+          if (err) reject(err);
+          else resolve(data);
+        });
+      });
+
+      const status = queryRes?.data?.task_status;
+      const resultUrl = queryRes?.data?.image_url;
+
+      if (status === "succeed" && resultUrl) {
+        console.log(`[Jimeng] ✅ Task completed after ${i + 1} attempts`);
+        return resultUrl;
+      } else if (status === "failed") {
+        throw new Error(`Jimeng task failed: ${queryRes?.data?.fail_reason}`);
+      } else if (status === "processing") {
+        // Continue polling
+        if (i % 5 === 0) {
+          console.log(`[Jimeng] Still processing... (${i + 1}/${maxAttempts})`);
+        }
+      }
+    }
+
+    throw new Error("Jimeng task polling timeout");
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error(`[Jimeng] Error: ${msg}`);
+    throw error;
+  }
+}
+
+/**
+ * 处理单个队列项
+ */
+export async function processAvatarQueueItem(item: AvatarQueueItem) {
+  console.log(
+    `[AvatarQueue] Processing ${item.id} for session ${item.sessionId}`
+  );
+
+  try {
+    // Update status to processing
+    await prisma.avatarQueue.update({
+      where: { id: item.id },
+      data: {
+        status: "processing",
+        startedAt: new Date(),
+      },
+    });
+
+    // Generate avatar
+    const result = await generateAvatarImage(
+      item.frontPhoto,
+      item.characteristics,
+      item.nickname || "用户"
+    );
+
+    if (!result) {
+      throw new Error("Avatar generation returned no result");
+    }
+
+    // 使用事务确保两个表的更新原子性
+    // 要么都成功，要么都失败重试
+    try {
+      await prisma.$transaction(async (tx) => {
+        // 先读取当前 session 的结果
+        const session = await tx.advisorSession.findUnique({
+          where: { sessionId: item.sessionId },
+          select: { analysisResult: true },
+        });
+
+        if (!session) {
+          throw new Error(`AdvisorSession not found for sessionId: ${item.sessionId}`);
+        }
+
+        const currentResult = (session.analysisResult as any) || {};
+        const updatedResult = {
+          ...currentResult,
+          generatedAvatar: result.url,
+        };
+
+        // 同时更新两个表
+        await Promise.all([
+          tx.avatarQueue.update({
+            where: { id: item.id },
+            data: {
+              status: "completed",
+              generatedUrl: result.url,
+              source: result.source,
+              completedAt: new Date(),
+            },
+          }),
+          tx.advisorSession.update({
+            where: { sessionId: item.sessionId },
+            data: { analysisResult: updatedResult },
+          }),
+        ]);
+
+        console.log(`[AvatarQueue] ✅ Successfully updated session ${item.sessionId} with avatar`);
+      });
+    } catch (txError) {
+      const msg = txError instanceof Error ? txError.message : String(txError);
+      console.warn(
+        `[AvatarQueue] ⚠️  Transaction failed (will retry): ${msg}`
+      );
+
+      // 标记为待重试，而不是完成
+      const attempts = (item as any).attempts + 1;
+      if (attempts < 3) {
+        await prisma.avatarQueue.update({
+          where: { id: item.id },
+          data: {
+            status: "pending",
+            attempts,
+            errorMessage: `Failed to sync with session: ${msg}`,
+          },
+        });
+        console.log(
+          `[AvatarQueue] Marked for retry (${attempts}/3): ${item.id}`
+        );
+      } else {
+        // 尝试 3 次后放弃，标记为失败
+        await prisma.avatarQueue.update({
+          where: { id: item.id },
+          data: {
+            status: "failed",
+            attempts,
+            errorMessage: `Failed to sync after 3 attempts: ${msg}`,
+            completedAt: new Date(),
+          },
+        });
+        console.error(
+          `[AvatarQueue] ❌ Transaction failed after 3 retries: ${item.id}`
+        );
+      }
+
+      // 重新抛出错误以保持外层 catch 的统一处理
+      throw txError;
+    }
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error(`[AvatarQueue] ❌ Failed to process ${item.id}: ${msg}`);
+
+    // Update to failed
+    const attempts = item.sessionId ? (item as any).attempts + 1 : 1;
+    if (attempts < 3) {
+      // Retry
+      await prisma.avatarQueue.update({
+        where: { id: item.id },
+        data: {
+          status: "pending",
+          attempts,
+          errorMessage: msg,
+        },
+      });
+      console.log(
+        `[AvatarQueue] Marked for retry (${attempts}/3): ${item.id}`
+      );
+    } else {
+      // Give up
+      await prisma.avatarQueue.update({
+        where: { id: item.id },
+        data: {
+          status: "failed",
+          attempts,
+          errorMessage: msg,
+          completedAt: new Date(),
+        },
+      });
+      console.error(
+        `[AvatarQueue] ❌ Gave up after 3 attempts: ${item.id}`
+      );
+    }
+  }
+}
+
+/**
+ * 启动后台队列处理器
+ * 应该在应用启动时调用一次
+ */
+export function startAvatarQueueProcessor(checkIntervalMs: number = 2000) {
+  let isActive = true;
+  let isProcessing = false;
+
+  async function processQueue() {
+    if (isProcessing) return;
+    isProcessing = true;
+
+    try {
+      // 获取pending队列中的第一个
+      const nextItem = await prisma.avatarQueue.findFirst({
+        where: { status: "pending" },
+        orderBy: { createdAt: "asc" },
+      });
+
+      if (nextItem) {
+        await processAvatarQueueItem(nextItem);
+      }
+
+      // 清理过期的队列项 (7天前的)
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const result = await prisma.avatarQueue.deleteMany({
+        where: {
+          expiresAt: {
+            lt: new Date(),
+          },
+        },
+      });
+
+      if (result.count > 0) {
+        console.log(`[AvatarQueue] Cleaned up ${result.count} expired items`);
+      }
+    } catch (error) {
+      console.error("[AvatarQueue] Processor error:", error);
+    } finally {
+      isProcessing = false;
+
+      // Schedule next check
+      if (isActive) {
+        setTimeout(processQueue, checkIntervalMs);
+      }
+    }
+  }
+
+  // Start processing
+  console.log(`[AvatarQueue] Processor started (checking every ${checkIntervalMs}ms)`);
+  processQueue();
+
+  // Return stop function
+  return () => {
+    isActive = false;
+    console.log("[AvatarQueue] Processor stopped");
+  };
+}
