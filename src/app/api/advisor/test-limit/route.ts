@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
                 where: { id: session.id },
                 select: { dailyTestLimit: true }
             });
-            const dailyLimit = user?.dailyTestLimit || 1;
+            const dailyLimit = user?.dailyTestLimit || 10;
 
             // 统计今日测试次数
             const todayCount = await prisma.testRecord.count({
@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
                 where: { id: session.id },
                 select: { dailyTestLimit: true }
             });
-            const dailyLimit = user?.dailyTestLimit || 1;
+            const dailyLimit = user?.dailyTestLimit || 10;
 
             // 检查是否已达到限制
             const todayCount = await prisma.testRecord.count({

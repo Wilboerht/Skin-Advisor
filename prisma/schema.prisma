@@ -158,7 +158,7 @@ model User {
 
   role            String           @default("user") // user, vip, disabled
   vipExpiresAt    DateTime?        // VIP 会员过期时间
-  dailyTestLimit  Int              @default(1) // 每日测试次数限制，管理员可调整
+  dailyTestLimit  Int              @default(10) // 每日测试次数限制，默认10次，管理员可调整
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   
