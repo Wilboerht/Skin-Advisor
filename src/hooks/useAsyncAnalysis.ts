@@ -166,40 +166,89 @@ export function useAsyncAnalysis() {
 
             // Trigger background avatar generation in PARALLEL with text analysis
             // We do this immediately after face analysis is available
+            // Non-blocking: failures are silently logged, don't affect result display
             const storedGender = localStorage.getItem("advisor_gender") || answers?.gender || 'female';
-            console.log("Starting parallel avatar generation...");
+            console.log("[Avatar] Starting background generation...");
             (async () => {
-                try {
-                    const response = await fetch("/api/advisor/avatar/generate", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            sessionId: sessionId,
-                            nickname: nickname,
-                            frontPhoto: frontPhotoForAvatar,
-                            characteristics: {
-                                age: faceAnalysis?.skinAge?.estimated || 25,
-                                gender: storedGender,
-                                skinTone: 'healthy',
-                                hairStyle: 'elegant'
+                let retries = 0;
+                const maxRetries = 2;
+                
+                while (retries <= maxRetries) {
+                    try {
+                        const controller = new AbortController();
+                        const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout per attempt
+
+                        const response = await fetch("/api/advisor/avatar/generate", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                sessionId: sessionId,
+                                nickname: nickname,
+                                frontPhoto: frontPhotoForAvatar,
+                                characteristics: {
+                                    age: faceAnalysis?.skinAge?.estimated || 25,
+                                    gender: storedGender,
+                                    skinTone: 'healthy',
+                                    hairStyle: 'elegant'
+                                }
+                            }),
+                            signal: controller.signal
+                        });
+
+                        clearTimeout(timeout);
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            
+                            // Validate response
+                            if (data.success && data.url && typeof data.url === 'string') {
+                                // Save to DB for persistence (optimized: do not block)
+                                console.log(`[Avatar] ✅ Generation succeeded from ${data.source}`);
+                                break; // Success, exit while loop
+                            } else {
+                                console.warn("[Avatar] ❌ Invalid response format:", data);
+                                if (retries < maxRetries) {
+                                    retries++;
+                                    await new Promise(r => setTimeout(r, 1000)); // Wait before retry
+                                    continue;
+                                } else {
+                                    break;
+                                }
                             }
-                        })
-                    });
-                    
-                    if (response.ok) {
-                        const data = await response.json();
-                        if (data.success && data.url) {
-                            console.log("Avatar generation completed from source:", data.source);
+                        } else if (response.status >= 500) {
+                            // Server error, retry-able
+                            console.warn(`[Avatar] ⚠️  Server error (${response.status}), retrying...`);
+                            if (retries < maxRetries) {
+                                retries++;
+                                await new Promise(r => setTimeout(r, 2000 * Math.pow(1.5, retries))); // Exponential backoff
+                                continue;
+                            } else {
+                                break;
+                            }
                         } else {
-                            console.warn("Avatar generation did not return a valid URL:", data);
+                            // Client error or other, don't retry
+                            console.error(`[Avatar] ❌ API error (${response.status})`);
+                            break;
                         }
-                    } else {
-                        console.error("Avatar generation API error:", response.status);
+                    } catch (err) {
+                        if (err instanceof Error && err.name === 'AbortError') {
+                            console.warn("[Avatar] ⚠️  Request timeout");
+                        } else {
+                            console.error("[Avatar] ❌ Generation failed:", err);
+                        }
+                        
+                        if (retries < maxRetries) {
+                            retries++;
+                            await new Promise(r => setTimeout(r, 2000));
+                            continue;
+                        } else {
+                            break;
+                        }
                     }
-                } catch (err) {
-                    console.error("Background avatar generation failed:", err);
                 }
-            })()
+                
+                console.log("[Avatar] Background process complete (frontend will poll for results)");
+            })();
 
 
             // Check if this is a free retry (gender mismatch retry — won't consume quota)
