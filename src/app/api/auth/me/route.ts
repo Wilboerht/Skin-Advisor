@@ -6,21 +6,24 @@ function mirrorOfficialSessionCookie(officialResponse: Response, response: NextR
     const setCookieHeader = officialResponse.headers.get("set-cookie");
     
     if (!setCookieHeader) {
-        console.warn("⚠️  Official API (me) did NOT return set-cookie header");
+        console.warn("⚠️  Official API (me) did NOT return set-cookie header - session cookie may need renewal");
+        // 即使官方 API 没有返回 cookie，也不中断流程
+        // 客户端应该保留现有的 token cookie
         return;
     }
 
     console.log(`📝 Official API (me) returned cookie: ${setCookieHeader.substring(0, 50)}...`);
 
-    // Handle potentially multiple Set-Cookie headers
-    const cookies = setCookieHeader.split(",").map(c => c.trim());
+    // Handle potentially multiple Set-Cookie headers (可能是用逗号或其他方式分隔)
+    const cookieLines = setCookieHeader.split(/,(?=\s*\w+\s*=)/);
     
-    for (const cookieStr of cookies) {
-        const eqIdx = cookieStr.indexOf("=");
+    for (const cookieStr of cookieLines) {
+        const trimmed = cookieStr.trim();
+        const eqIdx = trimmed.indexOf("=");
         if (eqIdx === -1) continue;
         
-        const cookieName = cookieStr.substring(0, eqIdx).trim();
-        const rest = cookieStr.substring(eqIdx + 1);
+        const cookieName = trimmed.substring(0, eqIdx).trim();
+        const rest = trimmed.substring(eqIdx + 1);
         const semiIdx = rest.indexOf(";");
         const cookieValue = (semiIdx === -1 ? rest : rest.substring(0, semiIdx)).trim();
         

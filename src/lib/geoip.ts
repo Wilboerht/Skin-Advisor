@@ -82,7 +82,14 @@ export function resolveIPLocation(ip: string): GeoLocation | null {
             };
         }
     } catch (e) {
-        console.error("GeoIP lookup failed:", e);
+        // GeoIP 在 Vercel 环境中可能缺少数据文件，使用备选方案
+        console.warn("GeoIP lookup failed (Vercel/无服务器环境):", e instanceof Error ? e.message : e);
+        // 返回默认地理位置，避免服务中断
+        return {
+            country: "CN",
+            region: "未知",
+            city: "未知"
+        };
     }
 
     return null;

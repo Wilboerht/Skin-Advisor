@@ -65,27 +65,28 @@ export async function GET(req: NextRequest) {
     try {
         const resultResponse = await Promise.race([
             (async () => {
-                // Try QWeather
-                try {
-                    const data = await getQWeatherData(locationQuery!);
-                    if (data.isRealData) return NextResponse.json(data);
-                } catch (e) {
-                    console.warn("QWeather attempt failed:", e);
-                }
-
-                // Try Open-Meteo
+                // 优先使用 Open-Meteo （更稳定，无 API 密钥限制）
                 try {
                     const data = await getOpenMeteoData(locationQuery!);
                     if (data.isRealData) return NextResponse.json(data);
                 } catch (e) {
-                    console.warn("Open-Meteo attempt failed:", e);
+                    console.warn("[Weather] Open-Meteo attempt failed:", e instanceof Error ? e.message : e);
                 }
 
+                // 备选：尝试 QWeather（可能存在 API 配置问题，保留备选）
+                try {
+                    const data = await getQWeatherData(locationQuery!);
+                    if (data.isRealData) return NextResponse.json(data);
+                } catch (e) {
+                    console.warn("[Weather] QWeather attempt failed:", e instanceof Error ? e.message : e);
+                }
+
+                console.warn("[Weather] 所有实时数据源均失败，返回降级数据");
                 return NextResponse.json(fallbackData);
             })(),
             new Promise<NextResponse>((resolve) =>
                 setTimeout(() => {
-                    console.error("Weather API Global Timeout (8s)");
+                    console.error("[Weather] Global timeout (8s) - returning fallback");
                     resolve(NextResponse.json(fallbackData));
                 }, 8000)
             )

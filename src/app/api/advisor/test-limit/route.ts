@@ -74,7 +74,14 @@ export async function GET(request: NextRequest) {
         }
     } catch (error) {
         console.error("Failed to check test limit:", error);
-        return NextResponse.json({ error: "Failed to check test limit" }, { status: 500 });
+        // 提供详细的错误信息用于诊断
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorStack = error instanceof Error ? error.stack : '';
+        console.error("Error stack:", errorStack);
+        return NextResponse.json({ 
+            error: "Failed to check test limit",
+            details: errorMessage 
+        }, { status: 500 });
     }
 }
 
@@ -164,6 +171,13 @@ export async function POST(request: NextRequest) {
         }
     } catch (error) {
         console.error("Failed to record test:", error);
-        return NextResponse.json({ error: "Failed to record test" }, { status: 500 });
+        // 提供详细的错误信息用于诊断
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorStack = error instanceof Error ? error.stack : '';
+        console.error("Error stack:", errorStack);
+        return NextResponse.json({ 
+            error: "Failed to record test",
+            details: errorMessage 
+        }, { status: 500 });
     }
 }
