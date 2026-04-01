@@ -22,13 +22,12 @@ export async function POST(req: NextRequest) {
         // Build prompt for style transfer
         const rawGender = characteristics?.gender;
         const isMale = rawGender === 'male' || rawGender === '男';
-        const gender = isMale ? 'handsome male (man, boy)' : 'beautiful female (woman, girl)';
+        const gender = isMale ? '男' : '女';
         const age = characteristics?.age || '25';
-        const skinTone = characteristics?.skinTone || 'healthy';
-        const hairStyle = characteristics?.hairStyle || 'elegant';
+        const skinTone = characteristics?.skinTone || '健康肤色';
+        const hairStyle = characteristics?.hairStyle || '日常发型';
 
-        // 强化正脸、无倾斜约束的提示词
-        const prompt = `A strict front-facing portrait of a ${gender}, approximate age ${age}. The face is looking directly and straight at the camera. Perfect symmetrical composition, shoulders completely squared, head totally straight, no head tilt, no side profile. Transform into a Japanese commercial beauty illustration style. Retain original facial features accurately but beautify them. Skin tone: ${skinTone}. Hair style: ${hairStyle}. Features: extremely attractive, warm friendly smile, soft pastel colors, 8k high detail, studio soft lighting. Background: Simple soft gradient.`;
+        const prompt = `将图片中的人像转为日系美妆插画风格，尽可能还原所有人物特征及细节（性别：${gender}，大约${age}岁，肤色：${skinTone}，发型：${hairStyle}），要正脸照，不要歪的，仅保留人体部分，适当美颜、给角色微笑表情，并将人像水平居中显示`;
 
         let imageUrl: string | null = null;
         let source = "fallback";
@@ -146,7 +145,7 @@ async function updateSessionAvatar(sessionId: string, url: string) {
     try {
         const session = await prisma.advisorSession.findUnique({
             where: { sessionId },
-            select: { analysisResult: true }
+            select: { analysisResult: true, userId: true }
         });
 
         const currentResult = (session?.analysisResult as any) || {};
@@ -161,6 +160,23 @@ async function updateSessionAvatar(sessionId: string, url: string) {
                 data: { analysisResult: updatedResult }
             });
             console.log(`Updated existing session ${sessionId} with avatar`);
+
+            // 如果用户未设置自定义头像，自动更新为其生成的 AI 头像
+            if (session.userId) {
+                const user = await prisma.user.findUnique({
+                    where: { id: session.userId },
+                    select: { avatarUrl: true }
+                });
+
+                // 判断是否是系统生成的头像、占位图或者是空
+                if (user && (!user.avatarUrl || user.avatarUrl === '/user-placeholder.svg' || user.avatarUrl.includes('avatar-ai-'))) {
+                    await prisma.user.update({
+                        where: { id: session.userId },
+                        data: { avatarUrl: url }
+                    });
+                    console.log(`Updated user ${session.userId} avatar with newly generated AI avatar`);
+                }
+            }
         } else {
             // If main analysis hasn't created the session yet, we create it with just the avatar
             // The main analysis will later update it with reports
