@@ -80,14 +80,21 @@ export function preloadMediaPipe() {
 /**
  * 预加载所有面部识别相关模型
  * 在进入问卷时调用，这样在用户完成问卷进入拍照时模型就已就绪
+ * 
+ * @returns Promise 返回所有预加载任务的结果
+ * 可以忽略返回值（火烧不管），或者在需要时 await
  */
 export function preloadAllFaceModels() {
   console.log("[Preload] Starting all face detection models preload...");
   
-  // 并行启动两个预加载任务，不等待它们完成
-  preloadFaceApi();
-  preloadMediaPipe();
+  // 并行启动两个预加载任务
+  const faceApiPromise = preloadFaceApi();
+  const mediaPipePromise = preloadMediaPipe();
   
-  // 如果需要等待都完成，可以这样做：
-  // return Promise.all([preloadFaceApi(), preloadMediaPipe()]);
+  // 返回 Promise，但不阻塞调用方
+  // 在后台静默加载，即使 Promise reject 也不会抛出错误
+  Promise.all([faceApiPromise, mediaPipePromise]).catch(err => {
+    console.error("[Preload] Some models failed to preload:", err);
+    // 不重新抛出错误，应用可以继续运行
+  });
 }
