@@ -514,7 +514,7 @@ export default function Home() {
           <h3 className="mb-3 text-xl font-serif text-[#1A1A1A] tracking-tight">今日测试次数已用完</h3>
           <p className="mb-8 text-[14px] text-[#5E5E5E] leading-relaxed font-light">
             {user ? (
-              <>您今日的 {testLimitInfo?.dailyLimit || 10} 次测试机会已全部使用，请明天再来</>
+              <>您今日的 {testLimitInfo?.dailyLimit || 1} 次测试机会已全部使用，请明天再来</>
             ) : (
               <>游客每天仅有 1 次测试机会<br />登录后可获得更多测试次数</>
             )}
