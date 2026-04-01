@@ -190,19 +190,28 @@ async function generateJimengAvatarAsync(
 ): Promise<string | null> {
     // Trim keys to avoid newline issues from .env parsing (should be raw decoded values)
     const accessKeyId = (process.env.VOLC_ACCESSKEY || '').trim();
-    const secretKey = (process.env.VOLC_SECRETKEY || '').trim();
+    const secretKeyRaw = (process.env.VOLC_SECRETKEY || '').trim();
 
     // Validate credentials exist
-    if (!accessKeyId || !secretKey) {
+    if (!accessKeyId || !secretKeyRaw) {
         console.error("❌ Jimeng credentials missing: VOLC_ACCESSKEY or VOLC_SECRETKEY not configured");
         throw new Error("Jimeng credentials not configured");
     }
 
     // Debug: Log credential format validation
-    console.log(`🔐 Credential validation:`);
-    console.log(`   VOLC_ACCESSKEY format: ${accessKeyId.startsWith('AKLT') ? '✅ Valid AKLT prefix' : '⚠️  Unexpected format'}`);
-    console.log(`   VOLC_SECRETKEY length: ${secretKey.length} (expected ~32 for hex)`);
-    console.log(`   VOLC_SECRETKEY format: ${/^[a-f0-9]{32}$/i.test(secretKey) ? '✅ Valid hex' : '⚠️  May not be base64-decoded properly'}`);
+    console.log(`🔐 Credential analysis:`);
+    console.log(`   VOLC_ACCESSKEY: ${accessKeyId.substring(0, 10)}...${accessKeyId.substring(accessKeyId.length - 4)}`);
+    console.log(`   VOLC_SECRETKEY (raw): ${secretKeyRaw.substring(0, 10)}...${secretKeyRaw.substring(secretKeyRaw.length - 4)}`);
+    console.log(`   VOLC_SECRETKEY length: ${secretKeyRaw.length}`);
+    console.log(`   VOLC_SECRETKEY format: ${/^[a-f0-9]{32}$/i.test(secretKeyRaw) ? '✅ Hex (32 chars)' : /^[A-Za-z0-9+/=]+$/.test(secretKeyRaw) ? '⚠️  Base64' : '❌ Unknown'}`);
+
+    // Try to detect if still Base64 and handle accordingly
+    let secretKey = secretKeyRaw;
+    
+    // If it looks like Base64 (not hex), try using it as-is for signature calculation
+    if (/^[A-Za-z0-9+/=]+$/.test(secretKeyRaw) && !/^[a-f0-9]{32}$/i.test(secretKeyRaw)) {
+        console.log(`   ℹ️  Secret Key appears to be Base64, using as-is for SDK`);
+    }
 
     const service = new Service({
         host: 'visual.volcengineapi.com',
