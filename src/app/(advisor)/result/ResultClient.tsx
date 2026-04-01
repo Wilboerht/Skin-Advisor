@@ -356,7 +356,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
         const pollAvatar = async () => {
             try {
-                const response = await fetch(`/api/advisor/avatar/status?sessionId=${sessionId}`);
+                const response = await fetch(`/api/advisor/avatar/status?sessionId=${sessionId}&t=${Date.now()}`);
                 if (response.ok) {
                     const data = await response.json();
                     if (data.generatedAvatar) {
