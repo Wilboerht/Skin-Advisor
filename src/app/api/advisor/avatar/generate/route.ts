@@ -31,6 +31,10 @@ export async function POST(req: NextRequest) {
         let source = "fallback";
 
         // Strategy 1: Try Jimeng (Volcengine) async img2img — Primary
+        console.log("🔍 Checking Jimeng credentials...");
+        console.log(`   VOLC_ACCESSKEY set: ${!!process.env.VOLC_ACCESSKEY}`);
+        console.log(`   VOLC_SECRETKEY set: ${!!process.env.VOLC_SECRETKEY}`);
+        
         if (process.env.VOLC_ACCESSKEY && process.env.VOLC_SECRETKEY) {
             try {
                 // First attempt: img2img with user face reference
@@ -58,11 +62,17 @@ export async function POST(req: NextRequest) {
                 
                 // Log specific error types to help debugging
                 if (errorMsg.includes('Access Denied') || errorMsg.includes('Unauthorized')) {
-                    console.error("⚠️  需要检查 Vercel 环境变量: VOLC_ACCESSKEY, VOLC_SECRETKEY");
+                    console.error("🔴 Jimeng 权限错误 - 凭证可能无效");
+                    console.error("   检查项: VOLC_ACCESSKEY 和 VOLC_SECRETKEY 在 Vercel 中是否正确");
+                } else if (errorMsg.includes('credentials not configured')) {
+                    console.error("🔴 Jimeng 凭证未被读取 - 环境变量可能未加载");
+                    console.error("   检查项: Vercel 部署是否完成，环境变量是否应用");
                 }
             }
         } else {
-            console.warn("⚠️  Jimeng 未配置 (VOLC_ACCESSKEY/VOLC_SECRETKEY missing)");
+            console.warn("⚠️  Jimeng 未配置 - 缺少: VOLC_ACCESSKEY/VOLC_SECRETKEY");
+            console.warn(`   VOLC_ACCESSKEY: ${process.env.VOLC_ACCESSKEY ? '已设置' : '未设置'}`);
+            console.warn(`   VOLC_SECRETKEY: ${process.env.VOLC_SECRETKEY ? '已设置' : '未设置'}`);
         }
 
         // Strategy 2: Try OpenAI DALL-E 3 (text-to-image fallback)
