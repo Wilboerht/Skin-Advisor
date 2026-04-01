@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
         const skinTone = characteristics?.skinTone || '健康肤色';
         const hairStyle = characteristics?.hairStyle || '日常发型';
 
-        const prompt = `将图片中的人像转为日系美妆插画风格，尽可能还原所有人物特征及细节（性别：${gender}，大约${age}岁，肤色：${skinTone}，发型：${hairStyle}），必须是标准的正面头像视角，人物的头部和身体都必须笔直正对镜头，绝对不能歪头、侧身或歪着身子，仅保留人体部分，适当美颜、给角色微笑表情，要求介于白色与米色之间的纯色背景，人物在图片内完全居中`;
+        const prompt = `将图片中的人像转为日系美妆插画风格，尽可能还原所有人物特征及细节（性别：${gender}，大约${age}岁，肤色：${skinTone}，发型：${hairStyle}），【构图绝对要求：人物必须严格位于画面的垂直中轴线上，左右两侧背景留白必须完全对称均等】，必须是标准的正面头像视角，人物的头部和身体都必须笔直正对镜头，绝对不能歪头、侧身或歪着身子，仅保留人体部分，适当美颜、给角色微笑表情，要求介于白色与米色之间的纯色背景`;
 
         let imageUrl: string | null = null;
         let source = "fallback";
