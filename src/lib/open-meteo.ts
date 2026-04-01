@@ -89,12 +89,12 @@ export async function getSkinEnvData(locationInput: string): Promise<SkinEnvData
                 lon = num1; lat = num2;
             }
 
-            // Reverse Geocode name if input is coordinates
+            // Reverse Geocode name if input is coordinates - BUT ONLY IF WE HAVE TIME
+            // Since we have a strict deadline from the API route, skip nominatim if time is tight
             try {
-                // Nominatim Reverse (Free, Rate limited)
-                // Use shorter timeout for address lookup
+                // Nominatim Reverse (Free, Rate limited) - shorter timeout since it's optional
                 const geoUrl = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=zh`;
-                const geoRes = await fetchWithTimeout(geoUrl, 3000);
+                const geoRes = await fetchWithTimeout(geoUrl, 2000); // Reduced to 2s - it's optional
                 if (geoRes.ok) {
                     const geoJson = await geoRes.json();
                     locationName = geoJson.address.city || geoJson.address.town || geoJson.address.county || "当前位置";
@@ -102,6 +102,7 @@ export async function getSkinEnvData(locationInput: string): Promise<SkinEnvData
                     locationName = "当前位置";
                 }
             } catch (e) {
+                // If nominatim fails, that's OK - we'll just use "当前位置"
                 locationName = "当前位置";
             }
         }

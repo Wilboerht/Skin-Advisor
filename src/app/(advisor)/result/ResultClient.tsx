@@ -14,14 +14,11 @@ import {
     ScanFace,
     Activity,
     Search,
-    Sun,
     Gift, // Import Gift icon
     ClipboardList,
     AlertCircle,
     Link as LinkIcon,
     X,
-    MapPin,
-    Droplets,
     Play, // Import Play icon
     Sparkles // For Adaptive Mode
 } from "lucide-react";
@@ -527,96 +524,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     }, [sessionId, user]);
 
     // --- Environment Data Integration ---
-    // Fetches from /api/weather which handles QWeather/Open-Meteo fallback
-    const [envData, setEnvData] = useState({
-        uvIndex: 0,
-        humidity: 50,
-        aqi: 50, // Added AQI
-        temperature: 20,
-        location: "定位中...",
-        isRealData: false
-    });
-
-    // Prevent infinite loop by tracking the last fetched query
-    const lastFetchedQuery = useRef<string>("");
-    const envDataRef = useRef(envData);
-    useEffect(() => { envDataRef.current = envData; }, [envData]);
-
-    useEffect(() => {
-        // Fetch Weather Data
-        const fetchWeather = async () => {
-            let query = "";
-
-            if (userLocation?.lat && userLocation?.lon) {
-                // Round to 2 decimals for API (QWeather recommends this for caching and lookup)
-                const latFixed = Number(userLocation.lat).toFixed(2);
-                const lonFixed = Number(userLocation.lon).toFixed(2);
-                query = `${lonFixed},${latFixed}`;
-            } else if (userLocation?.city) {
-                // Avoid duplication in query
-                const p = userLocation.province || '';
-                const c = userLocation.city;
-                if (p && c.startsWith(p)) {
-                    query = c;
-                } else {
-                    query = `${p}${c}`;
-                }
-            } else if (userLocation?.province) {
-                // If only province (e.g. manual select might be loose), try it
-                query = userLocation.province;
-            } else if (typeof userLocation === 'string') {
-                // Handle legacy string case
-                query = userLocation;
-            } else {
-                // No location available, use generic fallback immediately
-                setEnvData({
-                    uvIndex: 5,
-                    humidity: 45,
-                    aqi: 75, // Default AQI
-                    temperature: 22,
-                    location: "通用环境",
-                    isRealData: false
-                });
-                return;
-            }
-
-            // Prevent duplicate fetches
-            if (query === lastFetchedQuery.current) return;
-
-            // Use ref to avoid stale closure (envData not in deps to prevent infinite loops)
-            if (envDataRef.current.isRealData && envDataRef.current.location === query) {
-                lastFetchedQuery.current = query;
-                return;
-            }
-
-            lastFetchedQuery.current = query;
-
-            try {
-                const res = await fetch(`/api/weather?city=${encodeURIComponent(query)}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    setEnvData(data);
-
-                    // Update location display name if we got a real one from coordinates
-                    // Only update if it's a real location name (not fallback) and different from current
-                    if (data.isRealData && data.location && data.location !== "通用环境" && userLocation?.city !== data.location) {
-                        setUserLocation(prev => {
-                            if (!prev || typeof prev === 'string') return { city: data.location };
-                            return { ...prev, city: data.location };
-                        });
-                    }
-                }
-            } catch (e) {
-                console.error("Weather fetch failed", e);
-                setEnvData(prev => ({ ...prev, location: "暂无数据", isRealData: false }));
-            }
-        };
-
-        if (userLocation !== undefined) {
-            // Only fetch if userLocation is at least processed (null or object)
-            fetchWeather();
-        }
-    }, [userLocation]);
+    // REMOVED: Weather component has been disabled per user request
 
     // Recover Bio-Factors from LocalStorage (Questionnaire Answers)
     // Extracted outside useMemo so handleDownload can reuse the same data for PDF consistency
@@ -680,8 +588,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     analysis: result.analysis,
                     faceAnalysis: faceAnalysis,
                     location: userLocation,
-                    bioFactors: bioFactors,
-                    envData: envData
+                    bioFactors: bioFactors
                 })
             });
 
@@ -1170,75 +1077,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                         {/* Right Column: Detailed Analysis & Routine */}
                         <div className="flex flex-col gap-6">
 
-                            {/* --- 0. ENVIRONMENT DASHBOARD --- */}
-                            <div className="rounded-2xl bg-white border border-gray-100 shadow-sm p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                {/* Location - clean and simple */}
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
-                                        <MapPin className="w-5 h-5" />
-                                    </div>
-                                    <div>
-                                        <div className="text-xs text-gray-400 font-medium uppercase tracking-wider">当前环境</div>
-                                        <div className="font-semibold text-gray-900">{envData.location}</div>
-                                    </div>
-                                </div>
-
-                                {/* Metrics */}
-                                <div className="flex items-center justify-between gap-4 md:gap-8 flex-1 md:flex-none">
-                                    {/* UV */}
-                                    <div className="text-right flex-1 md:flex-auto">
-                                        <div className="text-xs text-gray-400 mb-0.5 flex items-center justify-end gap-1">
-                                            <Sun className="w-3 h-3" /> UV指数
-                                        </div>
-                                        <div className="font-mono text-lg font-medium text-gray-900 leading-none">
-                                            {envData.uvIndex} <span className="text-xs text-gray-400 font-sans ml-0.5">
-                                                {envData.uvIndex <= 2 ? "(低)" : envData.uvIndex <= 5 ? "(中)" : envData.uvIndex <= 7 ? "(高)" : "(极强)"}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    {/* Humidity */}
-                                    <div className="text-right border-l border-gray-100 pl-4 md:pl-8 flex-1 md:flex-auto">
-                                        <div className="text-xs text-gray-400 mb-0.5 flex items-center justify-end gap-1">
-                                            <Droplets className="w-3 h-3" /> 湿度
-                                        </div>
-                                        <div className="font-mono text-lg font-medium text-gray-900 leading-none">
-                                            {envData.humidity}% <span className="text-xs text-gray-400 font-sans ml-0.5">
-                                                {envData.humidity < 40 ? "(干燥)" : envData.humidity > 70 ? "(潮湿)" : "(适宜)"}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    {/* AQI (New) */}
-                                    <div className="text-right border-l border-gray-100 pl-4 md:pl-8 flex-1 md:flex-auto">
-                                        <div className="text-xs text-gray-400 mb-0.5 flex items-center justify-end gap-1">
-                                            <Activity className="w-3 h-3" /> AQI
-                                        </div>
-                                        <div className="font-mono text-lg font-medium text-gray-900 leading-none">
-                                            {envData.aqi || '-'} <span className="text-xs text-gray-400 font-sans ml-0.5">
-                                                {(envData.aqi || 0) <= 50 ? "(优)" : (envData.aqi || 0) <= 100 ? "(良)" : "(差)"}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                </div>
-                            </div>
-                            {/* Dynamic Alerts */}
-                            <div className="space-y-2">
-                                {envData.uvIndex >= 8 && (
-                                    <div className="flex items-start gap-2 text-xs md:text-sm text-red-700 bg-red-50 border border-red-100 px-3 py-2 rounded-lg">
-                                        <span className="shrink-0 mt-0.5">⚠️</span>
-                                        <span><b>紫外线红色预警：</b>今日UV极高，系统已将您的防晒用量调至 1.5倍，并建议每2小时补涂。</span>
-                                    </div>
-                                )}
-                                {envData.humidity < 30 && (
-                                    <div className="flex items-start gap-2 text-xs md:text-sm text-amber-800 bg-amber-50 border border-amber-100 px-3 py-2 rounded-lg">
-                                        <span className="shrink-0 mt-0.5">💧</span>
-                                        <span><b>极度干燥预警：</b>空气湿度过低，系统建议在面霜中滴入护肤油以增强封闭性。</span>
-                                    </div>
-                                )}
-                            </div>
-
                             {/* VIP Analysis Section removed per user request */}
 
                             {/* 1. Condition Summary (Original) */}
@@ -1643,11 +1481,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     benefits: p.benefits || [],
                                 } as ProductCardData))}
                                 isLoading={loading}
-                                envData={{
-                                    uvIndex: envData.uvIndex,
-                                    humidity: envData.humidity,
-                                    aqi: envData.aqi
-                                }}
                                 faceAnalysis={faceAnalysis}
                                 onAddToRoutine={(productId) => {
                                     const product = result.products?.find(p => p.id === productId);

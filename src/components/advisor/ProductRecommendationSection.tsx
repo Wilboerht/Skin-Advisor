@@ -13,12 +13,6 @@ import {
     inferStepFromCategory,
     SKINCARE_STEPS
 } from "@/lib/skincare-steps";
-import {
-    EnvironmentData,
-    calculateEnvironmentBonus,
-    getTopPriorityStep,
-    getCurrentSeason
-} from "@/lib/env-recommendation";
 import { cn } from "@/lib/utils";
 
 // 维度名称映射
@@ -38,7 +32,6 @@ const DIMENSION_LABELS: Record<string, string> = {
 interface ProductRecommendationSectionProps {
     products: ProductCardData[];
     isLoading?: boolean;
-    envData?: EnvironmentData | null;
     faceAnalysis?: {
         dimensions?: Record<string, { score: number }>;
     } | null;
@@ -50,25 +43,12 @@ interface ProductRecommendationSectionProps {
 export function ProductRecommendationSection({
     products,
     isLoading = false,
-    envData,
     faceAnalysis,
     onAddToRoutine,
     onProductClick,
     className
 }: ProductRecommendationSectionProps) {
     const [processedProducts, setProcessedProducts] = useState<ProductCardData[]>([]);
-
-    // 环境数据处理
-    const environment: EnvironmentData = useMemo(() => ({
-        uvIndex: envData?.uvIndex ?? 5,
-        humidity: envData?.humidity ?? 60,
-        aqi: envData?.aqi ?? 50,
-        season: getCurrentSeason()
-    }), [envData]);
-
-    // 计算环境加成
-    const envBonuses = useMemo(() => calculateEnvironmentBonus(environment), [environment]);
-    const topPriorityStep = useMemo(() => getTopPriorityStep(environment), [environment]);
 
     // 处理产品数据：添加步骤、匹配度、环境推荐、维度关联
     useEffect(() => {
@@ -84,10 +64,6 @@ export function ProductRecommendationSection({
             // 计算匹配度 (基于 score，如果有的话)
             const baseScore = product.score ?? 50;
             const matchScore = Math.min(99, Math.round((baseScore / 150) * 100));
-
-            // 检查环境加成
-            const envBonus = envBonuses.find(b => b.step === step);
-            const environmentBonus = envBonus?.priority === 'high' ? envBonus.reason : null;
 
             // 关联维度评分 (简单逻辑：根据类别关联维度)
             let dimensionLink: ProductCardData['dimensionLink'] = null;
@@ -121,24 +97,15 @@ export function ProductRecommendationSection({
                 ...product,
                 step,
                 matchScore,
-                environmentBonus,
                 dimensionLink
             } as ProductCardData;
         });
 
-        // 按环境优先级排序
-        if (topPriorityStep) {
-            processed.sort((a, b) => {
-                const aIsPriority = (a as any).step === topPriorityStep.step;
-                const bIsPriority = (b as any).step === topPriorityStep.step;
-                if (aIsPriority && !bIsPriority) return -1;
-                if (!aIsPriority && bIsPriority) return 1;
-                return (b.matchScore ?? 0) - (a.matchScore ?? 0);
-            });
-        }
+        // 按匹配度排序
+        processed.sort((a, b) => (b.matchScore ?? 0) - (a.matchScore ?? 0));
 
         setProcessedProducts(processed);
-    }, [products, envBonuses, topPriorityStep, faceAnalysis]);
+    }, [products, faceAnalysis]);
 
     // 按步骤分组
     const groupedProducts = useMemo(() => {
@@ -196,12 +163,6 @@ export function ProductRecommendationSection({
                             <TrendingUp className="w-3.5 h-3.5" />
                             {products.length} 款产品
                         </span>
-                        {topPriorityStep && (
-                            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 font-medium">
-                                <Zap className="w-3 h-3" />
-                                今日重点: {SKINCARE_STEPS[topPriorityStep.step].label}
-                            </span>
-                        )}
                     </div>
                 </div>
             </div>
@@ -214,7 +175,6 @@ export function ProductRecommendationSection({
                     <div className="space-y-8">
                         {stepsWithProducts.map((step, index) => {
                             const stepProducts = groupedProducts.get(step) || [];
-                            const envBonus = envBonuses.find(b => b.step === step);
 
                             return (
                                 <StepProductGroup
@@ -222,7 +182,7 @@ export function ProductRecommendationSection({
                                     step={step}
                                     products={stepProducts as ProductCardData[]}
                                     index={index}
-                                    environmentReason={envBonus?.priority === 'high' ? envBonus.reason : null}
+                                    environmentReason={null}
                                     onAddToRoutine={onAddToRoutine}
                                     onProductClick={onProductClick}
                                     defaultExpanded={index < 3} // 前3个步骤默认展开

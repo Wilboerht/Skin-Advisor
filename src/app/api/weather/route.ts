@@ -61,22 +61,30 @@ export async function GET(req: NextRequest) {
         isRealData: false
     };
 
-    // Race with a global timeout of 8 seconds
+    // Race with a global timeout of 6 seconds (reduced from 8s for better responsiveness)
     try {
         const resultResponse = await Promise.race([
             (async () => {
                 // 优先使用 Open-Meteo （更稳定，无 API 密钥限制）
                 try {
+                    console.log("[Weather] Attempting Open-Meteo...");
                     const data = await getOpenMeteoData(locationQuery!);
-                    if (data.isRealData) return NextResponse.json(data);
+                    if (data.isRealData) {
+                        console.log("[Weather] ✅ Open-Meteo succeeded");
+                        return NextResponse.json(data);
+                    }
                 } catch (e) {
                     console.warn("[Weather] Open-Meteo attempt failed:", e instanceof Error ? e.message : e);
                 }
 
                 // 备选：尝试 QWeather（可能存在 API 配置问题，保留备选）
                 try {
+                    console.log("[Weather] Attempting QWeather...");
                     const data = await getQWeatherData(locationQuery!);
-                    if (data.isRealData) return NextResponse.json(data);
+                    if (data.isRealData) {
+                        console.log("[Weather] ✅ QWeather succeeded");
+                        return NextResponse.json(data);
+                    }
                 } catch (e) {
                     console.warn("[Weather] QWeather attempt failed:", e instanceof Error ? e.message : e);
                 }
@@ -86,9 +94,9 @@ export async function GET(req: NextRequest) {
             })(),
             new Promise<NextResponse>((resolve) =>
                 setTimeout(() => {
-                    console.error("[Weather] Global timeout (8s) - returning fallback");
+                    console.warn("[Weather] Global timeout (6s) - returning fallback");
                     resolve(NextResponse.json(fallbackData));
-                }, 8000)
+                }, 6000)
             )
         ]);
 
