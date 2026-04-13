@@ -429,7 +429,7 @@
 /* ========== Graphite Kinetic Grid 全局背景 (nihplod.cn 复刻版) ========== */
 
 :root {
-  --kinetic-bg: rgb(142, 128, 114);
+  --kinetic-bg: rgb(175, 155, 142);
   --kinetic-accent: #333333;
   --kinetic-text-primary: #ffffff;
   --kinetic-text-secondary: #a1a1a1;
@@ -466,7 +466,7 @@
   position: absolute;
   inset: 0;
   background-color: var(--kinetic-bg);
-  background-image: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.6) 0%, transparent 100%);
+  background-image: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.3) 0%, transparent 100%);
   pointer-events: none;
 }
 
@@ -487,14 +487,31 @@
   top: 46%;
   left: 50%;
   transform: translate(-50%, -50%);
-  opacity: 0.3;
+  opacity: 0.15;
   pointer-events: none;
   z-index: 1;
   max-width: 2800px;
   width: 150vw;
   height: auto;
-  filter: grayscale(1) brightness(2);
+  filter: grayscale(0.5) brightness(2.2) sepia(0.3);
   mix-blend-mode: overlay;
+}
+
+/* 移动端水印处理 - 全屏覆盖版本 */
+@media (max-width: 768px) {
+  .kinetic-watermark {
+    position: absolute;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    top: 0;
+    left: 0;
+    transform: none;
+    opacity: 0.4;
+    filter: sepia(0.25);
+    mix-blend-mode: multiply;
+    z-index: 0;
+  }
 }
 
 /* 渐变光晕效果 */
@@ -643,14 +660,104 @@
   box-shadow: 0 20px 50px -12px rgba(44, 44, 44, 0.08) !important;
 }
 
-@media (max-width: 1024px) {
+/* ========== 平板端 (820px-1024px) - 显示完整布局 ========== */
+@media (min-width: 820px) and (max-width: 1024px) {
   .kinetic-container {
     grid-template-columns: repeat(2, 1fr);
-    width: min(86vw, 32vh);
+    width: min(86vw, 40vh);
     max-width: 480px;
     gap: 12px;
   }
   .kinetic-cell-large { grid-row: span 1; aspect-ratio: 1/1 !important; }
+  
+  .kinetic-cell-steps,
+  .kinetic-cell-reverse {
+    display: flex !important;
+    order: 3;
+  }
+}
+
+/* ========== 手机端 (<820px) - 精简布局 ========== */
+@media (max-width: 819px) {
+  .kinetic-container {
+    grid-template-columns: repeat(2, 1fr);
+    width: min(86vw, 40vh);
+    max-width: 450px;
+    gap: 12px;
+    top: 49%;
+  }
+
+  /* 隐藏两个文字卡片 */
+  .kinetic-cell-steps,
+  .kinetic-cell-reverse {
+    display: none !important;
+  }
+
+  /* 重新排列卡片顺序 */
+  .kinetic-cell-boxes {
+    order: 1;
+    grid-column: span 1;
+    aspect-ratio: 1/1 !important;
+  }
+
+  .kinetic-cell-login {
+    order: 2;
+    grid-column: span 1;
+    aspect-ratio: 1/1 !important;
+  }
+
+  /* LESS BUT BETTER 图片卡 - 单独占一行 */
+  .kinetic-cell-less {
+    order: 3;
+    grid-column: span 2;
+    aspect-ratio: 2.1/1 !important;
+  }
+
+  /* 产品图片卡 - 占一行 */
+  .kinetic-cell-skin {
+    order: 4;
+    grid-column: span 2;
+    aspect-ratio: 2.1/1 !important;
+  }
+
+  /* 卡片样式调整 */
+  .kinetic-cell {
+    padding: 16px;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  .kinetic-cell-large { 
+    grid-row: span 1; 
+    aspect-ratio: 1/1 !important; 
+  }
+
+  .kinetic-name {
+    font-size: 1.35rem;
+    text-shadow: none !important;
+  }
+
+  .kinetic-login-cell {
+    padding: 16px;
+  }
+
+  .kinetic-btn {
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+
+  .kinetic-btn-group {
+    gap: 8px;
+  }
+
+  /* 禁用移动端悬浮效果 */
+  .kinetic-cell:hover,
+  .kinetic-cell:active,
+  .kinetic-login-cell:not(.no-hover-effect):hover,
+  .kinetic-login-cell:not(.no-hover-effect):active {
+    transform: none !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1) !important;
+  }
 }
 
 /* ========== 自定义彩色卡片样式 - 极简淡色玻璃感设计 ========== */

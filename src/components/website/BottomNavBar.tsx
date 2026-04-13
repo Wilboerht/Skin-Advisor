@@ -28,7 +28,7 @@ const allNavItems: NavItem[] = [
     { href: "https://nihplod.cn/guide", label: "官方指南", labelEn: "Guide", icon: BookOpen },
     { href: "https://nihplod.cn/faq", label: "常见问题", labelEn: "FAQ", icon: HelpCircle },
     { href: "https://nihplod.cn/about", label: "关于旎柏", labelEn: "About", icon: StoryIcon },
-    { href: "/", label: "AI 测肤", labelEn: "Advisor", icon: Home },
+    { href: "https://nihplod.cn", label: "首页", labelEn: "Home", icon: Home },
 ];
 
 export function BottomNavBar() {
@@ -200,7 +200,7 @@ export function BottomNavBar() {
                             <div className="hidden items-center gap-3 lg:flex lg:gap-[40px]">
                                 {allNavItems.filter(item => item.labelEn !== "About").map((item) => {
                                     const Icon = item.icon;
-                                    const isHome = item.href === "/";
+                                    const isHome = item.labelEn === "Home";
 
                                     return (
                                         <React.Fragment key={item.href}>

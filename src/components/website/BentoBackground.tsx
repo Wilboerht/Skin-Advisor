@@ -86,7 +86,7 @@ export function BentoBackground() {
                         {/* 左侧大卡片 - 跨两行 */}
                         <div
                             ref={(el) => addCellRef(el, 0)}
-                            className="kinetic-cell kinetic-cell-large kinetic-image-cell group cursor-pointer"
+                            className="kinetic-cell kinetic-cell-large kinetic-image-cell kinetic-cell-boxes group cursor-pointer"
                         >
                             <Link href="#" className="absolute inset-0 z-20" aria-label="了解产品" />
                             <Image
@@ -104,16 +104,16 @@ export function BentoBackground() {
                         {/* Row 1, Col 2: 文字卡 */}
                         <div
                             ref={(el) => addCellRef(el, 1)}
-                            className="kinetic-cell kinetic-text-cell kinetic-cell-yellow"
+                            className="kinetic-cell kinetic-text-cell kinetic-cell-yellow kinetic-cell-steps"
                         >
                             <div className="kinetic-name" style={{ marginBottom: '12px', lineHeight: '1.3' }}>更少步骤<br />更多呵护</div>
                             <div className="kinetic-desc" style={{ fontSize: '13px', lineHeight: '1.5', letterSpacing: '0.05em', textTransform: 'none', fontWeight: 400, opacity: 0.8 }}>美丽不该复杂，<br />专注美好生活</div>
                         </div>
 
-                        {/* Row 1, Col 3-4: 合并后的宽图片卡 */}
+                        {/* Row 1, Col 3-4: 合并后的宽图片卡 - LESS BUT BETTER */}
                         <div
                             ref={(el) => addCellRef(el, 2)}
-                            className="kinetic-cell kinetic-image-cell group cursor-pointer"
+                            className="kinetic-cell kinetic-image-cell kinetic-cell-less group cursor-pointer"
                             style={{ gridColumn: "span 2", aspectRatio: "auto" }}
                         >
                             <Link href="#" className="absolute inset-0 z-20" aria-label="官方指南" />
@@ -131,7 +131,7 @@ export function BentoBackground() {
 
                         <div
                             ref={(el) => addCellRef(el, 3)}
-                            className="kinetic-cell kinetic-image-cell group cursor-pointer"
+                            className="kinetic-cell kinetic-image-cell kinetic-cell-skin group cursor-pointer"
                         >
                             <Link href="#" className="absolute inset-0 z-20" aria-label="关于旎柏" />
                             <Image
@@ -154,7 +154,7 @@ export function BentoBackground() {
                         {/* Row 2, Col 3: 文字卡 */}
                         <div
                             ref={(el) => addCellRef(el, 4)}
-                            className="kinetic-cell kinetic-text-cell kinetic-cell-orange"
+                            className="kinetic-cell kinetic-text-cell kinetic-cell-orange kinetic-cell-reverse"
                         >
                             <div className="kinetic-name">逆转时光</div>
                             <div className="kinetic-desc" style={{ fontSize: '13px', letterSpacing: '0.05em', textTransform: 'none', fontWeight: 400, opacity: 0.8 }}>REVERSE TIME</div>
@@ -163,7 +163,7 @@ export function BentoBackground() {
                         {/* Row 2, Col 4: 登录/CTA卡 */}
                         <div
                             ref={(el) => addCellRef(el, 5)}
-                            className={`kinetic-cell kinetic-login-cell ${user ? "kinetic-cell-user-premium" : "cursor-pointer"}`}
+                            className={`kinetic-cell kinetic-login-cell kinetic-cell-login ${user ? "kinetic-cell-user-premium" : "cursor-pointer"}`}
                             onClick={!user ? handleLoginClick : undefined}
                         >
                             <div className="flex flex-col items-center justify-center w-full relative z-20 gap-4">

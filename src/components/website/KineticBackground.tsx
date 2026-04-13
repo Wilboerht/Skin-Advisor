@@ -47,14 +47,27 @@ export function KineticBackground() {
 
             {/* 全局背景水印 - 复刻原版静态配置 */}
             <div className="kinetic-watermark">
+                {/* PC 端水印 */}
                 <Image
                     src="/images/watermark.webp"
-                    alt="Watermark"
+                    alt="Watermark PC"
                     width={2800}
                     height={800}
                     style={{ objectFit: 'contain' }}
+                    className="hidden md:block"
                     priority
                 />
+                {/* 移动端水印 - 竖版 SVG */}
+                <div className="block md:hidden absolute inset-0">
+                    <Image
+                        src="/images/watermark-mobile.svg"
+                        alt="Watermark Mobile"
+                        fill
+                        priority
+                        style={{ objectFit: 'fill' }}
+                        className="opacity-90"
+                    />
+                </div>
             </div>
 
             {/* 矿物纹质感叠加层 */}
