@@ -148,24 +148,27 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                 </div>
 
                 {/* Avatar with Ring */}
+                {/* Avatar with Ring */}
                 <div className="relative flex items-center justify-center w-[100px] h-[100px]">
-                  {/* The SVG Frame */}
+                  {/* The SVG Frame - Bottom Layer (Opaque) */}
                   <img
                     src="/images/avatar-frame.svg"
                     alt="frame"
-                    className="absolute inset-0 w-full h-full z-10 pointer-events-none object-contain scale-[1.1]"
+                    className="absolute inset-0 w-full h-full z-0 pointer-events-none object-contain scale-[1.1]"
                   />
-                  {/* Inner Avatar Content */}
-                  <div className="w-[72%] h-[72%] rounded-full overflow-hidden shrink-0 mt-[2%] ml-[2%]">
+
+                  {/* Inner Avatar Content - Top Layer */}
+                  <div className="relative z-10 w-[72%] h-[72%] rounded-full overflow-hidden shrink-0 mt-[1.5%] ml-[1.5%] shadow-inner">
                     {data.generatedAvatar ? (
                       <img src={data.generatedAvatar} alt="avatar" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full bg-[#dfc9b2] flex items-center justify-center text-white text-2xl font-bold">
-                        {data.nickname.charAt(0)}
+                        {data.nickname ? data.nickname.charAt(0) : '?'}
                       </div>
                     )}
                   </div>
-                  {/* Minimal name badge */}
+
+                  {/* Minimal name badge - Topmost Layer */}
                   <div className="absolute bottom-0 right-0 bg-[#2d2a26] text-white text-[10px] px-2.5 py-0.5 rounded-full whitespace-nowrap z-20 border-[2.5px] border-white shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
                     {data.nickname}
                   </div>
