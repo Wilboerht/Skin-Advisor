@@ -173,9 +173,12 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
               </div>
 
               {/* Text Content */}
-              <div className="flex flex-col pt-2 lg:pt-0 z-10 w-full">
-                <p className="text-[#a89582] text-sm mb-1">亲爱的{data.nickname}：</p>
-                <h2 className="text-2xl lg:text-3xl font-bold text-[#2d2a26] leading-snug mb-4">
+              <div className="flex flex-col z-10 w-full pt-[2px]">
+                {/* 保证这里的高度(26px)与底部间距(mb-4=16px)加起来等于左侧标签高度(26px)+gap-4(16px) */}
+                <div className="h-[26px] flex items-center mb-2">
+                  <p className="text-[#a89582] text-sm leading-none">亲爱的{data.nickname}：</p>
+                </div>
+                <h2 className="text-2xl lg:text-3xl font-bold text-[#2d2a26] leading-snug mb-4 mt-0">
                   你的素颜评分超越了<br/>
                   全国 <span className="text-3xl lg:text-4xl px-1">{rankPercentile}%</span> 的用户
                 </h2>
