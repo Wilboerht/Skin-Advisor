@@ -132,17 +132,21 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
   };
 
   return (
-    <div
-      className="min-h-screen font-sans text-[#7a6552] flex flex-col"
-      style={{
-        backgroundImage: 'url(/images/result-bg.svg)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed'
-      }}
-    >
-      {/* Header hidden or customized as per design (design doesn't show standard header) */}
-      <div className="flex-1 py-12 px-4 max-w-4xl mx-auto flex flex-col items-center justify-center w-full">
+    <div className="min-h-screen font-sans text-[#7a6552] flex flex-col relative overflow-x-hidden">
+      {/* Fixed Background Layer - Optimized for iOS and dynamic viewports */}
+      <div
+        className="fixed top-0 left-0 w-full h-[100dvh] z-[-1] pointer-events-none"
+        style={{
+          backgroundImage: 'url(/images/result-bg.svg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          transform: 'translateZ(0)', // Force hardware acceleration
+          WebkitTransform: 'translateZ(0)',
+        }}
+      />
+
+      {/* Header hidden or customized per design */}
+      <div className="flex-1 py-12 px-4 max-w-4xl mx-auto flex flex-col items-center justify-center w-full relative z-10">
         <img
           src="/images/NIHPLOD-logo.svg"
           alt="NIHPLOD MONACO"
