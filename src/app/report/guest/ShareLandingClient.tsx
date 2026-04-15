@@ -136,10 +136,10 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
               {/* Left Column: Tag + Avatar properly aligned */}
               <div className="flex flex-col items-start gap-4 shrink-0 mt-1">
                 {/* Tag */}
-                <div className="relative flex items-center justify-center w-[64px] h-[20px] -ml-[10px]">
+                <div className="relative flex items-center justify-center w-[72px] h-[24px] -ml-[10px]">
                   <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#e6d0a8] via-[#f5dfb8] to-[#d4b483] shadow-sm" />
                   <div className="absolute inset-[1px] rounded-full bg-white/20 backdrop-blur-[1px] border border-white/30" />
-                  <span className="relative z-10 text-[#3d2f25] text-[9px] font-bold tracking-widest pl-[1px]">
+                  <span className="relative z-10 text-[#3d2f25] text-xs font-bold tracking-widest">
                     分享版
                   </span>
                 </div>
@@ -172,8 +172,8 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
 
               {/* Text Content */}
               <div className="flex flex-col z-10 w-full pt-[2px]">
-                {/* 保证这里的高度(26px)与底部间距(mb-4=16px)加起来等于左侧标签高度(26px)+gap-4(16px) */}
-                <div className="h-[26px] flex items-center mb-2">
+                {/* 保证这里的高度(24px)与底部间距(mb-4=16px)加起来等于左侧标签高度(24px)+gap-4(16px) = 40px */}
+                <div className="h-[24px] flex items-center mb-4">
                   <p className="text-[#a89582] text-sm leading-none">亲爱的{data.nickname}：</p>
                 </div>
                 <h2 className="text-2xl lg:text-3xl font-bold text-[#2d2a26] leading-snug mb-4 mt-0">
@@ -241,49 +241,54 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="rounded-[32px] p-6 lg:p-8 backdrop-blur-xl border border-white/20"
+            className="rounded-[32px] p-6 lg:p-10 backdrop-blur-xl border border-white/20"
             style={{
               background: 'linear-gradient(135deg, rgba(230, 215, 195, 0.4) 0%, rgba(200, 180, 155, 0.3) 100%)',
               boxShadow: '0 8px 32px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.3)',
             }}
           >
-            <div className="flex flex-col lg:flex-row justify-between gap-8 h-full">
-              {/* Left text column */}
-              <div className="flex flex-col justify-between items-start h-full">
+            <div className="flex flex-col lg:flex-row justify-between gap-8 lg:gap-12 h-full">
+              {/* Left text column - 30% width */}
+              <div className="flex flex-col justify-between items-start lg:w-[30%] shrink-0">
                 <div>
-                  <div className="bg-white/80 text-[#5c4937] px-3 py-1 rounded-full text-xs font-medium inline-block mb-4 shadow-sm border border-white/50">
+                  <div className="bg-white/80 text-[#5c4937] w-[72px] h-[24px] rounded-full text-xs font-bold flex items-center justify-center mb-6 shadow-sm border border-white/50 tracking-widest">
                     专业版
                   </div>
                   <h2 className="text-2xl font-bold text-white drop-shadow-md mb-2">深度检测报告</h2>
-                  <p className="text-[#f5ebd7] text-xs max-wxs leading-relaxed mb-6 font-medium tracking-wide" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}>
+                  <p className="text-[#f5ebd7] text-xs max-w-xs leading-relaxed mb-8 font-medium tracking-wide" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}>
                     基于千万级亚洲肌肤数据库，全方位解析您的肌肤问题。
                   </p>
                 </div>
 
                 {!user && (
                   <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                    whileHover={{ scale: 1.03, y: -1 }}
+                    whileTap={{ scale: 0.97 }}
                     onClick={() => openAuthModal('register')}
-                    className="focus:outline-none"
+                    className="relative focus:outline-none flex items-center justify-center h-[38px] sm:h-[42px] px-6 sm:px-8 rounded-full shadow-[0_8px_20px_-6px_rgba(0,0,0,0.15)] border border-white/60 group overflow-hidden transition-all"
+                    style={{
+                      background: 'linear-gradient(135deg, #ffffff 0%, #f8f0e3 50%, #f0e6d8 100%)',
+                    }}
                   >
-                    <img
-                      src="/images/login-btn.svg"
-                      alt="登录查看完整报告"
-                      className="h-10 sm:h-11 object-contain drop-shadow-sm pointer-events-none"
-                    />
+                    {/* Glossy overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/40 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 pointer-events-none" />
+                    
+                    <span className="relative z-10 text-[#5c4937] text-[11px] sm:text-[12px] font-bold tracking-wider flex items-center gap-2">
+                       登录查看完整报告
+                       <Lock className="w-3.5 h-3.5 text-[#5c4937] stroke-[2.5]" />
+                    </span>
                   </motion.button>
                 )}
               </div>
 
-              {/* Right Cards Grid */}
+              {/* Right Cards Grid - 70% width */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 flex-1">
                 {/* Comprehensive Score */}
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.3 }}
-                  className="p-4 rounded-2xl flex flex-col justify-between"
+                  className="p-4 rounded-2xl flex flex-col justify-between aspect-[2/3]"
                   style={{
                     background: 'linear-gradient(180deg, rgba(230,220,205,0.7) 0%, rgba(240,230,215,0.5) 100%)',
                     boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5)',
@@ -303,7 +308,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.35 }}
-                  className="p-4 rounded-2xl flex flex-col justify-between"
+                  className="p-4 rounded-2xl flex flex-col justify-between aspect-[2/3]"
                   style={{
                     background: 'linear-gradient(180deg, rgba(240,225,215,0.8) 0%, rgba(255,245,230,0.6) 100%)',
                     boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)',
@@ -323,15 +328,15 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.4 }}
-                  className="p-4 rounded-2xl flex flex-col justify-between"
+                  className="p-4 rounded-2xl flex flex-col justify-between aspect-[2/3]"
                   style={{
                     background: 'linear-gradient(180deg, rgba(230,225,215,0.6) 0%, rgba(245,240,230,0.4) 100%)',
                     boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.4)',
                   }}
                 >
                   <p className="text-xs text-[#7a6552] mb-6 font-medium">油脂分泌</p>
-                  <div className="flex items-center h-full">
-                    <span className="text-base font-bold text-[#5c4937]">{getTZoneLabel}</span>
+                  <div className="flex items-baseline mb-1">
+                    <span className="text-xl font-bold text-[#5c4937] leading-tight">{getTZoneLabel}</span>
                   </div>
                 </motion.div>
 
@@ -341,7 +346,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.4 }}
-                    className="p-4 rounded-2xl flex flex-col items-center justify-center border border-dashed border-white/50"
+                    className="p-4 rounded-2xl flex flex-col items-center justify-center border border-dashed border-white/50 aspect-[2/3]"
                     style={{
                       background: 'rgba(255,255,255,0.1)',
                     }}
@@ -356,7 +361,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.4 }}
-                    className="p-4 rounded-2xl flex flex-col justify-between"
+                    className="p-4 rounded-2xl flex flex-col justify-between aspect-[2/3]"
                     style={{
                       background: 'linear-gradient(180deg, rgba(230,225,215,0.6) 0%, rgba(245,240,230,0.4) 100%)',
                       boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.4)',
