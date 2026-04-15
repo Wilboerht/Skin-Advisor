@@ -247,7 +247,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
               boxShadow: '0 8px 32px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.3)',
             }}
           >
-            <div className="flex flex-col lg:flex-row justify-between gap-8 lg:gap-12 h-full">
+            <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-8 lg:gap-12 h-full">
               {/* Left text column - 30% width */}
               <div className="flex flex-col justify-between items-start lg:w-[30%] shrink-0">
                 <div>
