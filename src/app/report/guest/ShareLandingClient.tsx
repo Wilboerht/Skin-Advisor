@@ -192,14 +192,15 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => setShowShareModal(true)}
-                      className="relative focus:outline-none flex items-center justify-center w-[220px] sm:w-[240px] h-[64px] sm:h-[70px] -ml-[48px]"
+                      className="relative focus:outline-none flex items-center justify-center px-8 sm:px-12 h-[64px] sm:h-[70px] -ml-[48px]"
                     >
                       <img 
                         src="/images/share-btn.svg" 
                         alt="分享背景" 
-                        className="absolute inset-0 w-full h-full object-fill drop-shadow-sm pointer-events-none" 
+                        className="absolute inset-0 w-[120%] h-full object-fill drop-shadow-sm pointer-events-none" 
                       />
                       <span className="relative z-10 text-[#5e4b3c] text-[13px] sm:text-sm font-bold -translate-y-[4px] flex items-center justify-center gap-1.5">
+                        <span>&nbsp;</span>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mb-0.5">
                           <circle cx="18" cy="5" r="3"></circle>
                           <circle cx="6" cy="12" r="3"></circle>
@@ -207,14 +208,14 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                           <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
                           <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
                         </svg>
-                        分享检测结果
+                        分享我的素颜证书&nbsp;
                       </span>
                     </motion.button>
                     <div className="hidden sm:flex items-center -ml-[56px] z-10">
                       <img 
                         src="/images/share-hint.svg" 
                         alt="分享提示" 
-                        className="h-[58px] w-auto object-contain" 
+                        className="h-[58px] w-auto object-contain -mt-2" 
                       />
                     </div>
                   </div>
