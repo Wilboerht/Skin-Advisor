@@ -102,7 +102,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
   };
 
   return (
-    <div 
+    <div
       className="min-h-screen font-sans text-[#7a6552]"
       style={{
         backgroundImage: 'url(/images/result-bg.svg)',
@@ -113,9 +113,9 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
     >
       {/* Header hidden or customized as per design (design doesn't show standard header) */}
       <div className="pt-12 px-4 max-w-4xl mx-auto flex flex-col items-center justify-center">
-        <img 
-          src="/images/NIHPLOD-logo.svg" 
-          alt="NIHPLOD MONACO" 
+        <img
+          src="/images/NIHPLOD-logo.svg"
+          alt="NIHPLOD MONACO"
           className="h-10 mb-8 object-contain"
         />
 
@@ -125,22 +125,22 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="relative rounded-[32px] p-6 lg:p-10 overflow-hidden"
+            className="relative rounded-[32px] p-6 lg:p-10"
             style={{
               background: 'linear-gradient(135deg, rgba(255, 248, 235, 0.95) 0%, rgba(245, 230, 205, 0.9) 100%)',
               boxShadow: '0 10px 40px -10px rgba(0,0,0,0.1), inset 0 2px 0 rgba(255,255,255,0.7)',
             }}
           >
             <div className="flex flex-col lg:flex-row items-start gap-6 lg:gap-10 relative z-10 w-full">
-              
+
               {/* Left Column: Tag + Avatar properly aligned */}
               <div className="flex flex-col items-start gap-4 shrink-0 mt-1">
                 {/* Tag */}
                 <div className="relative flex items-center justify-center w-[84px] h-[26px] -ml-[14px]">
-                  <img 
-                    src="/images/version-tag.svg" 
-                    alt="标签背景" 
-                    className="absolute inset-0 w-full h-full object-fill pointer-events-none" 
+                  <img
+                    src="/images/version-tag.svg"
+                    alt="标签背景"
+                    className="absolute inset-0 w-full h-full object-fill pointer-events-none"
                   />
                   <span className="relative z-10 text-[#3d2f25] text-[10px] font-bold">
                     分享版
@@ -150,10 +150,10 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                 {/* Avatar with Ring */}
                 <div className="relative flex items-center justify-center w-[100px] h-[100px]">
                   {/* The SVG Frame */}
-                  <img 
-                    src="/images/avatar-frame.svg" 
-                    alt="frame" 
-                    className="absolute inset-0 w-full h-full z-10 pointer-events-none object-contain scale-[1.1]" 
+                  <img
+                    src="/images/avatar-frame.svg"
+                    alt="frame"
+                    className="absolute inset-0 w-full h-full z-10 pointer-events-none object-contain scale-[1.1]"
                   />
                   {/* Inner Avatar Content */}
                   <div className="w-[72%] h-[72%] rounded-full overflow-hidden shrink-0 mt-[2%] ml-[2%]">
@@ -179,52 +179,58 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                   <p className="text-[#a89582] text-sm leading-none">亲爱的{data.nickname}：</p>
                 </div>
                 <h2 className="text-2xl lg:text-3xl font-bold text-[#2d2a26] leading-snug mb-4 mt-0">
-                  你的素颜评分超越了<br/>
+                  你的素颜评分超越了<br />
                   全国 <span className="text-3xl lg:text-4xl px-1">{rankPercentile}%</span> 的用户
                 </h2>
                 <p className="text-[#8c7a6b] text-sm leading-relaxed max-w-sm mb-6">
-                    {data.guestAnalysis?.summary || "整体状态极佳，肌肤屏障健康，水油平衡度完美，仅在眼周区域存在轻微色素沉积。"}
-                  </p>
-                  
-                  {/* Share Button & Handwritten note */}
-                  <div className="flex items-center gap-4">
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setShowShareModal(true)}
-                      className="relative focus:outline-none flex items-center justify-center px-8 sm:px-12 h-[64px] sm:h-[70px] -ml-[48px]"
-                    >
-                      <img 
-                        src="/images/share-btn.svg" 
-                        alt="分享背景" 
-                        className="absolute inset-0 w-[120%] h-full object-fill drop-shadow-sm pointer-events-none" 
-                      />
-                      <span className="relative z-10 text-[#5e4b3c] text-[13px] sm:text-sm font-bold -translate-y-[4px] flex items-center justify-center gap-1.5">
-                        <span>&nbsp;</span>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mb-0.5">
-                          <circle cx="18" cy="5" r="3"></circle>
-                          <circle cx="6" cy="12" r="3"></circle>
-                          <circle cx="18" cy="19" r="3"></circle>
-                          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
-                          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
-                        </svg>
-                        分享我的素颜证书&nbsp;
-                      </span>
-                    </motion.button>
-                    <div className="hidden sm:flex items-center -ml-[56px] z-10">
-                      <img 
-                        src="/images/share-hint.svg" 
-                        alt="分享提示" 
-                        className="h-[58px] w-auto object-contain -mt-2" 
-                      />
-                    </div>
+                  {data.guestAnalysis?.summary || "整体状态极佳，肌肤屏障健康，水油平衡度完美，仅在眼周区域存在轻微色素沉积。"}
+                </p>
+
+                {/* Share Button & Handwritten note */}
+                <div className="flex items-center gap-4">
+                  <motion.button
+                    whileHover={{ scale: 1.03, y: -1 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => setShowShareModal(true)}
+                    className="relative focus:outline-none flex items-center justify-center h-[38px] sm:h-[42px] px-6 sm:px-8 rounded-full shadow-[0_4px_12px_-3px_rgba(150,110,60,0.18)] border border-[#e6d0a8]/50 group transition-all"
+                    style={{
+                      background: 'linear-gradient(135deg, #fdf6e9 0%, #f5dfb8 50%, #e6d0a8 100%)',
+                    }}
+                  >
+                    {/* Inner Shine Effect */}
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-t from-transparent via-transparent to-white/30 pointer-events-none" />
+                    <div className="absolute inset-[1px] rounded-full shadow-[inset_0_1px_1px_rgba(255,255,255,0.7)] pointer-events-none" />
+
+                    <span className="relative z-10 text-[#5e4b3c] text-[11px] sm:text-[12px] font-bold flex items-center justify-center gap-2 tracking-wide">
+                      <Share2 className="w-3 h-3 text-[#7a6552] stroke-[2.5]" />
+                      分享我的素颜证书
+                    </span>
+                  </motion.button>
+                  <div className="hidden sm:flex items-center -ml-[10px] z-10">
+                    <img
+                      src="/images/share-hint.svg"
+                      alt="分享提示"
+                      className="h-[58px] w-auto object-contain -mt-2"
+                    />
                   </div>
                 </div>
+              </div>
 
-              {/* Decorative Image Area (Right) - Simplified via CSS shapes for structure */}
-              <div className="absolute right-0 bottom-0 w-1/3 h-full opacity-50 lg:opacity-100 mix-blend-multiply flex items-end justify-end pointer-events-none">
-                {/* You can place a gift box image here: <img src="/images/gift-box.png" /> */}
-                <div className="w-full h-full bg-gradient-to-l from-[#f5dfb8]/40 to-transparent"></div>
+              {/* Decorative Image Area (Right) */}
+              <div className="absolute -right-31 -bottom-6 w-1/2 h-[110%] pointer-events-none flex items-end justify-end z-20">
+                {/* Gift Box sitting on the ribbon */}
+                <div className="absolute right-[2%] -bottom-[25%] w-80 sm:w-96 h-80 sm:h-96 z-30 drop-shadow-2xl">
+                  <img
+                    src="/images/gift.svg"
+                    alt="礼盒"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <img
+                  src="/images/ribbon.svg"
+                  alt="装饰彩带"
+                  className="w-full h-full object-contain object-right-bottom opacity-90 scale-110"
+                />
               </div>
             </div>
           </motion.div>
@@ -260,10 +266,10 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                     onClick={() => openAuthModal('register')}
                     className="focus:outline-none"
                   >
-                    <img 
-                      src="/images/login-btn.svg" 
-                      alt="登录查看完整报告" 
-                      className="h-10 sm:h-11 object-contain drop-shadow-sm pointer-events-none" 
+                    <img
+                      src="/images/login-btn.svg"
+                      alt="登录查看完整报告"
+                      className="h-10 sm:h-11 object-contain drop-shadow-sm pointer-events-none"
                     />
                   </motion.button>
                 )}
@@ -330,42 +336,42 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
 
                 {/* Login Unlock Box */}
                 {!user ? (
-                   <motion.div
-                   initial={{ opacity: 0, scale: 0.9 }}
-                   animate={{ opacity: 1, scale: 1 }}
-                   transition={{ delay: 0.4 }}
-                   className="p-4 rounded-2xl flex flex-col items-center justify-center border border-dashed border-white/50"
-                   style={{
-                     background: 'rgba(255,255,255,0.1)',
-                   }}
-                 >
-                   <div className="w-8 h-8 rounded-lg bg-white/80 flex items-center justify-center mb-2 shadow-sm">
-                    <Lock className="w-4 h-4 text-[#8c7a6b]" />
-                   </div>
-                   <p className="text-[#5c4937] text-xs font-medium text-center">登录解锁<br/>更多数据</p>
-                 </motion.div>
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.4 }}
+                    className="p-4 rounded-2xl flex flex-col items-center justify-center border border-dashed border-white/50"
+                    style={{
+                      background: 'rgba(255,255,255,0.1)',
+                    }}
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-white/80 flex items-center justify-center mb-2 shadow-sm">
+                      <Lock className="w-4 h-4 text-[#8c7a6b]" />
+                    </div>
+                    <p className="text-[#5c4937] text-xs font-medium text-center">登录解锁<br />更多数据</p>
+                  </motion.div>
                 ) : (
                   <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.4 }}
-                  className="p-4 rounded-2xl flex flex-col justify-between"
-                  style={{
-                    background: 'linear-gradient(180deg, rgba(230,225,215,0.6) 0%, rgba(245,240,230,0.4) 100%)',
-                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.4)',
-                  }}
-                >
-                  <p className="text-xs text-[#7a6552] mb-6 font-medium">肌肤类型</p>
-                  <div className="flex items-center h-full">
-                    <span className="text-base font-bold text-[#5c4937]">已解锁</span>
-                  </div>
-                </motion.div>
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.4 }}
+                    className="p-4 rounded-2xl flex flex-col justify-between"
+                    style={{
+                      background: 'linear-gradient(180deg, rgba(230,225,215,0.6) 0%, rgba(245,240,230,0.4) 100%)',
+                      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.4)',
+                    }}
+                  >
+                    <p className="text-xs text-[#7a6552] mb-6 font-medium">肌肤类型</p>
+                    <div className="flex items-center h-full">
+                      <span className="text-base font-bold text-[#5c4937]">已解锁</span>
+                    </div>
+                  </motion.div>
                 )}
               </div>
             </div>
           </motion.div>
         </div>
-        
+
         <p className="text-center text-[#c4b5a2] text-xs mt-6 tracking-widest">AI综合分析结果</p>
       </div>
 
