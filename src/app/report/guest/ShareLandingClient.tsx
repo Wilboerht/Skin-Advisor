@@ -288,16 +288,30 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.3 }}
-                  className="p-4 rounded-2xl flex flex-col justify-between aspect-[2/3] relative overflow-hidden"
+                  className="p-4 rounded-2xl flex flex-col justify-between aspect-[2/3] relative"
                   style={{
                     background: 'linear-gradient(180deg, rgba(230,220,205,0.7) 0%, rgba(240,230,215,0.5) 100%)',
                     boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5)',
                   }}
                 >
+                  {/* Blue Glow Decoration */}
+                  <div
+                    className="absolute -top-12 -right-12 w-40 h-40 bg-blue-500/15 blur-[60px] rounded-full pointer-events-none"
+                  />
                   <img
                     src="/images/vector-decor.svg"
                     alt=""
-                    className="absolute -top-1 -right-1 w-16 h-16 z-10 pointer-events-none"
+                    className="absolute -top-4 -right-4 w-14 h-14 z-10 pointer-events-none"
+                  />
+                  <img
+                    src="/images/vector-decor.svg"
+                    alt=""
+                    className="absolute top-10 -right-4 w-7 h-7 z-10 pointer-events-none"
+                  />
+                  <img
+                    src="/images/vector-decor.svg"
+                    alt=""
+                    className="absolute -bottom-4 -left-4 w-9 h-9 z-10 pointer-events-none"
                   />
                   <p className="text-xs text-[#7a6552] mb-6 font-medium">综合评分</p>
                   <div className="flex items-baseline">
