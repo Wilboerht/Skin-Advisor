@@ -103,7 +103,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
 
   return (
     <div
-      className="min-h-screen font-sans text-[#7a6552]"
+      className="min-h-screen font-sans text-[#7a6552] flex flex-col"
       style={{
         backgroundImage: 'url(/images/result-bg.svg)',
         backgroundSize: 'cover',
@@ -112,7 +112,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
       }}
     >
       {/* Header hidden or customized as per design (design doesn't show standard header) */}
-      <div className="pt-12 px-4 max-w-4xl mx-auto flex flex-col items-center justify-center">
+      <div className="flex-1 py-12 px-4 max-w-4xl mx-auto flex flex-col items-center justify-center w-full">
         <img
           src="/images/NIHPLOD-logo.svg"
           alt="NIHPLOD MONACO"
@@ -272,10 +272,10 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                   >
                     {/* Glossy overlay */}
                     <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/40 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 pointer-events-none" />
-                    
+
                     <span className="relative z-10 text-[#5c4937] text-[11px] sm:text-[12px] font-bold tracking-wider flex items-center gap-2">
-                       登录查看完整报告
-                       <Lock className="w-3.5 h-3.5 text-[#5c4937] stroke-[2.5]" />
+                      登录查看完整报告
+                      <Lock className="w-3.5 h-3.5 text-[#5c4937] stroke-[2.5]" />
                     </span>
                   </motion.button>
                 )}
