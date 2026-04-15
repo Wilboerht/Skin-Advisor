@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, Share2, Lock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -66,6 +66,36 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
   const { openAuthModal } = useAuthModal();
   const toast = useToast();
   const [showShareModal, setShowShareModal] = useState(false);
+  const [currentAvatar, setCurrentAvatar] = useState<string | null>(data.generatedAvatar || null);
+
+  // Poll for avatar if it's not ready
+  useEffect(() => {
+    if (currentAvatar) return;
+
+    let pollCount = 0;
+    const maxPolls = 20; // Max 60 seconds (3 * 20)
+
+    const pollInterval = setInterval(async () => {
+      pollCount++;
+      if (pollCount > maxPolls) {
+        clearInterval(pollInterval);
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/advisor/avatar/status?sessionId=${data.sessionId}`);
+        const result = await res.json();
+        if (result.isReady && result.generatedAvatar) {
+          setCurrentAvatar(result.generatedAvatar);
+          clearInterval(pollInterval);
+        }
+      } catch (e) {
+        console.error("Avatar poll error:", e);
+      }
+    }, 3000);
+
+    return () => clearInterval(pollInterval);
+  }, [currentAvatar, data.sessionId]);
 
   const rankPercentile = useMemo(() => {
     const percentiles = Object.values(data.dimensions)
@@ -134,9 +164,9 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
             <div className="flex flex-col lg:flex-row items-start gap-6 lg:gap-10 relative z-10 w-full">
 
               {/* Left Column: Tag + Avatar properly aligned */}
-              <div className="flex flex-col items-start gap-4 shrink-0 mt-1">
+              <div className="flex flex-col items-start gap-4 shrink-0">
                 {/* Tag */}
-                <div className="relative flex items-center justify-center w-[72px] h-[24px] -ml-[10px]">
+                <div className="relative flex items-center justify-center w-[72px] h-[24px]">
                   <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#e6d0a8] via-[#f5dfb8] to-[#d4b483] shadow-sm" />
                   <div className="absolute inset-[1px] rounded-full bg-white/20 backdrop-blur-[1px] border border-white/30" />
                   <span className="relative z-10 text-[#3d2f25] text-xs font-bold tracking-widest">
@@ -152,11 +182,23 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                     <div className="w-full h-full rounded-full bg-white p-[1px]">
                       {/* Inner Avatar Content */}
                       <div className="w-full h-full rounded-full overflow-hidden">
-                        {data.generatedAvatar ? (
-                          <img src={data.generatedAvatar} alt="avatar" className="w-full h-full object-cover" />
+                        {currentAvatar ? (
+                          <motion.img
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            src={currentAvatar}
+                            alt="avatar"
+                            className="w-full h-full object-cover"
+                          />
                         ) : (
-                          <div className="w-full h-full bg-[#dfc9b2] flex items-center justify-center text-white text-xl font-bold">
+                          <div className="w-full h-full bg-[#dfc9b2] flex items-center justify-center text-white text-xl font-bold relative">
                             {data.nickname ? data.nickname.charAt(0) : '?'}
+                            {/* Generation Loading Indicator */}
+                            <motion.div
+                              animate={{ opacity: [0, 0.5, 0] }}
+                              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                              className="absolute inset-0 bg-white"
+                            />
                           </div>
                         )}
                       </div>
