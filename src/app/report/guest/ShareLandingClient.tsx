@@ -294,10 +294,13 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                     boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5)',
                   }}
                 >
-                  {/* Blue Glow Decoration */}
-                  <div
-                    className="absolute -top-12 -right-12 w-40 h-40 bg-blue-500/15 blur-[60px] rounded-full pointer-events-none"
-                  />
+                  {/* Clipped content container (for the glow) */}
+                  <div className="absolute inset-0 overflow-hidden rounded-[inherit] pointer-events-none">
+                    <div
+                      className="absolute -top-3 -right-3 w-8 h-8 bg-blue-500/70 blur-[25px] rounded-full"
+                    />
+                  </div>
+
                   <img
                     src="/images/vector-decor.svg"
                     alt=""
