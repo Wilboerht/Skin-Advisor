@@ -288,12 +288,17 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.3 }}
-                  className="p-4 rounded-2xl flex flex-col justify-between aspect-[2/3]"
+                  className="p-4 rounded-2xl flex flex-col justify-between aspect-[2/3] relative overflow-hidden"
                   style={{
                     background: 'linear-gradient(180deg, rgba(230,220,205,0.7) 0%, rgba(240,230,215,0.5) 100%)',
                     boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5)',
                   }}
                 >
+                  <img
+                    src="/images/vector-decor.svg"
+                    alt=""
+                    className="absolute -top-1 -right-1 w-16 h-16 z-10 pointer-events-none"
+                  />
                   <p className="text-xs text-[#7a6552] mb-6 font-medium">综合评分</p>
                   <div className="flex items-baseline">
                     <span className="text-3xl font-bold text-[#5c4937] leading-none">
