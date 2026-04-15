@@ -210,9 +210,12 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                         分享检测结果
                       </span>
                     </motion.button>
-                    <div className="hidden sm:block text-[#c4aca4] italic font-serif text-sm -ml-4">
-                      <span className="inline-block border-t border-[#c4aca4]/30 w-8 mr-2 align-middle"></span>
-                      分享至小红书<br/>参与抽奖赢好礼！
+                    <div className="hidden sm:flex items-center -ml-[56px] z-10">
+                      <img 
+                        src="/images/share-hint.svg" 
+                        alt="分享提示" 
+                        className="h-[58px] w-auto object-contain" 
+                      />
                     </div>
                   </div>
                 </div>
