@@ -345,13 +345,16 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                   <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
+                    whileHover={{ scale: 1.03, backgroundColor: 'rgba(255,255,255,0.15)' }}
+                    whileTap={{ scale: 0.97 }}
                     transition={{ delay: 0.4 }}
-                    className="p-4 rounded-2xl flex flex-col items-center justify-center border border-dashed border-white/50 aspect-[2/3]"
+                    onClick={() => openAuthModal('register')}
+                    className="p-4 rounded-2xl flex flex-col items-center justify-center border border-dashed border-white/50 aspect-[2/3] cursor-pointer group transition-colors"
                     style={{
                       background: 'rgba(255,255,255,0.1)',
                     }}
                   >
-                    <div className="w-8 h-8 rounded-lg bg-white/80 flex items-center justify-center mb-2 shadow-sm">
+                    <div className="w-8 h-8 rounded-lg bg-white/80 flex items-center justify-center mb-2 shadow-sm group-hover:bg-white transition-colors">
                       <Lock className="w-4 h-4 text-[#8c7a6b]" />
                     </div>
                     <p className="text-[#5c4937] text-xs font-medium text-center">登录解锁<br />更多数据</p>
