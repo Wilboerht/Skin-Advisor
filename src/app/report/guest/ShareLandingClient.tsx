@@ -148,28 +148,26 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                 </div>
 
                 {/* Avatar with Ring */}
-                {/* Avatar with Ring */}
-                <div className="relative flex items-center justify-center w-[100px] h-[100px]">
-                  {/* The SVG Frame - Bottom Layer (Opaque) */}
-                  <img
-                    src="/images/avatar-frame.svg"
-                    alt="frame"
-                    className="absolute inset-0 w-full h-full z-0 pointer-events-none object-contain scale-[1.1]"
-                  />
-
-                  {/* Inner Avatar Content - Top Layer */}
-                  <div className="relative z-10 w-[72%] h-[72%] rounded-full overflow-hidden shrink-0 mt-[1.5%] ml-[1.5%] shadow-inner">
-                    {data.generatedAvatar ? (
-                      <img src={data.generatedAvatar} alt="avatar" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full bg-[#dfc9b2] flex items-center justify-center text-white text-2xl font-bold">
-                        {data.nickname ? data.nickname.charAt(0) : '?'}
+                <div className="relative flex items-center justify-center w-[92px] h-[92px]">
+                  {/* Subtle Gradient Matte Gold Ring */}
+                  <div className="absolute inset-0 rounded-full p-[2.5px] bg-gradient-to-br from-[#e6d0a8] via-[#f5dfb8] to-[#d4b483] shadow-sm">
+                    {/* Ultra-Thin White Gap */}
+                    <div className="w-full h-full rounded-full bg-white p-[1px]">
+                      {/* Inner Avatar Content */}
+                      <div className="w-full h-full rounded-full overflow-hidden">
+                        {data.generatedAvatar ? (
+                          <img src={data.generatedAvatar} alt="avatar" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-[#dfc9b2] flex items-center justify-center text-white text-xl font-bold">
+                            {data.nickname ? data.nickname.charAt(0) : '?'}
+                          </div>
+                        )}
                       </div>
-                    )}
+                    </div>
                   </div>
 
-                  {/* Minimal name badge - Topmost Layer */}
-                  <div className="absolute bottom-0 right-0 bg-[#2d2a26] text-white text-[10px] px-2.5 py-0.5 rounded-full whitespace-nowrap z-20 border-[2.5px] border-white shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
+                  {/* Minimal name badge */}
+                  <div className="absolute -bottom-0.5 -right-0.5 bg-[#2d2a26] text-white text-[9px] px-2 py-0.5 rounded-full whitespace-nowrap z-20 border-[1.5px] border-white shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
                     {data.nickname}
                   </div>
                 </div>
@@ -222,7 +220,10 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
               {/* Decorative Image Area (Right) */}
               <div className="absolute -right-31 -bottom-6 w-1/2 h-[110%] pointer-events-none flex items-end justify-end z-20">
                 {/* Gift Box sitting on the ribbon */}
-                <div className="absolute right-[2%] -bottom-[25%] w-80 sm:w-96 h-80 sm:h-96 z-30 drop-shadow-2xl">
+                <div
+                  className="absolute -bottom-[30%] w-[24rem] sm:w-[28rem] h-[24rem] sm:h-[28rem] z-30 drop-shadow-2xl"
+                  style={{ right: 'calc(-5% - 12px)' }}
+                >
                   <img
                     src="/images/gift.svg"
                     alt="礼盒"
