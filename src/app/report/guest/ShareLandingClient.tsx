@@ -136,13 +136,10 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
               {/* Left Column: Tag + Avatar properly aligned */}
               <div className="flex flex-col items-start gap-4 shrink-0 mt-1">
                 {/* Tag */}
-                <div className="relative flex items-center justify-center w-[84px] h-[26px] -ml-[14px]">
-                  <img
-                    src="/images/version-tag.svg"
-                    alt="标签背景"
-                    className="absolute inset-0 w-full h-full object-fill pointer-events-none"
-                  />
-                  <span className="relative z-10 text-[#3d2f25] text-[10px] font-bold">
+                <div className="relative flex items-center justify-center w-[64px] h-[20px] -ml-[10px]">
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#e6d0a8] via-[#f5dfb8] to-[#d4b483] shadow-sm" />
+                  <div className="absolute inset-[1px] rounded-full bg-white/20 backdrop-blur-[1px] border border-white/30" />
+                  <span className="relative z-10 text-[#3d2f25] text-[9px] font-bold tracking-widest pl-[1px]">
                     分享版
                   </span>
                 </div>
