@@ -136,7 +136,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
               {/* Left Column: Tag + Avatar properly aligned */}
               <div className="flex flex-col items-start gap-4 shrink-0 mt-1">
                 {/* Tag */}
-                <div className="relative flex items-center justify-center w-[84px] h-[26px] -ml-[5px]">
+                <div className="relative flex items-center justify-center w-[84px] h-[26px] -ml-[14px]">
                   <img 
                     src="/images/version-tag.svg" 
                     alt="标签背景" 
@@ -166,7 +166,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                     )}
                   </div>
                   {/* Minimal name badge */}
-                  <div className="absolute bottom-0 right-0 bg-[#2d2a26] text-[#f5ebd7] text-[10px] px-2.5 py-0.5 rounded-full whitespace-nowrap z-20">
+                  <div className="absolute bottom-0 right-0 bg-[#2d2a26] text-white text-[10px] px-2.5 py-0.5 rounded-full whitespace-nowrap z-20 border-[2.5px] border-white shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
                     {data.nickname}
                   </div>
                 </div>
