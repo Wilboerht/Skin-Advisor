@@ -7,29 +7,30 @@ interface ScanGuideModalProps {
     isOpen: boolean;
     onConfirm: () => void;
     onCancel?: () => void;
+    onExit?: () => void;
 }
 
-export function ScanGuideModal({ isOpen, onConfirm, onCancel }: ScanGuideModalProps) {
+export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuideModalProps) {
     const guideItems = [
         {
             icon: Sparkles,
             title: "保持素颜",
-            desc: "建议卸除底妆、遮瑕及有色面霜，还原最真实的皮肤纹理与色泽。"
+            desc: "建议卸除底妆，保持肌肤真实状态"
         },
         {
             icon: Glasses,
             title: "摘下眼镜",
-            desc: "请摘下眼镜、墨镜及面部饰品，避免镜片反光及遮挡关键区域。"
+            desc: "请摘下眼镜或饰品，避免面部遮挡"
         },
         {
             icon: Sun,
             title: "光源充足",
-            desc: "建议面向窗户自然光或室内明亮主灯，避免背光或阴阳脸。"
+            desc: "确保面部光线均匀，避免背光"
         },
         {
             icon: Smartphone,
             title: "对准镜头",
-            desc: "手机保持约 20-30cm 距离，平视镜头，将面部置于引导框中央。"
+            desc: "平视镜头，将面部置于引导框中央"
         }
     ];
 
@@ -97,7 +98,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel }: ScanGuideModalPr
                             </div>
 
                             {/* Actions */}
-                            <div className="pt-2 flex flex-col gap-3">
+                            <div className="pt-4 flex flex-col items-center">
                                 <button
                                     onClick={() => {
                                         // 关键体验修复：利用用户的首次显式点击解锁 iOS Safari 的语音合成引擎
@@ -108,7 +109,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel }: ScanGuideModalPr
                                         }
                                         onConfirm();
                                     }}
-                                    className="w-full h-14 rounded-full bg-[#4A3728]/95 backdrop-blur-md hover:bg-[#4A3728] text-[#FDFBF7] text-[15px] font-bold tracking-[0.2em] shadow-xl hover:shadow-[#4A3728]/30 transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-2 group border border-white/20"
+                                    className="w-full h-14 rounded-full bg-[#4A3728]/95 backdrop-blur-md hover:bg-[#4A3728] text-[#FDFBF7] text-[15px] font-bold tracking-[0.2em] shadow-xl hover:shadow-[#4A3728]/30 transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-2 group border border-white/20 mb-4"
                                 >
                                     <span>我已准备好</span>
                                     <Check className="w-4 h-4 opacity-70 group-hover:opacity-100 transition-opacity" />
@@ -117,10 +118,22 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel }: ScanGuideModalPr
                                 {onCancel && (
                                     <button
                                         onClick={onCancel}
-                                        className="w-full h-10 rounded-full text-[#4A3728]/40 hover:text-[#4A3728] text-[13px] font-medium tracking-[0.2em] transition-all duration-300 flex items-center justify-center group"
+                                        className="w-full h-10 rounded-full text-[#4A3728]/50 hover:text-[#4A3728] text-[13px] font-medium tracking-[0.2em] transition-all duration-300 flex items-center justify-center group"
                                     >
                                         <span className="relative">
-                                            暂不测试，退出
+                                            返回修改问卷
+                                            <span className="absolute -bottom-1 left-1.5 right-1.5 h-[1px] bg-current scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-center opacity-30" />
+                                        </span>
+                                    </button>
+                                )}
+
+                                {onExit && (
+                                    <button
+                                        onClick={onExit}
+                                        className="w-full h-10 rounded-full text-[#4A3728]/50 hover:text-[#4A3728] text-[13px] font-medium tracking-[0.2em] transition-all duration-300 flex items-center justify-center group"
+                                    >
+                                        <span className="relative">
+                                            退出测试并回到首页
                                             <span className="absolute -bottom-1 left-1.5 right-1.5 h-[1px] bg-current scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-center opacity-30" />
                                         </span>
                                     </button>

@@ -337,11 +337,14 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
   const speak = useCallback((text: string) => {
     if (isMuted || typeof window === 'undefined') return;
     try {
-      // 取消正在播放的语音
-      window.speechSynthesis.cancel();
+      // 优雅处理：不再强制截断 (cancel)，允许语音队列平滑过渡
+      // 但为了防止同一个指令在短时间内重复堆积，进行简单过滤
+      if (window.speechSynthesis.speaking && text === lastSpokenPhraseRef.current) {
+        return;
+      }
 
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = "zh-CN"; // 中文
+      utterance.lang = "zh-CN";
       utterance.rate = 1.0;
       utterance.volume = 1.0;
 
@@ -412,9 +415,8 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
           setStabilityProgress(Math.min(100, (stableCountRef.current / progressFrames) * 100));
 
           // 稳定检测后拍照
-          // 普通步骤: 约0.6秒 (3帧 x 200ms)
-          // chin步骤: 约1秒 (5帧 x 200ms)，需要更稳定的姿势
-          if (stableCountRef.current >= requiredFrames) {
+          // 优化：如果当前还在播报语音（比如纠错引导），则等待播报完再执行“拍下”动作，确保交互优雅
+          if (stableCountRef.current >= requiredFrames && !window.speechSynthesis.speaking) {
             setFaceStatus("ready");
             setStabilityProgress(100);
 
@@ -424,10 +426,14 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
 
             // 拍照
             takePhotoAuto();
+          } else if (stableCountRef.current >= requiredFrames) {
+            // 姿态已经稳了，但还在等语音播完，此时保持 100% 进度但显示“found”状态
+            setFaceStatus("found");
+            setStabilityProgress(100);
           } else if (stableCountRef.current === 1) { // 刚达到正确姿势的第一帧，给正面反馈
             const now = Date.now();
-            if (now - lastSpeakTimeRef.current > 2000 && lastSpokenPhraseRef.current !== "保持") {
-              speak("很好，请保持");
+            if (now - lastSpeakTimeRef.current > 2000 && lastSpokenPhraseRef.current !== "保持" && !window.speechSynthesis.speaking) {
+              speak("请保持");
               lastSpeakTimeRef.current = now;
               lastSpokenPhraseRef.current = "保持";
             }

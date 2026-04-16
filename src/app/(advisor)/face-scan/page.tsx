@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FaceCapture, type FaceCaptureImages } from "@/components/advisor/FaceCapture";
-import { m } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { ChevronLeft, Camera } from "lucide-react";
 import Link from "next/link";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
@@ -108,24 +108,19 @@ export default function FaceScanPage() {
 
             {/* Main Content: Mirror Container pushed to center */}
             <div className="flex-1 flex flex-col items-center justify-center w-full min-h-0">
-                <div className="relative w-full max-w-[480px] aspect-[3/4] max-h-[70vh] bg-black rounded-[2rem] overflow-hidden shadow-2xl ring-8 ring-white/50 z-10 flex flex-col">
-                    {!hasStarted ? (
-                        // Camera Placeholder when modal is open
-                        <div className="flex-1 flex flex-col items-center justify-center bg-[#1A1A1A] text-white/20 p-8 text-center">
-                            <m.div
-                                animate={{ opacity: [0.3, 0.6, 0.3], scale: [1, 1.05, 1] }}
-                                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                                className="w-20 h-20 rounded-full border-2 border-white/10 flex items-center justify-center mb-4"
-                            >
-                                <Camera className="h-8 w-8" />
-                            </m.div>
-                            <p className="text-xs font-light tracking-widest uppercase opacity-40">Ready to Scan</p>
-                        </div>
-                    ) : (
-                        // Real Camera Component
-                        <FaceCapture onCapture={handleCaptureComplete} />
+                <AnimatePresence>
+                    {hasStarted && (
+                        <m.div 
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                            className="relative w-full max-w-[480px] aspect-[3/4] max-h-[70vh] bg-black rounded-[2rem] overflow-hidden shadow-2xl ring-8 ring-white/50 z-10 flex flex-col"
+                        >
+                            {/* Real Camera Component */}
+                            <FaceCapture onCapture={handleCaptureComplete} />
+                        </m.div>
                     )}
-                </div>
+                </AnimatePresence>
             </div>
 
             {/* Footer with Copyright & Registration */}
@@ -158,7 +153,12 @@ export default function FaceScanPage() {
                     setIsModalOpen(false);
                 }}
                 onCancel={() => {
-                    router.push("/questions");
+                    router.push("/questions?edit=true");
+                }}
+                onExit={async () => {
+                    const { advisorStorage } = await import("@/lib/advisor-storage");
+                    await advisorStorage.clearAll();
+                    router.push("/");
                 }}
             />
         </div>

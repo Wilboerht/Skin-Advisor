@@ -122,7 +122,14 @@ export default function QuestionsPage() {
             const hasProgress = savedGender || (savedAnswers && Object.keys(JSON.parse(savedAnswers)).length > 0);
 
             if (hasProgress && savedStep) {
-                // 有未完成的测试，显示选择弹窗
+                // 如果是从扫脸页点击“返回修改”进来的 (带 ?edit=true)，则自动恢复，不弹窗询问
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('edit') === 'true') {
+                    resumeSavedProgress();
+                    return;
+                }
+
+                // 否则显示选择弹窗
                 setHasSavedProgress(true);
                 setShowResumeModal(true);
             }
@@ -262,8 +269,7 @@ export default function QuestionsPage() {
     // 真正执行提交的逻辑
     const processSubmission = (finalAnswers: any) => {
         localStorage.setItem("advisor_answers", JSON.stringify(finalAnswers));
-        // 清除进度索引（已完成）
-        localStorage.removeItem("advisor_step");
+        // 不再此处清除进度，以便用户从扫脸页返回时能恢复问卷位置
         trackQuestionnaireComplete(finalAnswers);
         router.push("/face-scan");
     };

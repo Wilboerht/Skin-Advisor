@@ -150,7 +150,7 @@ export function OnboardingFlowModal({
                                         value={nickname}
                                         onChange={(e) => setNickname(e.target.value)}
                                         placeholder="输入您的昵称"
-                                        maxLength={20}
+                                        maxLength={10}
                                         className="w-full px-6 py-4 mb-6 text-center text-[#1A1A1A] bg-[#FDFBF7] border border-[#3D4430]/10 rounded-full focus:outline-none focus:border-[#3D4430]/30 transition-all placeholder:text-[#3D4430]/20 text-[15px] tracking-wide"
                                         onKeyDown={(e) => {
                                             if (e.key === 'Enter') {

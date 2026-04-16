@@ -105,6 +105,7 @@ export default function Home() {
     safeStorage.remove("advisor_result");
     safeStorage.remove("advisor_gender_mismatch_ack");
     safeStorage.remove("advisor_free_retry");
+    safeStorage.remove("advisor_step");
 
     setIsLoading(true);
     router.push("/questions");
