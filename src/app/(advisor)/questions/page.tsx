@@ -291,9 +291,13 @@ export default function QuestionsPage() {
 
             // 规则：如果在本次会话中回答了超过 3 题，且平均每题耗时少于 1.5 秒
             // 或者：如果回答了超过 5 题且总耗时少于 6 秒 (极速盲点)
+            // 优化：如果是“编辑模式 (?edit=true)”，直接跳过质量检测，因为回溯查看肯定很快
+            const urlParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+            const isEditMode = urlParams.get('edit') === 'true';
+            
             const avgTime = timeSpent / questionsAnsweredInSession;
-            const isTooFast = (questionsAnsweredInSession >= 3 && avgTime < 1500) ||
-                (questionsAnsweredInSession >= 5 && timeSpent < 6000);
+            const isTooFast = !isEditMode && ((questionsAnsweredInSession >= 3 && avgTime < 1500) ||
+                (questionsAnsweredInSession >= 5 && timeSpent < 6000));
 
             if (isTooFast) {
                 setPendingAnswers(currentAnswers);
@@ -447,8 +451,12 @@ export default function QuestionsPage() {
                                     : "bg-[#4A3728]/95 text-[#FDFBF7] border-white/20 hover:bg-[#4A3728] hover:shadow-[0_20px_50px_-12px_rgba(74,55,40,0.5)]"
                             )}
                         >
-                            <span>{currentStepIndex === questions.length - 1 ? "面部检测" : "下一步"}</span>
-                            {!isNextDisabled() && <ChevronRight className="h-5 w-5" />}
+                            <span>
+                                {currentStepIndex === questions.length - 1 
+                                    ? (new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '').get('edit') === 'true' ? "完成并返回扫脸" : "面部检测")
+                                    : "下一步"}
+                            </span>
+                            <ChevronRight className="h-5 w-5" />
                         </m.button>
                     )}
                 </AnimatePresence>
