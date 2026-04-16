@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, Sparkles, Glasses, Sun, Smartphone, ScanFace } from "lucide-react";
+import { ArrowRight, Sparkles, Glasses, Sun, Smartphone, ScanFace } from "lucide-react";
 
 interface ScanGuideModalProps {
     isOpen: boolean;
@@ -112,32 +112,39 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuid
                                     className="w-full h-14 rounded-full bg-[#4A3728]/95 backdrop-blur-md hover:bg-[#4A3728] text-[#FDFBF7] text-[15px] font-bold tracking-[0.2em] shadow-xl hover:shadow-[#4A3728]/30 transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-2 group border border-white/20 mb-4"
                                 >
                                     <span>我已准备好</span>
-                                    <Check className="w-4 h-4 opacity-70 group-hover:opacity-100 transition-opacity" />
+                                    <ArrowRight className="w-4 h-4 opacity-70 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-1" />
                                 </button>
 
-                                {onCancel && (
-                                    <button
-                                        onClick={onCancel}
-                                        className="w-full h-10 rounded-full text-[#4A3728]/50 hover:text-[#4A3728] text-[13px] font-medium tracking-[0.2em] transition-all duration-300 flex items-center justify-center group"
-                                    >
-                                        <span className="relative">
-                                            返回修改问卷
-                                            <span className="absolute -bottom-1 left-1.5 right-1.5 h-[1px] bg-current scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-center opacity-30" />
-                                        </span>
-                                    </button>
-                                )}
+                                {/* Secondary Actions: Horizontal Layout for Harmony */}
+                                <div className="flex items-center justify-center gap-4 w-full">
+                                    {onCancel && (
+                                        <button
+                                            onClick={onCancel}
+                                            className="px-4 h-10 text-[#4A3728]/50 hover:text-[#4A3728] text-[13px] font-medium tracking-[0.15em] transition-all duration-300 flex items-center justify-center group"
+                                        >
+                                            <span className="relative">
+                                                返回修改问卷
+                                                <span className="absolute -bottom-1 left-0 right-0 h-[1px] bg-current scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-center opacity-30" />
+                                            </span>
+                                        </button>
+                                    )}
 
-                                {onExit && (
-                                    <button
-                                        onClick={onExit}
-                                        className="w-full h-10 rounded-full text-[#4A3728]/50 hover:text-[#4A3728] text-[13px] font-medium tracking-[0.2em] transition-all duration-300 flex items-center justify-center group"
-                                    >
-                                        <span className="relative">
-                                            退出测试并回到首页
-                                            <span className="absolute -bottom-1 left-1.5 right-1.5 h-[1px] bg-current scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-center opacity-30" />
-                                        </span>
-                                    </button>
-                                )}
+                                    {(onCancel && onExit) && (
+                                        <div className="w-px h-3 bg-[#4A3728]/10" />
+                                    )}
+
+                                    {onExit && (
+                                        <button
+                                            onClick={onExit}
+                                            className="px-4 h-10 text-[#4A3728]/50 hover:text-[#4A3728] text-[13px] font-medium tracking-[0.15em] transition-all duration-300 flex items-center justify-center group"
+                                        >
+                                            <span className="relative">
+                                                退出测试
+                                                <span className="absolute -bottom-1 left-0 right-0 h-[1px] bg-current scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-center opacity-30" />
+                                            </span>
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </motion.div>
