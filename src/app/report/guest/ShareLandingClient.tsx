@@ -150,7 +150,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
         <img
           src="/images/NIHPLOD-logo.svg"
           alt="NIHPLOD MONACO"
-          className="h-10 mb-8 object-contain"
+          className="h-8 sm:h-10 mb-8 object-contain"
         />
 
         <div className="w-full flex flex-col gap-6">
@@ -171,8 +171,8 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
               <div className="flex flex-col items-end lg:items-start gap-4 shrink-0">
                 {/* Tag - Hidden on Mobile, Shown on PC */}
                 <div className="hidden lg:flex relative items-center justify-center w-[72px] h-[24px]">
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#e6d0a8] via-[#f5dfb8] to-[#d4b483] shadow-sm" />
-                  <div className="absolute inset-[1px] rounded-full bg-white/20 backdrop-blur-[1px] border border-white/30" />
+                  <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-[#e6d0a8] via-[#f5dfb8] to-[#d4b483] shadow-sm" />
+                  <div className="absolute inset-[1px] rounded-lg bg-white/20 backdrop-blur-[1px] border border-white/30" />
                   <span className="relative z-10 text-[#3d2f25] text-xs font-bold tracking-widest">
                     分享版
                   </span>
@@ -218,22 +218,22 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
 
               <div className="flex flex-col z-10 flex-1 pt-[2px]">
                 {/* Tag - Shown on Mobile, Hidden on PC */}
-                <div className="flex lg:hidden relative items-center justify-center w-[72px] h-[24px] mb-4">
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#e6d0a8] via-[#f5dfb8] to-[#d4b483] shadow-sm" />
-                  <div className="absolute inset-[1px] rounded-full bg-white/20 backdrop-blur-[1px] border border-white/30" />
+                <div className="flex lg:hidden relative items-center justify-center w-[72px] h-[24px] mb-6">
+                  <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-[#e6d0a8] via-[#f5dfb8] to-[#d4b483] shadow-sm" />
+                  <div className="absolute inset-[1px] rounded-lg bg-white/20 backdrop-blur-[1px] border border-white/30" />
                   <span className="relative z-10 text-[#3d2f25] text-xs font-bold tracking-widest">
                     分享版
                   </span>
                 </div>
                 {/* 保证这里的高度(24px)与底部间距(mb-4=16px)加起来等于左侧标签高度(24px)+gap-4(16px) = 40px */}
-                <div className="hidden lg:flex h-[24px] items-center mb-4">
+                <div className="hidden lg:flex h-[24px] items-center mb-6">
                   <p className="text-[#a89582] text-sm leading-none">亲爱的{data.nickname}：</p>
                 </div>
-                <h2 className="text-2xl lg:text-3xl font-bold text-[#2d2a26] leading-snug mb-4 mt-0">
+                <h2 className="text-xl lg:text-3xl font-bold text-[#2d2a26] leading-snug tracking-tight lg:tracking-normal mb-5 lg:mb-4 mt-0">
                   你的素颜评分超越了<br />
-                  全国 <span className="text-3xl lg:text-4xl px-1">{rankPercentile}%</span> 的用户
+                  全国 <span className="text-2xl lg:text-4xl px-0.5">{rankPercentile}%</span> 的用户
                 </h2>
-                <p className="text-[#8c7a6b] text-sm leading-relaxed max-w-[90%] lg:max-w-sm mb-6">
+                <p className="text-[#8c7a6b] text-xs lg:text-sm leading-relaxed tracking-tight lg:tracking-normal max-w-[75%] lg:max-w-sm mb-6">
                   {data.guestAnalysis?.summary || "整体状态极佳，肌肤屏障健康，水油平衡度完美，仅在眼周区域存在轻微色素沉积。"}
                 </p>
 
@@ -252,7 +252,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                     <div className="absolute inset-0 rounded-full bg-gradient-to-t from-transparent via-transparent to-white/30 pointer-events-none" />
                     <div className="absolute inset-[1px] rounded-full shadow-[inset_0_1px_1px_rgba(255,255,255,0.7)] pointer-events-none" />
 
-                    <span className="relative z-10 text-[#5e4b3c] text-[11px] sm:text-[12px] font-bold flex items-center justify-center gap-2 tracking-wide">
+                    <span className="relative z-10 text-[#5e4b3c] text-sm sm:text-[12px] font-bold flex items-center justify-center gap-2 tracking-wide">
                       <Share2 className="w-3 h-3 text-[#7a6552] stroke-[2.5]" />
                       分享我的素颜证书
                     </span>
@@ -265,14 +265,22 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                     />
                   </div>
                 </div>
+
+                {/* Mobile Hint */}
+                <div className="flex sm:hidden items-center ml-0 mt-1 opacity-90">
+                  <img
+                    src="/images/share-hint.svg"
+                    alt="分享提示"
+                    className="h-[48px] w-auto object-contain"
+                  />
+                </div>
               </div>
 
               {/* Decorative Image Area (Right) */}
-              <div className="absolute -right-31 -bottom-6 w-1/2 h-[110%] pointer-events-none flex items-end justify-end z-20">
+              <div className="absolute right-[-30px] lg:-right-31 bottom-[108px] lg:-bottom-6 w-1/2 h-[110%] pointer-events-none flex items-end justify-end z-20">
                 {/* Gift Box sitting on the ribbon */}
                 <div
-                  className="absolute -bottom-[30%] w-[24rem] sm:w-[28rem] h-[24rem] sm:h-[28rem] z-30 drop-shadow-2xl"
-                  style={{ right: 'calc(-5% - 12px)' }}
+                  className="absolute -bottom-[53%] lg:-bottom-[30%] w-[16rem] sm:w-[28rem] h-[16rem] sm:h-[28rem] z-30 drop-shadow-2xl right-[-35px] lg:right-[-32px]"
                 >
                   <img
                     src="/images/gift.svg"
@@ -283,7 +291,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                 <img
                   src="/images/ribbon.svg"
                   alt="装饰彩带"
-                  className="w-full h-full object-contain object-right-bottom opacity-90 scale-110"
+                  className="w-full h-full object-contain object-right-bottom opacity-90 scale-[1.8] lg:scale-110"
                 />
               </div>
             </div>
@@ -304,10 +312,12 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
               {/* Left text column - 30% width */}
               <div className="flex flex-col justify-between items-start lg:w-[30%] shrink-0">
                 <div>
-                  <div className="bg-white/80 text-[#5c4937] w-[72px] h-[24px] rounded-full text-xs font-bold flex items-center justify-center mb-6 shadow-sm border border-white/50 tracking-widest">
+                  <div className="bg-white/80 text-[#5c4937] w-[72px] h-[24px] rounded-lg text-xs font-bold flex items-center justify-center mb-6 shadow-sm border border-white/50 tracking-widest">
                     专业版
                   </div>
-                  <h2 className="text-2xl font-bold text-white drop-shadow-md mb-2">深度检测报告</h2>
+                  <h2 className="text-2xl font-bold text-white drop-shadow-md mb-2">
+                    深度<br className="lg:hidden" />肌肤检测报告
+                  </h2>
                   <p className="text-[#f5ebd7] text-xs max-w-xs leading-relaxed mb-8 font-medium tracking-wide" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}>
                     基于千万级亚洲肌肤数据库，全方位解析您的肌肤问题。
                   </p>
