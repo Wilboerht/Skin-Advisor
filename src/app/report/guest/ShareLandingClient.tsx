@@ -298,28 +298,29 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
           </motion.div>
 
           {/* Professional Version Card */}
+          {/* Professional Version Card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="rounded-[32px] p-6 lg:p-10 backdrop-blur-xl border border-white/20"
+            className="rounded-[32px] p-6 lg:p-10 backdrop-blur-xl border border-white/20 overflow-hidden"
             style={{
               background: 'linear-gradient(135deg, rgba(230, 215, 195, 0.4) 0%, rgba(200, 180, 155, 0.3) 100%)',
               boxShadow: '0 8px 32px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.3)',
             }}
           >
-            <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-8 lg:gap-12 h-full">
-              {/* Left text column - 30% width */}
-              <div className="flex flex-col justify-between items-start lg:w-[30%] shrink-0">
+            <div className="flex flex-row lg:flex-row justify-between items-stretch lg:items-center gap-4 lg:gap-12 h-full">
+              {/* Balanced Split Layout - 50% width on mobile */}
+              <div className="flex flex-col justify-between items-start w-[50%] lg:w-[30%] shrink-0">
                 <div>
-                  <div className="bg-white/80 text-[#5c4937] w-[72px] h-[24px] rounded-lg text-xs font-bold flex items-center justify-center mb-6 shadow-sm border border-white/50 tracking-widest">
+                  <div className="bg-white/80 text-[#5c4937] w-[72px] lg:w-[72px] h-[24px] lg:h-[24px] rounded-lg text-xs lg:text-xs font-bold flex items-center justify-center mb-4 lg:mb-6 shadow-sm border border-white/50 tracking-widest relative z-10">
                     专业版
                   </div>
-                  <h2 className="text-2xl font-bold text-white drop-shadow-md mb-2">
+                  <h2 className="text-xl lg:text-2xl font-bold text-white drop-shadow-md mb-2 relative z-10">
                     深度<br className="lg:hidden" />肌肤检测报告
                   </h2>
-                  <p className="text-[#f5ebd7] text-xs max-w-xs leading-relaxed mb-8 font-medium tracking-wide" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}>
-                    基于千万级亚洲肌肤数据库，全方位解析您的肌肤问题。
+                  <p className="text-white text-xs lg:text-xs max-w-xs leading-relaxed mb-4 lg:mb-8 font-medium tracking-wide relative z-10">
+                    基于千万级亚洲肌肤数据库，<br className="lg:hidden" />全方位解析您的肌肤问题。
                   </p>
                 </div>
 
@@ -328,15 +329,13 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                     whileHover={{ scale: 1.03, y: -1 }}
                     whileTap={{ scale: 0.97 }}
                     onClick={() => openAuthModal('register')}
-                    className="relative focus:outline-none flex items-center justify-center h-[38px] sm:h-[42px] px-6 sm:px-8 rounded-full shadow-[0_8px_20px_-6px_rgba(0,0,0,0.15)] border border-white/60 group overflow-hidden transition-all"
+                    className="relative focus:outline-none flex items-center justify-center h-8 lg:h-[42px] px-3 lg:px-8 rounded-full shadow-[0_8px_20px_-6px_rgba(0,0,0,0.15)] border border-white/60 group overflow-hidden transition-all mt-auto lg:mt-0"
                     style={{
                       background: 'linear-gradient(135deg, #ffffff 0%, #f8f0e3 50%, #f0e6d8 100%)',
                     }}
                   >
-                    {/* Glossy overlay */}
                     <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/40 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 pointer-events-none" />
-
-                    <span className="relative z-10 text-[#5c4937] text-[11px] sm:text-[12px] font-bold tracking-wider flex items-center gap-2">
+                    <span className="relative z-10 text-[#5c4937] text-sm lg:text-[12px] font-bold tracking-wider flex items-center gap-2">
                       登录查看完整报告
                       <Lock className="w-3.5 h-3.5 text-[#5c4937] stroke-[2.5]" />
                     </span>
@@ -344,47 +343,33 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                 )}
               </div>
 
-              {/* Right Cards Grid - 70% width */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 flex-1">
+              {/* Right Cards Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-2 lg:gap-4 flex-1">
                 {/* Comprehensive Score */}
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.3 }}
-                  className="p-4 rounded-2xl flex flex-col justify-between aspect-[2/3] relative"
+                  className="p-3 lg:p-4 rounded-xl lg:rounded-2xl flex flex-row lg:flex-col items-center lg:items-start justify-between lg:aspect-[2/3] relative min-h-[48px] lg:min-h-0 overflow-hidden"
                   style={{
                     background: 'linear-gradient(180deg, rgba(230,220,205,0.7) 0%, rgba(240,230,215,0.5) 100%)',
                     boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5)',
                   }}
                 >
-                  {/* Clipped content container (for the glow) */}
-                  <div className="absolute inset-0 overflow-hidden rounded-[inherit] pointer-events-none">
-                    <div
-                      className="absolute -top-3 -right-3 w-8 h-8 bg-blue-500/70 blur-[25px] rounded-full"
-                    />
+                  {/* PC Decor Glow */}
+                  <div className="hidden lg:block absolute inset-0 overflow-hidden rounded-[inherit] pointer-events-none">
+                    <div className="absolute -top-3 -right-3 w-8 h-8 bg-blue-500/70 blur-[25px] rounded-full" />
                   </div>
+                  <img src="/images/vector-decor.svg" alt="" className="hidden lg:block absolute -top-4 -right-4 w-14 h-14 z-10 pointer-events-none" />
+                  <img src="/images/vector-decor.svg" alt="" className="hidden lg:block absolute top-10 -right-4 w-7 h-7 z-10 pointer-events-none" />
+                  <img src="/images/vector-decor.svg" alt="" className="hidden lg:block absolute -bottom-4 -left-4 w-9 h-9 z-10 pointer-events-none" />
 
-                  <img
-                    src="/images/vector-decor.svg"
-                    alt=""
-                    className="absolute -top-4 -right-4 w-14 h-14 z-10 pointer-events-none"
-                  />
-                  <img
-                    src="/images/vector-decor.svg"
-                    alt=""
-                    className="absolute top-10 -right-4 w-7 h-7 z-10 pointer-events-none"
-                  />
-                  <img
-                    src="/images/vector-decor.svg"
-                    alt=""
-                    className="absolute -bottom-4 -left-4 w-9 h-9 z-10 pointer-events-none"
-                  />
-                  <p className="text-xs text-[#7a6552] mb-6 font-medium">综合评分</p>
-                  <div className="flex items-baseline">
-                    <span className="text-3xl font-bold text-[#5c4937] leading-none">
+                  <p className="text-[10px] lg:text-xs text-[#7a6552] font-medium relative z-20">综合评分</p>
+                  <div className="flex items-baseline relative z-20">
+                    <span className="text-xl lg:text-3xl font-bold text-[#5c4937] leading-none">
                       <AnimatedNumber value={data.score} duration={1.5} />
                     </span>
-                    <span className="text-xs text-[#7a6552] ml-1 font-medium">分</span>
+                    <span className="text-[10px] lg:text-xs text-[#7a6552] ml-1 font-medium">分</span>
                   </div>
                 </motion.div>
 
@@ -393,18 +378,18 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.35 }}
-                  className="p-4 rounded-2xl flex flex-col justify-between aspect-[2/3]"
+                  className="p-3 lg:p-4 rounded-xl lg:rounded-2xl flex flex-row lg:flex-col items-center lg:items-start justify-between lg:aspect-[2/3] min-h-[48px] lg:min-h-0 relative overflow-hidden"
                   style={{
                     background: 'linear-gradient(180deg, rgba(240,225,215,0.8) 0%, rgba(255,245,230,0.6) 100%)',
                     boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)',
                   }}
                 >
-                  <p className="text-xs text-[#7a6552] mb-6 font-medium">肌肤年龄</p>
+                  <p className="text-[10px] lg:text-xs text-[#7a6552] font-medium">肌肤年龄</p>
                   <div className="flex items-baseline">
-                    <span className="text-3xl font-bold text-[#5c4937] leading-none">
+                    <span className="text-xl lg:text-3xl font-bold text-[#5c4937] leading-none">
                       <AnimatedNumber value={data.skinAge} duration={1.5} />
                     </span>
-                    <span className="text-xs text-[#7a6552] ml-1 font-medium">岁</span>
+                    <span className="text-[10px] lg:text-xs text-[#7a6552] ml-1 font-medium">岁</span>
                   </div>
                 </motion.div>
 
@@ -413,19 +398,19 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.4 }}
-                  className="p-4 rounded-2xl flex flex-col justify-between aspect-[2/3]"
+                  className="p-3 lg:p-4 rounded-xl lg:rounded-2xl flex flex-row lg:flex-col items-center lg:items-start justify-between lg:aspect-[2/3] min-h-[48px] lg:min-h-0 relative overflow-hidden"
                   style={{
                     background: 'linear-gradient(180deg, rgba(230,225,215,0.6) 0%, rgba(245,240,230,0.4) 100%)',
                     boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.4)',
                   }}
                 >
-                  <p className="text-xs text-[#7a6552] mb-6 font-medium">油脂分泌</p>
-                  <div className="flex items-baseline mb-1">
-                    <span className="text-xl font-bold text-[#5c4937] leading-tight">{getTZoneLabel}</span>
+                  <p className="text-[10px] lg:text-xs text-[#7a6552] font-medium">油脂分泌</p>
+                  <div className="flex items-baseline">
+                    <span className="text-base lg:text-xl font-bold text-[#5c4937] leading-tight">{getTZoneLabel}</span>
                   </div>
                 </motion.div>
 
-                {/* Login Unlock Box */}
+                {/* Last slot: Login Unlock or Extra data */}
                 {!user ? (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
@@ -434,30 +419,31 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                     whileTap={{ scale: 0.97 }}
                     transition={{ delay: 0.4 }}
                     onClick={() => openAuthModal('register')}
-                    className="p-4 rounded-2xl flex flex-col items-center justify-center border border-dashed border-white/50 aspect-[2/3] cursor-pointer group transition-colors"
-                    style={{
-                      background: 'rgba(255,255,255,0.1)',
-                    }}
+                    className="p-3 lg:p-4 rounded-xl lg:rounded-2xl flex flex-row lg:flex-col items-center lg:items-center lg:justify-center lg:aspect-[2/3] border border-dashed border-white/50 cursor-pointer group transition-colors min-h-[48px] lg:min-h-0"
+                    style={{ background: 'rgba(255,255,255,0.1)' }}
                   >
-                    <div className="w-8 h-8 rounded-lg bg-white/80 flex items-center justify-center mb-2 shadow-sm group-hover:bg-white transition-colors">
-                      <Lock className="w-4 h-4 text-[#8c7a6b]" />
+                    <div className="flex lg:flex-col items-center gap-2">
+                      <div className="w-5 h-5 lg:w-8 lg:h-8 rounded-lg bg-white/80 flex items-center justify-center shadow-sm group-hover:bg-white transition-colors">
+                        <Lock className="w-3 h-3 lg:w-4 lg:h-4 text-[#8c7a6b]" />
+                      </div>
+                      <p className="text-[#5c4937] text-[10px] lg:hidden font-medium">更多数据</p>
                     </div>
-                    <p className="text-[#5c4937] text-xs font-medium text-center">登录解锁<br />更多数据</p>
+                    <p className="hidden lg:block text-[#5c4937] text-xs font-medium text-center">登录解锁<br />全部数值</p>
                   </motion.div>
                 ) : (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.4 }}
-                    className="p-4 rounded-2xl flex flex-col justify-between aspect-[2/3]"
+                    className="p-3 lg:p-4 rounded-xl lg:rounded-2xl flex flex-row lg:flex-col items-center lg:items-start justify-between lg:aspect-[2/3] min-h-[48px] lg:min-h-0 relative overflow-hidden"
                     style={{
                       background: 'linear-gradient(180deg, rgba(230,225,215,0.6) 0%, rgba(245,240,230,0.4) 100%)',
                       boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.4)',
                     }}
                   >
-                    <p className="text-xs text-[#7a6552] mb-6 font-medium">肌肤类型</p>
-                    <div className="flex items-center h-full">
-                      <span className="text-base font-bold text-[#5c4937]">已解锁</span>
+                    <p className="text-[10px] lg:text-xs text-[#7a6552] font-medium">详情</p>
+                    <div className="flex items-center">
+                      <span className="text-base lg:text-xl font-bold text-[#5c4937]">已解锁</span>
                     </div>
                   </motion.div>
                 )}
