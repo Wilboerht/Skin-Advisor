@@ -243,7 +243,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                     whileHover={{ scale: 1.03, y: -1 }}
                     whileTap={{ scale: 0.97 }}
                     onClick={() => setShowShareModal(true)}
-                    className="relative focus:outline-none flex items-center justify-center h-[38px] sm:h-[42px] px-6 sm:px-8 rounded-full shadow-[0_4px_12px_-3px_rgba(150,110,60,0.18)] border border-[#e6d0a8]/50 group transition-all"
+                    className="relative focus:outline-none flex items-center justify-center h-[34px] sm:h-[42px] px-5 sm:px-8 rounded-full shadow-[0_4px_12px_-3px_rgba(150,110,60,0.18)] border border-[#e6d0a8]/50 group transition-all"
                     style={{
                       background: 'linear-gradient(135deg, #fdf6e9 0%, #f5dfb8 50%, #e6d0a8 100%)',
                     }}
@@ -252,8 +252,8 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                     <div className="absolute inset-0 rounded-full bg-gradient-to-t from-transparent via-transparent to-white/30 pointer-events-none" />
                     <div className="absolute inset-[1px] rounded-full shadow-[inset_0_1px_1px_rgba(255,255,255,0.7)] pointer-events-none" />
 
-                    <span className="relative z-10 text-[#5e4b3c] text-sm sm:text-[12px] font-bold flex items-center justify-center gap-2 tracking-wide">
-                      <Share2 className="w-3 h-3 text-[#7a6552] stroke-[2.5]" />
+                    <span className="relative z-10 text-[#5e4b3c] text-xs sm:text-[12px] font-bold flex items-center justify-center gap-2 tracking-wide">
+                      <Share2 className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#7a6552] stroke-[2.5]" />
                       分享我的素颜证书
                     </span>
                   </motion.button>
@@ -269,9 +269,9 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                 {/* Mobile Hint */}
                 <div className="flex sm:hidden items-center ml-0 mt-1 opacity-90">
                   <img
-                    src="/images/share-hint.svg"
+                    src="/images/mobile-share-hint.svg"
                     alt="分享提示"
-                    className="h-[48px] w-auto object-contain"
+                    className="h-[42px] w-auto object-contain"
                   />
                 </div>
               </div>
@@ -298,7 +298,6 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
           </motion.div>
 
           {/* Professional Version Card */}
-          {/* Professional Version Card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -310,16 +309,16 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
             }}
           >
             <div className="flex flex-row lg:flex-row justify-between items-stretch lg:items-center gap-4 lg:gap-12 h-full">
-              {/* Balanced Split Layout - 50% width on mobile */}
-              <div className="flex flex-col justify-between items-start w-[50%] lg:w-[30%] shrink-0">
+              {/* Refined Split Layout - 52% width on mobile */}
+              <div className="flex flex-col justify-between items-start w-[52%] lg:w-[30%] shrink-0">
                 <div>
-                  <div className="bg-white/80 text-[#5c4937] w-[72px] lg:w-[72px] h-[24px] lg:h-[24px] rounded-lg text-xs lg:text-xs font-bold flex items-center justify-center mb-4 lg:mb-6 shadow-sm border border-white/50 tracking-widest relative z-10">
+                  <div className="bg-white/80 text-[#5c4937] w-[72px] lg:w-[72px] h-[24px] lg:h-[24px] rounded-lg text-xs lg:text-xs font-bold flex items-center justify-center mb-6 lg:mb-6 shadow-sm border border-white/50 tracking-widest relative z-10">
                     专业版
                   </div>
                   <h2 className="text-xl lg:text-2xl font-bold text-white drop-shadow-md mb-2 relative z-10">
                     深度<br className="lg:hidden" />肌肤检测报告
                   </h2>
-                  <p className="text-white text-xs lg:text-xs max-w-xs leading-relaxed mb-4 lg:mb-8 font-medium tracking-wide relative z-10">
+                  <p className="text-white text-xs lg:text-xs max-w-xs leading-relaxed mb-6 lg:mb-8 font-medium tracking-wide relative z-10">
                     基于千万级亚洲肌肤数据库，<br className="lg:hidden" />全方位解析您的肌肤问题。
                   </p>
                 </div>
@@ -329,28 +328,28 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                     whileHover={{ scale: 1.03, y: -1 }}
                     whileTap={{ scale: 0.97 }}
                     onClick={() => openAuthModal('register')}
-                    className="relative focus:outline-none flex items-center justify-center h-8 lg:h-[42px] px-3 lg:px-8 rounded-full shadow-[0_8px_20px_-6px_rgba(0,0,0,0.15)] border border-white/60 group overflow-hidden transition-all mt-auto lg:mt-0"
+                    className="relative focus:outline-none flex items-center justify-center h-[34px] lg:h-[42px] px-5 lg:px-8 rounded-full shadow-[0_8px_20px_-6px_rgba(0,0,0,0.15)] border border-white/60 group overflow-hidden transition-all mt-auto lg:mt-0"
                     style={{
                       background: 'linear-gradient(135deg, #ffffff 0%, #f8f0e3 50%, #f0e6d8 100%)',
                     }}
                   >
                     <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/40 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 pointer-events-none" />
-                    <span className="relative z-10 text-[#5c4937] text-sm lg:text-[12px] font-bold tracking-wider flex items-center gap-2">
+                    <span className="relative z-10 text-[#5c4937] text-xs lg:text-[12px] font-bold tracking-wider flex items-center justify-center gap-2 whitespace-nowrap">
                       登录查看完整报告
-                      <Lock className="w-3.5 h-3.5 text-[#5c4937] stroke-[2.5]" />
+                      <Lock className="w-3 h-3 text-[#5c4937] stroke-[2.5] shrink-0" />
                     </span>
                   </motion.button>
                 )}
               </div>
 
               {/* Right Cards Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-4 gap-2 lg:gap-4 flex-1">
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-2 lg:gap-4 flex-1 max-w-[170px] mx-auto lg:max-w-none">
                 {/* Comprehensive Score */}
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.3 }}
-                  className="p-3 lg:p-4 rounded-xl lg:rounded-2xl flex flex-row lg:flex-col items-center lg:items-start justify-between lg:aspect-[2/3] relative min-h-[48px] lg:min-h-0 overflow-hidden"
+                  className="p-3 lg:p-4 rounded-xl lg:rounded-2xl flex flex-row lg:flex-col items-center lg:items-start justify-between lg:aspect-[2/3] relative min-h-[48px] lg:min-h-0"
                   style={{
                     background: 'linear-gradient(180deg, rgba(230,220,205,0.7) 0%, rgba(240,230,215,0.5) 100%)',
                     boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5)',
@@ -360,16 +359,19 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                   <div className="hidden lg:block absolute inset-0 overflow-hidden rounded-[inherit] pointer-events-none">
                     <div className="absolute -top-3 -right-3 w-8 h-8 bg-blue-500/70 blur-[25px] rounded-full" />
                   </div>
-                  <img src="/images/vector-decor.svg" alt="" className="hidden lg:block absolute -top-4 -right-4 w-14 h-14 z-10 pointer-events-none" />
+                  <img src="/images/vector-decor.svg" alt="" className="block absolute -top-3 -right-3 lg:-top-4 lg:-right-5 w-10 h-10 lg:w-16 lg:h-16 z-30 pointer-events-none" />
+                  <img src="/images/vector-decor.svg" alt="" className="block lg:hidden absolute -top-3 right-9 lg:-top-4 lg:right-16 w-6 h-6 lg:w-10 lg:h-10 z-30 pointer-events-none scale-x-[-1]" />
                   <img src="/images/vector-decor.svg" alt="" className="hidden lg:block absolute top-10 -right-4 w-7 h-7 z-10 pointer-events-none" />
-                  <img src="/images/vector-decor.svg" alt="" className="hidden lg:block absolute -bottom-4 -left-4 w-9 h-9 z-10 pointer-events-none" />
+                  <img src="/images/vector-decor.svg" alt="" className="block absolute -bottom-2 -left-3 lg:-bottom-5 lg:-left-5 w-8 h-8 lg:w-12 lg:h-12 z-10 pointer-events-none opacity-80" />
 
-                  <p className="text-[10px] lg:text-xs text-[#7a6552] font-medium relative z-20">综合评分</p>
-                  <div className="flex items-baseline relative z-20">
-                    <span className="text-xl lg:text-3xl font-bold text-[#5c4937] leading-none">
-                      <AnimatedNumber value={data.score} duration={1.5} />
-                    </span>
-                    <span className="text-[10px] lg:text-xs text-[#7a6552] ml-1 font-medium">分</span>
+                  <div className="flex flex-row lg:flex-col items-center lg:items-start gap-2 lg:justify-between w-full h-full relative z-20">
+                    <p className="text-[11px] lg:text-xs text-[#7a6552] font-medium shrink-0">综合评分</p>
+                    <div className="flex items-baseline">
+                      <span className="text-[11px] lg:text-3xl font-bold text-[#5c4937] leading-none">
+                        <AnimatedNumber value={data.score} duration={1.5} />
+                      </span>
+                      <span className="text-[11px] lg:text-xs text-[#7a6552] ml-0.5 font-medium">分</span>
+                    </div>
                   </div>
                 </motion.div>
 
@@ -384,12 +386,14 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                     boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)',
                   }}
                 >
-                  <p className="text-[10px] lg:text-xs text-[#7a6552] font-medium">肌肤年龄</p>
-                  <div className="flex items-baseline">
-                    <span className="text-xl lg:text-3xl font-bold text-[#5c4937] leading-none">
-                      <AnimatedNumber value={data.skinAge} duration={1.5} />
-                    </span>
-                    <span className="text-[10px] lg:text-xs text-[#7a6552] ml-1 font-medium">岁</span>
+                  <div className="flex flex-row lg:flex-col items-center lg:items-start gap-2 lg:justify-between w-full h-full relative z-20">
+                    <p className="text-[12px] lg:text-xs text-[#7a6552] font-medium shrink-0">肌肤年龄</p>
+                    <div className="flex items-baseline">
+                      <span className="text-[13px] lg:text-3xl font-bold text-[#5c4937] leading-none">
+                        <AnimatedNumber value={data.skinAge} duration={1.5} />
+                      </span>
+                      <span className="text-[12px] lg:text-xs text-[#7a6552] ml-0.5 font-medium">岁</span>
+                    </div>
                   </div>
                 </motion.div>
 
@@ -404,9 +408,11 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                     boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.4)',
                   }}
                 >
-                  <p className="text-[10px] lg:text-xs text-[#7a6552] font-medium">油脂分泌</p>
-                  <div className="flex items-baseline">
-                    <span className="text-base lg:text-xl font-bold text-[#5c4937] leading-tight">{getTZoneLabel}</span>
+                  <div className="flex flex-row lg:flex-col items-center lg:items-start gap-2 lg:justify-between w-full h-full relative z-20">
+                    <p className="text-[11px] lg:text-xs text-[#7a6552] font-medium shrink-0">油脂分泌</p>
+                    <div className="flex items-baseline">
+                      <span className="text-[11px] lg:text-xl font-bold text-[#5c4937] leading-tight">{getTZoneLabel}</span>
+                    </div>
                   </div>
                 </motion.div>
 
@@ -419,16 +425,16 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                     whileTap={{ scale: 0.97 }}
                     transition={{ delay: 0.4 }}
                     onClick={() => openAuthModal('register')}
-                    className="p-3 lg:p-4 rounded-xl lg:rounded-2xl flex flex-row lg:flex-col items-center lg:items-center lg:justify-center lg:aspect-[2/3] border border-dashed border-white/50 cursor-pointer group transition-colors min-h-[48px] lg:min-h-0"
+                    className="p-3 lg:p-4 rounded-xl lg:rounded-2xl flex flex-row lg:flex-col items-center lg:items-center lg:justify-center lg:gap-3 lg:aspect-[2/3] border border-dashed border-white/50 cursor-pointer group transition-colors min-h-[48px] lg:min-h-0"
                     style={{ background: 'rgba(255,255,255,0.1)' }}
                   >
                     <div className="flex lg:flex-col items-center gap-2">
                       <div className="w-5 h-5 lg:w-8 lg:h-8 rounded-lg bg-white/80 flex items-center justify-center shadow-sm group-hover:bg-white transition-colors">
                         <Lock className="w-3 h-3 lg:w-4 lg:h-4 text-[#8c7a6b]" />
                       </div>
-                      <p className="text-[#5c4937] text-[10px] lg:hidden font-medium">更多数据</p>
+                      <p className="text-[#5c4937] text-[11px] lg:hidden font-medium">更多数据待解锁</p>
                     </div>
-                    <p className="hidden lg:block text-[#5c4937] text-xs font-medium text-center">登录解锁<br />全部数值</p>
+                    <p className="hidden lg:block text-[#5c4937] text-xs font-medium text-center">登录</p>
                   </motion.div>
                 ) : (
                   <motion.div
@@ -441,9 +447,11 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                       boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.4)',
                     }}
                   >
-                    <p className="text-[10px] lg:text-xs text-[#7a6552] font-medium">详情</p>
-                    <div className="flex items-center">
-                      <span className="text-base lg:text-xl font-bold text-[#5c4937]">已解锁</span>
+                    <div className="flex flex-row lg:flex-col items-center lg:items-start gap-2 lg:justify-between w-full h-full relative z-20">
+                      <p className="text-[12px] lg:text-xs text-[#7a6552] font-medium shrink-0">详情</p>
+                      <div className="flex items-center">
+                        <span className="text-[13px] lg:text-xl font-bold text-[#5c4937]">已解锁</span>
+                      </div>
                     </div>
                   </motion.div>
                 )}
@@ -452,7 +460,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
           </motion.div>
         </div>
 
-        <p className="text-center text-[#c4b5a2] text-xs mt-6 tracking-widest">AI综合分析结果</p>
+        <p className="text-center text-[#a89582] text-xs mt-6 tracking-widest">AI综合分析结果</p>
       </div>
 
       {/* Share Modal */}
@@ -462,35 +470,59 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-sm bg-black/20"
             onClick={() => setShowShareModal(false)}
           >
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl"
+              className="relative bg-white/80 backdrop-blur-2xl rounded-[32px] pt-12 pb-8 px-8 max-w-[340px] w-full border border-white/60 shadow-[0_20px_50px_rgba(0,0,0,0.1)] overflow-hidden"
             >
-              <h3 className="text-lg font-semibold text-slate-900 mb-4">分享检测结果</h3>
-              <div className="space-y-3">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handleShare}
-                  className="w-full py-3 px-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg font-medium flex items-center justify-center gap-2 hover:shadow-lg transition-shadow"
-                >
-                  <Share2 className="w-4 h-4" />
-                  分享链接
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => setShowShareModal(false)}
-                  className="w-full py-3 px-4 bg-slate-200 text-slate-900 rounded-lg font-medium hover:bg-slate-300 transition-colors"
-                >
-                  关闭
-                </motion.button>
+              {/* Background Decor */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-[#e6d0a8]/20 blur-[40px] rounded-full -translate-y-1/2 translate-x-1/2" />
+
+              <div className="relative z-10 flex flex-col items-center text-center">
+                {/* Floating Logo */}
+                <div className="mb-6">
+                  <img
+                    src="/images/NIHPLOD-logo.svg"
+                    alt="Logo"
+                    className="h-6 w-auto object-contain brightness-95 opacity-80"
+                  />
+                </div>
+
+                <h3 className="text-xl font-bold text-[#2d2a26] mb-2 tracking-tight">分享我的检测结果</h3>
+                <p className="text-sm text-[#8c7a6b] mb-8 leading-relaxed">
+                  让好友见证您的肌肤蜕变<br />同步解锁专属护肤建议
+                </p>
+
+                <div className="w-full space-y-3">
+                  <motion.button
+                    whileHover={{ scale: 1.02, y: -1 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleShare}
+                    className="relative w-full py-3.5 px-6 rounded-full shadow-[0_4px_12px_-2px_rgba(150,110,60,0.2)] border border-[#e6d0a8]/50 group transition-all"
+                    style={{
+                      background: 'linear-gradient(135deg, #fdf6e9 0%, #f5dfb8 50%, #e6d0a8 100%)',
+                    }}
+                  >
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-t from-transparent via-transparent to-white/30 pointer-events-none" />
+                    <span className="relative z-10 text-[#5e4b3c] text-sm font-bold flex items-center justify-center gap-2 tracking-wide">
+                      复制分享链接
+                    </span>
+                  </motion.button>
+
+                  <motion.button
+                    whileHover={{ backgroundColor: 'rgba(0,0,0,0.03)' }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setShowShareModal(false)}
+                    className="w-full py-3 text-sm font-medium text-[#c4b5a2] hover:text-[#8c7a6b] transition-colors"
+                  >
+                    再等一下
+                  </motion.button>
+                </div>
               </div>
             </motion.div>
           </motion.div>
