@@ -165,12 +165,12 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
               boxShadow: '0 10px 40px -10px rgba(0,0,0,0.1), inset 0 2px 0 rgba(255,255,255,0.7)',
             }}
           >
-            <div className="flex flex-col lg:flex-row items-start gap-6 lg:gap-10 relative z-10 w-full">
+            <div className="flex flex-row-reverse lg:flex-row items-start gap-4 lg:gap-10 relative z-10 w-full">
 
               {/* Left Column: Tag + Avatar properly aligned */}
-              <div className="flex flex-col items-start gap-4 shrink-0">
-                {/* Tag */}
-                <div className="relative flex items-center justify-center w-[72px] h-[24px]">
+              <div className="flex flex-col items-end lg:items-start gap-4 shrink-0">
+                {/* Tag - Hidden on Mobile, Shown on PC */}
+                <div className="hidden lg:flex relative items-center justify-center w-[72px] h-[24px]">
                   <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#e6d0a8] via-[#f5dfb8] to-[#d4b483] shadow-sm" />
                   <div className="absolute inset-[1px] rounded-full bg-white/20 backdrop-blur-[1px] border border-white/30" />
                   <span className="relative z-10 text-[#3d2f25] text-xs font-bold tracking-widest">
@@ -216,17 +216,24 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                 </div>
               </div>
 
-              {/* Text Content */}
-              <div className="flex flex-col z-10 w-full pt-[2px]">
+              <div className="flex flex-col z-10 flex-1 pt-[2px]">
+                {/* Tag - Shown on Mobile, Hidden on PC */}
+                <div className="flex lg:hidden relative items-center justify-center w-[72px] h-[24px] mb-4">
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#e6d0a8] via-[#f5dfb8] to-[#d4b483] shadow-sm" />
+                  <div className="absolute inset-[1px] rounded-full bg-white/20 backdrop-blur-[1px] border border-white/30" />
+                  <span className="relative z-10 text-[#3d2f25] text-xs font-bold tracking-widest">
+                    分享版
+                  </span>
+                </div>
                 {/* 保证这里的高度(24px)与底部间距(mb-4=16px)加起来等于左侧标签高度(24px)+gap-4(16px) = 40px */}
-                <div className="h-[24px] flex items-center mb-4">
+                <div className="hidden lg:flex h-[24px] items-center mb-4">
                   <p className="text-[#a89582] text-sm leading-none">亲爱的{data.nickname}：</p>
                 </div>
                 <h2 className="text-2xl lg:text-3xl font-bold text-[#2d2a26] leading-snug mb-4 mt-0">
                   你的素颜评分超越了<br />
                   全国 <span className="text-3xl lg:text-4xl px-1">{rankPercentile}%</span> 的用户
                 </h2>
-                <p className="text-[#8c7a6b] text-sm leading-relaxed max-w-sm mb-6">
+                <p className="text-[#8c7a6b] text-sm leading-relaxed max-w-[90%] lg:max-w-sm mb-6">
                   {data.guestAnalysis?.summary || "整体状态极佳，肌肤屏障健康，水油平衡度完美，仅在眼周区域存在轻微色素沉积。"}
                 </p>
 
