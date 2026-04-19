@@ -3,8 +3,50 @@
  * 后台异步处理队列中的头像生成请求
  */
 
+
 import prisma from "@/lib/prisma";
 import { Service } from "@volcengine/openapi";
+
+// 阿里万相头像生成
+async function generateWanxiangAvatarAsync(prompt: string, frontPhoto: string | null | undefined): Promise<string | null> {
+  const apiKey = (process.env.WANXIANG_API_KEY || process.env.QWEN_API_KEY || "").trim();
+  if (!apiKey) throw new Error("Wanxiang API Key not configured");
+  const endpoint = "https://dashscope.aliyuncs.com/api/v1/services/aigc/image2image/generation";
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${apiKey}`,
+  };
+  // 构造请求体
+  const body: any = {
+    model: "wanx-v1",
+    prompt,
+    n: 1,
+    size: "1024x1024",
+    // 支持 base64 或 url
+  };
+  if (frontPhoto) {
+    if (frontPhoto.startsWith("data:")) {
+      body.image = frontPhoto.split(",")[1];
+      body.image_type = "base64";
+    } else {
+      body.image = frontPhoto;
+      body.image_type = "url";
+    }
+  }
+  const res = await fetch(endpoint, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Wanxiang Error: ${res.status} ${err}`);
+  }
+  const data = await res.json();
+  // 万相返回格式：data.output.images[0].url
+  const url = data?.output?.images?.[0]?.url || data?.output?.results?.[0]?.url;
+  return url || null;
+}
 
 export interface AvatarQueueItem {
   id: string;
@@ -35,7 +77,25 @@ async function generateAvatarImage(
   let imageUrl: string | null = null;
   let source = "fallback";
 
-  // 策略 1: Jimeng img2img
+
+  // 策略 1: Wanxiang image2image
+  if (process.env.WANXIANG_API_KEY || process.env.QWEN_API_KEY) {
+    try {
+      console.log("🖼️ Attempting Wanxiang image2image...");
+      imageUrl = await generateWanxiangAvatarAsync(prompt, frontPhoto);
+      if (imageUrl) {
+        console.log("✅ Wanxiang image2image succeeded");
+        source = "wanxiang";
+        return { url: imageUrl, source };
+      }
+    } catch (e) {
+      const errorMsg = e instanceof Error ? e.message : String(e);
+      console.error("❌ Wanxiang generation failed:", errorMsg);
+      // 失败则继续尝试 Jimeng
+    }
+  }
+
+  // 策略 2: Jimeng img2img
   if (process.env.VOLC_ACCESSKEY && process.env.VOLC_SECRETKEY) {
     try {
       if (frontPhoto) {
@@ -52,7 +112,7 @@ async function generateAvatarImage(
         }
       }
 
-      // 策略 2: Jimeng text2image
+      // 策略 3: Jimeng text2image
       console.log("🎨 Attempting Jimeng text-to-image...");
       imageUrl = await generateJimengAvatarAsync(
         prompt,
@@ -67,14 +127,16 @@ async function generateAvatarImage(
     } catch (e) {
       const errorMsg = e instanceof Error ? e.message : String(e);
       console.error("❌ Jimeng generation failed:", errorMsg);
-
       if (
         errorMsg.includes("429") ||
         errorMsg.includes("限流") ||
         errorMsg.includes("Quota")
       ) {
-        console.warn("🔴 Jimeng 已超限，返回占位符");
-        return null; // 让调用方决定处理
+        console.warn("🔴 Jimeng 已超限");
+        // Jimeng 超限，直接降级
+      } else {
+        // 其它错误直接降级
+        return null;
       }
     }
   }
