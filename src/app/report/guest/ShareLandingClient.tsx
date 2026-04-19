@@ -186,25 +186,16 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                     <div className="w-full h-full rounded-full bg-white p-[1px]">
                       {/* Inner Avatar Content */}
                       <div className="w-full h-full rounded-full overflow-hidden">
-                        {currentAvatar ? (
-                          <motion.img
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            src={currentAvatar}
-                            alt="avatar"
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-[#dfc9b2] flex items-center justify-center text-white text-xl font-bold relative">
-                            {data.nickname ? data.nickname.charAt(0) : '?'}
-                            {/* Generation Loading Indicator */}
-                            <motion.div
-                              animate={{ opacity: [0, 0.5, 0] }}
-                              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                              className="absolute inset-0 bg-white"
-                            />
-                          </div>
-                        )}
+                        <motion.img
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          src={currentAvatar || "/user-placeholder.svg"}
+                          alt="avatar"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = "/user-placeholder.svg";
+                          }}
+                        />
                       </div>
                     </div>
                   </div>
