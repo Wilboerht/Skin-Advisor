@@ -7,45 +7,95 @@
 import prisma from "@/lib/prisma";
 import { Service } from "@volcengine/openapi";
 
-// 阿里万相头像生成
+// 阿里万相头像生成（新版 wan2.5-i2i-preview，异步轮询）
 async function generateWanxiangAvatarAsync(prompt: string, frontPhoto: string | null | undefined): Promise<string | null> {
   const apiKey = (process.env.WANXIANG_API_KEY || process.env.QWEN_API_KEY || "").trim();
   if (!apiKey) throw new Error("Wanxiang API Key not configured");
-  const endpoint = "https://dashscope.aliyuncs.com/api/v1/services/aigc/image2image/generation";
+
+  const endpoint = "https://dashscope.aliyuncs.com/api/v1/services/aigc/image2image/image-synthesis";
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     "Authorization": `Bearer ${apiKey}`,
+    "X-DashScope-Async": "enable",
   };
-  // 构造请求体
-  const body: any = {
-    model: "wanx-v1",
-    prompt,
-    n: 1,
-    size: "1024x1024",
-    // 支持 base64 或 url
-  };
+
+  // 构造请求体（新版 input/parameters 嵌套结构）
+  const images: string[] = [];
   if (frontPhoto) {
     if (frontPhoto.startsWith("data:")) {
-      body.image = frontPhoto.split(",")[1];
-      body.image_type = "base64";
+      // 新版 API 支持完整 data URI 格式传入 images 数组
+      images.push(frontPhoto);
     } else {
-      body.image = frontPhoto;
-      body.image_type = "url";
+      images.push(frontPhoto);
     }
   }
-  const res = await fetch(endpoint, {
+
+  const body = {
+    model: "wan2.5-i2i-preview",
+    input: {
+      prompt,
+      ...(images.length > 0 ? { images } : {}),
+    },
+    parameters: {
+      n: 1,
+      size: "1024*1024",
+      watermark: false,
+      prompt_extend: true,
+      negative_prompt: "",
+    },
+  };
+
+  // 1. 提交异步任务
+  const submitRes = await fetch(endpoint, {
     method: "POST",
     headers,
     body: JSON.stringify(body),
   });
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Wanxiang Error: ${res.status} ${err}`);
+
+  if (!submitRes.ok) {
+    const err = await submitRes.text();
+    throw new Error(`Wanxiang submit error: ${submitRes.status} ${err}`);
   }
-  const data = await res.json();
-  // 万相返回格式：data.output.images[0].url
-  const url = data?.output?.images?.[0]?.url || data?.output?.results?.[0]?.url;
-  return url || null;
+
+  const submitData = await submitRes.json();
+  const taskId = submitData?.output?.task_id;
+  if (!taskId) {
+    throw new Error(`No task_id returned from Wanxiang submit: ${JSON.stringify(submitData)}`);
+  }
+
+  console.log(`[Wanxiang] Task submitted, taskId=${taskId}`);
+
+  // 2. 轮询查询结果（最长 60 秒）
+  const maxAttempts = 60;
+  for (let i = 0; i < maxAttempts; i++) {
+    await new Promise((r) => setTimeout(r, 1000));
+
+    const queryRes = await fetch(`https://dashscope.aliyuncs.com/api/v1/tasks/${taskId}`, {
+      headers: { "Authorization": `Bearer ${apiKey}` },
+    });
+
+    if (!queryRes.ok) {
+      console.warn(`[Wanxiang] Query failed: ${queryRes.status}`);
+      continue;
+    }
+
+    const queryData = await queryRes.json();
+    const status = queryData?.output?.task_status;
+
+    if (status === "SUCCEEDED") {
+      const url = queryData?.output?.results?.[0]?.url || queryData?.output?.image_url;
+      if (url) {
+        console.log(`[Wanxiang] Task completed after ${i + 1} attempts`);
+        return url;
+      }
+    } else if (status === "FAILED") {
+      throw new Error(`Wanxiang task failed: ${queryData?.output?.message || JSON.stringify(queryData)}`);
+    } else if (i % 5 === 0) {
+      console.log(`[Wanxiang] Still processing... (${i + 1}/${maxAttempts})`);
+    }
+  }
+
+  throw new Error("Wanxiang task polling timeout");
 }
 
 export interface AvatarQueueItem {

@@ -154,21 +154,13 @@
 /* --- Main Layout --- */
 /* --- Main Layout: Academic Resume Style --- */
 .main {
-    max-width: 1440px;
+    max-width: 900px;
     margin: 0 auto;
     padding: 40px 24px;
-    display: grid;
-    grid-template-columns: 320px 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 40px;
-    align-items: start;
-}
-
-@media (max-width: 1024px) {
-    .main {
-        grid-template-columns: 1fr;
-        max-width: 800px;
-        gap: 48px;
-    }
+    align-items: stretch;
 }
 
 @media (max-width: 768px) {

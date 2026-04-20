@@ -2,13 +2,10 @@
 
 import { useEffect, useState, useRef, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { House } from "lucide-react";
 import { useAsyncAnalysis } from "@/hooks/useAsyncAnalysis";
-import { Link } from "next-view-transitions";
 import { motion as m, AnimatePresence } from "framer-motion";
-import Image from "next/image";
 import {
-    Download,
-    Share2,
     RotateCcw,
     ChevronRight,
     ScanFace,
@@ -33,14 +30,13 @@ import { copyToClipboard, generateShareUrl } from "@/lib/share";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { AIChatWindow } from "@/components/advisor/AIChatWindow";
 import { ShareRewardBanner } from "@/components/advisor/ShareRewardBanner";
+import ReportCards from "@/components/advisor/ReportCards";
 
 // Import the new CSS Module
 import styles from "./result.module.css";
-import sidebarStyles from "./sidebar.module.css";
 import { ProductRecommendationSection } from "@/components/advisor/ProductRecommendationSection";
 import type { ProductCardData } from "@/components/advisor/ProductCard";
 import { addProductToRoutine } from "@/lib/routine-products";
-import { WishlistNavButton } from "@/components/advisor/WishlistNavButton";
 import { SaveReportBanner } from "@/components/advisor/SaveReportBanner";
 import { AnalyzingOverlay } from "@/components/advisor/AnalyzingOverlay";
 
@@ -856,49 +852,17 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 )}
             </AnimatePresence>
 
+
             {result && (
                 <div className={styles.container}>
-                    {/* Global Brand Bar */}
-                    <div className="w-full bg-white border-b border-[#E9E9E7] sticky top-0 z-[101]">
-                        <div className="w-full max-w-[1440px] mx-auto px-4 py-1 flex items-center justify-start">
-                            <div className="w-16 h-16 relative">
-                                <Image
-                                    src="/images/NIHPLOD-logo.svg"
-                                    alt="MySkin.Today"
-                                    fill
-                                    className="object-contain opacity-90"
-                                />
-                            </div>
-                        </div>
+                    {/* Logo */}
+                    <div className="w-full flex justify-center pt-14 pb-3">
+                        <img
+                            src="/images/NIHPLOD-logo.svg"
+                            alt="NIHPLOD MONACO"
+                            className="h-8 sm:h-10 object-contain"
+                        />
                     </div>
-
-                    {/* Header */}
-                    <header className={styles.header}>
-                        <div className={styles.headerContent}>
-                            <div className={styles.headerLeft}>
-                                <button onClick={() => router.push('/')} className={styles.backButton}>
-                                    <ChevronRight className="w-5 h-5 rotate-180" />
-                                </button>
-                                <div className={styles.brandWrapper}>
-                                    <h1 className={styles.brandName}>智能测肤</h1>
-                                    <span className={styles.reportType}>专业分析报告</span>
-                                </div>
-                            </div>
-                            <div className={styles.headerActions}>
-                                <WishlistNavButton className="mr-2" />
-                                <button onClick={handleSaveImage} className={styles.actionBtn} title="保存分析结果为图片">
-                                    <Share2 className="w-4 h-4" />
-                                    保存图片
-                                </button>
-                                {user && (
-                                    <button onClick={handleDownload} className={`${styles.actionBtn} ${styles.primaryActionBtn}`}>
-                                        <Download className="w-4 h-4" />
-                                        下载报告
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    </header>
 
                     {/* Validation Warning Banner */}
                     {faceAnalysis?.validation && !faceAnalysis.validation.isValid && (
@@ -927,179 +891,18 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     {/* Main Content */}
                     <main className={styles.main}>
 
-                        {/* Left Column: Summary */}
-                        <aside className={sidebarStyles.summaryCard}>
-                            {/* Icon & Title */}
-                            <div className={sidebarStyles.pageIconWrapper}>
-                                {/* Avatar Display with Loading State */}
-                                <div className="relative">
-                                    <img
-                                        src={generatedAvatar || userImage || "/user-placeholder.svg"}
-                                        alt="User Avatar"
-                                        className={sidebarStyles.pageIcon + " bg-gray-50/50 p-1"}
-                                        onError={(e) => {
-                                            (e.target as HTMLImageElement).src = `/user-placeholder.svg`;
-                                        }}
-                                    />
-                                    {/* Loading Spinner Overlay with Status Text */}
-                                    {isAvatarLoading && (
-                                        <div className="absolute inset-0 bg-white/60 backdrop-blur-sm rounded-full flex flex-col items-center justify-center gap-2">
-                                            <div className="w-8 h-8 border-3 border-gray-100 border-t-[#D4B78F] border-r-[#D4B78F] rounded-full animate-spin" />
-                                            <div className="text-center">
-                                                <div className="text-[10px] font-medium text-gray-600 tracking-wide">
-                                                    {avatarQueueStatus?.position ? `队列 #${avatarQueueStatus.position}` : '生成中'}
-                                                </div>
-                                                {avatarQueueStatus?.estimatedWaitTime && (
-                                                    <div className="text-[8px] text-gray-500 mt-0.5">
-                                                        约 {avatarQueueStatus.estimatedWaitTime}秒
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                                {/* Hidden Side Angles - Only show if we have original photos, hide when showing AI avatar */}
-                                {!generatedAvatar && (
-                                    <div className={sidebarStyles.profileExpander}>
-                                        {['left', 'right', 'chin'].map((angle, idx) => (
-                                            <img
-                                                key={angle}
-                                                src={sideImages[angle] || userImage || "/user-placeholder.svg"}
-                                            alt={`Angle ${angle}`}
-                                            className={sidebarStyles.sideAngleIcon}
-                                            style={{ transitionDelay: `${idx * 50}ms` }}
-                                        />
-                                    ))}
-                                </div>
-                                )}
-                            </div>
-                            <h1 className={sidebarStyles.pageTitle}>
-                                {userNickname}{/[A-Za-z0-9]$/.test(userNickname) ? ' ' : ''}的肌肤诊断报告
-                            </h1>
-
-
-
-                            {/* Properties List */}
-                            <div className={sidebarStyles.propertyList}>
-                                <div className={sidebarStyles.propertyRow}>
-                                    <div className={sidebarStyles.propertyLabel}>
-                                        <span className={sidebarStyles.propertyIcon}>📅</span>
-                                        <span>生成日期</span>
-                                    </div>
-                                    <div className={sidebarStyles.propertyContent}>
-                                        <span className={sidebarStyles.propertyText}>{new Date().toLocaleDateString()}</span>
-                                    </div>
-                                </div>
-
-                                <div className={sidebarStyles.propertyRow}>
-                                    <div className={sidebarStyles.propertyLabel}>
-                                        <span className={sidebarStyles.propertyIcon}>📊</span>
-                                        <span>综合评分</span>
-                                    </div>
-                                    <div className={sidebarStyles.propertyContent}>
-                                        {faceAnalysis?.overallScore ? (
-                                            <span className={`${sidebarStyles.propertyTag} ${faceAnalysis.overallScore >= 80 ? sidebarStyles.tagGreen :
-                                                faceAnalysis.overallScore >= 60 ? sidebarStyles.tagOrange : sidebarStyles.tagRed
-                                                }`}>
-                                                {faceAnalysis.overallScore}
-                                            </span>
-                                        ) : (
-                                            <span className={`${sidebarStyles.propertyTag} bg-gray-100 text-gray-400`}>-</span>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className={sidebarStyles.propertyRow}>
-                                    <div className={sidebarStyles.propertyLabel}>
-                                        <span className={sidebarStyles.propertyIcon}>🧬</span>
-                                        <span>肤质类型</span>
-                                    </div>
-                                    <div className={sidebarStyles.propertyContent}>
-                                        <span className={`${sidebarStyles.propertyTag} ${sidebarStyles.tagBlue}`}>
-                                            {result.skinProfile?.typeLabel || "分析中"}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div className={sidebarStyles.propertyRow}>
-                                    <div className={sidebarStyles.propertyLabel}>
-                                        <span className={sidebarStyles.propertyIcon}>🎂</span>
-                                        <span>肌龄检测</span>
-                                    </div>
-                                    <div className={sidebarStyles.propertyContent}>
-                                        <span className={sidebarStyles.propertyText}>
-                                            {result.skinProfile?.skinAge || 25} 岁
-                                        </span>
-                                    </div>
-                                </div>
-
-
-
-                                <div className={sidebarStyles.propertyRow}>
-                                    <div className={sidebarStyles.propertyLabel}>
-                                        <span className={sidebarStyles.propertyIcon}>💧</span>
-                                        <span>水分状态</span>
-                                    </div>
-                                    <div className={sidebarStyles.propertyContent}>
-                                        {faceAnalysis?.hydration?.level ? (
-                                            <span className={`${sidebarStyles.propertyTag} ${faceAnalysis.hydration.level.toLowerCase() === 'low' ? sidebarStyles.tagRed :
-                                                faceAnalysis.hydration.level.toLowerCase() === 'medium' ? sidebarStyles.tagOrange : sidebarStyles.tagGreen
-                                                }`}>
-                                                {faceAnalysis.hydration.level.toLowerCase() === 'low' ? '缺乏' :
-                                                    faceAnalysis.hydration.level.toLowerCase() === 'medium' ? '适中' : '充足'}
-                                            </span>
-                                        ) : (
-                                            <span className={`${sidebarStyles.propertyTag} bg-gray-100 text-gray-400`}>-</span>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* --- Adaptive Gender Tuning (Text Only) --- */}
-                                {isGenderMismatch && (
-                                    <div className="mt-3 px-3 py-2 bg-amber-50 rounded-lg border border-amber-100 flex items-start gap-2">
-                                        <Sparkles size={14} className="text-amber-500 mt-0.5 shrink-0" />
-                                        <p className="text-xs text-amber-800 leading-relaxed">
-                                            检测到生理特征差异，已自动启用<span className="font-semibold">混合分析模式</span>，优化控油与激素逻辑。
-                                        </p>
-                                    </div>
-                                )}
-
-                            </div>
-
-                            <div className={sidebarStyles.divider} />
-
-                            {/* Summary Callout */}
-                            <div className={sidebarStyles.calloutBlock}>
-
-                                <div className={sidebarStyles.calloutContent}>
-                                    <div className={sidebarStyles.calloutTitle}>分析摘要</div>
-                                    <div className={sidebarStyles.calloutText}>
-                                        {result.analysis?.summary || "暂无摘要"}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Reward Link - Only for logged in users */}
-                            {user && (
-                                <Link href="/share-reward" className={sidebarStyles.linkBlock}>
-                                    <div className={sidebarStyles.linkIconBox}>
-                                        <Gift size={18} />
-                                    </div>
-                                    <div className={sidebarStyles.linkContent}>
-                                        <div className={sidebarStyles.linkTitle}>领取专属好礼</div>
-                                        <div className={sidebarStyles.linkDesc}>
-                                            {faceAnalysis?.overallScore
-                                                ? `综合评分 ${faceAnalysis.overallScore} · 分享赢好礼`
-                                                : '分享测肤结果赢好礼'}
-                                        </div>
-                                    </div>
-                                    <ChevronRight size={14} className="text-gray-400" />
-                                </Link>
-                            )}
-                        </aside>
-
-                        {/* Right Column: Detailed Analysis & Routine */}
-                        <div className="flex flex-col gap-6">
+                        {/* Report Summary Cards */}
+                        <ReportCards
+                            score={faceAnalysis?.overallScore || 0}
+                            skinAge={result?.skinProfile?.skinAge || 25}
+                            dimensions={faceAnalysis?.dimensions || {}}
+                            nickname={userNickname}
+                            generatedAvatar={generatedAvatar}
+                            summary={result?.analysis?.summary}
+                            onShare={handleSaveImage}
+                            isLoggedIn={!!user}
+                            onLoginClick={() => openAuthModal('register')}
+                        />
 
                             {/* VIP Analysis Section removed per user request */}
 
@@ -1107,38 +910,38 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             {/* 1. Radar Analysis */}
                             {/* 1. Radar Analysis (Interactive) or Fallback */}
                             {/* 1. Radar Analysis (Unified Container) */}
-                            <div className={`${styles.analysisGrid} ${styles.fadeInUp}`}>
-                                <div className={styles.sectionTitle}>
-                                    <div className="flex items-center gap-3">
-                                        <ScanFace className="w-5 h-5 text-gray-700" />
-                                        <span className="text-lg font-semibold text-gray-900">十二维深度分析</span>
-                                    </div>
+                            <div
+                                className="relative rounded-[32px] p-6 lg:p-10 backdrop-blur-xl border border-white/20 overflow-hidden"
+                                style={{
+                                    background: 'linear-gradient(135deg, rgba(230, 215, 195, 0.4) 0%, rgba(200, 180, 155, 0.3) 100%)',
+                                    boxShadow: '0 8px 32px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.3)'
+                                }}
+                            >
+                                {/* 专业版卡片风格标题区 */}
+                                <div className="mb-8">
+                                    <span className="text-xl lg:text-2xl font-bold text-white drop-shadow-md relative z-10">十二维深度分析</span>
                                 </div>
 
                                 {faceAnalysis?.dimensions && activeDimension ? (
-                                    /* Flexible Container for Radar + Detail Panel */
-                                    <div className="flex flex-col lg:flex-row items-stretch min-h-[400px]">
-
-                                        {/* Left: Interactive Radar */}
-                                        <div className={`${styles.radarWrapper} flex-1 border-r border-gray-100`}>
+                                    <div className="flex flex-col lg:flex-row items-stretch min-h-[400px] gap-8">
+                                        {/* 左侧雷达图 */}
+                                        <div className="flex-1 flex flex-col items-center justify-center">
                                             <ScientificRadarChart
                                                 dimensions={faceAnalysis.dimensions}
                                                 activeDimension={activeDimension}
                                                 onDimensionSelect={setActiveDimension}
                                             />
                                         </div>
-
-                                        {/* Right: Dynamic Detail Panel */}
-                                        <div className="flex-1 p-8 flex flex-col justify-center bg-white">
-                                            <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-
+                                        {/* 右侧动态详情面板 */}
+                                        <div className="flex-1 flex flex-col justify-center">
+                                            <div className="bg-white/80 rounded-2xl p-8 shadow-md border border-white/40 animate-in fade-in slide-in-from-right-4 duration-300">
                                                 {/* Header */}
                                                 <div className="flex items-center justify-between mb-6">
                                                     <div>
-                                                        <h3 className="text-lg font-semibold text-gray-900 mb-0.5">
+                                                        <h3 className="text-lg font-semibold text-[#5c4937] mb-0.5">
                                                             {DIMENSION_LABELS[activeDimension]}
                                                         </h3>
-                                                        <p className="text-xs text-gray-400 font-mono tracking-wide">
+                                                        <p className="text-xs text-[#a89582] font-mono tracking-wide">
                                                             {activeDimension === 'spots' && 'SURFACE PIGMENTATION'}
                                                             {activeDimension === 'wrinkles' && 'FINE LINES & WRINKLES'}
                                                             {activeDimension === 'uvDamage' && 'DEEP SUN DAMAGE'}
@@ -1157,7 +960,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                         {faceAnalysis.dimensions[activeDimension].score}
                                                     </div>
                                                 </div>
-
                                                 {/* Progress Bar */}
                                                 <div className="h-2 w-full bg-gray-100 rounded-full mb-8 overflow-hidden">
                                                     <div
@@ -1528,38 +1330,56 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 }}
                                 className={styles.fadeInUp}
                             />
-                        </div>
-                    </main >
+                    </main>
 
                     {/* Global Footer */}
-                    <footer className="w-full bg-[#FAFAFA] border-t border-gray-100 mt-0 py-12">
+                    <footer className="w-full bg-transparent mt-0 py-12">
                         <div className="max-w-[1440px] mx-auto px-6">
                             {/* Retake Button - Centered */}
-                            <div className="flex justify-center mb-10">
+                            <div className="flex justify-center mb-10 gap-4">
                                 <button
                                     onClick={handleRetake}
-                                    className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors px-8 py-3 border border-gray-200 rounded-full bg-white hover:bg-gray-50 text-sm font-medium transition-all hover:shadow-sm"
+                                    className="glass-premium-primary animate-float-premium group relative inline-flex items-center justify-center gap-3 px-8 py-3.5 sm:px-10 rounded-full text-[14px] sm:text-[15px] tracking-[0.15em] font-medium disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer transition-all duration-300"
                                 >
-                                    <RotateCcw className="w-4 h-4" />
-                                    重新测试
+                                    <RotateCcw className="w-5 h-5 transition-transform duration-500 group-hover:-rotate-45" />
+                                    <span>重新测试</span>
+                                </button>
+                                <button
+                                    onClick={() => window.location.href = '/'}
+                                    className="glass-premium-primary animate-float-premium group relative inline-flex items-center justify-center gap-3 px-8 py-3.5 sm:px-10 rounded-full text-[14px] sm:text-[15px] tracking-[0.15em] font-medium disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer transition-all duration-300"
+                                >
+                                    <House className="w-5 h-5" />
+                                    <span>回到首页</span>
                                 </button>
                             </div>
 
                             {/* Minimal Footer Text */}
                             <div className="text-center">
-                                <div className="flex flex-col md:flex-row justify-center items-center gap-2 md:gap-6 text-xs text-gray-500 mb-3">
-                                    <span className="opacity-80">© 2026 NIHPLOD. All Rights Reserved.</span>
-                                    <span className="hidden md:inline text-gray-300">•</span>
+                                <div className="flex flex-col md:flex-row justify-center items-center gap-2 md:gap-6 text-xs mb-3">
+                                    <span className="opacity-90" style={{ color: '#5c4937' }}>© 2026 NIHPLOD. All Rights Reserved.</span>
+                                    <span className="hidden md:inline" style={{ color: '#5c4937', opacity: 0.4 }}>•</span>
                                     <div className="flex gap-4 font-medium">
-                                        <a href="https://demo.myskin.today/terms" target="_blank" rel="noopener noreferrer" className="hover:text-gray-900 transition-colors">
+                                        <a
+                                            href="https://demo.myskin.today/terms"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="transition-colors"
+                                            style={{ color: '#5c4937', opacity: 0.8 }}
+                                        >
                                             服务条款
                                         </a>
-                                        <a href="https://demo.myskin.today/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-gray-900 transition-colors">
+                                        <a
+                                            href="https://demo.myskin.today/privacy"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="transition-colors"
+                                            style={{ color: '#5c4937', opacity: 0.8 }}
+                                        >
                                             隐私政策
                                         </a>
                                     </div>
                                 </div>
-                                <p className="text-xs text-gray-400 opacity-75">
+                                <p className="text-xs" style={{ color: '#5c4937', opacity: 0.7 }}>
                                     *AI 分析结果受图像质量影响仅供参考，不构成医疗诊断建议
                                 </p>
                             </div>
