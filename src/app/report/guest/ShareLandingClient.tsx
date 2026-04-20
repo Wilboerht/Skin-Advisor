@@ -7,7 +7,7 @@ import { Fragment } from 'react';
 // 引入完整分析内容的复用组件（假设已抽出为可复用组件）
 import { FullAnalysisSection } from '@/components/advisor/FullAnalysisSection';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Share2, Lock } from 'lucide-react';
+import { Share2, Lock, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthModal } from '@/components/auth/AuthModalContext';
@@ -76,8 +76,13 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
   const { openAuthModal } = useAuthModal();
   const toast = useToast();
   const [showShareModal, setShowShareModal] = useState(false);
-  const currentAvatar = data.generatedAvatar || null;
-  console.log("[DEBUG] ShareLandingClient - data.generatedAvatar:", data.generatedAvatar, "currentAvatar:", currentAvatar);
+  const [generatedAvatar, setGeneratedAvatar] = useState<string | null>(data.generatedAvatar || null);
+  const [isAvatarLoading, setIsAvatarLoading] = useState(!data.generatedAvatar);
+  const [avatarQueueStatus, setAvatarQueueStatus] = useState<{
+    position?: number;
+    estimatedWaitTime?: number;
+    message?: string;
+  } | null>(null);
 
   // 登录用户跳转到完整报告页
   useEffect(() => {
@@ -85,6 +90,67 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
       router.replace(`/result?id=${data.sessionId}`);
     }
   }, [loading, user, router, data.sessionId]);
+
+  // --- Avatar Polling ---
+  // 游客分享页也可能头像未生成完，添加轮询
+  useEffect(() => {
+    const sessionId = data.sessionId;
+    if (!sessionId || generatedAvatar || !isAvatarLoading) return;
+
+    const pollRef = { failureCount: 0 };
+
+    const pollAvatar = async () => {
+      try {
+        const response = await fetch(`/api/advisor/avatar/status?sessionId=${sessionId}&t=${Date.now()}`);
+        if (response.ok) {
+          const resData = await response.json();
+
+          if (resData.queueStatus && resData.queueStatus !== 'completed') {
+            setAvatarQueueStatus({
+              position: resData.queuePosition,
+              estimatedWaitTime: resData.estimatedWaitTime,
+              message: resData.message,
+            });
+          }
+
+          if (resData.generatedAvatar && typeof resData.generatedAvatar === 'string' &&
+              (resData.generatedAvatar.startsWith('http') || resData.generatedAvatar.startsWith('data:'))) {
+            setGeneratedAvatar(resData.generatedAvatar);
+            setIsAvatarLoading(false);
+            setAvatarQueueStatus(null);
+            return;
+          }
+          pollRef.failureCount = 0;
+        } else if (response.status === 404) {
+          pollRef.failureCount = 999;
+        } else {
+          pollRef.failureCount++;
+        }
+      } catch (err) {
+        pollRef.failureCount++;
+      }
+
+      if (pollRef.failureCount >= 5) {
+        setIsAvatarLoading(false);
+      }
+    };
+
+    const interval = setInterval(pollAvatar, avatarQueueStatus ? 1000 : 500);
+    const timeout = setTimeout(() => {
+      clearInterval(interval);
+      if (isAvatarLoading) {
+        setIsAvatarLoading(false);
+        setAvatarQueueStatus(null);
+      }
+    }, 120000);
+
+    pollAvatar();
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [data.sessionId, generatedAvatar, isAvatarLoading, avatarQueueStatus]);
 
   // percentile 取最大值
   const rankPercentile = useMemo(() => {
@@ -176,19 +242,21 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                     {/* Ultra-Thin White Gap */}
                     <div className="w-full h-full rounded-full bg-white p-[1px]">
                       {/* Inner Avatar Content */}
-                      <div className="w-full h-full rounded-full overflow-hidden">
-                        <motion.img
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          src={currentAvatar || "/user-placeholder.svg"}
-                          alt="avatar"
-                          className="w-full h-full object-cover"
-                          onLoad={() => console.log("[DEBUG] ShareLandingClient avatar loaded, src:", currentAvatar ? currentAvatar.substring(0, 60) + "..." : "placeholder")}
-                          onError={(e) => {
-                            console.error("[DEBUG] ShareLandingClient avatar failed to load, src:", (e.target as HTMLImageElement).src);
-                            (e.target as HTMLImageElement).src = "/user-placeholder.svg";
-                          }}
-                        />
+                      <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center bg-gradient-to-br from-[#f8f0e3] to-[#f5dfb8]">
+                        {isAvatarLoading ? (
+                          <Loader2 className="w-6 h-6 text-[#c4b5a2] animate-spin" />
+                        ) : (
+                          <motion.img
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            src={generatedAvatar || "/user-placeholder.svg"}
+                            alt="avatar"
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = "/user-placeholder.svg";
+                            }}
+                          />
+                        )}
                       </div>
                     </div>
                   </div>
