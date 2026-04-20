@@ -931,7 +931,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             >
                                 {/* 专业版卡片风格标题区 */}
                                 <div className="mb-8">
-                                    <span className="text-xl lg:text-2xl font-bold text-white drop-shadow-md relative z-10">十二维深度分析</span>
+                                    <span className="text-xl lg:text-2xl font-bold text-white drop-shadow-md relative z-10">十维深度分析</span>
                                 </div>
 
                                 {faceAnalysis?.dimensions && activeDimension ? (

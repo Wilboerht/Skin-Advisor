@@ -2,12 +2,13 @@
 
 import { useMemo } from "react";
 import {
-    PolarAngleAxis,
-    PolarGrid,
-    PolarRadiusAxis,
-    Radar,
-    RadarChart,
+    Bar,
+    BarChart,
+    CartesianGrid,
+    Cell,
     ResponsiveContainer,
+    XAxis,
+    YAxis,
 } from "recharts";
 import type { SkinDimensions, SkinDimensionKey } from "@/lib/advisor-utils";
 import { DIMENSION_LABELS } from "@/lib/advisor-utils";
@@ -20,8 +21,9 @@ interface ScientificRadarChartProps {
 }
 
 const DIMENSION_ORDER: SkinDimensionKey[] = [
-    'waterOil', 'skinTone', 'spots', 'wrinkles', 
-    'uvDamage', 'sensitivity', 'darkCircles', 'firmness', 'acne', 'radiance'
+    'radiance', 'acne', 'firmness', 'darkCircles',
+    'sensitivity', 'uvDamage', 'wrinkles', 'spots',
+    'skinTone', 'waterOil'
 ];
 
 const getScoreColor = (score: number) => {
@@ -38,142 +40,79 @@ export function ScientificRadarChart({ dimensions, size = 300, activeDimension, 
         fullMark: 100,
     })), [dimensions]);
 
-    // Custom Tick Component for interactivity
-    const CustomTick = ({ payload, x, y, textAnchor, stroke, radius }: any) => {
-        const data = chartData[payload.index];
+    // Custom label on the right side of each bar
+    const LabelContent = (props: any) => {
+        const { x, y, width, value, index } = props;
+        const data = chartData[index];
         const isActive = activeDimension === data.key;
-
-        // Adjust text position slightly to avoid overlapping with the grid
-        // We can push the text out a bit based on its angle if needed, 
-        // but Recharts handles rotation fairly well. 
-        // We'll just add a slight improved styling.
-
         return (
-            <g
-                className="cursor-pointer transition-all duration-200"
-                onClick={() => onDimensionSelect?.(data.key as SkinDimensionKey)}
+            <text
+                x={x + width + 8}
+                y={y + 12}
+                fontSize={12}
+                fontWeight={isActive ? 600 : 400}
+                fill={isActive ? '#337EA9' : '#787774'}
+                className="select-none"
             >
-                <text
-                    radius={radius}
-                    stroke={stroke}
-                    x={x}
-                    y={y}
-                    fontFamily="ui-sans-serif, system-ui, sans-serif"
-                    fontSize={isActive ? 13 : 11}
-                    fontWeight={isActive ? 600 : 400}
-                    fill={isActive ? '#337EA9' : '#787774'} // Notion Blue / Notion Gray
-                    textAnchor={textAnchor}
-                    className="select-none"
-                >
-                    <tspan dy="0.35em">{payload.value}</tspan>
-                </text>
-            </g>
-        );
-    };
-
-    // Custom Dot to highlight active point
-    const CustomDot = (props: any) => {
-        const { cx, cy, payload } = props;
-        const isActive = activeDimension === payload.key;
-        const color = getScoreColor(payload.score);
-
-        const handleClick = (e: any) => {
-            e.stopPropagation();
-            e.preventDefault();
-            onDimensionSelect?.(payload.key as SkinDimensionKey);
-        };
-
-        return (
-            <g
-                className="recharts-layer recharts-radar-dot"
-                onClick={handleClick}
-                style={{ cursor: 'pointer' }}
-            >
-                {/* Active Indicator Ring (Ripple effect static) */}
-                {isActive && (
-                    <circle cx={cx} cy={cy} r={10} fill={color} fillOpacity={0.2} />
-                )}
-
-                {/* Visible inner dot */}
-                <circle
-                    cx={cx}
-                    cy={cy}
-                    r={isActive ? 5 : 3.5}
-                    fill={color}
-                    fillOpacity={1}
-                    stroke="#ffffff"
-                    strokeWidth={1.5}
-                    className="transition-all duration-300"
-                />
-
-                {/* Click target expander */}
-                <circle cx={cx} cy={cy} r={20} fill="transparent" />
-            </g>
+                {value}
+            </text>
         );
     };
 
     return (
-        <div className="w-full h-full relative" style={{ minHeight: "340px" }}>
-            {/* Gradient Definitions */}
-            <svg style={{ height: 0, width: 0, position: 'absolute' }}>
-                <defs>
-                    <linearGradient id="radarFillGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#337EA9" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#337EA9" stopOpacity={0.05} />
-                    </linearGradient>
-                    <radialGradient id="radarStrokeGradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
-                        <stop offset="0%" stopColor="#2c3e50" stopOpacity={0.8} />
-                        <stop offset="100%" stopColor="#337EA9" stopOpacity={1} />
-                    </radialGradient>
-                </defs>
-            </svg>
-
+        <div className="w-full h-full relative" style={{ minHeight: "400px" }}>
             <ResponsiveContainer width="100%" height="100%">
-                <RadarChart
-                    cx="50%"
-                    cy="50%"
-                    outerRadius="75%"
+                <BarChart
                     data={chartData}
-                    startAngle={90}
-                    endAngle={-270}
+                    layout="vertical"
+                    margin={{ top: 8, right: 40, bottom: 8, left: 80 }}
+                    barCategoryGap="20%"
                 >
-                    {/* Background Circles for Lab/Radar Look */}
-                    <PolarGrid
-                        gridType="circle"
+                    <CartesianGrid
+                        horizontal={false}
                         stroke="#E9E9E7"
-                        strokeWidth={1}
-                        strokeDasharray="4 4"
+                        strokeDasharray="3 3"
                     />
-
-                    <PolarAngleAxis
-                        dataKey="dimension"
-                        tick={<CustomTick />}
-                        axisLine={false}
+                    <XAxis
+                        type="number"
+                        domain={[0, 100]}
+                        tick={{ fontSize: 11, fill: '#787774' }}
+                        axisLine={{ stroke: '#E9E9E7' }}
                         tickLine={false}
                     />
-
-                    {/* Hidden Axis for scaling */}
-                    <PolarRadiusAxis
-                        angle={90}
-                        domain={[0, 100]}
-                        tick={false}
+                    <YAxis
+                        type="category"
+                        dataKey="dimension"
+                        tick={{ fontSize: 12, fill: '#787774' }}
                         axisLine={false}
+                        tickLine={false}
+                        width={70}
                     />
-
-                    <Radar
-                        name="Skin Score"
+                    <Bar
                         dataKey="score"
-                        stroke="#337EA9"
-                        strokeWidth={2}
-                        fill="url(#radarFillGradient)"
-                        fillOpacity={1}
-                        dot={<CustomDot />}
-                        activeDot={false}
-                        isAnimationActive={true}
+                        radius={[0, 6, 6, 0]}
+                        maxBarSize={24}
+                        label={<LabelContent />}
                         animationDuration={1000}
                         animationEasing="ease-out"
-                    />
-                </RadarChart>
+                    >
+                        {chartData.map((entry, index) => {
+                            const isActive = activeDimension === entry.key;
+                            const baseColor = getScoreColor(entry.score);
+                            return (
+                                <Cell
+                                    key={`cell-${index}`}
+                                    fill={baseColor}
+                                    fillOpacity={isActive ? 1 : 0.6}
+                                    stroke={isActive ? baseColor : 'none'}
+                                    strokeWidth={isActive ? 2 : 0}
+                                    cursor="pointer"
+                                    onClick={() => onDimensionSelect?.(entry.key as SkinDimensionKey)}
+                                />
+                            );
+                        })}
+                    </Bar>
+                </BarChart>
             </ResponsiveContainer>
         </div>
     );
