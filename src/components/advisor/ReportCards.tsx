@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Share2, Lock } from 'lucide-react';
+import { Share2, Lock, Loader2 } from 'lucide-react';
 
 interface Dimension {
   score?: number;
@@ -15,6 +15,7 @@ interface ReportCardsProps {
   dimensions: Record<string, Dimension | undefined>;
   nickname: string;
   generatedAvatar?: string | null;
+  isAvatarLoading?: boolean;
   summary?: string;
   onShare: () => void;
   isLoggedIn: boolean;
@@ -56,6 +57,7 @@ export default function ReportCards({
   dimensions,
   nickname,
   generatedAvatar,
+  isAvatarLoading,
   summary,
   onShare,
   isLoggedIn,
@@ -63,7 +65,6 @@ export default function ReportCards({
 }: ReportCardsProps) {
   const [showShareModal, setShowShareModal] = useState(false);
   const currentAvatar = generatedAvatar || null;
-  console.log("[DEBUG] ReportCards render - generatedAvatar prop:", generatedAvatar, "currentAvatar:", currentAvatar);
 
   const rankPercentile = useMemo(() => {
     const percentiles = Object.values(dimensions)
@@ -115,19 +116,23 @@ export default function ReportCards({
             <div className="relative flex items-center justify-center w-[92px] h-[92px]">
               <div className="absolute inset-0 rounded-full p-[2.5px] bg-gradient-to-br from-[#e6d0a8] via-[#f5dfb8] to-[#d4b483] shadow-sm">
                 <div className="w-full h-full rounded-full bg-white p-[1px]">
-                  <div className="w-full h-full rounded-full overflow-hidden">
-                    <motion.img
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      src={currentAvatar || '/user-placeholder.svg'}
-                      alt="avatar"
-                      className="w-full h-full object-cover"
-                      onLoad={() => console.log("[DEBUG] ReportCards avatar image loaded, src:", currentAvatar ? currentAvatar.substring(0, 60) + "..." : "placeholder")}
-                      onError={(e) => {
-                        console.error("[DEBUG] ReportCards avatar image failed to load, src:", (e.target as HTMLImageElement).src);
-                        (e.target as HTMLImageElement).src = '/user-placeholder.svg';
-                      }}
-                    />
+                    <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center bg-gradient-to-br from-[#f8f0e3] to-[#f5dfb8]">
+                    {isAvatarLoading ? (
+                      <Loader2 className="w-6 h-6 text-[#c4b5a2] animate-spin" />
+                    ) : (
+                      <motion.img
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        src={currentAvatar || '/user-placeholder.svg'}
+                        alt="avatar"
+                        className="w-full h-full object-cover"
+                        onLoad={() => console.log("[DEBUG] ReportCards avatar image loaded, src:", currentAvatar ? currentAvatar.substring(0, 60) + "..." : "placeholder")}
+                        onError={(e) => {
+                          console.error("[DEBUG] ReportCards avatar image failed to load, src:", (e.target as HTMLImageElement).src);
+                          (e.target as HTMLImageElement).src = '/user-placeholder.svg';
+                        }}
+                      />
+                    )}
                   </div>
                 </div>
               </div>

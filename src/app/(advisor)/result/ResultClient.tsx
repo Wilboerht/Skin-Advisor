@@ -909,6 +909,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             dimensions={faceAnalysis?.dimensions || {}}
                             nickname={userNickname}
                             generatedAvatar={generatedAvatar}
+                            isAvatarLoading={isAvatarLoading}
                             summary={result?.analysis?.summary}
                             onShare={handleSaveImage}
                             isLoggedIn={!!user}
