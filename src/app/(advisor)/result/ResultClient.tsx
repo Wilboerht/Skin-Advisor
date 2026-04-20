@@ -101,8 +101,10 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const [faceAnalysis, setFaceAnalysis] = useState<FaceAnalysisResult | null>(initialData?.faceAnalysis || null);
     const [userImage, setUserImage] = useState<string | undefined>(undefined);
     const [sideImages, setSideImages] = useState<Record<string, string>>({});
-    const [generatedAvatar, setGeneratedAvatar] = useState<string | null>((initialData?.result as any)?.generatedAvatar || null);
-    const [isAvatarLoading, setIsAvatarLoading] = useState(!(initialData?.result as any)?.generatedAvatar);
+    const initialAvatar = (initialData?.result as any)?.generatedAvatar || null;
+    console.log("[DEBUG] ResultClient init - initialAvatar:", initialAvatar, "initialData?.result keys:", initialData ? Object.keys(initialData.result || {}) : "no initialData");
+    const [generatedAvatar, setGeneratedAvatar] = useState<string | null>(initialAvatar);
+    const [isAvatarLoading, setIsAvatarLoading] = useState(!initialAvatar);
     const [avatarQueueStatus, setAvatarQueueStatus] = useState<{
         position?: number;
         estimatedWaitTime?: number;
@@ -361,14 +363,15 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         if (!user) {
             try {
                 const guestAvatarUrl = localStorage.getItem(`guest_avatar_${sessionId}`);
+                console.log("[DEBUG] localStorage guest_avatar check:", `guest_avatar_${sessionId}`, "value:", guestAvatarUrl ? guestAvatarUrl.substring(0, 60) + "..." : "null");
                 if (guestAvatarUrl && (guestAvatarUrl.startsWith('http') || guestAvatarUrl.startsWith('data:'))) {
-                    console.log("Avatar loaded from localStorage (guest)");
+                    console.log("[DEBUG] Avatar loaded from localStorage (guest)");
                     setGeneratedAvatar(guestAvatarUrl);
                     setIsAvatarLoading(false);
                     return;
                 }
             } catch (e) {
-                console.warn("Failed to read guest avatar from localStorage:", e);
+                console.warn("[DEBUG] Failed to read guest avatar from localStorage:", e);
             }
         }
 
@@ -386,6 +389,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 
                 if (response.ok) {
                     const data = await response.json();
+                    console.log("[DEBUG] Avatar API poll response:", JSON.stringify(data));
                     
                     // 更新队列状态
                     if (data.queueStatus && data.queueStatus !== 'completed') {
@@ -397,15 +401,21 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     }
                     
                     // Validate avatar URL format
+                    console.log("[DEBUG] Avatar URL check:", "data.generatedAvatar:", data.generatedAvatar, "type:", typeof data.generatedAvatar);
                     if (data.generatedAvatar && typeof data.generatedAvatar === 'string') {
                         // Basic URL validation
                         if (data.generatedAvatar.startsWith('http') || data.generatedAvatar.startsWith('data:')) {
+                            console.log("[DEBUG] Setting generatedAvatar from API:", data.generatedAvatar.substring(0, 60) + "...");
                             setGeneratedAvatar(data.generatedAvatar);
                             setIsAvatarLoading(false);
                             setAvatarQueueStatus(null);
-                            console.log("Avatar loaded successfully");
+                            console.log("[DEBUG] Avatar loaded successfully");
                             return;
+                        } else {
+                            console.warn("[DEBUG] Avatar URL invalid format:", data.generatedAvatar.substring(0, 60));
                         }
+                    } else {
+                        console.log("[DEBUG] No generatedAvatar in API response");
                     }
                     
                     // Reset error count on successful connection
@@ -892,6 +902,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     <main className={styles.main}>
 
                         {/* Report Summary Cards */}
+                        {(console.log("[DEBUG] ResultClient rendering ReportCards - generatedAvatar:", generatedAvatar), null)}
                         <ReportCards
                             score={faceAnalysis?.overallScore || 0}
                             skinAge={result?.skinProfile?.skinAge || 25}

@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
         });
 
         if (queueItem) {
+            console.log("[DEBUG] Avatar status API - queueItem found:", queueItem.sessionId, "status:", queueItem.status, "generatedUrl:", queueItem.generatedUrl ? queueItem.generatedUrl.substring(0, 60) + "..." : "null");
             // 计算队列位置
             const position = await prisma.avatarQueue.count({
                 where: {
@@ -56,6 +57,7 @@ export async function GET(req: NextRequest) {
         });
 
         if (!session || !session.analysisResult) {
+            console.log("[DEBUG] Avatar status API - no session or analysisResult found for:", sessionId);
             return NextResponse.json({ 
                 generatedAvatar: null,
                 isReady: false,
@@ -65,6 +67,7 @@ export async function GET(req: NextRequest) {
 
         const result = session.analysisResult as any;
         const generatedAvatar = result.generatedAvatar || null;
+        console.log("[DEBUG] Avatar status API - session found, generatedAvatar:", generatedAvatar ? generatedAvatar.substring(0, 60) + "..." : "null");
 
         return NextResponse.json({
             generatedAvatar,

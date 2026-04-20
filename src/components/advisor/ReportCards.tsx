@@ -63,6 +63,7 @@ export default function ReportCards({
 }: ReportCardsProps) {
   const [showShareModal, setShowShareModal] = useState(false);
   const currentAvatar = generatedAvatar || null;
+  console.log("[DEBUG] ReportCards render - generatedAvatar prop:", generatedAvatar, "currentAvatar:", currentAvatar);
 
   const rankPercentile = useMemo(() => {
     const percentiles = Object.values(dimensions)
@@ -95,7 +96,7 @@ export default function ReportCards({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="relative rounded-[32px] p-6 lg:p-10 border border-white/20 overflow-hidden"
+        className="relative rounded-[32px] p-6 lg:p-10 border border-white/20"
         style={{
           background: 'linear-gradient(135deg, rgba(255, 248, 235, 0.95) 0%, rgba(245, 230, 205, 0.9) 100%)',
           boxShadow: '0 10px 40px -10px rgba(0,0,0,0.1), inset 0 2px 0 rgba(255,255,255,0.7)',
@@ -121,7 +122,9 @@ export default function ReportCards({
                       src={currentAvatar || '/user-placeholder.svg'}
                       alt="avatar"
                       className="w-full h-full object-cover"
+                      onLoad={() => console.log("[DEBUG] ReportCards avatar image loaded, src:", currentAvatar ? currentAvatar.substring(0, 60) + "..." : "placeholder")}
                       onError={(e) => {
+                        console.error("[DEBUG] ReportCards avatar image failed to load, src:", (e.target as HTMLImageElement).src);
                         (e.target as HTMLImageElement).src = '/user-placeholder.svg';
                       }}
                     />
