@@ -199,10 +199,25 @@ export function useAsyncAnalysis() {
                         
                         if (response.ok) {
                             const data = await response.json();
-                            
-                            // Validate response
+
+                            // 队列模式：成功加入队列即可，前端会轮询获取结果
+                            if (data.success && data.queued) {
+                                // 如果队列项已完成且已有 URL，直接存入 localStorage
+                                if (data.generatedUrl) {
+                                    try {
+                                        localStorage.setItem(`guest_avatar_${sessionId}`, data.generatedUrl);
+                                        console.log(`[Avatar] ✅ Avatar already generated, stored in localStorage`);
+                                    } catch (e) {
+                                        console.warn("[Avatar] ⚠️  Failed to store avatar in localStorage:", e);
+                                    }
+                                } else {
+                                    console.log(`[Avatar] ✅ Enqueued for generation (position: #${data.position})`);
+                                }
+                                break; // Success, exit while loop
+                            }
+
+                            // 旧格式兼容：直接返回了 url（同步生成模式）
                             if (data.success && data.url && typeof data.url === 'string') {
-                                // If guest user, store avatar URL in localStorage (client-side only)
                                 if (data.isGuest) {
                                     try {
                                         localStorage.setItem(`guest_avatar_${sessionId}`, data.url);
@@ -214,15 +229,15 @@ export function useAsyncAnalysis() {
                                     console.log(`[Avatar] ✅ User avatar generation succeeded from ${data.source}`);
                                 }
                                 break; // Success, exit while loop
+                            }
+
+                            console.warn("[Avatar] ❌ Unexpected response format:", data);
+                            if (retries < maxRetries) {
+                                retries++;
+                                await new Promise(r => setTimeout(r, 1000));
+                                continue;
                             } else {
-                                console.warn("[Avatar] ❌ Invalid response format:", data);
-                                if (retries < maxRetries) {
-                                    retries++;
-                                    await new Promise(r => setTimeout(r, 1000)); // Wait before retry
-                                    continue;
-                                } else {
-                                    break;
-                                }
+                                break;
                             }
                         } else if (response.status >= 500) {
                             // Server error, retry-able
