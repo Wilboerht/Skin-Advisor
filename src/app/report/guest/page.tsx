@@ -83,27 +83,32 @@ export default async function GuestReportPage(props: GuestReportPageProps) {
         ? { value: result.faceAnalysis.gender.value, confidence: result.faceAnalysis.gender.confidence || 0 }
         : null;
 
-    // Construct Safe Data Payload (No PPI, no photos)
-    const safeData = {
+    // 构造完整数据，供登录用户详细分析区块使用
+    const fullData = {
+        // 兼容原有 guest 展示字段
         score: userScore,
         skinType: result.skinProfile?.typeLabel || "未知肤质",
         skinAge: result.skinProfile?.skinAge || 25,
-        dimensions: result.faceAnalysis?.dimensions || {}, // Needed for chart
+        dimensions: result.faceAnalysis?.dimensions || {},
         publishDate: new Date().toLocaleDateString(),
-        // User info for display (prioritize nickname from analysisResult)
         nickname: result.nickname || session.user?.name || `用户${id.substring(0, 8)}`,
         generatedAvatar: result.generatedAvatar || null,
         city: result.userLocation?.city || session.city || session.province || "未知城市",
         isGuest: !session.user,
-        // Session ID
         sessionId: id,
-        // Gender mismatch detection
         detectedGender,
-        // Guest simplified analysis
         guestAnalysis,
+        // 详细分析区块所需字段
+        result: {
+            skinProfile: result.skinProfile || result.skinAnalysis || {},
+            analysis: result.analysis || result.skinAnalysis || {},
+            products: result.products || [],
+            dataSource: result.dataSource || (result.source === "ai" ? "comprehensive" : "questionnaire"),
+        },
+        faceAnalysis: result.faceAnalysis || {},
     };
 
-    return <ShareLandingClient data={safeData} />;
+    return <ShareLandingClient data={fullData} />;
 }
 
 

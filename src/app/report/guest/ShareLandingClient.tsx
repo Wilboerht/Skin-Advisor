@@ -1,8 +1,13 @@
+
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import { Fragment } from 'react';
+// 引入完整分析内容的复用组件（假设已抽出为可复用组件）
+import { FullAnalysisSection } from '@/components/advisor/FullAnalysisSection';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, Share2, Lock } from 'lucide-react';
+import { Share2, Lock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthModal } from '@/components/auth/AuthModalContext';
@@ -30,30 +35,35 @@ interface ShareLandingProps {
     guestAnalysis?: {
       summary?: string;
     };
+    // 新增，兼容详细分析区块
+    result: any;
+    faceAnalysis: any;
   };
 }
 
 const AnimatedNumber = ({ value, duration = 1.5 }: { value: number; duration?: number }) => {
   const [displayValue, setDisplayValue] = useState(0);
 
+  useEffect(() => {
+    let start = 0;
+    const increment = value / (duration * 1000 / 16);
+    const timer = setInterval(() => {
+      start += increment;
+      if (start >= value) {
+        setDisplayValue(Math.round(value));
+        clearInterval(timer);
+      } else {
+        setDisplayValue(Math.round(start));
+      }
+    }, 16);
+    return () => clearInterval(timer);
+  }, [value, duration]);
+
   return (
     <motion.span
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
-      onAnimationStart={() => {
-        let start = 0;
-        const increment = value / (duration * 1000 / 16);
-        const timer = setInterval(() => {
-          start += increment;
-          if (start >= value) {
-            setDisplayValue(Math.round(value));
-            clearInterval(timer);
-          } else {
-            setDisplayValue(Math.round(start));
-          }
-        }, 16);
-      }}
     >
       {displayValue}
     </motion.span>
@@ -66,37 +76,16 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
   const { openAuthModal } = useAuthModal();
   const toast = useToast();
   const [showShareModal, setShowShareModal] = useState(false);
-  const [currentAvatar, setCurrentAvatar] = useState<string | null>(data.generatedAvatar || null);
+  const currentAvatar = data.generatedAvatar || null;
 
-  // Poll for avatar if it's not ready
+  // 登录用户跳转到完整报告页
   useEffect(() => {
-    if (currentAvatar) return;
+    if (!loading && user) {
+      router.replace(`/result?id=${data.sessionId}`);
+    }
+  }, [loading, user, router, data.sessionId]);
 
-    let pollCount = 0;
-    const maxPolls = 20; // Max 60 seconds (3 * 20)
-
-    const pollInterval = setInterval(async () => {
-      pollCount++;
-      if (pollCount > maxPolls) {
-        clearInterval(pollInterval);
-        return;
-      }
-
-      try {
-        const res = await fetch(`/api/advisor/avatar/status?sessionId=${data.sessionId}`);
-        const result = await res.json();
-        if (result.isReady && result.generatedAvatar) {
-          setCurrentAvatar(result.generatedAvatar);
-          clearInterval(pollInterval);
-        }
-      } catch (e) {
-        console.error("Avatar poll error:", e);
-      }
-    }, 3000);
-
-    return () => clearInterval(pollInterval);
-  }, [currentAvatar, data.sessionId]);
-
+  // percentile 取最大值
   const rankPercentile = useMemo(() => {
     const percentiles = Object.values(data.dimensions)
       .filter((dim): dim is Dimension => dim !== undefined && dim.percentile !== undefined)
@@ -104,6 +93,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
     return percentiles.length > 0 ? Math.max(...percentiles) : 96;
   }, [data.dimensions]);
 
+  // T区标签
   const getTZoneLabel = useMemo(() => {
     const score = data.dimensions.waterOil?.score ?? 0;
     if (score >= 80) return 'T区平衡';
@@ -268,7 +258,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
               </div>
 
               {/* Decorative Image Area (Right) */}
-              <div className="absolute right-[-30px] lg:-right-31 bottom-[108px] lg:-bottom-6 w-1/2 h-[110%] pointer-events-none flex items-end justify-end z-20">
+              <div className="absolute right-[-30px] lg:-right-8 bottom-[108px] lg:-bottom-6 w-1/2 h-[110%] pointer-events-none flex items-end justify-end z-20">
                 {/* Gift Box sitting on the ribbon */}
                 <div
                   className="absolute -bottom-[53%] lg:-bottom-[30%] w-[16rem] sm:w-[28rem] h-[16rem] sm:h-[28rem] z-30 drop-shadow-2xl right-[-35px] lg:right-[-32px]"
