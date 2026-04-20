@@ -123,20 +123,25 @@ export function ProductRecommendationSection({
     // 完全没有产品时的空状态
     if (!isLoading && products.length === 0) {
         return (
-            <div className={cn("rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden", className)}>
+            <div className={cn("rounded-[32px] backdrop-blur-xl border border-white/20 overflow-hidden", className)}
+                style={{
+                    background: 'linear-gradient(135deg, rgba(230, 215, 195, 0.4) 0%, rgba(200, 180, 155, 0.3) 100%)',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.3)',
+                }}
+            >
                 {/* 标题 */}
-                <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-3">
-                    <Gift className="w-5 h-5 text-gray-700" />
-                    <span className="text-lg font-semibold text-gray-900">甄选产品推荐</span>
+                <div className="px-6 py-4 border-b border-white/20 flex items-center gap-3">
+                    <Gift className="w-5 h-5 text-white drop-shadow-sm" />
+                    <span className="text-lg font-semibold text-white drop-shadow-sm">甄选产品推荐</span>
                 </div>
 
                 {/* 空状态 */}
                 <div className="p-12 text-center">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
-                        <AlertCircle className="w-8 h-8 text-gray-400" />
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/20 flex items-center justify-center">
+                        <AlertCircle className="w-8 h-8 text-white/60" />
                     </div>
-                    <h4 className="text-base font-medium text-gray-900 mb-2">暂无产品推荐</h4>
-                    <p className="text-sm text-gray-500">
+                    <h4 className="text-base font-medium text-white drop-shadow-sm mb-2">暂无产品推荐</h4>
+                    <p className="text-sm text-white/70">
                         系统正在为您匹配最适合的护肤产品，请稍后再查看。
                     </p>
                 </div>
@@ -145,20 +150,25 @@ export function ProductRecommendationSection({
     }
 
     return (
-        <div className={cn("rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden", className)}>
+        <div className={cn("rounded-[32px] backdrop-blur-xl border border-white/20 overflow-hidden", className)}
+            style={{
+                background: 'linear-gradient(135deg, rgba(230, 215, 195, 0.4) 0%, rgba(200, 180, 155, 0.3) 100%)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.3)',
+            }}
+        >
             {/* 标题栏 */}
-            <div className="px-6 py-4 border-b border-gray-100">
+            <div className="px-6 py-4 border-b border-white/20">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <Gift className="w-5 h-5 text-gray-700" />
-                        <span className="text-lg font-semibold text-gray-900">甄选产品推荐</span>
-                        <span className="text-xs text-gray-400 font-normal">
+                        <Gift className="w-5 h-5 text-white drop-shadow-sm" />
+                        <span className="text-lg font-semibold text-white drop-shadow-sm">甄选产品推荐</span>
+                        <span className="text-xs text-white/60 font-normal">
                             按护肤步骤分类
                         </span>
                     </div>
 
                     {/* 统计信息 */}
-                    <div className="flex items-center gap-4 text-xs text-gray-500">
+                    <div className="flex items-center gap-4 text-xs text-white/70">
                         <span className="flex items-center gap-1">
                             <TrendingUp className="w-3.5 h-3.5" />
                             {products.length} 款产品
@@ -194,8 +204,8 @@ export function ProductRecommendationSection({
             </div>
 
             {/* 底部说明 */}
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
-                <p className="text-xs text-gray-500 text-center">
+            <div className="px-6 py-4 bg-white/10 border-t border-white/20">
+                <p className="text-xs text-white/70 text-center">
                     💡 产品推荐基于您的肤质分析和当前环境数据，仅供参考
                 </p>
             </div>

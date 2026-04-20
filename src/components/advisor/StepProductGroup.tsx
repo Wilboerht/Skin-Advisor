@@ -51,8 +51,8 @@ export function StepProductGroup({
                     {/* 步骤图标 */}
                     <div className={cn(
                         "w-10 h-10 rounded-xl flex items-center justify-center text-lg",
-                        "bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200",
-                        "group-hover:from-blue-50 group-hover:to-blue-100 group-hover:border-blue-200",
+                        "bg-gradient-to-br from-white/20 to-white/10 border border-white/30",
+                        "group-hover:from-white/30 group-hover:to-white/20 group-hover:border-white/40",
                         "transition-all duration-200"
                     )}>
                         {stepConfig.icon}
@@ -60,16 +60,16 @@ export function StepProductGroup({
 
                     <div>
                         {/* 中文标题 */}
-                        <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                        <h3 className="text-base font-semibold text-white drop-shadow-sm flex items-center gap-2">
                             第{index + 1}步: {stepConfig.label}
-                            <span className="text-xs font-normal text-gray-400">
+                            <span className="text-xs font-normal text-white/60">
                                 ({products.length}款)
                             </span>
                         </h3>
 
                         {/* 英文标题 + 环境提示 */}
                         <div className="flex items-center gap-2">
-                            <span className="text-[10px] uppercase tracking-wider text-gray-400">
+                            <span className="text-[10px] uppercase tracking-wider text-white/60">
                                 {stepConfig.labelEn}
                             </span>
                         </div>
@@ -77,10 +77,10 @@ export function StepProductGroup({
                 </div>
 
                 {/* 展开/收起按钮 */}
-                <button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
+                <button className="p-2 rounded-full hover:bg-white/10 transition-colors">
                     <ChevronDown
                         className={cn(
-                            "w-5 h-5 text-gray-400 transition-transform duration-200",
+                            "w-5 h-5 text-white/60 transition-transform duration-200",
                             isExpanded && "rotate-180"
                         )}
                     />
@@ -117,7 +117,7 @@ export function StepProductGroup({
                                         e.stopPropagation();
                                         setShowAll(true);
                                     }}
-                                    className="inline-flex items-center gap-1 px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 rounded-full transition-colors"
+                                    className="inline-flex items-center gap-1 px-4 py-2 text-sm font-medium text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full transition-colors"
                                 >
                                     查看更多 ({products.length - maxVisible}款)
                                     <ChevronDown className="w-4 h-4" />
@@ -133,7 +133,7 @@ export function StepProductGroup({
                                         e.stopPropagation();
                                         setShowAll(false);
                                     }}
-                                    className="inline-flex items-center gap-1 px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors"
+                                    className="inline-flex items-center gap-1 px-4 py-2 text-sm font-medium text-white/70 hover:text-white transition-colors"
                                 >
                                     收起
                                     <ChevronDown className="w-4 h-4 rotate-180" />
