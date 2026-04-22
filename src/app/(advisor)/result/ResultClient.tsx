@@ -1014,25 +1014,25 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             >
                                 <div className="px-6 py-6 lg:px-10 lg:py-10">
                                     <div className="flex items-center gap-3 mb-6">
-                                        <ClipboardList className="w-5 h-5 text-white drop-shadow-sm" />
-                                        <span className="text-xl lg:text-2xl font-bold text-white drop-shadow-md">综合检测报告</span>
+                                        <ClipboardList className="w-5 h-5 text-[#3d2f25]" />
+                                        <span className="text-xl lg:text-2xl font-bold text-[#3d2f25]">综合检测报告</span>
                                     </div>
 
                                     {/* Report Header / Summary */}
                                     <div className="mb-6">
-                                        <h4 className="text-base font-medium text-white mb-3 border-b border-white/20 pb-2">
+                                        <h4 className="text-base font-medium text-[#3d2f25] mb-3 border-b border-[#3d2f25]/20 pb-2">
                                             1、详细诊断报告 (Detailed Diagnosis)
                                         </h4>
 
                                         {/* Show Details if available, else fallback to Summary */}
                                         {result.analysis?.details && result.analysis.details.length > 0 ? (
-                                            <div className="space-y-3 text-[14px] leading-relaxed text-white/80">
+                                            <div className="space-y-3 text-[14px] leading-relaxed text-[#5c4937]">
                                                 {result.analysis.details.map((paragraph, idx) => (
                                                     <p key={idx}>{paragraph}</p>
                                                 ))}
                                             </div>
                                         ) : (
-                                            <p className="text-[14px] leading-relaxed text-white/80">
+                                            <p className="text-[14px] leading-relaxed text-[#5c4937]">
                                                 {faceAnalysis?.summary || result.analysis?.summary || "暂无详细分析摘要"}
                                             </p>
                                         )}
@@ -1040,17 +1040,17 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                                     {/* Expert Advice */}
                                     <div className="mb-8">
-                                        <h4 className="text-base font-medium text-white mb-3 border-b border-white/20 pb-2">
+                                        <h4 className="text-base font-medium text-[#3d2f25] mb-3 border-b border-[#3d2f25]/20 pb-2">
                                             2、专家护肤建议 (Expert Recommendations)
                                         </h4>
                                         {(faceAnalysis?.recommendations && faceAnalysis.recommendations.length > 0) ? (
-                                            <ul className="list-disc pl-5 space-y-2 text-[14px] leading-relaxed text-white/80">
+                                            <ul className="list-disc pl-5 space-y-2 text-[14px] leading-relaxed text-[#5c4937]">
                                                 {(faceAnalysis.recommendations).map((rec, idx) => (
                                                     <li key={idx}>{rec}</li>
                                                 ))}
                                             </ul>
                                         ) : (
-                                            <p className="text-[14px] leading-relaxed text-white/80">
+                                            <p className="text-[14px] leading-relaxed text-[#5c4937]">
                                                 根据您的肤质分析，建议您：
                                                 1. 每日早晚温和清洁，避免过度去脂。
                                                 2. 严格做好防晒，减少紫外线损伤。
@@ -1062,7 +1062,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     {/* 3. Zone Analysis Grid (Explicitly Added) */}
                                     {faceAnalysis?.zoneAnalysis && (
                                         <div className="mb-8">
-                                            <h4 className="text-base font-medium text-white mb-4 border-b border-white/20 pb-2">
+                                            <h4 className="text-base font-medium text-[#3d2f25] mb-4 border-b border-[#3d2f25]/20 pb-2">
                                                 3、区域重点关注 (Area Focus)
                                             </h4>
                                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1078,18 +1078,18 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                     const zoneData = faceAnalysis.zoneAnalysis[key];
                                                     if (!zoneData) return null;
                                                     return (
-                                                        <div key={key} className="bg-white/10 border text-left border-white/20 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+                                                        <div key={key} className="bg-[#3d2f25]/5 border text-left border-[#3d2f25]/15 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
                                                             <div className="flex items-center justify-between mb-2">
-                                                                <h5 className="font-semibold text-white text-sm">{label}</h5>
-                                                                <span className="text-xs bg-white/10 text-white/70 px-2 py-0.5 rounded-full max-w-[100px] truncate">
+                                                                <h5 className="font-semibold text-[#3d2f25] text-sm">{label}</h5>
+                                                                <span className="text-xs bg-[#3d2f25]/8 text-[#8c7a6b] px-2 py-0.5 rounded-full max-w-[100px] truncate">
                                                                     {zoneData.condition}
                                                                 </span>
                                                             </div>
-                                                            <p className="text-xs text-white/60 mb-2 leading-snug min-h-[2.5em] line-clamp-2">
+                                                            <p className="text-xs text-[#8c7a6b] mb-2 leading-snug min-h-[2.5em] line-clamp-2">
                                                                 {zoneData.condition}
                                                             </p>
-                                                            <div className="mt-2 pt-2 border-t border-dashed border-white/10">
-                                                                <p className="text-xs text-emerald-300 leading-snug">
+                                                            <div className="mt-2 pt-2 border-t border-dashed border-[#3d2f25]/10">
+                                                                <p className="text-xs text-emerald-700 leading-snug">
                                                                     <span className="font-medium mr-1">建议:</span>
                                                                     {zoneData.advice}
                                                                 </p>
@@ -1102,20 +1102,20 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     )}
 
                                     {/* Lab-Grade Analysis Metrics */}
-                                    <div className="rounded-xl border border-white/20 bg-white/10 shadow-sm overflow-hidden font-sans">
+                                    <div className="rounded-xl border border-[#3d2f25]/15 bg-[#3d2f25]/5 shadow-sm overflow-hidden font-sans">
                                         <div
-                                            className="px-5 py-3 flex justify-between items-center cursor-pointer hover:bg-white/10 transition-colors"
+                                            className="px-5 py-3 flex justify-between items-center cursor-pointer hover:bg-[#3d2f25]/5 transition-colors"
                                             onClick={() => setShowLabData(true)}
                                         >
                                             <div className="flex items-center gap-2">
-                                                <Activity className="w-4 h-4 text-white/60" />
-                                                <span className="text-sm font-medium text-white">AI 实验室数据 (AI Labs)</span>
+                                                <Activity className="w-4 h-4 text-[#8c7a6b]" />
+                                                <span className="text-sm font-medium text-[#3d2f25]">AI 实验室数据 (AI Labs)</span>
                                             </div>
                                             <div className="flex items-center gap-3">
-                                                <span className="text-xs text-white/50 font-normal hidden sm:inline-block">
+                                                <span className="text-xs text-[#8c7a6b] font-normal hidden sm:inline-block">
                                                     MySkin.Today™ Gold Standard
                                                 </span>
-                                                <ChevronRight className="w-4 h-4 text-white/50" />
+                                                <ChevronRight className="w-4 h-4 text-[#8c7a6b]" />
                                             </div>
                                         </div>
                                     </div>
