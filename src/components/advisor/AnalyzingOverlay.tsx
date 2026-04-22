@@ -342,7 +342,7 @@ export function AnalyzingOverlay({ progress, userImage, onCancel }: AnalyzingOve
         if (p < 40) return "正在进行多维智能分析...";
         if (p < 70) return "正在比对医学临床数据库...";
         if (p < 98) return "正在生成专属于您的护肤方案...";
-        return "AI仍在深度解码您的肌肤纹理...";
+        return "即将为您呈现专属肌肤报告...";
     };
 
     const statusText = getStatusText(progress);

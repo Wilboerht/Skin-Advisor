@@ -92,11 +92,13 @@ export const FullAnalysisSection: React.FC<FullAnalysisSectionProps> = ({
       )}
       {/* 头像与昵称 */}
       <div className="flex items-center gap-4 mb-4">
-        <img
-          src={generatedAvatar || userImage || "/user-placeholder.svg"}
-          alt="avatar"
-          className="w-16 h-16 rounded-full object-cover border"
-        />
+        <div className="w-16 h-16 rounded-full overflow-hidden border">
+          <img
+            src={generatedAvatar || userImage || "/user-placeholder.svg"}
+            alt="avatar"
+            className="w-full h-full object-cover scale-125"
+          />
+        </div>
         <div>
           <div className="font-semibold text-lg">{userNickname}的肌肤诊断报告</div>
         </div>
