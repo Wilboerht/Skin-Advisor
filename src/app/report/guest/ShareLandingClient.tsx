@@ -251,7 +251,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                             animate={{ opacity: 1 }}
                             src={generatedAvatar || "/user-placeholder.svg"}
                             alt="avatar"
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover scale-125"
                             onError={(e) => {
                               (e.target as HTMLImageElement).src = "/user-placeholder.svg";
                             }}

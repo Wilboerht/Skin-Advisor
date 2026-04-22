@@ -1012,18 +1012,14 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     boxShadow: '0 8px 32px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.3)'
                                 }}
                             >
-                                {/* Title */}
-                                <div className="p-6 lg:p-10 pb-0">
-                                    <div className="flex items-center gap-3 mb-8">
+                                <div className="px-6 py-6 lg:px-10 lg:py-10">
+                                    <div className="flex items-center gap-3 mb-4">
                                         <ClipboardList className="w-5 h-5 text-white drop-shadow-sm" />
                                         <span className="text-xl lg:text-2xl font-bold text-white drop-shadow-md">综合检测报告</span>
                                     </div>
-                                </div>
 
-                                <div className="p-6 lg:p-10 pt-0">
-                                    <div className="p-6 lg:p-8 bg-white/10 backdrop-blur-sm rounded-2xl text-white/90">
                                     {/* Report Header / Summary */}
-                                    <div className="mb-8">
+                                    <div>
                                         <h4 className="text-base font-medium text-white mb-3 border-b border-white/20 pb-2">
                                             1、详细诊断报告 (Detailed Diagnosis)
                                         </h4>
@@ -1064,56 +1060,11 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         )}
                                     </div>
 
-                                    {/* Conditions List - Table Format */}
-                                    {faceAnalysis?.skinConditions && faceAnalysis.skinConditions.length > 0 ? (
-                                        <div className="mb-8">
-                                            <h4 className="text-base font-medium text-white mb-3 border-b border-white/20 pb-2">
-                                                3、症状详情 (Clinical Observations)
-                                            </h4>
-                                            <div className="overflow-x-auto border border-white/10 rounded-lg">
-                                                <table className="w-full text-sm text-center">
-                                                    <thead className="bg-white/10 text-xs text-white/60 uppercase tracking-wider font-medium">
-                                                        <tr>
-                                                            <th className="py-3 px-4 whitespace-nowrap">症状</th>
-                                                            <th className="py-3 px-4 whitespace-nowrap">区域</th>
-                                                            <th className="py-3 px-4 whitespace-nowrap">程度</th>
-                                                            <th className="py-3 px-4 text-left min-w-[200px]">详情/成因</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody className="divide-y divide-white/10">
-                                                        {faceAnalysis.skinConditions.map((cond, idx) => (
-                                                            <tr key={idx} className="hover:bg-white/10 transition-colors">
-                                                                <td className="py-3 px-4 text-white/70 text-[13px]">
-                                                                    {cond.condition}
-                                                                </td>
-                                                                <td className="py-3 px-4 text-white/70 text-[13px]">
-                                                                    {cond.area}
-                                                                </td>
-                                                                <td className="py-3 px-4">
-                                                                    <span className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium ${cond.severity?.toLowerCase() === 'severe' ? 'bg-red-500/20 text-red-300' :
-                                                                        cond.severity?.toLowerCase() === 'moderate' ? 'bg-amber-500/20 text-amber-300' :
-                                                                            'bg-white/10 text-white/70'
-                                                                        }`}>
-                                                                        {cond.severity?.toLowerCase() === 'severe' ? '严重' :
-                                                                            cond.severity?.toLowerCase() === 'moderate' ? '中度' : '轻微'}
-                                                                    </span>
-                                                                </td>
-                                                                <td className="py-3 px-4 text-left text-white/70 leading-relaxed text-[13px]">
-                                                                    {cond.description}
-                                                                </td>
-                                                            </tr>
-                                                        ))}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                    ) : null}
-
-                                    {/* 4. Zone Analysis Grid (Explicitly Added) */}
+                                    {/* 3. Zone Analysis Grid (Explicitly Added) */}
                                     {faceAnalysis?.zoneAnalysis && (
                                         <div className="mb-8">
                                             <h4 className="text-base font-medium text-white mb-4 border-b border-white/20 pb-2">
-                                                4、区域重点关注 (Area Focus)
+                                                3、区域重点关注 (Area Focus)
                                             </h4>
                                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                                 {Object.entries({
@@ -1307,7 +1258,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                                     {/* Conditions List - Text Only */}
 
-                                </div>
                             </div>
                         </div>
 
