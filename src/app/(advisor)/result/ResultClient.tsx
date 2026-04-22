@@ -1019,7 +1019,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     </div>
 
                                     {/* Report Header / Summary */}
-                                    <div>
+                                    <div className="mb-6">
                                         <h4 className="text-base font-medium text-white mb-3 border-b border-white/20 pb-2">
                                             1、详细诊断报告 (Detailed Diagnosis)
                                         </h4>
@@ -1038,7 +1038,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         )}
                                     </div>
 
-                                    {/* Expert Advice */}
                                     {/* Expert Advice */}
                                     <div className="mb-8">
                                         <h4 className="text-base font-medium text-white mb-3 border-b border-white/20 pb-2">
