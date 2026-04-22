@@ -159,7 +159,7 @@
     padding: 40px 24px;
     display: flex;
     flex-direction: column;
-    gap: 40px;
+    gap: 24px;
     align-items: stretch;
 }
 
@@ -374,7 +374,7 @@
     border-radius: 8px;
     padding: 0;
     overflow: hidden;
-    margin-bottom: 24px;
+    margin-bottom: 0;
     /* Clean shadow for depth */
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
 }

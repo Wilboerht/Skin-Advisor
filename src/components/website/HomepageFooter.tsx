@@ -27,7 +27,7 @@ export function HomepageFooter() {
                         target="_blank"
                         className="!min-h-0 !min-w-0 hover:text-brand-gold transition-colors flex items-center"
                     >
-                        沪ICP备xxxx号-1
+                        沪ICP备2026014764号-1
                     </Link>
 
                     <span className="text-[#1A1A1A]/30">|</span>

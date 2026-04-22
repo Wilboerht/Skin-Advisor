@@ -193,19 +193,19 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         const isGood = goodKeywords.some(k => status.includes(k));
 
         return (
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 py-2.5 border-b border-dashed border-gray-200 last:border-0 items-center hover:bg-gray-50 transition-colors">
-                <div className="sm:col-span-5 text-[12px] text-gray-500 font-mono tracking-tight uppercase">
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 py-2.5 border-b border-dashed border-white/20 last:border-0 items-center hover:bg-white/10 transition-colors">
+                <div className="sm:col-span-5 text-[12px] text-white/60 font-mono tracking-tight uppercase">
                     {param}
                 </div>
-                <div className="sm:col-span-3 text-left sm:text-right font-mono text-[13px] font-semibold text-gray-900">
+                <div className="sm:col-span-3 text-left sm:text-right font-mono text-[13px] font-semibold text-white">
                     {value}
                 </div>
-                <div className="sm:col-span-2 text-left sm:text-right font-mono text-[11px] text-gray-400">
-                    <span className="sm:hidden mr-2 text-gray-300">Ref:</span>
+                <div className="sm:col-span-2 text-left sm:text-right font-mono text-[11px] text-white/50">
+                    <span className="sm:hidden mr-2 text-white/40">Ref:</span>
                     {ref}
                 </div>
                 <div className="sm:col-span-2 text-left sm:text-right font-mono text-[11px] font-bold">
-                    <span className={isGood ? 'text-gray-400' : 'text-gray-900'}>
+                    <span className={isGood ? 'text-white/50' : 'text-white'}>
                         {status} {isGood ? '' : '▲'}
                     </span>
                 </div>
@@ -747,12 +747,12 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     if (analysisState.status === 'error') {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen bg-[#FAFAFA] p-4">
-                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 max-w-md w-full text-center">
-                    <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <AlertCircle className="w-8 h-8 text-red-500" />
+                <div className="bg-white/10 backdrop-blur-sm p-8 rounded-2xl shadow-sm border border-white/10 max-w-md w-full text-center">
+                    <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <AlertCircle className="w-8 h-8 text-red-300" />
                     </div>
-                    <h2 className="text-xl font-bold text-gray-900 mb-2">分析遇到了一些问题</h2>
-                    <p className="text-gray-500 mb-8 leading-relaxed">
+                    <h2 className="text-xl font-bold text-white mb-2">分析遇到了一些问题</h2>
+                    <p className="text-white/60 mb-8 leading-relaxed">
                         {analysisState.error || "服务器暂时无法响应，请稍后再试。"}
                     </p>
                     <div className="flex flex-col gap-3">
@@ -946,14 +946,14 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         </div>
                                         {/* 右侧动态详情面板 */}
                                         <div className="flex-1 flex flex-col justify-center">
-                                            <div className="bg-white/80 rounded-2xl p-8 shadow-md border border-white/40 animate-in fade-in slide-in-from-right-4 duration-300">
+                                            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 shadow-md border border-white/20 animate-in fade-in slide-in-from-right-4 duration-300">
                                                 {/* Header */}
                                                 <div className="flex items-center justify-between mb-6">
                                                     <div>
-                                                        <h3 className="text-lg font-semibold text-[#5c4937] mb-0.5">
+                                                        <h3 className="text-lg font-semibold text-white mb-0.5">
                                                             {DIMENSION_LABELS[activeDimension]}
                                                         </h3>
-                                                        <p className="text-xs text-[#a89582] font-mono tracking-wide">
+                                                        <p className="text-xs text-white/70 font-mono tracking-wide">
                                                             {activeDimension === 'spots' && 'SURFACE PIGMENTATION'}
                                                             {activeDimension === 'wrinkles' && 'FINE LINES & WRINKLES'}
                                                             {activeDimension === 'uvDamage' && 'DEEP SUN DAMAGE'}
@@ -966,17 +966,17 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                             {activeDimension === 'darkCircles' && 'PERIORBITAL PIGMENTATION'}
                                                         </p>
                                                     </div>
-                                                    <div className={`text-3xl font-mono font-medium ${faceAnalysis.dimensions[activeDimension].score >= 80 ? 'text-emerald-600' :
-                                                        faceAnalysis.dimensions[activeDimension].score >= 60 ? 'text-amber-600' : 'text-rose-600'
+                                                    <div className={`text-3xl font-mono font-medium ${faceAnalysis.dimensions[activeDimension].score >= 80 ? 'text-emerald-300' :
+                                                        faceAnalysis.dimensions[activeDimension].score >= 60 ? 'text-amber-300' : 'text-rose-300'
                                                         }`}>
                                                         {faceAnalysis.dimensions[activeDimension].score}
                                                     </div>
                                                 </div>
                                                 {/* Progress Bar */}
-                                                <div className="h-2 w-full bg-gray-100 rounded-full mb-8 overflow-hidden">
+                                                <div className="h-2 w-full bg-white/20 rounded-full mb-8 overflow-hidden">
                                                     <div
-                                                        className={`h-full rounded-full transition-all duration-1000 ease-out ${faceAnalysis.dimensions[activeDimension].score >= 80 ? 'bg-emerald-500' :
-                                                            faceAnalysis.dimensions[activeDimension].score >= 60 ? 'bg-amber-500' : 'bg-red-500'
+                                                        className={`h-full rounded-full transition-all duration-1000 ease-out ${faceAnalysis.dimensions[activeDimension].score >= 80 ? 'bg-emerald-400' :
+                                                            faceAnalysis.dimensions[activeDimension].score >= 60 ? 'bg-amber-400' : 'bg-red-400'
                                                             }`}
                                                         style={{ width: `${faceAnalysis.dimensions[activeDimension].score}%` }}
                                                     />
@@ -984,10 +984,10 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                                                 {/* Diagnosis & Advice */}
                                                 <div className="mt-6">
-                                                    <h4 className="text-base font-medium text-gray-900 mb-3 border-b border-gray-200 pb-2">
+                                                    <h4 className="text-base font-medium text-white mb-3 border-b border-white/20 pb-2">
                                                         AI 诊断建议 (AI Analysis)
                                                     </h4>
-                                                    <p className="text-[14px] leading-relaxed text-gray-700">
+                                                    <p className="text-[14px] leading-relaxed text-white/80">
                                                         {getDimensionAdvice(activeDimension, faceAnalysis.dimensions[activeDimension].score)}
                                                     </p>
                                                 </div>
@@ -995,8 +995,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="p-8 text-center bg-white">
-                                        <div className="text-[14px] leading-relaxed text-gray-700">
+                                    <div className="p-8 text-center bg-white/10 backdrop-blur-sm rounded-2xl">
+                                        <div className="text-[14px] leading-relaxed text-white/80">
                                             暂无面部分析数据，请完善面部扫描数据。
                                         </div>
                                     </div>
@@ -1005,31 +1005,38 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                             {/* 1.5 Comprehensive Analysis Details - Professional Report Style */}
                             {/* 1.5 Comprehensive Analysis Details - Professional Report Style */}
-                            <div className={`${styles.analysisGrid} ${styles.fadeInUp} border-0 shadow-sm mb-6`}>
+                            <div
+                                className={`${styles.fadeInUp} relative rounded-[32px] backdrop-blur-xl border border-white/20 overflow-hidden`}
+                                style={{
+                                    background: 'linear-gradient(135deg, rgba(230, 215, 195, 0.4) 0%, rgba(200, 180, 155, 0.3) 100%)',
+                                    boxShadow: '0 8px 32px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.3)'
+                                }}
+                            >
                                 {/* Title */}
-                                <div className={styles.sectionTitle}>
-                                    <div className="flex items-center gap-3">
-                                        <ClipboardList className="w-5 h-5 text-gray-700" />
-                                        <span className="text-lg font-semibold text-gray-900">综合检测报告</span>
+                                <div className="p-6 lg:p-10 pb-0">
+                                    <div className="flex items-center gap-3 mb-8">
+                                        <ClipboardList className="w-5 h-5 text-white drop-shadow-sm" />
+                                        <span className="text-xl lg:text-2xl font-bold text-white drop-shadow-md">综合检测报告</span>
                                     </div>
                                 </div>
 
-                                <div className="p-8 bg-white text-gray-800">
+                                <div className="p-6 lg:p-10 pt-0">
+                                    <div className="p-6 lg:p-8 bg-white/10 backdrop-blur-sm rounded-2xl text-white/90">
                                     {/* Report Header / Summary */}
                                     <div className="mb-8">
-                                        <h4 className="text-base font-medium text-gray-900 mb-3 border-b border-gray-200 pb-2">
+                                        <h4 className="text-base font-medium text-white mb-3 border-b border-white/20 pb-2">
                                             1、详细诊断报告 (Detailed Diagnosis)
                                         </h4>
 
                                         {/* Show Details if available, else fallback to Summary */}
                                         {result.analysis?.details && result.analysis.details.length > 0 ? (
-                                            <div className="space-y-3 text-[14px] leading-relaxed text-gray-700">
+                                            <div className="space-y-3 text-[14px] leading-relaxed text-white/80">
                                                 {result.analysis.details.map((paragraph, idx) => (
                                                     <p key={idx}>{paragraph}</p>
                                                 ))}
                                             </div>
                                         ) : (
-                                            <p className="text-[14px] leading-relaxed text-gray-700">
+                                            <p className="text-[14px] leading-relaxed text-white/80">
                                                 {faceAnalysis?.summary || result.analysis?.summary || "暂无详细分析摘要"}
                                             </p>
                                         )}
@@ -1038,17 +1045,17 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     {/* Expert Advice */}
                                     {/* Expert Advice */}
                                     <div className="mb-8">
-                                        <h4 className="text-base font-medium text-gray-900 mb-3 border-b border-gray-200 pb-2">
+                                        <h4 className="text-base font-medium text-white mb-3 border-b border-white/20 pb-2">
                                             2、专家护肤建议 (Expert Recommendations)
                                         </h4>
                                         {(faceAnalysis?.recommendations && faceAnalysis.recommendations.length > 0) ? (
-                                            <ul className="list-disc pl-5 space-y-2 text-[14px] leading-relaxed text-gray-700">
+                                            <ul className="list-disc pl-5 space-y-2 text-[14px] leading-relaxed text-white/80">
                                                 {(faceAnalysis.recommendations).map((rec, idx) => (
                                                     <li key={idx}>{rec}</li>
                                                 ))}
                                             </ul>
                                         ) : (
-                                            <p className="text-[14px] leading-relaxed text-gray-700">
+                                            <p className="text-[14px] leading-relaxed text-white/80">
                                                 根据您的肤质分析，建议您：
                                                 1. 每日早晚温和清洁，避免过度去脂。
                                                 2. 严格做好防晒，减少紫外线损伤。
@@ -1060,12 +1067,12 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     {/* Conditions List - Table Format */}
                                     {faceAnalysis?.skinConditions && faceAnalysis.skinConditions.length > 0 ? (
                                         <div className="mb-8">
-                                            <h4 className="text-base font-medium text-gray-900 mb-3 border-b border-gray-200 pb-2">
+                                            <h4 className="text-base font-medium text-white mb-3 border-b border-white/20 pb-2">
                                                 3、症状详情 (Clinical Observations)
                                             </h4>
-                                            <div className="overflow-x-auto border border-gray-100 rounded-lg">
+                                            <div className="overflow-x-auto border border-white/10 rounded-lg">
                                                 <table className="w-full text-sm text-center">
-                                                    <thead className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider font-medium">
+                                                    <thead className="bg-white/10 text-xs text-white/60 uppercase tracking-wider font-medium">
                                                         <tr>
                                                             <th className="py-3 px-4 whitespace-nowrap">症状</th>
                                                             <th className="py-3 px-4 whitespace-nowrap">区域</th>
@@ -1073,25 +1080,25 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                             <th className="py-3 px-4 text-left min-w-[200px]">详情/成因</th>
                                                         </tr>
                                                     </thead>
-                                                    <tbody className="divide-y divide-gray-100">
+                                                    <tbody className="divide-y divide-white/10">
                                                         {faceAnalysis.skinConditions.map((cond, idx) => (
-                                                            <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
-                                                                <td className="py-3 px-4 text-gray-600 text-[13px]">
+                                                            <tr key={idx} className="hover:bg-white/10 transition-colors">
+                                                                <td className="py-3 px-4 text-white/70 text-[13px]">
                                                                     {cond.condition}
                                                                 </td>
-                                                                <td className="py-3 px-4 text-gray-600 text-[13px]">
+                                                                <td className="py-3 px-4 text-white/70 text-[13px]">
                                                                     {cond.area}
                                                                 </td>
                                                                 <td className="py-3 px-4">
-                                                                    <span className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium ${cond.severity?.toLowerCase() === 'severe' ? 'bg-red-50 text-red-600' :
-                                                                        cond.severity?.toLowerCase() === 'moderate' ? 'bg-amber-50 text-amber-600' :
-                                                                            'bg-slate-100 text-slate-600'
+                                                                    <span className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium ${cond.severity?.toLowerCase() === 'severe' ? 'bg-red-500/20 text-red-300' :
+                                                                        cond.severity?.toLowerCase() === 'moderate' ? 'bg-amber-500/20 text-amber-300' :
+                                                                            'bg-white/10 text-white/70'
                                                                         }`}>
                                                                         {cond.severity?.toLowerCase() === 'severe' ? '严重' :
                                                                             cond.severity?.toLowerCase() === 'moderate' ? '中度' : '轻微'}
                                                                     </span>
                                                                 </td>
-                                                                <td className="py-3 px-4 text-left text-gray-600 leading-relaxed text-[13px]">
+                                                                <td className="py-3 px-4 text-left text-white/70 leading-relaxed text-[13px]">
                                                                     {cond.description}
                                                                 </td>
                                                             </tr>
@@ -1105,7 +1112,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     {/* 4. Zone Analysis Grid (Explicitly Added) */}
                                     {faceAnalysis?.zoneAnalysis && (
                                         <div className="mb-8">
-                                            <h4 className="text-base font-medium text-gray-900 mb-4 border-b border-gray-200 pb-2">
+                                            <h4 className="text-base font-medium text-white mb-4 border-b border-white/20 pb-2">
                                                 4、区域重点关注 (Area Focus)
                                             </h4>
                                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1121,18 +1128,18 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                     const zoneData = faceAnalysis.zoneAnalysis[key];
                                                     if (!zoneData) return null;
                                                     return (
-                                                        <div key={key} className="bg-white border text-left border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+                                                        <div key={key} className="bg-white/10 border text-left border-white/20 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
                                                             <div className="flex items-center justify-between mb-2">
-                                                                <h5 className="font-semibold text-gray-800 text-sm">{label}</h5>
-                                                                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full max-w-[100px] truncate">
+                                                                <h5 className="font-semibold text-white text-sm">{label}</h5>
+                                                                <span className="text-xs bg-white/10 text-white/70 px-2 py-0.5 rounded-full max-w-[100px] truncate">
                                                                     {zoneData.condition}
                                                                 </span>
                                                             </div>
-                                                            <p className="text-xs text-gray-500 mb-2 leading-snug min-h-[2.5em] line-clamp-2">
+                                                            <p className="text-xs text-white/60 mb-2 leading-snug min-h-[2.5em] line-clamp-2">
                                                                 {zoneData.condition}
                                                             </p>
-                                                            <div className="mt-2 pt-2 border-t border-dashed border-gray-100">
-                                                                <p className="text-xs text-emerald-700 leading-snug">
+                                                            <div className="mt-2 pt-2 border-t border-dashed border-white/10">
+                                                                <p className="text-xs text-emerald-300 leading-snug">
                                                                     <span className="font-medium mr-1">建议:</span>
                                                                     {zoneData.advice}
                                                                 </p>
@@ -1145,20 +1152,20 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     )}
 
                                     {/* Lab-Grade Analysis Metrics */}
-                                    <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden font-sans">
+                                    <div className="rounded-xl border border-white/20 bg-white/10 shadow-sm overflow-hidden font-sans">
                                         <div
-                                            className={`px-5 py-3 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors ${showLabData ? 'border-b border-gray-100' : ''}`}
+                                            className={`px-5 py-3 flex justify-between items-center cursor-pointer hover:bg-white/10 transition-colors ${showLabData ? 'border-b border-white/10' : ''}`}
                                             onClick={() => setShowLabData(!showLabData)}
                                         >
                                             <div className="flex items-center gap-2">
-                                                <Activity className="w-4 h-4 text-gray-500" />
-                                                <span className="text-sm font-medium text-gray-900">AI 实验室数据 (AI Labs)</span>
+                                                <Activity className="w-4 h-4 text-white/60" />
+                                                <span className="text-sm font-medium text-white">AI 实验室数据 (AI Labs)</span>
                                             </div>
                                             <div className="flex items-center gap-3">
-                                                <span className="text-xs text-gray-400 font-normal hidden sm:inline-block">
+                                                <span className="text-xs text-white/50 font-normal hidden sm:inline-block">
                                                     MySkin.Today™ Gold Standard
                                                 </span>
-                                                <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${showLabData ? 'rotate-90' : ''}`} />
+                                                <ChevronRight className={`w-4 h-4 text-white/50 transition-transform duration-200 ${showLabData ? 'rotate-90' : ''}`} />
                                             </div>
                                         </div>
                                         {showLabData && (
@@ -1166,7 +1173,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                 <div className="grid grid-cols-1 gap-y-6">
 
                                                     {/* Table Header Row (Desktop only) */}
-                                                    <div className="hidden md:grid grid-cols-12 text-[11px] text-gray-400 border-b border-gray-200 pb-2 mb-2 font-mono uppercase tracking-wider">
+                                                    <div className="hidden md:grid grid-cols-12 text-[11px] text-white/50 border-b border-white/20 pb-2 mb-2 font-mono uppercase tracking-wider">
                                                         <div className="col-span-5">检测指标 (Parameter)</div>
                                                         <div className="col-span-3 text-right">测定值 (Value)*</div>
                                                         <div className="col-span-2 text-right">参考范围 (Range)</div>
@@ -1175,7 +1182,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                                                     {/* Group 1: Biophysical Profile */}
                                                     <div>
-                                                        <h5 className="text-[12px] font-bold font-mono text-gray-600 tracking-wide uppercase mb-3 px-2 py-1 bg-gray-50 border-l-[3px] border-gray-400">
+                                                        <h5 className="text-[12px] font-bold font-mono text-white/70 tracking-wide uppercase mb-3 px-2 py-1 bg-white/10 border-l-[3px] border-white/40">
                                                             I. 生物物理特性 (Biophysical Profile)
                                                         </h5>
                                                         <div className="space-y-1">
@@ -1207,7 +1214,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                                                     {/* Group 2: Pigmentation & Vascularity */}
                                                     <div>
-                                                        <h5 className="text-[12px] font-bold font-mono text-gray-600 tracking-wide uppercase mb-3 px-2 py-1 bg-gray-50 border-l-[3px] border-gray-400">
+                                                        <h5 className="text-[12px] font-bold font-mono text-white/70 tracking-wide uppercase mb-3 px-2 py-1 bg-white/10 border-l-[3px] border-white/40">
                                                             II. 色基分布分析 (Chromophore Map)
                                                         </h5>
                                                         <div className="space-y-1">
@@ -1244,7 +1251,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                                                     {/* Group 3: Surface & Microbiome */}
                                                     <div>
-                                                        <h5 className="text-[12px] font-bold font-mono text-gray-600 tracking-wide uppercase mb-3 px-2 py-1 bg-gray-50 border-l-[3px] border-gray-400">
+                                                        <h5 className="text-[12px] font-bold font-mono text-white/70 tracking-wide uppercase mb-3 px-2 py-1 bg-white/10 border-l-[3px] border-white/40">
                                                             III. 表面与微生态 (Surface & Microbiome)
                                                         </h5>
                                                         <div className="space-y-1">
@@ -1280,13 +1287,13 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                     </div>
                                                 </div>
 
-                                                <div className="mt-6 pt-4 border-t border-dashed border-gray-200">
-                                                    <div className="flex gap-2.5 items-start text-[11px] leading-relaxed text-gray-500 font-mono">
-                                                        <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-gray-400" />
+                                                <div className="mt-6 pt-4 border-t border-dashed border-white/20">
+                                                    <div className="flex gap-2.5 items-start text-[11px] leading-relaxed text-white/60 font-mono">
+                                                        <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-white/50" />
                                                         <div className="space-y-2">
-                                                            <p className="font-bold text-gray-900 uppercase tracking-wide">数据说明 (Data Disclaimer)</p>
+                                                            <p className="font-bold text-white uppercase tracking-wide">数据说明 (Data Disclaimer)</p>
                                                             <p>
-                                                                <span className="font-semibold text-gray-700">* AI ESTIMATE:</span> 上述数值均由 AI 算法基于您的面部图像特征（纹理、色泽、对比度）反演推算得出，<span className="border-b border-gray-300 text-gray-700">并非物理探头实测数据</span>。
+                                                                <span className="font-semibold text-white/80">* AI ESTIMATE:</span> 上述数值均由 AI 算法基于您的面部图像特征（纹理、色泽、对比度）反演推算得出，<span className="border-b border-white/30 text-white/80">并非物理探头实测数据</span>。
                                                             </p>
                                                             <p>
                                                                 例如：TEWL（经表皮失水率）是根据皮肤屏障受损程度的视觉表现估算而来。本报告仅作护肤参考，不可替代医疗诊断。
@@ -1302,6 +1309,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                                 </div>
                             </div>
+                        </div>
 
 
 

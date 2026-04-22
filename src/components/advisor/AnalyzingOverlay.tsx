@@ -555,7 +555,7 @@ export function AnalyzingOverlay({ progress, userImage, onCancel }: AnalyzingOve
             {/* Footer Branding */}
             <div className="absolute bottom-8 text-center opacity-40">
                 <p className="text-[9px] text-[#8A8A8A] tracking-[0.2em] font-light">
-                    MySkinToday Technology Technical Support
+                    MySkinToday™ Technology Support
                 </p>
             </div>
         </m.div>

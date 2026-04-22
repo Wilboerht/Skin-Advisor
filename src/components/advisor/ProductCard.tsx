@@ -106,8 +106,8 @@ export function ProductCard({
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05, duration: 0.3 }}
             className={cn(
-                "group relative bg-white rounded-xl border border-gray-100 overflow-hidden",
-                "hover:border-gray-200 hover:shadow-lg transition-all duration-300",
+                "group relative bg-white/10 backdrop-blur-sm rounded-xl border border-white/10 overflow-hidden",
+                "hover:border-white/20 hover:shadow-lg transition-all duration-300",
                 "cursor-pointer"
             )}
             onClick={handleCardClick}
@@ -121,7 +121,7 @@ export function ProductCard({
                             ? "bg-emerald-500 text-white"
                             : product.matchScore >= 75
                                 ? "bg-blue-500 text-white"
-                                : "bg-gray-100 text-gray-600"
+                                : "bg-white/10 text-white/70"
                     )}>
                         {product.matchScore}% 匹配
                     </span>
@@ -134,7 +134,7 @@ export function ProductCard({
             </div>
 
             {/* 图片区域 */}
-            <div className="relative aspect-square overflow-hidden bg-gray-50">
+            <div className="relative aspect-square overflow-hidden bg-white/5">
                 {!imageError ? (
                     <Image
                         src={product.image}
@@ -147,7 +147,7 @@ export function ProductCard({
                         onError={() => setImageError(true)}
                     />
                 ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-300">
+                    <div className="w-full h-full flex items-center justify-center text-white/30">
                         <ShoppingCart className="w-12 h-12" />
                     </div>
                 )}
@@ -156,18 +156,18 @@ export function ProductCard({
             {/* 内容区域 */}
             <div className="p-4">
                 {/* 分类 */}
-                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1 block">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-white/50 mb-1 block">
                     {product.category}
                 </span>
 
                 {/* 产品名称 */}
-                <h4 className="text-sm font-semibold text-gray-900 mb-1 leading-snug line-clamp-2 group-hover:text-blue-600 transition-colors">
+                <h4 className="text-sm font-semibold text-white mb-1 leading-snug line-clamp-2 group-hover:text-blue-300 transition-colors">
                     {product.name}
                 </h4>
 
                 {/* 英文名 */}
                 {product.nameEn && (
-                    <p className="text-[10px] text-gray-400 mb-2 line-clamp-1">
+                    <p className="text-[10px] text-white/50 mb-2 line-clamp-1">
                         {product.nameEn}
                     </p>
                 )}
@@ -187,13 +187,13 @@ export function ProductCard({
                 )}
 
                 {/* 推荐理由 */}
-                <p className="text-xs text-gray-600 leading-relaxed mb-3 line-clamp-2">
+                <p className="text-xs text-white/70 leading-relaxed mb-3 line-clamp-2">
                     {getReasonText()}
                 </p>
 
                 {/* 底部操作栏 */}
-                <div className="pt-3 border-t border-gray-100 flex items-center justify-between">
-                    <span className="text-sm font-semibold text-gray-900">
+                <div className="pt-3 border-t border-white/10 flex items-center justify-between">
+                    <span className="text-sm font-semibold text-white">
                         {product.price || '咨询价格'}
                     </span>
 
@@ -202,7 +202,7 @@ export function ProductCard({
                         {onAddToRoutine && (
                             <button
                                 onClick={handleAddToRoutine}
-                                className="flex items-center justify-center w-7 h-7 rounded-full bg-gray-100 hover:bg-blue-100 text-gray-500 hover:text-blue-600 transition-colors"
+                                className="flex items-center justify-center w-7 h-7 rounded-full bg-white/10 hover:bg-blue-500/20 text-white/60 hover:text-blue-300 transition-colors"
                                 title="加入护肤流程"
                             >
                                 <Plus className="w-4 h-4" />
@@ -214,7 +214,7 @@ export function ProductCard({
                             <div className="relative">
                                 <button
                                     onClick={handleBuyClick}
-                                    className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-900 text-white hover:bg-gray-800 transition-colors"
+                                    className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-white/20 text-white hover:bg-white/30 transition-colors"
                                 >
                                     去购买
                                     {allLinks.length > 1 ? (
@@ -229,7 +229,7 @@ export function ProductCard({
 
                                 {/* 多平台选择下拉 */}
                                 {showPlatforms && allLinks.length > 1 && (
-                                    <div className="absolute bottom-full right-0 mb-1 py-1 bg-white rounded-lg shadow-xl border border-gray-100 min-w-[120px] z-20">
+                                    <div className="absolute bottom-full right-0 mb-1 py-1 bg-white/10 backdrop-blur-sm rounded-lg shadow-xl border border-white/10 min-w-[120px] z-20">
                                         {allLinks.map(link => (
                                             <button
                                                 key={link.platform}
@@ -237,7 +237,7 @@ export function ProductCard({
                                                     e.stopPropagation();
                                                     handlePlatformClick(link);
                                                 }}
-                                                className="w-full px-3 py-1.5 text-left text-xs font-medium hover:bg-gray-50 flex items-center gap-2 transition-colors"
+                                                className="w-full px-3 py-1.5 text-left text-xs font-medium hover:bg-white/10 flex items-center gap-2 transition-colors"
                                                 style={{ color: link.config.color }}
                                             >
                                                 <span>{link.config.icon}</span>
@@ -251,7 +251,7 @@ export function ProductCard({
 
                         {/* 无购买链接时显示箭头 */}
                         {allLinks.length === 0 && (
-                            <ChevronRight className="w-4 h-4 text-gray-400" />
+                            <ChevronRight className="w-4 h-4 text-white/50" />
                         )}
                     </div>
                 </div>
@@ -279,11 +279,11 @@ function HorizontalProductCard({
         <m.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="group flex bg-white rounded-xl border border-gray-100 overflow-hidden hover:border-gray-200 hover:shadow-lg transition-all duration-300 cursor-pointer"
+            className="group flex bg-white/10 backdrop-blur-sm rounded-xl border border-white/10 overflow-hidden hover:border-white/20 hover:shadow-lg transition-all duration-300 cursor-pointer"
             onClick={() => onProductClick?.(product.id)}
         >
             {/* 图片 */}
-            <div className="relative w-32 h-32 flex-shrink-0 overflow-hidden bg-gray-50">
+            <div className="relative w-32 h-32 flex-shrink-0 overflow-hidden bg-white/5">
                 {!imageError ? (
                     <Image
                         src={product.image}
@@ -294,7 +294,7 @@ function HorizontalProductCard({
                         onError={() => setImageError(true)}
                     />
                 ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-300">
+                    <div className="w-full h-full flex items-center justify-center text-white/30">
                         <ShoppingCart className="w-8 h-8" />
                     </div>
                 )}
@@ -303,19 +303,19 @@ function HorizontalProductCard({
             {/* 内容 */}
             <div className="flex-1 p-4 flex flex-col justify-between">
                 <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">
                         {product.category}
                     </span>
-                    <h4 className="text-sm font-semibold text-gray-900 mt-0.5 line-clamp-1">
+                    <h4 className="text-sm font-semibold text-white mt-0.5 line-clamp-1">
                         {product.name}
                     </h4>
-                    <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+                    <p className="text-xs text-white/70 mt-1 line-clamp-2">
                         {product.reason}
                     </p>
                 </div>
 
                 <div className="flex items-center justify-between mt-2">
-                    <span className="text-sm font-semibold text-gray-900">{product.price}</span>
+                    <span className="text-sm font-semibold text-white">{product.price}</span>
                     <div className="flex items-center gap-2">
                         <WishlistButton productId={product.id} size="sm" />
                         {onAddToRoutine && (
@@ -324,7 +324,7 @@ function HorizontalProductCard({
                                     e.stopPropagation();
                                     onAddToRoutine(product.id);
                                 }}
-                                className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                                className="text-xs text-blue-300 hover:text-blue-200 font-medium"
                             >
                                 + 加入流程
                             </button>
