@@ -1013,7 +1013,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 }}
                             >
                                 <div className="px-6 py-6 lg:px-10 lg:py-10">
-                                    <div className="flex items-center gap-3 mb-4">
+                                    <div className="flex items-center gap-3 mb-6">
                                         <ClipboardList className="w-5 h-5 text-white drop-shadow-sm" />
                                         <span className="text-xl lg:text-2xl font-bold text-white drop-shadow-md">综合检测报告</span>
                                     </div>
