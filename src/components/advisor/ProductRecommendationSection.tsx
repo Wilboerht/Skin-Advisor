@@ -1,18 +1,11 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { m } from "framer-motion";
-import { Gift, AlertCircle, TrendingUp, Zap } from "lucide-react";
-import { StepProductGroup } from "./StepProductGroup";
+import { Gift, AlertCircle, TrendingUp } from "lucide-react";
 import { ProductRecommendationSkeleton } from "./ProductCardSkeleton";
-import { ProductCardData } from "./ProductCard";
-import {
-    SkincareStep,
-    STEP_ORDER,
-    groupProductsByStep,
-    inferStepFromCategory,
-    SKINCARE_STEPS
-} from "@/lib/skincare-steps";
+import { ProductCard, ProductCardData } from "./ProductCard";
+import { inferStepFromCategory } from "@/lib/skincare-steps";
 import { cn } from "@/lib/utils";
 
 // 维度名称映射
@@ -107,18 +100,8 @@ export function ProductRecommendationSection({
         setProcessedProducts(processed);
     }, [products, faceAnalysis]);
 
-    // 按步骤分组
-    const groupedProducts = useMemo(() => {
-        return groupProductsByStep(processedProducts.map(p => ({
-            ...p,
-            step: (p as any).step || inferStepFromCategory(p.category)
-        })));
-    }, [processedProducts]);
-
-    // 获取有产品的步骤列表 (按顺序)
-    const stepsWithProducts = useMemo(() => {
-        return STEP_ORDER.filter(step => groupedProducts.has(step));
-    }, [groupedProducts]);
+    // 取匹配度最高的前3个产品
+    const topProducts = processedProducts.slice(0, 3);
 
     // 完全没有产品时的空状态
     if (!isLoading && products.length === 0) {
@@ -163,7 +146,7 @@ export function ProductRecommendationSection({
                         <Gift className="w-5 h-5 text-white drop-shadow-sm" />
                         <span className="text-lg font-semibold text-white drop-shadow-sm">甄选产品推荐</span>
                         <span className="text-xs text-white/60 font-normal">
-                            按护肤步骤分类
+                            为您精选
                         </span>
                     </div>
 
@@ -182,23 +165,16 @@ export function ProductRecommendationSection({
                 {isLoading ? (
                     <ProductRecommendationSkeleton />
                 ) : (
-                    <div className="space-y-8">
-                        {stepsWithProducts.map((step, index) => {
-                            const stepProducts = groupedProducts.get(step) || [];
-
-                            return (
-                                <StepProductGroup
-                                    key={step}
-                                    step={step}
-                                    products={stepProducts as ProductCardData[]}
-                                    index={index}
-                                    onAddToRoutine={onAddToRoutine}
-                                    onProductClick={onProductClick}
-                                    defaultExpanded={index < 3} // 前3个步骤默认展开
-                                    maxVisible={4}
-                                />
-                            );
-                        })}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {topProducts.map((product, index) => (
+                            <ProductCard
+                                key={product.id}
+                                product={product}
+                                index={index}
+                                onAddToRoutine={onAddToRoutine}
+                                onProductClick={onProductClick}
+                            />
+                        ))}
                     </div>
                 )}
             </div>
