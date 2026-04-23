@@ -8,6 +8,7 @@ import { Fragment } from 'react';
 import { FullAnalysisSection } from '@/components/advisor/FullAnalysisSection';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Share2, Lock, Loader2 } from 'lucide-react';
+import { FloatingToolbar } from '@/components/advisor/FloatingToolbar';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthModal } from '@/components/auth/AuthModalContext';
@@ -580,6 +581,17 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Floating Toolbar */}
+      <FloatingToolbar
+        onSharePoster={() => {
+          setShowShareModal(true);
+        }}
+        onRetake={() => router.push("/questions")}
+        onChat={() => {
+          /* TODO: 打开 AI 咨询 */
+        }}
+      />
     </div>
   );
 }

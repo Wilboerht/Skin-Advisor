@@ -26,6 +26,7 @@ import type { FaceAnalysisResult, ZoneAnalysis } from "@/lib/advisor-utils";
 import { DIMENSION_LABELS, SkinDimensionKey, getDefaultFaceAnalysisResult } from "@/lib/advisor-utils";
 import { getDimensionAdvice } from "@/lib/advice-utils";
 import { ScientificRadarChart } from "@/components/advisor/ScientificRadarChart";
+import { FloatingToolbar } from "@/components/advisor/FloatingToolbar";
 import { copyToClipboard, generateShareUrl } from "@/lib/share";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { AIChatWindow } from "@/components/advisor/AIChatWindow";
@@ -1405,6 +1406,17 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                     {/* Save Report Banner for unauthenticated users */}
                     <SaveReportBanner />
+
+                    {/* Floating Toolbar */}
+                    <FloatingToolbar
+                        onSharePoster={() => {
+                            /* TODO: 分享海报 */
+                        }}
+                        onRetake={() => router.push("/questions")}
+                        onChat={() => {
+                            /* TODO: 打开 AI 咨询 */
+                        }}
+                    />
                 </div>)}
         </>
     );
