@@ -1,7 +1,8 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Sparkles, Glasses, Sun, Smartphone, ScanFace } from "lucide-react";
+import { ArrowRight, Sparkles, Sun, Smartphone } from "lucide-react";
+import Image from "next/image";
 
 interface ScanGuideModalProps {
     isOpen: boolean;
@@ -15,12 +16,9 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuid
         {
             icon: Sparkles,
             title: "保持素颜",
-            desc: "建议卸除底妆，保持肌肤真实状态"
-        },
-        {
-            icon: Glasses,
-            title: "摘下眼镜",
-            desc: "请摘下眼镜或饰品，避免面部遮挡"
+            desc: "请在扫描前彻底卸除底妆、防晒及彩妆产品，清洁面部并静待5分钟，以确保AI能够识别您最真实的肌肤纹理、色斑分布与毛孔状态，避免残留化妆品干扰分析精度。",
+
+            fullWidth: true
         },
         {
             icon: Sun,
@@ -57,9 +55,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuid
                         <div className="p-7 pt-9">
                             {/* Header */}
                             <div className="flex flex-col items-center text-center gap-4 mb-8">
-                                <div className="w-16 h-16 rounded-full bg-[#4A3728]/5 flex items-center justify-center mb-1 ring-1 ring-[#4A3728]/10 shadow-inner">
-                                    <ScanFace className="w-8 h-8 text-[#4A3728]" strokeWidth={1.2} />
-                                </div>
+                                <Image src="/NIHPLOD-logo.svg" alt="NIHPLOD" width={120} height={64} className="w-[120px] h-16 mb-1" />
                                 <div className="space-y-2">
                                     <h3 className="text-3xl font-serif text-[#1A1A1A] tracking-tight">
                                         开始面部扫描
@@ -77,7 +73,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuid
                                     return (
                                         <div
                                             key={index}
-                                            className="flex flex-col h-full p-5 rounded-2xl bg-white/40 border border-[#4A3728]/5 hover:border-[#4A3728]/20 hover:bg-white/60 hover:shadow-xl hover:shadow-[#4A3728]/5 transition-all duration-500 group backdrop-blur-sm"
+                                            className={`flex flex-col h-full p-5 rounded-2xl bg-white/40 border border-[#4A3728]/5 hover:border-[#4A3728]/20 hover:bg-white/60 hover:shadow-xl hover:shadow-[#4A3728]/5 transition-all duration-500 group backdrop-blur-sm ${item.fullWidth ? 'sm:col-span-2' : ''}`}
                                         >
                                             <div className="flex items-start gap-3.5 mb-auto">
                                                 <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-[#4A3728]/5 group-hover:bg-[#4A3728]/10 transition-all duration-500 flex items-center justify-center text-[#4A3728] group-hover:scale-110 shadow-sm border border-white/40">
