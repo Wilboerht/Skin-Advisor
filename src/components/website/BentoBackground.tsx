@@ -88,7 +88,7 @@ export function BentoBackground() {
                             ref={(el) => addCellRef(el, 0)}
                             className="kinetic-cell kinetic-cell-large kinetic-image-cell kinetic-cell-boxes group cursor-pointer"
                         >
-                            <Link href="#" className="absolute inset-0 z-20" aria-label="了解产品" />
+                            <Link href="https://nihplod.cn/products" className="absolute inset-0 z-20" aria-label="了解产品" />
                             <Image
                                 src="/images/kinetic-story.jpg"
                                 alt="Brand Story"
@@ -116,7 +116,7 @@ export function BentoBackground() {
                             className="kinetic-cell kinetic-image-cell kinetic-cell-less group cursor-pointer"
                             style={{ gridColumn: "span 2", aspectRatio: "auto" }}
                         >
-                            <Link href="#" className="absolute inset-0 z-20" aria-label="官方指南" />
+                            <Link href="https://nihplod.cn/guide" className="absolute inset-0 z-20" aria-label="官方指南" />
                             <Image
                                 src="/images/kinetic-cat.webp"
                                 alt="Cat Aesthetic"
@@ -133,7 +133,7 @@ export function BentoBackground() {
                             ref={(el) => addCellRef(el, 3)}
                             className="kinetic-cell kinetic-image-cell kinetic-cell-skin group cursor-pointer"
                         >
-                            <Link href="#" className="absolute inset-0 z-20" aria-label="关于旎柏" />
+                            <Link href="https://nihplod.cn/about" className="absolute inset-0 z-20" aria-label="关于旎柏" />
                             <Image
                                 src="/images/kinetic-desktop.webp"
                                 alt="Product Desktop"
