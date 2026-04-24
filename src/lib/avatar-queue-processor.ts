@@ -38,7 +38,7 @@ async function generateWanxiangAvatarAsync(prompt: string, frontPhoto: string | 
     },
     parameters: {
       n: 1,
-      size: "1024*1536",
+      size: "1024*1024",
       watermark: false,
       prompt_extend: true,
       negative_prompt: "",
