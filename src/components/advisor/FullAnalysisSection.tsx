@@ -96,7 +96,7 @@ export const FullAnalysisSection: React.FC<FullAnalysisSectionProps> = ({
           <img
             src={generatedAvatar || userImage || "/user-placeholder.svg"}
             alt="avatar"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover object-top"
           />
         </div>
         <div>

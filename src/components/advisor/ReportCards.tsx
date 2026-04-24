@@ -125,7 +125,7 @@ export default function ReportCards({
                         animate={{ opacity: 1 }}
                         src={currentAvatar || '/user-placeholder.svg'}
                         alt="avatar"
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover object-top"
                         onLoad={() => console.log("[DEBUG] ReportCards avatar image loaded, src:", currentAvatar ? currentAvatar.substring(0, 60) + "..." : "placeholder")}
                         onError={(e) => {
                           console.error("[DEBUG] ReportCards avatar image failed to load, src:", (e.target as HTMLImageElement).src);

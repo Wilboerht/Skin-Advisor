@@ -77,6 +77,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
   const { openAuthModal } = useAuthModal();
   const toast = useToast();
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showAuthChoice, setShowAuthChoice] = useState(false);
   const [generatedAvatar, setGeneratedAvatar] = useState<string | null>(data.generatedAvatar || null);
   const [isAvatarLoading, setIsAvatarLoading] = useState(!data.generatedAvatar);
   const [avatarQueueStatus, setAvatarQueueStatus] = useState<{
@@ -252,7 +253,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                             animate={{ opacity: 1 }}
                             src={generatedAvatar || "/user-placeholder.svg"}
                             alt="avatar"
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover object-top"
                             onError={(e) => {
                               (e.target as HTMLImageElement).src = "/user-placeholder.svg";
                             }}
@@ -380,7 +381,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                   <motion.button
                     whileHover={{ scale: 1.03, y: -1 }}
                     whileTap={{ scale: 0.97 }}
-                    onClick={() => openAuthModal('register')}
+                    onClick={() => setShowAuthChoice(true)}
                     className="relative focus:outline-none flex items-center justify-center h-[34px] lg:h-[42px] px-5 lg:px-8 rounded-full shadow-[0_8px_20px_-6px_rgba(0,0,0,0.15)] border border-white/60 group overflow-hidden transition-all mt-auto lg:mt-0"
                     style={{
                       background: 'linear-gradient(135deg, #ffffff 0%, #f8f0e3 50%, #f0e6d8 100%)',
@@ -388,7 +389,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                   >
                     <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/40 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 pointer-events-none" />
                     <span className="relative z-10 text-[#5c4937] text-xs lg:text-[12px] font-bold tracking-wider flex items-center justify-center gap-2 whitespace-nowrap">
-                      登录查看完整报告
+                      解锁查看完整报告
                       <Lock className="w-3 h-3 text-[#5c4937] stroke-[2.5] shrink-0" />
                     </span>
                   </motion.button>
@@ -477,7 +478,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                     whileHover={{ scale: 1.03, backgroundColor: 'rgba(255,255,255,0.15)' }}
                     whileTap={{ scale: 0.97 }}
                     transition={{ delay: 0.4 }}
-                    onClick={() => openAuthModal('register')}
+                    onClick={() => setShowAuthChoice(true)}
                     className="p-3 lg:p-4 rounded-xl lg:rounded-2xl flex flex-row lg:flex-col items-center lg:items-center lg:justify-center lg:gap-3 lg:aspect-[2/3] border border-dashed border-white/50 cursor-pointer group transition-colors min-h-[48px] lg:min-h-0"
                     style={{ background: 'rgba(255,255,255,0.1)' }}
                   >
@@ -487,7 +488,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                       </div>
                       <p className="text-[#5c4937] text-[11px] lg:hidden font-medium">更多数据待解锁</p>
                     </div>
-                    <p className="hidden lg:block text-[#5c4937] text-xs font-medium text-center">登录</p>
+                    <p className="hidden lg:block text-[#5c4937] text-xs font-medium text-center">解锁</p>
                   </motion.div>
                 ) : (
                   <motion.div
@@ -574,6 +575,90 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                     className="w-full py-3 text-sm font-medium text-[#c4b5a2] hover:text-[#8c7a6b] transition-colors"
                   >
                     再等一下
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Auth Choice Modal */}
+      <AnimatePresence>
+        {showAuthChoice && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-sm bg-black/20"
+            onClick={() => setShowAuthChoice(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative bg-white/80 backdrop-blur-2xl rounded-[32px] pt-10 pb-8 px-8 max-w-[340px] w-full border border-white/60 shadow-[0_20px_50px_rgba(0,0,0,0.1)] overflow-hidden"
+            >
+              {/* Background Decor */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-[#e6d0a8]/20 blur-[40px] rounded-full -translate-y-1/2 translate-x-1/2" />
+
+              <div className="relative z-10 flex flex-col items-center text-center">
+                <div className="mb-5">
+                  <img
+                    src="/images/NIHPLOD-logo.svg"
+                    alt="NIHPLOD"
+                    className="h-7 w-auto object-contain brightness-95 opacity-80"
+                  />
+                </div>
+                <p className="text-sm text-[#8c7a6b] mb-8 leading-relaxed">
+                  选择以下方式继续
+                </p>
+
+                <div className="w-full space-y-3">
+                  <motion.button
+                    whileHover={{ scale: 1.02, y: -1 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      setShowAuthChoice(false);
+                      openAuthModal('login');
+                    }}
+                    className="relative w-full py-3.5 px-6 rounded-full shadow-[0_4px_12px_-2px_rgba(150,110,60,0.2)] border border-[#e6d0a8]/50 group transition-all"
+                    style={{
+                      background: 'linear-gradient(135deg, #fdf6e9 0%, #f5dfb8 50%, #e6d0a8 100%)',
+                    }}
+                  >
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-t from-transparent via-transparent to-white/30 pointer-events-none" />
+                    <span className="relative z-10 text-[#5e4b3c] text-sm font-bold flex items-center justify-center gap-2 tracking-wide">
+                      登录
+                    </span>
+                  </motion.button>
+
+                  <motion.button
+                    whileHover={{ scale: 1.02, y: -1 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      setShowAuthChoice(false);
+                      openAuthModal('register');
+                    }}
+                    className="relative w-full py-3.5 px-6 rounded-full shadow-[0_4px_12px_-2px_rgba(150,110,60,0.2)] border border-white/50 group transition-all"
+                    style={{
+                      background: 'linear-gradient(135deg, #ffffff 0%, #f8f0e3 50%, #f0e6d8 100%)',
+                    }}
+                  >
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-t from-transparent via-transparent to-white/30 pointer-events-none" />
+                    <span className="relative z-10 text-[#5e4b3c] text-sm font-bold flex items-center justify-center gap-2 tracking-wide">
+                      注册
+                    </span>
+                  </motion.button>
+
+                  <motion.button
+                    whileHover={{ backgroundColor: 'rgba(0,0,0,0.03)' }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setShowAuthChoice(false)}
+                    className="w-full py-3 text-sm font-medium text-[#c4b5a2] hover:text-[#8c7a6b] transition-colors"
+                  >
+                    取消
                   </motion.button>
                 </div>
               </div>
