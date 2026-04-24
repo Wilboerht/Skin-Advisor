@@ -81,26 +81,34 @@ export function FloatingToolbar({
 
     return (
         <motion.div
-            className={`fixed right-4 top-1/2 -translate-y-1/2 z-[200] flex flex-col items-end gap-2 ${className}`}
+            className={`fixed right-4 top-1/2 -translate-y-1/2 z-[200] ${className}`}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
             initial={false}
         >
+            {/* 菜单项 - 绝对定位在触发按钮上方，不推动布局 */}
             <AnimatePresence>
                 {isHovered && (
                     <motion.div
-                        initial={{ opacity: 0, x: 20, scale: 0.9 }}
-                        animate={{ opacity: 1, x: 0, scale: 1 }}
-                        exit={{ opacity: 0, x: 20, scale: 0.9 }}
-                        transition={{ type: "spring", stiffness: 400, damping: 28 }}
-                        className="flex flex-col gap-2 items-end"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                        className="absolute right-0 bottom-full mb-2 flex flex-col gap-2 items-end will-change-transform"
                     >
                         {toolbarActions.map((action, index) => (
                             <motion.button
                                 key={action.id}
-                                initial={{ opacity: 0, x: 20 }}
+                                initial={{ opacity: 0, x: 12 }}
                                 animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: index * 0.04 }}
+                                exit={{ opacity: 0, x: 12 }}
+                                transition={{
+                                    duration: 0.3,
+                                    ease: [0.22, 1, 0.36, 1],
+                                    delay: index * 0.05,
+                                }}
+                                whileHover={{ x: -2 }}
+                                whileTap={{ scale: 0.97 }}
                                 onClick={() => {
                                     if (action.id === "top") {
                                         handleScrollTop();
@@ -111,7 +119,7 @@ export function FloatingToolbar({
                                 className={`
                                     group flex items-center gap-3 pl-4 pr-3 py-2.5 rounded-full
                                     backdrop-blur-xl border shadow-lg
-                                    transition-all duration-300 cursor-pointer
+                                    cursor-pointer
                                     ${action.variant === "primary"
                                         ? "bg-[#4A3728]/90 border-[#4A3728]/20 text-[#FDFBF7] hover:bg-[#4A3728] shadow-[#4A3728]/20"
                                         : action.variant === "danger"
@@ -130,7 +138,6 @@ export function FloatingToolbar({
                                             ? "bg-white/15"
                                             : "bg-[#4A3728]/5 group-hover:bg-[#4A3728]/10"
                                         }
-                                        transition-colors duration-300
                                     `}
                                 >
                                     {action.icon}
@@ -141,13 +148,13 @@ export function FloatingToolbar({
                 )}
             </AnimatePresence>
 
-            {/* Collapsed trigger button */}
+            {/* Collapsed trigger button - 位置固定，只做淡出 */}
             <motion.button
                 animate={{
-                    scale: isHovered ? 0.8 : 1,
                     opacity: isHovered ? 0 : 1,
+                    scale: isHovered ? 0.9 : 1,
                 }}
-                transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
                 className="
                     w-11 h-11 rounded-full
                     bg-[#FDFBF7]/90 backdrop-blur-xl
@@ -155,8 +162,8 @@ export function FloatingToolbar({
                     shadow-lg hover:shadow-xl
                     flex items-center justify-center
                     text-[#4A3728]
-                    transition-shadow duration-300
                     cursor-pointer
+                    will-change-transform
                 "
             >
                 <HelpCircle className="w-5 h-5" strokeWidth={1.5} />
