@@ -30,7 +30,6 @@ import { FloatingToolbar } from "@/components/advisor/FloatingToolbar";
 import { copyToClipboard, generateShareUrl } from "@/lib/share";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { AIChatWindow } from "@/components/advisor/AIChatWindow";
-import { ShareRewardBanner } from "@/components/advisor/ShareRewardBanner";
 import ReportCards from "@/components/advisor/ReportCards";
 
 // Import the new CSS Module

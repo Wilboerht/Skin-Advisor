@@ -60,15 +60,11 @@ const ACTION_ICONS: Record<string, any> = {
     batch_delete: Trash2,
     batch_activate: Package,
     batch_deactivate: Package,
-    ship: Gift,
-    reward_approved: Gift,
-    reward_rejected: Gift,
 };
 
 const RESOURCE_ICONS: Record<string, any> = {
     Product: Package,
     AdminUser: User,
-    ShareReward: Gift,
     Setting: Settings,
     Question: FileQuestion,
 };

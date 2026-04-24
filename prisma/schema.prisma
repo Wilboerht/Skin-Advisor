@@ -164,7 +164,6 @@ model User {
   
   // Relations
   advisorSessions AdvisorSession[]
-  shareRewards    ShareReward[]
   pushSubscriptions PushSubscription[]
   reminderSettings  ReminderSettings?
   testRecords       TestRecord[]
@@ -248,46 +247,7 @@ model Product {
   // Relations
 }
 
-// 分享领奖记录
-model ShareReward {
-  id            String    @id @default(cuid())
-  name          String
-  phone         String
-  address       String
-  shareProofUrl String    // 截图 URL
-  skinScore     Int?
-  percentile    Int?
-  status        String    @default("pending") // pending, approved, rejected, shipped
-  trackingNo    String?   // 快递单号
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
 
-  userId        String?
-  user          User?     @relation(fields: [userId], references: [id])
-  
-  campaignId    String?
-  campaign      Campaign? @relation(fields: [campaignId], references: [id])
-}
-
-// 分享领奖活动配置
-model Campaign {
-  id                  String        @id @default(cuid())
-  name                String        // 活动名称
-  description         String?       // 活动描述
-  rewardType          String        @default("sample") // sample, coupon, gift
-  rewardDescription   String?       // 奖品描述
-  startDate           DateTime      // 活动开始时间
-  endDate             DateTime      // 活动结束时间
-  isActive            Boolean       @default(true)
-  maxParticipants     Int?          // 最大参与人数 (可选)
-  currentParticipants Int           @default(0)
-  rules               String?       // 活动规则说明
-  bannerImage         String?       // 活动横幅图片
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
-
-  rewards             ShareReward[]
-}
 
 // Web Push 订阅
 model PushSubscription {

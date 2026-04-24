@@ -20,7 +20,6 @@ interface UserDetail {
     dailyTestLimit: number;
     createdAt: string;
     advisorSessions: any[];
-    shareRewards: any[];
     _count?: {
         testRecords?: number;
     };

@@ -11,7 +11,7 @@ interface StatsData {
         totalProducts: number;
         totalSessions: number;
         completedSessions: number;
-        pendingRewards: number;
+
         todaySessions: number;
         todayCompletions: number;
         completionRate: number;

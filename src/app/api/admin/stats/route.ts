@@ -14,13 +14,11 @@ export async function GET() {
             totalUsers,
             totalProducts,
             totalSessions,
-            pendingRewards,
             completedSessions
         ] = await Promise.all([
             prisma.user.count(),
             prisma.product.count(),
             prisma.advisorSession.count(),
-            prisma.shareReward.count({ where: { status: 'pending' } }),
             prisma.advisorSession.count({ where: { completedAt: { not: null } } }),
         ]);
 
@@ -113,7 +111,6 @@ export async function GET() {
                     totalProducts,
                     totalSessions,
                     completedSessions,
-                    pendingRewards,
                     todaySessions,
                     todayCompletions,
                     completionRate: totalSessions > 0

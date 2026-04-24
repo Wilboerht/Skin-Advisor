@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
             where,
             include: {
                 _count: {
-                    select: { advisorSessions: true, shareRewards: true }
+                    select: { advisorSessions: true }
                 },
                 advisorSessions: {
                     orderBy: { createdAt: "desc" },

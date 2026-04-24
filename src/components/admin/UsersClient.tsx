@@ -14,7 +14,6 @@ interface User {
     createdAt: string;
     _count: {
         advisorSessions: number;
-        shareRewards: number;
     };
     advisorSessions: {
         createdAt: string;
@@ -191,20 +190,19 @@ export function UsersClient() {
                                 <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">注册日期</th>
                                 <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">最后活跃</th>
                                 <th className="px-6 py-4 text-right text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">测试次数</th>
-                                <th className="px-6 py-4 text-right text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">领奖次数</th>
                                 <th className="px-6 py-4 text-right text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">操作</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/20">
                             {loading ? (
                                 <tr>
-                                    <td colSpan={7} className="px-6 py-12 text-center">
+                                    <td colSpan={6} className="px-6 py-12 text-center">
                                         <Loader2 className="w-6 h-6 animate-spin mx-auto text-[#1A1A1A]/40" />
                                     </td>
                                 </tr>
                             ) : users.length === 0 ? (
                                 <tr>
-                                    <td colSpan={7} className="px-6 py-12 text-center text-[#1A1A1A]/40">
+                                    <td colSpan={6} className="px-6 py-12 text-center text-[#1A1A1A]/40">
                                         未找到符合条件的用户。
                                     </td>
                                 </tr>
@@ -240,9 +238,6 @@ export function UsersClient() {
                                         </td>
                                         <td className="px-6 py-4 text-right tabular-nums text-slate-900 align-middle">
                                             {user._count.advisorSessions}
-                                        </td>
-                                        <td className="px-6 py-4 text-right tabular-nums text-slate-900 align-middle">
-                                            {user._count.shareRewards}
                                         </td>
                                         <td className="px-6 py-4 text-right relative align-middle">
                                             <div className="flex justify-end items-center h-full">

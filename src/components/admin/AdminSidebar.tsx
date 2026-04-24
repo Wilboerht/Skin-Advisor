@@ -7,10 +7,8 @@ import { usePathname, useRouter } from "next/navigation";
 import {
     LayoutDashboard,
     Package,
-    Gift,
     Settings,
     LogOut,
-    FileText,
     ChevronLeft,
     ChevronRight,
     Users,
@@ -24,7 +22,6 @@ import { motion, AnimatePresence } from "framer-motion";
 const MENU_ITEMS = [
     { href: "/admin/products", label: "产品管理", icon: Package },
     { href: "/admin/users", label: "用户管理", icon: Users },
-    { href: "/admin/campaigns", label: "活动中心", icon: FileText },
     { href: "/admin/settings", label: "系统设置", icon: Settings },
     { href: "/admin/audit-logs", label: "安全审计", icon: Shield },
 ];
@@ -159,7 +156,7 @@ export default function AdminSidebar() {
                                         { id: 'products', label: '产品数据报表', icon: Package },
                                         { id: 'users', label: '用户增长数据', icon: Users },
                                         { id: 'sessions', label: '诊断请求记录', icon: Activity },
-                                        { id: 'rewards', label: '礼等核销清单', icon: Gift },
+
                                     ].map((item) => (
                                         <button
                                             key={item.id}

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { verifyAdminSession, getClientInfo, logAdminAction } from "@/lib/admin-auth";
 
-// GET /api/admin/export?type=products|users|sessions|rewards
+// GET /api/admin/export?type=products|users|sessions
 export async function GET(request: NextRequest) {
     const session = await verifyAdminSession();
     if (!session) {
@@ -74,26 +74,6 @@ export async function GET(request: NextRequest) {
                 s.resultShared ? "Yes" : "No",
             ]);
             filename = `sessions_export_${new Date().toISOString().split("T")[0]}.csv`;
-            break;
-
-        case "rewards":
-            const rewards = await prisma.shareReward.findMany({
-                orderBy: { createdAt: "desc" },
-                include: {
-                    user: { select: { email: true, name: true } },
-                },
-            });
-            headers = ["ID", "User Email", "Name", "Phone", "Address", "Status", "Created"];
-            data = rewards.map((r) => [
-                r.id,
-                r.user?.email || "",
-                r.name,
-                r.phone,
-                r.address,
-                r.status,
-                new Date(r.createdAt).toISOString(),
-            ]);
-            filename = `rewards_export_${new Date().toISOString().split("T")[0]}.csv`;
             break;
 
         default:

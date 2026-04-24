@@ -31,12 +31,8 @@ export async function GET(
                     province: true,
                 }
             },
-            shareRewards: {
-                orderBy: { createdAt: "desc" },
-                take: 5,
-            },
             _count: {
-                select: { advisorSessions: true, shareRewards: true }
+                select: { advisorSessions: true }
             }
         } as any
     });
