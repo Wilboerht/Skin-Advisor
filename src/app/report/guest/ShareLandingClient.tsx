@@ -539,11 +539,11 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
 
               <div className="relative z-10 flex flex-col items-center text-center">
                 {/* Floating Logo */}
-                <div className="mb-6">
+                <div className="mb-5">
                   <img
                     src="/images/NIHPLOD-logo.svg"
                     alt="Logo"
-                    className="h-6 w-auto object-contain brightness-95 opacity-80"
+                    className="h-7 w-auto object-contain brightness-95 opacity-80"
                   />
                 </div>
 
@@ -564,7 +564,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                   >
                     <div className="absolute inset-0 rounded-full bg-gradient-to-t from-transparent via-transparent to-white/30 pointer-events-none" />
                     <span className="relative z-10 text-[#5e4b3c] text-sm font-bold flex items-center justify-center gap-2 tracking-wide">
-                      复制分享链接
+                      保存分享海报
                     </span>
                   </motion.button>
 

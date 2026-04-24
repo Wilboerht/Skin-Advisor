@@ -7,7 +7,7 @@ import {
     RotateCcw,
     ArrowUp,
     MessageCircle,
-    HelpCircle,
+    GripVertical,
 } from "lucide-react";
 
 interface ToolbarAction {
@@ -49,7 +49,7 @@ const defaultActions = (
     {
         id: "chat",
         icon: <MessageCircle className="w-[18px] h-[18px]" strokeWidth={1.5} />,
-        label: "AI 咨询",
+        label: "顾问咨询",
         onClick: onChat,
     },
     {
@@ -86,28 +86,28 @@ export function FloatingToolbar({
             onMouseLeave={() => setIsHovered(false)}
             initial={false}
         >
-            {/* 菜单项 - 绝对定位在触发按钮上方，不推动布局 */}
+            {/* 菜单项 - 绝对定位，底部和按钮对齐，向上展开 */}
             <AnimatePresence>
                 {isHovered && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                        className="absolute right-0 bottom-full mb-2 flex flex-col gap-2 items-end will-change-transform"
+                        transition={{ duration: 0.3, ease: "easeOut", delay: 0.15 }}
+                        className="absolute bottom-0 right-0 flex flex-col-reverse items-end gap-2 will-change-transform"
                     >
                         {toolbarActions.map((action, index) => (
                             <motion.button
                                 key={action.id}
-                                initial={{ opacity: 0, x: 12 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: 12 }}
+                                initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: 8, scale: 0.96 }}
                                 transition={{
                                     duration: 0.3,
                                     ease: [0.22, 1, 0.36, 1],
-                                    delay: index * 0.05,
+                                    delay: 0.15 + index * 0.05,
                                 }}
-                                whileHover={{ x: -2 }}
+                                whileHover={{ scale: 1.03 }}
                                 whileTap={{ scale: 0.97 }}
                                 onClick={() => {
                                     if (action.id === "top") {
@@ -152,21 +152,26 @@ export function FloatingToolbar({
             <motion.button
                 animate={{
                     opacity: isHovered ? 0 : 1,
-                    scale: isHovered ? 0.9 : 1,
+                    scale: isHovered ? 0.85 : 1,
                 }}
-                transition={{ duration: 0.2, ease: "easeOut" }}
+                transition={{ duration: 0.25, ease: "easeInOut" }}
                 className="
-                    w-11 h-11 rounded-full
-                    bg-[#FDFBF7]/90 backdrop-blur-xl
-                    border border-[#4A3728]/10
-                    shadow-lg hover:shadow-xl
-                    flex items-center justify-center
+                    w-[52px] py-3 rounded-[20px]
+                    bg-gradient-to-b from-[#FDFBF7]/95 to-[#F5F0E8]/95
+                    backdrop-blur-xl
+                    border border-[#4A3728]/8
+                    shadow-[0_4px_16px_rgba(74,55,40,0.08)]
+                    hover:shadow-[0_6px_20px_rgba(74,55,40,0.12)]
+                    flex flex-col items-center gap-2
                     text-[#4A3728]
                     cursor-pointer
                     will-change-transform
                 "
             >
-                <HelpCircle className="w-5 h-5" strokeWidth={1.5} />
+                <div className="w-7 h-7 rounded-full bg-[#4A3728]/6 flex items-center justify-center">
+                    <GripVertical className="w-3.5 h-3.5 text-[#4A3728]/70" strokeWidth={2} />
+                </div>
+                <span className="text-[10px] font-medium tracking-wider text-[#4A3728]/60">更多</span>
             </motion.button>
         </motion.div>
     );
