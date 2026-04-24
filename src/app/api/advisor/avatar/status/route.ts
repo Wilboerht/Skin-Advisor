@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { processAvatarQueueItem } from "@/lib/avatar-queue-processor";
+import { withDbRetry } from "@/lib/utils";
 
 export const dynamic = 'force-dynamic';
 
@@ -13,9 +14,11 @@ export async function GET(req: NextRequest) {
         }
 
         // 首先检查队列状态
-        const queueItem = await prisma.avatarQueue.findUnique({
-            where: { sessionId }
-        });
+        const queueItem = await withDbRetry(() =>
+            prisma.avatarQueue.findUnique({
+                where: { sessionId }
+            })
+        );
 
         if (queueItem) {
             console.log("[DEBUG] Avatar status API - queueItem found:", queueItem.sessionId, "status:", queueItem.status, "generatedUrl:", queueItem.generatedUrl ? queueItem.generatedUrl.substring(0, 60) + "..." : "null");
@@ -52,12 +55,14 @@ export async function GET(req: NextRequest) {
             }
 
             // 计算队列位置
-            const position = await prisma.avatarQueue.count({
-                where: {
-                    status: "pending",
-                    createdAt: { lt: queueItem.createdAt }
-                }
-            });
+            const position = await withDbRetry(() =>
+                prisma.avatarQueue.count({
+                    where: {
+                        status: "pending",
+                        createdAt: { lt: queueItem.createdAt }
+                    }
+                })
+            );
 
             // 如果正在处理或等待中
             const estimatedWaitTime = Math.max(10, position * 8); // 每个队列项约 8 秒
@@ -74,10 +79,12 @@ export async function GET(req: NextRequest) {
         }
 
         // 如果没有队列项，检查 AdvisorSession 中是否已经有头像
-        const session = await prisma.advisorSession.findUnique({
-            where: { sessionId },
-            select: { analysisResult: true }
-        });
+        const session = await withDbRetry(() =>
+            prisma.advisorSession.findUnique({
+                where: { sessionId },
+                select: { analysisResult: true }
+            })
+        );
 
         if (!session || !session.analysisResult) {
             console.log("[DEBUG] Avatar status API - no session or analysisResult found for:", sessionId);

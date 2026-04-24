@@ -22,3 +22,34 @@ export function formatDateTime(date: Date | string | number) {
         minute: "numeric",
     });
 }
+
+/**
+ * 数据库查询重试包装器
+ * 针对 Supabase/PgBouncer 连接不稳定问题，自动重试连接断开错误
+ */
+export async function withDbRetry<T>(
+    fn: () => Promise<T>,
+    retries = 2,
+    delayMs = 100
+): Promise<T> {
+    let lastError: Error | undefined;
+    for (let i = 0; i <= retries; i++) {
+        try {
+            return await fn();
+        } catch (e: any) {
+            lastError = e;
+            const isConnectionError =
+                e.message?.includes("Connection terminated unexpectedly") ||
+                e.message?.includes("Connection terminated due to connection timeout") ||
+                e.message?.includes("Can't reach database server");
+
+            if (!isConnectionError || i === retries) {
+                throw e;
+            }
+
+            console.warn(`[DB Retry] Connection error, retrying ${i + 1}/${retries}...`);
+            await new Promise((r) => setTimeout(r, delayMs * (i + 1)));
+        }
+    }
+    throw lastError!;
+}

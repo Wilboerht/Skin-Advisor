@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getSession, isVipCheck } from '@/lib/auth';
 import { extractGuestIdentifiers } from './guest-limit';
+import { withDbRetry } from './utils';
 
 /**
  * 使用频率限制结果
@@ -33,12 +34,14 @@ export async function checkUsageLimit(request: NextRequest, body?: any): Promise
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        const count = await prisma.testRecord.count({
-            where: {
-                userId,
-                testDate: { gte: today }
-            }
-        });
+        const count = await withDbRetry(() =>
+            prisma.testRecord.count({
+                where: {
+                    userId,
+                    testDate: { gte: today }
+                }
+            })
+        );
 
         // VIP 限制：每日 100 次（临时放宽）
         const limit = 100;
@@ -56,12 +59,14 @@ export async function checkUsageLimit(request: NextRequest, body?: any): Promise
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        const count = await prisma.testRecord.count({
-            where: {
-                userId,
-                testDate: { gte: today }
-            }
-        });
+        const count = await withDbRetry(() =>
+            prisma.testRecord.count({
+                where: {
+                    userId,
+                    testDate: { gte: today }
+                }
+            })
+        );
 
         // 普通用户限制：每日 100 次（临时放宽）
         const limit = 100;
@@ -85,13 +90,15 @@ export async function checkUsageLimit(request: NextRequest, body?: any): Promise
     if (cookieId) whereConditions.push({ cookieId });
     if (fingerprint) whereConditions.push({ fingerprint });
 
-    const todayCount = await prisma.guestUsage.findFirst({
-        where: {
-            OR: whereConditions,
-            lastTestAt: { gte: today }
-        },
-        orderBy: { lastTestAt: 'desc' }
-    });
+    const todayCount = await withDbRetry(() =>
+        prisma.guestUsage.findFirst({
+            where: {
+                OR: whereConditions,
+                lastTestAt: { gte: today }
+            },
+            orderBy: { lastTestAt: 'desc' }
+        })
+    );
 
     const count = todayCount?.todayCount || 0;
     const limit = 100;

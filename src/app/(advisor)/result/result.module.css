@@ -47,6 +47,7 @@
 .header {
     height: 48px;
     background: rgba(255, 255, 255, 0.95);
+    -webkit-backdrop-filter: blur(4px);
     backdrop-filter: blur(4px);
     border-bottom: 1px solid var(--notion-border);
     position: sticky;
@@ -607,6 +608,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
+    -webkit-user-select: none;
     user-select: none;
 }
 

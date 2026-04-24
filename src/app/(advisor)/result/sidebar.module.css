@@ -59,6 +59,7 @@
     background: rgba(255, 255, 255, 0.8);
     padding: 4px;
     border-radius: 40px;
+    -webkit-backdrop-filter: blur(4px);
     backdrop-filter: blur(4px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
@@ -294,6 +295,7 @@
     font-size: 0.75rem;
     cursor: help;
     transition: all 0.2s;
+    -webkit-user-select: none;
     user-select: none;
     border: 1px solid transparent;
 }

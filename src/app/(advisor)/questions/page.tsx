@@ -382,6 +382,7 @@ export default function QuestionsPage() {
 
                 <button
                     onClick={() => setShowExitConfirm(true)}
+                    aria-label="退出测评"
                     className="group w-12 h-12 flex items-center justify-end text-[#4A3728]/50 hover:text-[#4A3728] transition-colors"
                 >
                     <LogOut className="h-5 w-5 transition-transform group-hover:translate-x-1 duration-300" />
