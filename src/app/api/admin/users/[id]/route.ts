@@ -36,16 +36,7 @@ export async function GET(
                 take: 5,
             },
             _count: {
-                select: { advisorSessions: true, shareRewards: true, wishlists: true }
-            },
-            wishlists: {
-                include: {
-                    items: {
-                        include: {
-                            product: true
-                        }
-                    }
-                }
+                select: { advisorSessions: true, shareRewards: true }
             }
         } as any
     });

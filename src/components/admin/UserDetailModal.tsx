@@ -21,17 +21,6 @@ interface UserDetail {
     createdAt: string;
     advisorSessions: any[];
     shareRewards: any[];
-    wishlists: {
-        items: {
-            product: {
-                id: string;
-                name: string;
-                price: string;
-                image: string;
-            };
-            addedAt: string;
-        }[];
-    }[];
     _count?: {
         testRecords?: number;
     };
@@ -214,40 +203,7 @@ export function UserDetailModal({ isOpen, onClose, userId, onUpdate }: UserDetai
                             </div>
                         </div>
 
-                        {/* Wishlist */}
-                        <div>
-                            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 flex items-center gap-2">
-                                <ShoppingBag className="w-4 h-4" /> Wishlist ({user.wishlists?.[0]?.items?.length || 0})
-                            </h3>
-                            {user.wishlists?.[0]?.items && user.wishlists[0].items.length > 0 ? (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto pr-2">
-                                    {user.wishlists[0].items.map((item, idx) => (
-                                        <div key={idx} className="flex gap-3 p-3 rounded-lg border border-slate-100 hover:bg-slate-50 transition-colors">
-                                            <img
-                                                src={item.product.image}
-                                                alt={item.product.name}
-                                                className="w-12 h-12 rounded object-cover bg-slate-100"
-                                            />
-                                            <div className="flex-1 min-w-0">
-                                                <div className="text-sm font-medium text-slate-900 truncate">
-                                                    {item.product.name}
-                                                </div>
-                                                <div className="flex justify-between items-center mt-1">
-                                                    <span className="text-xs text-slate-500">{item.product.price}</span>
-                                                    <span className="text-[10px] text-slate-400">
-                                                        Added {new Date(item.addedAt).toLocaleDateString()}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="text-center py-6 bg-slate-50 rounded-xl border border-slate-100 border-dashed">
-                                    <p className="text-sm text-slate-400">Wishlist is empty</p>
-                                </div>
-                            )}
-                        </div>
+
                     </div>
                 )}
             </div>

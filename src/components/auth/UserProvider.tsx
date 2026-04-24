@@ -1,7 +1,6 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { syncWishlistToServer } from '@/lib/wishlist';
 
 // --- Types ---
 
@@ -146,10 +145,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
             // 立即刷新 session 以确保 Cookie 已正确设置
             console.log("🔄 Refreshing session to verify cookie...");
             await checkSession();
-
-            if (data.user?.id) {
-                syncWishlistToServer({ userId: data.user.id });
-            }
         } catch (err: any) {
             console.error("🔴 Login failed:", err);
             throw err;
@@ -167,10 +162,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
         setUser(data.user);
         setCachedUser(data.user);
-
-        if (data.user?.id) {
-            syncWishlistToServer({ userId: data.user.id });
-        }
     }, []);
 
     const logout = useCallback(async () => {

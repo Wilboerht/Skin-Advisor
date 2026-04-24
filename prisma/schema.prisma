@@ -165,7 +165,6 @@ model User {
   // Relations
   advisorSessions AdvisorSession[]
   shareRewards    ShareReward[]
-  wishlists       Wishlist[]
   pushSubscriptions PushSubscription[]
   reminderSettings  ReminderSettings?
   testRecords       TestRecord[]
@@ -247,33 +246,6 @@ model Product {
   ingredientDetails Json?    // 详细成分解读 [{ name: "烟酰胺", effect: "美白提亮", concentration: "5%" }]
   
   // Relations
-  wishlistItems     WishlistItem[]
-}
-
-// 心愿单
-model Wishlist {
-  id        String         @id @default(cuid())
-  userId    String?        // 已登录用户关联
-  guestId   String?        // 未登录用户 (localStorage fingerprint)
-  user      User?          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items     WishlistItem[]
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-
-  @@unique([userId])
-  @@index([guestId])
-}
-
-model WishlistItem {
-  id         String   @id @default(cuid())
-  wishlistId String
-  wishlist   Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
-  productId  String
-  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  addedAt    DateTime @default(now())
-  note       String?  // 用户备注
-
-  @@unique([wishlistId, productId])
 }
 
 // 分享领奖记录

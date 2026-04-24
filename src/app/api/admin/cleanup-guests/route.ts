@@ -60,15 +60,7 @@ export async function POST(req: NextRequest) {
                 where: { sessionId: { in: sessionIds } }
             });
 
-            // B. 删除游客心愿单 (针对无 userId 的旧心愿单)
-            const wishlists = await tx.wishlist.deleteMany({
-                where: {
-                    userId: null,
-                    createdAt: { lt: oneDayAgo }
-                }
-            });
-
-            // C. 删除过期的测试记录 (针对无 userId 的旧记录)
+            // B. 删除过期的测试记录 (针对无 userId 的旧记录)
             const testRecords = await tx.testRecord.deleteMany({
                 where: {
                     userId: null,
@@ -84,7 +76,6 @@ export async function POST(req: NextRequest) {
             return {
                 sessions: sessions.count,
                 conversations: conversations.count,
-                wishlists: wishlists.count,
                 testRecords: testRecords.count
             };
         });

@@ -4,7 +4,6 @@ import { useState, useCallback } from "react";
 import Image from "next/image";
 import { m } from "framer-motion";
 import { ChevronRight, Plus, ExternalLink, ShoppingCart } from "lucide-react";
-import { WishlistButton } from "./WishlistButton";
 import { IngredientTooltip, IngredientTags } from "./IngredientTooltip";
 import {
     AffiliateLinks,
@@ -127,11 +126,6 @@ export function ProductCard({
                     </span>
                 </div>
             )}
-
-            {/* 收藏按钮 */}
-            <div className="absolute top-2 right-2 z-10">
-                <WishlistButton productId={product.id} size="sm" />
-            </div>
 
             {/* 图片区域 */}
             <div className="relative aspect-square overflow-hidden bg-white/5">
@@ -317,7 +311,6 @@ function HorizontalProductCard({
                 <div className="flex items-center justify-between mt-2">
                     <span className="text-sm font-semibold text-white">{product.price}</span>
                     <div className="flex items-center gap-2">
-                        <WishlistButton productId={product.id} size="sm" />
                         {onAddToRoutine && (
                             <button
                                 onClick={(e) => {
