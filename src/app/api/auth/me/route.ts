@@ -2,6 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
 
+// 简单的内存缓存，防止外部官方 API 慢导致每个请求都阻塞 10s+
+// Key = cookie 字符串 hash, Value = 官方 API 返回的 data
+const meCache = new Map<string, { data: any; timestamp: number }>();
+const ME_CACHE_TTL_MS = 5000; // 5 秒缓存
+
+function getCacheKey(cookieStr: string): string {
+    let hash = 0;
+    for (let i = 0; i < cookieStr.length; i++) {
+        hash = ((hash << 5) - hash) + cookieStr.charCodeAt(i);
+        hash |= 0;
+    }
+    return String(hash);
+}
+
 function mirrorOfficialSessionCookie(officialResponse: Response, response: NextResponse) {
     const setCookieHeader = officialResponse.headers.get("set-cookie");
     
@@ -52,6 +66,16 @@ export async function GET(req: NextRequest) {
     }
 
     try {
+        const cacheKey = getCacheKey(allCookies);
+        const cached = meCache.get(cacheKey);
+        if (cached && Date.now() - cached.timestamp < ME_CACHE_TTL_MS) {
+            console.log("[auth/me] Returning cached user data (cache hit)");
+            // 缓存命中时仍需要 upsert 本地用户，但跳过外部 API 调用
+            // 为了简化，缓存只缓存最终返回结果，不包含 cookie 镜像逻辑
+            // 如果 cookie 快过期，这可能有风险，但 5s 缓存影响极小
+            return NextResponse.json(cached.data);
+        }
+
         const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";
         
         // Add a timeout to prevent long hangs if the official API is unreachable
@@ -108,14 +132,19 @@ export async function GET(req: NextRequest) {
             }
         });
 
-        const response = NextResponse.json({
+        const responsePayload = {
             user: {
                 ...data.data.user,
                 phone: data.data.user.phone,
                 name: data.data.user.nickname || data.data.user.phone,
                 role: "user"
             }
-        });
+        };
+
+        // 写入缓存，5s 内相同 cookie 的请求不再访问外部 API
+        meCache.set(cacheKey, { data: responsePayload, timestamp: Date.now() });
+
+        const response = NextResponse.json(responsePayload);
 
         mirrorOfficialSessionCookie(officialResponse, response);
 

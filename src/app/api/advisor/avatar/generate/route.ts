@@ -19,37 +19,12 @@ export async function POST(req: NextRequest) {
 
         console.log(`📝 Enqueuing avatar generation for session ${sessionId}...`);
 
-        // 检查是否已有该 sessionId 的队列项
-        const existing = await prisma.avatarQueue.findUnique({
-            where: { sessionId }
-        });
-
-        if (existing) {
-            // 已存在，返回现有状态
-            console.log(`ℹ️  Avatar queue entry already exists for ${sessionId}`);
-            
-            // 计算队列位置
-            const position = await prisma.avatarQueue.count({
-                where: {
-                    status: "pending",
-                    createdAt: { lt: existing.createdAt }
-                }
-            });
-
-            return NextResponse.json({
-                success: true,
-                queued: true,
-                queueId: existing.id,
-                position: position + 1,
-                status: existing.status,
-                generatedUrl: existing.generatedUrl,
-                message: `已在队列中，位置: #${position + 1}`
-            });
-        }
-
-        // 创建新的队列项
-        const queueItem = await prisma.avatarQueue.create({
-            data: {
+        // 使用 upsert 实现幂等：并发请求下不会重复创建记录
+        // sessionId 已加 @unique 约束，upsert 在数据库层面是原子的
+        const queueItem = await prisma.avatarQueue.upsert({
+            where: { sessionId },
+            update: {}, // 已存在则不修改任何字段
+            create: {
                 sessionId,
                 status: "pending",
                 nickname,
@@ -60,13 +35,30 @@ export async function POST(req: NextRequest) {
             }
         });
 
-        // 计算当前队列位置
+        const isExisting = queueItem.status !== "pending" || queueItem.generatedUrl;
+        if (isExisting) {
+            console.log(`ℹ️  Avatar queue entry already exists for ${sessionId} (status: ${queueItem.status})`);
+        }
+
+        // 计算队列位置
         const position = await prisma.avatarQueue.count({
             where: {
                 status: "pending",
                 createdAt: { lt: queueItem.createdAt }
             }
         });
+
+        if (isExisting) {
+            return NextResponse.json({
+                success: true,
+                queued: true,
+                queueId: queueItem.id,
+                position: position + 1,
+                status: queueItem.status,
+                generatedUrl: queueItem.generatedUrl,
+                message: `已在队列中，位置: #${position + 1}`
+            });
+        }
 
         console.log(`✅ Enqueued avatar generation (queueId: ${queueItem.id}, position: #${position + 1})`);
 

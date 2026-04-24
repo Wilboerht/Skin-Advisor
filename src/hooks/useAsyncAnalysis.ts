@@ -176,7 +176,7 @@ export function useAsyncAnalysis() {
                 while (retries <= maxRetries) {
                     try {
                         const controller = new AbortController();
-                        const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout per attempt
+                        const timeout = setTimeout(() => controller.abort(), 60000); // 60s timeout per attempt (match backend AI duration)
 
                         const response = await fetch("/api/advisor/avatar/generate", {
                             method: "POST",

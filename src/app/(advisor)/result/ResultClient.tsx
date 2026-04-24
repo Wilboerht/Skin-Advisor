@@ -446,8 +446,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             }
         };
 
-        // 动态轮询间隔：队列中时较快，已处理时较慢
-        const pollInterval = setInterval(pollAvatar, avatarQueueStatus ? 1000 : 500);
+        // 动态轮询间隔：队列中时 3s，已处理时 2.5s，避免压垮数据库连接池
+        const pollInterval = setInterval(pollAvatar, avatarQueueStatus ? 3000 : 2500);
         const pollTimeout = setTimeout(() => {
             clearInterval(pollInterval);
             if (isAvatarLoading) {
