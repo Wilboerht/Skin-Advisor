@@ -38,7 +38,7 @@ async function generateWanxiangAvatarAsync(prompt: string, frontPhoto: string | 
     },
     parameters: {
       n: 1,
-      size: "1024*1024",
+      size: "1024*1536",
       watermark: false,
       prompt_extend: true,
       negative_prompt: "",
@@ -122,7 +122,7 @@ async function generateAvatarImage(
   const skinTone = characteristics?.skinTone || "健康肤色";
   const hairStyle = characteristics?.hairStyle || "日常发型";
 
-  const prompt = `水彩手绘风格半身像，头顶预留一定空间。清新治愈，画面构图简洁，主体人物置身于纯白背景中，视觉焦点突出，质感柔和。头发以水彩平涂+一些勾线为主；不同区域的勾线的颜色有区分，面部和手部轮廓为暖咖色，颜色明度浅一些；衣服没有外轮廓线，是水彩平涂的形式，保留水彩肌理，衣服区域内部有白色的细线条作为对一些细节的交代。整幅画以低饱和度的柔和色调为主，结合通透的水彩笔触与简约的概括性线条，营造出清新恬静、治愈舒适的视觉氛围，画面松弛、灵动，是极具氛围感的日系清新插画作品，比例 「1:1」`;
+  const prompt = `水彩手绘风格半身像，头顶预留一定空间。清新治愈，画面构图简洁，主体人物置身于纯白背景中，视觉焦点突出，质感柔和。头发以水彩平涂+一些勾线为主；不同区域的勾线的颜色有区分，面部和手部轮廓为暖咖色，颜色明度浅一些；衣服没有外轮廓线，是水彩平涂的形式，保留水彩肌理，衣服区域内部有白色的细线条作为对一些细节的交代。整幅画以低饱和度的柔和色调为主，结合通透的水彩笔触与简约的概括性线条，营造出清新恬静、治愈舒适的视觉氛围，画面松弛、灵动，是极具氛围感的日系清新插画作品，比例 「3:4」竖版`;
 
   let imageUrl: string | null = null;
   let source = "fallback";
@@ -226,6 +226,8 @@ async function generateJimengAvatarAsync(
     prompt: prompt,
     model_version: "general",
     return_url: true,
+    width: 1024,
+    height: 1536,
   };
 
   // Add image parameter if provided (for img2img)

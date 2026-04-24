@@ -125,7 +125,7 @@ export default function ReportCards({
                         animate={{ opacity: 1 }}
                         src={currentAvatar || '/user-placeholder.svg'}
                         alt="avatar"
-                        className="w-full h-full object-cover scale-125"
+                        className="w-full h-full object-cover"
                         onLoad={() => console.log("[DEBUG] ReportCards avatar image loaded, src:", currentAvatar ? currentAvatar.substring(0, 60) + "..." : "placeholder")}
                         onError={(e) => {
                           console.error("[DEBUG] ReportCards avatar image failed to load, src:", (e.target as HTMLImageElement).src);
@@ -151,7 +151,7 @@ export default function ReportCards({
             </div>
 
             <div className="hidden lg:flex h-[24px] items-center mb-6">
-              <p className="text-[#a89582] text-sm leading-none">亲爱的{nickname}：</p>
+              <p className="text-[#a89582] text-sm leading-none">亲爱的「{nickname}」 ：</p>
             </div>
 
             <h2 className="text-xl lg:text-3xl font-bold text-[#2d2a26] leading-snug tracking-tight lg:tracking-normal mb-5 lg:mb-4 mt-0">

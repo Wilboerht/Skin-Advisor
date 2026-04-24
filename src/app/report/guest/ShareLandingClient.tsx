@@ -252,7 +252,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                             animate={{ opacity: 1 }}
                             src={generatedAvatar || "/user-placeholder.svg"}
                             alt="avatar"
-                            className="w-full h-full object-cover scale-125"
+                            className="w-full h-full object-cover"
                             onError={(e) => {
                               (e.target as HTMLImageElement).src = "/user-placeholder.svg";
                             }}
@@ -280,7 +280,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                 </div>
                 {/* 保证这里的高度(24px)与底部间距(mb-4=16px)加起来等于左侧标签高度(24px)+gap-4(16px) = 40px */}
                 <div className="hidden lg:flex h-[24px] items-center mb-6">
-                  <p className="text-[#a89582] text-sm leading-none">亲爱的{data.nickname}：</p>
+                  <p className="text-[#a89582] text-sm leading-none">亲爱的「{data.nickname}」 ：</p>
                 </div>
                 <h2 className="text-xl lg:text-3xl font-bold text-[#2d2a26] leading-snug tracking-tight lg:tracking-normal mb-5 lg:mb-4 mt-0">
                   你的素颜评分超越了<br />
