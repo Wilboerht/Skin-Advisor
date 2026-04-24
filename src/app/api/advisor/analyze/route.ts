@@ -211,7 +211,7 @@ export async function POST(request: NextRequest) {
             }).filter(Boolean);
 
             if (mappedProducts.length > 0) {
-                finalProducts = mappedProducts;
+                finalProducts = mappedProducts.slice(0, 3);
             }
         }
 

@@ -372,8 +372,8 @@ export async function recommendProducts(
         // 4. Sort by score desc
         scored.sort((a, b) => b.rawScore - a.rawScore);
 
-        // 5. Select Top N (e.g. 6)
-        const top = scored.slice(0, 6);
+        // 5. Select Top N (3)
+        const top = scored.slice(0, 3);
 
         return top.map((p, index) => ({
             id: p.id,
