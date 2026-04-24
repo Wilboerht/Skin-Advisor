@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
                 keyIngredients: body.keyIngredients || [],
                 suitableSkinTypes: body.suitableSkinTypes || [],
                 benefits: body.benefits || [],
+                negativeFor: body.negativeFor || [],
                 sortOrder: body.sortOrder || 0,
                 active: body.active ?? true,
                 stock: body.stock || 0,

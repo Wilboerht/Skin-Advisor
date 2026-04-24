@@ -62,7 +62,8 @@ const PRODUCTS_CATALOG = [
         description: "淡化眼周细纹，改善黑眼圈，紧致眼部轮廓。",
         keyIngredients: ["视黄醇", "咖啡因", "胜肽"],
         suitableSkinTypes: ["aging", "dry"],
-        benefits: ["淡纹紧致", "消除浮肿", "提亮眼周"]
+        benefits: ["淡纹紧致", "消除浮肿", "提亮眼周"],
+        negativeFor: ["敏感肌", "孕妇"]
     },
     {
         id: "p6",
@@ -74,7 +75,8 @@ const PRODUCTS_CATALOG = [
         description: "疏通毛孔，改善痘痘粉刺，平衡油脂分泌。",
         keyIngredients: ["2%水杨酸", "茶树精油", "金缕梅"],
         suitableSkinTypes: ["oily", "acne-prone"],
-        benefits: ["祛痘控油", "收缩毛孔", "改善黑头"]
+        benefits: ["祛痘控油", "收缩毛孔", "改善黑头"],
+        negativeFor: ["敏感肌", "孕妇", "干皮"]
     }
 ];
 
@@ -127,6 +129,7 @@ async function main() {
                 keyIngredients: p.keyIngredients,
                 suitableSkinTypes: p.suitableSkinTypes,
                 benefits: p.benefits,
+                negativeFor: p.negativeFor || [],
                 active: true,
                 stock: 100 // Default stock
             },
@@ -141,6 +144,7 @@ async function main() {
                 keyIngredients: p.keyIngredients,
                 suitableSkinTypes: p.suitableSkinTypes,
                 benefits: p.benefits,
+                negativeFor: p.negativeFor || [],
                 active: true,
                 stock: 100 // Default stock
             }

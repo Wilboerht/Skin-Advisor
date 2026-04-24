@@ -40,6 +40,7 @@ export async function GET() {
                         keyIngredients: p.keyIngredients,
                         suitableSkinTypes: p.suitableSkinTypes,
                         benefits: p.benefits,
+                        negativeFor: (p as any).negativeFor || [],
                         active: true,
                         stock: 100,
                         featured: false

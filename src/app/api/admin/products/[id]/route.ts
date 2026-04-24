@@ -48,7 +48,7 @@ export async function PUT(
         // This prevents accidentally nullifying fields when doing partial updates
         const allowedFields = [
             'name', 'nameEn', 'category', 'image', 'price', 'description',
-            'keyIngredients', 'suitableSkinTypes', 'benefits', 'sortOrder',
+            'keyIngredients', 'suitableSkinTypes', 'benefits', 'negativeFor', 'sortOrder',
             'active', 'stock', 'featured', 'step', 'howToUse',
             'affiliateLinks', 'ingredientDetails'
         ];

@@ -146,7 +146,41 @@ function calculateScore(
         }
     }
 
-    // Base Score fallback
+    // 6. 负面关键词排除 — 产品明确不适合当前用户特征时大幅扣分
+    const negativeTags: string[] = Array.isArray(product.negativeFor)
+        ? product.negativeFor as string[]
+        : [];
+
+    if (negativeTags.length > 0) {
+        // 肤质负面匹配
+        const skinTypeNegativeMap: Record<string, string[]> = {
+            dry: ["干皮", "干性", "干燥肌"],
+            oily: ["油皮", "油性", "痘痘肌", "致痘"],
+            sensitive: ["敏感肌", "敏感", "刺激", "酒精"],
+            combination: ["闷痘", "厚重"],
+            combination_dry: ["闷痘", "厚重"],
+            combination_oily: ["油腻", "闷痘", "厚重"],
+        };
+        const skinNegatives = skinTypeNegativeMap[skinType] || [];
+        if (skinNegatives.some(tag => negativeTags.includes(tag))) {
+            score -= 300;
+            reasons.push("⚠️ 不适合您的肤质");
+        }
+
+        // 关注点负面匹配
+        if (concerns.includes("acne") && negativeTags.some(t => ["致痘", "痘痘肌", "闷痘"].includes(t))) {
+            score -= 300;
+        }
+        if (concerns.includes("sensitivity") && negativeTags.some(t => ["刺激", "敏感肌", "酒精", "香精"].includes(t))) {
+            score -= 300;
+        }
+        if (concerns.includes("anti_aging") && negativeTags.some(t => ["孕妇", "哺乳期"].includes(t))) {
+            score -= 200;
+        }
+    }
+
+    // Base Score fallback (确保负面产品不会低于 0)
+    if (score < 0) score = 0;
     if (score === 0) score = 10;
 
     return { score, reasons, matchedBenefits };

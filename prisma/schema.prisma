@@ -243,7 +243,8 @@ model Product {
   howToUse          String?  // 使用方法说明
   affiliateLinks    Json?    // 电商链接 { taobao: "", jd: "", xiaohongshu: "", douyin: "" }
   ingredientDetails Json?    // 详细成分解读 [{ name: "烟酰胺", effect: "美白提亮", concentration: "5%" }]
-  
+  negativeFor       Json     // string[] 不适合人群/负面标签，如 ["敏感肌", "痘痘肌", "孕妇"]
+
   // Relations
 }
 

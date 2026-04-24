@@ -110,6 +110,7 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
         })
     );
     const [benefits, setBenefits] = useState<string[]>(initialData?.benefits || []);
+    const [negativeFor, setNegativeFor] = useState<string[]>(initialData?.negativeFor || []);
     const [suitableSkinTypes, setSuitableSkinTypes] = useState<string[]>(initialData?.suitableSkinTypes || []);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -144,6 +145,7 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
             ...formData,
             keyIngredients: keyIngredientIds,
             benefits,
+            negativeFor,
             suitableSkinTypes,
             affiliateLinks: Object.keys(filteredLinks).length > 0 ? filteredLinks : null,
         };
@@ -312,6 +314,7 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
 
                     <IngredientSelector selectedIds={keyIngredientIds} onChange={setKeyIngredientIds} />
                     <TagInput label="Benefits" values={benefits} onChange={setBenefits} />
+                    <TagInput label="不适合人群 / 负面标签" values={negativeFor} onChange={setNegativeFor} />
 
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-2">适用肤质</label>
