@@ -250,10 +250,6 @@ ${productsContext}
   "summary": "50字以内的极简综合分析总结 (挑重点说，若有医美经历或熬夜情况简单提及)",
   "skinTypeAnalysis": "肤质深度解析",
   "concernAnalysis": ["问题1成因及对策", "问题2成因及对策"],
-  "routine": {
-    "morning": ["步骤1", "步骤2", "步骤3"],
-    "evening": ["步骤1", "步骤2", "步骤3"]
-  },
   "lifestyleTips": ["生活习惯建议1 (针对睡眠/饮食等)", "建议2"],
   "products": [
     {
@@ -323,10 +319,6 @@ export const COMPREHENSIVE_ANALYSIS_SYSTEM_PROMPT = `
     "summary": "综合分析总结 (结合照片和问卷)",
     "skinTypeAnalysis": "肤质深度解析",
     "concernAnalysis": ["问题1分析", "问题2分析"],
-    "routine": {
-      "morning": ["步骤..."],
-      "evening": ["步骤..."]
-    },
     "lifestyleTips": ["..."],
     "products": [
       { "id": "MustMatchProductID", "reason": "推荐理由..." }

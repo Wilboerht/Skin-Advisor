@@ -8,7 +8,6 @@ import { Upload, X, Plus, Loader2 } from "lucide-react";
 import { uploadImageToOSS } from "@/lib/oss-upload-client";
 import { IngredientSelector } from "./IngredientSelector";
 import { STAR_INGREDIENTS } from "@/config/ingredients";
-import { RoutineSimulator } from "./RoutineSimulator";
 import { useToast } from "@/components/ui/Toast";
 
 // Simple Tag Input Component
@@ -282,13 +281,7 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
                         />
                     </div>
 
-                    <div className="pt-2">
-                        <RoutineSimulator
-                            currentStep={formData.step}
-                            productName={formData.name}
-                            productType="both"
-                        />
-                    </div>
+
                 </div>
 
                 {/* Image & Tags */}

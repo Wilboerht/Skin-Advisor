@@ -217,7 +217,7 @@ export interface QuestionnaireAnswers {
     primaryConcern?: string | string[];
     ageRange?: string;
     gender?: string;
-    currentRoutine?: string;
+
     allergies?: string | string[];
     budget?: string;
     pregnancyStatus?: string;

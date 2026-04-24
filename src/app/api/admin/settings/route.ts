@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
             // Feature Flags
             enableDetailedAnalysis: settingsMap.enableDetailedAnalysis ?? true,
             enableProductRecommendations: settingsMap.enableProductRecommendations ?? true,
-            enableRoutineSuggestions: settingsMap.enableRoutineSuggestions ?? true,
+
 
             // Inventory
             stockAlertThreshold: settingsMap.stockAlertThreshold ?? 10,

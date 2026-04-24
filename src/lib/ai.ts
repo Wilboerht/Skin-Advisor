@@ -15,19 +15,6 @@ import {
 // 类型定义
 // ============================================================================
 
-export interface SkincareStep {
-    order: number;
-    step: string;
-    description: string;
-    productName?: string;
-}
-
-export interface SkincareRoutine {
-    morning: SkincareStep[];
-    evening: SkincareStep[];
-}
-
-
 export type AIProvider = "openai" | "anthropic" | "qwen" | "deepseek" | "gemini";
 
 export interface ApiKeys {
@@ -453,40 +440,4 @@ export function fallbackAnalysis(answers: QuestionnaireAnswers): FaceAnalysisRes
     return result;
 }
 
-/**
- * 生成护肤方案 (基于 NIHPLOD 产品线)
- */
-export function generateSkincareRoutine(currentRoutine: string = "basic"): SkincareRoutine {
-    // 基础方案 (晨间)
-    const morningSteps: SkincareStep[] = [
-        { order: 1, step: "洁面", description: "温和清洁，唤醒肌肤", productName: "云朵洁面慕斯" },
-        { order: 2, step: "爽肤", description: "二次清洁，平衡酸碱", productName: "水杨酸调理水" },
-        { order: 3, step: "面霜", description: "锁水保湿", productName: "深海海藻保湿霜" },
-        { order: 4, step: "防晒", description: "抵御紫外线", productName: "轻透防晒霜" }
-    ];
 
-    // 基础方案 (晚间)
-    const eveningSteps: SkincareStep[] = [
-        { order: 1, step: "洁面", description: "深层清洁，卸除防晒", productName: "云朵洁面慕斯" },
-        { order: 2, step: "爽肤", description: "补水保湿", productName: "水杨酸调理水" },
-        { order: 3, step: "面霜", description: "夜间修护", productName: "逆龄面霜" }
-    ];
-
-    // 进阶调整 (Serum, Eye Cream etc)
-    if (["advanced", "intermediate", "expert"].includes(currentRoutine)) {
-        morningSteps.splice(2, 0, { order: 3, step: "精华", description: "抗氧提亮", productName: "光蕴焕活精华液" });
-        morningSteps.forEach((s, i) => s.order = i + 1);
-
-        eveningSteps.splice(2, 0, { order: 3, step: "精华", description: "紧致修护", productName: "修护紧致精华" });
-        eveningSteps.splice(3, 0, { order: 4, step: "眼霜", description: "淡化细纹", productName: "视黄醇抗皱眼霜" });
-        eveningSteps.forEach((s, i) => s.order = i + 1);
-    }
-
-    // 针对油性/痘痘肌调整
-    // (这里可以根据 skinType 参数扩展，但目前只有 currentRoutine 参数)
-
-    return {
-        morning: morningSteps,
-        evening: eveningSteps
-    };
-}

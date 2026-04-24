@@ -37,7 +37,6 @@ import ReportCards from "@/components/advisor/ReportCards";
 import styles from "./result.module.css";
 import { ProductRecommendationSection } from "@/components/advisor/ProductRecommendationSection";
 import type { ProductCardData } from "@/components/advisor/ProductCard";
-import { addProductToRoutine } from "@/lib/routine-products";
 import { SaveReportBanner } from "@/components/advisor/SaveReportBanner";
 import { AnalyzingOverlay } from "@/components/advisor/AnalyzingOverlay";
 
@@ -1314,18 +1313,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 } as ProductCardData))}
                                 isLoading={loading}
                                 faceAnalysis={faceAnalysis}
-                                onAddToRoutine={(productId) => {
-                                    const product = result.products?.find(p => p.id === productId);
-                                    if (product) {
-                                        addProductToRoutine({
-                                            id: product.id,
-                                            name: product.name,
-                                            category: product.category,
-                                            image: product.image,
-                                        }, 'both');
-                                        toast.success(`${product.name} 已加入今日护肤流程`);
-                                    }
-                                }}
+
                                 onProductClick={(productId) => {
                                     const product = result.products?.find(p => p.id === productId);
                                     if (product) {

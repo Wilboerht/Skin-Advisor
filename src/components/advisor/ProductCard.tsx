@@ -37,7 +37,6 @@ export interface ProductCardData {
 interface ProductCardProps {
     product: ProductCardData;
     index?: number;
-    onAddToRoutine?: (productId: string) => void;
     onProductClick?: (productId: string) => void;
     variant?: "default" | "compact" | "horizontal";
     showMatchScore?: boolean;
@@ -46,7 +45,6 @@ interface ProductCardProps {
 export function ProductCard({
     product,
     index = 0,
-    onAddToRoutine,
     onProductClick,
     variant = "default",
     showMatchScore = true
@@ -60,11 +58,6 @@ export function ProductCard({
     const handleCardClick = useCallback(() => {
         onProductClick?.(product.id);
     }, [product.id, onProductClick]);
-
-    const handleAddToRoutine = useCallback((e: React.MouseEvent) => {
-        e.stopPropagation();
-        onAddToRoutine?.(product.id);
-    }, [product.id, onAddToRoutine]);
 
     const handleBuyClick = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
@@ -93,7 +86,6 @@ export function ProductCard({
         return (
             <HorizontalProductCard
                 product={product}
-                onAddToRoutine={onAddToRoutine}
                 onProductClick={onProductClick}
             />
         );
@@ -192,17 +184,6 @@ export function ProductCard({
                     </span>
 
                     <div className="flex items-center gap-1.5">
-                        {/* 加入流程按钮 */}
-                        {onAddToRoutine && (
-                            <button
-                                onClick={handleAddToRoutine}
-                                className="flex items-center justify-center w-7 h-7 rounded-full bg-white/10 hover:bg-blue-500/20 text-white/60 hover:text-blue-300 transition-colors"
-                                title="加入护肤流程"
-                            >
-                                <Plus className="w-4 h-4" />
-                            </button>
-                        )}
-
                         {/* 购买按钮 */}
                         {allLinks.length > 0 && (
                             <div className="relative">
@@ -259,11 +240,9 @@ export function ProductCard({
  */
 function HorizontalProductCard({
     product,
-    onAddToRoutine,
     onProductClick
 }: {
     product: ProductCardData;
-    onAddToRoutine?: (productId: string) => void;
     onProductClick?: (productId: string) => void;
 }) {
     const [imageError, setImageError] = useState(false);
@@ -310,19 +289,6 @@ function HorizontalProductCard({
 
                 <div className="flex items-center justify-between mt-2">
                     <span className="text-sm font-semibold text-white">{product.price}</span>
-                    <div className="flex items-center gap-2">
-                        {onAddToRoutine && (
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onAddToRoutine(product.id);
-                                }}
-                                className="text-xs text-blue-300 hover:text-blue-200 font-medium"
-                            >
-                                + 加入流程
-                            </button>
-                        )}
-                    </div>
                 </div>
             </div>
         </m.div>

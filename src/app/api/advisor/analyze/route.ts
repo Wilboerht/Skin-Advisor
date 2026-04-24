@@ -247,15 +247,7 @@ export async function POST(request: NextRequest) {
                 finalFaceAnalysis.recommendations = [...finalFaceAnalysis.recommendations, ...newRecs];
             }
 
-            // Also include Routine steps if recommendations are still sparse
-            if (finalFaceAnalysis.recommendations.length < 3 && resultJson.routine) {
-                if (resultJson.routine.morning) {
-                    finalFaceAnalysis.recommendations.push(`早间护肤：${resultJson.routine.morning.join(' > ')}`);
-                }
-                if (resultJson.routine.evening) {
-                    finalFaceAnalysis.recommendations.push(`晚间护肤：${resultJson.routine.evening.join(' > ')}`);
-                }
-            }
+
         }
 
         const standardizedResult = {

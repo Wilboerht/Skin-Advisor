@@ -26,7 +26,6 @@ interface SettingsData {
     // Feature Flags
     enableDetailedAnalysis: boolean;
     enableProductRecommendations: boolean;
-    enableRoutineSuggestions: boolean;
 
     // Inventory Management
     stockAlertThreshold: number; // Products below this level trigger alerts
@@ -47,7 +46,6 @@ const DEFAULT_SETTINGS: SettingsData = {
     pigmentSensitivity: 50,
     enableDetailedAnalysis: true,
     enableProductRecommendations: true,
-    enableRoutineSuggestions: true,
     stockAlertThreshold: 10,
 };
 
@@ -166,7 +164,7 @@ export default function SettingsClient() {
                                     value={settings.systemPrompt}
                                     onChange={(e) => setSettings({ ...settings, systemPrompt: e.target.value })}
                                     className="w-full rounded-lg border-slate-200 text-sm bg-slate-50/30 focus:bg-white focus:ring-4 focus:ring-slate-500/5 focus:border-slate-400 min-h-[140px] p-3 transition-all leading-relaxed"
-                                    placeholder="You are an expert dermatologist specializing in skincare routine optimization..."
+                                    placeholder="You are an expert dermatologist specializing in skincare analysis and product recommendations..."
                                 />
                                 <div className="mt-2 flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-lg">
                                     <MessageSquare className="h-3.5 w-3.5 text-slate-400" />
@@ -409,19 +407,6 @@ export default function SettingsClient() {
                                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${settings.enableProductRecommendations ? 'bg-slate-900' : 'bg-slate-200'}`}
                                 >
                                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${settings.enableProductRecommendations ? 'translate-x-6' : 'translate-x-1'}`} />
-                                </button>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700">护肤建议</label>
-                                    <p className="text-xs text-slate-500">生成日常护肤流程建议</p>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() => setSettings({ ...settings, enableRoutineSuggestions: !settings.enableRoutineSuggestions })}
-                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${settings.enableRoutineSuggestions ? 'bg-slate-900' : 'bg-slate-200'}`}
-                                >
-                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${settings.enableRoutineSuggestions ? 'translate-x-6' : 'translate-x-1'}`} />
                                 </button>
                             </div>
                         </div>

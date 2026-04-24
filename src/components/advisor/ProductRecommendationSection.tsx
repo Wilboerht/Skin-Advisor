@@ -28,7 +28,6 @@ interface ProductRecommendationSectionProps {
     faceAnalysis?: {
         dimensions?: Record<string, { score: number }>;
     } | null;
-    onAddToRoutine?: (productId: string) => void;
     onProductClick?: (productId: string) => void;
     className?: string;
 }
@@ -37,7 +36,6 @@ export function ProductRecommendationSection({
     products,
     isLoading = false,
     faceAnalysis,
-    onAddToRoutine,
     onProductClick,
     className
 }: ProductRecommendationSectionProps) {
@@ -171,7 +169,6 @@ export function ProductRecommendationSection({
                                 key={product.id}
                                 product={product}
                                 index={index}
-                                onAddToRoutine={onAddToRoutine}
                                 onProductClick={onProductClick}
                             />
                         ))}

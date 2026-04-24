@@ -11,7 +11,6 @@ interface StepProductGroupProps {
     step: SkincareStep;
     products: ProductCardData[];
     index?: number;
-    onAddToRoutine?: (productId: string) => void;
     onProductClick?: (productId: string) => void;
     defaultExpanded?: boolean;
     maxVisible?: number;
@@ -21,7 +20,6 @@ export function StepProductGroup({
     step,
     products,
     index = 0,
-    onAddToRoutine,
     onProductClick,
     defaultExpanded = true,
     maxVisible = 4
@@ -103,7 +101,6 @@ export function StepProductGroup({
                                     key={product.id}
                                     product={product}
                                     index={idx}
-                                    onAddToRoutine={onAddToRoutine}
                                     onProductClick={onProductClick}
                                 />
                             ))}

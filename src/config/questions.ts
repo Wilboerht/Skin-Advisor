@@ -147,18 +147,6 @@ export const DEFAULT_QUESTIONS: Question[] = [
     },
     {
         id: "q9",
-        fieldName: "currentRoutine",
-        question: "您的护肤习惯是？",
-        type: "single",
-        options: [
-            { value: "beginner", label: "几乎不护肤", description: "很少护肤或随意护肤" },
-            { value: "basic", label: "简易打理", description: "仅进行 1-2 步基础护理（如只涂面霜）" },
-            { value: "intermediate", label: "认真对待", description: "追求合适的产品、使用步骤和方法，偶尔使用居家美容仪器" },
-            { value: "expert", label: "专业护理", description: "定期或不定期的进行医美或专业院线级护理" },
-        ],
-    },
-    {
-        id: "q10",
         fieldName: "allergies",
         question: "你有以下过敏情况吗？",
         subtext: "多选 (无可跳过或选没有)",

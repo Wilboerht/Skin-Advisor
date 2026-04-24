@@ -60,14 +60,7 @@ const AGE_TO_BENEFITS: Record<string, string[]> = {
     "above_50": ["紧致", "滋养", "修护", "抗皱", "弹力"],
 };
 
-/** 护肤习惯到产品复杂度的映射 */
-const ROUTINE_COMPLEXITY: Record<string, number> = {
-    beginner: 1,      // 全新小白
-    basic: 2,         // 基础入门
-    intermediate: 3,  // 略有心得
-    advanced: 4,      // 资深达人
-    expert: 5,        // 行业专家
-};
+
 
 /**
  * Calculate match score for a product (Enhanced)
@@ -150,25 +143,6 @@ function calculateScore(
         if (suitableTypes.includes(skinType) || suitableTypes.includes('all')) {
             score += 25;
             reasons.push("适用于您的肤质");
-        }
-    }
-
-    // 6. 护肤习惯匹配（新增：根据复杂度调整）
-    if (answers.currentRoutine) {
-        const complexity = ROUTINE_COMPLEXITY[answers.currentRoutine] || 2;
-        const hasBasicBenefits = productBenefits.some((b) =>
-            ["保湿", "补水", "清洁", "防晒"].some((basic) => b.includes(basic))
-        );
-        const hasAdvancedBenefits = productBenefits.some((b) =>
-            ["精华", "抗老", "焕肤", "修护"].some((adv) => b.includes(adv))
-        );
-
-        if (complexity <= 2 && hasBasicBenefits) {
-            score += 10; // 新手 + 基础产品
-        } else if (complexity >= 3 && hasAdvancedBenefits) {
-            score += 10; // 进阶 + 专业产品
-        } else {
-            score += 5;
         }
     }
 
