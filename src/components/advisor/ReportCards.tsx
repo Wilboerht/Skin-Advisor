@@ -394,14 +394,8 @@ export default function ReportCards({
                 <p className="hidden lg:block text-[#5c4937] text-xs font-medium text-center">登录</p>
               </motion.div>
             ) : (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                whileHover={{ scale: 1.03, backgroundColor: 'rgba(255,255,255,0.15)' }}
-                whileTap={{ scale: 0.97 }}
-                transition={{ delay: 0.4 }}
-                onClick={onUnlockClick}
-                className="p-3 lg:p-4 rounded-xl lg:rounded-2xl flex flex-row lg:flex-col items-center lg:items-start justify-between lg:aspect-[2/3] min-h-[48px] lg:min-h-0 relative overflow-hidden cursor-pointer"
+              <div
+                className="p-3 lg:p-4 rounded-xl lg:rounded-2xl flex flex-row lg:flex-col items-center lg:items-start justify-between lg:aspect-[2/3] min-h-[48px] lg:min-h-0 relative overflow-hidden"
                 style={{
                   background: 'linear-gradient(180deg, rgba(230,225,215,0.6) 0%, rgba(245,240,230,0.4) 100%)',
                   boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.4)',
@@ -413,7 +407,7 @@ export default function ReportCards({
                     <span className="text-[13px] lg:text-xl font-bold text-[#5c4937]">已解锁</span>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             )}
           </div>
         </div>

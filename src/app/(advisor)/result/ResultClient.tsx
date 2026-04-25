@@ -919,14 +919,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             onUnlockClick={() => detailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
                             comprehensiveReport={
                                 <>
-                                    <hr className="border-[#3d2f25]/10 my-6" />
-                                    <div className="flex items-center gap-3 mb-6">
-                                        <ClipboardList className="w-5 h-5 text-[#3d2f25]" />
-                                        <span className="text-xl lg:text-2xl font-bold text-[#3d2f25]">综合检测报告</span>
-                                    </div>
-
                                     {/* Report Header / Summary */}
-                                    <div className="mb-6">
+                                    <div className="mt-10 mb-6">
                                         <h4 className="text-base font-medium text-[#3d2f25] mb-3 border-b border-[#3d2f25]/20 pb-2">
                                             1、详细诊断报告 (Detailed Diagnosis)
                                         </h4>
@@ -1009,11 +1003,11 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     )}
 
                                     {/* Lab-Grade Analysis Metrics */}
-                                    <div className="rounded-xl border border-[#3d2f25]/15 bg-[#3d2f25]/5 shadow-sm overflow-hidden font-sans">
-                                        <div
-                                            className="px-5 py-3 flex justify-between items-center cursor-pointer hover:bg-[#3d2f25]/5 transition-colors"
-                                            onClick={() => setShowLabData(true)}
-                                        >
+                                    <div
+                                        className="rounded-xl border border-[#3d2f25]/15 bg-[#3d2f25]/5 shadow-sm overflow-hidden font-sans cursor-pointer hover:bg-[#3d2f25]/[0.07] transition-colors"
+                                        onClick={() => setShowLabData(true)}
+                                    >
+                                        <div className="px-5 py-3 flex justify-between items-center">
                                             <div className="flex items-center gap-2">
                                                 <Activity className="w-4 h-4 text-[#8c7a6b]" />
                                                 <span className="text-sm font-medium text-[#3d2f25]">AI 实验室数据 (AI Labs)</span>
@@ -1024,6 +1018,11 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                 </span>
                                                 <ChevronRight className="w-4 h-4 text-[#8c7a6b]" />
                                             </div>
+                                        </div>
+                                        <div className="px-5 pb-3 pt-0">
+                                            <p className="text-[11px] text-[#8c7a6b]/80 leading-relaxed pl-6">
+                                                联系您的专属护肤顾问，或咨询门店顾问获取专业分析解读
+                                            </p>
                                         </div>
                                     </div>
                                 </>
