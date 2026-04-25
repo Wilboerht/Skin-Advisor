@@ -7,6 +7,7 @@ import { FullAnalysisSection } from '@/components/advisor/FullAnalysisSection';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Share2, Lock, Loader2 } from 'lucide-react';
 import { FloatingToolbar } from '@/components/advisor/FloatingToolbar';
+import { ContactAdvisorModal } from '@/components/advisor/ContactAdvisorModal';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthModal } from '@/components/auth/AuthModalContext';
@@ -87,6 +88,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
   } | null>(null);
   const posterRef = useRef<HTMLDivElement>(null);
   const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
+  const [showContactAdvisor, setShowContactAdvisor] = useState(false);
 
   // 登录用户跳转到完整报告页
   useEffect(() => {
@@ -779,9 +781,13 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
           setShowShareModal(true);
         }}
         onRetake={() => router.push("/questions")}
-        onChat={() => {
-          /* TODO: 打开 AI 咨询 */
-        }}
+        onChat={() => setShowContactAdvisor(true)}
+      />
+
+      {/* Contact Advisor Modal */}
+      <ContactAdvisorModal
+        isOpen={showContactAdvisor}
+        onClose={() => setShowContactAdvisor(false)}
       />
     </div>
   );

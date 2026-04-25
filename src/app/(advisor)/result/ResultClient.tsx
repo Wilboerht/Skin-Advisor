@@ -30,6 +30,7 @@ import { FloatingToolbar } from "@/components/advisor/FloatingToolbar";
 import { copyToClipboard, generateShareUrl } from "@/lib/share";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { AIChatWindow } from "@/components/advisor/AIChatWindow";
+import { ContactAdvisorModal } from "@/components/advisor/ContactAdvisorModal";
 import ReportCards from "@/components/advisor/ReportCards";
 
 // Import the new CSS Module
@@ -127,6 +128,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     // New State for interactivity
     const [activeDimension, setActiveDimension] = useState<SkinDimensionKey | null>(null);
     const [showLabData, setShowLabData] = useState(false);
+    const [showContactAdvisor, setShowContactAdvisor] = useState(false);
 
     const isGenderMismatch = useMemo(() => {
         if (!faceAnalysis || !socialGender) return false;
@@ -1403,9 +1405,13 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             /* TODO: 分享海报 */
                         }}
                         onRetake={() => router.push("/questions")}
-                        onChat={() => {
-                            /* TODO: 打开 AI 咨询 */
-                        }}
+                        onChat={() => setShowContactAdvisor(true)}
+                    />
+
+                    {/* Contact Advisor Modal */}
+                    <ContactAdvisorModal
+                        isOpen={showContactAdvisor}
+                        onClose={() => setShowContactAdvisor(false)}
                     />
                 </div>)}
         </>
