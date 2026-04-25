@@ -244,25 +244,25 @@ export function AuthModal() {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={closeAuthModal}
-                        className="absolute inset-0 bg-[#1A1A1A]/20 backdrop-blur-[8px]"
+                        className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
                     />
 
                     {/* Modal Content - Premium Design */}
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                        initial={{ opacity: 0, scale: 0.96, y: 10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                        className="relative z-10 w-full max-w-[400px] bg-[#FDFBF7]/95 backdrop-blur-xl border border-white/60 rounded-[32px] shadow-[0_20px_60px_-10px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col max-h-[92vh]"
+                        exit={{ opacity: 0, scale: 0.96, y: 10 }}
+                        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                        className="relative z-10 w-full max-w-[420px] bg-white rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col max-h-[92vh]"
                         onClick={(e: React.MouseEvent) => e.stopPropagation()}
                     >
                         {/* Close Button */}
                         <button
                             onClick={closeAuthModal}
                             disabled={loading}
-                            className="absolute top-5 right-5 z-20 p-2 rounded-full text-[#1A1A1A]/40 hover:text-[#1A1A1A] hover:bg-[#1A1A1A]/5 transition-all"
+                            className="absolute top-6 right-6 z-20 w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
                         >
-                            <X size={20} />
+                            <X size={16} strokeWidth={2.5} />
                         </button>
 
                         {/* Back Button (Only for register/forgot) */}
@@ -270,57 +270,57 @@ export function AuthModal() {
                             <button
                                 onClick={() => setAuthView('login')}
                                 disabled={loading}
-                                className="absolute top-5 left-5 z-20 p-2 rounded-full text-[#1A1A1A]/40 hover:text-[#1A1A1A] hover:bg-[#1A1A1A]/5 transition-all flex items-center gap-1"
+                                className="absolute top-6 left-6 z-20 w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
                             >
-                                <ArrowLeft size={20} />
+                                <ArrowLeft size={16} strokeWidth={2.5} />
                             </button>
                         )}
 
-                        <div className="overflow-y-auto p-6 sm:p-8 pt-8 sm:pt-10">
+                        <div className="overflow-y-auto">
                             {/* Header */}
-                            <div className="text-center mb-8">
+                            <div className="p-10 pt-14 text-center pb-8">
                                 {view !== 'forgot_password' && view !== 'wechat_bind' ? (
-                                    <div className="mb-3 flex justify-center">
+                                    <div className="mb-7 flex justify-center">
                                         <img
                                             src="/NIHPLOD-logo.svg"
                                             alt="NIHPLOD"
-                                            className="h-7 sm:h-8.5 object-contain opacity-90"
+                                            className="h-[34px] object-contain"
                                         />
                                     </div>
                                 ) : (
-                                    <h1 className="font-serif text-2xl text-[#1A1A1A] mb-3 tracking-wide">
+                                    <h1 className="text-xl font-bold text-slate-900 mb-3 tracking-[0.14em]">
                                         {headerTitle}
                                     </h1>
                                 )}
-                                <p className="text-[#8C8C8C] text-xs font-medium tracking-widest uppercase">
+                                <p className="text-slate-400 text-xs font-bold tracking-widest uppercase">
                                     {headerSubtitle}
                                 </p>
                             </div>
 
                             {/* Forms */}
                             {view === "login" && (
-                                <form onSubmit={handleLogin} className="space-y-4">
+                                <form onSubmit={handleLogin} className="px-10 pb-10 pt-2 flex flex-col gap-6">
                                     {/* Phone */}
-                                    <div className="space-y-1.5">
-                                        <label className="text-xs font-semibold text-[#5C5855] uppercase tracking-wider ml-1">手机号</label>
+                                    <div className="flex flex-col gap-2">
+                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">手机号</label>
                                         <input
                                             type="tel"
                                             required
                                             value={loginPhone}
                                             onChange={(e) => setLoginPhone(e.target.value)}
-                                            className="w-full px-4 py-3 sm:py-3.5 rounded-2xl border border-[#E6E2D6] bg-white/70 text-[#1A1A1A] placeholder:text-[#1A1A1A]/20 focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/5 focus:border-[#1A1A1A]/30 transition-all font-medium"
+                                            className="block w-full bg-slate-50 border border-slate-100 rounded-xl py-3.5 px-5 text-[13px] text-slate-900 outline-none transition-all duration-300 focus:bg-white focus:border-[#C6A87C]/40 focus:ring-4 focus:ring-[#C6A87C]/15 placeholder:text-slate-300"
                                             placeholder="请输入手机号"
                                         />
                                     </div>
 
                                     {/* Password */}
-                                    <div className="space-y-1.5">
-                                        <div className="flex justify-between items-center ml-1">
-                                            <label className="text-xs font-semibold text-[#5C5855] uppercase tracking-wider">密码</label>
+                                    <div className="flex flex-col gap-2">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">密码</span>
                                             <button
                                                 type="button"
                                                 onClick={handleForgotPassword}
-                                                className="text-xs text-[#8C8C8C] hover:text-[#1A1A1A] transition-colors"
+                                                className="text-xs text-slate-400 hover:text-slate-700 transition-colors font-medium"
                                             >
                                                 忘记密码？
                                             </button>
@@ -331,13 +331,13 @@ export function AuthModal() {
                                                 required
                                                 value={loginPassword}
                                                 onChange={(e) => setLoginPassword(e.target.value)}
-                                                className="w-full px-4 py-3 sm:py-3.5 rounded-2xl border border-[#E6E2D6] bg-white/70 text-[#1A1A1A] placeholder:text-[#1A1A1A]/20 focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/5 focus:border-[#1A1A1A]/30 transition-all pr-12 font-medium"
-                                                placeholder="••••••••"
+                                                className="block w-full bg-slate-50 border border-slate-100 rounded-xl py-3.5 px-5 text-[13px] text-slate-900 outline-none transition-all duration-300 focus:bg-white focus:border-[#C6A87C]/40 focus:ring-4 focus:ring-[#C6A87C]/15 placeholder:text-slate-300"
+                                                placeholder="请输入密码"
                                             />
                                             <button
                                                 type="button"
                                                 onClick={() => setShowPassword(!showPassword)}
-                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-[#1A1A1A]/30 hover:text-[#1A1A1A] transition-colors"
+                                                className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                                             >
                                                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                             </button>
@@ -348,9 +348,13 @@ export function AuthModal() {
                                     <button
                                         type="submit"
                                         disabled={loading}
-                                        className="w-full mt-4 sm:mt-6 glass-premium-primary rounded-full py-[11px] sm:py-3.5 text-[14px] sm:text-[15px] font-medium tracking-[0.15em] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                                        className="w-full bg-[#8B7355]/10 text-[#8B7355] border border-[#8B7355]/40 rounded-xl py-3.5 font-bold tracking-widest text-[13px] hover:bg-[#8B7355]/20 hover:border-[#8B7355]/70 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2"
                                     >
-                                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>登录账户 <ArrowRight className="w-4 h-4" /></>}
+                                        {loading ? (
+                                            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                                        ) : (
+                                            <>登录 <ArrowRight size={16} /></>
+                                        )}
                                     </button>
 
                                     {/* Social Login - Hidden until implemented */}
@@ -382,53 +386,48 @@ export function AuthModal() {
                             )}
 
                             {view === "register" && (
-                                <form onSubmit={handleRegister} className="space-y-4">
+                                <form onSubmit={handleRegister} className="px-10 pb-10 pt-2 flex flex-col gap-6">
                                     {/* Name */}
-                                    <div className="space-y-1.5">
-                                        <label className="text-xs font-semibold text-[#5C5855] uppercase tracking-wider ml-1">姓名</label>
+                                    <div className="flex flex-col gap-2">
                                         <input
                                             type="text"
                                             required
                                             value={regName}
                                             onChange={(e) => setRegName(e.target.value)}
-                                            className="w-full px-4 py-3.5 rounded-2xl border border-[#E6E2D6] bg-white/70 text-[#1A1A1A] placeholder:text-[#1A1A1A]/20 focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/5 focus:border-[#1A1A1A]/30 transition-all font-medium"
-                                            placeholder="Your Name"
+                                            className="block w-full bg-slate-50 border border-slate-100 rounded-xl py-3.5 px-5 text-[13px] text-slate-900 outline-none transition-all duration-300 focus:bg-white focus:border-[#C6A87C]/40 focus:ring-4 focus:ring-[#C6A87C]/15 placeholder:text-slate-300"
+                                            placeholder="请输入姓名"
                                         />
                                     </div>
 
                                     {/* Phone */}
-                                    <div className="space-y-1.5">
-                                        <label className="text-xs font-semibold text-[#5C5855] uppercase tracking-wider ml-1">手机号</label>
+                                    <div className="flex flex-col gap-2">
                                         <input
                                             type="tel"
                                             required
                                             value={regPhone}
                                             onChange={(e) => setRegPhone(e.target.value)}
-                                            className="w-full px-4 py-3.5 rounded-2xl border border-[#E6E2D6] bg-white/70 text-[#1A1A1A] placeholder:text-[#1A1A1A]/20 focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/5 focus:border-[#1A1A1A]/30 transition-all font-medium"
+                                            className="block w-full bg-slate-50 border border-slate-100 rounded-xl py-3.5 px-5 text-[13px] text-slate-900 outline-none transition-all duration-300 focus:bg-white focus:border-[#C6A87C]/40 focus:ring-4 focus:ring-[#C6A87C]/15 placeholder:text-slate-300"
                                             placeholder="请输入手机号"
                                         />
                                     </div>
 
                                     {/* Verify Code */}
-                                    <div className="space-y-1.5 flex gap-2">
-                                        <div className="flex-1 space-y-1.5">
-                                            <label className="text-xs font-semibold text-[#5C5855] uppercase tracking-wider ml-1">验证码</label>
+                                    <div className="flex flex-col gap-2">
+                                        <div className="flex gap-2">
                                             <input
                                                 type="text"
                                                 required
                                                 maxLength={6}
                                                 value={regCode}
                                                 onChange={(e) => setRegCode(e.target.value)}
-                                                className="w-full px-4 py-3.5 rounded-2xl border border-[#E6E2D6] bg-white/70 text-[#1A1A1A] placeholder:text-[#1A1A1A]/20 focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/5 focus:border-[#1A1A1A]/30 transition-all font-medium"
+                                                className="flex-1 block bg-slate-50 border border-slate-100 rounded-xl py-3.5 px-5 text-[13px] text-slate-900 outline-none transition-all duration-300 focus:bg-white focus:border-[#C6A87C]/40 focus:ring-4 focus:ring-[#C6A87C]/15 placeholder:text-slate-300"
                                                 placeholder="6位验证码"
                                             />
-                                        </div>
-                                        <div className="pt-6">
                                             <button
                                                 type="button"
                                                 onClick={handleSendRegCode}
                                                 disabled={regCodeSending || regCountdown > 0 || !regPhone}
-                                                className="px-4 py-3.5 h-full rounded-2xl bg-[#E6E2D6]/50 text-[#5C5855] text-sm font-semibold hover:bg-[#E6E2D6] transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-[100px]"
+                                                className="px-4 py-3.5 rounded-xl bg-[#8B7355]/10 text-[#8B7355] border border-[#8B7355]/40 text-[13px] font-bold tracking-wider hover:bg-[#8B7355]/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-[100px]"
                                             >
                                                 {regCountdown > 0 ? `${regCountdown}s` : "获取"}
                                             </button>
@@ -436,8 +435,7 @@ export function AuthModal() {
                                     </div>
 
                                     {/* Password */}
-                                    <div className="space-y-1.5">
-                                        <label className="text-xs font-semibold text-[#5C5855] uppercase tracking-wider ml-1">密码</label>
+                                    <div className="flex flex-col gap-2">
                                         <div className="relative">
                                             <input
                                                 type={showPassword ? "text" : "password"}
@@ -445,15 +443,15 @@ export function AuthModal() {
                                                 minLength={6}
                                                 value={regPassword}
                                                 onChange={(e) => setRegPassword(e.target.value)}
-                                                className="w-full px-4 py-3.5 rounded-2xl border border-[#E6E2D6] bg-white/70 text-[#1A1A1A] placeholder:text-[#1A1A1A]/20 focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/5 focus:border-[#1A1A1A]/30 transition-all pr-12 font-medium"
+                                                className="block w-full bg-slate-50 border border-slate-100 rounded-xl py-3.5 px-5 text-[13px] text-slate-900 outline-none transition-all duration-300 focus:bg-white focus:border-[#C6A87C]/40 focus:ring-4 focus:ring-[#C6A87C]/15 placeholder:text-slate-300"
                                                 placeholder="至少6位字符"
                                             />
                                             <button
                                                 type="button"
                                                 onClick={() => setShowPassword(!showPassword)}
-                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-[#1A1A1A]/30 hover:text-[#1A1A1A] transition-colors"
+                                                className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                                             >
-                                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                                             </button>
                                         </div>
                                     </div>
@@ -462,52 +460,52 @@ export function AuthModal() {
                                     <button
                                         type="submit"
                                         disabled={loading}
-                                        className="w-full mt-4 sm:mt-6 glass-premium-primary rounded-full py-[11px] sm:py-4 text-[14px] sm:text-[15px] font-medium tracking-[0.15em] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                                        className="w-full bg-[#8B7355]/10 text-[#8B7355] border border-[#8B7355]/40 rounded-xl py-3.5 font-bold tracking-widest text-[13px] hover:bg-[#8B7355]/20 hover:border-[#8B7355]/70 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2"
                                     >
-                                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>创建账户 <ArrowRight className="w-4 h-4" /></>}
+                                        {loading ? (
+                                            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                                        ) : (
+                                            <>创建账户 <ArrowRight size={16} /></>
+                                        )}
                                     </button>
                                 </form>
                             )}
 
                             {view === "wechat_bind" && (
-                                <form onSubmit={handleWechatBind} className="space-y-4">
-                                    <p className="text-center text-[#8C8C8C] text-sm mb-4">
+                                <form onSubmit={handleWechatBind} className="px-10 pb-10 pt-2 flex flex-col gap-6">
+                                    <p className="text-center text-slate-400 text-sm">
                                         为了保障您的账户安全与多端同步体验，请绑定并在日后使用此手机号登录。
                                     </p>
 
                                     {/* Phone */}
-                                    <div className="space-y-1.5">
-                                        <label className="text-xs font-semibold text-[#5C5855] uppercase tracking-wider ml-1">手机号</label>
+                                    <div className="flex flex-col gap-2">
                                         <input
                                             type="tel"
                                             required
                                             value={regPhone}
                                             onChange={(e) => setRegPhone(e.target.value)}
-                                            className="w-full px-4 py-3.5 rounded-2xl border border-[#E6E2D6] bg-white/70 text-[#1A1A1A] placeholder:text-[#1A1A1A]/20 focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/5 focus:border-[#1A1A1A]/30 transition-all font-medium"
+                                            className="block w-full bg-slate-50 border border-slate-100 rounded-xl py-3.5 px-5 text-[13px] text-slate-900 outline-none transition-all duration-300 focus:bg-white focus:border-[#C6A87C]/40 focus:ring-4 focus:ring-[#C6A87C]/15 placeholder:text-slate-300"
                                             placeholder="请输入绑定的真实手机号"
                                         />
                                     </div>
 
                                     {/* Verify Code */}
-                                    <div className="space-y-1.5 flex gap-2">
-                                        <div className="flex-1 space-y-1.5">
-                                            <label className="text-xs font-semibold text-[#5C5855] uppercase tracking-wider ml-1">验证码</label>
+                                    <div className="flex flex-col gap-2">
+                                        <div className="flex gap-2">
                                             <input
                                                 type="text"
                                                 required
                                                 maxLength={6}
                                                 value={regCode}
                                                 onChange={(e) => setRegCode(e.target.value)}
-                                                className="w-full px-4 py-3.5 rounded-2xl border border-[#E6E2D6] bg-white/70 text-[#1A1A1A] placeholder:text-[#1A1A1A]/20 focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/5 focus:border-[#1A1A1A]/30 transition-all font-medium"
+                                                className="flex-1 block bg-slate-50 border border-slate-100 rounded-xl py-3.5 px-5 text-[13px] text-slate-900 outline-none transition-all duration-300 focus:bg-white focus:border-[#C6A87C]/40 focus:ring-4 focus:ring-[#C6A87C]/15 placeholder:text-slate-300"
                                                 placeholder="6位验证码"
                                             />
-                                        </div>
-                                        <div className="pt-6">
                                             <button
                                                 type="button"
                                                 onClick={handleSendRegCode}
                                                 disabled={regCodeSending || regCountdown > 0 || !regPhone}
-                                                className="px-4 py-3.5 h-full rounded-2xl bg-[#E6E2D6]/50 text-[#5C5855] text-sm font-semibold hover:bg-[#E6E2D6] transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-[100px]"
+                                                className="px-4 py-3.5 rounded-xl bg-[#8B7355]/10 text-[#8B7355] border border-[#8B7355]/40 text-[13px] font-bold tracking-wider hover:bg-[#8B7355]/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-[100px]"
                                             >
                                                 {regCountdown > 0 ? `${regCountdown}s` : "获取"}
                                             </button>
@@ -515,8 +513,7 @@ export function AuthModal() {
                                     </div>
 
                                     {/* Password */}
-                                    <div className="space-y-1.5">
-                                        <label className="text-xs font-semibold text-[#5C5855] uppercase tracking-wider ml-1">设置密码</label>
+                                    <div className="flex flex-col gap-2">
                                         <div className="relative">
                                             <input
                                                 type={showPassword ? "text" : "password"}
@@ -524,15 +521,15 @@ export function AuthModal() {
                                                 minLength={6}
                                                 value={regPassword}
                                                 onChange={(e) => setRegPassword(e.target.value)}
-                                                className="w-full px-4 py-3.5 rounded-2xl border border-[#E6E2D6] bg-white/70 text-[#1A1A1A] placeholder:text-[#1A1A1A]/20 focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/5 focus:border-[#1A1A1A]/30 transition-all pr-12 font-medium"
+                                                className="block w-full bg-slate-50 border border-slate-100 rounded-xl py-3.5 px-5 text-[13px] text-slate-900 outline-none transition-all duration-300 focus:bg-white focus:border-[#C6A87C]/40 focus:ring-4 focus:ring-[#C6A87C]/15 placeholder:text-slate-300"
                                                 placeholder="至少6位密码，用于后续直接登录"
                                             />
                                             <button
                                                 type="button"
                                                 onClick={() => setShowPassword(!showPassword)}
-                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-[#1A1A1A]/30 hover:text-[#1A1A1A] transition-colors"
+                                                className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                                             >
-                                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                                             </button>
                                         </div>
                                     </div>
@@ -541,48 +538,48 @@ export function AuthModal() {
                                     <button
                                         type="submit"
                                         disabled={loading}
-                                        className="w-full mt-4 sm:mt-6 glass-premium-primary rounded-full py-[11px] sm:py-3.5 text-[14px] sm:text-[15px] font-medium tracking-[0.15em] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                                        className="w-full bg-[#8B7355]/10 text-[#8B7355] border border-[#8B7355]/40 rounded-xl py-3.5 font-bold tracking-widest text-[13px] hover:bg-[#8B7355]/20 hover:border-[#8B7355]/70 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2"
                                     >
-                                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>绑定手机号并完成 <CheckCircle className="w-4 h-4" /></>}
+                                        {loading ? (
+                                            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                                        ) : (
+                                            <>绑定手机号并完成 <CheckCircle size={16} /></>
+                                        )}
                                     </button>
                                 </form>
                             )}
 
                             {view === "forgot_password" && (
-                                <div>
+                                <div className="px-10 pb-10 pt-2 flex flex-col gap-6">
                                     {forgotSubmitted ? (
-                                        <form onSubmit={handleResetPassword} className="space-y-4">
-                                            <div className="text-center py-2 mb-2">
-                                                <h3 className="text-lg font-medium text-[#1A1A1A] mb-1">验证码已发送至 {forgotPhone}</h3>
+                                        <form onSubmit={handleResetPassword} className="flex flex-col gap-6">
+                                            <div className="text-center py-2">
+                                                <h3 className="text-lg font-bold text-slate-900 mb-1">验证码已发送至 {forgotPhone}</h3>
                                                 <button
                                                     type="button"
                                                     onClick={handleSendResetLink}
                                                     disabled={loading}
-                                                    className="text-[#C9A86C] text-xs font-medium hover:underline disabled:opacity-50"
+                                                    className="text-[#8B7355] text-xs font-bold tracking-wider hover:underline disabled:opacity-50"
                                                 >
                                                     重新发送验证码
                                                 </button>
                                             </div>
 
                                             {/* Code Input */}
-                                            <div className="space-y-1.5 flex gap-2">
-                                                <div className="flex-1 space-y-1.5">
-                                                    <label className="text-xs font-semibold text-[#5C5855] uppercase tracking-wider ml-1">验证码</label>
-                                                    <input
-                                                        type="text"
-                                                        required
-                                                        maxLength={6}
-                                                        value={resetCode}
-                                                        onChange={(e) => setResetCode(e.target.value)}
-                                                        className="w-full px-4 py-3.5 rounded-2xl border border-[#E6E2D6] bg-white/70 text-[#1A1A1A] placeholder:text-[#1A1A1A]/20 focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/5 focus:border-[#1A1A1A]/30 transition-all font-medium"
-                                                        placeholder="6位验证码"
-                                                    />
-                                                </div>
+                                            <div className="flex flex-col gap-2">
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    maxLength={6}
+                                                    value={resetCode}
+                                                    onChange={(e) => setResetCode(e.target.value)}
+                                                    className="block w-full bg-slate-50 border border-slate-100 rounded-xl py-3.5 px-5 text-[13px] text-slate-900 outline-none transition-all duration-300 focus:bg-white focus:border-[#C6A87C]/40 focus:ring-4 focus:ring-[#C6A87C]/15 placeholder:text-slate-300"
+                                                    placeholder="6位验证码"
+                                                />
                                             </div>
 
                                             {/* New Password Input */}
-                                            <div className="space-y-1.5">
-                                                <label className="text-xs font-semibold text-[#5C5855] uppercase tracking-wider ml-1">新密码</label>
+                                            <div className="flex flex-col gap-2">
                                                 <div className="relative">
                                                     <input
                                                         type={showPassword ? "text" : "password"}
@@ -590,13 +587,13 @@ export function AuthModal() {
                                                         minLength={6}
                                                         value={resetNewPassword}
                                                         onChange={(e) => setResetNewPassword(e.target.value)}
-                                                        className="w-full px-4 py-3.5 rounded-2xl border border-[#E6E2D6] bg-white/70 text-[#1A1A1A] placeholder:text-[#1A1A1A]/20 focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/5 focus:border-[#1A1A1A]/30 transition-all pr-12 font-medium"
+                                                        className="block w-full bg-slate-50 border border-slate-100 rounded-xl py-3.5 px-5 text-[13px] text-slate-900 outline-none transition-all duration-300 focus:bg-white focus:border-[#C6A87C]/40 focus:ring-4 focus:ring-[#C6A87C]/15 placeholder:text-slate-300"
                                                         placeholder="至少6位新密码"
                                                     />
                                                     <button
                                                         type="button"
                                                         onClick={() => setShowPassword(!showPassword)}
-                                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-[#1A1A1A]/30 hover:text-[#1A1A1A] transition-colors"
+                                                        className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                                                     >
                                                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                                     </button>
@@ -606,27 +603,30 @@ export function AuthModal() {
                                             <button
                                                 type="submit"
                                                 disabled={loading}
-                                                className="w-full mt-4 sm:mt-6 glass-premium-primary rounded-full py-[11px] sm:py-3.5 text-[14px] sm:text-[15px] font-medium tracking-[0.15em] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                                                className="w-full bg-[#8B7355]/10 text-[#8B7355] border border-[#8B7355]/40 rounded-xl py-3.5 font-bold tracking-widest text-[13px] hover:bg-[#8B7355]/20 hover:border-[#8B7355]/70 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2"
                                             >
-                                                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "完成重置"}
+                                                {loading ? (
+                                                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                                                ) : (
+                                                    "完成重置"
+                                                )}
                                             </button>
                                         </form>
                                     ) : (
-                                        <form onSubmit={handleSendResetLink} className="space-y-4">
-                                            <p className="text-[#8C8C8C] text-sm mb-4">
+                                        <form onSubmit={handleSendResetLink} className="flex flex-col gap-6">
+                                            <p className="text-slate-400 text-sm">
                                                 请输入您的注册手机号，我们将向您发送重置密码的验证码。
                                             </p>
 
-                                            <div className="space-y-1.5">
-                                                <label className="text-xs font-semibold text-[#5C5855] uppercase tracking-wider ml-1">手机号</label>
+                                            <div className="flex flex-col gap-2">
                                                 <div className="relative">
-                                                    <Phone className="absolute left-4 top-3.5 text-[#1A1A1A]/30 w-5 h-5" />
+                                                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
                                                     <input
                                                         type="tel"
                                                         required
                                                         value={forgotPhone}
                                                         onChange={(e) => setForgotPhone(e.target.value)}
-                                                        className="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-[#E6E2D6] bg-white/70 text-[#1A1A1A] placeholder:text-[#1A1A1A]/20 focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/5 focus:border-[#1A1A1A]/30 transition-all font-medium"
+                                                        className="block w-full bg-slate-50 border border-slate-100 rounded-xl py-3.5 pl-11 pr-5 text-[13px] text-slate-900 outline-none transition-all duration-300 focus:bg-white focus:border-[#C6A87C]/40 focus:ring-4 focus:ring-[#C6A87C]/15 placeholder:text-slate-300"
                                                         placeholder="请输入手机号"
                                                     />
                                                 </div>
@@ -635,9 +635,13 @@ export function AuthModal() {
                                             <button
                                                 type="submit"
                                                 disabled={loading}
-                                                className="w-full mt-4 sm:mt-6 glass-premium-primary rounded-full py-[11px] sm:py-3.5 text-[14px] sm:text-[15px] font-medium tracking-[0.15em] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                                                className="w-full bg-[#8B7355]/10 text-[#8B7355] border border-[#8B7355]/40 rounded-xl py-3.5 font-bold tracking-widest text-[13px] hover:bg-[#8B7355]/20 hover:border-[#8B7355]/70 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2"
                                             >
-                                                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "发送验证码"}
+                                                {loading ? (
+                                                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                                                ) : (
+                                                    "发送验证码"
+                                                )}
                                             </button>
                                         </form>
                                     )}
@@ -648,23 +652,23 @@ export function AuthModal() {
 
                         {/* View Switcher Footer */}
                         {view !== 'forgot_password' && view !== 'wechat_bind' && (
-                            <div className="p-6 text-center border-t border-[#E6E2D6]/50 bg-white/30 backdrop-blur-sm">
+                            <div className="px-10 pb-10 pt-2 text-center">
                                 {view === "login" ? (
-                                    <p className="text-[#8C8C8C] text-sm">
+                                    <p className="text-slate-400 text-sm font-medium">
                                         还没有账号？{" "}
                                         <button
                                             onClick={() => setAuthView("register")}
-                                            className="text-[#C9A86C] font-semibold hover:underline hover:text-[#B08D55] transition-colors"
+                                            className="text-[#8B7355] font-bold hover:underline transition-colors"
                                         >
                                             立即注册
                                         </button>
                                     </p>
                                 ) : (
-                                    <p className="text-[#8C8C8C] text-sm">
+                                    <p className="text-slate-400 text-sm font-medium">
                                         已有账号？{" "}
                                         <button
                                             onClick={() => setAuthView("login")}
-                                            className="text-[#1A1A1A] font-semibold hover:underline transition-colors"
+                                            className="text-[#8B7355] font-bold hover:underline transition-colors"
                                         >
                                             立即登录
                                         </button>
@@ -675,10 +679,10 @@ export function AuthModal() {
 
                         {/* Footer for Forgot Password */}
                         {view === 'forgot_password' && (
-                            <div className="p-6 text-center border-t border-[#E6E2D6]/50 bg-white/30 backdrop-blur-sm">
+                            <div className="px-10 pb-10 pt-2 text-center">
                                 <button
                                     onClick={() => setAuthView("login")}
-                                    className="text-[#1A1A1A] font-medium hover:underline transition-colors text-sm"
+                                    className="text-slate-500 font-bold hover:underline transition-colors text-sm"
                                 >
                                     返回登录
                                 </button>
