@@ -4,8 +4,8 @@ import { useMemo } from "react";
 import {
     Bar,
     BarChart,
-    CartesianGrid,
     Cell,
+    ReferenceLine,
     ResponsiveContainer,
     XAxis,
     YAxis,
@@ -68,17 +68,17 @@ export function ScientificRadarChart({ dimensions, size = 300, activeDimension, 
                     margin={{ top: 8, right: 40, bottom: 60, left: 55 }}
                     barCategoryGap="20%"
                 >
-                    <CartesianGrid
-                        horizontal={false}
-                        stroke="#E9E9E7"
-                        strokeDasharray="3 3"
-                    />
                     <XAxis
                         type="number"
                         domain={[0, 100]}
                         ticks={[0, 60, 80, 100]}
                         hide
                     />
+                    {/* Custom vertical grid lines: 0=solid, 60/80/100=dashed */}
+                    <ReferenceLine x={0} stroke="#E9E9E7" strokeWidth={1} />
+                    <ReferenceLine x={60} stroke="#E9E9E7" strokeWidth={1} strokeDasharray="3 3" />
+                    <ReferenceLine x={80} stroke="#E9E9E7" strokeWidth={1} strokeDasharray="3 3" />
+                    <ReferenceLine x={100} stroke="#E9E9E7" strokeWidth={1} strokeDasharray="3 3" />
                     <YAxis
                         type="category"
                         dataKey="dimension"
