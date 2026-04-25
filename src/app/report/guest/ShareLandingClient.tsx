@@ -542,7 +542,34 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
           </motion.div>
         </div>
 
-        <p className="text-center text-[#a89582] text-xs mt-6 tracking-widest">AI综合分析结果</p>
+        {/* Footer */}
+        <div className="text-center mt-10">
+          <p className="text-[#a89582] text-xs mb-4 tracking-widest">AI综合分析结果</p>
+          <div className="flex flex-col md:flex-row justify-center items-center gap-2 md:gap-6 text-xs mb-3">
+            <span className="opacity-90" style={{ color: '#5c4937' }}>© 2026 NIHPLOD. All Rights Reserved.</span>
+            <span className="hidden md:inline" style={{ color: '#5c4937', opacity: 0.4 }}>•</span>
+            <div className="flex gap-4 font-medium">
+              <a
+                href="https://demo.myskin.today/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="transition-colors hover:opacity-70"
+                style={{ color: '#5c4937', opacity: 0.8 }}
+              >
+                服务条款
+              </a>
+              <a
+                href="https://demo.myskin.today/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="transition-colors hover:opacity-70"
+                style={{ color: '#5c4937', opacity: 0.8 }}
+              >
+                隐私政策
+              </a>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Share Modal */}

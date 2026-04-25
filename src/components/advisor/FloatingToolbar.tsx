@@ -171,7 +171,10 @@ export function FloatingToolbar({
                 <div className="w-7 h-7 rounded-full bg-[#4A3728]/6 flex items-center justify-center">
                     <GripVertical className="w-3.5 h-3.5 text-[#4A3728]/70" strokeWidth={2} />
                 </div>
-                <span className="text-[10px] font-medium tracking-wider text-[#4A3728]/60">更多</span>
+                <div className="flex flex-col items-center leading-tight">
+                    <span className="text-xs font-medium tracking-wider text-[#4A3728]/60">更多</span>
+                    <span className="text-xs font-medium tracking-wider text-[#4A3728]/60">功能</span>
+                </div>
             </motion.button>
         </motion.div>
     );

@@ -391,7 +391,7 @@ export default function Home() {
                         AI 智能测肤
                       </h1>
 
-                      <p className="text-[#5C5855]/90 leading-relaxed mb-14 max-w-xl mx-auto font-light text-[16px] opacity-0 animate-fade-in-up tracking-wide" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
+                      <p className="text-[#5C5855]/90 leading-relaxed mb-14 max-w-xl mx-auto font-light text-lg sm:text-xl opacity-0 animate-fade-in-up tracking-wide" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
                         源自摩纳哥真脂质体科技，<br className="sm:hidden" />结合 AI 深度视觉分析。<br />
                         为您量身打造科学、精准的<br className="sm:hidden" /><span className="text-[#3D4430] font-medium">肌肤护理方案</span>，<br className="sm:hidden" />唤醒肌肤本源之美。
                       </p>
