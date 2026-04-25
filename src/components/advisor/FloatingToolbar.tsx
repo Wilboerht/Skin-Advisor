@@ -81,9 +81,10 @@ export function FloatingToolbar({
 
     return (
         <motion.div
-            className={`fixed right-4 top-1/2 -translate-y-1/2 z-[200] ${className}`}
+            className={`fixed right-4 top-1/2 -translate-y-1/2 z-[200] h-[280px] flex flex-col justify-end ${className}`}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
+            onTouchStart={() => setIsHovered((prev) => !prev)}
             initial={false}
         >
             {/* 菜单项 - 绝对定位，底部和按钮对齐，向上展开 */}

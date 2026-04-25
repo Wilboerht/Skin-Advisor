@@ -156,13 +156,22 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
     };
   }, [data.sessionId, generatedAvatar, isAvatarLoading, avatarQueueStatus]);
 
-  // percentile 取最大值
+  // 基于综合评分计算全国排名百分比
   const rankPercentile = useMemo(() => {
-    const percentiles = Object.values(data.dimensions)
-      .filter((dim): dim is Dimension => dim !== undefined && dim.percentile !== undefined)
-      .map((dim) => dim.percentile as number);
-    return percentiles.length > 0 ? Math.max(...percentiles) : 96;
-  }, [data.dimensions]);
+    const score = data.score ?? 75;
+    const scoreToPercentile: { min: number; max: number; percentile: number }[] = [
+      { min: 90, max: 99,  percentile: 95 },
+      { min: 80, max: 89,  percentile: 90 },
+      { min: 75, max: 79,  percentile: 85 },
+      { min: 70, max: 74,  percentile: 80 },
+      { min: 65, max: 69,  percentile: 74 },
+      { min: 60, max: 64,  percentile: 68 },
+      { min: 55, max: 59,  percentile: 62 },
+      { min: 0,  max: 54,  percentile: 55 },
+    ];
+    const match = scoreToPercentile.find((r) => score >= r.min && score <= r.max);
+    return match ? match.percentile : 75;
+  }, [data.score]);
 
   // T区标签
   const getTZoneLabel = useMemo(() => {
