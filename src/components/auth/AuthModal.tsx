@@ -45,6 +45,7 @@ export function AuthModal() {
     const [resetCode, setResetCode] = useState("");
     const [resetNewPassword, setResetNewPassword] = useState("");
     const [resetConfirmPassword, setResetConfirmPassword] = useState("");
+    const [resetCountdown, setResetCountdown] = useState(0);
 
     const [showPassword, setShowPassword] = useState(false);
 
@@ -55,6 +56,7 @@ export function AuthModal() {
             setForgotSubmitted(false);
             setRegCodeSending(false);
             setRegCountdown(0);
+            setResetCountdown(0);
         }
     }, [isOpen]);
 
@@ -66,6 +68,14 @@ export function AuthModal() {
         }
         return () => clearTimeout(timer);
     }, [regCountdown]);
+
+    useEffect(() => {
+        let timer: NodeJS.Timeout;
+        if (resetCountdown > 0) {
+            timer = setTimeout(() => setResetCountdown(prev => prev - 1), 1000);
+        }
+        return () => clearTimeout(timer);
+    }, [resetCountdown]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -182,6 +192,7 @@ export function AuthModal() {
             if (!res.ok) throw new Error(data.error?.message || data.error || "请求失败");
 
             setForgotSubmitted(true);
+            setResetCountdown(60);
             toast.success("重置验证码已发送");
         } catch (error: any) {
             toast.error(error.message);
@@ -304,7 +315,7 @@ export function AuthModal() {
                                         {headerTitle}
                                     </h1>
                                 )}
-                                <p className="text-slate-400 text-sm font-bold tracking-widest uppercase">
+                                <p className={`text-slate-400 font-bold tracking-widest uppercase ${view === "register" ? "text-base" : "text-sm"}`}>
                                     {headerSubtitle}
                                 </p>
                             </div>
@@ -592,10 +603,10 @@ export function AuthModal() {
                                                 <button
                                                     type="button"
                                                     onClick={handleSendResetLink}
-                                                    disabled={loading}
+                                                    disabled={loading || resetCountdown > 0}
                                                     className="text-[#8B7355] text-xs font-bold tracking-wider hover:underline disabled:opacity-50"
                                                 >
-                                                    重新发送验证码
+                                                    {resetCountdown > 0 ? `${resetCountdown}s 后重新发送` : "重新发送验证码"}
                                                 </button>
                                             </div>
 
