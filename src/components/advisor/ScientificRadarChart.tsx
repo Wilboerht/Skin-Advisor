@@ -7,6 +7,7 @@ import {
     CartesianGrid,
     Cell,
     ResponsiveContainer,
+    XAxis,
     YAxis,
 } from "recharts";
 import type { SkinDimensions, SkinDimensionKey } from "@/lib/advisor-utils";
@@ -26,9 +27,9 @@ const DIMENSION_ORDER: SkinDimensionKey[] = [
 ];
 
 const getScoreColor = (score: number) => {
-    if (score >= 80) return "#10b981"; // Emerald 500
-    if (score >= 60) return "#f59e0b"; // Amber 500
-    return "#ef4444"; // Red 500
+    if (score >= 80) return "#10b981"; // Green
+    if (score >= 60) return "#f59e0b"; // Yellow
+    return "#ef4444"; // Red
 };
 
 export function ScientificRadarChart({ dimensions, size = 300, activeDimension, onDimensionSelect }: ScientificRadarChartProps) {
@@ -72,10 +73,16 @@ export function ScientificRadarChart({ dimensions, size = 300, activeDimension, 
                         stroke="#E9E9E7"
                         strokeDasharray="3 3"
                     />
+                    <XAxis
+                        type="number"
+                        domain={[0, 100]}
+                        ticks={[0, 60, 80, 100]}
+                        hide
+                    />
                     <YAxis
                         type="category"
                         dataKey="dimension"
-                        tick={{ fontSize: 12, fill: '#787774' }}
+                        tick={{ fontSize: 14, fill: '#787774' }}
                         axisLine={false}
                         tickLine={false}
                         width={10}
@@ -120,14 +127,14 @@ export function ScientificRadarChart({ dimensions, size = 300, activeDimension, 
                 {/* Gradient bar */}
                 <div className="h-1.5 w-full rounded-full overflow-hidden"
                     style={{
-                        background: 'linear-gradient(to right, #ef4444 0%, #ef4444 33%, #eab308 33%, #eab308 66%, #22c55e 66%, #22c55e 100%)'
+                        background: 'linear-gradient(to right, #ef4444 0%, #ef4444 60%, #eab308 60%, #eab308 80%, #22c55e 80%, #22c55e 100%)'
                     }}
                 />
                 {/* Labels */}
-                <div className="flex justify-between mt-1.5 text-[11px] font-medium text-[#8c7a6b]">
-                    <span>严重</span>
-                    <span>中度</span>
-                    <span>良好</span>
+                <div className="relative mt-1.5 h-4">
+                    <span className="absolute left-[60%] -translate-x-1/2 text-[11px] font-medium text-[#8c7a6b]">严重</span>
+                    <span className="absolute left-[80%] -translate-x-1/2 text-[11px] font-medium text-[#8c7a6b]">中度</span>
+                    <span className="absolute right-0 text-[11px] font-medium text-[#8c7a6b]">良好</span>
                 </div>
             </div>
         </div>
