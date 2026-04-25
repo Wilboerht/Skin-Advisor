@@ -8,9 +8,10 @@ import { cn } from "@/lib/utils";
 interface IngredientSelectorProps {
     selectedIds: string[];
     onChange: (ids: string[]) => void;
+    error?: string;
 }
 
-export function IngredientSelector({ selectedIds, onChange }: IngredientSelectorProps) {
+export function IngredientSelector({ selectedIds, onChange, error }: IngredientSelectorProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const inputRef = useRef<HTMLInputElement>(null);
@@ -185,6 +186,8 @@ export function IngredientSelector({ selectedIds, onChange }: IngredientSelector
                     </div>
                 </div>
             )}
+            {/* 显示外部传入的错误信息 */}
+            {error && <div className="text-xs text-red-500 mt-1">{error}</div>}
         </div>
     );
 }
