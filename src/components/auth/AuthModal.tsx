@@ -44,6 +44,7 @@ export function AuthModal() {
     const [forgotSubmitted, setForgotSubmitted] = useState(false);
     const [resetCode, setResetCode] = useState("");
     const [resetNewPassword, setResetNewPassword] = useState("");
+    const [resetConfirmPassword, setResetConfirmPassword] = useState("");
 
     const [showPassword, setShowPassword] = useState(false);
 
@@ -194,10 +195,15 @@ export function AuthModal() {
         setForgotSubmitted(false);
         setResetCode("");
         setResetNewPassword("");
+        setResetConfirmPassword("");
     };
 
     const handleResetPassword = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (resetNewPassword !== resetConfirmPassword) {
+            toast.error("两次密码输入不一致，请重新输入");
+            return;
+        }
         setLoading(true);
         try {
             const res = await fetch("/api/auth/reset-password", {
@@ -214,6 +220,7 @@ export function AuthModal() {
             // reset form data
             setResetCode("");
             setResetNewPassword("");
+            setResetConfirmPassword("");
             setForgotSubmitted(false);
         } catch (error: any) {
             toast.error(error.message);
@@ -616,6 +623,28 @@ export function AuthModal() {
                                                         onChange={(e) => setResetNewPassword(e.target.value)}
                                                         className="block w-full bg-slate-50 border border-slate-100 rounded-xl py-3.5 px-5 text-[13px] text-slate-900 outline-none transition-all duration-300 focus:bg-white focus:border-[#C6A87C]/40 focus:ring-4 focus:ring-[#C6A87C]/15 placeholder:text-slate-300"
                                                         placeholder="至少6位新密码"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowPassword(!showPassword)}
+                                                        className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                                                    >
+                                                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {/* Confirm Password Input */}
+                                            <div className="flex flex-col gap-2">
+                                                <div className="relative">
+                                                    <input
+                                                        type={showPassword ? "text" : "password"}
+                                                        required
+                                                        minLength={6}
+                                                        value={resetConfirmPassword}
+                                                        onChange={(e) => setResetConfirmPassword(e.target.value)}
+                                                        className="block w-full bg-slate-50 border border-slate-100 rounded-xl py-3.5 px-5 text-[13px] text-slate-900 outline-none transition-all duration-300 focus:bg-white focus:border-[#C6A87C]/40 focus:ring-4 focus:ring-[#C6A87C]/15 placeholder:text-slate-300"
+                                                        placeholder="请再次输入新密码"
                                                     />
                                                     <button
                                                         type="button"
