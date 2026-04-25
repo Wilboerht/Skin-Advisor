@@ -25,6 +25,7 @@ interface ReportCardsProps {
   onUnlockClick?: () => void;
   professionalClassName?: string;
   professionalStyle?: React.CSSProperties;
+  comprehensiveReport?: React.ReactNode;
 }
 
 const AnimatedNumber = ({ value, duration = 1.5 }: { value: number; duration?: number }) => {
@@ -70,6 +71,7 @@ export default function ReportCards({
   onUnlockClick,
   professionalClassName,
   professionalStyle,
+  comprehensiveReport,
 }: ReportCardsProps) {
   const [showShareModal, setShowShareModal] = useState(false);
   const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
@@ -415,6 +417,7 @@ export default function ReportCards({
             )}
           </div>
         </div>
+        {comprehensiveReport}
       </motion.div>
 
       {/* Share Modal */}
