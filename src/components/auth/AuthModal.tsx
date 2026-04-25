@@ -35,6 +35,7 @@ export function AuthModal() {
     const [regPhone, setRegPhone] = useState("");
     const [regCode, setRegCode] = useState("");
     const [regPassword, setRegPassword] = useState("");
+    const [regConfirmPassword, setRegConfirmPassword] = useState("");
     const [regCodeSending, setRegCodeSending] = useState(false);
     const [regCountdown, setRegCountdown] = useState(0);
 
@@ -84,6 +85,10 @@ export function AuthModal() {
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (regPassword !== regConfirmPassword) {
+            toast.error("两次密码输入不一致，请重新输入");
+            return;
+        }
         setLoading(true);
         try {
             await register({ name: regName, phone: regPhone, code: regCode, password: regPassword });
@@ -436,6 +441,7 @@ export function AuthModal() {
 
                                     {/* Password */}
                                     <div className="flex flex-col gap-2">
+                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">密码</label>
                                         <div className="relative">
                                             <input
                                                 type={showPassword ? "text" : "password"}
@@ -445,6 +451,29 @@ export function AuthModal() {
                                                 onChange={(e) => setRegPassword(e.target.value)}
                                                 className="block w-full bg-slate-50 border border-slate-100 rounded-xl py-3.5 px-5 text-[13px] text-slate-900 outline-none transition-all duration-300 focus:bg-white focus:border-[#C6A87C]/40 focus:ring-4 focus:ring-[#C6A87C]/15 placeholder:text-slate-300"
                                                 placeholder="请输入密码，至少6位字符"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                                            >
+                                                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Confirm Password */}
+                                    <div className="flex flex-col gap-2">
+                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">确认密码</label>
+                                        <div className="relative">
+                                            <input
+                                                type={showPassword ? "text" : "password"}
+                                                required
+                                                minLength={6}
+                                                value={regConfirmPassword}
+                                                onChange={(e) => setRegConfirmPassword(e.target.value)}
+                                                className="block w-full bg-slate-50 border border-slate-100 rounded-xl py-3.5 px-5 text-[13px] text-slate-900 outline-none transition-all duration-300 focus:bg-white focus:border-[#C6A87C]/40 focus:ring-4 focus:ring-[#C6A87C]/15 placeholder:text-slate-300"
+                                                placeholder="请再次输入密码"
                                             />
                                             <button
                                                 type="button"
