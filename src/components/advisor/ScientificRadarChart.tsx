@@ -53,7 +53,7 @@ export function ScientificRadarChart({ dimensions, size = 300, activeDimension, 
                 <BarChart
                     data={chartData}
                     layout="vertical"
-                    margin={{ top: 8, right: 0, bottom: 60, left: 55 }}
+                    margin={{ top: 8, right: 12, bottom: 60, left: 55 }}
                     barCategoryGap="20%"
                 >
                     <XAxis
@@ -126,7 +126,7 @@ export function ScientificRadarChart({ dimensions, size = 300, activeDimension, 
             </ResponsiveContainer>
 
             {/* Severity indicator bar — positioned outside SVG, aligned via margins */}
-            <div style={{ position: 'absolute', bottom: 12, left: 0, right: 0, paddingLeft: 67, paddingRight: 0 }}>
+            <div style={{ position: 'absolute', bottom: 12, left: 0, right: 0, paddingLeft: 67, paddingRight: 12 }}>
                 {/* Scale ticks */}
                 <div className="flex justify-between text-[11px] text-[#787774] mb-1">
                     <span>0</span>
