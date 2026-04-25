@@ -23,6 +23,8 @@ interface ReportCardsProps {
   isLoggedIn: boolean;
   onLoginClick?: () => void;
   onUnlockClick?: () => void;
+  professionalClassName?: string;
+  professionalStyle?: React.CSSProperties;
 }
 
 const AnimatedNumber = ({ value, duration = 1.5 }: { value: number; duration?: number }) => {
@@ -66,6 +68,8 @@ export default function ReportCards({
   isLoggedIn,
   onLoginClick,
   onUnlockClick,
+  professionalClassName,
+  professionalStyle,
 }: ReportCardsProps) {
   const [showShareModal, setShowShareModal] = useState(false);
   const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
@@ -254,10 +258,11 @@ export default function ReportCards({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="relative rounded-[32px] p-6 lg:p-10 backdrop-blur-xl border border-white/20 overflow-hidden"
+        className={`relative rounded-[32px] p-6 lg:p-10 backdrop-blur-xl border border-white/20 overflow-hidden ${professionalClassName || ''}`}
         style={{
           background: 'linear-gradient(135deg, rgba(230, 215, 195, 0.4) 0%, rgba(200, 180, 155, 0.3) 100%)',
           boxShadow: '0 8px 32px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.3)',
+          ...professionalStyle,
         }}
       >
         <div className="flex flex-row lg:flex-row justify-between items-stretch lg:items-center gap-4 lg:gap-12 h-full">

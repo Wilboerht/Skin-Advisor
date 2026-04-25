@@ -903,21 +903,141 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     {/* Main Content */}
                     <main className={styles.main}>
 
-                        {/* Report Summary Cards */}
-                        {(console.log("[DEBUG] ResultClient rendering ReportCards - generatedAvatar:", generatedAvatar), null)}
-                        <ReportCards
-                            score={faceAnalysis?.overallScore || 0}
-                            skinAge={result?.skinProfile?.skinAge || 25}
-                            dimensions={faceAnalysis?.dimensions || {}}
-                            nickname={userNickname}
-                            generatedAvatar={generatedAvatar}
-                            isAvatarLoading={isAvatarLoading}
-                            summary={result?.analysis?.summary}
-                            onShare={handleSaveImage}
-                            isLoggedIn={!!user}
-                            onLoginClick={() => openAuthModal('register')}
-                            onUnlockClick={() => detailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                        />
+                        {/* Report Summary Cards + 综合检测报告 */}
+                        <div
+                            className="relative rounded-[32px] backdrop-blur-xl border border-white/20 overflow-hidden"
+                            style={{
+                                background: 'linear-gradient(135deg, rgba(230, 215, 195, 0.4) 0%, rgba(200, 180, 155, 0.3) 100%)',
+                                boxShadow: '0 8px 32px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.3)'
+                            }}
+                        >
+                            {(console.log("[DEBUG] ResultClient rendering ReportCards - generatedAvatar:", generatedAvatar), null)}
+                            <ReportCards
+                                score={faceAnalysis?.overallScore || 0}
+                                skinAge={result?.skinProfile?.skinAge || 25}
+                                dimensions={faceAnalysis?.dimensions || {}}
+                                nickname={userNickname}
+                                generatedAvatar={generatedAvatar}
+                                isAvatarLoading={isAvatarLoading}
+                                summary={result?.analysis?.summary}
+                                onShare={handleSaveImage}
+                                isLoggedIn={!!user}
+                                onLoginClick={() => openAuthModal('register')}
+                                onUnlockClick={() => detailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                                professionalClassName="!rounded-none !border-none"
+                                professionalStyle={{ background: 'transparent', boxShadow: 'none' }}
+                            />
+
+                            {/* 综合检测报告 */}
+                            <div className="px-6 py-6 lg:px-10 lg:py-10">
+                                <div className="flex items-center gap-3 mb-6">
+                                    <ClipboardList className="w-5 h-5 text-[#3d2f25]" />
+                                    <span className="text-xl lg:text-2xl font-bold text-[#3d2f25]">综合检测报告</span>
+                                </div>
+
+                                {/* Report Header / Summary */}
+                                <div className="mb-6">
+                                    <h4 className="text-base font-medium text-[#3d2f25] mb-3 border-b border-[#3d2f25]/20 pb-2">
+                                        1、详细诊断报告 (Detailed Diagnosis)
+                                    </h4>
+
+                                    {/* Show Details if available, else fallback to Summary */}
+                                    {result.analysis?.details && result.analysis.details.length > 0 ? (
+                                        <div className="space-y-3 text-[14px] leading-relaxed text-[#5c4937]">
+                                            {result.analysis.details.map((paragraph, idx) => (
+                                                <p key={idx}>{paragraph}</p>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-[14px] leading-relaxed text-[#5c4937]">
+                                            {faceAnalysis?.summary || result.analysis?.summary || "暂无详细分析摘要"}
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Expert Advice */}
+                                <div className="mb-8">
+                                    <h4 className="text-base font-medium text-[#3d2f25] mb-3 border-b border-[#3d2f25]/20 pb-2">
+                                        2、专家护肤建议 (Expert Recommendations)
+                                    </h4>
+                                    {(faceAnalysis?.recommendations && faceAnalysis.recommendations.length > 0) ? (
+                                        <ul className="list-disc pl-5 space-y-2 text-[14px] leading-relaxed text-[#5c4937]">
+                                            {(faceAnalysis.recommendations).map((rec, idx) => (
+                                                <li key={idx}>{rec}</li>
+                                            ))}
+                                        </ul>
+                                    ) : (
+                                        <p className="text-[14px] leading-relaxed text-[#5c4937]">
+                                            根据您的肤质分析，建议您：
+                                            1. 每日早晚温和清洁，避免过度去脂。
+                                            2. 严格做好防晒，减少紫外线损伤。
+                                            3. 根据季节调整保湿产品，保持水油平衡。
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* 3. Zone Analysis Grid (Explicitly Added) */}
+                                {faceAnalysis?.zoneAnalysis && (
+                                    <div className="mb-8">
+                                        <h4 className="text-base font-medium text-[#3d2f25] mb-4 border-b border-[#3d2f25]/20 pb-2">
+                                            3、区域重点关注 (Area Focus)
+                                        </h4>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {Object.entries({
+                                                forehead: "额头区域",
+                                                tZone: "T字区域",
+                                                leftCheek: "左脸颊",
+                                                rightCheek: "右脸颊",
+                                                eyeArea: "眼周",
+                                                jawline: "下颌线"
+                                            }).map(([key, label]) => {
+                                                // @ts-ignore
+                                                const zoneData = faceAnalysis.zoneAnalysis[key];
+                                                if (!zoneData) return null;
+                                                return (
+                                                    <div key={key} className="bg-[#3d2f25]/5 border text-left border-[#3d2f25]/15 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+                                                        <div className="flex items-center justify-between mb-2">
+                                                            <h5 className="font-semibold text-[#3d2f25] text-sm">{label}</h5>
+                                                            <span className="text-xs bg-[#3d2f25]/8 text-[#8c7a6b] px-2 py-0.5 rounded-full max-w-[100px] truncate">
+                                                                {zoneData.condition}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-xs text-[#8c7a6b] mb-2 leading-snug min-h-[2.5em] line-clamp-2">
+                                                            {zoneData.condition}
+                                                        </p>
+                                                        <div className="mt-2 pt-2 border-t border-dashed border-[#3d2f25]/10">
+                                                            <p className="text-xs text-emerald-700 leading-snug">
+                                                                <span className="font-medium mr-1">建议:</span>
+                                                                {zoneData.advice}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Lab-Grade Analysis Metrics */}
+                                <div className="rounded-xl border border-[#3d2f25]/15 bg-[#3d2f25]/5 shadow-sm overflow-hidden font-sans">
+                                    <div
+                                        className="px-5 py-3 flex justify-between items-center cursor-pointer hover:bg-[#3d2f25]/5 transition-colors"
+                                        onClick={() => setShowLabData(true)}
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <Activity className="w-4 h-4 text-[#8c7a6b]" />
+                                            <span className="text-sm font-medium text-[#3d2f25]">AI 实验室数据 (AI Labs)</span>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-xs text-[#8c7a6b] font-normal hidden sm:inline-block">
+                                                MySkin.Today™ Gold Standard
+                                            </span>
+                                            <ChevronRight className="w-4 h-4 text-[#8c7a6b]" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
                             {/* VIP Analysis Section removed per user request */}
 
@@ -977,115 +1097,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         </div>
                                     </div>
                                 )}
-
-                                {/* 综合检测报告 */}
-                                <div className="flex items-center gap-3 mb-6 mt-8">
-                                    <ClipboardList className="w-5 h-5 text-[#3d2f25]" />
-                                    <span className="text-xl lg:text-2xl font-bold text-[#3d2f25]">综合检测报告</span>
-                                </div>
-
-                                {/* Report Header / Summary */}
-                                    <div className="mb-6">
-                                        <h4 className="text-base font-medium text-[#3d2f25] mb-3 border-b border-[#3d2f25]/20 pb-2">
-                                            1、详细诊断报告 (Detailed Diagnosis)
-                                        </h4>
-
-                                        {/* Show Details if available, else fallback to Summary */}
-                                        {result.analysis?.details && result.analysis.details.length > 0 ? (
-                                            <div className="space-y-3 text-[14px] leading-relaxed text-[#5c4937]">
-                                                {result.analysis.details.map((paragraph, idx) => (
-                                                    <p key={idx}>{paragraph}</p>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <p className="text-[14px] leading-relaxed text-[#5c4937]">
-                                                {faceAnalysis?.summary || result.analysis?.summary || "暂无详细分析摘要"}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    {/* Expert Advice */}
-                                    <div className="mb-8">
-                                        <h4 className="text-base font-medium text-[#3d2f25] mb-3 border-b border-[#3d2f25]/20 pb-2">
-                                            2、专家护肤建议 (Expert Recommendations)
-                                        </h4>
-                                        {(faceAnalysis?.recommendations && faceAnalysis.recommendations.length > 0) ? (
-                                            <ul className="list-disc pl-5 space-y-2 text-[14px] leading-relaxed text-[#5c4937]">
-                                                {(faceAnalysis.recommendations).map((rec, idx) => (
-                                                    <li key={idx}>{rec}</li>
-                                                ))}
-                                            </ul>
-                                        ) : (
-                                            <p className="text-[14px] leading-relaxed text-[#5c4937]">
-                                                根据您的肤质分析，建议您：
-                                                1. 每日早晚温和清洁，避免过度去脂。
-                                                2. 严格做好防晒，减少紫外线损伤。
-                                                3. 根据季节调整保湿产品，保持水油平衡。
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    {/* 3. Zone Analysis Grid (Explicitly Added) */}
-                                    {faceAnalysis?.zoneAnalysis && (
-                                        <div className="mb-8">
-                                            <h4 className="text-base font-medium text-[#3d2f25] mb-4 border-b border-[#3d2f25]/20 pb-2">
-                                                3、区域重点关注 (Area Focus)
-                                            </h4>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                                {Object.entries({
-                                                    forehead: "额头区域",
-                                                    tZone: "T字区域",
-                                                    leftCheek: "左脸颊",
-                                                    rightCheek: "右脸颊",
-                                                    eyeArea: "眼周",
-                                                    jawline: "下颌线"
-                                                }).map(([key, label]) => {
-                                                    // @ts-ignore
-                                                    const zoneData = faceAnalysis.zoneAnalysis[key];
-                                                    if (!zoneData) return null;
-                                                    return (
-                                                        <div key={key} className="bg-[#3d2f25]/5 border text-left border-[#3d2f25]/15 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
-                                                            <div className="flex items-center justify-between mb-2">
-                                                                <h5 className="font-semibold text-[#3d2f25] text-sm">{label}</h5>
-                                                                <span className="text-xs bg-[#3d2f25]/8 text-[#8c7a6b] px-2 py-0.5 rounded-full max-w-[100px] truncate">
-                                                                    {zoneData.condition}
-                                                                </span>
-                                                            </div>
-                                                            <p className="text-xs text-[#8c7a6b] mb-2 leading-snug min-h-[2.5em] line-clamp-2">
-                                                                {zoneData.condition}
-                                                            </p>
-                                                            <div className="mt-2 pt-2 border-t border-dashed border-[#3d2f25]/10">
-                                                                <p className="text-xs text-emerald-700 leading-snug">
-                                                                    <span className="font-medium mr-1">建议:</span>
-                                                                    {zoneData.advice}
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Lab-Grade Analysis Metrics */}
-                                    <div className="rounded-xl border border-[#3d2f25]/15 bg-[#3d2f25]/5 shadow-sm overflow-hidden font-sans">
-                                        <div
-                                            className="px-5 py-3 flex justify-between items-center cursor-pointer hover:bg-[#3d2f25]/5 transition-colors"
-                                            onClick={() => setShowLabData(true)}
-                                        >
-                                            <div className="flex items-center gap-2">
-                                                <Activity className="w-4 h-4 text-[#8c7a6b]" />
-                                                <span className="text-sm font-medium text-[#3d2f25]">AI 实验室数据 (AI Labs)</span>
-                                            </div>
-                                            <div className="flex items-center gap-3">
-                                                <span className="text-xs text-[#8c7a6b] font-normal hidden sm:inline-block">
-                                                    MySkin.Today™ Gold Standard
-                                                </span>
-                                                <ChevronRight className="w-4 h-4 text-[#8c7a6b]" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                            </div>
 
                         {/* AI Labs Modal - Page Level */}
                         <AnimatePresence>
