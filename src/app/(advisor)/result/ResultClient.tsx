@@ -1356,7 +1356,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     <span className="hidden md:inline" style={{ color: '#5c4937', opacity: 0.4 }}>•</span>
                                     <div className="flex gap-4 font-medium">
                                         <a
-                                            href="https://demo.myskin.today/terms"
+                                            href="https://nihplod.cn/terms"
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="transition-colors"
@@ -1365,7 +1365,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                             服务条款
                                         </a>
                                         <a
-                                            href="https://demo.myskin.today/privacy"
+                                            href="https://nihplod.cn/privacy"
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="transition-colors"
