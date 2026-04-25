@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
     Bar,
     BarChart,
     Cell,
+    LabelList,
     ReferenceLine,
     ResponsiveContainer,
     XAxis,
@@ -33,31 +34,18 @@ const getScoreColor = (score: number) => {
 };
 
 export function ScientificRadarChart({ dimensions, size = 300, activeDimension, onDimensionSelect }: ScientificRadarChartProps) {
+    const [initialLoad, setInitialLoad] = useState(true);
+    useEffect(() => {
+        const timer = setTimeout(() => setInitialLoad(false), 1200);
+        return () => clearTimeout(timer);
+    }, []);
+
     const chartData = useMemo(() => DIMENSION_ORDER.map(key => ({
         dimension: DIMENSION_LABELS[key],
         key: key,
         score: dimensions[key]?.score ?? 50,
         fullMark: 100,
     })), [dimensions]);
-
-    // Custom label on the right side of each bar
-    const LabelContent = (props: any) => {
-        const { x, y, width, value, index } = props;
-        const data = chartData[index];
-        const isActive = activeDimension === data.key;
-        return (
-            <text
-                x={x + width + 6}
-                y={y + 12}
-                fontSize={12}
-                fontWeight={isActive ? 600 : 400}
-                fill={isActive ? '#337EA9' : '#787774'}
-                className="select-none"
-            >
-                {value}
-            </text>
-        );
-    };
 
     return (
         <div className="w-full relative" style={{ height: "480px" }}>
@@ -91,10 +79,32 @@ export function ScientificRadarChart({ dimensions, size = 300, activeDimension, 
                         dataKey="score"
                         radius={[0, 6, 6, 0]}
                         maxBarSize={24}
-                        label={<LabelContent />}
+                        isAnimationActive={initialLoad}
                         animationDuration={1000}
                         animationEasing="ease-out"
                     >
+                        <LabelList
+                            dataKey="score"
+                            position="right"
+                            content={(props: any) => {
+                                const { x, y, width, value, index } = props;
+                                const data = chartData[index];
+                                const isActive = activeDimension === data.key;
+                                return (
+                                    <text
+                                        x={x + width + 6}
+                                        y={y + 12}
+                                        fontSize={12}
+                                        fontWeight={isActive ? 600 : 400}
+                                        fill={isActive ? '#337EA9' : '#787774'}
+                                        className="select-none"
+                                        style={{ transition: 'none' }}
+                                    >
+                                        {value}
+                                    </text>
+                                );
+                            }}
+                        />
                         {chartData.map((entry, index) => {
                             const isActive = activeDimension === entry.key;
                             const baseColor = getScoreColor(entry.score);
@@ -106,6 +116,7 @@ export function ScientificRadarChart({ dimensions, size = 300, activeDimension, 
                                     stroke={isActive ? baseColor : 'none'}
                                     strokeWidth={isActive ? 2 : 0}
                                     cursor="pointer"
+                                    style={{ transition: 'none' }}
                                     onClick={() => onDimensionSelect?.(entry.key as SkinDimensionKey)}
                                 />
                             );
