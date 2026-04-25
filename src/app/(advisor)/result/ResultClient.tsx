@@ -941,7 +941,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 {faceAnalysis?.dimensions && activeDimension ? (
                                     <div className="flex flex-col gap-8">
                                         {/* 上方条形图 */}
-                                        <div className="flex flex-col items-center justify-center">
+                                        <div className="w-full">
                                             <ScientificRadarChart
                                                 dimensions={faceAnalysis.dimensions}
                                                 activeDimension={activeDimension}
