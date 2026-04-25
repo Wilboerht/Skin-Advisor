@@ -62,8 +62,7 @@ export function ScientificRadarChart({ dimensions, size = 300, activeDimension, 
                         ticks={[0, 60, 80, 100]}
                         hide
                     />
-                    {/* Custom vertical grid lines: 0=solid, 60/80/100=dashed */}
-                    <ReferenceLine x={0} stroke="#E9E9E7" strokeWidth={1} />
+                    {/* Custom vertical grid lines: 60/80/100=dashed */}
                     <ReferenceLine x={60} stroke="#E9E9E7" strokeWidth={1} strokeDasharray="3 3" />
                     <ReferenceLine x={80} stroke="#E9E9E7" strokeWidth={1} strokeDasharray="3 3" />
                     <ReferenceLine x={100} stroke="#E9E9E7" strokeWidth={1} strokeDasharray="3 3" />
