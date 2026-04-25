@@ -292,7 +292,7 @@ export function AuthModal() {
                                         {headerTitle}
                                     </h1>
                                 )}
-                                <p className="text-slate-400 text-xs font-bold tracking-widest uppercase">
+                                <p className="text-slate-400 text-sm font-bold tracking-widest uppercase">
                                     {headerSubtitle}
                                 </p>
                             </div>
@@ -444,7 +444,7 @@ export function AuthModal() {
                                                 value={regPassword}
                                                 onChange={(e) => setRegPassword(e.target.value)}
                                                 className="block w-full bg-slate-50 border border-slate-100 rounded-xl py-3.5 px-5 text-[13px] text-slate-900 outline-none transition-all duration-300 focus:bg-white focus:border-[#C6A87C]/40 focus:ring-4 focus:ring-[#C6A87C]/15 placeholder:text-slate-300"
-                                                placeholder="至少6位字符"
+                                                placeholder="请输入密码，至少6位字符"
                                             />
                                             <button
                                                 type="button"
