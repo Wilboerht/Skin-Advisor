@@ -233,7 +233,7 @@ export function AuthModal() {
         headerSubtitle = "注册会员";
     } else if (view === "forgot_password") {
         headerTitle = "找回密码";
-        headerSubtitle = "安全重置";
+        headerSubtitle = "重置密码";
     } else if (view === "wechat_bind") {
         headerTitle = "绑定手机号";
         headerSubtitle = "微信授权成功，请绑定手机";
@@ -284,7 +284,7 @@ export function AuthModal() {
                         <div className="overflow-y-auto">
                             {/* Header */}
                             <div className="p-10 pt-14 text-center pb-8">
-                                {view !== 'forgot_password' && view !== 'wechat_bind' ? (
+                                {view !== 'wechat_bind' ? (
                                     <div className="mb-7 flex justify-center">
                                         <img
                                             src="/NIHPLOD-logo.svg"
@@ -441,7 +441,6 @@ export function AuthModal() {
 
                                     {/* Password */}
                                     <div className="flex flex-col gap-2">
-                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">密码</label>
                                         <div className="relative">
                                             <input
                                                 type={showPassword ? "text" : "password"}
@@ -464,7 +463,6 @@ export function AuthModal() {
 
                                     {/* Confirm Password */}
                                     <div className="flex flex-col gap-2">
-                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">确认密码</label>
                                         <div className="relative">
                                             <input
                                                 type={showPassword ? "text" : "password"}
