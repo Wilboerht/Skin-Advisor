@@ -939,17 +939,16 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 </div>
 
                                 {faceAnalysis?.dimensions && activeDimension ? (
-                                    <div className="flex flex-col lg:flex-row items-stretch min-h-[400px] gap-8">
-                                        {/* 左侧雷达图 */}
-                                        <div className="flex-1 flex flex-col items-center justify-center">
+                                    <div className="flex flex-col gap-8">
+                                        {/* 上方条形图 */}
+                                        <div className="flex flex-col items-center justify-center">
                                             <ScientificRadarChart
                                                 dimensions={faceAnalysis.dimensions}
                                                 activeDimension={activeDimension}
                                                 onDimensionSelect={setActiveDimension}
                                             />
                                         </div>
-                                        {/* 右侧动态详情面板 */}
-                                        <div className="flex-1 flex flex-col justify-center">
+                                        {/* 下方动态详情面板 */}
                                             <div className="bg-[#3d2f25]/5 backdrop-blur-sm rounded-2xl p-8 shadow-md border border-[#3d2f25]/15 animate-in fade-in slide-in-from-right-4 duration-300">
                                                 {/* Header */}
                                                 <div className="flex items-center justify-between mb-6">
@@ -976,14 +975,27 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                         {faceAnalysis.dimensions[activeDimension].score}
                                                     </div>
                                                 </div>
-                                                {/* Progress Bar */}
-                                                <div className="h-2 w-full bg-[#3d2f25]/15 rounded-full mb-8 overflow-hidden">
-                                                    <div
-                                                        className={`h-full rounded-full transition-all duration-1000 ease-out ${faceAnalysis.dimensions[activeDimension].score >= 80 ? 'bg-emerald-500' :
-                                                            faceAnalysis.dimensions[activeDimension].score >= 60 ? 'bg-amber-500' : 'bg-red-500'
-                                                            }`}
-                                                        style={{ width: `${faceAnalysis.dimensions[activeDimension].score}%` }}
-                                                    />
+                                                {/* Combined Severity + Score Bar */}
+                                                <div className="mb-8">
+                                                    <div className="relative h-3 w-full rounded-full overflow-hidden">
+                                                        {/* Gradient background: severe → moderate → good */}
+                                                        <div
+                                                            className="absolute inset-0 rounded-full"
+                                                            style={{
+                                                                background: 'linear-gradient(to right, #ef4444 0%, #ef4444 33%, #eab308 33%, #eab308 66%, #22c55e 66%, #22c55e 100%)'
+                                                            }}
+                                                        />
+                                                        {/* White overlay marking current score */}
+                                                        <div
+                                                            className="absolute top-0 bottom-0 left-0 bg-white/65 rounded-full transition-all duration-1000 ease-out"
+                                                            style={{ width: `${faceAnalysis.dimensions[activeDimension].score}%` }}
+                                                        />
+                                                    </div>
+                                                    <div className="flex justify-between mt-1.5 text-[11px] font-medium text-[#8c7a6b]">
+                                                        <span>严重</span>
+                                                        <span>中度</span>
+                                                        <span>良好</span>
+                                                    </div>
                                                 </div>
 
                                                 {/* Diagnosis & Advice */}
@@ -997,7 +1009,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
                                 ) : (
                                     <div className="p-8 text-center bg-[#3d2f25]/5 backdrop-blur-sm rounded-2xl border border-[#3d2f25]/15">
                                         <div className="text-[14px] leading-relaxed text-[#5c4937]">

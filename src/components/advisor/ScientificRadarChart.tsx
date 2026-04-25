@@ -7,7 +7,6 @@ import {
     CartesianGrid,
     Cell,
     ResponsiveContainer,
-    XAxis,
     YAxis,
 } from "recharts";
 import type { SkinDimensions, SkinDimensionKey } from "@/lib/advisor-utils";
@@ -60,12 +59,12 @@ export function ScientificRadarChart({ dimensions, size = 300, activeDimension, 
     };
 
     return (
-        <div className="w-full h-full relative" style={{ minHeight: "400px" }}>
+        <div className="w-full relative" style={{ height: "480px" }}>
             <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                     data={chartData}
                     layout="vertical"
-                    margin={{ top: 8, right: 40, bottom: 8, left: 80 }}
+                    margin={{ top: 8, right: 40, bottom: 60, left: 55 }}
                     barCategoryGap="20%"
                 >
                     <CartesianGrid
@@ -73,20 +72,13 @@ export function ScientificRadarChart({ dimensions, size = 300, activeDimension, 
                         stroke="#E9E9E7"
                         strokeDasharray="3 3"
                     />
-                    <XAxis
-                        type="number"
-                        domain={[0, 100]}
-                        tick={{ fontSize: 11, fill: '#787774' }}
-                        axisLine={{ stroke: '#E9E9E7' }}
-                        tickLine={false}
-                    />
                     <YAxis
                         type="category"
                         dataKey="dimension"
                         tick={{ fontSize: 12, fill: '#787774' }}
                         axisLine={false}
                         tickLine={false}
-                        width={70}
+                        width={10}
                     />
                     <Bar
                         dataKey="score"
@@ -114,6 +106,30 @@ export function ScientificRadarChart({ dimensions, size = 300, activeDimension, 
                     </Bar>
                 </BarChart>
             </ResponsiveContainer>
+
+            {/* Severity indicator bar — positioned outside SVG, aligned via margins */}
+            <div style={{ position: 'absolute', bottom: 12, left: 0, right: 0, paddingLeft: 67, paddingRight: 40 }}>
+                {/* Scale ticks */}
+                <div className="flex justify-between text-[11px] text-[#787774] mb-1">
+                    <span>0</span>
+                    <span>25</span>
+                    <span>50</span>
+                    <span>75</span>
+                    <span>100</span>
+                </div>
+                {/* Gradient bar */}
+                <div className="h-1.5 w-full rounded-full overflow-hidden"
+                    style={{
+                        background: 'linear-gradient(to right, #ef4444 0%, #ef4444 33%, #eab308 33%, #eab308 66%, #22c55e 66%, #22c55e 100%)'
+                    }}
+                />
+                {/* Labels */}
+                <div className="flex justify-between mt-1.5 text-[11px] font-medium text-[#8c7a6b]">
+                    <span>严重</span>
+                    <span>中度</span>
+                    <span>良好</span>
+                </div>
+            </div>
         </div>
     );
 }
