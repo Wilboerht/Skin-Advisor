@@ -951,59 +951,20 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         {/* 下方动态详情面板 */}
                                             <div className="bg-[#3d2f25]/5 backdrop-blur-sm rounded-2xl p-8 shadow-md border border-[#3d2f25]/15 animate-in fade-in slide-in-from-right-4 duration-300">
                                                 {/* Header */}
-                                                <div className="flex items-center justify-between mb-6">
-                                                    <div>
-                                                        <h3 className="text-lg font-semibold text-[#3d2f25] mb-0.5">
-                                                            {DIMENSION_LABELS[activeDimension]}
-                                                        </h3>
-                                                        <p className="text-xs text-[#8c7a6b] font-mono tracking-wide">
-                                                            {activeDimension === 'spots' && 'SURFACE PIGMENTATION'}
-                                                            {activeDimension === 'wrinkles' && 'FINE LINES & WRINKLES'}
-                                                            {activeDimension === 'uvDamage' && 'DEEP SUN DAMAGE'}
-                                                            {activeDimension === 'sensitivity' && 'REDNESS & SENSITIVITY'}
-                                                            {activeDimension === 'acne' && 'ACNE & SEBUM'}
-                                                            {activeDimension === 'waterOil' && 'HYDRO-LIPID BALANCE'}
-                                                            {activeDimension === 'skinTone' && 'SKIN TONE EVENNESS'}
-                                                            {activeDimension === 'firmness' && 'ELASTICITY & FIRMNESS'}
-                                                            {activeDimension === 'radiance' && 'SKIN RADIANCE'}
-                                                            {activeDimension === 'darkCircles' && 'PERIORBITAL PIGMENTATION'}
-                                                        </p>
-                                                    </div>
-                                                    <div className={`text-3xl font-mono font-medium ${faceAnalysis.dimensions[activeDimension].score >= 80 ? 'text-emerald-600' :
-                                                        faceAnalysis.dimensions[activeDimension].score >= 60 ? 'text-amber-600' : 'text-rose-600'
+                                                <div className="flex items-center justify-between mb-5">
+                                                    <h3 className="text-xl font-bold text-[#3d2f25] tracking-wide">
+                                                        {DIMENSION_LABELS[activeDimension]}
+                                                    </h3>
+                                                    <div className={`px-3 py-1 rounded-full text-sm font-bold ${faceAnalysis.dimensions[activeDimension].score >= 80 ? 'bg-emerald-100 text-emerald-700' :
+                                                        faceAnalysis.dimensions[activeDimension].score >= 60 ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700'
                                                         }`}>
-                                                        {faceAnalysis.dimensions[activeDimension].score}
-                                                    </div>
-                                                </div>
-                                                {/* Combined Severity + Score Bar */}
-                                                <div className="mb-8">
-                                                    <div className="relative h-3 w-full rounded-full overflow-hidden">
-                                                        {/* Gradient background: severe → moderate → good */}
-                                                        <div
-                                                            className="absolute inset-0 rounded-full"
-                                                            style={{
-                                                                background: 'linear-gradient(to right, #ef4444 0%, #ef4444 33%, #eab308 33%, #eab308 66%, #22c55e 66%, #22c55e 100%)'
-                                                            }}
-                                                        />
-                                                        {/* White overlay marking current score */}
-                                                        <div
-                                                            className="absolute top-0 bottom-0 left-0 bg-white/65 rounded-full transition-all duration-1000 ease-out"
-                                                            style={{ width: `${faceAnalysis.dimensions[activeDimension].score}%` }}
-                                                        />
-                                                    </div>
-                                                    <div className="flex justify-between mt-1.5 text-[11px] font-medium text-[#8c7a6b]">
-                                                        <span>严重</span>
-                                                        <span>中度</span>
-                                                        <span>良好</span>
+                                                        {faceAnalysis.dimensions[activeDimension].score} 分
                                                     </div>
                                                 </div>
 
                                                 {/* Diagnosis & Advice */}
-                                                <div className="mt-6">
-                                                    <h4 className="text-base font-medium text-[#3d2f25] mb-3 border-b border-[#3d2f25]/20 pb-2">
-                                                        AI 诊断建议 (AI Analysis)
-                                                    </h4>
-                                                    <p className="text-[14px] leading-relaxed text-[#5c4937]">
+                                                <div className="bg-white/50 rounded-xl p-5 border border-[#3d2f25]/10">
+                                                    <p className="text-[14px] leading-[1.8] text-[#5c4937]">
                                                         {getDimensionAdvice(activeDimension, faceAnalysis.dimensions[activeDimension].score)}
                                                     </p>
                                                 </div>
