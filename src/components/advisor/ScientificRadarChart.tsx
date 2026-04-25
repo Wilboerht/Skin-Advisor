@@ -119,15 +119,16 @@ export function ScientificRadarChart({ dimensions, size = 300, activeDimension, 
                 {/* Scale ticks */}
                 <div className="flex justify-between text-[11px] text-[#787774] mb-1">
                     <span>0</span>
-                    <span>25</span>
-                    <span>50</span>
-                    <span>75</span>
+                    <span>60</span>
+                    <span>80</span>
                     <span>100</span>
                 </div>
                 {/* Gradient bar */}
                 <div className="h-1.5 w-full rounded-full overflow-hidden"
                     style={{
-                        background: 'linear-gradient(to right, #ef4444 0%, #ef4444 60%, #eab308 60%, #eab308 80%, #22c55e 80%, #22c55e 100%)'
+                        background: 'linear-gradient(to right, #ef4444 0%, #ef4444 60%, #eab308 60%, #eab308 80%, #22c55e 80%, #22c55e 100%)',
+                        maskImage: 'linear-gradient(to right, transparent 0%, black 15%)',
+                        WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 15%)'
                     }}
                 />
                 {/* Labels */}
