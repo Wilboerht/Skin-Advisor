@@ -920,7 +920,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             comprehensiveReport={
                                 <>
                                     {/* Report Header / Summary */}
-                                    <div className="mt-10 mb-6">
+                                    <div className="mt-14 mb-6">
                                         <h4 className="text-base font-medium text-[#3d2f25] mb-3 border-b border-[#3d2f25]/20 pb-2">
                                             1、详细诊断报告 (Detailed Diagnosis)
                                         </h4>
