@@ -22,6 +22,7 @@ interface ReportCardsProps {
   onShare: () => void;
   isLoggedIn: boolean;
   onLoginClick?: () => void;
+  onUnlockClick?: () => void;
 }
 
 const AnimatedNumber = ({ value, duration = 1.5 }: { value: number; duration?: number }) => {
@@ -64,6 +65,7 @@ export default function ReportCards({
   onShare,
   isLoggedIn,
   onLoginClick,
+  onUnlockClick,
 }: ReportCardsProps) {
   const [showShareModal, setShowShareModal] = useState(false);
   const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
@@ -388,8 +390,11 @@ export default function ReportCards({
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
+                whileHover={{ scale: 1.03, backgroundColor: 'rgba(255,255,255,0.15)' }}
+                whileTap={{ scale: 0.97 }}
                 transition={{ delay: 0.4 }}
-                className="p-3 lg:p-4 rounded-xl lg:rounded-2xl flex flex-row lg:flex-col items-center lg:items-start justify-between lg:aspect-[2/3] min-h-[48px] lg:min-h-0 relative overflow-hidden"
+                onClick={onUnlockClick}
+                className="p-3 lg:p-4 rounded-xl lg:rounded-2xl flex flex-row lg:flex-col items-center lg:items-start justify-between lg:aspect-[2/3] min-h-[48px] lg:min-h-0 relative overflow-hidden cursor-pointer"
                 style={{
                   background: 'linear-gradient(180deg, rgba(230,225,215,0.6) 0%, rgba(245,240,230,0.4) 100%)',
                   boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.4)',

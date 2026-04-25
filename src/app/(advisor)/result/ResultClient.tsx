@@ -118,6 +118,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     // UI State
     const [loading, setLoading] = useState(!initialData);
     const hasTrackedView = useRef(false);
+    const detailsRef = useRef<HTMLDivElement>(null);
     const [isRedirecting, setIsRedirecting] = useState(false);
 
     // Gender Mismatch State
@@ -913,6 +914,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             onShare={handleSaveImage}
                             isLoggedIn={!!user}
                             onLoginClick={() => openAuthModal('register')}
+                            onUnlockClick={() => detailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
                         />
 
                             {/* VIP Analysis Section removed per user request */}
@@ -922,7 +924,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             {/* 1. Radar Analysis (Interactive) or Fallback */}
                             {/* 1. Radar Analysis (Unified Container) */}
                             <div
-                                className="relative rounded-[32px] p-6 lg:p-10 backdrop-blur-xl border border-white/20 overflow-hidden"
+                                ref={detailsRef}
+                                className="relative rounded-[32px] p-6 lg:p-10 backdrop-blur-xl border border-white/20 overflow-hidden scroll-mt-24"
                                 style={{
                                     background: 'linear-gradient(135deg, rgba(230, 215, 195, 0.4) 0%, rgba(200, 180, 155, 0.3) 100%)',
                                     boxShadow: '0 8px 32px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.3)'
