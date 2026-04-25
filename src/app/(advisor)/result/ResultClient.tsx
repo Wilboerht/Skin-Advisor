@@ -977,24 +977,14 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         </div>
                                     </div>
                                 )}
-                            </div>
 
-                            {/* 1.5 Comprehensive Analysis Details - Professional Report Style */}
-                            {/* 1.5 Comprehensive Analysis Details - Professional Report Style */}
-                            <div
-                                className={`${styles.fadeInUp} relative rounded-[32px] backdrop-blur-xl border border-white/20 overflow-hidden`}
-                                style={{
-                                    background: 'linear-gradient(135deg, rgba(230, 215, 195, 0.4) 0%, rgba(200, 180, 155, 0.3) 100%)',
-                                    boxShadow: '0 8px 32px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.3)'
-                                }}
-                            >
-                                <div className="px-6 py-6 lg:px-10 lg:py-10">
-                                    <div className="flex items-center gap-3 mb-6">
-                                        <ClipboardList className="w-5 h-5 text-[#3d2f25]" />
-                                        <span className="text-xl lg:text-2xl font-bold text-[#3d2f25]">综合检测报告</span>
-                                    </div>
+                                {/* 综合检测报告 */}
+                                <div className="flex items-center gap-3 mb-6 mt-8">
+                                    <ClipboardList className="w-5 h-5 text-[#3d2f25]" />
+                                    <span className="text-xl lg:text-2xl font-bold text-[#3d2f25]">综合检测报告</span>
+                                </div>
 
-                                    {/* Report Header / Summary */}
+                                {/* Report Header / Summary */}
                                     <div className="mb-6">
                                         <h4 className="text-base font-medium text-[#3d2f25] mb-3 border-b border-[#3d2f25]/20 pb-2">
                                             1、详细诊断报告 (Detailed Diagnosis)
@@ -1095,9 +1085,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                             </div>
                                         </div>
                                     </div>
-
-                            </div>
-                        </div>
+                                </div>
 
                         {/* AI Labs Modal - Page Level */}
                         <AnimatePresence>
