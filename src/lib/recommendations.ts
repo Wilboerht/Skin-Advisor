@@ -258,8 +258,7 @@ export async function getCandidateProducts(
         // 1. Fetch Active & In-Stock Products
         const allProducts = await prisma.product.findMany({
             where: {
-                active: true,
-                stock: { gt: 0 } // Stock Check
+                active: true
             }
         });
 
@@ -332,7 +331,8 @@ export async function getCandidateProducts(
 export async function recommendProducts(
     answers: QuestionnaireAnswers,
     concerns: string[],
-    preloadedProducts?: any[] // Optional: reuse already-fetched products to avoid duplicate DB query
+    preloadedProducts?: any[], // Optional: reuse already-fetched products to avoid duplicate DB query
+    limit: number = 3
 ): Promise<ProductRecommendation[]> {
     try {
         // 1. Use preloaded products if available, otherwise fetch from DB
@@ -340,8 +340,7 @@ export async function recommendProducts(
             ? preloadedProducts
             : await prisma.product.findMany({
                 where: {
-                    active: true,
-                    stock: { gt: 0 }
+                    active: true
                 }
             });
 
@@ -406,8 +405,8 @@ export async function recommendProducts(
         // 4. Sort by score desc
         scored.sort((a, b) => b.rawScore - a.rawScore);
 
-        // 5. Select Top N (3)
-        const top = scored.slice(0, 3);
+        // 5. Select Top N
+        const top = scored.slice(0, limit);
 
         return top.map((p, index) => ({
             id: p.id,

@@ -47,10 +47,10 @@ export async function PUT(
         // Build update data — only include fields that are explicitly provided
         // This prevents accidentally nullifying fields when doing partial updates
         const allowedFields = [
-            'name', 'nameEn', 'category', 'image', 'price', 'description',
+            'name', 'nameEn', 'category', 'image', 'images', 'price', 'description',
             'keyIngredients', 'suitableSkinTypes', 'benefits', 'negativeFor', 'sortOrder',
             'active', 'stock', 'featured', 'step', 'howToUse',
-            'affiliateLinks', 'ingredientDetails'
+            'affiliateLinks'
         ];
 
         const updateData: Record<string, any> = {};

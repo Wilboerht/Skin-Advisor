@@ -1,14 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { m } from "framer-motion";
-import { Gift, AlertCircle, TrendingUp } from "lucide-react";
-import { ProductRecommendationSkeleton } from "./ProductCardSkeleton";
+import { Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import { ProductCard, ProductCardData } from "./ProductCard";
 import { inferStepFromCategory } from "@/lib/skincare-steps";
 import { cn } from "@/lib/utils";
 
-// 维度名称映射
 const DIMENSION_LABELS: Record<string, string> = {
     spots: "色斑",
     wrinkles: "皱纹",
@@ -40,8 +38,9 @@ export function ProductRecommendationSection({
     className
 }: ProductRecommendationSectionProps) {
     const [processedProducts, setProcessedProducts] = useState<ProductCardData[]>([]);
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const hasCentered = useRef(false);
 
-    // 处理产品数据：添加步骤、匹配度、环境推荐、维度关联
     useEffect(() => {
         if (!products || products.length === 0) {
             setProcessedProducts([]);
@@ -49,31 +48,20 @@ export function ProductRecommendationSection({
         }
 
         const processed = products.map(product => {
-            // 推断护肤步骤
             const step = (product as any).step || inferStepFromCategory(product.category);
-
-            // 计算匹配度 (基于 score，如果有的话)
             const baseScore = product.score ?? 50;
             const matchScore = Math.min(99, Math.round((baseScore / 150) * 100));
 
-            // 关联维度评分 (简单逻辑：根据类别关联维度)
             let dimensionLink: ProductCardData['dimensionLink'] = null;
             if (faceAnalysis?.dimensions) {
                 const categoryToDimension: Record<string, string> = {
-                    '精华': 'radiance',
-                    '精华液': 'radiance',
-                    '安瓶': 'radiance',
-                    '面霜': 'waterOil',
-                    '乳液': 'waterOil',
-                    '防晒': 'uvDamage',
-                    '防晒霜': 'uvDamage',
-                    '洁面': 'waterOil',
-                    '洁面乳': 'waterOil',
+                    '精华': 'radiance', '精华液': 'radiance', '安瓶': 'radiance',
+                    '面霜': 'waterOil', '乳液': 'waterOil',
+                    '防晒': 'uvDamage', '防晒霜': 'uvDamage',
+                    '洁面': 'waterOil', '洁面乳': 'waterOil',
                     '眼霜': 'darkCircles',
-                    '爽肤水': 'skinTone',
-                    '化妆水': 'skinTone',
-                    '面膜': 'sensitivity',
-                    '护肤油': 'waterOil',
+                    '爽肤水': 'skinTone', '化妆水': 'skinTone',
+                    '面膜': 'sensitivity', '护肤油': 'waterOil',
                 };
                 const dimKey = categoryToDimension[product.category];
                 if (dimKey && faceAnalysis.dimensions[dimKey]) {
@@ -92,97 +80,159 @@ export function ProductRecommendationSection({
             } as ProductCardData;
         });
 
-        // 按匹配度排序
         processed.sort((a, b) => (b.matchScore ?? 0) - (a.matchScore ?? 0));
-
         setProcessedProducts(processed);
     }, [products, faceAnalysis]);
 
-    // 取匹配度最高的前3个产品
-    const topProducts = processedProducts.slice(0, 3);
+    // 初始化滚动位置：让前3个推荐卡片居中显示
+    useEffect(() => {
+        if (!scrollRef.current || processedProducts.length === 0 || hasCentered.current) return;
 
-    // 完全没有产品时的空状态
+        const container = scrollRef.current;
+        const cards = Array.from(container.children) as HTMLElement[];
+        if (cards.length < 3) {
+            hasCentered.current = true;
+            return;
+        }
+
+        const containerWidth = container.clientWidth;
+        const card1 = cards[0];
+        const card3 = cards[2];
+
+        if (card1 && card3) {
+            const scrollLeft = card1.offsetLeft;
+            const contentRight = card3.offsetLeft + card3.offsetWidth;
+            const contentWidth = contentRight - scrollLeft;
+            const targetScroll = scrollLeft - (containerWidth - contentWidth) / 2;
+
+            container.scrollTo({ left: Math.max(0, targetScroll), behavior: 'instant' });
+            hasCentered.current = true;
+        }
+    }, [processedProducts]);
+
+    const scroll = (direction: 'left' | 'right') => {
+        if (!scrollRef.current) return;
+        const container = scrollRef.current;
+        const cardWidth = container.firstElementChild?.clientWidth || 320;
+        const scrollAmount = cardWidth * 3 + 16 * 3;
+        container.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
+    };
+
     if (!isLoading && products.length === 0) {
         return (
-            <div className={cn("rounded-[32px] backdrop-blur-xl border border-white/20 overflow-hidden", className)}
-                style={{
-                    background: 'linear-gradient(135deg, rgba(230, 215, 195, 0.4) 0%, rgba(200, 180, 155, 0.3) 100%)',
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.3)',
-                }}
-            >
-                {/* 标题 */}
-                <div className="px-6 py-4 border-b border-white/20 flex items-center gap-3">
-                    <Gift className="w-5 h-5 text-white drop-shadow-sm" />
-                    <span className="text-lg font-semibold text-white drop-shadow-sm">甄选产品推荐</span>
-                </div>
-
-                {/* 空状态 */}
-                <div className="p-12 text-center">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/20 flex items-center justify-center">
-                        <AlertCircle className="w-8 h-8 text-white/60" />
-                    </div>
-                    <h4 className="text-base font-medium text-white drop-shadow-sm mb-2">暂无产品推荐</h4>
-                    <p className="text-sm text-white/70">
-                        系统正在为您匹配最适合的护肤产品，请稍后再查看。
-                    </p>
-                </div>
+            <div className="py-12 text-center">
+                <h4 className="text-base font-medium text-[#3d2f25] mb-2">暂无产品推荐</h4>
+                <p className="text-sm text-[#8c7a6b]">更多精选产品即将上线，敬请期待</p>
             </div>
         );
     }
 
     return (
-        <div className={cn("rounded-[32px] backdrop-blur-xl border border-white/20 overflow-hidden", className)}
-            style={{
-                background: 'linear-gradient(135deg, rgba(230, 215, 195, 0.4) 0%, rgba(200, 180, 155, 0.3) 100%)',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.3)',
-            }}
-        >
-            {/* 标题栏 */}
-            <div className="px-6 py-4 border-b border-white/20">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <Gift className="w-5 h-5 text-white drop-shadow-sm" />
-                        <span className="text-lg font-semibold text-white drop-shadow-sm">甄选产品推荐</span>
-                        <span className="text-xs text-white/60 font-normal">
-                            为您精选
-                        </span>
-                    </div>
+        <section className={cn("relative w-full py-10", className)}>
+            {/* 标题 */}
+            <m.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="text-center mb-10"
+            >
+                <h2 className="text-2xl font-bold text-[#3d2f25] tracking-wide">甄选产品推荐</h2>
+                <p className="text-sm text-[#8c7a6b] mt-2">基于您的肤质分析，为您精选以下产品</p>
+            </m.div>
 
-                    {/* 统计信息 */}
-                    <div className="flex items-center gap-4 text-xs text-white/70">
-                        <span className="flex items-center gap-1">
-                            <TrendingUp className="w-3.5 h-3.5" />
-                            {products.length} 款产品
-                        </span>
-                    </div>
-                </div>
-            </div>
+            {/* 轮播区域 */}
+            <div className="relative group">
+                {/* 左箭头 */}
+                <button
+                    onClick={() => scroll('left')}
+                    className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full
+                               bg-white/90 backdrop-blur-sm shadow-lg border border-[#E9E9E7]
+                               flex items-center justify-center text-[#3d2f25]
+                               opacity-0 group-hover:opacity-100 transition-all duration-300
+                               hover:bg-white hover:scale-110 hover:shadow-xl"
+                >
+                    <ChevronLeft className="w-5 h-5" />
+                </button>
+                {/* 右箭头 */}
+                <button
+                    onClick={() => scroll('right')}
+                    className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full
+                               bg-white/90 backdrop-blur-sm shadow-lg border border-[#E9E9E7]
+                               flex items-center justify-center text-[#3d2f25]
+                               opacity-0 group-hover:opacity-100 transition-all duration-300
+                               hover:bg-white hover:scale-110 hover:shadow-xl"
+                >
+                    <ChevronRight className="w-5 h-5" />
+                </button>
 
-            {/* 内容区域 */}
-            <div className="p-6">
+                {/* 左虚化遮罩 */}
+                <div className="absolute left-0 top-0 bottom-0 w-[6%] sm:w-[8%] md:w-[10%] z-10 pointer-events-none
+                                bg-gradient-to-r from-[#FDFBF7] via-[#FDFBF7]/95 to-transparent" />
+                {/* 右虚化遮罩 */}
+                <div className="absolute right-0 top-0 bottom-0 w-[6%] sm:w-[8%] md:w-[10%] z-10 pointer-events-none
+                                bg-gradient-to-l from-[#FDFBF7] via-[#FDFBF7]/95 to-transparent" />
+
+                {/* 滚动容器 */}
                 {isLoading ? (
-                    <ProductRecommendationSkeleton />
+                    <div className="flex gap-4 px-[2%] sm:px-[4%] md:px-[6%]">
+                        {[0, 1, 2].map(i => (
+                            <div key={i} className="flex-shrink-0 w-[85vw] sm:w-[45vw] md:w-[32vw] lg:w-[28vw]">
+                                <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/10 h-[380px] animate-pulse" />
+                            </div>
+                        ))}
+                    </div>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {topProducts.map((product, index) => (
-                            <ProductCard
+                    <div
+                        ref={scrollRef}
+                        className="flex gap-4 overflow-x-auto snap-x snap-mandatory
+                                   px-[2%] sm:px-[4%] md:px-[6%]
+                                   pb-4 pt-4"
+                        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                    >
+                        {processedProducts.map((product, index) => (
+                            <div
                                 key={product.id}
-                                product={product}
-                                index={index}
-                                onProductClick={onProductClick}
-                            />
+                                className="flex-shrink-0
+                                           w-[85vw] sm:w-[45vw] md:w-[32vw] lg:w-[28vw] xl:w-[25vw]
+                                           snap-center"
+                            >
+                                <div className="relative">
+                                    {/* 推荐胶囊 — 前3个显示 */}
+                                    {index < 3 && (
+                                        <m.div
+                                            initial={{ opacity: 0, y: -10, scale: 0.8 }}
+                                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                                            transition={{ delay: index * 0.12 + 0.3, type: 'spring', stiffness: 400, damping: 20 }}
+                                            className="absolute -top-3 left-1/2 -translate-x-1/2 z-20"
+                                        >
+                                            <span className="inline-flex items-center gap-1.5
+                                                             px-4 py-1.5 rounded-full
+                                                             bg-gradient-to-r from-[#C8A97E] to-[#D4B78F]
+                                                             text-white text-xs font-bold shadow-lg
+                                                             border border-white/30">
+                                                <Sparkles className="w-3 h-3" />
+                                                推荐
+                                            </span>
+                                        </m.div>
+                                    )}
+
+                                    <ProductCard
+                                        product={product}
+                                        index={index}
+                                        onProductClick={onProductClick}
+                                    />
+                                </div>
+                            </div>
                         ))}
                     </div>
                 )}
             </div>
 
-            {/* 底部说明 */}
-            <div className="px-6 py-4 bg-white/10 border-t border-white/20">
-                <p className="text-xs text-white/70 text-center">
-                    💡 产品推荐基于您的肤质分析和当前环境数据，仅供参考
-                </p>
-            </div>
-        </div>
+            {/* 底部提示 */}
+            <p className="text-xs text-[#8c7a6b] text-center mt-6">
+                💡 左右滑动或点击箭头查看更多产品
+            </p>
+        </section>
     );
 }
 

@@ -142,26 +142,16 @@ export const EVENING_STEPS: SkincareStep[] = ['cleanser', 'toner', 'essence', 's
 export function inferStepFromCategory(category: string): SkincareStep {
     const categoryMap: Record<string, SkincareStep> = {
         '洁面': 'cleanser',
-        '洁面乳': 'cleanser',
-        '洗面奶': 'cleanser',
-        '卸妆': 'cleanser',
-        '化妆水': 'toner',
-        '爽肤水': 'toner',
-        '柔肤水': 'toner',
-        '精华液': 'essence',
-        '精华': 'serum',
-        '安瓶': 'serum',
-        '眼霜': 'eye_cream',
-        '眼部精华': 'eye_cream',
+        '磨砂膏': 'cleanser',
+        '精华露': 'serum',
         '面霜': 'cream',
         '乳液': 'cream',
         '保湿霜': 'cream',
-        '防晒': 'sunscreen',
-        '防晒霜': 'sunscreen',
-        '隔离': 'sunscreen',
+        '护理油': 'oil',
         '面膜': 'mask',
-        '护肤油': 'oil',
-        '精油': 'oil'
+        '防晒': 'sunscreen',
+        '身体乳': 'other',
+        '护手霜': 'other',
     };
 
     return categoryMap[category] || 'other';

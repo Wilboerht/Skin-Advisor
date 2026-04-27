@@ -301,8 +301,8 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                 const actionNames: Record<string, string> = {
                     activate: '上架',
                     deactivate: '下架',
-                    feature: '设为推荐',
-                    unfeature: '取消推荐',
+                    feature: '设为精选置顶',
+                    unfeature: '取消精选置顶',
                     delete: '删除'
                 };
                 toast.success(`${actionNames[action]}成功`);
@@ -461,7 +461,7 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                         disabled={batchLoading !== null}
                         className="px-4 py-2 text-xs font-bold bg-amber-500/10 text-amber-700 border border-amber-500/20 hover:bg-amber-500/20 rounded-2xl transition-all shadow-sm active:scale-95"
                     >
-                        {batchLoading === 'feature' ? <Loader2 className="w-4 h-4 animate-spin" /> : '设为推荐'}
+                        {batchLoading === 'feature' ? <Loader2 className="w-4 h-4 animate-spin" /> : '设为精选置顶'}
                     </button>
                     <button
                         onClick={() => setDeleteConfirm({ show: true, id: null, batch: true })}

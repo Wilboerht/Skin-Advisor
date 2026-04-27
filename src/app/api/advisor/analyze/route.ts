@@ -185,9 +185,11 @@ export async function POST(request: NextRequest) {
             resultJson = {}; // Safety
         }
 
-        // 6. 补全产品详情
+        // 6. 补全产品详情 — 返回最多15个产品，前3个为AI精选推荐
         let finalProducts: any[] = [];
-        // reusable concerns already defined above
+
+        // 预先用算法生成15个带推荐理由的候选（用于兜底和补充）
+        const algorithmRecs = await recommendProducts(answers as any, concerns, candidateProducts, 15);
 
         if (resultJson.products && Array.isArray(resultJson.products)) {
             const mappedProducts = resultJson.products.map((p: any) => {
@@ -211,16 +213,20 @@ export async function POST(request: NextRequest) {
             }).filter(Boolean);
 
             if (mappedProducts.length > 0) {
-                finalProducts = mappedProducts.slice(0, 3);
+                // 前3个为AI主推推荐，补充算法候选至15个
+                const aiTop3 = mappedProducts.slice(0, 3).map((p: any) => ({
+                    ...p,
+                    reason: p.reason || algorithmRecs.find((r: any) => r.id === p.id)?.reason || "为您精选的护肤产品"
+                }));
+                const remaining = algorithmRecs.filter((ar: any) => !aiTop3.some((p: any) => p.id === ar.id));
+                finalProducts = [...aiTop3, ...remaining].slice(0, 15);
             }
         }
 
         // 如果 AI 没返回有效产品 (或映射全失败)，使用推荐算法兜底
         if (finalProducts.length === 0) {
             console.log("AI products invalid/empty, using recommendation engine fallback");
-            // Pass candidateProducts to avoid duplicate DB query
-            const recs = await recommendProducts(answers as any, concerns, candidateProducts);
-            finalProducts = recs;
+            finalProducts = algorithmRecs;
         }
 
         // 7. Construct Final Standardized Result (Matching ComprehensiveResult Interface)

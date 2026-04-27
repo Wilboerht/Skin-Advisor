@@ -7,7 +7,6 @@ import { usePathname, useRouter } from "next/navigation";
 import {
     LayoutDashboard,
     Package,
-    Settings,
     LogOut,
     ChevronLeft,
     ChevronRight,
@@ -22,7 +21,6 @@ import { motion, AnimatePresence } from "framer-motion";
 const MENU_ITEMS = [
     { href: "/admin/products", label: "产品管理", icon: Package },
     { href: "/admin/users", label: "用户管理", icon: Users },
-    { href: "/admin/settings", label: "系统设置", icon: Settings },
     { href: "/admin/audit-logs", label: "安全审计", icon: Shield },
 ];
 

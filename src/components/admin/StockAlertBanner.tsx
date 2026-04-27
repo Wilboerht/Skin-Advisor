@@ -38,27 +38,15 @@ export function StockAlertBanner() {
         // Fetch stock data
         const fetchStockData = async () => {
             try {
-                // 1. Fetch settings for threshold
-                let threshold = 10;
-                try {
-                    const settingsRes = await fetch('/api/admin/settings');
-                    if (settingsRes.ok) {
-                        const settingsData = await settingsRes.json();
-                        if (settingsData.success && settingsData.data.stockAlertThreshold) {
-                            threshold = settingsData.data.stockAlertThreshold;
-                        }
-                    }
-                } catch (e) {
-                    console.warn("Failed to fetch settings, utilizing default threshold 10");
-                }
+                const STOCK_ALERT_THRESHOLD = 10;
 
-                // 2. Fetch products
+                // Fetch products
                 const res = await fetch('/api/admin/products');
                 if (res.ok) {
                     const products = await res.json();
                     const productsList = Array.isArray(products) ? products : (products.data || []);
 
-                    const lowStock = productsList.filter((p: any) => p.stock > 0 && p.stock <= threshold);
+                    const lowStock = productsList.filter((p: any) => p.stock > 0 && p.stock <= STOCK_ALERT_THRESHOLD);
                     const outOfStock = productsList.filter((p: any) => p.stock <= 0);
 
                     const alertData: StockAlertData = {
@@ -78,7 +66,7 @@ export function StockAlertBanner() {
                     const hasShownToast = sessionStorage.getItem("stock_alert_toast_shown");
                     if (!hasShownToast && (alertData.lowStockCount > 0 || alertData.outOfStockCount > 0)) {
                         toast.error(
-                            `库存警报: ${alertData.outOfStockCount}个售罄, ${alertData.lowStockCount}个不足 (阈值: ${threshold})`,
+                            `库存警报: ${alertData.outOfStockCount}个售罄, ${alertData.lowStockCount}个不足 (阈值: ${STOCK_ALERT_THRESHOLD})`,
                             8000 // Long duration
                         );
                         sessionStorage.setItem("stock_alert_toast_shown", "true");

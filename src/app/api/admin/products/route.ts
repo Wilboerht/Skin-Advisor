@@ -32,9 +32,9 @@ export async function POST(request: NextRequest) {
         const product = await prisma.product.create({
             data: {
                 name: body.name,
-                nameEn: body.nameEn,
                 category: body.category,
                 image: body.image,
+                images: body.images || null,
                 price: body.price,
                 description: body.description,
                 keyIngredients: body.keyIngredients || [],
@@ -43,7 +43,11 @@ export async function POST(request: NextRequest) {
                 negativeFor: body.negativeFor || [],
                 sortOrder: body.sortOrder || 0,
                 active: body.active ?? true,
-                stock: body.stock || 0,
+                stock: 999,
+                step: body.step || null,
+                howToUse: body.howToUse || null,
+                affiliateLinks: body.affiliateLinks || null,
+                featured: body.featured ?? false,
             }
         });
 
