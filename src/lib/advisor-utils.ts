@@ -338,6 +338,8 @@ function mapConditionToConcern(condition: string): string | null {
     if (lower.includes("红") || lower.includes("sensitive") || lower.includes("敏")) return "sensitivity";
     if (lower.includes("黑眼圈") || lower.includes("dark circle")) return "dark_circles";
     if (lower.includes("暗") || lower.includes("dull")) return "dullness";
+    if (lower.includes("粗糙") || lower.includes("毛孔") || lower.includes("texture")) return "roughness";
+    if (lower.includes("光损伤") || lower.includes("晒伤") || lower.includes("光老化")) return "anti_aging";
     return null;
 }
 
@@ -366,14 +368,29 @@ export function identifyConcerns(
                 if (key) concerns.add(key);
             }
         });
+    }
 
-        // 检查维度评分
-        if (faceAnalysis.dimensions) {
-            if (faceAnalysis.dimensions.wrinkles.score < 60) concerns.add("wrinkles");
-            if (faceAnalysis.dimensions.spots.score < 60) concerns.add("spots");
-            if (faceAnalysis.dimensions.waterOil.score < 60) concerns.add("waterOil");
-            if (faceAnalysis.dimensions.acne.score < 60) concerns.add("acne");
-        }
+    // 3. 检查维度评分
+    if (faceAnalysis?.dimensions) {
+        if (faceAnalysis.dimensions.wrinkles.score < 60) concerns.add("wrinkles");
+        if (faceAnalysis.dimensions.spots.score < 60) concerns.add("spots");
+        if (faceAnalysis.dimensions.waterOil.score < 60) concerns.add("waterOil");
+        if (faceAnalysis.dimensions.acne.score < 60) concerns.add("acne");
+        if (faceAnalysis.dimensions.uvDamage.score < 60) concerns.add("anti_aging");
+        if (faceAnalysis.dimensions.sensitivity.score < 60) concerns.add("sensitivity");
+        if (faceAnalysis.dimensions.radiance.score < 60) concerns.add("dullness");
+    }
+
+    // 4. 检查实验室指标（粗糙度）
+    if (faceAnalysis?.labAnalysis?.roughness && faceAnalysis.labAnalysis.roughness.value > 15) {
+        concerns.add("roughness");
+    }
+
+    // 5. 检查区域分析中的纹理/粗糙问题
+    if (faceAnalysis?.zoneAnalysis) {
+        const zones = [faceAnalysis.zoneAnalysis.forehead, faceAnalysis.zoneAnalysis.tZone, faceAnalysis.zoneAnalysis.leftCheek, faceAnalysis.zoneAnalysis.rightCheek];
+        const hasRoughZone = zones.some(z => z.texture !== undefined && z.texture < 50);
+        if (hasRoughZone) concerns.add("roughness");
     }
 
     // 保证至少有一个关注点
@@ -400,6 +417,8 @@ export function getConcernLabel(concern: string): string {
         dryness: "干燥缺水",
         oil_control: "控油平衡",
         dark_circles: "黑眼圈",
+        roughness: "粗糙毛孔",
+        waterOil: "水油平衡",
     };
     return CONCERN_LABELS[concern] || concern;
 }
