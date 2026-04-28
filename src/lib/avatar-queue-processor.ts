@@ -25,7 +25,31 @@ async function generateWanxiangAvatarAsync(prompt: string, frontPhoto: string | 
     if (frontPhoto.startsWith("data:")) {
       // 新版 API 支持完整 data URI 格式传入 images 数组
       images.push(frontPhoto);
+    } else if (
+      frontPhoto.startsWith("/") ||
+      frontPhoto.includes("localhost") ||
+      frontPhoto.includes("127.0.0.1")
+    ) {
+      // 相对路径或本地地址：万象服务器无法访问，需要下载转成 base64
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+        const fullUrl = frontPhoto.startsWith("/") ? `${baseUrl}${frontPhoto}` : frontPhoto;
+        const res = await fetch(fullUrl);
+        if (res.ok) {
+          const blob = await res.blob();
+          const buffer = Buffer.from(await blob.arrayBuffer());
+          const base64 = buffer.toString("base64");
+          const mimeType = blob.type || "image/jpeg";
+          images.push(`data:${mimeType};base64,${base64}`);
+          console.log("[Wanxiang] Converted local image to base64 for upload");
+        } else {
+          console.warn("[Wanxiang] Failed to fetch local image:", res.status);
+        }
+      } catch (e) {
+        console.warn("[Wanxiang] Failed to convert local image to base64:", e);
+      }
     } else {
+      // 公网 URL：万象服务器可以直接访问
       images.push(frontPhoto);
     }
   }
@@ -244,20 +268,18 @@ async function generateJimengAvatarAsync(
   );
 
   try {
-    // Submit async task
-    const submitRes = await new Promise<any>((resolve, reject) => {
-      service.json("CVSync2AsyncSubmitTask", {}, reqBody, (err: any, data: any) => {
-        if (err) reject(err);
-        else resolve(data);
-      });
+    // 新版 @volcengine/openapi 没有 service.json()，需要用 createJSONAPI()
+    const submitAPI = service.createJSONAPI("CVSync2AsyncSubmitTask", {
+      Version: "2022-08-31",
     });
+    const submitRes = await submitAPI(reqBody);
 
-    if (!submitRes || submitRes.error || submitRes.code !== 0) {
-      const error = submitRes?.error || submitRes?.code;
+    if (!submitRes || (submitRes as any).error || (submitRes as any).code !== 0) {
+      const error = (submitRes as any)?.error || (submitRes as any)?.code;
       throw new Error(`Jimeng submit failed: ${JSON.stringify(error)}`);
     }
 
-    const reqId = submitRes.data?.req_id;
+    const reqId = (submitRes as any)?.data?.req_id;
     if (!reqId) {
       throw new Error("No request ID returned from Jimeng submit");
     }
@@ -265,25 +287,23 @@ async function generateJimengAvatarAsync(
     console.log(`[Jimeng] Task submitted, reqId=${reqId}, polling for result...`);
 
     // Poll for result (max 60 seconds)
+    const getResultAPI = service.createJSONAPI("CVSync2AsyncGetResult", {
+      Version: "2022-08-31",
+    });
     const maxAttempts = 60;
     for (let i = 0; i < maxAttempts; i++) {
       await new Promise((r) => setTimeout(r, 1000)); // Wait 1s between polls
 
-      const queryRes = await new Promise<any>((resolve, reject) => {
-        service.json("CVSync2AsyncGetResult", {}, { req_id: reqId }, (err: any, data: any) => {
-          if (err) reject(err);
-          else resolve(data);
-        });
-      });
+      const queryRes = await getResultAPI({ req_id: reqId });
 
-      const status = queryRes?.data?.task_status;
-      const resultUrl = queryRes?.data?.image_url;
+      const status = (queryRes as any)?.data?.task_status;
+      const resultUrl = (queryRes as any)?.data?.image_url;
 
       if (status === "succeed" && resultUrl) {
         console.log(`[Jimeng] ✅ Task completed after ${i + 1} attempts`);
         return resultUrl;
       } else if (status === "failed") {
-        throw new Error(`Jimeng task failed: ${queryRes?.data?.fail_reason}`);
+        throw new Error(`Jimeng task failed: ${(queryRes as any)?.data?.fail_reason}`);
       } else if (status === "processing") {
         // Continue polling
         if (i % 5 === 0) {
