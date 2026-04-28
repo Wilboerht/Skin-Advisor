@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 import { House } from "lucide-react";
 import { useAsyncAnalysis } from "@/hooks/useAsyncAnalysis";
 import { motion as m, AnimatePresence } from "framer-motion";
@@ -749,28 +750,46 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     // Error State
     if (analysisState.status === 'error') {
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen bg-[#FAFAFA] p-4">
-                <div className="bg-white/10 backdrop-blur-sm p-8 rounded-2xl shadow-sm border border-white/10 max-w-md w-full text-center">
-                    <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <AlertCircle className="w-8 h-8 text-red-300" />
+            <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
+                {/* Backdrop with Blur */}
+                <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md" />
+
+                {/* Modal Content */}
+                <div className="relative z-10 w-full max-w-[420px] bg-white rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col">
+                    {/* Header */}
+                    <div className="p-10 pt-14 text-center pb-1">
+                        <div className="mb-7 flex justify-center">
+                            <img
+                                src="/NIHPLOD-logo.svg"
+                                alt="NIHPLOD"
+                                className="h-[34px] object-contain"
+                            />
+                        </div>
+                        <h3 className="text-base font-bold" style={{ color: '#5c4937' }}>
+                            分析遇到了一些问题
+                        </h3>
                     </div>
-                    <h2 className="text-xl font-bold text-white mb-2">分析遇到了一些问题</h2>
-                    <p className="text-white/60 mb-8 leading-relaxed">
-                        {analysisState.error || "服务器暂时无法响应，请稍后再试。"}
-                    </p>
-                    <div className="flex flex-col gap-3">
-                        <button
-                            onClick={() => router.push('/face-scan')}
-                            className="w-full py-3 bg-black text-white rounded-xl font-medium hover:bg-gray-800 transition-colors"
-                        >
-                            重新拍摄
-                        </button>
-                        <button
-                            onClick={() => router.push('/questions')}
-                            className="w-full py-3 bg-transparent text-gray-500 rounded-xl font-medium hover:bg-gray-50 transition-colors"
-                        >
-                            返回重新测试
-                        </button>
+
+                    {/* Content */}
+                    <div className="px-10 pb-10 pt-1 flex flex-col items-center gap-6">
+                        <p className="text-sm leading-relaxed text-center" style={{ color: '#5c4937', opacity: 0.8 }}>
+                            {analysisState.error || "服务器暂时无法响应，请稍后再试。"}
+                        </p>
+
+                        <div className="flex flex-col gap-3 w-full">
+                            <button
+                                onClick={() => router.push('/face-scan')}
+                                className="flex w-full items-center justify-center gap-2 rounded-full bg-[#5c4937] py-3 text-sm font-medium text-white shadow-lg transition-transform active:scale-95 hover:bg-[#4a3a2c]"
+                            >
+                                重新拍摄
+                            </button>
+                            <button
+                                onClick={() => router.push('/questions')}
+                                className="flex w-full items-center justify-center gap-2 rounded-full border border-[#5c4937]/10 bg-white py-3 text-sm font-medium text-[#5c4937] transition-colors hover:bg-[#5c4937]/5 active:scale-95"
+                            >
+                                返回重新测试
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
