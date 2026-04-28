@@ -113,6 +113,21 @@ export async function DELETE(
             where: { id }
         });
 
+        // 清理 RecommendationRule 中引用的已删除产品 ID
+        const rules = await prisma.recommendationRule.findMany();
+        for (const rule of rules) {
+            const ruleProductIds = Array.isArray(rule.productIds)
+                ? rule.productIds as string[]
+                : [];
+            const cleanedIds = ruleProductIds.filter(pid => pid !== id);
+            if (cleanedIds.length !== ruleProductIds.length) {
+                await prisma.recommendationRule.update({
+                    where: { id: rule.id },
+                    data: { productIds: cleanedIds }
+                });
+            }
+        }
+
         // Log audit
         await logAdminAction({
             adminId: admin.adminId,

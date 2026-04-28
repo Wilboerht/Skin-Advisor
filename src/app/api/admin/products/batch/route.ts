@@ -82,6 +82,22 @@ export async function POST(request: NextRequest) {
                 result = await prisma.product.deleteMany({
                     where: { id: { in: ids } }
                 });
+
+                // 清理 RecommendationRule 中引用的已删除产品 ID
+                const deletedIdSet = new Set<string>(ids);
+                const rules = await prisma.recommendationRule.findMany();
+                for (const rule of rules) {
+                    const ruleProductIds = Array.isArray(rule.productIds)
+                        ? rule.productIds as string[]
+                        : [];
+                    const cleanedIds = ruleProductIds.filter(id => !deletedIdSet.has(id));
+                    if (cleanedIds.length !== ruleProductIds.length) {
+                        await prisma.recommendationRule.update({
+                            where: { id: rule.id },
+                            data: { productIds: cleanedIds }
+                        });
+                    }
+                }
                 break;
         }
 

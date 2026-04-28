@@ -66,13 +66,14 @@ export function ProductRecommendationSection({
             let dimensionLink: ProductCardData['dimensionLink'] = null;
             if (faceAnalysis?.dimensions) {
                 const categoryToDimension: Record<string, string> = {
-                    '精华': 'radiance', '精华液': 'radiance', '安瓶': 'radiance',
-                    '面霜': 'waterOil', '乳液': 'waterOil',
-                    '防晒': 'uvDamage', '防晒霜': 'uvDamage',
-                    '洁面': 'waterOil', '洁面乳': 'waterOil',
-                    '眼霜': 'darkCircles',
-                    '爽肤水': 'skinTone', '化妆水': 'skinTone',
-                    '面膜': 'sensitivity', '护肤油': 'waterOil',
+                    // 与后台 admin CATEGORY_OPTIONS 严格对齐
+                    '精华露': 'radiance',
+                    '面霜': 'waterOil',
+                    '洁面': 'waterOil',
+                    '护理油': 'waterOil',
+                    '面膜': 'sensitivity',
+                    '防晒': 'uvDamage',
+                    '磨砂膏': 'waterOil',
                 };
                 const dimKey = categoryToDimension[product.category];
                 if (dimKey && faceAnalysis.dimensions[dimKey]) {
