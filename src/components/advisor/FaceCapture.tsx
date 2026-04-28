@@ -67,6 +67,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
   const cooldownRef = useRef<boolean>(false); // 步骤切换冷却标志
   const lastSpeakTimeRef = useRef<number>(0); // 语音防抖时间戳
   const lastSpokenPhraseRef = useRef<string>(""); // 避免短时间内重复播报同一句话
+  const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null); // 冷却进度定时器
 
   const [stream, setStream] = useState<MediaStream | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -671,13 +672,22 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
       const progressInterval = 50; // 每 50ms 更新一次进度
       let elapsed = 0;
 
-      const progressTimer = setInterval(() => {
+      // Clear any existing timer first
+      if (progressTimerRef.current) {
+        clearInterval(progressTimerRef.current);
+        progressTimerRef.current = null;
+      }
+
+      progressTimerRef.current = setInterval(() => {
         elapsed += progressInterval;
         const progress = Math.min(100, (elapsed / cooldownDuration) * 100);
         setCooldownProgress(progress);
 
         if (elapsed >= cooldownDuration) {
-          clearInterval(progressTimer);
+          if (progressTimerRef.current) {
+            clearInterval(progressTimerRef.current);
+            progressTimerRef.current = null;
+          }
           cooldownRef.current = false;
           setIsInCooldown(false);
           setCooldownProgress(0);
@@ -860,9 +870,13 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
         streamRef.current.getTracks().forEach((track) => track.stop());
         streamRef.current = null;
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
       if (videoRef.current) {
         videoRef.current.srcObject = null;
+      }
+      // 清理冷却进度定时器，防止组件卸载后内存泄漏
+      if (progressTimerRef.current) {
+        clearInterval(progressTimerRef.current);
+        progressTimerRef.current = null;
       }
     };
   }, [facingMode, initCamera]);

@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
         case "products":
             const products = await prisma.product.findMany({
                 orderBy: { sortOrder: "asc" },
+                take: 5000, // Hard limit to prevent memory exhaustion
             });
             headers = ["ID", "Name", "Name (EN)", "Category", "Price", "Stock", "Active", "Featured", "Created"];
             data = products.map((p) => [
@@ -41,6 +42,7 @@ export async function GET(request: NextRequest) {
                     _count: { select: { advisorSessions: true } },
                 },
                 orderBy: { createdAt: "desc" },
+                take: 5000, // Hard limit to prevent memory exhaustion
             });
             headers = ["ID", "Email", "Name", "Role", "Tests Taken", "Created"];
             data = users.map((u) => [

@@ -5,9 +5,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateUploadSignature } from "@/lib/ali-oss";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { getSession } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
     try {
+        // 0. 必须登录才能获取 OSS 签名
+        const user = await getSession();
+        if (!user) {
+            return NextResponse.json({ error: "请先登录" }, { status: 401 });
+        }
+
         // 1. 简单的身份/频率检查
         const ip = getClientIP(request);
         const limitParams = await rateLimit(ip + ":oss-sign", "oss-sign", { maxRequests: 5 });

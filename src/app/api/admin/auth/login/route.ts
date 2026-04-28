@@ -4,12 +4,30 @@ import prisma from "@/lib/prisma";
 import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import { logAdminAction, getClientInfo } from "@/lib/admin-auth";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
 export async function POST(request: NextRequest) {
     const clientInfo = getClientInfo(request);
+    const ip = getClientIP(request);
+
+    // Rate limit: max 5 login attempts per 15 minutes per IP
+    const ipLimit = await rateLimit(`admin-login-ip-${ip}`, "login");
+    if (!ipLimit.success) {
+        return NextResponse.json(
+            { error: "Too many login attempts. Please try again later." },
+            { status: 429 }
+        );
+    }
 
     try {
         const { username, password } = await request.json();
+
+        if (!username || !password || typeof username !== "string" || typeof password !== "string") {
+            return NextResponse.json(
+                { error: "Invalid request" },
+                { status: 400 }
+            );
+        }
 
         const admin = await prisma.adminUser.findUnique({
             where: { username }
@@ -30,23 +48,31 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Support both bcrypt hashed passwords and legacy plaintext during migration
-        let passwordValid = false;
-        if (admin.password.startsWith("$2a$") || admin.password.startsWith("$2b$")) {
-            // Bcrypt hashed password
-            passwordValid = await bcrypt.compare(password, admin.password);
-        } else {
-            // Legacy plaintext password — verify and auto-upgrade to bcrypt
-            passwordValid = admin.password === password;
-            if (passwordValid) {
-                const hashedPassword = await bcrypt.hash(password, 12);
-                await prisma.adminUser.update({
-                    where: { id: admin.id },
-                    data: { password: hashedPassword }
-                });
-                console.log(`[Security] Auto-upgraded password hash for admin: ${admin.username}`);
-            }
+        // Account-level rate limit: max 5 attempts per 15 minutes per account
+        const accountLimit = await rateLimit(`admin-login-account-${admin.id}`, "login");
+        if (!accountLimit.success) {
+            return NextResponse.json(
+                { error: "Too many login attempts for this account. Please try again later." },
+                { status: 429 }
+            );
         }
+
+        // SECURITY: Reject plaintext passwords entirely. All admin passwords MUST be bcrypt hashed.
+        if (!admin.password.startsWith("$2a$") && !admin.password.startsWith("$2b$")) {
+            console.error(`[Security] Admin ${admin.username} has a non-bcrypt password. Login rejected.`);
+            await logAdminAction({
+                action: "login_failed",
+                resource: "AdminUser",
+                details: { username, reason: "plaintext_password_rejected" },
+                ...clientInfo
+            });
+            return NextResponse.json(
+                { error: "Invalid credentials" },
+                { status: 401 }
+            );
+        }
+
+        const passwordValid = await bcrypt.compare(password, admin.password);
 
         if (!passwordValid) {
             await logAdminAction({

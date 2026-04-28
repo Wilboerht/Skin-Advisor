@@ -1143,7 +1143,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                     <div className="space-y-1">
                                                         {renderLabRow("皮肤 pH 值 (Est. pH)",
                                                             faceAnalysis?.labAnalysis?.skinPh?.value ? `${faceAnalysis.labAnalysis.skinPh.value}` :
-                                                                (faceAnalysis?.dimensions ? (5.5 + (faceAnalysis.dimensions.waterOil.score < 60 ? 0.4 : -0.2) + Math.random() * 0.3).toFixed(1) : '?'),
+                                                                (faceAnalysis?.dimensions ? (5.5 + (faceAnalysis.dimensions.waterOil.score < 60 ? 0.4 : -0.2) + ((faceAnalysis.dimensions.waterOil.score % 100) / 1000 * 3)).toFixed(1) : '?'),
                                                             faceAnalysis?.labAnalysis?.skinPh?.range || "4.5 - 5.5",
                                                             faceAnalysis?.labAnalysis?.skinPh?.status || (faceAnalysis?.dimensions ? (faceAnalysis.dimensions.waterOil.score < 60 ? '偏碱' : '正常') : '-'))}
 

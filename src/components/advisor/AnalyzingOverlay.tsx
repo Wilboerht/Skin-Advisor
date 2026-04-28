@@ -309,13 +309,14 @@ export function AnalyzingOverlay({ progress, userImage, onCancel }: AnalyzingOve
     const [isMounted, setIsMounted] = useState(false);
 
     // Memoize particles to prevent jumping on re-renders (triggered by progress updates)
+    // Use deterministic pseudo-random based on index to avoid SSR/CSR hydration mismatch
     const particles = useMemo(() => {
         return [...Array(6)].map((_, i) => ({
             id: i,
-            duration: 2 + Math.random(),
-            delay: Math.random() * 2,
-            left: 50 + (Math.random() * 100 - 50),
-            top: 50 + (Math.random() * 100 - 50),
+            duration: 2 + (((i * 37) % 100) / 100),
+            delay: (((i * 53) % 100) / 50),
+            left: 50 + (((i * 71) % 100) - 50),
+            top: 50 + (((i * 89) % 100) - 50),
         }));
     }, []);
 

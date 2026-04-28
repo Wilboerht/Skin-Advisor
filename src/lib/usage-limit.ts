@@ -43,7 +43,7 @@ export async function checkUsageLimit(request: NextRequest, body?: any): Promise
             })
         );
 
-        // VIP 限制：每日 100 次（临时放宽）
+        // VIP 限制：每日 100 次
         const limit = 100;
         return {
             canTest: count < limit,
@@ -68,8 +68,8 @@ export async function checkUsageLimit(request: NextRequest, body?: any): Promise
             })
         );
 
-        // 普通用户限制：每日 100 次（临时放宽）
-        const limit = 100;
+        // 普通用户限制：每日 10 次
+        const limit = 10;
         return {
             canTest: count < limit,
             remaining: Math.max(0, limit - count),
@@ -78,7 +78,7 @@ export async function checkUsageLimit(request: NextRequest, body?: any): Promise
         };
     }
 
-    // 3. 如果是访客 — 每日 100 次（临时放宽）
+    // 3. 如果是访客 — 每日 3 次
     const identifiers = extractGuestIdentifiers(request, body);
     const { ipAddress, cookieId, fingerprint } = identifiers;
 
@@ -101,7 +101,7 @@ export async function checkUsageLimit(request: NextRequest, body?: any): Promise
     );
 
     const count = todayCount?.todayCount || 0;
-    const limit = 100;
+    const limit = 3;
 
     if (count >= limit) {
         return {
@@ -128,65 +128,64 @@ export async function recordUsage(request: NextRequest, sessionId: string, body?
     const { ipAddress, cookieId, fingerprint, userAgent } = identifiers;
 
     try {
-        // 1. 创建 TestRecord (用于所有角色计数)
-        await prisma.testRecord.create({
-            data: {
-                userId: user?.id || null,
-                guestId: !user ? (fingerprint || cookieId || ipAddress) : null,
-                sessionId,
-                testDate: new Date()
-            }
-        });
-
-        // 2. 如果是访客，同时更新 GuestUsage (用于访客识别)
-        if (!user) {
-            // 查找或创建
-            const existing = await prisma.guestUsage.findFirst({
-                where: {
-                    OR: [
-                        { ipAddress },
-                        ...(fingerprint ? [{ fingerprint }] : []),
-                        ...(cookieId ? [{ cookieId }] : [])
-                    ]
+        await prisma.$transaction(async (tx) => {
+            // 1. 创建 TestRecord (用于所有角色计数)
+            await tx.testRecord.create({
+                data: {
+                    userId: user?.id || null,
+                    guestId: !user ? (fingerprint || cookieId || ipAddress) : null,
+                    sessionId,
+                    testDate: new Date()
                 }
             });
 
-            const now = new Date();
-            if (existing) {
-                // Check if todayCount needs daily reset
-                const lastReset = existing.lastResetDate || existing.lastTestAt;
-                const todayStart = new Date();
-                todayStart.setHours(0, 0, 0, 0);
-                const needsReset = !lastReset || lastReset < todayStart;
+            // 2. 如果是访客，同时原子更新 GuestUsage
+            if (!user) {
+                const existing = await tx.guestUsage.findFirst({
+                    where: {
+                        OR: [
+                            { ipAddress },
+                            ...(fingerprint ? [{ fingerprint }] : []),
+                            ...(cookieId ? [{ cookieId }] : [])
+                        ]
+                    }
+                });
 
-                await prisma.guestUsage.update({
-                    where: { id: existing.id },
-                    data: {
-                        lastTestAt: now,
-                        testCount: { increment: 1 },
-                        // Reset todayCount to 1 if it's a new day, otherwise increment
-                        todayCount: needsReset ? 1 : { increment: 1 },
-                        lastResetDate: needsReset ? todayStart : undefined,
-                        ipAddress,
-                        cookieId: cookieId || existing.cookieId,
-                        fingerprint: fingerprint || existing.fingerprint,
-                        userAgent
-                    }
-                });
-            } else {
-                await prisma.guestUsage.create({
-                    data: {
-                        ipAddress,
-                        cookieId,
-                        fingerprint,
-                        userAgent,
-                        lastTestAt: now,
-                        testCount: 1,
-                        todayCount: 1
-                    }
-                });
+                const now = new Date();
+                if (existing) {
+                    const lastReset = existing.lastResetDate || existing.lastTestAt;
+                    const todayStart = new Date();
+                    todayStart.setHours(0, 0, 0, 0);
+                    const needsReset = !lastReset || lastReset < todayStart;
+
+                    await tx.guestUsage.update({
+                        where: { id: existing.id },
+                        data: {
+                            lastTestAt: now,
+                            testCount: { increment: 1 },
+                            todayCount: needsReset ? 1 : { increment: 1 },
+                            lastResetDate: needsReset ? todayStart : undefined,
+                            ipAddress,
+                            cookieId: cookieId || existing.cookieId,
+                            fingerprint: fingerprint || existing.fingerprint,
+                            userAgent
+                        }
+                    });
+                } else {
+                    await tx.guestUsage.create({
+                        data: {
+                            ipAddress,
+                            cookieId,
+                            fingerprint,
+                            userAgent,
+                            lastTestAt: now,
+                            testCount: 1,
+                            todayCount: 1
+                        }
+                    });
+                }
             }
-        }
+        });
     } catch (e) {
         console.error('Failed to record usage:', e);
     }

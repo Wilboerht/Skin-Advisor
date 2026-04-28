@@ -86,13 +86,27 @@ export async function POST(request: NextRequest) {
 
             if ((imgData.startsWith('/') || imgData.startsWith('\\')) && !imgData.startsWith('data:')) {
                 try {
-                    let relativePath = imgData.startsWith('/') ? imgData.slice(1) : imgData;
-                    // FIX: Check if uploads/ is already included
+                    const relativePath = imgData.startsWith('/') ? imgData.slice(1) : imgData;
+
+                    // Security: resolve and whitelist to public/uploads only
+                    const uploadRoot = path.resolve(process.cwd(), 'public', 'uploads');
+                    const normalized = path.normalize(relativePath);
+
+                    if (path.isAbsolute(normalized) || normalized.startsWith('..') || normalized.includes('..' + path.sep)) {
+                        aiLogger.warn(`Blocked path traversal attempt: ${imgData}`);
+                        return null;
+                    }
+
                     let filePath: string;
-                    if (relativePath.startsWith('uploads/') || relativePath.startsWith('uploads\\')) {
-                        filePath = path.join(process.cwd(), 'public', relativePath);
+                    if (normalized.startsWith('uploads/') || normalized.startsWith('uploads\\')) {
+                        filePath = path.resolve(process.cwd(), 'public', normalized);
                     } else {
-                        filePath = path.join(process.cwd(), 'public', 'uploads', relativePath);
+                        filePath = path.resolve(uploadRoot, normalized);
+                    }
+
+                    if (!filePath.startsWith(uploadRoot + path.sep) && filePath !== uploadRoot) {
+                        aiLogger.warn(`Blocked out-of-bounds file access: ${imgData}`);
+                        return null;
                     }
 
                     buffer = await fs.readFile(filePath);

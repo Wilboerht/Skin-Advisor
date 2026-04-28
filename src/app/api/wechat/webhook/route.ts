@@ -39,8 +39,28 @@ export async function GET(request: NextRequest) {
     }
 }
 
-// 预留接口：将来用于接收用户在公众号发的文本消息和事件
+// 接收用户在公众号发的文本消息和事件
 export async function POST(request: NextRequest) {
-    // 根据微信规范，即使目前不处理 POST 消息，也必须返回 "success"
+    const searchParams = request.nextUrl.searchParams;
+    const signature = searchParams.get("signature");
+    const timestamp = searchParams.get("timestamp");
+    const nonce = searchParams.get("nonce");
+
+    const token = process.env.WECHAT_TOKEN || "skinadvisor2026";
+
+    if (!signature || !timestamp || !nonce) {
+        return new NextResponse("Invalid Request", { status: 400 });
+    }
+
+    const arr = [token, timestamp, nonce].sort();
+    const str = arr.join("");
+    const sha1 = crypto.createHash("sha1").update(str).digest("hex");
+
+    if (sha1 !== signature) {
+        console.error("微信 Webhook POST 验证失败: signature 不匹配");
+        return new NextResponse("Invalid signature", { status: 403 });
+    }
+
+    // Signature verified. For now, return success as per WeChat spec.
     return new NextResponse("success");
 }

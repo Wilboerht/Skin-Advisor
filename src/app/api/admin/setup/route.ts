@@ -7,22 +7,45 @@ import { verifyAdminSession } from "@/lib/admin-auth";
 
 export async function GET() {
     try {
-        // 1. Admin - Always ensure admin exists with admin123
-        const hashedPassword = await bcrypt.hash("admin123", 12);
-        await prisma.adminUser.upsert({
-            where: { username: "admin" },
-            update: { password: hashedPassword },
-            create: {
-                username: "admin",
-                password: hashedPassword,
-                name: "System Admin",
-                role: "super_admin"
-            }
+        // 1. Security: verify admin session first
+        const admin = await verifyAdminSession();
+        if (!admin) {
+            return NextResponse.json(
+                { success: false, error: "Unauthorized" },
+                { status: 401 }
+            );
+        }
+
+        // 2. Admin - Only create if not exists, NEVER reset existing password
+        const adminPassword = process.env.ADMIN_INITIAL_PASSWORD;
+        let adminMsg: string;
+        const existingAdmin = await prisma.adminUser.findUnique({
+            where: { username: "admin" }
         });
-        const adminMsg = "Admin user ensured: admin / admin123";
 
+        if (!existingAdmin) {
+            // Only create admin if it doesn't exist and an initial password is configured
+            if (!adminPassword) {
+                return NextResponse.json(
+                    { success: false, error: "ADMIN_INITIAL_PASSWORD not configured" },
+                    { status: 500 }
+                );
+            }
+            const hashedPassword = await bcrypt.hash(adminPassword, 12);
+            await prisma.adminUser.create({
+                data: {
+                    username: "admin",
+                    password: hashedPassword,
+                    name: "System Admin",
+                    role: "super_admin"
+                }
+            });
+            adminMsg = "Admin user created";
+        } else {
+            adminMsg = "Admin user already exists, password left unchanged";
+        }
 
-        // 2. Products - Manual entry only
+        // 3. Products - Manual entry only
         const productCount = await prisma.product.count();
         let productMsg = `Found ${productCount} existing products.`;
 

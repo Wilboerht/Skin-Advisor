@@ -79,6 +79,9 @@ export async function getSession(): Promise<SessionUser | null> {
     }
 
     // Try to verify the token with local JWT secret
+    // IMPORTANT: If you need to support external tokens from an official API,
+    // you MUST configure the same JWT_SECRET so that jwtVerify can validate
+    // the signature. NEVER trust a token without signature verification.
     const payload = await verifyToken(tokenValue);
     if (payload?.sub) {
         console.log(`✅ Token verified (local JWT) for user: ${payload.sub}`);
@@ -91,50 +94,10 @@ export async function getSession(): Promise<SessionUser | null> {
             vipExpiresAt: payload.vipExpiresAt || null
         };
     }
-    
-    // If local JWT verification fails, the token might be signed by official server
-    // In this case, we still need to extract user info from the JWT payload
-    // The token structure from official API likely contains: sub, id, phone, etc.
-    if (tokenValue) {
-        try {
-            // Decode JWT without verification to extract payload
-            // JWT format: header.payload.signature
-            const parts = tokenValue.split('.');
-            if (parts.length !== 3) {
-                console.error("Invalid JWT format from token cookie");
-                return null;
-            }
-            
-            // Decode the payload (second part)
-            const payloadBase64 = parts[1];
-            // Add padding if needed
-            const padding = 4 - (payloadBase64.length % 4);
-            const paddedPayload = padding < 4 ? payloadBase64 + '='.repeat(padding) : payloadBase64;
-            const decodedPayload = JSON.parse(Buffer.from(paddedPayload, 'base64').toString());
-            
-            // Extract user ID from various possible fields
-            const userId = decodedPayload.sub || decodedPayload.id || decodedPayload.user_id;
-            
-            if (!userId) {
-                console.warn("Official API token missing user ID field (sub/id/user_id)");
-                return null;
-            }
-            
-            console.log(`✅ Using external token from cookie: ${foundCookieName} - user: ${userId}`);
-            return {
-                id: userId as string,
-                role: decodedPayload.role || 'user',
-                email: decodedPayload.email || null,
-                phone: decodedPayload.phone || null,
-                name: decodedPayload.name || decodedPayload.nickname || undefined,
-                vipExpiresAt: decodedPayload.vipExpiresAt || null
-            };
-        } catch (decodeError) {
-            console.error("Failed to decode external token:", decodeError);
-            return null;
-        }
-    }
-    
+
+    // Token failed signature verification — do NOT fall back to unverified decoding.
+    // This prevents trivial user impersonation by crafting a fake JWT payload.
+    console.warn(`🔴 Token signature invalid or expired for cookie: ${foundCookieName}`);
     return null;
 }
 

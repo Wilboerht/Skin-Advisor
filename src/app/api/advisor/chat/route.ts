@@ -5,6 +5,40 @@ import { ChatRequestSchema } from "@/lib/schemas";
 import { getSession } from "@/lib/auth";
 import { rateLimit } from "@/lib/ratelimit";
 
+/**
+ * Sanitize user message to prevent prompt injection.
+ * Blocks common injection patterns that try to override system instructions.
+ */
+function sanitizeUserMessage(input: string): string {
+    if (!input || typeof input !== "string") return "";
+    // Block common injection keywords/patterns (case-insensitive)
+    const blockedPatterns = [
+        /ignore\s+(all\s+)?previous\s+instructions/gi,
+        /ignore\s+(the\s+)?system\s+prompt/gi,
+        /you\s+are\s+now\s+/gi,
+        /system\s*:\s*/gi,
+        /---\s*system\s*---/gi,
+        /new\s+role\s*:/gi,
+        /disregard\s+(all\s+)?prior\s+/gi,
+        /override\s+(the\s+)?previous/gi,
+        /simulate\s+/gi,
+        /act\s+as\s+/gi,
+        /角色扮演/gi,
+        /忽略之前/gi,
+        /系统提示/gi,
+    ];
+    let sanitized = input;
+    for (const pattern of blockedPatterns) {
+        sanitized = sanitized.replace(pattern, "[BLOCKED]");
+    }
+    // Limit length to prevent token abuse
+    const MAX_MESSAGE_LENGTH = 2000;
+    if (sanitized.length > MAX_MESSAGE_LENGTH) {
+        sanitized = sanitized.substring(0, MAX_MESSAGE_LENGTH);
+    }
+    return sanitized;
+}
+
 // 聊天 API (DB Persisted for logged-in users only)
 // Note: Ensure `npx prisma generate` is run if types are missing
 
@@ -33,7 +67,16 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const { message, context, sessionId } = validation.data;
+        let { message, context, sessionId } = validation.data;
+
+        // Sanitize user message to prevent prompt injection
+        message = sanitizeUserMessage(message);
+        if (!message.trim()) {
+            return NextResponse.json(
+                { success: false, error: "消息内容无效或包含被禁止的指令" },
+                { status: 400 }
+            );
+        }
 
         // 检查用户登录状态
         const user = await getSession();

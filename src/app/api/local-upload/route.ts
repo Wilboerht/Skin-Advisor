@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
+
 /**
  * PUT /api/local-upload
  * Local file upload handler (fallback for OSS)
@@ -14,9 +17,24 @@ export async function PUT(request: NextRequest) {
         return NextResponse.json({ error: "Missing path" }, { status: 400 });
     }
 
-    // Security check: prevent directory traversal
-    if (filePath.includes("..")) {
+    // Security: normalize and whitelist the resolved path
+    const uploadRoot = path.resolve(process.cwd(), "public", "uploads");
+    const requestedPath = path.normalize(filePath);
+
+    // Reject any path that tries to escape the upload directory
+    if (path.isAbsolute(requestedPath) || requestedPath.startsWith("..") || requestedPath.includes(".." + path.sep)) {
         return NextResponse.json({ error: "Invalid path" }, { status: 400 });
+    }
+
+    const fullPath = path.resolve(uploadRoot, requestedPath);
+    if (!fullPath.startsWith(uploadRoot + path.sep) && fullPath !== uploadRoot) {
+        return NextResponse.json({ error: "Path traversal detected" }, { status: 403 });
+    }
+
+    // Validate extension
+    const ext = path.extname(requestedPath).toLowerCase();
+    if (!ALLOWED_EXTENSIONS.includes(ext)) {
+        return NextResponse.json({ error: "File type not allowed" }, { status: 400 });
     }
 
     try {
@@ -32,10 +50,25 @@ export async function PUT(request: NextRequest) {
         // Read the file content
         const buffer = Buffer.from(await request.arrayBuffer());
 
-        // Define the target path in public/uploads
-        // Note: In development, writing to public might trigger reload
-        // In production container, persistency depends on volume mounting
-        const fullPath = path.join(process.cwd(), "public", "uploads", filePath);
+        // Validate file size
+        if (buffer.length > MAX_FILE_SIZE) {
+            return NextResponse.json(
+                { error: `File too large. Max size: ${MAX_FILE_SIZE / 1024 / 1024}MB` },
+                { status: 413 }
+            );
+        }
+
+        // Validate MIME type via file magic numbers (simple check)
+        const magic = buffer.slice(0, 4).toString("hex");
+        const isJpeg = magic.startsWith("ffd8");
+        const isPng = magic.startsWith("89504e47");
+        const isGif = magic.startsWith("47494638");
+        const isWebp = buffer.slice(0, 12).toString("hex").includes("57454250"); // WEBP
+
+        if (!isJpeg && !isPng && !isGif && !isWebp) {
+            return NextResponse.json({ error: "Invalid file content" }, { status: 400 });
+        }
+
         const dir = path.dirname(fullPath);
 
         // Ensure directory exists

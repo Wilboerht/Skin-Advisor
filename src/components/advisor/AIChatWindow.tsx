@@ -31,7 +31,7 @@ export function AIChatWindow({ skinType, concerns, summary, sessionId }: AIChatW
             id: "welcome",
             role: "assistant",
             content: `您好！我是您的专属 AI 护肤顾问。基于您的肤质分析报告，您有什么想进一步了解的吗？比如："适合我的防晒霜怎么选？"或"如何改善T区出油？"`,
-            createdAt: Date.now()
+            createdAt: 0 // Avoids SSR/CSR hydration mismatch; actual timestamp not displayed for welcome msg
         }
     ]);
     const [inputValue, setInputValue] = useState("");

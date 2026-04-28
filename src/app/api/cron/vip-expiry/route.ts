@@ -61,7 +61,6 @@ export async function GET(request: NextRequest) {
                 id: true,
                 name: true,
                 email: true,
-                phoneNumber: true,
                 vipExpiresAt: true,
             },
         });
@@ -91,7 +90,6 @@ export async function GET(request: NextRequest) {
         const logDetails = expiredVipUsers.map((u) => ({
             id: u.id,
             name: u.name,
-            phone: u.phoneNumber,
             expiredAt: u.vipExpiresAt?.toISOString(),
         }));
 

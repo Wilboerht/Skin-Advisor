@@ -13,7 +13,13 @@ export async function GET(req: NextRequest) {
         const { searchParams } = new URL(req.url);
         const id = searchParams.get('id');
 
-        let data = {
+        // Basic access control: require a valid-looking session ID (CUID format)
+        // This prevents trivial enumeration of very short IDs
+        if (!id || id.length < 10) {
+            return new Response('Invalid session ID', { status: 400 });
+        }
+
+        const data = {
             score: searchParams.get('score') || '--',
             skinType: searchParams.get('skinType') || 'Unknown',
             date: searchParams.get('date') || new Date().toISOString().split('T')[0],

@@ -106,8 +106,7 @@ export async function POST(req: NextRequest) {
         console.error("[Cleanup Global Error]:", error);
         return NextResponse.json({ 
             success: false, 
-            error: "清理失败", 
-            details: error.message 
+            error: "清理失败" 
         }, { status: 500 });
     }
 }

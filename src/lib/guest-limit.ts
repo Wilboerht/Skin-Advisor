@@ -211,99 +211,95 @@ export async function recordGuestTest(
     const deviceInfo = parseUserAgent(userAgent);
 
     try {
-        // 查找或创建游客记录
-        // 优先用指纹匹配，其次 Cookie，最后 IP
-        let existingRecord = null;
+        const result = await prisma.$transaction(async (tx) => {
+            // 查找或创建游客记录（原子操作）
+            let existingRecord = null;
 
-        if (fingerprint) {
-            existingRecord = await prisma.guestUsage.findFirst({
-                where: { fingerprint }
-            });
-        }
+            if (fingerprint) {
+                existingRecord = await tx.guestUsage.findFirst({
+                    where: { fingerprint }
+                });
+            }
 
-        if (!existingRecord && cookieId) {
-            existingRecord = await prisma.guestUsage.findFirst({
-                where: { cookieId }
-            });
-        }
+            if (!existingRecord && cookieId) {
+                existingRecord = await tx.guestUsage.findFirst({
+                    where: { cookieId }
+                });
+            }
 
-        if (!existingRecord) {
-            existingRecord = await prisma.guestUsage.findFirst({
-                where: { ipAddress }
-            });
-        }
+            if (!existingRecord) {
+                existingRecord = await tx.guestUsage.findFirst({
+                    where: { ipAddress }
+                });
+            }
 
-        const now = new Date();
+            const now = new Date();
 
-        if (existingRecord) {
-            // 检查是否跨天
-            const lastReset = new Date(existingRecord.lastResetDate);
-            lastReset.setHours(0, 0, 0, 0);
-            const needsReset = lastReset < today;
+            if (existingRecord) {
+                const lastReset = new Date(existingRecord.lastResetDate);
+                lastReset.setHours(0, 0, 0, 0);
+                const needsReset = lastReset < today;
 
-            // 更新记录
-            await prisma.guestUsage.update({
-                where: { id: existingRecord.id },
-                data: {
-                    // 更新所有标识（可能之前缺失）
-                    ipAddress,
-                    cookieId: cookieId || existingRecord.cookieId,
-                    fingerprint: fingerprint || existingRecord.fingerprint,
-                    userAgent,
-                    deviceType: deviceInfo.deviceType,
-                    browser: deviceInfo.browser,
-                    os: deviceInfo.os,
-                    // 更新计数
-                    testCount: { increment: 1 },
-                    todayCount: needsReset ? 1 : { increment: 1 },
-                    lastTestAt: now,
-                    lastResetDate: needsReset ? now : existingRecord.lastResetDate
-                }
-            });
+                await tx.guestUsage.update({
+                    where: { id: existingRecord.id },
+                    data: {
+                        ipAddress,
+                        cookieId: cookieId || existingRecord.cookieId,
+                        fingerprint: fingerprint || existingRecord.fingerprint,
+                        userAgent,
+                        deviceType: deviceInfo.deviceType,
+                        browser: deviceInfo.browser,
+                        os: deviceInfo.os,
+                        testCount: { increment: 1 },
+                        todayCount: needsReset ? 1 : { increment: 1 },
+                        lastTestAt: now,
+                        lastResetDate: needsReset ? now : existingRecord.lastResetDate
+                    }
+                });
 
-            // 同时记录到 TestRecord 表（保持兼容）
-            await prisma.testRecord.create({
-                data: {
-                    guestId: fingerprint || cookieId || ipAddress,
-                    sessionId
-                }
-            });
+                await tx.testRecord.create({
+                    data: {
+                        guestId: fingerprint || cookieId || ipAddress,
+                        sessionId
+                    }
+                });
 
-            return {
-                success: true,
-                usedCount: needsReset ? 1 : existingRecord.todayCount + 1
-            };
-        } else {
-            // 创建新记录
-            await prisma.guestUsage.create({
-                data: {
-                    ipAddress,
-                    cookieId,
-                    fingerprint,
-                    userAgent,
-                    deviceType: deviceInfo.deviceType,
-                    browser: deviceInfo.browser,
-                    os: deviceInfo.os,
-                    testCount: 1,
-                    todayCount: 1,
-                    lastTestAt: now,
-                    lastResetDate: now
-                }
-            });
+                return {
+                    success: true,
+                    usedCount: needsReset ? 1 : existingRecord.todayCount + 1
+                };
+            } else {
+                await tx.guestUsage.create({
+                    data: {
+                        ipAddress,
+                        cookieId,
+                        fingerprint,
+                        userAgent,
+                        deviceType: deviceInfo.deviceType,
+                        browser: deviceInfo.browser,
+                        os: deviceInfo.os,
+                        testCount: 1,
+                        todayCount: 1,
+                        lastTestAt: now,
+                        lastResetDate: now
+                    }
+                });
 
-            // 同时记录到 TestRecord 表
-            await prisma.testRecord.create({
-                data: {
-                    guestId: fingerprint || cookieId || ipAddress,
-                    sessionId
-                }
-            });
+                await tx.testRecord.create({
+                    data: {
+                        guestId: fingerprint || cookieId || ipAddress,
+                        sessionId
+                    }
+                });
 
-            return {
-                success: true,
-                usedCount: 1
-            };
-        }
+                return {
+                    success: true,
+                    usedCount: 1
+                };
+            }
+        });
+
+        return result;
     } catch (error) {
         console.error('Failed to record guest test:', error);
         return {

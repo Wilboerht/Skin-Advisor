@@ -6,6 +6,7 @@ import prisma from "@/lib/prisma";
 // Key = cookie 字符串 hash, Value = 官方 API 返回的 data
 const meCache = new Map<string, { data: any; timestamp: number }>();
 const ME_CACHE_TTL_MS = 5000; // 5 秒缓存
+const MAX_CACHE_SIZE = 1000;
 
 function getCacheKey(cookieStr: string): string {
     let hash = 0;
@@ -14,6 +15,24 @@ function getCacheKey(cookieStr: string): string {
         hash |= 0;
     }
     return String(hash);
+}
+
+function setMeCache(key: string, value: { data: any; timestamp: number }) {
+    // Evict oldest entries if cache exceeds max size
+    if (meCache.size >= MAX_CACHE_SIZE) {
+        const oldestKey = meCache.keys().next().value;
+        if (oldestKey) meCache.delete(oldestKey);
+    }
+    meCache.set(key, value);
+}
+
+function cleanupExpiredCache() {
+    const now = Date.now();
+    for (const [key, entry] of meCache.entries()) {
+        if (now - entry.timestamp > ME_CACHE_TTL_MS * 2) {
+            meCache.delete(key);
+        }
+    }
 }
 
 function mirrorOfficialSessionCookie(officialResponse: Response, response: NextResponse) {
@@ -66,13 +85,11 @@ export async function GET(req: NextRequest) {
     }
 
     try {
+        cleanupExpiredCache();
         const cacheKey = getCacheKey(allCookies);
         const cached = meCache.get(cacheKey);
         if (cached && Date.now() - cached.timestamp < ME_CACHE_TTL_MS) {
             console.log("[auth/me] Returning cached user data (cache hit)");
-            // 缓存命中时仍需要 upsert 本地用户，但跳过外部 API 调用
-            // 为了简化，缓存只缓存最终返回结果，不包含 cookie 镜像逻辑
-            // 如果 cookie 快过期，这可能有风险，但 5s 缓存影响极小
             return NextResponse.json(cached.data);
         }
 
@@ -142,7 +159,7 @@ export async function GET(req: NextRequest) {
         };
 
         // 写入缓存，5s 内相同 cookie 的请求不再访问外部 API
-        meCache.set(cacheKey, { data: responsePayload, timestamp: Date.now() });
+        setMeCache(cacheKey, { data: responsePayload, timestamp: Date.now() });
 
         const response = NextResponse.json(responsePayload);
 

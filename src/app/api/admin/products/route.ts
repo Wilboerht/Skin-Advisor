@@ -29,6 +29,26 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         const clientInfo = getClientInfo(request);
 
+        // Basic input validation
+        if (!body.name || typeof body.name !== "string" || body.name.length > 200) {
+            return NextResponse.json({ error: "Invalid name (required, max 200 chars)" }, { status: 400 });
+        }
+        if (!body.category || typeof body.category !== "string" || body.category.length > 100) {
+            return NextResponse.json({ error: "Invalid category (required, max 100 chars)" }, { status: 400 });
+        }
+        if (!body.image || typeof body.image !== "string" || body.image.length > 500) {
+            return NextResponse.json({ error: "Invalid image URL (required, max 500 chars)" }, { status: 400 });
+        }
+        if (body.description && typeof body.description === "string" && body.description.length > 5000) {
+            return NextResponse.json({ error: "Description too long (max 5000 chars)" }, { status: 400 });
+        }
+        if (body.price && (typeof body.price !== "string" || body.price.length > 50)) {
+            return NextResponse.json({ error: "Invalid price (max 50 chars)" }, { status: 400 });
+        }
+        if (body.step && typeof body.step !== "string") {
+            return NextResponse.json({ error: "Invalid step" }, { status: 400 });
+        }
+
         const product = await prisma.product.create({
             data: {
                 name: body.name,

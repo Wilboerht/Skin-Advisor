@@ -1,7 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
 export async function POST(req: NextRequest) {
     try {
+        const ip = getClientIP(req);
+        // Stricter limit for SMS: 3 requests per 5 minutes per IP
+        const ipLimit = await rateLimit(`sendcode-ip-${ip}`, "login", { maxRequests: 3, windowMs: 5 * 60 * 1000 });
+        if (!ipLimit.success) {
+            return NextResponse.json(
+                { error: "验证码发送过于频繁，请稍后再试" },
+                { status: 429 }
+            );
+        }
+
         const body = await req.json();
 
         const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";

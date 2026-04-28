@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
 function mirrorOfficialSessionCookie(officialResponse: Response, response: NextResponse) {
     const setCookieHeader = officialResponse.headers.get("set-cookie");
@@ -60,6 +61,15 @@ async function parseOfficialJson(officialResponse: Response) {
 
 export async function POST(req: NextRequest) {
     try {
+        const ip = getClientIP(req);
+        const ipLimit = await rateLimit(`register-ip-${ip}`, "login");
+        if (!ipLimit.success) {
+            return NextResponse.json(
+                { error: "注册尝试过于频繁，请 15 分钟后再试" },
+                { status: 429 }
+            );
+        }
+
         const body = await req.json();
         if (!body.phone || !body.code || !body.password) {
             return NextResponse.json({ error: "缺少必填项" }, { status: 400 });

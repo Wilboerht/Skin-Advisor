@@ -7,9 +7,15 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { getSession } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
     try {
+        const user = await getSession();
+        if (!user) {
+            return NextResponse.json({ error: "请先登录" }, { status: 401 });
+        }
+
         const body = await req.json();
         const { sessionId, characteristics, nickname, frontPhoto } = body;
 

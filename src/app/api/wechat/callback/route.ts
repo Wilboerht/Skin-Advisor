@@ -1,17 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import * as jose from "jose";
+import { cookies } from "next/headers";
 
 export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
-    // 微信授权跳重定向回来时，必定会带上 code（有效期 5 分钟）
     const code = searchParams.get("code");
-    // 如果你上一步传了 state，这里也能接住，方便业务路由做分发判断
     const state = searchParams.get("state");
 
     if (!code) {
         return new NextResponse("授权失败，未获取到微信返回的 Code", { status: 400 });
     }
+
+    // Security: validate CSRF state parameter
+    const cookieStore = await cookies();
+    const expectedState = cookieStore.get("wechat_oauth_state")?.value;
+    if (!expectedState || expectedState !== state) {
+        console.error("[Security] WeChat OAuth state mismatch. Possible CSRF attack.", { expectedState, receivedState: state });
+        return new NextResponse("授权验证失败，请重新尝试", { status: 403 });
+    }
+    // Clear the state cookie immediately after validation
+    cookieStore.set("wechat_oauth_state", "", { maxAge: 0, path: "/" });
 
     const appId = process.env.WECHAT_APP_ID;
     const appSecret = process.env.WECHAT_APP_SECRET;

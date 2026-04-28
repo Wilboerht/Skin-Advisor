@@ -55,8 +55,31 @@ export async function POST(request: NextRequest) {
         }
 
         // 4. 检查使用限制 (Guest/Member/VIP)
-        // freeRetry = 性别不匹配后的免费重试，跳过额度检查
-        if (!freeRetry) {
+        let isFreeRetryAllowed = false;
+        if (freeRetry && sessionId) {
+            // Validate freeRetry eligibility server-side:
+            // Only allowed if the session has a prior completed analysis and hasn't used freeRetry before.
+            const existingSession = await prisma.advisorSession.findUnique({
+                where: { sessionId },
+                select: { completedAt: true, analysisResult: true }
+            });
+            const priorResult = existingSession?.analysisResult as Record<string, unknown> | null;
+            if (!existingSession?.completedAt) {
+                return NextResponse.json(
+                    { error: "免费重试无效：尚未完成过首次分析" },
+                    { status: 400 }
+                );
+            }
+            if (priorResult?.freeRetryUsed) {
+                return NextResponse.json(
+                    { error: "免费重试已使用，每个会话仅限一次" },
+                    { status: 429 }
+                );
+            }
+            isFreeRetryAllowed = true;
+        }
+
+        if (!isFreeRetryAllowed) {
             const usageLimit = await checkUsageLimit(request, body);
             if (!usageLimit.canTest) {
                 return NextResponse.json(
@@ -66,8 +89,8 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // 5. 记录使用次数（验证通过后才扣额度，免费重试不扣）
-        if (sessionId && !freeRetry) {
+        // 5. 记录使用次数（验证通过后才扣额度，免费重试不扣额度但需记录行为）
+        if (sessionId && !isFreeRetryAllowed) {
             await recordUsage(request, sessionId, body);
         }
 
@@ -293,7 +316,8 @@ export async function POST(request: NextRequest) {
             // Merge current results with any existing data (like generatedAvatar)
             const mergedResult = {
                 ...(existingSession?.analysisResult as any || {}),
-                ...standardizedResult
+                ...standardizedResult,
+                ...(isFreeRetryAllowed ? { freeRetryUsed: true } : {})
             };
 
             await prisma.advisorSession.upsert({
