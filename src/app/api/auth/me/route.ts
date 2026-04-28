@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
-import { signToken } from "@/lib/auth";
+import { signToken, getSession } from "@/lib/auth";
 
 // 简单的内存缓存，防止外部官方 API 慢导致每个请求都阻塞 10s+
 // Key = cookie 字符串 hash, Value = 官方 API 返回的 data
@@ -192,6 +192,32 @@ export async function GET(req: NextRequest) {
 
     } catch (e) {
         console.error("Me GET Proxy Error", e);
+
+        // 官网 API 不可用时的降级方案：尝试用本地 token 直接识别用户
+        try {
+            const localUser = await getSession();
+            if (localUser) {
+                const dbUser = await prisma.user.findUnique({
+                    where: { id: localUser.id },
+                    select: { id: true, phoneNumber: true, name: true, avatarUrl: true, role: true }
+                });
+                if (dbUser) {
+                    console.log("[auth/me] Official API unreachable, serving user from local DB:", dbUser.id);
+                    return NextResponse.json({
+                        user: {
+                            id: dbUser.id,
+                            phone: dbUser.phoneNumber,
+                            name: dbUser.name || dbUser.phoneNumber,
+                            avatar: dbUser.avatarUrl,
+                            role: dbUser.role || "user"
+                        }
+                    });
+                }
+            }
+        } catch (localErr) {
+            console.error("[auth/me] Local fallback also failed:", localErr);
+        }
+
         return NextResponse.json({ user: null });
     }
 }

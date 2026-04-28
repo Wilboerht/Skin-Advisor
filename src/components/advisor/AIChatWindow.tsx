@@ -20,12 +20,19 @@ interface AIChatWindowProps {
     concerns?: string[];
     summary?: string;
     sessionId?: string;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
 }
 
-export function AIChatWindow({ skinType, concerns, summary, sessionId }: AIChatWindowProps) {
+export function AIChatWindow({ skinType, concerns, summary, sessionId, open: controlledOpen, onOpenChange }: AIChatWindowProps) {
     const { user } = useAuth();
     const { openAuthModal } = useAuthModal();
-    const [isOpen, setIsOpen] = useState(false);
+    const [internalOpen, setInternalOpen] = useState(false);
+    const isOpen = controlledOpen !== undefined ? controlledOpen : internalOpen;
+    const setIsOpen = (value: boolean) => {
+        if (controlledOpen === undefined) setInternalOpen(value);
+        onOpenChange?.(value);
+    };
     const [messages, setMessages] = useState<Message[]>([
         {
             id: "welcome",
@@ -70,10 +77,9 @@ export function AIChatWindow({ skinType, concerns, summary, sessionId }: AIChatW
         }
     }, [isOpen, sessionId, user]);
 
-    // Handle floating button click
-    const handleFloatingButtonClick = () => {
+    // Handle open (called from external trigger button)
+    const handleOpen = () => {
         if (!user) {
-            // Show login prompt for guests
             openAuthModal('login');
             return;
         }
@@ -163,17 +169,6 @@ export function AIChatWindow({ skinType, concerns, summary, sessionId }: AIChatW
 
     return (
         <>
-            {/* 悬浮球开关 */}
-            {!isOpen && (
-                <button
-                    onClick={handleFloatingButtonClick}
-                    className="fixed bottom-24 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-brand-charcoal text-white shadow-lg transition-transform hover:scale-110 sm:bottom-8 sm:right-8"
-                    title={user ? "AI 护肤顾问" : "登录后使用 AI 顾问"}
-                >
-                    <Sparkles className="h-6 w-6" />
-                </button>
-            )}
-
             {/* 聊天窗口 - 只有登录用户可以打开 */}
             <AnimatePresence>
                 {isOpen && user && (
@@ -195,7 +190,7 @@ export function AIChatWindow({ skinType, concerns, summary, sessionId }: AIChatW
                                 </div>
                             </div>
                             <button
-                                onClick={() => setIsOpen(false)}
+                                onClick={() => { setIsOpen(false); onOpenChange?.(false); }}
                                 className="rounded-full p-1 hover:bg-white/10"
                             >
                                 <X className="h-5 w-5" />

@@ -131,6 +131,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const [activeDimension, setActiveDimension] = useState<SkinDimensionKey | null>(null);
     const [showLabData, setShowLabData] = useState(false);
     const [showContactAdvisor, setShowContactAdvisor] = useState(false);
+    const [isToolbarHovered, setIsToolbarHovered] = useState(false);
+    const [isChatOpen, setIsChatOpen] = useState(false);
 
     const isGenderMismatch = useMemo(() => {
         if (!faceAnalysis || !socialGender) return false;
@@ -1375,6 +1377,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 concerns={result.skinProfile?.concerns || []}
                                 summary={result.analysis?.summary || ''}
                                 sessionId={sessionId}
+                                open={isChatOpen}
+                                onOpenChange={setIsChatOpen}
                             />
                         )
                     }
@@ -1389,6 +1393,10 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                         }}
                         onRetake={() => router.push("/questions")}
                         onChat={() => setShowContactAdvisor(true)}
+                        onAIClick={() => setIsChatOpen(true)}
+                        onHoverChange={setIsToolbarHovered}
+                        visible={!isChatOpen}
+                        showAIButton={true}
                     />
 
                     {/* Contact Advisor Modal */}

@@ -8,6 +8,7 @@ import {
     ArrowUp,
     MessageCircle,
     GripVertical,
+    Sparkles,
 } from "lucide-react";
 
 interface ToolbarAction {
@@ -24,6 +25,10 @@ interface FloatingToolbarProps {
     onRetake?: () => void;
     onScrollTop?: () => void;
     onChat?: () => void;
+    onAIClick?: () => void;
+    onHoverChange?: (hovered: boolean) => void;
+    visible?: boolean;
+    showAIButton?: boolean;
     className?: string;
 }
 
@@ -66,11 +71,21 @@ export function FloatingToolbar({
     onRetake,
     onScrollTop,
     onChat,
+    onAIClick,
+    onHoverChange,
+    visible = true,
+    showAIButton = false,
     className = "",
 }: FloatingToolbarProps) {
+    if (!visible) return null;
     const [isHovered, setIsHovered] = useState(false);
 
     const toolbarActions = actions ?? defaultActions(onSharePoster, onRetake, onScrollTop, onChat);
+
+    const handleHoverChange = (hovered: boolean) => {
+        setIsHovered(hovered);
+        onHoverChange?.(hovered);
+    };
 
     const handleScrollTop = () => {
         if (typeof window !== "undefined") {
@@ -82,9 +97,6 @@ export function FloatingToolbar({
     return (
         <motion.div
             className={`fixed right-4 top-1/2 -translate-y-1/2 z-[200] h-[280px] flex flex-col justify-end ${className}`}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-            onTouchStart={() => setIsHovered((prev) => !prev)}
             initial={false}
         >
             {/* 菜单项 - 绝对定位，底部和按钮对齐，向上展开 */}
@@ -96,6 +108,8 @@ export function FloatingToolbar({
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.3, ease: "easeOut", delay: 0.15 }}
                         className="absolute bottom-0 right-0 flex flex-col-reverse items-end gap-2 will-change-transform"
+                        onMouseEnter={() => handleHoverChange(true)}
+                        onMouseLeave={() => handleHoverChange(false)}
                     >
                         {toolbarActions.map((action, index) => (
                             <motion.button
@@ -177,6 +191,35 @@ export function FloatingToolbar({
                     <span className="text-xs font-medium tracking-wider text-[#4A3728]/60">功能</span>
                 </div>
             </motion.button>
+
+            {/* AI 顾问按钮 - 和更多功能按钮一体，hover 不触发菜单，菜单展开时同步淡出 */}
+            {showAIButton && (
+            <motion.button
+                animate={{
+                    opacity: isHovered ? 0 : 1,
+                    scale: isHovered ? 0.85 : 1,
+                }}
+                transition={{ duration: 0.25, ease: "easeInOut" }}
+                onClick={onAIClick}
+                className="
+                    w-[52px] h-14 rounded-[20px] mt-2
+                    bg-gradient-to-b from-[#FDFBF7]/95 to-[#F5F0E8]/95
+                    backdrop-blur-xl
+                    border border-[#4A3728]/8
+                    shadow-[0_4px_16px_rgba(74,55,40,0.08)]
+                    hover:shadow-[0_6px_20px_rgba(74,55,40,0.12)]
+                    flex flex-col items-center justify-center gap-1
+                    text-[#4A3728]
+                    cursor-pointer
+                "
+                title="AI 护肤顾问"
+            >
+                <div className="w-7 h-7 rounded-full bg-[#4A3728]/6 flex items-center justify-center">
+                    <Sparkles className="h-3.5 w-3.5 text-[#4A3728]/70" strokeWidth={2} />
+                </div>
+                <span className="text-[10px] font-medium tracking-wider text-[#4A3728]/60 leading-tight">AI</span>
+            </motion.button>
+            )}
         </motion.div>
     );
 }

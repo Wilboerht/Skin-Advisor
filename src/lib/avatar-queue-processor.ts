@@ -64,8 +64,8 @@ async function generateWanxiangAvatarAsync(prompt: string, frontPhoto: string | 
       n: 1,
       size: "1024*1024",
       watermark: false,
-      prompt_extend: true,
-      negative_prompt: "",
+      prompt_extend: true, // 保持自动扩展以提升画面丰富度
+      negative_prompt: "腮红,红晕,脸红,脸颊泛红,胭脂,blush,rosy cheeks,flushed cheeks,面部泛红,红色晕染,血色,面部红晕,绯红",
     },
   };
 
@@ -146,7 +146,8 @@ async function generateAvatarImage(
   const skinTone = characteristics?.skinTone || "健康肤色";
   const hairStyle = characteristics?.hairStyle || "日常发型";
 
-  const prompt = `水彩手绘风格半身像，头顶预留一定空间。清新治愈，画面构图简洁，主体人物置身于纯白背景中，视觉焦点突出，质感柔和。头发以水彩平涂+一些勾线为主；不同区域的勾线的颜色有区分，面部和手部轮廓为暖咖色，颜色明度浅一些；面部肤色自然均匀，脸颊不要泛红，避免出现明显红晕；衣服没有外轮廓线，是水彩平涂的形式，保留水彩肌理，衣服区域内部有白色的细线条作为对一些细节的交代。整幅画以低饱和度的柔和色调为主，结合通透的水彩笔触与简约的概括性线条，营造出清新恬静、治愈舒适的视觉氛围，画面松弛、灵动，是极具氛围感的日系清新插画作品，比例 「3:4」竖版`;
+  // 核心约束前置+后置，防止被长文本稀释
+  const prompt = `面部肤色干净自然，绝对不要腮红、红晕或脸颊泛红。水彩手绘风格半身像，头顶预留一定空间，清新治愈，纯白背景，视觉焦点突出，质感柔和。头发以水彩平涂+勾线为主，不同区域勾线颜色有区分，面部和手部轮廓为暖咖色。衣服无外轮廓线，水彩平涂保留肌理，内部有白色细线条交代细节。整幅画低饱和度柔和色调，通透水彩笔触与简约线条，日系清新插画，比例3:4竖版。再次强调：脸颊和苹果肌区域必须干净，禁止出现任何红色晕染、胭脂感或红晕效果`;
 
   let imageUrl: string | null = null;
   let source = "fallback";
@@ -248,6 +249,7 @@ async function generateJimengAvatarAsync(
   const reqBody: any = {
     req_key: reqKey,
     prompt: prompt,
+    negative_prompt: "腮红,红晕,脸红,脸颊泛红,胭脂,blush,rosy cheeks,flushed cheeks,面部泛红,红色晕染,血色,面部红晕,绯红",
     model_version: "general",
     return_url: true,
     width: 1024,
