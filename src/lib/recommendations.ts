@@ -29,7 +29,7 @@ const CONCERN_TO_BENEFITS: Record<string, string[]> = {
     spots: ["淡斑", "美白", "淡化痘印"],
     dryness: ["补水", "保湿", "滋润", "微补水", "修护皮脂膜", "以油养肤"],
     oil_control: ["控油", "清爽", "平衡"],
-    dark_circles: ["眼周", "修护"],
+    dark_circles: ["眼周", "眼部", "黑眼圈", "眼袋"],
     roughness: ["改善粗糙", "平滑", "细致"],
     waterOil: ["平衡", "调理", "控油", "补水"],
 };
