@@ -4,7 +4,6 @@ import { getSession } from "@/lib/auth";
 import {
     extractGuestIdentifiers,
     checkGuestLimit,
-    recordGuestTest,
     DEFAULT_GUEST_LIMIT
 } from "@/lib/guest-limit";
 
@@ -26,12 +25,9 @@ export async function GET(request: NextRequest) {
         tomorrow.setDate(tomorrow.getDate() + 1);
 
         if (session) {
-            // 登录用户：获取用户信息和限制
-            const user = await prisma.user.findUnique({
-                where: { id: session.id },
-                select: { dailyTestLimit: true }
-            });
-            const dailyLimit = user?.dailyTestLimit || 1;
+            // 登录用户：VIP 100 次，普通用户 10 次
+            const isVip = session.role === 'vip' || session.role === 'admin' || session.role === 'super_admin';
+            const dailyLimit = isVip ? 100 : 10;
 
             // 统计今日测试次数
             const todayCount = await prisma.testRecord.count({
@@ -101,12 +97,9 @@ export async function POST(request: NextRequest) {
         tomorrow.setDate(tomorrow.getDate() + 1);
 
         if (session) {
-            // 登录用户：获取用户信息和限制
-            const user = await prisma.user.findUnique({
-                where: { id: session.id },
-                select: { dailyTestLimit: true }
-            });
-            const dailyLimit = user?.dailyTestLimit || 1;
+            // 登录用户：VIP 100 次，普通用户 10 次
+            const isVip = session.role === 'vip' || session.role === 'admin' || session.role === 'super_admin';
+            const dailyLimit = isVip ? 100 : 10;
 
             // 检查是否已达到限制
             const todayCount = await prisma.testRecord.count({
@@ -129,44 +122,39 @@ export async function POST(request: NextRequest) {
                 }, { status: 429 });
             }
 
-            // 记录测试
-            await prisma.testRecord.create({
-                data: {
-                    userId: session.id,
-                    sessionId: sessionId
-                }
-            });
-
+            // 注意：测试记录由 analyze API 统一写入，此处不再重复记录
             return NextResponse.json({
                 success: true,
-                usedCount: todayCount + 1,
+                usedCount: todayCount,
                 dailyLimit: dailyLimit,
-                remaining: dailyLimit - todayCount - 1
+                remaining: dailyLimit - todayCount
             });
         } else {
-            // 游客：使用多维度验证和记录
+            // 游客：使用多维度验证（记录由 analyze API 统一写入）
             const identifiers = extractGuestIdentifiers(request, {
                 cookieId: cookieId || undefined,
                 fingerprint: fingerprint || guestId || undefined
             });
 
-            const result = await recordGuestTest(identifiers, sessionId);
+            const limitResult = await checkGuestLimit(identifiers);
 
-            if (!result.success) {
+            if (!limitResult.canTest) {
                 return NextResponse.json({
                     success: false,
-                    error: result.error || "已达到今日测试次数上限，登录后可获得更多测试次数",
+                    error: limitResult.isBlocked
+                        ? (limitResult.blockReason || '您已被限制访问')
+                        : "已达到今日测试次数上限，登录后可获得更多测试次数",
                     canTest: false,
-                    usedCount: result.usedCount,
+                    usedCount: limitResult.usedCount,
                     dailyLimit: DEFAULT_GUEST_LIMIT
                 }, { status: 429 });
             }
 
             return NextResponse.json({
                 success: true,
-                usedCount: result.usedCount,
+                usedCount: limitResult.usedCount,
                 dailyLimit: DEFAULT_GUEST_LIMIT,
-                remaining: DEFAULT_GUEST_LIMIT - result.usedCount
+                remaining: limitResult.remaining
             });
         }
     } catch (error) {

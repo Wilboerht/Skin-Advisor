@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import * as jose from "jose";
+import { signToken } from "@/lib/auth";
 import { cookies } from "next/headers";
 
 export async function GET(request: NextRequest) {
@@ -79,19 +79,11 @@ export async function GET(request: NextRequest) {
         }
 
         // 3. 用户鉴别完毕（无论是老用户还是刚创建好的新用户），我们给他发一张项目的 JWT 门票让他顺畅浏览网页！
-        const secret = new TextEncoder().encode(
-            process.env.JWT_SECRET || "local-dev-secret-key"
-        );
-
-        // 签发 Token，你可以把这个写在你现在的 '@/lib/auth' 或者你习惯放 Jwt 生成的地方。
-        // 这里保持和你应用默认过期时间（如 30 天强无感知登录）
-        const token = await new jose.SignJWT({
-            userId: dbUser.id,
+        // 使用统一的 signToken 确保 secret 和 payload 格式一致
+        const token = await signToken({
+            sub: dbUser.id,
             role: dbUser.role,
-        })
-            .setProtectedHeader({ alg: "HS256" })
-            .setExpirationTime("30d") // 长时间不过期，符合微信生态的小程序或公众号直板体验
-            .sign(secret);
+        }, "30d");
 
         // 4. 重定向去前端界面，而且带上包含凭证的 HttpOnly Cookie！
         const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://advisor.nihplod.cn";

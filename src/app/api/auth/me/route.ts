@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
+import { signToken } from "@/lib/auth";
 
 // 简单的内存缓存，防止外部官方 API 慢导致每个请求都阻塞 10s+
 // Key = cookie 字符串 hash, Value = 官方 API 返回的 data
@@ -149,19 +150,41 @@ export async function GET(req: NextRequest) {
             }
         });
 
-        const responsePayload = {
-            user: {
-                ...data.data.user,
-                phone: data.data.user.phone,
-                name: data.data.user.nickname || data.data.user.phone,
-                role: "user"
-            }
+        const responseUser = {
+            ...data.data.user,
+            phone: data.data.user.phone,
+            name: data.data.user.nickname || data.data.user.phone,
+            role: "user"
         };
+
+        const responsePayload = { user: responseUser };
 
         // 写入缓存，5s 内相同 cookie 的请求不再访问外部 API
         setMeCache(cacheKey, { data: responsePayload, timestamp: Date.now() });
 
         const response = NextResponse.json(responsePayload);
+
+        // 签发本地 JWT token，让后续本地 API (analyze, test-limit 等) 能正确识别用户
+        // 官网的 user_token 是用官网 secret 签发的，本地无法验证，所以必须重新签发
+        try {
+            const localToken = await signToken({
+                sub: responseUser.id,
+                email: responseUser.email || null,
+                phone: responseUser.phone || null,
+                name: responseUser.name,
+                role: responseUser.role
+            }, "7d");
+            response.cookies.set("auth_token", localToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "lax",
+                maxAge: 7 * 24 * 60 * 60, // 7天
+                path: "/"
+            });
+            console.log("[auth/me] Issued local auth_token for user:", userPayload.id);
+        } catch (tokenErr) {
+            console.error("[auth/me] Failed to issue local token:", tokenErr);
+        }
 
         mirrorOfficialSessionCookie(officialResponse, response);
 

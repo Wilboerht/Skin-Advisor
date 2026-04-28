@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Link } from "next-view-transitions";
 import { LazyMotion, domAnimation, AnimatePresence, m } from "framer-motion";
 import Image from "next/image";
-import { ArrowRight, House, Loader2, MapPin, User, ClipboardList, ChevronDown } from "lucide-react";
+import { ArrowRight, House, Loader2, MapPin, User, ClipboardList, ChevronDown, X } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
 import { useLayout } from "@/contexts/LayoutContext";
@@ -52,7 +52,7 @@ export default function Home() {
   const toast = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const { initSession } = useAdvisorAnalytics();
-  const { user } = useAuth();
+  const { user, refresh: refreshUser } = useAuth();
   const { isDrawerOpen, setDrawerOpen, showBento, setShowBento } = useLayout();
   const textureRef = useRef<HTMLDivElement>(null);
 
@@ -212,6 +212,16 @@ export default function Home() {
         const data = await res.json();
         setTestLimitInfo(data);
 
+        // Frontend safeguard: if frontend thinks user is logged in but backend treats as guest,
+        // the JWT token may be invalid/mismatched. Refresh user state and warn.
+        if (user && data.isGuest) {
+          console.warn("[Auth Mismatch] Frontend has user but backend returned guest. Refreshing session...");
+          await refreshUser();
+          toast.info("登录状态已刷新，请重新尝试");
+          // After refresh, allow the test to proceed; next check will use fresh state
+          return true;
+        }
+
         // Check if blocked
         if (data.isBlocked) {
           return false;
@@ -225,33 +235,12 @@ export default function Home() {
     } finally {
       setCheckingLimit(false);
     }
-  }, [guestIdentity]);
+  }, [guestIdentity, user, refreshUser, toast]);
 
-  // Record test and start with multi-factor identity
+  // Start test directly — usage will be recorded by analyze API
   const recordAndStartTest = useCallback(async () => {
-    try {
-      // Get fresh identity if not available
-      let identity = guestIdentity;
-      if (!identity) {
-        identity = await getGuestIdentity();
-        setGuestIdentity(identity);
-      }
-
-      const sessionId = safeStorage.get("advisor_session_id");
-      await fetch("/api/advisor/test-limit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          cookieId: identity.cookieId,
-          fingerprint: identity.fingerprint,
-          sessionId
-        })
-      });
-    } catch (err) {
-      console.error("Failed to record test:", err);
-    }
     startNewTest();
-  }, [guestIdentity, startNewTest]);
+  }, [startNewTest]);
 
   const handleStart = async () => {
     // Check test limit first
@@ -492,55 +481,85 @@ export default function Home() {
         isLoggedIn={!!user}
       />
 
-      <BaseModal
-        isOpen={showLimitModal}
-        onClose={() => setShowLimitModal(false)}
-        showCloseButton
-        className="p-10 text-center rounded-[2rem] shadow-2xl overflow-hidden bg-[#FDFBF7]/80 backdrop-blur-2xl border border-white/20 ring-1 ring-white/10"
-      >
-        {/* Texture Overlay */}
-        <div
-          className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`
-          }}
-        />
-
-        <div className="relative z-10">
-          <div className="flex justify-center mb-6 text-amber-500/80">
-            <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-          </div>
-          <h3 className="mb-3 text-xl font-serif text-[#1A1A1A] tracking-tight">今日测试次数已用完</h3>
-          <p className="mb-8 text-[14px] text-[#5E5E5E] leading-relaxed font-light">
-            {user ? (
-              <>您今日的 {testLimitInfo?.dailyLimit || 1} 次测试机会已全部使用，请明天再来</>
-            ) : (
-              <>游客每天仅有 1 次测试机会<br />登录后可获得更多测试次数</>
-            )}
-          </p>
-          <div className="space-y-4">
-            {!user && (
-              <button
-                onClick={() => {
-                  setShowLimitModal(false);
-                  openAuthModal('login');
-                }}
-                className="glass-premium-primary w-full py-3.5 rounded-full text-[15px] tracking-[0.2em] font-medium transition-all duration-300 border-none cursor-pointer outline-none"
-              >
-                登录 / 注册
-              </button>
-            )}
-            <button
+      <AnimatePresence>
+        {showLimitModal && (
+          <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
+            {/* Backdrop with Blur */}
+            <m.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               onClick={() => setShowLimitModal(false)}
-              className="w-full py-2 text-[13px] tracking-widest text-[#3D4430]/40 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
+            />
+
+            {/* Modal Content */}
+            <m.div
+              initial={{ opacity: 0, scale: 0.96, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 10 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative z-10 w-full max-w-[420px] bg-white rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col"
+              onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
-              我知道了
-            </button>
+              {/* Close Button */}
+              <button
+                onClick={() => setShowLimitModal(false)}
+                className="absolute top-6 right-6 z-20 w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+              >
+                <X size={16} strokeWidth={2.5} />
+              </button>
+
+              {/* Header */}
+              <div className="p-10 pt-14 text-center pb-2">
+                <div className="mb-7 flex justify-center">
+                  <img
+                    src="/NIHPLOD-logo.svg"
+                    alt="NIHPLOD"
+                    className="h-[34px] object-contain"
+                  />
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="px-10 pb-10 pt-2 flex flex-col items-center gap-6">
+                <div className="text-center space-y-2">
+                  <h3 className="text-base font-bold" style={{ color: '#5c4937' }}>
+                    今日测试次数已用完
+                  </h3>
+                  <p className="text-sm leading-relaxed" style={{ color: '#5c4937', opacity: 0.8 }}>
+                    {user ? (
+                      <>您今日的 {testLimitInfo?.dailyLimit || 1} 次测试机会已全部使用，请明天再来</>
+                    ) : (
+                      <>游客每天仅有 {testLimitInfo?.dailyLimit || 3} 次测试机会<br />登录后可获得更多测试次数</>
+                    )}
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-3 w-full">
+                  {!user && (
+                    <button
+                      onClick={() => {
+                        setShowLimitModal(false);
+                        openAuthModal('login');
+                      }}
+                      className="flex w-full items-center justify-center gap-2 rounded-full bg-[#5c4937] py-3 text-sm font-medium text-white shadow-lg transition-transform active:scale-95 hover:bg-[#4a3a2c]"
+                    >
+                      登录 / 注册
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setShowLimitModal(false)}
+                    className="flex w-full items-center justify-center gap-2 rounded-full border border-[#5c4937]/10 bg-white py-3 text-sm font-medium text-[#5c4937] transition-colors hover:bg-[#5c4937]/5 active:scale-95"
+                  >
+                    我知道了
+                  </button>
+                </div>
+              </div>
+            </m.div>
           </div>
-        </div>
-      </BaseModal>
+        )}
+      </AnimatePresence>
 
       <ProfileModal
         isOpen={showProfileModal}

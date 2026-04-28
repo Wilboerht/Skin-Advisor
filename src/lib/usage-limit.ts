@@ -20,9 +20,9 @@ export interface UsageLimitResult {
  * 检查用户或访客的测试频率限制
  * 
  * 规则：
- * 1. 访客：每周一次 (7天内只能测1次)
- * 2. 普通注册用户：每日一次
- * 3. VIP 用户：每日 5 次
+ * 1. 访客：每日 3 次
+ * 2. 普通注册用户：每日 10 次
+ * 3. VIP 用户：每日 100 次
  */
 export async function checkUsageLimit(request: NextRequest, body?: any): Promise<UsageLimitResult> {
     const user = await getSession();

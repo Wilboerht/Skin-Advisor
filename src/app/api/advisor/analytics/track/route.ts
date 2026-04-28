@@ -158,17 +158,38 @@ export async function POST(request: NextRequest) {
             }
 
             case "questionnaire_start": {
-                await prisma.advisorSession.update({
+                await prisma.advisorSession.upsert({
                     where: { sessionId },
-                    data: { questionnaireStartedAt: now },
+                    create: {
+                        sessionId,
+                        questionnaireStartedAt: now,
+                        userAgent: clientInfo.userAgent,
+                        ip: clientInfo.ip,
+                        referrer: clientInfo.referer,
+                        deviceType: clientInfo.deviceType,
+                        browser: clientInfo.browser,
+                        os: clientInfo.os,
+                    },
+                    update: { questionnaireStartedAt: now },
                 });
                 break;
             }
 
             case "questionnaire_complete": {
-                await prisma.advisorSession.update({
+                await prisma.advisorSession.upsert({
                     where: { sessionId },
-                    data: {
+                    create: {
+                        sessionId,
+                        questionnaireCompletedAt: now,
+                        answers: data?.answers ? data.answers as Prisma.InputJsonValue : Prisma.JsonNull,
+                        userAgent: clientInfo.userAgent,
+                        ip: clientInfo.ip,
+                        referrer: clientInfo.referer,
+                        deviceType: clientInfo.deviceType,
+                        browser: clientInfo.browser,
+                        os: clientInfo.os,
+                    },
+                    update: {
                         questionnaireCompletedAt: now,
                         answers: data?.answers ? data.answers as Prisma.InputJsonValue : Prisma.JsonNull,
                     },
@@ -177,17 +198,39 @@ export async function POST(request: NextRequest) {
             }
 
             case "face_scan_start": {
-                await prisma.advisorSession.update({
+                await prisma.advisorSession.upsert({
                     where: { sessionId },
-                    data: { faceScanStartedAt: now },
+                    create: {
+                        sessionId,
+                        faceScanStartedAt: now,
+                        userAgent: clientInfo.userAgent,
+                        ip: clientInfo.ip,
+                        referrer: clientInfo.referer,
+                        deviceType: clientInfo.deviceType,
+                        browser: clientInfo.browser,
+                        os: clientInfo.os,
+                    },
+                    update: { faceScanStartedAt: now },
                 });
                 break;
             }
 
             case "face_scan_complete": {
-                await prisma.advisorSession.update({
+                await prisma.advisorSession.upsert({
                     where: { sessionId },
-                    data: {
+                    create: {
+                        sessionId,
+                        faceScanCompletedAt: now,
+                        faceScanUsed: true,
+                        faceScanSkipped: false,
+                        userAgent: clientInfo.userAgent,
+                        ip: clientInfo.ip,
+                        referrer: clientInfo.referer,
+                        deviceType: clientInfo.deviceType,
+                        browser: clientInfo.browser,
+                        os: clientInfo.os,
+                    },
+                    update: {
                         faceScanCompletedAt: now,
                         faceScanUsed: true,
                         faceScanSkipped: false,
@@ -197,9 +240,20 @@ export async function POST(request: NextRequest) {
             }
 
             case "face_scan_skip": {
-                await prisma.advisorSession.update({
+                await prisma.advisorSession.upsert({
                     where: { sessionId },
-                    data: {
+                    create: {
+                        sessionId,
+                        faceScanSkipped: true,
+                        faceScanUsed: false,
+                        userAgent: clientInfo.userAgent,
+                        ip: clientInfo.ip,
+                        referrer: clientInfo.referer,
+                        deviceType: clientInfo.deviceType,
+                        browser: clientInfo.browser,
+                        os: clientInfo.os,
+                    },
+                    update: {
                         faceScanSkipped: true,
                         faceScanUsed: false,
                     },
@@ -208,17 +262,38 @@ export async function POST(request: NextRequest) {
             }
 
             case "analysis_start": {
-                await prisma.advisorSession.update({
+                await prisma.advisorSession.upsert({
                     where: { sessionId },
-                    data: { analysisStartedAt: now },
+                    create: {
+                        sessionId,
+                        analysisStartedAt: now,
+                        userAgent: clientInfo.userAgent,
+                        ip: clientInfo.ip,
+                        referrer: clientInfo.referer,
+                        deviceType: clientInfo.deviceType,
+                        browser: clientInfo.browser,
+                        os: clientInfo.os,
+                    },
+                    update: { analysisStartedAt: now },
                 });
                 break;
             }
 
             case "analysis_complete": {
-                await prisma.advisorSession.update({
+                await prisma.advisorSession.upsert({
                     where: { sessionId },
-                    data: {
+                    create: {
+                        sessionId,
+                        analysisCompletedAt: now,
+                        analysisSource: (data?.source as string) || null,
+                        userAgent: clientInfo.userAgent,
+                        ip: clientInfo.ip,
+                        referrer: clientInfo.referer,
+                        deviceType: clientInfo.deviceType,
+                        browser: clientInfo.browser,
+                        os: clientInfo.os,
+                    },
+                    update: {
                         analysisCompletedAt: now,
                         analysisSource: (data?.source as string) || null,
                     },

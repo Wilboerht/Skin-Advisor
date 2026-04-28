@@ -83,16 +83,22 @@ export async function getSession(): Promise<SessionUser | null> {
     // you MUST configure the same JWT_SECRET so that jwtVerify can validate
     // the signature. NEVER trust a token without signature verification.
     const payload = await verifyToken(tokenValue);
-    if (payload?.sub) {
-        console.log(`✅ Token verified (local JWT) for user: ${payload.sub}`);
-        return {
-            id: payload.sub as string,
-            email: (payload.email as string) || null,
-            phone: (payload.phone as string) || null,
-            name: payload.name as string,
-            role: payload.role as string || 'user',
-            vipExpiresAt: payload.vipExpiresAt || null
-        };
+    if (payload) {
+        // Support both standard 'sub' claim and legacy 'userId' field for backward compatibility
+        const userId = (payload.sub as string) || (payload.userId as string);
+        if (userId) {
+            console.log(`✅ Token verified (local JWT) for user: ${userId}`);
+            return {
+                id: userId,
+                email: (payload.email as string) || null,
+                phone: (payload.phone as string) || null,
+                name: payload.name as string,
+                role: payload.role as string || 'user',
+                vipExpiresAt: payload.vipExpiresAt || null
+            };
+        }
+        console.warn(`⚠️  Token verified but missing user identifier (sub/userId) in cookie: ${foundCookieName}`);
+        return null;
     }
 
     // Token failed signature verification — do NOT fall back to unverified decoding.
