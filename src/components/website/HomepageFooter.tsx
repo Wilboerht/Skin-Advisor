@@ -30,8 +30,7 @@ export function HomepageFooter() {
                         沪ICP备2026014764号-1
                     </Link>
 
-                    {/* 公安网备暂时隐藏，待备案完成后恢复 */}
-                    {/* <span className="text-[#1A1A1A]/30">|</span>
+                    <span className="text-[#1A1A1A]/30">|</span>
 
                     <Link
                         href="http://www.beian.gov.cn/portal/registerSystemInfo"
@@ -45,8 +44,8 @@ export function HomepageFooter() {
                             height={12}
                             className="shrink-0 opacity-80"
                         />
-                        <span>沪公网安备 xxxx号</span>
-                    </Link> */}
+                        <span>沪公网安备31010702010178号</span>
+                    </Link>
                 </div>
             </div>
         </m.div>
