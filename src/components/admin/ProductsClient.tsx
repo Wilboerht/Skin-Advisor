@@ -31,7 +31,6 @@ import {
     Loader2,
     CheckSquare,
     Square,
-    Copy,
     AlertTriangle,
     Filter,
     ChevronDown
@@ -42,7 +41,6 @@ import { ConfirmModal } from "@/components/ui/ConfirmModal";
 interface Product {
     id: string;
     name: string;
-    nameEn: string | null;
     category: string;
     price: string;
     image: string;
@@ -60,12 +58,14 @@ function SortableProductRow({
     product,
     isSelected,
     onSelect,
-    onDelete
+    onDelete,
+    sortingDisabled
 }: {
     product: Product;
     isSelected: boolean;
     onSelect: (id: string) => void;
     onDelete: (id: string) => void;
+    sortingDisabled?: boolean;
 }) {
     const {
         attributes,
@@ -74,7 +74,7 @@ function SortableProductRow({
         transform,
         transition,
         isDragging,
-    } = useSortable({ id: product.id });
+    } = useSortable({ id: product.id, disabled: sortingDisabled });
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -90,13 +90,19 @@ function SortableProductRow({
         >
             <td className="px-2 py-4 w-10 align-middle">
                 <div className="flex items-center justify-center">
-                    <button
-                        {...attributes}
-                        {...listeners}
-                        className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 p-1"
-                    >
-                        <GripVertical className="w-4 h-4" />
-                    </button>
+                    {sortingDisabled ? (
+                        <span className="text-slate-200 p-1 cursor-not-allowed" title="筛选状态下不可排序">
+                            <GripVertical className="w-4 h-4" />
+                        </span>
+                    ) : (
+                        <button
+                            {...attributes}
+                            {...listeners}
+                            className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 p-1"
+                        >
+                            <GripVertical className="w-4 h-4" />
+                        </button>
+                    )}
                 </div>
             </td>
             <td className="px-2 py-4 w-10 align-middle">
@@ -126,7 +132,6 @@ function SortableProductRow({
                 <div className="flex items-center gap-2">
                     <div>
                         <div className="text-sm font-medium text-slate-900">{product.name}</div>
-                        <div className="text-xs text-slate-500">{product.nameEn}</div>
                     </div>
                     {product.featured && (
                         <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
@@ -171,13 +176,6 @@ function SortableProductRow({
                         title="编辑"
                     >
                         <Edit className="h-4 w-4" />
-                    </Link>
-                    <Link
-                        href={`/admin/products/new?clone=${product.id}`}
-                        className="rounded p-2 text-slate-600 hover:bg-slate-100 transition-colors"
-                        title="复制"
-                    >
-                        <Copy className="h-4 w-4" />
                     </Link>
                     <button
                         onClick={() => onDelete(product.id)}
@@ -234,7 +232,14 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
         })
     );
 
+    const hasActiveFilters = categoryFilter !== "all" || statusFilter !== "all" || stockFilter !== "all";
+
     const handleDragEnd = async (event: DragEndEvent) => {
+        if (hasActiveFilters) {
+            toast.info('请清除筛选条件后再进行排序');
+            return;
+        }
+
         const { active, over } = event;
 
         if (over && active.id !== over.id) {
@@ -521,6 +526,7 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                                         isSelected={selectedIds.includes(product.id)}
                                         onSelect={handleToggleSelect}
                                         onDelete={(id) => setDeleteConfirm({ show: true, id, batch: false })}
+                                        sortingDisabled={categoryFilter !== "all" || statusFilter !== "all" || stockFilter !== "all"}
                                     />
                                 ))}
                             </SortableContext>

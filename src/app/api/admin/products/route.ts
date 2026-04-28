@@ -45,9 +45,6 @@ export async function POST(request: NextRequest) {
         if (body.price && (typeof body.price !== "string" || body.price.length > 50)) {
             return NextResponse.json({ error: "Invalid price (max 50 chars)" }, { status: 400 });
         }
-        if (body.step && typeof body.step !== "string") {
-            return NextResponse.json({ error: "Invalid step" }, { status: 400 });
-        }
 
         const product = await prisma.product.create({
             data: {
@@ -64,7 +61,6 @@ export async function POST(request: NextRequest) {
                 sortOrder: body.sortOrder || 0,
                 active: body.active ?? true,
                 stock: 999,
-                step: body.step || null,
                 howToUse: body.howToUse || null,
                 affiliateLinks: body.affiliateLinks || null,
                 featured: body.featured ?? false,
