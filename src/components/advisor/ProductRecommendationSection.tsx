@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import { m } from "framer-motion";
 import { Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import { ProductCard, ProductCardData } from "./ProductCard";
-import { inferStepFromCategory } from "@/lib/skincare-steps";
 import { cn } from "@/lib/utils";
 
 const DIMENSION_LABELS: Record<string, string> = {
@@ -59,7 +58,6 @@ export function ProductRecommendationSection({
         }
 
         const processed = products.map(product => {
-            const step = (product as any).step || inferStepFromCategory(product.category);
             const baseScore = product.score ?? 50;
             const matchScore = Math.min(99, Math.round((baseScore / 150) * 100));
 
@@ -86,7 +84,6 @@ export function ProductRecommendationSection({
 
             return {
                 ...product,
-                step,
                 matchScore,
                 dimensionLink
             } as ProductCardData;

@@ -240,7 +240,6 @@ model Product {
   updatedAt         DateTime @updatedAt
 
   // ===== 新增字段 =====
-  step              String?  // 护肤步骤: cleanser, toner, serum, eye_cream, cream, sunscreen, mask, oil
   howToUse          String?  // 使用方法说明
   affiliateLinks    Json?    // 电商链接 { taobao: "", jd: "", xiaohongshu: "", douyin: "" }
   negativeFor       Json     // string[] 不适合人群/负面标签，如 ["敏感肌", "痘痘肌", "孕妇"]

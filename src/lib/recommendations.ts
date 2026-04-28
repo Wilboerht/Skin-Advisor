@@ -127,8 +127,9 @@ function calculateScore(
     // 4. 预算匹配（权重中等：匹配 +15 分）
     if (answers.budget) {
         const priceRange = BUDGET_TO_PRICE[answers.budget];
-        // Strip non-numeric characters (e.g. "¥890" → 890) to avoid NaN
-        const productPrice = Number(String(product.price).replace(/[^0-9.]/g, ''));
+        // Extract first price number (handles ranges like "¥1000-2000" by taking the minimum)
+        const priceMatch = String(product.price).match(/[0-9]+(?:\.[0-9]+)?/);
+        const productPrice = priceMatch ? Number(priceMatch[0]) : 0;
         if (priceRange && !isNaN(productPrice) && productPrice > 0 && productPrice >= priceRange.min && productPrice <= priceRange.max) {
             score += 15;
             reasons.push("符合预算范围");
@@ -182,9 +183,10 @@ function calculateScore(
         }
     }
 
-    // Base Score fallback (确保负面产品不会低于 0)
+    // Base Score fallback
+    const hasNegativeReason = reasons.some(r => r.includes("不适合"));
     if (score < 0) score = 0;
-    if (score === 0) score = 10;
+    if (score === 0 && !hasNegativeReason) score = 10;
 
     return { score, reasons, matchedBenefits };
 }

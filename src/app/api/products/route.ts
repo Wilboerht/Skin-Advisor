@@ -31,7 +31,6 @@ export async function GET(request: NextRequest) {
                 keyIngredients: true,
                 suitableSkinTypes: true,
                 benefits: true,
-                step: true,
                 affiliateLinks: true,
             }
         });

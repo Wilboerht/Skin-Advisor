@@ -379,6 +379,9 @@ export function identifyConcerns(
         if (faceAnalysis.dimensions.uvDamage.score < 60) concerns.add("anti_aging");
         if (faceAnalysis.dimensions.sensitivity.score < 60) concerns.add("sensitivity");
         if (faceAnalysis.dimensions.radiance.score < 60) concerns.add("dullness");
+        if (faceAnalysis.dimensions.darkCircles.score < 60) concerns.add("dark_circles");
+        if (faceAnalysis.dimensions.firmness.score < 60) concerns.add("anti_aging");
+        if (faceAnalysis.dimensions.skinTone.score < 60) concerns.add("dullness");
     }
 
     // 4. 检查实验室指标（粗糙度）

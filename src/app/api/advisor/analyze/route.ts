@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateText, isAIEnabled, fallbackAnalysis } from "@/lib/ai";
 import { extractJsonFromResponse } from "@/lib/advisor-utils";
-import { buildTextAnalysisPrompt } from "@/config/ai-prompts";
+import { buildTextAnalysisPrompt, TEXT_ANALYSIS_SYSTEM_PROMPT } from "@/config/ai-prompts";
 import { rateLimit } from "@/lib/ratelimit";
 import prisma from "@/lib/prisma";
-import { getSkinTypeLabel } from "@/lib/advisor-utils";
+import { getSkinTypeLabel, getConcernLabel } from "@/lib/advisor-utils";
 // import { PRODUCTS_CATALOG } from "@/config/products"; // Deprecated, use DB or matchProducts
 import { determineSkinType, identifyConcerns } from "@/lib/advisor-utils";
 import { AnalyzeRequestSchema } from "@/lib/schemas";
@@ -140,8 +140,10 @@ export async function POST(request: NextRequest) {
             const fallbackFace = fallbackAnalysis(answers as any);
 
             // 补全产品推荐 (DB)
-            const concerns = identifyConcerns(answers as any);
-            const products = await recommendProducts(answers as any, concerns);
+            const fallbackSkinType = fallbackFace.skinType.type;
+            const enrichedAnswers = { ...answers, skinType: fallbackSkinType };
+            const concerns = identifyConcerns(enrichedAnswers as any, fallbackFace);
+            const products = await recommendProducts(enrichedAnswers as any, concerns);
 
             // 构造符合 ComprehensiveResult 结构的数据
             const finalResult = {
@@ -170,18 +172,21 @@ export async function POST(request: NextRequest) {
         }
 
         // 5. 构建 AI 提示词与调用
-        // FETCH PRODUCTS (Candidate Selection / RAG Lite)
-        const concerns = identifyConcerns(answers as any); // Pre-calculate concerns
-        const candidateProducts = await getCandidateProducts(answers as any, concerns, 10); // Top 10
-
         // Resolve Skin Type (Priority: Face Analysis > User Answer)
         const finalSkinType = determineSkinType(answers, (faceAnalysis as any) || undefined);
         const skinTypeLabel = getSkinTypeLabel(finalSkinType);
+        const enrichedAnswers = { ...answers, skinType: finalSkinType };
+
+        // FETCH PRODUCTS (Candidate Selection / RAG Lite)
+        const concerns = identifyConcerns(enrichedAnswers as any, faceAnalysis as any); // Pre-calculate concerns
+        const candidateProducts = await getCandidateProducts(enrichedAnswers as any, concerns, 10); // Top 10
+
+        const concernLabels = concerns.map(c => getConcernLabel(c));
 
         const userPrompt = buildTextAnalysisPrompt({
             skinTypeLabel,
             ageRange: answers.ageRange,
-            concerns: answers.concerns,
+            concerns: concernLabels,
             medicalBeauty: (answers as any).medicalBeauty,
             sleep: (answers as any).sleepQuality,
             faceAnalysis: faceAnalysis ? {
@@ -192,7 +197,7 @@ export async function POST(request: NextRequest) {
             products: candidateProducts
         });
 
-        const systemPrompt = "你是一位专业的皮肤专家，请根据用户数据生成 JSON 格式的护肤报告。";
+        const systemPrompt = TEXT_ANALYSIS_SYSTEM_PROMPT;
 
         // 调用 AI
         const provider = process.env.AI_PROVIDER || "openai";
@@ -216,12 +221,12 @@ export async function POST(request: NextRequest) {
         let finalProducts: any[] = [];
 
         // 预先用算法生成10个带推荐理由的候选（用于兜底和补充）
-        const algorithmRecs = await recommendProducts(answers as any, concerns, candidateProducts, 10);
+        const algorithmRecs = await recommendProducts(enrichedAnswers as any, concerns, candidateProducts, 10);
 
         if (resultJson.products && Array.isArray(resultJson.products)) {
             const mappedProducts = resultJson.products.map((p: any) => {
                 // strict match against candidate pool to enforce RAG boundaries
-                const catalogProduct = candidateProducts.find((cp: any) => cp.id === p.id);
+                const catalogProduct = candidateProducts.find((cp: any) => String(cp.id) === String(p.id));
                 if (catalogProduct) {
                     return {
                         ...p,
