@@ -496,7 +496,7 @@ export default function Home() {
         isOpen={showLimitModal}
         onClose={() => setShowLimitModal(false)}
         showCloseButton
-        className="p-10 text-center rounded-[2rem] shadow-2xl overflow-hidden"
+        className="p-10 text-center rounded-[2rem] shadow-2xl overflow-hidden bg-[#FDFBF7]/80 backdrop-blur-2xl border border-white/20 ring-1 ring-white/10"
       >
         {/* Texture Overlay */}
         <div
