@@ -49,7 +49,7 @@ export async function PUT(
         const allowedFields = [
             'name', 'category', 'image', 'images', 'price', 'description',
             'keyIngredients', 'suitableSkinTypes', 'benefits', 'negativeFor', 'sortOrder',
-            'active', 'stock', 'featured', 'howToUse',
+            'active', 'featured', 'howToUse',
             'affiliateLinks'
         ];
 

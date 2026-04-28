@@ -12,7 +12,7 @@ export interface ProductRecommendation {
     reason: string;
     score?: number;
     matchedBenefits?: string[];
-    affiliateLinks?: any;
+    affiliateLinks?: Record<string, string> | null;
 }
 
 /** 关注点到功效标签的映射 */

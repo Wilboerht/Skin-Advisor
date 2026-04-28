@@ -18,7 +18,6 @@ export default async function ProductsPage() {
         image: p.image,
         active: p.active,
         featured: p.featured,
-        stock: p.stock,
         sortOrder: p.sortOrder,
     }));
 

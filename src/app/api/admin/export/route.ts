@@ -21,14 +21,12 @@ export async function GET(request: NextRequest) {
                 orderBy: { sortOrder: "asc" },
                 take: 5000, // Hard limit to prevent memory exhaustion
             });
-            headers = ["ID", "Name", "Name (EN)", "Category", "Price", "Stock", "Active", "Featured", "Created"];
+            headers = ["ID", "Name", "Category", "Price", "Active", "Featured", "Created"];
             data = products.map((p) => [
                 p.id,
                 p.name,
-                p.nameEn || "",
                 p.category,
                 p.price,
-                p.stock,
                 p.active ? "Yes" : "No",
                 p.featured ? "Yes" : "No",
                 new Date(p.createdAt).toISOString(),

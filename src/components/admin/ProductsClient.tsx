@@ -31,7 +31,6 @@ import {
     Loader2,
     CheckSquare,
     Square,
-    AlertTriangle,
     Filter,
     ChevronDown
 } from "lucide-react";
@@ -46,7 +45,6 @@ interface Product {
     image: string;
     active: boolean;
     featured: boolean;
-    stock: number;
     sortOrder: number;
 }
 
@@ -155,19 +153,6 @@ function SortableProductRow({
                     {product.active ? '上架' : '下架'}
                 </span>
             </td>
-            <td className="px-4 py-4 whitespace-nowrap align-middle">
-                <span className={`inline-flex items-center gap-1 text-sm font-medium ${product.stock <= 0
-                    ? 'text-red-600'
-                    : product.stock <= 10
-                        ? 'text-amber-600'
-                        : 'text-slate-600'
-                    }`}>
-                    {product.stock <= 10 && product.stock > 0 && (
-                        <AlertTriangle className="w-3.5 h-3.5" />
-                    )}
-                    {product.stock <= 0 ? '已售罄' : product.stock}
-                </span>
-            </td>
             <td className="px-4 py-4 whitespace-nowrap text-sm font-medium align-middle">
                 <div className="flex items-center gap-1">
                     <Link
@@ -206,7 +191,6 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
     // P7.10 Filters
     const [categoryFilter, setCategoryFilter] = useState<string>("all");
     const [statusFilter, setStatusFilter] = useState<string>("all");
-    const [stockFilter, setStockFilter] = useState<string>("all");
 
     // Get unique categories
     const categories = [...new Set(initialProducts.map(p => p.category))];
@@ -216,14 +200,10 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
         if (categoryFilter !== "all" && p.category !== categoryFilter) return false;
         if (statusFilter === "active" && !p.active) return false;
         if (statusFilter === "inactive" && p.active) return false;
-        if (stockFilter === "low" && p.stock > 10) return false;
-        if (stockFilter === "out" && p.stock > 0) return false;
-        return true;
+            return true;
     });
 
-    // Count low stock items
-    const lowStockCount = products.filter(p => p.stock <= 10 && p.stock > 0).length;
-    const outOfStockCount = products.filter(p => p.stock <= 0).length;
+
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -232,7 +212,7 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
         })
     );
 
-    const hasActiveFilters = categoryFilter !== "all" || statusFilter !== "all" || stockFilter !== "all";
+    const hasActiveFilters = categoryFilter !== "all" || statusFilter !== "all";
 
     const handleDragEnd = async (event: DragEndEvent) => {
         if (hasActiveFilters) {
@@ -356,17 +336,6 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                     <h1 className="text-2xl font-bold text-slate-900 tracking-tight">产品管理</h1>
                     <p className="text-slate-500 text-sm mt-1">
                         共 {products.length} 个产品
-                        {lowStockCount > 0 && (
-                            <span className="ml-2 text-amber-600">
-                                <AlertTriangle className="w-3.5 h-3.5 inline mr-0.5" />
-                                {lowStockCount} 库存预警
-                            </span>
-                        )}
-                        {outOfStockCount > 0 && (
-                            <span className="ml-2 text-red-600">
-                                {outOfStockCount} 已售罄
-                            </span>
-                        )}
                         {saving && <span className="ml-2 text-amber-600">保存中...</span>}
                     </p>
                 </div>
@@ -411,22 +380,9 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                 </div>
 
-                {/* Stock Filter */}
-                <div className="relative min-w-[140px]">
-                    <select
-                        value={stockFilter}
-                        onChange={(e) => setStockFilter(e.target.value)}
-                        className="w-full pl-3 pr-10 py-1.5 text-sm border border-slate-200 rounded-lg bg-white hover:bg-slate-50 hover:border-slate-300 focus:outline-none focus:ring-1 focus:ring-slate-300 transition-all cursor-pointer appearance-none"
-                    >
-                        <option value="all">所有库存</option>
-                        <option value="low">库存预警 (≤10)</option>
-                        <option value="out">已售罄</option>
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                </div>
-                {(categoryFilter !== "all" || statusFilter !== "all" || stockFilter !== "all") && (
+                {(categoryFilter !== "all" || statusFilter !== "all") && (
                     <button
-                        onClick={() => { setCategoryFilter("all"); setStatusFilter("all"); setStockFilter("all"); }}
+                        onClick={() => { setCategoryFilter("all"); setStatusFilter("all"); }}
                         className="px-3 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-700"
                     >
                         清除筛选
@@ -510,7 +466,6 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                                 <th className="px-4 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">分类</th>
                                 <th className="px-4 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">价格</th>
                                 <th className="px-4 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">状态</th>
-                                <th className="px-4 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">库存</th>
                                 <th className="px-4 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">操作</th>
                             </tr>
                         </thead>
@@ -526,13 +481,13 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                                         isSelected={selectedIds.includes(product.id)}
                                         onSelect={handleToggleSelect}
                                         onDelete={(id) => setDeleteConfirm({ show: true, id, batch: false })}
-                                        sortingDisabled={categoryFilter !== "all" || statusFilter !== "all" || stockFilter !== "all"}
+                                        sortingDisabled={categoryFilter !== "all" || statusFilter !== "all"}
                                     />
                                 ))}
                             </SortableContext>
                             {filteredProducts.length === 0 && (
                                 <tr>
-                                    <td colSpan={9} className="px-6 py-12 text-center text-slate-500">
+                                    <td colSpan={8} className="px-6 py-12 text-center text-slate-500">
                                         暂无产品，点击"添加产品"开始。
                                     </td>
                                 </tr>

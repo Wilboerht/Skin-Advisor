@@ -55,7 +55,6 @@ export async function GET() {
                 await prisma.product.create({
                     data: {
                         name: p.name,
-                        nameEn: p.nameEn,
                         category: p.category,
                         image: p.image,
                         price: p.price,
@@ -65,7 +64,6 @@ export async function GET() {
                         benefits: p.benefits,
                         negativeFor: (p as any).negativeFor || [],
                         active: true,
-                        stock: 100,
                         featured: false
                     }
                 });

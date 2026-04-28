@@ -60,7 +60,6 @@ export async function POST(request: NextRequest) {
                 negativeFor: body.negativeFor || [],
                 sortOrder: body.sortOrder || 0,
                 active: body.active ?? true,
-                stock: 999,
                 howToUse: body.howToUse || null,
                 affiliateLinks: body.affiliateLinks || null,
                 featured: body.featured ?? false,
