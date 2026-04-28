@@ -78,7 +78,7 @@ export default function QuestionsPage() {
                     return Array.isArray(dependencyAnswer) && dependencyAnswer.includes(value as string);
                 } else {
                     if (Array.isArray(value)) {
-                        return value.includes(dependencyAnswer);
+                        return typeof dependencyAnswer === 'string' && value.includes(dependencyAnswer);
                     }
                     return dependencyAnswer === value;
                 }
@@ -403,7 +403,7 @@ export default function QuestionsPage() {
                     >
                         <QuestionStep
                             question={currentQuestion}
-                            selectedValue={answers[currentQuestion.fieldName] || null}
+                            selectedValue={(answers[currentQuestion.fieldName] as string | string[] | null) || null}
                             onSelect={handleSelect}
                             direction={direction}
                         />
