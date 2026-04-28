@@ -34,7 +34,7 @@ export async function GET(
             _count: {
                 select: { advisorSessions: true }
             }
-        } as any
+        }
     });
 
     if (!user) {
@@ -68,24 +68,14 @@ export async function PATCH(
         return NextResponse.json({ error: "Invalid role" }, { status: 400 });
     }
 
-    const updateData: any = {};
-    if (role !== undefined) updateData.role = role;
-    if (name !== undefined) updateData.name = name;
-    if (dailyTestLimit !== undefined) {
-        const limitNum = Number(dailyTestLimit);
-        if (Number.isNaN(limitNum) || limitNum < 1 || limitNum > 100) {
-            return NextResponse.json({ error: "dailyTestLimit must be between 1 and 100" }, { status: 400 });
-        }
-        updateData.dailyTestLimit = limitNum;
-    }
-    if (vipExpiresAt !== undefined) {
-        // Support null (clear expiration = permanent VIP) or ISO date string
-        updateData.vipExpiresAt = vipExpiresAt ? new Date(vipExpiresAt) : null;
-    }
-
     const updatedUser = await prisma.user.update({
         where: { id },
-        data: updateData,
+        data: {
+            ...(role !== undefined && { role }),
+            ...(name !== undefined && { name }),
+            ...(dailyTestLimit !== undefined && { dailyTestLimit: Number(dailyTestLimit) }),
+            ...(vipExpiresAt !== undefined && { vipExpiresAt: vipExpiresAt ? new Date(vipExpiresAt) : null }),
+        },
     });
 
     // Log admin action
@@ -98,7 +88,7 @@ export async function PATCH(
         details: {
             previousRole: user.role,
             newRole: role,
-            previousDailyTestLimit: (user as any).dailyTestLimit,
+            previousDailyTestLimit: user.dailyTestLimit,
             newDailyTestLimit: dailyTestLimit,
             previousVipExpiresAt: user.vipExpiresAt,
             newVipExpiresAt: vipExpiresAt

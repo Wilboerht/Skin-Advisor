@@ -107,12 +107,12 @@ export async function GET(request: NextRequest) {
             checkedAt: now.toISOString(),
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("[VIP-Cron] ❌ Cron job failed:", error);
         return NextResponse.json(
             {
                 success: false,
-                error: error.message || "Internal error",
+                error: error instanceof Error ? error.message : "Internal error",
             },
             { status: 500 }
         );

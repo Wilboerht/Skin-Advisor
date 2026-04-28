@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
         // 3. 提取所有关联的 OSS 图片 URL (主要用于批量删除头像)
         const urlsToDelete: string[] = [];
         guestSessions.forEach(session => {
-            const result = session.analysisResult as any;
+            const result = session.analysisResult as Record<string, unknown>;
             if (result?.generatedAvatar && typeof result.generatedAvatar === 'string' && result.generatedAvatar.startsWith('http')) {
                 urlsToDelete.push(result.generatedAvatar);
             }
@@ -102,11 +102,11 @@ export async function POST(req: NextRequest) {
             }
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("[Cleanup Global Error]:", error);
-        return NextResponse.json({ 
-            success: false, 
-            error: "清理失败" 
+        return NextResponse.json({
+            success: false,
+            error: "清理失败"
         }, { status: 500 });
     }
 }

@@ -7,7 +7,7 @@ import { QuestionStep } from "@/components/advisor/QuestionStep";
 import { ProgressBar } from "@/components/advisor/ProgressBar";
 import { GenderSelection } from "@/components/advisor/GenderSelection";
 import { m, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, X, LogOut, ArrowRight, AlertTriangle, ShieldCheck, History } from "lucide-react";
+import { ChevronLeft, ChevronRight, LogOut, ArrowRight, History } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { cn } from "@/lib/utils";
 import { preloadAllFaceModels } from "@/lib/preload-models";
@@ -16,21 +16,21 @@ export default function QuestionsPage() {
     const router = useRouter();
     const [gender, setGender] = useState<"female" | "male" | null>(null);
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
-    const [answers, setAnswers] = useState<Record<string, any>>({});
-    const [committedAnswers, setCommittedAnswers] = useState<Record<string, any>>({});
+    const [answers, setAnswers] = useState<Record<string, unknown>>({});
+    const [committedAnswers, setCommittedAnswers] = useState<Record<string, unknown>>({});
     const [direction, setDirection] = useState(0);
     const [showExitConfirm, setShowExitConfirm] = useState(false);
     const [showResumeModal, setShowResumeModal] = useState(false);
-    const [hasSavedProgress, setHasSavedProgress] = useState(false);
+    const [, setHasSavedProgress] = useState(false);
     const { trackQuestionnaireStart, trackQuestionnaireComplete } = useAdvisorAnalytics();
     const hasTrackedStart = useRef(false);
     const hasCheckedResume = useRef(false);
 
     // 追踪答题质量
-    const sessionStartTime = useRef(Date.now());
+    const sessionStartTime = useRef(0);
     const startStepIndex = useRef(0);
     const [showQualityWarning, setShowQualityWarning] = useState(false);
-    const [pendingAnswers, setPendingAnswers] = useState<Record<string, any> | null>(null);
+    const [pendingAnswers, setPendingAnswers] = useState<Record<string, unknown> | null>(null);
 
     // 从 API 获取问题列表（数据库优先，静态降级）
     const [allQuestions, setAllQuestions] = useState<Question[]>(DEFAULT_QUESTIONS);
@@ -62,7 +62,7 @@ export default function QuestionsPage() {
         preloadAllFaceModels();
     }, []);
 
-    const getFilteredQuestions = (currentAnswers: Record<string, any>, currentGender: typeof gender) => {
+    const getFilteredQuestions = (currentAnswers: Record<string, unknown>, currentGender: typeof gender) => {
         return allQuestions.filter(q => {
             if (currentGender === "male" && q.fieldName === "pregnancy") return false;
 
@@ -267,7 +267,7 @@ export default function QuestionsPage() {
     };
 
     // 真正执行提交的逻辑
-    const processSubmission = (finalAnswers: any) => {
+    const processSubmission = (finalAnswers: Record<string, unknown>) => {
         localStorage.setItem("advisor_answers", JSON.stringify(finalAnswers));
         // 不再此处清除进度，以便用户从扫脸页返回时能恢复问卷位置
         trackQuestionnaireComplete(finalAnswers);
@@ -275,7 +275,7 @@ export default function QuestionsPage() {
     };
 
     // 辅助函数：处理带特定答案的完成逻辑
-    const handleNextWithAnswers = (currentAnswers: any) => {
+    const handleNextWithAnswers = (currentAnswers: Record<string, unknown>) => {
         const nextQs = getFilteredQuestions(currentAnswers, gender);
         if (currentStepIndex < nextQs.length - 1) {
             setCommittedAnswers(currentAnswers);
