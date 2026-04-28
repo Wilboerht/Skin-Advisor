@@ -40,6 +40,17 @@ export function ProductRecommendationSection({
     const [processedProducts, setProcessedProducts] = useState<ProductCardData[]>([]);
     const scrollRef = useRef<HTMLDivElement>(null);
     const hasCentered = useRef(false);
+    const prevProductsRef = useRef<ProductCardData[]>([]);
+
+    // 当产品列表变化时重置居中状态
+    useEffect(() => {
+        const prevIds = prevProductsRef.current.map(p => p.id).join(',');
+        const currIds = products.map(p => p.id).join(',');
+        if (prevIds !== currIds) {
+            hasCentered.current = false;
+            prevProductsRef.current = products;
+        }
+    }, [products]);
 
     useEffect(() => {
         if (!products || products.length === 0) {
@@ -80,7 +91,7 @@ export function ProductRecommendationSection({
             } as ProductCardData;
         });
 
-        processed.sort((a, b) => (b.matchScore ?? 0) - (a.matchScore ?? 0));
+        // 保持后端排序（AI 精选在前，算法补充在后），不再按 matchScore 重排
         setProcessedProducts(processed);
     }, [products, faceAnalysis]);
 

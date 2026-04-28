@@ -12,6 +12,7 @@ export interface ProductRecommendation {
     reason: string;
     score?: number;
     matchedBenefits?: string[];
+    affiliateLinks?: any;
 }
 
 /** 关注点到功效标签的映射 */
@@ -252,7 +253,7 @@ function generateSmartReason(
 export async function getCandidateProducts(
     answers: QuestionnaireAnswers,
     concerns: string[],
-    limit: number = 20
+    limit: number = 10
 ): Promise<any[]> {
     try {
         // 1. Fetch Active & In-Stock Products
@@ -268,8 +269,8 @@ export async function getCandidateProducts(
 
         // 2. Score using our heuristic engine
         let scored = allProducts.map(p => {
-            const { score } = calculateScore(p, skinType, concerns, answers);
-            return { ...p, _score: score };
+            const { score, matchedBenefits } = calculateScore(p, skinType, concerns, answers);
+            return { ...p, _score: score, matchedBenefits };
         });
 
         // 3. Inject Forced Rules (Hard Rules)
@@ -350,9 +351,19 @@ export async function recommendProducts(
         }
 
         const skinType = answers.skinType || "combination";
+        const isPreScored = preloadedProducts && preloadedProducts.length > 0 && preloadedProducts[0]._score !== undefined;
 
-        // 2. Score each product
+        // 2. Score each product (skip if preloaded from getCandidateProducts which already scored)
         let scored = allProducts.map(p => {
+            if (isPreScored) {
+                // Reuse pre-computed score from getCandidateProducts
+                return {
+                    ...p,
+                    rawScore: p._score,
+                    matchedBenefits: p.matchedBenefits || [],
+                    price: p.price
+                };
+            }
             const { score, matchedBenefits } = calculateScore(p, skinType, concerns, answers);
             return {
                 ...p,
@@ -362,44 +373,46 @@ export async function recommendProducts(
             };
         });
 
-        // 3. Apply RecommendationRule engine (same logic as getCandidateProducts)
-        try {
-            const activeRules = await prisma.recommendationRule.findMany({
-                where: { active: true },
-                orderBy: { priority: 'desc' }
-            });
-
-            const forcedProductIds = new Set<string>();
-
-            for (const rule of activeRules) {
-                const conditions = rule.conditions as any;
-                let match = true;
-
-                if (conditions?.skinType && Array.isArray(conditions.skinType)) {
-                    if (!conditions.skinType.includes(skinType)) match = false;
-                }
-
-                if (match && conditions?.concern && Array.isArray(conditions.concern)) {
-                    const hasConcern = concerns.some(c => conditions.concern.includes(c));
-                    if (!hasConcern) match = false;
-                }
-
-                if (match && Array.isArray(rule.productIds)) {
-                    rule.productIds.forEach((id: any) => forcedProductIds.add(String(id)));
-                }
-            }
-
-            // Boost forced products
-            if (forcedProductIds.size > 0) {
-                scored = scored.map(p => {
-                    if (forcedProductIds.has(p.id)) {
-                        return { ...p, rawScore: p.rawScore + 1000 };
-                    }
-                    return p;
+        // 3. Apply RecommendationRule engine (skip if already applied by getCandidateProducts)
+        if (!isPreScored) {
+            try {
+                const activeRules = await prisma.recommendationRule.findMany({
+                    where: { active: true },
+                    orderBy: { priority: 'desc' }
                 });
+
+                const forcedProductIds = new Set<string>();
+
+                for (const rule of activeRules) {
+                    const conditions = rule.conditions as any;
+                    let match = true;
+
+                    if (conditions?.skinType && Array.isArray(conditions.skinType)) {
+                        if (!conditions.skinType.includes(skinType)) match = false;
+                    }
+
+                    if (match && conditions?.concern && Array.isArray(conditions.concern)) {
+                        const hasConcern = concerns.some(c => conditions.concern.includes(c));
+                        if (!hasConcern) match = false;
+                    }
+
+                    if (match && Array.isArray(rule.productIds)) {
+                        rule.productIds.forEach((id: any) => forcedProductIds.add(String(id)));
+                    }
+                }
+
+                // Boost forced products
+                if (forcedProductIds.size > 0) {
+                    scored = scored.map(p => {
+                        if (forcedProductIds.has(p.id)) {
+                            return { ...p, rawScore: p.rawScore + 1000 };
+                        }
+                        return p;
+                    });
+                }
+            } catch (ruleErr) {
+                console.warn("RecommendationRule query failed (non-fatal):", ruleErr);
             }
-        } catch (ruleErr) {
-            console.warn("RecommendationRule query failed (non-fatal):", ruleErr);
         }
 
         // 4. Sort by score desc
@@ -416,7 +429,8 @@ export async function recommendProducts(
             image: p.image,
             price: p.price,
             reason: generateSmartReason(p.matchedBenefits, concerns, skinType, index),
-            score: p.rawScore
+            score: p.rawScore,
+            affiliateLinks: p.affiliateLinks
         }));
 
     } catch (e) {

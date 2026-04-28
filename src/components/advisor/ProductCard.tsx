@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import Image from "next/image";
 import { m } from "framer-motion";
-import { ChevronRight, Plus, ExternalLink, ShoppingCart } from "lucide-react";
+import { ChevronRight, ExternalLink, ShoppingCart } from "lucide-react";
 import { IngredientTooltip, IngredientTags } from "./IngredientTooltip";
 import {
     AffiliateLinks,
@@ -51,6 +51,19 @@ export function ProductCard({
 }: ProductCardProps) {
     const [imageError, setImageError] = useState(false);
     const [showPlatforms, setShowPlatforms] = useState(false);
+    const platformRef = useRef<HTMLDivElement>(null);
+
+    // 点击外部关闭平台下拉
+    useEffect(() => {
+        if (!showPlatforms) return;
+        const handleClick = (e: MouseEvent) => {
+            if (platformRef.current && !platformRef.current.contains(e.target as Node)) {
+                setShowPlatforms(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClick);
+        return () => document.removeEventListener('mousedown', handleClick);
+    }, [showPlatforms]);
 
     const primaryLink = getPrimaryLink(product.affiliateLinks);
     const allLinks = getProductLinks(product.affiliateLinks);
@@ -186,7 +199,7 @@ export function ProductCard({
                     <div className="flex items-center gap-1.5">
                         {/* 购买按钮 */}
                         {allLinks.length > 0 && (
-                            <div className="relative">
+                            <div className="relative" ref={platformRef}>
                                 <button
                                     onClick={handleBuyClick}
                                     className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-white/20 text-white hover:bg-white/30 transition-colors"

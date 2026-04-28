@@ -145,21 +145,25 @@ export async function POST(request: NextRequest) {
 
             // 构造符合 ComprehensiveResult 结构的数据
             const finalResult = {
-                skinAnalysis: {
-                    skinType: fallbackFace.skinType.type,
-                    skinTypeLabel: getSkinTypeLabel(fallbackFace.skinType.type),
+                skinProfile: {
+                    type: fallbackFace.skinType.type,
+                    typeLabel: getSkinTypeLabel(fallbackFace.skinType.type),
                     concerns: concerns,
+                    skinAge: 25
+                },
+                analysis: {
                     summary: fallbackFace.skinType.description || "基于您的问卷数据生成的初步分析报告。",
                     details: [
                         "由于 AI 服务暂时不可用，本报告基于您的问卷回答生成。",
                         `检测到的主要肤质特征为：${getSkinTypeLabel(fallbackFace.skinType.type)}。`,
                         ...fallbackFace.recommendations
-                    ],
-                    skinAge: 25
+                    ]
                 },
                 faceAnalysis: fallbackFace,
                 products: products,
-                userLocation: geoLocation
+                dataSource: "questionnaire" as const,
+                userLocation: geoLocation,
+                nickname: nickname || "护肤达人"
             };
 
             return NextResponse.json(finalResult, { headers: rateLimitHeaders });
@@ -168,7 +172,7 @@ export async function POST(request: NextRequest) {
         // 5. 构建 AI 提示词与调用
         // FETCH PRODUCTS (Candidate Selection / RAG Lite)
         const concerns = identifyConcerns(answers as any); // Pre-calculate concerns
-        const candidateProducts = await getCandidateProducts(answers as any, concerns, 20); // Top 20
+        const candidateProducts = await getCandidateProducts(answers as any, concerns, 10); // Top 10
 
         // Resolve Skin Type (Priority: Face Analysis > User Answer)
         const finalSkinType = determineSkinType(answers, (faceAnalysis as any) || undefined);
@@ -208,11 +212,11 @@ export async function POST(request: NextRequest) {
             resultJson = {}; // Safety
         }
 
-        // 6. 补全产品详情 — 返回最多15个产品，前3个为AI精选推荐
+        // 6. 补全产品详情 — 返回最多10个产品，前3个为AI精选推荐
         let finalProducts: any[] = [];
 
-        // 预先用算法生成15个带推荐理由的候选（用于兜底和补充）
-        const algorithmRecs = await recommendProducts(answers as any, concerns, candidateProducts, 15);
+        // 预先用算法生成10个带推荐理由的候选（用于兜底和补充）
+        const algorithmRecs = await recommendProducts(answers as any, concerns, candidateProducts, 10);
 
         if (resultJson.products && Array.isArray(resultJson.products)) {
             const mappedProducts = resultJson.products.map((p: any) => {
@@ -229,20 +233,21 @@ export async function POST(request: NextRequest) {
                         price: catalogProduct.price,
                         description: catalogProduct.description,
                         keyIngredients: catalogProduct.keyIngredients || [],
-                        benefits: catalogProduct.benefits || []
+                        benefits: catalogProduct.benefits || [],
+                        affiliateLinks: catalogProduct.affiliateLinks || null
                     };
                 }
                 return null;
             }).filter(Boolean);
 
             if (mappedProducts.length > 0) {
-                // 前3个为AI主推推荐，补充算法候选至15个
+                // 前3个为AI主推推荐，补充算法候选至10个
                 const aiTop3 = mappedProducts.slice(0, 3).map((p: any) => ({
                     ...p,
                     reason: p.reason || algorithmRecs.find((r: any) => r.id === p.id)?.reason || "为您精选的护肤产品"
                 }));
                 const remaining = algorithmRecs.filter((ar: any) => !aiTop3.some((p: any) => p.id === ar.id));
-                finalProducts = [...aiTop3, ...remaining].slice(0, 15);
+                finalProducts = [...aiTop3, ...remaining].slice(0, 10);
             }
         }
 
