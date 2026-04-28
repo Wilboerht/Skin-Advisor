@@ -229,6 +229,7 @@ function generateSmartReason(
         oil_control: ["清爽控油，平衡水油", "调节油脂分泌"],
         dark_circles: ["修护眼周，淡化黑眼圈", "改善眼部循环"],
         roughness: ["改善粗糙，细致毛孔", "平滑肌肤纹理"],
+        waterOil: ["平衡水油，调理肌肤", "改善T区出油U区干燥"],
     };
 
     // 优先使用关注点相关理由
