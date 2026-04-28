@@ -165,6 +165,9 @@ export function FloatingToolbar({
 
             {/* Collapsed trigger button - 位置固定，只做淡出 */}
             <motion.button
+                onMouseEnter={() => handleHoverChange(true)}
+                onMouseLeave={() => handleHoverChange(false)}
+                onTouchStart={() => handleHoverChange(!isHovered)}
                 animate={{
                     opacity: isHovered ? 0 : 1,
                     scale: isHovered ? 0.85 : 1,
