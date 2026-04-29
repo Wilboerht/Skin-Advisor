@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { House } from "lucide-react";
+import { House, MessageCircle } from "lucide-react";
 import { useAsyncAnalysis } from "@/hooks/useAsyncAnalysis";
 import { motion as m, AnimatePresence } from "framer-motion";
 import {
@@ -1265,11 +1265,11 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             {/* Retake Button - Centered */}
                             <div className="flex justify-center mb-10 gap-4">
                                 <button
-                                    onClick={handleRetake}
+                                    onClick={() => setShowContactAdvisor(true)}
                                     className="glass-premium-primary animate-float-premium group relative inline-flex items-center justify-center gap-3 px-8 py-3.5 sm:px-10 rounded-full text-[14px] sm:text-[15px] tracking-[0.15em] font-medium disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer transition-all duration-300"
                                 >
-                                    <RotateCcw className="w-5 h-5 transition-transform duration-500 group-hover:-rotate-45" />
-                                    <span>重新测试</span>
+                                    <MessageCircle className="w-5 h-5" />
+                                    <span>联系顾问</span>
                                 </button>
                                 <button
                                     onClick={() => window.location.href = '/'}

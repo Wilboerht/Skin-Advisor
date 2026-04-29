@@ -140,6 +140,38 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                                 </p>
                             </section>
 
+                            {/* 小红书链接 */}
+                            <section className="mb-5">
+                                {(() => {
+                                    const keyword = `nihplod ${product.category}`;
+                                    const encodedKeyword = encodeURIComponent(keyword);
+                                    const webUrl = `https://www.xiaohongshu.com/search_result?keyword=${encodedKeyword}`;
+                                    const schemeUrl = `xhsdiscover://search/result?keyword=${encodedKeyword}`;
+                                    const isMobile = typeof navigator !== "undefined" && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                                    return (
+                                        <>
+                                            <a
+                                                href={isMobile ? schemeUrl : webUrl}
+                                                target={isMobile ? undefined : "_blank"}
+                                                rel="noopener noreferrer"
+                                                className="group inline-flex items-center gap-2 text-[14px] text-[#3d2f25] transition-opacity hover:opacity-60"
+                                            >
+                                                <span>去小红书了解更多</span>
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 transition-transform group-hover:translate-x-1">
+                                                    <path d="M5 12h14" />
+                                                    <path d="m12 5 7 7-7 7" />
+                                                </svg>
+                                            </a>
+                                            {isMobile && (
+                                                <p className="mt-1.5 text-[11px] text-[#8c7a6b]/60">
+                                                    若未唤起小红书App，请手动搜索「{keyword}」
+                                                </p>
+                                            )}
+                                        </>
+                                    );
+                                })()}
+                            </section>
+
                             {/* Accordions */}
                             <section className="border-t border-[#3d2f25]/8">
                                 {/* Key Ingredients */}
