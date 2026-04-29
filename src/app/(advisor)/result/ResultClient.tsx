@@ -1062,7 +1062,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         onClick={() => setShowLabData(false)}
                                     />
                                     <m.div
-                                        className="relative z-10 w-full max-w-3xl max-h-[85vh] rounded-2xl border border-[#3d2f25]/10 shadow-2xl bg-[#FDFBF7] flex flex-col"
+                                        className="relative z-10 w-full max-w-3xl max-h-[85vh] rounded-2xl border border-[#3d2f25]/10 shadow-2xl flex flex-col"
+                                        style={{ background: 'linear-gradient(180deg, #F5EDE2 0%, #EDE4D6 100%)' }}
                                         initial={{ opacity: 0, scale: 0.95, y: 20 }}
                                         animate={{ opacity: 1, scale: 1, y: 0 }}
                                         exit={{ opacity: 0, scale: 0.95, y: 20 }}

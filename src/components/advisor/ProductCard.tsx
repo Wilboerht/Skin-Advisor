@@ -112,7 +112,7 @@ export function ProductCard({
             className={cn(
                 "group relative overflow-hidden transition-all duration-300",
                 isCompact
-                    ? "bg-white rounded-[20px] shadow-sm hover:shadow-md cursor-default"
+                    ? "bg-[#FAF6F0] rounded-[20px] shadow-sm hover:shadow-md cursor-default"
                     : "rounded-xl border bg-white/10 backdrop-blur-sm border-white/10 hover:border-white/20 hover:shadow-lg cursor-pointer"
             )}
             onClick={handleCardClick}
