@@ -494,61 +494,84 @@ export default function Home() {
       <AnimatePresence>
         {showGuideModal && (
           <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
-            {/* Backdrop with Blur */}
             <m.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowGuideModal(false)}
-              className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
+              className="absolute inset-0 bg-[#2d2a26]/40 backdrop-blur-md"
             />
 
-            {/* Modal Content */}
             <m.div
-              initial={{ opacity: 0, scale: 0.96, y: 10 }}
+              initial={{ opacity: 0, scale: 0.96, y: 16 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, y: 10 }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="relative z-10 w-full max-w-[420px] bg-white rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col"
+              exit={{ opacity: 0, scale: 0.96, y: 16 }}
+              transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
+              className="relative z-10 w-full max-w-[420px] overflow-hidden flex flex-col max-h-[85vh]"
+              style={{
+                background: 'linear-gradient(180deg, #F8F6F1 0%, #F3F0E9 100%)',
+                borderRadius: 24,
+                boxShadow: '0 32px 64px -16px rgba(45, 42, 38, 0.25), inset 0 1px 1px rgba(255,255,255,0.6)',
+                border: '1px solid rgba(139, 115, 85, 0.15)',
+              }}
               onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
               {/* Close Button */}
               <button
                 onClick={() => setShowGuideModal(false)}
-                className="absolute top-6 right-6 z-20 w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                className="absolute top-5 right-5 z-20 w-8 h-8 flex items-center justify-center rounded-full transition-colors"
+                style={{ background: 'rgba(139, 115, 85, 0.08)', color: '#8B7355' }}
               >
-                <X size={16} strokeWidth={2.5} />
+                <X size={15} strokeWidth={2.5} />
               </button>
 
               {/* Header */}
-              <div className="p-10 pt-14 text-center pb-6">
-                <div className="mb-7 flex justify-center">
+              <div className="px-8 pt-10 pb-2 text-center shrink-0">
+                <div className="flex justify-center">
                   <img
                     src="/NIHPLOD-logo.svg"
                     alt="NIHPLOD"
-                    className="h-[34px] object-contain"
+                    className="h-[30px] object-contain opacity-80"
                   />
                 </div>
-                <p className="text-slate-400 text-sm font-bold tracking-widest uppercase">
-                  测试前准备指南
-                </p>
               </div>
 
               {/* Content */}
-              <div className="px-10 pb-10 pt-2 flex flex-col gap-5">
-                <div className="flex items-start gap-3">
-                  <span className="mt-1.5 w-2 h-2 rounded-full bg-[#8c7a6b] shrink-0" />
-                  <div>
-                    <p className="text-[15px] font-semibold text-[#3d2f25] mb-1">素颜状态</p>
-                    <p className="text-sm text-[#5c4937] leading-relaxed">彻底卸除底妆、防晒及彩妆产品，确保当前处于素颜状态。</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <span className="mt-1.5 w-2 h-2 rounded-full bg-[#8c7a6b] shrink-0" />
-                  <div>
-                    <p className="text-[15px] font-semibold text-[#3d2f25] mb-1">光线环境</p>
-                    <p className="text-sm text-[#5c4937] leading-relaxed">请在一个光线充足的环境下完成面部信息采集，避免强光照射或背光。</p>
-                  </div>
+              <div className="flex-1 overflow-y-auto px-6 pb-8 custom-scrollbar">
+                <div className="flex flex-col gap-3">
+                  {[
+                    { title: "素颜状态", desc: "彻底卸除底妆、防晒及彩妆产品，确保面部处于完全素颜状态。" },
+                    { title: "光线充足", desc: "在自然光或柔和灯光下进行，避免强光直射、背光或昏暗环境。" },
+                    { title: "正面拍摄", desc: "保持面部正对镜头，平视前方，头发整理至耳后，露出完整五官。" },
+                    { title: "稳定网络", desc: "确保网络连接稳定，面部信息采集与分析过程需要上传图片数据。" },
+                    { title: "预留时间", desc: "完整流程包括问卷与面部拍摄，建议预留 3-5 分钟专注完成。" },
+                  ].map((item, i) => (
+                    <m.div
+                      key={i}
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.1 + i * 0.06 }}
+                      className="flex items-start gap-3 px-4 py-3.5 rounded-xl transition-colors"
+                      style={{ background: 'rgba(139, 115, 85, 0.04)' }}
+                      onMouseEnter={(e) => {
+                        (e.currentTarget as HTMLElement).style.background = 'rgba(139, 115, 85, 0.08)';
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLElement).style.background = 'rgba(139, 115, 85, 0.04)';
+                      }}
+                    >
+                      <span
+                        className="mt-1 w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-[10px] font-bold"
+                        style={{ background: 'rgba(61, 68, 48, 0.1)', color: '#3D4430' }}
+                      >
+                        {i + 1}
+                      </span>
+                      <div>
+                        <p className="text-[13px] font-semibold mb-0.5" style={{ color: '#2d2a26' }}>{item.title}</p>
+                        <p className="text-[12px] leading-relaxed" style={{ color: '#8c7a6b' }}>{item.desc}</p>
+                      </div>
+                    </m.div>
+                  ))}
                 </div>
               </div>
             </m.div>
