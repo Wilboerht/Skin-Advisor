@@ -390,7 +390,7 @@ export default function Home() {
                         </button>
                       </div>
 
-                      <p className="text-[#5C5855]/90 leading-relaxed mb-10 max-w-2xl mx-auto font-light text-lg sm:text-xl opacity-0 animate-fade-in-up tracking-wide" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
+                      <p className="text-[#5C5855]/90 leading-relaxed mb-10 max-w-2xl mx-auto font-light text-base sm:text-xl opacity-0 animate-fade-in-up tracking-wide" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
                         为了精准分析你的肌肤状态并生成专业定制化报告，<br className="sm:hidden" />接下来我们将引导您进行个性化问卷调查<br className="sm:hidden" />与多维面部肌肤分析，整个过程预计占用 <span className="text-[#3D4430] font-medium">2-5 分钟</span>。
                       </p>
 
