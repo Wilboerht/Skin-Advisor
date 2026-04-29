@@ -9,6 +9,7 @@ import {
     MessageCircle,
     GripVertical,
     Sparkles,
+    Home,
 } from "lucide-react";
 
 interface ToolbarAction {
@@ -26,6 +27,7 @@ interface FloatingToolbarProps {
     onScrollTop?: () => void;
     onChat?: () => void;
     onAIClick?: () => void;
+    onHome?: () => void;
     onHoverChange?: (hovered: boolean) => void;
     visible?: boolean;
     showAIButton?: boolean;
@@ -36,7 +38,8 @@ const defaultActions = (
     onSharePoster?: () => void,
     onRetake?: () => void,
     onScrollTop?: () => void,
-    onChat?: () => void
+    onChat?: () => void,
+    onHome?: () => void
 ): ToolbarAction[] => [
     {
         id: "share",
@@ -58,6 +61,12 @@ const defaultActions = (
         onClick: onChat,
     },
     {
+        id: "home",
+        icon: <Home className="w-[18px] h-[18px]" strokeWidth={1.5} />,
+        label: "回到首页",
+        onClick: onHome,
+    },
+    {
         id: "top",
         icon: <ArrowUp className="w-[18px] h-[18px]" strokeWidth={1.5} />,
         label: "回到顶部",
@@ -72,6 +81,7 @@ export function FloatingToolbar({
     onScrollTop,
     onChat,
     onAIClick,
+    onHome,
     onHoverChange,
     visible = true,
     showAIButton = false,
@@ -80,7 +90,7 @@ export function FloatingToolbar({
     if (!visible) return null;
     const [isHovered, setIsHovered] = useState(false);
 
-    const toolbarActions = actions ?? defaultActions(onSharePoster, onRetake, onScrollTop, onChat);
+    const toolbarActions = actions ?? defaultActions(onSharePoster, onRetake, onScrollTop, onChat, onHome);
 
     const handleHoverChange = (hovered: boolean) => {
         setIsHovered(hovered);

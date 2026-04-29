@@ -31,6 +31,7 @@ import { ScientificRadarChart } from "@/components/advisor/ScientificRadarChart"
 import { copyToClipboard, generateShareUrl } from "@/lib/share";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 
+import { FloatingToolbar } from "@/components/advisor/FloatingToolbar";
 import { ContactAdvisorModal } from "@/components/advisor/ContactAdvisorModal";
 import ReportCards from "@/components/advisor/ReportCards";
 
@@ -1314,6 +1315,17 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                     {/* Save Report Banner for unauthenticated users */}
                     <SaveReportBanner />
+
+                    {/* Floating Toolbar */}
+                    <FloatingToolbar
+                        onSharePoster={() => {
+                            /* TODO: 分享海报 */
+                        }}
+                        onRetake={() => router.push("/questions")}
+                        onChat={() => setShowContactAdvisor(true)}
+                        onHome={() => router.push("/")}
+                        showAIButton={false}
+                    />
 
                     {/* Contact Advisor Modal */}
                     <ContactAdvisorModal
