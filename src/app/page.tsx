@@ -391,7 +391,7 @@ export default function Home() {
                       </div>
 
                       <p className="text-[#5C5855]/90 leading-relaxed mb-10 max-w-2xl mx-auto font-light text-lg sm:text-xl opacity-0 animate-fade-in-up tracking-wide" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
-                        为了精准分析你的肌肤状态并生成专业定制化报告，<br className="sm:hidden" />接下来我们将引导您进行个性化问卷调查<br className="sm:hidden" />与多维面部信息采集，整个过程预计占用 <span className="text-[#3D4430] font-medium">2-5 分钟</span>。
+                        为了精准分析你的肌肤状态并生成专业定制化报告，<br className="sm:hidden" />接下来我们将引导您进行个性化问卷调查<br className="sm:hidden" />与多维面部肌肤分析，整个过程预计占用 <span className="text-[#3D4430] font-medium">2-5 分钟</span>。
                       </p>
 
                       <div className="flex flex-col items-center gap-7 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.4s', animationFillMode: 'forwards' }}>
@@ -526,7 +526,7 @@ export default function Home() {
               </button>
 
               {/* Header */}
-              <div className="px-8 pt-10 pb-2 text-center shrink-0">
+              <div className="px-8 pt-10 pb-6 text-center shrink-0">
                 <div className="flex justify-center">
                   <img
                     src="/NIHPLOD-logo.svg"
@@ -542,9 +542,6 @@ export default function Home() {
                   {[
                     { title: "素颜状态", desc: "彻底卸除底妆、防晒及彩妆产品，确保面部处于完全素颜状态。" },
                     { title: "光线充足", desc: "在自然光或柔和灯光下进行，避免强光直射、背光或昏暗环境。" },
-                    { title: "正面拍摄", desc: "保持面部正对镜头，平视前方，头发整理至耳后，露出完整五官。" },
-                    { title: "稳定网络", desc: "确保网络连接稳定，面部信息采集与分析过程需要上传图片数据。" },
-                    { title: "预留时间", desc: "完整流程包括问卷与面部拍摄，建议预留 3-5 分钟专注完成。" },
                   ].map((item, i) => (
                     <m.div
                       key={i}
