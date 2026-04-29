@@ -350,7 +350,7 @@ export default function Home() {
                           className="group flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-medium tracking-[0.2em] text-[#3D4430]/40 hover:text-[#3D4430] hover:bg-white/40 border border-[#3D4430]/10 hover:border-[#3D4430]/20 transition-all duration-500 backdrop-blur-sm cursor-pointer"
                         >
                           <User className="w-3.5 h-3.5 transition-transform group-hover:scale-110 opacity-70 group-hover:opacity-100" />
-                          <span className="hidden sm:inline">{user.name || '我的档案'}</span>
+                          <span className="hidden sm:inline">{user.name || '测肤记录'}</span>
                         </button>
                       ) : (
                         <button
@@ -493,36 +493,70 @@ export default function Home() {
       />
 
       {/* 测试准备指南模态框 */}
-      <BaseModal
-        isOpen={showGuideModal}
-        onClose={() => setShowGuideModal(false)}
-        showCloseButton
-        backdropClassName="bg-black/40 backdrop-blur-sm"
-        className="p-8 text-left rounded-[2rem] bg-[#FAF6F0] border border-[#3d2f25]/10"
-      >
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-full bg-[#3d2f25]/8 flex items-center justify-center">
-            <BookOpen className="w-5 h-5 text-[#5c4937]" />
+      <AnimatePresence>
+        {showGuideModal && (
+          <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
+            {/* Backdrop with Blur */}
+            <m.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowGuideModal(false)}
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
+            />
+
+            {/* Modal Content */}
+            <m.div
+              initial={{ opacity: 0, scale: 0.96, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 10 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative z-10 w-full max-w-[420px] bg-white rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col"
+              onClick={(e: React.MouseEvent) => e.stopPropagation()}
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setShowGuideModal(false)}
+                className="absolute top-6 right-6 z-20 w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+              >
+                <X size={16} strokeWidth={2.5} />
+              </button>
+
+              {/* Header */}
+              <div className="p-10 pt-14 text-center pb-6">
+                <div className="mb-7 flex justify-center">
+                  <img
+                    src="/NIHPLOD-logo.svg"
+                    alt="NIHPLOD"
+                    className="h-[34px] object-contain"
+                  />
+                </div>
+                <p className="text-slate-400 text-sm font-bold tracking-widest uppercase">
+                  测试前准备指南
+                </p>
+              </div>
+
+              {/* Content */}
+              <div className="px-10 pb-10 pt-2 flex flex-col gap-5">
+                <div className="flex items-start gap-3">
+                  <span className="mt-1.5 w-2 h-2 rounded-full bg-[#8c7a6b] shrink-0" />
+                  <div>
+                    <p className="text-[15px] font-semibold text-[#3d2f25] mb-1">素颜状态</p>
+                    <p className="text-sm text-[#5c4937] leading-relaxed">彻底卸除底妆、防晒及彩妆产品，确保当前处于素颜状态。</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="mt-1.5 w-2 h-2 rounded-full bg-[#8c7a6b] shrink-0" />
+                  <div>
+                    <p className="text-[15px] font-semibold text-[#3d2f25] mb-1">光线环境</p>
+                    <p className="text-sm text-[#5c4937] leading-relaxed">请在一个光线充足的环境下完成面部信息采集，避免强光照射或背光。</p>
+                  </div>
+                </div>
+              </div>
+            </m.div>
           </div>
-          <h3 className="text-lg font-bold text-[#3d2f25]">测试前准备指南</h3>
-        </div>
-        <div className="space-y-5">
-          <div className="flex items-start gap-3">
-            <span className="mt-1.5 w-2 h-2 rounded-full bg-[#8c7a6b] shrink-0" />
-            <div>
-              <p className="text-[15px] font-semibold text-[#3d2f25] mb-1">素颜状态</p>
-              <p className="text-[14px] text-[#5c4937] leading-relaxed">彻底卸除底妆、防晒及彩妆产品，确保当前处于素颜状态。</p>
-            </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <span className="mt-1.5 w-2 h-2 rounded-full bg-[#8c7a6b] shrink-0" />
-            <div>
-              <p className="text-[15px] font-semibold text-[#3d2f25] mb-1">光线环境</p>
-              <p className="text-[14px] text-[#5c4937] leading-relaxed">请在一个光线充足的环境下完成面部信息采集，避免强光照射或背光。</p>
-            </div>
-          </div>
-        </div>
-      </BaseModal>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {showLimitModal && (

@@ -105,7 +105,7 @@ export function OnboardingFlowModal({
                 onClose={onClose}
                 showCloseButton={step !== "legal"}
                 backdropClassName="bg-black/5 backdrop-blur-[2px]"
-                className="p-10 text-center rounded-[2.5rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] overflow-hidden border border-white/20 ring-1 ring-white/10 bg-[#FDFBF7]/80 backdrop-blur-2xl !max-w-[29.5rem]"
+                className={`p-10 text-center rounded-[2.5rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] overflow-hidden border border-white/20 ring-1 ring-white/10 bg-[#FDFBF7]/80 backdrop-blur-2xl ${step === "legal" ? "!max-w-[29.5rem]" : "!max-w-sm"}`}
             >
                 {/* Texture Overlay in Modal */}
                 <div
@@ -125,6 +125,7 @@ export function OnboardingFlowModal({
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: 20 }}
                                     transition={{ duration: 0.3 }}
+
                                 >
                                     <div className="flex justify-center mb-6 text-[#3D4430]">
                                         <Image
@@ -180,6 +181,7 @@ export function OnboardingFlowModal({
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: 20 }}
                                     transition={{ duration: 0.3 }}
+
                                 >
                                     <div className="flex justify-center mb-6 text-[#8B7355]">
                                         <MapPin className="h-9 w-9 opacity-90" strokeWidth={1.2} />
