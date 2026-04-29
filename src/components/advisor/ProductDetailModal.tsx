@@ -116,8 +116,10 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                         {/* Right - Product Info */}
                         <div className="flex-1 overflow-y-auto px-5 py-6 lg:px-8 lg:py-8 scrollbar-none">
                             {/* Category */}
-                            <div className="mb-1.5 text-[11px] font-bold uppercase tracking-widest text-[#8c7a6b]">
-                                {product.category}
+                            <div className="mb-3">
+                                <span className="inline-block rounded-full bg-[#3d2f25]/8 px-3 py-1 text-[11px] font-medium text-[#5c4937]">
+                                    {product.category}
+                                </span>
                             </div>
 
                             {/* Product Name */}
