@@ -6,7 +6,7 @@ import { useToast } from "@/components/ui/Toast";
 import { Link } from "next-view-transitions";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, LogOut, Clock, Loader2, ScanFace, Calendar, TrendingUp, ChevronRight } from "lucide-react";
+import { X, LogOut, Clock, Loader2, ChevronRight, Calendar, BarChart3 } from "lucide-react";
 
 interface HistorySession {
     sessionId: string;
@@ -66,21 +66,11 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
         };
     };
 
-    const getSkinTypeColor = (type?: string) => {
-        if (!type) return "bg-[#3D4430]/10 text-[#3D4430]";
-        const t = type.toLowerCase();
-        if (t.includes('干')) return "bg-amber-50 text-amber-700 border-amber-200";
-        if (t.includes('油')) return "bg-emerald-50 text-emerald-700 border-emerald-200";
-        if (t.includes('敏')) return "bg-rose-50 text-rose-700 border-rose-200";
-        if (t.includes('混')) return "bg-sky-50 text-sky-700 border-sky-200";
-        return "bg-[#3D4430]/10 text-[#3D4430] border-[#3D4430]/20";
-    };
-
-    const getScoreColor = (score?: number) => {
-        if (!score) return "text-[#5E5E5E]";
-        if (score >= 85) return "text-emerald-600";
-        if (score >= 70) return "text-amber-600";
-        return "text-rose-500";
+    const getScoreTag = (score?: number) => {
+        if (!score) return { bg: "bg-slate-100", text: "text-slate-500" };
+        if (score >= 85) return { bg: "bg-emerald-50", text: "text-emerald-600" };
+        if (score >= 70) return { bg: "bg-amber-50", text: "text-amber-600" };
+        return { bg: "bg-rose-50", text: "text-rose-500" };
     };
 
     if (!user && !isOpen) return null;
@@ -89,103 +79,97 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
         <AnimatePresence>
             {isOpen && (
                 <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
-                    {/* Backdrop */}
+                    {/* Backdrop with Blur */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                        className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
                     />
 
-                    {/* Modal */}
+                    {/* Modal Content */}
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.96, y: 16 }}
+                        initial={{ opacity: 0, scale: 0.96, y: 10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.96, y: 16 }}
-                        transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
-                        className="relative z-10 w-full max-w-[520px] max-h-[80vh] bg-[#FAF9F6] rounded-2xl overflow-hidden flex flex-col shadow-2xl border border-[#E8E4DC]"
+                        exit={{ opacity: 0, scale: 0.96, y: 10 }}
+                        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                        className="relative z-10 w-full max-w-[460px] bg-white rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col max-h-[88vh]"
                         onClick={(e) => e.stopPropagation()}
                     >
+                        {/* Close Button */}
+                        <button
+                            onClick={onClose}
+                            className="absolute top-6 right-6 z-20 w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                        >
+                            <X size={16} strokeWidth={2.5} />
+                        </button>
+
                         {/* Header */}
-                        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E8E4DC] bg-white/60 backdrop-blur-sm">
-                            <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-full bg-[#3D4430] flex items-center justify-center text-white text-sm font-semibold">
-                                    {user?.name?.[0]?.toUpperCase() || <ScanFace size={16} />}
-                                </div>
-                                <div>
-                                    <h3 className="text-sm font-semibold text-[#1A1A1A]">{user?.name}</h3>
-                                    <p className="text-[11px] text-[#5E5E5E]">测肤记录</p>
-                                </div>
+                        <div className="p-10 pt-14 pb-6 text-center shrink-0">
+                            <div className="mb-6 flex justify-center">
+                                <img
+                                    src="/NIHPLOD-logo.svg"
+                                    alt="NIHPLOD"
+                                    className="h-[34px] object-contain"
+                                />
                             </div>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={handleLogout}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[#5E5E5E] hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                                >
-                                    <LogOut size={13} />
-                                    <span>退出</span>
-                                </button>
-                                <button
-                                    onClick={onClose}
-                                    className="p-1.5 rounded-lg hover:bg-[#F0EDE1] text-[#5E5E5E] hover:text-[#1A1A1A] transition-colors"
-                                >
-                                    <X size={16} />
-                                </button>
-                            </div>
+                            <p className="text-slate-400 text-sm font-bold tracking-widest uppercase">
+                                测肤记录
+                            </p>
                         </div>
 
-                        {/* Content */}
-                        <div className="flex-1 overflow-y-auto custom-scrollbar p-5">
+                        {/* Scrollable Content */}
+                        <div className="flex-1 overflow-y-auto px-10 pb-10 custom-scrollbar min-h-0">
                             {loadingHistory ? (
-                                <div className="h-48 flex flex-col items-center justify-center text-[#5E5E5E] gap-3">
+                                <div className="h-40 flex flex-col items-center justify-center text-slate-400 gap-3">
                                     <Loader2 className="w-5 h-5 animate-spin" />
-                                    <span className="text-xs font-medium">加载记录中...</span>
+                                    <span className="text-xs font-medium">加载中...</span>
                                 </div>
                             ) : auditHistory.length === 0 ? (
-                                <div className="h-64 flex flex-col items-center justify-center text-center">
-                                    <div className="w-14 h-14 bg-[#F0EDE1] rounded-2xl flex items-center justify-center mb-4">
-                                        <Clock className="w-6 h-6 text-[#A89F91]" />
+                                <div className="flex flex-col items-center justify-center text-center py-6">
+                                    <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center mb-4 border border-slate-100">
+                                        <Clock className="w-6 h-6 text-slate-300" />
                                     </div>
-                                    <h4 className="text-[#1A1A1A] font-semibold text-sm mb-1">暂无测肤记录</h4>
-                                    <p className="text-[#5E5E5E] text-xs mb-5 max-w-[200px]">
-                                        开始您的第一次 AI 皮肤分析，记录护肤历程
+                                    <h4 className="text-slate-900 font-bold text-sm mb-1">暂无测肤记录</h4>
+                                    <p className="text-slate-400 text-xs mb-6 max-w-[220px] leading-relaxed">
+                                        开始您的第一次 AI 皮肤分析，记录您的护肤历程
                                     </p>
                                     <button
                                         onClick={() => {
                                             onClose();
                                             router.push("/questions");
                                         }}
-                                        className="px-5 py-2 bg-[#3D4430] text-white rounded-lg text-xs font-medium hover:bg-[#2a2f21] transition-colors"
+                                        className="px-6 py-2.5 bg-[#8B7355]/10 text-[#8B7355] border border-[#8B7355]/40 rounded-xl text-xs font-bold tracking-widest hover:bg-[#8B7355]/20 transition-all"
                                     >
                                         立即测肤
                                     </button>
                                 </div>
                             ) : (
                                 <div className="space-y-3">
-                                    {/* Summary stats */}
-                                    <div className="flex items-center gap-4 mb-4 px-1">
-                                        <div className="flex items-center gap-1.5 text-xs text-[#5E5E5E]">
-                                            <TrendingUp size={13} className="text-[#3D4430]" />
-                                            <span>共 {auditHistory.length} 次测肤</span>
+                                    {/* Stats Summary */}
+                                    <div className="flex items-center gap-4 mb-5 px-1">
+                                        <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                                            <BarChart3 size={13} className="text-slate-400" />
+                                            <span>共 {auditHistory.length} 次</span>
                                         </div>
                                         {auditHistory[0]?.analysisResult?.faceAnalysis?.overallScore && (
-                                            <div className="flex items-center gap-1.5 text-xs text-[#5E5E5E]">
-                                                <Calendar size={13} className="text-[#3D4430]" />
+                                            <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                                                <Calendar size={13} className="text-slate-400" />
                                                 <span>最近 {formatDate(auditHistory[0].completedAt).date}</span>
                                             </div>
                                         )}
                                     </div>
 
-                                    {/* History list */}
+                                    {/* History Items */}
                                     {auditHistory.map((session, i) => {
                                         const result = session.analysisResult;
                                         const score = result?.faceAnalysis?.overallScore;
                                         const skinType = result?.skinProfile?.typeLabel || result?.skinType?.typeLabel;
-                                        const skinTypeRaw = result?.skinProfile?.type || result?.skinType?.type;
                                         const concerns = result?.skinProfile?.concerns || result?.concerns || [];
                                         const skinAge = result?.skinProfile?.skinAge || result?.faceAnalysis?.skinAge;
                                         const dateInfo = formatDate(session.completedAt);
+                                        const scoreTag = getScoreTag(score);
 
                                         return (
                                             <Link
@@ -197,65 +181,72 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                                                     initial={{ opacity: 0, y: 8 }}
                                                     animate={{ opacity: 1, y: 0 }}
                                                     transition={{ delay: i * 0.04 }}
-                                                    className="bg-white rounded-xl border border-[#E8E4DC] hover:border-[#3D4430]/30 hover:shadow-md transition-all duration-200 overflow-hidden"
+                                                    className="bg-white border border-slate-100 rounded-xl hover:border-slate-300 hover:shadow-sm transition-all duration-200 overflow-hidden"
                                                 >
                                                     <div className="p-4">
                                                         <div className="flex items-start justify-between mb-3">
                                                             {/* Date */}
                                                             <div className="flex items-center gap-2">
-                                                                <div className="w-10 h-10 rounded-lg bg-[#F0EDE1] flex flex-col items-center justify-center text-center">
-                                                                    <span className="text-[10px] text-[#5E5E5E] font-medium leading-none">{dateInfo.date.split('/')[0]}月</span>
-                                                                    <span className="text-sm font-bold text-[#3D4430] leading-none mt-0.5">{dateInfo.date.split('/')[1]}</span>
+                                                                <div className="w-9 h-9 rounded-lg bg-slate-50 flex items-center justify-center border border-slate-100">
+                                                                    <Calendar size={14} className="text-slate-400" />
                                                                 </div>
                                                                 <div>
-                                                                    <div className="text-xs text-[#5E5E5E]">{dateInfo.year}</div>
-                                                                    <div className="text-[10px] text-[#A89F91] mt-0.5">{dateInfo.full.split(' ')[1]}</div>
+                                                                    <div className="text-xs text-slate-700 font-medium">{dateInfo.full.split(' ')[0]}</div>
+                                                                    <div className="text-[10px] text-slate-400">{dateInfo.full.split(' ')[1]}</div>
                                                                 </div>
                                                             </div>
 
                                                             {/* Score */}
                                                             {score && (
-                                                                <div className="text-right">
-                                                                    <div className={`text-2xl font-bold tracking-tight ${getScoreColor(score)}`}>
-                                                                        {score}
-                                                                    </div>
-                                                                    <div className="text-[10px] text-[#A89F91]">综合评分</div>
+                                                                <div className={`px-2.5 py-1 rounded-md ${scoreTag.bg} ${scoreTag.text} text-sm font-bold`}>
+                                                                    {score} 分
                                                                 </div>
                                                             )}
                                                         </div>
 
-                                                        {/* Skin type & concerns */}
-                                                        <div className="flex items-center gap-2 flex-wrap">
+                                                        {/* Tags */}
+                                                        <div className="flex items-center gap-1.5 flex-wrap">
                                                             {skinType && (
-                                                                <span className={`px-2.5 py-1 rounded-full text-[11px] font-medium border ${getSkinTypeColor(skinTypeRaw)}`}>
+                                                                <span className="px-2 py-0.5 rounded bg-sky-50 text-sky-600 text-[11px] font-medium">
                                                                     {skinType}
                                                                 </span>
                                                             )}
                                                             {skinAge && (
-                                                                <span className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-[#F0EDE1] text-[#5E5E5E]">
-                                                                    肤龄 {skinAge} 岁
+                                                                <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600 text-[11px] font-medium">
+                                                                    肤龄 {skinAge}
                                                                 </span>
                                                             )}
                                                             {concerns.slice(0, 2).map((c: string, idx: number) => (
-                                                                <span key={idx} className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-[#F5F0E8] text-[#8B7355]">
+                                                                <span key={idx} className="px-2 py-0.5 rounded bg-amber-50 text-amber-600 text-[11px] font-medium">
                                                                     {c}
                                                                 </span>
                                                             ))}
                                                             {concerns.length > 2 && (
-                                                                <span className="text-[11px] text-[#A89F91]">+{concerns.length - 2}</span>
+                                                                <span className="text-[11px] text-slate-400">+{concerns.length - 2}</span>
                                                             )}
                                                         </div>
                                                     </div>
 
                                                     {/* Bottom bar */}
-                                                    <div className="px-4 py-2.5 bg-[#FAF9F6] border-t border-[#E8E4DC] flex items-center justify-between">
-                                                        <span className="text-[11px] text-[#A89F91]">查看完整报告</span>
-                                                        <ChevronRight size={14} className="text-[#A89F91] group-hover:text-[#3D4430] group-hover:translate-x-0.5 transition-all" />
+                                                    <div className="px-4 py-2.5 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
+                                                        <span className="text-[11px] text-slate-400">查看完整报告</span>
+                                                        <ChevronRight size={14} className="text-slate-300 group-hover:text-slate-600 group-hover:translate-x-0.5 transition-all" />
                                                     </div>
                                                 </motion.div>
                                             </Link>
                                         );
                                     })}
+
+                                    {/* Logout */}
+                                    <div className="pt-4 flex justify-center">
+                                        <button
+                                            onClick={handleLogout}
+                                            className="flex items-center gap-2 px-4 py-2 text-xs text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                        >
+                                            <LogOut size={13} />
+                                            <span>退出登录</span>
+                                        </button>
+                                    </div>
                                 </div>
                             )}
                         </div>
