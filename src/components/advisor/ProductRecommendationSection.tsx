@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import { m } from "framer-motion";
-import { Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ProductCard, ProductCardData } from "./ProductCard";
+import { ProductDetailModal } from "./ProductDetailModal";
 import { cn } from "@/lib/utils";
 
 const DIMENSION_LABELS: Record<string, string> = {
@@ -39,6 +40,8 @@ export function ProductRecommendationSection({
     centered = false
 }: ProductRecommendationSectionProps) {
     const [processedProducts, setProcessedProducts] = useState<ProductCardData[]>([]);
+    const [selectedProduct, setSelectedProduct] = useState<ProductCardData | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
     const hasCentered = useRef(false);
     const prevProductsRef = useRef<ProductCardData[]>([]);
@@ -182,29 +185,11 @@ export function ProductRecommendationSection({
                                 )}
                             >
                                 <div className="relative">
-                                    {/* 推荐胶囊 — 前3个显示 */}
-                                    {index < 3 && (
-                                        <m.div
-                                            initial={{ opacity: 0, y: -10, scale: 0.8 }}
-                                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                                            transition={{ delay: index * 0.12 + 0.3, type: 'spring', stiffness: 400, damping: 20 }}
-                                            className="absolute -top-3 left-1/2 -translate-x-1/2 z-20"
-                                        >
-                                            <span className="inline-flex items-center gap-1.5
-                                                             px-4 py-1.5 rounded-full
-                                                             bg-gradient-to-r from-[#C8A97E] to-[#D4B78F]
-                                                             text-white text-xs font-bold shadow-lg
-                                                             border border-white/30">
-                                                <Sparkles className="w-3 h-3" />
-                                                推荐
-                                            </span>
-                                        </m.div>
-                                    )}
-
                                     <ProductCard
                                         product={product}
                                         index={index}
                                         onProductClick={onProductClick}
+                                        onViewDetail={centered ? (p) => { setSelectedProduct(p); setIsModalOpen(true); } : undefined}
                                         variant={centered ? "compact" : "default"}
                                     />
                                 </div>
@@ -219,6 +204,12 @@ export function ProductRecommendationSection({
                     💡 左右滑动或点击箭头查看更多产品
                 </p>
             )}
+
+            <ProductDetailModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                product={selectedProduct}
+            />
         </section>
     );
 }

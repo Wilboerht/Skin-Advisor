@@ -38,6 +38,7 @@ interface ProductCardProps {
     product: ProductCardData;
     index?: number;
     onProductClick?: (productId: string) => void;
+    onViewDetail?: (product: ProductCardData) => void;
     variant?: "default" | "compact" | "horizontal";
     showMatchScore?: boolean;
 }
@@ -46,6 +47,7 @@ export function ProductCard({
     product,
     index = 0,
     onProductClick,
+    onViewDetail,
     variant = "default",
     showMatchScore = true
 }: ProductCardProps) {
@@ -114,35 +116,21 @@ export function ProductCard({
             )}
             onClick={handleCardClick}
         >
-            {/* 匹配度徽章 */}
-            {showMatchScore && product.matchScore && (
-                <div className="absolute top-2 left-2 z-10">
-                    <span className={cn(
-                        "px-2 py-0.5 rounded-full text-xs font-bold",
-                        product.matchScore >= 90
-                            ? "bg-emerald-500 text-white"
-                            : product.matchScore >= 75
-                                ? "bg-blue-500 text-white"
-                                : "bg-white/10 text-white/70"
-                    )}>
-                        {product.matchScore}% 匹配
-                    </span>
-                </div>
-            )}
-
             {/* 图片区域 */}
-            <div className={cn("relative overflow-hidden", isCompact ? "aspect-[4/3]" : "bg-white/5 aspect-square")}>
+            <div className={cn("relative overflow-hidden", isCompact ? "aspect-[4/3] p-3" : "bg-white/5 aspect-square")}>
                 {!imageError ? (
-                    <Image
-                        src={product.image}
-                        alt={product.name}
-                        fill
-                        className="object-cover transition-transform duration-500 group-hover:scale-105"
-                        sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-                        placeholder="blur"
-                        blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMCwsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wAARCAAIAAoDASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAAAAUH/8QAIRAAAgIBAwUBAAAAAAAAAAAAAwQBAgAFBhESEyExQVH/xAAVAQEBAAAAAAAAAAAAAAAAAAAFBv/EABoRAAICAwAAAAAAAAAAAAAAAAECAAMEESH/2gAMAwEAAhEDEEAAAAGqpnWZZMmf/9k="
-                        onError={() => setImageError(true)}
-                    />
+                    <div className="relative w-full h-full overflow-hidden rounded-[16px]">
+                        <Image
+                            src={product.image}
+                            alt={product.name}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                            placeholder="blur"
+                            blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMCwsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wAARCAAIAAoDASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAAAAUH/8QAIRAAAgIBAwUBAAAAAAAAAAAAAwQBAgAFBhESEyExQVH/xAAVAQEBAAAAAAAAAAAAAAAAAAAFBv/EABoRAAICAwAAAAAAAAAAAAAAAAECAAMEESH/2gAMAwEAAhEDEEAAAAGqpnWZZMmf/9k="
+                            onError={() => setImageError(true)}
+                        />
+                    </div>
                 ) : (
                     <div className={cn("w-full h-full flex items-center justify-center", isCompact ? "text-[#8c7a6b]/50" : "text-white/30")}>
                         <ShoppingCart className="w-12 h-12" />
@@ -176,62 +164,70 @@ export function ProductCard({
                     </span>
 
                     <div className="flex items-center gap-1.5">
-                        {/* 购买按钮 */}
-                        {allLinks.length > 0 && (
-                            <div className="relative" ref={platformRef}>
-                                <button
-                                    onClick={handleBuyClick}
-                                    className={cn(
-                                        "flex items-center gap-1 px-4 py-2 text-sm font-medium transition-colors",
-                                        isCompact
-                                            ? "rounded-full bg-[#C8A97E] text-white hover:bg-[#B89A6E]"
-                                            : "rounded-full bg-white/20 text-white hover:bg-white/30"
-                                    )}
-                                >
-                                    去购买
-                                    {allLinks.length > 1 ? (
-                                        <ChevronRight className={cn(
-                                            "w-3 h-3 transition-transform",
-                                            showPlatforms && "rotate-90"
-                                        )} />
-                                    ) : (
-                                        <ExternalLink className="w-3 h-3" />
-                                    )}
-                                </button>
+                        {/* 查看详情 / 购买按钮 */}
+                        {isCompact ? (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onViewDetail?.(product);
+                                }}
+                                className="flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-full bg-[#C8A97E] text-white hover:bg-[#B89A6E] transition-colors"
+                            >
+                                查看详情
+                                <ChevronRight className="w-3 h-3" />
+                            </button>
+                        ) : (
+                            <>
+                                {allLinks.length > 0 && (
+                                    <div className="relative" ref={platformRef}>
+                                        <button
+                                            onClick={handleBuyClick}
+                                            className={cn(
+                                                "flex items-center gap-1 px-4 py-2 text-sm font-medium transition-colors",
+                                                "rounded-full bg-white/20 text-white hover:bg-white/30"
+                                            )}
+                                        >
+                                            去购买
+                                            {allLinks.length > 1 ? (
+                                                <ChevronRight className={cn(
+                                                    "w-3 h-3 transition-transform",
+                                                    showPlatforms && "rotate-90"
+                                                )} />
+                                            ) : (
+                                                <ExternalLink className="w-3 h-3" />
+                                            )}
+                                        </button>
 
-                                {/* 多平台选择下拉 */}
-                                {showPlatforms && allLinks.length > 1 && (
-                                    <div className={cn(
-                                        "absolute bottom-full right-0 mb-1 py-1 rounded-lg shadow-xl min-w-[120px] z-20",
-                                        isCompact
-                                            ? "bg-white border border-[#E8E0D4]"
-                                            : "bg-white/10 backdrop-blur-sm border border-white/10"
-                                    )}>
-                                        {allLinks.map(link => (
-                                            <button
-                                                key={link.platform}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handlePlatformClick(link);
-                                                }}
-                                                className={cn(
-                                                    "w-full px-3 py-1.5 text-left text-xs font-medium flex items-center gap-2 transition-colors",
-                                                    isCompact ? "hover:bg-[#F5F0E8]" : "hover:bg-white/10"
-                                                )}
-                                                style={{ color: link.config.color }}
-                                            >
-                                                <span>{link.config.icon}</span>
-                                                {link.config.name}
-                                            </button>
-                                        ))}
+                                        {/* 多平台选择下拉 */}
+                                        {showPlatforms && allLinks.length > 1 && (
+                                            <div className={cn(
+                                                "absolute bottom-full right-0 mb-1 py-1 rounded-lg shadow-xl min-w-[120px] z-20",
+                                                "bg-white/10 backdrop-blur-sm border border-white/10"
+                                            )}>
+                                                {allLinks.map(link => (
+                                                    <button
+                                                        key={link.platform}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handlePlatformClick(link);
+                                                        }}
+                                                        className="w-full px-3 py-1.5 text-left text-xs font-medium flex items-center gap-2 transition-colors hover:bg-white/10"
+                                                        style={{ color: link.config.color }}
+                                                    >
+                                                        <span>{link.config.icon}</span>
+                                                        {link.config.name}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 )}
-                            </div>
-                        )}
 
-                        {/* 无购买链接时显示箭头 */}
-                        {allLinks.length === 0 && (
-                            <ChevronRight className={cn("w-4 h-4", isCompact ? "text-[#8c7a6b]" : "text-white/50")} />
+                                {/* 无购买链接时显示箭头 */}
+                                {allLinks.length === 0 && (
+                                    <ChevronRight className="w-4 h-4 text-white/50" />
+                                )}
+                            </>
                         )}
                     </div>
                 </div>
@@ -267,7 +263,7 @@ function HorizontalProductCard({
                         src={product.image}
                         alt={product.name}
                         fill
-                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        className="object-cover"
                         sizes="128px"
                         onError={() => setImageError(true)}
                     />
