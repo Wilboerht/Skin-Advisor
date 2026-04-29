@@ -6,7 +6,7 @@ import { useToast } from "@/components/ui/Toast";
 import { Link } from "next-view-transitions";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, LogOut, Clock, Loader2, ChevronRight, Calendar, BarChart3 } from "lucide-react";
+import { X, LogOut, Clock, Loader2, ChevronRight, ArrowUpRight } from "lucide-react";
 
 interface HistorySession {
     sessionId: string;
@@ -59,18 +59,20 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
 
     const formatDate = (dateStr: string) => {
         const date = new Date(dateStr);
-        return {
-            date: date.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' }),
-            year: date.toLocaleDateString('zh-CN', { year: 'numeric' }),
-            full: date.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
-        };
+        const now = new Date();
+        const isToday = date.toDateString() === now.toDateString();
+        const isYesterday = new Date(now.getTime() - 86400000).toDateString() === date.toDateString();
+
+        if (isToday) return "今天";
+        if (isYesterday) return "昨天";
+        return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
     };
 
-    const getScoreTag = (score?: number) => {
-        if (!score) return { bg: "bg-slate-100", text: "text-slate-500" };
-        if (score >= 85) return { bg: "bg-emerald-50", text: "text-emerald-600" };
-        if (score >= 70) return { bg: "bg-amber-50", text: "text-amber-600" };
-        return { bg: "bg-rose-50", text: "text-rose-500" };
+    const getScoreColor = (score?: number) => {
+        if (!score) return "text-[#787774]";
+        if (score >= 85) return "text-emerald-600";
+        if (score >= 70) return "text-amber-600";
+        return "text-rose-500";
     };
 
     if (!user && !isOpen) return null;
@@ -79,97 +81,106 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
         <AnimatePresence>
             {isOpen && (
                 <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
-                    {/* Backdrop with Blur */}
+                    {/* Backdrop */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
+                        className="absolute inset-0 bg-[#2d2a26]/40 backdrop-blur-md"
                     />
 
-                    {/* Modal Content */}
+                    {/* Modal */}
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.96, y: 10 }}
+                        initial={{ opacity: 0, scale: 0.96, y: 16 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.96, y: 10 }}
-                        transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                        className="relative z-10 w-full max-w-[460px] bg-white rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col max-h-[88vh]"
+                        exit={{ opacity: 0, scale: 0.96, y: 16 }}
+                        transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
+                        className="relative z-10 w-full max-w-[420px] max-h-[80vh] flex flex-col"
+                        style={{
+                            background: 'linear-gradient(180deg, #F8F6F1 0%, #F3F0E9 100%)',
+                            borderRadius: 24,
+                            boxShadow: '0 32px 64px -16px rgba(45, 42, 38, 0.25), inset 0 1px 1px rgba(255,255,255,0.6)',
+                            border: '1px solid rgba(139, 115, 85, 0.15)',
+                        }}
                         onClick={(e) => e.stopPropagation()}
                     >
-                        {/* Close Button */}
-                        <button
-                            onClick={onClose}
-                            className="absolute top-6 right-6 z-20 w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
-                        >
-                            <X size={16} strokeWidth={2.5} />
-                        </button>
-
                         {/* Header */}
-                        <div className="p-10 pt-14 pb-6 text-center shrink-0">
-                            <div className="mb-6 flex justify-center">
-                                <img
-                                    src="/NIHPLOD-logo.svg"
-                                    alt="NIHPLOD"
-                                    className="h-[34px] object-contain"
-                                />
+                        <div className="shrink-0 px-6 pt-6 pb-4">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold overflow-hidden shrink-0"
+                                        style={{ background: 'rgba(61, 68, 48, 0.1)', color: '#3D4430' }}>
+                                        {(() => {
+                                            const latestAvatar = auditHistory[0]?.analysisResult?.generatedAvatar;
+                                            if (latestAvatar) {
+                                                return <img src={latestAvatar} alt="" className="w-full h-full object-cover" />;
+                                            }
+                                            const avatarUrl = (user as any)?.avatarUrl;
+                                            if (avatarUrl) {
+                                                return <img src={avatarUrl} alt="" className="w-full h-full object-cover" />;
+                                            }
+                                            return user?.name?.[0]?.toUpperCase() || "?";
+                                        })()}
+                                    </div>
+                                    <div>
+                                        <div className="text-sm font-semibold" style={{ color: '#2d2a26' }}>{user?.name}</div>
+                                        <div className="text-[11px]" style={{ color: '#a89582' }}>测肤记录</div>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={onClose}
+                                    className="w-8 h-8 flex items-center justify-center rounded-full transition-colors"
+                                    style={{ background: 'rgba(139, 115, 85, 0.08)', color: '#8B7355' }}
+                                >
+                                    <X size={15} strokeWidth={2.5} />
+                                </button>
                             </div>
-                            <p className="text-slate-400 text-sm font-bold tracking-widest uppercase">
-                                测肤记录
-                            </p>
+
+                            {auditHistory.length > 0 && (
+                                <div className="flex items-center gap-4 px-1">
+                                    <span className="text-[11px] font-medium" style={{ color: '#a89582' }}>
+                                        共 {auditHistory.length} 次测肤
+                                    </span>
+                                </div>
+                            )}
                         </div>
 
-                        {/* Scrollable Content */}
-                        <div className="flex-1 overflow-y-auto px-10 pb-10 custom-scrollbar min-h-0">
+                        {/* Content */}
+                        <div className="flex-1 overflow-y-auto px-3 pb-4 custom-scrollbar min-h-0">
                             {loadingHistory ? (
-                                <div className="h-40 flex flex-col items-center justify-center text-slate-400 gap-3">
-                                    <Loader2 className="w-5 h-5 animate-spin" />
-                                    <span className="text-xs font-medium">加载中...</span>
+                                <div className="h-32 flex flex-col items-center justify-center gap-2">
+                                    <Loader2 className="w-4 h-4 animate-spin" style={{ color: '#a89582' }} />
+                                    <span className="text-[11px]" style={{ color: '#a89582' }}>加载中...</span>
                                 </div>
                             ) : auditHistory.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center text-center py-6">
-                                    <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center mb-4 border border-slate-100">
-                                        <Clock className="w-6 h-6 text-slate-300" />
+                                <div className="flex flex-col items-center justify-center text-center py-8 px-4">
+                                    <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-3"
+                                        style={{ background: 'rgba(139, 115, 85, 0.08)' }}>
+                                        <Clock className="w-5 h-5" style={{ color: '#c4b5a2' }} />
                                     </div>
-                                    <h4 className="text-slate-900 font-bold text-sm mb-1">暂无测肤记录</h4>
-                                    <p className="text-slate-400 text-xs mb-6 max-w-[220px] leading-relaxed">
-                                        开始您的第一次 AI 皮肤分析，记录您的护肤历程
+                                    <p className="text-sm font-medium mb-1" style={{ color: '#2d2a26' }}>暂无测肤记录</p>
+                                    <p className="text-[11px] mb-5" style={{ color: '#a89582' }}>
+                                        开始第一次 AI 皮肤分析
                                     </p>
                                     <button
-                                        onClick={() => {
-                                            onClose();
-                                            router.push("/questions");
+                                        onClick={() => { onClose(); router.push("/questions"); }}
+                                        className="px-5 py-2 rounded-lg text-[11px] font-bold tracking-widest transition-all"
+                                        style={{
+                                            background: 'rgba(61, 68, 48, 0.9)',
+                                            color: '#fff',
                                         }}
-                                        className="px-6 py-2.5 bg-[#8B7355]/10 text-[#8B7355] border border-[#8B7355]/40 rounded-xl text-xs font-bold tracking-widest hover:bg-[#8B7355]/20 transition-all"
                                     >
                                         立即测肤
                                     </button>
                                 </div>
                             ) : (
-                                <div className="space-y-3">
-                                    {/* Stats Summary */}
-                                    <div className="flex items-center gap-4 mb-5 px-1">
-                                        <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                                            <BarChart3 size={13} className="text-slate-400" />
-                                            <span>共 {auditHistory.length} 次</span>
-                                        </div>
-                                        {auditHistory[0]?.analysisResult?.faceAnalysis?.overallScore && (
-                                            <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                                                <Calendar size={13} className="text-slate-400" />
-                                                <span>最近 {formatDate(auditHistory[0].completedAt).date}</span>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* History Items */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                                     {auditHistory.map((session, i) => {
                                         const result = session.analysisResult;
                                         const score = result?.faceAnalysis?.overallScore;
                                         const skinType = result?.skinProfile?.typeLabel || result?.skinType?.typeLabel;
-                                        const concerns = result?.skinProfile?.concerns || result?.concerns || [];
-                                        const skinAge = result?.skinProfile?.skinAge || result?.faceAnalysis?.skinAge;
-                                        const dateInfo = formatDate(session.completedAt);
-                                        const scoreTag = getScoreTag(score);
+                                        const dateLabel = formatDate(session.completedAt);
 
                                         return (
                                             <Link
@@ -178,72 +189,66 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                                                 className="block group"
                                             >
                                                 <motion.div
-                                                    initial={{ opacity: 0, y: 8 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    transition={{ delay: i * 0.04 }}
-                                                    className="bg-white border border-slate-100 rounded-xl hover:border-slate-300 hover:shadow-sm transition-all duration-200 overflow-hidden"
+                                                    initial={{ opacity: 0 }}
+                                                    animate={{ opacity: 1 }}
+                                                    transition={{ delay: i * 0.03 }}
+                                                    className="flex items-center gap-3 px-3 py-3 rounded-xl transition-all"
+                                                    style={{
+                                                        background: 'transparent',
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        (e.currentTarget as HTMLElement).style.background = 'rgba(139, 115, 85, 0.06)';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        (e.currentTarget as HTMLElement).style.background = 'transparent';
+                                                    }}
                                                 >
-                                                    <div className="p-4">
-                                                        <div className="flex items-start justify-between mb-3">
-                                                            {/* Date */}
-                                                            <div className="flex items-center gap-2">
-                                                                <div className="w-9 h-9 rounded-lg bg-slate-50 flex items-center justify-center border border-slate-100">
-                                                                    <Calendar size={14} className="text-slate-400" />
-                                                                </div>
-                                                                <div>
-                                                                    <div className="text-xs text-slate-700 font-medium">{dateInfo.full.split(' ')[0]}</div>
-                                                                    <div className="text-[10px] text-slate-400">{dateInfo.full.split(' ')[1]}</div>
-                                                                </div>
-                                                            </div>
-
-                                                            {/* Score */}
-                                                            {score && (
-                                                                <div className={`px-2.5 py-1 rounded-md ${scoreTag.bg} ${scoreTag.text} text-sm font-bold`}>
-                                                                    {score} 分
-                                                                </div>
-                                                            )}
-                                                        </div>
-
-                                                        {/* Tags */}
-                                                        <div className="flex items-center gap-1.5 flex-wrap">
-                                                            {skinType && (
-                                                                <span className="px-2 py-0.5 rounded bg-sky-50 text-sky-600 text-[11px] font-medium">
-                                                                    {skinType}
-                                                                </span>
-                                                            )}
-                                                            {skinAge && (
-                                                                <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600 text-[11px] font-medium">
-                                                                    肤龄 {skinAge}
-                                                                </span>
-                                                            )}
-                                                            {concerns.slice(0, 2).map((c: string, idx: number) => (
-                                                                <span key={idx} className="px-2 py-0.5 rounded bg-amber-50 text-amber-600 text-[11px] font-medium">
-                                                                    {c}
-                                                                </span>
-                                                            ))}
-                                                            {concerns.length > 2 && (
-                                                                <span className="text-[11px] text-slate-400">+{concerns.length - 2}</span>
-                                                            )}
-                                                        </div>
+                                                    {/* Date */}
+                                                    <div className="w-12 text-[11px] font-medium shrink-0" style={{ color: '#a89582' }}>
+                                                        {dateLabel}
                                                     </div>
 
-                                                    {/* Bottom bar */}
-                                                    <div className="px-4 py-2.5 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
-                                                        <span className="text-[11px] text-slate-400">查看完整报告</span>
-                                                        <ChevronRight size={14} className="text-slate-300 group-hover:text-slate-600 group-hover:translate-x-0.5 transition-all" />
+                                                    {/* Skin Type */}
+                                                    <div className="flex-1 min-w-0">
+                                                        <span className="text-[13px] font-medium truncate block" style={{ color: '#2d2a26' }}>
+                                                            {skinType || "皮肤分析"}
+                                                        </span>
                                                     </div>
+
+                                                    {/* Score */}
+                                                    {score && (
+                                                        <div className={`text-[13px] font-bold tabular-nums ${getScoreColor(score)}`}>
+                                                            {score}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Arrow */}
+                                                    <ArrowUpRight
+                                                        size={14}
+                                                        className="shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                                                        style={{ color: '#c4b5a2' }}
+                                                    />
                                                 </motion.div>
                                             </Link>
                                         );
                                     })}
 
                                     {/* Logout */}
-                                    <div className="pt-4 flex justify-center">
+                                    <div className="pt-2 flex justify-center">
                                         <button
                                             onClick={handleLogout}
-                                            className="flex items-center gap-2 px-4 py-2 text-xs text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] transition-all"
+                                            style={{ color: '#a89582' }}
+                                            onMouseEnter={(e) => {
+                                                (e.currentTarget as HTMLElement).style.color = '#c45a4a';
+                                                (e.currentTarget as HTMLElement).style.background = 'rgba(196, 90, 74, 0.06)';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                (e.currentTarget as HTMLElement).style.color = '#a89582';
+                                                (e.currentTarget as HTMLElement).style.background = 'transparent';
+                                            }}
                                         >
-                                            <LogOut size={13} />
+                                            <LogOut size={12} />
                                             <span>退出登录</span>
                                         </button>
                                     </div>
