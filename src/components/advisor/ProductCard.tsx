@@ -88,12 +88,7 @@ export function ProductCard({
     }, [product.id]);
 
     // 生成个性化推荐理由
-    const getReasonText = () => {
-        if (product.dimensionLink) {
-            return `针对您的 ${product.dimensionLink.dimension} ${product.dimensionLink.score}分，${product.reason}`;
-        }
-        return product.reason;
-    };
+    const getReasonText = () => product.reason;
 
     if (variant === "horizontal") {
         return (
@@ -112,12 +107,10 @@ export function ProductCard({
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05, duration: 0.3 }}
             className={cn(
-                "group relative rounded-xl border overflow-hidden",
-                "hover:shadow-lg transition-all duration-300",
-                "cursor-pointer",
+                "group relative overflow-hidden transition-all duration-300",
                 isCompact
-                    ? "bg-[#FAF6F0] border-[#E8E0D4] hover:border-[#D4C8B8]"
-                    : "bg-white/10 backdrop-blur-sm border-white/10 hover:border-white/20"
+                    ? "bg-white rounded-[20px] shadow-sm hover:shadow-md cursor-default"
+                    : "rounded-xl border bg-white/10 backdrop-blur-sm border-white/10 hover:border-white/20 hover:shadow-lg cursor-pointer"
             )}
             onClick={handleCardClick}
         >
@@ -138,7 +131,7 @@ export function ProductCard({
             )}
 
             {/* 图片区域 */}
-            <div className={cn("relative overflow-hidden", isCompact ? "bg-[#F0EBE3] aspect-square" : "bg-white/5 aspect-square")}>
+            <div className={cn("relative overflow-hidden", isCompact ? "aspect-[4/3]" : "bg-white/5 aspect-square")}>
                 {!imageError ? (
                     <Image
                         src={product.image}
@@ -158,40 +151,28 @@ export function ProductCard({
             </div>
 
             {/* 内容区域 */}
-            <div className={cn(isCompact ? "p-3" : "p-4")}>
-                {/* 分类 */}
-                <span className={cn("font-bold uppercase tracking-wider block", isCompact ? "text-[9px] text-[#8c7a6b] mb-0.5" : "text-[10px] text-white/50 mb-1")}>
-                    {product.category}
-                </span>
-
+            <div className={cn(isCompact ? "p-4" : "p-4")}>
                 {/* 产品名称 */}
-                <h4 className={cn("font-semibold leading-snug line-clamp-2 transition-colors", isCompact ? "text-xs text-[#3d2f25] mb-0.5 group-hover:text-[#5c4937]" : "text-sm text-white mb-1 group-hover:text-blue-300")}>
+                <h4 className={cn("leading-snug line-clamp-2", isCompact ? "text-lg font-bold text-[#1a1a1a] mb-2" : "text-sm font-semibold text-white mb-1 group-hover:text-blue-300")}>
                     {product.name}
                 </h4>
 
-                {/* 英文名 */}
-                {product.nameEn && (
-                    <p className={cn("text-[10px] mb-2 line-clamp-1", isCompact ? "text-[#8c7a6b]" : "text-white/50")}>
-                        {product.nameEn}
+                {/* 功效标签 */}
+                {product.benefits && product.benefits.length > 0 && isCompact && (
+                    <p className="text-[13px] text-[#C8A97E] mb-2 truncate">
+                        {product.benefits.join(" | ")}
                     </p>
                 )}
 
-                {/* 成分标签 */}
-                {product.keyIngredients && product.keyIngredients.length > 0 && (
-                    <div className={isCompact ? "mb-1.5" : "mb-2"}>
-                        <IngredientTags ingredients={product.keyIngredients} maxShow={2} />
-                    </div>
-                )}
-
                 {/* 推荐理由 */}
-                <p className={cn("leading-relaxed", isCompact ? "text-[11px] text-[#5c4937] mb-2 line-clamp-1" : "text-xs text-white/70 mb-3 line-clamp-2")}>
+                <p className={cn("leading-relaxed", isCompact ? "text-[13px] text-[#666] mb-4 line-clamp-2" : "text-xs text-white/70 mb-3 line-clamp-2")}>
                     {getReasonText()}
                 </p>
 
                 {/* 底部操作栏 */}
-                <div className={cn("flex items-center justify-between", isCompact ? "pt-2 border-t border-[#E8E0D4]" : "pt-3 border-t border-white/10")}>
-                    <span className={cn("font-semibold", isCompact ? "text-xs text-[#3d2f25]" : "text-sm text-white")}>
-                        {product.price || '咨询价格'}
+                <div className={cn("flex items-center justify-between", isCompact ? "" : "pt-3 border-t border-white/10")}>
+                    <span className={cn("font-bold", isCompact ? "text-xl text-[#1a1a1a]" : "text-sm text-white")}>
+                        {product.price ? `¥ ${product.price}` : '咨询价格'}
                     </span>
 
                     <div className="flex items-center gap-1.5">
@@ -201,10 +182,10 @@ export function ProductCard({
                                 <button
                                     onClick={handleBuyClick}
                                     className={cn(
-                                        "flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-colors",
+                                        "flex items-center gap-1 px-4 py-2 text-sm font-medium transition-colors",
                                         isCompact
-                                            ? "bg-[#3d2f25] text-white hover:bg-[#2a2018]"
-                                            : "bg-white/20 text-white hover:bg-white/30"
+                                            ? "rounded-full bg-[#C8A97E] text-white hover:bg-[#B89A6E]"
+                                            : "rounded-full bg-white/20 text-white hover:bg-white/30"
                                     )}
                                 >
                                     去购买
@@ -223,7 +204,7 @@ export function ProductCard({
                                     <div className={cn(
                                         "absolute bottom-full right-0 mb-1 py-1 rounded-lg shadow-xl min-w-[120px] z-20",
                                         isCompact
-                                            ? "bg-[#FAF6F0] border border-[#E8E0D4]"
+                                            ? "bg-white border border-[#E8E0D4]"
                                             : "bg-white/10 backdrop-blur-sm border border-white/10"
                                     )}>
                                         {allLinks.map(link => (
@@ -235,7 +216,7 @@ export function ProductCard({
                                                 }}
                                                 className={cn(
                                                     "w-full px-3 py-1.5 text-left text-xs font-medium flex items-center gap-2 transition-colors",
-                                                    isCompact ? "hover:bg-[#F0EBE3]" : "hover:bg-white/10"
+                                                    isCompact ? "hover:bg-[#F5F0E8]" : "hover:bg-white/10"
                                                 )}
                                                 style={{ color: link.config.color }}
                                             >
