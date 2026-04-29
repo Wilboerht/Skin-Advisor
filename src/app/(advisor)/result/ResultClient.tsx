@@ -1288,7 +1288,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                     </main>
 
-                    {/* 4. Products - 突破 main 容器限制，占页面 80% 宽度 */}
+                    {/* 4. Products - 突破 main 容器限制，占页面 80% */}
                     <div className="w-[80%] mx-auto">
                         <ProductRecommendationSection
                             products={(result.products || []).map(p => ({
@@ -1312,6 +1312,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 }
                             }}
                             className={styles.fadeInUp}
+                            centered
                         />
                     </div>
 

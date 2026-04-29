@@ -27,6 +27,7 @@ interface ProductRecommendationSectionProps {
     } | null;
     onProductClick?: (productId: string) => void;
     className?: string;
+    centered?: boolean;
 }
 
 export function ProductRecommendationSection({
@@ -34,7 +35,8 @@ export function ProductRecommendationSection({
     isLoading = false,
     faceAnalysis,
     onProductClick,
-    className
+    className,
+    centered = false
 }: ProductRecommendationSectionProps) {
     const [processedProducts, setProcessedProducts] = useState<ProductCardData[]>([]);
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -149,34 +151,11 @@ export function ProductRecommendationSection({
                 <p className="text-sm text-[#8c7a6b] mt-2">基于您的肤质分析，为您精选以下产品</p>
             </m.div>
 
-            {/* 轮播区域 */}
-            <div className="relative group">
-                {/* 左箭头 */}
-                <button
-                    onClick={() => scroll('left')}
-                    className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full
-                               bg-white/90 backdrop-blur-sm shadow-lg border border-[#E9E9E7]
-                               flex items-center justify-center text-[#3d2f25]
-                               opacity-0 group-hover:opacity-100 transition-all duration-300
-                               hover:bg-white hover:scale-110 hover:shadow-xl"
-                >
-                    <ChevronLeft className="w-5 h-5" />
-                </button>
-                {/* 右箭头 */}
-                <button
-                    onClick={() => scroll('right')}
-                    className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full
-                               bg-white/90 backdrop-blur-sm shadow-lg border border-[#E9E9E7]
-                               flex items-center justify-center text-[#3d2f25]
-                               opacity-0 group-hover:opacity-100 transition-all duration-300
-                               hover:bg-white hover:scale-110 hover:shadow-xl"
-                >
-                    <ChevronRight className="w-5 h-5" />
-                </button>
-
+            {/* 产品展示区域 */}
+            <div className="relative">
                 {/* 滚动容器 */}
                 {isLoading ? (
-                    <div className="flex gap-4 px-[2%] sm:px-[4%] md:px-[6%]">
+                    <div className={cn("flex gap-4 px-[2%] sm:px-[4%] md:px-[6%]", centered && "justify-center")}>
                         {[0, 1, 2].map(i => (
                             <div key={i} className="flex-shrink-0 w-[85vw] sm:w-[45vw] md:w-[32vw] lg:w-[28vw]">
                                 <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/10 h-[380px] animate-pulse" />
@@ -186,17 +165,21 @@ export function ProductRecommendationSection({
                 ) : (
                     <div
                         ref={scrollRef}
-                        className="flex gap-4 overflow-x-auto snap-x snap-mandatory
-                                   px-[2%] sm:px-[4%] md:px-[6%]
-                                   pb-4 pt-4"
+                        className={cn(
+                            "flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 pt-4",
+                            centered ? "justify-center px-4" : "px-[2%] sm:px-[4%] md:px-[6%]"
+                        )}
                         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                     >
                         {processedProducts.map((product, index) => (
                             <div
                                 key={product.id}
-                                className="flex-shrink-0
-                                           w-[85vw] sm:w-[45vw] md:w-[32vw] lg:w-[28vw] xl:w-[25vw]
-                                           snap-center"
+                                className={cn(
+                                    "flex-shrink-0 snap-center",
+                                    centered
+                                        ? "w-full max-w-[340px]"
+                                        : "w-[85vw] sm:w-[45vw] md:w-[32vw] lg:w-[28vw] xl:w-[25vw]"
+                                )}
                             >
                                 <div className="relative">
                                     {/* 推荐胶囊 — 前3个显示 */}
@@ -222,6 +205,7 @@ export function ProductRecommendationSection({
                                         product={product}
                                         index={index}
                                         onProductClick={onProductClick}
+                                        variant={centered ? "compact" : "default"}
                                     />
                                 </div>
                             </div>
@@ -230,10 +214,11 @@ export function ProductRecommendationSection({
                 )}
             </div>
 
-            {/* 底部提示 */}
-            <p className="text-xs text-[#8c7a6b] text-center mt-6">
-                💡 左右滑动或点击箭头查看更多产品
-            </p>
+            {!centered && (
+                <p className="text-xs text-[#8c7a6b] text-center mt-6">
+                    💡 左右滑动或点击箭头查看更多产品
+                </p>
+            )}
         </section>
     );
 }
