@@ -1024,7 +1024,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         <div className="px-5 py-3 flex justify-between items-center">
                                             <div className="flex items-center gap-2">
                                                 <Activity className="w-4 h-4 text-[#8c7a6b]" />
-                                                <span className="text-sm font-medium text-[#3d2f25]">AI 实验室数据 (AI Labs)</span>
+                                                <span className="text-sm font-medium text-[#3d2f25]">分析数据详情</span>
                                             </div>
                                             <div className="flex items-center gap-3">
                                                 <span className="text-xs text-[#8c7a6b] font-normal hidden sm:inline-block">
@@ -1045,7 +1045,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                             {/* VIP Analysis Section removed per user request */}
 
-                        {/* AI Labs Modal - Page Level */}
+                        {/* 分析数据详情 Modal - Page Level */}
                         <AnimatePresence>
                             {showLabData && (
                                 <m.div
@@ -1077,7 +1077,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         <div className="px-6 sm:px-8 pt-6 sm:pt-8 pb-2 flex-shrink-0">
                                             <div className="flex items-center gap-3 mb-2">
                                                 <Activity className="w-5 h-5 text-[#8c7a6b]" />
-                                                <h3 className="text-lg font-bold text-[#3d2f25]">AI 实验室数据 (AI Labs)</h3>
+                                                <h3 className="text-lg font-bold text-[#3d2f25]">分析数据详情</h3>
                                             </div>
                                         </div>
                                         <div className="overflow-y-auto custom-scrollbar px-6 sm:px-8 pb-6 sm:pb-8 flex-1 text-sm leading-6">

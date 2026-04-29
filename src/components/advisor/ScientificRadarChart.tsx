@@ -77,7 +77,7 @@ export function ScientificRadarChart({ dimensions, size = 300, activeDimension, 
                     <Bar
                         dataKey="score"
                         radius={[0, 6, 6, 0]}
-                        maxBarSize={24}
+                        maxBarSize={16}
                         isAnimationActive={initialLoad}
                         animationDuration={1000}
                         animationEasing="ease-out"
@@ -114,9 +114,9 @@ export function ScientificRadarChart({ dimensions, size = 300, activeDimension, 
                                     fillOpacity={isActive ? 1 : 0.6}
                                     stroke={isActive ? baseColor : 'none'}
                                     strokeWidth={isActive ? 2 : 0}
-                                    cursor="pointer"
+                                    cursor={onDimensionSelect ? "pointer" : "default"}
                                     style={{ transition: 'none' }}
-                                    onClick={() => onDimensionSelect?.(entry.key as SkinDimensionKey)}
+                                    onClick={onDimensionSelect ? () => onDimensionSelect(entry.key as SkinDimensionKey) : undefined}
                                 />
                             );
                         })}
