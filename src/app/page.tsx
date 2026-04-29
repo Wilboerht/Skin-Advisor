@@ -377,13 +377,13 @@ export default function Home() {
                         className="h-8 sm:h-9 md:h-12 object-contain opacity-90 mix-blend-multiply mb-12 md:mb-16"
                       />
                       
-                      <div className="flex items-center justify-center gap-3 mb-8">
+                      <div className="flex items-end justify-center gap-3 mb-8">
                         <h1 className="text-[32px] sm:text-4xl md:text-5xl font-serif text-[#1A1A1A] leading-tight tracking-tight whitespace-nowrap">
                           在线素颜测肤
                         </h1>
                         <button
                           onClick={() => setShowGuideModal(true)}
-                          className="flex-shrink-0 flex items-center justify-center text-[#5c4937]/50 hover:text-[#3d2f25] transition-all cursor-pointer bg-transparent mt-1"
+                          className="flex-shrink-0 flex items-center justify-center text-[#5c4937]/50 hover:text-[#3d2f25] transition-all cursor-pointer bg-transparent mb-1.5"
                           title="测试前准备指南"
                         >
                           <CircleAlert className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={1.5} />
