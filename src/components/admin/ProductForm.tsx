@@ -254,12 +254,15 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
             toast.error("图片不能超过2MB");
             return;
         }
+        setUploading(true);
         try {
             const url = await uploadImageToOSS(file);
             setImages((prev) => [...prev, url]);
             toast.success("图片上传成功");
         } catch {
             toast.error("上传失败");
+        } finally {
+            setUploading(false);
         }
     };
 

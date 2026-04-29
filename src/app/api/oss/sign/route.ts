@@ -6,12 +6,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateUploadSignature } from "@/lib/ali-oss";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { getSession } from "@/lib/auth";
+import { verifyAdminSession } from "@/lib/admin-auth";
 
 export async function POST(request: NextRequest) {
     try {
-        // 0. 必须登录才能获取 OSS 签名
+        // 0. 必须登录才能获取 OSS 签名（支持普通用户或管理员）
         const user = await getSession();
-        if (!user) {
+        const admin = !user ? await verifyAdminSession() : null;
+        if (!user && !admin) {
             return NextResponse.json({ error: "请先登录" }, { status: 401 });
         }
 
