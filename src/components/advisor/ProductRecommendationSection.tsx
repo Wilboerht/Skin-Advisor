@@ -174,13 +174,6 @@ export function ProductRecommendationSection({
                     <ChevronRight className="w-5 h-5" />
                 </button>
 
-                {/* 左虚化遮罩 */}
-                <div className="absolute left-0 top-0 bottom-0 w-[6%] sm:w-[8%] md:w-[10%] z-10 pointer-events-none
-                                bg-gradient-to-r from-[#FDFBF7] via-[#FDFBF7]/95 to-transparent" />
-                {/* 右虚化遮罩 */}
-                <div className="absolute right-0 top-0 bottom-0 w-[6%] sm:w-[8%] md:w-[10%] z-10 pointer-events-none
-                                bg-gradient-to-l from-[#FDFBF7] via-[#FDFBF7]/95 to-transparent" />
-
                 {/* 滚动容器 */}
                 {isLoading ? (
                     <div className="flex gap-4 px-[2%] sm:px-[4%] md:px-[6%]">

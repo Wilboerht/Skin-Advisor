@@ -1286,34 +1286,34 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
 
 
-                            {/* 4. Products - 新版按步骤分组推荐 */}
-                            <ProductRecommendationSection
-                                products={(result.products || []).map(p => ({
-                                    id: p.id,
-                                    name: p.name,
-                                    nameEn: p.nameEn,
-                                    category: p.category,
-                                    image: p.image,
-                                    price: p.price || '',
-                                    reason: p.reason,
-                                    keyIngredients: p.keyIngredients || [],
-                                    benefits: p.benefits || [],
-                                    affiliateLinks: p.affiliateLinks || null,
-                                } as ProductCardData))}
-                                isLoading={loading}
-                                faceAnalysis={faceAnalysis}
-
-                                onProductClick={(productId) => {
-                                    const product = result.products?.find(p => p.id === productId);
-                                    if (product) {
-                                        trackProductClick(productId, product.name);
-                                    }
-                                    // Note: Product detail page not implemented yet.
-                                    // Purchase action is handled via affiliate link buttons on the ProductCard.
-                                }}
-                                className={styles.fadeInUp}
-                            />
                     </main>
+
+                    {/* 4. Products - 突破 main 容器限制，占页面 80% 宽度 */}
+                    <div className="w-[80%] mx-auto">
+                        <ProductRecommendationSection
+                            products={(result.products || []).map(p => ({
+                                id: p.id,
+                                name: p.name,
+                                nameEn: p.nameEn,
+                                category: p.category,
+                                image: p.image,
+                                price: p.price || '',
+                                reason: p.reason,
+                                keyIngredients: p.keyIngredients || [],
+                                benefits: p.benefits || [],
+                                affiliateLinks: p.affiliateLinks || null,
+                            } as ProductCardData))}
+                            isLoading={loading}
+                            faceAnalysis={faceAnalysis}
+                            onProductClick={(productId) => {
+                                const product = result.products?.find(p => p.id === productId);
+                                if (product) {
+                                    trackProductClick(productId, product.name);
+                                }
+                            }}
+                            className={styles.fadeInUp}
+                        />
+                    </div>
 
                     {/* Global Footer */}
                     <footer className="w-full bg-transparent mt-0 py-12">
