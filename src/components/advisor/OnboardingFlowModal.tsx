@@ -190,7 +190,7 @@ export function OnboardingFlowModal({
                                     </h3>
 
                                     <p className="mb-8 text-sm text-[#5E5E5E] leading-relaxed font-light">
-                                        我们需要分析您所在地区的气候环境，<br />为肤质判断提供依据。
+                                        为获得更精准的分析数据，我们需要您授权当前的地理位置信息（仅用于环境数据分析），<br />在结合温度、气候、空气湿度、紫外线等多维数据后生成更个性化的定制化报告。
                                     </p>
 
                                     <div className="space-y-3">
