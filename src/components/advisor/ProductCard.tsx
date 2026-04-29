@@ -72,7 +72,8 @@ export function ProductCard({
 
     const handleCardClick = useCallback(() => {
         onProductClick?.(product.id);
-    }, [product.id, onProductClick]);
+        onViewDetail?.(product);
+    }, [product.id, onProductClick, onViewDetail, product]);
 
     const handleBuyClick = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();

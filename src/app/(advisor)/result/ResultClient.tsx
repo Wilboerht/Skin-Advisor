@@ -1024,7 +1024,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         <div className="px-5 py-3 flex justify-between items-center">
                                             <div className="flex items-center gap-2">
                                                 <Activity className="w-4 h-4 text-[#8c7a6b]" />
-                                                <span className="text-sm font-medium text-[#3d2f25]">定制化分析数据详情</span>
+                                                <span className="text-sm font-medium text-[#3d2f25]">定制化专业分析数据详情</span>
                                             </div>
                                             <div className="flex items-center gap-3">
                                                 <span className="text-xs text-[#8c7a6b] font-normal hidden sm:inline-block">

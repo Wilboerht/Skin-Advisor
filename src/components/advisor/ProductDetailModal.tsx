@@ -161,7 +161,7 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                                                     transition={{ duration: 0.2 }}
                                                     className="overflow-hidden"
                                                 >
-                                                    <p className="pb-4 text-[13px] text-[#5c4937]">
+                                                    <p className="pb-4 text-[15px] text-[#5c4937]">
                                                         {product.keyIngredients.join("、")}
                                                     </p>
                                                 </m.div>
@@ -193,7 +193,7 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                                                     transition={{ duration: 0.2 }}
                                                     className="overflow-hidden"
                                                 >
-                                                    <p className="pb-4 text-[13px] text-[#5c4937]">
+                                                    <p className="pb-4 text-[15px] text-[#5c4937]">
                                                         {product.benefits.join("、")}
                                                     </p>
                                                 </m.div>
