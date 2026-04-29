@@ -105,7 +105,7 @@ export function OnboardingFlowModal({
                 onClose={onClose}
                 showCloseButton={step !== "legal"}
                 backdropClassName="bg-black/5 backdrop-blur-[2px]"
-                className="p-10 text-center rounded-[2.5rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] overflow-hidden border border-white/20 ring-1 ring-white/10 bg-[#FDFBF7]/80 backdrop-blur-2xl"
+                className="p-10 text-center rounded-[2.5rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] overflow-hidden border border-white/20 ring-1 ring-white/10 bg-[#FDFBF7]/80 backdrop-blur-2xl !max-w-[29.5rem]"
             >
                 {/* Texture Overlay in Modal */}
                 <div

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Link } from "next-view-transitions";
 import { LazyMotion, domAnimation, AnimatePresence, m } from "framer-motion";
 import Image from "next/image";
-import { ArrowRight, House, Loader2, MapPin, User, ClipboardList, ChevronDown, X } from "lucide-react";
+import { ArrowRight, House, Loader2, MapPin, User, ClipboardList, ChevronDown, X, BookOpen } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
 import { useLayout } from "@/contexts/LayoutContext";
@@ -87,6 +87,7 @@ export default function Home() {
 
   // Nickname state
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
+  const [showGuideModal, setShowGuideModal] = useState(false);
   const [nickname, setNickname] = useState("");
 
   // Location/Region states
@@ -377,13 +378,23 @@ export default function Home() {
                       />
                       
                       <h1 className="text-[32px] sm:text-4xl md:text-5xl font-serif text-[#1A1A1A] mb-8 leading-tight tracking-tight whitespace-nowrap">
-                        AI 智能测肤
+                        在线素颜测肤
                       </h1>
 
-                      <p className="text-[#5C5855]/90 leading-relaxed mb-14 max-w-xl mx-auto font-light text-lg sm:text-xl opacity-0 animate-fade-in-up tracking-wide" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
-                        源自摩纳哥真脂质体科技，<br className="sm:hidden" />结合 AI 深度视觉分析。<br />
-                        为您量身打造科学、精准的<br className="sm:hidden" /><span className="text-[#3D4430] font-medium">肌肤护理方案</span>，<br className="sm:hidden" />唤醒肌肤本源之美。
+                      <p className="text-[#5C5855]/90 leading-relaxed mb-5 max-w-2xl mx-auto font-light text-lg sm:text-xl opacity-0 animate-fade-in-up tracking-wide" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
+                        为了精准分析你的肌肤状态并生成专业定制化报告，<br className="sm:hidden" />接下来我们将引导您进行个性化问卷调查<br className="sm:hidden" />与多维面部信息采集，整个过程预计占用 <span className="text-[#3D4430] font-medium">2-5 分钟</span>。
                       </p>
+
+                      {/* 测试准备提示图标 */}
+                      <div className="mb-10 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.3s', animationFillMode: 'forwards' }}>
+                        <button
+                          onClick={() => setShowGuideModal(true)}
+                          className="inline-flex items-center gap-2 text-[13px] text-[#5c4937] hover:text-[#3d2f25] transition-colors cursor-pointer bg-transparent border-none pb-0.5 border-b border-[#5c4937]/30 hover:border-[#3d2f25]/40"
+                        >
+                          <BookOpen className="w-4 h-4" />
+                          <span>测试前准备指南</span>
+                        </button>
+                      </div>
 
                       <div className="flex flex-col items-center gap-7 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.4s', animationFillMode: 'forwards' }}>
                         <button
@@ -398,7 +409,7 @@ export default function Home() {
                             </>
                           ) : (
                             <>
-                              <span>开始肌肤测试</span>
+                              <span>立即开启</span>
                               <ArrowRight className="w-5 h-5 transition-transform duration-500 group-hover:translate-x-1.5" />
                             </>
                           )}
@@ -480,6 +491,38 @@ export default function Home() {
         regionOptions={regionOptions}
         isLoggedIn={!!user}
       />
+
+      {/* 测试准备指南模态框 */}
+      <BaseModal
+        isOpen={showGuideModal}
+        onClose={() => setShowGuideModal(false)}
+        showCloseButton
+        backdropClassName="bg-black/40 backdrop-blur-sm"
+        className="p-8 text-left rounded-[2rem] bg-[#FAF6F0] border border-[#3d2f25]/10"
+      >
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-full bg-[#3d2f25]/8 flex items-center justify-center">
+            <BookOpen className="w-5 h-5 text-[#5c4937]" />
+          </div>
+          <h3 className="text-lg font-bold text-[#3d2f25]">测试前准备指南</h3>
+        </div>
+        <div className="space-y-5">
+          <div className="flex items-start gap-3">
+            <span className="mt-1.5 w-2 h-2 rounded-full bg-[#8c7a6b] shrink-0" />
+            <div>
+              <p className="text-[15px] font-semibold text-[#3d2f25] mb-1">素颜状态</p>
+              <p className="text-[14px] text-[#5c4937] leading-relaxed">彻底卸除底妆、防晒及彩妆产品，确保当前处于素颜状态。</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <span className="mt-1.5 w-2 h-2 rounded-full bg-[#8c7a6b] shrink-0" />
+            <div>
+              <p className="text-[15px] font-semibold text-[#3d2f25] mb-1">光线环境</p>
+              <p className="text-[14px] text-[#5c4937] leading-relaxed">请在一个光线充足的环境下完成面部信息采集，避免强光照射或背光。</p>
+            </div>
+          </div>
+        </div>
+      </BaseModal>
 
       <AnimatePresence>
         {showLimitModal && (
