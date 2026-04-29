@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Link } from "next-view-transitions";
 import { LazyMotion, domAnimation, AnimatePresence, m } from "framer-motion";
 import Image from "next/image";
-import { ArrowRight, House, Loader2, MapPin, User, ClipboardList, ChevronDown, X, BookOpen } from "lucide-react";
+import { ArrowRight, House, Loader2, MapPin, User, ClipboardList, ChevronDown, X, CircleAlert } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
 import { useLayout } from "@/contexts/LayoutContext";
@@ -377,24 +377,22 @@ export default function Home() {
                         className="h-8 sm:h-9 md:h-12 object-contain opacity-90 mix-blend-multiply mb-12 md:mb-16"
                       />
                       
-                      <h1 className="text-[32px] sm:text-4xl md:text-5xl font-serif text-[#1A1A1A] mb-8 leading-tight tracking-tight whitespace-nowrap">
-                        在线素颜测肤
-                      </h1>
-
-                      <p className="text-[#5C5855]/90 leading-relaxed mb-5 max-w-2xl mx-auto font-light text-lg sm:text-xl opacity-0 animate-fade-in-up tracking-wide" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
-                        为了精准分析你的肌肤状态并生成专业定制化报告，<br className="sm:hidden" />接下来我们将引导您进行个性化问卷调查<br className="sm:hidden" />与多维面部信息采集，整个过程预计占用 <span className="text-[#3D4430] font-medium">2-5 分钟</span>。
-                      </p>
-
-                      {/* 测试准备提示图标 */}
-                      <div className="mb-10 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.3s', animationFillMode: 'forwards' }}>
+                      <div className="flex items-center justify-center gap-3 mb-8">
+                        <h1 className="text-[32px] sm:text-4xl md:text-5xl font-serif text-[#1A1A1A] leading-tight tracking-tight whitespace-nowrap">
+                          在线素颜测肤
+                        </h1>
                         <button
                           onClick={() => setShowGuideModal(true)}
-                          className="inline-flex items-center gap-2 text-[13px] text-[#5c4937] hover:text-[#3d2f25] transition-colors cursor-pointer bg-transparent border-none pb-0.5 border-b border-[#5c4937]/30 hover:border-[#3d2f25]/40"
+                          className="flex-shrink-0 flex items-center justify-center text-[#5c4937]/50 hover:text-[#3d2f25] transition-all cursor-pointer bg-transparent mt-1"
+                          title="测试前准备指南"
                         >
-                          <BookOpen className="w-4 h-4" />
-                          <span>测试前准备指南</span>
+                          <CircleAlert className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={1.5} />
                         </button>
                       </div>
+
+                      <p className="text-[#5C5855]/90 leading-relaxed mb-10 max-w-2xl mx-auto font-light text-lg sm:text-xl opacity-0 animate-fade-in-up tracking-wide" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
+                        为了精准分析你的肌肤状态并生成专业定制化报告，<br className="sm:hidden" />接下来我们将引导您进行个性化问卷调查<br className="sm:hidden" />与多维面部信息采集，整个过程预计占用 <span className="text-[#3D4430] font-medium">2-5 分钟</span>。
+                      </p>
 
                       <div className="flex flex-col items-center gap-7 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.4s', animationFillMode: 'forwards' }}>
                         <button
