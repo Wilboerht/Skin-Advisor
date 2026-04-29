@@ -137,7 +137,7 @@ export function ProductRecommendationSection({
     }
 
     return (
-        <section className={cn("relative w-full py-10", className)}>
+        <section className={cn("relative w-[80%] mx-auto py-10", className)}>
             {/* 标题 */}
             <m.div
                 initial={{ opacity: 0, y: 20 }}
