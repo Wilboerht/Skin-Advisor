@@ -1063,10 +1063,10 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 </div>
 
                                 {faceAnalysis?.dimensions ? (
-                                    <div className="w-full">
-                                        <ScientificRadarChart
-                                            dimensions={faceAnalysis.dimensions}
-                                        />
+                                    <div className="p-8 text-center bg-[#3d2f25]/5 backdrop-blur-sm rounded-2xl border border-[#3d2f25]/15">
+                                        <div className="text-[14px] leading-relaxed text-[#5c4937]">
+                                            详细面部分析数据请查看下方「AI 实验室数据」
+                                        </div>
                                     </div>
                                 ) : (
                                     <div className="p-8 text-center bg-[#3d2f25]/5 backdrop-blur-sm rounded-2xl border border-[#3d2f25]/15">
@@ -1114,6 +1114,15 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         </div>
                                         <div className="overflow-y-auto custom-scrollbar px-6 sm:px-8 pb-6 sm:pb-8 flex-1 text-sm leading-6">
                                             <div className="grid grid-cols-1 gap-y-6">
+
+                                                {/* 十维分析条形图 */}
+                                                {faceAnalysis?.dimensions && (
+                                                    <div className="mb-2">
+                                                        <ScientificRadarChart
+                                                            dimensions={faceAnalysis.dimensions}
+                                                        />
+                                                    </div>
+                                                )}
 
                                                 {/* Table Header Row (Desktop only) */}
                                                 <div className="hidden md:grid grid-cols-12 text-[11px] text-[#8c7a6b] border-b border-[#3d2f25]/10 pb-2 mb-2 font-mono uppercase tracking-wider">
