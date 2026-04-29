@@ -121,7 +121,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     // UI State
     const [loading, setLoading] = useState(!initialData);
     const hasTrackedView = useRef(false);
-    const detailsRef = useRef<HTMLDivElement>(null);
+
     const [isRedirecting, setIsRedirecting] = useState(false);
 
     // Gender Mismatch State
@@ -930,7 +930,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             onShare={handleSaveImage}
                             isLoggedIn={!!user}
                             onLoginClick={() => openAuthModal('register')}
-                            onUnlockClick={() => detailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+
                             comprehensiveReport={
                                 <>
                                     {/* Report Header / Summary */}
@@ -1044,38 +1044,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                         />
 
                             {/* VIP Analysis Section removed per user request */}
-
-                            {/* 1. Condition Summary (Original) */}
-                            {/* 1. Radar Analysis */}
-                            {/* 1. Radar Analysis (Interactive) or Fallback */}
-                            {/* 1. Radar Analysis (Unified Container) */}
-                            <div
-                                ref={detailsRef}
-                                className="relative rounded-[32px] p-6 lg:p-10 backdrop-blur-xl border border-white/20 overflow-hidden scroll-mt-24"
-                                style={{
-                                    background: 'linear-gradient(135deg, rgba(230, 215, 195, 0.4) 0%, rgba(200, 180, 155, 0.3) 100%)',
-                                    boxShadow: '0 8px 32px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.3)'
-                                }}
-                            >
-                                {/* 专业版卡片风格标题区 */}
-                                <div className="mb-8">
-                                    <span className="text-xl lg:text-2xl font-bold text-[#3d2f25]">十维深度分析</span>
-                                </div>
-
-                                {faceAnalysis?.dimensions ? (
-                                    <div className="p-8 text-center bg-[#3d2f25]/5 backdrop-blur-sm rounded-2xl border border-[#3d2f25]/15">
-                                        <div className="text-[14px] leading-relaxed text-[#5c4937]">
-                                            详细面部分析数据请查看下方「AI 实验室数据」
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="p-8 text-center bg-[#3d2f25]/5 backdrop-blur-sm rounded-2xl border border-[#3d2f25]/15">
-                                        <div className="text-[14px] leading-relaxed text-[#5c4937]">
-                                            暂无面部分析数据，请完善面部扫描数据。
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
 
                         {/* AI Labs Modal - Page Level */}
                         <AnimatePresence>
