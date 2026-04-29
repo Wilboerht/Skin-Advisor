@@ -24,8 +24,8 @@ import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useToast } from "@/components/ui/Toast";
 import { useAuth } from "@/hooks/useAuth";
 import type { FaceAnalysisResult, ZoneAnalysis } from "@/lib/advisor-utils";
-import { DIMENSION_LABELS, SkinDimensionKey, getDefaultFaceAnalysisResult } from "@/lib/advisor-utils";
-import { getDimensionAdvice } from "@/lib/advice-utils";
+import { DIMENSION_LABELS, getDefaultFaceAnalysisResult } from "@/lib/advisor-utils";
+
 import { ScientificRadarChart } from "@/components/advisor/ScientificRadarChart";
 import { FloatingToolbar } from "@/components/advisor/FloatingToolbar";
 import { copyToClipboard, generateShareUrl } from "@/lib/share";
@@ -128,7 +128,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const [showGenderMismatchModal, setShowGenderMismatchModal] = useState(false);
 
     // New State for interactivity
-    const [activeDimension, setActiveDimension] = useState<SkinDimensionKey | null>(null);
+
     const [showLabData, setShowLabData] = useState(false);
     const [showContactAdvisor, setShowContactAdvisor] = useState(false);
     const [isToolbarHovered, setIsToolbarHovered] = useState(false);
@@ -182,15 +182,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     };
 
 
-    // Set default active dimension once data is loaded
-    useEffect(() => {
-        if (faceAnalysis?.dimensions && !activeDimension) {
-            // Find lowest score to focus on first, or default to 'spots'
-            // @ts-ignore
-            const lowest = Object.entries(faceAnalysis.dimensions).sort((a, b) => a[1].score - b[1].score)[0];
-            setActiveDimension((lowest?.[0] as SkinDimensionKey) || 'spots');
-        }
-    }, [faceAnalysis]);
+
 
     // Helper for Lab Report
     const renderLabRow = (param: string, value: string, ref: string, status: string) => {
@@ -1070,38 +1062,12 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     <span className="text-xl lg:text-2xl font-bold text-[#3d2f25]">十维深度分析</span>
                                 </div>
 
-                                {faceAnalysis?.dimensions && activeDimension ? (
-                                    <div className="flex flex-col gap-8">
-                                        {/* 上方条形图 */}
-                                        <div className="w-full">
-                                            <ScientificRadarChart
-                                                dimensions={faceAnalysis.dimensions}
-                                                activeDimension={activeDimension}
-                                                onDimensionSelect={setActiveDimension}
-                                            />
-                                        </div>
-                                        {/* 下方动态详情面板 */}
-                                            <div className="bg-[#3d2f25]/5 backdrop-blur-sm rounded-2xl p-8 shadow-md border border-[#3d2f25]/15 animate-in fade-in slide-in-from-right-4 duration-300">
-                                                {/* Header */}
-                                                <div className="flex items-center justify-between mb-5">
-                                                    <h3 className="text-xl font-bold text-[#3d2f25] tracking-wide">
-                                                        {DIMENSION_LABELS[activeDimension]}
-                                                    </h3>
-                                                    <div className={`px-3 py-1 rounded-full text-sm font-bold ${faceAnalysis.dimensions[activeDimension].score >= 80 ? 'bg-emerald-100 text-emerald-700' :
-                                                        faceAnalysis.dimensions[activeDimension].score >= 60 ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700'
-                                                        }`}>
-                                                        {faceAnalysis.dimensions[activeDimension].score} 分
-                                                    </div>
-                                                </div>
-
-                                                {/* Diagnosis & Advice */}
-                                                <div className="bg-white/50 rounded-xl p-5 border border-[#3d2f25]/10">
-                                                    <p className="text-[14px] leading-[1.8] text-[#5c4937]">
-                                                        {getDimensionAdvice(activeDimension, faceAnalysis.dimensions[activeDimension].score)}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
+                                {faceAnalysis?.dimensions ? (
+                                    <div className="w-full">
+                                        <ScientificRadarChart
+                                            dimensions={faceAnalysis.dimensions}
+                                        />
+                                    </div>
                                 ) : (
                                     <div className="p-8 text-center bg-[#3d2f25]/5 backdrop-blur-sm rounded-2xl border border-[#3d2f25]/15">
                                         <div className="text-[14px] leading-relaxed text-[#5c4937]">

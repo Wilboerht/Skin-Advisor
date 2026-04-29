@@ -169,7 +169,7 @@ export function ProductRecommendationSection({
                             "flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 pt-4",
                             centered ? "justify-center px-4" : "px-[2%] sm:px-[4%] md:px-[6%]"
                         )}
-                        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', overscrollBehaviorX: 'contain' }}
                     >
                         {processedProducts.map((product, index) => (
                             <div
