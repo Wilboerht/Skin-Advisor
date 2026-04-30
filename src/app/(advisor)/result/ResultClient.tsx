@@ -65,6 +65,7 @@ export interface ComprehensiveResult {
         keyIngredients?: string[];
         benefits?: string[];
         affiliateLinks?: Record<string, string> | null;
+        howToUse?: string | null;
     }>;
     dataSource: "comprehensive" | "questionnaire";
 }
@@ -1247,6 +1248,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 keyIngredients: p.keyIngredients || [],
                                 benefits: p.benefits || [],
                                 affiliateLinks: p.affiliateLinks || null,
+                                howToUse: p.howToUse || null,
                             } as ProductCardData))}
                             isLoading={loading}
                             faceAnalysis={faceAnalysis}

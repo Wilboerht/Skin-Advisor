@@ -16,6 +16,35 @@ import { hashIP } from "@/lib/privacy";
 import { checkUsageLimit, recordUsage } from "@/lib/usage-limit";
 import { sendSkinReportTemplateMessage } from "@/lib/wechat";
 
+/** 清理推荐理由中的英文词汇，确保对用户友好 */
+function sanitizeReason(reason: string): string {
+    if (!reason) return reason;
+    const replacements: Record<string, string> = {
+        average: "一般",
+        good: "良好",
+        excellent: "优秀",
+        fair: "一般",
+        poor: "较差",
+        mild: "轻度",
+        moderate: "中度",
+        severe: "重度",
+        dry: "干性",
+        oily: "油性",
+        combination: "混合性",
+        sensitive: "敏感性",
+        normal: "正常",
+        low: "低",
+        medium: "中等",
+        high: "高",
+    };
+    let sanitized = reason;
+    for (const [en, cn] of Object.entries(replacements)) {
+        const regex = new RegExp(`\\b${en}\\b`, "gi");
+        sanitized = sanitized.replace(regex, cn);
+    }
+    return sanitized;
+}
+
 export async function POST(request: NextRequest) {
     try {
         // 1. 解析请求体
@@ -239,7 +268,9 @@ export async function POST(request: NextRequest) {
                         description: catalogProduct.description,
                         keyIngredients: catalogProduct.keyIngredients || [],
                         benefits: catalogProduct.benefits || [],
-                        affiliateLinks: catalogProduct.affiliateLinks || null
+                        affiliateLinks: catalogProduct.affiliateLinks || null,
+                        howToUse: catalogProduct.howToUse || null,
+                        reason: sanitizeReason(p.reason || algorithmRecs.find((r: any) => r.id === p.id)?.reason || "为您精选的护肤产品")
                     };
                 }
                 return null;
@@ -249,7 +280,7 @@ export async function POST(request: NextRequest) {
                 // 前3个为AI主推推荐，补充算法候选至10个
                 const aiTop3 = mappedProducts.slice(0, 3).map((p: any) => ({
                     ...p,
-                    reason: p.reason || algorithmRecs.find((r: any) => r.id === p.id)?.reason || "为您精选的护肤产品"
+                    reason: sanitizeReason(p.reason || algorithmRecs.find((r: any) => r.id === p.id)?.reason || "为您精选的护肤产品")
                 }));
                 const remaining = algorithmRecs.filter((ar: any) => !aiTop3.some((p: any) => p.id === ar.id));
                 finalProducts = [...aiTop3, ...remaining].slice(0, 10);
@@ -261,6 +292,12 @@ export async function POST(request: NextRequest) {
             console.log("AI products invalid/empty, using recommendation engine fallback");
             finalProducts = algorithmRecs;
         }
+
+        // 统一清理所有推荐理由中的英文词汇（兜底）
+        finalProducts = finalProducts.map((p: any) => ({
+            ...p,
+            reason: sanitizeReason(p.reason)
+        }));
 
         // 7. Construct Final Standardized Result (Matching ComprehensiveResult Interface)
 

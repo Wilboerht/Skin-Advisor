@@ -38,17 +38,9 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
 
     useEffect(() => {
         if (isOpen) {
-            const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-            document.body.style.overflow = "hidden";
-            document.body.style.paddingRight = `${scrollbarWidth}px`;
             document.addEventListener("keydown", handleKeyDown);
-        } else {
-            document.body.style.overflow = "";
-            document.body.style.paddingRight = "";
         }
         return () => {
-            document.body.style.overflow = "";
-            document.body.style.paddingRight = "";
             document.removeEventListener("keydown", handleKeyDown);
         };
     }, [isOpen, handleKeyDown]);
@@ -70,17 +62,17 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 0.25 }}
+                        transition={{ duration: 0.35 }}
                         onClick={onClose}
                         className="absolute inset-0 bg-black/55 backdrop-blur-sm"
                     />
 
                     {/* Modal Card */}
                     <m.div
-                        initial={{ opacity: 0, scale: 0.94, y: 20 }}
+                        initial={{ opacity: 0, scale: 0.96, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.94, y: 20 }}
-                        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                        exit={{ opacity: 0, scale: 0.96, y: -12 }}
+                        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
                         className="relative flex max-h-[85vh] w-full max-w-[960px] flex-col overflow-hidden rounded-[22px] bg-[#FAF6F0] shadow-2xl lg:h-[580px] lg:max-h-[600px] lg:flex-row"
                         onClick={(e) => e.stopPropagation()}
                     >
@@ -114,7 +106,7 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                         </div>
 
                         {/* Right - Product Info */}
-                        <div className="flex-1 overflow-y-auto px-5 py-6 lg:px-8 lg:py-8 scrollbar-none">
+                        <div className="flex-1 overflow-y-auto px-5 py-6 lg:px-8 lg:py-8 no-scrollbar">
                             {/* Category */}
                             <div className="mb-3">
                                 <span className="inline-block rounded-full bg-[#3d2f25]/8 px-3 py-1 text-[11px] font-medium text-[#5c4937]">

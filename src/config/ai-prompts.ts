@@ -266,7 +266,8 @@ ${productsContext}
 要求：
 1. 必须从"可用产品列表"中选择最多 3 款最适合的产品。如果可用产品不足 3 款，请推荐全部可用产品。
 2. reason 字段要具体、有说服力。
-3. 如果没有合适的产品，products 数组可以为空。
+3. **重要：所有输出文本（包括 reason 推荐理由、分析总结等）必须使用纯中文，不得出现任何英文单词或英文等级描述（如 average/good/excellent/poor 等）。**
+4. 如果没有合适的产品，products 数组可以为空。
 `;
 }
 
@@ -341,6 +342,7 @@ export const COMPREHENSIVE_ANALYSIS_SYSTEM_PROMPT = `
 2. 睡眠不足重点抗氧提亮。
 3. 产品推荐必须精准匹配肤质和问题，必须来自提供的产品列表。请推荐最多 3 款产品，如果可用产品不足 3 款则推荐全部。
 4. 语气专业、高端、体贴。
+5. **所有输出文本必须使用纯中文，禁止出现任何英文单词或英文等级（如 average/good/excellent/poor 等），请将英文概念翻译为对应的中文描述。**
 `;
 
 export const VIP_ANALYSIS_INSTRUCTION = `

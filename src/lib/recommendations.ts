@@ -13,6 +13,7 @@ export interface ProductRecommendation {
     score?: number;
     matchedBenefits?: string[];
     affiliateLinks?: Record<string, string> | null;
+    howToUse?: string | null;
 }
 
 /** 关注点到功效标签的映射 */
@@ -443,7 +444,8 @@ export async function recommendProducts(
             price: p.price,
             reason: generateSmartReason(p.matchedBenefits, concerns, skinType, index),
             score: p.rawScore,
-            affiliateLinks: p.affiliateLinks
+            affiliateLinks: p.affiliateLinks,
+            howToUse: p.howToUse || null
         }));
 
     } catch (e) {
