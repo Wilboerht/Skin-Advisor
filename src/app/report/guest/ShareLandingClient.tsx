@@ -22,26 +22,8 @@ interface Dimension {
 }
 
 interface ShareLandingProps {
-  data: {
-    score: number;
-    skinAge: number;
-    dimensions: {
-      skin_condition?: Dimension;
-      wrinkles?: Dimension;
-      texture?: Dimension;
-      waterOil: Dimension;
-      [key: string]: Dimension | undefined;
-    };
-    nickname: string;
-    generatedAvatar?: string;
-    sessionId: string;
-    guestAnalysis?: {
-      summary?: string;
-    };
-    // 新增，兼容详细分析区块
-    result: any;
-    faceAnalysis: any;
-  };
+  analysisResult: any;
+  sessionId: string;
 }
 
 const AnimatedNumber = ({ value, duration = 1.5 }: { value: number; duration?: number }) => {
@@ -73,20 +55,15 @@ const AnimatedNumber = ({ value, duration = 1.5 }: { value: number; duration?: n
   );
 };
 
-export default function ShareLandingClient({ data }: ShareLandingProps) {
+export default function ShareLandingClient({ analysisResult, sessionId }: ShareLandingProps) {
   const router = useRouter();
   const { user, loading } = useAuth();
   const { openAuthModal } = useAuthModal();
   const toast = useToast();
   const [showShareModal, setShowShareModal] = useState(false);
   const [showAuthChoice, setShowAuthChoice] = useState(false);
-  const [generatedAvatar, setGeneratedAvatar] = useState<string | null>(data.generatedAvatar || null);
-  const [isAvatarLoading, setIsAvatarLoading] = useState(!data.generatedAvatar);
-  const [avatarQueueStatus, setAvatarQueueStatus] = useState<{
-    position?: number;
-    estimatedWaitTime?: number;
-    message?: string;
-  } | null>(null);
+  const generatedAvatar = analysisResult.generatedAvatar || null;
+  const isAvatarLoading = false;
   const posterRef = useRef<HTMLDivElement>(null);
   const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
   const [showContactAdvisor, setShowContactAdvisor] = useState(false);
@@ -94,74 +71,13 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
   // 登录用户跳转到完整报告页
   useEffect(() => {
     if (!loading && user) {
-      router.replace(`/result?id=${data.sessionId}`);
+      router.replace(`/result?id=${sessionId}`);
     }
-  }, [loading, user, router, data.sessionId]);
-
-  // --- Avatar Polling ---
-  // 游客分享页也可能头像未生成完，添加轮询
-  useEffect(() => {
-    const sessionId = data.sessionId;
-    if (!sessionId || generatedAvatar || !isAvatarLoading) return;
-
-    const pollRef = { failureCount: 0 };
-
-    const pollAvatar = async () => {
-      try {
-        const response = await fetch(`/api/advisor/avatar/status?sessionId=${sessionId}&t=${Date.now()}`);
-        if (response.ok) {
-          const resData = await response.json();
-
-          if (resData.queueStatus && resData.queueStatus !== 'completed') {
-            setAvatarQueueStatus({
-              position: resData.queuePosition,
-              estimatedWaitTime: resData.estimatedWaitTime,
-              message: resData.message,
-            });
-          }
-
-          if (resData.generatedAvatar && typeof resData.generatedAvatar === 'string' &&
-              (resData.generatedAvatar.startsWith('http') || resData.generatedAvatar.startsWith('data:'))) {
-            setGeneratedAvatar(resData.generatedAvatar);
-            setIsAvatarLoading(false);
-            setAvatarQueueStatus(null);
-            return;
-          }
-          pollRef.failureCount = 0;
-        } else if (response.status === 404) {
-          pollRef.failureCount = 999;
-        } else {
-          pollRef.failureCount++;
-        }
-      } catch (err) {
-        pollRef.failureCount++;
-      }
-
-      if (pollRef.failureCount >= 5) {
-        setIsAvatarLoading(false);
-      }
-    };
-
-    const interval = setInterval(pollAvatar, avatarQueueStatus ? 3000 : 2500);
-    const timeout = setTimeout(() => {
-      clearInterval(interval);
-      if (isAvatarLoading) {
-        setIsAvatarLoading(false);
-        setAvatarQueueStatus(null);
-      }
-    }, 120000);
-
-    pollAvatar();
-
-    return () => {
-      clearInterval(interval);
-      clearTimeout(timeout);
-    };
-  }, [data.sessionId, generatedAvatar, isAvatarLoading, avatarQueueStatus]);
+  }, [loading, user, router, sessionId]);
 
   // 基于综合评分计算全国排名百分比
   const rankPercentile = useMemo(() => {
-    const score = data.score ?? 75;
+    const score = (analysisResult.faceAnalysis?.overallScore || analysisResult.skinAnalysis?.score || 75);
     const scoreToPercentile: { min: number; max: number; percentile: number }[] = [
       { min: 90, max: 99,  percentile: 95 },
       { min: 80, max: 89,  percentile: 90 },
@@ -174,15 +90,15 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
     ];
     const match = scoreToPercentile.find((r) => score >= r.min && score <= r.max);
     return match ? match.percentile : 75;
-  }, [data.score]);
+  }, [analysisResult]);
 
   // T区标签
   const getTZoneLabel = useMemo(() => {
-    const score = data.dimensions.waterOil?.score ?? 0;
+    const score = analysisResult.faceAnalysis?.dimensions?.waterOil?.score ?? 0;
     if (score >= 80) return 'T区平衡';
     if (score >= 60) return 'T区略油';
     return 'T区偏油';
-  }, [data.dimensions.waterOil?.score]);
+  }, [analysisResult]);
 
   const handleSavePoster = async () => {
     if (!posterRef.current || isGeneratingPoster) return;
@@ -216,7 +132,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
 
       const dataUrl = canvas.toDataURL('image/png');
       const link = document.createElement('a');
-      link.download = `NIHPLOD-肌肤报告-${data.nickname}-${Date.now()}.png`;
+      link.download = `NIHPLOD-肌肤报告-${analysisResult.nickname || '用户'}-${Date.now()}.png`;
       link.href = dataUrl;
       link.click();
 
@@ -318,7 +234,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
 
                   {/* Minimal name badge */}
                   <div className="absolute -bottom-0.5 -right-0.5 bg-[#2d2a26] text-white text-[9px] px-2 py-0.5 rounded-full whitespace-nowrap z-20 border-[1.5px] border-white shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
-                    {data.nickname}
+                    {analysisResult.nickname || '用户'}
                   </div>
                 </div>
               </div>
@@ -334,14 +250,14 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                 </div>
                 {/* 保证这里的高度(24px)与底部间距(mb-4=16px)加起来等于左侧标签高度(24px)+gap-4(16px) = 40px */}
                 <div className="hidden lg:flex h-[24px] items-center mb-6">
-                  <p className="text-[#a89582] text-sm leading-none">亲爱的「{data.nickname}」 ：</p>
+                  <p className="text-[#a89582] text-sm leading-none">亲爱的「{analysisResult.nickname || '用户'}」 ：</p>
                 </div>
                 <h2 className="text-xl lg:text-3xl font-bold text-[#2d2a26] leading-snug tracking-tight lg:tracking-normal mb-5 lg:mb-4 mt-0">
                   你的素颜评分超越了<br />
                   全国 <span className="text-2xl lg:text-4xl px-0.5">{rankPercentile}%</span> 的用户
                 </h2>
                 <p className="text-[#8c7a6b] text-xs lg:text-sm leading-relaxed tracking-tight lg:tracking-normal max-w-[75%] lg:max-w-sm mb-6">
-                  {data.guestAnalysis?.summary || "整体状态极佳，肌肤屏障健康，水油平衡度完美，仅在眼周区域存在轻微色素沉积。"}
+                  {analysisResult.analysis?.summary || analysisResult.skinAnalysis?.summary || "整体状态极佳，肌肤屏障健康，水油平衡度完美，仅在眼周区域存在轻微色素沉积。"}
                 </p>
 
                 {/* Share Button & Handwritten note */}
@@ -475,7 +391,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                     <p className="text-[11px] lg:text-xs text-[#7a6552] font-medium shrink-0">综合评分</p>
                     <div className="flex items-baseline">
                       <span className="text-[11px] lg:text-3xl font-bold text-[#5c4937] leading-none">
-                        <AnimatedNumber value={data.score} duration={1.5} />
+                        <AnimatedNumber value={analysisResult.faceAnalysis?.overallScore || analysisResult.skinAnalysis?.score || 0} duration={1.5} />
                       </span>
                       <span className="text-[11px] lg:text-xs text-[#7a6552] ml-0.5 font-medium">分</span>
                     </div>
@@ -497,7 +413,7 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                     <p className="text-[12px] lg:text-xs text-[#7a6552] font-medium shrink-0">肌肤年龄</p>
                     <div className="flex items-baseline">
                       <span className="text-[13px] lg:text-3xl font-bold text-[#5c4937] leading-none">
-                        <AnimatedNumber value={data.skinAge} duration={1.5} />
+                        <AnimatedNumber value={analysisResult.skinProfile?.skinAge || analysisResult.skinAnalysis?.skinAge || 25} duration={1.5} />
                       </span>
                       <span className="text-[12px] lg:text-xs text-[#7a6552] ml-0.5 font-medium">岁</span>
                     </div>
@@ -689,9 +605,9 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
                       <div style={{ width: 360, height: 640, transform: 'scale(0.67)', transformOrigin: '0 0' }}>
                       <SharePoster
                         ref={posterRef}
-                        nickname={data.nickname}
-                        score={data.score}
-                        skinAge={data.skinAge}
+                        nickname={analysisResult.nickname || '用户'}
+                        score={analysisResult.faceAnalysis?.overallScore || analysisResult.skinAnalysis?.score || 0}
+                        skinAge={analysisResult.skinProfile?.skinAge || analysisResult.skinAnalysis?.skinAge || 25}
                         percentile={rankPercentile}
                         avatar={generatedAvatar}
                       />
