@@ -73,7 +73,7 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.96, y: -12 }}
                         transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                        className="relative flex max-h-[85vh] w-full max-w-[960px] flex-col overflow-hidden rounded-[22px] bg-[#FAF6F0] shadow-2xl lg:h-[580px] lg:max-h-[600px] lg:flex-row"
+                        className="relative flex max-h-[85vh] w-full max-w-[1080px] flex-col overflow-hidden rounded-[22px] bg-[#FAF6F0] shadow-2xl lg:h-[680px] lg:max-h-[720px] lg:flex-row"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Close Button */}
@@ -255,7 +255,7 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                                                     transition={{ duration: 0.2 }}
                                                     className="overflow-hidden"
                                                 >
-                                                    <p className="pb-4 text-[13px] leading-[1.7] text-[#5c4937]">
+                                                    <p className="pb-4 text-[15px] leading-[1.7] text-[#5c4937]">
                                                         {product.howToUse}
                                                     </p>
                                                 </m.div>

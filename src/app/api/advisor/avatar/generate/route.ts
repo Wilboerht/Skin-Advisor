@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { processAvatarQueueItem } from "@/lib/avatar-queue-processor";
 
 export async function POST(req: NextRequest) {
     try {
@@ -61,6 +62,12 @@ export async function POST(req: NextRequest) {
         }
 
         console.log(`✅ Enqueued avatar generation (queueId: ${queueItem.id}, position: #${position + 1})`);
+
+        // 立即触发异步处理（fire-and-forget），无需等待 status 轮询才 kickoff
+        // 生产环境有后台 worker，乐观锁会防止重复处理；开发环境依赖此机制
+        processAvatarQueueItem(queueItem).catch(err => {
+            console.error(`[AvatarQueue] Immediate processing failed for ${sessionId}:`, err);
+        });
 
         return NextResponse.json({
             success: true,
