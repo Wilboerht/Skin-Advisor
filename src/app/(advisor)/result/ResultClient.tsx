@@ -32,6 +32,8 @@ import { copyToClipboard, generateShareUrl } from "@/lib/share";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 
 import { FloatingToolbar } from "@/components/advisor/FloatingToolbar";
+import { SharePoster } from "@/components/advisor/poster/SharePoster";
+import html2canvas from "html2canvas";
 import { ContactAdvisorModal } from "@/components/advisor/ContactAdvisorModal";
 import ReportCards from "@/components/advisor/ReportCards";
 
@@ -133,7 +135,26 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
     const [showLabData, setShowLabData] = useState(false);
     const [showContactAdvisor, setShowContactAdvisor] = useState(false);
+    const [showShareModal, setShowShareModal] = useState(false);
+    const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
+    const posterRef = useRef<HTMLDivElement>(null);
 
+
+    const rankPercentile = useMemo(() => {
+        const score = faceAnalysis?.overallScore ?? 0;
+        const scoreToPercentile: { min: number; max: number; percentile: number }[] = [
+            { min: 90, max: 99, percentile: 95 },
+            { min: 80, max: 89, percentile: 90 },
+            { min: 75, max: 79, percentile: 85 },
+            { min: 70, max: 74, percentile: 80 },
+            { min: 65, max: 69, percentile: 74 },
+            { min: 60, max: 64, percentile: 68 },
+            { min: 55, max: 59, percentile: 62 },
+            { min: 0, max: 54, percentile: 55 },
+        ];
+        const match = scoreToPercentile.find((r) => score >= r.min && score <= r.max);
+        return match ? match.percentile : 75;
+    }, [faceAnalysis?.overallScore]);
 
     const isGenderMismatch = useMemo(() => {
         if (!faceAnalysis || !socialGender) return false;
@@ -652,7 +673,46 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         router.push("/questions");
     };
 
-
+    const handleSavePoster = async () => {
+        if (!posterRef.current || isGeneratingPoster) return;
+        try {
+            setIsGeneratingPoster(true);
+            toast.info("正在生成分享海报...");
+            // 等待图片加载
+            const images = Array.from(posterRef.current.getElementsByTagName("img"));
+            await Promise.all(
+                images.map(
+                    (img) =>
+                        new Promise<void>((resolve) => {
+                            if (img.complete) {
+                                resolve();
+                                return;
+                            }
+                            img.onload = () => resolve();
+                            img.onerror = () => resolve();
+                        })
+                )
+            );
+            const canvas = await html2canvas(posterRef.current, {
+                useCORS: true,
+                scale: 2,
+                backgroundColor: null,
+                logging: false,
+            });
+            const dataUrl = canvas.toDataURL("image/png");
+            const link = document.createElement("a");
+            link.download = `NIHPLOD-肌肤报告-${userNickname || "用户"}-${Date.now()}.png`;
+            link.href = dataUrl;
+            link.click();
+            toast.success("海报已保存到相册");
+        } catch (error) {
+            console.error("海报生成失败:", error);
+            toast.error("海报生成失败，请重试");
+        } finally {
+            setIsGeneratingPoster(false);
+        }
+        setShowShareModal(false);
+    };
 
     // --- Auto-Claim Session ---
     // Automatically link guest-initiated session to user account once logged in

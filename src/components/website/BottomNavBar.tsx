@@ -1,12 +1,10 @@
 "use client";
-import React from "react";
+import React, { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link } from "next-view-transitions";
 import { usePathname } from "next/navigation";
 import { Menu, X, Home, BookOpen, HelpCircle, ShoppingBag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLayout } from "@/contexts/LayoutContext";
-import { useAuth } from "@/hooks/useAuth";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { RitualIcon, FAQIcon, HomeIcon, ShopIcon, StoryIcon } from "./NavIcons";
 
@@ -33,28 +31,22 @@ const allNavItems: NavItem[] = [
 
 export function BottomNavBar() {
     const pathname = usePathname();
-    const { isDrawerOpen, setDrawerOpen, isNavMenuOpen, setNavMenuOpen: setIsNavMenuOpen, showBento } = useLayout();
-    const { user } = useAuth();
+    const { isNavMenuOpen, setNavMenuOpen: setIsNavMenuOpen, showBento } = useLayout();
     const { isOpen: isAuthModalOpen } = useAuthModal();
 
-    // 简单映射 pathname 到 currentPage，仅用于高亮和主导航判定
-    const currentPage = allNavItems.find(item => item.href === pathname || (item.href !== "/" && pathname.startsWith(item.href)))?.href || "/";
+    // 主导航固定为首页（测肤应用内部没有对应官网页面）
+    const primaryNav = allNavItems[4]; // 首页
+    const otherNavItems = allNavItems.filter(item => item.href !== primaryNav.href);
 
-    // 根据当前页面获取主导航项
-    const primaryNav = allNavItems.find(item => item.href === currentPage) || allNavItems[4];
-    const otherNavItems = allNavItems.filter(item => item.href !== currentPage);
-
-    /**
-     * 处理导航点击
-     * 如果点击的是当前页面，则展开抽屉而不是跳转
-     */
-    const handleNavClick = (href: string, e: React.MouseEvent) => {
-        const isCurrentPage = href === currentPage || (href !== "/" && pathname.startsWith(href));
-        if (isCurrentPage) {
-            e.preventDefault();
-            setDrawerOpen(true);
+    // 菜单打开时锁定 body 滚动
+    useEffect(() => {
+        if (isNavMenuOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
         }
-    };
+        return () => { document.body.style.overflow = ''; };
+    }, [isNavMenuOpen]);
 
     const PrimaryIcon = primaryNav.icon;
 
@@ -95,6 +87,7 @@ export function BottomNavBar() {
                         <AnimatePresence>
                             {isNavMenuOpen && (
                                 <motion.div
+                                    id="mobile-nav-menu"
                                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
@@ -105,9 +98,11 @@ export function BottomNavBar() {
                                         {otherNavItems.map((item) => {
                                             const Icon = item.icon;
                                             return (
-                                                <Link
+                                                <a
                                                     key={item.href}
                                                     href={item.href}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
                                                     onClick={() => setIsNavMenuOpen(false)}
                                                     className="flex items-center gap-3 rounded-2xl px-3 py-3 transition-all active:scale-[0.97] active:bg-brand-beige/20 bg-transparent"
                                                 >
@@ -118,7 +113,7 @@ export function BottomNavBar() {
                                                         <span className="text-sm font-semibold tracking-wide text-brand-charcoal">{item.label}</span>
                                                         <span className="font-serif text-[10px] uppercase tracking-widest text-brand-gold/50">{item.labelEn}</span>
                                                     </div>
-                                                </Link>
+                                                </a>
                                             );
                                         })}
                                     </div>
@@ -135,10 +130,11 @@ export function BottomNavBar() {
                             )}
                             aria-label="主要导航"
                         >
-                            {/* ================= 移动端左侧主导航 (动态) ================= */}
-                            <Link
+                            {/* ================= 移动端左侧主导航 (固定为首页) ================= */}
+                            <a
                                 href={primaryNav.href}
-                                onClick={(e) => handleNavClick(primaryNav.href, e)}
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 className="group flex items-center gap-2 transition-opacity active:opacity-70 lg:hidden"
                             >
                                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-gold/10">
@@ -152,25 +148,26 @@ export function BottomNavBar() {
                                         {primaryNav.labelEn}
                                     </span>
                                 </div>
-                            </Link>
+                            </a>
 
-                            {/* ================= 桌面端左侧固定导航 (Story - 关于旎柏 - 极简横向锁定) ================= */}
+                            {/* ================= 桌面端左侧固定导航 (About) ================= */}
                             {(() => {
                                 const storyItem = allNavItems.find(item => item.labelEn === "About")!;
                                 const Icon = storyItem.icon;
 
                                 return (
                                     <div className="hidden items-center gap-8 lg:flex">
-                                        <Link
+                                        <a
                                             href={storyItem.href}
-                                            onClick={(e) => handleNavClick(storyItem.href, e)}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
                                             className="group flex items-center gap-3 px-2 transition-opacity duration-300 hover:opacity-70"
                                         >
                                             <Icon className="h-9 w-9 text-brand-gold transition-transform duration-500 group-hover:scale-105" />
                                             <span className="font-serif text-[18px] font-medium tracking-wide text-brand-charcoal">
-                                                关于旎柏
+                                                {storyItem.label}
                                             </span>
-                                        </Link>
+                                        </a>
                                         <div className="h-10 w-px bg-brand-charcoal/15" />
                                     </div>
                                 );
@@ -182,6 +179,8 @@ export function BottomNavBar() {
                                 onClick={() => setIsNavMenuOpen(!isNavMenuOpen)}
                                 className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-beige/30 transition-colors active:bg-brand-beige/50 lg:hidden"
                                 aria-label={isNavMenuOpen ? "关闭菜单" : "打开菜单"}
+                                aria-expanded={isNavMenuOpen}
+                                aria-controls="mobile-nav-menu"
                             >
                                 <AnimatePresence mode="wait" initial={false}>
                                     {isNavMenuOpen ? (
@@ -201,25 +200,30 @@ export function BottomNavBar() {
                                 {allNavItems.filter(item => item.labelEn !== "About").map((item) => {
                                     const Icon = item.icon;
                                     const isHome = item.labelEn === "Home";
+                                    const isActive = isHome ? pathname === "/" : false;
 
                                     return (
                                         <React.Fragment key={item.href}>
                                             {isHome && (
                                                 <div className="h-10 w-px bg-black/20" />
                                             )}
-                                            <Link
+                                            <a
                                                 href={item.href}
-                                                onClick={(e) => handleNavClick(item.href, e)}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
                                                 className={cn(
-                                                    "group flex flex-col items-center gap-1 py-2 text-[15px] font-medium text-[#1a1a1a] transition-all duration-[600ms] ease-[cubic-bezier(0.19,1,0.22,1)]",
-                                                    "hover:opacity-70"
+                                                    "group flex flex-col items-center gap-1 py-2 text-[15px] font-medium transition-all duration-[600ms] ease-[cubic-bezier(0.19,1,0.22,1)]",
+                                                    isActive ? "text-brand-gold" : "text-[#1a1a1a] hover:opacity-70"
                                                 )}
                                             >
-                                                <Icon className="h-8 w-8 text-[#C3BC9F] transition-all duration-[600ms] ease-[cubic-bezier(0.19,1,0.22,1)] group-hover:translate-y-[-2px] group-hover:text-brand-gold" />
+                                                <Icon className={cn(
+                                                    "h-8 w-8 transition-all duration-[600ms] ease-[cubic-bezier(0.19,1,0.22,1)] group-hover:translate-y-[-2px] group-hover:text-brand-gold",
+                                                    isActive ? "text-brand-gold" : "text-[#C3BC9F]"
+                                                )} />
                                                 <span>
                                                     {item.label}
                                                 </span>
-                                            </Link>
+                                            </a>
                                         </React.Fragment>
                                     );
                                 })}

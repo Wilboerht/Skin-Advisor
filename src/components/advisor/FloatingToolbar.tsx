@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
     Share2,
     RotateCcw,
-    ArrowUp,
     MessageCircle,
     GripVertical,
     Home,
@@ -23,7 +22,6 @@ interface FloatingToolbarProps {
     actions?: ToolbarAction[];
     onSharePoster?: () => void;
     onRetake?: () => void;
-    onScrollTop?: () => void;
     onChat?: () => void;
     onHome?: () => void;
     onHoverChange?: (hovered: boolean) => void;
@@ -34,7 +32,6 @@ interface FloatingToolbarProps {
 const defaultActions = (
     onSharePoster?: () => void,
     onRetake?: () => void,
-    onScrollTop?: () => void,
     onChat?: () => void,
     onHome?: () => void
 ): ToolbarAction[] => [
@@ -46,16 +43,16 @@ const defaultActions = (
         variant: "primary",
     },
     {
-        id: "retake",
-        icon: <RotateCcw className="w-[18px] h-[18px]" strokeWidth={1.5} />,
-        label: "重新测试",
-        onClick: onRetake,
-    },
-    {
         id: "chat",
         icon: <MessageCircle className="w-[18px] h-[18px]" strokeWidth={1.5} />,
         label: "顾问咨询",
         onClick: onChat,
+    },
+    {
+        id: "retake",
+        icon: <RotateCcw className="w-[18px] h-[18px]" strokeWidth={1.5} />,
+        label: "重新测试",
+        onClick: onRetake,
     },
     {
         id: "home",
@@ -63,19 +60,12 @@ const defaultActions = (
         label: "回到首页",
         onClick: onHome,
     },
-    {
-        id: "top",
-        icon: <ArrowUp className="w-[18px] h-[18px]" strokeWidth={1.5} />,
-        label: "回到顶部",
-        onClick: onScrollTop,
-    },
 ];
 
 export function FloatingToolbar({
     actions,
     onSharePoster,
     onRetake,
-    onScrollTop,
     onChat,
     onHome,
     onHoverChange,
@@ -85,18 +75,11 @@ export function FloatingToolbar({
     if (!visible) return null;
     const [isHovered, setIsHovered] = useState(false);
 
-    const toolbarActions = actions ?? defaultActions(onSharePoster, onRetake, onScrollTop, onChat, onHome);
+    const toolbarActions = actions ?? defaultActions(onSharePoster, onRetake, onChat, onHome);
 
     const handleHoverChange = (hovered: boolean) => {
         setIsHovered(hovered);
         onHoverChange?.(hovered);
-    };
-
-    const handleScrollTop = () => {
-        if (typeof window !== "undefined") {
-            window.scrollTo({ top: 0, behavior: "smooth" });
-        }
-        onScrollTop?.();
     };
 
     return (
@@ -129,13 +112,7 @@ export function FloatingToolbar({
                                 }}
                                 whileHover={{ scale: 1.03 }}
                                 whileTap={{ scale: 0.97 }}
-                                onClick={() => {
-                                    if (action.id === "top") {
-                                        handleScrollTop();
-                                    } else {
-                                        action.onClick?.();
-                                    }
-                                }}
+                                onClick={() => action.onClick?.()}
                                 className={`
                                     group flex items-center gap-3 pl-4 pr-3 py-2.5 rounded-full
                                     backdrop-blur-xl border shadow-lg
