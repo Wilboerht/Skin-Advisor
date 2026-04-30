@@ -119,19 +119,4 @@ export const FaceAnalyzeRequestSchema = z.object({
     message: "请至少提供一张正面照片"
 });
 
-// ============================================================================
-// 聊天 API 验证规则
-// ============================================================================
-
-export const ChatRequestSchema = z.object({
-    sessionId: SessionIdSchema,
-    message: z.string().min(1, "消息不能为空").max(500, "消息过长（限制500字符）"),
-    context: z.object({
-        skinType: z.string().optional(),
-        concerns: z.array(z.string()).optional(),
-        summary: z.string().optional()
-    }).optional()
-});
-
 export type AnalyzerRequest = z.infer<typeof AnalyzeRequestSchema>;
-export type ChatRequest = z.infer<typeof ChatRequestSchema>;

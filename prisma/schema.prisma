@@ -76,26 +76,6 @@ model Setting {
   updatedAt DateTime @updatedAt
 }
 
-// AI 顾问对话记录
-model Conversation {
-  id              String                @id @default(cuid())
-  sessionId       String                // 关联的会话 ID (AdvisorSession.sessionId)
-  messages        ConversationMessage[]
-  createdAt       DateTime              @default(now())
-  updatedAt       DateTime              @updatedAt
-
-  @@index([sessionId])
-}
-
-model ConversationMessage {
-  id             String       @id @default(cuid())
-  conversationId String
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  role           String       // user, assistant, system
-  content        String
-  createdAt      DateTime     @default(now())
-}
-
 // 推荐规则引擎
 model RecommendationRule {
   id          String   @id @default(cuid())

@@ -1326,7 +1326,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                         onRetake={() => router.push("/questions")}
                         onChat={() => setShowContactAdvisor(true)}
                         onHome={() => router.push("/")}
-                        showAIButton={false}
+
                     />
 
                     {/* Contact Advisor Modal */}

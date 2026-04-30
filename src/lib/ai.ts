@@ -32,7 +32,6 @@ export interface AISettings {
     visionModel: string;
     textSystemPrompt: string;
     visionSystemPrompt: string;
-    chatSystemPrompt: string;
     maxTokens: number;
     temperature: number;
     apiKeys?: ApiKeys;
@@ -50,7 +49,6 @@ const DEFAULT_AI_SETTINGS: AISettings = {
     visionModel: process.env.AI_VISION_MODEL || (envVisionProvider === "qwen" ? "qwen-vl-max" : envVisionProvider === "anthropic" ? "claude-3-5-sonnet-20240620" : "gpt-4o"),
     textSystemPrompt: TEXT_ANALYSIS_SYSTEM_PROMPT,
     visionSystemPrompt: "",
-    chatSystemPrompt: "",
     maxTokens: 2000,
     temperature: 0.3,
     apiKeys: {

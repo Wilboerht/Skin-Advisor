@@ -54,13 +54,7 @@ export async function POST(req: NextRequest) {
 
         // 4. 执行数据库事务物理删除
         const deletedStats = await prisma.$transaction(async (tx) => {
-            // A. 删除关联的对话消息 (ConversationMessage 级联删除由数据库外键或逻辑处理)
-            // 先删对话主表
-            const conversations = await tx.conversation.deleteMany({
-                where: { sessionId: { in: sessionIds } }
-            });
-
-            // B. 删除过期的测试记录 (针对无 userId 的旧记录)
+            // A. 删除过期的测试记录 (针对无 userId 的旧记录)
             const testRecords = await tx.testRecord.deleteMany({
                 where: {
                     userId: null,
@@ -68,14 +62,13 @@ export async function POST(req: NextRequest) {
                 }
             });
 
-            // D. 最后删除会话主表
+            // B. 最后删除会话主表
             const sessions = await tx.advisorSession.deleteMany({
                 where: { sessionId: { in: sessionIds } }
             });
 
             return {
                 sessions: sessions.count,
-                conversations: conversations.count,
                 testRecords: testRecords.count
             };
         });
