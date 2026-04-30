@@ -13,6 +13,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAuthModal } from '@/components/auth/AuthModalContext';
 import { useToast } from '@/components/ui/Toast';
 import { SharePoster } from '@/components/advisor/poster/SharePoster';
+import { AnalyzingOverlay } from '@/components/advisor/AnalyzingOverlay';
 import html2canvas from 'html2canvas';
 
 interface Dimension {
@@ -229,8 +230,21 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
     setShowShareModal(false);
   };
 
+  const isWaitingForAvatar = isAvatarLoading && !generatedAvatar;
+
   return (
-    <div className="min-h-screen font-sans text-[#7a6552] flex flex-col relative overflow-x-hidden">
+    <>
+      <AnimatePresence mode="wait">
+        {isWaitingForAvatar && (
+          <AnalyzingOverlay
+            key="analyzing-overlay"
+            progress={99}
+            waitingForAvatar={true}
+          />
+        )}
+      </AnimatePresence>
+
+      <div className="min-h-screen font-sans text-[#7a6552] flex flex-col relative overflow-x-hidden">
       {/* Fixed Background Layer - Optimized for iOS and dynamic viewports */}
       <div
         className="fixed top-0 left-0 w-full h-[100dvh] z-[-1] pointer-events-none"
@@ -790,5 +804,6 @@ export default function ShareLandingClient({ data }: ShareLandingProps) {
         onClose={() => setShowContactAdvisor(false)}
       />
     </div>
+    </>
   );
 }
