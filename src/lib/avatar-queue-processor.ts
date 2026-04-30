@@ -437,8 +437,8 @@ export async function processAvatarQueueItem(item: AvatarQueueItem) {
         );
       }
 
-      // 重新抛出错误以保持外层 catch 的统一处理
-      throw txError;
+      // 事务失败已在内层处理（retry / failed），不再抛到外层
+      return;
     }
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
