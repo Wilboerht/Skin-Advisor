@@ -301,9 +301,10 @@ interface AnalyzingOverlayProps {
     progress: number;
     userImage?: string;
     onCancel?: () => void;
+    waitingForAvatar?: boolean;
 }
 
-export function AnalyzingOverlay({ progress, userImage, onCancel }: AnalyzingOverlayProps) {
+export function AnalyzingOverlay({ progress, userImage, onCancel, waitingForAvatar }: AnalyzingOverlayProps) {
     const [activeIconIndex, setActiveIconIndex] = useState(0);
     const [showCancel, setShowCancel] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
@@ -338,7 +339,8 @@ export function AnalyzingOverlay({ progress, userImage, onCancel }: AnalyzingOve
     }, []);
 
     // Dynamic status messages based on progress
-    const getStatusText = (p: number) => {
+    const getStatusText = (p: number, isWaitingAvatar?: boolean) => {
+        if (isWaitingAvatar) return "正在绘制您的专属形象...";
         if (p < 20) return "正在识别面部特征...";
         if (p < 40) return "正在进行多维智能分析...";
         if (p < 70) return "正在比对医学临床数据库...";
@@ -346,7 +348,7 @@ export function AnalyzingOverlay({ progress, userImage, onCancel }: AnalyzingOve
         return "即将为您呈现专属肌肤报告...";
     };
 
-    const statusText = getStatusText(progress);
+    const statusText = getStatusText(progress, waitingForAvatar);
 
     return (
         <m.div

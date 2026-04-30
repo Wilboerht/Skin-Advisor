@@ -68,6 +68,10 @@ export function useAsyncAnalysis() {
             }
             const answers = JSON.parse(answersStr);
 
+            // Pre-generate sessionId and nickname (needed for both avatar and analysis)
+            const sessionId = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString();
+            const nickname = localStorage.getItem("advisor_nickname") || "您";
+
             // 1. Face Analysis
             let faceAnalysis = null;
             let frontPhotoForAvatar: string | null = null;
@@ -116,6 +120,112 @@ export function useAsyncAnalysis() {
                         frontPhotoForAvatar = images.front;
                     }
 
+                    // Trigger background avatar generation in PARALLEL with face analysis
+                    // Non-blocking: failures are silently logged, don't affect result display
+                    const storedGender = localStorage.getItem("advisor_gender") || answers?.gender || 'female';
+                    if (frontPhotoForAvatar) {
+                        console.log("[Avatar] Starting background generation (parallel with face analysis)...");
+                        (async () => {
+                            let retries = 0;
+                            const maxRetries = 2;
+                            
+                            while (retries <= maxRetries) {
+                                try {
+                                    const controller = new AbortController();
+                                    const timeout = setTimeout(() => controller.abort(), 60000);
+
+                                    const response = await fetch("/api/advisor/avatar/generate", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({
+                                            sessionId: sessionId,
+                                            nickname: nickname,
+                                            frontPhoto: frontPhotoForAvatar,
+                                            characteristics: {
+                                                age: 25,
+                                                gender: storedGender,
+                                                skinTone: 'healthy',
+                                                hairStyle: 'elegant'
+                                            }
+                                        }),
+                                        signal: controller.signal
+                                    });
+
+                                    clearTimeout(timeout);
+                                    
+                                    if (response.ok) {
+                                        const data = await response.json();
+
+                                        if (data.success && data.queued) {
+                                            if (data.generatedUrl) {
+                                                try {
+                                                    localStorage.setItem(`guest_avatar_${sessionId}`, data.generatedUrl);
+                                                    console.log(`[Avatar] ✅ Avatar already generated, stored in localStorage`);
+                                                } catch (e) {
+                                                    console.warn("[Avatar] ⚠️  Failed to store avatar in localStorage:", e);
+                                                }
+                                            } else {
+                                                console.log(`[Avatar] ✅ Enqueued for generation (position: #${data.position})`);
+                                            }
+                                            break;
+                                        }
+
+                                        if (data.success && data.url && typeof data.url === 'string') {
+                                            if (data.isGuest) {
+                                                try {
+                                                    localStorage.setItem(`guest_avatar_${sessionId}`, data.url);
+                                                    console.log(`[Avatar] ✅ Guest avatar stored in localStorage from ${data.source}`);
+                                                } catch (e) {
+                                                    console.warn("[Avatar] ⚠️  Failed to store guest avatar in localStorage:", e);
+                                                }
+                                            } else {
+                                                console.log(`[Avatar] ✅ User avatar generation succeeded from ${data.source}`);
+                                            }
+                                            break;
+                                        }
+
+                                        console.warn("[Avatar] ❌ Unexpected response format:", data);
+                                        if (retries < maxRetries) {
+                                            retries++;
+                                            await new Promise(r => setTimeout(r, 1000));
+                                            continue;
+                                        } else {
+                                            break;
+                                        }
+                                    } else if (response.status >= 500) {
+                                        console.warn(`[Avatar] ⚠️  Server error (${response.status}), retrying...`);
+                                        if (retries < maxRetries) {
+                                            retries++;
+                                            await new Promise(r => setTimeout(r, 2000 * Math.pow(1.5, retries)));
+                                            continue;
+                                        } else {
+                                            break;
+                                        }
+                                    } else {
+                                        console.error(`[Avatar] ❌ API error (${response.status})`);
+                                        break;
+                                    }
+                                } catch (err) {
+                                    if (err instanceof Error && err.name === 'AbortError') {
+                                        console.warn("[Avatar] ⚠️  Request timeout");
+                                    } else {
+                                        console.error("[Avatar] ❌ Generation failed:", err);
+                                    }
+                                    
+                                    if (retries < maxRetries) {
+                                        retries++;
+                                        await new Promise(r => setTimeout(r, 2000));
+                                        continue;
+                                    } else {
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            console.log("[Avatar] Background process complete (frontend will poll for results)");
+                        })();
+                    }
+
                     if (visionImages.length > 0) {
                         try {
                             const faceRes = await fetchWithRetry("/api/advisor/face-analyze", {
@@ -159,121 +269,6 @@ export function useAsyncAnalysis() {
             setAnalysisState(prev => ({ ...prev, status: 'analyzing_skin' }));
 
             // 2. Comprehensive Analysis (Text)
-            const sessionId = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString();
-
-            // Get user nickname from localStorage
-            const nickname = localStorage.getItem("advisor_nickname") || "您";
-
-            // Trigger background avatar generation in PARALLEL with text analysis
-            // We do this immediately after face analysis is available
-            // Non-blocking: failures are silently logged, don't affect result display
-            const storedGender = localStorage.getItem("advisor_gender") || answers?.gender || 'female';
-            console.log("[Avatar] Starting background generation...");
-            (async () => {
-                let retries = 0;
-                const maxRetries = 2;
-                
-                while (retries <= maxRetries) {
-                    try {
-                        const controller = new AbortController();
-                        const timeout = setTimeout(() => controller.abort(), 60000); // 60s timeout per attempt (match backend AI duration)
-
-                        const response = await fetch("/api/advisor/avatar/generate", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                                sessionId: sessionId,
-                                nickname: nickname,
-                                frontPhoto: frontPhotoForAvatar,
-                                characteristics: {
-                                    age: faceAnalysis?.skinAge?.estimated || 25,
-                                    gender: storedGender,
-                                    skinTone: 'healthy',
-                                    hairStyle: 'elegant'
-                                }
-                            }),
-                            signal: controller.signal
-                        });
-
-                        clearTimeout(timeout);
-                        
-                        if (response.ok) {
-                            const data = await response.json();
-
-                            // 队列模式：成功加入队列即可，前端会轮询获取结果
-                            if (data.success && data.queued) {
-                                // 如果队列项已完成且已有 URL，直接存入 localStorage
-                                if (data.generatedUrl) {
-                                    try {
-                                        localStorage.setItem(`guest_avatar_${sessionId}`, data.generatedUrl);
-                                        console.log(`[Avatar] ✅ Avatar already generated, stored in localStorage`);
-                                    } catch (e) {
-                                        console.warn("[Avatar] ⚠️  Failed to store avatar in localStorage:", e);
-                                    }
-                                } else {
-                                    console.log(`[Avatar] ✅ Enqueued for generation (position: #${data.position})`);
-                                }
-                                break; // Success, exit while loop
-                            }
-
-                            // 旧格式兼容：直接返回了 url（同步生成模式）
-                            if (data.success && data.url && typeof data.url === 'string') {
-                                if (data.isGuest) {
-                                    try {
-                                        localStorage.setItem(`guest_avatar_${sessionId}`, data.url);
-                                        console.log(`[Avatar] ✅ Guest avatar stored in localStorage from ${data.source}`);
-                                    } catch (e) {
-                                        console.warn("[Avatar] ⚠️  Failed to store guest avatar in localStorage:", e);
-                                    }
-                                } else {
-                                    console.log(`[Avatar] ✅ User avatar generation succeeded from ${data.source}`);
-                                }
-                                break; // Success, exit while loop
-                            }
-
-                            console.warn("[Avatar] ❌ Unexpected response format:", data);
-                            if (retries < maxRetries) {
-                                retries++;
-                                await new Promise(r => setTimeout(r, 1000));
-                                continue;
-                            } else {
-                                break;
-                            }
-                        } else if (response.status >= 500) {
-                            // Server error, retry-able
-                            console.warn(`[Avatar] ⚠️  Server error (${response.status}), retrying...`);
-                            if (retries < maxRetries) {
-                                retries++;
-                                await new Promise(r => setTimeout(r, 2000 * Math.pow(1.5, retries))); // Exponential backoff
-                                continue;
-                            } else {
-                                break;
-                            }
-                        } else {
-                            // Client error or other, don't retry
-                            console.error(`[Avatar] ❌ API error (${response.status})`);
-                            break;
-                        }
-                    } catch (err) {
-                        if (err instanceof Error && err.name === 'AbortError') {
-                            console.warn("[Avatar] ⚠️  Request timeout");
-                        } else {
-                            console.error("[Avatar] ❌ Generation failed:", err);
-                        }
-                        
-                        if (retries < maxRetries) {
-                            retries++;
-                            await new Promise(r => setTimeout(r, 2000));
-                            continue;
-                        } else {
-                            break;
-                        }
-                    }
-                }
-                
-                console.log("[Avatar] Background process complete (frontend will poll for results)");
-            })();
-
 
             // Check if this is a free retry (gender mismatch retry — won't consume quota)
             const isFreeRetry = localStorage.getItem("advisor_free_retry") === "true";

@@ -792,9 +792,9 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
     // Enhanced Loading State
     const isAsyncAnalyzing = searchParams.get('status') === 'analyzing' || analysisState.status !== 'idle';
-    const showLoading = loading || (!result && isAsyncAnalyzing) || isRedirecting;
-
-
+    // 分析完成后，如果头像还在生成，继续显示 loading（前端轮询最多 120 秒超时，不会无限等待）
+    const isWaitingForAvatar = !!result && isAvatarLoading && !generatedAvatar;
+    const showLoading = loading || (!result && isAsyncAnalyzing) || isRedirecting || isWaitingForAvatar;
 
     // Fallback if truly nothing to show (not loading, no result)
     if (!result && !showLoading) return null;
@@ -805,9 +805,10 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 {showLoading && (
                     <AnalyzingOverlay
                         key="analyzing-overlay"
-                        progress={analysisState.progress}
+                        progress={isWaitingForAvatar ? 99 : analysisState.progress}
                         userImage={userImage}
                         onCancel={() => router.push('/questions')}
+                        waitingForAvatar={isWaitingForAvatar}
                     />
                 )}
             </AnimatePresence>
