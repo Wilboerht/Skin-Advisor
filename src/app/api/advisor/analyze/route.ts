@@ -360,10 +360,17 @@ export async function POST(request: NextRequest) {
                 select: { analysisResult: true }
             });
 
+            // Also check avatarQueue in case avatar was generated before session was created
+            const avatarQueueItem = await prisma.avatarQueue.findUnique({
+                where: { sessionId },
+                select: { generatedUrl: true }
+            });
+
             // Merge current results with any existing data (like generatedAvatar)
             const mergedResult = {
                 ...(existingSession?.analysisResult as any || {}),
                 ...standardizedResult,
+                ...(avatarQueueItem?.generatedUrl ? { generatedAvatar: avatarQueueItem.generatedUrl } : {}),
                 ...(isFreeRetryAllowed ? { freeRetryUsed: true } : {})
             };
 

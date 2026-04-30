@@ -362,7 +362,18 @@ export async function processAvatarQueueItem(item: AvatarQueueItem) {
         });
 
         if (!session) {
-          throw new Error(`AdvisorSession not found for sessionId: ${item.sessionId}`);
+          // Session 尚未创建（analyze 还未完成），先把 generatedUrl 存到 avatarQueue 本身
+          await tx.avatarQueue.update({
+            where: { id: item.id },
+            data: {
+              status: "completed",
+              generatedUrl: result.url,
+              source: result.source,
+              completedAt: new Date(),
+            },
+          });
+          console.log(`[AvatarQueue] ✅ Avatar generated but session not yet created. Stored in avatarQueue for later sync.`);
+          return;
         }
 
         const currentResult = (session.analysisResult as any) || {};
