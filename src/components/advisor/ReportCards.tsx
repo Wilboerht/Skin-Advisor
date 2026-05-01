@@ -4,6 +4,8 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Share2, Lock, Loader2 } from 'lucide-react';
 import { SharePoster } from '@/components/advisor/poster/SharePoster';
+import { ShareModal } from '@/components/advisor/ShareModal';
+import { generateShareUrl } from '@/lib/share';
 import html2canvas from 'html2canvas';
 
 interface Dimension {
@@ -146,7 +148,6 @@ export default function ReportCards({
     } finally {
       setIsGeneratingPoster(false);
     }
-    setShowShareModal(false);
   };
 
   return (
@@ -424,113 +425,37 @@ export default function ReportCards({
         {comprehensiveReport}
       </motion.div>
 
-      {/* Share Modal */}
-      <AnimatePresence>
-        {showShareModal && (
-          <>
-            {/* 背景遮罩 */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[100] backdrop-blur-sm bg-black/20"
-              onClick={() => setShowShareModal(false)}
-            />
-
-            {/* 弹窗 - 左右结构 */}
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
-              className="fixed z-[101] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-[640px]"
-            >
-              <div className="relative bg-white/80 backdrop-blur-2xl rounded-[32px] p-8 lg:p-10 border border-white/60 shadow-[0_20px_50px_rgba(0,0,0,0.1)] overflow-hidden">
-                {/* Background Decor */}
-                <div className="absolute top-0 right-0 w-32 h-32 bg-[#e6d0a8]/20 blur-[40px] rounded-full -translate-y-1/2 translate-x-1/2" />
-
-                {/* 顶部 Logo */}
-                <div className="relative z-10 flex flex-col items-center mb-6">
-                  <img
-                    src="/images/NIHPLOD-logo.svg"
-                    alt="Logo"
-                    className="h-7 w-auto object-contain brightness-95 opacity-80 mb-4"
-                  />
-                  {/* 两端虚化分割线 */}
-                  <div className="w-full h-px bg-gradient-to-r from-transparent via-[#d4b483]/40 to-transparent" />
-                </div>
-
-                <div className="relative z-10 flex flex-col md:flex-row items-center md:items-stretch gap-8 md:gap-10">
-                  {/* 左侧：文字和操作 */}
-                  <div className="flex flex-col items-center md:items-start text-center md:text-left flex-1 min-w-0 justify-center">
-                    <h3 className="text-lg font-bold text-[#2d2a26] mb-1 tracking-tight">分享你的素颜证书</h3>
-                    <p className="text-xs text-[#8c7a6b] mb-4 leading-relaxed">
-                      让好友见证您的肌肤蜕变
-                    </p>
-
-                    <div className="w-full space-y-3">
-                      <motion.button
-                        whileHover={{ scale: 1.02, y: -1 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={handleSavePoster}
-                        disabled={isGeneratingPoster}
-                        className="relative w-full py-3.5 px-6 rounded-full shadow-[0_4px_12px_-2px_rgba(150,110,60,0.2)] border border-[#e6d0a8]/50 group transition-all disabled:opacity-60"
-                        style={{
-                          background: 'linear-gradient(135deg, #fdf6e9 0%, #f5dfb8 50%, #e6d0a8 100%)',
-                        }}
-                      >
-                        <div className="absolute inset-0 rounded-full bg-gradient-to-t from-transparent via-transparent to-white/30 pointer-events-none" />
-                        <span className="relative z-10 text-[#5e4b3c] text-sm font-bold flex items-center justify-center gap-2 tracking-wide">
-                          {isGeneratingPoster ? (
-                            <>
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                              生成中...
-                            </>
-                          ) : (
-                            <>保存分享海报</>
-                          )}
-                        </span>
-                      </motion.button>
-
-                      <motion.button
-                        whileHover={{ backgroundColor: 'rgba(0,0,0,0.03)' }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => setShowShareModal(false)}
-                        className="w-full py-3 text-sm font-medium text-[#c4b5a2] hover:text-[#8c7a6b] transition-colors"
-                      >
-                        再等一下
-                      </motion.button>
-                    </div>
-                  </div>
-
-                  {/* 右侧：海报预览 */}
-                  <div
-                    className="shrink-0 rounded-xl p-[2px] overflow-hidden shadow-sm"
-                    style={{
-                      width: 241,
-                      height: 429,
-                      background: 'linear-gradient(135deg, #e6d0a8 0%, #f5dfb8 50%, #d4b483 100%)',
-                    }}
-                  >
-                    <div className="w-full h-full rounded-[10px] overflow-hidden bg-white">
-                      <div style={{ width: 360, height: 640, transform: 'scale(0.67)', transformOrigin: '0 0' }}>
-                        <SharePoster
-                          ref={posterRef}
-                          nickname={nickname}
-                          score={score}
-                          skinAge={skinAge}
-                          percentile={rankPercentile}
-                          avatar={currentAvatar}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
+      <ShareModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        preview={
+          <div
+            className="shrink-0 rounded-xl p-[2px] overflow-hidden shadow-sm"
+            style={{
+              width: 241,
+              height: 429,
+              background: 'linear-gradient(135deg, #e6d0a8 0%, #f5dfb8 50%, #d4b483 100%)',
+            }}
+          >
+            <div className="w-full h-full rounded-[10px] overflow-hidden bg-white">
+              <div style={{ width: 360, height: 640, transform: 'scale(0.67)', transformOrigin: '0 0' }}>
+                <SharePoster
+                  ref={posterRef}
+                  nickname={nickname}
+                  score={score}
+                  skinAge={skinAge}
+                  percentile={rankPercentile}
+                  avatar={currentAvatar}
+                />
               </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+            </div>
+          </div>
+        }
+        shareUrl={typeof window !== 'undefined' ? generateShareUrl('/report/guest') : ''}
+        score={score}
+        onSavePoster={handleSavePoster}
+        isGeneratingPoster={isGeneratingPoster}
+      />
     </div>
   );
 }

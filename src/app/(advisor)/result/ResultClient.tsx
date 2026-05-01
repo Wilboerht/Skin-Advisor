@@ -33,6 +33,7 @@ import { useAuthModal } from "@/components/auth/AuthModalContext";
 
 import { FloatingToolbar } from "@/components/advisor/FloatingToolbar";
 import { SharePoster } from "@/components/advisor/poster/SharePoster";
+import { ShareModal } from "@/components/advisor/ShareModal";
 import html2canvas from "html2canvas";
 import { ContactAdvisorModal } from "@/components/advisor/ContactAdvisorModal";
 import ReportCards from "@/components/advisor/ReportCards";
@@ -711,7 +712,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         } finally {
             setIsGeneratingPoster(false);
         }
-        setShowShareModal(false);
     };
 
     // --- Auto-Claim Session ---
@@ -1388,105 +1388,39 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                         onHome={() => router.push("/")}
                     />
 
-                    {/* Share Modal */}
-                    <AnimatePresence>
-                        {showShareModal && (
-                            <>
-                                {/* 背景遮罩 */}
-                                <m.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    className="fixed inset-0 z-[100] backdrop-blur-sm bg-black/20"
-                                    onClick={() => setShowShareModal(false)}
-                                />
-                                {/* 弹窗 */}
-                                <m.div
-                                    initial={{ scale: 0.9, opacity: 0, y: 20 }}
-                                    animate={{ scale: 1, opacity: 1, y: 0 }}
-                                    exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="fixed z-[101] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-[640px]"
-                                >
-                                    <div className="relative bg-white/80 backdrop-blur-2xl rounded-[32px] p-8 lg:p-10 border border-white/60 shadow-[0_20px_50px_rgba(0,0,0,0.1)] overflow-hidden">
-                                        <div className="absolute top-0 right-0 w-32 h-32 bg-[#e6d0a8]/20 blur-[40px] rounded-full -translate-y-1/2 translate-x-1/2" />
-                                        {/* 顶部 Logo */}
-                                        <div className="relative z-10 flex flex-col items-center mb-6">
-                                            <img
-                                                src="/images/NIHPLOD-logo.svg"
-                                                alt="Logo"
-                                                className="h-7 w-auto object-contain brightness-95 opacity-80 mb-4"
-                                            />
-                                            <div className="w-full h-px bg-gradient-to-r from-transparent via-[#d4b483]/40 to-transparent" />
-                                        </div>
-                                        <div className="relative z-10 flex flex-col md:flex-row items-center md:items-stretch gap-8 md:gap-10">
-                                            {/* 左侧：文字和操作 */}
-                                            <div className="flex flex-col items-center md:items-start text-center md:text-left flex-1 min-w-0 justify-center">
-                                                <h3 className="text-lg font-bold text-[#2d2a26] mb-1 tracking-tight">分享你的素颜证书</h3>
-                                                <p className="text-xs text-[#8c7a6b] mb-4 leading-relaxed">
-                                                    让好友见证您的肌肤蜕变
-                                                </p>
-                                                <div className="w-full space-y-3">
-                                                    <m.button
-                                                        whileHover={{ scale: 1.02, y: -1 }}
-                                                        whileTap={{ scale: 0.98 }}
-                                                        onClick={handleSavePoster}
-                                                        disabled={isGeneratingPoster}
-                                                        className="relative w-full py-3.5 px-6 rounded-full shadow-[0_4px_12px_-2px_rgba(150,110,60,0.2)] border border-[#e6d0a8]/50 group transition-all disabled:opacity-60"
-                                                        style={{
-                                                            background: "linear-gradient(135deg, #fdf6e9 0%, #f5dfb8 50%, #e6d0a8 100%)",
-                                                        }}
-                                                    >
-                                                        <div className="absolute inset-0 rounded-full bg-gradient-to-t from-transparent via-transparent to-white/30 pointer-events-none" />
-                                                        <span className="relative z-10 text-[#5e4b3c] text-sm font-bold flex items-center justify-center gap-2 tracking-wide">
-                                                            {isGeneratingPoster ? (
-                                                                <>
-                                                                    <RotateCcw className="w-4 h-4 animate-spin" />
-                                                                    生成中...
-                                                                </>
-                                                            ) : (
-                                                                <>保存分享海报</>
-                                                            )}
-                                                        </span>
-                                                    </m.button>
-                                                    <m.button
-                                                        whileHover={{ backgroundColor: "rgba(0,0,0,0.03)" }}
-                                                        whileTap={{ scale: 0.98 }}
-                                                        onClick={() => setShowShareModal(false)}
-                                                        className="w-full py-3 text-sm font-medium text-[#c4b5a2] hover:text-[#8c7a6b] transition-colors"
-                                                    >
-                                                        再等一下
-                                                    </m.button>
-                                                </div>
-                                            </div>
-                                            {/* 右侧：海报预览 */}
-                                            <div
-                                                className="shrink-0 rounded-xl p-[2px] overflow-hidden shadow-sm"
-                                                style={{
-                                                    width: 241,
-                                                    height: 429,
-                                                    background: "linear-gradient(135deg, #e6d0a8 0%, #f5dfb8 50%, #d4b483 100%)",
-                                                }}
-                                            >
-                                                <div className="w-full h-full rounded-[10px] overflow-hidden bg-white">
-                                                    <div style={{ width: 360, height: 640, transform: "scale(0.67)", transformOrigin: "0 0" }}>
-                                                        <SharePoster
-                                                            ref={posterRef}
-                                                            nickname={userNickname || "用户"}
-                                                            score={faceAnalysis?.overallScore || 0}
-                                                            skinAge={result?.skinProfile?.skinAge || 25}
-                                                            percentile={rankPercentile}
-                                                            avatar={generatedAvatar}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
+                    <ShareModal
+                        isOpen={showShareModal}
+                        onClose={() => setShowShareModal(false)}
+                        preview={
+                            <div
+                                className="shrink-0 rounded-xl p-[2px] overflow-hidden shadow-sm"
+                                style={{
+                                    width: 241,
+                                    height: 429,
+                                    background: "linear-gradient(135deg, #e6d0a8 0%, #f5dfb8 50%, #d4b483 100%)",
+                                }}
+                            >
+                                <div className="w-full h-full rounded-[10px] overflow-hidden bg-white">
+                                    <div style={{ width: 360, height: 640, transform: "scale(0.67)", transformOrigin: "0 0" }}>
+                                        <SharePoster
+                                            ref={posterRef}
+                                            nickname={userNickname || "用户"}
+                                            score={faceAnalysis?.overallScore || 0}
+                                            skinAge={result?.skinProfile?.skinAge || 25}
+                                            percentile={rankPercentile}
+                                            avatar={generatedAvatar}
+                                        />
                                     </div>
-                                </m.div>
-                            </>
-                        )}
-                    </AnimatePresence>
+                                </div>
+                            </div>
+                        }
+                        shareUrl={typeof window !== "undefined" && sessionId ? generateShareUrl("/report/guest", { id: sessionId }) : ""}
+                        skinTypeLabel={result?.skinProfile?.typeLabel}
+                        score={faceAnalysis?.overallScore}
+                        onSavePoster={handleSavePoster}
+                        isGeneratingPoster={isGeneratingPoster}
+                        trackShare={trackResultShare}
+                    />
 
                     {/* Contact Advisor Modal */}
                     <ContactAdvisorModal

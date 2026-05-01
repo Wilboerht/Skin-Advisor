@@ -186,9 +186,23 @@ export async function GET(req: NextRequest) {
             }
         );
     } catch (e: any) {
-        console.log(`${e.message}`);
-        return new Response(`Failed to generate the image`, {
-            status: 500,
+        console.error("OG image generation failed:", e?.message || e);
+        // Fallback: return a simple SVG so social media crawlers still get a valid image
+        // instead of a 500 error. This improves compatibility on non-Vercel environments
+        // where Satori/Yoga may fail due to missing native bindings.
+        const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630">
+            <rect width="100%" height="100%" fill="#0F1115"/>
+            <rect x="40" y="40" width="1120" height="550" rx="16" fill="none" stroke="#C9A86C" stroke-width="2" opacity="0.3"/>
+            <text x="50%" y="42%" dominant-baseline="middle" text-anchor="middle" fill="#C9A86C" font-size="56" font-family="Arial, sans-serif" font-weight="bold" letter-spacing="8">NIHPLOD</text>
+            <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" fill="#F5E6E0" font-size="28" font-family="Arial, sans-serif" letter-spacing="4">SKIN ADVISOR</text>
+            <text x="50%" y="68%" dominant-baseline="middle" text-anchor="middle" fill="#888" font-size="20" font-family="Arial, sans-serif">AI-Powered Skin Analysis Report</text>
+        </svg>`;
+        return new Response(fallbackSvg, {
+            status: 200,
+            headers: {
+                'Content-Type': 'image/svg+xml',
+                'Cache-Control': 'public, max-age=60',
+            },
         });
     }
 }

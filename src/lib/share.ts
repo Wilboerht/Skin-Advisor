@@ -173,9 +173,39 @@ export async function shareNative(data: ShareData): Promise<boolean> {
 }
 
 /**
+ * 分享数据（扩展版）
+ */
+export interface ExtendedShareData extends ShareData {
+    skinTypeLabel?: string;
+    score?: number;
+}
+
+/**
+ * 调用小红书分享（复制文案到剪贴板）
+ * 小红书无 Web 分享 API，采用"保存图片 + 复制文案"的引导方案
+ */
+export async function shareToXiaohongshu(data: ExtendedShareData): Promise<{ text: string; url: string }> {
+    const { title, description } = generateXiaohongshuText(data.skinTypeLabel, data.score);
+    const fullText = `${title}\n\n${description}\n\n${data.url}`;
+    await copyToClipboard(fullText);
+    return { text: fullText, url: data.url };
+}
+
+/**
+ * 调用抖音分享（复制文案到剪贴板）
+ * 抖音无 Web 分享 API，采用"保存图片 + 复制文案"的引导方案
+ */
+export async function shareToDouyin(data: ExtendedShareData): Promise<{ text: string; url: string }> {
+    const { title, description } = generateDouyinText(data.skinTypeLabel, data.score);
+    const fullText = `${title}\n\n${description}\n\n${data.url}`;
+    await copyToClipboard(fullText);
+    return { text: fullText, url: data.url };
+}
+
+/**
  * 统一分享入口
  */
-export async function share(platform: SharePlatform, data: ShareData): Promise<boolean> {
+export async function share(platform: SharePlatform, data: ExtendedShareData): Promise<boolean> {
     switch (platform) {
         case "native":
             return shareNative(data);
@@ -184,13 +214,22 @@ export async function share(platform: SharePlatform, data: ShareData): Promise<b
             shareToWeibo(data);
             return true;
 
-        case "wechat":
+        case "wechat": {
             // 微信分享需要特殊处理
             const wechatResult = shareToWechat(data);
             if (wechatResult.showQRHint) {
                 // 复制链接并提示用户
                 await copyToClipboard(wechatResult.url);
             }
+            return true;
+        }
+
+        case "xiaohongshu":
+            await shareToXiaohongshu(data);
+            return true;
+
+        case "douyin":
+            await shareToDouyin(data);
             return true;
 
         case "copy":
