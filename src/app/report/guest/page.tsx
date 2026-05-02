@@ -40,7 +40,9 @@ export default async function GuestReportPage(props: GuestReportPageProps) {
         );
     }
 
-    const analysisResult = session.analysisResult as any;
+    // 显式 pick 需要的字段传给客户端，避免直接透传整个数据库原始对象
+    const raw = session.analysisResult as Record<string, unknown>;
+    const analysisResult: Record<string, unknown> = { ...raw };
     // 兜底：如果 analysisResult 里没有 nickname，用 session 关联的用户名
     if (!analysisResult.nickname && session.user?.name) {
         analysisResult.nickname = session.user.name;

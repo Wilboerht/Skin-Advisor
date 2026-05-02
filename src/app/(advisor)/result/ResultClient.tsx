@@ -166,12 +166,10 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         const normalizedConf = faGenderConf > 1 ? faGenderConf / 100 : faGenderConf;
 
         // Mismatch = questionnaire gender differs from detected gender with high confidence
-        console.log('[GenderMismatch] Detection:', { faGenderVal, faGenderConf, normalizedConf, socialGender, mismatch: faGenderVal && normalizedConf > 0.85 && faGenderVal !== socialGender });
         return faGenderVal && normalizedConf > 0.85 && faGenderVal !== socialGender;
     }, [faceAnalysis, socialGender]);
 
     useEffect(() => {
-        console.log('[GenderMismatch] Effect:', { loading, hasResult: !!result, hasFace: !!faceAnalysis, isGenderMismatch, acked: localStorage.getItem('advisor_gender_mismatch_ack') });
         if (!loading && result && faceAnalysis && isGenderMismatch) {
             // Check if user already acknowledged the mismatch (prevents modal reappearing on refresh)
             const acked = typeof window !== 'undefined' && localStorage.getItem('advisor_gender_mismatch_ack') === 'true';
@@ -292,7 +290,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             // Validate if the result is "fresh" (optional, but good for UX)
                             const urlSessionId = searchParams.get('id');
                             if (urlSessionId && advisorResult.sessionId && advisorResult.sessionId !== urlSessionId) {
-                                console.warn("Session ID mismatch in storage, ignoring cached result");
+                                // Session ID mismatch in storage, ignoring cached result
                             } else {
                                 // Reconstruct ComprehensiveResult
                                 const skinProfile = advisorResult.skinProfile || advisorResult.skinAnalysis;
@@ -443,7 +441,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     avatarPollRef.current.failureCount = 0;
                 } else if (response.status === 404) {
                     // SessionID not found (shouldn't happen in normal flow)
-                    console.warn(`Avatar session ${sessionId} not found`);
                     avatarPollRef.current.failureCount = 999; // Force timeout
                 } else if (response.status >= 500) {
                     // Server error, increment failure counter
@@ -531,8 +528,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 const guestAvatarUrl = localStorage.getItem(`guest_avatar_${sessionId}`);
                 
                 if (guestAvatarUrl) {
-                    console.log("🎭→👤 Found guest avatar, migrating to user account...");
-                    
                     const response = await fetch("/api/advisor/avatar/migrate-guest", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -546,17 +541,14 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     if (response.ok) {
                         const data = await response.json();
                         if (data.success && !data.skipped) {
-                            console.log("✅ Guest avatar successfully migrated to user account");
                             // Remove from localStorage since it's now stored on server
                             localStorage.removeItem(`guest_avatar_${sessionId}`);
-                        } else if (data.skipped) {
-                            console.log("ℹ️  User already has a custom avatar, skipping migration");
                         }
                     } else {
-                        console.warn("⚠️  Avatar migration failed:", response.status);
+                        console.warn("Avatar migration failed:", response.status);
                     }
                 } else {
-                    console.log("ℹ️  No guest avatar found to migrate");
+                    // No guest avatar found to migrate
                 }
             } catch (err) {
                 console.error("❌ Failed to migrate guest avatar:", err);
@@ -724,7 +716,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 });
                 
                 if (res.ok) {
-                    console.log(`✅ Session ${sessionId} successfully linked to account.`);
                     localStorage.setItem(claimedKey, 'true');
                 }
             } catch (err) {

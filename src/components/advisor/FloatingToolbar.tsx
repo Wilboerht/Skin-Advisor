@@ -72,8 +72,9 @@ export function FloatingToolbar({
     visible = true,
     className = "",
 }: FloatingToolbarProps) {
-    if (!visible) return null;
     const [isHovered, setIsHovered] = useState(false);
+
+    if (!visible) return null;
 
     const toolbarActions = actions ?? defaultActions(onSharePoster, onRetake, onChat, onHome);
 

@@ -63,37 +63,15 @@ function getUtmParams(): Record<string, string> {
 }
 
 /**
- * 简单的浏览器指纹生成（非精确，仅用于统计去重）
+ * 获取客户端基础环境信息（非唯一标识，仅用于统计分析）
+ * 不包含 Canvas 指纹等敏感追踪技术
  */
-function generateFingerprint(): string {
-  if (typeof window === "undefined") return "";
-
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return "";
-
-  ctx.textBaseline = "top";
-  ctx.font = "14px Arial";
-  ctx.fillText("fingerprint", 2, 2);
-
-  const data = [
-    navigator.userAgent,
-    navigator.language,
-    screen.width,
-    screen.height,
-    screen.colorDepth,
-    new Date().getTimezoneOffset(),
-    canvas.toDataURL().slice(-50), // 取最后50字符
-  ].join("|");
-
-  // 简单哈希
-  let hash = 0;
-  for (let i = 0; i < data.length; i++) {
-    const char = data.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
-  }
-  return Math.abs(hash).toString(36);
+function getClientEnv(): Record<string, string | number> {
+  if (typeof window === "undefined") return {};
+  return {
+    language: navigator.language,
+    timezone: new Date().getTimezoneOffset(),
+  };
 }
 
 /**
@@ -146,11 +124,11 @@ export function useAdvisorAnalytics() {
     if (initialized.current) return;
     initialized.current = true;
 
-    const fingerprint = generateFingerprint();
+    const clientEnv = getClientEnv();
     const utmParams = getUtmParams();
 
     sendTrackEvent("session_start", {
-      fingerprint,
+      ...clientEnv,
       ...utmParams,
     });
   }, []);
@@ -162,7 +140,9 @@ export function useAdvisorAnalytics() {
 
   // 追踪问卷完成
   const trackQuestionnaireComplete = useCallback((answers: Record<string, unknown>) => {
-    sendTrackEvent("questionnaire_complete", { answers });
+    // 只上报问卷字段数量，不上报具体答案内容，保护用户隐私
+    const fieldCount = Object.keys(answers).length;
+    sendTrackEvent("questionnaire_complete", { fieldCount });
   }, []);
 
   // 追踪面部扫描开始
