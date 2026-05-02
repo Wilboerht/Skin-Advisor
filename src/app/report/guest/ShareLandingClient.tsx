@@ -15,7 +15,6 @@ import { useToast } from '@/components/ui/Toast';
 import { SharePoster } from '@/components/advisor/poster/SharePoster';
 import { ShareModal } from '@/components/advisor/ShareModal';
 import { AnalyzingOverlay } from '@/components/advisor/AnalyzingOverlay';
-import { generateShareUrl } from '@/lib/share';
 import html2canvas from 'html2canvas';
 
 interface Dimension {
@@ -540,9 +539,6 @@ export default function ShareLandingClient({ analysisResult, sessionId }: ShareL
             </div>
           </div>
         }
-        shareUrl={typeof window !== 'undefined' ? generateShareUrl('/report/guest', { id: sessionId }) : ''}
-        skinTypeLabel={analysisResult.skinAnalysis?.typeLabel || analysisResult.skinProfile?.typeLabel}
-        score={analysisResult.faceAnalysis?.overallScore || analysisResult.skinAnalysis?.score || 0}
         onSavePoster={handleSavePoster}
         isGeneratingPoster={isGeneratingPoster}
       />

@@ -28,7 +28,7 @@ import { DIMENSION_LABELS, getDefaultFaceAnalysisResult } from "@/lib/advisor-ut
 
 import { ScientificRadarChart } from "@/components/advisor/ScientificRadarChart";
 
-import { copyToClipboard, generateShareUrl } from "@/lib/share";
+import { copyToClipboard } from "@/lib/share";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 
 import { FloatingToolbar } from "@/components/advisor/FloatingToolbar";
@@ -600,15 +600,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
     // Actions
     // Save result as image for sharing (image generation in progress)
-    const handleSaveImage = async () => {
-        toast.info("结果图片生成功能开发中，敬请期待");
-        // Placeholder for future image generation
-        // Will support:
-        // - Generate beautiful result card image
-        // - Include skin analysis summary
-        // - Add personalized recommendations
-        // - Support download as PNG/JPG
-    };
+
 
     const handleDownload = async () => {
         if (!result) return;
@@ -989,7 +981,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             generatedAvatar={generatedAvatar}
                             isAvatarLoading={isAvatarLoading}
                             summary={result?.analysis?.summary}
-                            onShare={handleSaveImage}
+                            onShare={() => setShowShareModal(true)}
                             isLoggedIn={!!user}
                             onLoginClick={() => openAuthModal('register')}
 
@@ -1414,12 +1406,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 </div>
                             </div>
                         }
-                        shareUrl={typeof window !== "undefined" && sessionId ? generateShareUrl("/report/guest", { id: sessionId }) : ""}
-                        skinTypeLabel={result?.skinProfile?.typeLabel}
-                        score={faceAnalysis?.overallScore}
                         onSavePoster={handleSavePoster}
                         isGeneratingPoster={isGeneratingPoster}
-                        trackShare={trackResultShare}
                     />
 
                     {/* Contact Advisor Modal */}

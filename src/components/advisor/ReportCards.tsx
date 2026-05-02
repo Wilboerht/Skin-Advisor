@@ -1,12 +1,9 @@
 'use client';
 
-import { useState, useMemo, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useMemo, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Share2, Lock, Loader2 } from 'lucide-react';
-import { SharePoster } from '@/components/advisor/poster/SharePoster';
-import { ShareModal } from '@/components/advisor/ShareModal';
-import { generateShareUrl } from '@/lib/share';
-import html2canvas from 'html2canvas';
+
 
 interface Dimension {
   score?: number;
@@ -75,9 +72,6 @@ export default function ReportCards({
   professionalStyle,
   comprehensiveReport,
 }: ReportCardsProps) {
-  const [showShareModal, setShowShareModal] = useState(false);
-  const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
-  const posterRef = useRef<HTMLDivElement>(null);
   const currentAvatar = generatedAvatar || null;
 
   // 基于综合评分计算全国排名百分比（与report页面一致）
@@ -105,50 +99,7 @@ export default function ReportCards({
     return 'T区偏油';
   }, [dimensions]);
 
-  const handleShareClick = () => {
-    setShowShareModal(true);
-  };
 
-  const handleSavePoster = async () => {
-    if (!posterRef.current || isGeneratingPoster) return;
-
-    try {
-      setIsGeneratingPoster(true);
-
-      // 等待图片加载
-      const images = Array.from(posterRef.current.getElementsByTagName('img'));
-      await Promise.all(
-        images.map(
-          (img) =>
-            new Promise<void>((resolve) => {
-              if (img.complete) {
-                resolve();
-                return;
-              }
-              img.onload = () => resolve();
-              img.onerror = () => resolve();
-            })
-        )
-      );
-
-      const canvas = await html2canvas(posterRef.current, {
-        useCORS: true,
-        scale: 2,
-        backgroundColor: null,
-        logging: false,
-      });
-
-      const dataUrl = canvas.toDataURL('image/png');
-      const link = document.createElement('a');
-      link.download = `NIHPLOD-肌肤报告-${nickname}-${Date.now()}.png`;
-      link.href = dataUrl;
-      link.click();
-    } catch (error) {
-      console.error('海报生成失败:', error);
-    } finally {
-      setIsGeneratingPoster(false);
-    }
-  };
 
   return (
     <div className="w-full flex flex-col gap-6">
@@ -228,7 +179,7 @@ export default function ReportCards({
               <motion.button
                 whileHover={{ scale: 1.03, y: -1 }}
                 whileTap={{ scale: 0.97 }}
-                onClick={handleShareClick}
+                onClick={onShare}
                 className="relative focus:outline-none flex items-center justify-center h-[34px] sm:h-[42px] px-5 sm:px-8 rounded-full shadow-[0_4px_12px_-3px_rgba(150,110,60,0.18)] border border-[#e6d0a8]/50 group transition-all"
                 style={{
                   background: 'linear-gradient(135deg, #fdf6e9 0%, #f5dfb8 50%, #e6d0a8 100%)',
@@ -425,37 +376,6 @@ export default function ReportCards({
         {comprehensiveReport}
       </motion.div>
 
-      <ShareModal
-        isOpen={showShareModal}
-        onClose={() => setShowShareModal(false)}
-        preview={
-          <div
-            className="shrink-0 rounded-xl p-[2px] overflow-hidden shadow-sm"
-            style={{
-              width: 241,
-              height: 429,
-              background: 'linear-gradient(135deg, #e6d0a8 0%, #f5dfb8 50%, #d4b483 100%)',
-            }}
-          >
-            <div className="w-full h-full rounded-[10px] overflow-hidden bg-white">
-              <div style={{ width: 360, height: 640, transform: 'scale(0.67)', transformOrigin: '0 0' }}>
-                <SharePoster
-                  ref={posterRef}
-                  nickname={nickname}
-                  score={score}
-                  skinAge={skinAge}
-                  percentile={rankPercentile}
-                  avatar={currentAvatar}
-                />
-              </div>
-            </div>
-          </div>
-        }
-        shareUrl={typeof window !== 'undefined' ? generateShareUrl('/report/guest') : ''}
-        score={score}
-        onSavePoster={handleSavePoster}
-        isGeneratingPoster={isGeneratingPoster}
-      />
     </div>
   );
 }
