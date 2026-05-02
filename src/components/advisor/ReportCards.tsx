@@ -137,7 +137,6 @@ export default function ReportCards({
                         src={currentAvatar || '/user-placeholder.svg'}
                         alt="avatar"
                         className="w-full h-full object-cover object-top"
-                        onLoad={() => {}}
                         onError={(e) => {
                           // avatar image failed to load, fallback already handled
                           (e.target as HTMLImageElement).src = '/user-placeholder.svg';

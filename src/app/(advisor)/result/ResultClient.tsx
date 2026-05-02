@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useRef, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Image from "next/image";
 import { House, MessageCircle } from "lucide-react";
 import { useAsyncAnalysis } from "@/hooks/useAsyncAnalysis";
 import { motion as m, AnimatePresence } from "framer-motion";
@@ -11,24 +10,17 @@ import {
     ChevronRight,
     ScanFace,
     Activity,
-    Search,
-    Gift, // Import Gift icon
-    ClipboardList,
     AlertCircle,
-    Link as LinkIcon,
-    X,
-    Play, // Import Play icon
-    Sparkles // For Adaptive Mode
+    X
 } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useToast } from "@/components/ui/Toast";
 import { useAuth } from "@/hooks/useAuth";
-import type { FaceAnalysisResult, ZoneAnalysis } from "@/lib/advisor-utils";
-import { DIMENSION_LABELS, getDefaultFaceAnalysisResult } from "@/lib/advisor-utils";
+import type { FaceAnalysisResult } from "@/lib/advisor-utils";
 
 import { ScientificRadarChart } from "@/components/advisor/ScientificRadarChart";
 
-import { copyToClipboard } from "@/lib/share";
+
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 
 import { FloatingToolbar } from "@/components/advisor/FloatingToolbar";
@@ -177,7 +169,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 setShowGenderMismatchModal(true);
             }
         }
-    }, [loading, result, faceAnalysis, isGenderMismatch]);
+    }, [loading, result, faceAnalysis, isGenderMismatch, socialGender]);
 
     const handleMismatchRetry = () => {
         // Clear previous answers to force a fresh start
@@ -403,6 +395,9 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         avatarPollRef.current.failureCount = 0;
 
         const pollAvatar = async () => {
+            // 页面在后台标签页时不发起网络请求，节省电池和流量
+            if (typeof document !== "undefined" && document.hidden) return;
+
             try {
                 const response = await fetch(`/api/advisor/avatar/status?sessionId=${sessionId}&t=${Date.now()}`);
                 
@@ -641,8 +636,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         localStorage.removeItem("advisor_gender");
         localStorage.removeItem("advisor_face_images");
         localStorage.removeItem("advisor_result");
-        // localStorage.removeItem("advisor_nickname");
-        // localStorage.removeItem("advisor_avatar");
+
         localStorage.removeItem("advisor_step");
         localStorage.removeItem("advisor_gender_mismatch_ack");
         localStorage.removeItem("advisor_free_retry");
@@ -841,7 +835,24 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const showLoading = loading || (!result && isAsyncAnalyzing) || isRedirecting || isWaitingForAvatar;
 
     // Fallback if truly nothing to show (not loading, no result)
-    if (!result && !showLoading) return null;
+    if (!result && !showLoading) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-[#FDFBF7] px-4">
+                <div className="text-center">
+                    <ScanFace className="w-12 h-12 text-[#D4B78F] mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-[#5c4937] mb-2">报告加载失败</h3>
+                    <p className="text-sm text-[#8c7a6b] mb-6">数据可能已过期或不存在</p>
+                    <button
+                        onClick={() => router.push("/questions")}
+                        className="inline-flex items-center justify-center gap-2 rounded-full bg-[#5c4937] px-6 py-3 text-sm font-medium text-white shadow-lg transition-transform active:scale-95"
+                    >
+                        <RotateCcw className="w-4 h-4" />
+                        重新测试
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <>
@@ -963,7 +974,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     <main className={styles.main}>
 
                         {/* Report Summary Cards */}
-                        {null}
                         <ReportCards
                             score={faceAnalysis?.overallScore || 0}
                             skinAge={result?.skinProfile?.skinAge || 25}
@@ -1319,7 +1329,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     <span>联系顾问</span>
                                 </button>
                                 <button
-                                    onClick={() => window.location.href = '/'}
+                                    onClick={() => router.push('/')}
                                     className="glass-premium-primary animate-float-premium group relative inline-flex items-center justify-center gap-3 px-8 py-3.5 sm:px-10 rounded-full text-[14px] sm:text-[15px] tracking-[0.15em] font-medium disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer transition-all duration-300"
                                 >
                                     <House className="w-5 h-5" />

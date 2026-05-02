@@ -206,13 +206,4 @@ export function useAdvisorAnalytics() {
   };
 }
 
-/**
- * 便捷组件：自动初始化会话
- */
-export function useAutoInitSession() {
-  const { initSession } = useAdvisorAnalytics();
 
-  useEffect(() => {
-    initSession();
-  }, [initSession]);
-}

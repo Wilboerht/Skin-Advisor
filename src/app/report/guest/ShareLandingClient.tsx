@@ -1,9 +1,6 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Fragment } from 'react';
-// 引入完整分析内容的复用组件（假设已抽出为可复用组件）
-import { FullAnalysisSection } from '@/components/advisor/FullAnalysisSection';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Share2, Lock, Loader2 } from 'lucide-react';
 import { FloatingToolbar } from '@/components/advisor/FloatingToolbar';
@@ -64,8 +61,16 @@ export default function ShareLandingClient({ analysisResult, sessionId }: ShareL
   const [showShareModal, setShowShareModal] = useState(false);
   const [showAuthChoice, setShowAuthChoice] = useState(false);
   const generatedAvatar = analysisResult.generatedAvatar || null;
-  const isAvatarLoading = false;
+  const [isAvatarLoading, setIsAvatarLoading] = useState(!generatedAvatar);
   const posterRef = useRef<HTMLDivElement>(null);
+
+  // 访客页无轮询机制，若头像未生成则短暂显示 loading 后自动关闭，避免无限等待
+  useEffect(() => {
+    if (!generatedAvatar && isAvatarLoading) {
+      const timer = setTimeout(() => setIsAvatarLoading(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [generatedAvatar, isAvatarLoading]);
   const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
   const [showContactAdvisor, setShowContactAdvisor] = useState(false);
 
