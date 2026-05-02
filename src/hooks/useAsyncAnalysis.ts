@@ -53,11 +53,17 @@ export function useAsyncAnalysis() {
         setAnalysisState({ status: 'preparing', progress: 2, error: null });
         trackAnalysisStart();
 
-        const timeoutPromise = new Promise<{ result: any, faceAnalysis: any, sessionId: string }>((_, reject) => {
-            setTimeout(() => {
-                reject(new Error("分析超时 (180秒)。请检查网络连接后重试。"));
-            }, 180 * 1000); // 3 minutes
-        });
+        const createTimeoutPromise = () => {
+            let timeoutId: ReturnType<typeof setTimeout>;
+            const promise = new Promise<never>((_, reject) => {
+                timeoutId = setTimeout(() => {
+                    reject(new Error("分析超时 (180秒)。请检查网络连接后重试。"));
+                }, 180 * 1000); // 3 minutes
+            });
+            return { promise, cancel: () => clearTimeout(timeoutId) };
+        };
+
+        const { promise: timeoutPromise, cancel: cancelTimeout } = createTimeoutPromise();
 
         const analysisPromise = async () => {
             const answersStr = localStorage.getItem("advisor_answers");
@@ -309,8 +315,11 @@ export function useAsyncAnalysis() {
         };
 
         try {
-            return await Promise.race([analysisPromise(), timeoutPromise]);
+            const result = await Promise.race([analysisPromise(), timeoutPromise]);
+            cancelTimeout();
+            return result;
         } catch (e: any) {
+            cancelTimeout();
             console.error("Analysis failed:", e);
             setAnalysisState({ status: 'error', progress: 0, error: e.message || "Unknown error" });
             throw e;

@@ -517,8 +517,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
     } catch (err) {
       console.error("Face detection error:", err);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modelsLoaded, isAllCaptured, calculateHeadPose, currentStep, isFaceInEllipse, speak]);
+  }, [modelsLoaded, isAllCaptured, calculateHeadPose, currentStep, isFaceInEllipse, speak, facingMode]);
 
   // 监听步骤变化并播报语音指令
   useEffect(() => {

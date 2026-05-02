@@ -477,7 +477,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             clearTimeout(pollTimeout);
             avatarPollRef.current.hasStarted = false;
         };
-    }, [sessionId, generatedAvatar, isAvatarLoading]);
+    }, [sessionId, generatedAvatar, isAvatarLoading, avatarQueueStatus]);
 
     // --- Guest Protection Guard ---
     // Prevent direct access to full report by guests via URL
