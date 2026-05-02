@@ -923,17 +923,19 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
     }
 
     // 开始计时
+    const start = detectionStartTime || Date.now();
     if (!detectionStartTime) {
-      setDetectionStartTime(Date.now());
+      setDetectionStartTime(start);
     }
 
-    const timer = setInterval(() => {
-      if (detectionStartTime && Date.now() - detectionStartTime >= 5000) {
-        setShowManualButton(true);
-      }
-    }, 500);
+    const elapsed = Date.now() - start;
+    const remaining = Math.max(0, 5000 - elapsed);
 
-    return () => clearInterval(timer);
+    const timer = setTimeout(() => {
+      setShowManualButton(true);
+    }, remaining);
+
+    return () => clearTimeout(timer);
   }, [isAllCaptured, isLoading, error, isInCooldown, detectionStartTime]);
 
   /**

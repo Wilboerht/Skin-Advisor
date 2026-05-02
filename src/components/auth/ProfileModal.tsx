@@ -29,21 +29,24 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
 
     useEffect(() => {
         if (isOpen && user) {
+            const controller = new AbortController();
             const fetchHistory = async () => {
                 setLoadingHistory(true);
                 try {
-                    const res = await fetch("/api/advisor/history");
+                    const res = await fetch("/api/advisor/history", { signal: controller.signal });
                     if (res.ok) {
                         const data = await res.json();
                         setAuditHistory(data.history);
                     }
                 } catch (e) {
+                    if (e instanceof Error && e.name === 'AbortError') return;
                     console.error("History fetch error:", e);
                 } finally {
                     setLoadingHistory(false);
                 }
             };
             fetchHistory();
+            return () => controller.abort();
         }
     }, [isOpen, user]);
 

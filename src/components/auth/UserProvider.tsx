@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react';
 
 // --- Types ---
 
@@ -90,22 +90,17 @@ export function UserProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const [isInitialized, setIsInitialized] = useState(false);
+    const isMountedRef = useRef(true);
 
-    // Initial Load
     useEffect(() => {
-        const { user: cachedUser, needsRefresh } = getCachedUser();
-        if (cachedUser) {
-            setUser(cachedUser);
-            if (!needsRefresh) {
-                setLoading(false);
-            }
-        }
-        checkSession();
+        isMountedRef.current = true;
+        return () => { isMountedRef.current = false; };
     }, []);
 
     const checkSession = useCallback(async () => {
         try {
             const res = await fetch("/api/auth/me");
+            if (!isMountedRef.current) return;
             if (res.ok) {
                 const data = await res.json();
                 setUser(data.user);
@@ -117,10 +112,24 @@ export function UserProvider({ children }: { children: ReactNode }) {
         } catch (e) {
             console.error("Session check failed", e);
         } finally {
-            setLoading(false);
-            setIsInitialized(true);
+            if (isMountedRef.current) {
+                setLoading(false);
+                setIsInitialized(true);
+            }
         }
     }, []);
+
+    // Initial Load
+    useEffect(() => {
+        const { user: cachedUser, needsRefresh } = getCachedUser();
+        if (cachedUser) {
+            setUser(cachedUser);
+            if (!needsRefresh) {
+                setLoading(false);
+            }
+        }
+        checkSession();
+    }, [checkSession]);
 
     const login = useCallback(async (credentials: any) => {
         try {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getSession } from "@/lib/auth";
+import { getSession, isVipCheck } from "@/lib/auth";
 import {
     extractGuestIdentifiers,
     checkGuestLimit,
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
 
         if (session) {
             // 登录用户：VIP 100 次，普通用户 10 次
-            const isVip = session.role === 'vip' || session.role === 'admin' || session.role === 'super_admin';
+            const isVip = isVipCheck(session);
             const dailyLimit = isVip ? 100 : 10;
 
             // 统计今日测试次数
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
 
         if (session) {
             // 登录用户：VIP 100 次，普通用户 10 次
-            const isVip = session.role === 'vip' || session.role === 'admin' || session.role === 'super_admin';
+            const isVip = isVipCheck(session);
             const dailyLimit = isVip ? 100 : 10;
 
             // 检查是否已达到限制

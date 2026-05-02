@@ -3,18 +3,13 @@ import prisma from "@/lib/prisma";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
 function mirrorOfficialSessionCookie(officialResponse: Response, response: NextResponse) {
-    const setCookieHeader = officialResponse.headers.get("set-cookie");
+    const cookies = officialResponse.headers.getSetCookie();
     
-    if (!setCookieHeader) {
+    if (cookies.length === 0) {
         console.warn("⚠️  Official API did NOT return set-cookie header in register response");
         return;
     }
 
-    console.log(`📝 Official API returned cookie in register: ${setCookieHeader.substring(0, 50)}...`);
-
-    // Handle potentially multiple Set-Cookie headers (can be comma-separated or multiple)
-    const cookies = setCookieHeader.split(",").map(c => c.trim());
-    
     for (const cookieStr of cookies) {
         // Split by first '=' to get name and value+attributes
         const eqIdx = cookieStr.indexOf("=");

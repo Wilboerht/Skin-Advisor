@@ -10,7 +10,11 @@ export async function GET(request: NextRequest) {
     const echostr = searchParams.get("echostr");
 
     // 这个 TOKEN 必须和微信公众平台后台配置的一致
-    const token = process.env.WECHAT_TOKEN || "skinadvisor2026";
+    const token = process.env.WECHAT_TOKEN;
+    if (!token) {
+        console.error("WECHAT_TOKEN is not configured");
+        return new NextResponse("Server Configuration Error", { status: 500 });
+    }
 
     // 参数校验
     if (!signature || !timestamp || !nonce) {

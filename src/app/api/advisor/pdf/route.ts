@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import path from "path";
 import fs from "fs";
+import { getSession } from "@/lib/auth";
 
 // 缓存资源
 let cachedFontBase64: string | null = null;
@@ -56,6 +57,11 @@ import { resolveIPLocation } from "@/lib/geoip";
 
 export async function POST(request: NextRequest) {
     try {
+        const session = await getSession();
+        if (!session) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
         const body = await request.json();
         let { skinProfile, analysis, faceAnalysis, userImage, location, bioFactors } = body;
 

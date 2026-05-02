@@ -28,6 +28,18 @@ const ToastContext = React.createContext<ToastContextType | undefined>(undefined
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
     const [toasts, setToasts] = React.useState<Toast[]>([]);
+    const timeoutRefs = React.useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+
+    React.useEffect(() => {
+        return () => {
+            timeoutRefs.current.forEach(clearTimeout);
+            timeoutRefs.current.clear();
+        };
+    }, []);
+
+    const removeToast = React.useCallback((id: string) => {
+        setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, []);
 
     const addToast = React.useCallback(
         (message: string, type: ToastType, duration = 3000) => {
@@ -35,17 +47,15 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             setToasts((prev) => [...prev, { id, message, type, duration }]);
 
             if (duration > 0) {
-                setTimeout(() => {
+                const timer = setTimeout(() => {
+                    timeoutRefs.current.delete(timer);
                     removeToast(id);
                 }, duration);
+                timeoutRefs.current.add(timer);
             }
         },
-        []
+        [removeToast]
     );
-
-    const removeToast = React.useCallback((id: string) => {
-        setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, []);
 
     const toast = React.useMemo(
         () => ({

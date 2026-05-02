@@ -130,6 +130,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const [showContactAdvisor, setShowContactAdvisor] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
     const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
+    const [dismissValidationWarning, setDismissValidationWarning] = useState(false);
     const posterRef = useRef<HTMLDivElement>(null);
 
 
@@ -947,8 +948,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     </div>
 
                     {/* Validation Warning Banner */}
-                    {faceAnalysis?.validation && !faceAnalysis.validation.isValid && (
-                        <div className="w-full bg-red-50 border-b border-red-100 relative group z-[90]">
+                    {faceAnalysis?.validation && !faceAnalysis.validation.isValid && !dismissValidationWarning && (
+                        <div className="w-full bg-red-50 border-b border-red-100 relative z-[90]">
                             <div className="max-w-[1440px] mx-auto px-4 py-3 pr-10 flex items-start gap-3">
                                 <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
                                 <div className="flex-1">
@@ -958,11 +959,9 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     </p>
                                 </div>
                                 <button
-                                    onClick={(e) => {
-                                        const el = (e.target as HTMLElement).closest('.group') as HTMLElement;
-                                        if (el) el.style.display = 'none';
-                                    }}
+                                    onClick={() => setDismissValidationWarning(true)}
                                     className="absolute right-4 top-3 p-1 rounded-full hover:bg-red-100 text-red-500 transition-colors"
+                                    aria-label="关闭提示"
                                 >
                                     <X className="w-4 h-4" />
                                 </button>

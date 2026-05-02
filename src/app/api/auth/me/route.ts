@@ -37,21 +37,16 @@ function cleanupExpiredCache() {
 }
 
 function mirrorOfficialSessionCookie(officialResponse: Response, response: NextResponse) {
-    const setCookieHeader = officialResponse.headers.get("set-cookie");
+    const cookies = officialResponse.headers.getSetCookie();
     
-    if (!setCookieHeader) {
+    if (cookies.length === 0) {
         console.warn("⚠️  Official API (me) did NOT return set-cookie header - session cookie may need renewal");
         // 即使官方 API 没有返回 cookie，也不中断流程
         // 客户端应该保留现有的 token cookie
         return;
     }
 
-    console.log(`📝 Official API (me) returned cookie: ${setCookieHeader.substring(0, 50)}...`);
-
-    // Handle potentially multiple Set-Cookie headers (可能是用逗号或其他方式分隔)
-    const cookieLines = setCookieHeader.split(/,(?=\s*\w+\s*=)/);
-    
-    for (const cookieStr of cookieLines) {
+    for (const cookieStr of cookies) {
         const trimmed = cookieStr.trim();
         const eqIdx = trimmed.indexOf("=");
         if (eqIdx === -1) continue;
