@@ -1400,6 +1400,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                             skinAge={result?.skinProfile?.skinAge || 25}
                                             percentile={rankPercentile}
                                             avatar={generatedAvatar}
+                                            posterTemplate="/images/poster-template.svg"
                                         />
                                     </div>
                                 </div>

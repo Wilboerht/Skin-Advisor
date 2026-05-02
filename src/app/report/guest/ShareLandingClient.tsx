@@ -624,6 +624,7 @@ export default function ShareLandingClient({ analysisResult, sessionId }: ShareL
                   skinAge={analysisResult.skinProfile?.skinAge || analysisResult.skinAnalysis?.skinAge || 25}
                   percentile={rankPercentile}
                   avatar={generatedAvatar}
+                  posterTemplate="/images/poster-template.svg"
                 />
               </div>
             </div>

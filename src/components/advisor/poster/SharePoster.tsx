@@ -23,7 +23,6 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
     { nickname, score, skinAge, percentile, avatar, posterTemplate },
     ref
   ) {
-    const logoUrl = getAbsoluteUrl("/images/NIHPLOD-logo.svg");
     const templateUrl = posterTemplate ? getAbsoluteUrl(posterTemplate) : null;
 
     return (
@@ -54,19 +53,6 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
 
         {/* 内容层 */}
         <div className="relative z-10 flex flex-col h-full p-6">
-          {/* Logo */}
-          <div className="flex justify-center mb-4">
-            <img
-              src={logoUrl}
-              alt="NIHPLOD"
-              className="h-7 w-auto object-contain opacity-90"
-              crossOrigin="anonymous"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = "none";
-              }}
-            />
-          </div>
-
           {/* 头像 */}
           {avatar && (
             <div className="flex justify-center mb-4">
