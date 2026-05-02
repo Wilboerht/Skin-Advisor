@@ -60,17 +60,102 @@ export default function ShareLandingClient({ analysisResult, sessionId }: ShareL
   const toast = useToast();
   const [showShareModal, setShowShareModal] = useState(false);
   const [showAuthChoice, setShowAuthChoice] = useState(false);
-  const generatedAvatar = analysisResult.generatedAvatar || null;
-  const [isAvatarLoading, setIsAvatarLoading] = useState(!generatedAvatar);
+  const initialAvatar = analysisResult.generatedAvatar || null;
+  const [generatedAvatar, setGeneratedAvatar] = useState<string | null>(initialAvatar);
+  const [isAvatarLoading, setIsAvatarLoading] = useState(!initialAvatar);
+  const [avatarQueueStatus, setAvatarQueueStatus] = useState<{
+    position?: number;
+    estimatedWaitTime?: number;
+    message?: string;
+  } | null>(null);
   const posterRef = useRef<HTMLDivElement>(null);
+  const avatarPollRef = useRef({ failureCount: 0, hasStarted: false });
 
-  // 访客页无轮询机制，若头像未生成则短暂显示 loading 后自动关闭，避免无限等待
+  // --- Avatar Polling (对齐 /result 页逻辑) ---
   useEffect(() => {
-    if (!generatedAvatar && isAvatarLoading) {
-      const timer = setTimeout(() => setIsAvatarLoading(false), 5000);
-      return () => clearTimeout(timer);
+    if (!sessionId || generatedAvatar || !isAvatarLoading) {
+      avatarPollRef.current.hasStarted = false;
+      return;
     }
-  }, [generatedAvatar, isAvatarLoading]);
+
+    // Prevent multiple simultaneous polls
+    if (avatarPollRef.current.hasStarted) {
+      return;
+    }
+
+    avatarPollRef.current.hasStarted = true;
+    avatarPollRef.current.failureCount = 0;
+
+    const pollAvatar = async () => {
+      // 页面在后台标签页时不发起网络请求，节省电池和流量
+      if (typeof document !== 'undefined' && document.hidden) return;
+
+      try {
+        const response = await fetch(`/api/advisor/avatar/status?sessionId=${sessionId}&t=${Date.now()}`);
+
+        if (response.ok) {
+          const data = await response.json();
+
+          // 更新队列状态
+          if (data.queueStatus && data.queueStatus !== 'completed') {
+            setAvatarQueueStatus({
+              position: data.queuePosition,
+              estimatedWaitTime: data.estimatedWaitTime,
+              message: data.message,
+            });
+          }
+
+          // Validate avatar URL format
+          if (data.generatedAvatar && typeof data.generatedAvatar === 'string') {
+            if (data.generatedAvatar.startsWith('http') || data.generatedAvatar.startsWith('data:')) {
+              setGeneratedAvatar(data.generatedAvatar);
+              setIsAvatarLoading(false);
+              setAvatarQueueStatus(null);
+              return;
+            }
+          }
+
+          // Reset error count on successful connection
+          avatarPollRef.current.failureCount = 0;
+        } else if (response.status === 404) {
+          // SessionID not found
+          avatarPollRef.current.failureCount = 999; // Force timeout
+        } else if (response.status >= 500) {
+          // Server error, increment failure counter
+          avatarPollRef.current.failureCount++;
+        } else {
+          // Other HTTP errors
+          avatarPollRef.current.failureCount++;
+        }
+      } catch (err) {
+        avatarPollRef.current.failureCount++;
+      }
+
+      // Stop after 5 consecutive failures
+      if (avatarPollRef.current.failureCount >= 5) {
+        setIsAvatarLoading(false);
+      }
+    };
+
+    // 动态轮询间隔：队列中时 3s，已处理时 2.5s
+    const pollInterval = setInterval(pollAvatar, avatarQueueStatus ? 3000 : 2500);
+    const pollTimeout = setTimeout(() => {
+      clearInterval(pollInterval);
+      if (isAvatarLoading) {
+        setIsAvatarLoading(false);
+        setAvatarQueueStatus(null);
+      }
+    }, 120000); // 120 秒超时
+
+    // Immediate first poll
+    pollAvatar();
+
+    return () => {
+      clearInterval(pollInterval);
+      clearTimeout(pollTimeout);
+      avatarPollRef.current.hasStarted = false;
+    };
+  }, [sessionId, generatedAvatar, isAvatarLoading, avatarQueueStatus]);
   const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
   const [showContactAdvisor, setShowContactAdvisor] = useState(false);
 
