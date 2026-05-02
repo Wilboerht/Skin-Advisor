@@ -1,9 +1,8 @@
 "use client";
 
 import { motion as m, AnimatePresence } from "framer-motion";
-import Image from "next/image";
 import { useEffect, useState, useMemo } from "react";
-import { Sparkles, X, LogOut } from "lucide-react";
+import { Sparkles, LogOut } from "lucide-react";
 
 // --- Custom SVG Icons (Placeholders for your SVGs) ---
 // Each component accepts `className` to handle sizing and color changes
@@ -299,15 +298,15 @@ const IconTexture = ({ className }: { className?: string }) => (
 
 interface AnalyzingOverlayProps {
     progress: number;
-    userImage?: string;
     onCancel?: () => void;
     waitingForAvatar?: boolean;
 }
 
-export function AnalyzingOverlay({ progress, userImage, onCancel, waitingForAvatar }: AnalyzingOverlayProps) {
+export function AnalyzingOverlay({ progress, onCancel, waitingForAvatar }: AnalyzingOverlayProps) {
     const [activeIconIndex, setActiveIconIndex] = useState(0);
     const [showCancel, setShowCancel] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
+    const [isExiting, setIsExiting] = useState(false);
 
     // Memoize particles to prevent jumping on re-renders (triggered by progress updates)
     // Use deterministic pseudo-random based on index to avoid SSR/CSR hydration mismatch
@@ -330,7 +329,7 @@ export function AnalyzingOverlay({ progress, userImage, onCancel, waitingForAvat
 
         const timeoutId = setTimeout(() => {
             setShowCancel(true);
-        }, 5000); // Reduced to 5s for better UX as requested
+        }, 5000);
 
         return () => {
             clearInterval(interval);
@@ -357,7 +356,7 @@ export function AnalyzingOverlay({ progress, userImage, onCancel, waitingForAvat
             exit={{ opacity: 0, transition: { duration: 0.8 } }}
             className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-[#FDFBF7] overflow-hidden"
         >
-            {/* Elegant Cancel Button (appears after 15 seconds) */}
+            {/* Elegant Cancel Button (appears after 5 seconds) */}
             <AnimatePresence>
                 {showCancel && onCancel && (
                     <m.button
@@ -365,12 +364,17 @@ export function AnalyzingOverlay({ progress, userImage, onCancel, waitingForAvat
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 1, ease: "easeInOut" }}
-                        onClick={onCancel}
-                        className="absolute top-8 right-8 z-50 flex items-center gap-2 transition-all group text-[#5A5A5A]/60 hover:text-[#1A1A1A]"
+                        onClick={() => {
+                            if (isExiting) return;
+                            setIsExiting(true);
+                            onCancel();
+                        }}
+                        disabled={isExiting}
+                        className="absolute top-8 right-8 z-50 flex items-center gap-2 transition-all group text-[#5A5A5A]/60 hover:text-[#1A1A1A] disabled:opacity-30 disabled:cursor-not-allowed"
                         aria-label="Exit analysis"
                     >
                         <span className="text-[12px] font-medium tracking-[0.2em] transition-colors">
-                            退出测试
+                            {isExiting ? "退出中..." : "退出测试"}
                         </span>
                         <LogOut className="w-4 h-4 opacity-40 group-hover:opacity-100 transition-opacity" strokeWidth={1.5} />
                     </m.button>

@@ -862,7 +862,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     <AnalyzingOverlay
                         key="analyzing-overlay"
                         progress={isWaitingForAvatar ? 99 : analysisState.progress}
-                        userImage={userImage}
                         onCancel={() => router.push('/questions')}
                         waitingForAvatar={isWaitingForAvatar}
                     />
