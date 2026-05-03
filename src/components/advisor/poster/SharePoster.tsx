@@ -88,8 +88,7 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
               <div className="text-5xl font-bold text-[#E53935]" style={{ transform: 'translateY(-123px) rotate(5deg)' }}>{score}</div>
             </div>
 
-            <div className="text-center">
-              <div className="text-xs text-[#8c7a6b] mb-1">肌肤年龄</div>
+            <div className="text-center" style={{ transform: 'translateX(-10px)' }}>
               <div className="text-3xl font-medium text-[#5c4937]">
                 {skinAge} <span className="text-base">岁</span>
               </div>
@@ -97,19 +96,12 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
 
             <div className="text-center px-6">
               <p className="text-sm text-[#5c4937] leading-relaxed">
-                您的肌肤状态超越了全国
-                <span className="font-bold mx-1">{percentile}%</span>
-                的用户
+                <span className="font-bold text-4xl mx-1" style={{ transform: 'translate(-95px, -50px)', display: 'inline-block' }}>{percentile}%</span>
               </p>
             </div>
           </div>
 
-          {/* 底部 */}
-          <div className="mt-auto pt-4 border-t border-[#5c4937]/10 text-center">
-            <p className="text-[10px] text-[#a89582] tracking-wider">
-              扫码体验 AI 肌肤分析
-            </p>
-          </div>
+
         </div>
       </div>
     );
