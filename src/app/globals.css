@@ -4,6 +4,15 @@
    MyskinToday Brand Design System
    ======================================== */
 
+@keyframes orbit-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @theme {
   /* 禁用 oklch，使用 srgb 兼容 html2canvas 1.4.1 */
   --default-color-space: srgb;
