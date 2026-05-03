@@ -88,9 +88,15 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
               <div className="text-5xl font-bold text-[#E53935]" style={{ transform: 'translateY(-140px) rotate(5deg)' }}>{score}<span className="text-sm font-bold">分</span></div>
             </div>
 
-            <div className="text-center" style={{ transform: 'translate(-90px, 120px)' }}>
-              <div className="text-3xl font-medium text-[#5c4937]">
-                {skinAge} <span className="text-base">岁</span>
+            <div className="text-center" style={{ transform: 'translate(-70px, 120px)' }}>
+              <div className="flex items-center gap-1.5">
+                <div className="w-16 h-1.5 rounded-full bg-[#e6d0a8]/30 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-[#5c4937]"
+                    style={{ width: `${Math.min((skinAge / 60) * 100, 100)}%` }}
+                  />
+                </div>
+                <span className="text-sm font-medium text-[#5c4937]">{skinAge} 岁</span>
               </div>
             </div>
 
