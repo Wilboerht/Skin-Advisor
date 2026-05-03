@@ -1,6 +1,7 @@
 "use client";
 
-import { forwardRef } from "react";
+import { forwardRef, useState, useEffect } from "react";
+import QRCode from "qrcode";
 
 interface SharePosterProps {
   nickname: string;
@@ -24,6 +25,13 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
     ref
   ) {
     const templateUrl = posterTemplate ? getAbsoluteUrl(posterTemplate) : null;
+    const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+
+    useEffect(() => {
+      QRCode.toDataURL('https://advisor.nihplod.cn', { width: 80, margin: 1 })
+        .then(url => setQrDataUrl(url))
+        .catch(() => setQrDataUrl(null));
+    }, []);
 
     return (
       <div
@@ -107,7 +115,12 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
             </div>
           </div>
 
-
+          {/* 二维码 */}
+          {qrDataUrl && (
+            <div className="mt-auto flex justify-center pb-2" style={{ transform: 'translate(20px, -20px)' }}>
+              <img src={qrDataUrl} alt="二维码" className="w-16 h-16 rounded-lg" />
+            </div>
+          )}
         </div>
       </div>
     );
