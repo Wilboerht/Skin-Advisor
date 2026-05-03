@@ -51,28 +51,30 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
           </div>
         )}
 
+        {/* 头像 — 绝对定位到模板圆圈位置 */}
+        {avatar && (
+          <div
+            className="absolute z-20 rounded-full overflow-hidden"
+            style={{
+              top: 38,
+              right: 58,
+              width: 78,
+              height: 78,
+              border: '3px solid rgba(255,255,255,0.9)',
+              boxShadow: '0 4px 10px rgba(0,0,0,0.15)',
+            }}
+          >
+            <img
+              src={avatar}
+              alt={nickname}
+              className="w-full h-full object-cover object-top"
+              crossOrigin="anonymous"
+            />
+          </div>
+        )}
+
         {/* 内容层 */}
         <div className="relative z-10 flex flex-col h-full p-6">
-          {/* 头像 */}
-          {avatar && (
-            <div className="flex justify-center mb-4">
-              <div
-                className="relative w-20 h-20 rounded-full overflow-hidden"
-                style={{
-                  border: '3px solid rgba(255,255,255,0.8)',
-                  boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)',
-                }}
-              >
-                <img
-                  src={avatar}
-                  alt={nickname}
-                  className="w-full h-full object-cover object-top"
-                  crossOrigin="anonymous"
-                />
-              </div>
-            </div>
-          )}
-
           {/* 昵称 */}
           <div className="text-center mb-4">
             <p className="text-lg font-medium text-[#2d2a26]">

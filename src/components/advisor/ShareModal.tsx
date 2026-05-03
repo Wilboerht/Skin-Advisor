@@ -7,7 +7,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { m, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { X, Download } from "lucide-react";
 
 interface ShareModalProps {
@@ -42,7 +42,7 @@ export function ShareModal({
             {isOpen && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 text-brand-charcoal">
                     {/* 背景遮罩 */}
-                    <m.div
+                    <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
@@ -51,7 +51,7 @@ export function ShareModal({
                     />
 
                     {/* 弹窗内容 */}
-                    <m.div
+                    <motion.div
                         initial={{ opacity: 0, scale: 0.95, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -65,32 +65,22 @@ export function ShareModal({
                             <X className="h-5 w-5 opacity-60" />
                         </button>
 
-                        {/* 顶部 Logo */}
-                        <div className="relative z-10 flex flex-col items-center pt-8 pb-4 px-8">
-                            <img
-                                src="/images/NIHPLOD-logo.svg"
-                                alt="Logo"
-                                className="h-7 w-auto object-contain brightness-95 opacity-80 mb-4"
-                            />
-                            <div className="w-full h-px bg-gradient-to-r from-transparent via-[#d4b483]/40 to-transparent" />
-                        </div>
-
                         {/* 内容区 */}
-                        <div className="relative z-10 flex flex-col md:flex-row items-center md:items-stretch gap-8 md:gap-10 px-8 pb-8 lg:px-10 lg:pb-10">
+                        <div className="relative z-10 flex flex-col md:flex-row items-center md:items-center gap-8 md:gap-12 p-8 pt-10 lg:p-10 lg:pt-12">
                             {/* 左侧：文字和操作 */}
-                            <div className="flex flex-col items-center md:items-start text-center md:text-left flex-1 min-w-0 justify-center order-2 md:order-1">
-                                <h3 className="text-lg font-bold text-[#2d2a26] mb-1 tracking-tight">
+                            <div className="flex flex-col items-center md:items-start text-center md:text-left flex-1 min-w-0 order-2 md:order-1">
+                                <h3 className="text-xl font-bold text-[#2d2a26] mb-2 tracking-tight">
                                     分享你的素颜证书
                                 </h3>
-                                <p className="text-xs text-[#8c7a6b] mb-6 leading-relaxed">
+                                <p className="text-sm text-[#8c7a6b] mb-8 leading-relaxed">
                                     保存海报，分享到你的社交平台
                                 </p>
 
-                                <div className="w-full space-y-3">
+                                <div className="w-full space-y-4">
                                     <button
                                         onClick={onSavePoster}
                                         disabled={isGeneratingPoster}
-                                        className="relative w-full py-3.5 px-6 rounded-full shadow-[0_4px_12px_-2px_rgba(150,110,60,0.2)] border border-[#e6d0a8]/50 group transition-all disabled:opacity-60"
+                                        className="relative w-full py-4 px-6 rounded-full shadow-[0_4px_12px_-2px_rgba(150,110,60,0.2)] border border-[#e6d0a8]/50 group transition-all disabled:opacity-60"
                                         style={{
                                             background: "linear-gradient(135deg, #fdf6e9 0%, #f5dfb8 50%, #e6d0a8 100%)",
                                         }}
@@ -113,7 +103,7 @@ export function ShareModal({
 
                                     <button
                                         onClick={onClose}
-                                        className="w-full py-2 text-sm font-medium text-[#c4b5a2] hover:text-[#8c7a6b] transition-colors"
+                                        className="w-full py-2.5 text-sm font-medium text-[#c4b5a2] hover:text-[#8c7a6b] transition-colors"
                                     >
                                         再等一下
                                     </button>
@@ -125,7 +115,7 @@ export function ShareModal({
                                 {preview}
                             </div>
                         </div>
-                    </m.div>
+                    </motion.div>
                 </div>
             )}
         </AnimatePresence>,

@@ -113,7 +113,7 @@ export function FloatingToolbar({
                                 }}
                                 whileHover={{ scale: 1.03 }}
                                 whileTap={{ scale: 0.97 }}
-                                onClick={() => action.onClick?.()}
+                                onPointerDown={() => action.onClick?.()}
                                 className={`
                                     group flex items-center gap-3 pl-4 pr-3 py-2.5 rounded-full
                                     backdrop-blur-xl border shadow-lg

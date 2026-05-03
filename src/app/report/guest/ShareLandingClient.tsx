@@ -12,7 +12,7 @@ import { useToast } from '@/components/ui/Toast';
 import { SharePoster } from '@/components/advisor/poster/SharePoster';
 import { ShareModal } from '@/components/advisor/ShareModal';
 import { AnalyzingOverlay } from '@/components/advisor/AnalyzingOverlay';
-import html2canvas from 'html2canvas';
+import { toPng } from 'html-to-image';
 
 interface Dimension {
   score?: number;
@@ -214,18 +214,29 @@ export default function ShareLandingClient({ analysisResult, sessionId }: ShareL
         )
       );
 
-      const canvas = await html2canvas(posterRef.current, {
-        useCORS: true,
-        scale: 2,
-        backgroundColor: null,
-        logging: false,
+      const dataUrl = await toPng(posterRef.current, {
+        pixelRatio: 2,
+        cacheBust: true,
       });
 
-      const dataUrl = canvas.toDataURL('image/png');
+      // data URL → Blob URL（绕过 CSP 限制，不用 fetch）
+      const arr = dataUrl.split(',');
+      const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/png';
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      const blob = new Blob([u8arr], { type: mime });
+      const blobUrl = URL.createObjectURL(blob);
+
       const link = document.createElement('a');
       link.download = `NIHPLOD-肌肤报告-${analysisResult.nickname || '用户'}-${Date.now()}.png`;
-      link.href = dataUrl;
+      link.href = blobUrl;
       link.click();
+
+      URL.revokeObjectURL(blobUrl);
 
       toast.success('海报已保存到相册');
     } catch (error) {
