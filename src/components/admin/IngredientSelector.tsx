@@ -87,6 +87,7 @@ export function IngredientSelector({ selectedIds, onChange, error }: IngredientS
                             <button
                                 onClick={() => handleRemove(ing.id)}
                                 className="p-0.5 rounded-full hover:bg-black/10 transition-colors"
+                                aria-label={`移除 ${ing.name}`}
                             >
                                 <X className="w-3 h-3" />
                             </button>
@@ -102,6 +103,7 @@ export function IngredientSelector({ selectedIds, onChange, error }: IngredientS
                             setIsOpen(!isOpen);
                             setTimeout(() => inputRef.current?.focus(), 100);
                         }}
+                        aria-expanded={isOpen}
                         className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium border border-dashed border-slate-300 text-slate-500 hover:border-slate-400 hover:text-slate-700 transition-colors"
                     >
                         <Plus className="w-3.5 h-3.5" />

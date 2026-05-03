@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { verifyAdminSession } from "@/lib/admin-auth";
+import { Prisma } from "@prisma/client";
 
 export async function GET(request: NextRequest) {
     try {
@@ -11,8 +12,8 @@ export async function GET(request: NextRequest) {
         }
 
         const { searchParams } = new URL(request.url);
-        const page = parseInt(searchParams.get("page") || "1");
-        const limit = Math.min(parseInt(searchParams.get("limit") || "50"), 200); // Cap at 200
+        const page = Math.max(1, parseInt(searchParams.get("page") || "1") || 1);
+        const limit = Math.min(200, Math.max(1, parseInt(searchParams.get("limit") || "50") || 50));
         const action = searchParams.get("action");
         const resource = searchParams.get("resource");
         const adminId = searchParams.get("adminId");
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest) {
         const endDate = searchParams.get("endDate");
         const skip = (page - 1) * limit;
 
-        const whereCondition: any = {};
+        const whereCondition: Prisma.AdminAuditLogWhereInput = {};
 
         // Action filter
         if (action && action !== "all") {
@@ -41,13 +42,20 @@ export async function GET(request: NextRequest) {
         if (startDate || endDate) {
             whereCondition.createdAt = {};
             if (startDate) {
-                whereCondition.createdAt.gte = new Date(startDate);
+                const d = new Date(startDate);
+                if (isNaN(d.getTime())) {
+                    return NextResponse.json({ error: "Invalid startDate" }, { status: 400 });
+                }
+                whereCondition.createdAt.gte = d;
             }
             if (endDate) {
+                const d = new Date(endDate);
+                if (isNaN(d.getTime())) {
+                    return NextResponse.json({ error: "Invalid endDate" }, { status: 400 });
+                }
                 // Include the entire end date (add 1 day)
-                const end = new Date(endDate);
-                end.setDate(end.getDate() + 1);
-                whereCondition.createdAt.lte = end;
+                d.setDate(d.getDate() + 1);
+                whereCondition.createdAt.lte = d;
             }
         }
 
@@ -73,6 +81,7 @@ export async function GET(request: NextRequest) {
         ]);
 
         // Get unique actions and resources for filter dropdowns
+        // NOTE: distinct queries can be slow on large tables; consider caching these values
         const [actionsResult, resourcesResult] = await Promise.all([
             prisma.adminAuditLog.findMany({
                 distinct: ['action'],

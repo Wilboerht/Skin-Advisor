@@ -1,6 +1,7 @@
+"use client";
 
 import { X, Clock, ShoppingBag, Calendar, Smartphone, MapPin, Settings, Save } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 
@@ -32,6 +33,13 @@ export function UserDetailModal({ isOpen, onClose, userId, onUpdate }: UserDetai
     const [newLimit, setNewLimit] = useState(1);
     const [saving, setSaving] = useState(false);
     const toast = useToast();
+    const modalRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (isOpen && modalRef.current) {
+            modalRef.current.focus();
+        }
+    }, [isOpen]);
 
     useEffect(() => {
         if (isOpen && userId) {
@@ -42,7 +50,11 @@ export function UserDetailModal({ isOpen, onClose, userId, onUpdate }: UserDetai
                     setUser(data);
                     setNewLimit(data.dailyTestLimit || 1);
                 })
-                .catch(console.error)
+                .catch((err) => {
+                    console.error(err);
+                    setUser(null);
+                    toast.error("加载用户详情失败");
+                })
                 .finally(() => setLoading(false));
         } else {
             setUser(null);
@@ -86,7 +98,18 @@ export function UserDetailModal({ isOpen, onClose, userId, onUpdate }: UserDetai
             />
 
             {/* Modal Content */}
-            <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-xl flex flex-col animate-in fade-in zoom-in-95 duration-200">
+            <div
+                ref={modalRef}
+                className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-xl flex flex-col animate-in fade-in zoom-in-95 duration-200"
+                role="dialog"
+                aria-modal="true"
+                tabIndex={-1}
+                onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                        onClose();
+                    }
+                }}
+            >
                 <button
                     onClick={onClose}
                     className="absolute right-4 top-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors z-10"

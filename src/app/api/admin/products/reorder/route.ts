@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Size limit to prevent excessive transaction load
-        const MAX_REORDER_SIZE = 500;
+        const MAX_REORDER_SIZE = 100;
         if (orderedIds.length > MAX_REORDER_SIZE) {
             return NextResponse.json(
                 { success: false, error: `Reorder list exceeds limit of ${MAX_REORDER_SIZE}` },
@@ -31,9 +31,20 @@ export async function POST(request: NextRequest) {
         }
 
         // Validate all IDs are strings
-        if (!orderedIds.every((id: any) => typeof id === 'string' && id.length > 0)) {
+        if (!orderedIds.every((id: unknown) => typeof id === 'string' && id.length > 0)) {
             return NextResponse.json(
                 { success: false, error: "Invalid ID format in orderedIds" },
+                { status: 400 }
+            );
+        }
+
+        // Verify all IDs exist before updating
+        const existingCount = await prisma.product.count({
+            where: { id: { in: orderedIds } }
+        });
+        if (existingCount !== orderedIds.length) {
+            return NextResponse.json(
+                { success: false, error: "Some product IDs do not exist" },
                 { status: 400 }
             );
         }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { deleteOSSFiles } from "@/lib/ali-oss";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
 /**
  * POST /api/admin/cleanup-guests
@@ -8,6 +9,16 @@ import { deleteOSSFiles } from "@/lib/ali-oss";
  * 必须携带 Authorization: Bearer <ADMIN_SECRET>
  */
 export async function POST(req: NextRequest) {
+    // Rate limit: max 10 requests per minute per IP
+    const ip = getClientIP(req);
+    const rateLimitResult = await rateLimit(`cleanup-guests-${ip}`, "default", {
+        maxRequests: 10,
+        windowMs: 60 * 1000,
+    });
+    if (!rateLimitResult.success) {
+        return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     // 1. 安全校验 (由环境变量控制密钥，防止外部恶意扫描触发)
     const authHeader = req.headers.get("authorization");
     const secret = process.env.ADMIN_SECRET;

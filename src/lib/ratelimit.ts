@@ -106,6 +106,7 @@ export async function rateLimit(
 
     // 获取或创建请求记录
     let record = rateLimitCache.get(cacheKey);
+    const isNewRecord = !record;
 
     if (!record) {
         record = {
@@ -118,7 +119,11 @@ export async function rateLimit(
     // 清理过期的请求记录
     const windowStart = now - opts.windowMs;
     record.timestamps = record.timestamps.filter((t: number) => t > windowStart);
-    record.windowStart = now;
+    // Only update windowStart on first creation, not on every request.
+    // This ensures cleanup can eventually remove stale records.
+    if (isNewRecord) {
+        record.windowStart = now;
+    }
 
     // 检查是否超过限制
     const currentCount = record.timestamps.length;
@@ -146,19 +151,32 @@ export async function rateLimit(
 }
 
 /**
+ * Reset rate limit for a given identifier
+ */
+export function resetRateLimit(
+    identifier: string,
+    type: keyof typeof RATE_LIMIT_PRESETS = "default"
+): void {
+    const cacheKey = `${type}:${identifier}`;
+    rateLimitCache.delete(cacheKey);
+}
+
+/**
  * 获取客户端 IP 地址
  * 支持代理环境
  */
 export function getClientIP(request: Request): string {
-    // 尝试从各种头部获取真实 IP
-    const headers = request.headers;
-
-    const forwardedFor = headers.get("x-forwarded-for");
+    // Use the LAST value in X-Forwarded-For (closest to the server / most trusted)
+    // instead of the FIRST value which can be spoofed by the client.
+    const forwardedFor = request.headers.get("x-forwarded-for");
     if (forwardedFor) {
-        return forwardedFor.split(",")[0].trim();
+        const ips = forwardedFor.split(",").map(s => s.trim()).filter(Boolean);
+        if (ips.length > 0) {
+            return ips[ips.length - 1];
+        }
     }
 
-    const realIP = headers.get("x-real-ip");
+    const realIP = request.headers.get("x-real-ip");
     if (realIP) {
         return realIP;
     }

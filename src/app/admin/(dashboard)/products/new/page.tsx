@@ -1,9 +1,15 @@
 
 import ProductForm from "@/components/admin/ProductForm";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { verifyAdminSession } from "@/lib/admin-auth";
 import { ChevronRight, Package } from "lucide-react";
 
-export default function NewProductPage() {
+export default async function NewProductPage() {
+    const admin = await verifyAdminSession();
+    if (!admin) {
+        redirect("/admin/login");
+    }
     return (
         <div className="space-y-4">
             {/* 面包屑 */}

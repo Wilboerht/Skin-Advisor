@@ -92,6 +92,29 @@ const TIME_PRESETS = [
     { label: "自定义", value: "custom" },
 ];
 
+function getDateRangeFromPreset(preset: string) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const toLocalDate = (d: Date) => d.toLocaleDateString('en-CA');
+
+    switch (preset) {
+        case "today":
+            return { start: toLocalDate(today), end: toLocalDate(today) };
+        case "7days": {
+            const start = new Date(today);
+            start.setDate(start.getDate() - 6);
+            return { start: toLocalDate(start), end: toLocalDate(today) };
+        }
+        case "30days": {
+            const start = new Date(today);
+            start.setDate(start.getDate() - 29);
+            return { start: toLocalDate(start), end: toLocalDate(today) };
+        }
+        default:
+            return { start: "", end: "" };
+    }
+}
+
 export default function AuditLogsClient() {
     const [logs, setLogs] = useState<AuditLog[]>([]);
     const [loading, setLoading] = useState(true);
@@ -111,28 +134,6 @@ export default function AuditLogsClient() {
     const [timePreset, setTimePreset] = useState<string>("all");
     const [startDate, setStartDate] = useState<string>("");
     const [endDate, setEndDate] = useState<string>("");
-
-    const getDateRangeFromPreset = (preset: string) => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        switch (preset) {
-            case "today":
-                return { start: today.toISOString().split('T')[0], end: today.toISOString().split('T')[0] };
-            case "7days": {
-                const start = new Date(today);
-                start.setDate(start.getDate() - 6);
-                return { start: start.toISOString().split('T')[0], end: today.toISOString().split('T')[0] };
-            }
-            case "30days": {
-                const start = new Date(today);
-                start.setDate(start.getDate() - 29);
-                return { start: start.toISOString().split('T')[0], end: today.toISOString().split('T')[0] };
-            }
-            default:
-                return { start: "", end: "" };
-        }
-    };
 
     const fetchLogs = async () => {
         setLoading(true);
@@ -168,6 +169,7 @@ export default function AuditLogsClient() {
             }
         } catch (e) {
             console.error(e);
+            toast.error("加载日志失败");
         } finally {
             setLoading(false);
         }
@@ -221,12 +223,20 @@ export default function AuditLogsClient() {
     const handleExport = async () => {
         setExporting(true);
         try {
+            let exportStartDate = startDate;
+            let exportEndDate = endDate;
+            if (timePreset !== "custom" && timePreset !== "all") {
+                const range = getDateRangeFromPreset(timePreset);
+                exportStartDate = range.start;
+                exportEndDate = range.end;
+            }
+
             const params = new URLSearchParams({
                 adminId: selectedAdmin,
                 action: selectedAction,
                 resource: selectedResource,
-                startDate,
-                endDate,
+                startDate: exportStartDate,
+                endDate: exportEndDate,
                 limit: "1000", // Export up to 1000 logs
             });
 
@@ -258,6 +268,7 @@ export default function AuditLogsClient() {
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
+                URL.revokeObjectURL(url);
                 toast.success("报告已生成并开始下载");
             }
         } catch (error) {
@@ -442,6 +453,14 @@ export default function AuditLogsClient() {
                                 <div
                                     key={log.id}
                                     onClick={() => log.details && setSelectedLog(log)}
+                                    onKeyDown={(e) => {
+                                        if (log.details && (e.key === "Enter" || e.key === " ")) {
+                                            e.preventDefault();
+                                            setSelectedLog(log);
+                                        }
+                                    }}
+                                    role={log.details ? "button" : undefined}
+                                    tabIndex={log.details ? 0 : undefined}
                                     className={cn(
                                         "px-6 py-3 transition-colors group",
                                         log.details ? "cursor-pointer hover:bg-slate-50" : "cursor-default"

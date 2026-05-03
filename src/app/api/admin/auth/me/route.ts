@@ -1,6 +1,7 @@
 
 import { NextResponse } from "next/server";
 import { verifyAdminSession } from "@/lib/admin-auth";
+import prisma from "@/lib/prisma";
 
 export async function GET() {
     try {
@@ -10,11 +11,16 @@ export async function GET() {
             return NextResponse.json({ authenticated: false }, { status: 401 });
         }
 
+        const adminFromDb = await prisma.adminUser.findUnique({
+            where: { id: admin.adminId },
+            select: { name: true }
+        });
+
         return NextResponse.json({
             authenticated: true,
             user: {
                 id: admin.adminId,
-                name: admin.username,
+                name: adminFromDb?.name || admin.username,
                 username: admin.username,
                 role: admin.role
             }

@@ -2,10 +2,16 @@
 import prisma from "@/lib/prisma";
 import ProductForm from "@/components/admin/ProductForm";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { verifyAdminSession } from "@/lib/admin-auth";
 import { ChevronRight, Package } from "lucide-react";
 
 export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
+    const admin = await verifyAdminSession();
+    if (!admin) {
+        redirect("/admin/login");
+    }
+
     const { id } = await params;
     const product = await prisma.product.findUnique({
         where: { id }

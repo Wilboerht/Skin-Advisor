@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Search, MoreHorizontal, User as UserIcon, Shield, ShieldOff, Trash2, Eye, Loader2, ChevronLeft, ChevronRight, Download, ChevronDown } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
@@ -39,6 +39,28 @@ export function UsersClient() {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [actionLoading, setActionLoading] = useState(false);
     const [showDropdown, setShowDropdown] = useState<string | null>(null);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setShowDropdown(null);
+            }
+        }
+        function handleKeyDown(event: KeyboardEvent) {
+            if (event.key === "Escape") {
+                setShowDropdown(null);
+            }
+        }
+        if (showDropdown) {
+            document.addEventListener("mousedown", handleClickOutside);
+            document.addEventListener("keydown", handleKeyDown);
+        }
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+            document.removeEventListener("keydown", handleKeyDown);
+        };
+    }, [showDropdown]);
 
     // Add state for detail modal
     const [detailUser, setDetailUser] = useState<string | null>(null);
@@ -59,6 +81,8 @@ export function UsersClient() {
                 const data = await res.json();
                 setUsers(data.users);
                 setPagination(data.pagination);
+            } else {
+                toast.error("加载用户失败");
             }
         } catch (error) {
             toast.error("加载用户失败");
@@ -67,15 +91,23 @@ export function UsersClient() {
         }
     }, [page, search, status, toast]);
 
+    const fetchUsersRef = useRef(fetchUsers);
+    const pageRef = useRef(page);
+    useEffect(() => { fetchUsersRef.current = fetchUsers; }, [fetchUsers]);
+    useEffect(() => { pageRef.current = page; }, [page]);
+
     useEffect(() => {
-        fetchUsers();
-    }, [fetchUsers]);
+        fetchUsersRef.current();
+    }, [page, status]);
 
     // Debounced search
     useEffect(() => {
         const timer = setTimeout(() => {
-            setPage(1);
-            fetchUsers();
+            if (pageRef.current !== 1) {
+                setPage(1);
+            } else {
+                fetchUsersRef.current();
+            }
         }, 300);
         return () => clearTimeout(timer);
     }, [search]);
@@ -251,7 +283,7 @@ export function UsersClient() {
 
                                             {/* Dropdown Menu */}
                                             {showDropdown === user.id && (
-                                                <div className="absolute right-6 top-full mt-1 z-10 bg-white border border-[#1A1A1A]/10 rounded-lg shadow-lg py-1 w-40">
+                                                <div ref={dropdownRef} className="absolute right-6 top-full mt-1 z-10 bg-white border border-[#1A1A1A]/10 rounded-lg shadow-lg py-1 w-40">
                                                     <button
                                                         onClick={() => {
                                                             setDetailUser(user.id);

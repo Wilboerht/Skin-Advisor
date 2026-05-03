@@ -14,16 +14,17 @@ import { cn } from "@/lib/utils";
 import { OrbitalIcons } from "@/components/ui/OrbitalIcons";
 
 interface FormErrors {
-  email?: string;
+  username?: string;
   password?: string;
 }
 
 export default function AdminLoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirect") || "/admin/products";
+  const rawRedirect = searchParams.get("redirect") || "/admin/products";
+  const redirectTo = /^\/admin\//.test(rawRedirect) ? rawRedirect : "/admin/products";
 
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
   const [error, setError] = useState("");
@@ -39,8 +40,8 @@ export default function AdminLoginPage() {
   const validateForm = useCallback((): boolean => {
     const errors: FormErrors = {};
 
-    if (!email.trim()) {
-      errors.email = "请输入账号";
+    if (!username.trim()) {
+      errors.username = "请输入账号";
     }
 
     if (!password) {
@@ -51,7 +52,7 @@ export default function AdminLoginPage() {
 
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
-  }, [email, password]);
+  }, [username, password]);
 
   const handleSubmit = useCallback(
     async (e: FormEvent) => {
@@ -71,7 +72,7 @@ export default function AdminLoginPage() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ username: email, password }),
+          body: JSON.stringify({ username, password }),
         });
 
         const data = await response.json();
@@ -89,17 +90,17 @@ export default function AdminLoginPage() {
         setIsLoading(false);
       }
     },
-    [email, password, redirectTo, router, validateForm]
+    [username, password, redirectTo, router, validateForm]
   );
 
-  const handleEmailChange = useCallback(
+  const handleUsernameChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      setEmail(e.target.value);
-      if (fieldErrors.email) {
-        setFieldErrors((prev) => ({ ...prev, email: undefined }));
+      setUsername(e.target.value);
+      if (fieldErrors.username) {
+        setFieldErrors((prev) => ({ ...prev, username: undefined }));
       }
     },
-    [fieldErrors.email]
+    [fieldErrors.username]
   );
 
   const handlePasswordChange = useCallback(
@@ -161,32 +162,32 @@ export default function AdminLoginPage() {
                   {/* 账号 */}
                   <div>
                     <input
-                      id="email"
+                      id="username"
                       type="text"
-                      value={email}
-                      onChange={handleEmailChange}
+                      value={username}
+                      onChange={handleUsernameChange}
                       required
                       autoComplete="username"
                       disabled={isLoading}
-                      placeholder="邮箱地址"
-                      aria-invalid={!!fieldErrors.email}
-                      aria-describedby={fieldErrors.email ? "email-error" : undefined}
+                      placeholder="用户名"
+                      aria-invalid={!!fieldErrors.username}
+                      aria-describedby={fieldErrors.username ? "username-error" : undefined}
                       className={cn(
                         "block w-full rounded-xl border bg-slate-50 py-3.5 px-5 text-[13px] text-slate-900 outline-none transition-all duration-300 placeholder:text-slate-300 disabled:opacity-50",
-                        fieldErrors.email
+                        fieldErrors.username
                           ? "border-red-300 focus:border-red-400 focus:bg-white focus:ring-4 focus:ring-red-100"
                           : "border-slate-100 focus:border-[#C6A87C]/40 focus:bg-white focus:ring-4 focus:ring-[#C6A87C]/15"
                       )}
                     />
                     <p
-                      id="email-error"
+                      id="username-error"
                       className={cn(
                         "mt-1.5 flex items-center gap-1 text-xs text-red-500 transition-all duration-200",
-                        fieldErrors.email ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-1 pointer-events-none h-0 mt-0"
+                        fieldErrors.username ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-1 pointer-events-none h-0 mt-0"
                       )}
                     >
                       <AlertCircle className="h-3 w-3 flex-shrink-0" />
-                      <span>{fieldErrors.email || ""}</span>
+                      <span>{fieldErrors.username || ""}</span>
                     </p>
                   </div>
 
@@ -215,7 +216,6 @@ export default function AdminLoginPage() {
                       type="button"
                       onClick={() => setShowPassword((prev) => !prev)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-slate-400 transition-colors hover:text-slate-600 focus:outline-none"
-                      tabIndex={-1}
                       aria-label={showPassword ? "隐藏密码" : "显示密码"}
                     >
                       {showPassword ? (

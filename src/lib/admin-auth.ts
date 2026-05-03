@@ -10,6 +10,8 @@ interface AdminSession {
     role: string;
 }
 
+const SESSION_MAX_AGE_MS = 8 * 60 * 60 * 1000; // 8 hours
+
 /**
  * Get the HMAC secret for signing session cookies.
  * Falls back to a development-only default if not configured.
@@ -48,11 +50,7 @@ export function verifySessionSignature(signedValue: string): Record<string, any>
     try {
         const separatorIndex = signedValue.lastIndexOf(".");
         if (separatorIndex === -1) {
-            // Legacy unsigned cookie — attempt to parse as plain JSON for backward compatibility
-            const parsed = JSON.parse(signedValue);
-            if (parsed?.adminId) {
-                return parsed;
-            }
+            // No signature present — reject legacy unsigned cookies
             return null;
         }
 
@@ -73,7 +71,15 @@ export function verifySessionSignature(signedValue: string): Record<string, any>
             return null;
         }
 
-        return JSON.parse(data);
+        const parsed = JSON.parse(data);
+
+        // Verify expiration time
+        if (typeof parsed.exp === "number" && Date.now() > parsed.exp) {
+            console.warn("[Security] Session cookie expired");
+            return null;
+        }
+
+        return parsed;
     } catch {
         return null;
     }
@@ -82,8 +88,14 @@ export function verifySessionSignature(signedValue: string): Record<string, any>
 /**
  * Create a signed session cookie value
  */
-export function createSignedSession(sessionData: AdminSession): string {
-    const data = JSON.stringify(sessionData);
+export function createSignedSession(sessionData: Omit<AdminSession, "iat" | "exp">): string {
+    const now = Date.now();
+    const payload = {
+        ...sessionData,
+        iat: now,
+        exp: now + SESSION_MAX_AGE_MS
+    };
+    const data = JSON.stringify(payload);
     const signature = signSessionData(data);
     return `${data}.${signature}`;
 }
@@ -109,6 +121,8 @@ export async function verifyAdminSession(): Promise<AdminSession | null> {
         }
 
         // Verify admin exists in database
+        // NOTE: If AdminUser schema gains an `active` field in the future,
+        // add `active: true` check here to reject disabled accounts immediately.
         const admin = await prisma.adminUser.findUnique({
             where: { id: sessionData.adminId },
             select: { id: true, username: true, role: true }
@@ -130,15 +144,45 @@ export async function verifyAdminSession(): Promise<AdminSession | null> {
 }
 
 /**
+ * Extract the last non-empty IP from X-Forwarded-For, falling back to X-Real-IP.
+ * We use the LAST value because the FIRST value can be spoofed by the client.
+ */
+function extractTrustedIp(forwardedFor: string | null, realIp: string | null): string {
+    if (forwardedFor) {
+        const ips = forwardedFor.split(",").map(s => s.trim()).filter(Boolean);
+        if (ips.length > 0) {
+            // Return the last IP in the chain (closest to the server / most trusted proxy)
+            return ips[ips.length - 1];
+        }
+    }
+    if (realIp) {
+        return realIp;
+    }
+    return "unknown";
+}
+
+/**
  * Extract client info from request
  */
 export function getClientInfo(request: NextRequest) {
     return {
-        ip: request.headers.get("x-forwarded-for")?.split(",")[0] ||
-            request.headers.get("x-real-ip") ||
-            "unknown",
+        ip: extractTrustedIp(
+            request.headers.get("x-forwarded-for"),
+            request.headers.get("x-real-ip")
+        ),
         userAgent: request.headers.get("user-agent") || "unknown"
     };
+}
+
+/**
+ * Get client IP from request (standalone utility for non-NextRequest usage)
+ * Extracts the last non-empty value from X-Forwarded-For instead of the first.
+ */
+export function getClientIP(request: Request): string {
+    return extractTrustedIp(
+        request.headers.get("x-forwarded-for"),
+        request.headers.get("x-real-ip")
+    );
 }
 
 /**
@@ -191,6 +235,37 @@ export function withAdminAuth(
         }
 
         return handler(request, { admin, params: context?.params });
+    };
+}
+
+/**
+ * Require specific role(s) for API route handlers.
+ * Returns a wrapper that checks admin authentication AND role membership.
+ */
+export function requireRole(...allowedRoles: string[]) {
+    return function <T extends (req: NextRequest, ctx: { admin: AdminSession; params?: any }) => Promise<NextResponse>>(
+        handler: T
+    ) {
+        return async (request: NextRequest, context?: { params?: any }) => {
+            const admin = await verifyAdminSession();
+
+            if (!admin) {
+                return NextResponse.json(
+                    { success: false, error: "Unauthorized" },
+                    { status: 401 }
+                );
+            }
+
+            if (!allowedRoles.includes(admin.role)) {
+                console.warn(`[Security] Role forbidden: ${admin.role} not in [${allowedRoles.join(", ")}]`);
+                return NextResponse.json(
+                    { success: false, error: "Forbidden" },
+                    { status: 403 }
+                );
+            }
+
+            return handler(request, { admin, params: context?.params });
+        };
     };
 }
 

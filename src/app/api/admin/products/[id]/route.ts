@@ -38,14 +38,7 @@ export async function PUT(
         const body = await request.json();
         const clientInfo = getClientInfo(request);
 
-        // Get old product for audit log and existence check
-        const oldProduct = await prisma.product.findUnique({ where: { id } });
-        if (!oldProduct) {
-            return NextResponse.json({ error: "Product not found" }, { status: 404 });
-        }
-
         // Build update data — only include fields that are explicitly provided
-        // This prevents accidentally nullifying fields when doing partial updates
         const allowedFields = [
             'name', 'category', 'image', 'images', 'price', 'description',
             'keyIngredients', 'suitableSkinTypes', 'benefits', 'negativeFor', 'sortOrder',
@@ -53,7 +46,7 @@ export async function PUT(
             'affiliateLinks'
         ];
 
-        const updateData: Record<string, any> = {};
+        const updateData: Record<string, unknown> = {};
         for (const field of allowedFields) {
             if (body[field] !== undefined) {
                 updateData[field] = body[field];
@@ -67,26 +60,41 @@ export async function PUT(
             );
         }
 
-        const product = await prisma.product.update({
-            where: { id },
-            data: updateData
+        const txResult = await prisma.$transaction(async (tx) => {
+            const oldProduct = await tx.product.findUnique({ where: { id } });
+            if (!oldProduct) {
+                return { type: "not_found" as const };
+            }
+
+            const product = await tx.product.update({
+                where: { id },
+                data: updateData
+            });
+
+            await tx.adminAuditLog.create({
+                data: {
+                    adminId: admin.adminId,
+                    action: "update",
+                    resource: "Product",
+                    resourceId: id,
+                    details: {
+                        oldName: oldProduct.name,
+                        newName: updateData.name || oldProduct.name,
+                        changes: Object.keys(updateData)
+                    },
+                    ip: clientInfo.ip,
+                    userAgent: clientInfo.userAgent,
+                }
+            });
+
+            return { type: "success" as const, product };
         });
 
-        // Log audit
-        await logAdminAction({
-            adminId: admin.adminId,
-            action: "update",
-            resource: "Product",
-            resourceId: id,
-            details: {
-                oldName: oldProduct.name,
-                newName: updateData.name || oldProduct.name,
-                changes: Object.keys(updateData)
-            },
-            ...clientInfo
-        });
+        if (txResult.type === "not_found") {
+            return NextResponse.json({ error: "Product not found" }, { status: 404 });
+        }
 
-        return NextResponse.json(product);
+        return NextResponse.json(txResult.product);
     } catch (error) {
         console.error(error);
         return NextResponse.json({ error: "Failed to update" }, { status: 500 });
@@ -106,40 +114,47 @@ export async function DELETE(
         const { id } = await params;
         const clientInfo = getClientInfo(request);
 
-        // Get product name for audit log
-        const product = await prisma.product.findUnique({ where: { id } });
-
-        await prisma.product.delete({
-            where: { id }
-        });
-
-        // 清理 RecommendationRule 中引用的已删除产品 ID
-        const rules = await prisma.recommendationRule.findMany();
-        for (const rule of rules) {
-            const ruleProductIds = Array.isArray(rule.productIds)
-                ? rule.productIds as string[]
-                : [];
-            const cleanedIds = ruleProductIds.filter(pid => pid !== id);
-            if (cleanedIds.length !== ruleProductIds.length) {
-                await prisma.recommendationRule.update({
-                    where: { id: rule.id },
-                    data: { productIds: cleanedIds }
-                });
+        await prisma.$transaction(async (tx) => {
+            const product = await tx.product.findUnique({ where: { id } });
+            if (!product) {
+                throw new Error("NOT_FOUND");
             }
-        }
 
-        // Log audit
-        await logAdminAction({
-            adminId: admin.adminId,
-            action: "delete",
-            resource: "Product",
-            resourceId: id,
-            details: { name: product?.name },
-            ...clientInfo
+            await tx.product.delete({ where: { id } });
+
+            // Clean up RecommendationRule references
+            const rules = await tx.recommendationRule.findMany();
+            for (const rule of rules) {
+                const ruleProductIds = Array.isArray(rule.productIds)
+                    ? rule.productIds as string[]
+                    : [];
+                const cleanedIds = ruleProductIds.filter(pid => pid !== id);
+                if (cleanedIds.length !== ruleProductIds.length) {
+                    await tx.recommendationRule.update({
+                        where: { id: rule.id },
+                        data: { productIds: cleanedIds }
+                    });
+                }
+            }
+
+            await tx.adminAuditLog.create({
+                data: {
+                    adminId: admin.adminId,
+                    action: "delete",
+                    resource: "Product",
+                    resourceId: id,
+                    details: { name: product.name },
+                    ip: clientInfo.ip,
+                    userAgent: clientInfo.userAgent,
+                }
+            });
         });
 
         return NextResponse.json({ success: true });
-    } catch (error) {
+    } catch (error: unknown) {
+        if (error instanceof Error && error.message === "NOT_FOUND") {
+            return NextResponse.json({ error: "Product not found" }, { status: 404 });
+        }
         return NextResponse.json({ error: "Failed to delete" }, { status: 500 });
     }
 }

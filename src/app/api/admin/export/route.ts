@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
 
         const type = request.nextUrl.searchParams.get("type") || "products";
 
-        let data: any[] = [];
+        let data: unknown[][] = [];
         let filename = "";
         let headers: string[] = [];
 
@@ -82,8 +82,12 @@ export async function GET(request: NextRequest) {
         }
 
         // Convert to CSV
-        const escapeCSV = (val: any) => {
-            const str = String(val ?? "");
+        const escapeCSV = (val: unknown) => {
+            let str = String(val ?? "");
+            const DANGEROUS_PREFIXES = /^[=+\-\@\t\r]/;
+            if (DANGEROUS_PREFIXES.test(str)) {
+                str = "'" + str;
+            }
             if (str.includes(",") || str.includes('"') || str.includes("\n")) {
                 return `"${str.replace(/"/g, '""')}"`;
             }
@@ -109,7 +113,7 @@ export async function GET(request: NextRequest) {
         return new NextResponse(csvContent, {
             headers: {
                 "Content-Type": "text/csv; charset=utf-8",
-                "Content-Disposition": `attachment; filename="${filename}"`,
+                "Content-Disposition": `attachment; filename="${filename}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
             },
         });
     } catch (error) {

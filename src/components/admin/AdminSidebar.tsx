@@ -53,8 +53,15 @@ export default function AdminSidebar() {
     };
 
     const handleLogout = async () => {
-        await fetch("/api/admin/auth/logout", { method: "POST" });
-        router.push("/admin/login");
+        try {
+            const res = await fetch("/api/admin/auth/logout", { method: "POST" });
+            if (!res.ok) {
+                throw new Error("Logout failed");
+            }
+            router.push("/admin/login");
+        } catch {
+            alert("退出登录失败，请重试");
+        }
     };
 
     return (
@@ -66,14 +73,17 @@ export default function AdminSidebar() {
         >
             <div className={cn("flex h-20 items-center justify-center border-b border-[#1A1A1A]/5 px-2")}>
                 <div className="flex items-center gap-2.5 overflow-hidden">
-                    <div className="flex items-center justify-center shrink-0">
-                        <img
+                    <div className="flex items-center justify-center shrink-0 relative">
+                        <Image
                             src="/NIHPLOD-logo.svg"
                             alt="NIHPLOD"
+                            width={collapsed ? 64 : 84}
+                            height={collapsed ? 16 : 21}
                             className={cn(
                                 "w-auto transition-all duration-300",
                                 collapsed ? "h-4" : "h-[21px]"
                             )}
+                            priority
                         />
                     </div>
                     {!collapsed && (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useToast } from "@/components/ui/Toast";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
 import { m } from "framer-motion";
 import { Loader2 } from "lucide-react";
@@ -23,18 +24,32 @@ interface StatsData {
 export function useDashboardStats() {
     const [stats, setStats] = useState<StatsData | null>(null);
     const [loading, setLoading] = useState(true);
+    const toast = useToast();
 
     useEffect(() => {
-        fetch('/api/admin/stats')
-            .then(res => res.json())
+        const controller = new AbortController();
+        fetch('/api/admin/stats', { signal: controller.signal })
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error(`HTTP ${res.status}`);
+                }
+                return res.json();
+            })
             .then(data => {
                 if (data.success) {
                     setStats(data.data);
+                } else {
+                    toast.error(data.error || "Failed to load dashboard stats");
                 }
             })
-            .catch(console.error)
+            .catch(err => {
+                if (err.name === 'AbortError') return;
+                console.error(err);
+                toast.error(err instanceof Error ? err.message : "Network error loading stats");
+            })
             .finally(() => setLoading(false));
-    }, []);
+        return () => controller.abort();
+    }, [toast]);
 
     return { stats, loading };
 }

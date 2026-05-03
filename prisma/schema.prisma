@@ -65,6 +65,7 @@ model AdvisorSession {
 
   // ===== 性能索引 =====
   @@index([userId])              // JOIN User 加速
+  @@index([createdAt])           // 时间范围查询加速
 }
 
 
@@ -95,9 +96,12 @@ model RecommendationRule {
 model AdminUser {
   id        String   @id @default(cuid())
   username  String   @unique
+  email     String?  @unique
   password  String   // 加密后的密码
   name      String?
-  role      String   @default("admin") // super_admin, editor
+  // NOTE: role should ideally be an enum (super_admin, editor, admin).
+  // Kept as String for broader database compatibility.
+  role      String   @default("admin")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
@@ -128,7 +132,7 @@ model User {
   id              String           @id @default(cuid())
   email           String?          @unique
   phoneNumber     String?          @unique
-  password        String
+  password        String?
   name            String?
   
   // 微信授权相关字段
@@ -136,7 +140,9 @@ model User {
   wechatUnionId   String?          @unique
   avatarUrl       String?
 
-  role            String           @default("user") // user, vip, disabled
+  // NOTE: role should ideally be an enum (user, vip, disabled).
+  // Kept as String for broader database compatibility.
+  role            String           @default("user")
   vipExpiresAt    DateTime?        // VIP 会员过期时间
   dailyTestLimit  Int              @default(1) // 每日测试次数限制，管理员可调整
   createdAt       DateTime         @default(now())
@@ -197,6 +203,7 @@ model GuestUsage {
   @@index([cookieId])
   @@index([fingerprint])
   @@index([lastTestAt])
+  @@index([ipAddress, lastTestAt])
 }
 
 // 产品库
@@ -218,6 +225,7 @@ model Product {
   sortOrder         Int      @default(0)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+  deletedAt         DateTime? // 软删除时间戳
 
   // ===== 新增字段 =====
   howToUse          String?  // 使用方法说明
@@ -225,6 +233,12 @@ model Product {
   negativeFor       Json     // string[] 不适合人群/负面标签，如 ["敏感肌", "痘痘肌", "孕妇"]
 
   // Relations
+
+  // ===== 常用查询索引 =====
+  @@index([category])
+  @@index([active, featured])
+  @@index([sortOrder])
+  @@index([deletedAt])
 }
 
 

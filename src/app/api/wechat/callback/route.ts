@@ -61,10 +61,8 @@ export async function GET(request: NextRequest) {
                 data: {
                     wechatOpenId: openid,
                     ...(unionid && { wechatUnionId: unionid }),
-                    // 因为静默注册没有名字、没有手机、没有密码，我们给一点占位符
+                    // 静默注册：微信用户无需密码
                     name: "微信用户_" + Math.random().toString(36).substring(7),
-                    // 为了过 Prisma 必填校验，设置一个复杂的随机废密码
-                    password: Math.random().toString(36).substring(2),
                     role: "user",
                 },
             });

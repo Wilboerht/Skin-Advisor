@@ -1,7 +1,7 @@
 "use client";
 
 import { X, Copy, Check, Terminal, History, ArrowRight, ShieldCheck } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useToast } from "@/components/ui/Toast";
 
 interface LogDetailModalProps {
@@ -13,13 +13,39 @@ interface LogDetailModalProps {
 export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
     const [copied, setCopied] = useState(false);
     const toast = useToast();
+    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // Clear timeout on unmount or when modal closes
+    useEffect(() => {
+        if (!isOpen && timerRef.current) {
+            clearTimeout(timerRef.current);
+            timerRef.current = null;
+        }
+        return () => {
+            if (timerRef.current) {
+                clearTimeout(timerRef.current);
+                timerRef.current = null;
+            }
+        };
+    }, [isOpen]);
+
+    // Escape key to close
+    useEffect(() => {
+        if (!isOpen) return;
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") onClose();
+        };
+        document.addEventListener("keydown", handleKeyDown);
+        return () => document.removeEventListener("keydown", handleKeyDown);
+    }, [isOpen, onClose]);
 
     if (!isOpen || !log) return null;
 
     const handleCopy = () => {
         navigator.clipboard.writeText(JSON.stringify(log.details, null, 2));
         setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        if (timerRef.current) clearTimeout(timerRef.current);
+        timerRef.current = setTimeout(() => setCopied(false), 2000);
         toast.success("内容已复制到剪贴板");
     };
 
@@ -97,7 +123,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
             <div
                 className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
                 onClick={onClose}

@@ -4,7 +4,7 @@ import prisma from "@/lib/prisma";
 import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import { logAdminAction, getClientInfo } from "@/lib/admin-auth";
-import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { rateLimit, getClientIP, resetRateLimit } from "@/lib/ratelimit";
 
 export async function POST(request: NextRequest) {
     const clientInfo = getClientInfo(request);
@@ -57,8 +57,13 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // SECURITY: Reject plaintext passwords entirely. All admin passwords MUST be bcrypt hashed.
-        if (!admin.password.startsWith("$2a$") && !admin.password.startsWith("$2b$")) {
+        // SECURITY: Reject non-bcrypt passwords entirely. All admin passwords MUST be bcrypt hashed.
+        if (
+            !admin.password.startsWith("$2a$") &&
+            !admin.password.startsWith("$2b$") &&
+            !admin.password.startsWith("$2y$") &&
+            !admin.password.startsWith("$2x$")
+        ) {
             console.error(`[Security] Admin ${admin.username} has a non-bcrypt password. Login rejected.`);
             await logAdminAction({
                 action: "login_failed",
@@ -100,10 +105,13 @@ export async function POST(request: NextRequest) {
         cookieStore.set("admin_session", signedSession, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
+            sameSite: "strict",
             path: "/",
-            maxAge: 60 * 60 * 24 // 1 day
+            maxAge: 60 * 60 * 8 // 8 hours
         });
+
+        // Reset account-level rate limit on successful login
+        resetRateLimit(`admin-login-account-${admin.id}`, "login");
 
         // Log successful login
         await logAdminAction({
@@ -115,10 +123,19 @@ export async function POST(request: NextRequest) {
             ...clientInfo
         });
 
-        return NextResponse.json({
+        const response = NextResponse.json({
             success: true,
             user: { name: admin.name, role: admin.role }
         });
+
+        if (process.env.NODE_ENV === "production") {
+            response.headers.set(
+                "Strict-Transport-Security",
+                "max-age=63072000; includeSubDomains; preload"
+            );
+        }
+
+        return response;
 
     } catch (error) {
         console.error("Login error:", error);

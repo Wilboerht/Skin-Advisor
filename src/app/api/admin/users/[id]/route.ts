@@ -17,7 +17,16 @@ export async function GET(
 
         const user = await prisma.user.findUnique({
             where: { id },
-            include: {
+            select: {
+                id: true,
+                email: true,
+                name: true,
+                role: true,
+                avatarUrl: true,
+                vipExpiresAt: true,
+                dailyTestLimit: true,
+                createdAt: true,
+                updatedAt: true,
                 advisorSessions: {
                     orderBy: { createdAt: "desc" },
                     take: 10,
@@ -69,9 +78,36 @@ export async function PATCH(
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
-        const VALID_ROLES = ["user", "vip", "disabled", "admin", "super_admin"];
-        if (role !== undefined && !VALID_ROLES.includes(role)) {
-            return NextResponse.json({ error: "Invalid role" }, { status: 400 });
+        const VALID_ROLES = ["user", "vip", "disabled"];
+        if (role !== undefined) {
+            if (!VALID_ROLES.includes(role)) {
+                return NextResponse.json({ error: "Invalid role" }, { status: 400 });
+            }
+        }
+
+        if (dailyTestLimit !== undefined) {
+            const limitNum = Number(dailyTestLimit);
+            if (
+                !Number.isFinite(limitNum) ||
+                !Number.isInteger(limitNum) ||
+                limitNum < 0 ||
+                limitNum > 9999
+            ) {
+                return NextResponse.json(
+                    { error: "Invalid dailyTestLimit (must be an integer 0-9999)" },
+                    { status: 400 }
+                );
+            }
+        }
+
+        if (vipExpiresAt !== undefined && vipExpiresAt !== null) {
+            const d = new Date(vipExpiresAt);
+            if (isNaN(d.getTime())) {
+                return NextResponse.json(
+                    { error: "Invalid vipExpiresAt" },
+                    { status: 400 }
+                );
+            }
         }
 
         const updatedUser = await prisma.user.update({

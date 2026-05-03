@@ -16,7 +16,11 @@ export function SetupButton() {
 
         setLoading(true);
         try {
-            const res = await fetch("/api/admin/setup");
+            const res = await fetch("/api/admin/setup", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({})
+            });
             const data = await res.json();
 
             if (data.success) {

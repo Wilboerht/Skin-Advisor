@@ -99,10 +99,8 @@ async function main() {
                     visionProvider: "openai",
                     model: "gpt-4o",
                     visionModel: "gpt-4o",
-                    apiKeys: {
-                        openai: process.env.OPENAI_API_KEY || "",
-                        anthropic: process.env.ANTHROPIC_API_KEY || "",
-                    },
+                    // SECURITY: API keys are NEVER stored in the database.
+                    // They are always read from environment variables at runtime.
                     maxTokens: 2000,
                     temperature: 0.3
                 }

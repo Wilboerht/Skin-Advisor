@@ -1,47 +1,6 @@
 
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-
-export function proxy(request: NextRequest) {
-    const { pathname } = request.nextUrl;
-
-    // Define protected paths
-    const isAdminPath = pathname.startsWith('/admin');
-    const isAdminApi = pathname.startsWith('/api/admin');
-
-    // Define public paths within admin
-    // Define public paths within admin
-    const isLoginPage = pathname === '/admin/login';
-    const isSetupApi = pathname === '/api/admin/setup';
-    const isLoginApi = pathname === '/api/admin/auth/login';
-
-    // If it's the login page, login API, or setup API, allow access
-    if (isLoginPage || isLoginApi || isSetupApi) {
-        return NextResponse.next();
-    }
-
-    // Check for admin session cookie
-    const adminSession = request.cookies.get('admin_session');
-
-    if (isAdminPath || isAdminApi) {
-        if (!adminSession) {
-            if (isAdminApi) {
-                return NextResponse.json(
-                    { success: false, error: 'Unauthorized' },
-                    { status: 401 }
-                );
-            } else {
-                return NextResponse.redirect(new URL('/admin/login', request.url));
-            }
-        }
-    }
-
-    return NextResponse.next();
-}
-
-export const config = {
-    matcher: [
-        '/admin/:path*',
-        '/api/admin/:path*',
-    ],
-};
+/**
+ * @deprecated This file is no longer used.
+ * Admin route protection has been moved to src/middleware.ts (Next.js Middleware).
+ * Keeping the file to avoid import errors from any stale references.
+ */

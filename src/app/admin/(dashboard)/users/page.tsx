@@ -1,7 +1,13 @@
 import { UsersClient } from "@/components/admin/UsersClient";
+import { verifyAdminSession } from "@/lib/admin-auth";
+import { redirect } from "next/navigation";
 
 export const dynamic = 'force-dynamic';
 
-export default function UsersPage() {
+export default async function UsersPage() {
+    const admin = await verifyAdminSession();
+    if (!admin) {
+        redirect("/admin/login");
+    }
     return <UsersClient />;
 }

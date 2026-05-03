@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Validate all IDs are strings
-        if (!ids.every((id: any) => typeof id === 'string' && id.length > 0)) {
+        if (!ids.every((id: unknown) => typeof id === 'string' && id.length > 0)) {
             return NextResponse.json(
                 { success: false, error: "Invalid ID format" },
                 { status: 400 }
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        let result;
+        let result: { count: number } | undefined;
 
         switch (action) {
             case 'activate':
@@ -79,25 +79,33 @@ export async function POST(request: NextRequest) {
                 break;
 
             case 'delete':
-                result = await prisma.product.deleteMany({
-                    where: { id: { in: ids } }
-                });
-
-                // 清理 RecommendationRule 中引用的已删除产品 ID
-                const deletedIdSet = new Set<string>(ids);
-                const rules = await prisma.recommendationRule.findMany();
-                for (const rule of rules) {
-                    const ruleProductIds = Array.isArray(rule.productIds)
-                        ? rule.productIds as string[]
-                        : [];
-                    const cleanedIds = ruleProductIds.filter(id => !deletedIdSet.has(id));
-                    if (cleanedIds.length !== ruleProductIds.length) {
-                        await prisma.recommendationRule.update({
-                            where: { id: rule.id },
-                            data: { productIds: cleanedIds }
-                        });
-                    }
+                if (admin.role !== "super_admin") {
+                    return NextResponse.json(
+                        { success: false, error: "Forbidden: only super_admin can delete products" },
+                        { status: 403 }
+                    );
                 }
+                await prisma.$transaction(async (tx) => {
+                    result = await tx.product.deleteMany({
+                        where: { id: { in: ids } }
+                    });
+
+                    // Clean up RecommendationRule references
+                    const deletedIdSet = new Set<string>(ids);
+                    const rules = await tx.recommendationRule.findMany();
+                    for (const rule of rules) {
+                        const ruleProductIds = Array.isArray(rule.productIds)
+                            ? rule.productIds as string[]
+                            : [];
+                        const cleanedIds = ruleProductIds.filter(id => !deletedIdSet.has(id));
+                        if (cleanedIds.length !== ruleProductIds.length) {
+                            await tx.recommendationRule.update({
+                                where: { id: rule.id },
+                                data: { productIds: cleanedIds }
+                            });
+                        }
+                    }
+                });
                 break;
         }
 

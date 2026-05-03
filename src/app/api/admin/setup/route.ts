@@ -1,18 +1,51 @@
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { PRODUCTS_CATALOG } from "@/config/products";
 import { verifyAdminSession } from "@/lib/admin-auth";
 
-export async function GET() {
+export async function POST(request: NextRequest) {
     try {
-        // 1. Security: verify admin session first
-        const admin = await verifyAdminSession();
-        if (!admin) {
+        const setupSecret = process.env.SETUP_SECRET;
+        if (!setupSecret) {
             return NextResponse.json(
-                { success: false, error: "Unauthorized" },
-                { status: 401 }
+                { success: false, error: "SETUP_SECRET not configured" },
+                { status: 500 }
+            );
+        }
+
+        const adminCount = await prisma.adminUser.count();
+
+        if (adminCount > 0) {
+            // Existing admins: require authentication
+            const admin = await verifyAdminSession();
+            if (!admin) {
+                return NextResponse.json(
+                    { success: false, error: "Unauthorized" },
+                    { status: 401 }
+                );
+            }
+        }
+
+        // Validate setup secret from header or body
+        let providedSecret: string | null = null;
+        const authHeader = request.headers.get("x-setup-secret");
+        if (authHeader) {
+            providedSecret = authHeader;
+        } else {
+            try {
+                const body = await request.json();
+                providedSecret = body?.setupSecret || null;
+            } catch {
+                // ignore JSON parse errors
+            }
+        }
+
+        if (!providedSecret || providedSecret !== setupSecret) {
+            return NextResponse.json(
+                { success: false, error: "Invalid setup secret" },
+                { status: 403 }
             );
         }
 
@@ -78,6 +111,6 @@ export async function GET() {
 
     } catch (error) {
         console.error("Setup failed:", error);
-        return NextResponse.json({ error: String(error) }, { status: 500 });
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }

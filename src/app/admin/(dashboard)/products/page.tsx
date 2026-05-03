@@ -6,7 +6,8 @@ export const dynamic = "force-dynamic";
 
 export default async function ProductsPage() {
     const products = await prisma.product.findMany({
-        orderBy: { sortOrder: 'asc' }
+        orderBy: { sortOrder: 'asc' },
+        take: 1000
     });
 
     // Serialize for client component

@@ -91,7 +91,15 @@ function Toggle({ label, checked, onChange, tooltip }: { label: string; checked:
         <div className="flex items-center gap-3 group">
             <button
                 type="button"
+                role="switch"
+                aria-checked={checked}
                 onClick={() => onChange(!checked)}
+                onKeyDown={(e) => {
+                    if (e.key === " " || e.key === "Spacebar") {
+                        e.preventDefault();
+                        onChange(!checked);
+                    }
+                }}
                 className="flex items-center gap-3"
             >
                 <div className={cn(
@@ -271,12 +279,22 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
         const remaining = 5 - images.length;
         const toUpload = files.slice(0, remaining);
         toUpload.forEach((file) => handleImageUpload(file));
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
+    };
+
+    const ALLOWED_IMAGE_EXTS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
+    const isValidImageFile = (file: File) => {
+        if (file.type.startsWith("image/")) return true;
+        const ext = file.name.slice(file.name.lastIndexOf(".")).toLowerCase();
+        return ALLOWED_IMAGE_EXTS.includes(ext);
     };
 
     const onDrop = (e: React.DragEvent) => {
         e.preventDefault();
         setDragOver(false);
-        const files = Array.from(e.dataTransfer.files).filter((f) => f.type.startsWith("image/"));
+        const files = Array.from(e.dataTransfer.files).filter(isValidImageFile);
         const remaining = 5 - images.length;
         const toUpload = files.slice(0, remaining);
         toUpload.forEach((file) => handleImageUpload(file));
@@ -312,7 +330,12 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
             if (v.trim()) filteredLinks[k] = v.trim();
         });
         for (const [k, v] of Object.entries(filteredLinks)) {
-            if (!/^https?:\/\//.test(v)) {
+            try {
+                const url = new URL(v);
+                if (url.protocol !== "http:" && url.protocol !== "https:") {
+                    throw new Error("Invalid protocol");
+                }
+            } catch {
                 setErrors((errs) => ({ ...errs, [`affiliateLinks_${k}`]: "请输入有效链接" }));
                 toast.error("请填写有效的电商链接");
                 setSaving(false);

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, memo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import {
     DndContext,
     closestCenter,
@@ -52,7 +53,7 @@ interface ProductsClientProps {
     initialProducts: Product[];
 }
 
-function SortableProductRow({
+const SortableProductRow = memo(function SortableProductRow({
     product,
     isSelected,
     onSelect,
@@ -119,11 +120,20 @@ function SortableProductRow({
             </td>
             <td className="px-4 py-4 whitespace-nowrap align-middle">
                 <div className="relative h-12 w-12 overflow-hidden rounded-lg border border-slate-100 bg-slate-50 mx-auto sm:mx-0">
-                    <img
-                        src={product.image}
-                        alt={product.name}
-                        className="h-full w-full object-cover"
-                    />
+                    {product.image && /^https?:\/\//.test(product.image) ? (
+                        <Image
+                            src={product.image}
+                            alt={product.name}
+                            width={48}
+                            height={48}
+                            className="h-full w-full object-cover"
+                            onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                        />
+                    ) : (
+                        <div className="h-full w-full bg-slate-100 flex items-center justify-center text-slate-300 text-xs">无图</div>
+                    )}
                 </div>
             </td>
             <td className="px-4 py-4 align-middle">
@@ -173,7 +183,7 @@ function SortableProductRow({
             </td>
         </tr>
     );
-}
+});
 
 export default function ProductsClient({ initialProducts }: ProductsClientProps) {
     const router = useRouter();
@@ -191,6 +201,10 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
     // P7.10 Filters
     const [categoryFilter, setCategoryFilter] = useState<string>("all");
     const [statusFilter, setStatusFilter] = useState<string>("all");
+
+    useEffect(() => {
+        setSelectedIds([]);
+    }, [categoryFilter, statusFilter]);
 
     // Get unique categories
     const categories = [...new Set(initialProducts.map(p => p.category))];
