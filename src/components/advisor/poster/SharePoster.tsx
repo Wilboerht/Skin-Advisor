@@ -85,9 +85,8 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
 
           {/* 核心数据 */}
           <div className="flex-1 flex flex-col items-center justify-center gap-6">
-            <div className="text-center">
-              <div className="text-xs text-[#8c7a6b] mb-1">综合评分</div>
-              <div className="text-5xl font-light text-[#5c4937]">{score}</div>
+            <div className="text-center pl-6">
+              <div className="text-5xl font-light text-[#5c4937]" style={{ transform: 'translateY(-12px)' }}>{score}</div>
             </div>
 
             <div className="text-center">
