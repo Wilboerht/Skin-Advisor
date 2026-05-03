@@ -56,10 +56,10 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
           <div
             className="absolute z-20 rounded-full overflow-hidden"
             style={{
-              top: 38,
-              right: 58,
-              width: 78,
-              height: 78,
+              top: 252,
+              right: 277,
+              width: 36,
+              height: 36,
               border: '3px solid rgba(255,255,255,0.9)',
               boxShadow: '0 4px 10px rgba(0,0,0,0.15)',
             }}
