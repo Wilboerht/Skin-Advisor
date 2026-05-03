@@ -80,7 +80,6 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
             <p className="text-lg font-medium text-[#2d2a26]">
               亲爱的「{nickname}」
             </p>
-            <p className="text-xs text-[#8c7a6b] mt-1">AI 肌肤分析报告</p>
           </div>
 
           {/* 核心数据 */}
