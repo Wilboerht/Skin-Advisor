@@ -117,7 +117,7 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
 
           {/* 二维码 */}
           {qrDataUrl && (
-            <div className="mt-auto flex justify-center pb-2" style={{ transform: 'translate(20px, -20px)' }}>
+            <div className="mt-auto flex justify-center pb-2" style={{ transform: 'translate(100px, -78px)' }}>
               <img src={qrDataUrl} alt="二维码" className="w-16 h-16 rounded-lg" />
             </div>
           )}
