@@ -1,10 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
+
+const PHONE_REGEX = /^1[3-9]\d{9}$/;
+
 export async function POST(req: NextRequest) {
     try {
+        // 1. 速率限制
+        const ip = getClientIP(req);
+        const ipLimit = await rateLimit(`forgot-password-ip-${ip}`, "login", { maxRequests: 3, windowMs: 5 * 60 * 1000 });
+        if (!ipLimit.success) {
+            return NextResponse.json({ error: "请求过于频繁，请稍后再试" }, { status: 429 });
+        }
+
         const { phone } = await req.json();
 
-        if (!phone) {
-            return NextResponse.json({ error: "手机号不能为空" }, { status: 400 });
+        if (!phone || !PHONE_REGEX.test(phone)) {
+            return NextResponse.json({ error: "请输入有效的手机号" }, { status: 400 });
         }
 
         // 调用官网验证码发送接口（同注册/登录的验证码入口）

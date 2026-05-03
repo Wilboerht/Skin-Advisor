@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateText, isAIEnabled, fallbackAnalysis } from "@/lib/ai";
 import { extractJsonFromResponse } from "@/lib/advisor-utils";
 import { buildTextAnalysisPrompt, TEXT_ANALYSIS_SYSTEM_PROMPT } from "@/config/ai-prompts";
-import { rateLimit } from "@/lib/ratelimit";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import prisma from "@/lib/prisma";
 import { getSkinTypeLabel, getConcernLabel } from "@/lib/advisor-utils";
 // import { PRODUCTS_CATALOG } from "@/config/products"; // Deprecated, use DB or matchProducts
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
         const { answers, faceAnalysis, sessionId, nickname, freeRetry } = result.data;
 
         // 3. 速率限制 (基础防刷) — 即使免费重试也需要基础限流
-        const ip = request.headers.get("x-forwarded-for") || "127.0.0.1";
+        const ip = getClientIP(request);
         const limit = await rateLimit(`advisor-analyze-${ip}`, "comprehensive-analyze", { maxRequests: 20 });
 
         const geoLocation = resolveIPLocation(ip);
