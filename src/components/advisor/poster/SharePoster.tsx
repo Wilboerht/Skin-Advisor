@@ -102,7 +102,7 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
 
             <div className="text-center px-6">
               <p className="text-sm text-[#5c4937] leading-relaxed">
-                <span className="font-bold text-4xl mx-1" style={{ transform: 'translate(-95px, -50px)', display: 'inline-block' }}>{percentile}%</span>
+                <span className="font-bold text-4xl mx-1" style={{ transform: 'translate(-97px, -45px)', display: 'inline-block' }}>{percentile}%</span>
               </p>
             </div>
           </div>
