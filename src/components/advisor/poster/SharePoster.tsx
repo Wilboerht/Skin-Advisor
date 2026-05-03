@@ -76,9 +76,9 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
         {/* 内容层 */}
         <div className="relative z-10 flex flex-col h-full p-6">
           {/* 昵称 */}
-          <div className="text-center mb-4" style={{ transform: 'translateY(240px) translateX(-18px)' }}>
+          <div className="text-center mb-4" style={{ transform: 'translateY(240px) translateX(-70px)' }}>
             <p className="text-lg font-medium text-[#2d2a26]">
-              亲爱的「{nickname}」
+              {nickname}
             </p>
           </div>
 
