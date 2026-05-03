@@ -57,14 +57,6 @@ export function ShareModal({
                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
                         className="relative flex max-h-full w-full max-w-[640px] flex-col overflow-hidden rounded-[32px] bg-white/90 backdrop-blur-2xl shadow-2xl border border-white/60"
                     >
-                        {/* 关闭按钮 */}
-                        <button
-                            onClick={onClose}
-                            className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/5 transition-colors hover:bg-black/10"
-                        >
-                            <X className="h-5 w-5 opacity-60" />
-                        </button>
-
                         {/* 内容区 */}
                         <div className="relative z-10 flex flex-col md:flex-row items-center md:items-center gap-8 md:gap-12 p-8 pt-10 lg:p-10 lg:pt-12">
                             {/* 左侧：文字和操作 */}

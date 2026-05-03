@@ -1,7 +1,7 @@
 "use client";
 
 import { forwardRef, useState, useEffect } from "react";
-import QRCode from "qrcode";
+import { toDataURL } from "qrcode";
 
 interface SharePosterProps {
   nickname: string;
@@ -28,7 +28,7 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
     const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 
     useEffect(() => {
-      QRCode.toDataURL('https://advisor.nihplod.cn', { width: 80, margin: 1 })
+      toDataURL('https://advisor.nihplod.cn', { width: 80, margin: 1 })
         .then(url => setQrDataUrl(url))
         .catch(() => setQrDataUrl(null));
     }, []);
