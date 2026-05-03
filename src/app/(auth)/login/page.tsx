@@ -52,27 +52,31 @@ export default function LoginPage() {
 
                 <form onSubmit={handleSubmit} className="space-y-5">
                     <div>
-                        <label className="block text-sm font-medium text-[#4A4A4A] mb-1.5 ml-1">
+                        <label htmlFor="phone" className="block text-sm font-medium text-[#4A4A4A] mb-1.5 ml-1">
                             手机号
                         </label>
                         <input
+                            id="phone"
                             type="tel"
                             required
                             value={phone}
                             onChange={(e) => setPhone(e.target.value)}
+                            pattern="1[3-9]\d{9}"
                             className="w-full px-4 py-3 rounded-xl border border-[#E0E0E0] bg-[#FAFAFA] text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#C9A86C]/20 focus:border-[#C9A86C] transition-all"
                             placeholder="请输入手机号"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-[#4A4A4A] mb-1.5 ml-1">
+                        <label htmlFor="password" className="block text-sm font-medium text-[#4A4A4A] mb-1.5 ml-1">
                             密码
                         </label>
                         <div className="relative">
                             <input
+                                id="password"
                                 type={showPassword ? "text" : "password"}
                                 required
+                                minLength={6}
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 className="w-full px-4 py-3 rounded-xl border border-[#E0E0E0] bg-[#FAFAFA] text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#C9A86C]/20 focus:border-[#C9A86C] transition-all pr-12"

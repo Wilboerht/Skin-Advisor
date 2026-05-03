@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
             }).catch((err: unknown) => console.error("Session save error:", err));
         }
 
-        // 4. 检查 AI 开关
+        // 5. 检查 AI 开关
         const aiEnabled = await isAIEnabled();
 
         if (!aiEnabled) {
@@ -200,7 +200,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json(finalResult, { headers: rateLimitHeaders });
         }
 
-        // 5. 构建 AI 提示词与调用
+        // 6. 构建 AI 提示词与调用
         // Resolve Skin Type (Priority: Face Analysis > User Answer)
         const finalSkinType = determineSkinType(answers, (faceAnalysis as any) || undefined);
         const skinTypeLabel = getSkinTypeLabel(finalSkinType);
@@ -246,7 +246,7 @@ export async function POST(request: NextRequest) {
             resultJson = {}; // Safety
         }
 
-        // 6. 补全产品详情 — 返回最多10个产品，前3个为AI精选推荐
+        // 7. 补全产品详情 — 返回最多10个产品，前3个为AI精选推荐
         let finalProducts: any[] = [];
 
         // 预先用算法生成10个带推荐理由的候选（用于兜底和补充）
@@ -299,7 +299,7 @@ export async function POST(request: NextRequest) {
             reason: sanitizeReason(p.reason)
         }));
 
-        // 7. Construct Final Standardized Result (Matching ComprehensiveResult Interface)
+        // 8. Construct Final Standardized Result (Matching ComprehensiveResult Interface)
 
         // Enhance Face Analysis with Text AI Recommendations if missing
         let finalFaceAnalysis = faceAnalysis || resultJson.faceAnalysis || null;
@@ -347,7 +347,7 @@ export async function POST(request: NextRequest) {
             nickname: nickname || "护肤达人" // Include user nickname for sharing
         };
 
-        // 8. Persist Result to DB (all users including guests)
+        // 9. Persist Result to DB (all users including guests)
         if (sessionId) {
             // Calculate Expiration Date (30 days from now)
             const expiresAt = new Date();

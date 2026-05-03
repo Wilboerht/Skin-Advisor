@@ -75,16 +75,18 @@ export default function ForgotPasswordPage() {
                 ) : (
                     <form onSubmit={handleSubmit} className="space-y-5">
                         <div>
-                            <label className="block text-sm font-medium text-[#4A4A4A] mb-1.5 ml-1">
+                            <label htmlFor="phone" className="block text-sm font-medium text-[#4A4A4A] mb-1.5 ml-1">
                                 手机号
                             </label>
                             <div className="relative">
                                 <Phone className="absolute left-4 top-3.5 text-[#8C8C8C] w-5 h-5" />
                                 <input
+                                    id="phone"
                                     type="tel"
                                     required
                                     value={phone}
                                     onChange={(e) => setPhone(e.target.value)}
+                                    pattern="1[3-9]\d{9}"
                                     className="w-full pl-11 pr-4 py-3 rounded-xl border border-[#E0E0E0] bg-[#FAFAFA] text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#C9A86C]/20 focus:border-[#C9A86C] transition-all"
                                     placeholder="请输入手机号"
                                 />

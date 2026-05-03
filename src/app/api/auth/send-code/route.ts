@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
+const PHONE_REGEX = /^1[3-9]\d{9}$/;
+
 export async function POST(req: NextRequest) {
     try {
         const ip = getClientIP(req);
@@ -14,6 +16,10 @@ export async function POST(req: NextRequest) {
         }
 
         const body = await req.json();
+
+        if (!body.phone || !PHONE_REGEX.test(body.phone)) {
+            return NextResponse.json({ error: "请输入有效的手机号" }, { status: 400 });
+        }
 
         const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";
         

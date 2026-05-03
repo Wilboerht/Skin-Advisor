@@ -2,24 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
 import { signToken, getSession } from "@/lib/auth";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { createHash } from "crypto";
 
 // 简单的内存缓存，防止外部官方 API 慢导致每个请求都阻塞 10s+
-// Key = cookie 字符串 hash, Value = 官方 API 返回的 data
 const meCache = new Map<string, { data: any; timestamp: number }>();
 const ME_CACHE_TTL_MS = 5000; // 5 秒缓存
 const MAX_CACHE_SIZE = 1000;
 
 function getCacheKey(cookieStr: string): string {
-    let hash = 0;
-    for (let i = 0; i < cookieStr.length; i++) {
-        hash = ((hash << 5) - hash) + cookieStr.charCodeAt(i);
-        hash |= 0;
-    }
-    return String(hash);
+    return createHash('sha256').update(cookieStr).digest('hex');
 }
 
 function setMeCache(key: string, value: { data: any; timestamp: number }) {
-    // Evict oldest entries if cache exceeds max size
     if (meCache.size >= MAX_CACHE_SIZE) {
         const oldestKey = meCache.keys().next().value;
         if (oldestKey) meCache.delete(oldestKey);
@@ -35,6 +30,9 @@ function cleanupExpiredCache() {
         }
     }
 }
+
+// 启动定时清理，每30秒执行一次，避免请求触发时的性能抖动
+setInterval(cleanupExpiredCache, 30000);
 
 function mirrorOfficialSessionCookie(officialResponse: Response, response: NextResponse) {
     const cookies = officialResponse.headers.getSetCookie();
@@ -58,10 +56,9 @@ function mirrorOfficialSessionCookie(officialResponse: Response, response: NextR
         
         if (!cookieName || !cookieValue) continue;
 
-        console.log(`✅ Setting cookie on response (me): ${cookieName}`);
         response.cookies.set(cookieName, cookieValue, {
             httpOnly: true,
-            sameSite: "lax",
+            sameSite: "strict",
             path: "/",
             secure: process.env.NODE_ENV === "production",
             maxAge: 60 * 60 * 24 * 30
@@ -85,7 +82,7 @@ export async function GET(req: NextRequest) {
         const cacheKey = getCacheKey(allCookies);
         const cached = meCache.get(cacheKey);
         if (cached && Date.now() - cached.timestamp < ME_CACHE_TTL_MS) {
-            console.log("[auth/me] Returning cached user data (cache hit)");
+            // Cache hit — skip external API call
             return NextResponse.json(cached.data);
         }
 
@@ -176,7 +173,7 @@ export async function GET(req: NextRequest) {
                 maxAge: 7 * 24 * 60 * 60, // 7天
                 path: "/"
             });
-            console.log("[auth/me] Issued local auth_token for user:", userPayload.id);
+            // Local auth_token issued successfully
         } catch (tokenErr) {
             console.error("[auth/me] Failed to issue local token:", tokenErr);
         }
@@ -197,7 +194,7 @@ export async function GET(req: NextRequest) {
                     select: { id: true, phoneNumber: true, name: true, avatarUrl: true, role: true }
                 });
                 if (dbUser) {
-                    console.log("[auth/me] Official API unreachable, serving user from local DB:", dbUser.id);
+                    // Official API unreachable, serving user from local DB
                     return NextResponse.json({
                         user: {
                             id: dbUser.id,
@@ -218,6 +215,13 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+    // 1. 速率限制
+    const ip = getClientIP(req);
+    const ipLimit = await rateLimit(`me-put-ip-${ip}`, "default", { maxRequests: 10, windowMs: 60 * 1000 });
+    if (!ipLimit.success) {
+        return NextResponse.json({ error: "请求过于频繁，请稍后再试" }, { status: 429 });
+    }
+
     const cookieStore = await cookies();
     const allCookies = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ');
 
@@ -228,16 +232,20 @@ export async function PUT(req: NextRequest) {
     try {
         const body = await req.json();
 
-        // 我们代理到官网的 PUT /api/auth/me 去修改资料
+        // 2. 代理到官网的 PUT /api/auth/me 去修改资料（带超时）
         const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+
         const officialResponse = await fetch(`${officialApiUrl}/api/auth/me`, {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",
                 "Cookie": allCookies
             },
-            body: JSON.stringify(body)
-        });
+            body: JSON.stringify(body),
+            signal: controller.signal
+        }).finally(() => clearTimeout(timeoutId));
 
         const data = await officialResponse.json();
 

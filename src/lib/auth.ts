@@ -57,37 +57,16 @@ export interface SessionUser {
 
 export async function getSession(): Promise<SessionUser | null> {
     const cookieStore = await cookies();
-    
-    // Try multiple possible token cookie names (official API may return user_token or auth_token)
-    const possibleTokenNames = ['auth_token', 'user_token', 'token', 'session_token'];
-    let tokenValue: string | undefined;
-    let foundCookieName: string | null = null;
-    
-    for (const cookieName of possibleTokenNames) {
-        const value = cookieStore.get(cookieName)?.value;
-        if (value) {
-            tokenValue = value;
-            foundCookieName = cookieName;
-            console.log(`✅ Found token in cookie: ${cookieName}`);
-            break;
-        }
-    }
 
+    const tokenValue = cookieStore.get('auth_token')?.value;
     if (!tokenValue) {
-        console.warn(`🔴 No authentication token found. Checked cookies: ${possibleTokenNames.join(', ')}`);
         return null;
     }
 
-    // Try to verify the token with local JWT secret
-    // IMPORTANT: If you need to support external tokens from an official API,
-    // you MUST configure the same JWT_SECRET so that jwtVerify can validate
-    // the signature. NEVER trust a token without signature verification.
     const payload = await verifyToken(tokenValue);
     if (payload) {
-        // Support both standard 'sub' claim and legacy 'userId' field for backward compatibility
         const userId = (payload.sub as string) || (payload.userId as string);
         if (userId) {
-            console.log(`✅ Token verified (local JWT) for user: ${userId}`);
             return {
                 id: userId,
                 email: (payload.email as string) || null,
@@ -97,13 +76,9 @@ export async function getSession(): Promise<SessionUser | null> {
                 vipExpiresAt: payload.vipExpiresAt || null
             };
         }
-        console.warn(`⚠️  Token verified but missing user identifier (sub/userId) in cookie: ${foundCookieName}`);
         return null;
     }
 
-    // Token failed signature verification — do NOT fall back to unverified decoding.
-    // This prevents trivial user impersonation by crafting a fake JWT payload.
-    console.warn(`🔴 Token signature invalid or expired for cookie: ${foundCookieName}`);
     return null;
 }
 

@@ -82,10 +82,11 @@ export default function RegisterPage() {
 
                 <form onSubmit={handleSubmit} className="space-y-5">
                     <div>
-                        <label className="block text-sm font-medium text-[#4A4A4A] mb-1.5 ml-1">
+                        <label htmlFor="name" className="block text-sm font-medium text-[#4A4A4A] mb-1.5 ml-1">
                             姓名
                         </label>
                         <input
+                            id="name"
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
@@ -95,25 +96,28 @@ export default function RegisterPage() {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-[#4A4A4A] mb-1.5 ml-1">
+                        <label htmlFor="phone" className="block text-sm font-medium text-[#4A4A4A] mb-1.5 ml-1">
                             手机号
                         </label>
                         <input
+                            id="phone"
                             type="tel"
                             required
                             value={phone}
                             onChange={(e) => setPhone(e.target.value)}
+                            pattern="1[3-9]\d{9}"
                             className="w-full px-4 py-3 rounded-xl border border-[#E0E0E0] bg-[#FAFAFA] text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#C9A86C]/20 focus:border-[#C9A86C] transition-all"
                             placeholder="请输入手机号"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-[#4A4A4A] mb-1.5 ml-1">
+                        <label htmlFor="code" className="block text-sm font-medium text-[#4A4A4A] mb-1.5 ml-1">
                             验证码
                         </label>
                         <div className="flex gap-3">
                             <input
+                                id="code"
                                 type="text"
                                 required
                                 value={code}
@@ -133,11 +137,12 @@ export default function RegisterPage() {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-[#4A4A4A] mb-1.5 ml-1">
+                        <label htmlFor="password" className="block text-sm font-medium text-[#4A4A4A] mb-1.5 ml-1">
                             密码
                         </label>
                         <div className="relative">
                             <input
+                                id="password"
                                 type={showPassword ? "text" : "password"}
                                 required
                                 value={password}

@@ -32,7 +32,7 @@ export default function RootLayout({
 }>) {
   return (
     <ViewTransitions>
-      <html lang="en">
+      <html lang="zh-CN">
         <body
           className={`antialiased`}
           suppressHydrationWarning

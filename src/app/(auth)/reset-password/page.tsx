@@ -120,21 +120,24 @@ function ResetPasswordForm() {
 
             <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
-                    <label className="block text-sm font-medium text-[#4A4A4A] mb-1.5 ml-1">手机号</label>
+                    <label htmlFor="phone" className="block text-sm font-medium text-[#4A4A4A] mb-1.5 ml-1">手机号</label>
                     <input
+                        id="phone"
                         type="tel"
                         required
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
+                        pattern="1[3-9]\d{9}"
                         className="w-full px-4 py-3 rounded-xl border border-[#E0E0E0] bg-[#FAFAFA] text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#C9A86C]/20 focus:border-[#C9A86C] transition-all"
                         placeholder="请输入手机号"
                     />
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-[#4A4A4A] mb-1.5 ml-1">验证码</label>
+                    <label htmlFor="code" className="block text-sm font-medium text-[#4A4A4A] mb-1.5 ml-1">验证码</label>
                     <div className="flex gap-3">
                         <input
+                            id="code"
                             type="text"
                             required
                             value={code}
@@ -154,12 +157,14 @@ function ResetPasswordForm() {
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-[#4A4A4A] mb-1.5 ml-1">新密码</label>
+                    <label htmlFor="password" className="block text-sm font-medium text-[#4A4A4A] mb-1.5 ml-1">新密码</label>
                     <div className="relative">
                         <Lock className="absolute left-4 top-3.5 text-[#8C8C8C] w-5 h-5" />
                         <input
+                            id="password"
                             type={showPassword ? "text" : "password"}
                             required
+                            minLength={6}
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             className="w-full pl-11 pr-12 py-3 rounded-xl border border-[#E0E0E0] bg-[#FAFAFA] text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#C9A86C]/20 focus:border-[#C9A86C] transition-all"
@@ -176,12 +181,14 @@ function ResetPasswordForm() {
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-[#4A4A4A] mb-1.5 ml-1">确认新密码</label>
+                    <label htmlFor="confirmPassword" className="block text-sm font-medium text-[#4A4A4A] mb-1.5 ml-1">确认新密码</label>
                     <div className="relative">
                         <Lock className="absolute left-4 top-3.5 text-[#8C8C8C] w-5 h-5" />
                         <input
+                            id="confirmPassword"
                             type={showPassword ? "text" : "password"}
                             required
+                            minLength={6}
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
                             className="w-full pl-11 pr-4 py-3 rounded-xl border border-[#E0E0E0] bg-[#FAFAFA] text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#C9A86C]/20 focus:border-[#C9A86C] transition-all"

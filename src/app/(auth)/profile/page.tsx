@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "next-view-transitions";
-import { ArrowLeft, Clock, Loader2, ChevronRight, Calendar, BarChart3, ScanFace, LogOut } from "lucide-react";
+import { ArrowLeft, Clock, Loader2, ChevronRight, ChevronLeft, Calendar, BarChart3, ScanFace, LogOut } from "lucide-react";
 import { m } from "framer-motion";
 
 interface HistorySession {
@@ -32,6 +32,10 @@ export default function ProfilePage() {
     const router = useRouter();
     const [auditHistory, setAuditHistory] = useState<HistorySession[]>([]);
     const [loadingHistory, setLoadingHistory] = useState(true);
+    const [page, setPage] = useState(1);
+    const [limit] = useState(10);
+    const [totalPages, setTotalPages] = useState(0);
+    const [total, setTotal] = useState(0);
 
     useEffect(() => {
         if (!loading && !user) {
@@ -42,11 +46,14 @@ export default function ProfilePage() {
     useEffect(() => {
         const fetchHistory = async () => {
             if (!user) return;
+            setLoadingHistory(true);
             try {
-                const res = await fetch("/api/advisor/history");
+                const res = await fetch(`/api/advisor/history?page=${page}&limit=${limit}`);
                 if (res.ok) {
                     const data = await res.json();
                     setAuditHistory(data.history);
+                    setTotalPages(data.pagination?.totalPages || 0);
+                    setTotal(data.pagination?.total || 0);
                 }
             } catch (e) {
                 console.error("History fetch error:", e);
@@ -55,7 +62,7 @@ export default function ProfilePage() {
             }
         };
         fetchHistory();
-    }, [user]);
+    }, [user, page, limit]);
 
     const handleLogout = async () => {
         await logout();
@@ -453,16 +460,50 @@ export default function ProfilePage() {
                     )}
                 </div>
 
+                {/* Pagination */}
+                {totalPages > 1 && (
+                    <m.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="flex items-center justify-between mt-8"
+                        style={{ padding: '12px 0', borderTop: '1px solid #E9E9E7' }}
+                    >
+                        <button
+                            onClick={() => setPage((p) => Math.max(1, p - 1))}
+                            disabled={page <= 1 || loadingHistory}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#F1F1EF]"
+                            style={{ color: '#37352F' }}
+                        >
+                            <ChevronLeft className="w-4 h-4" />
+                            上一页
+                        </button>
+
+                        <span className="text-sm" style={{ color: '#787774' }}>
+                            第 {page} / {totalPages} 页（共 {total} 条）
+                        </span>
+
+                        <button
+                            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                            disabled={page >= totalPages || loadingHistory}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#F1F1EF]"
+                            style={{ color: '#37352F' }}
+                        >
+                            下一页
+                            <ChevronRight className="w-4 h-4" />
+                        </button>
+                    </m.div>
+                )}
+
                 {/* Footer */}
                 <div
                     style={{
                         borderTop: '1px solid #E9E9E7',
-                        marginTop: 64,
+                        marginTop: 32,
                         paddingTop: 32,
                     }}
                 >
                     <p style={{ fontSize: 12, color: '#787774', lineHeight: 1.5 }}>
-                        测肤记录仅保存最近 20 次完成的分析。点击记录可查看完整的护肤报告。
+                        测肤记录分页展示，每页 {limit} 条。点击记录可查看完整的护肤报告。
                     </p>
                 </div>
             </main>

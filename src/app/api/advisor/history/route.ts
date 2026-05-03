@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
@@ -10,26 +9,43 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        const history = await prisma.advisorSession.findMany({
-            where: {
-                userId: user.id,
-                completedAt: { not: null } // Only completed sessions
-            },
-            orderBy: {
-                completedAt: 'desc'
-            },
-            select: {
-                sessionId: true,
-                completedAt: true,
-                analysisResult: true
-            },
-            take: 20 // Limit to last 20
+        const { searchParams } = new URL(req.url);
+        const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
+        const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "10", 10) || 10));
+        const skip = (page - 1) * limit;
+
+        const [history, total] = await Promise.all([
+            prisma.advisorSession.findMany({
+                where: {
+                    userId: user.id,
+                    completedAt: { not: null }
+                },
+                orderBy: { completedAt: "desc" },
+                select: {
+                    sessionId: true,
+                    completedAt: true,
+                    analysisResult: true
+                },
+                skip,
+                take: limit
+            }),
+            prisma.advisorSession.count({
+                where: {
+                    userId: user.id,
+                    completedAt: { not: null }
+                }
+            })
+        ]);
+
+        return NextResponse.json({
+            history,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit)
+            }
         });
-
-        // Also try to find sessions created by this device/browser fingerprint if userId was just linked? 
-        // For now, simple user-bound history.
-
-        return NextResponse.json({ history });
     } catch (e) {
         console.error("History fetch error:", e);
         return NextResponse.json({ error: "Failed to fetch history" }, { status: 500 });

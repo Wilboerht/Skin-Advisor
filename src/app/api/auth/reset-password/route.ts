@@ -1,11 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
+
+const PHONE_REGEX = /^1[3-9]\d{9}$/;
 
 export async function POST(req: NextRequest) {
     try {
+        // 1. 速率限制
+        const ip = getClientIP(req);
+        const ipLimit = await rateLimit(`reset-password-ip-${ip}`, "login", { maxRequests: 5, windowMs: 15 * 60 * 1000 });
+        if (!ipLimit.success) {
+            return NextResponse.json({ error: "请求过于频繁，请稍后再试" }, { status: 429 });
+        }
+
         const body = await req.json();
 
-        if (!body.phone || !body.code || !body.password) {
+        if (!body.phone || !PHONE_REGEX.test(body.phone)) {
+            return NextResponse.json({ error: "请输入有效的手机号" }, { status: 400 });
+        }
+        if (!body.code || !body.password) {
             return NextResponse.json({ error: "缺少必填项" }, { status: 400 });
+        }
+        if (body.password.length < 6) {
+            return NextResponse.json({ error: "密码长度至少为 6 位" }, { status: 400 });
         }
 
         const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";

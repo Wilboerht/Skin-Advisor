@@ -528,9 +528,11 @@ export default function Home() {
               {/* Header */}
               <div className="px-8 pt-10 pb-6 text-center shrink-0">
                 <div className="flex justify-center">
-                  <img
+                  <Image
                     src="/NIHPLOD-logo.svg"
                     alt="NIHPLOD"
+                    width={120}
+                    height={30}
                     className="h-[30px] object-contain opacity-80"
                   />
                 </div>
@@ -608,9 +610,11 @@ export default function Home() {
               {/* Header */}
               <div className="p-10 pt-14 text-center pb-2">
                 <div className="mb-7 flex justify-center">
-                  <img
+                  <Image
                     src="/NIHPLOD-logo.svg"
                     alt="NIHPLOD"
+                    width={136}
+                    height={34}
                     className="h-[34px] object-contain"
                   />
                 </div>

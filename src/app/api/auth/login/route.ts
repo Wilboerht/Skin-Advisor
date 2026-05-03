@@ -27,10 +27,10 @@ function mirrorOfficialSessionCookie(officialResponse: Response, response: NextR
             continue;
         }
 
-        console.log(`✅ Setting cookie on response: ${cookieName}`);
+        // Cookie set successfully (debug log removed for production)
         response.cookies.set(cookieName, cookieValue, {
             httpOnly: true,
-            sameSite: "lax",
+            sameSite: "strict",
             path: "/",
             secure: process.env.NODE_ENV === "production",
             maxAge: 60 * 60 * 24 * 30 // 30 days
