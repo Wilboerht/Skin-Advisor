@@ -121,7 +121,7 @@ export default function AdminLoginPage() {
           首页
         </Link>
         <span className="text-slate-300">/</span>
-        <span className="font-medium text-slate-600">后台登录</span>
+        <span className="font-medium text-slate-600">后台登录（AI 护肤顾问）</span>
       </div>
 
       {/* 装饰背景光晕 */}

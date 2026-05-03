@@ -13,16 +13,17 @@ const prismaClientSingleton = () => {
     const { Pool } = require("pg");
     const { PrismaPg } = require("@prisma/adapter-pg");
 
-    // Serverless 环境检测：多实例下需要限制连接数，避免耗尽数据库连接
-    const isServerless = !!process.env.VERCEL || process.env.NODE_ENV === "production";
+    // Serverless 环境检测：Vercel / AWS Lambda 等多实例平台需要限制连接数
+    // 独立服务器部署（单实例常驻）可以使用更大的连接池
+    const isServerless = !!process.env.VERCEL || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
 
-    // 优化 Supabase PostgreSQL 连接池配置
+    // 优化 PostgreSQL 连接池配置
     const pool = new Pool({
         connectionString: url,
         max: isServerless ? 2 : 10,
-        min: 0, // 允许在空闲时完全关闭连接，防止被 Supabase 强行释放时产生报错
-        idleTimeoutMillis: 30000, // 缩短空闲超时到 30 秒
-        connectionTimeoutMillis: 30000, 
+        min: isServerless ? 0 : 2, // 独立服务器保持最小连接以减少冷启动
+        idleTimeoutMillis: isServerless ? 30000 : 60000,
+        connectionTimeoutMillis: 30000,
         statement_timeout: 30000,
         keepAlive: true,
         keepAliveInitialDelayMillis: 10000,
