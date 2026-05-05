@@ -152,6 +152,8 @@ async function callClaudeVision(
 
     // Claude 将 system prompt 放在 user message 里效果往往更好，或者使用 system 字段
     // 这里我们把专门的 Vision Prompt 拼接到 user message
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
     const res = await fetch(config.baseUrl, {
         method: "POST",
         headers: {
@@ -171,8 +173,10 @@ async function callClaudeVision(
                     ]
                 }
             ]
-        })
+        }),
+        signal: controller.signal
     });
+    clearTimeout(timeout);
 
     if (!res.ok) {
         const err = await res.text();
@@ -257,6 +261,8 @@ async function callGeminiVision(
         }
     });
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
     const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -266,8 +272,10 @@ async function callGeminiVision(
                 temperature: 0.4,
                 maxOutputTokens: 2048
             }
-        })
+        }),
+        signal: controller.signal
     });
+    clearTimeout(timeout);
 
     if (!res.ok) {
         const errText = await res.text();

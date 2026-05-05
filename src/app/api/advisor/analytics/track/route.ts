@@ -10,6 +10,7 @@ import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { getSession } from "@/lib/auth";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
 // 事件类型定义
 const EventSchema = z.object({
@@ -109,6 +110,12 @@ function getClientInfo(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
+        const ip = getClientIP(request);
+        const limitResult = await rateLimit(`analytics-${ip}`, "default", { maxRequests: 60, windowMs: 60 * 1000 });
+        if (!limitResult.success) {
+            return NextResponse.json({ success: false, error: "Rate limit exceeded" }, { status: 429 });
+        }
+
         const body = await request.json();
         const result = EventSchema.safeParse(body);
 

@@ -8,9 +8,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { processAvatarQueueItem } from "@/lib/avatar-queue-processor";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
 export async function POST(req: NextRequest) {
     try {
+        const ip = getClientIP(req);
+        const limitResult = await rateLimit(`avatar-generate-${ip}`, "default", { maxRequests: 10, windowMs: 60 * 1000 });
+        if (!limitResult.success) {
+            return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
+        }
+
         const body = await req.json();
         const { sessionId, characteristics, nickname, frontPhoto } = body;
 

@@ -119,11 +119,9 @@ export async function rateLimit(
     // 清理过期的请求记录
     const windowStart = now - opts.windowMs;
     record.timestamps = record.timestamps.filter((t: number) => t > windowStart);
-    // Only update windowStart on first creation, not on every request.
-    // This ensures cleanup can eventually remove stale records.
-    if (isNewRecord) {
-        record.windowStart = now;
-    }
+    // Update windowStart on every request to reflect latest activity.
+    // Cleanup uses windowStart to determine stale entries.
+    record.windowStart = now;
 
     // 检查是否超过限制
     const currentCount = record.timestamps.length;

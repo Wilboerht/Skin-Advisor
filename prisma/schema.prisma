@@ -66,6 +66,8 @@ model AdvisorSession {
   // ===== 性能索引 =====
   @@index([userId])              // JOIN User 加速
   @@index([createdAt])           // 时间范围查询加速
+  @@index([expiresAt])           // 清理任务按过期时间过滤
+  @@index([completedAt])         // 历史记录查询加速
 }
 
 
@@ -204,6 +206,7 @@ model GuestUsage {
   @@index([fingerprint])
   @@index([lastTestAt])
   @@index([ipAddress, lastTestAt])
+  @@index([isBlocked])           // 封禁状态过滤加速
 }
 
 // 产品库
@@ -227,6 +230,9 @@ model Product {
   updatedAt         DateTime @updatedAt
   deletedAt         DateTime? // 软删除时间戳
 
+  // ===== 性能索引 =====
+  @@index([active, priority])    // 推荐规则查询加速
+
   // ===== 新增字段 =====
   howToUse          String?  // 使用方法说明
   affiliateLinks    Json?    // 电商链接 { taobao: "", jd: "", xiaohongshu: "", douyin: "" }
@@ -239,6 +245,7 @@ model Product {
   @@index([active, featured])
   @@index([sortOrder])
   @@index([deletedAt])
+  @@index([active, category, sortOrder]) // 产品列表组合过滤
 }
 
 
@@ -253,6 +260,9 @@ model PushSubscription {
   userAgent String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // ===== 性能索引 =====
+  @@index([userId])              // 关联用户查询加速
 }
 
 // 护肤提醒设置
@@ -300,5 +310,9 @@ model AvatarQueue {
   startedAt       DateTime?
   completedAt     DateTime?
   expiresAt       DateTime // 7 天后自动清理
+
+  // ===== 性能索引 =====
+  @@index([status, createdAt])   // 队列处理器按状态+时间排序
+  @@index([expiresAt])           // 过期清理加速
 }
 

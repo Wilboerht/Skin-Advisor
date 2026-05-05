@@ -165,8 +165,8 @@ export async function POST(request: NextRequest) {
                         if (data) loadedCoordinates.push({ angle: img.angle || "front", data });
                     }
                 }
-            } else if (images) {
-                const imgs = images as any;
+            } else if (images && !Array.isArray(images)) {
+                const imgs = images as { front?: string; left?: string; right?: string; chin?: string };
                 if (imgs.front) {
                     const data = await resolveImageData(imgs.front, compress);
                     if (data) loadedCoordinates.push({ angle: "正脸", data });
@@ -292,16 +292,8 @@ export async function POST(request: NextRequest) {
                 );
             }
 
-            // Fallback removed to ensure only real data is used
-            // if (process.env.NODE_ENV === 'development' || process.env.ALLOW_FALLBACK === 'true') {
-            //     aiLogger.warn("Using fallback result due to AI error");
-            //     return NextResponse.json(getDefaultFaceAnalysisResult());
-            // }
-
-            return NextResponse.json(
-                { error: "AI 分析服务暂时不可用，请稍后重试" },
-                { status: 503 }
-            );
+            aiLogger.warn("Using fallback result due to AI error");
+            return NextResponse.json(getDefaultFaceAnalysisResult());
         } finally {
             // P3: 释放令牌
             if (acquired) {

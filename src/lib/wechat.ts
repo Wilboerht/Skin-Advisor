@@ -27,7 +27,10 @@ export async function getWechatAccessToken(): Promise<string | null> {
 
     try {
         const url = `https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${appId}&secret=${appSecret}`;
-        const response = await fetch(url, { cache: "no-store" });
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15000);
+        const response = await fetch(url, { cache: "no-store", signal: controller.signal });
+        clearTimeout(timeout);
         const data = await response.json();
 
         if (data.access_token) {
@@ -99,14 +102,18 @@ export async function sendSkinReportTemplateMessage(
     };
 
     try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15000);
         const response = await fetch(
             `https://api.weixin.qq.com/cgi-bin/message/template/send?access_token=${token}`,
             {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
+                signal: controller.signal,
             }
         );
+        clearTimeout(timeout);
 
         const data = await response.json();
 

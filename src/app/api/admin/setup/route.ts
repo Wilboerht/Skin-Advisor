@@ -4,9 +4,16 @@ import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { PRODUCTS_CATALOG } from "@/config/products";
 import { verifyAdminSession } from "@/lib/admin-auth";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
 export async function POST(request: NextRequest) {
     try {
+        const ip = getClientIP(request);
+        const limitResult = await rateLimit(`admin-setup-${ip}`, "default", { maxRequests: 5, windowMs: 15 * 60 * 1000 });
+        if (!limitResult.success) {
+            return NextResponse.json({ success: false, error: "Rate limit exceeded" }, { status: 429 });
+        }
+
         const setupSecret = process.env.SETUP_SECRET;
         if (!setupSecret) {
             return NextResponse.json(

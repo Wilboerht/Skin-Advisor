@@ -50,7 +50,11 @@ export async function POST(request: NextRequest) {
     const timestamp = searchParams.get("timestamp");
     const nonce = searchParams.get("nonce");
 
-    const token = process.env.WECHAT_TOKEN || "skinadvisor2026";
+    const token = process.env.WECHAT_TOKEN;
+    if (!token) {
+        console.error("WECHAT_TOKEN is not configured");
+        return new NextResponse("Server Configuration Error", { status: 500 });
+    }
 
     if (!signature || !timestamp || !nonce) {
         return new NextResponse("Invalid Request", { status: 400 });

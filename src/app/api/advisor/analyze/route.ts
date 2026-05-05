@@ -354,53 +354,55 @@ export async function POST(request: NextRequest) {
                 ? new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
                 : new Date(Date.now() + 3 * 60 * 60 * 1000);
 
-            // Fetch existing session first to avoid overwriting parallel avatar data
-            // (Avatar generation might have finished first and saved to DB)
-            const existingSession = await prisma.advisorSession.findUnique({
-                where: { sessionId },
-                select: { analysisResult: true }
-            });
+            await prisma.$transaction(async (tx) => {
+                // Fetch existing session first to avoid overwriting parallel avatar data
+                // (Avatar generation might have finished first and saved to DB)
+                const existingSession = await tx.advisorSession.findUnique({
+                    where: { sessionId },
+                    select: { analysisResult: true }
+                });
 
-            // Also check avatarQueue in case avatar was generated before session was created
-            const avatarQueueItem = await prisma.avatarQueue.findUnique({
-                where: { sessionId },
-                select: { generatedUrl: true }
-            });
+                // Also check avatarQueue in case avatar was generated before session was created
+                const avatarQueueItem = await tx.avatarQueue.findUnique({
+                    where: { sessionId },
+                    select: { generatedUrl: true }
+                });
 
-            // Merge current results with any existing data (like generatedAvatar)
-            const mergedResult = {
-                ...(existingSession?.analysisResult as any || {}),
-                ...standardizedResult,
-                ...(avatarQueueItem?.generatedUrl ? { generatedAvatar: avatarQueueItem.generatedUrl } : {}),
-                ...(isFreeRetryAllowed ? { freeRetryUsed: true } : {})
-            };
+                // Merge current results with any existing data (like generatedAvatar)
+                const mergedResult = {
+                    ...(existingSession?.analysisResult as any || {}),
+                    ...standardizedResult,
+                    ...(avatarQueueItem?.generatedUrl ? { generatedAvatar: avatarQueueItem.generatedUrl } : {}),
+                    ...(isFreeRetryAllowed ? { freeRetryUsed: true } : {})
+                };
 
-            await prisma.advisorSession.upsert({
-                where: { sessionId },
-                update: {
-                    analysisResult: mergedResult as any, // stored as json
-                    analysisSource: "hybrid",
-                    completedAt: new Date(),
-                    province: geoLocation?.region,
-                    city: geoLocation?.city,
-                    expiresAt: expiresAt
-                },
-                create: {
-                    sessionId,
-                    analysisResult: mergedResult as any,
-                    analysisSource: "hybrid",
-                    completedAt: new Date(),
-                    province: geoLocation?.region,
-                    city: geoLocation?.city,
-                    expiresAt: expiresAt
-                }
+                await tx.advisorSession.upsert({
+                    where: { sessionId },
+                    update: {
+                        analysisResult: mergedResult as any, // stored as json
+                        analysisSource: "hybrid",
+                        completedAt: new Date(),
+                        province: geoLocation?.region,
+                        city: geoLocation?.city,
+                        expiresAt: expiresAt
+                    },
+                    create: {
+                        sessionId,
+                        analysisResult: mergedResult as any,
+                        analysisSource: "hybrid",
+                        completedAt: new Date(),
+                        province: geoLocation?.region,
+                        city: geoLocation?.city,
+                        expiresAt: expiresAt
+                    }
+                });
+
+                // 报告生成后，立即清空原始问卷数据（即用即删）
+                await tx.advisorSession.updateMany({
+                    where: { sessionId },
+                    data: { answers: Prisma.JsonNull }
+                });
             }).catch(err => console.error("Failed to persist final analysis:", err));
-
-            // 报告生成后，立即清空原始问卷数据（即用即删）
-            await prisma.advisorSession.updateMany({
-                where: { sessionId },
-                data: { answers: Prisma.JsonNull }
-            }).catch(err => console.error("Failed to clear answers:", err));
 
             // ====== 微信公众号推送逻辑 ======
             if (user?.id) {

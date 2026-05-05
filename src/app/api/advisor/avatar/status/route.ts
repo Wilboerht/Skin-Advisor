@@ -2,11 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { processAvatarQueueItem } from "@/lib/avatar-queue-processor";
 import { withDbRetry } from "@/lib/utils";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
     try {
+        const ip = getClientIP(req);
+        const limitResult = await rateLimit(`avatar-status-${ip}`, "default", { maxRequests: 30, windowMs: 60 * 1000 });
+        if (!limitResult.success) {
+            return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
+        }
+
         const sessionId = req.nextUrl.searchParams.get("sessionId");
 
         if (!sessionId) {

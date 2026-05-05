@@ -9,6 +9,40 @@ import { Service } from "@volcengine/openapi";
 import { deleteSupabaseFiles } from "./supabase-storage";
 import { deleteOSSFiles } from "./ali-oss";
 
+/**
+ * SSRF 防护：校验 URL 是否为可安全请求的公网地址
+ */
+function isPublicUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    // 只允许 http(s)
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return false;
+    }
+
+    const hostname = parsed.hostname.toLowerCase();
+
+    // 拒绝 localhost 及 loopback
+    if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1" || hostname === "0:0:0:0:0:0:0:1") {
+      return false;
+    }
+
+    // 拒绝 IPv4 私有/本地链路地址
+    if (/^10\./.test(hostname)) return false;                      // 10.0.0.0/8
+    if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)) return false; // 172.16.0.0/12
+    if (/^192\.168\./.test(hostname)) return false;                // 192.168.0.0/16
+    if (/^169\.254\./.test(hostname)) return false;                // 169.254.0.0/16 (link-local)
+
+    // 拒绝 IPv6 loopback / link-local / unique-local
+    if (hostname.startsWith("fc") || hostname.startsWith("fd")) return false; // unique-local
+    if (hostname.startsWith("fe80:")) return false;               // link-local
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // 阿里万相头像生成（新版 wan2.5-i2i-preview，异步轮询）
 async function generateWanxiangAvatarAsync(prompt: string, frontPhoto: string | null | undefined): Promise<string | null> {
   const apiKey = (process.env.WANXIANG_API_KEY || process.env.QWEN_API_KEY || "").trim();
@@ -36,16 +70,20 @@ async function generateWanxiangAvatarAsync(prompt: string, frontPhoto: string | 
       try {
         const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
         const fullUrl = frontPhoto.startsWith("/") ? `${baseUrl}${frontPhoto}` : frontPhoto;
-        const res = await fetch(fullUrl);
-        if (res.ok) {
-          const blob = await res.blob();
-          const buffer = Buffer.from(await blob.arrayBuffer());
-          const base64 = buffer.toString("base64");
-          const mimeType = blob.type || "image/jpeg";
-          images.push(`data:${mimeType};base64,${base64}`);
-          console.log("[Wanxiang] Converted local image to base64 for upload");
+        if (!isPublicUrl(fullUrl)) {
+          console.warn("[Wanxiang] Blocked non-public URL:", fullUrl);
         } else {
-          console.warn("[Wanxiang] Failed to fetch local image:", res.status);
+          const res = await fetch(fullUrl);
+          if (res.ok) {
+            const blob = await res.blob();
+            const buffer = Buffer.from(await blob.arrayBuffer());
+            const base64 = buffer.toString("base64");
+            const mimeType = blob.type || "image/jpeg";
+            images.push(`data:${mimeType};base64,${base64}`);
+            console.log("[Wanxiang] Converted local image to base64 for upload");
+          } else {
+            console.warn("[Wanxiang] Failed to fetch local image:", res.status);
+          }
         }
       } catch (e) {
         console.warn("[Wanxiang] Failed to convert local image to base64:", e);
@@ -72,11 +110,15 @@ async function generateWanxiangAvatarAsync(prompt: string, frontPhoto: string | 
   };
 
   // 1. 提交异步任务
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 60000);
   const submitRes = await fetch(endpoint, {
     method: "POST",
     headers,
     body: JSON.stringify(body),
+    signal: controller.signal,
   });
+  clearTimeout(timeout);
 
   if (!submitRes.ok) {
     const err = await submitRes.text();
@@ -96,9 +138,13 @@ async function generateWanxiangAvatarAsync(prompt: string, frontPhoto: string | 
   for (let i = 0; i < maxAttempts; i++) {
     await new Promise((r) => setTimeout(r, 1000));
 
+    const pollController = new AbortController();
+    const pollTimeout = setTimeout(() => pollController.abort(), 30000);
     const queryRes = await fetch(`https://dashscope.aliyuncs.com/api/v1/tasks/${taskId}`, {
       headers: { "Authorization": `Bearer ${apiKey}` },
+      signal: pollController.signal,
     });
+    clearTimeout(pollTimeout);
 
     if (!queryRes.ok) {
       console.warn(`[Wanxiang] Query failed: ${queryRes.status}`);
@@ -502,8 +548,10 @@ export async function processAvatarQueueItem(item: AvatarQueueItem) {
             attempts,
             errorMessage: `Failed to sync after 3 attempts: ${msg}`,
             completedAt: new Date(),
+            frontPhoto: null, // 清理原始照片数据
           },
         });
+        await deleteSourcePhoto(sourcePhoto).catch(() => {});
         console.error(
           `[AvatarQueue] ❌ Transaction failed after 3 retries: ${item.id}`
         );
@@ -540,8 +588,10 @@ export async function processAvatarQueueItem(item: AvatarQueueItem) {
           attempts,
           errorMessage: msg,
           completedAt: new Date(),
+          frontPhoto: null, // 清理原始照片数据
         },
       });
+      await deleteSourcePhoto(sourcePhoto).catch(() => {});
       console.error(
         `[AvatarQueue] ❌ Gave up after 3 attempts: ${item.id}`
       );

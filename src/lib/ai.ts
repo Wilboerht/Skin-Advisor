@@ -271,6 +271,8 @@ async function callProviderInternal(
     // Anthropic 特殊处理
     if (provider === "anthropic") {
         const config = getProviderConfig("anthropic");
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 30000);
         const res = await fetch(config.baseUrl, {
             method: "POST",
             headers: {
@@ -284,8 +286,10 @@ async function callProviderInternal(
                 system: systemPrompt,
                 messages: [{ role: "user", content: userPrompt }],
                 temperature: settings.temperature
-            })
+            }),
+            signal: controller.signal
         });
+        clearTimeout(timeout);
 
         if (!res.ok) throw new Error(`Anthropic Error: ${res.statusText}`);
         const data = await res.json();
@@ -296,6 +300,8 @@ async function callProviderInternal(
     if (provider === "gemini") {
         const config = getProviderConfig("gemini");
         const url = `${config.baseUrl}/models/${model || 'gemini-1.5-flash'}:generateContent?key=${apiKey}`;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 30000);
         const res = await fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -303,8 +309,10 @@ async function callProviderInternal(
                 contents: [{
                     parts: [{ text: systemPrompt + "\n\n" + userPrompt }]
                 }]
-            })
+            }),
+            signal: controller.signal
         });
+        clearTimeout(timeout);
         if (!res.ok) throw new Error(`Gemini Error: ${res.statusText}`);
         const data = await res.json();
         return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
