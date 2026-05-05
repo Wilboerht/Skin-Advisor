@@ -6,6 +6,8 @@
 
 import prisma from "@/lib/prisma";
 import { Service } from "@volcengine/openapi";
+import { deleteSupabaseFiles } from "./supabase-storage";
+import { deleteOSSFiles } from "./ali-oss";
 
 // 阿里万相头像生成（新版 wan2.5-i2i-preview，异步轮询）
 async function generateWanxiangAvatarAsync(prompt: string, frontPhoto: string | null | undefined): Promise<string | null> {
@@ -128,6 +130,68 @@ export interface AvatarQueueItem {
   nickname?: string | null;
   characteristics?: any;
   frontPhoto?: string | null;
+}
+
+/**
+ * 删除头像生成的原始源照片（本地文件/云端对象）
+ */
+async function deleteSourcePhoto(frontPhoto: string | null | undefined): Promise<void> {
+  if (!frontPhoto) return;
+
+  // Base64 data URI: 无持久化文件需要删除
+  if (frontPhoto.startsWith("data:")) return;
+
+  // 本地文件路径
+  if (frontPhoto.startsWith("/")) {
+    try {
+      const fs = await import("fs/promises");
+      const path = await import("path");
+      const process = await import("process");
+
+      const relativePath = frontPhoto.slice(1);
+      const normalized = path.normalize(relativePath);
+
+      // 路径穿越防护
+      if (path.isAbsolute(normalized) || normalized.startsWith("..") || normalized.includes(".." + path.sep)) {
+        console.warn(`[Privacy] Blocked path traversal attempt: ${frontPhoto}`);
+        return;
+      }
+
+      const uploadRoot = path.resolve(process.cwd(), "public", "uploads");
+      let filePath: string;
+      if (normalized.startsWith("uploads/") || normalized.startsWith("uploads\\")) {
+        filePath = path.resolve(process.cwd(), "public", normalized);
+      } else {
+        filePath = path.resolve(uploadRoot, normalized);
+      }
+
+      if (!filePath.startsWith(uploadRoot + path.sep) && filePath !== uploadRoot) {
+        console.warn(`[Privacy] Blocked out-of-bounds file access: ${frontPhoto}`);
+        return;
+      }
+
+      await fs.unlink(filePath);
+      console.log(`[Privacy] Deleted local source photo: ${frontPhoto}`);
+    } catch {
+      // 忽略删除失败（文件可能已被清理）
+    }
+    return;
+  }
+
+  // 云端 URL
+  if (frontPhoto.startsWith("http")) {
+    try {
+      if (frontPhoto.includes("supabase.co")) {
+        await deleteSupabaseFiles([frontPhoto]);
+        console.log(`[Privacy] Deleted Supabase source photo`);
+      } else {
+        await deleteOSSFiles([frontPhoto]);
+        console.log(`[Privacy] Deleted OSS source photo`);
+      }
+    } catch (e) {
+      console.error(`[Privacy] Failed to delete cloud source photo:`, e);
+    }
+  }
 }
 
 /**
@@ -330,6 +394,9 @@ export async function processAvatarQueueItem(item: AvatarQueueItem) {
     `[AvatarQueue] Processing ${item.id} for session ${item.sessionId}`
   );
 
+  // 保存原始照片引用，用于生成成功后清理
+  const sourcePhoto = item.frontPhoto;
+
   try {
     // Update status to processing
     await prisma.avatarQueue.update({
@@ -370,6 +437,7 @@ export async function processAvatarQueueItem(item: AvatarQueueItem) {
               generatedUrl: result.url,
               source: result.source,
               completedAt: new Date(),
+              frontPhoto: null, // 清空原始照片数据
             },
           });
           console.log(`[AvatarQueue] ✅ Avatar generated but session not yet created. Stored in avatarQueue for later sync.`);
@@ -391,6 +459,7 @@ export async function processAvatarQueueItem(item: AvatarQueueItem) {
               generatedUrl: result.url,
               source: result.source,
               completedAt: new Date(),
+              frontPhoto: null, // 清空原始照片数据
             },
           }),
           tx.advisorSession.update({
@@ -401,6 +470,9 @@ export async function processAvatarQueueItem(item: AvatarQueueItem) {
 
         console.log(`[AvatarQueue] ✅ Successfully updated session ${item.sessionId} with avatar`);
       });
+
+      // 事务成功后，删除原始源照片（本地/云端）
+      await deleteSourcePhoto(sourcePhoto);
     } catch (txError) {
       const msg = txError instanceof Error ? txError.message : String(txError);
       console.warn(

@@ -181,7 +181,6 @@ export async function POST(request: NextRequest) {
                     create: {
                         sessionId,
                         questionnaireCompletedAt: now,
-                        answers: data?.answers ? data.answers as Prisma.InputJsonValue : Prisma.JsonNull,
                         userAgent: clientInfo.userAgent,
                         ip: clientInfo.ip,
                         referrer: clientInfo.referer,
@@ -191,7 +190,6 @@ export async function POST(request: NextRequest) {
                     },
                     update: {
                         questionnaireCompletedAt: now,
-                        answers: data?.answers ? data.answers as Prisma.InputJsonValue : Prisma.JsonNull,
                     },
                 });
                 break;

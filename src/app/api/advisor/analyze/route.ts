@@ -4,6 +4,7 @@ import { extractJsonFromResponse } from "@/lib/advisor-utils";
 import { buildTextAnalysisPrompt, TEXT_ANALYSIS_SYSTEM_PROMPT } from "@/config/ai-prompts";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import prisma from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { getSkinTypeLabel, getConcernLabel } from "@/lib/advisor-utils";
 // import { PRODUCTS_CATALOG } from "@/config/products"; // Deprecated, use DB or matchProducts
 import { determineSkinType, identifyConcerns } from "@/lib/advisor-utils";
@@ -132,11 +133,11 @@ export async function POST(request: NextRequest) {
         const user = await getSession();
 
         // 保存会话记录到数据库（所有用户，包括访客）
+        // 注意：原始问卷数据(answers)不入库，报告生成后仅存分析结果
         if (sessionId) {
             await prisma.advisorSession.upsert({
                 where: { sessionId },
                 update: {
-                    answers,
                     analysisSource: faceAnalysis ? "hybrid" : "text",
                     faceScanUsed: !!faceAnalysis,
                     completedAt: new Date(),
@@ -148,7 +149,6 @@ export async function POST(request: NextRequest) {
                 },
                 create: {
                     sessionId,
-                    answers,
                     analysisSource: faceAnalysis ? "hybrid" : "text",
                     faceScanUsed: !!faceAnalysis,
                     completedAt: new Date(),
@@ -394,6 +394,12 @@ export async function POST(request: NextRequest) {
                     expiresAt: expiresAt
                 }
             }).catch(err => console.error("Failed to persist final analysis:", err));
+
+            // 报告生成后，立即清空原始问卷数据（即用即删）
+            await prisma.advisorSession.updateMany({
+                where: { sessionId },
+                data: { answers: Prisma.JsonNull }
+            }).catch(err => console.error("Failed to clear answers:", err));
 
             // ====== 微信公众号推送逻辑 ======
             if (user?.id) {
