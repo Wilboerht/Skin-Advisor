@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import ShareLandingClient from "./ShareLandingClient";
 import prisma from "@/lib/prisma";
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 
 interface GuestReportPageProps {
     searchParams: Promise<{ id?: string }>;
@@ -12,7 +12,7 @@ export default async function GuestReportPage(props: GuestReportPageProps) {
     const { id } = searchParams;
 
     if (!id) {
-        return notFound();
+        redirect("/");
     }
 
     const session = await prisma.advisorSession.findUnique({
@@ -29,15 +29,11 @@ export default async function GuestReportPage(props: GuestReportPageProps) {
     });
 
     if (!session || !session.analysisResult) {
-        return notFound();
+        redirect("/");
     }
 
     if (session.expiresAt && new Date() > new Date(session.expiresAt)) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50 text-gray-500">
-                <p>该分享链接已过期</p>
-            </div>
-        );
+        redirect("/");
     }
 
     // 显式 pick 需要的字段传给客户端，避免直接透传整个数据库原始对象
