@@ -231,7 +231,7 @@ model Product {
   deletedAt         DateTime? // 软删除时间戳
 
   // ===== 性能索引 =====
-  @@index([active, priority])    // 推荐规则查询加速
+  @@index([active, sortOrder])   // 推荐规则查询加速
 
   // ===== 新增字段 =====
   howToUse          String?  // 使用方法说明
