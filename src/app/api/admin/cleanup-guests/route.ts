@@ -5,7 +5,7 @@ import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
 /**
  * POST /api/admin/cleanup-guests
- * 自动清理超过 24 小时的游客数据
+ * 自动清理超过 3 小时的游客数据
  * 必须携带 Authorization: Bearer <ADMIN_SECRET>
  */
 export async function POST(req: NextRequest) {
@@ -29,14 +29,14 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-        // 计算 24 小时前的时间点
-        const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        // 计算 3 小时前的时间点
+        const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000);
 
         // 2. 查找过期的游客会话 (没有绑定 userId)
         const guestSessions = await prisma.advisorSession.findMany({
             where: {
                 userId: null,
-                createdAt: { lt: oneDayAgo }
+                createdAt: { lt: threeHoursAgo }
             },
             select: {
                 sessionId: true,
@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({
             success: true,
             timestamp: new Date().toISOString(),
-            message: `成功清理 ${oneDayAgo.toISOString()} 之前的游客数据`,
+            message: `成功清理 ${threeHoursAgo.toISOString()} 之前的游客数据`,
             data: {
                 dbStats: deletedStats,
                 ossFilesDeleted: ossDeleted
