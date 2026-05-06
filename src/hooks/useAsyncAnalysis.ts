@@ -271,8 +271,8 @@ export function useAsyncAnalysis() {
                 }
             }
 
-            // Bump to next major phase smoothly: avoid manual jump
-            setAnalysisState(prev => ({ ...prev, status: 'analyzing_skin' }));
+            // Bump to next major phase smoothly
+            setAnalysisState(prev => ({ ...prev, status: 'analyzing_skin', progress: Math.max(prev.progress, 45) }));
 
             // 2. Comprehensive Analysis (Text)
 
@@ -294,6 +294,9 @@ export function useAsyncAnalysis() {
                     ...(isFreeRetry ? { freeRetry: true } : {})
                 })
             });
+
+            // 服务端已响应，快速推进进度让用户感知到进展
+            setAnalysisState(prev => ({ ...prev, progress: 90 }));
 
             if (!analyzeRes.ok) throw new Error("Analysis failed");
 
@@ -337,22 +340,21 @@ export function useAsyncAnalysis() {
                     let increment = 0;
 
                     // Configure simulated progress speed for each stage
-                    // This creates a perceived smooth movement even when APIs take time
+                    // Redesigned to avoid the "stuck at 99%" problem:
+                    // analyzing_skin now stops at 75%, then jumps to 90% when server responds
                     if (prev.status === 'preparing') {
-                        target = 14;
-                        increment = 0.12; // Slower start
+                        target = 20;
+                        increment = 0.25; // Faster start, users feel it begins quickly
                     } else if (prev.status === 'analyzing_face') {
-                        target = 39;
-                        increment = 0.08; // Even more gradual
+                        target = 45;
+                        increment = 0.12; // Moderate pace
                     } else if (prev.status === 'analyzing_skin') {
-                        target = 99.5; // Stay just below 100
-                        // Logarithmic-like slowdown for long waits (LLM phase)
+                        target = 75; // Stop at 75% while waiting for LLM
                         const remaining = target - prev.progress;
-                        if (remaining > 50) increment = 0.15; // Faster if we are still far
-                        else if (remaining > 20) increment = 0.05;
-                        else if (remaining > 5) increment = 0.01;
-                        else if (remaining > 1) increment = 0.002;
-                        else increment = 0.0005; // Extremely slow crawl at the very end
+                        if (remaining > 20) increment = 0.18;
+                        else if (remaining > 10) increment = 0.10;
+                        else if (remaining > 3) increment = 0.04;
+                        else increment = 0.015; // Much faster than before, won't feel stuck
                     }
 
                     if (prev.progress >= target) return prev;
@@ -362,7 +364,7 @@ export function useAsyncAnalysis() {
                         progress: Math.min(prev.progress + increment, target)
                     };
                 });
-            }, 60); // Slightly slower tick
+            }, 60);
         }
 
         return () => clearInterval(interval);

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion as m, AnimatePresence } from "framer-motion";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { Sparkles, LogOut } from "lucide-react";
 
 // --- Custom SVG Icons (Placeholders for your SVGs) ---
@@ -307,9 +307,10 @@ export function AnalyzingOverlay({ progress, onCancel, waitingForAvatar }: Analy
     const [showCancel, setShowCancel] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
     const [isExiting, setIsExiting] = useState(false);
+    const [stuckTime, setStuckTime] = useState(0);
+    const stuckStartRef = useRef<number | null>(null);
 
     // Memoize particles to prevent jumping on re-renders (triggered by progress updates)
-    // Use deterministic pseudo-random based on index to avoid SSR/CSR hydration mismatch
     const particles = useMemo(() => {
         return [...Array(6)].map((_, i) => ({
             id: i,
@@ -320,12 +321,28 @@ export function AnalyzingOverlay({ progress, onCancel, waitingForAvatar }: Analy
         }));
     }, []);
 
+    // Track how long we've been stuck at the LLM waiting phase (75%-90%)
+    useEffect(() => {
+        if (progress >= 75 && progress < 90) {
+            if (stuckStartRef.current === null) {
+                stuckStartRef.current = Date.now();
+            }
+            const interval = setInterval(() => {
+                setStuckTime(Math.floor((Date.now() - stuckStartRef.current!) / 1000));
+            }, 1000);
+            return () => clearInterval(interval);
+        } else {
+            stuckStartRef.current = null;
+            setStuckTime(0);
+        }
+    }, [progress]);
+
     // Cycle through icons for "loading" animation
     useEffect(() => {
         setIsMounted(true);
         const interval = setInterval(() => {
             setActiveIconIndex((prev) => (prev + 1) % 9);
-        }, 800); // Slower speed
+        }, 800);
 
         const timeoutId = setTimeout(() => {
             setShowCancel(true);
@@ -337,17 +354,24 @@ export function AnalyzingOverlay({ progress, onCancel, waitingForAvatar }: Analy
         };
     }, []);
 
-    // Dynamic status messages based on progress
-    const getStatusText = (p: number, isWaitingAvatar?: boolean) => {
+    // Dynamic status messages based on progress and wait time
+    const getStatusText = (p: number, stuckSeconds: number, isWaitingAvatar?: boolean) => {
         if (isWaitingAvatar) return "正在绘制您的专属形象...";
-        if (p < 20) return "正在识别面部特征...";
-        if (p < 40) return "正在进行多维智能分析...";
-        if (p < 70) return "正在比对医学临床数据库...";
-        if (p < 98) return "正在生成专属于您的护肤方案...";
+        if (p < 20) return "正在准备您的面部数据...";
+        if (p < 45) return "正在识别面部轮廓与特征...";
+        if (p < 60) return "正在进行皮肤纹理分析...";
+        if (p < 75) return "正在构建个性化 AI 分析模型...";
+        if (p < 90) {
+            if (stuckSeconds < 3) return "正在连接 AI 护肤专家...";
+            if (stuckSeconds < 10) return "AI 正在深度思考中，请稍候...";
+            return "正在处理复杂的肌肤数据，即将完成...";
+        }
+        if (p < 100) return "正在生成您的专属肌肤报告...";
         return "即将为您呈现专属肌肤报告...";
     };
 
-    const statusText = getStatusText(progress, waitingForAvatar);
+    const statusText = getStatusText(progress, stuckTime, waitingForAvatar);
+    const isWaitingLLM = progress >= 75 && progress < 90;
 
     return (
         <m.div
@@ -495,7 +519,7 @@ export function AnalyzingOverlay({ progress, onCancel, waitingForAvatar }: Analy
                         </AnimatePresence>
                     </div>
 
-                    {/* Progress Bar - Minimalist Line */}
+                    {/* Progress Bar - Minimalist Line with streamer effect when waiting */}
                     <div className="w-full max-w-[280px] relative h-[4px] bg-[#E9E9E7] rounded-full overflow-hidden">
                         <m.div
                             className="absolute top-0 bottom-0 left-0 bg-[#D4B78F]"
@@ -503,13 +527,32 @@ export function AnalyzingOverlay({ progress, onCancel, waitingForAvatar }: Analy
                             animate={{ width: `${progress}%` }}
                             transition={{ type: "spring", stiffness: 50, damping: 20 }}
                         />
+                        {/* Streamer effect: active waiting indicator when LLM is thinking */}
+                        {isWaitingLLM && (
+                            <m.div
+                                className="absolute top-0 bottom-0 bg-gradient-to-r from-transparent via-white/70 to-transparent"
+                                style={{ width: '30%' }}
+                                initial={{ left: '-30%' }}
+                                animate={{ left: '100%' }}
+                                transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
+                            />
+                        )}
                     </div>
 
-                    {/* Percentage */}
-                    <div className="w-12 text-center">
+                    {/* Percentage + Wait hint */}
+                    <div className="flex flex-col items-center gap-1">
                         <span className="text-xs text-[#9A9A9A] font-mono tracking-widest">
                             {Math.round(progress)}%
                         </span>
+                        {isWaitingLLM && stuckTime >= 3 && (
+                            <m.span
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="text-[10px] text-[#9A9A9A]/60 tracking-wider"
+                            >
+                                已等待 {stuckTime} 秒，AI 专家正在工作中
+                            </m.span>
+                        )}
                     </div>
                 </div>
 
