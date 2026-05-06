@@ -55,18 +55,21 @@ export function AdminsClient() {
 
     // Dropdown
     const [dropdownId, setDropdownId] = useState<string | null>(null);
-    const dropdownRef = useRef<HTMLDivElement>(null);
+    const [dropdownPos, setDropdownPos] = useState<{ top: number; right: number } | null>(null);
 
     // Close dropdown on outside click or Escape key
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+            const target = event.target as HTMLElement;
+            if (!target.closest('[data-dropdown-menu]') && !target.closest('[data-dropdown-trigger]')) {
                 setDropdownId(null);
+                setDropdownPos(null);
             }
         }
         function handleKeyDown(event: KeyboardEvent) {
             if (event.key === "Escape") {
                 setDropdownId(null);
+                setDropdownPos(null);
             }
         }
         if (dropdownId) {
@@ -338,38 +341,25 @@ export function AdminsClient() {
                                             <td className="px-6 py-4 text-right relative align-middle">
                                                 <div className="flex justify-end items-center h-full">
                                                     <button
-                                                        onClick={() => setDropdownId(dropdownId === admin.id ? null : admin.id)}
+                                                        data-dropdown-trigger
+                                                        onClick={(e) => {
+                                                            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                                                            if (dropdownId === admin.id) {
+                                                                setDropdownId(null);
+                                                                setDropdownPos(null);
+                                                            } else {
+                                                                setDropdownId(admin.id);
+                                                                setDropdownPos({
+                                                                    top: rect.bottom + 4,
+                                                                    right: window.innerWidth - rect.right,
+                                                                });
+                                                            }
+                                                        }}
                                                         className="p-2 text-slate-400 hover:text-slate-600 transition-colors rounded-full hover:bg-slate-100"
                                                     >
                                                         <MoreHorizontal className="w-4 h-4" />
                                                     </button>
                                                 </div>
-
-                                                {dropdownId === admin.id && (
-                                                    <div ref={dropdownRef} className="absolute right-6 top-full mt-1 z-10 bg-white border border-[#1A1A1A]/10 rounded-lg shadow-lg py-1 w-40">
-                                                        <button
-                                                            onClick={() => openEdit(admin)}
-                                                            className="w-full px-3 py-2 text-left text-sm hover:bg-[#1A1A1A]/5 flex items-center gap-2"
-                                                        >
-                                                            <Pencil className="w-4 h-4 text-slate-500" />
-                                                            <span>编辑信息</span>
-                                                        </button>
-                                                        <button
-                                                            onClick={() => openReset(admin)}
-                                                            className="w-full px-3 py-2 text-left text-sm hover:bg-[#1A1A1A]/5 flex items-center gap-2"
-                                                        >
-                                                            <KeyRound className="w-4 h-4 text-amber-600" />
-                                                            <span>重置密码</span>
-                                                        </button>
-                                                        <button
-                                                            onClick={() => openDelete(admin)}
-                                                            className="w-full px-3 py-2 text-left text-sm hover:bg-red-50 text-red-600 flex items-center gap-2"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                            <span>删除</span>
-                                                        </button>
-                                                    </div>
-                                                )}
                                             </td>
                                         </tr>
                                     );
@@ -380,7 +370,52 @@ export function AdminsClient() {
                 </div>
             </div>
 
-            {/* Form Modal */}
+            {/* Dropdown Menu — rendered to body via Portal to escape overflow clipping */}
+            {dropdownId && dropdownPos && typeof document !== "undefined" && createPortal(
+                <div
+                    data-dropdown-menu
+                    className="fixed z-[90] bg-white border border-[#1A1A1A]/10 rounded-lg shadow-lg py-1 w-40"
+                    style={{ top: dropdownPos.top, right: dropdownPos.right }}
+                >
+                    {admins.find(a => a.id === dropdownId) && (
+                        <>
+                            <button
+                                onClick={() => {
+                                    const admin = admins.find(a => a.id === dropdownId);
+                                    if (admin) openEdit(admin);
+                                }}
+                                className="w-full px-3 py-2 text-left text-sm hover:bg-[#1A1A1A]/5 flex items-center gap-2"
+                            >
+                                <Pencil className="w-4 h-4 text-slate-500" />
+                                <span>编辑信息</span>
+                            </button>
+                            <button
+                                onClick={() => {
+                                    const admin = admins.find(a => a.id === dropdownId);
+                                    if (admin) openReset(admin);
+                                }}
+                                className="w-full px-3 py-2 text-left text-sm hover:bg-[#1A1A1A]/5 flex items-center gap-2"
+                            >
+                                <KeyRound className="w-4 h-4 text-amber-600" />
+                                <span>重置密码</span>
+                            </button>
+                            <button
+                                onClick={() => {
+                                    const admin = admins.find(a => a.id === dropdownId);
+                                    if (admin) openDelete(admin);
+                                }}
+                                className="w-full px-3 py-2 text-left text-sm hover:bg-red-50 text-red-600 flex items-center gap-2"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                                <span>删除</span>
+                            </button>
+                        </>
+                    )}
+                </div>,
+                document.body
+            )}
+
+            {/* Form Modal --
             <AdminFormModal
                 isOpen={showFormModal}
                 onClose={() => {
