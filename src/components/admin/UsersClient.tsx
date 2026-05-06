@@ -30,6 +30,8 @@ interface Pagination {
 }
 
 export function UsersClient() {
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
     const [users, setUsers] = useState<User[]>([]);
     const [pagination, setPagination] = useState<Pagination | null>(null);
     const [loading, setLoading] = useState(true);
@@ -335,7 +337,7 @@ export function UsersClient() {
             </div>
 
             {/* Dropdown Menu — rendered to body via Portal to escape overflow clipping */}
-            {showDropdown && dropdownPos && typeof document !== "undefined" && createPortal(
+            {showDropdown && dropdownPos && mounted && createPortal(
                 <div
                     data-dropdown-menu
                     className="fixed z-[90] bg-white border border-[#1A1A1A]/10 rounded-lg shadow-lg py-1 w-40"

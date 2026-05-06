@@ -15,6 +15,8 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
     const [copied, setCopied] = useState(false);
     const toast = useToast();
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
 
     // Clear timeout on unmount or when modal closes
     useEffect(() => {
@@ -187,8 +189,6 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
         </div>
     );
 
-    if (typeof document !== "undefined") {
-        return createPortal(modalContent, document.body);
-    }
-    return null;
+    if (!mounted) return null;
+    return createPortal(modalContent, document.body);
 }

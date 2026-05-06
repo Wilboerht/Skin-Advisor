@@ -44,6 +44,8 @@ export function AdminFormModal({ isOpen, onClose, onSubmit, admin, loading }: Ad
     const [name, setName] = useState("");
     const [role, setRole] = useState("admin");
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
 
     useEffect(() => {
         if (isOpen) {
@@ -279,8 +281,6 @@ export function AdminFormModal({ isOpen, onClose, onSubmit, admin, loading }: Ad
         </AnimatePresence>
     );
 
-    if (typeof document !== "undefined") {
-        return createPortal(modalContent, document.body);
-    }
-    return null;
+    if (!mounted) return null;
+    return createPortal(modalContent, document.body);
 }

@@ -35,6 +35,8 @@ export function UserDetailModal({ isOpen, onClose, userId, onUpdate }: UserDetai
     const [saving, setSaving] = useState(false);
     const toast = useToast();
     const modalRef = useRef<HTMLDivElement>(null);
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
 
     useEffect(() => {
         if (isOpen && modalRef.current) {
@@ -233,8 +235,6 @@ export function UserDetailModal({ isOpen, onClose, userId, onUpdate }: UserDetai
         </div>
     );
 
-    if (typeof document !== "undefined") {
-        return createPortal(modalContent, document.body);
-    }
-    return null;
+    if (!mounted) return null;
+    return createPortal(modalContent, document.body);
 }

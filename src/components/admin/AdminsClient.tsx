@@ -37,6 +37,8 @@ const ROLE_LABELS: Record<string, { label: string; color: string; bg: string; ic
 };
 
 export function AdminsClient() {
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
     const [admins, setAdmins] = useState<Admin[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
@@ -371,7 +373,7 @@ export function AdminsClient() {
             </div>
 
             {/* Dropdown Menu — rendered to body via Portal to escape overflow clipping */}
-            {dropdownId && dropdownPos && typeof document !== "undefined" && createPortal(
+            {dropdownId && dropdownPos && mounted && createPortal(
                 <div
                     data-dropdown-menu
                     className="fixed z-[90] bg-white border border-[#1A1A1A]/10 rounded-lg shadow-lg py-1 w-40"
@@ -440,7 +442,7 @@ export function AdminsClient() {
             />
 
             {/* Reset Password Modal */}
-            {showResetModal && typeof document !== "undefined" && createPortal(
+            {showResetModal && mounted && createPortal(
                 <AnimatePresence>
                     {showResetModal && (
                         <div className="fixed inset-0 z-[100] flex items-center justify-center">

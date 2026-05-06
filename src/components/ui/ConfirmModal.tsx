@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { X, AlertTriangle, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -28,7 +28,9 @@ export function ConfirmModal({
     variant = "default",
     loading = false,
 }: ConfirmModalProps) {
-    const [isSubmitting, setIsSubmitting] = React.useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
 
     const handleConfirm = async () => {
         setIsSubmitting(true);
@@ -129,10 +131,8 @@ export function ConfirmModal({
         </AnimatePresence>
     );
 
-    if (typeof document !== "undefined") {
-        return createPortal(modalContent, document.body);
-    }
-    return null;
+    if (!mounted) return null;
+    return createPortal(modalContent, document.body);
 }
 
 // Hook for easier usage
@@ -146,7 +146,7 @@ interface ConfirmState {
 }
 
 export function useConfirm() {
-    const [state, setState] = React.useState<ConfirmState>({
+    const [state, setState] = useState<ConfirmState>({
         isOpen: false,
         title: "",
         message: "",
@@ -155,7 +155,7 @@ export function useConfirm() {
         onConfirm: () => { },
     });
 
-    const confirm = React.useCallback(
+    const confirm = useCallback(
         (options: {
             title: string;
             message: string;
@@ -179,11 +179,11 @@ export function useConfirm() {
         []
     );
 
-    const close = React.useCallback(() => {
+    const close = useCallback(() => {
         setState((prev) => ({ ...prev, isOpen: false }));
     }, []);
 
-    const ConfirmDialog = React.useCallback(
+    const ConfirmDialog = useCallback(
         () => (
             <ConfirmModal
                 isOpen={state.isOpen}
