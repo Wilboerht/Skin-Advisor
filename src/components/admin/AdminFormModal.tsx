@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X, Loader2, Shield, UserCog, Eye, EyeOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -99,7 +100,7 @@ export function AdminFormModal({ isOpen, onClose, onSubmit, admin, loading }: Ad
 
     if (!isOpen) return null;
 
-    return (
+    return createPortal(
         <AnimatePresence>
             {isOpen && (
                 <div className="fixed inset-0 z-[99999] flex items-center justify-center">
@@ -277,6 +278,7 @@ export function AdminFormModal({ isOpen, onClose, onSubmit, admin, loading }: Ad
                     </motion.div>
                 </div>
             )}
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.body
     );
 }
