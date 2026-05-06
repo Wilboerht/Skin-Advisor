@@ -208,8 +208,14 @@ async function generateAvatarImage(
   const skinTone = characteristics?.skinTone || "健康肤色";
   const hairStyle = characteristics?.hairStyle || "日常发型";
 
+  // 动态注入用户特征到 prompt
+  const genderLabel = isMale ? "男性" : "女性";
+  const ageLabel = typeof age === "number" ? `${age}岁` : String(age);
+  const skinToneLabel = String(skinTone);
+  const hairStyleLabel = String(hairStyle);
+
   // 核心约束前置+后置，防止被长文本稀释
-  const prompt = `面部肤色干净自然。水彩手绘风格半身像，头顶预留一定空间，清新治愈，纯白背景，视觉焦点突出，质感柔和。头发以水彩平涂+勾线为主，不同区域勾线颜色有区分，面部和手部轮廓为暖咖色。衣服无外轮廓线，水彩平涂保留肌理，内部有白色细线条交代细节。整幅画低饱和度柔和色调，通透水彩笔触与简约线条，日系清新插画，比例3:4竖版。`;
+  const prompt = `${genderLabel}，${ageLabel}，${skinToneLabel}，${hairStyleLabel}。面部肤色干净自然。水彩手绘风格半身像，头顶预留一定空间，清新治愈，纯白背景，视觉焦点突出，质感柔和。头发以水彩平涂+勾线为主，不同区域勾线颜色有区分，面部和手部轮廓为暖咖色。衣服无外轮廓线，水彩平涂保留肌理，内部有白色细线条交代细节。整幅画低饱和度柔和色调，通透水彩笔触与简约线条，日系清新插画，比例3:4竖版。`;
 
   let imageUrl: string | null = null;
   let source = "fallback";
@@ -610,8 +616,7 @@ export function startAvatarQueueProcessor(checkIntervalMs: number = 2000) {
         await processAvatarQueueItem(nextItem);
       }
 
-      // 清理过期的队列项 (7天前的)
-      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      // 清理过期的队列项
       const result = await prisma.avatarQueue.deleteMany({
         where: {
           expiresAt: {

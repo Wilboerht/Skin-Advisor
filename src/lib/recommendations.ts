@@ -69,8 +69,21 @@ const AGE_TO_BENEFITS: Record<string, string[]> = {
 /**
  * Calculate match score for a product (Enhanced)
  */
+// 产品基础类型（与 Prisma Product 模型对齐的简化类型）
+interface ProductBase {
+    id: string;
+    name: string;
+    benefits: unknown;
+    suitableSkinTypes: unknown;
+    negativeFor: unknown;
+    price: string | number;
+    featured?: boolean;
+    image?: string;
+    category?: string;
+}
+
 function calculateScore(
-    product: any,
+    product: ProductBase,
     skinType: string,
     concerns: string[],
     answers: QuestionnaireAnswers

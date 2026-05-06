@@ -94,10 +94,11 @@ export async function checkGuestLimit(
         whereConditions.push({ fingerprint });
     }
 
-    // 查询所有可能匹配的记录
+    // 查询所有可能匹配的记录（限制返回数量防止滥用）
     const matchedRecords = await prisma.guestUsage.findMany({
         where: { OR: whereConditions },
-        orderBy: { todayCount: 'desc' } // 优先取使用次数最多的
+        orderBy: { todayCount: 'desc' }, // 优先取使用次数最多的
+        take: 50
     });
 
     // 如果没有任何记录，说明是新访客
@@ -182,6 +183,8 @@ export async function checkGuestLimit(
 
 /**
  * 记录游客测试
+ * @deprecated 该函数已不再使用，请使用 src/lib/usage-limit.ts 中的 recordUsage() 代替。
+ * 保留导出以确保向后兼容，但内部实现不再维护。
  */
 export async function recordGuestTest(
     identifiers: GuestIdentifiers,

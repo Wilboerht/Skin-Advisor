@@ -374,13 +374,29 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         // For guests: try to get avatar from localStorage first
         if (!user) {
             try {
-                const guestAvatarUrl = localStorage.getItem(`guest_avatar_${sessionId}`);
-
-                if (guestAvatarUrl && (guestAvatarUrl.startsWith('http') || guestAvatarUrl.startsWith('data:'))) {
-
-                    setGeneratedAvatar(guestAvatarUrl);
-                    setIsAvatarLoading(false);
-                    return;
+                const guestAvatarRaw = localStorage.getItem(`guest_avatar_${sessionId}`);
+                if (guestAvatarRaw) {
+                    let guestAvatarUrl: string | null = null;
+                    // 兼容旧格式（纯字符串 URL）和新格式（带过期时间的 JSON）
+                    if (guestAvatarRaw.startsWith('http') || guestAvatarRaw.startsWith('data:')) {
+                        guestAvatarUrl = guestAvatarRaw;
+                    } else {
+                        try {
+                            const parsed = JSON.parse(guestAvatarRaw);
+                            if (parsed.expiresAt && Date.now() > parsed.expiresAt) {
+                                localStorage.removeItem(`guest_avatar_${sessionId}`);
+                            } else if (parsed.url) {
+                                guestAvatarUrl = parsed.url;
+                            }
+                        } catch {
+                            // 解析失败则忽略
+                        }
+                    }
+                    if (guestAvatarUrl) {
+                        setGeneratedAvatar(guestAvatarUrl);
+                        setIsAvatarLoading(false);
+                        return;
+                    }
                 }
             } catch (e) {
                 // ignore localStorage read errors
@@ -518,16 +534,31 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         // Mark as migration started to prevent duplicate calls
         avatarMigrationRef.current = true;
 
+        const abortController = new AbortController();
         (async () => {
             try {
                 // Check if there's a guest avatar in localStorage
-                const guestAvatarUrl = localStorage.getItem(`guest_avatar_${sessionId}`);
-                
+                const guestAvatarRaw = localStorage.getItem(`guest_avatar_${sessionId}`);
+                let guestAvatarUrl: string | null = null;
+                if (guestAvatarRaw) {
+                    if (guestAvatarRaw.startsWith('http') || guestAvatarRaw.startsWith('data:')) {
+                        guestAvatarUrl = guestAvatarRaw;
+                    } else {
+                        try {
+                            const parsed = JSON.parse(guestAvatarRaw);
+                            if (parsed.url) guestAvatarUrl = parsed.url;
+                        } catch {
+                            // ignore
+                        }
+                    }
+                }
+
                 if (guestAvatarUrl) {
                     const response = await fetch("/api/advisor/avatar/migrate-guest", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         credentials: "include",
+                        signal: abortController.signal,
                         body: JSON.stringify({
                             sessionId,
                             avatarUrl: guestAvatarUrl
@@ -543,14 +574,20 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     } else {
                         console.warn("Avatar migration failed:", response.status);
                     }
-                } else {
-                    // No guest avatar found to migrate
                 }
             } catch (err) {
+                if (err instanceof Error && err.name === 'AbortError') {
+                    // 组件卸载导致的取消，静默处理
+                    return;
+                }
                 console.error("❌ Failed to migrate guest avatar:", err);
                 // Non-blocking error - don't show to user, just log
             }
         })();
+
+        return () => {
+            abortController.abort();
+        };
     }, [sessionId, user]);
 
     // --- Environment Data Integration ---

@@ -13,13 +13,27 @@ export interface User {
     vipExpiresAt?: string | null;
 }
 
+interface LoginCredentials {
+    email?: string;
+    phone?: string;
+    password: string;
+}
+
+interface RegisterData {
+    email?: string;
+    phone?: string;
+    password: string;
+    name?: string;
+    code?: string;
+}
+
 interface AuthContextType {
     user: User | null;
     isVip: boolean;
     loading: boolean;
     isInitialized: boolean;
-    login: (credentials: any) => Promise<void>;
-    register: (userData: any) => Promise<void>;
+    login: (credentials: LoginCredentials) => Promise<void>;
+    register: (userData: RegisterData) => Promise<void>;
     logout: () => Promise<void>;
     refresh: () => Promise<void>;
 }
@@ -131,7 +145,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         checkSession();
     }, [checkSession]);
 
-    const login = useCallback(async (credentials: any) => {
+    const login = useCallback(async (credentials: LoginCredentials) => {
         try {
             console.log("🔐 Sending login request to /api/auth/login...");
             const res = await fetch("/api/auth/login", {
@@ -154,13 +168,13 @@ export function UserProvider({ children }: { children: ReactNode }) {
             // 立即刷新 session 以确保 Cookie 已正确设置
             console.log("🔄 Refreshing session to verify cookie...");
             await checkSession();
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("🔴 Login failed:", err);
             throw err;
         }
     }, [checkSession]);
 
-    const register = useCallback(async (userData: any) => {
+    const register = useCallback(async (userData: RegisterData) => {
         const res = await fetch("/api/auth/register", {
             method: "POST",
             headers: { "Content-Type": "application/json" },

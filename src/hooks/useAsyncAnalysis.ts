@@ -27,10 +27,11 @@ async function fetchWithRetry(url: string, options: RequestInit, retries = 3, ba
             throw new Error(`Request failed: ${res.status}`);
         }
         return res;
-    } catch (err: any) {
+    } catch (err: unknown) {
+        const error = err instanceof Error ? err : new Error(String(err));
         // Do NOT retry usage-limit errors (429)
-        if (err.message?.includes('测试次数上限') || err.message?.includes('测试上限')) {
-            throw err;
+        if (error.message?.includes('测试次数上限') || error.message?.includes('测试上限')) {
+            throw error;
         }
         if (retries > 0) {
             console.log(`Retrying ${url}... (${retries} attempts left)`);
@@ -64,10 +65,14 @@ export function useAsyncAnalysis() {
         setAnalysisState({ status: 'preparing', progress: 2, error: null, queuePosition: undefined, queueWaitSeconds: undefined });
         trackAnalysisStart();
 
+        // 共享 AbortController：超时或组件卸载时统一取消所有未完成的请求
+        const abortController = new AbortController();
+
         const createTimeoutPromise = () => {
             let timeoutId: ReturnType<typeof setTimeout>;
             const promise = new Promise<never>((_, reject) => {
                 timeoutId = setTimeout(() => {
+                    abortController.abort();
                     reject(new Error("分析超时 (180秒)。请检查网络连接后重试。"));
                 }, 180 * 1000); // 3 minutes
             });
@@ -142,14 +147,17 @@ export function useAsyncAnalysis() {
                     const storedGender = localStorage.getItem("advisor_gender") || answers?.gender || 'female';
                     if (frontPhotoForAvatar) {
                         console.log("[Avatar] Starting background generation (parallel with face analysis)...");
+                        const avatarAbortController = new AbortController();
+                        // 主流程取消时同步取消 avatar 请求
+                        abortController.signal.addEventListener('abort', () => avatarAbortController.abort());
+
                         (async () => {
                             let retries = 0;
                             const maxRetries = 2;
                             
                             while (retries <= maxRetries) {
                                 try {
-                                    const controller = new AbortController();
-                                    const timeout = setTimeout(() => controller.abort(), 60000);
+                                    const timeout = setTimeout(() => avatarAbortController.abort(), 60000);
 
                                     const response = await fetch("/api/advisor/avatar/generate", {
                                         method: "POST",
@@ -165,7 +173,7 @@ export function useAsyncAnalysis() {
                                                 hairStyle: 'elegant'
                                             }
                                         }),
-                                        signal: controller.signal
+                                        signal: avatarAbortController.signal
                                     });
 
                                     clearTimeout(timeout);
@@ -176,8 +184,18 @@ export function useAsyncAnalysis() {
                                         if (data.success && data.queued) {
                                             if (data.generatedUrl) {
                                                 try {
-                                                    localStorage.setItem(`guest_avatar_${sessionId}`, data.generatedUrl);
-                                                    console.log(`[Avatar] ✅ Avatar already generated, stored in localStorage`);
+                                                    // 带过期时间的 localStorage 存储（24小时）
+                                                    const payload = JSON.stringify({
+                                                        url: data.generatedUrl,
+                                                        expiresAt: Date.now() + 24 * 60 * 60 * 1000
+                                                    });
+                                                    // 大小检查：localStorage 通常限制 5MB
+                                                    if (payload.length > 4 * 1024 * 1024) {
+                                                        console.warn("[Avatar] ⚠️  Avatar URL too large for localStorage, skipping");
+                                                    } else {
+                                                        localStorage.setItem(`guest_avatar_${sessionId}`, payload);
+                                                        console.log(`[Avatar] ✅ Avatar already generated, stored in localStorage`);
+                                                    }
                                                 } catch (e) {
                                                     console.warn("[Avatar] ⚠️  Failed to store avatar in localStorage:", e);
                                                 }
@@ -190,8 +208,16 @@ export function useAsyncAnalysis() {
                                         if (data.success && data.url && typeof data.url === 'string') {
                                             if (data.isGuest) {
                                                 try {
-                                                    localStorage.setItem(`guest_avatar_${sessionId}`, data.url);
-                                                    console.log(`[Avatar] ✅ Guest avatar stored in localStorage from ${data.source}`);
+                                                    const payload = JSON.stringify({
+                                                        url: data.url,
+                                                        expiresAt: Date.now() + 24 * 60 * 60 * 1000
+                                                    });
+                                                    if (payload.length > 4 * 1024 * 1024) {
+                                                        console.warn("[Avatar] ⚠️  Avatar URL too large for localStorage, skipping");
+                                                    } else {
+                                                        localStorage.setItem(`guest_avatar_${sessionId}`, payload);
+                                                        console.log(`[Avatar] ✅ Guest avatar stored in localStorage from ${data.source}`);
+                                                    }
                                                 } catch (e) {
                                                     console.warn("[Avatar] ⚠️  Failed to store guest avatar in localStorage:", e);
                                                 }
@@ -224,7 +250,7 @@ export function useAsyncAnalysis() {
                                     }
                                 } catch (err) {
                                     if (err instanceof Error && err.name === 'AbortError') {
-                                        console.warn("[Avatar] ⚠️  Request timeout");
+                                        console.warn("[Avatar] ⚠️  Request cancelled or timeout");
                                     } else {
                                         console.error("[Avatar] ❌ Generation failed:", err);
                                     }
@@ -355,11 +381,13 @@ export function useAsyncAnalysis() {
             const result = await Promise.race([analysisPromise(), timeoutPromise]);
             cancelTimeout();
             return result;
-        } catch (e: any) {
+        } catch (e: unknown) {
             cancelTimeout();
-            console.error("Analysis failed:", e);
-            setAnalysisState({ status: 'error', progress: 0, error: e.message || "Unknown error", queuePosition: undefined, queueWaitSeconds: undefined });
-            throw e;
+            abortController.abort(); // 确保取消所有未完成的请求
+            const error = e instanceof Error ? e : new Error(String(e));
+            console.error("Analysis failed:", error);
+            setAnalysisState({ status: 'error', progress: 0, error: error.message || "Unknown error", queuePosition: undefined, queueWaitSeconds: undefined });
+            throw error;
         } finally {
             isRunningRef.current = false;
         }

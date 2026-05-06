@@ -62,8 +62,16 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // 2. 解析与验证
-        const body = await request.json();
+        // 2. 解析与验证（带 guard，malformed JSON 返回 400 而非 500）
+        let body: unknown;
+        try {
+            body = await request.json();
+        } catch {
+            return NextResponse.json(
+                { error: "无效的请求体，请检查 JSON 格式" },
+                { status: 400 }
+            );
+        }
         const result = FaceAnalyzeRequestSchema.safeParse(body);
 
         if (!result.success) {
@@ -312,11 +320,12 @@ export async function POST(request: NextRequest) {
                 }
             });
 
-        } catch (aiError: any) {
-            aiLogger.error("AI Analysis Failed", aiError);
+        } catch (aiError: unknown) {
+            const err = aiError instanceof Error ? aiError : new Error(String(aiError));
+            aiLogger.error("AI Analysis Failed", { error: err.message });
 
             // 队列超时特有错误
-            if (aiError.message?.includes("Queue timeout") || aiError.message?.includes("Server busy")) {
+            if (err.message?.includes("Queue timeout") || err.message?.includes("Server busy")) {
                 return NextResponse.json(
                     { error: "服务器繁忙，请稍后再试", code: "SERVER_BUSY" },
                     { status: 503, headers: { "Retry-After": "30" } }
@@ -333,14 +342,15 @@ export async function POST(request: NextRequest) {
             }
         }
 
-    } catch (error: any) {
-        if (error.message?.includes("cancelled") || error.name === 'AbortError') {
+    } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        if (err.message?.includes("cancelled") || (err as { name?: string }).name === 'AbortError') {
             return NextResponse.json(
                 { error: "分析请求已取消，请重试" },
                 { status: 499 }
             );
         }
-        console.error("Critical error in face analysis:", error);
+        console.error("Critical error in face analysis:", err);
         return NextResponse.json(
             { error: "服务器内部错误" },
             { status: 500 }

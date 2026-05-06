@@ -61,6 +61,9 @@ model AdvisorSession {
   userId          String?
   user            User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
 
+  // 头像生成队列关联（一对一）
+  avatarQueue     AvatarQueue?
+
   createdAt       DateTime  @default(now())
 
   // ===== 性能索引 =====
@@ -294,22 +297,25 @@ model AvatarQueue {
   sessionId       String   @unique
   status          String   @default("pending") // pending | processing | completed | failed
   attempts        Int      @default(0)
-  
+
   // 生成参数
   nickname        String?
   characteristics Json?    // { age, gender, skinTone, hairStyle }
   frontPhoto      String?  // base64 或 URL
-  
+
   // 结果
   generatedUrl    String?
   source          String?  // jimeng_i2i | jimeng_t2i | fallback
   errorMessage    String?
-  
+
   // 时间戳
   createdAt       DateTime @default(now())
   startedAt       DateTime?
   completedAt     DateTime?
   expiresAt       DateTime // 7 天后自动清理
+
+  // 正式外键关系：关联到 AdvisorSession（一对一）
+  advisorSession  AdvisorSession? @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
 
   // ===== 性能索引 =====
   @@index([status, createdAt])   // 队列处理器按状态+时间排序

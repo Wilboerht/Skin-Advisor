@@ -84,8 +84,16 @@ export async function POST(request: NextRequest) {
     request.signal.addEventListener('abort', onClientAbort);
 
     try {
-        // 1. 解析请求体
-        const body = await request.json();
+        // 1. 解析请求体（带 guard，malformed JSON 返回 400 而非 500）
+        let body: unknown;
+        try {
+            body = await request.json();
+        } catch {
+            return NextResponse.json(
+                { error: "无效的请求体，请检查 JSON 格式" },
+                { status: 400 }
+            );
+        }
 
         // 2. 使用 Zod 验证（先验证再扣额度，避免无效请求浪费配额）
         const result = AnalyzeRequestSchema.safeParse(body);
@@ -441,6 +449,11 @@ export async function POST(request: NextRequest) {
 
         }
 
+        // Safe concernAnalysis extraction with Array.isArray guard
+        const concernAnalysisItems = Array.isArray(resultJson.concernAnalysis)
+            ? resultJson.concernAnalysis
+            : [];
+
         const standardizedResult = {
             skinProfile: {
                 type: finalSkinType,
@@ -452,7 +465,7 @@ export async function POST(request: NextRequest) {
                 summary: resultJson.summary || "根据您的问卷及面部数据，我们为您生成了这份综合分析报告。",
                 details: [
                     resultJson.skinTypeAnalysis || "",
-                    ...(resultJson.concernAnalysis || [])
+                    ...concernAnalysisItems
                 ].filter(Boolean)
             },
             products: finalProducts,
@@ -571,8 +584,9 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json(sanitizedResult, { headers: rateLimitHeaders });
 
-    } catch (error: any) {
-        if (error.message?.includes("cancelled") || error.name === 'AbortError') {
+    } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        if (err.message?.includes("cancelled") || (err as { name?: string }).name === 'AbortError') {
             return NextResponse.json(
                 { error: "分析请求已取消，请重试" },
                 { status: 499 }

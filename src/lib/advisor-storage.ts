@@ -127,7 +127,7 @@ export async function getFaceImages(): Promise<{
 /**
  * Save analysis result to IndexedDB
  */
-export async function saveResult(result: any): Promise<boolean> {
+export async function saveResult(result: unknown): Promise<boolean> {
     try {
         const db = await getDB();
         return new Promise((resolve, reject) => {
@@ -155,7 +155,7 @@ export async function saveResult(result: any): Promise<boolean> {
 /**
  * Get analysis result from IndexedDB
  */
-export async function getResult(): Promise<any | null> {
+export async function getResult(): Promise<unknown | null> {
     try {
         const db = await getDB();
         return new Promise((resolve, reject) => {

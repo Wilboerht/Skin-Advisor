@@ -56,43 +56,5 @@ export async function GET(request: NextRequest) {
     }
 }
 
-// POST: 检查是否可以测试（复用 checkUsageLimit，记录由 analyze API 统一写入）
-export async function POST(request: NextRequest) {
-    try {
-        const body = await request.json();
-        const { guestId, cookieId, fingerprint } = body;
-
-        const limitBody = {
-            cookieId: cookieId || undefined,
-            fingerprint: fingerprint || guestId || undefined
-        };
-
-        const limit = await checkUsageLimit(request, limitBody);
-        const dailyLimit = limit.role === 'vip' ? 100 : limit.role === 'member' ? 10 : DEFAULT_GUEST_LIMIT;
-        const usedCount = Math.max(0, dailyLimit - limit.remaining);
-
-        if (!limit.canTest) {
-            return NextResponse.json({
-                success: false,
-                error: limit.error || "已达到今日测试次数上限",
-                canTest: false,
-                usedCount,
-                dailyLimit
-            }, { status: 429 });
-        }
-
-        return NextResponse.json({
-            success: true,
-            usedCount,
-            dailyLimit,
-            remaining: limit.remaining
-        });
-    } catch (error) {
-        console.error("Failed to record test:", error);
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        return NextResponse.json({
-            error: "Failed to record test",
-            details: errorMessage
-        }, { status: 500 });
-    }
-}
+// POST 端点已移除：test-limit 只做查询不做写入，GET 已足够。
+// 保留此注释说明，防止误增冗余端点。

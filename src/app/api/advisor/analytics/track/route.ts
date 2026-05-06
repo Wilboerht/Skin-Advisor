@@ -61,9 +61,8 @@ function anonymizeIP(ip: string): string {
 // 获取客户端信息
 function getClientInfo(request: NextRequest) {
     const userAgent = request.headers.get("user-agent") || "";
-    const rawIP = request.headers.get("x-forwarded-for")?.split(",")[0].trim()
-        || request.headers.get("x-real-ip")
-        || "unknown";
+    // 统一使用 getClientIP 获取原始 IP（限流和存储使用同一来源），再脱敏存储
+    const rawIP = getClientIP(request);
     const referer = request.headers.get("referer") || "";
 
     // 脱敏处理 IP 地址用于存储
@@ -308,6 +307,7 @@ export async function POST(request: NextRequest) {
 
             case "result_view": {
                 // 使用 upsert 避免通过分享链接直接访问时找不到记录
+                // 注意：create 分支不设置 completedAt，避免污染"完成会话"统计
                 await prisma.advisorSession.upsert({
                     where: { sessionId },
                     update: {
@@ -318,7 +318,7 @@ export async function POST(request: NextRequest) {
                         sessionId,
                         startedAt: now,
                         resultViewedAt: now,
-                        completedAt: now,
+                        // 不设置 completedAt：通过分享链接直接访问不算作完整的分析流程
                         userAgent: clientInfo.userAgent,
                         ip: clientInfo.ip,
                         referrer: clientInfo.referer,

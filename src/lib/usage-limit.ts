@@ -127,7 +127,7 @@ export async function checkUsageLimit(request: NextRequest, body?: any): Promise
                 OR: whereConditions,
                 lastTestAt: { gte: today }
             },
-            orderBy: { lastTestAt: 'desc' }
+            orderBy: { todayCount: 'desc' }
         })
     );
 
@@ -254,9 +254,10 @@ export async function recordUsage(request: NextRequest, sessionId: string, body?
             });
             return true;
         });
-    } catch (e: any) {
+    } catch (e: unknown) {
+        const err = e instanceof Error ? e : new Error(String(e));
         // P2002 = unique constraint violation (already recorded) — 这是正常的幂等行为
-        if (e.code === 'P2002' || e.message?.includes('Unique constraint')) {
+        if ((err as { code?: string }).code === 'P2002' || err.message?.includes('Unique constraint')) {
             console.log(`[recordUsage] Session ${sessionId} already recorded, skipping duplicate.`);
             return true;
         }

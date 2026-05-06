@@ -74,6 +74,16 @@ let cachedSettings: AISettings | null = null;
 let cacheTimestamp = 0;
 const CACHE_TTL = 60 * 1000; // 60s
 
+/**
+ * 手动失效 AI 设置缓存
+ * 供管理后台调用，确保配置修改后立即生效
+ */
+export function invalidateAISettingsCache(): void {
+    cachedSettings = null;
+    cacheTimestamp = 0;
+    aiLogger.info("AI settings cache invalidated");
+}
+
 // ============================================================================
 // 配置管理
 // ============================================================================
@@ -418,14 +428,17 @@ export function extractJson(content: string) {
  */
 export async function analyzeWithAI(
     answers: QuestionnaireAnswers,
-    userPrompt: string
+    userPrompt: string,
+    signal?: AbortSignal
 ): Promise<FaceAnalysisResult> {
     try {
         aiLogger.info("Starting AI Analysis (Text Only)");
 
         const resultText = await generateText(
             TEXT_ANALYSIS_SYSTEM_PROMPT,
-            userPrompt
+            userPrompt,
+            undefined,
+            signal
         );
 
         const result = extractJsonFromResponse<FaceAnalysisResult>(resultText);
@@ -436,7 +449,7 @@ export async function analyzeWithAI(
 
         return result;
     } catch (error) {
-        aiLogger.error("AI Analysis Failed", error as any);
+        aiLogger.error("AI Analysis Failed", { error: error instanceof Error ? error.message : String(error) });
         throw error;
     }
 }

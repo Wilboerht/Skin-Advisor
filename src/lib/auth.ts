@@ -1,6 +1,6 @@
 
 import { compare, hash } from 'bcryptjs';
-import { SignJWT, jwtVerify } from 'jose';
+import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
 import { cookies } from 'next/headers';
 
 function getJwtSecret(): Uint8Array {
@@ -29,7 +29,7 @@ export async function verifyPassword(plain: string, hashed: string): Promise<boo
     return compare(plain, hashed);
 }
 
-export async function signToken(payload: any, expiresIn: string | number = '7d'): Promise<string> {
+export async function signToken(payload: Record<string, unknown>, expiresIn: string | number = '7d'): Promise<string> {
     return new SignJWT(payload)
         .setProtectedHeader({ alg: 'HS256' })
         .setIssuedAt()
@@ -37,7 +37,7 @@ export async function signToken(payload: any, expiresIn: string | number = '7d')
         .sign(JWT_SECRET);
 }
 
-export async function verifyToken(token: string): Promise<any> {
+export async function verifyToken(token: string): Promise<JWTPayload | null> {
     try {
         const { payload } = await jwtVerify(token, JWT_SECRET);
         return payload;
@@ -73,7 +73,7 @@ export async function getSession(): Promise<SessionUser | null> {
                 phone: (payload.phone as string) || null,
                 name: payload.name as string,
                 role: payload.role as string || 'user',
-                vipExpiresAt: payload.vipExpiresAt || null
+                vipExpiresAt: (payload.vipExpiresAt as string | null | undefined) || null
             };
         }
         return null;
