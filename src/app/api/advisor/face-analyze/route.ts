@@ -19,6 +19,16 @@ import { visionQueue } from "@/lib/ai-queue";
 export const maxDuration = 60; // 防止超时
 
 export async function POST(request: NextRequest) {
+    // 创建 AbortController 用于服务端超时和客户端断开取消 AI 请求
+    const abortController = new AbortController();
+    const serverTimeout = setTimeout(() => abortController.abort(), 55 * 1000);
+
+    const onClientAbort = () => {
+        clearTimeout(serverTimeout);
+        abortController.abort();
+    };
+    request.signal.addEventListener('abort', onClientAbort);
+
     try {
         // 0. 检查 AI 开关
         if (!(await isAIEnabled())) {
@@ -238,9 +248,13 @@ export async function POST(request: NextRequest) {
                     validImages,
                     systemPrompt,
                     VISION_ANALYSIS_USER_PROMPT,
-                    provider as any
+                    provider as any,
+                    abortController.signal
                 );
             } catch (e: any) {
+                if (e.message?.includes("cancelled") || e.name === 'AbortError') {
+                    throw new Error("Face analysis cancelled (client timeout or disconnect)");
+                }
                 // Retry if payload error
                 const isPayloadError = e.message?.includes('400') || e.message?.includes('base64') || e.message?.includes('too large');
                 if (isPayloadError) {
@@ -252,7 +266,8 @@ export async function POST(request: NextRequest) {
                         validImages,
                         systemPrompt,
                         VISION_ANALYSIS_USER_PROMPT,
-                        provider as any
+                        provider as any,
+                        abortController.signal
                     );
                     aiLogger.info(`[FaceAnalyze] Retry successful.`);
                 } else {
@@ -302,11 +317,20 @@ export async function POST(request: NextRequest) {
             }
         }
 
-    } catch (error) {
+    } catch (error: any) {
+        if (error.message?.includes("cancelled") || error.name === 'AbortError') {
+            return NextResponse.json(
+                { error: "分析请求已取消，请重试" },
+                { status: 499 }
+            );
+        }
         console.error("Critical error in face analysis:", error);
         return NextResponse.json(
             { error: "服务器内部错误" },
             { status: 500 }
         );
+    } finally {
+        clearTimeout(serverTimeout);
+        request.signal.removeEventListener('abort', onClientAbort);
     }
 }

@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import { getSession, isVipCheck } from '@/lib/auth';
 import { extractGuestIdentifiers } from './guest-limit';
 import { withDbRetry } from './utils';
+import { hashIP } from './privacy';
 
 /**
  * 使用频率限制结果
@@ -28,6 +29,9 @@ export async function checkUsageLimit(request: NextRequest, body?: any): Promise
     const user = await getSession();
     const now = new Date();
 
+    // 统计进行中请求（5 分钟内启动但未完成的），防止并发重试导致超额
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+
     // 1. 如果是 VIP 用户
     if (isVipCheck(user)) {
         const userId = user!.id;
@@ -43,13 +47,25 @@ export async function checkUsageLimit(request: NextRequest, body?: any): Promise
             })
         );
 
+        const inProgressCount = await withDbRetry(() =>
+            prisma.advisorSession.count({
+                where: {
+                    userId,
+                    analysisStartedAt: { gte: fiveMinutesAgo },
+                    completedAt: null
+                }
+            })
+        );
+
+        const totalCount = count + inProgressCount;
+
         // VIP 限制：每日 100 次
         const limit = 100;
         return {
-            canTest: count < limit,
-            remaining: Math.max(0, limit - count),
+            canTest: totalCount < limit,
+            remaining: Math.max(0, limit - totalCount),
             role: 'vip',
-            error: count >= limit ? '您的 VIP 今日测试次数已用完，请明天再试。' : undefined
+            error: totalCount >= limit ? '您的 VIP 今日测试次数已用完，请明天再试。' : undefined
         };
     }
 
@@ -68,13 +84,25 @@ export async function checkUsageLimit(request: NextRequest, body?: any): Promise
             })
         );
 
+        const inProgressCount = await withDbRetry(() =>
+            prisma.advisorSession.count({
+                where: {
+                    userId,
+                    analysisStartedAt: { gte: fiveMinutesAgo },
+                    completedAt: null
+                }
+            })
+        );
+
+        const totalCount = count + inProgressCount;
+
         // 普通用户限制：每日 10 次
         const limit = 10;
         return {
-            canTest: count < limit,
-            remaining: Math.max(0, limit - count),
+            canTest: totalCount < limit,
+            remaining: Math.max(0, limit - totalCount),
             role: 'member',
-            error: count >= limit ? '今日测试次数已用完，请明天再试。' : undefined
+            error: totalCount >= limit ? '今日测试次数已用完，请明天再试。' : undefined
         };
     }
 
@@ -101,9 +129,22 @@ export async function checkUsageLimit(request: NextRequest, body?: any): Promise
     );
 
     const count = todayCount?.todayCount || 0;
+
+    // 统计访客进行中的请求
+    const inProgressCount = await withDbRetry(() =>
+        prisma.advisorSession.count({
+            where: {
+                ip: hashIP(ipAddress),
+                analysisStartedAt: { gte: fiveMinutesAgo },
+                completedAt: null
+            }
+        })
+    );
+
+    const totalCount = count + inProgressCount;
     const limit = 3;
 
-    if (count >= limit) {
+    if (totalCount >= limit) {
         return {
             canTest: false,
             remaining: 0,
@@ -114,7 +155,7 @@ export async function checkUsageLimit(request: NextRequest, body?: any): Promise
 
     return {
         canTest: true,
-        remaining: Math.max(0, limit - count),
+        remaining: Math.max(0, limit - totalCount),
         role: 'guest'
     };
 }

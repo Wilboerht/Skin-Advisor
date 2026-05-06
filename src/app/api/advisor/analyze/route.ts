@@ -47,6 +47,16 @@ function sanitizeReason(reason: string): string {
 }
 
 export async function POST(request: NextRequest) {
+    // 创建 AbortController 用于服务端超时和客户端断开取消 AI 请求
+    const abortController = new AbortController();
+    const serverTimeout = setTimeout(() => abortController.abort(), 90 * 1000);
+
+    const onClientAbort = () => {
+        clearTimeout(serverTimeout);
+        abortController.abort();
+    };
+    request.signal.addEventListener('abort', onClientAbort);
+
     try {
         // 1. 解析请求体
         const body = await request.json();
@@ -230,9 +240,16 @@ export async function POST(request: NextRequest) {
 
         let resultJson: any;
         try {
-            const resultText = await generateText(systemPrompt, userPrompt, provider as any);
+            const resultText = await generateText(systemPrompt, userPrompt, provider as any, abortController.signal);
             resultJson = extractJsonFromResponse<any>(resultText);
-        } catch (e) {
+        } catch (e: any) {
+            if (e.message?.includes("cancelled") || e.name === 'AbortError') {
+                console.warn("Text analysis cancelled (client timeout or disconnect)");
+                return NextResponse.json(
+                    { error: "分析请求已取消，请重试" },
+                    { status: 499 }
+                );
+            }
             console.error("AI Generation failed, falling back", e);
             // Fallback if AI text gen fails but we have DB
             resultJson = {};
@@ -439,11 +456,20 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json(standardizedResult, { headers: rateLimitHeaders });
 
-    } catch (error) {
+    } catch (error: any) {
+        if (error.message?.includes("cancelled") || error.name === 'AbortError') {
+            return NextResponse.json(
+                { error: "分析请求已取消，请重试" },
+                { status: 499 }
+            );
+        }
         console.error("Advisor analysis failed:", error);
         return NextResponse.json(
             { error: "生成分析报告失败，请重试" },
             { status: 500 }
         );
+    } finally {
+        clearTimeout(serverTimeout);
+        request.signal.removeEventListener('abort', onClientAbort);
     }
 }

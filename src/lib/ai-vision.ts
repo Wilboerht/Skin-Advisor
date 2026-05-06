@@ -31,8 +31,13 @@ export async function analyzeImages(
     images: VisionImage[],
     _defaultSystemPrompt: string, // 保留参数兼容，但内部优先用配置
     userPrompt: string,
-    _defaultProvider: AIProvider = "openai"
+    _defaultProvider: AIProvider = "openai",
+    signal?: AbortSignal
 ) {
+    // 如果外部 signal 已 abort，直接抛出
+    if (signal?.aborted) {
+        throw new Error("Vision request cancelled by client.");
+    }
     // 1. 获取配置
     const settings = await getAISettings();
     // 优先使用数据库配置的 provider，如果没有则回退到传入参数或默认值
@@ -68,7 +73,7 @@ export async function analyzeImages(
                 if (attempt > 1) await delay(RETRY_DELAY_MS * attempt);
                 if (i > 0 || attempt > 1) aiLogger.warn(`Vision Retry: Key ${i + 1}, Attempt ${attempt}`);
 
-                const result = await callVisionAPI(provider, apiKey, model, images, systemPrompt, finalUserPrompt);
+                const result = await callVisionAPI(provider, apiKey, model, images, systemPrompt, finalUserPrompt, signal);
 
                 // 解析与验证
                 const jsonData = extractJsonFromResponse<any>(result);
@@ -82,6 +87,9 @@ export async function analyzeImages(
                 return jsonData; // 成功返回
 
             } catch (error: any) {
+                if (error.name === 'AbortError' || signal?.aborted) {
+                    throw new Error("Vision request cancelled by client.");
+                }
                 lastError = error;
                 aiLogger.warn(`Vision Error (${provider}): ${error.message}`);
 
@@ -108,24 +116,25 @@ async function callVisionAPI(
     model: string,
     images: VisionImage[],
     systemPrompt: string,
-    userPrompt: string
+    userPrompt: string,
+    signal?: AbortSignal
 ): Promise<string> {
 
     if (provider === "anthropic") {
-        return callClaudeVision(apiKey, model, images, systemPrompt, userPrompt);
+        return callClaudeVision(apiKey, model, images, systemPrompt, userPrompt, signal);
     }
 
     if (provider === "qwen") {
         // 通义千问 VL 特殊处理
-        return callOpenAICompatibleVision(provider, apiKey, model, images, systemPrompt, userPrompt);
+        return callOpenAICompatibleVision(provider, apiKey, model, images, systemPrompt, userPrompt, signal);
     }
 
     if (provider === "gemini") {
-        return callGeminiVision(apiKey, model, images, systemPrompt, userPrompt);
+        return callGeminiVision(apiKey, model, images, systemPrompt, userPrompt, signal);
     }
 
     // Default: OpenAI Compatible
-    return callOpenAICompatibleVision(provider, apiKey, model, images, systemPrompt, userPrompt);
+    return callOpenAICompatibleVision(provider, apiKey, model, images, systemPrompt, userPrompt, signal);
 }
 
 async function callClaudeVision(
@@ -133,7 +142,8 @@ async function callClaudeVision(
     model: string,
     images: VisionImage[],
     systemPrompt: string,
-    userPrompt: string
+    userPrompt: string,
+    signal?: AbortSignal
 ) {
     const config = getProviderConfig("anthropic");
 
@@ -150,41 +160,54 @@ async function callClaudeVision(
         };
     });
 
-    // Claude 将 system prompt 放在 user message 里效果往往更好，或者使用 system 字段
-    // 这里我们把专门的 Vision Prompt 拼接到 user message
+    // 合并外部 signal 和内部 timeout
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30000);
-    const res = await fetch(config.baseUrl, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "x-api-key": apiKey,
-            "anthropic-version": "2023-06-01"
-        },
-        body: JSON.stringify({
-            model: model || "claude-3-5-sonnet-20240620",
-            max_tokens: 2500,
-            messages: [
-                {
-                    role: "user",
-                    content: [
-                        ...imageContents,
-                        { type: "text", text: `${systemPrompt}\n\n${userPrompt}` }
-                    ]
-                }
-            ]
-        }),
-        signal: controller.signal
-    });
-    clearTimeout(timeout);
-
-    if (!res.ok) {
-        const err = await res.text();
-        throw new Error(`Anthropic Vision Error: ${res.status} - ${err}`);
+    const onExternalAbort = () => {
+        clearTimeout(timeout);
+        controller.abort();
+    };
+    if (signal) {
+        signal.addEventListener('abort', onExternalAbort);
     }
 
-    const data = await res.json();
-    return data.content?.[0]?.text || "";
+    try {
+        const res = await fetch(config.baseUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "x-api-key": apiKey,
+                "anthropic-version": "2023-06-01"
+            },
+            body: JSON.stringify({
+                model: model || "claude-3-5-sonnet-20240620",
+                max_tokens: 2500,
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            ...imageContents,
+                            { type: "text", text: `${systemPrompt}\n\n${userPrompt}` }
+                        ]
+                    }
+                ]
+            }),
+            signal: controller.signal
+        });
+
+        if (!res.ok) {
+            const err = await res.text();
+            throw new Error(`Anthropic Vision Error: ${res.status} - ${err}`);
+        }
+
+        const data = await res.json();
+        return data.content?.[0]?.text || "";
+    } finally {
+        clearTimeout(timeout);
+        if (signal) {
+            signal.removeEventListener('abort', onExternalAbort);
+        }
+    }
 }
 
 async function callOpenAICompatibleVision(
@@ -193,7 +216,8 @@ async function callOpenAICompatibleVision(
     model: string,
     images: VisionImage[],
     systemPrompt: string,
-    userPrompt: string
+    userPrompt: string,
+    signal?: AbortSignal
 ) {
     const client = createOpenAIClient(provider, apiKey);
 
@@ -208,28 +232,26 @@ async function callOpenAICompatibleVision(
             url = `data:image/jpeg;base64,${url}`;
         }
 
-        // Qwen specific handling: If data URI is too long, it might fail.
-        // But without OSS, we have no choice but to try.
-        // Some adapters strip 'data:image/jpeg;base64,' but standard OpenAI requires it.
-
         content.push({
             type: "image_url",
             image_url: {
                 url: url,
-                // detail: "auto" // Default to auto
             },
         });
     });
 
-    const response = await client.chat.completions.create({
-        model: model,
-        messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content },
-        ],
-        max_tokens: 2500,
-        temperature: 0.2,
-    });
+    const response = await client.chat.completions.create(
+        {
+            model: model,
+            messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content },
+            ],
+            max_tokens: 2500,
+            temperature: 0.2
+        },
+        { signal: signal as any }
+    );
 
     return response.choices[0]?.message?.content || "";
 }
@@ -239,7 +261,8 @@ async function callGeminiVision(
     model: string,
     images: VisionImage[],
     systemPrompt: string,
-    userPrompt: string
+    userPrompt: string,
+    signal?: AbortSignal
 ) {
     const config = getProviderConfig("gemini");
     const targetModel = model || "gemini-1.5-flash";
@@ -261,29 +284,44 @@ async function callGeminiVision(
         }
     });
 
+    // 合并外部 signal 和内部 timeout
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30000);
-    const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            contents: [{ parts: parts }],
-            generationConfig: {
-                temperature: 0.4,
-                maxOutputTokens: 2048
-            }
-        }),
-        signal: controller.signal
-    });
-    clearTimeout(timeout);
-
-    if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`Gemini Vision Error: ${res.status} - ${errText}`);
+    const onExternalAbort = () => {
+        clearTimeout(timeout);
+        controller.abort();
+    };
+    if (signal) {
+        signal.addEventListener('abort', onExternalAbort);
     }
 
-    const data = await res.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    try {
+        const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                contents: [{ parts: parts }],
+                generationConfig: {
+                    temperature: 0.4,
+                    maxOutputTokens: 2048
+                }
+            }),
+            signal: controller.signal
+        });
+
+        if (!res.ok) {
+            const errText = await res.text();
+            throw new Error(`Gemini Vision Error: ${res.status} - ${errText}`);
+        }
+
+        const data = await res.json();
+        return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    } finally {
+        clearTimeout(timeout);
+        if (signal) {
+            signal.removeEventListener('abort', onExternalAbort);
+        }
+    }
 }
 
 // 辅助：获取默认视觉模型

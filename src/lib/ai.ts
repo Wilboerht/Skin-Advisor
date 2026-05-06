@@ -192,8 +192,14 @@ export function createOpenAIClient(provider: AIProvider, apiKey: string) {
 export async function generateText(
     systemPrompt: string,
     userPrompt: string,
-    preferredProvider?: AIProvider
+    preferredProvider?: AIProvider,
+    signal?: AbortSignal
 ): Promise<string> {
+    // 如果外部 signal 已 abort，直接抛出
+    if (signal?.aborted) {
+        throw new Error("Request cancelled by client.");
+    }
+
     const settings = await getAISettings();
     const primaryProvider = preferredProvider || settings.provider || "openai";
     const primaryModel = settings.model;
@@ -210,10 +216,13 @@ export async function generateText(
         const model = provider === primaryProvider ? primaryModel : getModelForProvider(provider, settings);
 
         try {
-            const result = await callProviderWithRetry(provider as AIProvider, model, systemPrompt, userPrompt, settings);
+            const result = await callProviderWithRetry(provider as AIProvider, model, systemPrompt, userPrompt, settings, signal);
             aiLogger.info(`AI Generation Success using provider: ${provider}`);
             return result;
         } catch (error: any) {
+            if (error.name === 'AbortError' || signal?.aborted) {
+                throw new Error("Request cancelled by client.");
+            }
             aiLogger.warn(`Provider ${provider} failed: ${error.message}. Switching to next...`);
             lastError = error;
             continue;
@@ -231,7 +240,8 @@ async function callProviderWithRetry(
     model: string,
     systemPrompt: string,
     userPrompt: string,
-    settings: AISettings
+    settings: AISettings,
+    signal?: AbortSignal
 ): Promise<string> {
     const apiKeys = getApiKeysForProvider(provider, settings);
 
@@ -244,8 +254,11 @@ async function callProviderWithRetry(
         const apiKey = apiKeys[i];
         try {
             if (i > 0) aiLogger.info(`Retrying with key ${i + 1}/${apiKeys.length} for ${provider}`);
-            return await callProviderInternal(provider, apiKey, model, systemPrompt, userPrompt, settings);
+            return await callProviderInternal(provider, apiKey, model, systemPrompt, userPrompt, settings, signal);
         } catch (error: any) {
+            if (error.name === 'AbortError' || signal?.aborted) {
+                throw error;
+            }
             const isAuthError = error.status === 401 || String(error).includes("401");
             const isRateLimit = error.status === 429 || String(error).includes("429");
 
@@ -264,71 +277,100 @@ async function callProviderInternal(
     model: string,
     systemPrompt: string,
     userPrompt: string,
-    settings: AISettings
+    settings: AISettings,
+    signal?: AbortSignal
 ): Promise<string> {
     aiLogger.info(`Calling AI: ${provider} (${model})`, { promptLength: userPrompt.length });
+
+    // 合并外部 signal 和内部 timeout 的辅助函数
+    function createMergedAbortController(timeoutMs: number) {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), timeoutMs);
+        const onExternalAbort = () => {
+            clearTimeout(timeout);
+            controller.abort();
+        };
+        if (signal) {
+            signal.addEventListener('abort', onExternalAbort);
+        }
+        return {
+            controller,
+            cleanup: () => {
+                clearTimeout(timeout);
+                if (signal) {
+                    signal.removeEventListener('abort', onExternalAbort);
+                }
+            }
+        };
+    }
 
     // Anthropic 特殊处理
     if (provider === "anthropic") {
         const config = getProviderConfig("anthropic");
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 30000);
-        const res = await fetch(config.baseUrl, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "x-api-key": apiKey,
-                "anthropic-version": "2023-06-01"
-            },
-            body: JSON.stringify({
-                model: model || "claude-3-5-sonnet-20240620",
-                max_tokens: settings.maxTokens,
-                system: systemPrompt,
-                messages: [{ role: "user", content: userPrompt }],
-                temperature: settings.temperature
-            }),
-            signal: controller.signal
-        });
-        clearTimeout(timeout);
-
-        if (!res.ok) throw new Error(`Anthropic Error: ${res.statusText}`);
-        const data = await res.json();
-        return data.content?.[0]?.text || "";
+        const { controller, cleanup } = createMergedAbortController(30000);
+        try {
+            const res = await fetch(config.baseUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-api-key": apiKey,
+                    "anthropic-version": "2023-06-01"
+                },
+                body: JSON.stringify({
+                    model: model || "claude-3-5-sonnet-20240620",
+                    max_tokens: settings.maxTokens,
+                    system: systemPrompt,
+                    messages: [{ role: "user", content: userPrompt }],
+                    temperature: settings.temperature
+                }),
+                signal: controller.signal
+            });
+            if (!res.ok) throw new Error(`Anthropic Error: ${res.statusText}`);
+            const data = await res.json();
+            return data.content?.[0]?.text || "";
+        } finally {
+            cleanup();
+        }
     }
 
     // Gemini 特殊处理 (简版)
     if (provider === "gemini") {
         const config = getProviderConfig("gemini");
         const url = `${config.baseUrl}/models/${model || 'gemini-1.5-flash'}:generateContent?key=${apiKey}`;
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 30000);
-        const res = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                contents: [{
-                    parts: [{ text: systemPrompt + "\n\n" + userPrompt }]
-                }]
-            }),
-            signal: controller.signal
-        });
-        clearTimeout(timeout);
-        if (!res.ok) throw new Error(`Gemini Error: ${res.statusText}`);
-        const data = await res.json();
-        return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        const { controller, cleanup } = createMergedAbortController(30000);
+        try {
+            const res = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{ text: systemPrompt + "\n\n" + userPrompt }]
+                    }]
+                }),
+                signal: controller.signal
+            });
+            if (!res.ok) throw new Error(`Gemini Error: ${res.statusText}`);
+            const data = await res.json();
+            return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        } finally {
+            cleanup();
+        }
     }
 
     // OpenAI 兼容接口 (DeepSeek, Qwen, OpenAI)
     const client = createOpenAIClient(provider, apiKey);
-    const completion = await client.chat.completions.create({
-        model: model,
-        messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt }
-        ],
-        temperature: settings.temperature,
-        max_tokens: settings.maxTokens
-    });
+    const completion = await client.chat.completions.create(
+        {
+            model: model,
+            messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: userPrompt }
+            ],
+            temperature: settings.temperature,
+            max_tokens: settings.maxTokens
+        },
+        { signal: signal as any }
+    );
 
     return completion.choices[0]?.message?.content || "";
 }
