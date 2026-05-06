@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Search, MoreHorizontal, User as UserIcon, Shield, ShieldOff, Trash2, Eye, Loader2, ChevronLeft, ChevronRight, Download, ChevronDown } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
@@ -39,17 +40,20 @@ export function UsersClient() {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [actionLoading, setActionLoading] = useState(false);
     const [showDropdown, setShowDropdown] = useState<string | null>(null);
-    const dropdownRef = useRef<HTMLDivElement>(null);
+    const [dropdownPos, setDropdownPos] = useState<{ top: number; right: number } | null>(null);
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+            const target = event.target as HTMLElement;
+            if (!target.closest('[data-dropdown-menu]') && !target.closest('[data-dropdown-trigger]')) {
                 setShowDropdown(null);
+                setDropdownPos(null);
             }
         }
         function handleKeyDown(event: KeyboardEvent) {
             if (event.key === "Escape") {
                 setShowDropdown(null);
+                setDropdownPos(null);
             }
         }
         if (showDropdown) {
@@ -274,55 +278,25 @@ export function UsersClient() {
                                         <td className="px-6 py-4 text-right relative align-middle">
                                             <div className="flex justify-end items-center h-full">
                                                 <button
-                                                    onClick={() => setShowDropdown(showDropdown === user.id ? null : user.id)}
+                                                    data-dropdown-trigger
+                                                    onClick={(e) => {
+                                                        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                                                        if (showDropdown === user.id) {
+                                                            setShowDropdown(null);
+                                                            setDropdownPos(null);
+                                                        } else {
+                                                            setShowDropdown(user.id);
+                                                            setDropdownPos({
+                                                                top: rect.bottom + 4,
+                                                                right: window.innerWidth - rect.right,
+                                                            });
+                                                        }
+                                                    }}
                                                     className="p-2 text-slate-400 hover:text-slate-600 transition-colors rounded-full hover:bg-slate-100"
                                                 >
                                                     <MoreHorizontal className="w-4 h-4" />
                                                 </button>
                                             </div>
-
-                                            {/* Dropdown Menu */}
-                                            {showDropdown === user.id && (
-                                                <div ref={dropdownRef} className="absolute right-6 top-full mt-1 z-10 bg-white border border-[#1A1A1A]/10 rounded-lg shadow-lg py-1 w-40">
-                                                    <button
-                                                        onClick={() => {
-                                                            setDetailUser(user.id);
-                                                            setShowDropdown(null);
-                                                        }}
-                                                        className="w-full px-3 py-2 text-left text-sm hover:bg-[#1A1A1A]/5 flex items-center gap-2"
-                                                    >
-                                                        <Eye className="w-4 h-4 text-slate-500" />
-                                                        <span>查看详情</span>
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleToggleStatus(user)}
-                                                        className="w-full px-3 py-2 text-left text-sm hover:bg-[#1A1A1A]/5 flex items-center gap-2"
-                                                    >
-                                                        {user.role === "disabled" ? (
-                                                            <>
-                                                                <Shield className="w-4 h-4 text-green-600" />
-                                                                <span>启用用户</span>
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <ShieldOff className="w-4 h-4 text-amber-600" />
-                                                                <span>禁用用户</span>
-                                                            </>
-                                                        )}
-                                                    </button>
-                                                    <button
-                                                        onClick={() => {
-                                                            setSelectedUser(user);
-                                                            setShowDeleteModal(true);
-                                                            setShowDropdown(null);
-                                                        }}
-                                                        className="w-full px-3 py-2 text-left text-sm hover:bg-red-50 text-red-600 flex items-center gap-2"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                        <span>删除用户</span>
-                                                    </button>
-                                                </div>
-                                            )}
                                         </td>
                                     </tr>
                                 ))
@@ -359,6 +333,71 @@ export function UsersClient() {
                     </div>
                 )}
             </div>
+
+            {/* Dropdown Menu — rendered to body via Portal to escape overflow clipping */}
+            {showDropdown && dropdownPos && typeof document !== "undefined" && createPortal(
+                <div
+                    data-dropdown-menu
+                    className="fixed z-[90] bg-white border border-[#1A1A1A]/10 rounded-lg shadow-lg py-1 w-40"
+                    style={{ top: dropdownPos.top, right: dropdownPos.right }}
+                >
+                    {users.find(u => u.id === showDropdown) && (
+                        <>
+                            <button
+                                onClick={() => {
+                                    const user = users.find(u => u.id === showDropdown);
+                                    if (user) {
+                                        setDetailUser(user.id);
+                                        setShowDropdown(null);
+                                        setDropdownPos(null);
+                                    }
+                                }}
+                                className="w-full px-3 py-2 text-left text-sm hover:bg-[#1A1A1A]/5 flex items-center gap-2"
+                            >
+                                <Eye className="w-4 h-4 text-slate-500" />
+                                <span>查看详情</span>
+                            </button>
+                            <button
+                                onClick={() => {
+                                    const user = users.find(u => u.id === showDropdown);
+                                    if (user) {
+                                        handleToggleStatus(user);
+                                    }
+                                }}
+                                className="w-full px-3 py-2 text-left text-sm hover:bg-[#1A1A1A]/5 flex items-center gap-2"
+                            >
+                                {users.find(u => u.id === showDropdown)?.role === "disabled" ? (
+                                    <>
+                                        <Shield className="w-4 h-4 text-green-600" />
+                                        <span>启用用户</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <ShieldOff className="w-4 h-4 text-amber-600" />
+                                        <span>禁用用户</span>
+                                    </>
+                                )}
+                            </button>
+                            <button
+                                onClick={() => {
+                                    const user = users.find(u => u.id === showDropdown);
+                                    if (user) {
+                                        setSelectedUser(user);
+                                        setShowDeleteModal(true);
+                                        setShowDropdown(null);
+                                        setDropdownPos(null);
+                                    }
+                                }}
+                                className="w-full px-3 py-2 text-left text-sm hover:bg-red-50 text-red-600 flex items-center gap-2"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                                <span>删除用户</span>
+                            </button>
+                        </>
+                    )}
+                </div>,
+                document.body
+            )}
 
             {/* Delete Confirmation Modal */}
             <ConfirmModal
