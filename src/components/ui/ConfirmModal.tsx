@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { createPortal } from "react-dom";
 import { X, AlertTriangle, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -57,7 +58,7 @@ export function ConfirmModal({
 
     const styles = variantStyles[variant];
 
-    return (
+    const modalContent = (
         <AnimatePresence>
             {isOpen && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center">
@@ -127,6 +128,11 @@ export function ConfirmModal({
             )}
         </AnimatePresence>
     );
+
+    if (typeof document !== "undefined") {
+        return createPortal(modalContent, document.body);
+    }
+    return null;
 }
 
 // Hook for easier usage

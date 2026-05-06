@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X, Loader2, Shield, UserCog, Eye, EyeOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -97,7 +98,7 @@ export function AdminFormModal({ isOpen, onClose, onSubmit, admin, loading }: Ad
         await onSubmit(data as { username?: string; email?: string; password?: string; name?: string; role: string });
     };
 
-    return (
+    const modalContent = (
         <AnimatePresence>
             {isOpen && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center">
@@ -277,4 +278,9 @@ export function AdminFormModal({ isOpen, onClose, onSubmit, admin, loading }: Ad
             )}
         </AnimatePresence>
     );
+
+    if (typeof document !== "undefined") {
+        return createPortal(modalContent, document.body);
+    }
+    return null;
 }
