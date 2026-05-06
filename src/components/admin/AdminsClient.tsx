@@ -17,6 +17,7 @@ import {
 import { useToast } from "@/components/ui/Toast";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { AdminFormModal } from "./AdminFormModal";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Admin {
     id: string;
@@ -55,18 +56,25 @@ export function AdminsClient() {
     const [dropdownId, setDropdownId] = useState<string | null>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    // Close dropdown on outside click
+    // Close dropdown on outside click or Escape key
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
                 setDropdownId(null);
             }
         }
+        function handleKeyDown(event: KeyboardEvent) {
+            if (event.key === "Escape") {
+                setDropdownId(null);
+            }
+        }
         if (dropdownId) {
             document.addEventListener("mousedown", handleClickOutside);
+            document.addEventListener("keydown", handleKeyDown);
         }
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
+            document.removeEventListener("keydown", handleKeyDown);
         };
     }, [dropdownId]);
 
@@ -396,46 +404,57 @@ export function AdminsClient() {
             />
 
             {/* Reset Password Modal */}
-            {showResetModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center">
-                    <div
-                        onClick={() => { setShowResetModal(false); setResetTarget(null); }}
-                        className="absolute inset-0 bg-slate-900/30 backdrop-blur-md"
-                    />
-                    <div className="relative z-10 w-full max-w-sm mx-4 bg-white/60 backdrop-blur-3xl rounded-[32px] border-[1.5px] border-white/70 shadow-[0_40px_100px_rgba(0,0,0,0.1),inset_0_2px_10px_rgba(255,255,255,0.4)] overflow-hidden p-8">
-                        <h3 className="text-xl font-bold text-slate-900 text-center mb-2 tracking-tight">
-                            重置密码
-                        </h3>
-                        <p className="text-sm text-slate-500 text-center mb-6">
-                            为 <strong>{resetTarget?.name || resetTarget?.username}</strong> 设置新密码
-                        </p>
-                        <input
-                            type="text"
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            placeholder="输入新密码（至少6位）"
-                            className="block w-full rounded-xl border-slate-200 bg-white/50 py-2.5 px-4 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-400 focus:ring-0 transition-all mb-6"
+            <AnimatePresence>
+                {showResetModal && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => { setShowResetModal(false); setResetTarget(null); }}
+                            className="absolute inset-0 bg-slate-900/30 backdrop-blur-md"
                         />
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => { setShowResetModal(false); setResetTarget(null); setNewPassword(""); }}
-                                disabled={actionLoading}
-                                className="flex-1 px-4 py-3 text-sm font-bold text-slate-600 bg-white/40 hover:bg-white/60 border border-white/60 rounded-2xl transition-all shadow-sm disabled:opacity-50"
-                            >
-                                取消
-                            </button>
-                            <button
-                                onClick={handleResetPassword}
-                                disabled={actionLoading || newPassword.length < 6}
-                                className="flex-1 px-4 py-3 text-sm font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-70"
-                            >
-                                {actionLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                            className="relative z-10 w-full max-w-sm mx-4 bg-white/60 backdrop-blur-3xl rounded-[32px] border-[1.5px] border-white/70 shadow-[0_40px_100px_rgba(0,0,0,0.1),inset_0_2px_10px_rgba(255,255,255,0.4)] overflow-hidden p-8"
+                        >
+                            <h3 className="text-xl font-bold text-slate-900 text-center mb-2 tracking-tight">
                                 重置密码
-                            </button>
-                        </div>
+                            </h3>
+                            <p className="text-sm text-slate-500 text-center mb-6">
+                                为 <strong>{resetTarget?.name || resetTarget?.username}</strong> 设置新密码
+                            </p>
+                            <input
+                                type="password"
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                placeholder="输入新密码（至少6位）"
+                                className="block w-full rounded-xl border-slate-200 bg-white/50 py-2.5 px-4 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-400 focus:ring-0 transition-all mb-6"
+                            />
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => { setShowResetModal(false); setResetTarget(null); setNewPassword(""); }}
+                                    disabled={actionLoading}
+                                    className="flex-1 px-4 py-3 text-sm font-bold text-slate-600 bg-white/40 hover:bg-white/60 border border-white/60 rounded-2xl transition-all shadow-sm disabled:opacity-50"
+                                >
+                                    取消
+                                </button>
+                                <button
+                                    onClick={handleResetPassword}
+                                    disabled={actionLoading || newPassword.length < 6}
+                                    className="flex-1 px-4 py-3 text-sm font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-70"
+                                >
+                                    {actionLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                                    重置密码
+                                </button>
+                            </div>
+                        </motion.div>
                     </div>
-                </div>
-            )}
+                )}
+            </AnimatePresence>
         </div>
     );
 }

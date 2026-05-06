@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireRole, logAdminAction, getClientInfo } from "@/lib/admin-auth";
+import bcrypt from "bcryptjs";
 
 const VALID_ROLES = ["super_admin", "admin", "editor"];
 
@@ -9,7 +10,7 @@ export const PATCH = requireRole("super_admin")(async (request, { admin, params 
     try {
         const { id } = await params;
         const body = await request.json();
-        const { name, email, role } = body;
+        const { name, email, role, password } = body;
 
         const targetAdmin = await prisma.adminUser.findUnique({ where: { id } });
         if (!targetAdmin) {
@@ -48,12 +49,25 @@ export const PATCH = requireRole("super_admin")(async (request, { admin, params 
             }
         }
 
+        // Validate and hash password if provided
+        let hashedPassword: string | undefined;
+        if (password !== undefined && password !== null && password !== "") {
+            if (typeof password !== "string" || password.length < 6) {
+                return NextResponse.json(
+                    { success: false, error: "密码至少6个字符" },
+                    { status: 400 }
+                );
+            }
+            hashedPassword = await bcrypt.hash(password, 12);
+        }
+
         const updated = await prisma.adminUser.update({
             where: { id },
             data: {
                 ...(name !== undefined && { name: name || null }),
                 ...(email !== undefined && { email: email || null }),
                 ...(role !== undefined && { role }),
+                ...(hashedPassword && { password: hashedPassword }),
             },
             select: {
                 id: true,
@@ -80,6 +94,7 @@ export const PATCH = requireRole("super_admin")(async (request, { admin, params 
                 newEmail: email,
                 previousRole: targetAdmin.role,
                 newRole: role,
+                passwordChanged: !!hashedPassword,
             },
             ...clientInfo,
         });
