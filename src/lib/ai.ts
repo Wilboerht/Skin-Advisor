@@ -358,21 +358,26 @@ async function callProviderInternal(
     }
 
     // OpenAI 兼容接口 (DeepSeek, Qwen, OpenAI)
-    const client = createOpenAIClient(provider, apiKey);
-    const completion = await client.chat.completions.create(
-        {
-            model: model,
-            messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: userPrompt }
-            ],
-            temperature: settings.temperature,
-            max_tokens: settings.maxTokens
-        },
-        { signal: signal as any }
-    );
-
-    return completion.choices[0]?.message?.content || "";
+    // 合并外部 abort signal 和内部 30s 超时，防止 SDK 无限挂起
+    const { controller, cleanup } = createMergedAbortController(30000);
+    try {
+        const client = createOpenAIClient(provider, apiKey);
+        const completion = await client.chat.completions.create(
+            {
+                model: model,
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    { role: "user", content: userPrompt }
+                ],
+                temperature: settings.temperature,
+                max_tokens: settings.maxTokens
+            },
+            { signal: controller.signal }
+        );
+        return completion.choices[0]?.message?.content || "";
+    } finally {
+        cleanup();
+    }
 }
 
 // ============================================================================

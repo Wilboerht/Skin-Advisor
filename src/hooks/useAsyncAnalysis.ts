@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAdvisorAnalytics } from './useAdvisorAnalytics';
 import { useAuth } from './useAuth';
 import { preprocessFaceImage } from '@/lib/image-processing';
@@ -51,7 +51,16 @@ export function useAsyncAnalysis() {
     const { user } = useAuth();
     const router = useRouter();
 
+    const isRunningRef = useRef(false);
+
     const runAnalysis = useCallback(async () => {
+        // 并发保护：防止双击或重渲染导致多个分析流程竞争
+        if (isRunningRef.current) {
+            console.warn('[useAsyncAnalysis] Analysis already in progress, ignoring duplicate call');
+            return;
+        }
+        isRunningRef.current = true;
+
         setAnalysisState({ status: 'preparing', progress: 2, error: null, queuePosition: undefined, queueWaitSeconds: undefined });
         trackAnalysisStart();
 
@@ -290,10 +299,7 @@ export function useAsyncAnalysis() {
 
             // Check if this is a free retry (gender mismatch retry — won't consume quota)
             const isFreeRetry = localStorage.getItem("advisor_free_retry") === "true";
-            // Clear immediately so it can only be used once
-            if (isFreeRetry) {
-                localStorage.removeItem("advisor_free_retry");
-            }
+            // NOTE: Do NOT clear localStorage here — only clear after server confirms success
 
             const analyzeRes = await fetchWithRetry("/api/advisor/analyze", {
                 method: "POST",
@@ -334,6 +340,11 @@ export function useAsyncAnalysis() {
             localStorage.setItem("advisor_result", JSON.stringify(result));
             trackAnalysisComplete(result.dataSource === "comprehensive" ? "ai" : "fallback");
 
+            // Only clear freeRetry flag after successful server response
+            if (isFreeRetry) {
+                localStorage.removeItem("advisor_free_retry");
+            }
+
             setAnalysisState({ status: 'completed', progress: 100, error: null, queuePosition: undefined, queueWaitSeconds: undefined });
 
             // Return data to caller
@@ -349,12 +360,14 @@ export function useAsyncAnalysis() {
             console.error("Analysis failed:", e);
             setAnalysisState({ status: 'error', progress: 0, error: e.message || "Unknown error", queuePosition: undefined, queueWaitSeconds: undefined });
             throw e;
+        } finally {
+            isRunningRef.current = false;
         }
     }, [trackAnalysisStart, trackAnalysisComplete, user]);
 
     // Fake progress animation to fill the gaps between milestones
     useEffect(() => {
-        let interval: any;
+        let interval: ReturnType<typeof setInterval> | undefined;
 
         if (['preparing', 'analyzing_face', 'analyzing_skin'].includes(analysisState.status)) {
             interval = setInterval(() => {

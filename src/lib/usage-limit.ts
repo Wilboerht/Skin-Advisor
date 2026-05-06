@@ -130,11 +130,29 @@ export async function checkUsageLimit(request: NextRequest, body?: any): Promise
 
     const count = todayCount?.todayCount || 0;
 
+    // 检查是否被封禁（任何匹配标识的封禁记录都拒绝）
+    const blockedRecord = await withDbRetry(() =>
+        prisma.guestUsage.findFirst({
+            where: {
+                OR: whereConditions,
+                isBlocked: true
+            }
+        })
+    );
+    if (blockedRecord) {
+        return {
+            canTest: false,
+            remaining: 0,
+            role: 'guest',
+            error: blockedRecord.blockedReason || '您的访问已被限制，请联系客服。'
+        };
+    }
+
     // 统计访客进行中的请求
     const inProgressCount = await withDbRetry(() =>
         prisma.advisorSession.count({
             where: {
-                ip: hashIP(ipAddress),
+                ip: ipAddress, // ipAddress 已由 extractGuestIdentifiers 哈希过
                 analysisStartedAt: { gte: fiveMinutesAgo },
                 completedAt: null
             }
@@ -165,80 +183,81 @@ export async function checkUsageLimit(request: NextRequest, body?: any): Promise
  * 
  * 幂等性保护：同一个 sessionId 只记录一次，防止超时重试导致重复扣额度
  */
-export async function recordUsage(request: NextRequest, sessionId: string, body?: any) {
-    // 幂等性检查：同一个 sessionId 只扣一次额度
-    const existingRecord = await prisma.testRecord.findFirst({
-        where: { sessionId }
-    });
-    if (existingRecord) {
-        console.log(`[recordUsage] Session ${sessionId} already recorded, skipping duplicate.`);
-        return;
-    }
-
+export async function recordUsage(request: NextRequest, sessionId: string, body?: any): Promise<boolean> {
     const user = await getSession();
     const identifiers = extractGuestIdentifiers(request, body);
     const { ipAddress, cookieId, fingerprint, userAgent } = identifiers;
 
     try {
-        await prisma.$transaction(async (tx) => {
-            // 1. 创建 TestRecord (用于所有角色计数)
-            await tx.testRecord.create({
-                data: {
-                    userId: user?.id || null,
-                    guestId: !user ? (fingerprint || cookieId || ipAddress) : null,
-                    sessionId,
-                    testDate: new Date()
-                }
-            });
-
-            // 2. 如果是访客，同时原子更新 GuestUsage
-            if (!user) {
-                const existing = await tx.guestUsage.findFirst({
-                    where: {
-                        OR: [
-                            { ipAddress },
-                            ...(fingerprint ? [{ fingerprint }] : []),
-                            ...(cookieId ? [{ cookieId }] : [])
-                        ]
+        return await withDbRetry(async () => {
+            await prisma.$transaction(async (tx) => {
+                // 1. 创建 TestRecord (用于所有角色计数)
+                // sessionId 有 @unique 约束，重复插入会抛出 P2002，事务回滚
+                await tx.testRecord.create({
+                    data: {
+                        userId: user?.id || null,
+                        guestId: !user ? (fingerprint || cookieId || ipAddress) : null,
+                        sessionId,
+                        testDate: new Date()
                     }
                 });
 
-                const now = new Date();
-                if (existing) {
-                    const lastReset = existing.lastResetDate || existing.lastTestAt;
-                    const todayStart = new Date();
-                    todayStart.setHours(0, 0, 0, 0);
-                    const needsReset = !lastReset || lastReset < todayStart;
+                // 2. 如果是访客，同时原子更新 GuestUsage
+                if (!user) {
+                    const existing = await tx.guestUsage.findFirst({
+                        where: {
+                            OR: [
+                                { ipAddress },
+                                ...(fingerprint ? [{ fingerprint }] : []),
+                                ...(cookieId ? [{ cookieId }] : [])
+                            ]
+                        }
+                    });
 
-                    await tx.guestUsage.update({
-                        where: { id: existing.id },
-                        data: {
-                            lastTestAt: now,
-                            testCount: { increment: 1 },
-                            todayCount: needsReset ? 1 : { increment: 1 },
-                            lastResetDate: needsReset ? todayStart : undefined,
-                            ipAddress,
-                            cookieId: cookieId || existing.cookieId,
-                            fingerprint: fingerprint || existing.fingerprint,
-                            userAgent
-                        }
-                    });
-                } else {
-                    await tx.guestUsage.create({
-                        data: {
-                            ipAddress,
-                            cookieId,
-                            fingerprint,
-                            userAgent,
-                            lastTestAt: now,
-                            testCount: 1,
-                            todayCount: 1
-                        }
-                    });
+                    const now = new Date();
+                    if (existing) {
+                        const lastReset = existing.lastResetDate || existing.lastTestAt;
+                        const todayStart = new Date();
+                        todayStart.setHours(0, 0, 0, 0);
+                        const needsReset = !lastReset || lastReset < todayStart;
+
+                        await tx.guestUsage.update({
+                            where: { id: existing.id },
+                            data: {
+                                lastTestAt: now,
+                                testCount: { increment: 1 },
+                                todayCount: needsReset ? 1 : { increment: 1 },
+                                lastResetDate: needsReset ? todayStart : undefined,
+                                ipAddress,
+                                cookieId: cookieId || existing.cookieId,
+                                fingerprint: fingerprint || existing.fingerprint,
+                                userAgent
+                            }
+                        });
+                    } else {
+                        await tx.guestUsage.create({
+                            data: {
+                                ipAddress,
+                                cookieId,
+                                fingerprint,
+                                userAgent,
+                                lastTestAt: now,
+                                testCount: 1,
+                                todayCount: 1
+                            }
+                        });
+                    }
                 }
-            }
+            });
+            return true;
         });
-    } catch (e) {
+    } catch (e: any) {
+        // P2002 = unique constraint violation (already recorded) — 这是正常的幂等行为
+        if (e.code === 'P2002' || e.message?.includes('Unique constraint')) {
+            console.log(`[recordUsage] Session ${sessionId} already recorded, skipping duplicate.`);
+            return true;
+        }
         console.error('Failed to record usage:', e);
+        return false;
     }
 }

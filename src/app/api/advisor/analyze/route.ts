@@ -47,6 +47,31 @@ function sanitizeReason(reason: string): string {
     return sanitized;
 }
 
+import DOMPurify from 'isomorphic-dompurify';
+
+/**
+ * 递归清理 AI 输出中的潜在危险 HTML/JS 内容
+ * 使用 DOMPurify 在存储到数据库前进行标准化 XSS 清理
+ */
+function sanitizeAiOutput(obj: unknown): unknown {
+    if (typeof obj === 'string') {
+        // DOMPurify 处理 HTML 实体、嵌套标签、事件处理器等边缘情况
+        // 比手写正则更全面，且持续维护更新
+        return DOMPurify.sanitize(obj, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+    }
+    if (Array.isArray(obj)) {
+        return obj.map(sanitizeAiOutput);
+    }
+    if (obj !== null && typeof obj === 'object') {
+        const result: Record<string, unknown> = {};
+        for (const [key, value] of Object.entries(obj)) {
+            result[key] = sanitizeAiOutput(value);
+        }
+        return result;
+    }
+    return obj;
+}
+
 export async function POST(request: NextRequest) {
     // 创建 AbortController 用于服务端超时和客户端断开取消 AI 请求
     const abortController = new AbortController();
@@ -100,9 +125,10 @@ export async function POST(request: NextRequest) {
         if (freeRetry && sessionId) {
             // Validate freeRetry eligibility server-side:
             // Only allowed if the session has a prior completed analysis and hasn't used freeRetry before.
+            // CRITICAL: Also verify session ownership to prevent sessionId enumeration attacks.
             const existingSession = await prisma.advisorSession.findUnique({
                 where: { sessionId },
-                select: { completedAt: true, analysisResult: true }
+                select: { completedAt: true, analysisResult: true, ip: true, userId: true }
             });
             const priorResult = existingSession?.analysisResult as Record<string, unknown> | null;
             if (!existingSession?.completedAt || !existingSession?.analysisResult) {
@@ -116,6 +142,26 @@ export async function POST(request: NextRequest) {
                     { error: "免费重试已使用，每个会话仅限一次" },
                     { status: 429 }
                 );
+            }
+            // Ownership verification: current requester must match session creator
+            const currentUser = await getSession();
+            const currentIpHash = hashIP(ip);
+            if (currentUser?.id) {
+                // Logged-in user: must own the session
+                if (existingSession.userId !== currentUser.id) {
+                    return NextResponse.json(
+                        { error: "免费重试无效：无权访问此会话" },
+                        { status: 403 }
+                    );
+                }
+            } else {
+                // Guest: IP hash must match
+                if (existingSession.ip && existingSession.ip !== currentIpHash) {
+                    return NextResponse.json(
+                        { error: "免费重试无效：会话身份验证失败" },
+                        { status: 403 }
+                    );
+                }
             }
             isFreeRetryAllowed = true;
         }
@@ -204,6 +250,42 @@ export async function POST(request: NextRequest) {
                 nickname: nickname || "护肤达人"
             };
 
+            // AI 禁用模式下也扣除额度（防止无限免费分析）
+            if (sessionId && !isFreeRetryAllowed) {
+                try {
+                    await recordUsage(request, sessionId, body);
+                } catch (usageErr) {
+                    console.error("[AI-Disabled] recordUsage failed:", usageErr);
+                }
+            }
+
+            // 持久化降级结果
+            if (sessionId) {
+                const expiresAt = user?.id
+                    ? new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
+                    : new Date(Date.now() + 3 * 60 * 60 * 1000);
+                try {
+                    await prisma.advisorSession.upsert({
+                        where: { sessionId },
+                        update: {
+                            analysisResult: finalResult as any,
+                            analysisSource: "fallback",
+                            completedAt: new Date(),
+                            expiresAt
+                        },
+                        create: {
+                            sessionId,
+                            analysisResult: finalResult as any,
+                            analysisSource: "fallback",
+                            completedAt: new Date(),
+                            expiresAt
+                        }
+                    });
+                } catch (persistErr) {
+                    console.error("[AI-Disabled] Failed to persist fallback result:", persistErr);
+                }
+            }
+
             return NextResponse.json(finalResult, { headers: rateLimitHeaders });
         }
 
@@ -243,7 +325,7 @@ export async function POST(request: NextRequest) {
         let queueAcquired = false;
         try {
             // P3: 请求队列处理 - 申请令牌（防止并发过高打爆 LLM API）
-            await analysisQueue.acquire();
+            await analysisQueue.acquire({ signal: abortController.signal });
             queueAcquired = true;
 
             // 记录队列状态到响应头
@@ -380,6 +462,9 @@ export async function POST(request: NextRequest) {
             nickname: nickname || "护肤达人" // Include user nickname for sharing
         };
 
+        // 清理 AI 输出中的潜在危险内容（存储型 XSS 防护）
+        const sanitizedResult = sanitizeAiOutput(standardizedResult) as typeof standardizedResult;
+
         // 9. Persist Result to DB (all users including guests)
         if (sessionId) {
             // 游客报告保留3小时，注册用户报告保留3个月
@@ -387,55 +472,58 @@ export async function POST(request: NextRequest) {
                 ? new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
                 : new Date(Date.now() + 3 * 60 * 60 * 1000);
 
-            await prisma.$transaction(async (tx) => {
-                // Fetch existing session first to avoid overwriting parallel avatar data
-                // (Avatar generation might have finished first and saved to DB)
-                const existingSession = await tx.advisorSession.findUnique({
-                    where: { sessionId },
-                    select: { analysisResult: true }
-                });
+            // Persist result to DB — do NOT swallow errors (ghost analysis bug)
+            try {
+                await prisma.$transaction(async (tx) => {
+                    // Fetch existing session first to avoid overwriting parallel avatar data
+                    const existingSession = await tx.advisorSession.findUnique({
+                        where: { sessionId },
+                        select: { analysisResult: true }
+                    });
 
-                // Also check avatarQueue in case avatar was generated before session was created
-                const avatarQueueItem = await tx.avatarQueue.findUnique({
-                    where: { sessionId },
-                    select: { generatedUrl: true }
-                });
+                    // Also check avatarQueue in case avatar was generated before session was created
+                    const avatarQueueItem = await tx.avatarQueue.findUnique({
+                        where: { sessionId },
+                        select: { generatedUrl: true }
+                    });
 
-                // Merge current results with any existing data (like generatedAvatar)
-                const mergedResult = {
-                    ...(existingSession?.analysisResult as any || {}),
-                    ...standardizedResult,
-                    ...(avatarQueueItem?.generatedUrl ? { generatedAvatar: avatarQueueItem.generatedUrl } : {}),
-                    ...(isFreeRetryAllowed ? { freeRetryUsed: true } : {})
-                };
+                    // Merge current results with any existing data (like generatedAvatar)
+                    const mergedResult = {
+                        ...(existingSession?.analysisResult as any || {}),
+                        ...sanitizedResult,
+                        ...(avatarQueueItem?.generatedUrl ? { generatedAvatar: avatarQueueItem.generatedUrl } : {}),
+                        ...(isFreeRetryAllowed ? { freeRetryUsed: true } : {})
+                    };
 
-                await tx.advisorSession.upsert({
-                    where: { sessionId },
-                    update: {
-                        analysisResult: mergedResult as any, // stored as json
-                        analysisSource: "hybrid",
-                        completedAt: new Date(),
-                        province: geoLocation?.region,
-                        city: geoLocation?.city,
-                        expiresAt: expiresAt
-                    },
-                    create: {
-                        sessionId,
-                        analysisResult: mergedResult as any,
-                        analysisSource: "hybrid",
-                        completedAt: new Date(),
-                        province: geoLocation?.region,
-                        city: geoLocation?.city,
-                        expiresAt: expiresAt
-                    }
+                    await tx.advisorSession.upsert({
+                        where: { sessionId },
+                        update: {
+                            analysisResult: mergedResult as any,
+                            analysisSource: "hybrid",
+                            completedAt: new Date(),
+                            province: geoLocation?.region,
+                            city: geoLocation?.city,
+                            expiresAt: expiresAt,
+                            answers: Prisma.JsonNull // 合并到 upsert 中，避免多余 updateMany
+                        },
+                        create: {
+                            sessionId,
+                            analysisResult: mergedResult as any,
+                            analysisSource: "hybrid",
+                            completedAt: new Date(),
+                            province: geoLocation?.region,
+                            city: geoLocation?.city,
+                            expiresAt: expiresAt
+                        }
+                    });
                 });
-
-                // 报告生成后，立即清空原始问卷数据（即用即删）
-                await tx.advisorSession.updateMany({
-                    where: { sessionId },
-                    data: { answers: Prisma.JsonNull }
-                });
-            }).catch(err => console.error("Failed to persist final analysis:", err));
+            } catch (txErr) {
+                console.error("Failed to persist final analysis:", txErr);
+                return NextResponse.json(
+                    { error: "分析结果保存失败，请重试", details: "DATABASE_PERSISTENCE_ERROR" },
+                    { status: 503, headers: rateLimitHeaders }
+                );
+            }
 
             // ====== 微信公众号推送逻辑 ======
             if (user?.id) {
@@ -469,12 +557,19 @@ export async function POST(request: NextRequest) {
         }
 
         // 10. 记录使用次数（AI 成功生成结果后才扣额度，免费重试不扣）
-        // 幂等性保护：recordUsage 内部会检查 sessionId 是否已记录
+        // 隔离保护：recordUsage 失败不覆盖已成功生成的分析结果
         if (sessionId && !isFreeRetryAllowed) {
-            await recordUsage(request, sessionId, body);
+            try {
+                const recorded = await recordUsage(request, sessionId, body);
+                if (!recorded) {
+                    console.warn(`[analyze] recordUsage returned false for session ${sessionId}`);
+                }
+            } catch (usageErr) {
+                console.error("[analyze] recordUsage failed (non-blocking):", usageErr);
+            }
         }
 
-        return NextResponse.json(standardizedResult, { headers: rateLimitHeaders });
+        return NextResponse.json(sanitizedResult, { headers: rateLimitHeaders });
 
     } catch (error: any) {
         if (error.message?.includes("cancelled") || error.name === 'AbortError') {

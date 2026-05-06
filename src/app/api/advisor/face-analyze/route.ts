@@ -237,7 +237,7 @@ export async function POST(request: NextRequest) {
             // P3: 请求队列处理 - 申请令牌
             // 这是一个异步操作，如果队列已满会等待，直到超时
             aiLogger.debug(`[Queue] Requesting lock. Stats:`, visionQueue.getStats() as any);
-            await visionQueue.acquire();
+            await visionQueue.acquire({ signal: abortController.signal });
             acquired = true;
             aiLogger.debug(`[Queue] Lock acquired.`);
 

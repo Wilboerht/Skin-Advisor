@@ -750,7 +750,9 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
             const execute = async () => {
                 try {
-                    const { result: newResult, faceAnalysis: newFace, sessionId: newSessionId } = await runAnalysis();
+                    const analysisResult = await runAnalysis();
+                    if (!analysisResult) return; // Already running, skip
+                    const { result: newResult, faceAnalysis: newFace, sessionId: newSessionId } = analysisResult;
 
                     // Save sessionId for sharing
                     if (newSessionId) {

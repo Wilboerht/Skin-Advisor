@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const ids = searchParams.get('ids'); // 逗号分隔的 ID 列表
 
-        const whereClause: any = { active: true };
+        const whereClause: any = { active: true, deletedAt: null };
 
         // 如果传入了 ids 参数，只返回指定的产品
         if (ids) {

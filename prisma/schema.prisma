@@ -59,7 +59,7 @@ model AdvisorSession {
   utmCampaign     String?   // UTM活动
   
   userId          String?
-  user            User?     @relation(fields: [userId], references: [id])
+  user            User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   createdAt       DateTime  @default(now())
 
@@ -163,7 +163,7 @@ model TestRecord {
   userId    String?  // 登录用户
   guestId   String?  // 游客 (浏览器指纹)
   testDate  DateTime @default(now()) // 测试日期
-  sessionId String?  // 关联的会话ID
+  sessionId String?  @unique // 关联的会话ID
   
   user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   

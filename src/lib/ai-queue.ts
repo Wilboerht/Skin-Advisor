@@ -81,6 +81,9 @@ class AIRequestQueue {
     /** 存储用于释放锁的 resolver (针对 acquire/release 模式) */
     private releaseResolvers: (() => void)[] = [];
 
+    /** 追踪已获取但未释放的槽位数，防止 double release */
+    private acquireCount = 0;
+
     constructor(maxConcurrent = 10) {
         this.maxConcurrent = maxConcurrent;
         aiLogger.info("AI Queue initialized", { maxConcurrent });
@@ -164,12 +167,40 @@ class AIRequestQueue {
     /**
      * 兼容旧版 acquire/release 模式的包装器
      * 通过 enqueue 一个挂起的任务来占用并发槽位
+     *
+     * @param options - timeoutMs: 队列等待超时（默认 60s）; signal: 外部 abort signal
      */
-    async acquire(): Promise<void> {
+    async acquire(options?: { timeoutMs?: number; signal?: AbortSignal }): Promise<void> {
+        const timeoutMs = options?.timeoutMs ?? 60000;
+        const signal = options?.signal;
+
+        this.acquireCount++;
         return new Promise<void>((headerResolve, headerReject) => {
+            let timeout: ReturnType<typeof setTimeout> | null = null;
+
+            const cleanup = () => {
+                if (timeout) clearTimeout(timeout);
+                if (signal) signal.removeEventListener('abort', onAbort);
+            };
+
+            const onAbort = () => {
+                cleanup();
+                this.acquireCount = Math.max(0, this.acquireCount - 1);
+                headerReject(new Error("Queue acquire aborted by signal"));
+            };
+
+            if (signal) signal.addEventListener('abort', onAbort);
+
+            timeout = setTimeout(() => {
+                cleanup();
+                this.acquireCount = Math.max(0, this.acquireCount - 1);
+                headerReject(new Error(`Queue acquire timed out after ${timeoutMs}ms`));
+            }, timeoutMs);
+
             this.enqueue("legacy-acquire", () => {
                 // 这个 Promise 会在任务开始执行时被创建，并一直挂起直到 release() 被调用
                 return new Promise<void>((done) => {
+                    cleanup();
                     // 1. 任务已开始执行，通知 acquire 调用者可以继续了
                     headerResolve();
 
@@ -178,20 +209,28 @@ class AIRequestQueue {
                 });
             }).promise.catch(err => {
                 // 如果入队或执行出错
+                cleanup();
+                this.acquireCount = Math.max(0, this.acquireCount - 1);
                 headerReject(err);
             });
         });
     }
 
     release() {
+        if (this.acquireCount <= 0) {
+            console.warn("[AIQueue] release() called without matching acquire() — ignored");
+            return;
+        }
+        this.acquireCount--;
+
         const done = this.releaseResolvers.shift();
         if (done) {
             // 调用 done()，结束那个挂起的任务
             // 这会触发 processQueue 中的 finally 块：runningCount-- 并调度下一个任务
             done();
         } else {
-            // 安全网：如果没有等待释放的 resolver，尝试直接修正计数
-            // 但这通常意味着 acquire/release 不匹配
+            // 安全网：如果没有等待释放的 resolver，直接修正计数
+            // 这通常发生在平台超时 kill 进程后重启的场景
             this.runningCount = Math.max(0, this.runningCount - 1);
             this.processQueue();
         }
