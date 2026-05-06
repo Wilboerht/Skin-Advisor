@@ -324,19 +324,32 @@ export function AnalyzingOverlay({ progress, onCancel, waitingForAvatar, queuePo
     }, []);
 
     // Track how long we've been stuck at the LLM waiting phase (75%-90%)
+    const stuckIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
     useEffect(() => {
-        if (progress >= 75 && progress < 90) {
+        const inRange = progress >= 75 && progress < 90;
+        if (inRange) {
             if (stuckStartRef.current === null) {
                 stuckStartRef.current = Date.now();
             }
-            const interval = setInterval(() => {
-                setStuckTime(Math.floor((Date.now() - stuckStartRef.current!) / 1000));
-            }, 1000);
-            return () => clearInterval(interval);
+            if (!stuckIntervalRef.current) {
+                stuckIntervalRef.current = setInterval(() => {
+                    setStuckTime(Math.floor((Date.now() - stuckStartRef.current!) / 1000));
+                }, 1000);
+            }
         } else {
             stuckStartRef.current = null;
             setStuckTime(0);
+            if (stuckIntervalRef.current) {
+                clearInterval(stuckIntervalRef.current);
+                stuckIntervalRef.current = null;
+            }
         }
+        return () => {
+            if (stuckIntervalRef.current) {
+                clearInterval(stuckIntervalRef.current);
+                stuckIntervalRef.current = null;
+            }
+        };
     }, [progress]);
 
     // Cycle through icons for "loading" animation

@@ -42,7 +42,7 @@ export function extractGuestIdentifiers(request: NextRequest, body?: {
         const ips = forwardedFor.split(',').map(s => s.trim()).filter(Boolean);
         if (ips.length > 0) rawIp = ips[ips.length - 1];
     }
-    rawIp = rawIp || realIp || '0.0.0.0';
+    rawIp = rawIp || realIp || 'unknown';
 
     // 如果是本地开发环境的回环地址,使用固定标记（保证同一设备的限制一致性）
     if (rawIp === '::1' || rawIp === '127.0.0.1') {

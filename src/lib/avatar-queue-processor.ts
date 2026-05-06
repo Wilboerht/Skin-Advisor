@@ -7,6 +7,9 @@
 import prisma from "@/lib/prisma";
 import { Service } from "@volcengine/openapi";
 
+const MAX_LOCAL_FILE_SIZE_MB = 15;
+const MAX_LOCAL_FILE_SIZE_BYTES = MAX_LOCAL_FILE_SIZE_MB * 1024 * 1024;
+
 /**
  * SSRF 防护：校验 URL 是否为可安全请求的公网地址
  */
@@ -75,10 +78,14 @@ async function generateWanxiangAvatarAsync(prompt: string, frontPhoto: string | 
           if (res.ok) {
             const blob = await res.blob();
             const buffer = Buffer.from(await blob.arrayBuffer());
-            const base64 = buffer.toString("base64");
-            const mimeType = blob.type || "image/jpeg";
-            images.push(`data:${mimeType};base64,${base64}`);
-            console.log("[Wanxiang] Converted local image to base64 for upload");
+            if (buffer.length > MAX_LOCAL_FILE_SIZE_BYTES) {
+              console.warn(`[Wanxiang] Local image too large: ${(buffer.length / 1024 / 1024).toFixed(1)}MB > ${MAX_LOCAL_FILE_SIZE_MB}MB`);
+            } else {
+              const base64 = buffer.toString("base64");
+              const mimeType = blob.type || "image/jpeg";
+              images.push(`data:${mimeType};base64,${base64}`);
+              console.log("[Wanxiang] Converted local image to base64 for upload");
+            }
           } else {
             console.warn("[Wanxiang] Failed to fetch local image:", res.status);
           }
@@ -171,6 +178,7 @@ async function generateWanxiangAvatarAsync(prompt: string, frontPhoto: string | 
 export interface AvatarQueueItem {
   id: string;
   sessionId: string;
+  status: string;
   nickname?: string | null;
   characteristics?: any;
   frontPhoto?: string | null;
@@ -314,6 +322,36 @@ async function generateJimengAvatarAsync(
   if (frontPhoto && frontPhoto.startsWith("data:")) {
     // Base64 encoded image
     reqBody.image_base64 = frontPhoto.split(",")[1];
+  } else if (frontPhoto && (
+    frontPhoto.startsWith("/") ||
+    frontPhoto.includes("localhost") ||
+    frontPhoto.includes("127.0.0.1")
+  )) {
+    // 本地路径：Jimeng 服务器无法访问，需要下载转成 base64
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+      const fullUrl = frontPhoto.startsWith("/") ? `${baseUrl}${frontPhoto}` : frontPhoto;
+      if (!isPublicUrl(fullUrl)) {
+        console.warn("[Jimeng] Blocked non-public URL:", fullUrl);
+      } else {
+        const res = await fetch(fullUrl);
+        if (res.ok) {
+          const blob = await res.blob();
+          const buffer = Buffer.from(await blob.arrayBuffer());
+          if (buffer.length > MAX_LOCAL_FILE_SIZE_BYTES) {
+            console.warn(`[Jimeng] Local image too large: ${(buffer.length / 1024 / 1024).toFixed(1)}MB > ${MAX_LOCAL_FILE_SIZE_MB}MB`);
+          } else {
+            const base64 = buffer.toString("base64");
+            reqBody.image_base64 = base64;
+            console.log("[Jimeng] Converted local image to base64 for upload");
+          }
+        } else {
+          console.warn("[Jimeng] Failed to fetch local image:", res.status);
+        }
+      }
+    } catch (e) {
+      console.warn("[Jimeng] Failed to convert local image to base64:", e);
+    }
   } else if (frontPhoto) {
     // URL reference
     reqBody.image_url = frontPhoto;
@@ -383,6 +421,12 @@ export async function processAvatarQueueItem(item: AvatarQueueItem) {
   console.log(
     `[AvatarQueue] Processing ${item.id} for session ${item.sessionId}`
   );
+
+  // 乐观锁：只有 pending 状态才处理（防止并发重复执行）
+  if (item.status !== "pending") {
+    console.log(`[AvatarQueue] ${item.id} status=${item.status}, skipping duplicate processing`);
+    return;
+  }
 
   // 保存原始照片引用，用于生成成功后清理
   const sourcePhoto = item.frontPhoto;

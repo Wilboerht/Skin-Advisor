@@ -176,47 +176,22 @@ export async function GET(request: NextRequest) {
         await cleanupSessions(oldUserSessions, stats);
 
         // ===== 3. 清理注册用户超量数据（3 个月内每个用户最多保留 100 条）=====
-        const usersWithExcess = await prisma.advisorSession.groupBy({
-            by: ["userId"],
-            where: {
-                userId: { not: null },
-                createdAt: { gte: userCutoff },
-            },
-            _count: { id: true },
-            having: {
-                id: {
-                    _count: {
-                        gt: MAX_USER_REPORTS,
-                    },
-                },
-            },
-        });
+        // 使用 window function 一次性获取所有超量记录，避免 N+1 查询
+        const excessSessions = await prisma.$queryRaw<Array<{ sessionId: string; analysisResult: unknown }>>`
+            SELECT "sessionId", "analysisResult"
+            FROM (
+                SELECT "sessionId", "analysisResult", "createdAt",
+                       ROW_NUMBER() OVER (PARTITION BY "userId" ORDER BY "createdAt" DESC) as rn
+                FROM "AdvisorSession"
+                WHERE "userId" IS NOT NULL
+                  AND "createdAt" >= ${userCutoff}
+            ) t
+            WHERE rn > ${MAX_USER_REPORTS}
+            ORDER BY "createdAt" ASC
+        `;
 
-        console.log(`[Cleanup] Found ${usersWithExcess.length} users with > ${MAX_USER_REPORTS} reports`);
-
-        for (const user of usersWithExcess) {
-            if (!user.userId) continue;
-            const excess = user._count.id - MAX_USER_REPORTS;
-            if (excess <= 0) continue;
-
-            const sessionsToDelete = await prisma.advisorSession.findMany({
-                where: {
-                    userId: user.userId,
-                    createdAt: { gte: userCutoff },
-                },
-                orderBy: { createdAt: "asc" },
-                take: excess,
-                select: {
-                    sessionId: true,
-                    analysisResult: true,
-                },
-            });
-
-            console.log(
-                `[Cleanup] User ${user.userId}: deleting ${sessionsToDelete.length} oldest sessions`
-            );
-            await cleanupSessions(sessionsToDelete, stats);
-        }
+        console.log(`[Cleanup] Found ${excessSessions.length} excess user sessions to delete`);
+        await cleanupSessions(excessSessions, stats);
 
         console.log("[Cleanup] Done:", stats);
 

@@ -50,7 +50,12 @@ export const AnalyzeRequestSchema = z.object({
             value: z.enum(["male", "female"]),
             confidence: z.number()
         }).optional(),
-        dimensions: z.record(z.string(), z.any()).optional(),
+        dimensions: z.record(z.string(), z.object({
+            score: z.number().optional(),
+            percentile: z.number().optional(),
+            grade: z.enum(["excellent", "good", "average", "fair", "poor"]).optional(),
+            details: z.string().optional(),
+        })).optional(),
         overallScore: z.number().optional(),
         skinAge: z.object({
             estimated: z.number().optional(),
@@ -79,16 +84,17 @@ export const ShareImageRequestSchema = z.object({
     date: z.string().optional(),
     summary: z.string().optional(),
     radarData: z.record(z.string(), z.any()).optional(), // 维度数据
-    dimensions: z.record(z.string(), z.any()).optional(),
+    dimensions: z.record(z.string(), z.object({
+        score: z.number().optional(),
+        percentile: z.number().optional(),
+        grade: z.enum(["excellent", "good", "average", "fair", "poor"]).optional(),
+        details: z.string().optional(),
+    })).optional(),
     userInfo: z.object({
         name: z.string().optional(),
         avatar: z.string().optional()
     }).optional()
 });
-
-// ============================================================================
-// 面部分析 API 验证规则
-// ============================================================================
 
 // ============================================================================
 // 面部分析 API 验证规则

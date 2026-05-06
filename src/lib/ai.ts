@@ -259,10 +259,19 @@ async function callProviderWithRetry(
             if (error.name === 'AbortError' || signal?.aborted) {
                 throw error;
             }
-            const isAuthError = error.status === 401 || String(error).includes("401");
-            const isRateLimit = error.status === 429 || String(error).includes("429");
+            const status = error.status;
+            const statusStr = String(error);
+            const isAbort = error.name === 'AbortError' || signal?.aborted;
+            const isAuth = status === 401 || status === 403 || statusStr.includes("401") || statusStr.includes("403");
+            const isRateLimit = status === 429 || statusStr.includes("429");
+            const isBadRequest = status === 400 || statusStr.includes("400");
+            const isServerError = status && status >= 500;
 
-            if ((isAuthError || isRateLimit) && i < apiKeys.length - 1) {
+            if (isAbort) {
+                throw error;
+            }
+            // 不重试明确的客户端错误（400），但重试认证/限流/服务器临时错误
+            if (!isBadRequest && (isAuth || isRateLimit || isServerError) && i < apiKeys.length - 1) {
                 continue; // 尝试下一个 Key
             }
             throw error; // 其他错误直接抛出

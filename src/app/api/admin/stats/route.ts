@@ -41,7 +41,9 @@ export async function GET() {
         skinTypeRaw.forEach(row => {
             const type = row.skin_type;
             if (type && validSkinTypes.includes(type)) {
-                skinTypeCount[type] = Number(row.count);
+                // Safe BigInt → Number conversion with overflow guard
+                const n = Number(row.count);
+                skinTypeCount[type] = Number.isFinite(n) && n >= 0 ? n : 0;
             }
         });
 

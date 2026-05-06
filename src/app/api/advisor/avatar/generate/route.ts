@@ -10,6 +10,18 @@ import prisma from "@/lib/prisma";
 import { processAvatarQueueItem } from "@/lib/avatar-queue-processor";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
+const MAX_BASE64_SIZE_MB = 10;
+
+function isValidBase64DataURI(str: string): boolean {
+    return typeof str === 'string' && /^data:image\/[a-zA-Z0-9+]+;base64,/.test(str);
+}
+
+function estimateBase64SizeMB(base64: string): number {
+    // base64 长度 × 3/4 ≈ 原始字节数，再转换为 MB
+    const bytes = (base64.length * 3) / 4;
+    return bytes / (1024 * 1024);
+}
+
 export async function POST(req: NextRequest) {
     try {
         const ip = getClientIP(req);
@@ -25,27 +37,67 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Missing sessionId" }, { status: 400 });
         }
 
+        // P1-25: frontPhoto 大小验证
+        if (frontPhoto) {
+            if (!isValidBase64DataURI(frontPhoto)) {
+                return NextResponse.json(
+                    { error: "frontPhoto must be a valid base64 data URI (data:image/...;base64,...)", code: "INVALID_IMAGE_FORMAT" },
+                    { status: 400 }
+                );
+            }
+            const sizeMB = estimateBase64SizeMB(frontPhoto);
+            if (sizeMB > MAX_BASE64_SIZE_MB) {
+                return NextResponse.json(
+                    { error: `Image too large (${sizeMB.toFixed(1)}MB). Max ${MAX_BASE64_SIZE_MB}MB allowed.`, code: "IMAGE_TOO_LARGE" },
+                    { status: 413 }
+                );
+            }
+        }
+
         console.log(`📝 Enqueuing avatar generation for session ${sessionId}...`);
 
-        // 使用 upsert 实现幂等：并发请求下不会重复创建记录
-        // sessionId 已加 @unique 约束，upsert 在数据库层面是原子的
-        const queueItem = await prisma.avatarQueue.upsert({
-            where: { sessionId },
-            update: {}, // 已存在则不修改任何字段
-            create: {
-                sessionId,
-                status: "pending",
-                nickname,
-                characteristics,
-                frontPhoto,
-                expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7天后过期
-                attempts: 0
-            }
-        });
+        // P1-24: 使用 create + P2002 捕获实现幂等，防止并发重复创建
+        let queueItem;
+        try {
+            queueItem = await prisma.avatarQueue.create({
+                data: {
+                    sessionId,
+                    status: "pending",
+                    nickname,
+                    characteristics,
+                    frontPhoto,
+                    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7天后过期
+                    attempts: 0
+                }
+            });
+        } catch (e: any) {
+            if (e.code === 'P2002') {
+                // 记录已存在（并发请求或重复提交），查询当前状态返回
+                queueItem = await prisma.avatarQueue.findUnique({
+                    where: { sessionId }
+                });
+                if (!queueItem) {
+                    return NextResponse.json({ error: "Queue item not found" }, { status: 500 });
+                }
 
-        const isExisting = queueItem.status !== "pending" || queueItem.generatedUrl;
-        if (isExisting) {
-            console.log(`ℹ️  Avatar queue entry already exists for ${sessionId} (status: ${queueItem.status})`);
+                const position = await prisma.avatarQueue.count({
+                    where: {
+                        status: "pending",
+                        createdAt: { lt: queueItem.createdAt }
+                    }
+                });
+
+                return NextResponse.json({
+                    success: true,
+                    queued: true,
+                    queueId: queueItem.id,
+                    position: position + 1,
+                    status: queueItem.status,
+                    generatedUrl: queueItem.generatedUrl,
+                    message: `已在队列中，位置: #${position + 1}`
+                });
+            }
+            throw e;
         }
 
         // 计算队列位置
@@ -56,22 +108,9 @@ export async function POST(req: NextRequest) {
             }
         });
 
-        if (isExisting) {
-            return NextResponse.json({
-                success: true,
-                queued: true,
-                queueId: queueItem.id,
-                position: position + 1,
-                status: queueItem.status,
-                generatedUrl: queueItem.generatedUrl,
-                message: `已在队列中，位置: #${position + 1}`
-            });
-        }
-
         console.log(`✅ Enqueued avatar generation (queueId: ${queueItem.id}, position: #${position + 1})`);
 
-        // 立即触发异步处理（fire-and-forget），无需等待 status 轮询才 kickoff
-        // 生产环境有后台 worker，乐观锁会防止重复处理；开发环境依赖此机制
+        // 立即触发异步处理（fire-and-forget）
         processAvatarQueueItem(queueItem).catch(err => {
             console.error(`[AvatarQueue] Immediate processing failed for ${sessionId}:`, err);
         });

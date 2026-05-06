@@ -11,7 +11,7 @@ import {
     VIP_ANALYSIS_INSTRUCTION,
 } from "@/config/ai-prompts";
 import { getSession, isVipCheck } from "@/lib/auth";
-import { rateLimit } from "@/lib/ratelimit";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { aiLogger } from "@/lib/logger";
 import { getDefaultFaceAnalysisResult } from "@/lib/advisor-utils";
 import { visionQueue } from "@/lib/ai-queue";
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
         }
 
         // 1. 速率限制
-        const ip = request.headers.get("x-forwarded-for") || "127.0.0.1";
+        const ip = getClientIP(request);
         const limit = await rateLimit(`face-analyze-${ip}`, "face-analyze", { maxRequests: 60 }); // Increased for testing
 
         const rateLimitHeaders = {
@@ -256,11 +256,27 @@ export async function POST(request: NextRequest) {
                     throw new Error("Face analysis cancelled (client timeout or disconnect)");
                 }
                 // Retry if payload error
-                const isPayloadError = e.message?.includes('400') || e.message?.includes('base64') || e.message?.includes('too large');
+                const isPayloadError = e.message?.includes('400') || e.message?.includes('413') || e.message?.includes('base64') || e.message?.includes('too large') || e.message?.includes('content length') || e.message?.includes('payload');
                 if (isPayloadError) {
-                    aiLogger.warn(`[FaceAnalyze] Payload error (${e.message}), retrying with compression...`);
-                    // Reload with compression
-                    validImages = await loadImages(true);
+                    aiLogger.warn(`[FaceAnalyze] Payload error (${e.message}), retrying with aggressive compression...`);
+                    // 对现有图片做更强压缩（512px / quality 60），而不是重新加载
+                    if (sharp) {
+                        validImages = await Promise.all(validImages.map(async (img) => {
+                            if (!img.data || img.data.startsWith('http')) return img;
+                            try {
+                                const base64Data = img.data.split(',')[1];
+                                const buffer = Buffer.from(base64Data, 'base64');
+                                const compressed = await sharp(buffer)
+                                    .resize({ width: 512, fit: 'inside', withoutEnlargement: true })
+                                    .jpeg({ quality: 60 })
+                                    .toBuffer();
+                                return { ...img, data: `data:image/jpeg;base64,${compressed.toString('base64')}` };
+                            } catch (compErr: any) {
+                                aiLogger.warn("Aggressive compression failed", compErr);
+                                return img;
+                            }
+                        }));
+                    }
 
                     analysisResult = await analyzeImages(
                         validImages,

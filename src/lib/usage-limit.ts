@@ -29,8 +29,9 @@ export async function checkUsageLimit(request: NextRequest, body?: any): Promise
     const user = await getSession();
     const now = new Date();
 
-    // 统计进行中请求（5 分钟内启动但未完成的），防止并发重试导致超额
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    // 统计进行中请求（10 分钟内启动但未完成的），防止并发重试导致超额
+    // 注：队列等待时间不计入该窗口（analysisStartedAt 在 acquire 成功后才更新）
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
 
     // 1. 如果是 VIP 用户
     if (isVipCheck(user)) {
@@ -38,24 +39,25 @@ export async function checkUsageLimit(request: NextRequest, body?: any): Promise
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        const count = await withDbRetry(() =>
-            prisma.testRecord.count({
-                where: {
-                    userId,
-                    testDate: { gte: today }
-                }
-            })
-        );
-
-        const inProgressCount = await withDbRetry(() =>
-            prisma.advisorSession.count({
-                where: {
-                    userId,
-                    analysisStartedAt: { gte: fiveMinutesAgo },
-                    completedAt: null
-                }
-            })
-        );
+        const [count, inProgressCount] = await Promise.all([
+            withDbRetry(() =>
+                prisma.testRecord.count({
+                    where: {
+                        userId,
+                        testDate: { gte: today }
+                    }
+                })
+            ),
+            withDbRetry(() =>
+                prisma.advisorSession.count({
+                    where: {
+                        userId,
+                        analysisStartedAt: { gte: tenMinutesAgo },
+                        completedAt: null
+                    }
+                })
+            )
+        ]);
 
         const totalCount = count + inProgressCount;
 
@@ -75,24 +77,25 @@ export async function checkUsageLimit(request: NextRequest, body?: any): Promise
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        const count = await withDbRetry(() =>
-            prisma.testRecord.count({
-                where: {
-                    userId,
-                    testDate: { gte: today }
-                }
-            })
-        );
-
-        const inProgressCount = await withDbRetry(() =>
-            prisma.advisorSession.count({
-                where: {
-                    userId,
-                    analysisStartedAt: { gte: fiveMinutesAgo },
-                    completedAt: null
-                }
-            })
-        );
+        const [count, inProgressCount] = await Promise.all([
+            withDbRetry(() =>
+                prisma.testRecord.count({
+                    where: {
+                        userId,
+                        testDate: { gte: today }
+                    }
+                })
+            ),
+            withDbRetry(() =>
+                prisma.advisorSession.count({
+                    where: {
+                        userId,
+                        analysisStartedAt: { gte: tenMinutesAgo },
+                        completedAt: null
+                    }
+                })
+            )
+        ]);
 
         const totalCount = count + inProgressCount;
 
@@ -153,7 +156,7 @@ export async function checkUsageLimit(request: NextRequest, body?: any): Promise
         prisma.advisorSession.count({
             where: {
                 ip: ipAddress, // ipAddress 已由 extractGuestIdentifiers 哈希过
-                analysisStartedAt: { gte: fiveMinutesAgo },
+                analysisStartedAt: { gte: tenMinutesAgo },
                 completedAt: null
             }
         })
