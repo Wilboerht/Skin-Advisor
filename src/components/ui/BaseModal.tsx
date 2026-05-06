@@ -1,6 +1,7 @@
 import { m, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import React from "react";
+import { createPortal } from "react-dom";
 
 interface BaseModalProps {
     isOpen: boolean;
@@ -19,7 +20,7 @@ export function BaseModal({
     backdropClassName = "bg-[#FDFBF7]/80 backdrop-blur-sm",
     showCloseButton = false,
 }: BaseModalProps) {
-    return (
+    const modalContent = (
         <AnimatePresence>
             {isOpen && (
                 <m.div
@@ -57,4 +58,9 @@ export function BaseModal({
             )}
         </AnimatePresence>
     );
+
+    if (typeof document !== "undefined") {
+        return createPortal(modalContent, document.body);
+    }
+    return null;
 }

@@ -3,6 +3,7 @@
 import { X, Copy, Check, Terminal, History, ArrowRight, ShieldCheck } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useToast } from "@/components/ui/Toast";
+import { createPortal } from "react-dom";
 
 interface LogDetailModalProps {
     isOpen: boolean;
@@ -122,7 +123,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
         );
     };
 
-    return (
+    const modalContent = (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
             <div
                 className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
@@ -185,4 +186,9 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
             </div>
         </div>
     );
+
+    if (typeof document !== "undefined") {
+        return createPortal(modalContent, document.body);
+    }
+    return null;
 }

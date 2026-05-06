@@ -4,6 +4,7 @@ import { X, Clock, ShoppingBag, Calendar, Smartphone, MapPin, Settings, Save } f
 import { useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
+import { createPortal } from "react-dom";
 
 interface UserDetailModalProps {
     isOpen: boolean;
@@ -89,7 +90,7 @@ export function UserDetailModal({ isOpen, onClose, userId, onUpdate }: UserDetai
 
     if (!isOpen) return null;
 
-    return (
+    const modalContent = (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-0">
             {/* Backdrop */}
             <div
@@ -231,4 +232,9 @@ export function UserDetailModal({ isOpen, onClose, userId, onUpdate }: UserDetai
             </div>
         </div>
     );
+
+    if (typeof document !== "undefined") {
+        return createPortal(modalContent, document.body);
+    }
+    return null;
 }
