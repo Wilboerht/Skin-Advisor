@@ -299,6 +299,7 @@ export const aiQueue = new AIRequestQueue(
 // 注意：原项目可能共享实例，这里我们也提供导出的实例
 export const visionQueue = new AIRequestQueue(3); // 视觉分析并发较低
 export const chatQueue = new AIRequestQueue(10); // 聊天并发较高
+export const analysisQueue = new AIRequestQueue(5); // 综合分析并发限制（LLM 长文本生成，不宜过高）
 
 // 导出类型供测试使用
 export { AIRequestQueue };

@@ -9,6 +9,8 @@ export interface AsyncAnalysisState {
     status: 'idle' | 'preparing' | 'analyzing_face' | 'analyzing_skin' | 'completed' | 'error';
     progress: number;
     error: string | null;
+    queuePosition?: number;
+    queueWaitSeconds?: number;
 }
 
 // Helper for auto-retry
@@ -50,7 +52,7 @@ export function useAsyncAnalysis() {
     const router = useRouter();
 
     const runAnalysis = useCallback(async () => {
-        setAnalysisState({ status: 'preparing', progress: 2, error: null });
+        setAnalysisState({ status: 'preparing', progress: 2, error: null, queuePosition: undefined, queueWaitSeconds: undefined });
         trackAnalysisStart();
 
         const createTimeoutPromise = () => {
@@ -242,6 +244,16 @@ export function useAsyncAnalysis() {
 
                             if (faceRes.ok) {
                                 faceAnalysis = await faceRes.json();
+                                // 读取队列状态（如果系统繁忙，告诉用户）
+                                const qp = faceRes.headers.get("X-Queue-Position");
+                                const qw = faceRes.headers.get("X-Queue-Wait-Seconds");
+                                if (qp) {
+                                    setAnalysisState(prev => ({
+                                        ...prev,
+                                        queuePosition: parseInt(qp, 10) || 0,
+                                        queueWaitSeconds: qw ? parseInt(qw, 10) : undefined
+                                    }));
+                                }
                             } else {
                                 // fetchWithRetry should have handled 5xx/429, so this is for other client errors (4xx)
                                 const errorData = await faceRes.json().catch(() => ({}));
@@ -295,6 +307,17 @@ export function useAsyncAnalysis() {
                 })
             });
 
+            // 读取队列状态
+            const qp = analyzeRes.headers.get("X-Queue-Position");
+            const qw = analyzeRes.headers.get("X-Queue-Wait-Seconds");
+            if (qp) {
+                setAnalysisState(prev => ({
+                    ...prev,
+                    queuePosition: parseInt(qp, 10) || 0,
+                    queueWaitSeconds: qw ? parseInt(qw, 10) : undefined
+                }));
+            }
+
             // 服务端已响应，快速推进进度让用户感知到进展
             setAnalysisState(prev => ({ ...prev, progress: 90 }));
 
@@ -311,7 +334,7 @@ export function useAsyncAnalysis() {
             localStorage.setItem("advisor_result", JSON.stringify(result));
             trackAnalysisComplete(result.dataSource === "comprehensive" ? "ai" : "fallback");
 
-            setAnalysisState({ status: 'completed', progress: 100, error: null });
+            setAnalysisState({ status: 'completed', progress: 100, error: null, queuePosition: undefined, queueWaitSeconds: undefined });
 
             // Return data to caller
             return { result, faceAnalysis, sessionId };
@@ -324,7 +347,7 @@ export function useAsyncAnalysis() {
         } catch (e: any) {
             cancelTimeout();
             console.error("Analysis failed:", e);
-            setAnalysisState({ status: 'error', progress: 0, error: e.message || "Unknown error" });
+            setAnalysisState({ status: 'error', progress: 0, error: e.message || "Unknown error", queuePosition: undefined, queueWaitSeconds: undefined });
             throw e;
         }
     }, [trackAnalysisStart, trackAnalysisComplete, user]);

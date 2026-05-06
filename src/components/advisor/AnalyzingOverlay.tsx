@@ -300,9 +300,11 @@ interface AnalyzingOverlayProps {
     progress: number;
     onCancel?: () => void;
     waitingForAvatar?: boolean;
+    queuePosition?: number;
+    queueWaitSeconds?: number;
 }
 
-export function AnalyzingOverlay({ progress, onCancel, waitingForAvatar }: AnalyzingOverlayProps) {
+export function AnalyzingOverlay({ progress, onCancel, waitingForAvatar, queuePosition, queueWaitSeconds }: AnalyzingOverlayProps) {
     const [activeIconIndex, setActiveIconIndex] = useState(0);
     const [showCancel, setShowCancel] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
@@ -354,14 +356,19 @@ export function AnalyzingOverlay({ progress, onCancel, waitingForAvatar }: Analy
         };
     }, []);
 
-    // Dynamic status messages based on progress and wait time
-    const getStatusText = (p: number, stuckSeconds: number, isWaitingAvatar?: boolean) => {
+    // Dynamic status messages based on progress, wait time, and queue info
+    const getStatusText = (p: number, stuckSeconds: number, isWaitingAvatar?: boolean, qPos?: number) => {
         if (isWaitingAvatar) return "正在绘制您的专属形象...";
         if (p < 20) return "正在准备您的面部数据...";
         if (p < 45) return "正在识别面部轮廓与特征...";
         if (p < 60) return "正在进行皮肤纹理分析...";
         if (p < 75) return "正在构建个性化 AI 分析模型...";
         if (p < 90) {
+            if (qPos && qPos > 0) {
+                if (stuckSeconds < 3) return "系统繁忙，AI 专家正在接入...";
+                if (stuckSeconds < 10) return "当前使用人数较多，AI 正在全力处理中...";
+                return "系统负载较高，正在加速处理您的分析...";
+            }
             if (stuckSeconds < 3) return "正在连接 AI 护肤专家...";
             if (stuckSeconds < 10) return "AI 正在深度思考中，请稍候...";
             return "正在处理复杂的肌肤数据，即将完成...";
@@ -370,8 +377,9 @@ export function AnalyzingOverlay({ progress, onCancel, waitingForAvatar }: Analy
         return "即将为您呈现专属肌肤报告...";
     };
 
-    const statusText = getStatusText(progress, stuckTime, waitingForAvatar);
+    const statusText = getStatusText(progress, stuckTime, waitingForAvatar, queuePosition);
     const isWaitingLLM = progress >= 75 && progress < 90;
+    const hasQueued = (queuePosition !== undefined && queuePosition > 0);
 
     return (
         <m.div
@@ -544,7 +552,16 @@ export function AnalyzingOverlay({ progress, onCancel, waitingForAvatar }: Analy
                         <span className="text-xs text-[#9A9A9A] font-mono tracking-widest">
                             {Math.round(progress)}%
                         </span>
-                        {isWaitingLLM && stuckTime >= 3 && (
+                        {hasQueued && (
+                            <m.span
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="text-[10px] text-[#D4B78F] tracking-wider font-medium"
+                            >
+                                当前使用人数较多{queueWaitSeconds ? `，预计等待约 ${queueWaitSeconds} 秒` : ""}
+                            </m.span>
+                        )}
+                        {isWaitingLLM && stuckTime >= 3 && !hasQueued && (
                             <m.span
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}

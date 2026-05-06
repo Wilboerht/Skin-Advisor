@@ -873,6 +873,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                         progress={isWaitingForAvatar ? 99 : analysisState.progress}
                         onCancel={() => router.push('/questions')}
                         waitingForAvatar={isWaitingForAvatar}
+                        queuePosition={analysisState.queuePosition}
+                        queueWaitSeconds={analysisState.queueWaitSeconds}
                     />
                 )}
             </AnimatePresence>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateText, isAIEnabled, fallbackAnalysis } from "@/lib/ai";
+import { analysisQueue } from "@/lib/ai-queue";
 import { extractJsonFromResponse } from "@/lib/advisor-utils";
 import { buildTextAnalysisPrompt, TEXT_ANALYSIS_SYSTEM_PROMPT } from "@/config/ai-prompts";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
@@ -81,7 +82,7 @@ export async function POST(request: NextRequest) {
         const limit = await rateLimit(`advisor-analyze-${ip}`, "comprehensive-analyze", { maxRequests: 20 });
 
         const geoLocation = resolveIPLocation(ip);
-        const rateLimitHeaders = {
+        const rateLimitHeaders: Record<string, string> = {
             "X-RateLimit-Limit": String(limit.limit),
             "X-RateLimit-Remaining": String(limit.remaining),
             "X-RateLimit-Reset": String(limit.reset)
@@ -239,7 +240,22 @@ export async function POST(request: NextRequest) {
         console.log(`Starting text analysis with ${provider}...`);
 
         let resultJson: any;
+        let queueAcquired = false;
         try {
+            // P3: 请求队列处理 - 申请令牌（防止并发过高打爆 LLM API）
+            await analysisQueue.acquire();
+            queueAcquired = true;
+
+            // 记录队列状态到响应头
+            const queueStats = analysisQueue.getStats();
+            rateLimitHeaders["X-Queue-Position"] = String(queueStats.queueLength);
+            rateLimitHeaders["X-Queue-Wait-Seconds"] = String(queueStats.estimatedWaitSeconds);
+
+            // 排队期间客户端可能已断开
+            if (abortController.signal.aborted) {
+                throw new Error("Request cancelled during queue wait.");
+            }
+
             const resultText = await generateText(systemPrompt, userPrompt, provider as any, abortController.signal);
             resultJson = extractJsonFromResponse<any>(resultText);
         } catch (e: any) {
@@ -253,6 +269,10 @@ export async function POST(request: NextRequest) {
             console.error("AI Generation failed, falling back", e);
             // Fallback if AI text gen fails but we have DB
             resultJson = {};
+        } finally {
+            if (queueAcquired) {
+                analysisQueue.release();
+            }
         }
 
         if (!resultJson) {
