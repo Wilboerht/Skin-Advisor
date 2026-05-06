@@ -14,6 +14,7 @@ import {
     Shield,
     Download,
     Activity,
+    UserCog,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
