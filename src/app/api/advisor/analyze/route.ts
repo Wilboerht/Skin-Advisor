@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
                 select: { completedAt: true, analysisResult: true }
             });
             const priorResult = existingSession?.analysisResult as Record<string, unknown> | null;
-            if (!existingSession?.completedAt) {
+            if (!existingSession?.completedAt || !existingSession?.analysisResult) {
                 return NextResponse.json(
                     { error: "免费重试无效：尚未完成过首次分析" },
                     { status: 400 }
@@ -119,11 +119,6 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // 5. 记录使用次数（验证通过后才扣额度，免费重试不扣额度但需记录行为）
-        if (sessionId && !isFreeRetryAllowed) {
-            await recordUsage(request, sessionId, body);
-        }
-
         // 注入地理位置 (如果用户未提供)
         if (!answers.location && geoLocation) {
             answers.location = `${geoLocation.region || ''} ${geoLocation.city || ''}`.trim();
@@ -132,7 +127,7 @@ export async function POST(request: NextRequest) {
         // 6. 检查用户登录状态
         const user = await getSession();
 
-        // 保存会话记录到数据库（所有用户，包括访客）
+        // 保存会话占位记录（标记分析开始，不设置 completedAt——防止超时后状态不一致）
         // 注意：原始问卷数据(answers)不入库，报告生成后仅存分析结果
         if (sessionId) {
             await prisma.advisorSession.upsert({
@@ -140,7 +135,8 @@ export async function POST(request: NextRequest) {
                 update: {
                     analysisSource: faceAnalysis ? "hybrid" : "text",
                     faceScanUsed: !!faceAnalysis,
-                    completedAt: new Date(),
+                    analysisStartedAt: new Date(),
+                    // 保留已有的 completedAt（如 freeRetry 的原始会话）
                     // Save Geo Info
                     province: geoLocation?.region,
                     city: geoLocation?.city,
@@ -151,7 +147,7 @@ export async function POST(request: NextRequest) {
                     sessionId,
                     analysisSource: faceAnalysis ? "hybrid" : "text",
                     faceScanUsed: !!faceAnalysis,
-                    completedAt: new Date(),
+                    analysisStartedAt: new Date(),
                     province: geoLocation?.region,
                     city: geoLocation?.city,
                     ip: hashIP(ip),
@@ -433,6 +429,12 @@ export async function POST(request: NextRequest) {
                     ).catch(err => console.error("微信推送执行异常:", err));
                 }
             }
+        }
+
+        // 10. 记录使用次数（AI 成功生成结果后才扣额度，免费重试不扣）
+        // 幂等性保护：recordUsage 内部会检查 sessionId 是否已记录
+        if (sessionId && !isFreeRetryAllowed) {
+            await recordUsage(request, sessionId, body);
         }
 
         return NextResponse.json(standardizedResult, { headers: rateLimitHeaders });

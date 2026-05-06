@@ -121,8 +121,19 @@ export async function checkUsageLimit(request: NextRequest, body?: any): Promise
 
 /**
  * 记录一次测试行为
+ * 
+ * 幂等性保护：同一个 sessionId 只记录一次，防止超时重试导致重复扣额度
  */
 export async function recordUsage(request: NextRequest, sessionId: string, body?: any) {
+    // 幂等性检查：同一个 sessionId 只扣一次额度
+    const existingRecord = await prisma.testRecord.findFirst({
+        where: { sessionId }
+    });
+    if (existingRecord) {
+        console.log(`[recordUsage] Session ${sessionId} already recorded, skipping duplicate.`);
+        return;
+    }
+
     const user = await getSession();
     const identifiers = extractGuestIdentifiers(request, body);
     const { ipAddress, cookieId, fingerprint, userAgent } = identifiers;
