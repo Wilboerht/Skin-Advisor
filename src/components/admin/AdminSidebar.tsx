@@ -19,18 +19,42 @@ import {
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
-const MENU_ITEMS = [
+const BASE_MENU_ITEMS = [
     { href: "/admin/products", label: "产品管理", icon: Package },
     { href: "/admin/users", label: "用户管理", icon: Users },
     { href: "/admin/audit-logs", label: "安全审计", icon: Shield },
 ];
+
+interface AdminMe {
+    id: string;
+    name: string;
+    username: string;
+    role: string;
+}
 
 export default function AdminSidebar() {
     const pathname = usePathname();
     const router = useRouter();
     const [collapsed, setCollapsed] = useState(false);
     const [showExportMenu, setShowExportMenu] = useState(false);
+    const [adminRole, setAdminRole] = useState<string | null>(null);
     const exportMenuRef = useRef<HTMLDivElement>(null);
+
+    // Fetch current admin role for conditional menu rendering
+    useEffect(() => {
+        fetch("/api/admin/auth/me")
+            .then(res => res.ok ? res.json() : null)
+            .then((data: { user?: AdminMe } | null) => {
+                if (data?.user) {
+                    setAdminRole(data.user.role);
+                }
+            })
+            .catch(() => { /* ignore */ });
+    }, []);
+
+    const menuItems = adminRole === "super_admin"
+        ? [...BASE_MENU_ITEMS, { href: "/admin/admins", label: "管理员", icon: UserCog }]
+        : BASE_MENU_ITEMS;
 
     // Close export menu when clicking outside
     useEffect(() => {
@@ -104,7 +128,7 @@ export default function AdminSidebar() {
                         功能导航
                     </div>
                 )}
-                {MENU_ITEMS.map((item) => {
+                {menuItems.map((item) => {
                     const isActive = pathname === item.href;
                     return (
                         <Link
