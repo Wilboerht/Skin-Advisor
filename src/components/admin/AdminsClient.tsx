@@ -417,7 +417,7 @@ export function AdminsClient() {
                 document.body
             )}
 
-            {/* Form Modal --
+            {/* Form Modal */}
             <AdminFormModal
                 isOpen={showFormModal}
                 onClose={() => {
