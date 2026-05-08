@@ -1365,7 +1365,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     {/* 4. Products - 突破 main 容器限制，占页面 80% */}
                     <div className="w-[80%] mx-auto">
                         <ProductRecommendationSection
-                            products={(result.products || []).map(p => ({
+                            products={(result.products || []).slice(0, 3).map(p => ({
                                 id: p.id,
                                 name: p.name,
                                 nameEn: p.nameEn,
