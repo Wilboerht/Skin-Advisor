@@ -87,7 +87,7 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                         </button>
 
                         {/* Left - Image */}
-                        <div className="relative h-[36%] w-full flex-shrink-0 bg-[#F0EBE3] lg:h-full lg:w-[45%]">
+                        <div className="relative aspect-square w-full flex-shrink-0 bg-[#F5F0E8] lg:h-full lg:w-[45%] lg:aspect-auto">
                             {product.image ? (
                                 <Image
                                     src={product.image}
