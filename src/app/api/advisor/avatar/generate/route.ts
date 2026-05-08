@@ -62,6 +62,16 @@ export async function POST(req: NextRequest) {
 
         console.log(`📝 Enqueuing avatar generation for session ${sessionId}...`);
 
+        // 确保 AdvisorSession 存在（avatar generate 可能在 analyze 完成前被并行调用）
+        await prisma.advisorSession.upsert({
+            where: { sessionId },
+            update: {},
+            create: {
+                sessionId,
+                expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            }
+        });
+
         // P1-24: 使用 create + P2002 捕获实现幂等，防止并发重复创建
         let queueItem;
         try {
