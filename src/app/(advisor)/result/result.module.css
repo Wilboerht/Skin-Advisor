@@ -32,6 +32,7 @@
 .container {
     width: 100%;
     min-height: 100vh;
+    overflow-x: hidden;
     background-color: var(--notion-bg);
     background-image: url('/images/result-bg.webp');
     background-size: cover;
