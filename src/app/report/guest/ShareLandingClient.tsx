@@ -70,6 +70,7 @@ export default function ShareLandingClient({ analysisResult, sessionId }: ShareL
   } | null>(null);
   const posterRef = useRef<HTMLDivElement>(null);
   const avatarPollRef = useRef({ failureCount: 0, hasStarted: false });
+  const hasRedirectedRef = useRef(false);
 
   // --- Avatar Polling (对齐 /result 页逻辑) ---
   useEffect(() => {
@@ -159,9 +160,10 @@ export default function ShareLandingClient({ analysisResult, sessionId }: ShareL
   const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
   const [showContactAdvisor, setShowContactAdvisor] = useState(false);
 
-  // 登录用户跳转到完整报告页
+  // 登录用户跳转到完整报告页（防抖，防止重复跳转）
   useEffect(() => {
-    if (!loading && user) {
+    if (!loading && user && !hasRedirectedRef.current) {
+      hasRedirectedRef.current = true;
       router.replace(`/result?id=${sessionId}`);
     }
   }, [loading, user, router, sessionId]);

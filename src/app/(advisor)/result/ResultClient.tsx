@@ -70,7 +70,35 @@ interface ResultClientProps {
     initialData?: {
         result: ComprehensiveResult;
         faceAnalysis: FaceAnalysisResult | null;
+        generatedAvatar?: string | null;
     } | null;
+}
+
+/**
+ * 标准化 analysisResult 数据结构，兼容新旧两种格式：
+ * - 新格式: { skinProfile, analysis, products, dataSource }
+ * - 旧格式: { skinAnalysis, faceAnalysis, products, ... }
+ */
+function normalizeAnalysisResult(raw: any): ComprehensiveResult | null {
+    if (!raw) return null;
+
+    const skinProfile = raw.skinProfile || raw.skinAnalysis;
+    const analysis = raw.analysis || raw.skinAnalysis;
+
+    return {
+        skinProfile: {
+            type: skinProfile?.type || skinProfile?.skinType || "combination",
+            typeLabel: skinProfile?.typeLabel || skinProfile?.skinTypeLabel || "混合性肌肤",
+            concerns: skinProfile?.concerns || [],
+            skinAge: skinProfile?.skinAge,
+        },
+        analysis: {
+            summary: analysis?.summary || "分析完成。",
+            details: analysis?.details || [],
+        },
+        dataSource: raw.dataSource || (raw.source === "ai" ? "comprehensive" : "questionnaire"),
+        products: raw.products || [],
+    };
 }
 
 // Wrapper component with Suspense for useSearchParams
@@ -96,11 +124,12 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const { runAnalysis, analysisState } = useAsyncAnalysis();
 
     // Data State
-    const [result, setResult] = useState<ComprehensiveResult | null>(initialData?.result || null);
+    const normalizedResult = useMemo(() => normalizeAnalysisResult(initialData?.result || null), [initialData]);
+    const [result, setResult] = useState<ComprehensiveResult | null>(normalizedResult);
     const [faceAnalysis, setFaceAnalysis] = useState<FaceAnalysisResult | null>(initialData?.faceAnalysis || null);
     const [userImage, setUserImage] = useState<string | undefined>(undefined);
     const [sideImages, setSideImages] = useState<Record<string, string>>({});
-    const initialAvatar = (initialData?.result as any)?.generatedAvatar || null;
+    const initialAvatar = initialData?.generatedAvatar || (initialData?.result as any)?.generatedAvatar || null;
 
     const [generatedAvatar, setGeneratedAvatar] = useState<string | null>(initialAvatar);
     const [isAvatarLoading, setIsAvatarLoading] = useState(!initialAvatar);
@@ -285,24 +314,11 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             if (urlSessionId && advisorResult.sessionId && advisorResult.sessionId !== urlSessionId) {
                                 // Session ID mismatch in storage, ignoring cached result
                             } else {
-                                // Reconstruct ComprehensiveResult
-                                const skinProfile = advisorResult.skinProfile || advisorResult.skinAnalysis;
-                                const analysis = advisorResult.analysis || advisorResult.skinAnalysis;
-
-                                setResult({
-                                    skinProfile: {
-                                        type: skinProfile?.type || skinProfile?.skinType || "combination",
-                                        typeLabel: skinProfile?.typeLabel || skinProfile?.skinTypeLabel || "混合性肌肤",
-                                        concerns: skinProfile?.concerns || [],
-                                        skinAge: skinProfile?.skinAge,
-                                    },
-                                    analysis: {
-                                        summary: analysis?.summary || "分析完成。",
-                                        details: analysis?.details || [],
-                                    },
-                                    dataSource: advisorResult.dataSource || (advisorResult.source === "ai" ? "comprehensive" : "questionnaire"),
-                                    products: advisorResult.products || []
-                                });
+                                // Reconstruct ComprehensiveResult via normalized helper
+                                const normalized = normalizeAnalysisResult(advisorResult);
+                                if (normalized) {
+                                    setResult(normalized);
+                                }
 
                                 if (advisorResult.faceAnalysis) {
                                     setFaceAnalysis(advisorResult.faceAnalysis);
@@ -507,7 +523,18 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
         // Skip if result was loaded from this device's localStorage
         // (same device = session owner, no need to restrict even if auth fails)
-        if (!initialData && localStorage.getItem("advisor_result")) return;
+        // BUT only if the cached sessionId matches the current URL sessionId
+        if (!initialData) {
+            try {
+                const cached = localStorage.getItem("advisor_result");
+                if (cached) {
+                    const parsed = JSON.parse(cached);
+                    if (parsed.sessionId === sessionId) return;
+                }
+            } catch {
+                // ignore parse errors, fall through to redirect
+            }
+        }
 
         // If Guest accessing full report via URL -> Redirect to Share Page (Simplified)
         if (!user) {

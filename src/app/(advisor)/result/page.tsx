@@ -46,7 +46,8 @@ export default async function ResultPage(props: {
                     const result = session.analysisResult as any;
                     initialData = {
                         result: result as any,
-                        faceAnalysis: result.faceAnalysis || null
+                        faceAnalysis: result.faceAnalysis || null,
+                        generatedAvatar: result.generatedAvatar || null
                     };
                 }
             }
