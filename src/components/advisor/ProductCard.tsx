@@ -69,6 +69,7 @@ export function ProductCard({
 
     const primaryLink = getPrimaryLink(product.affiliateLinks);
     const allLinks = getProductLinks(product.affiliateLinks);
+    const isLocalImage = product.image?.startsWith('/') && !product.image?.startsWith('//');
 
     const handleCardClick = useCallback(() => {
         onProductClick?.(product.id);
@@ -129,6 +130,7 @@ export function ProductCard({
                             sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
                             placeholder="blur"
                             blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMCwsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wAARCAAIAAoDASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAAAAUH/8QAIRAAAgIBAwUBAAAAAAAAAAAAAwQBAgAFBhESEyExQVH/xAAVAQEBAAAAAAAAAAAAAAAAAAAFBv/EABoRAAICAwAAAAAAAAAAAAAAAAECAAMEESH/2gAMAwEAAhEDEEAAAAGqpnWZZMmf/9k="
+                            unoptimized={isLocalImage}
                             onError={() => setImageError(true)}
                         />
                     </div>
@@ -249,6 +251,7 @@ function HorizontalProductCard({
 }) {
     const [imageError, setImageError] = useState(false);
     const primaryLink = getPrimaryLink(product.affiliateLinks);
+    const isLocalImage = product.image?.startsWith('/') && !product.image?.startsWith('//');
 
     return (
         <m.div
@@ -266,6 +269,7 @@ function HorizontalProductCard({
                         fill
                         className="object-cover"
                         sizes="128px"
+                        unoptimized={isLocalImage}
                         onError={() => setImageError(true)}
                     />
                 ) : (

@@ -460,7 +460,9 @@ export async function recommendProducts(
             reason: generateSmartReason(p.matchedBenefits, concerns, skinType, index),
             score: p.rawScore,
             affiliateLinks: p.affiliateLinks,
-            howToUse: p.howToUse || null
+            howToUse: p.howToUse || null,
+            benefits: Array.isArray(p.benefits) ? p.benefits : [],
+            keyIngredients: Array.isArray(p.keyIngredients) ? p.keyIngredients : []
         }));
 
     } catch (e) {
