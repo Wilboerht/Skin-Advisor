@@ -3,13 +3,10 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import {
-    X, Plus, Loader2, Check, ChevronLeft,
-    Sparkles, Link2, ImageIcon,
-    Package
+    X, Loader2, Check, ChevronLeft,
+    ImageIcon,
 } from "lucide-react";
-// Local upload for admin product images
 import { useToast } from "@/components/ui/Toast";
 import { cn } from "@/lib/utils";
 
@@ -56,14 +53,14 @@ function TagInput({ label, values, onChange, required = false, error, placeholde
 
     return (
         <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
+            <label className="block text-sm font-medium text-[#5E5E5E] mb-2">
                 {label}{required && <span className="text-red-500 ml-1">*</span>}
             </label>
-            <div className="flex flex-wrap gap-2 min-h-[42px] p-2 rounded-xl border border-slate-200 bg-white focus-within:border-slate-900 focus-within:ring-1 focus-within:ring-slate-900 transition-all">
+            <div className="flex flex-wrap gap-2 min-h-[42px] p-2 rounded-xl border border-[#E8E2D9] bg-white focus-within:border-[#3D4430] focus-within:ring-1 focus-within:ring-[#3D4430]/20 transition-all">
                 {values.map((tag, i) => (
-                    <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 text-sm font-medium text-slate-800">
+                    <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#FAF8F5] text-sm font-medium text-[#2C2C2C]">
                         {tag}
-                        <button type="button" onClick={() => removeTag(i)} className="text-slate-400 hover:text-red-500 transition-colors">
+                        <button type="button" onClick={() => removeTag(i)} className="text-[#9E9E9E] hover:text-red-500 transition-colors">
                             <X className="h-3 w-3" />
                         </button>
                     </span>
@@ -75,7 +72,7 @@ function TagInput({ label, values, onChange, required = false, error, placeholde
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
                         onBlur={addTag}
-                        className="w-full text-sm text-slate-900 placeholder:text-slate-400 outline-none bg-transparent py-1"
+                        className="w-full text-sm text-[#2C2C2C] placeholder:text-[#B0A89A] outline-none bg-transparent py-1"
                         placeholder={values.length === 0 ? placeholder : ""}
                     />
                 </div>
@@ -104,21 +101,21 @@ function Toggle({ label, checked, onChange, tooltip }: { label: string; checked:
             >
                 <div className={cn(
                     "relative w-11 h-6 rounded-full transition-colors duration-200",
-                    checked ? "bg-slate-900" : "bg-slate-200"
+                    checked ? "bg-[#3D4430]" : "bg-[#D9D0C3]"
                 )}>
                     <div className={cn(
                         "absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200",
                         checked ? "translate-x-5" : "translate-x-0"
                     )} />
                 </div>
-                <span className="text-sm font-medium text-slate-700">{label}</span>
+                <span className="text-sm font-medium text-[#5E5E5E]">{label}</span>
             </button>
             {tooltip && (
                 <div className="relative">
-                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-200 text-[10px] font-bold text-slate-500 cursor-help">?</span>
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 px-3 py-2 bg-slate-900 text-white text-xs rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-50">
+                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#E8E2D9] text-[10px] font-bold text-[#8B7355] cursor-help">?</span>
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 px-3 py-2 bg-[#2C2C2C] text-white text-xs rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-50">
                         {tooltip}
-                        <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-900" />
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-[#2C2C2C]" />
                     </div>
                 </div>
             )}
@@ -126,55 +123,12 @@ function Toggle({ label, checked, onChange, tooltip }: { label: string; checked:
     );
 }
 
-/** 步骤导航 */
-function StepNav({ steps, activeStep, onStepClick }: {
-    steps: { id: string; label: string; icon: React.ElementType }[];
-    activeStep: string;
-    onStepClick: (id: string) => void;
-}) {
-    return (
-        <div className="flex items-center gap-1 p-1 bg-slate-100/80 rounded-xl">
-            {steps.map((step) => {
-                const Icon = step.icon;
-                const isActive = activeStep === step.id;
-                return (
-                    <button
-                        key={step.id}
-                        type="button"
-                        onClick={() => onStepClick(step.id)}
-                        className={cn(
-                            "flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all",
-                            isActive
-                                ? "bg-white text-slate-900 shadow-sm"
-                                : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
-                        )}
-                    >
-                        <Icon className="w-4 h-4" />
-                        {step.label}
-                    </button>
-                );
-            })}
-        </div>
-    );
-}
-
 /** 表单区块标题 */
-function SectionCard({ id, title, icon: Icon, children, className }: {
-    id: string; title: string; icon: React.ElementType;
-    children: React.ReactNode; className?: string;
-}) {
+function SectionTitle({ children }: { children: React.ReactNode }) {
     return (
-        <div id={id} className={cn("bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden", className)}>
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2.5 bg-slate-50/50">
-                <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center">
-                    <Icon className="w-4 h-4 text-white" />
-                </div>
-                <h2 className="text-base font-bold text-slate-900">{title}</h2>
-            </div>
-            <div className="p-6">
-                {children}
-            </div>
-        </div>
+        <h4 className="text-xs font-bold text-[#8B7355] uppercase tracking-widest mb-4">
+            {children}
+        </h4>
     );
 }
 
@@ -195,12 +149,6 @@ function validate(formData: any, keyIngredients: string[], benefits: string[], i
     return errors;
 }
 
-const STEPS = [
-    { id: "basic", label: "基础信息", icon: Package },
-    { id: "ingredients", label: "成分功效", icon: Sparkles },
-    { id: "links", label: "肤质电商", icon: Link2 },
-];
-
 export default function ProductForm({
     initialData,
     onSuccess,
@@ -219,7 +167,6 @@ export default function ProductForm({
     const [saving, setSaving] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [errors, setErrors] = useState<FormErrors>({});
-    const [activeStep, setActiveStep] = useState("basic");
     const [dragOver, setDragOver] = useState(false);
 
     const [formData, setFormData] = useState({
@@ -248,25 +195,6 @@ export default function ProductForm({
     const [suitableSkinTypes, setSuitableSkinTypes] = useState<string[]>(initialData?.suitableSkinTypes || []);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
-
-    // 滚动监听更新当前步骤
-    useEffect(() => {
-        const observer = new IntersectionObserver(
-            (entries) => {
-                entries.forEach((entry) => {
-                    if (entry.isIntersecting) {
-                        setActiveStep(entry.target.id.replace("section-", ""));
-                    }
-                });
-            },
-            { rootMargin: "-40% 0px -50% 0px" }
-        );
-        STEPS.forEach((s) => {
-            const el = document.getElementById(`section-${s.id}`);
-            if (el) observer.observe(el);
-        });
-        return () => observer.disconnect();
-    }, []);
 
     const handleImageUpload = async (file: File) => {
         if (!file) return;
@@ -325,20 +253,11 @@ export default function ProductForm({
         setImages((prev) => prev.filter((_, i) => i !== index));
     };
 
-    const scrollToStep = (id: string) => {
-        const el = document.getElementById(`section-${id}`);
-        if (el) {
-            el.scrollIntoView({ behavior: "smooth", block: "start" });
-            setActiveStep(id);
-        }
-    };
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const newErrors = validate(formData, keyIngredients, benefits, images);
         setErrors(newErrors);
         if (Object.keys(newErrors).length > 0) {
-            // 滚动到第一个错误
             const firstErr = document.querySelector("[aria-invalid='true']");
             firstErr?.scrollIntoView({ behavior: "smooth", block: "center" });
             toast.error("请完善必填项");
@@ -440,20 +359,16 @@ export default function ProductForm({
     }, [formData, images, affiliateLinks, keyIngredients, benefits, negativeFor, suitableSkinTypes, onDirtyChange]);
 
     return (
-        <form onSubmit={handleSubmit} className={cn("space-y-6", !onCancel && "max-w-4xl mx-auto")}>
-            {/* ===== 左侧表单 ===== */}
-            <div className="flex-1 min-w-0 space-y-6">
-                {/* 步骤导航 */}
-                <div className={cn("sticky top-0 z-30 pt-2 pb-3", onCancel ? "bg-transparent" : "bg-[#F9FAFB]")}>
-                    <StepNav steps={STEPS} activeStep={activeStep} onStepClick={scrollToStep} />
-                </div>
+        <form onSubmit={handleSubmit} className={cn("space-y-8", !onCancel && "max-w-4xl mx-auto")}>
+            <div className="flex-1 min-w-0 space-y-8">
 
-                {/* 步骤1：基础信息 */}
-                <SectionCard id="section-basic" title="基础信息" icon={Package}>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {/* ===== 基本信息 ===== */}
+                <section>
+                    <SectionTitle>基本信息</SectionTitle>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {/* 产品名称 */}
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                        <div className="md:col-span-2">
+                            <label className="block text-sm font-medium text-[#5E5E5E] mb-1.5">
                                 产品名称 <span className="text-red-500">*</span>
                             </label>
                             <input
@@ -461,9 +376,9 @@ export default function ProductForm({
                                 value={formData.name}
                                 onChange={(e) => updateField("name", e.target.value)}
                                 className={cn(
-                                    "block w-full rounded-xl border shadow-sm text-sm p-3 outline-none transition-all",
-                                    "focus:border-slate-900 focus:ring-1 focus:ring-slate-900",
-                                    errors.name ? "border-red-400 bg-red-50/30" : "border-slate-200 bg-white"
+                                    "block w-full rounded-xl border shadow-sm text-sm p-3 outline-none transition-all bg-white",
+                                    "focus:border-[#3D4430] focus:ring-1 focus:ring-[#3D4430]/20",
+                                    errors.name ? "border-red-400 bg-red-50/30" : "border-[#E8E2D9]"
                                 )}
                                 placeholder="如：NIHPLOD 玻色因面霜"
                                 aria-invalid={!!errors.name}
@@ -473,7 +388,7 @@ export default function ProductForm({
 
                         {/* 分类 */}
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                            <label className="block text-sm font-medium text-[#5E5E5E] mb-1.5">
                                 分类 <span className="text-red-500">*</span>
                             </label>
                             <select
@@ -481,8 +396,8 @@ export default function ProductForm({
                                 onChange={(e) => updateField("category", e.target.value)}
                                 className={cn(
                                     "block w-full rounded-xl border shadow-sm text-sm p-3 outline-none transition-all appearance-none bg-white",
-                                    "focus:border-slate-900 focus:ring-1 focus:ring-slate-900",
-                                    errors.category ? "border-red-400 bg-red-50/30" : "border-slate-200"
+                                    "focus:border-[#3D4430] focus:ring-1 focus:ring-[#3D4430]/20",
+                                    errors.category ? "border-red-400 bg-red-50/30" : "border-[#E8E2D9]"
                                 )}
                                 aria-invalid={!!errors.category}
                             >
@@ -496,19 +411,19 @@ export default function ProductForm({
 
                         {/* 价格 */}
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                            <label className="block text-sm font-medium text-[#5E5E5E] mb-1.5">
                                 价格 <span className="text-red-500">*</span>
                             </label>
                             <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">¥</span>
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#B0A89A] text-sm">¥</span>
                                 <input
                                     type="text"
                                     value={formData.price}
                                     onChange={(e) => updateField("price", e.target.value)}
                                     className={cn(
-                                        "block w-full rounded-xl border shadow-sm text-sm p-3 pl-7 outline-none transition-all",
-                                        "focus:border-slate-900 focus:ring-1 focus:ring-slate-900",
-                                        errors.price ? "border-red-400 bg-red-50/30" : "border-slate-200 bg-white"
+                                        "block w-full rounded-xl border shadow-sm text-sm p-3 pl-7 outline-none transition-all bg-white",
+                                        "focus:border-[#3D4430] focus:ring-1 focus:ring-[#3D4430]/20",
+                                        errors.price ? "border-red-400 bg-red-50/30" : "border-[#E8E2D9]"
                                     )}
                                     placeholder="890"
                                     aria-invalid={!!errors.price}
@@ -517,8 +432,8 @@ export default function ProductForm({
                             {errors.price && <p className="text-xs text-red-500 mt-1">{errors.price}</p>}
                         </div>
 
-                            {/* 开关组 */}
-                        <div className="flex items-center gap-6">
+                        {/* 开关组 */}
+                        <div className="flex items-center gap-6 md:col-span-2">
                             <Toggle label="上架状态" checked={formData.active} onChange={(v) => updateField("active", v)} />
                             <Toggle
                                 label="精选置顶"
@@ -529,19 +444,9 @@ export default function ProductForm({
                         </div>
                     </div>
 
-                    <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1.5">使用方法</label>
-                            <textarea
-                                rows={3}
-                                value={formData.howToUse}
-                                onChange={(e) => updateField("howToUse", e.target.value)}
-                                placeholder="例：取适量于掌心，轻拍于面部..."
-                                className="block w-full rounded-xl border border-slate-200 shadow-sm text-sm p-3 outline-none resize-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition-all"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                            <label className="block text-sm font-medium text-[#5E5E5E] mb-1.5">
                                 产品描述 <span className="text-red-500">*</span>
                             </label>
                             <textarea
@@ -550,100 +455,118 @@ export default function ProductForm({
                                 onChange={(e) => updateField("description", e.target.value)}
                                 placeholder="产品的核心卖点、适合人群..."
                                 className={cn(
-                                    "block w-full rounded-xl border shadow-sm text-sm p-3 outline-none resize-none transition-all",
-                                    "focus:border-slate-900 focus:ring-1 focus:ring-slate-900",
-                                    errors.description ? "border-red-400 bg-red-50/30" : "border-slate-200"
+                                    "block w-full rounded-xl border shadow-sm text-sm p-3 outline-none resize-none transition-all bg-white",
+                                    "focus:border-[#3D4430] focus:ring-1 focus:ring-[#3D4430]/20",
+                                    errors.description ? "border-red-400 bg-red-50/30" : "border-[#E8E2D9]"
                                 )}
                                 aria-invalid={!!errors.description}
                             />
                             {errors.description && <p className="text-xs text-red-500 mt-1">{errors.description}</p>}
                         </div>
-                    </div>
-                </SectionCard>
-
-                {/* 步骤2：成分与功效 */}
-                <SectionCard id="section-ingredients" title="成分与功效" icon={Sparkles}>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {/* 图片上传 */}
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">
-                                产品图片 <span className="text-red-500">*</span>
-                                <span className="text-xs text-slate-400 font-normal ml-2">最多5张，第1张为封面</span>
-                            </label>
+                            <label className="block text-sm font-medium text-[#5E5E5E] mb-1.5">使用方法</label>
+                            <textarea
+                                rows={3}
+                                value={formData.howToUse}
+                                onChange={(e) => updateField("howToUse", e.target.value)}
+                                placeholder="例：取适量于掌心，轻拍于面部..."
+                                className="block w-full rounded-xl border border-[#E8E2D9] shadow-sm text-sm p-3 outline-none resize-none focus:border-[#3D4430] focus:ring-1 focus:ring-[#3D4430]/20 transition-all bg-white"
+                            />
+                        </div>
+                    </div>
+                </section>
 
-                            {/* 已上传图片缩略图 */}
-                            {images.length > 0 && (
-                                <div className="grid grid-cols-5 gap-2 mb-3">
-                                    {images.map((url, index) => (
-                                        <div
-                                            key={index}
-                                            className={cn(
-                                                "relative aspect-square rounded-xl overflow-hidden border-2",
-                                                index === 0 ? "border-slate-900" : "border-slate-200"
-                                            )}
-                                        >
-                                            <img src={url} className="w-full h-full object-cover" alt="" />
-                                            <button
-                                                type="button"
-                                                onClick={(e) => { e.stopPropagation(); removeImage(index); }}
-                                                className="absolute top-1 right-1 w-5 h-5 rounded-full bg-slate-900/70 text-white flex items-center justify-center hover:bg-red-500 transition-colors"
-                                            >
-                                                <X className="w-3 h-3" />
-                                            </button>
-                                            {index === 0 && (
-                                                <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-900 text-white">封面</span>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
+                <div className="h-px bg-[#E8E2D9]/60" />
 
-                            {/* 上传区域 */}
-                            {images.length < 5 && (
-                                <div
-                                    onClick={() => fileInputRef.current?.click()}
-                                    onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-                                    onDragLeave={() => setDragOver(false)}
-                                    onDrop={onDrop}
-                                    className={cn(
-                                        "relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-6 cursor-pointer transition-all",
-                                        dragOver ? "border-slate-900 bg-slate-50" : "border-slate-200 hover:border-slate-400 hover:bg-slate-50/50",
-                                        errors.image ? "border-red-400 bg-red-50/20" : ""
-                                    )}
-                                >
-                                    <input ref={fileInputRef} type="file" className="sr-only" onChange={onFileChange} accept="image/*" multiple />
-                                    <div className="text-center">
-                                        {uploading ? (
-                                            <Loader2 className="mx-auto h-8 w-8 text-slate-300 animate-spin" />
-                                        ) : (
-                                            <ImageIcon className="mx-auto h-8 w-8 text-slate-300" />
+                {/* ===== 产品图片 ===== */}
+                <section>
+                    <SectionTitle>产品图片</SectionTitle>
+                    <div>
+                        <label className="block text-sm font-medium text-[#5E5E5E] mb-2">
+                            上传图片 <span className="text-red-500">*</span>
+                            <span className="text-xs text-[#B0A89A] font-normal ml-2">最多5张，第1张为封面</span>
+                        </label>
+
+                        {/* 已上传图片缩略图 */}
+                        {images.length > 0 && (
+                            <div className="grid grid-cols-5 gap-2 mb-3">
+                                {images.map((url, index) => (
+                                    <div
+                                        key={index}
+                                        className={cn(
+                                            "relative aspect-square rounded-xl overflow-hidden border-2",
+                                            index === 0 ? "border-[#C9A86C]" : "border-[#E8E2D9]"
                                         )}
-                                        <p className="mt-2 text-sm font-medium text-slate-700">
-                                            {uploading ? "上传中..." : dragOver ? "松开以上传" : "点击或拖拽上传图片"}
-                                        </p>
-                                        <p className="mt-1 text-xs text-slate-400">
-                                            支持 JPG、PNG，最大 10MB · 还可上传 {5 - images.length} 张
-                                        </p>
+                                    >
+                                        <img src={url} className="w-full h-full object-cover" alt="" />
+                                        <button
+                                            type="button"
+                                            onClick={(e) => { e.stopPropagation(); removeImage(index); }}
+                                            className="absolute top-1 right-1 w-5 h-5 rounded-full bg-[#2C2C2C]/60 text-white flex items-center justify-center hover:bg-red-500 transition-colors"
+                                        >
+                                            <X className="w-3 h-3" />
+                                        </button>
+                                        {index === 0 && (
+                                            <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#C9A86C] text-white">封面</span>
+                                        )}
                                     </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* 上传区域 */}
+                        {images.length < 5 && (
+                            <div
+                                onClick={() => fileInputRef.current?.click()}
+                                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                                onDragLeave={() => setDragOver(false)}
+                                onDrop={onDrop}
+                                className={cn(
+                                    "relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-8 cursor-pointer transition-all",
+                                    dragOver ? "border-[#C9A86C] bg-[#FAF8F5]" : "border-[#E8E2D9] hover:border-[#C9A86C]/60 hover:bg-[#FAF8F5]/50",
+                                    errors.image ? "border-red-400 bg-red-50/20" : ""
+                                )}
+                            >
+                                <input ref={fileInputRef} type="file" className="sr-only" onChange={onFileChange} accept="image/*" multiple />
+                                <div className="text-center">
+                                    {uploading ? (
+                                        <Loader2 className="mx-auto h-8 w-8 text-[#D9D0C3] animate-spin" />
+                                    ) : (
+                                        <ImageIcon className="mx-auto h-8 w-8 text-[#D9D0C3]" />
+                                    )}
+                                    <p className="mt-2 text-sm font-medium text-[#5E5E5E]">
+                                        {uploading ? "上传中..." : dragOver ? "松开以上传" : "点击或拖拽上传图片"}
+                                    </p>
+                                    <p className="mt-1 text-xs text-[#B0A89A]">
+                                        支持 JPG、PNG，最大 10MB · 还可上传 {5 - images.length} 张
+                                    </p>
                                 </div>
-                            )}
-                            {errors.image && <p className="text-xs text-red-500 mt-1">{errors.image}</p>}
-                        </div>
-
-                        {/* 标签组 */}
-                        <div className="flex flex-col gap-5">
-                            <TagInput label="核心成分" values={keyIngredients} onChange={setKeyIngredients} required error={errors.keyIngredients} placeholder="输入成分名称，按回车添加" />
-                            <TagInput label="主要功效" values={benefits} onChange={setBenefits} required error={errors.benefits} placeholder="如：保湿、抗老、美白..." />
-                            <TagInput label="不适合人群 / 负面标签" values={negativeFor} onChange={setNegativeFor} placeholder="如：敏感肌、孕妇..." />
-                        </div>
+                            </div>
+                        )}
+                        {errors.image && <p className="text-xs text-red-500 mt-1">{errors.image}</p>}
                     </div>
-                </SectionCard>
+                </section>
 
-                {/* 步骤3：肤质与电商 */}
-                <SectionCard id="section-links" title="适用肤质 & 电商信息" icon={Link2}>
+                <div className="h-px bg-[#E8E2D9]/60" />
+
+                {/* ===== 成分与功效 ===== */}
+                <section>
+                    <SectionTitle>成分与功效</SectionTitle>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        <TagInput label="核心成分" values={keyIngredients} onChange={setKeyIngredients} required error={errors.keyIngredients} placeholder="输入成分名称，按回车添加" />
+                        <TagInput label="主要功效" values={benefits} onChange={setBenefits} required error={errors.benefits} placeholder="如：保湿、抗老、美白..." />
+                        <TagInput label="不适合人群" values={negativeFor} onChange={setNegativeFor} placeholder="如：敏感肌、孕妇..." />
+                    </div>
+                </section>
+
+                <div className="h-px bg-[#E8E2D9]/60" />
+
+                {/* ===== 肤质与电商 ===== */}
+                <section>
+                    <SectionTitle>肤质与购买链接</SectionTitle>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-3">适用肤质</label>
+                            <label className="block text-sm font-medium text-[#5E5E5E] mb-3">适用肤质</label>
                             <div className="flex flex-wrap gap-2">
                                 {SKIN_TYPE_OPTIONS.map((opt) => {
                                     const selected = suitableSkinTypes.includes(opt.value);
@@ -659,8 +582,8 @@ export default function ProductForm({
                                             className={cn(
                                                 "px-3.5 py-2 rounded-xl text-sm font-medium border transition-all",
                                                 selected
-                                                    ? "bg-slate-900 text-white border-slate-900 shadow-sm"
-                                                    : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+                                                    ? "bg-[#3D4430] text-white border-[#3D4430] shadow-sm"
+                                                    : "bg-white text-[#5E5E5E] border-[#E8E2D9] hover:border-[#C9A86C]/60"
                                             )}
                                         >
                                             <span className="flex items-center gap-1.5">
@@ -674,7 +597,7 @@ export default function ProductForm({
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-3">电商购买链接</label>
+                            <label className="block text-sm font-medium text-[#5E5E5E] mb-3">电商购买链接</label>
                             <div className="space-y-3">
                                 {[
                                     { key: "taobao", label: "天猫", icon: "🛒" },
@@ -682,7 +605,7 @@ export default function ProductForm({
                                     { key: "douyin", label: "抖音", icon: "🎵" },
                                 ].map(({ key, label, icon }) => (
                                     <div key={key} className="flex items-center gap-3">
-                                        <span className="w-20 text-sm text-slate-600 flex items-center gap-1.5 shrink-0">
+                                        <span className="w-20 text-sm text-[#5E5E5E] flex items-center gap-1.5 shrink-0">
                                             <span>{icon}</span>
                                             {label}
                                         </span>
@@ -692,9 +615,9 @@ export default function ProductForm({
                                             onChange={(e) => setAffiliateLinks((prev) => ({ ...prev, [key]: e.target.value }))}
                                             placeholder="https://..."
                                             className={cn(
-                                                "flex-1 rounded-xl border shadow-sm text-sm p-2.5 outline-none transition-all",
-                                                "focus:border-slate-900 focus:ring-1 focus:ring-slate-900",
-                                                errors[`affiliateLinks_${key}`] ? "border-red-400" : "border-slate-200"
+                                                "flex-1 rounded-xl border shadow-sm text-sm p-2.5 outline-none transition-all bg-white",
+                                                "focus:border-[#3D4430] focus:ring-1 focus:ring-[#3D4430]/20",
+                                                errors[`affiliateLinks_${key}`] ? "border-red-400" : "border-[#E8E2D9]"
                                             )}
                                         />
                                     </div>
@@ -702,14 +625,14 @@ export default function ProductForm({
                             </div>
                         </div>
                     </div>
-                </SectionCard>
+                </section>
 
                 {/* 底部操作栏 */}
-                <div className="flex items-center justify-between pt-2 pb-8">
+                <div className="flex items-center justify-between pt-4 pb-2">
                     {!onCancel && (
                         <Link
                             href="/admin/products"
-                            className="flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors"
+                            className="flex items-center gap-1.5 text-sm font-medium text-[#8B7355] hover:text-[#3D4430] transition-colors"
                         >
                             <ChevronLeft className="w-4 h-4" />
                             返回产品列表
@@ -719,14 +642,14 @@ export default function ProductForm({
                         <button
                             type="button"
                             onClick={() => (onCancel ? onCancel() : router.back())}
-                            className="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-colors"
+                            className="px-5 py-2.5 rounded-xl text-sm font-semibold text-[#5E5E5E] bg-white border border-[#E8E2D9] hover:bg-[#FAF8F5] transition-colors"
                         >
                             取消
                         </button>
                         <button
                             type="submit"
                             disabled={saving}
-                            className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-60 transition-colors shadow-sm"
+                            className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#3D4430] hover:bg-[#B8975B] disabled:opacity-60 transition-colors shadow-sm"
                         >
                             {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                             {initialData?.id ? "保存修改" : "创建产品"}
@@ -734,7 +657,6 @@ export default function ProductForm({
                     </div>
                 </div>
             </div>
-
         </form>
     );
 }

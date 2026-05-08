@@ -59,26 +59,26 @@ export function ProductFormModal({ isOpen, onClose, product, onSuccess }: Produc
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={() => !submitting && handleClose()}
-                        className="absolute inset-0 bg-slate-900/30 backdrop-blur-md"
+                        className="absolute inset-0 bg-[#2C2C2C]/25 backdrop-blur-md"
                     />
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95, y: 10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 10 }}
                         transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                        className="relative z-10 w-full max-w-5xl mx-4 bg-white/60 backdrop-blur-3xl rounded-[32px] border-[1.5px] border-white/70 shadow-[0_40px_100px_rgba(0,0,0,0.1),inset_0_2px_10px_rgba(255,255,255,0.4)] overflow-hidden max-h-[90vh] flex flex-col"
+                        className="relative z-10 w-full max-w-4xl mx-4 bg-white/70 backdrop-blur-3xl rounded-[28px] border-[1.5px] border-white/80 shadow-[0_40px_100px_rgba(0,0,0,0.08),inset_0_2px_10px_rgba(255,255,255,0.5)] overflow-hidden max-h-[90vh] flex flex-col"
                     >
                         {/* Header */}
                         <div className="flex items-center justify-between px-8 pt-8 pb-4 shrink-0">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center">
-                                    <Package className="w-5 h-5 text-white" />
+                                <div className="w-10 h-10 rounded-xl bg-[#C9A86C]/15 flex items-center justify-center">
+                                    <Package className="w-5 h-5 text-[#8B6914]" />
                                 </div>
                                 <div>
-                                    <h3 className="text-lg font-bold text-slate-900 tracking-tight">
+                                    <h3 className="text-lg font-bold text-[#2C2C2C] tracking-tight">
                                         {product ? "编辑产品" : "新建产品"}
                                     </h3>
-                                    <p className="text-xs text-slate-500">
+                                    <p className="text-xs text-[#8B7355]">
                                         {product ? "修改产品信息" : "填写产品信息并发布到前端展示"}
                                     </p>
                                 </div>
@@ -86,7 +86,7 @@ export function ProductFormModal({ isOpen, onClose, product, onSuccess }: Produc
                             <button
                                 onClick={handleClose}
                                 disabled={submitting}
-                                className="p-2 rounded-full text-slate-400 hover:text-slate-900 hover:bg-white/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="p-2 rounded-full text-[#B0A89A] hover:text-[#C9A86C] hover:bg-white/60 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <X className="w-5 h-5" />
                             </button>
