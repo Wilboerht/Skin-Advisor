@@ -103,7 +103,7 @@ export default function ProfilePage() {
             className="min-h-screen"
             style={{
                 backgroundColor: '#FFFFFF',
-                backgroundImage: "url('/images/result-bg.svg')",
+                backgroundImage: "url('/images/result-bg.webp')",
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 backgroundAttachment: 'fixed',

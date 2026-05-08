@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Share2, Lock, Loader2 } from 'lucide-react';
+import Image from 'next/image';
 import { FloatingToolbar } from '@/components/advisor/FloatingToolbar';
 import { ContactAdvisorModal } from '@/components/advisor/ContactAdvisorModal';
 import { useRouter } from 'next/navigation';
@@ -305,7 +306,7 @@ export default function ShareLandingClient({ analysisResult, sessionId }: ShareL
       <div
         className="fixed top-0 left-0 w-full h-[100dvh] z-[-1] pointer-events-none"
         style={{
-          backgroundImage: 'url(/images/result-bg.svg)',
+          backgroundImage: 'url(/images/result-bg.webp)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           transform: 'translateZ(0)', // Force hardware acceleration
@@ -445,16 +446,20 @@ export default function ShareLandingClient({ analysisResult, sessionId }: ShareL
                 <div
                   className="absolute -bottom-[53%] lg:-bottom-[30%] w-[16rem] sm:w-[28rem] h-[16rem] sm:h-[28rem] z-30 drop-shadow-2xl right-[-55px] lg:right-[-48px]"
                 >
-                  <img
-                    src="/images/gift.svg"
+                  <Image
+                    src="/images/gift.webp"
                     alt="礼盒"
-                    className="w-full h-full object-contain"
+                    fill
+                    className="object-contain"
+                    sizes="(max-width: 640px) 256px, 448px"
                   />
                 </div>
-                <img
-                  src="/images/ribbon.svg"
+                <Image
+                  src="/images/ribbon.webp"
                   alt="装饰彩带"
-                  className="w-full h-full object-contain object-right-bottom opacity-90 scale-[1.8] lg:scale-110"
+                  fill
+                  className="object-contain object-right-bottom opacity-90 scale-[1.8] lg:scale-110"
+                  sizes="50vw"
                 />
               </div>
             </div>
@@ -674,7 +679,7 @@ export default function ShareLandingClient({ analysisResult, sessionId }: ShareL
                   skinAge={analysisResult.skinProfile?.skinAge || analysisResult.skinAnalysis?.skinAge || 25}
                   percentile={rankPercentile}
                   avatar={generatedAvatar}
-                  posterTemplate="/images/poster-template.svg"
+                  posterTemplate="/images/poster-template.webp"
                 />
               </div>
             </div>

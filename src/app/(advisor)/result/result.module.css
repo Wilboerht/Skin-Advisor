@@ -33,7 +33,7 @@
     width: 100%;
     min-height: 100vh;
     background-color: var(--notion-bg);
-    background-image: url('/images/result-bg.svg');
+    background-image: url('/images/result-bg.webp');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;

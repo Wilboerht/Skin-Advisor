@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Share2, Lock, Loader2 } from 'lucide-react';
+import Image from 'next/image';
 
 
 interface Dimension {
@@ -205,12 +206,20 @@ export default function ReportCards({
           {/* Decorative Image Area (Right) */}
           <div className="absolute right-[-80px] lg:-right-33 bottom-[108px] lg:-bottom-6 w-1/2 h-[110%] pointer-events-none flex items-end justify-end z-20">
             <div className="absolute -bottom-[53%] lg:-bottom-[30%] w-[16rem] sm:w-[28rem] h-[16rem] sm:h-[28rem] z-30 drop-shadow-2xl right-[-55px] lg:right-[-48px]">
-              <img src="/images/gift.svg" alt="礼盒" className="w-full h-full object-contain" />
+              <Image
+                src="/images/gift.webp"
+                alt="礼盒"
+                fill
+                className="object-contain"
+                sizes="(max-width: 640px) 256px, 448px"
+              />
             </div>
-            <img
-              src="/images/ribbon.svg"
+            <Image
+              src="/images/ribbon.webp"
               alt="装饰彩带"
-              className="w-full h-full object-contain object-right-bottom opacity-90 scale-[1.8] lg:scale-110"
+              fill
+              className="object-contain object-right-bottom opacity-90 scale-[1.8] lg:scale-110"
+              sizes="50vw"
             />
           </div>
         </div>
