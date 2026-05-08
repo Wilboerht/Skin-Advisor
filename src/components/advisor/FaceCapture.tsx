@@ -123,7 +123,8 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
         video: {
           facingMode,
           width: { ideal: 1280 }, // Use 1280 for better compatibility than 1080
-          height: { ideal: 720 }
+          height: { ideal: 720 },
+          frameRate: { ideal: 30, min: 15 }
         }
       };
 
