@@ -79,6 +79,35 @@ export default function ShareLandingClient({ analysisResult, sessionId }: ShareL
       return;
     }
 
+    // 先检查 localStorage 中是否有已生成的 guest avatar（与 /result 页对齐）
+    try {
+      const guestAvatarRaw = localStorage.getItem(`guest_avatar_${sessionId}`);
+      if (guestAvatarRaw) {
+        let guestAvatarUrl: string | null = null;
+        if (guestAvatarRaw.startsWith('http') || guestAvatarRaw.startsWith('data:')) {
+          guestAvatarUrl = guestAvatarRaw;
+        } else {
+          try {
+            const parsed = JSON.parse(guestAvatarRaw);
+            if (parsed.expiresAt && Date.now() > parsed.expiresAt) {
+              localStorage.removeItem(`guest_avatar_${sessionId}`);
+            } else if (parsed.url) {
+              guestAvatarUrl = parsed.url;
+            }
+          } catch {
+            // ignore
+          }
+        }
+        if (guestAvatarUrl) {
+          setGeneratedAvatar(guestAvatarUrl);
+          setIsAvatarLoading(false);
+          return;
+        }
+      }
+    } catch (e) {
+      // ignore localStorage errors
+    }
+
     // Prevent multiple simultaneous polls
     if (avatarPollRef.current.hasStarted) {
       return;
@@ -96,6 +125,14 @@ export default function ShareLandingClient({ analysisResult, sessionId }: ShareL
 
         if (response.ok) {
           const data = await response.json();
+
+          // 处理失败状态：停止轮询
+          if (data.queueStatus === 'failed') {
+            console.warn("Avatar generation failed, stopping poll");
+            setIsAvatarLoading(false);
+            setAvatarQueueStatus(null);
+            return;
+          }
 
           // 更新队列状态
           if (data.queueStatus && data.queueStatus !== 'completed') {
@@ -138,8 +175,8 @@ export default function ShareLandingClient({ analysisResult, sessionId }: ShareL
       }
     };
 
-    // 动态轮询间隔：队列中时 3s，已处理时 2.5s
-    const pollInterval = setInterval(pollAvatar, avatarQueueStatus ? 3000 : 2500);
+    // 固定轮询间隔 3s，不随 queueStatus 变化而重启 effect
+    const pollInterval = setInterval(pollAvatar, 3000);
     const pollTimeout = setTimeout(() => {
       clearInterval(pollInterval);
       if (isAvatarLoading) {
@@ -156,7 +193,7 @@ export default function ShareLandingClient({ analysisResult, sessionId }: ShareL
       clearTimeout(pollTimeout);
       avatarPollRef.current.hasStarted = false;
     };
-  }, [sessionId, generatedAvatar, isAvatarLoading, avatarQueueStatus]);
+  }, [sessionId, generatedAvatar, isAvatarLoading]);
   const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
   const [showContactAdvisor, setShowContactAdvisor] = useState(false);
 

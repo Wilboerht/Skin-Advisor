@@ -179,6 +179,7 @@ export interface AvatarQueueItem {
   id: string;
   sessionId: string;
   status: string;
+  attempts: number;
   nickname?: string | null;
   characteristics?: any;
   frontPhoto?: string | null;
@@ -243,11 +244,12 @@ async function generateAvatarImage(
     try {
       if (frontPhoto) {
         console.log("📸 Attempting Jimeng img2img...");
-        imageUrl = await generateJimengAvatarAsync(
-          prompt,
-          frontPhoto,
-          "jimeng_i2i_v30"
-        );
+        imageUrl = await Promise.race([
+          generateJimengAvatarAsync(prompt, frontPhoto, "jimeng_i2i_v30"),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error("Jimeng i2i timeout")), 90000)
+          ),
+        ]);
         if (imageUrl) {
           console.log("✅ Jimeng img2img succeeded");
           source = "jimeng_i2i";
@@ -257,11 +259,12 @@ async function generateAvatarImage(
 
       // 策略 3: Jimeng text2image
       console.log("🎨 Attempting Jimeng text-to-image...");
-      imageUrl = await generateJimengAvatarAsync(
-        prompt,
-        null,
-        "jimeng_t2i_v30"
-      );
+      imageUrl = await Promise.race([
+        generateJimengAvatarAsync(prompt, null, "jimeng_t2i_v30"),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("Jimeng t2i timeout")), 90000)
+        ),
+      ]);
       if (imageUrl) {
         console.log("✅ Jimeng t2i succeeded");
         source = "jimeng_t2i";
@@ -276,10 +279,10 @@ async function generateAvatarImage(
         errorMsg.includes("Quota")
       ) {
         console.warn("🔴 Jimeng 已超限");
-        // Jimeng 超限，直接降级
+        // Jimeng 超限，继续走 fallback
       } else {
-        // 其它错误直接降级
-        return null;
+        // 其它错误也继续走 fallback，不要提前 return null
+        console.warn("⚠️ Jimeng 其它错误，继续降级到 fallback");
       }
     }
   }
@@ -484,29 +487,42 @@ export async function processAvatarQueueItem(item: AvatarQueueItem) {
           return;
         }
 
-        const currentResult = (session.analysisResult as any) || {};
-        const updatedResult = {
-          ...currentResult,
-          generatedAvatar: result.url,
-        };
+        // 顺序更新（避免 PostgreSQL 死锁）
+        await tx.avatarQueue.update({
+          where: { id: item.id },
+          data: {
+            status: "completed",
+            generatedUrl: result.url,
+            source: result.source,
+            completedAt: new Date(),
+            frontPhoto: null,
+          },
+        });
 
-        // 同时更新两个表
-        await Promise.all([
-          tx.avatarQueue.update({
-            where: { id: item.id },
-            data: {
-              status: "completed",
-              generatedUrl: result.url,
-              source: result.source,
-              completedAt: new Date(),
-              frontPhoto: null, // 清空原始照片数据
-            },
-          }),
-          tx.advisorSession.update({
+        // 原子 JSONB 更新，避免 Lost Update（PostgreSQL 用 jsonb_set，SQLite 直接覆盖）
+        const isPostgres = (process.env.DATABASE_URL || "").includes("postgresql");
+        if (isPostgres) {
+          await tx.$executeRaw`
+            UPDATE "AdvisorSession"
+            SET "analysisResult" = jsonb_set(
+              COALESCE("analysisResult", '{}'::jsonb),
+              '{generatedAvatar}',
+              ${JSON.stringify(result.url)}::jsonb
+            )
+            WHERE "sessionId" = ${item.sessionId}
+          `;
+        } else {
+          const currentResult = (session.analysisResult as any) || {};
+          await tx.advisorSession.update({
             where: { sessionId: item.sessionId },
-            data: { analysisResult: updatedResult },
-          }),
-        ]);
+            data: {
+              analysisResult: {
+                ...currentResult,
+                generatedAvatar: result.url,
+              }
+            },
+          });
+        }
 
         console.log(`[AvatarQueue] ✅ Successfully updated session ${item.sessionId} with avatar`);
       });
@@ -606,6 +622,29 @@ export function startAvatarQueueProcessor(checkIntervalMs: number = 2000) {
     isProcessing = true;
 
     try {
+      // 先重置卡死的 processing 任务（超过 5 分钟视为死锁，startedAt 为 null 也视为死锁）
+      const processingTimeoutMs = 5 * 60 * 1000;
+      const stalled = await prisma.avatarQueue.findMany({
+        where: {
+          status: "processing",
+          OR: [
+            { startedAt: { lt: new Date(Date.now() - processingTimeoutMs) } },
+            { startedAt: null }
+          ]
+        }
+      });
+      for (const item of stalled) {
+        try {
+          await prisma.avatarQueue.updateMany({
+            where: { id: item.id, status: "processing" },
+            data: { status: "pending", errorMessage: "Processing timeout, will retry" }
+          });
+          console.log(`[AvatarQueue] Reset stalled processing item: ${item.id}`);
+        } catch (e) {
+          console.error(`[AvatarQueue] Failed to reset stalled item ${item.id}:`, e);
+        }
+      }
+
       // 获取pending队列中的第一个
       const nextItem = await prisma.avatarQueue.findFirst({
         where: { status: "pending" },
@@ -613,7 +652,14 @@ export function startAvatarQueueProcessor(checkIntervalMs: number = 2000) {
       });
 
       if (nextItem) {
-        await processAvatarQueueItem(nextItem);
+        // Hard timeout: 单个任务最多 6 分钟，防止永久阻塞队列
+        const processorTimeout = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error("Processor timeout: 6 minutes exceeded")), 6 * 60 * 1000);
+        });
+        await Promise.race([
+          processAvatarQueueItem(nextItem),
+          processorTimeout
+        ]);
       }
 
       // 清理过期的队列项

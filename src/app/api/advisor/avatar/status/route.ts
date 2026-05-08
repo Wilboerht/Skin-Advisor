@@ -28,7 +28,28 @@ export async function GET(req: NextRequest) {
         );
 
         if (queueItem) {
-
+            // 处理卡死的 processing 任务（Serverless 环境下 Lambda 可能被回收）
+            if (queueItem.status === "processing") {
+                const processingTimeoutMs = 5 * 60 * 1000; // 5 分钟超时
+                const startedAt = queueItem.startedAt ? new Date(queueItem.startedAt).getTime() : 0;
+                // startedAt 为 null 也视为超时（on-demand processing 可能未设置）
+                if (!queueItem.startedAt || Date.now() - startedAt > processingTimeoutMs) {
+                    console.warn(`[AvatarQueue] Processing timeout for ${sessionId}, resetting to pending`);
+                    try {
+                        await prisma.avatarQueue.updateMany({
+                            where: { id: queueItem.id, status: "processing" },
+                            data: { status: "pending", errorMessage: "Processing timeout, will retry" }
+                        });
+                        // 重新读取更新后的队列项
+                        const refreshed = await prisma.avatarQueue.findUnique({ where: { sessionId } });
+                        if (refreshed) {
+                            Object.assign(queueItem, refreshed);
+                        }
+                    } catch (e) {
+                        console.error(`[AvatarQueue] Failed to reset processing timeout:`, e);
+                    }
+                }
+            }
 
             // 如果已完成，返回生成的头像
             if (queueItem.status === "completed" && queueItem.generatedUrl) {
@@ -46,7 +67,7 @@ export async function GET(req: NextRequest) {
                     // 乐观锁：只有 status 还是 pending 时才更新为 processing
                     const updated = await prisma.avatarQueue.updateMany({
                         where: { id: queueItem.id, status: "pending" },
-                        data: { status: "processing" }
+                        data: { status: "processing", startedAt: new Date() }
                     });
 
                     if (updated.count > 0) {

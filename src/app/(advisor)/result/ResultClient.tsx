@@ -437,6 +437,13 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 if (response.ok) {
                     const data = await response.json();
 
+                    // 处理失败状态：停止轮询
+                    if (data.queueStatus === 'failed') {
+                        console.warn("Avatar generation failed, stopping poll");
+                        setIsAvatarLoading(false);
+                        setAvatarQueueStatus(null);
+                        return;
+                    }
                     
                     // 更新队列状态
                     if (data.queueStatus && data.queueStatus !== 'completed') {
@@ -448,21 +455,14 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     }
                     
                     // Validate avatar URL format
-
                     if (data.generatedAvatar && typeof data.generatedAvatar === 'string') {
                         // Basic URL validation
                         if (data.generatedAvatar.startsWith('http') || data.generatedAvatar.startsWith('data:')) {
-
                             setGeneratedAvatar(data.generatedAvatar);
                             setIsAvatarLoading(false);
                             setAvatarQueueStatus(null);
-
                             return;
-                        } else {
-
                         }
-                    } else {
-
                     }
                     
                     // Reset error count on successful connection
@@ -491,8 +491,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             }
         };
 
-        // 动态轮询间隔：队列中时 3s，已处理时 2.5s，避免压垮数据库连接池
-        const pollInterval = setInterval(pollAvatar, avatarQueueStatus ? 5000 : 4000);
+        // 固定轮询间隔 3s，不随 queueStatus 变化而重启 effect
+        const pollInterval = setInterval(pollAvatar, 3000);
         const pollTimeout = setTimeout(() => {
             clearInterval(pollInterval);
             if (isAvatarLoading) {
@@ -500,7 +500,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 setIsAvatarLoading(false);
                 setAvatarQueueStatus(null);
             }
-        }, 120000); // 增加到 120 秒，因为可能需要排队
+        }, 120000);
         
         // Immediate first poll to catch avatar if already available
         pollAvatar();
@@ -510,7 +510,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             clearTimeout(pollTimeout);
             avatarPollRef.current.hasStarted = false;
         };
-    }, [sessionId, generatedAvatar, isAvatarLoading, avatarQueueStatus]);
+    }, [sessionId, generatedAvatar, isAvatarLoading, user]);
 
     // --- Guest Protection Guard ---
     // Prevent direct access to full report by guests via URL
@@ -544,7 +544,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     }, [user, authLoading, authInitialized, loading, result, sessionId, searchParams, router, initialData]);
 
     // --- Guest Avatar Migration ---
-    // When a guest user logs in, migrate their guest avatar from localStorage to user account
+    // When a user views a report, migrate any guest avatar from localStorage to their account
     const avatarMigrationRef = useRef(false);
 
     useEffect(() => {
@@ -552,9 +552,9 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             return;
         }
 
-        // Only migrate if we were previously a guest (no user) but now logged in
-        const previousWasGuest = userRef.current === null || userRef.current === undefined;
-        if (!previousWasGuest) {
+        // Check if there's a guest avatar in localStorage for this session
+        const guestAvatarRaw = localStorage.getItem(`guest_avatar_${sessionId}`);
+        if (!guestAvatarRaw) {
             return;
         }
 

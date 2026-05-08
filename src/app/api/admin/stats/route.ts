@@ -23,14 +23,15 @@ export async function GET() {
         ]);
 
         // ===== 肤质分布 (使用 SQL 在数据库端聚合，避免全表加载到内存) =====
+        // 注意：数据实际存储在 analysisResult->skinProfile->type，不是根级的 skinType
         const skinTypeRaw = await prisma.$queryRaw<Array<{ skin_type: string; count: bigint }>>`
             SELECT 
-                LOWER("analysisResult"->>'skinType') as skin_type,
+                LOWER("analysisResult"->'skinProfile'->>'type') as skin_type,
                 COUNT(*) as count
             FROM "AdvisorSession"
             WHERE "analysisResult" IS NOT NULL 
-              AND "analysisResult"->>'skinType' IS NOT NULL
-            GROUP BY LOWER("analysisResult"->>'skinType')
+              AND "analysisResult"->'skinProfile'->>'type' IS NOT NULL
+            GROUP BY LOWER("analysisResult"->'skinProfile'->>'type')
         `;
 
         const validSkinTypes = ['dry', 'oily', 'combination', 'sensitive', 'normal'];

@@ -29,6 +29,10 @@ async function fetchWithRetry(url: string, options: RequestInit, retries = 3, ba
         return res;
     } catch (err: unknown) {
         const error = err instanceof Error ? err : new Error(String(err));
+        // Do NOT retry on AbortError (user cancelled or timeout)
+        if (error.name === 'AbortError' || options.signal?.aborted) {
+            throw error;
+        }
         // Do NOT retry usage-limit errors (429)
         if (error.message?.includes('测试次数上限') || error.message?.includes('测试上限')) {
             throw error;
@@ -36,6 +40,10 @@ async function fetchWithRetry(url: string, options: RequestInit, retries = 3, ba
         if (retries > 0) {
             console.log(`Retrying ${url}... (${retries} attempts left)`);
             await new Promise(r => setTimeout(r, backoff));
+            // Check again before retry in case signal was aborted during backoff
+            if (options.signal?.aborted) {
+                throw new Error('Request aborted');
+            }
             return fetchWithRetry(url, options, retries - 1, backoff * 1.5);
         }
         throw err;
@@ -118,17 +126,13 @@ export function useAsyncAnalysis() {
                             finalData = processed.imageData;
 
                             try {
-                                // Upload to cloud storage (only for logged-in users)
-                                if (user) {
-                                    const { uploadImage } = await import("@/lib/upload-client");
-                                    const blob = await (await fetch(finalData)).blob();
-                                    const url = await uploadImage(blob, "face-front.jpg");
-                                    if (url) {
-                                        finalData = url;
-                                        console.log("Uploaded to cloud storage:", url);
-                                    }
-                                } else {
-                                    console.log("Guest user, skipping cloud upload");
+                                // Upload to cloud storage (for all users — reduces DB bloat and API payload size)
+                                const { uploadImage } = await import("@/lib/upload-client");
+                                const blob = await (await fetch(finalData)).blob();
+                                const url = await uploadImage(blob, "face-front.jpg");
+                                if (url) {
+                                    finalData = url;
+                                    console.log("Uploaded to cloud storage:", url);
                                 }
                             } catch (uploadError) {
                                 console.warn("Cloud upload failed, using base64", uploadError);

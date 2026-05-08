@@ -71,56 +71,63 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        // Approach 2: Get avatar from session (in case it was stored server-side for that brief moment)
+        // Approach 2: Get avatar from session or AvatarQueue
         if (sessionId) {
+            // 2a: Check AdvisorSession.analysisResult
             const advisorSession = await prisma.advisorSession.findUnique({
                 where: { sessionId },
                 select: { analysisResult: true }
             });
 
+            let generatedAvatar: string | null = null;
+
             if (advisorSession) {
                 const analysisResult = advisorSession.analysisResult as any;
-                const generatedAvatar = analysisResult?.generatedAvatar;
+                generatedAvatar = analysisResult?.generatedAvatar || null;
+            }
 
-                if (generatedAvatar && typeof generatedAvatar === "string") {
-                    // Update user's avatar
-                    const currentUser = await prisma.user.findUnique({
+            // 2b: Fallback to AvatarQueue (avatar may exist there before sync to session)
+            if (!generatedAvatar) {
+                const queueItem = await prisma.avatarQueue.findUnique({
+                    where: { sessionId },
+                    select: { generatedUrl: true, status: true }
+                });
+                if (queueItem?.generatedUrl && queueItem.status === "completed") {
+                    generatedAvatar = queueItem.generatedUrl;
+                }
+            }
+
+            if (generatedAvatar) {
+                // Update user's avatar
+                const currentUser = await prisma.user.findUnique({
+                    where: { id: session.id },
+                    select: { avatarUrl: true }
+                });
+
+                if (currentUser && (!currentUser.avatarUrl || currentUser.avatarUrl === "/user-placeholder.svg" || currentUser.avatarUrl.includes("avatar-ai-"))) {
+                    await prisma.user.update({
                         where: { id: session.id },
-                        select: { avatarUrl: true }
+                        data: { avatarUrl: generatedAvatar }
                     });
-
-                    if (currentUser && (!currentUser.avatarUrl || currentUser.avatarUrl === "/user-placeholder.svg" || currentUser.avatarUrl.includes("avatar-ai-"))) {
-                        await prisma.user.update({
-                            where: { id: session.id },
-                            data: { avatarUrl: generatedAvatar }
-                        });
-                        console.log(`✅ User ${session.id} avatar migrated from session ${sessionId}`);
-                        return NextResponse.json({ 
-                            success: true, 
-                            message: "Guest avatar migrated to user account",
-                            avatarUrl: generatedAvatar
-                        });
-                    } else {
-                        console.log(`ℹ️  User ${session.id} already has a custom avatar`);
-                        return NextResponse.json({ 
-                            success: true, 
-                            message: "User already has a custom avatar",
-                            skipped: true
-                        });
-                    }
-                } else {
-                    console.log(`ℹ️  No avatar found in session ${sessionId}`);
+                    console.log(`✅ User ${session.id} avatar migrated from session ${sessionId}`);
                     return NextResponse.json({ 
-                        success: false,
-                        message: "No avatar found in session",
+                        success: true, 
+                        message: "Guest avatar migrated to user account",
+                        avatarUrl: generatedAvatar
+                    });
+                } else {
+                    console.log(`ℹ️  User ${session.id} already has a custom avatar`);
+                    return NextResponse.json({ 
+                        success: true, 
+                        message: "User already has a custom avatar",
                         skipped: true
                     });
                 }
             } else {
-                console.log(`ℹ️  Session ${sessionId} not found`);
+                console.log(`ℹ️  No avatar found in session ${sessionId} or AvatarQueue`);
                 return NextResponse.json({ 
                     success: false,
-                    message: "Session not found",
+                    message: "No avatar found in session",
                     skipped: true
                 });
             }

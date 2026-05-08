@@ -37,20 +37,26 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Missing sessionId" }, { status: 400 });
         }
 
-        // P1-25: frontPhoto 大小验证
+        // P1-25: frontPhoto 验证（支持 base64 data URI 或公网 URL）
         if (frontPhoto) {
-            if (!isValidBase64DataURI(frontPhoto)) {
+            const isBase64 = isValidBase64DataURI(frontPhoto);
+            const isUrl = typeof frontPhoto === 'string' && frontPhoto.startsWith('http');
+
+            if (!isBase64 && !isUrl) {
                 return NextResponse.json(
-                    { error: "frontPhoto must be a valid base64 data URI (data:image/...;base64,...)", code: "INVALID_IMAGE_FORMAT" },
+                    { error: "frontPhoto must be a valid base64 data URI or a public URL", code: "INVALID_IMAGE_FORMAT" },
                     { status: 400 }
                 );
             }
-            const sizeMB = estimateBase64SizeMB(frontPhoto);
-            if (sizeMB > MAX_BASE64_SIZE_MB) {
-                return NextResponse.json(
-                    { error: `Image too large (${sizeMB.toFixed(1)}MB). Max ${MAX_BASE64_SIZE_MB}MB allowed.`, code: "IMAGE_TOO_LARGE" },
-                    { status: 413 }
-                );
+
+            if (isBase64) {
+                const sizeMB = estimateBase64SizeMB(frontPhoto);
+                if (sizeMB > MAX_BASE64_SIZE_MB) {
+                    return NextResponse.json(
+                        { error: `Image too large (${sizeMB.toFixed(1)}MB). Max ${MAX_BASE64_SIZE_MB}MB allowed.`, code: "IMAGE_TOO_LARGE" },
+                        { status: 413 }
+                    );
+                }
             }
         }
 
