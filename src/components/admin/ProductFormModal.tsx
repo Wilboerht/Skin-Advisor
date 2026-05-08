@@ -93,7 +93,7 @@ export function ProductFormModal({ isOpen, onClose, product, onSuccess }: Produc
                         </div>
 
                         {/* Form */}
-                        <div ref={scrollRef} className="px-8 pb-8 overflow-y-auto">
+                        <div ref={scrollRef} className="px-8 pb-8 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                             <ProductForm
                                 key={product?.id || "new"}
                                 initialData={product}

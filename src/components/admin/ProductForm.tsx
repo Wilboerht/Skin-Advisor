@@ -56,7 +56,7 @@ function TagInput({ label, values, onChange, required = false, error, placeholde
             <label className="block text-sm font-medium text-[#5E5E5E] mb-2">
                 {label}{required && <span className="text-red-500 ml-1">*</span>}
             </label>
-            <div className="flex flex-wrap gap-2 min-h-[42px] p-2 rounded-xl border border-[#E8E2D9] bg-white focus-within:border-[#3D4430] focus-within:ring-1 focus-within:ring-[#3D4430]/20 transition-all">
+            <div className="flex flex-wrap gap-2 min-h-[42px] p-2 rounded-xl border border-[#E8E2D9] bg-white focus-within:border-[#C9A86C] focus-within:ring-1 focus-within:ring-[#C9A86C]/20 transition-all">
                 {values.map((tag, i) => (
                     <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#FAF8F5] text-sm font-medium text-[#2C2C2C]">
                         {tag}
@@ -101,7 +101,7 @@ function Toggle({ label, checked, onChange, tooltip }: { label: string; checked:
             >
                 <div className={cn(
                     "relative w-11 h-6 rounded-full transition-colors duration-200",
-                    checked ? "bg-[#3D4430]" : "bg-[#D9D0C3]"
+                    checked ? "bg-[#C9A86C]" : "bg-[#D9D0C3]"
                 )}>
                     <div className={cn(
                         "absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200",
@@ -120,15 +120,6 @@ function Toggle({ label, checked, onChange, tooltip }: { label: string; checked:
                 </div>
             )}
         </div>
-    );
-}
-
-/** 表单区块标题 */
-function SectionTitle({ children }: { children: React.ReactNode }) {
-    return (
-        <h4 className="text-xs font-bold text-[#8B7355] uppercase tracking-widest mb-4">
-            {children}
-        </h4>
     );
 }
 
@@ -359,12 +350,11 @@ export default function ProductForm({
     }, [formData, images, affiliateLinks, keyIngredients, benefits, negativeFor, suitableSkinTypes, onDirtyChange]);
 
     return (
-        <form onSubmit={handleSubmit} className={cn("space-y-8", !onCancel && "max-w-4xl mx-auto")}>
-            <div className="flex-1 min-w-0 space-y-8">
+        <form onSubmit={handleSubmit} className={cn("space-y-10", !onCancel && "max-w-4xl mx-auto")}>
+            <div className="flex-1 min-w-0 space-y-10">
 
                 {/* ===== 基本信息 ===== */}
                 <section>
-                    <SectionTitle>基本信息</SectionTitle>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {/* 产品名称 */}
                         <div className="md:col-span-2">
@@ -377,7 +367,7 @@ export default function ProductForm({
                                 onChange={(e) => updateField("name", e.target.value)}
                                 className={cn(
                                     "block w-full rounded-xl border shadow-sm text-sm p-3 outline-none transition-all bg-white",
-                                    "focus:border-[#3D4430] focus:ring-1 focus:ring-[#3D4430]/20",
+                                    "focus:border-[#C9A86C] focus:ring-1 focus:ring-[#C9A86C]/20",
                                     errors.name ? "border-red-400 bg-red-50/30" : "border-[#E8E2D9]"
                                 )}
                                 placeholder="如：NIHPLOD 玻色因面霜"
@@ -396,7 +386,7 @@ export default function ProductForm({
                                 onChange={(e) => updateField("category", e.target.value)}
                                 className={cn(
                                     "block w-full rounded-xl border shadow-sm text-sm p-3 outline-none transition-all appearance-none bg-white",
-                                    "focus:border-[#3D4430] focus:ring-1 focus:ring-[#3D4430]/20",
+                                    "focus:border-[#C9A86C] focus:ring-1 focus:ring-[#C9A86C]/20",
                                     errors.category ? "border-red-400 bg-red-50/30" : "border-[#E8E2D9]"
                                 )}
                                 aria-invalid={!!errors.category}
@@ -422,7 +412,7 @@ export default function ProductForm({
                                     onChange={(e) => updateField("price", e.target.value)}
                                     className={cn(
                                         "block w-full rounded-xl border shadow-sm text-sm p-3 pl-7 outline-none transition-all bg-white",
-                                        "focus:border-[#3D4430] focus:ring-1 focus:ring-[#3D4430]/20",
+                                        "focus:border-[#C9A86C] focus:ring-1 focus:ring-[#C9A86C]/20",
                                         errors.price ? "border-red-400 bg-red-50/30" : "border-[#E8E2D9]"
                                     )}
                                     placeholder="890"
@@ -433,14 +423,17 @@ export default function ProductForm({
                         </div>
 
                         {/* 开关组 */}
-                        <div className="flex items-center gap-6 md:col-span-2">
-                            <Toggle label="上架状态" checked={formData.active} onChange={(v) => updateField("active", v)} />
-                            <Toggle
-                                label="精选置顶"
-                                checked={formData.featured}
-                                onChange={(v) => updateField("featured", v)}
-                                tooltip="给该产品增加排序权重，使其在算法推荐中更容易排在前面。不勾选也会被算法自动推荐。"
-                            />
+                        <div className="md:col-span-2">
+                            <label className="block text-sm font-medium text-[#5E5E5E] mb-1.5">产品状态</label>
+                            <div className="flex items-center gap-6 h-[46px]">
+                                <Toggle label="上架状态" checked={formData.active} onChange={(v) => updateField("active", v)} />
+                                <Toggle
+                                    label="精选置顶"
+                                    checked={formData.featured}
+                                    onChange={(v) => updateField("featured", v)}
+                                    tooltip="给该产品增加排序权重，使其在算法推荐中更容易排在前面。不勾选也会被算法自动推荐。"
+                                />
+                            </div>
                         </div>
                     </div>
 
@@ -456,7 +449,7 @@ export default function ProductForm({
                                 placeholder="产品的核心卖点、适合人群..."
                                 className={cn(
                                     "block w-full rounded-xl border shadow-sm text-sm p-3 outline-none resize-none transition-all bg-white",
-                                    "focus:border-[#3D4430] focus:ring-1 focus:ring-[#3D4430]/20",
+                                    "focus:border-[#C9A86C] focus:ring-1 focus:ring-[#C9A86C]/20",
                                     errors.description ? "border-red-400 bg-red-50/30" : "border-[#E8E2D9]"
                                 )}
                                 aria-invalid={!!errors.description}
@@ -470,17 +463,14 @@ export default function ProductForm({
                                 value={formData.howToUse}
                                 onChange={(e) => updateField("howToUse", e.target.value)}
                                 placeholder="例：取适量于掌心，轻拍于面部..."
-                                className="block w-full rounded-xl border border-[#E8E2D9] shadow-sm text-sm p-3 outline-none resize-none focus:border-[#3D4430] focus:ring-1 focus:ring-[#3D4430]/20 transition-all bg-white"
+                                className="block w-full rounded-xl border border-[#E8E2D9] shadow-sm text-sm p-3 outline-none resize-none focus:border-[#C9A86C] focus:ring-1 focus:ring-[#C9A86C]/20 transition-all bg-white"
                             />
                         </div>
                     </div>
                 </section>
 
-                <div className="h-px bg-[#E8E2D9]/60" />
-
                 {/* ===== 产品图片 ===== */}
                 <section>
-                    <SectionTitle>产品图片</SectionTitle>
                     <div>
                         <label className="block text-sm font-medium text-[#5E5E5E] mb-2">
                             上传图片 <span className="text-red-500">*</span>
@@ -547,11 +537,8 @@ export default function ProductForm({
                     </div>
                 </section>
 
-                <div className="h-px bg-[#E8E2D9]/60" />
-
                 {/* ===== 成分与功效 ===== */}
                 <section>
-                    <SectionTitle>成分与功效</SectionTitle>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                         <TagInput label="核心成分" values={keyIngredients} onChange={setKeyIngredients} required error={errors.keyIngredients} placeholder="输入成分名称，按回车添加" />
                         <TagInput label="主要功效" values={benefits} onChange={setBenefits} required error={errors.benefits} placeholder="如：保湿、抗老、美白..." />
@@ -559,11 +546,8 @@ export default function ProductForm({
                     </div>
                 </section>
 
-                <div className="h-px bg-[#E8E2D9]/60" />
-
                 {/* ===== 肤质与电商 ===== */}
                 <section>
-                    <SectionTitle>肤质与购买链接</SectionTitle>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div>
                             <label className="block text-sm font-medium text-[#5E5E5E] mb-3">适用肤质</label>
@@ -582,7 +566,7 @@ export default function ProductForm({
                                             className={cn(
                                                 "px-3.5 py-2 rounded-xl text-sm font-medium border transition-all",
                                                 selected
-                                                    ? "bg-[#3D4430] text-white border-[#3D4430] shadow-sm"
+                                                    ? "bg-[#C9A86C] text-white border-[#C9A86C] shadow-sm"
                                                     : "bg-white text-[#5E5E5E] border-[#E8E2D9] hover:border-[#C9A86C]/60"
                                             )}
                                         >
@@ -616,7 +600,7 @@ export default function ProductForm({
                                             placeholder="https://..."
                                             className={cn(
                                                 "flex-1 rounded-xl border shadow-sm text-sm p-2.5 outline-none transition-all bg-white",
-                                                "focus:border-[#3D4430] focus:ring-1 focus:ring-[#3D4430]/20",
+                                                "focus:border-[#C9A86C] focus:ring-1 focus:ring-[#C9A86C]/20",
                                                 errors[`affiliateLinks_${key}`] ? "border-red-400" : "border-[#E8E2D9]"
                                             )}
                                         />
@@ -632,7 +616,7 @@ export default function ProductForm({
                     {!onCancel && (
                         <Link
                             href="/admin/products"
-                            className="flex items-center gap-1.5 text-sm font-medium text-[#8B7355] hover:text-[#3D4430] transition-colors"
+                            className="flex items-center gap-1.5 text-sm font-medium text-[#8B7355] hover:text-[#C9A86C] transition-colors"
                         >
                             <ChevronLeft className="w-4 h-4" />
                             返回产品列表
@@ -649,7 +633,7 @@ export default function ProductForm({
                         <button
                             type="submit"
                             disabled={saving}
-                            className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#3D4430] hover:bg-[#B8975B] disabled:opacity-60 transition-colors shadow-sm"
+                            className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#C9A86C] hover:bg-[#B8975B] disabled:opacity-60 transition-colors shadow-sm"
                         >
                             {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                             {initialData?.id ? "保存修改" : "创建产品"}
