@@ -30,7 +30,7 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
     const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 
     useEffect(() => {
-      toDataURL('https://advisor.nihplod.cn', { width: 80, margin: 1 })
+      toDataURL('https://advisor.nihplod.cn', { width: 80, margin: 1, color: { dark: '#3F2C76', light: '#0000' } })
         .then(url => setQrDataUrl(url))
         .catch(() => setQrDataUrl(null));
     }, []);
@@ -95,7 +95,7 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
           {/* 核心数据 */}
           <div className="flex-1 flex flex-col items-center justify-center gap-6">
             <div className="text-center pl-54">
-              <div className="text-5xl font-bold text-[#E53935]" style={{ transform: 'translateY(-95px) rotate(5deg)' }}>{score}<span className="text-sm font-bold">分</span></div>
+              <div className="text-5xl font-bold text-[#E53935]" style={{ transform: 'translateY(-88px) rotate(5deg)' }}>{score}<span className="text-sm font-bold">分</span></div>
             </div>
 
             <div className="text-center" style={{ transform: 'translate(-70px, 190px)' }}>
