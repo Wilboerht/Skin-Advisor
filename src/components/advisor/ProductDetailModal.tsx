@@ -97,6 +97,7 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                                     sizes="(max-width: 1024px) 100vw, 42vw"
                                     quality={90}
                                     priority
+                                    unoptimized={product.image?.startsWith('/') && !product.image?.startsWith('//')}
                                 />
                             ) : (
                                 <div className="flex h-full items-center justify-center text-[#8c7a6b]/50">
