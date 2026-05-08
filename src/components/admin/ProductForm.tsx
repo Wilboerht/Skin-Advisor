@@ -201,7 +201,17 @@ const STEPS = [
     { id: "links", label: "肤质电商", icon: Link2 },
 ];
 
-export default function ProductForm({ initialData }: { initialData?: any }) {
+export default function ProductForm({
+    initialData,
+    onSuccess,
+    onCancel,
+    onSubmittingChange,
+}: {
+    initialData?: any;
+    onSuccess?: () => void;
+    onCancel?: () => void;
+    onSubmittingChange?: (submitting: boolean) => void;
+}) {
     const router = useRouter();
     const toast = useToast();
     const [saving, setSaving] = useState(false);
@@ -324,6 +334,7 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
             return;
         }
         setSaving(true);
+        onSubmittingChange?.(true);
 
         const filteredLinks: Record<string, string> = {};
         Object.entries(affiliateLinks).forEach(([k, v]) => {
@@ -362,12 +373,17 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
             const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
             if (!res.ok) throw new Error("保存失败");
             toast.success(initialData?.id ? "产品已更新" : "产品已创建");
-            router.push("/admin/products");
-            router.refresh();
+            if (onSuccess) {
+                onSuccess();
+            } else {
+                router.push("/admin/products");
+                router.refresh();
+            }
         } catch {
             toast.error("保存产品时出错");
         } finally {
             setSaving(false);
+            onSubmittingChange?.(false);
         }
     };
 
@@ -392,11 +408,11 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
     }), [formData, keyIngredients, benefits, affiliateLinks]);
 
     return (
-        <form onSubmit={handleSubmit} className="max-w-4xl mx-auto space-y-6">
+        <form onSubmit={handleSubmit} className={cn("space-y-6", !onCancel && "max-w-4xl mx-auto")}>
             {/* ===== 左侧表单 ===== */}
             <div className="flex-1 min-w-0 space-y-6">
                 {/* 步骤导航 */}
-                <div className="sticky top-0 z-30 bg-[#F9FAFB] pt-2 pb-3">
+                <div className={cn("sticky top-0 z-30 pt-2 pb-3", onCancel ? "bg-transparent" : "bg-[#F9FAFB]")}>
                     <StepNav steps={STEPS} activeStep={activeStep} onStepClick={scrollToStep} />
                 </div>
 
@@ -658,17 +674,19 @@ export default function ProductForm({ initialData }: { initialData?: any }) {
 
                 {/* 底部操作栏 */}
                 <div className="flex items-center justify-between pt-2 pb-8">
-                    <Link
-                        href="/admin/products"
-                        className="flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors"
-                    >
-                        <ChevronLeft className="w-4 h-4" />
-                        返回产品列表
-                    </Link>
-                    <div className="flex items-center gap-3">
+                    {!onCancel && (
+                        <Link
+                            href="/admin/products"
+                            className="flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors"
+                        >
+                            <ChevronLeft className="w-4 h-4" />
+                            返回产品列表
+                        </Link>
+                    )}
+                    <div className={cn("flex items-center gap-3", onCancel && "ml-auto")}>
                         <button
                             type="button"
-                            onClick={() => router.back()}
+                            onClick={() => (onCancel ? onCancel() : router.back())}
                             className="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-colors"
                         >
                             取消

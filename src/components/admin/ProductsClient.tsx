@@ -2,7 +2,6 @@
 
 import { useState, memo, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import Image from "next/image";
 import {
     DndContext,
@@ -37,6 +36,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { ProductFormModal } from "./ProductFormModal";
 
 interface Product {
     id: string;
@@ -44,6 +44,14 @@ interface Product {
     category: string;
     price: string;
     image: string;
+    images?: any;
+    description?: string;
+    howToUse?: string | null;
+    keyIngredients?: any;
+    suitableSkinTypes?: any;
+    benefits?: any;
+    negativeFor?: any;
+    affiliateLinks?: any;
     active: boolean;
     featured: boolean;
     sortOrder: number;
@@ -58,12 +66,14 @@ const SortableProductRow = memo(function SortableProductRow({
     isSelected,
     onSelect,
     onDelete,
+    onEdit,
     sortingDisabled
 }: {
     product: Product;
     isSelected: boolean;
     onSelect: (id: string) => void;
     onDelete: (id: string) => void;
+    onEdit: (product: Product) => void;
     sortingDisabled?: boolean;
 }) {
     const {
@@ -165,13 +175,13 @@ const SortableProductRow = memo(function SortableProductRow({
             </td>
             <td className="px-4 py-4 whitespace-nowrap text-sm font-medium align-middle">
                 <div className="flex items-center gap-1">
-                    <Link
-                        href={`/admin/products/${product.id}/edit`}
+                    <button
+                        onClick={() => onEdit(product)}
                         className="rounded p-2 text-slate-600 hover:bg-slate-100 transition-colors"
                         title="编辑"
                     >
                         <Edit className="h-4 w-4" />
-                    </Link>
+                    </button>
                     <button
                         onClick={() => onDelete(product.id)}
                         className="rounded p-2 text-red-600 hover:bg-red-50 transition-colors"
@@ -197,6 +207,9 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
         id: null,
         batch: false
     });
+
+    const [modalOpen, setModalOpen] = useState(false);
+    const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
     // P7.10 Filters
     const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -353,13 +366,16 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                         {saving && <span className="ml-2 text-amber-600">保存中...</span>}
                     </p>
                 </div>
-                <Link
-                    href="/admin/products/new"
+                <button
+                    onClick={() => {
+                        setEditingProduct(null);
+                        setModalOpen(true);
+                    }}
                     className="flex items-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-slate-800 transition-colors"
                 >
                     <Plus className="mr-2 h-4 w-4" />
                     添加产品
-                </Link>
+                </button>
             </div>
 
             {/* P7.10 Filter Controls */}
@@ -495,6 +511,10 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                                         isSelected={selectedIds.includes(product.id)}
                                         onSelect={handleToggleSelect}
                                         onDelete={(id) => setDeleteConfirm({ show: true, id, batch: false })}
+                                        onEdit={(p) => {
+                                            setEditingProduct(p);
+                                            setModalOpen(true);
+                                        }}
                                         sortingDisabled={categoryFilter !== "all" || statusFilter !== "all"}
                                     />
                                 ))}
@@ -524,6 +544,17 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                 }
                 confirmText="删除"
                 variant="danger"
+            />
+
+            {/* Product Form Modal */}
+            <ProductFormModal
+                isOpen={modalOpen}
+                onClose={() => setModalOpen(false)}
+                product={editingProduct}
+                onSuccess={() => {
+                    router.refresh();
+                    setSelectedIds([]);
+                }}
             />
         </div>
     );
