@@ -69,6 +69,14 @@ const nextConfig: NextConfig = {
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },
+  async rewrites() {
+    return [
+      {
+        source: "/uploads/:path*",
+        destination: "/api/file/:path*",
+      },
+    ];
+  },
   async headers() {
     return [
       {
