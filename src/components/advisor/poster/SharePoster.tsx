@@ -95,7 +95,7 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
           {/* 核心数据 */}
           <div className="flex-1 flex flex-col items-center justify-center gap-6">
             <div className="text-center pl-54">
-              <div className="text-5xl font-bold text-[#E53935]" style={{ transform: 'translateY(-112px) rotate(5deg)' }}>{score}<span className="text-sm font-bold">分</span></div>
+              <div className="text-5xl font-bold text-[#E53935]" style={{ transform: 'translateY(-95px) rotate(5deg)' }}>{score}<span className="text-sm font-bold">分</span></div>
             </div>
 
             <div className="text-center" style={{ transform: 'translate(-70px, 190px)' }}>
@@ -130,7 +130,7 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
 
             <div className="text-center px-6">
               <p className="text-sm text-[#5c4937] leading-relaxed">
-                <span className="font-bold text-4xl mx-1" style={{ transform: 'translate(-97px, -10px)', display: 'inline-block' }}>{percentile}%</span>
+                <span className="font-bold text-4xl mx-1" style={{ transform: 'translate(-97px, -28px)', display: 'inline-block' }}>{percentile}%</span>
               </p>
             </div>
           </div>
