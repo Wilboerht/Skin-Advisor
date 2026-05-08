@@ -676,7 +676,8 @@ export default function ShareLandingClient({ analysisResult, sessionId }: ShareL
                   ref={posterRef}
                   nickname={analysisResult.nickname || '用户'}
                   score={analysisResult.faceAnalysis?.overallScore || analysisResult.skinAnalysis?.score || 0}
-                  skinAge={analysisResult.skinProfile?.skinAge || analysisResult.skinAnalysis?.skinAge || 25}
+                  skinTone={analysisResult.faceAnalysis?.dimensions?.skinTone?.score || 0}
+                  waterOil={analysisResult.faceAnalysis?.dimensions?.waterOil?.score || 0}
                   percentile={rankPercentile}
                   avatar={generatedAvatar}
                   posterTemplate="/images/poster-template.webp"

@@ -2,11 +2,13 @@
 
 import { forwardRef, useState, useEffect } from "react";
 import { toDataURL } from "qrcode";
+import { Palette, Droplets } from "lucide-react";
 
 interface SharePosterProps {
   nickname: string;
   score: number;
-  skinAge: number;
+  skinTone: number;
+  waterOil: number;
   percentile: number;
   avatar?: string | null;
   posterTemplate?: string;
@@ -21,7 +23,7 @@ function getAbsoluteUrl(path: string): string {
 
 export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
   function SharePoster(
-    { nickname, score, skinAge, percentile, avatar, posterTemplate },
+    { nickname, score, skinTone, waterOil, percentile, avatar, posterTemplate },
     ref
   ) {
     const templateUrl = posterTemplate ? getAbsoluteUrl(posterTemplate) : null;
@@ -96,15 +98,33 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
               <div className="text-5xl font-bold text-[#E53935]" style={{ transform: 'translateY(-112px) rotate(5deg)' }}>{score}<span className="text-sm font-bold">分</span></div>
             </div>
 
-            <div className="text-center" style={{ transform: 'translate(-70px, 160px)' }}>
+            <div className="text-center" style={{ transform: 'translate(-70px, 190px)' }}>
               <div className="flex items-center gap-1.5">
-                <div className="w-16 h-1.5 rounded-full bg-[#e6d0a8]/30 overflow-hidden">
+                <div className="w-4 h-4 rounded-sm bg-blue-500/15 flex items-center justify-center shrink-0">
+                  <Palette className="w-2.5 h-2.5 text-blue-500" />
+                </div>
+                <div className="w-16 h-1.5 rounded-full bg-blue-200/50 overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-[#5c4937]"
-                    style={{ width: `${Math.min((skinAge / 60) * 100, 100)}%` }}
+                    className="h-full rounded-full bg-blue-500"
+                    style={{ width: `${Math.min(skinTone, 100)}%` }}
                   />
                 </div>
-                <span className="text-sm font-medium text-[#5c4937]">{skinAge} 岁</span>
+                <span className="text-sm font-medium text-[#5c4937]">{skinTone} 分</span>
+              </div>
+            </div>
+
+            <div className="text-center" style={{ transform: 'translate(-70px, 190px)' }}>
+              <div className="flex items-center gap-1.5">
+                <div className="w-4 h-4 rounded-sm bg-amber-500/15 flex items-center justify-center shrink-0">
+                  <Droplets className="w-2.5 h-2.5 text-amber-500" />
+                </div>
+                <div className="w-16 h-1.5 rounded-full bg-amber-200/50 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-amber-500"
+                    style={{ width: `${Math.min(waterOil, 100)}%` }}
+                  />
+                </div>
+                <span className="text-sm font-medium text-[#5c4937]">{waterOil} 分</span>
               </div>
             </div>
 

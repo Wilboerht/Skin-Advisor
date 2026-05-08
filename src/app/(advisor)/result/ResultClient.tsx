@@ -1474,7 +1474,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                             ref={posterRef}
                                             nickname={userNickname || "用户"}
                                             score={faceAnalysis?.overallScore || 0}
-                                            skinAge={result?.skinProfile?.skinAge || 25}
+                                            skinTone={faceAnalysis?.dimensions?.skinTone?.score || 0}
+                                            waterOil={faceAnalysis?.dimensions?.waterOil?.score || 0}
                                             percentile={rankPercentile}
                                             avatar={generatedAvatar}
                                             posterTemplate="/images/poster-template.webp"
