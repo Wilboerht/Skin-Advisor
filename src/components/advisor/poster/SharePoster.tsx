@@ -66,8 +66,8 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
           <div
             className="absolute z-20 rounded-full overflow-hidden"
             style={{
-              top: 260,
-              right: 277,
+              top: 258,
+              right: 280,
               width: 32,
               height: 32,
               border: '3px solid rgba(255,255,255,0.9)',
@@ -86,7 +86,7 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
         {/* 内容层 */}
         <div className="relative z-10 flex flex-col h-full p-6">
           {/* 昵称 */}
-          <div className="text-center mb-4" style={{ transform: 'translateY(240px) translateX(-70px)' }}>
+          <div className="text-center mb-4" style={{ transform: 'translateY(238px) translateX(-70px)' }}>
             <p className="text-lg font-medium text-[#2d2a26]">
               {nickname}
             </p>
