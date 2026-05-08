@@ -9,7 +9,7 @@ import {
     Sparkles, Link2, ImageIcon,
     Package
 } from "lucide-react";
-import { uploadImageToOSS } from "@/lib/oss-upload-client";
+// Local upload for admin product images
 import { useToast } from "@/components/ui/Toast";
 import { cn } from "@/lib/utils";
 
@@ -276,11 +276,20 @@ export default function ProductForm({
         }
         setUploading(true);
         try {
-            const url = await uploadImageToOSS(file);
-            setImages((prev) => [...prev, url]);
+            const formData = new FormData();
+            formData.append("file", file);
+            const res = await fetch("/api/upload", {
+                method: "POST",
+                body: formData,
+            });
+            const data = await res.json();
+            if (!res.ok || !data.url) {
+                throw new Error(data.error || "上传失败");
+            }
+            setImages((prev) => [...prev, data.url]);
             toast.success("图片上传成功");
-        } catch {
-            toast.error("上传失败");
+        } catch (e: any) {
+            toast.error(e.message || "上传失败");
         } finally {
             setUploading(false);
         }
