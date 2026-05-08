@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -206,11 +206,13 @@ export default function ProductForm({
     onSuccess,
     onCancel,
     onSubmittingChange,
+    onDirtyChange,
 }: {
     initialData?: any;
     onSuccess?: () => void;
     onCancel?: () => void;
     onSubmittingChange?: (submitting: boolean) => void;
+    onDirtyChange?: (dirty: boolean) => void;
 }) {
     const router = useRouter();
     const toast = useToast();
@@ -268,8 +270,8 @@ export default function ProductForm({
 
     const handleImageUpload = async (file: File) => {
         if (!file) return;
-        if (file.size > 2 * 1024 * 1024) {
-            toast.error("图片不能超过2MB");
+        if (file.size > 10 * 1024 * 1024) {
+            toast.error("图片不能超过10MB");
             return;
         }
         setUploading(true);
@@ -392,20 +394,41 @@ export default function ProductForm({
         if (errors[key]) setErrors((prev) => { const next = { ...prev }; delete next[key]; return next; });
     }, [errors]);
 
-    // 预览数据
-    const previewData = useMemo(() => ({
-        id: "preview",
-        name: formData.name || "产品名称",
-        category: formData.category || "分类",
-        image: images[0] || "",
-        price: String(formData.price) || "¥0",
-        reason: formData.description || "产品描述",
-        matchScore: 92,
-        keyIngredients,
-        benefits,
-        howToUse: formData.howToUse || null,
-        affiliateLinks: Object.entries(affiliateLinks).filter(([, v]) => v.trim()).length > 0 ? affiliateLinks : null,
-    }), [formData, keyIngredients, benefits, affiliateLinks]);
+    // ===== 未保存更改检测 =====
+    const initialSnapshot = useRef({
+        formData: { name: "", category: "", price: "", description: "", howToUse: "", active: true, featured: false },
+        images: [] as string[],
+        affiliateLinks: { taobao: "", xiaohongshu: "", douyin: "" },
+        keyIngredients: [] as string[],
+        benefits: [] as string[],
+        negativeFor: [] as string[],
+        suitableSkinTypes: [] as string[],
+    });
+
+    useEffect(() => {
+        initialSnapshot.current = {
+            formData: { ...formData },
+            images: [...images],
+            affiliateLinks: { ...affiliateLinks },
+            keyIngredients: [...keyIngredients],
+            benefits: [...benefits],
+            negativeFor: [...negativeFor],
+            suitableSkinTypes: [...suitableSkinTypes],
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    useEffect(() => {
+        const dirty =
+            JSON.stringify(formData) !== JSON.stringify(initialSnapshot.current.formData) ||
+            JSON.stringify(images) !== JSON.stringify(initialSnapshot.current.images) ||
+            JSON.stringify(affiliateLinks) !== JSON.stringify(initialSnapshot.current.affiliateLinks) ||
+            JSON.stringify(keyIngredients) !== JSON.stringify(initialSnapshot.current.keyIngredients) ||
+            JSON.stringify(benefits) !== JSON.stringify(initialSnapshot.current.benefits) ||
+            JSON.stringify(negativeFor) !== JSON.stringify(initialSnapshot.current.negativeFor) ||
+            JSON.stringify(suitableSkinTypes) !== JSON.stringify(initialSnapshot.current.suitableSkinTypes);
+        onDirtyChange?.(dirty);
+    }, [formData, images, affiliateLinks, keyIngredients, benefits, negativeFor, suitableSkinTypes, onDirtyChange]);
 
     return (
         <form onSubmit={handleSubmit} className={cn("space-y-6", !onCancel && "max-w-4xl mx-auto")}>
@@ -590,7 +613,7 @@ export default function ProductForm({
                                             {uploading ? "上传中..." : dragOver ? "松开以上传" : "点击或拖拽上传图片"}
                                         </p>
                                         <p className="mt-1 text-xs text-slate-400">
-                                            支持 JPG、PNG，最大 2MB · 还可上传 {5 - images.length} 张
+                                            支持 JPG、PNG，最大 10MB · 还可上传 {5 - images.length} 张
                                         </p>
                                     </div>
                                 </div>

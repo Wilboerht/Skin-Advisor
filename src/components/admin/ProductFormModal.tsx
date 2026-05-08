@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Package } from "lucide-react";
 import ProductForm from "./ProductForm";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 interface ProductFormModalProps {
     isOpen: boolean;
@@ -16,10 +17,34 @@ interface ProductFormModalProps {
 export function ProductFormModal({ isOpen, onClose, product, onSuccess }: ProductFormModalProps) {
     const [mounted, setMounted] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [isDirty, setIsDirty] = useState(false);
+    const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+    const scrollRef = useRef<HTMLDivElement>(null);
     useEffect(() => setMounted(true), []);
+
+    // 打开时重置滚动位置
+    useEffect(() => {
+        if (isOpen && scrollRef.current) {
+            scrollRef.current.scrollTop = 0;
+        }
+    }, [isOpen, product]);
 
     const handleSuccess = () => {
         onSuccess?.();
+        onClose();
+    };
+
+    const handleClose = () => {
+        if (submitting) return;
+        if (isDirty) {
+            setShowDiscardConfirm(true);
+        } else {
+            onClose();
+        }
+    };
+
+    const handleConfirmDiscard = () => {
+        setShowDiscardConfirm(false);
         onClose();
     };
 
@@ -33,7 +58,7 @@ export function ProductFormModal({ isOpen, onClose, product, onSuccess }: Produc
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        onClick={() => !submitting && onClose()}
+                        onClick={() => !submitting && handleClose()}
                         className="absolute inset-0 bg-slate-900/30 backdrop-blur-md"
                     />
                     <motion.div
@@ -41,7 +66,7 @@ export function ProductFormModal({ isOpen, onClose, product, onSuccess }: Produc
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 10 }}
                         transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                        className="relative z-10 w-full max-w-3xl mx-4 bg-white/60 backdrop-blur-3xl rounded-[32px] border-[1.5px] border-white/70 shadow-[0_40px_100px_rgba(0,0,0,0.1),inset_0_2px_10px_rgba(255,255,255,0.4)] overflow-hidden max-h-[90vh] flex flex-col"
+                        className="relative z-10 w-full max-w-5xl mx-4 bg-white/60 backdrop-blur-3xl rounded-[32px] border-[1.5px] border-white/70 shadow-[0_40px_100px_rgba(0,0,0,0.1),inset_0_2px_10px_rgba(255,255,255,0.4)] overflow-hidden max-h-[90vh] flex flex-col"
                     >
                         {/* Header */}
                         <div className="flex items-center justify-between px-8 pt-8 pb-4 shrink-0">
@@ -59,7 +84,7 @@ export function ProductFormModal({ isOpen, onClose, product, onSuccess }: Produc
                                 </div>
                             </div>
                             <button
-                                onClick={onClose}
+                                onClick={handleClose}
                                 disabled={submitting}
                                 className="p-2 rounded-full text-slate-400 hover:text-slate-900 hover:bg-white/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                             >
@@ -68,16 +93,28 @@ export function ProductFormModal({ isOpen, onClose, product, onSuccess }: Produc
                         </div>
 
                         {/* Form */}
-                        <div className="px-8 pb-8 overflow-y-auto">
+                        <div ref={scrollRef} className="px-8 pb-8 overflow-y-auto">
                             <ProductForm
                                 key={product?.id || "new"}
                                 initialData={product}
                                 onSuccess={handleSuccess}
-                                onCancel={onClose}
+                                onCancel={handleClose}
                                 onSubmittingChange={setSubmitting}
+                                onDirtyChange={setIsDirty}
                             />
                         </div>
                     </motion.div>
+
+                    {/* Discard Changes Confirm */}
+                    <ConfirmModal
+                        isOpen={showDiscardConfirm}
+                        onClose={() => setShowDiscardConfirm(false)}
+                        onConfirm={handleConfirmDiscard}
+                        title="放弃更改？"
+                        message="您有未保存的更改，确定要关闭吗？"
+                        confirmText="放弃更改"
+                        variant="warning"
+                    />
                 </div>
             )}
         </AnimatePresence>,
