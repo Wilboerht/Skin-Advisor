@@ -204,7 +204,7 @@ export default function ReportCards({
           </div>
 
           {/* Decorative Image Area (Right) */}
-          <div className="absolute right-[-80px] lg:-right-33 bottom-[108px] lg:-bottom-6 w-1/2 h-[110%] pointer-events-none flex items-end justify-end z-20">
+          <div className="absolute right-[-20px] lg:-right-33 bottom-[105px] lg:-bottom-6 w-1/2 h-[110%] pointer-events-none flex items-end justify-end z-20">
             <div className="absolute -bottom-[53%] lg:-bottom-[30%] w-[16rem] sm:w-[28rem] h-[16rem] sm:h-[28rem] z-30 drop-shadow-2xl right-[-55px] lg:right-[-48px]">
               <Image
                 src="/images/gift.webp"
