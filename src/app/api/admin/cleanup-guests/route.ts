@@ -53,8 +53,14 @@ export async function POST(req: NextRequest) {
         }
 
         const sessionIds = guestSessions.map(s => s.sessionId);
+
+        // 3a. 提取所有关联的 AvatarQueue 记录（可能包含未同步到 analysisResult 的 avatar）
+        const avatarQueueItems = await prisma.avatarQueue.findMany({
+            where: { sessionId: { in: sessionIds } },
+            select: { frontPhoto: true, generatedUrl: true }
+        });
         
-        // 3. 提取所有关联的 OSS 图片 URL (主要用于批量删除头像)
+        // 3b. 提取所有关联的 OSS 图片 URL (analysisResult + AvatarQueue)
         const urlsToDelete: string[] = [];
         guestSessions.forEach(session => {
             const result = session.analysisResult as Record<string, unknown>;
@@ -62,10 +68,23 @@ export async function POST(req: NextRequest) {
                 urlsToDelete.push(result.generatedAvatar);
             }
         });
+        avatarQueueItems.forEach(item => {
+            if (item.generatedUrl && item.generatedUrl.startsWith('http')) {
+                urlsToDelete.push(item.generatedUrl);
+            }
+            if (item.frontPhoto && item.frontPhoto.startsWith('http')) {
+                urlsToDelete.push(item.frontPhoto);
+            }
+        });
 
         // 4. 执行数据库事务物理删除
         const deletedStats = await prisma.$transaction(async (tx) => {
-            // A. 删除过期的测试记录 (针对无 userId 的旧记录)
+            // A. 删除 AvatarQueue 记录
+            const avatarQueues = await tx.avatarQueue.deleteMany({
+                where: { sessionId: { in: sessionIds } }
+            });
+
+            // B. 删除过期的测试记录 (针对无 userId 的旧记录)
             const testRecords = await tx.testRecord.deleteMany({
                 where: {
                     userId: null,
@@ -73,14 +92,15 @@ export async function POST(req: NextRequest) {
                 }
             });
 
-            // B. 最后删除会话主表
+            // C. 最后删除会话主表
             const sessions = await tx.advisorSession.deleteMany({
                 where: { sessionId: { in: sessionIds } }
             });
 
             return {
                 sessions: sessions.count,
-                testRecords: testRecords.count
+                testRecords: testRecords.count,
+                avatarQueues: avatarQueues.count
             };
         });
 

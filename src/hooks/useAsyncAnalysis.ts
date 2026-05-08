@@ -117,33 +117,48 @@ export function useAsyncAnalysis() {
                 
                 if (images && images.front) {
                     const visionImages = [];
-                    // Preprocess
-                    try {
-                        let finalData = images.front;
-                        // Only preprocess if not already a URL (local data)
-                        if (finalData.startsWith('data:')) {
-                            const processed = await preprocessFaceImage(images.front);
-                            finalData = processed.imageData;
+                    // Preprocess all available angles
+                    const angles: Array<{ key: 'front' | 'left' | 'right'; label: string }> = [
+                        { key: 'front', label: 'front' },
+                        { key: 'left', label: 'left' },
+                        { key: 'right', label: 'right' },
+                    ];
 
-                            try {
-                                // Upload to cloud storage (for all users — reduces DB bloat and API payload size)
-                                const { uploadImage } = await import("@/lib/upload-client");
-                                const blob = await (await fetch(finalData)).blob();
-                                const url = await uploadImage(blob, "face-front.jpg");
-                                if (url) {
-                                    finalData = url;
-                                    console.log("Uploaded to cloud storage:", url);
+                    for (const { key, label } of angles) {
+                        const imgData = images[key];
+                        if (!imgData) continue;
+
+                        try {
+                            let finalData = imgData;
+                            // Only preprocess if not already a URL (local data)
+                            if (finalData.startsWith('data:')) {
+                                const processed = await preprocessFaceImage(imgData);
+                                finalData = processed.imageData;
+
+                                try {
+                                    // Upload to cloud storage (for all users — reduces DB bloat and API payload size)
+                                    const { uploadImage } = await import("@/lib/upload-client");
+                                    const blob = await (await fetch(finalData)).blob();
+                                    const url = await uploadImage(blob, `face-${label}.jpg`);
+                                    if (url) {
+                                        finalData = url;
+                                        console.log(`Uploaded ${label} to cloud storage:`, url);
+                                    }
+                                } catch (uploadError) {
+                                    console.warn(`Cloud upload failed for ${label}, using base64`, uploadError);
                                 }
-                            } catch (uploadError) {
-                                console.warn("Cloud upload failed, using base64", uploadError);
+                            }
+                            visionImages.push({ data: finalData, angle: label });
+                            if (key === 'front') {
+                                frontPhotoForAvatar = finalData;
+                            }
+                        } catch (e) {
+                            console.warn(`Preprocessing failed for ${label}`, e);
+                            visionImages.push({ data: imgData, angle: label });
+                            if (key === 'front') {
+                                frontPhotoForAvatar = imgData;
                             }
                         }
-                        visionImages.push({ data: finalData, angle: 'front' });
-                        frontPhotoForAvatar = finalData;
-                    } catch (e) {
-                        console.warn("Preprocessing failed", e);
-                        visionImages.push({ data: images.front, angle: 'front' });
-                        frontPhotoForAvatar = images.front;
                     }
 
                     // Trigger background avatar generation in PARALLEL with face analysis

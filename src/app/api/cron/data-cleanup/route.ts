@@ -34,6 +34,22 @@ function extractAvatarUrls(sessions: Array<{ analysisResult: unknown }>): string
     return urls;
 }
 
+/**
+ * 从 AvatarQueue 中提取需要删除的 cloud 文件 URL
+ */
+function extractQueueUrls(items: Array<{ frontPhoto: string | null; generatedUrl: string | null }>): string[] {
+    const urls: string[] = [];
+    for (const item of items) {
+        if (item.generatedUrl && item.generatedUrl.startsWith("http")) {
+            urls.push(item.generatedUrl);
+        }
+        if (item.frontPhoto && item.frontPhoto.startsWith("http")) {
+            urls.push(item.frontPhoto);
+        }
+    }
+    return urls;
+}
+
 async function deleteCloudFiles(urls: string[]): Promise<number> {
     if (urls.length === 0) return 0;
 
@@ -69,25 +85,14 @@ async function cleanupSessions(
     const sessionIds = sessions.map((s) => s.sessionId);
     const urlsToDelete = extractAvatarUrls(sessions);
 
-    // 清理 AvatarQueue 中残留的原始照片
+    // 清理 AvatarQueue 中残留的原始照片和生成的 avatar（可能未同步到 analysisResult）
     const avatarQueueItems = await prisma.avatarQueue.findMany({
         where: { sessionId: { in: sessionIds } },
-        select: { frontPhoto: true },
+        select: { frontPhoto: true, generatedUrl: true },
     });
 
-    for (const item of avatarQueueItems) {
-        if (item.frontPhoto && item.frontPhoto.startsWith("http")) {
-            try {
-                if (item.frontPhoto.includes("supabase.co")) {
-                    await deleteSupabaseFiles([item.frontPhoto]);
-                } else {
-                    await deleteOSSFiles([item.frontPhoto]);
-                }
-            } catch {
-                // ignore
-            }
-        }
-    }
+    const queueUrls = extractQueueUrls(avatarQueueItems);
+    urlsToDelete.push(...queueUrls);
 
     const deletedStats = await prisma.$transaction(async (tx) => {
         const testRecords = await tx.testRecord.deleteMany({

@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: NextRequest) {
     try {
         const ip = getClientIP(req);
-        const limitResult = await rateLimit(`avatar-status-${ip}`, "default", { maxRequests: 30, windowMs: 60 * 1000 });
+        const limitResult = await rateLimit(`avatar-status-${ip}`, "default", { maxRequests: 120, windowMs: 60 * 1000 });
         if (!limitResult.success) {
             return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
         }
