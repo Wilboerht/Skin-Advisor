@@ -245,14 +245,14 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
     // --- 判定逻辑 ---
 
     // 基础标志位
-    // 放宽左右转阈值 (0.20 -> 0.15)
-    const isLookingLeft = noseOffsetRatio > 0.15;
-    const isLookingRight = noseOffsetRatio < -0.15;
-    const isLookingCenter = Math.abs(noseOffsetRatio) < 0.25;
+    // 放宽左右转阈值，手机端更容易触发
+    const isLookingLeft = noseOffsetRatio > 0.12;
+    const isLookingRight = noseOffsetRatio < -0.12;
+    const isLookingCenter = Math.abs(noseOffsetRatio) < 0.30;
 
-    // 抬头标志: tiltRatio 越小越仰头。需要明显的抬头动作才能触发
-    // 收紧阈值到 0.18，防止自然姿态被误判为抬头
-    const isLookingUp = tiltRatio < 0.18;
+    // 抬头标志: tiltRatio 越小越仰头
+    // 放宽阈值到 0.22，更容易触发抬头判定
+    const isLookingUp = tiltRatio < 0.22;
 
     // 优先匹配当前目标步骤 (Bias towards user intent)
 
@@ -267,10 +267,9 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
     }
 
     if (targetStep === 'chin') {
-      // 必须有明显抬头特征
-      // 收紧 tiltRatio 阈值到 0.15，需要用户做出真正明显的抬头动作
-      // 同时要求头部基本正对镜头（不要偏转太厉害）
-      if (tiltRatio < 0.15 && Math.abs(noseOffsetRatio) < 0.30) {
+      // 抬头检测：放宽阈值让用户更容易通过
+      // tiltRatio 放宽到 0.20，noseOffsetRatio 放宽到 0.40
+      if (tiltRatio < 0.20 && Math.abs(noseOffsetRatio) < 0.40) {
         return "chin";
       }
     }
