@@ -130,7 +130,7 @@ const SortableProductRow = memo(function SortableProductRow({
             </td>
             <td className="px-4 py-4 whitespace-nowrap align-middle">
                 <div className="relative h-12 w-12 overflow-hidden rounded-lg border border-slate-100 bg-slate-50 mx-auto sm:mx-0">
-                    {product.image && /^https?:\/\//.test(product.image) ? (
+                    {product.image ? (
                         <Image
                             src={product.image}
                             alt={product.name}
