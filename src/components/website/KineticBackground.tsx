@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import Image from "next/image";
 
 /**
@@ -10,40 +10,11 @@ import Image from "next/image";
  * 已同步至 nihplod.cn 最新配置。
  */
 export function KineticBackground() {
-    const glow1Ref = useRef<HTMLDivElement>(null);
-    const glow2Ref = useRef<HTMLDivElement>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        const handleMouseMove = (e: MouseEvent) => {
-            if (!containerRef.current) return;
-
-            const { clientX, clientY } = e;
-            const x = (clientX / window.innerWidth - 0.5);
-            const y = (clientY / window.innerHeight - 0.5);
-
-            // 光晕视差：维持与原版一致的漂浮感
-            if (glow1Ref.current) {
-                glow1Ref.current.style.transform = `translate(${x * 60}px, ${y * 60}px) scale(1.1)`;
-            }
-            if (glow2Ref.current) {
-                glow2Ref.current.style.transform = `translate(${-x * 40}px, ${-y * 40}px) scale(1.1)`;
-            }
-        };
-
-        window.addEventListener("mousemove", handleMouseMove);
-        return () => window.removeEventListener("mousemove", handleMouseMove);
-    }, []);
-
     return (
-        <div ref={containerRef} className="kinetic-background-wrapper">
+        <div className="kinetic-background-wrapper">
             {/* 底层 3D 动力学背景 */}
             <div className="kinetic-bg-base" />
             <div className="kinetic-dot-pattern" />
-
-            <div ref={glow1Ref} className="kinetic-glow kinetic-glow-1" />
-            <div ref={glow2Ref} className="kinetic-glow kinetic-glow-2" />
-            <div className="kinetic-glow kinetic-glow-3" />
 
             {/* 全局背景水印 - 复刻原版静态配置 */}
             <div className="kinetic-watermark">
