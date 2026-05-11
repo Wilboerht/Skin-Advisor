@@ -251,8 +251,8 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
     const isLookingCenter = Math.abs(noseOffsetRatio) < 0.30;
 
     // 抬头标志: tiltRatio 越小越仰头
-    // 放宽阈值到 0.22，更容易触发抬头判定
-    const isLookingUp = tiltRatio < 0.22;
+    // 放宽阈值到 0.28，让手机端用户更容易触发抬头判定
+    const isLookingUp = tiltRatio < 0.28;
 
     // 优先匹配当前目标步骤 (Bias towards user intent)
 
@@ -267,9 +267,9 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
     }
 
     if (targetStep === 'chin') {
-      // 抬头检测：放宽阈值让用户更容易通过
-      // tiltRatio 放宽到 0.20，noseOffsetRatio 放宽到 0.40
-      if (tiltRatio < 0.20 && Math.abs(noseOffsetRatio) < 0.40) {
+      // 抬头检测：进一步放宽阈值，提升手机端通过率
+      // tiltRatio 放宽到 0.28，noseOffsetRatio 放宽到 0.45
+      if (tiltRatio < 0.28 && Math.abs(noseOffsetRatio) < 0.45) {
         return "chin";
       }
     }
@@ -394,8 +394,8 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
         // 检查面部大小是否合适（相对于椭圆大小）
         const ellipseHeight = videoHeight * 0.70;
         const faceToEllipseRatio = box.height / ellipseHeight;
-        // 面部应该占椭圆高度的 25%-95% (放宽容错率)
-        const isSizeOk = faceToEllipseRatio > 0.25 && faceToEllipseRatio < 0.95;
+        // 面部应该占椭圆高度的 35%-95% (提升下限以确保 landmark 精度)
+        const isSizeOk = faceToEllipseRatio > 0.35 && faceToEllipseRatio < 0.95;
 
         // 计算头部朝向 (传入 currentStep 以优化判定逻辑)
         const headPose = calculateHeadPose(detection.landmarks, currentStep);
@@ -408,9 +408,9 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
           stableCountRef.current += 1;
           setFaceStatus("found");
 
-          // chin 步骤需要稍多帧数，但降低了要求以提高容错 (12->8)
-          const requiredFrames = currentStep === 'chin' ? 8 : 4;
-          const progressFrames = currentStep === 'chin' ? 10 : 5;
+          // 降低稳定帧数要求，提升手机端响应速度 (8/4 -> 5/3)
+          const requiredFrames = currentStep === 'chin' ? 5 : 3;
+          const progressFrames = currentStep === 'chin' ? 6 : 4;
 
           // 更新稳定进度
           setStabilityProgress(Math.min(100, (stableCountRef.current / progressFrames) * 100));
@@ -440,8 +440,9 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
             }
           }
         } else {
-          stableCountRef.current = 0;
-          setStabilityProgress(0);
+          // 渐进衰减而非直接清零：微调姿势不会完全打断进度
+          stableCountRef.current = Math.max(0, stableCountRef.current - 2);
+          setStabilityProgress(Math.min(100, (stableCountRef.current / (currentStep === 'chin' ? 6 : 4)) * 100));
           setFaceStatus("detecting");
 
           // ---- 添加语音纠错与进度指导反馈 (Throttle 冷却期 4秒) ----
@@ -666,8 +667,8 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
       // 进入下一步
       setCurrentStep(nextStep);
 
-      // 冷却期 2.5 秒，给用户足够时间调整姿势
-      const cooldownDuration = 2500;
+      // 冷却期 1.2 秒，流程更流畅同时保留调整时间
+      const cooldownDuration = 1200;
       const progressInterval = 50; // 每 50ms 更新一次进度
       let elapsed = 0;
 
@@ -886,7 +887,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
 
     let animationId: number;
     let lastDetectionTime = 0;
-    const detectionInterval = 200; // 降低间隔到 200ms，提高响应速度
+    const detectionInterval = 50; // 检测间隔 50ms ≈ 20 FPS，大幅提升动作跟踪灵敏度
 
     const runDetection = (timestamp: number) => {
       if (timestamp - lastDetectionTime >= detectionInterval) {
