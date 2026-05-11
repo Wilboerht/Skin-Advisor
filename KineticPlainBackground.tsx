@@ -49,7 +49,7 @@ export function KineticPlainBackground() {
             <style dangerouslySetInnerHTML={{
                 __html: `
         :root {
-          --k-bg: rgb(142, 128, 114);
+          --k-bg: rgb(195, 180, 162);
           --k-accent: #333333;
           --k-transition: 1s cubic-bezier(0.23, 1, 0.32, 1);
         }
