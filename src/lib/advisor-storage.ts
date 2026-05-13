@@ -66,6 +66,7 @@ export async function saveFaceImages(images: {
     front?: string;
     left?: string;
     right?: string;
+    chin?: string;
 }): Promise<boolean> {
     try {
         const db = await getDB();
@@ -98,6 +99,7 @@ export async function getFaceImages(): Promise<{
     front?: string;
     left?: string;
     right?: string;
+    chin?: string;
 } | null> {
     try {
         const db = await getDB();
@@ -253,7 +255,7 @@ export async function clearExpiredData(maxAgeHours: number = 24): Promise<void> 
  * Hybrid storage utility - tries IndexedDB first, falls back to localStorage
  */
 export const advisorStorage = {
-    async saveFaceImages(images: { front?: string; left?: string; right?: string }): Promise<boolean> {
+    async saveFaceImages(images: { front?: string; left?: string; right?: string; chin?: string }): Promise<boolean> {
         // Try IndexedDB first
         if (isIndexedDBAvailable()) {
             try {
@@ -281,7 +283,7 @@ export const advisorStorage = {
         }
     },
 
-    async getFaceImages(): Promise<{ front?: string; left?: string; right?: string } | null> {
+    async getFaceImages(): Promise<{ front?: string; left?: string; right?: string; chin?: string } | null> {
         // Check if we have IndexedDB data
         if (localStorage.getItem("advisor_face_images_idb") && isIndexedDBAvailable()) {
             try {

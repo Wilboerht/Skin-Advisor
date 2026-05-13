@@ -312,8 +312,9 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
     }
 
     if (targetStep === 'chin') {
-      // 抬头检测：大幅放宽阈值，提升手机端通过率
-      if (tiltRatio < 0.50 && Math.abs(noseOffsetRatio) < 0.55) {
+      // 抬头检测：tiltRatio 越小表示仰头越明显
+      // 正常正面平视约 0.45~0.55，需明显抬头才能通过
+      if (tiltRatio < 0.30 && Math.abs(noseOffsetRatio) < 0.55) {
         return "chin";
       }
     }

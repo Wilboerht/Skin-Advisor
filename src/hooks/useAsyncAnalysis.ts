@@ -118,10 +118,11 @@ export function useAsyncAnalysis() {
                 if (images && images.front) {
                     const visionImages = [];
                     // Preprocess all available angles
-                    const angles: Array<{ key: 'front' | 'left' | 'right'; label: string }> = [
+                    const angles: Array<{ key: 'front' | 'left' | 'right' | 'chin'; label: string }> = [
                         { key: 'front', label: 'front' },
                         { key: 'left', label: 'left' },
                         { key: 'right', label: 'right' },
+                        { key: 'chin', label: 'chin' },
                     ];
 
                     for (const { key, label } of angles) {

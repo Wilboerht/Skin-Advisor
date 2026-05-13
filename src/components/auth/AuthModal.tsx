@@ -242,41 +242,443 @@ export function AuthModal() {
 
     if (!isOpen) return null;
 
-    let headerTitle = "NIHPLOD";
-    let headerSubtitle = "";
-
-    if (view === "login") {
-        headerSubtitle = "";
-    } else if (view === "register") {
-        headerSubtitle = "注册会员";
-    } else if (view === "forgot_password") {
-        headerTitle = "找回密码";
-        headerSubtitle = "重置密码";
-    } else if (view === "wechat_bind") {
-        headerTitle = "绑定手机号";
-        headerSubtitle = "微信授权成功，请绑定手机";
-    }
+    // ===== PC 端输入框通用样式 =====
+    const pcInputClass = "w-full bg-transparent border-0 border-b border-brand-charcoal/20 rounded-none py-4 px-0 text-base tracking-wide text-brand-charcoal placeholder:text-brand-charcoal/40 placeholder:text-sm placeholder:tracking-wider placeholder:uppercase focus:outline-none focus:border-brand-gold/60 transition-colors";
+    const pcBtnClass = "w-full py-4 text-sm font-medium tracking-[0.2em] text-brand-charcoal border border-brand-charcoal/25 hover:bg-brand-charcoal/[0.02] active:scale-[0.98] transition-all disabled:opacity-40 flex items-center justify-center gap-2";
 
     return (
         <AnimatePresence>
             {isOpen && (
-                <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
-                    {/* Backdrop with Blur */}
+                <motion.div
+                    className="fixed inset-0 z-[99999]"
+                    initial={{ opacity: 1 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 1 }}
+                    transition={{ duration: 0.8 }}
+                >
+                    {/* Backdrop */}
                     <motion.div
+                        key="backdrop"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={closeAuthModal}
-                        className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
+                        className="absolute inset-0 bg-slate-900/40 backdrop-blur-md md:bg-black/20"
                     />
 
-                    {/* Modal Content - Premium Design */}
+                    {/* ==================== PC 端：全屏从右滑入面板（nihplod 风格双向滑动） ==================== */}
                     <motion.div
+                        key="pc-panel"
+                        initial={{ x: "100%" }}
+                        animate={{ x: 0, transition: { duration: 0.8, ease: [0.8, 0, 0.13, 1] } }}
+                        exit={{ x: "-100%", transition: { duration: 0.8, ease: [0.9, 0, 0.17, 1] } }}
+                        className="hidden md:flex absolute inset-y-0 right-0 w-full bg-white flex-col"
+                    >
+                        {/* 关闭按钮 */}
+                        <button
+                            onClick={closeAuthModal}
+                            disabled={loading}
+                            className="absolute top-8 right-8 z-20 flex h-10 w-10 items-center justify-center text-brand-charcoal/40 hover:text-brand-charcoal/70 transition-colors"
+                        >
+                            <X size={20} strokeWidth={1.5} />
+                        </button>
+
+                        {/* 返回按钮（非登录页） */}
+                        {view !== 'login' && (
+                            <button
+                                onClick={() => setAuthView('login')}
+                                disabled={loading}
+                                className="absolute top-8 left-8 z-20 flex h-10 w-10 items-center justify-center text-brand-charcoal/40 hover:text-brand-charcoal/70 transition-colors"
+                            >
+                                <ArrowLeft size={20} strokeWidth={1.5} />
+                            </button>
+                        )}
+
+                        {/* 内容区域 */}
+                        <div className="flex-1 flex flex-col items-center justify-center px-6 overflow-y-auto">
+                            <div className="w-full max-w-[480px] py-12">
+                                {/* Logo */}
+                                <div className="mb-14 flex justify-center">
+                                    <img
+                                        src="/NIHPLOD-logo.svg"
+                                        alt="NIHPLOD"
+                                        className="h-[52px] object-contain"
+                                    />
+                                </div>
+
+                                {/* ====== LOGIN ====== */}
+                                {view === "login" && (
+                                    <>
+                                        <h1 className="text-center text-[2rem] font-light tracking-[0.15em] text-brand-charcoal mb-14">
+                                            登录
+                                        </h1>
+                                        <form onSubmit={handleLogin} className="space-y-10">
+                                            <div>
+                                                <input
+                                                    type="tel"
+                                                    required
+                                                    value={loginPhone}
+                                                    onChange={(e) => setLoginPhone(e.target.value)}
+                                                    className={pcInputClass}
+                                                    placeholder="手机号"
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <div className="relative">
+                                                    <input
+                                                        type={showPassword ? "text" : "password"}
+                                                        required
+                                                        value={loginPassword}
+                                                        onChange={(e) => setLoginPassword(e.target.value)}
+                                                        className={`${pcInputClass} pr-10`}
+                                                        placeholder="密码"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowPassword(!showPassword)}
+                                                        className="absolute right-0 top-1/2 -translate-y-1/2 text-brand-charcoal/40 hover:text-brand-charcoal/70 transition-colors"
+                                                    >
+                                                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                                    </button>
+                                                </div>
+                                                <div className="mt-4 text-right">
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleForgotPassword}
+                                                        className="text-xs tracking-wider text-brand-charcoal/50 hover:text-brand-charcoal transition-colors"
+                                                    >
+                                                        忘记密码？
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div className="pt-2">
+                                                <button
+                                                    type="submit"
+                                                    disabled={loading}
+                                                    className={pcBtnClass}
+                                                >
+                                                    {loading ? (
+                                                        <div className="h-4 w-4 border-2 border-brand-charcoal/20 border-t-brand-charcoal rounded-full animate-spin" />
+                                                    ) : "登录"}
+                                                </button>
+                                            </div>
+                                        </form>
+
+                                        <div className="mt-14 text-center space-y-5">
+                                            <p className="text-xs tracking-[0.15em] text-brand-charcoal/40 uppercase">
+                                                还没有账号？
+                                            </p>
+                                            <button
+                                                onClick={() => setAuthView("register")}
+                                                className={pcBtnClass}
+                                            >
+                                                立即注册
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+
+                                {/* ====== REGISTER ====== */}
+                                {view === "register" && (
+                                    <>
+                                        <h1 className="text-center text-[2rem] font-light tracking-[0.15em] text-brand-charcoal mb-12">
+                                            注册会员
+                                        </h1>
+                                        <form onSubmit={handleRegister} className="space-y-8">
+                                            <input
+                                                type="text"
+                                                required
+                                                value={regName}
+                                                onChange={(e) => setRegName(e.target.value)}
+                                                className={pcInputClass}
+                                                placeholder="姓名"
+                                            />
+                                            <input
+                                                type="tel"
+                                                required
+                                                value={regPhone}
+                                                onChange={(e) => setRegPhone(e.target.value)}
+                                                className={pcInputClass}
+                                                placeholder="手机号"
+                                            />
+                                            <div className="relative flex gap-3">
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    maxLength={6}
+                                                    value={regCode}
+                                                    onChange={(e) => setRegCode(e.target.value)}
+                                                    className={`${pcInputClass} flex-1`}
+                                                    placeholder="验证码"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={handleSendRegCode}
+                                                    disabled={regCodeSending || regCountdown > 0 || !regPhone}
+                                                    className="shrink-0 self-end mb-2 px-4 py-2 text-xs font-medium tracking-wider text-brand-charcoal/60 border border-brand-charcoal/25 disabled:opacity-30 transition-all hover:bg-brand-charcoal/[0.02]"
+                                                >
+                                                    {regCountdown > 0 ? `${regCountdown}s` : "获取"}
+                                                </button>
+                                            </div>
+                                            <div className="relative">
+                                                <input
+                                                    type={showPassword ? "text" : "password"}
+                                                    required
+                                                    minLength={6}
+                                                    value={regPassword}
+                                                    onChange={(e) => setRegPassword(e.target.value)}
+                                                    className={`${pcInputClass} pr-10`}
+                                                    placeholder="密码"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    className="absolute right-0 top-1/2 -translate-y-1/2 text-brand-charcoal/40 hover:text-brand-charcoal/70 transition-colors"
+                                                >
+                                                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                                </button>
+                                            </div>
+                                            <div className="relative">
+                                                <input
+                                                    type={showPassword ? "text" : "password"}
+                                                    required
+                                                    minLength={6}
+                                                    value={regConfirmPassword}
+                                                    onChange={(e) => setRegConfirmPassword(e.target.value)}
+                                                    className={`${pcInputClass} pr-10`}
+                                                    placeholder="确认密码"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    className="absolute right-0 top-1/2 -translate-y-1/2 text-brand-charcoal/40 hover:text-brand-charcoal/70 transition-colors"
+                                                >
+                                                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                                </button>
+                                            </div>
+
+                                            <div className="pt-2">
+                                                <button
+                                                    type="submit"
+                                                    disabled={loading}
+                                                    className={pcBtnClass}
+                                                >
+                                                    {loading ? (
+                                                        <div className="h-4 w-4 border-2 border-brand-charcoal/20 border-t-brand-charcoal rounded-full animate-spin" />
+                                                    ) : "注册"}
+                                                </button>
+                                            </div>
+                                        </form>
+
+                                        <div className="mt-10 text-center">
+                                            <button
+                                                onClick={() => setAuthView("login")}
+                                                className="text-xs tracking-wider text-brand-charcoal/40 hover:text-brand-charcoal/70 transition-colors"
+                                            >
+                                                已有账号？返回登录
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+
+                                {/* ====== FORGOT PASSWORD ====== */}
+                                {view === "forgot_password" && (
+                                    <>
+                                        <h1 className="text-center text-[2rem] font-light tracking-[0.15em] text-brand-charcoal mb-12">
+                                            {forgotSubmitted ? "重置密码" : "找回密码"}
+                                        </h1>
+                                        {forgotSubmitted ? (
+                                            <form onSubmit={handleResetPassword} className="space-y-8">
+                                                <p className="text-center text-sm text-brand-charcoal/60 tracking-wide">
+                                                    验证码已发送至 {forgotPhone.slice(0, 3)}****{forgotPhone.slice(-4)}
+                                                </p>
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    maxLength={6}
+                                                    value={resetCode}
+                                                    onChange={(e) => setResetCode(e.target.value)}
+                                                    className={pcInputClass}
+                                                    placeholder="6位验证码"
+                                                />
+                                                <div className="relative">
+                                                    <input
+                                                        type={showPassword ? "text" : "password"}
+                                                        required
+                                                        minLength={6}
+                                                        value={resetNewPassword}
+                                                        onChange={(e) => setResetNewPassword(e.target.value)}
+                                                        className={`${pcInputClass} pr-10`}
+                                                        placeholder="新密码"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowPassword(!showPassword)}
+                                                        className="absolute right-0 top-1/2 -translate-y-1/2 text-brand-charcoal/40 hover:text-brand-charcoal/70 transition-colors"
+                                                    >
+                                                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                                    </button>
+                                                </div>
+                                                <div className="relative">
+                                                    <input
+                                                        type={showPassword ? "text" : "password"}
+                                                        required
+                                                        minLength={6}
+                                                        value={resetConfirmPassword}
+                                                        onChange={(e) => setResetConfirmPassword(e.target.value)}
+                                                        className={`${pcInputClass} pr-10`}
+                                                        placeholder="确认新密码"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowPassword(!showPassword)}
+                                                        className="absolute right-0 top-1/2 -translate-y-1/2 text-brand-charcoal/40 hover:text-brand-charcoal/70 transition-colors"
+                                                    >
+                                                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                                    </button>
+                                                </div>
+                                                <button
+                                                    type="submit"
+                                                    disabled={loading}
+                                                    className={pcBtnClass}
+                                                >
+                                                    {loading ? (
+                                                        <div className="h-4 w-4 border-2 border-brand-charcoal/20 border-t-brand-charcoal rounded-full animate-spin" />
+                                                    ) : "确认重置"}
+                                                </button>
+                                                <div className="text-center">
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleSendResetLink}
+                                                        disabled={loading || resetCountdown > 0}
+                                                        className="text-xs tracking-wider text-brand-charcoal/50 hover:text-brand-charcoal transition-colors disabled:opacity-40"
+                                                    >
+                                                        {resetCountdown > 0 ? `${resetCountdown}s 后重新发送` : "重新发送验证码"}
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        ) : (
+                                            <form onSubmit={handleSendResetLink} className="space-y-10">
+                                                <p className="text-center text-sm text-brand-charcoal/60 tracking-wide">
+                                                    请输入您的注册手机号，我们将向您发送重置密码的验证码。
+                                                </p>
+                                                <div className="relative">
+                                                    <Phone className="absolute left-0 top-1/2 -translate-y-1/2 text-brand-charcoal/40 w-5 h-5" />
+                                                    <input
+                                                        type="tel"
+                                                        required
+                                                        value={forgotPhone}
+                                                        onChange={(e) => setForgotPhone(e.target.value)}
+                                                        className={`${pcInputClass} pl-8`}
+                                                        placeholder="手机号"
+                                                    />
+                                                </div>
+                                                <button
+                                                    type="submit"
+                                                    disabled={loading}
+                                                    className={pcBtnClass}
+                                                >
+                                                    {loading ? (
+                                                        <div className="h-4 w-4 border-2 border-brand-charcoal/20 border-t-brand-charcoal rounded-full animate-spin" />
+                                                    ) : "发送验证码"}
+                                                </button>
+                                            </form>
+                                        )}
+
+                                        <div className="mt-10 text-center">
+                                            <button
+                                                onClick={() => setAuthView("login")}
+                                                className="text-xs tracking-wider text-brand-charcoal/40 hover:text-brand-charcoal/70 transition-colors"
+                                            >
+                                                返回登录
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+
+                                {/* ====== WECHAT BIND ====== */}
+                                {view === "wechat_bind" && (
+                                    <>
+                                        <h1 className="text-center text-[2rem] font-light tracking-[0.15em] text-brand-charcoal mb-10">
+                                            绑定手机号
+                                        </h1>
+                                        <p className="text-center text-sm text-brand-charcoal/50 tracking-wide mb-10">
+                                            微信授权成功，请绑定手机号以完成登录。
+                                        </p>
+                                        <form onSubmit={handleWechatBind} className="space-y-8">
+                                            <input
+                                                type="tel"
+                                                required
+                                                value={regPhone}
+                                                onChange={(e) => setRegPhone(e.target.value)}
+                                                className={pcInputClass}
+                                                placeholder="手机号"
+                                            />
+                                            <div className="relative flex gap-3">
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    maxLength={6}
+                                                    value={regCode}
+                                                    onChange={(e) => setRegCode(e.target.value)}
+                                                    className={`${pcInputClass} flex-1`}
+                                                    placeholder="验证码"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={handleSendRegCode}
+                                                    disabled={regCodeSending || regCountdown > 0 || !regPhone}
+                                                    className="shrink-0 self-end mb-2 px-4 py-2 text-xs font-medium tracking-wider text-brand-charcoal/60 border border-brand-charcoal/25 disabled:opacity-30 transition-all hover:bg-brand-charcoal/[0.02]"
+                                                >
+                                                    {regCountdown > 0 ? `${regCountdown}s` : "获取"}
+                                                </button>
+                                            </div>
+                                            <div className="relative">
+                                                <input
+                                                    type={showPassword ? "text" : "password"}
+                                                    required
+                                                    minLength={6}
+                                                    value={regPassword}
+                                                    onChange={(e) => setRegPassword(e.target.value)}
+                                                    className={`${pcInputClass} pr-10`}
+                                                    placeholder="密码"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    className="absolute right-0 top-1/2 -translate-y-1/2 text-brand-charcoal/40 hover:text-brand-charcoal/70 transition-colors"
+                                                >
+                                                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                                </button>
+                                            </div>
+                                            <button
+                                                type="submit"
+                                                disabled={loading}
+                                                className={pcBtnClass}
+                                            >
+                                                {loading ? (
+                                                    <div className="h-4 w-4 border-2 border-brand-charcoal/20 border-t-brand-charcoal rounded-full animate-spin" />
+                                                ) : (
+                                                    <>绑定手机号 <CheckCircle size={16} /></>
+                                                )}
+                                            </button>
+                                        </form>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    </motion.div>
+
+                    {/* ==================== 移动端：原有模态框 ==================== */}
+                    <motion.div
+                        key="mobile-modal"
                         initial={{ opacity: 0, scale: 0.96, y: 10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.96, y: 10 }}
                         transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                        className="relative z-10 w-full max-w-[420px] bg-white rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col max-h-[92vh]"
+                        className="md:hidden relative z-10 w-full max-w-[420px] bg-white rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col max-h-[92vh]"
                         onClick={(e: React.MouseEvent) => e.stopPropagation()}
                     >
                         {/* Close Button */}
@@ -312,11 +714,11 @@ export function AuthModal() {
                                     </div>
                                 ) : (
                                     <h1 className="text-xl font-bold text-slate-900 mb-3 tracking-[0.14em]">
-                                        {headerTitle}
+                                        绑定手机号
                                     </h1>
                                 )}
                                 <p className={`text-slate-400 font-bold tracking-widest uppercase ${view === "register" ? "text-base" : "text-sm"}`}>
-                                    {headerSubtitle}
+                                    {view === "login" ? "" : view === "register" ? "注册会员" : view === "forgot_password" ? "重置密码" : "微信授权成功，请绑定手机"}
                                 </p>
                             </div>
 
@@ -379,32 +781,6 @@ export function AuthModal() {
                                             <>登录 <ArrowRight size={16} /></>
                                         )}
                                     </button>
-
-                                    {/* Social Login - Hidden until implemented */}
-                                    {false && (
-                                        <>
-                                            <div className="relative my-7 sm:my-8">
-                                                <div className="absolute inset-0 flex items-center">
-                                                    <div className="w-full border-t border-[#E6E2D6]"></div>
-                                                </div>
-                                                <div className="relative flex justify-center text-xs">
-                                                    <span className="px-4 bg-[#FDFBF7] text-[#8C8C8C] font-medium uppercase tracking-wider">其他登录方式</span>
-                                                </div>
-                                            </div>
-
-                                            <button
-                                                type="button"
-                                                onClick={handleWechatLogin}
-                                                disabled={loading}
-                                                className="w-fit mx-auto px-10 py-2.5 sm:py-3 border border-[#E6E2D6] rounded-full text-[13px] sm:text-[14px] font-medium tracking-widest flex items-center justify-center gap-2.5 transition-all hover:bg-white hover:border-[#1A1A1A]/20 active:scale-[0.95] disabled:opacity-50"
-                                            >
-                                                <svg className="w-4 h-4 text-[#07C160]" viewBox="0 0 24 24" fill="currentColor">
-                                                    <path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 0 1 .213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 0 0 .167-.054l1.903-1.114a.864.864 0 0 1 .717-.098 10.16 10.16 0 0 0 2.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178A1.17 1.17 0 0 1 4.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178 1.17 1.17 0 0 1-1.162-1.178c0-.651.52-1.18 1.162-1.18zm5.34 2.867c-1.797-.052-3.746.512-5.28 1.786-1.72 1.428-2.687 3.72-1.78 6.22.942 2.453 3.666 4.229 6.884 4.229.826 0 1.622-.12 2.361-.336a.722.722 0 0 1 .598.082l1.584.926a.272.272 0 0 0 .14.045c.134 0 .24-.11.24-.245 0-.06-.024-.12-.04-.178l-.327-1.233a.582.582 0 0 1-.023-.156.49.49 0 0 1 .201-.398C23.024 18.48 24 16.82 24 14.98c0-3.21-2.931-5.837-6.656-6.088-.182-.013-.373-.027-.545-.035h-.06zm-2.89 3.217c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.97-.982zm4.844 0c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.969-.982z" />
-                                                </svg>
-                                                <span className="text-[#1A1A1A]/60 font-medium">微信账号快速登录</span>
-                                            </button>
-                                        </>
-                                    )}
                                 </form>
                             )}
 
@@ -757,7 +1133,7 @@ export function AuthModal() {
                         )}
 
                     </motion.div>
-                </div>
+                </motion.div>
             )}
         </AnimatePresence>
     );
