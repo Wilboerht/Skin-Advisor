@@ -18,7 +18,7 @@ import {
 import { cn } from "@/lib/utils";
 import { FaceScanOverlay } from "./FaceScanOverlay";
 
-const DEBUG = true;
+const DEBUG = process.env.NODE_ENV === 'development';
 
 // 四张照片的数据结构
 export interface FaceCaptureImages {
@@ -82,7 +82,6 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
   const [currentStep, setCurrentStep] = useState<CaptureStep>("front");
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
   const [lightLevel, setLightLevel] = useState<LightLevel>("unknown");
-  const [_lightScore, setLightScore] = useState<number>(0); // 0-100 光线质量分数
   const [error, setError] = useState<string | null>(null);
   const [stabilityProgress, setStabilityProgress] = useState<number>(0); // 姿势稳定进度 0-100
   const [isInCooldown, setIsInCooldown] = useState<boolean>(false); // 冷却状态 UI 显示
@@ -90,16 +89,24 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
   const [isMuted, setIsMuted] = useState(false); // 静音状态
   const [isLoading, setIsLoading] = useState(true);
   const [faceStatus, setFaceStatus] = useState<FaceStatus>("none");
-  const [detectionStartTime, setDetectionStartTime] = useState<number | null>(null); // 检测开始时间，用于计算5秒后显示手动按钮
   const [showManualButton, setShowManualButton] = useState(false); // 是否显示手动拍照按钮
   const [modelsLoaded, setModelsLoaded] = useState(false);
   const [faceApiLoaded, setFaceApiLoaded] = useState(false);
   const [isAllCaptured, setIsAllCaptured] = useState(false);
   const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
+  const [modelLoadFailed, setModelLoadFailed] = useState(false); // 模型加载失败状态
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const faceApiRef = useRef<any>(null);
   // 保存最新的面部检测框，用于裁剪
   const faceBoxRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
+  // 摄像头初始化调用ID，防竞态
+  const initCallIdRef = useRef(0);
+  // 面部检测并发锁
+  const isDetectingRef = useRef(false);
+  // 语音锁定截止时间
+  const speakLockUntilRef = useRef<number>(0);
+  // 当前步骤开始时间，用于手动按钮计时
+  const stepStartTimeRef = useRef<number>(0);
   // 调试信息
   const [debugInfo, setDebugInfo] = useState<{
     headPose: string;
@@ -120,6 +127,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
   const initCamera = useCallback(async () => {
     setIsLoading(true);
     setError(null);
+    const callId = ++initCallIdRef.current;
 
     try {
       // 先停止现有流
@@ -133,21 +141,39 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
 
       let mediaStream: MediaStream;
 
-      const requestedConstraints = {
-        video: {
-          facingMode,
-          width: { ideal: 1280 }, // Use 1280 for better compatibility than 1080
-          height: { ideal: 720 },
-          frameRate: { ideal: 30, min: 15 }
-        }
-      };
+      // 尝试多组分辨率，从优到劣
+      const constraintsList = [
+        { video: { facingMode, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, min: 15 } } },
+        { video: { facingMode, width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 30, min: 15 } } },
+        { video: { facingMode, width: { ideal: 320 }, height: { ideal: 240 }, frameRate: { ideal: 30, min: 15 } } },
+      ];
 
-      mediaStream = await navigator.mediaDevices.getUserMedia(requestedConstraints);
-      console.log("Camera stream obtained:", mediaStream.id, mediaStream.getVideoTracks()[0].label);
+      let lastError: Error | null = null;
+      for (const constraints of constraintsList) {
+        try {
+          mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+          lastError = null;
+          break;
+        } catch (e) {
+          lastError = e as Error;
+          if ((e as Error)?.name !== 'OverconstrainedError') throw e;
+          // 继续尝试更低分辨率
+        }
+      }
+
+      if (lastError) throw lastError;
+
+      // 竞态保护：如果 facingMode 在此期间已变化，丢弃本次结果
+      if (callId !== initCallIdRef.current) {
+        mediaStream!.getTracks().forEach(t => t.stop());
+        return;
+      }
+
+      console.log("Camera stream obtained:", mediaStream!.id, mediaStream!.getVideoTracks()[0].label);
 
       // Try to apply advanced constraints after stream is obtained
       try {
-        const videoTrack = mediaStream.getVideoTracks()[0];
+        const videoTrack = mediaStream!.getVideoTracks()[0];
         if (videoTrack) {
           await videoTrack.applyConstraints({
             advanced: [
@@ -160,14 +186,15 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
         console.warn("Could not apply beautification constraints:", e);
       }
 
-      streamRef.current = mediaStream;
-      setStream(mediaStream);
+      streamRef.current = mediaStream!;
+      setStream(mediaStream!);
       setIsLoading(false);
     } catch (err) {
+      // 竞态保护：忽略过期的错误
+      if (callId !== initCallIdRef.current) return;
+
       console.error("Camera error:", err);
 
-      // 如果流已经获取成功，或者是播放错误导致的跳转，不应视为严重错误
-      // 检查 err 是否是 'AbortError' 或类似的非权限错误
       if ((err as Error)?.name === 'AbortError') {
         console.warn("Camera init interrupted, ignoring.");
         return;
@@ -189,7 +216,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
       setError(errorMessage);
       setIsLoading(false);
     }
-  }, [facingMode]); // Removed stream dependency
+  }, [facingMode]);
 
   /**
    * 加载 face-api.js 和模型
@@ -202,19 +229,23 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
       const faceapi = await import("@vladmandic/face-api");
       faceApiRef.current = faceapi;
 
-      // 从本地加载 TinyFaceDetector 和 faceLandmark68Net 模型
-      await Promise.all([
-        faceapi.nets.tinyFaceDetector.loadFromUri("/models"),
-        faceapi.nets.faceLandmark68Net.loadFromUri("/models"),
+      // 从本地加载 TinyFaceDetector 和 faceLandmark68Net 模型，15秒超时
+      await Promise.race([
+        Promise.all([
+          faceapi.nets.tinyFaceDetector.loadFromUri("/models"),
+          faceapi.nets.faceLandmark68Net.loadFromUri("/models"),
+        ]),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("模型加载超时")), 15000))
       ]);
 
       setModelsLoaded(true);
       setFaceApiLoaded(true);
+      setModelLoadFailed(false);
       console.log("Face detection models loaded (including landmarks)");
     } catch (err) {
       console.error("Failed to load face detection:", err);
-      // 加载失败时，使用手动模式
       setModelsLoaded(false);
+      setModelLoadFailed(true);
     }
   }, [faceApiLoaded]);
 
@@ -396,19 +427,16 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
    * 检测面部和头部朝向
    */
   const detectFace = useCallback(async () => {
-    // 如果处于冷却期，跳过检测
-    if (cooldownRef.current) {
-      return;
-    }
-    if (!videoRef.current || !faceApiRef.current || !modelsLoaded || isAllCaptured) {
-      return;
-    }
+    if (cooldownRef.current || isDetectingRef.current) return;
+    if (!videoRef.current || !faceApiRef.current || !modelsLoaded || isAllCaptured) return;
 
-    const faceapi = faceApiRef.current;
     const video = videoRef.current;
+    if (video.readyState < 2) return;
+
+    isDetectingRef.current = true;
 
     try {
-      // 使用 withFaceLandmarks 获取面部关键点
+      const faceapi = faceApiRef.current;
       const detection = await faceapi
         .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.3 }))
         .withFaceLandmarks();
@@ -489,24 +517,19 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
           // 更新稳定进度
           setStabilityProgress(Math.min(100, (stableCountRef.current / progressFrames) * 100));
 
-          // 稳定检测后拍照
-          if (stableCountRef.current >= requiredFrames && !window.speechSynthesis.speaking) {
+          // 达到稳定帧数立即拍照，不再等待语音播完
+          if (stableCountRef.current >= requiredFrames) {
             setFaceStatus("ready");
             setStabilityProgress(100);
 
-            // 锁定后续 1.5 秒的普通提示音
             const now = Date.now();
-            lastSpeakTimeRef.current = now + 1500;
+            lastSpeakTimeRef.current = now;
+            speakLockUntilRef.current = now + 1500;
 
-            // 拍照
             takePhotoAuto();
-          } else if (stableCountRef.current >= requiredFrames) {
-            // 姿态已经稳了，但还在等语音播完，此时保持 100% 进度但显示“found”状态
-            setFaceStatus("found");
-            setStabilityProgress(100);
-          } else if (stableCountRef.current === 1) { // 刚达到正确姿势的第一帧，给正面反馈
+          } else if (stableCountRef.current === 1) {
             const now = Date.now();
-            if (now - lastSpeakTimeRef.current > 2000 && lastSpokenPhraseRef.current !== "保持" && !window.speechSynthesis.speaking) {
+            if (now > speakLockUntilRef.current && now - lastSpeakTimeRef.current > 2000 && lastSpokenPhraseRef.current !== "保持") {
               speak("请保持");
               lastSpeakTimeRef.current = now;
               lastSpokenPhraseRef.current = "保持";
@@ -518,9 +541,8 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
           setStabilityProgress(Math.min(100, (stableCountRef.current / 3) * 100));
           setFaceStatus("detecting");
 
-          // ---- 极简语音纠错：只提示姿态，不限制位置和距离 ----
           const now = Date.now();
-          if (now - lastSpeakTimeRef.current > 6000 && !isPoseCorrect) {
+          if (now > speakLockUntilRef.current && now - lastSpeakTimeRef.current > 6000 && !isPoseCorrect) {
             let feedback = "";
             if (currentStep === "left") {
               feedback = "请向左边转头";
@@ -547,6 +569,8 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
       }
     } catch (err) {
       console.error("Face detection error:", err);
+    } finally {
+      isDetectingRef.current = false;
     }
   }, [modelsLoaded, isAllCaptured, calculateHeadPose, currentStep, isFaceInEllipse, mapVideoBoxToDisplay, speak, facingMode]);
 
@@ -584,15 +608,18 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
    * 优化：根据面部检测框裁剪图像，去除多余背景
    */
   const takePhotoAuto = useCallback(() => {
-    if (!videoRef.current || !canvasRef.current) return;
+    if (!videoRef.current || !canvasRef.current || cooldownRef.current) return;
 
-    const canvas = canvasRef.current;
-    const video = videoRef.current;
-    const videoWidth = video.videoWidth;
-    const videoHeight = video.videoHeight;
+    setTimeout(() => {
+      const canvas = canvasRef.current;
+      const video = videoRef.current;
+      if (!canvas || !video) return;
 
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    if (!ctx) return;
+      const videoWidth = video.videoWidth;
+      const videoHeight = video.videoHeight;
+
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (!ctx) return;
 
     let imageData: string;
 
@@ -753,6 +780,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
       };
       onCapture(allImages);
     }
+    }, 0);
   }, [facingMode, currentStep, getNextStep, stream, capturedImages, onCapture, speak]);
 
   /**
@@ -838,7 +866,6 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
       score += 10;
     }
 
-    setLightScore(score);
 
     // 根据评分和具体问题设置状态
     if (score >= 85) {
@@ -895,7 +922,6 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
     initCamera();
 
     return () => {
-      // 彻底清理：停止所有轨道并释放引用
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
         streamRef.current = null;
@@ -903,10 +929,12 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
       if (videoRef.current) {
         videoRef.current.srcObject = null;
       }
-      // 清理冷却进度定时器，防止组件卸载后内存泄漏
       if (progressTimerRef.current) {
         clearInterval(progressTimerRef.current);
         progressTimerRef.current = null;
+      }
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
       }
     };
   }, [facingMode, initCamera]);
@@ -945,29 +973,26 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
     return () => clearInterval(interval);
   }, [stream, isAllCaptured, analyzeLightLevel]);
 
+  // 步骤切换时重置手动按钮计时
+  useEffect(() => {
+    stepStartTimeRef.current = Date.now();
+    setShowManualButton(false);
+  }, [currentStep]);
+
   // 5秒后显示手动拍照按钮
   useEffect(() => {
     if (isAllCaptured || isLoading || error || isInCooldown) {
       setShowManualButton(false);
-      setDetectionStartTime(null);
       return;
     }
 
-    // 开始计时
-    const start = detectionStartTime || Date.now();
-    if (!detectionStartTime) {
-      setDetectionStartTime(start);
-    }
-
-    const elapsed = Date.now() - start;
-    const remaining = Math.max(0, 5000 - elapsed);
-
+    const remaining = Math.max(0, 5000 - (Date.now() - stepStartTimeRef.current));
     const timer = setTimeout(() => {
       setShowManualButton(true);
     }, remaining);
 
     return () => clearTimeout(timer);
-  }, [isAllCaptured, isLoading, error, isInCooldown, detectionStartTime]);
+  }, [isAllCaptured, isLoading, error, isInCooldown, currentStep]);
 
   /**
    * 渲染光线提示 - 精简版
@@ -1175,13 +1200,13 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
           </m.div>
 
           {/* 手动拍照按钮 (Fallback) */}
-          {showManualButton && (
+          {(showManualButton || modelLoadFailed) && (
             <div className="pointer-events-auto mt-4">
               <button
                 onClick={takePhotoAuto}
                 className="px-6 py-2 rounded-full border border-white/30 text-white text-sm hover:bg-white/10 transition-colors backdrop-blur-sm"
               >
-                无法自动识别？点击手动拍照
+                {modelLoadFailed ? "面部检测不可用，点击手动拍照" : "无法自动识别？点击手动拍照"}
               </button>
             </div>
           )}
@@ -1193,6 +1218,15 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black">
           <div className="h-10 w-10 animate-spin rounded-full border-2 border-white/20 border-t-white" />
           <p className="mt-4 text-white/50 text-sm tracking-widest uppercase">正在启动摄像头</p>
+        </div>
+      )}
+
+      {/* 模型加载失败提示 */}
+      {modelLoadFailed && !isLoading && (
+        <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm p-8 text-center">
+          <AlertCircle className="h-10 w-10 text-yellow-400 mb-3" />
+          <p className="text-white/80 text-sm mb-2">面部检测加载失败</p>
+          <p className="text-white/50 text-xs">您可以点击下方按钮手动拍照</p>
         </div>
       )}
 
