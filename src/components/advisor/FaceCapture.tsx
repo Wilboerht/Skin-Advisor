@@ -18,6 +18,8 @@ import {
 import { cn } from "@/lib/utils";
 import { FaceScanOverlay } from "./FaceScanOverlay";
 
+const DEBUG = true;
+
 // 四张照片的数据结构
 export interface FaceCaptureImages {
   front: string;
@@ -98,6 +100,18 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
   const faceApiRef = useRef<any>(null);
   // 保存最新的面部检测框，用于裁剪
   const faceBoxRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
+  // 调试信息
+  const [debugInfo, setDebugInfo] = useState<{
+    headPose: string;
+    noseOffsetRatio: number;
+    tiltRatio: number;
+    isInEllipse: boolean;
+    isSizeOk: boolean;
+    faceToEllipseRatio: number;
+    isPoseCorrect: boolean;
+    currentStep: string;
+    displayBox: { x: number; y: number; width: number; height: number } | null;
+  } | null>(null);
 
   /**
    * 初始化摄像头
@@ -245,14 +259,14 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
     // --- 判定逻辑 ---
 
     // 基础标志位
-    // 放宽左右转阈值，手机端更容易触发
-    const isLookingLeft = noseOffsetRatio > 0.12;
-    const isLookingRight = noseOffsetRatio < -0.12;
-    const isLookingCenter = Math.abs(noseOffsetRatio) < 0.30;
+    // 大幅放宽阈值，用户体验优先，能拍到即可，不追求精确对准
+    const isLookingLeft = noseOffsetRatio > 0.06;
+    const isLookingRight = noseOffsetRatio < -0.06;
+    const isLookingCenter = Math.abs(noseOffsetRatio) < 0.45;
 
     // 抬头标志: tiltRatio 越小越仰头
-    // 放宽阈值到 0.28，让手机端用户更容易触发抬头判定
-    const isLookingUp = tiltRatio < 0.28;
+    // 大幅放宽到 0.50，几乎只要抬头就能过
+    const isLookingUp = tiltRatio < 0.50;
 
     // 优先匹配当前目标步骤 (Bias towards user intent)
 
@@ -267,9 +281,8 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
     }
 
     if (targetStep === 'chin') {
-      // 抬头检测：进一步放宽阈值，提升手机端通过率
-      // tiltRatio 放宽到 0.28，noseOffsetRatio 放宽到 0.45
-      if (tiltRatio < 0.28 && Math.abs(noseOffsetRatio) < 0.45) {
+      // 抬头检测：大幅放宽阈值，提升手机端通过率
+      if (tiltRatio < 0.50 && Math.abs(noseOffsetRatio) < 0.55) {
         return "chin";
       }
     }
@@ -290,25 +303,49 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
   }, []);
 
   /**
-   * 检查面部是否在椭圆框内
-   * 椭圆框尺寸与 FaceScanOverlay 保持一致：宽度65%，高度70%
+   * 把视频原始坐标框映射到 CSS 显示坐标系（处理 object-fit: cover 的缩放/裁剪）
+   */
+  const mapVideoBoxToDisplay = useCallback((
+    videoBox: { x: number; y: number; width: number; height: number },
+    videoWidth: number,
+    videoHeight: number,
+    displayWidth: number,
+    displayHeight: number
+  ) => {
+    const scale = Math.max(displayWidth / videoWidth, displayHeight / videoHeight);
+    const scaledVideoWidth = videoWidth * scale;
+    const scaledVideoHeight = videoHeight * scale;
+    const offsetX = (displayWidth - scaledVideoWidth) / 2;
+    const offsetY = (displayHeight - scaledVideoHeight) / 2;
+
+    return {
+      x: videoBox.x * scale + offsetX,
+      y: videoBox.y * scale + offsetY,
+      width: videoBox.width * scale,
+      height: videoBox.height * scale,
+    };
+  }, []);
+
+  /**
+   * 检查面部是否在椭圆框内（使用显示坐标系，与 FaceScanOverlay UI 严格对齐）
+   * 椭圆框尺寸：宽度65%，高度70%
    */
   const isFaceInEllipse = useCallback((
     faceBox: { x: number; y: number; width: number; height: number },
-    videoWidth: number,
-    videoHeight: number
+    containerWidth: number,
+    containerHeight: number
   ): boolean => {
     // 椭圆参数（与 FaceScanOverlay 一致）
     const ellipseWidthRatio = 0.65;
     const ellipseHeightRatio = 0.70;
 
-    // 椭圆中心（视频中心）
-    const ellipseCenterX = videoWidth / 2;
-    const ellipseCenterY = videoHeight / 2;
+    // 椭圆中心（容器中心）
+    const ellipseCenterX = containerWidth / 2;
+    const ellipseCenterY = containerHeight / 2;
 
     // 椭圆半轴
-    const ellipseA = (videoWidth * ellipseWidthRatio) / 2;  // 水平半轴
-    const ellipseB = (videoHeight * ellipseHeightRatio) / 2; // 垂直半轴
+    const ellipseA = (containerWidth * ellipseWidthRatio) / 2;  // 水平半轴
+    const ellipseB = (containerHeight * ellipseHeightRatio) / 2; // 垂直半轴
 
     // 面部的四个角点
     const faceCorners = [
@@ -380,50 +417,86 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
         const { box } = detection.detection;
         const videoWidth = video.videoWidth;
         const videoHeight = video.videoHeight;
+        const displayWidth = video.clientWidth;
+        const displayHeight = video.clientHeight;
 
-        // 保存面部检测框用于裁剪
+        // 保存面部检测框用于裁剪（保持原始视频坐标）
         faceBoxRef.current = { x: box.x, y: box.y, width: box.width, height: box.height };
 
-        // 检查面部是否在椭圆框内（精确检测）
-        const isInEllipse = isFaceInEllipse(
+        // 映射到显示坐标系（解决 object-cover 裁剪导致的坐标错位）
+        const displayBox = mapVideoBoxToDisplay(
           { x: box.x, y: box.y, width: box.width, height: box.height },
           videoWidth,
-          videoHeight
+          videoHeight,
+          displayWidth,
+          displayHeight
         );
 
-        // 检查面部大小是否合适（相对于椭圆大小）
+        // 检查面部是否在椭圆框内（仅作为视觉引导，不作为硬性拍照门槛）
+        const isInEllipse = isFaceInEllipse(displayBox, displayWidth, displayHeight);
+
+        // 检查面部大小是否合适——大幅放宽，能拍到就行
         const ellipseHeight = videoHeight * 0.70;
         const faceToEllipseRatio = box.height / ellipseHeight;
-        // 面部应该占椭圆高度的 35%-95% (提升下限以确保 landmark 精度)
-        const isSizeOk = faceToEllipseRatio > 0.35 && faceToEllipseRatio < 0.95;
+        const isSizeOk = faceToEllipseRatio > 0.15 && faceToEllipseRatio < 1.05;
 
         // 计算头部朝向 (传入 currentStep 以优化判定逻辑)
         const headPose = calculateHeadPose(detection.landmarks, currentStep);
 
-
         // 检查当前头部朝向是否匹配当前步骤
         const isPoseCorrect = headPose === currentStep;
 
-        if (isInEllipse && isSizeOk && isPoseCorrect) {
+        // 调试信息
+        if (DEBUG) {
+          const positions = detection.landmarks.positions;
+          const leftEyeOuter = positions[36];
+          const rightEyeOuter = positions[45];
+          const noseTip = positions[30];
+          const faceLeft = positions[0];
+          const faceRight = positions[16];
+          const chin = positions[8];
+          const eyesCenterX = (leftEyeOuter.x + rightEyeOuter.x) / 2;
+          const eyesCenterY = (leftEyeOuter.y + rightEyeOuter.y) / 2;
+          const faceWidth = faceRight.x - faceLeft.x;
+          const noseOffsetRatio = (noseTip.x - eyesCenterX) / faceWidth;
+          const noseToEyesY = noseTip.y - eyesCenterY;
+          const eyesToChinY = chin.y - eyesCenterY;
+          const tiltRatio = eyesToChinY !== 0 ? noseToEyesY / eyesToChinY : 0.5;
+          setDebugInfo({
+            headPose,
+            noseOffsetRatio: Math.round(noseOffsetRatio * 1000) / 1000,
+            tiltRatio: Math.round(tiltRatio * 1000) / 1000,
+            isInEllipse,
+            isSizeOk,
+            faceToEllipseRatio: Math.round(faceToEllipseRatio * 100) / 100,
+            isPoseCorrect,
+            currentStep,
+            displayBox,
+          });
+        }
+
+        // 核心拍照条件：姿势正确 + 大小基本合适（椭圆框只是视觉引导，不硬性限制）
+        const canCapture = isSizeOk && isPoseCorrect;
+
+        if (canCapture) {
           stableCountRef.current += 1;
           setFaceStatus("found");
 
-          // 降低稳定帧数要求，提升手机端响应速度 (8/4 -> 5/3)
-          const requiredFrames = currentStep === 'chin' ? 5 : 3;
-          const progressFrames = currentStep === 'chin' ? 6 : 4;
+          // 大幅放宽稳定帧数要求，2帧即可拍照，体验更流畅
+          const requiredFrames = 2;
+          const progressFrames = 3;
 
           // 更新稳定进度
           setStabilityProgress(Math.min(100, (stableCountRef.current / progressFrames) * 100));
 
           // 稳定检测后拍照
-          // 优化：如果当前还在播报语音（比如纠错引导），则等待播报完再执行“拍下”动作，确保交互优雅
           if (stableCountRef.current >= requiredFrames && !window.speechSynthesis.speaking) {
             setFaceStatus("ready");
             setStabilityProgress(100);
 
-            // 重要：标记正在执行成功操作，避免被语音打断
+            // 锁定后续 1.5 秒的普通提示音
             const now = Date.now();
-            lastSpeakTimeRef.current = now + 1500; // 锁定后续 1.5 秒的普通提示音，把舞台留给 "好"
+            lastSpeakTimeRef.current = now + 1500;
 
             // 拍照
             takePhotoAuto();
@@ -440,72 +513,29 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
             }
           }
         } else {
-          // 渐进衰减而非直接清零：微调姿势不会完全打断进度
-          stableCountRef.current = Math.max(0, stableCountRef.current - 2);
-          setStabilityProgress(Math.min(100, (stableCountRef.current / (currentStep === 'chin' ? 6 : 4)) * 100));
+          // 轻微衰减，流程更宽容
+          stableCountRef.current = Math.max(0, stableCountRef.current - 1);
+          setStabilityProgress(Math.min(100, (stableCountRef.current / 3) * 100));
           setFaceStatus("detecting");
 
-          // ---- 添加语音纠错与进度指导反馈 (Throttle 冷却期 4秒) ----
+          // ---- 极简语音纠错：只提示姿态，不限制位置和距离 ----
           const now = Date.now();
-          if (now - lastSpeakTimeRef.current > 4000) {
+          if (now - lastSpeakTimeRef.current > 6000 && !isPoseCorrect) {
             let feedback = "";
-
-            // 1. 距离反馈（最高优先级）
-            const ellipseHeight = videoHeight * 0.70;
-            const faceToEllipseRatio = box.height / ellipseHeight;
-            
-            if (faceToEllipseRatio < 0.25) {
-              feedback = "请稍微靠近屏幕";
-            } else if (faceToEllipseRatio >= 0.95) {
-              feedback = "请稍微远离屏幕";
-            } 
-            // 2. 位置反馈（次高优先级）
-            else if (!isInEllipse) {
-              const ellipseCenterX = videoWidth / 2;
-              const ellipseCenterY = videoHeight / 2;
-              const faceCenterX = box.x + box.width / 2;
-              const faceCenterY = box.y + box.height / 2;
-              
-              const deltaX = faceCenterX - ellipseCenterX;
-              const deltaY = faceCenterY - ellipseCenterY;
-              
-              // 镜像模式下的左右判定
-              const isUser = facingMode === "user";
-              
-              if (Math.abs(deltaX) > Math.abs(deltaY) * 1.2) {
-                if (isUser) {
-                  feedback = deltaX > 0 ? "请向左移动一点" : "请向右移动一点";
-                } else {
-                  feedback = deltaX > 0 ? "请向右移动一点" : "请向左移动一点";
-                }
-              } else {
-                feedback = deltaY > 0 ? "请向上移动一点" : "请向下移动一点";
-              }
-            } 
-            // 3. 姿态反馈
-            else if (!isPoseCorrect) {
-              if (currentStep === "left") {
-                feedback = "请再向左边转一点头";
-              } else if (currentStep === "right") {
-                feedback = "请再向右边转一点头";
-              } else if (currentStep === "chin") {
-                feedback = "请再稍微抬起一点下巴";
-              } else if (currentStep === "front") {
-                feedback = "请正对镜头，微调头部位姿";
-              }
+            if (currentStep === "left") {
+              feedback = "请向左边转头";
+            } else if (currentStep === "right") {
+              feedback = "请向右边转头";
+            } else if (currentStep === "chin") {
+              feedback = "请稍微抬头";
+            } else if (currentStep === "front") {
+              feedback = "请正对镜头";
             }
 
-            // 执行反馈播报并记录防抖标志
             if (feedback && feedback !== lastSpokenPhraseRef.current) {
               speak(feedback);
               lastSpeakTimeRef.current = now;
               lastSpokenPhraseRef.current = feedback;
-            } else if (feedback) {
-              // 如果是重复的话术，延长一点冷却时间避免显得太啰嗦，比如5秒后再说
-              if (now - lastSpeakTimeRef.current > 5000) {
-                speak(feedback);
-                lastSpeakTimeRef.current = now;
-              }
             }
           }
         }
@@ -518,7 +548,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
     } catch (err) {
       console.error("Face detection error:", err);
     }
-  }, [modelsLoaded, isAllCaptured, calculateHeadPose, currentStep, isFaceInEllipse, speak, facingMode]);
+  }, [modelsLoaded, isAllCaptured, calculateHeadPose, currentStep, isFaceInEllipse, mapVideoBoxToDisplay, speak, facingMode]);
 
   // 监听步骤变化并播报语音指令
   useEffect(() => {
@@ -667,8 +697,8 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
       // 进入下一步
       setCurrentStep(nextStep);
 
-      // 冷却期 1.2 秒，流程更流畅同时保留调整时间
-      const cooldownDuration = 1200;
+      // 冷却期 0.8 秒，流程更流畅同时保留调整时间
+      const cooldownDuration = 800;
       const progressInterval = 50; // 每 50ms 更新一次进度
       let elapsed = 0;
 
@@ -723,7 +753,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
       };
       onCapture(allImages);
     }
-  }, [facingMode, currentStep, getNextStep, stream, capturedImages, onCapture]);
+  }, [facingMode, currentStep, getNextStep, stream, capturedImages, onCapture, speak]);
 
   /**
    * 分析光线条件 - 增强版
@@ -1032,6 +1062,32 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
 
         {/* 视频遮罩：让文字更清晰，同时增加质感 */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40 pointer-events-none" />
+
+        {/* 调试信息面板 */}
+        {DEBUG && debugInfo && (
+          <div className="absolute top-20 left-4 z-50 bg-black/70 backdrop-blur-sm text-white text-[10px] font-mono p-3 rounded-lg border border-white/20 space-y-1 max-w-[200px]">
+            <div className="text-brand-gold font-bold mb-1">DEBUG</div>
+            <div>步骤: {debugInfo.currentStep}</div>
+            <div>姿态: {debugInfo.headPose} {debugInfo.isPoseCorrect ? '✅' : '❌'}</div>
+            <div>椭圆内: {debugInfo.isInEllipse ? '✅' : '❌'}</div>
+            <div>大小: {debugInfo.isSizeOk ? '✅' : '❌'} ({debugInfo.faceToEllipseRatio})</div>
+            <div>noseRatio: {debugInfo.noseOffsetRatio}</div>
+            <div>tiltRatio: {debugInfo.tiltRatio}</div>
+          </div>
+        )}
+
+        {/* 检测框可视化 */}
+        {DEBUG && debugInfo?.displayBox && (
+          <div
+            className="absolute border-2 border-red-500/70 z-40 pointer-events-none"
+            style={{
+              left: debugInfo.displayBox.x,
+              top: debugInfo.displayBox.y,
+              width: debugInfo.displayBox.width,
+              height: debugInfo.displayBox.height,
+            }}
+          />
+        )}
       </div>
 
       {/* ✨ 顶部步骤指示器 - 悬浮 */}
