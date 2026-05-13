@@ -240,8 +240,6 @@ export function AuthModal() {
         }
     };
 
-    if (!isOpen) return null;
-
     // ===== PC 端输入框通用样式 =====
     const pcInputClass = "w-full bg-transparent border-0 border-b border-brand-charcoal/20 rounded-none py-4 px-0 text-base tracking-wide text-brand-charcoal placeholder:text-brand-charcoal/40 placeholder:text-sm placeholder:tracking-wider placeholder:uppercase focus:outline-none focus:border-brand-gold/60 transition-colors";
     const pcBtnClass = "w-full py-4 text-sm font-medium tracking-[0.2em] text-brand-charcoal border border-brand-charcoal/25 hover:bg-brand-charcoal/[0.02] active:scale-[0.98] transition-all disabled:opacity-40 flex items-center justify-center gap-2";
@@ -249,31 +247,23 @@ export function AuthModal() {
     return (
         <AnimatePresence>
             {isOpen && (
+                <>
                 <motion.div
-                    className="fixed inset-0 z-[99999]"
-                    initial={{ opacity: 1 }}
+                    key="backdrop"
+                    initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    exit={{ opacity: 1 }}
-                    transition={{ duration: 0.8 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    onClick={closeAuthModal}
+                    className="fixed inset-0 z-[99998] bg-slate-900/40 backdrop-blur-md md:bg-black/20"
+                />
+                <motion.div
+                    key="pc-panel"
+                    initial={{ x: "100%" }}
+                    animate={{ x: 0, transition: { duration: 0.8, ease: [0.8, 0, 0.13, 1] } }}
+                    exit={{ x: "100%", transition: { duration: 0.8, ease: [0.9, 0, 0.17, 1] } }}
+                    className="hidden md:flex fixed inset-y-0 right-0 w-full bg-white flex-col z-[99999]"
                 >
-                    {/* Backdrop */}
-                    <motion.div
-                        key="backdrop"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        onClick={closeAuthModal}
-                        className="absolute inset-0 bg-slate-900/40 backdrop-blur-md md:bg-black/20"
-                    />
-
-                    {/* ==================== PC 端：全屏从右滑入面板（nihplod 风格双向滑动） ==================== */}
-                    <motion.div
-                        key="pc-panel"
-                        initial={{ x: "100%" }}
-                        animate={{ x: 0, transition: { duration: 0.8, ease: [0.8, 0, 0.13, 1] } }}
-                        exit={{ x: "-100%", transition: { duration: 0.8, ease: [0.9, 0, 0.17, 1] } }}
-                        className="hidden md:flex absolute inset-y-0 right-0 w-full bg-white flex-col"
-                    >
                         {/* 关闭按钮 */}
                         <button
                             onClick={closeAuthModal}
@@ -670,17 +660,21 @@ export function AuthModal() {
                             </div>
                         </div>
                     </motion.div>
-
-                    {/* ==================== 移动端：原有模态框 ==================== */}
+                </>
+            )}
+            {isOpen && (
                     <motion.div
                         key="mobile-modal"
-                        initial={{ opacity: 0, scale: 0.96, y: 10 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.96, y: 10 }}
-                        transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                        className="md:hidden relative z-10 w-full max-w-[420px] bg-white rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col max-h-[92vh]"
-                        onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="md:hidden fixed inset-0 z-[99999] flex items-center justify-center p-4"
                     >
+                        <div
+                            className="relative w-full max-w-[420px] bg-white rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col max-h-[92vh]"
+                            onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                        >
                         {/* Close Button */}
                         <button
                             onClick={closeAuthModal}
@@ -1132,7 +1126,7 @@ export function AuthModal() {
                             </div>
                         )}
 
-                    </motion.div>
+                    </div>
                 </motion.div>
             )}
         </AnimatePresence>
