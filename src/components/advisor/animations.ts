@@ -12,7 +12,7 @@ import { Variants, Transition } from "framer-motion";
  */
 export const slideVariants: Variants = {
     enter: (direction: number) => ({
-        x: direction > 0 ? 300 : -300,
+        x: direction > 0 ? 200 : -200,
         opacity: 0,
     }),
     center: {
@@ -20,7 +20,7 @@ export const slideVariants: Variants = {
         opacity: 1,
     },
     exit: (direction: number) => ({
-        x: direction < 0 ? 300 : -300,
+        x: direction < 0 ? 200 : -200,
         opacity: 0,
     }),
 };
@@ -30,8 +30,8 @@ export const slideVariants: Variants = {
  * 使用弹簧动画实现自然的物理效果
  */
 export const slideTransition: Transition = {
-    x: { type: "spring", stiffness: 300, damping: 30 },
-    opacity: { duration: 0.2 },
+    x: { type: "spring", stiffness: 250, damping: 35 },
+    opacity: { duration: 0.25 },
 };
 
 /**

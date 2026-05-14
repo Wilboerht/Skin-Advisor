@@ -52,9 +52,9 @@ export function QuestionStep({
         className="w-full max-w-5xl mx-auto px-4"
       >
         {/* Header - Centered & Clean */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-10 md:mb-14">
           <m.h2
-            className="text-3xl md:text-5xl font-serif text-[#1A1A1A] mb-6 leading-tight max-w-3xl mx-auto"
+            className="text-2xl md:text-4xl font-serif text-[#1A1A1A] mb-4 leading-snug max-w-3xl mx-auto"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, duration: 0.5 }}
@@ -64,7 +64,7 @@ export function QuestionStep({
 
           {question.subtext && (
             <m.p
-              className="text-sm md:text-base text-[#5E5E5E] font-light leading-relaxed max-w-lg mx-auto"
+              className="text-sm md:text-[15px] text-[#5E5E5E] font-light leading-relaxed max-w-lg mx-auto"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2, duration: 0.5 }}
@@ -75,7 +75,7 @@ export function QuestionStep({
         </div>
 
         {/* Options - Grid Layout on Desktop */}
-        <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+        <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-5">
           {question.options.map((option, index) => {
             const isSelected = Array.isArray(selectedValue)
               ? selectedValue.includes(option.value)

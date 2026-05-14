@@ -51,13 +51,13 @@ export function OptionCard({
                 perspective: "1000px"
             }}
             className={cn(
-                "group relative w-full rounded-2xl text-left border px-6 py-5 flex items-center gap-5 backdrop-blur-md transition-[border-color,background-color,box-shadow] duration-300",
+                "group relative w-full rounded-lg text-left border px-6 py-5 flex items-center gap-5 backdrop-blur-md transition-all duration-300",
                 isSelected
-                    ? "bg-[#FDFBF7]/85 border-[#8B7355] text-[#1A1A1A] shadow-[0_20px_40px_-15px_rgba(139,115,85,0.2)] ring-1 ring-[#8B7355]/10"
-                    : "bg-[#F0EDE1]/55 border-white/60 text-[#1A1A1A] hover:border-[#8B7355]/40 shadow-sm hover:shadow-[0_15px_30px_-10px_rgba(0,0,0,0.05)]"
+                    ? "bg-[#FDFBF7]/90 border-[#8B7355]/60 text-[#1A1A1A] shadow-[0_12px_32px_-8px_rgba(139,115,85,0.18)]"
+                    : "bg-[#F0EDE1]/40 border-white/50 text-[#1A1A1A] hover:border-[#8B7355]/30 hover:bg-[#F0EDE1]/60 shadow-sm hover:shadow-[0_8px_24px_-6px_rgba(0,0,0,0.04)]"
             )}
         >
-            <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none" />
+            <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none rounded-lg" />
             {/* Emoji - Simplified */}
             {emoji && (
                 <div className={cn(
@@ -71,8 +71,8 @@ export function OptionCard({
             {/* Text Content */}
             <div className="flex-1 min-w-0">
                 <p className={cn(
-                    "text-base font-semibold tracking-wide mb-0.5",
-                    "text-[#1A1A1A]"
+                    "text-[15px] font-medium tracking-wide mb-0.5",
+                    isSelected ? "text-[#1A1A1A]" : "text-[#1A1A1A]/90"
                 )}>
                     {label}
                 </p>
@@ -87,14 +87,18 @@ export function OptionCard({
             </div>
 
             {/* Checkmark - Only shows when selected, very minimal */}
-            <div className={cn(
-                "w-5 h-5 rounded-full border flex items-center justify-center transition-all duration-300",
-                isSelected
-                    ? "border-[#8B7355] bg-[#8B7355] text-white"
-                    : "border-[#E5E5E5] group-hover:border-[#1A1A1A]/30"
-            )}>
+            <m.div
+                className={cn(
+                    "w-5 h-5 rounded-sm border flex items-center justify-center transition-colors duration-300",
+                    isSelected
+                        ? "border-[#8B7355] bg-[#8B7355] text-white"
+                        : "border-[#D4CFC5] group-hover:border-[#8B7355]/40"
+                )}
+                animate={isSelected ? { scale: [1, 0.85, 1.1, 1] } : { scale: 1 }}
+                transition={{ duration: 0.35 }}
+            >
                 {isSelected && <Check className="w-3 h-3" strokeWidth={3} />}
-            </div>
+            </m.div>
 
         </m.button>
     );

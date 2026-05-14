@@ -23,12 +23,12 @@ export function ProgressBar({
   if (compact) {
     const progress = (current / total) * 100;
     return (
-      <div className="w-full h-[1px] bg-[#E5E5E5]">
+      <div className="w-full h-[2px] bg-[#E5E5E5] rounded-full overflow-hidden">
         <m.div
-          className="h-full bg-[#1A1A1A]"
+          className="h-full bg-[#4A3728] rounded-full"
           initial={{ width: 0 }}
           animate={{ width: `${progress}%` }}
-          transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+          transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
         />
       </div>
     );

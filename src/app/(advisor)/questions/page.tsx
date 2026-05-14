@@ -420,7 +420,7 @@ export default function QuestionsPage() {
                 <button
                     onClick={handleBack}
                     className={cn(
-                        "glass-premium px-6 sm:px-8 py-3 rounded-full text-sm font-semibold tracking-widest hover:scale-110 active:scale-95 transition-all duration-500 shadow-xl border border-white/40 flex items-center gap-2",
+                        "px-5 sm:px-7 py-2.5 rounded-md text-[13px] font-medium tracking-widest hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2 bg-white/60 backdrop-blur-md border border-[#3D4430]/10 text-[#3D4430]/70 hover:text-[#3D4430] hover:border-[#3D4430]/20 hover:bg-white/80",
                         (currentStepIndex === 0 && !gender) ? "opacity-0 pointer-events-none translate-y-4" : "opacity-100 translate-y-0"
                     )}
                 >
@@ -434,22 +434,22 @@ export default function QuestionsPage() {
                 <AnimatePresence>
                     {((currentQuestion.type === "multiple") || (currentStepIndex === questions.length - 1 && !isNextDisabled())) && (
                         <m.button
-                            initial={{ opacity: 0, scale: 0.8, x: 20 }}
-                            animate={{ opacity: 1, scale: 1, x: 0 }}
-                            exit={{ opacity: 0, scale: 0.8, x: 20 }}
-                            whileHover={!isNextDisabled() ? { scale: 1.05, y: -2 } : {}}
-                            whileTap={!isNextDisabled() ? { scale: 0.95 } : {}}
+                            initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                            whileHover={!isNextDisabled() ? { scale: 1.03 } : {}}
+                            whileTap={!isNextDisabled() ? { scale: 0.97 } : {}}
                             onClick={handleNext}
                             disabled={isNextDisabled()}
                             className={cn(
-                                "px-8 sm:px-10 py-3.5 sm:py-4 rounded-full text-sm font-bold tracking-[0.2em] transition-all duration-500 shadow-2xl flex items-center gap-3 backdrop-blur-xl border",
+                                "px-7 sm:px-9 py-3 rounded-md text-[13px] font-medium tracking-[0.15em] transition-all duration-300 flex items-center gap-2",
                                 isNextDisabled()
-                                    ? "bg-white/40 text-[#1A1A1A]/10 cursor-not-allowed border-white/20"
-                                    : "bg-[#4A3728]/95 text-[#FDFBF7] border-white/20 hover:bg-[#4A3728] hover:shadow-[0_20px_50px_-12px_rgba(74,55,40,0.5)]"
+                                    ? "bg-[#E5E0D5]/50 text-[#1A1A1A]/15 cursor-not-allowed border border-transparent"
+                                    : "bg-[#4A3728] text-[#FDFBF7] border border-transparent hover:bg-[#3D2E20] hover:shadow-[0_12px_32px_-8px_rgba(74,55,40,0.35)]"
                             )}
                         >
                             <span>{currentStepIndex === questions.length - 1 ? "面部检测" : "下一步"}</span>
-                            {!isNextDisabled() && <ChevronRight className="h-5 w-5" />}
+                            {!isNextDisabled() && <ChevronRight className="h-4 w-4" />}
                         </m.button>
                     )}
                 </AnimatePresence>
@@ -465,14 +465,14 @@ export default function QuestionsPage() {
                             onClick={() => setShowExitConfirm(false)}
                         />
                         <m.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            className="relative w-full max-w-sm glass-premium p-10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] border border-white/50 text-center rounded-[2.5rem] overflow-hidden"
+                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                            className="relative w-full max-w-sm bg-white/70 backdrop-blur-xl p-10 shadow-[0_24px_48px_-12px_rgba(0,0,0,0.08)] border border-white/60 text-center rounded-xl overflow-hidden"
                         >
-                            <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none" />
+                            <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }} />
                             <div className="relative z-10">
-                                <h3 className="text-2xl font-serif text-[#1A1A1A] mb-3 tracking-tight">结束测试？</h3>
+                                <h3 className="text-xl md:text-2xl font-serif text-[#1A1A1A] mb-3">结束测试？</h3>
                                 <p className="text-sm text-[#5E5E5E] mb-10 font-light leading-relaxed">
                                     您的进度已自动保存，<br />下次返回可直接从此处继续。
                                 </p>
@@ -510,15 +510,15 @@ export default function QuestionsPage() {
                             initial={{ opacity: 0, scale: 0.95, y: 10 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                            className="relative w-full max-w-[400px] glass-premium p-10 shadow-[0_32px_64px_-16px_rgba(162,148,134,0.2)] border border-white/50 text-center rounded-[2.5rem] overflow-hidden"
+                            className="relative w-full max-w-sm bg-white/70 backdrop-blur-xl p-10 shadow-[0_24px_48px_-12px_rgba(0,0,0,0.08)] border border-white/60 text-center rounded-xl overflow-hidden"
                         >
-                            <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none" />
+                            <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }} />
                             <div className="relative z-10">
-                                <div className="w-16 h-16 rounded-full bg-[#8B7355]/5 flex items-center justify-center mx-auto mb-6">
-                                    <span className="text-3xl">🤔</span>
+                                <div className="w-14 h-14 rounded-lg bg-[#8B7355]/5 flex items-center justify-center mx-auto mb-5">
+                                    <span className="text-2xl">🤔</span>
                                 </div>
-                                <h3 className="text-2xl font-serif text-[#1A1A1A] mb-3 tracking-tight">确认提交？</h3>
-                                <p className="text-[14px] text-[#5E5E5E] mb-10 font-light leading-relaxed px-4">
+                                <h3 className="text-xl md:text-2xl font-serif text-[#1A1A1A] mb-3">确认提交？</h3>
+                                <p className="text-sm text-[#5E5E5E] mb-10 font-light leading-relaxed">
                                     我们检测到您的填写速度较快。<br />
                                     建议您再次核对，确保 AI 能为您提供<span className="text-[#1A1A1A] font-medium"> 最精准 </span>的分析结果。
                                 </p>
@@ -557,18 +557,18 @@ export default function QuestionsPage() {
                             className="absolute inset-0 bg-[#FDFBF7]/90 backdrop-blur-sm"
                         />
                         <m.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            className="relative w-full max-w-[400px] glass-premium p-10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] border border-white/50 text-center rounded-[2.5rem] overflow-hidden"
+                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                            className="relative w-full max-w-sm bg-white/70 backdrop-blur-xl p-10 shadow-[0_24px_48px_-12px_rgba(0,0,0,0.08)] border border-white/60 text-center rounded-xl overflow-hidden"
                         >
-                            <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none" />
+                            <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }} />
                             <div className="relative z-10">
-                                <div className="w-16 h-16 rounded-full bg-[#8B7355]/5 flex items-center justify-center mx-auto mb-6">
-                                    <History className="w-8 h-8 text-[#8B7355]/60" strokeWidth={1} />
+                                <div className="w-14 h-14 rounded-lg bg-[#8B7355]/5 flex items-center justify-center mx-auto mb-5">
+                                    <History className="w-7 h-7 text-[#8B7355]/60" strokeWidth={1} />
                                 </div>
-                                <h3 className="text-2xl font-serif text-[#1A1A1A] mb-3 tracking-tight">未完成的测试</h3>
-                                <p className="text-[14px] text-[#5E5E5E] mb-10 font-light leading-relaxed">
+                                <h3 className="text-xl md:text-2xl font-serif text-[#1A1A1A] mb-3">未完成的测试</h3>
+                                <p className="text-sm text-[#5E5E5E] mb-10 font-light leading-relaxed">
                                     为您自动找回了上次的进度，<br />是否立即继续完成？
                                 </p>
                                 <div className="flex flex-col items-center gap-5">

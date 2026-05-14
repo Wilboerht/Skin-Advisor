@@ -30,13 +30,13 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
                 animate={{ opacity: 1, y: 0 }}
                 className="mb-8 text-center"
             >
-                <span className="mb-3 inline-block rounded-full bg-[#3D4430]/5 px-4 py-1.5 text-xs font-medium tracking-wider text-[#3D4430]">
+                <span className="mb-3 inline-block rounded-md bg-[#3D4430]/5 px-4 py-1.5 text-[11px] font-medium tracking-wider text-[#3D4430]">
                     第一步
                 </span>
-                <h2 className="font-serif text-2xl text-[#1A1A1A]">
+                <h2 className="font-serif text-2xl md:text-3xl text-[#1A1A1A]">
                     为了提供更精准的建议
                 </h2>
-                <p className="mt-2 text-sm text-[#5E5E5E]">
+                <p className="mt-2 text-sm text-[#5E5E5E] font-light">
                     请选择您的适用性别，我们将为您定制专属问卷
                 </p>
             </m.div>
@@ -58,11 +58,11 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
                         WebkitBackfaceVisibility: "hidden",
                         perspective: "1000px"
                     }}
-                    className="group relative flex items-center gap-5 rounded-[1.5rem] border border-white/60 bg-[#F0EDE1]/55 px-7 py-6 text-left backdrop-blur-md transition-all duration-300 hover:border-[#8B7355]/40 hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.05)]"
+                    className="group relative flex items-center gap-5 rounded-lg border border-[#3D4430]/10 bg-[#F0EDE1]/30 px-7 py-6 text-left backdrop-blur-md transition-all duration-300 hover:border-[#8B7355]/30 hover:bg-[#F0EDE1]/50 hover:shadow-[0_8px_24px_-6px_rgba(0,0,0,0.03)]"
                 >
-                    <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none rounded-[1.5rem]" />
+                    <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none rounded-lg" />
                     
-                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-white to-[#F6F1EF] shadow-[inset_0_2px_8px_rgba(183,149,167,0.1)] border border-white transition-all duration-500 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#B795A7]/5">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-white to-[#F6F1EF] shadow-[inset_0_2px_8px_rgba(183,149,167,0.1)] border border-[#3D4430]/10 transition-all duration-500 group-hover:scale-105">
                         <Venus className="w-8 h-8 text-[#B795A7]" strokeWidth={1.5} />
                     </div>
 
@@ -83,11 +83,11 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
                         WebkitBackfaceVisibility: "hidden",
                         perspective: "1000px"
                     }}
-                    className="group relative flex items-center gap-5 rounded-[1.5rem] border border-white/60 bg-[#F0EDE1]/55 px-7 py-6 text-left backdrop-blur-md transition-all duration-300 hover:border-[#8B7355]/40 hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.05)]"
+                    className="group relative flex items-center gap-5 rounded-lg border border-[#3D4430]/10 bg-[#F0EDE1]/30 px-7 py-6 text-left backdrop-blur-md transition-all duration-300 hover:border-[#8B7355]/30 hover:bg-[#F0EDE1]/50 hover:shadow-[0_8px_24px_-6px_rgba(0,0,0,0.03)]"
                 >
-                    <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none rounded-[1.5rem]" />
+                    <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none rounded-lg" />
                     
-                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-white to-[#F0F2F4] shadow-[inset_0_2px_8px_rgba(94,108,117,0.1)] border border-white transition-all duration-500 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#5E6C75]/5">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-white to-[#F0F2F4] shadow-[inset_0_2px_8px_rgba(94,108,117,0.1)] border border-[#3D4430]/10 transition-all duration-500 group-hover:scale-105">
                         <Mars className="w-8 h-8 text-[#5E6C75]" strokeWidth={1.5} />
                     </div>
 
