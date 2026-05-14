@@ -467,7 +467,7 @@
 /* ========== Graphite Kinetic Grid 全局背景 (nihplod.cn 复刻版) ========== */
 
 :root {
-  --kinetic-bg: #FAFAFA;
+  --kinetic-bg: #F0EDE1;
   --kinetic-accent: #333333;
   --kinetic-text-primary: #ffffff;
   --kinetic-text-secondary: #a1a1a1;
@@ -530,8 +530,8 @@
   max-width: 2800px;
   width: 150vw;
   height: auto;
-  filter: grayscale(0.5) brightness(2.2) sepia(0.3);
-  mix-blend-mode: overlay;
+  filter: grayscale(0.5) brightness(2.2);
+  mix-blend-mode: normal;
 }
 
 /* 移动端水印处理 - 全屏覆盖版本 */
@@ -544,9 +544,9 @@
     top: 0;
     left: 0;
     transform: none;
-    opacity: 0.4;
-    filter: sepia(0.25);
-    mix-blend-mode: multiply;
+    opacity: 0.15;
+    filter: none;
+    mix-blend-mode: normal;
     z-index: 0;
   }
 }
