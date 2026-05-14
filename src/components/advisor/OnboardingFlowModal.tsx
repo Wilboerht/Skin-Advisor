@@ -387,21 +387,21 @@ export function OnboardingFlowModal({
                                         服务确认与授权
                                     </h3>
 
-                                    <div className="bg-white/50 rounded-2xl p-6 mb-10 border border-[#3D4430]/5 text-left max-w-sm mx-auto">
-                                        <label className="flex items-start gap-3 cursor-pointer group">
-                                            <div className="mt-1 relative flex items-center">
+                                    <div className="p-6 mb-10 text-left max-w-sm mx-auto">
+                                        <label className="flex items-start gap-4 cursor-pointer group">
+                                            <div className="mt-0.5 relative flex items-center">
                                                 <input
                                                     type="checkbox"
                                                     checked={isAgreed}
                                                     onChange={(e) => setIsAgreed(e.target.checked)}
                                                     className="sr-only"
                                                 />
-                                                <div className={`w-5 h-5 rounded border transition-all duration-300 flex items-center justify-center shrink-0 ${isAgreed ? "bg-[#8B7355] border-[#8B7355]" : "bg-transparent border-[#8B7355]/20 group-hover:border-[#8B7355]/40"}`}>
+                                                <div className={`w-6 h-6 rounded border transition-all duration-300 flex items-center justify-center shrink-0 ${isAgreed ? "bg-[#8B7355] border-[#8B7355]" : "bg-transparent border-[#8B7355]/20 group-hover:border-[#8B7355]/40"}`}>
                                                     {isAgreed && (
                                                         <m.svg
                                                             initial={{ scale: 0 }}
                                                             animate={{ scale: 1 }}
-                                                            className="w-3.5 h-3.5 text-white"
+                                                            className="w-4 h-4 text-white"
                                                             viewBox="0 0 24 24"
                                                             fill="none"
                                                             stroke="currentColor"
@@ -414,7 +414,7 @@ export function OnboardingFlowModal({
                                                     )}
                                                 </div>
                                             </div>
-                                            <span className="text-[13px] text-[#5E5E5E] leading-relaxed font-light select-none">
+                                            <span className="text-sm text-[#5E5E5E] leading-relaxed font-normal select-none">
                                                 我已年满 14 周岁（未满 14 周岁已获得监护人许可），且已阅读并同意我们的
                                                 <a href="https://nihplod.cn/privacy" target="_blank" rel="noopener noreferrer" className="text-[#3D4430] font-medium underline underline-offset-4 mx-1">隐私政策</a>
                                                 与
