@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FaceCapture, type FaceCaptureImages } from "@/components/advisor/FaceCapture";
 import { m, AnimatePresence } from "framer-motion";
-import { ChevronLeft, Camera } from "lucide-react";
+import { ChevronLeft, Camera, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useToast } from "@/components/ui/Toast";
@@ -17,6 +17,7 @@ export default function FaceScanPage() {
     const hasTrackedStart = useRef(false);
     const [hasStarted, setHasStarted] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(true);
+    const [isPreparing, setIsPreparing] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
@@ -117,7 +118,10 @@ export default function FaceScanPage() {
                             className="relative w-full max-w-[480px] aspect-[3/4] max-h-[70vh] bg-black rounded-[2rem] overflow-hidden shadow-2xl ring-8 ring-white/50 z-10 flex flex-col"
                         >
                             {/* Real Camera Component */}
-                            <FaceCapture onCapture={handleCaptureComplete} />
+                            <FaceCapture
+                                onCapture={handleCaptureComplete}
+                                onModelsLoaded={() => setIsPreparing(false)}
+                            />
                         </m.div>
                     )}
                 </AnimatePresence>
@@ -145,11 +149,29 @@ export default function FaceScanPage() {
                 </div>
             </m.div>
 
+            {/* 全屏加载遮罩：模型加载中 */}
+            <AnimatePresence>
+                {isPreparing && (
+                    <m.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.4 }}
+                        className="fixed inset-0 z-[9999] bg-[#FDFBF7] flex flex-col items-center justify-center"
+                    >
+                        <Loader2 className="w-10 h-10 text-[#3D4430] animate-spin mb-6" />
+                        <p className="text-[#5E5E5E] text-[15px] font-medium tracking-wide">正在启动 AI 面部扫描...</p>
+                        <p className="text-[#8C8C8C] text-[13px] mt-2 font-light">首次加载需要几秒钟</p>
+                    </m.div>
+                )}
+            </AnimatePresence>
+
             {/* Prep Guide Modal */}
             <ScanGuideModal
                 isOpen={isModalOpen}
                 onConfirm={() => {
                     setHasStarted(true);
+                    setIsPreparing(true);
                     setIsModalOpen(false);
                 }}
                 onCancel={() => {

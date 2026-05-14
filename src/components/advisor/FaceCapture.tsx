@@ -30,6 +30,7 @@ export interface FaceCaptureImages {
 
 interface FaceCaptureProps {
   onCapture: (images: FaceCaptureImages) => void;
+  onModelsLoaded?: () => void;
 }
 
 type LightLevel = "excellent" | "good" | "low" | "too_dark" | "too_bright" | "uneven" | "unknown";
@@ -61,7 +62,7 @@ const CAPTURE_STEPS: { step: CaptureStep; label: string; instruction: string; ic
  * - 光线检测提示
  * - 前置/后置摄像头切换
  */
-export function FaceCapture({ onCapture }: FaceCaptureProps) {
+export function FaceCapture({ onCapture, onModelsLoaded }: FaceCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const faceDetectionRef = useRef<number | null>(null);
@@ -242,6 +243,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
       setFaceApiLoaded(true);
       setModelLoadFailed(false);
       console.log("Face detection models loaded (including landmarks)");
+      onModelsLoaded?.();
     } catch (err) {
       console.error("Failed to load face detection:", err);
       setModelsLoaded(false);
