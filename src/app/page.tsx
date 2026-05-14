@@ -342,66 +342,68 @@ export default function Home() {
 
                 {/* Center AI Actions */}
                 <div className="z-10 flex flex-col items-center text-center px-6 max-w-3xl mx-auto pt-4 lg:pt-8">
-                  <div className="animate-fade-in-up flex flex-col items-center border-[0px] border-red-500">
-                    {/* Logo (Moved from top bar) */}
+                  <div className="animate-fade-in-up flex flex-col items-center">
+                    {/* Logo */}
                     <Image
                       src="/NIHPLOD-logo.svg"
                       alt="NIHPLOD 旎柏"
-                      width={260}
-                      height={78}
+                      width={200}
+                      height={60}
                       priority
-                      className="h-8 sm:h-9 md:h-12 object-contain opacity-90 mix-blend-multiply mb-12 md:mb-16"
+                      className="h-6 sm:h-7 md:h-8 object-contain opacity-60 mix-blend-multiply mb-14 md:mb-20"
                     />
-                    
-                    <div className="flex items-end justify-center gap-3 mb-8">
-                      <h1 className="text-[32px] sm:text-4xl md:text-5xl font-serif text-[#1A1A1A] leading-tight tracking-tight whitespace-nowrap">
-                        在线素颜测肤
-                      </h1>
-                      <button
-                        onClick={() => setShowGuideModal(true)}
-                        className="flex-shrink-0 flex items-center justify-center text-[#5c4937]/50 hover:text-[#3d2f25] transition-all cursor-pointer bg-transparent mb-1.5"
-                        title="测试前准备指南"
-                      >
-                        <CircleAlert className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={1.5} />
-                      </button>
-                    </div>
 
-                    <p className="text-[#5C5855]/90 leading-relaxed mb-10 max-w-2xl mx-auto font-light text-base sm:text-xl opacity-0 animate-fade-in-up tracking-wide" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
-                      为了精准分析你的肌肤状态并生成专业定制化报告，<br className="sm:hidden" />接下来我们将引导您进行个性化问卷调查<br className="sm:hidden" />与多维面部肌肤分析，整个过程预计占用 <span className="text-[#3D4430] font-medium">2-5 分钟</span>。
+                    {/* Title */}
+                    <h1 className="text-[40px] sm:text-[52px] md:text-[64px] font-serif text-[#1A1A1A] font-light leading-[1.05] tracking-tight mb-12 md:mb-16">
+                      在线素颜测肤
+                    </h1>
+
+                    {/* Description */}
+                    <p className="text-[#5C5855]/40 leading-[1.9] mb-16 md:mb-24 max-w-xl mx-auto font-light text-sm sm:text-base tracking-wide opacity-0 animate-fade-in-up" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
+                      为了精准分析你的肌肤状态并生成专业定制化报告，<br className="hidden sm:block" />接下来我们将引导您进行个性化问卷调查与多维面部肌肤分析，<br className="hidden sm:block" />整个过程预计占用 <span className="text-[#3D4430]/60">2-5 分钟</span>。
                     </p>
 
-                    <div className="flex flex-col items-center gap-7 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.4s', animationFillMode: 'forwards' }}>
+                    {/* CTA + Guide + History */}
+                    <div className="flex flex-col items-center gap-6 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.4s', animationFillMode: 'forwards' }}>
                       <button
                         onClick={handleStart}
                         disabled={isLoading || checkingLimit}
-                        className="glass-premium-primary animate-float-premium group relative inline-flex items-center justify-center gap-3 px-8 py-3.5 sm:px-10 rounded-full text-[14px] sm:text-[15px] tracking-[0.15em] font-medium disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer transition-all duration-300"
+                        className="group relative inline-flex items-center justify-center gap-4 px-10 py-3.5 sm:px-14 border border-[#3D4430]/12 hover:border-[#3D4430]/30 hover:bg-[#3D4430]/[0.02] text-[13px] sm:text-[14px] tracking-[0.2em] text-[#3D4430]/50 hover:text-[#3D4430] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500"
                       >
                         {isLoading || checkingLimit ? (
                           <>
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                            <span>正在连接...</span>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>正在连接</span>
                           </>
                         ) : (
                           <>
                             <span>立即开启</span>
-                            <ArrowRight className="w-5 h-5 transition-transform duration-500 group-hover:translate-x-1.5" />
+                            <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-2" />
                           </>
                         )}
                       </button>
 
-                      <div className="flex flex-wrap justify-center items-center gap-10">
+                      {/* Guide Hint */}
+                      <button
+                        onClick={() => setShowGuideModal(true)}
+                        className="flex items-center gap-1.5 text-[11px] text-[#5c4937]/25 hover:text-[#5c4937]/50 transition-colors cursor-pointer bg-transparent"
+                        title="测试前准备指南"
+                      >
+                        <CircleAlert className="w-3.5 h-3.5" strokeWidth={1.5} />
+                        <span className="tracking-wider">测试指南</span>
+                      </button>
+
+                      {/* History */}
+                      <div className="flex flex-wrap justify-center items-center gap-10 mt-2">
                         {user && (
                           <div className="flex items-center gap-8">
                             <button
                               onClick={() => setShowProfileModal(true)}
-                              className="group relative flex items-center gap-2 text-[13px] font-medium text-[#8B7355] transition-all duration-300 cursor-pointer border-none bg-transparent hover:-translate-y-0.5"
+                              className="group relative flex items-center gap-2 text-[12px] font-medium text-[#8B7355]/60 hover:text-[#8B7355] transition-all duration-300 cursor-pointer border-none bg-transparent"
                             >
-                              <ClipboardList className="w-4 h-4 transition-transform group-hover:scale-110" />
+                              <ClipboardList className="w-4 h-4 opacity-60 group-hover:opacity-100 transition-opacity" />
                               <span className="tracking-widest">历史记录</span>
-                              {/* Base Line */}
-                              <div className="absolute -bottom-1 left-0 w-full h-[0.5px] bg-[#8B7355]/10" />
-                              {/* Animated Line */}
-                              <div className="absolute -bottom-1 left-1/2 w-0 h-[1px] bg-[#8B7355] transition-all duration-500 ease-out group-hover:w-full group-hover:left-0" />
+                              <span className="absolute -bottom-1 left-0 w-0 h-[1px] bg-[#8B7355]/40 group-hover:w-full transition-all duration-500 ease-out" />
                             </button>
                           </div>
                         )}
