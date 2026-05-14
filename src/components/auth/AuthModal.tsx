@@ -324,7 +324,7 @@ export function AuthModal() {
                     initial={{ x: "100%" }}
                     animate={{ x: 0, transition: { duration: 0.8, ease: [0.8, 0, 0.13, 1] } }}
                     exit={{ x: "100%", transition: { duration: 0.8, ease: [0.9, 0, 0.17, 1] } }}
-                    className="hidden md:flex fixed inset-y-0 right-0 w-full bg-[#F5F2E9] flex-col z-[99999]"
+                    className="hidden md:flex fixed inset-y-0 right-0 w-full bg-white flex-col z-[99999]"
                 >
                         {/* 关闭按钮 */}
                         <button
@@ -731,7 +731,7 @@ export function AuthModal() {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.3 }}
-                    className="md:hidden fixed inset-0 z-[99999] bg-[#F5F2E9] flex flex-col"
+                    className="md:hidden fixed inset-0 z-[99999] bg-white flex flex-col"
                 >
                     <div className="flex-1 flex flex-col justify-center px-6 overflow-y-auto">
                         {/* Logo */}
