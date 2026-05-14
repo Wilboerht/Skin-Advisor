@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Loader2, MapPin, ShieldCheck, ArrowRight, ChevronLeft, ChevronDown, X } from "lucide-react";
+import { Loader2, MapPin, ShieldCheck, ArrowRight, ChevronLeft, X } from "lucide-react";
 import { AnimatePresence, motion as m } from "framer-motion";
 import Image from "next/image";
 
@@ -396,23 +396,30 @@ export function OnboardingFlowModal({
                                                     onChange={(e) => setIsAgreed(e.target.checked)}
                                                     className="sr-only"
                                                 />
-                                                <div className={`w-6 h-6 rounded border transition-all duration-300 flex items-center justify-center shrink-0 ${isAgreed ? "bg-[#8B7355] border-[#8B7355]" : "bg-transparent border-[#8B7355]/20 group-hover:border-[#8B7355]/40"}`}>
+                                                <m.div
+                                                    className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 transition-colors duration-300 ${isAgreed ? "bg-[#8B7355] border-[#8B7355]" : "bg-transparent border-[#3D4430]/15 group-hover:border-[#8B7355]/60"}`}
+                                                    animate={isAgreed ? { scale: [1, 0.92, 1.04, 1] } : { scale: 1 }}
+                                                    transition={{ duration: 0.4, ease: "easeOut" }}
+                                                >
                                                     {isAgreed && (
                                                         <m.svg
-                                                            initial={{ scale: 0 }}
-                                                            animate={{ scale: 1 }}
                                                             className="w-4 h-4 text-white"
                                                             viewBox="0 0 24 24"
                                                             fill="none"
                                                             stroke="currentColor"
-                                                            strokeWidth="4"
+                                                            strokeWidth="3"
                                                             strokeLinecap="round"
                                                             strokeLinejoin="round"
                                                         >
-                                                            <polyline points="20 6 9 17 4 12" />
+                                                            <m.polyline
+                                                                initial={{ pathLength: 0 }}
+                                                                animate={{ pathLength: 1 }}
+                                                                transition={{ duration: 0.25, ease: "easeOut", delay: 0.05 }}
+                                                                points="20 6 9 17 4 12"
+                                                            />
                                                         </m.svg>
                                                     )}
-                                                </div>
+                                                </m.div>
                                             </div>
                                             <span className="text-sm text-[#5E5E5E] leading-relaxed font-normal select-none">
                                                 我已年满 14 周岁（未满 14 周岁已获得监护人许可），且已阅读并同意我们的
@@ -475,23 +482,7 @@ export function OnboardingFlowModal({
                         ))}
                     </div>
 
-                    {/* ---- Bottom scroll hint (not on last screen) ---- */}
-                    {activeIndex < totalScreens - 1 && currentScreen !== "legal" && (
-                        <m.div
-                            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[110] flex flex-col items-center gap-1 pointer-events-none"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 0.4 }}
-                            transition={{ delay: 1, duration: 0.8 }}
-                        >
-                            <span className="text-[10px] tracking-[0.2em] text-[#3D4430]/40 uppercase">Scroll</span>
-                            <m.div
-                                animate={{ y: [0, 6, 0] }}
-                                transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                            >
-                                <ChevronDown className="w-4 h-4 text-[#3D4430]/30" />
-                            </m.div>
-                        </m.div>
-                    )}
+
                 </m.div>
             )}
         </AnimatePresence>
