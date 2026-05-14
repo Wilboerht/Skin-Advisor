@@ -163,10 +163,10 @@ export function OnboardingFlowModal({
             {isOpen && (
                 <m.div
                     className="fixed inset-0 z-[100] overflow-hidden"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                    initial={{ y: "100%" }}
+                    animate={{ y: 0 }}
+                    exit={{ y: "100%" }}
+                    transition={{ duration: 0.7, ease: [0.65, 0, 0.35, 1] }}
                 >
                     {/* ---- Slides Wrapper ---- */}
                     <div className="h-full w-full" style={slideContainerStyle}>

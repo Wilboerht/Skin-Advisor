@@ -78,6 +78,7 @@ export default function Home() {
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
   const [showGuideModal, setShowGuideModal] = useState(false);
   const [nickname, setNickname] = useState("");
+  const [isHomeExiting, setIsHomeExiting] = useState(false);
 
   // Location/Region states
   const [isLocating, setIsLocating] = useState(false);
@@ -245,6 +246,7 @@ export default function Home() {
       setNickname(user.name);
       safeStorage.set("advisor_nickname", user.name);
     }
+    setIsHomeExiting(true);
     setShowOnboardingModal(true);
   };
 
@@ -280,8 +282,8 @@ export default function Home() {
       <m.div
         className="fixed inset-0 z-20"
         initial={{ opacity: 0, scale: 0.98 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+        animate={isHomeExiting ? { y: "-100%" } : { opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.7, ease: [0.65, 0, 0.35, 1] }}
       >
         <div className="h-full">
           <div className="relative z-20 w-full h-full bg-[#F5F2E9]">
@@ -395,6 +397,7 @@ export default function Home() {
         isOpen={showOnboardingModal}
         onClose={() => {
           setShowOnboardingModal(false);
+          setIsHomeExiting(false);
         }}
         nickname={nickname}
         setNickname={setNickname}
