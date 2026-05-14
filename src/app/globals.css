@@ -347,7 +347,7 @@
   position: fixed;
   inset: 0;
   z-index: -1;
-  background-color: #F0EDE1;
+  background-color: #F5F2E9;
 }
 
 /* 全屏背景容器 - 带边距和圆角 */
@@ -392,7 +392,7 @@
 /* ========== 首页专用样式 (一模一样) ========== */
 
 .home-container {
-  --home-bg: #F0EDE1;
+  --home-bg: #F5F2E9;
   --home-text: #3A3530;
   --home-morandi: #A89F91;
   --home-dark: #6B655E;
@@ -833,4 +833,33 @@
 .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+}
+
+/* ========== 首页水波纹背景动画 ========== */
+
+@keyframes waveFlow1 {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes waveFlow2 {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes waveFlow3 {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-wave-1 {
+  animation: waveFlow1 18s linear infinite;
+}
+
+.animate-wave-2 {
+  animation: waveFlow2 14s linear infinite;
+}
+
+.animate-wave-3 {
+  animation: waveFlow3 22s linear infinite;
 }
