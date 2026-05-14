@@ -359,8 +359,8 @@ export default function Home() {
                     </h1>
 
                     {/* Description */}
-                    <p className="text-[#5C5855]/40 leading-[1.9] mb-16 md:mb-24 max-w-xl mx-auto font-light text-sm sm:text-base tracking-wide opacity-0 animate-fade-in-up" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
-                      为了精准分析你的肌肤状态并生成专业定制化报告，<br className="hidden sm:block" />接下来我们将引导您进行个性化问卷调查与多维面部肌肤分析，<br className="hidden sm:block" />整个过程预计占用 <span className="text-[#3D4430]/60">2-5 分钟</span>。
+                    <p className="text-[#5C5855]/70 leading-[1.9] mb-16 md:mb-24 max-w-xl mx-auto font-light text-sm sm:text-base tracking-wide opacity-0 animate-fade-in-up" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
+                      为了精准分析你的肌肤状态并生成专业定制化报告，<br className="hidden sm:block" />接下来我们将引导您进行个性化问卷调查与多维面部肌肤分析，<br className="hidden sm:block" />整个过程预计占用 <span className="text-[#3D4430]/80">2-5 分钟</span>。
                     </p>
 
                     {/* CTA + Guide + History */}
