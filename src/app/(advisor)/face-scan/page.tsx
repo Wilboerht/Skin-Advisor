@@ -19,6 +19,8 @@ export default function FaceScanPage() {
     const [isModalOpen, setIsModalOpen] = useState(true);
     const [isPreparing, setIsPreparing] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [preloadedFaceApi, setPreloadedFaceApi] = useState<any>(null);
 
     useEffect(() => {
         // 校验是否有问卷数据 (增加对无痕模式及禁用Storage时的异常处理)
@@ -41,6 +43,28 @@ export default function FaceScanPage() {
             hasTrackedStart.current = true;
         }
     }, [trackFaceScanStart, router]);
+
+    // 预加载 face-api 模型：用户还在看引导页时就开始加载，减少等待时间
+    useEffect(() => {
+        let cancelled = false;
+        const preloadModels = async () => {
+            try {
+                const faceapi = await import("@vladmandic/face-api");
+                await Promise.all([
+                    faceapi.nets.tinyFaceDetector.loadFromUri("/models"),
+                    faceapi.nets.faceLandmark68Net.loadFromUri("/models"),
+                ]);
+                if (!cancelled) {
+                    setPreloadedFaceApi(faceapi);
+                    console.log("Face-api models preloaded successfully");
+                }
+            } catch (err) {
+                console.error("Failed to preload face-api models:", err);
+            }
+        };
+        preloadModels();
+        return () => { cancelled = true; };
+    }, []);
 
     const handleCaptureComplete = async (images: FaceCaptureImages) => {
         if (isSubmitting) return;
@@ -121,6 +145,7 @@ export default function FaceScanPage() {
                             <FaceCapture
                                 onCapture={handleCaptureComplete}
                                 onModelsLoaded={() => setIsPreparing(false)}
+                                externalFaceApi={preloadedFaceApi}
                             />
                         </m.div>
                     )}

@@ -31,6 +31,7 @@ export interface FaceCaptureImages {
 interface FaceCaptureProps {
   onCapture: (images: FaceCaptureImages) => void;
   onModelsLoaded?: () => void;
+  externalFaceApi?: any; // 外部预加载的 face-api 实例
 }
 
 type LightLevel = "excellent" | "good" | "low" | "too_dark" | "too_bright" | "uneven" | "unknown";
@@ -62,7 +63,7 @@ const CAPTURE_STEPS: { step: CaptureStep; label: string; instruction: string; ic
  * - 光线检测提示
  * - 前置/后置摄像头切换
  */
-export function FaceCapture({ onCapture, onModelsLoaded }: FaceCaptureProps) {
+export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: FaceCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const faceDetectionRef = useRef<number | null>(null);
@@ -221,9 +222,21 @@ export function FaceCapture({ onCapture, onModelsLoaded }: FaceCaptureProps) {
 
   /**
    * 加载 face-api.js 和模型
+   * 支持外部预加载：如果父组件已经加载了模型，直接使用外部实例
    */
   const loadFaceApi = useCallback(async () => {
     if (faceApiLoaded) return;
+
+    // 如果外部已经预加载了 face-api 实例，直接复用
+    if (externalFaceApi) {
+      faceApiRef.current = externalFaceApi;
+      setModelsLoaded(true);
+      setFaceApiLoaded(true);
+      setModelLoadFailed(false);
+      console.log("Face detection models reused from preload");
+      onModelsLoaded?.();
+      return;
+    }
 
     try {
       // 动态导入 @vladmandic/face-api
@@ -249,7 +262,7 @@ export function FaceCapture({ onCapture, onModelsLoaded }: FaceCaptureProps) {
       setModelsLoaded(false);
       setModelLoadFailed(true);
     }
-  }, [faceApiLoaded]);
+  }, [faceApiLoaded, externalFaceApi, onModelsLoaded]);
 
   /**
    * 根据面部关键点计算头部朝向
