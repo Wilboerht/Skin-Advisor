@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 import { Link } from "next-view-transitions";
 import { LazyMotion, domAnimation, AnimatePresence, m } from "framer-motion";
 import Image from "next/image";
-import { ArrowRight, House, Loader2, MapPin, User, ClipboardList, ChevronDown, X, CircleAlert } from "lucide-react";
+import { ArrowRight, House, Loader2, MapPin, User, ClipboardList, X, CircleAlert } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
-import { useLayout } from "@/contexts/LayoutContext";
+
 import { useToast } from "@/components/ui/Toast";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { getGuestIdentity, type GuestIdentity } from "@/lib/guest-identity";
@@ -53,20 +53,12 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const { initSession } = useAdvisorAnalytics();
   const { user, refresh: refreshUser } = useAuth();
-  const { isDrawerOpen, setDrawerOpen, showBento, setShowBento } = useLayout();
-  const textureRef = useRef<HTMLDivElement>(null);
 
-  // 首页特殊处理：立即设置抽屉为展开状态，并隐藏便当盒
-  useEffect(() => {
-    setDrawerOpen(true);
-    setShowBento(false);
-  }, [setDrawerOpen, setShowBento]);
+  const textureRef = useRef<HTMLDivElement>(null);
 
   // 鼠标视差效果
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isDrawerOpen) return;
-
       const moveX = (e.clientX - window.innerWidth / 2) * 0.01;
       const moveY = (e.clientY - window.innerHeight / 2) * 0.01;
 
@@ -77,7 +69,7 @@ export default function Home() {
 
     document.addEventListener("mousemove", handleMouseMove);
     return () => document.removeEventListener("mousemove", handleMouseMove);
-  }, [isDrawerOpen]);
+  }, []);
 
   // Initialize session
   useEffect(() => {
@@ -251,9 +243,6 @@ export default function Home() {
       return;
     }
 
-    // 进入问卷时收起抽屉
-    setDrawerOpen(false);
-
     // If user is logged in and has a name, pre-fill it and let the modal handle skipping the step
     if (user?.name) {
       setNickname(user.name);
@@ -290,185 +279,143 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      {/* 内容区域容器 */}
+      {/* 内容区域容器 - 全屏显示 */}
       <m.div
-        className="safe-area-content !-top-[1px] !pointer-events-none"
+        className="fixed inset-0 z-20"
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
       >
-        {/* 主内容区域 + 展开按钮一体化 */}
-        <m.div
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-          className="h-full pointer-events-none"
-        >
-          {/* 主内容区域 - 抽屉 + 按钮一体化容器 */}
-          <div className="flex h-full flex-col items-center pointer-events-none">
-            {/* 主内容区域 - 抽屉 - z-20 Ensure it sits on top of the button */}
-            <m.div
-              className="relative z-20 w-full overflow-hidden rounded-b-2xl bg-[#F0EDE1] lg:rounded-b-3xl pointer-events-auto shadow-2xl"
-              style={{ willChange: "flex-grow, height" }}
-              initial={{ height: 0, flexGrow: 0 }}
-              animate={{
-                flexGrow: isDrawerOpen ? 1 : 0,
-                height: !isDrawerOpen ? 0 : "auto"
-              }}
-              transition={{
-                duration: 1.2,
-                ease: [0.22, 1, 0.36, 1],
-                delay: isDrawerOpen ? 0.3 : 0
-              }}
-            >
-              <div className={`home-container relative h-full w-full transition-opacity duration-500 ${isDrawerOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
-                {/* Texture Overlay */}
-                <div
-                  ref={textureRef}
-                  className="mineral-texture absolute -inset-10 z-0 opacity-40 transition-transform duration-1000 ease-out"
-                  style={{
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`
-                  }}
-                />
+        <div className="h-full">
+          <div className="relative z-20 w-full h-full bg-[#F0EDE1]">
+            <div className="home-container relative h-full w-full">
+              {/* Texture Overlay */}
+              <div
+                ref={textureRef}
+                className="mineral-texture absolute -inset-10 z-0 opacity-40 transition-transform duration-1000 ease-out"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`
+                }}
+              />
 
-                {/* Main Content Area */}
-                <main className="main-content relative z-10 w-full flex h-full flex-col items-center justify-center text-center pb-32 lg:pb-24">
-                  {/* Top Navigation Hooks */}
-                  <div className="absolute top-6 left-1/2 -translate-x-1/2 w-[90%] flex items-center justify-between z-50">
-                    <a
-                      href="https://nihplod.cn"
-                      className="group flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-medium tracking-[0.2em] text-[#3D4430]/40 hover:text-[#3D4430] hover:bg-white/40 border border-[#3D4430]/10 hover:border-[#3D4430]/20 transition-all duration-500 backdrop-blur-sm no-underline cursor-pointer relative z-10"
-                    >
-                      <House className="w-3.5 h-3.5 transition-transform group-hover:scale-110 opacity-70 group-hover:opacity-100" />
-                      <span className="hidden sm:inline">返回官网</span>
-                    </a>
+              {/* Main Content Area */}
+              <main className="main-content relative z-10 w-full flex h-full flex-col items-center justify-center text-center pb-16 lg:pb-12">
+                {/* Top Navigation Hooks */}
+                <div className="absolute top-6 left-1/2 -translate-x-1/2 w-[90%] flex items-center justify-between z-50">
+                  <a
+                    href="https://nihplod.cn"
+                    className="group flex items-center gap-2 text-[13px] font-medium tracking-[0.2em] text-[#3D4430]/30 hover:text-[#3D4430] transition-colors duration-500 no-underline cursor-pointer relative z-10"
+                  >
+                    <House className="w-4 h-4 opacity-40 group-hover:opacity-100 transition-opacity duration-500" />
+                    <span className="hidden sm:inline relative">
+                      返回官网
+                      <span className="absolute -bottom-0.5 left-0 w-0 h-[1px] bg-[#3D4430]/30 group-hover:w-full transition-all duration-500 ease-out" />
+                    </span>
+                  </a>
 
-
-
-                    <div className="relative z-10">
-                      {user ? (
-                        <button
-                          onClick={() => setShowProfileModal(true)}
-                          className="group flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-medium tracking-[0.2em] text-[#3D4430]/40 hover:text-[#3D4430] hover:bg-white/40 border border-[#3D4430]/10 hover:border-[#3D4430]/20 transition-all duration-500 backdrop-blur-sm cursor-pointer"
-                        >
-                          <User className="w-3.5 h-3.5 transition-transform group-hover:scale-110 opacity-70 group-hover:opacity-100" />
-                          <span className="hidden sm:inline">{user.name || '测肤记录'}</span>
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => openAuthModal('login')}
-                          className="group flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-medium tracking-[0.2em] text-[#3D4430]/40 hover:text-[#3D4430] hover:bg-white/40 border border-[#3D4430]/10 hover:border-[#3D4430]/20 transition-all duration-500 backdrop-blur-sm cursor-pointer"
-                        >
-                          <User className="w-3.5 h-3.5 transition-transform group-hover:scale-110 opacity-70 group-hover:opacity-100" />
-                          <span className="hidden sm:inline">登录 / 注册</span>
-                        </button>
-                      )}
-                    </div>
+                  <div className="relative z-10">
+                    {user ? (
+                      <button
+                        onClick={() => setShowProfileModal(true)}
+                        className="group flex items-center gap-2 text-[13px] font-medium tracking-[0.2em] text-[#3D4430]/30 hover:text-[#3D4430] transition-colors duration-500 cursor-pointer"
+                      >
+                        <User className="w-4 h-4 opacity-40 group-hover:opacity-100 transition-opacity duration-500" />
+                        <span className="hidden sm:inline relative">
+                          {user.name || '测肤记录'}
+                          <span className="absolute -bottom-0.5 left-0 w-0 h-[1px] bg-[#3D4430]/30 group-hover:w-full transition-all duration-500 ease-out" />
+                        </span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => openAuthModal('login')}
+                        className="group flex items-center gap-2 text-[13px] font-medium tracking-[0.2em] text-[#3D4430]/30 hover:text-[#3D4430] transition-colors duration-500 cursor-pointer"
+                      >
+                        <User className="w-4 h-4 opacity-40 group-hover:opacity-100 transition-opacity duration-500" />
+                        <span className="hidden sm:inline relative">
+                          登录 / 注册
+                          <span className="absolute -bottom-0.5 left-0 w-0 h-[1px] bg-[#3D4430]/30 group-hover:w-full transition-all duration-500 ease-out" />
+                        </span>
+                      </button>
+                    )}
                   </div>
+                </div>
 
-                  {/* Center AI Actions */}
-                  <div className="z-10 flex flex-col items-center text-center px-6 max-w-3xl mx-auto pt-4 lg:pt-8">
-                    <div className="animate-fade-in-up flex flex-col items-center border-[0px] border-red-500">
-                      {/* Logo (Moved from top bar) */}
-                      <Image
-                        src="/NIHPLOD-logo.svg"
-                        alt="NIHPLOD 旎柏"
-                        width={260}
-                        height={78}
-                        priority
-                        className="h-8 sm:h-9 md:h-12 object-contain opacity-90 mix-blend-multiply mb-12 md:mb-16"
-                      />
-                      
-                      <div className="flex items-end justify-center gap-3 mb-8">
-                        <h1 className="text-[32px] sm:text-4xl md:text-5xl font-serif text-[#1A1A1A] leading-tight tracking-tight whitespace-nowrap">
-                          在线素颜测肤
-                        </h1>
-                        <button
-                          onClick={() => setShowGuideModal(true)}
-                          className="flex-shrink-0 flex items-center justify-center text-[#5c4937]/50 hover:text-[#3d2f25] transition-all cursor-pointer bg-transparent mb-1.5"
-                          title="测试前准备指南"
-                        >
-                          <CircleAlert className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={1.5} />
-                        </button>
-                      </div>
+                {/* Center AI Actions */}
+                <div className="z-10 flex flex-col items-center text-center px-6 max-w-3xl mx-auto pt-4 lg:pt-8">
+                  <div className="animate-fade-in-up flex flex-col items-center border-[0px] border-red-500">
+                    {/* Logo (Moved from top bar) */}
+                    <Image
+                      src="/NIHPLOD-logo.svg"
+                      alt="NIHPLOD 旎柏"
+                      width={260}
+                      height={78}
+                      priority
+                      className="h-8 sm:h-9 md:h-12 object-contain opacity-90 mix-blend-multiply mb-12 md:mb-16"
+                    />
+                    
+                    <div className="flex items-end justify-center gap-3 mb-8">
+                      <h1 className="text-[32px] sm:text-4xl md:text-5xl font-serif text-[#1A1A1A] leading-tight tracking-tight whitespace-nowrap">
+                        在线素颜测肤
+                      </h1>
+                      <button
+                        onClick={() => setShowGuideModal(true)}
+                        className="flex-shrink-0 flex items-center justify-center text-[#5c4937]/50 hover:text-[#3d2f25] transition-all cursor-pointer bg-transparent mb-1.5"
+                        title="测试前准备指南"
+                      >
+                        <CircleAlert className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={1.5} />
+                      </button>
+                    </div>
 
-                      <p className="text-[#5C5855]/90 leading-relaxed mb-10 max-w-2xl mx-auto font-light text-base sm:text-xl opacity-0 animate-fade-in-up tracking-wide" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
-                        为了精准分析你的肌肤状态并生成专业定制化报告，<br className="sm:hidden" />接下来我们将引导您进行个性化问卷调查<br className="sm:hidden" />与多维面部肌肤分析，整个过程预计占用 <span className="text-[#3D4430] font-medium">2-5 分钟</span>。
-                      </p>
+                    <p className="text-[#5C5855]/90 leading-relaxed mb-10 max-w-2xl mx-auto font-light text-base sm:text-xl opacity-0 animate-fade-in-up tracking-wide" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
+                      为了精准分析你的肌肤状态并生成专业定制化报告，<br className="sm:hidden" />接下来我们将引导您进行个性化问卷调查<br className="sm:hidden" />与多维面部肌肤分析，整个过程预计占用 <span className="text-[#3D4430] font-medium">2-5 分钟</span>。
+                    </p>
 
-                      <div className="flex flex-col items-center gap-7 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.4s', animationFillMode: 'forwards' }}>
-                        <button
-                          onClick={handleStart}
-                          disabled={isLoading || checkingLimit}
-                          className="glass-premium-primary animate-float-premium group relative inline-flex items-center justify-center gap-3 px-8 py-3.5 sm:px-10 rounded-full text-[14px] sm:text-[15px] tracking-[0.15em] font-medium disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer transition-all duration-300"
-                        >
-                          {isLoading || checkingLimit ? (
-                            <>
-                              <Loader2 className="w-5 h-5 animate-spin" />
-                              <span>正在连接...</span>
-                            </>
-                          ) : (
-                            <>
-                              <span>立即开启</span>
-                              <ArrowRight className="w-5 h-5 transition-transform duration-500 group-hover:translate-x-1.5" />
-                            </>
-                          )}
-                        </button>
+                    <div className="flex flex-col items-center gap-7 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.4s', animationFillMode: 'forwards' }}>
+                      <button
+                        onClick={handleStart}
+                        disabled={isLoading || checkingLimit}
+                        className="glass-premium-primary animate-float-premium group relative inline-flex items-center justify-center gap-3 px-8 py-3.5 sm:px-10 rounded-full text-[14px] sm:text-[15px] tracking-[0.15em] font-medium disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer transition-all duration-300"
+                      >
+                        {isLoading || checkingLimit ? (
+                          <>
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            <span>正在连接...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>立即开启</span>
+                            <ArrowRight className="w-5 h-5 transition-transform duration-500 group-hover:translate-x-1.5" />
+                          </>
+                        )}
+                      </button>
 
-                        <div className="flex flex-wrap justify-center items-center gap-10">
-                          {user && (
-                            <div className="flex items-center gap-8">
-                              <button
-                                onClick={() => setShowProfileModal(true)}
-                                className="group relative flex items-center gap-2 text-[13px] font-medium text-[#8B7355] transition-all duration-300 cursor-pointer border-none bg-transparent hover:-translate-y-0.5"
-                              >
-                                <ClipboardList className="w-4 h-4 transition-transform group-hover:scale-110" />
-                                <span className="tracking-widest">历史记录</span>
-                                {/* Base Line */}
-                                <div className="absolute -bottom-1 left-0 w-full h-[0.5px] bg-[#8B7355]/10" />
-                                {/* Animated Line */}
-                                <div className="absolute -bottom-1 left-1/2 w-0 h-[1px] bg-[#8B7355] transition-all duration-500 ease-out group-hover:w-full group-hover:left-0" />
-                              </button>
-                            </div>
-                          )}
-                        </div>
+                      <div className="flex flex-wrap justify-center items-center gap-10">
+                        {user && (
+                          <div className="flex items-center gap-8">
+                            <button
+                              onClick={() => setShowProfileModal(true)}
+                              className="group relative flex items-center gap-2 text-[13px] font-medium text-[#8B7355] transition-all duration-300 cursor-pointer border-none bg-transparent hover:-translate-y-0.5"
+                            >
+                              <ClipboardList className="w-4 h-4 transition-transform group-hover:scale-110" />
+                              <span className="tracking-widest">历史记录</span>
+                              {/* Base Line */}
+                              <div className="absolute -bottom-1 left-0 w-full h-[0.5px] bg-[#8B7355]/10" />
+                              {/* Animated Line */}
+                              <div className="absolute -bottom-1 left-1/2 w-0 h-[1px] bg-[#8B7355] transition-all duration-500 ease-out group-hover:w-full group-hover:left-0" />
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
+                </div>
 
-                  {/* Homepage Footer */}
-                  <HomepageFooter />
-                </main>
-              </div>
-            </m.div>
-
-            {/* Drawer Toggle Button */}
-            <button
-              onClick={() => {
-                if (!isDrawerOpen) {
-                  // 展开：隐藏便当盒
-                  setShowBento(false);
-                  setDrawerOpen(true);
-                } else {
-                  // 收起：显示便当盒
-                  setDrawerOpen(false);
-                  setShowBento(true);
-                }
-              }}
-              className="group -mt-[1px] relative z-30 flex items-center justify-center rounded-b-2xl bg-[#F0EDE1] px-10 py-3 shadow-[0_10px_20px_-5px_rgba(0,0,0,0.1)] transition-all hover:shadow-[0_15px_25px_-5px_rgba(0,0,0,0.15)] lg:px-14 lg:py-3.5 overflow-hidden pointer-events-auto border-none outline-none"
-            >
-              <div className="texture-overlay absolute inset-0" />
-              <m.div
-                className="relative z-10 flex flex-col items-center"
-                animate={{ rotate: isDrawerOpen ? 180 : 0 }}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-                transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-              >
-                <ChevronDown className="h-7 w-7 text-brand-gold lg:h-8 lg:w-8" />
-                <ChevronDown className="-mt-5 h-7 w-7 text-brand-gold lg:h-8 lg:w-8" />
-              </m.div>
-            </button>
+                {/* Homepage Footer */}
+                <HomepageFooter />
+              </main>
+            </div>
           </div>
-        </m.div>
+        </div>
       </m.div>
 
       {/* Modals */}
@@ -476,7 +423,6 @@ export default function Home() {
         isOpen={showOnboardingModal}
         onClose={() => {
           setShowOnboardingModal(false);
-          setDrawerOpen(true);
         }}
         nickname={nickname}
         setNickname={setNickname}
