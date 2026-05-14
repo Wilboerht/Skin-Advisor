@@ -54,16 +54,13 @@ export default function Home() {
   const { initSession } = useAdvisorAnalytics();
   const { user, refresh: refreshUser } = useAuth();
 
-  const textureRef = useRef<HTMLDivElement>(null);
+  const spotlightRef = useRef<HTMLDivElement>(null);
 
-  // 鼠标视差效果
+  // 柔光聚光灯跟随效果
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      const moveX = (e.clientX - window.innerWidth / 2) * 0.01;
-      const moveY = (e.clientY - window.innerHeight / 2) * 0.01;
-
-      if (textureRef.current) {
-        textureRef.current.style.transform = `translate(${moveX * 0.5}px, ${moveY * 0.5}px)`;
+      if (spotlightRef.current) {
+        spotlightRef.current.style.background = `radial-gradient(600px circle at ${e.clientX}px ${e.clientY}px, rgba(200, 185, 160, 0.08), transparent 40%)`;
       }
     };
 
@@ -289,13 +286,10 @@ export default function Home() {
         <div className="h-full">
           <div className="relative z-20 w-full h-full bg-[#F0EDE1]">
             <div className="home-container relative h-full w-full">
-              {/* Texture Overlay */}
+              {/* Spotlight Follow */}
               <div
-                ref={textureRef}
-                className="mineral-texture absolute -inset-10 z-0 opacity-40 transition-transform duration-1000 ease-out"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`
-                }}
+                ref={spotlightRef}
+                className="absolute inset-0 z-[1] pointer-events-none"
               />
 
               {/* Main Content Area */}
