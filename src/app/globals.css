@@ -467,7 +467,7 @@
 /* ========== Graphite Kinetic Grid 全局背景 (nihplod.cn 复刻版) ========== */
 
 :root {
-  --kinetic-bg: rgb(195, 180, 162);
+  --kinetic-bg: #FAFAFA;
   --kinetic-accent: #333333;
   --kinetic-text-primary: #ffffff;
   --kinetic-text-secondary: #a1a1a1;
@@ -504,7 +504,6 @@
   position: absolute;
   inset: 0;
   background-color: var(--kinetic-bg);
-  background-image: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.3) 0%, transparent 100%);
   pointer-events: none;
 }
 
