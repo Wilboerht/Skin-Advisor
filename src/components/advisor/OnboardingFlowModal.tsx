@@ -387,7 +387,7 @@ export function OnboardingFlowModal({
                                         服务确认与授权
                                     </h3>
 
-                                    <div className="p-6 mb-10 text-left max-w-sm mx-auto">
+                                    <div className="p-6 mb-10 text-left max-w-md mx-auto">
                                         <label className="flex items-start gap-4 cursor-pointer group">
                                             <div className="mt-0.5 relative flex items-center">
                                                 <input
