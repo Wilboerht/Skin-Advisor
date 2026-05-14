@@ -347,10 +347,10 @@ export default function Home() {
                     <Image
                       src="/NIHPLOD-logo.svg"
                       alt="NIHPLOD 旎柏"
-                      width={200}
-                      height={60}
+                      width={260}
+                      height={78}
                       priority
-                      className="h-6 sm:h-7 md:h-8 object-contain opacity-60 mix-blend-multiply mb-14 md:mb-20"
+                      className="h-9 sm:h-10 md:h-12 object-contain mb-14 md:mb-20"
                     />
 
                     {/* Title */}
@@ -368,7 +368,7 @@ export default function Home() {
                       <button
                         onClick={handleStart}
                         disabled={isLoading || checkingLimit}
-                        className="group relative inline-flex items-center justify-center gap-4 px-10 py-3.5 sm:px-14 border border-[#3D4430]/12 hover:border-[#3D4430]/30 hover:bg-[#3D4430]/[0.02] text-[13px] sm:text-[14px] tracking-[0.2em] text-[#3D4430]/50 hover:text-[#3D4430] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500"
+                        className="group relative inline-flex items-center justify-center gap-4 px-10 py-3.5 sm:px-14 border border-[#3D4430]/25 hover:border-[#3D4430]/50 hover:bg-[#3D4430]/[0.03] text-[13px] sm:text-[14px] tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500"
                       >
                         {isLoading || checkingLimit ? (
                           <>
@@ -383,31 +383,7 @@ export default function Home() {
                         )}
                       </button>
 
-                      {/* Guide Hint */}
-                      <button
-                        onClick={() => setShowGuideModal(true)}
-                        className="flex items-center gap-1.5 text-[11px] text-[#5c4937]/25 hover:text-[#5c4937]/50 transition-colors cursor-pointer bg-transparent"
-                        title="测试前准备指南"
-                      >
-                        <CircleAlert className="w-3.5 h-3.5" strokeWidth={1.5} />
-                        <span className="tracking-wider">测试指南</span>
-                      </button>
 
-                      {/* History */}
-                      <div className="flex flex-wrap justify-center items-center gap-10 mt-2">
-                        {user && (
-                          <div className="flex items-center gap-8">
-                            <button
-                              onClick={() => setShowProfileModal(true)}
-                              className="group relative flex items-center gap-2 text-[12px] font-medium text-[#8B7355]/60 hover:text-[#8B7355] transition-all duration-300 cursor-pointer border-none bg-transparent"
-                            >
-                              <ClipboardList className="w-4 h-4 opacity-60 group-hover:opacity-100 transition-opacity" />
-                              <span className="tracking-widest">历史记录</span>
-                              <span className="absolute -bottom-1 left-0 w-0 h-[1px] bg-[#8B7355]/40 group-hover:w-full transition-all duration-500 ease-out" />
-                            </button>
-                          </div>
-                        )}
-                      </div>
                     </div>
                   </div>
                 </div>
