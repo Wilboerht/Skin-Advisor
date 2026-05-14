@@ -152,9 +152,12 @@ export function OnboardingFlowModal({
         visible: { opacity: 1, y: 0, transition: { duration: 0.5, delay: 0.25, ease: "easeOut" as const } },
     };
 
-    // Slide transition style
+    const slideWidthPercent = 100 / totalScreens;
+
+    // Slide transition style (horizontal)
     const slideContainerStyle: React.CSSProperties = {
-        transform: `translateY(-${activeIndex * 100}%)`,
+        width: `${totalScreens * 100}%`,
+        transform: `translateX(-${activeIndex * slideWidthPercent}%)`,
         transition: "transform 0.7s cubic-bezier(0.65, 0, 0.35, 1)",
     };
 
@@ -169,12 +172,12 @@ export function OnboardingFlowModal({
                     transition={{ duration: 0.7, ease: [0.65, 0, 0.35, 1] }}
                 >
                     {/* ---- Slides Wrapper ---- */}
-                    <div className="h-full w-full" style={slideContainerStyle}>
+                    <div className="h-full flex" style={slideContainerStyle}>
                         {/* Slide: Nickname */}
                         {hasNicknameScreen && (
                             <div
-                                className="h-full w-full flex flex-col items-center justify-center px-6 relative"
-                                style={{ backgroundColor: getBgColor() }}
+                                className="h-full shrink-0 flex flex-col items-center justify-center px-6 relative"
+                                style={{ backgroundColor: getBgColor(), width: `${slideWidthPercent}%` }}
                             >
                                 {/* Subtle texture overlay */}
                                 <div
@@ -235,8 +238,8 @@ export function OnboardingFlowModal({
 
                         {/* Slide: Location */}
                         <div
-                            className="h-full w-full flex flex-col items-center justify-center px-6 relative"
-                            style={{ backgroundColor: getBgColor() }}
+                            className="h-full shrink-0 flex flex-col items-center justify-center px-6 relative"
+                            style={{ backgroundColor: getBgColor(), width: `${slideWidthPercent}%` }}
                         >
                             <div
                                 className="absolute inset-0 opacity-[0.03] pointer-events-none"
@@ -250,9 +253,9 @@ export function OnboardingFlowModal({
                                     <m.div
                                         key="location-main"
                                         className="relative z-10 w-full max-w-md text-center"
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -20 }}
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: -20 }}
                                         transition={{ duration: 0.3 }}
                                     >
                                         <div className="flex justify-center mb-8 text-[#8B7355]">
@@ -361,8 +364,8 @@ export function OnboardingFlowModal({
                         {/* Slide: Legal */}
                         {hasLegalScreen && (
                             <div
-                                className="h-full w-full flex flex-col items-center justify-center px-6 relative"
-                                style={{ backgroundColor: getBgColor() }}
+                                className="h-full shrink-0 flex flex-col items-center justify-center px-6 relative"
+                                style={{ backgroundColor: getBgColor(), width: `${slideWidthPercent}%` }}
                             >
                                 <div
                                     className="absolute inset-0 opacity-[0.03] pointer-events-none"
