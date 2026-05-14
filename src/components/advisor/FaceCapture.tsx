@@ -313,8 +313,10 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
 
     if (targetStep === 'chin') {
       // 抬头检测：tiltRatio 越小表示仰头越明显
-      // 正常正面平视约 0.45~0.55，需明显抬头才能通过
-      if (tiltRatio < 0.30 && Math.abs(noseOffsetRatio) < 0.55) {
+      // 注意：不同人面部比例差异大（鼻子长短、下巴长短），正常平视的 tiltRatio
+      // 可能在 0.25~0.55 之间波动。阈值设得太低（如 0.30）会导致很多用户正常
+      // 平视时被误判为抬头。收紧到 0.15 确保只有真正明显的抬头动作才会触发。
+      if (tiltRatio < 0.15 && Math.abs(noseOffsetRatio) < 0.55) {
         return "chin";
       }
     }
@@ -336,13 +338,15 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
 
   /**
    * 把视频原始坐标框映射到 CSS 显示坐标系（处理 object-fit: cover 的缩放/裁剪）
+   * 前置摄像头时额外处理 CSS scale-x-[-1] 镜像，确保 overlay 对齐
    */
   const mapVideoBoxToDisplay = useCallback((
     videoBox: { x: number; y: number; width: number; height: number },
     videoWidth: number,
     videoHeight: number,
     displayWidth: number,
-    displayHeight: number
+    displayHeight: number,
+    facingMode: "user" | "environment"
   ) => {
     const scale = Math.max(displayWidth / videoWidth, displayHeight / videoHeight);
     const scaledVideoWidth = videoWidth * scale;
@@ -350,17 +354,25 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
     const offsetX = (displayWidth - scaledVideoWidth) / 2;
     const offsetY = (displayHeight - scaledVideoHeight) / 2;
 
-    return {
-      x: videoBox.x * scale + offsetX,
-      y: videoBox.y * scale + offsetY,
-      width: videoBox.width * scale,
-      height: videoBox.height * scale,
-    };
+    let x = videoBox.x * scale + offsetX;
+    const y = videoBox.y * scale + offsetY;
+    const width = videoBox.width * scale;
+    const height = videoBox.height * scale;
+
+    // 前置摄像头视频被 CSS scale-x-[-1] 镜像，x 坐标需要翻转
+    if (facingMode === "user") {
+      x = displayWidth - x - width;
+    }
+
+    return { x, y, width, height };
   }, []);
 
   /**
    * 检查面部是否在椭圆框内（使用显示坐标系，与 FaceScanOverlay UI 严格对齐）
    * 椭圆框尺寸：宽度65%，高度70%
+   *
+   * 判断策略：以中心点为主（只要脸中心在椭圆内就算在），四个角点为辅助，
+   * 大幅放宽容错，避免视觉明明在框内但逻辑判定失败的情况。
    */
   const isFaceInEllipse = useCallback((
     faceBox: { x: number; y: number; width: number; height: number },
@@ -379,28 +391,32 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
     const ellipseA = (containerWidth * ellipseWidthRatio) / 2;  // 水平半轴
     const ellipseB = (containerHeight * ellipseHeightRatio) / 2; // 垂直半轴
 
-    // 面部的四个角点
+    // 1. 检查面部中心点是否在椭圆内（核心判断）
+    const centerX = faceBox.x + faceBox.width / 2;
+    const centerY = faceBox.y + faceBox.height / 2;
+    const normCenterX = (centerX - ellipseCenterX) / ellipseA;
+    const normCenterY = (centerY - ellipseCenterY) / ellipseB;
+    const centerValue = normCenterX * normCenterX + normCenterY * normCenterY;
+
+    // 2. 检查四个角点，统计在椭圆内的数量（放宽到 1.3 容错）
     const faceCorners = [
-      { x: faceBox.x, y: faceBox.y },                                     // 左上
-      { x: faceBox.x + faceBox.width, y: faceBox.y },                    // 右上
-      { x: faceBox.x, y: faceBox.y + faceBox.height },                   // 左下
-      { x: faceBox.x + faceBox.width, y: faceBox.y + faceBox.height },   // 右下
+      { x: faceBox.x, y: faceBox.y },
+      { x: faceBox.x + faceBox.width, y: faceBox.y },
+      { x: faceBox.x, y: faceBox.y + faceBox.height },
+      { x: faceBox.x + faceBox.width, y: faceBox.y + faceBox.height },
     ];
 
-    // 检查所有角点是否都在椭圆内
-    // 椭圆方程: (x-cx)²/a² + (y-cy)²/b² <= 1
+    let cornersInside = 0;
     for (const corner of faceCorners) {
-      const normalizedX = (corner.x - ellipseCenterX) / ellipseA;
-      const normalizedY = (corner.y - ellipseCenterY) / ellipseB;
-      const ellipseValue = normalizedX * normalizedX + normalizedY * normalizedY;
-
-      // 使用 1.1 而不是 1.0 来显著增加容错率，只要大致在框内即可
-      if (ellipseValue > 1.1) {
-        return false;
+      const nx = (corner.x - ellipseCenterX) / ellipseA;
+      const ny = (corner.y - ellipseCenterY) / ellipseB;
+      if (nx * nx + ny * ny <= 1.3) {
+        cornersInside++;
       }
     }
 
-    return true;
+    // 策略：中心点必须在椭圆内，且至少 2 个角点在椭圆内（允许部分头发/耳朵超出）
+    return centerValue <= 1.0 && cornersInside >= 2;
   }, []);
 
   /* 语音播报函数 */
@@ -458,7 +474,8 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
           videoWidth,
           videoHeight,
           displayWidth,
-          displayHeight
+          displayHeight,
+          facingMode
         );
 
         // 检查面部是否在椭圆框内（仅作为视觉引导，不作为硬性拍照门槛）
@@ -512,8 +529,9 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
           setFaceStatus("found");
 
           // 大幅放宽稳定帧数要求，2帧即可拍照，体验更流畅
-          const requiredFrames = 2;
-          const progressFrames = 3;
+          // 但下颚（抬头）步骤容易误判，需要更多稳定帧
+          const requiredFrames = currentStep === 'chin' ? 5 : 2;
+          const progressFrames = currentStep === 'chin' ? 6 : 3;
 
           // 更新稳定进度
           setStabilityProgress(Math.min(100, (stableCountRef.current / progressFrames) * 100));
@@ -725,8 +743,9 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
       // 进入下一步
       setCurrentStep(nextStep);
 
-      // 冷却期 0.8 秒，流程更流畅同时保留调整时间
-      const cooldownDuration = 800;
+      // 冷却期：下颚步骤给用户更多准备时间，防止还没反应过来就拍完
+      // 注意：这里用 nextStep 判断，因为 currentStep 还没更新
+      const cooldownDuration = nextStep === 'chin' ? 2000 : 800;
       const progressInterval = 50; // 每 50ms 更新一次进度
       let elapsed = 0;
 
@@ -1091,7 +1110,7 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
 
         {/* 调试信息面板 */}
         {DEBUG && debugInfo && (
-          <div className="absolute top-20 left-4 z-50 bg-black/70 backdrop-blur-sm text-white text-[10px] font-mono p-3 rounded-lg border border-white/20 space-y-1 max-w-[200px]">
+          <div className="absolute top-20 left-4 z-50 bg-black/70 backdrop-blur-sm text-white text-[10px] font-mono p-3 rounded-lg border border-white/20 space-y-1 max-w-[220px]">
             <div className="text-brand-gold font-bold mb-1">DEBUG</div>
             <div>步骤: {debugInfo.currentStep}</div>
             <div>姿态: {debugInfo.headPose} {debugInfo.isPoseCorrect ? '✅' : '❌'}</div>
@@ -1099,6 +1118,11 @@ export function FaceCapture({ onCapture }: FaceCaptureProps) {
             <div>大小: {debugInfo.isSizeOk ? '✅' : '❌'} ({debugInfo.faceToEllipseRatio})</div>
             <div>noseRatio: {debugInfo.noseOffsetRatio}</div>
             <div>tiltRatio: {debugInfo.tiltRatio}</div>
+            {debugInfo.displayBox && (
+              <div className="text-white/70">
+                box: {Math.round(debugInfo.displayBox.x)},{Math.round(debugInfo.displayBox.y)} {Math.round(debugInfo.displayBox.width)}x{Math.round(debugInfo.displayBox.height)}
+              </div>
+            )}
           </div>
         )}
 
