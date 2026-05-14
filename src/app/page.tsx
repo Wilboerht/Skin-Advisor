@@ -286,22 +286,6 @@ export default function Home() {
         <div className="h-full">
           <div className="relative z-20 w-full h-full bg-[#F5F2E9]">
             <div className="home-container relative h-full w-full">
-              {/* Wave Background - 底部水面效果 */}
-              <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-                {/* 最外层波浪 - 最淡最远 */}
-                <svg className="absolute bottom-[12%] left-0 w-[200%] h-32 animate-wave-3" preserveAspectRatio="none" viewBox="0 0 2880 200">
-                  <path d="M0,100 Q360,60 720,100 T1440,100 T2160,100 T2880,100" fill="none" stroke="#DED9C7" strokeWidth="0.5" opacity="0.25" />
-                </svg>
-                {/* 中层波浪 */}
-                <svg className="absolute bottom-[8%] left-0 w-[200%] h-32 animate-wave-2" preserveAspectRatio="none" viewBox="0 0 2880 200">
-                  <path d="M0,100 Q360,140 720,100 T1440,100 T2160,100 T2880,100" fill="none" stroke="#DED9C7" strokeWidth="0.75" opacity="0.35" />
-                </svg>
-                {/* 最内层波浪 - 最接近水面 */}
-                <svg className="absolute bottom-[4%] left-0 w-[200%] h-32 animate-wave-1" preserveAspectRatio="none" viewBox="0 0 2880 200">
-                  <path d="M0,100 Q360,70 720,100 T1440,100 T2160,100 T2880,100" fill="none" stroke="#DED9C7" strokeWidth="1" opacity="0.45" />
-                </svg>
-              </div>
-
               {/* Spotlight Follow */}
               <div
                 ref={spotlightRef}
