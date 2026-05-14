@@ -146,19 +146,19 @@ export function OnboardingFlowModal({
     // Unified background color for all screens
     const getBgColor = () => "#FDFBF7";
 
-    // Content entrance animation variants
+    // Content entrance animation variants (horizontal to match slide direction)
     const contentVariants = {
-        hidden: { opacity: 0, y: 30 },
-        visible: { opacity: 1, y: 0, transition: { duration: 0.5, delay: 0.25, ease: "easeOut" as const } },
+        hidden: { opacity: 0, x: 20 },
+        visible: { opacity: 1, x: 0, transition: { duration: 0.6, delay: 0.35, ease: "easeOut" as const } },
     };
 
-    const slideWidthPercent = 100 / totalScreens;
-
-    // Slide transition style (horizontal)
+    // Slide transition style (horizontal, vw-based to avoid subpixel jitter)
     const slideContainerStyle: React.CSSProperties = {
-        width: `${totalScreens * 100}%`,
-        transform: `translateX(-${activeIndex * slideWidthPercent}%)`,
-        transition: "transform 0.7s cubic-bezier(0.65, 0, 0.35, 1)",
+        width: `${totalScreens * 100}vw`,
+        transform: `translateX(-${activeIndex * 100}vw)`,
+        transition: "transform 0.9s cubic-bezier(0.32, 0.72, 0, 1)",
+        willChange: "transform",
+        backfaceVisibility: "hidden",
     };
 
     return (
@@ -176,8 +176,8 @@ export function OnboardingFlowModal({
                         {/* Slide: Nickname */}
                         {hasNicknameScreen && (
                             <div
-                                className="h-full shrink-0 flex flex-col items-center justify-center px-6 relative"
-                                style={{ backgroundColor: getBgColor(), width: `${slideWidthPercent}%` }}
+                                className="h-full flex flex-col items-center justify-center px-6 relative"
+                                style={{ backgroundColor: getBgColor(), flex: "0 0 100vw", backfaceVisibility: "hidden", willChange: "transform" }}
                             >
                                 {/* Subtle texture overlay */}
                                 <div
@@ -238,8 +238,8 @@ export function OnboardingFlowModal({
 
                         {/* Slide: Location */}
                         <div
-                            className="h-full shrink-0 flex flex-col items-center justify-center px-6 relative"
-                            style={{ backgroundColor: getBgColor(), width: `${slideWidthPercent}%` }}
+                            className="h-full flex flex-col items-center justify-center px-6 relative"
+                            style={{ backgroundColor: getBgColor(), flex: "0 0 100vw", backfaceVisibility: "hidden", willChange: "transform" }}
                         >
                             <div
                                 className="absolute inset-0 opacity-[0.03] pointer-events-none"
@@ -364,8 +364,8 @@ export function OnboardingFlowModal({
                         {/* Slide: Legal */}
                         {hasLegalScreen && (
                             <div
-                                className="h-full shrink-0 flex flex-col items-center justify-center px-6 relative"
-                                style={{ backgroundColor: getBgColor(), width: `${slideWidthPercent}%` }}
+                                className="h-full flex flex-col items-center justify-center px-6 relative"
+                                style={{ backgroundColor: getBgColor(), flex: "0 0 100vw", backfaceVisibility: "hidden", willChange: "transform" }}
                             >
                                 <div
                                     className="absolute inset-0 opacity-[0.03] pointer-events-none"
