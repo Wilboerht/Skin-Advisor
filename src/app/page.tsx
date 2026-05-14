@@ -348,7 +348,7 @@ export default function Home() {
                     />
 
                     {/* Title */}
-                    <h1 className="text-[40px] sm:text-[52px] md:text-[64px] font-serif text-[#1A1A1A] font-light leading-[1.05] tracking-tight mb-12 md:mb-16">
+                    <h1 className="text-[36px] sm:text-[44px] md:text-[52px] font-serif text-[#1A1A1A] font-normal leading-[1.1] tracking-tight mb-12 md:mb-16">
                       在线素颜测肤
                     </h1>
 
