@@ -72,17 +72,17 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuid
                                 return (
                                     <div
                                         key={index}
-                                        className={`flex flex-col h-full p-6 rounded-2xl bg-white/60 border border-[#4A3728]/5 hover:border-[#4A3728]/15 hover:bg-white/80 hover:shadow-xl hover:shadow-[#4A3728]/5 transition-all duration-500 group backdrop-blur-sm ${item.fullWidth ? 'sm:col-span-2' : ''}`}
+                                        className={`flex flex-col h-full p-5 rounded-lg bg-white/50 border border-[#D4CFC5]/60 hover:border-[#8B7355]/25 hover:bg-[#F8F5EE]/80 transition-all duration-300 group ${item.fullWidth ? 'sm:col-span-2' : ''}`}
                                     >
                                         <div className="flex items-start gap-4">
-                                            <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-[#4A3728]/5 group-hover:bg-[#4A3728]/10 transition-all duration-500 flex items-center justify-center text-[#4A3728] group-hover:scale-110 shadow-sm border border-white/40">
-                                                <Icon className="w-5 h-5" strokeWidth={1.5} />
+                                            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-[#4A3728]/[0.04] group-hover:bg-[#4A3728]/[0.08] transition-colors duration-300 flex items-center justify-center text-[#4A3728]">
+                                                <Icon className="w-[18px] h-[18px]" strokeWidth={1.5} />
                                             </div>
-                                            <div className="flex-1 pt-1">
-                                                <h4 className="text-base font-semibold text-[#1A1A1A] mb-2 leading-none tracking-wide">
+                                            <div className="flex-1 pt-0.5">
+                                                <h4 className="text-[15px] font-medium text-[#1A1A1A] mb-1.5 tracking-wide">
                                                     {item.title}
                                                 </h4>
-                                                <p className="text-[13px] text-[#4A3728]/70 leading-relaxed font-light">
+                                                <p className="text-[13px] text-[#5E5E5E]/80 leading-relaxed font-light">
                                                     {item.desc}
                                                 </p>
                                             </div>
@@ -109,7 +109,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuid
                                     }
                                     onConfirm();
                                 }}
-                                className="w-full h-14 rounded-full bg-[#4A3728]/95 backdrop-blur-md hover:bg-[#4A3728] text-[#FDFBF7] text-[15px] font-bold tracking-[0.2em] shadow-xl hover:shadow-[#4A3728]/30 transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-2 group border border-white/20 mb-5"
+                                className="w-full max-w-sm h-12 rounded-md bg-[#4A3728] hover:bg-[#3D2E20] text-[#FDFBF7] text-[14px] font-medium tracking-[0.15em] transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-2 group mb-5"
                             >
                                 <span>我已准备好</span>
                                 <ArrowRight className="w-4 h-4 opacity-70 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-1" />
