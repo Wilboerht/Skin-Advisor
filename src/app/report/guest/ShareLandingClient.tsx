@@ -781,6 +781,7 @@ export default function ShareLandingClient({ analysisResult, sessionId }: ShareL
         }}
         onRetake={() => router.push("/questions")}
         onChat={() => setShowContactAdvisor(true)}
+        onHome={() => router.push("/")}
       />
 
       {/* Contact Advisor Modal */}
