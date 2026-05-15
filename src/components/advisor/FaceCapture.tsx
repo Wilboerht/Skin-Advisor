@@ -438,8 +438,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
   const speak = useCallback((text: string) => {
     if (isMuted || typeof window === 'undefined') return;
     try {
-      // 优雅处理：不再强制截断 (cancel)，允许语音队列平滑过渡
-      // 但为了防止同一个指令在短时间内重复堆积，进行简单过滤
+      // 防止同一个指令在短时间内重复堆积
       if (window.speechSynthesis.speaking && text === lastSpokenPhraseRef.current) {
         return;
       }
@@ -551,7 +550,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
           // 更新稳定进度
           setStabilityProgress(Math.min(100, (stableCountRef.current / progressFrames) * 100));
 
-          // 达到稳定帧数立即拍照，不再等待语音播完
+          // 达到稳定帧数立即拍照，先打断当前语音避免滞后播报
           if (stableCountRef.current >= requiredFrames) {
             setFaceStatus("ready");
             setStabilityProgress(100);
@@ -559,6 +558,11 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
             const now = Date.now();
             lastSpeakTimeRef.current = now;
             speakLockUntilRef.current = now + 1500;
+
+            // 拍照前打断所有语音，避免拍完还在播旧指令
+            if (typeof window !== 'undefined' && window.speechSynthesis) {
+              window.speechSynthesis.cancel();
+            }
 
             takePhotoAuto();
           } else if (stableCountRef.current === 1) {
@@ -610,20 +614,29 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
 
   // 监听步骤变化并播报语音指令
   useEffect(() => {
-    if (isAllCaptured || isLoading) return;
+    if (isAllCaptured || isLoading || isInCooldown) return;
 
     const instruction = CAPTURE_STEPS.find(s => s.step === currentStep)?.instruction;
     if (instruction) {
-      // 首次加载或切换步骤时播报
+      // 切换步骤时，先清空之前的语音队列和正在播放的语音
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+
       // 稍微延迟确保用户准备好
       const timer = setTimeout(() => {
         speak(instruction);
-        lastSpeakTimeRef.current = Date.now(); // 重置防抖计时器
+        lastSpeakTimeRef.current = Date.now();
         lastSpokenPhraseRef.current = instruction;
-      }, 600);
-      return () => clearTimeout(timer);
+      }, 500);
+      return () => {
+        clearTimeout(timer);
+        if (typeof window !== 'undefined' && window.speechSynthesis) {
+          window.speechSynthesis.cancel();
+        }
+      };
     }
-  }, [currentStep, isAllCaptured, isLoading, speak]);
+  }, [currentStep, isAllCaptured, isLoading, isInCooldown, speak]);
 
   /**
    * 获取下一步骤
@@ -737,8 +750,10 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
       [currentStep]: imageData,
     }));
 
-    // 播放音效
-    // 播报反馈
+    // 播报拍照成功反馈，先清空队列避免旧指令滞后
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
     speak("好");
 
     stableCountRef.current = 0;
