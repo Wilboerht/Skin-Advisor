@@ -615,51 +615,57 @@ export default function Home() {
             </button>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto px-6 py-20 md:py-24">
-              <div className="max-w-xl mx-auto text-center">
-                <Image
-                  src="/NIHPLOD-logo.svg"
-                  alt="NIHPLOD"
-                  width={180}
-                  height={54}
-                  className="h-8 md:h-10 object-contain mx-auto mb-12"
-                />
+            <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
+              <div className="max-w-4xl w-full">
 
-                <h2 className="text-2xl md:text-3xl font-serif text-[#1A1A1A] mb-8 tracking-tight">
-                  关于 NIHPLOD
-                </h2>
-
-                <div className="space-y-6 text-left">
-                  <p className="text-[15px] text-[#5E5E5E] leading-[1.9] font-light">
-                    NIHPLOD（旎柏）诞生于摩纳哥——这个以奢华与精准著称的地中海公国。品牌将尖端生物科技与 Monaco 独有的护肤哲学深度融合，致力于为每一位追求极致肌肤状态的现代人，提供真正有效的定制化护理方案。
-                  </p>
-
-                  <p className="text-[15px] text-[#5E5E5E] leading-[1.9] font-light">
-                    我们相信，每个人的肌肤都是独一无二的。真正的护肤不是盲目跟风，而是基于科学数据的精准洞察。通过 AI 肌肤分析技术，我们为您解读肌肤的真实状态，从肤质、敏感度、老化迹象到环境适应性，多维度构建您的肌肤档案。
-                  </p>
-
-                  <div className="py-6 border-y border-[#3D4430]/10 my-8">
-                    <p className="text-[13px] text-[#8B7355] tracking-[0.2em] uppercase font-medium text-center mb-3">
-                      品牌理念
-                    </p>
-                    <p className="text-lg md:text-xl font-serif text-[#1A1A1A] text-center leading-relaxed">
-                      精准分析，科学护肤<br />
-                      让每一寸肌肤都被正确理解
-                    </p>
-                  </div>
-
-                  <p className="text-[15px] text-[#5E5E5E] leading-[1.9] font-light">
-                    本次素颜测肤服务基于 NIHPLOD 多年积累的肌肤数据库与前沿 AI 视觉识别技术，能够在短时间内完成传统美容顾问需要数小时才能完成的肌肤评估。从纹理、色斑、毛孔到轮廓状态，每一项指标都经过精密算法分析，最终生成专属于您的个性化护肤方案。
-                  </p>
+                {/* Header */}
+                <div className="text-center mb-8 md:mb-10">
+                  <Image
+                    src="/NIHPLOD-logo.svg"
+                    alt="NIHPLOD"
+                    width={160}
+                    height={48}
+                    className="h-7 md:h-8 object-contain mx-auto mb-6"
+                  />
                 </div>
 
-                <button
-                  onClick={() => setShowBrandModal(false)}
-                  className="mt-12 inline-flex items-center gap-2 py-2 text-[14px] tracking-[0.2em] font-medium text-[#8B7355] cursor-pointer transition-all duration-300 bg-transparent border-none outline-none group"
-                >
-                  <span className="border-b border-[#8B7355]/30 pb-0.5 group-hover:border-[#8B7355] transition-colors">关闭</span>
-                  <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
-                </button>
+                {/* Main: 图片左 + 文字右 */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 items-center">
+                  <div className="rounded-lg overflow-hidden bg-[#F0EDE1]">
+                    <img
+                      src="/hero-illustration-v2.webp"
+                      alt="NIHPLOD"
+                      className="w-full h-auto object-cover"
+                    />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-[12px] text-[#8B7355] tracking-[0.2em] uppercase font-medium mb-3">
+                      源自摩纳哥
+                    </p>
+                    <h3 className="text-lg md:text-xl font-serif text-[#1A1A1A] mb-3 leading-snug">
+                      精准分析，科学护肤
+                    </h3>
+                    <p className="text-[14px] text-[#5E5E5E] leading-[1.8] font-light mb-5">
+                      NIHPLOD（旎柏）将尖端生物科技与 Monaco 独有的护肤哲学深度融合，致力于为每一位追求极致肌肤状态的现代人，提供真正有效的定制化护理方案。
+                    </p>
+                    <div className="pt-4 border-t border-[#3D4430]/10">
+                      <p className="text-[13px] text-[#1A1A1A]/70 font-light leading-relaxed">
+                        通过 AI 肌肤分析技术，从肤质、敏感度、老化迹象到环境适应性，多维度构建您的肌肤档案，让每一寸肌肤都被正确理解。
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Close */}
+                <div className="text-center mt-10">
+                  <button
+                    onClick={() => setShowBrandModal(false)}
+                    className="inline-flex items-center gap-2 py-2 text-[13px] tracking-[0.2em] font-medium text-[#8B7355] cursor-pointer transition-all duration-300 bg-transparent border-none outline-none group"
+                  >
+                    <span className="border-b border-[#8B7355]/30 pb-0.5 group-hover:border-[#8B7355] transition-colors">关闭</span>
+                    <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+                  </button>
+                </div>
               </div>
             </div>
           </m.div>
