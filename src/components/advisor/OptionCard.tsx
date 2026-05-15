@@ -53,8 +53,8 @@ export function OptionCard({
             className={cn(
                 "group relative w-full rounded-lg text-left border px-6 py-5 flex items-center gap-5 backdrop-blur-md transition-all duration-300 overflow-hidden",
                 isSelected
-                    ? "bg-[#F8F5EE] border-[#8B7355]/35 shadow-[0_2px_12px_-2px_rgba(139,115,85,0.08)]"
-                    : "bg-[#F0EDE1]/25 border-[#3D4430]/8 hover:border-[#8B7355]/20 hover:bg-[#F0EDE1]/45 shadow-sm hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.03)]"
+                    ? "bg-[#F8F5EE] border-[#8B7355]/40 shadow-[0_2px_12px_-2px_rgba(139,115,85,0.08)]"
+                    : "bg-white/50 border-[#D4CFC5]/70 hover:border-[#8B7355]/30 hover:bg-[#F5F2EA]/60 shadow-sm hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.03)]"
             )}
         >
             {/* Left accent bar */}
@@ -77,14 +77,14 @@ export function OptionCard({
             <div className="flex-1 min-w-0">
                 <p className={cn(
                     "text-[15px] tracking-wide mb-0.5 transition-colors duration-300",
-                    isSelected ? "text-[#1A1A1A] font-semibold" : "text-[#5E5E5E] font-medium"
+                    isSelected ? "text-[#1A1A1A] font-semibold" : "text-[#3D4430]/85 font-medium"
                 )}>
                     {label}
                 </p>
                 {description && (
                     <p className={cn(
                         "text-xs font-light leading-relaxed transition-colors duration-300",
-                        isSelected ? "text-[#8B7355]/80" : "text-[#5E5E5E]/70"
+                        isSelected ? "text-[#8B7355]/80" : "text-[#5E5E5E]/60"
                     )}>
                         {description}
                     </p>
