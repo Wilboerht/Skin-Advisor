@@ -615,52 +615,71 @@ export default function Home() {
             </button>
 
             {/* Content */}
-            <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
-              <div className="max-w-4xl w-full">
+            <div className="flex-1 flex flex-col items-center justify-center px-10 md:px-20 py-14">
+              <div className="max-w-6xl xl:max-w-7xl w-full">
 
                 {/* Header */}
-                <div className="text-center mb-8 md:mb-10">
+                <div className="text-center mb-10 md:mb-14">
                   <Image
                     src="/NIHPLOD-logo.svg"
                     alt="NIHPLOD"
-                    width={160}
-                    height={48}
-                    className="h-7 md:h-8 object-contain mx-auto mb-6"
+                    width={200}
+                    height={60}
+                    className="h-9 md:h-11 object-contain mx-auto"
                   />
+                  <p className="mt-4 text-[12px] tracking-[0.35em] uppercase text-[#8B7355] font-medium">
+                    About NIHPLOD
+                  </p>
                 </div>
 
                 {/* Main: 图片左 + 文字右 */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 items-center">
-                  <div className="rounded-lg overflow-hidden bg-[#F0EDE1]">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-stretch">
+                  {/* Image */}
+                  <div className="relative rounded-lg overflow-hidden bg-[#F0EDE1] min-h-[340px] md:min-h-[520px]">
                     <img
                       src="/hero-illustration-v2.webp"
                       alt="NIHPLOD"
-                      className="w-full h-auto object-cover"
+                      className="absolute inset-0 w-full h-full object-cover"
                     />
                   </div>
-                  <div className="text-left">
-                    <p className="text-[12px] text-[#8B7355] tracking-[0.2em] uppercase font-medium mb-3">
-                      源自摩纳哥
+
+                  {/* Text */}
+                  <div className="flex flex-col justify-center text-left py-2">
+                    <p className="text-[13px] text-[#8B7355] tracking-[0.25em] uppercase font-medium mb-5">
+                      源自摩纳哥 · 奢护定制
                     </p>
-                    <h3 className="text-lg md:text-xl font-serif text-[#1A1A1A] mb-3 leading-snug">
+                    <h3 className="text-[26px] md:text-[32px] font-serif text-[#1A1A1A] mb-6 leading-tight tracking-tight">
                       精准分析，科学护肤
                     </h3>
-                    <p className="text-[14px] text-[#5E5E5E] leading-[1.8] font-light mb-5">
-                      NIHPLOD（旎柏）将尖端生物科技与 Monaco 独有的护肤哲学深度融合，致力于为每一位追求极致肌肤状态的现代人，提供真正有效的定制化护理方案。
+                    <p className="text-base md:text-lg text-[#5E5E5E] leading-[1.9] font-light mb-6">
+                      NIHPLOD（旎柏）诞生于摩纳哥，将尖端生物科技与 Monaco 独有的护肤哲学深度融合。我们坚信每个人的肌肤都是独一无二的，真正的护肤不是盲目跟风，而是基于科学数据的精准洞察。
                     </p>
-                    <div className="pt-4 border-t border-[#3D4430]/10">
-                      <p className="text-[13px] text-[#1A1A1A]/70 font-light leading-relaxed">
-                        通过 AI 肌肤分析技术，从肤质、敏感度、老化迹象到环境适应性，多维度构建您的肌肤档案，让每一寸肌肤都被正确理解。
+
+                    {/* Tags */}
+                    <div className="flex flex-wrap gap-3 mb-7">
+                      {["AI 视觉测肤", "定制化方案", "多维度分析"].map((tag) => (
+                        <span
+                          key={tag}
+                          className="inline-block px-4 py-2 text-[13px] text-[#3D4430] bg-[#F0EDE1] rounded-md border border-[#D4CFC5]/60 tracking-wide"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="pt-6 border-t border-[#3D4430]/10">
+                      <p className="text-[14px] md:text-[15px] text-[#1A1A1A]/70 font-light leading-[1.9]">
+                        本次素颜测肤服务基于 NIHPLOD 多年积累的肌肤数据库与前沿 AI 视觉识别技术，从纹理、色斑、毛孔到轮廓状态，多维度评估，几分钟即可生成您的个性化护肤方案。
                       </p>
                     </div>
                   </div>
                 </div>
 
                 {/* Close */}
-                <div className="text-center mt-10">
+                <div className="text-center mt-12 md:mt-16">
                   <button
                     onClick={() => setShowBrandModal(false)}
-                    className="inline-flex items-center gap-2 py-2 text-[13px] tracking-[0.2em] font-medium text-[#8B7355] cursor-pointer transition-all duration-300 bg-transparent border-none outline-none group"
+                    className="inline-flex items-center gap-2 py-2 text-[14px] tracking-[0.2em] font-medium text-[#8B7355] cursor-pointer transition-all duration-300 bg-transparent border-none outline-none group"
                   >
                     <span className="border-b border-[#8B7355]/30 pb-0.5 group-hover:border-[#8B7355] transition-colors">关闭</span>
                     <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
