@@ -468,25 +468,25 @@ export default function QuestionsPage() {
                             initial={{ opacity: 0, scale: 0.95, y: 10 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                            className="relative w-full max-w-sm bg-white/70 backdrop-blur-xl p-10 shadow-[0_24px_48px_-12px_rgba(0,0,0,0.08)] border border-white/60 text-center rounded-xl overflow-hidden"
+                            className="relative w-full max-w-sm bg-white/70 backdrop-blur-xl p-8 shadow-[0_24px_48px_-12px_rgba(0,0,0,0.08)] border border-white/60 text-center rounded-xl overflow-hidden"
                         >
                             <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }} />
                             <div className="relative z-10">
-                                <h3 className="text-xl md:text-2xl font-serif text-[#1A1A1A] mb-3">结束测试？</h3>
-                                <p className="text-sm text-[#5E5E5E] mb-10 font-light leading-relaxed">
+                                <h3 className="text-xl font-serif text-[#1A1A1A] mb-2">结束测试？</h3>
+                                <p className="text-sm text-[#5E5E5E] mb-8 font-light leading-relaxed">
                                     您的进度已自动保存，<br />下次返回可直接从此处继续。
                                 </p>
-                                <div className="flex flex-col items-center gap-5">
+                                <div className="flex flex-col items-center gap-4">
                                     <button
                                         onClick={() => setShowExitConfirm(false)}
-                                        className="group inline-flex items-center gap-2 py-2 text-[15px] tracking-[0.2em] font-medium text-[#8B7355] cursor-pointer transition-all duration-300 bg-transparent border-none outline-none"
+                                        className="w-full h-11 rounded-md bg-[#4A3728] hover:bg-[#3D2E20] text-[#FDFBF7] text-[13px] font-medium tracking-[0.15em] transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-2"
                                     >
-                                        <span className="border-b border-[#8B7355]/30 pb-0.5 group-hover:border-[#8B7355] transition-colors">继续测试</span>
-                                        <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+                                        <span>继续测试</span>
+                                        <ArrowRight className="w-4 h-4" />
                                     </button>
                                     <button
                                         onClick={() => router.push("/")}
-                                        className="text-[12px] tracking-[0.15em] text-[#3D4430]/30 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
+                                        className="text-[12px] tracking-[0.15em] text-[#3D4430]/40 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
                                     >
                                         退出并返回首页
                                     </button>
@@ -510,19 +510,16 @@ export default function QuestionsPage() {
                             initial={{ opacity: 0, scale: 0.95, y: 10 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                            className="relative w-full max-w-sm bg-white/70 backdrop-blur-xl p-10 shadow-[0_24px_48px_-12px_rgba(0,0,0,0.08)] border border-white/60 text-center rounded-xl overflow-hidden"
+                            className="relative w-full max-w-sm bg-white/70 backdrop-blur-xl p-8 shadow-[0_24px_48px_-12px_rgba(0,0,0,0.08)] border border-white/60 text-center rounded-xl overflow-hidden"
                         >
                             <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }} />
                             <div className="relative z-10">
-                                <div className="w-14 h-14 rounded-lg bg-[#8B7355]/5 flex items-center justify-center mx-auto mb-5">
-                                    <span className="text-2xl">🤔</span>
-                                </div>
-                                <h3 className="text-xl md:text-2xl font-serif text-[#1A1A1A] mb-3">确认提交？</h3>
-                                <p className="text-sm text-[#5E5E5E] mb-10 font-light leading-relaxed">
+                                <h3 className="text-xl font-serif text-[#1A1A1A] mb-2">确认提交？</h3>
+                                <p className="text-sm text-[#5E5E5E] mb-8 font-light leading-relaxed">
                                     我们检测到您的填写速度较快。<br />
                                     建议您再次核对，确保 AI 能为您提供<span className="text-[#1A1A1A] font-medium"> 最精准 </span>的分析结果。
                                 </p>
-                                <div className="flex flex-col items-center gap-5">
+                                <div className="flex flex-col items-center gap-4">
                                     <button
                                         onClick={() => {
                                             setShowQualityWarning(false);
@@ -530,14 +527,14 @@ export default function QuestionsPage() {
                                             startStepIndex.current = currentStepIndex;
                                             if (pendingAnswers) processSubmission(pendingAnswers);
                                         }}
-                                        className="group inline-flex items-center gap-2 py-2 text-[15px] tracking-[0.2em] font-medium text-[#8B7355] cursor-pointer transition-all duration-300 bg-transparent border-none outline-none"
+                                        className="w-full h-11 rounded-md bg-[#4A3728] hover:bg-[#3D2E20] text-[#FDFBF7] text-[13px] font-medium tracking-[0.15em] transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-2"
                                     >
-                                        <span className="border-b border-[#8B7355]/30 pb-0.5 group-hover:border-[#8B7355] transition-colors">我已确认，去提交</span>
-                                        <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+                                        <span>我已确认，去提交</span>
+                                        <ArrowRight className="w-4 h-4" />
                                     </button>
                                     <button
                                         onClick={() => setShowQualityWarning(false)}
-                                        className="text-[12px] tracking-[0.15em] text-[#3D4430]/30 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
+                                        className="text-[12px] tracking-[0.15em] text-[#3D4430]/40 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
                                     >
                                         返回检查
                                     </button>
@@ -560,28 +557,25 @@ export default function QuestionsPage() {
                             initial={{ opacity: 0, scale: 0.95, y: 10 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                            className="relative w-full max-w-sm bg-white/70 backdrop-blur-xl p-10 shadow-[0_24px_48px_-12px_rgba(0,0,0,0.08)] border border-white/60 text-center rounded-xl overflow-hidden"
+                            className="relative w-full max-w-sm bg-white/70 backdrop-blur-xl p-8 shadow-[0_24px_48px_-12px_rgba(0,0,0,0.08)] border border-white/60 text-center rounded-xl overflow-hidden"
                         >
                             <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }} />
                             <div className="relative z-10">
-                                <div className="w-14 h-14 rounded-lg bg-[#8B7355]/5 flex items-center justify-center mx-auto mb-5">
-                                    <History className="w-7 h-7 text-[#8B7355]/60" strokeWidth={1} />
-                                </div>
-                                <h3 className="text-xl md:text-2xl font-serif text-[#1A1A1A] mb-3">未完成的测试</h3>
-                                <p className="text-sm text-[#5E5E5E] mb-10 font-light leading-relaxed">
+                                <h3 className="text-xl font-serif text-[#1A1A1A] mb-2">未完成的测试</h3>
+                                <p className="text-sm text-[#5E5E5E] mb-8 font-light leading-relaxed">
                                     为您自动找回了上次的进度，<br />是否立即继续完成？
                                 </p>
-                                <div className="flex flex-col items-center gap-5">
+                                <div className="flex flex-col items-center gap-4">
                                     <button
                                         onClick={resumeSavedProgress}
-                                        className="group inline-flex items-center gap-2 py-2 text-[15px] tracking-[0.2em] font-medium text-[#8B7355] cursor-pointer transition-all duration-300 bg-transparent border-none outline-none"
+                                        className="w-full h-11 rounded-md bg-[#4A3728] hover:bg-[#3D2E20] text-[#FDFBF7] text-[13px] font-medium tracking-[0.15em] transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-2"
                                     >
-                                        <span className="border-b border-[#8B7355]/30 pb-0.5 group-hover:border-[#8B7355] transition-colors">继续上次测试</span>
-                                        <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+                                        <span>继续上次测试</span>
+                                        <ArrowRight className="w-4 h-4" />
                                     </button>
                                     <button
                                         onClick={startFresh}
-                                        className="text-[12px] tracking-[0.15em] text-[#3D4430]/30 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
+                                        className="text-[12px] tracking-[0.15em] text-[#3D4430]/40 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
                                     >
                                         暂时不用，重新开始
                                     </button>
