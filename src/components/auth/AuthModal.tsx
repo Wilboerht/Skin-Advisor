@@ -727,10 +727,9 @@ export function AuthModal() {
             {isOpen && (
                 <motion.div
                     key="mobile-modal"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.3 }}
+                    initial={{ x: "100%" }}
+                    animate={{ x: 0, transition: { duration: 0.8, ease: [0.8, 0, 0.13, 1] } }}
+                    exit={{ x: "100%", transition: { duration: 0.8, ease: [0.9, 0, 0.17, 1] } }}
                     className="md:hidden fixed inset-0 z-[99999] bg-white flex flex-col"
                 >
                     <div className="flex-1 flex flex-col justify-center px-6 overflow-y-auto">
