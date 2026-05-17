@@ -109,7 +109,7 @@ async function generateWanxiangAvatarAsync(prompt: string, frontPhoto: string | 
       n: 1,
       size: "1024*1024",
       watermark: false,
-      prompt_extend: true, // 保持自动扩展以提升画面丰富度
+      prompt_extend: false, // 关闭自动扩展，严格控制风格避免偏离
       negative_prompt: "腮红,红晕,脸红,脸颊泛红,胭脂,blush,rosy cheeks,flushed cheeks,面部泛红,红色晕染,血色,面部红晕,绯红",
     },
   };
@@ -194,19 +194,56 @@ async function deleteSourcePhoto(frontPhoto: string | null | undefined): Promise
 }
 
 /**
+ * 根据肤色评分映射为中文描述
+ */
+function mapSkinTone(score: number | undefined): string | null {
+  if (score === undefined || score === null) return null;
+  if (score >= 80) return "白皙透亮肤色";
+  if (score >= 65) return "自然偏白肤色";
+  if (score >= 45) return "健康小麦肤色";
+  return "偏深肤色";
+}
+
+/**
  * 生成头像的完整逻辑（从 generate/route.ts 迁移）
  */
 async function generateAvatarImage(
   frontPhoto: string | null | undefined,
   characteristics: any,
-  nickname: string
+  nickname: string,
+  sessionId: string
 ): Promise<{ url: string; source: string } | null> {
+  // ===== 优先从 AI 分析结果读取真实面部特征 =====
+  let realGender: string | undefined;
+  let realAge: number | undefined;
+  let realSkinToneScore: number | undefined;
+
+  try {
+    const session = await prisma.advisorSession.findUnique({
+      where: { sessionId },
+      select: { analysisResult: true },
+    });
+    if (session?.analysisResult) {
+      const result = session.analysisResult as any;
+      realGender = result.gender?.value;
+      realAge = result.skinAge?.estimated;
+      realSkinToneScore = result.dimensions?.skinTone?.score;
+      console.log(
+        `[Avatar] Real analysis data for ${sessionId}: gender=${realGender}, age=${realAge}, skinToneScore=${realSkinToneScore}`
+      );
+    } else {
+      console.log(`[Avatar] No analysis result yet for ${sessionId}, using fallback characteristics`);
+    }
+  } catch (e) {
+    console.warn("[Avatar] Failed to fetch analysis result, using fallback characteristics:", e);
+  }
+
   // Build prompt
-  const rawGender = characteristics?.gender;
+  const rawGender = realGender || characteristics?.gender;
   const isMale = rawGender === "male" || rawGender === "男";
   const gender = isMale ? "男" : "女";
-  const age = characteristics?.age || "25";
-  const skinTone = characteristics?.skinTone || "健康肤色";
+  const age = realAge ?? characteristics?.age ?? 25;
+  const skinTone = mapSkinTone(realSkinToneScore) || characteristics?.skinTone || "健康肤色";
   const hairStyle = characteristics?.hairStyle || "日常发型";
 
   // 动态注入用户特征到 prompt
@@ -215,8 +252,8 @@ async function generateAvatarImage(
   const skinToneLabel = String(skinTone);
   const hairStyleLabel = String(hairStyle);
 
-  // 核心约束前置+后置，防止被长文本稀释
-  const prompt = `${genderLabel}，${ageLabel}，${skinToneLabel}，${hairStyleLabel}。面部肤色干净自然。水彩手绘风格半身像，头顶预留一定空间，清新治愈，纯白背景，视觉焦点突出，质感柔和。头发以水彩平涂+勾线为主，不同区域勾线颜色有区分，面部和手部轮廓为暖咖色。衣服无外轮廓线，水彩平涂保留肌理，内部有白色细线条交代细节。整幅画低饱和度柔和色调，通透水彩笔触与简约线条，日系清新插画，比例3:4竖版。`;
+  // 核心约束前置+后置，防止被长文本稀释（已移除固定尺寸要求）
+  const prompt = `${genderLabel}，${ageLabel}，${skinToneLabel}，${hairStyleLabel}。面部肤色干净自然。水彩手绘风格半身像，头顶预留一定空间，清新治愈，纯白背景，视觉焦点突出，质感柔和。头发以水彩平涂+勾线为主，不同区域勾线颜色有区分，面部和手部轮廓为暖咖色。衣服无外轮廓线，水彩平涂保留肌理，内部有白色细线条交代细节。整幅画低饱和度柔和色调，通透水彩笔触与简约线条，日系清新插画。`;
 
   let imageUrl: string | null = null;
   let source = "fallback";
@@ -257,10 +294,10 @@ async function generateAvatarImage(
         }
       }
 
-      // 策略 3: Jimeng text2image
+      // 策略 3: Jimeng text2image（如果 frontPhoto 存在也传入，争取保留用户参考）
       console.log("🎨 Attempting Jimeng text-to-image...");
       imageUrl = await Promise.race([
-        generateJimengAvatarAsync(prompt, null, "jimeng_t2i_v30"),
+        generateJimengAvatarAsync(prompt, frontPhoto, "jimeng_t2i_v30"),
         new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error("Jimeng t2i timeout")), 90000)
         ),
@@ -454,7 +491,8 @@ export async function processAvatarQueueItem(item: AvatarQueueItem) {
     const result = await generateAvatarImage(
       item.frontPhoto,
       item.characteristics,
-      item.nickname || "用户"
+      item.nickname || "用户",
+      item.sessionId
     );
 
     if (!result) {

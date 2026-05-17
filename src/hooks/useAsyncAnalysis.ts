@@ -187,10 +187,9 @@ export function useAsyncAnalysis() {
                                             nickname: nickname,
                                             frontPhoto: frontPhotoForAvatar,
                                             characteristics: {
-                                                age: 25,
-                                                gender: storedGender,
-                                                skinTone: 'healthy',
-                                                hairStyle: 'elegant'
+                                                // 年龄、肤色、发型由后端从 AI 分析结果中读取真实数据
+                                                // 此处仅传入用户明确填写的性别作为最终 fallback
+                                                gender: storedGender
                                             }
                                         }),
                                         signal: avatarAbortController.signal
