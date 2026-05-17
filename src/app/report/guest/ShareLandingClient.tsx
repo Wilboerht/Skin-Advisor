@@ -441,10 +441,10 @@ export default function ShareLandingClient({ analysisResult, sessionId }: ShareL
               </div>
 
               {/* Decorative Image Area (Right) */}
-              <div className="absolute right-[-40px] lg:-right-33 bottom-[112px] lg:-bottom-6 w-1/2 h-[110%] pointer-events-none flex items-end justify-end z-20">
+              <div className="absolute right-[-44px] lg:-right-33 bottom-[112px] lg:-bottom-6 w-1/2 h-[110%] pointer-events-none flex items-end justify-end z-20">
                 {/* Gift Box sitting on the ribbon */}
                 <div
-                  className="absolute -bottom-[53%] lg:-bottom-[30%] w-[16rem] sm:w-[28rem] h-[16rem] sm:h-[28rem] z-30 drop-shadow-2xl right-[-30px] lg:right-[-48px]"
+                  className="absolute -bottom-[53%] lg:-bottom-[30%] w-[16rem] sm:w-[28rem] h-[16rem] sm:h-[28rem] z-30 drop-shadow-2xl right-[-34px] lg:right-[-48px]"
                 >
                   <Image
                     src="/images/gift.webp"
