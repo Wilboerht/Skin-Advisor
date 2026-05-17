@@ -463,8 +463,8 @@ export function OnboardingFlowModal({
                         </button>
                     )}
 
-                    {/* ---- Progress Indicators (right side dots) ---- */}
-                    <div className="fixed right-6 md:right-10 top-1/2 -translate-y-1/2 z-[110] flex flex-col items-center gap-3">
+                    {/* ---- Progress Indicators (bottom dots) ---- */}
+                    <div className="fixed bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 z-[110] flex flex-row items-center gap-3">
                         {screens.map((screen, index) => (
                             <button
                                 key={screen}
