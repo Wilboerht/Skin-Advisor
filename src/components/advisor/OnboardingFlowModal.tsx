@@ -463,23 +463,78 @@ export function OnboardingFlowModal({
                         </button>
                     )}
 
-                    {/* ---- Progress Indicators (bottom dots) ---- */}
-                    <div className="fixed bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 z-[110] flex flex-row items-center gap-3">
-                        {screens.map((screen, index) => (
-                            <button
-                                key={screen}
-                                onClick={() => index <= maxVisitedIndex && goTo(index)}
-                                className={`w-2.5 h-2.5 rounded-full transition-all duration-300 border ${
-                                    index === activeIndex
-                                        ? "bg-[#8B7355] border-[#8B7355] scale-125"
-                                        : index <= maxVisitedIndex
-                                            ? "bg-[#8B7355]/30 border-[#8B7355]/40 hover:bg-[#8B7355]/50 cursor-pointer"
-                                            : "bg-transparent border-[#3D4430]/15 cursor-default"
-                                }`}
-                                aria-label={`跳转到第 ${index + 1} 步`}
-                                disabled={index > maxVisitedIndex}
-                            />
-                        ))}
+                    {/* ---- Progress Indicators (connected steps) ---- */}
+                    <div className="fixed bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 z-[110]">
+                        <div className="flex items-center">
+                            {screens.map((screen, index) => {
+                                const isActive = index === activeIndex;
+                                const isCompleted = index < activeIndex;
+                                const isClickable = index <= maxVisitedIndex;
+
+                                return (
+                                    <div key={screen} className="flex items-center">
+                                        {/* Step dot */}
+                                        <button
+                                            onClick={() => isClickable && goTo(index)}
+                                            className="relative flex items-center justify-center focus:outline-none"
+                                            aria-label={`跳转到第 ${index + 1} 步`}
+                                            disabled={!isClickable}
+                                        >
+                                            {/* Active pulse ring */}
+                                            {isActive && (
+                                                <m.span
+                                                    className="absolute w-full h-full rounded-full bg-[#8B7355]/20"
+                                                    initial={{ scale: 1, opacity: 0.6 }}
+                                                    animate={{ scale: 2.2, opacity: 0 }}
+                                                    transition={{
+                                                        duration: 1.8,
+                                                        repeat: Infinity,
+                                                        ease: "easeOut",
+                                                    }}
+                                                />
+                                            )}
+
+                                            {/* Dot core */}
+                                            <m.span
+                                                className={`relative block rounded-full border transition-colors duration-500 ${
+                                                    isActive
+                                                        ? "bg-[#8B7355] border-[#8B7355]"
+                                                        : isCompleted
+                                                            ? "bg-[#8B7355] border-[#8B7355]"
+                                                            : "bg-transparent border-[#3D4430]/20"
+                                                }`}
+                                                animate={{
+                                                    width: isActive ? 10 : 8,
+                                                    height: isActive ? 10 : 8,
+                                                }}
+                                                transition={{
+                                                    type: "spring",
+                                                    stiffness: 400,
+                                                    damping: 25,
+                                                }}
+                                            />
+                                        </button>
+
+                                        {/* Connecting line */}
+                                        {index < screens.length - 1 && (
+                                            <div className="relative w-8 md:w-10 h-[1.5px] mx-1.5 overflow-hidden rounded-full bg-[#3D4430]/8">
+                                                <m.div
+                                                    className="absolute inset-y-0 left-0 bg-[#8B7355]/50 rounded-full"
+                                                    initial={{ width: "0%" }}
+                                                    animate={{
+                                                        width: isCompleted ? "100%" : "0%",
+                                                    }}
+                                                    transition={{
+                                                        duration: 0.6,
+                                                        ease: [0.32, 0.72, 0, 1],
+                                                    }}
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </div>
 
 

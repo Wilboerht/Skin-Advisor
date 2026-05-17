@@ -109,6 +109,8 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
   const speakLockUntilRef = useRef<number>(0);
   // 当前步骤开始时间，用于手动按钮计时
   const stepStartTimeRef = useRef<number>(0);
+  // 标记刚完成拍照的时间戳，用于语音时序对齐
+  const justCapturedRef = useRef<number | null>(null);
   // 调试信息
   const [debugInfo, setDebugInfo] = useState<{
     headPose: string;
@@ -564,6 +566,9 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
               window.speechSynthesis.cancel();
             }
 
+            // 立即重置稳定计数，防止 setTimeout 异步窗口期内重复触发拍照
+            stableCountRef.current = 0;
+
             takePhotoAuto();
           } else if (stableCountRef.current === 1) {
             const now = Date.now();
@@ -614,29 +619,28 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
 
   // 监听步骤变化并播报语音指令
   useEffect(() => {
-    if (isAllCaptured || isLoading || isInCooldown) return;
+    if (isAllCaptured || isLoading) return;
 
     const instruction = CAPTURE_STEPS.find(s => s.step === currentStep)?.instruction;
     if (instruction) {
-      // 切换步骤时，先清空之前的语音队列和正在播放的语音
-      if (typeof window !== 'undefined' && window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-      }
+      // 如果刚拍完照（2秒内），延迟更久让"好"先播完，避免打断
+      const timeSinceCapture = justCapturedRef.current ? Date.now() - justCapturedRef.current : Infinity;
+      const delay = timeSinceCapture < 2000 ? 800 : 500;
 
-      // 稍微延迟确保用户准备好
       const timer = setTimeout(() => {
-        speak(instruction);
-        lastSpeakTimeRef.current = Date.now();
-        lastSpokenPhraseRef.current = instruction;
-      }, 500);
-      return () => {
-        clearTimeout(timer);
+        // 时间到了再 cancel，避免打断"好"
         if (typeof window !== 'undefined' && window.speechSynthesis) {
           window.speechSynthesis.cancel();
         }
-      };
+        speak(instruction);
+        lastSpeakTimeRef.current = Date.now();
+        lastSpokenPhraseRef.current = instruction;
+        justCapturedRef.current = null; // 清除标记
+      }, delay);
+
+      return () => clearTimeout(timer);
     }
-  }, [currentStep, isAllCaptured, isLoading, isInCooldown, speak]);
+  }, [currentStep, isAllCaptured, isLoading, speak]);
 
   /**
    * 获取下一步骤
@@ -755,6 +759,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
       window.speechSynthesis.cancel();
     }
     speak("好");
+    justCapturedRef.current = Date.now(); // 标记刚拍完，用于下一步语音延迟对齐
 
     stableCountRef.current = 0;
     faceBoxRef.current = null; // 重置面部框
