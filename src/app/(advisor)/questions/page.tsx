@@ -370,10 +370,22 @@ export default function QuestionsPage() {
     return (
         <div className="min-h-screen bg-transparent flex flex-col items-center relative overflow-x-hidden text-[#1A1A1A]">
 
-            {/* Top Bar: Progress & Exit */}
+            {/* Top Bar: Progress, Back & Exit */}
             <div className="w-[90%] mx-auto py-8 flex items-center justify-between z-20 shrink-0">
                 <div className="w-12 h-12 flex items-center justify-center">
-                    <span className="text-xs font-bold tracking-widest text-[#4A3728]/50">0{currentStepIndex + 1}</span>
+                    {/* 手机端：返回按钮 */}
+                    <button
+                        onClick={handleBack}
+                        className={cn(
+                            "sm:hidden w-10 h-10 flex items-center justify-center rounded-full text-[#4A3728]/50 hover:text-[#4A3728] hover:bg-[#4A3728]/5 active:bg-[#4A3728]/10 transition-all duration-300",
+                            (currentStepIndex === 0 && !gender) ? "opacity-0 pointer-events-none" : "opacity-100"
+                        )}
+                        aria-label="上一题"
+                    >
+                        <ChevronLeft className="h-5 w-5" />
+                    </button>
+                    {/* 桌面端：题号 */}
+                    <span className="hidden sm:inline text-xs font-bold tracking-widest text-[#4A3728]/50">0{currentStepIndex + 1}</span>
                 </div>
 
                 <div className="flex-1 max-w-xs mx-auto px-4 opacity-0 sm:opacity-100 transition-opacity">
@@ -415,17 +427,17 @@ export default function QuestionsPage() {
             <div className="h-[112px] shrink-0 pointer-events-none" aria-hidden="true" />
 
             {/* Floating Navigation Controls */}
-            {/* Left Corner: Back */}
-            <div className="fixed bottom-8 left-[5%] lg:bottom-12 z-30">
+            {/* Left Corner: Back - Desktop Only */}
+            <div className="fixed bottom-8 left-[5%] lg:bottom-12 z-30 hidden sm:block">
                 <button
                     onClick={handleBack}
                     className={cn(
-                        "px-5 sm:px-7 py-2.5 rounded-md text-[13px] font-medium tracking-widest hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2 bg-white/60 backdrop-blur-md border border-[#3D4430]/10 text-[#3D4430]/70 hover:text-[#3D4430] hover:border-[#3D4430]/20 hover:bg-white/80",
+                        "px-7 py-2.5 rounded-md text-[13px] font-medium tracking-widest hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2 bg-white/60 backdrop-blur-md border border-[#3D4430]/10 text-[#3D4430]/70 hover:text-[#3D4430] hover:border-[#3D4430]/20 hover:bg-white/80",
                         (currentStepIndex === 0 && !gender) ? "opacity-0 pointer-events-none translate-y-4" : "opacity-100 translate-y-0"
                     )}
                 >
                     <ChevronLeft className="h-4 w-4" />
-                    <span className="hidden sm:inline">上一题</span>
+                    <span>上一题</span>
                 </button>
             </div>
 
