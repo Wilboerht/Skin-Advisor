@@ -109,7 +109,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuid
                                     }
                                     onConfirm();
                                 }}
-                                className="w-full max-w-sm h-12 rounded-xl sm:rounded-md bg-[#7A6B5E] hover:bg-[#6A5B4E] sm:bg-[#4A3728] sm:hover:bg-[#3D2E20] text-[#FDFBF7] text-[14px] font-medium tracking-[0.15em] transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-2 group mb-5"
+                                className="w-full max-w-sm h-12 rounded-xl sm:rounded-md bg-[#8B5E3C] hover:bg-[#7A4E2C] sm:bg-[#4A3728] sm:hover:bg-[#3D2E20] text-[#FDFBF7] text-[14px] font-medium tracking-[0.15em] transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-2 group mb-5"
                             >
                                 <span>我已准备好</span>
                                 <ArrowRight className="w-4 h-4 opacity-70 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-1" />
