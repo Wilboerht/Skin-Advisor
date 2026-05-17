@@ -632,9 +632,9 @@ export default function Home() {
                 {/* Main: 图片左 + 文字右 */}
                 <div className="grid grid-cols-1 md:grid-cols-[5fr_5fr] gap-10 md:gap-12 items-stretch">
                   {/* Image */}
-                  <div className="relative min-h-[340px] md:min-h-[520px]">
+                  <div className="relative min-h-[340px] md:min-h-[520px] -ml-6 md:-ml-12">
                     {/* 上方图片 - 海豚灵感 */}
-                    <div className="absolute top-0 left-0 w-[80%] h-[62%] rounded-lg overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.12)] z-10 border-4 border-white/90">
+                    <div className="absolute top-0 left-0 w-[80%] h-[62%] overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.12)] z-10 border-4 border-white/90">
                       <img
                         src="/images/story/dolphin-ocean.webp"
                         alt="海豚灵感"
@@ -642,7 +642,7 @@ export default function Home() {
                       />
                     </div>
                     {/* 下方图片 - 研发团队 */}
-                    <div className="absolute bottom-0 right-0 w-[84%] h-[62%] rounded-lg overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.12)] z-20 border-4 border-white/90">
+                    <div className="absolute bottom-0 right-0 w-[72%] h-[52%] overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.12)] z-20 border-4 border-white/90">
                       <img
                         src="/images/story/lab-research.webp"
                         alt="研发团队"
