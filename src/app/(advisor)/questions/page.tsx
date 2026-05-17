@@ -426,6 +426,9 @@ export default function QuestionsPage() {
             {/* Ghost footer to balance the top bar height for perfect centering between Header and Bottom Buttons */}
             <div className="h-[112px] shrink-0 pointer-events-none" aria-hidden="true" />
 
+            {/* Bottom Fade Mask - 底部渐隐遮挡 */}
+            <div className="fixed bottom-0 left-0 right-0 h-24 pointer-events-none z-20 bg-gradient-to-t from-[#F0EDE1] via-[#F0EDE1]/80 to-transparent" />
+
             {/* Floating Navigation Controls */}
             {/* Left Corner: Back - Desktop Only */}
             <div className="fixed bottom-8 left-[5%] lg:bottom-12 z-30 hidden sm:block">
