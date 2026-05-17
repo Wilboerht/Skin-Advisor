@@ -659,28 +659,13 @@ export default function Home() {
                     <h3 className="text-[26px] md:text-[32px] font-serif text-[#1A1A1A] mb-6 leading-tight tracking-tight">
                       将逆转时光的不可能，慢慢变得「有可能」
                     </h3>
-                    <p className="text-base md:text-lg text-[#5E5E5E] leading-[1.9] font-light mb-6">
+                    <p className="text-base md:text-lg text-[#5E5E5E] leading-[1.9] font-light">
                       旎柏始终坚持正确且积极的科学理念。通过化繁为简的居家修护及高效舒适的院线调理，尽可能的帮助人们解决并预防各类肌肤问题。
                     </p>
 
-                    {/* Tags */}
-                    <div className="flex flex-wrap gap-3 mb-7">
-                      {["居家修护", "院线调理", "天然活性成分"].map((tag) => (
-                        <span
-                          key={tag}
-                          className="inline-block px-4 py-2 text-[13px] text-[#3D4430] bg-[#F0EDE1] rounded-md border border-[#D4CFC5]/60 tracking-wide"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-
-                    <div className="pt-6 border-t border-[#3D4430]/10 space-y-4">
+                    <div className="pt-6 border-t border-[#3D4430]/10">
                       <p className="text-[14px] md:text-[15px] text-[#1A1A1A]/70 font-light leading-[1.9]">
-                        来自大自然的神奇修复力——海豚的肌肤拥有每两小时自我更新的神奇能力。这种「逆转时光」的动物本能，是旎柏成立的灵感来源。所以我们将「DOLPHIN」这个单词逆转，这就是 NIHPLOD。
-                      </p>
-                      <p className="text-[14px] md:text-[15px] text-[#1A1A1A]/70 font-light leading-[1.9]">
-                        创始人 Dr. Stefan 博士和他的团队，将前沿技术与精选的天然活性成分相结合，为每一款产品融入了前沿的科技和配方，使护肤调理变得简单、高效且美好。
+                        NIHPLOD 源于「DOLPHIN」的逆转——灵感来自海豚肌肤每两小时自我更新的神奇修复力。创始人 Dr. Stefan 博士将前沿技术与天然活性成分结合，为每一款产品注入前沿科技，使护肤调理变得简单、高效且美好。
                       </p>
                     </div>
                   </div>
