@@ -111,10 +111,10 @@ export default function FaceScanPage() {
                 <div className="w-[90%] py-6 flex items-center justify-between relative">
                     <Link
                         href="/questions"
-                        className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/40 backdrop-blur-md text-[#1A1A1A]/60 hover:bg-white/80 hover:text-[#1A1A1A] hover:shadow-xl transition-all border border-white/40 shadow-sm"
+                        className="flex items-center justify-center w-10 h-10 rounded-full text-[#1A1A1A]/60 hover:text-[#1A1A1A] hover:bg-[#4A3728]/5 active:bg-[#4A3728]/10 transition-all duration-300 sm:px-5 sm:py-2.5 sm:rounded-full sm:bg-white/40 sm:backdrop-blur-md sm:border sm:border-white/40 sm:shadow-sm sm:gap-2 sm:w-auto sm:h-auto sm:hover:bg-white/80 sm:hover:shadow-xl"
                     >
-                        <ChevronLeft className="h-4 w-4" />
-                        <span className="text-xs font-bold tracking-widest uppercase">返回</span>
+                        <ChevronLeft className="h-5 w-5 sm:h-4 sm:w-4" />
+                        <span className="hidden sm:inline text-xs font-bold tracking-widest uppercase">返回</span>
                     </Link>
 
                     {/* Centered Brand Logo */}
