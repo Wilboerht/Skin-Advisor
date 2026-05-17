@@ -627,37 +627,45 @@ export default function Home() {
                     height={60}
                     className="h-9 md:h-11 object-contain mx-auto"
                   />
-                  <p className="mt-4 text-[12px] tracking-[0.35em] uppercase text-[#8B7355] font-medium">
-                    About NIHPLOD
-                  </p>
                 </div>
 
                 {/* Main: 图片左 + 文字右 */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-stretch">
+                <div className="grid grid-cols-1 md:grid-cols-[5fr_5fr] gap-10 md:gap-12 items-stretch">
                   {/* Image */}
-                  <div className="relative rounded-lg overflow-hidden bg-[#F0EDE1] min-h-[340px] md:min-h-[520px]">
-                    <img
-                      src="/hero-illustration-v2.webp"
-                      alt="NIHPLOD"
-                      className="absolute inset-0 w-full h-full object-cover"
-                    />
+                  <div className="relative min-h-[340px] md:min-h-[520px]">
+                    {/* 上方图片 - 海豚灵感 */}
+                    <div className="absolute top-0 left-0 w-[80%] h-[62%] rounded-lg overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.12)] z-10 border-4 border-white/90">
+                      <img
+                        src="/images/story/dolphin-ocean.webp"
+                        alt="海豚灵感"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    {/* 下方图片 - 研发团队 */}
+                    <div className="absolute bottom-0 right-0 w-[84%] h-[62%] rounded-lg overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.12)] z-20 border-4 border-white/90">
+                      <img
+                        src="/images/story/lab-research.webp"
+                        alt="研发团队"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
                   </div>
 
                   {/* Text */}
                   <div className="flex flex-col justify-center text-left py-2">
                     <p className="text-[13px] text-[#8B7355] tracking-[0.25em] uppercase font-medium mb-5">
-                      源自摩纳哥 · 奢护定制
+                      化繁为简 · 逆转时光
                     </p>
                     <h3 className="text-[26px] md:text-[32px] font-serif text-[#1A1A1A] mb-6 leading-tight tracking-tight">
-                      精准分析，科学护肤
+                      将逆转时光的不可能，慢慢变得「有可能」
                     </h3>
                     <p className="text-base md:text-lg text-[#5E5E5E] leading-[1.9] font-light mb-6">
-                      NIHPLOD（旎柏）诞生于摩纳哥，将尖端生物科技与 Monaco 独有的护肤哲学深度融合。我们坚信每个人的肌肤都是独一无二的，真正的护肤不是盲目跟风，而是基于科学数据的精准洞察。
+                      旎柏始终坚持正确且积极的科学理念。通过化繁为简的居家修护及高效舒适的院线调理，尽可能的帮助人们解决并预防各类肌肤问题。
                     </p>
 
                     {/* Tags */}
                     <div className="flex flex-wrap gap-3 mb-7">
-                      {["AI 视觉测肤", "定制化方案", "多维度分析"].map((tag) => (
+                      {["居家修护", "院线调理", "天然活性成分"].map((tag) => (
                         <span
                           key={tag}
                           className="inline-block px-4 py-2 text-[13px] text-[#3D4430] bg-[#F0EDE1] rounded-md border border-[#D4CFC5]/60 tracking-wide"
@@ -667,9 +675,12 @@ export default function Home() {
                       ))}
                     </div>
 
-                    <div className="pt-6 border-t border-[#3D4430]/10">
+                    <div className="pt-6 border-t border-[#3D4430]/10 space-y-4">
                       <p className="text-[14px] md:text-[15px] text-[#1A1A1A]/70 font-light leading-[1.9]">
-                        本次素颜测肤服务基于 NIHPLOD 多年积累的肌肤数据库与前沿 AI 视觉识别技术，从纹理、色斑、毛孔到轮廓状态，多维度评估，几分钟即可生成您的个性化护肤方案。
+                        来自大自然的神奇修复力——海豚的肌肤拥有每两小时自我更新的神奇能力。这种「逆转时光」的动物本能，是旎柏成立的灵感来源。所以我们将「DOLPHIN」这个单词逆转，这就是 NIHPLOD。
+                      </p>
+                      <p className="text-[14px] md:text-[15px] text-[#1A1A1A]/70 font-light leading-[1.9]">
+                        创始人 Dr. Stefan 博士和他的团队，将前沿技术与精选的天然活性成分相结合，为每一款产品融入了前沿的科技和配方，使护肤调理变得简单、高效且美好。
                       </p>
                     </div>
                   </div>
