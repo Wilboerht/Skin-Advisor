@@ -600,7 +600,7 @@ export function AnalyzingOverlay({ progress, onCancel, waitingForAvatar, queuePo
             {/* 3. Analysis Icons Row (9 Metrics) */}
             <div className="absolute bottom-24 w-full px-4 z-50">
                 <m.div
-                    className="flex flex-wrap md:flex-nowrap items-center justify-center gap-3 sm:gap-4 md:gap-6 max-w-[95vw] sm:max-w-2xl mx-auto"
+                    className="flex flex-nowrap items-center justify-center gap-2 sm:gap-4 md:gap-6 max-w-[95vw] sm:max-w-2xl mx-auto"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5, duration: 0.8 }}
@@ -632,7 +632,7 @@ export function AnalyzingOverlay({ progress, onCancel, waitingForAvatar, queuePo
                                     ease: "easeInOut"
                                 }}
                             >
-                                <div className="[&_svg]:w-9 [&_svg]:h-9 sm:[&_svg]:w-11 sm:[&_svg]:h-11 md:[&_svg]:w-12 md:[&_svg]:h-12 drop-shadow-sm transition-all duration-300">
+                                <div className="[&_svg]:w-7 [&_svg]:h-7 sm:[&_svg]:w-11 sm:[&_svg]:h-11 md:[&_svg]:w-12 md:[&_svg]:h-12 drop-shadow-sm transition-all duration-300">
                                     <Icon />
                                 </div>
                             </m.div>
