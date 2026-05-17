@@ -660,14 +660,8 @@ export default function Home() {
                       将逆转时光的不可能，慢慢变得「有可能」
                     </h3>
                     <p className="text-base md:text-lg text-[#5E5E5E] leading-[1.9] font-light">
-                      旎柏始终坚持正确且积极的科学理念。通过化繁为简的居家修护及高效舒适的院线调理，尽可能的帮助人们解决并预防各类肌肤问题。
+                      旎柏始终坚持正确且积极的科学理念。通过化繁为简的居家修护及高效舒适的院线调理，尽可能的帮助人们解决并预防各类肌肤问题。NIHPLOD 源于「DOLPHIN」的逆转——灵感来自海豚肌肤每两小时自我更新的神奇修复力。创始人 Dr. Stefan 博士将前沿技术与天然活性成分结合，为每一款产品注入前沿科技，使护肤调理变得简单、高效且美好。
                     </p>
-
-                    <div className="pt-6 border-t border-[#3D4430]/10">
-                      <p className="text-[14px] md:text-[15px] text-[#1A1A1A]/70 font-light leading-[1.9]">
-                        NIHPLOD 源于「DOLPHIN」的逆转——灵感来自海豚肌肤每两小时自我更新的神奇修复力。创始人 Dr. Stefan 博士将前沿技术与天然活性成分结合，为每一款产品注入前沿科技，使护肤调理变得简单、高效且美好。
-                      </p>
-                    </div>
                   </div>
                 </div>
 
