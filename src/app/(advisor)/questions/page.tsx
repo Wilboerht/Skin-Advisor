@@ -445,22 +445,26 @@ export default function QuestionsPage() {
             </div>
 
             {/* Right Corner: Next */}
-            <div className="fixed bottom-8 right-[5%] lg:bottom-12 z-30">
+            <div className={cn(
+                "fixed z-30",
+                "bottom-4 left-4 right-4 sm:bottom-8 sm:left-auto sm:right-[5%] lg:bottom-12"
+            )}>
                 <AnimatePresence>
                     {((currentQuestion.type === "multiple") || (currentStepIndex === questions.length - 1 && !isNextDisabled())) && (
                         <m.button
-                            initial={{ opacity: 0, scale: 0.9, y: 10 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9, y: 10 }}
-                            whileHover={!isNextDisabled() ? { scale: 1.03 } : {}}
-                            whileTap={!isNextDisabled() ? { scale: 0.97 } : {}}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 20 }}
+                            whileHover={!isNextDisabled() ? { scale: 1.02 } : {}}
+                            whileTap={!isNextDisabled() ? { scale: 0.98 } : {}}
                             onClick={handleNext}
                             disabled={isNextDisabled()}
                             className={cn(
-                                "px-7 sm:px-9 py-3 rounded-md text-[13px] font-medium tracking-[0.15em] transition-all duration-300 flex items-center gap-2",
+                                "w-full sm:w-auto text-[13px] sm:text-[13px] font-medium tracking-[0.15em] transition-all duration-300 flex items-center justify-center gap-2",
+                                "py-3.5 sm:py-3 rounded-xl sm:rounded-md sm:px-9",
                                 isNextDisabled()
-                                    ? "bg-[#E5E0D5]/50 text-[#1A1A1A]/15 cursor-not-allowed border border-transparent"
-                                    : "bg-[#4A3728] text-[#FDFBF7] border border-transparent hover:bg-[#3D2E20] hover:shadow-[0_12px_32px_-8px_rgba(74,55,40,0.35)]"
+                                    ? "bg-[#E5E0D5]/80 text-[#1A1A1A]/30 cursor-not-allowed"
+                                    : "bg-[#7A6B5E] text-[#FDFBF7] hover:bg-[#6A5B4E] hover:shadow-[0_12px_32px_-8px_rgba(74,55,40,0.22)] sm:bg-[#4A3728] sm:hover:bg-[#3D2E20] sm:hover:shadow-[0_12px_32px_-8px_rgba(74,55,40,0.35)]"
                             )}
                         >
                             <span>{currentStepIndex === questions.length - 1 ? "面部检测" : "下一步"}</span>
