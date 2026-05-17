@@ -85,10 +85,14 @@ export function FloatingToolbar({
 
     return (
         <motion.div
-            className={`fixed right-4 top-1/2 -translate-y-1/2 z-[200] h-[280px] flex flex-col justify-end ${className}`}
+            className={`fixed z-[200] flex flex-col justify-end
+                bottom-4 right-4 
+                sm:top-1/2 sm:-translate-y-1/2 sm:right-4 sm:bottom-auto
+                h-auto sm:h-[280px]
+                ${className}`}
             initial={false}
         >
-            {/* 菜单项 - 绝对定位，底部和按钮对齐，向上展开 */}
+            {/* 菜单项 - 手机端向上展开，桌面端向上展开 */}
             <AnimatePresence>
                 {isHovered && (
                     <motion.div
@@ -96,7 +100,7 @@ export function FloatingToolbar({
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.3, ease: "easeOut", delay: 0.15 }}
-                        className="absolute bottom-0 right-0 flex flex-col-reverse items-end gap-2 will-change-transform"
+                        className="absolute bottom-full right-0 mb-2 sm:bottom-0 sm:mb-0 flex flex-col-reverse items-end gap-2 will-change-transform"
                         onMouseEnter={() => handleHoverChange(true)}
                         onMouseLeave={() => handleHoverChange(false)}
                     >
@@ -146,7 +150,7 @@ export function FloatingToolbar({
                 )}
             </AnimatePresence>
 
-            {/* Collapsed trigger button - 位置固定，只做淡出 */}
+            {/* Collapsed trigger button - 手机端圆形图标，桌面端竖条 */}
             <motion.button
                 onMouseEnter={() => handleHoverChange(true)}
                 onMouseLeave={() => handleHoverChange(false)}
@@ -157,28 +161,28 @@ export function FloatingToolbar({
                 }}
                 transition={{ duration: 0.25, ease: "easeInOut" }}
                 className="
-                    w-[52px] py-3 rounded-[20px]
+                    w-10 h-10 rounded-full
+                    sm:w-[52px] sm:py-3 sm:rounded-[20px]
                     bg-gradient-to-b from-[#FDFBF7]/95 to-[#F5F0E8]/95
                     backdrop-blur-xl
                     border border-[#4A3728]/8
                     shadow-[0_4px_16px_rgba(74,55,40,0.08)]
                     hover:shadow-[0_6px_20px_rgba(74,55,40,0.12)]
-                    flex flex-col items-center gap-2
+                    flex items-center justify-center
+                    sm:flex-col sm:gap-2
                     text-[#4A3728]
                     cursor-pointer
                     will-change-transform
                 "
             >
                 <div className="w-7 h-7 rounded-full bg-[#4A3728]/6 flex items-center justify-center">
-                    <GripVertical className="w-3.5 h-3.5 text-[#4A3728]/70" strokeWidth={2} />
+                    <GripVertical className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-[#4A3728]/70" strokeWidth={2} />
                 </div>
-                <div className="flex flex-col items-center leading-tight">
+                <div className="hidden sm:flex flex-col items-center leading-tight">
                     <span className="text-xs font-medium tracking-wider text-[#4A3728]/60">更多</span>
                     <span className="text-xs font-medium tracking-wider text-[#4A3728]/60">功能</span>
                 </div>
             </motion.button>
-
-
         </motion.div>
     );
 }
