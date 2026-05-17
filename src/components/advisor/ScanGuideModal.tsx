@@ -41,13 +41,13 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuid
                     transition={{ duration: 0.4 }}
                     className="fixed inset-0 z-[300] bg-[#FAF8F5] flex flex-col items-center justify-center overflow-y-auto"
                 >
-                    <div className="w-full max-w-2xl px-6 py-12 md:py-16 flex flex-col items-center">
+                    <div className="w-full max-w-2xl px-6 py-8 md:py-16 flex flex-col items-center">
                         {/* Header */}
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.1, duration: 0.5 }}
-                            className="flex flex-col items-center text-center gap-4 mb-10"
+                            className="flex flex-col items-center text-center gap-3 sm:gap-4 mb-6 sm:mb-10"
                         >
                             <Image src="/NIHPLOD-logo.svg" alt="NIHPLOD" width={140} height={74} className="w-[140px] h-16 mb-2" />
                             <div className="space-y-2">
@@ -109,7 +109,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuid
                                     }
                                     onConfirm();
                                 }}
-                                className="w-full max-w-sm h-12 rounded-md bg-[#4A3728] hover:bg-[#3D2E20] text-[#FDFBF7] text-[14px] font-medium tracking-[0.15em] transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-2 group mb-5"
+                                className="w-full max-w-sm h-12 rounded-xl sm:rounded-md bg-[#7A6B5E] hover:bg-[#6A5B4E] sm:bg-[#4A3728] sm:hover:bg-[#3D2E20] text-[#FDFBF7] text-[14px] font-medium tracking-[0.15em] transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-2 group mb-5"
                             >
                                 <span>我已准备好</span>
                                 <ArrowRight className="w-4 h-4 opacity-70 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-1" />
