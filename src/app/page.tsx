@@ -665,15 +665,18 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Close */}
+                {/* CTA */}
                 <div className="text-center mt-12 md:mt-16">
-                  <button
+                  <a
+                    href="https://nihplod.cn/"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     onClick={() => setShowBrandModal(false)}
                     className="inline-flex items-center gap-2 py-2 text-[14px] tracking-[0.2em] font-medium text-[#8B7355] cursor-pointer transition-all duration-300 bg-transparent border-none outline-none group"
                   >
-                    <span className="border-b border-[#8B7355]/30 pb-0.5 group-hover:border-[#8B7355] transition-colors">关闭</span>
+                    <span className="border-b border-[#8B7355]/30 pb-0.5 group-hover:border-[#8B7355] transition-colors">前往官网</span>
                     <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
-                  </button>
+                  </a>
                 </div>
               </div>
             </div>
