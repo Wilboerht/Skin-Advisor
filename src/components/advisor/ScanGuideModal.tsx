@@ -65,24 +65,24 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuid
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.2, duration: 0.5 }}
-                            className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10"
+                            className="w-full grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-10"
                         >
                             {guideItems.map((item, index) => {
                                 const Icon = item.icon;
                                 return (
                                     <div
                                         key={index}
-                                        className={`flex flex-col h-full p-5 rounded-lg bg-white/50 border border-[#D4CFC5]/60 hover:border-[#8B7355]/25 hover:bg-[#F8F5EE]/80 transition-all duration-300 group ${item.fullWidth ? 'sm:col-span-2' : ''}`}
+                                        className={`flex flex-col h-full p-4 sm:p-5 rounded-lg bg-white/50 border border-[#D4CFC5]/60 hover:border-[#8B7355]/25 hover:bg-[#F8F5EE]/80 transition-all duration-300 group ${item.fullWidth ? 'sm:col-span-2' : ''}`}
                                     >
-                                        <div className="flex items-start gap-4">
-                                            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-[#4A3728]/[0.04] group-hover:bg-[#4A3728]/[0.08] transition-colors duration-300 flex items-center justify-center text-[#4A3728]">
-                                                <Icon className="w-[18px] h-[18px]" strokeWidth={1.5} />
+                                        <div className="flex items-center sm:items-start gap-3 sm:gap-4">
+                                            <div className="flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-[#4A3728]/[0.04] group-hover:bg-[#4A3728]/[0.08] transition-colors duration-300 flex items-center justify-center text-[#4A3728]">
+                                                <Icon className="w-4 h-4 sm:w-[18px] sm:h-[18px]" strokeWidth={1.5} />
                                             </div>
-                                            <div className="flex-1 pt-0.5">
-                                                <h4 className="text-[15px] font-medium text-[#1A1A1A] mb-1.5 tracking-wide">
+                                            <div className="flex-1 sm:pt-0.5">
+                                                <h4 className="text-sm sm:text-[15px] font-medium text-[#1A1A1A] sm:mb-1.5 tracking-wide">
                                                     {item.title}
                                                 </h4>
-                                                <p className="text-[13px] text-[#5E5E5E]/80 leading-relaxed font-light">
+                                                <p className="hidden sm:block text-[13px] text-[#5E5E5E]/80 leading-relaxed font-light">
                                                     {item.desc}
                                                 </p>
                                             </div>
