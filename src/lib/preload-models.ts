@@ -6,8 +6,8 @@
  */
 
 /** 跟踪预加载状态 */
-let faceApiPreloadPromise: Promise<any> | null = null;
-let mediaPipePreloadPromise: Promise<any> | null = null;
+let faceApiPreloadPromise: Promise<unknown> | null = null;
+let mediaPipePreloadPromise: Promise<unknown> | null = null;
 
 /**
  * 预加载 face-api.js 模型（TinyFaceDetector + faceLandmark68Net）

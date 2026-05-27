@@ -120,7 +120,6 @@ export async function rateLimit(
 
     // 获取或创建请求记录
     let record = rateLimitCache.get(cacheKey);
-    const isNewRecord = !record;
 
     if (!record) {
         record = {

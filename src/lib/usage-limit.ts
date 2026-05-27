@@ -5,7 +5,6 @@ import { Prisma } from '@prisma/client';
 import { getSession, isVipCheck } from '@/lib/auth';
 import { extractGuestIdentifiers } from './guest-limit';
 import { withDbRetry } from './utils';
-import { hashIP } from './privacy';
 
 /**
  * 使用频率限制结果
@@ -28,7 +27,6 @@ export interface UsageLimitResult {
  */
 export async function checkUsageLimit(request: NextRequest, body?: Record<string, unknown>): Promise<UsageLimitResult> {
     const user = await getSession();
-    const now = new Date();
 
     // 统计进行中请求（10 分钟内启动但未完成的），防止并发重试导致超额
     // 注：队列等待时间不计入该窗口（analysisStartedAt 在 acquire 成功后才更新）

@@ -10,7 +10,9 @@ const prismaClientSingleton = () => {
         throw new Error("DATABASE_URL environment variable is not set");
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { Pool } = require("pg");
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { PrismaPg } = require("@prisma/adapter-pg");
 
     // Serverless 环境检测：Vercel / AWS Lambda 等多实例平台需要限制连接数
