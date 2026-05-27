@@ -85,8 +85,11 @@ class AIRequestQueue {
     private acquireCount = 0;
 
     constructor(maxConcurrent = 10) {
-        this.maxConcurrent = maxConcurrent;
-        aiLogger.info("AI Queue initialized", { maxConcurrent });
+        if (typeof maxConcurrent !== 'number' || isNaN(maxConcurrent) || maxConcurrent < 1) {
+            throw new Error(`[AIQueue] Invalid maxConcurrent: ${maxConcurrent}. Must be a positive integer.`);
+        }
+        this.maxConcurrent = Math.floor(maxConcurrent);
+        aiLogger.info("AI Queue initialized", { maxConcurrent: this.maxConcurrent });
     }
 
     /**

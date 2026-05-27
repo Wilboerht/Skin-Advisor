@@ -159,7 +159,9 @@ export async function checkGuestLimit(
 
     // 检查是否需要重置今日计数（跨天）
     let todayCount = primaryRecord.todayCount;
-    const lastReset = new Date(primaryRecord.lastResetDate);
+    // 安全处理 lastResetDate 为 null 的边界情况（理论上 schema 有 default，但防御性编码）
+    const rawLastReset = primaryRecord.lastResetDate || primaryRecord.lastTestAt;
+    const lastReset = rawLastReset ? new Date(rawLastReset) : new Date();
     lastReset.setHours(0, 0, 0, 0);
 
     if (lastReset < today) {
@@ -183,7 +185,7 @@ export async function checkGuestLimit(
 
 /**
  * 记录游客测试
- * @deprecated 该函数已不再使用，请使用 src/lib/usage-limit.ts 中的 recordUsage() 代替。
+ * @deprecated 该函数已不再使用，请使用 src/lib/usage-limit.ts 中的 reserveUsage() 代替。
  * 保留导出以确保向后兼容，但内部实现不再维护。
  */
 export async function recordGuestTest(

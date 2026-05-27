@@ -156,8 +156,8 @@ export function getDefaultFaceAnalysisResult(): FaceAnalysisResult {
         validation: { isValid: true, message: "默认分析" },
         skinType: { type: "combination", confidence: 0.8, description: "混合性肌肤" },
         skinAge: { estimated: 25, factors: [] },
-        // MOCK: Default to male to test conflict logic if using default data
-        gender: { value: "male", confidence: 0.98 },
+        // 默认不设置 gender，避免与问卷答案产生误判
+        gender: undefined,
         dimensions: {
             waterOil: { score: 72, grade: "average", details: "T区偏油，U区适中" },
             skinTone: { score: 75, grade: "good", details: "肤色基本均匀" },

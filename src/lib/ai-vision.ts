@@ -79,9 +79,12 @@ export async function analyzeImages(
                 const jsonData = extractJsonFromResponse<any>(result);
                 if (!jsonData) throw new Error("Failed to parse JSON from Vision API");
 
-                // 简单的结构验证
-                if (!jsonData.dimensions && !jsonData.faceAnalysis && !jsonData.skinType) {
-                    throw new Error("AI response structure missing critical fields");
+                // 结构验证：必须包含核心分析字段，且 dimensions 应为对象
+                const hasDimensions = jsonData.dimensions && typeof jsonData.dimensions === 'object';
+                const hasSkinType = jsonData.skinType && typeof jsonData.skinType === 'object';
+                const hasFaceAnalysis = jsonData.faceAnalysis && typeof jsonData.faceAnalysis === 'object';
+                if (!hasDimensions && !hasSkinType && !hasFaceAnalysis) {
+                    throw new Error("AI response structure missing critical fields (dimensions/skinType/faceAnalysis)");
                 }
 
                 return jsonData; // 成功返回

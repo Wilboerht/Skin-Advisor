@@ -318,7 +318,13 @@ export async function getCandidateProducts(
         const forcedProductIds = new Set<string>();
 
         for (const rule of activeRules) {
-            const conditions = rule.conditions as { skinType?: string[]; concern?: string[] };
+            // 防御性校验：确保 conditions 是合法对象
+            const rawConditions = rule.conditions;
+            if (!rawConditions || typeof rawConditions !== 'object' || Array.isArray(rawConditions)) {
+                console.warn(`[RecommendationRule] Rule ${rule.id} has invalid conditions, skipping.`);
+                continue;
+            }
+            const conditions = rawConditions as { skinType?: string[]; concern?: string[] };
             let match = true;
 
             // Check Skin Type Condition
@@ -422,7 +428,12 @@ export async function recommendProducts(
                 const forcedProductIds = new Set<string>();
 
                 for (const rule of activeRules) {
-                    const conditions = rule.conditions as { skinType?: string[]; concern?: string[] };
+                    const rawConditions = rule.conditions;
+                    if (!rawConditions || typeof rawConditions !== 'object' || Array.isArray(rawConditions)) {
+                        console.warn(`[RecommendationRule] Rule ${rule.id} has invalid conditions, skipping.`);
+                        continue;
+                    }
+                    const conditions = rawConditions as { skinType?: string[]; concern?: string[] };
                     let match = true;
 
                     if (conditions?.skinType && Array.isArray(conditions.skinType)) {

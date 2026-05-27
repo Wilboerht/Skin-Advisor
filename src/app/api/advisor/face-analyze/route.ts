@@ -333,7 +333,16 @@ export async function POST(request: NextRequest) {
             }
 
             aiLogger.warn("Using fallback result due to AI error");
-            return NextResponse.json(getDefaultFaceAnalysisResult());
+            const fallbackResult = getDefaultFaceAnalysisResult();
+            return NextResponse.json({
+                ...fallbackResult,
+                dataSource: "fallback" as const,
+                validation: {
+                    ...(fallbackResult.validation || { isValid: true, message: "" }),
+                    isValid: false,
+                    message: "AI 服务暂时不可用，返回参考数据"
+                }
+            });
         } finally {
             // P3: 释放令牌
             if (acquired) {

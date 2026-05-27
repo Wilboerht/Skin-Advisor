@@ -18,18 +18,35 @@ export interface UsageLimitResult {
 }
 
 /**
- * 检查用户或访客的测试频率限制
- * 
+ * 原子性预占额度结果
+ */
+export interface ReserveUsageResult {
+    success: boolean;
+    error?: string;
+    role: 'guest' | 'member' | 'vip';
+}
+
+/**
+ * 获取用户或访客的每日测试限制
+ */
+function getUserDailyLimit(user: { dailyTestLimit: number | null } | null | undefined, isVip: boolean): number {
+    if (isVip) return 100;
+    if (user && typeof user.dailyTestLimit === 'number' && user.dailyTestLimit > 0) {
+        return user.dailyTestLimit;
+    }
+    return 10;
+}
+
+/**
+ * 检查用户或访客的测试频率限制（快速前置检查，不扣费）
+ *
  * 规则：
  * 1. 访客：每日 3 次
- * 2. 普通注册用户：每日 10 次
+ * 2. 普通注册用户：每日 10 次（管理员可通过 dailyTestLimit 调整）
  * 3. VIP 用户：每日 100 次
  */
 export async function checkUsageLimit(request: NextRequest, body?: Record<string, unknown>): Promise<UsageLimitResult> {
     const user = await getSession();
-
-    // 统计进行中请求（10 分钟内启动但未完成的），防止并发重试导致超额
-    // 注：队列等待时间不计入该窗口（analysisStartedAt 在 acquire 成功后才更新）
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
 
     // 1. 如果是 VIP 用户
@@ -41,26 +58,17 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
         const [count, inProgressCount] = await Promise.all([
             withDbRetry(() =>
                 prisma.testRecord.count({
-                    where: {
-                        userId,
-                        testDate: { gte: today }
-                    }
+                    where: { userId, testDate: { gte: today } }
                 })
             ),
             withDbRetry(() =>
                 prisma.advisorSession.count({
-                    where: {
-                        userId,
-                        analysisStartedAt: { gte: tenMinutesAgo },
-                        completedAt: null
-                    }
+                    where: { userId, analysisStartedAt: { gte: tenMinutesAgo }, completedAt: null }
                 })
             )
         ]);
 
         const totalCount = count + inProgressCount;
-
-        // VIP 限制：每日 100 次
         const limit = 100;
         return {
             canTest: totalCount < limit,
@@ -79,27 +87,18 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
         const [count, inProgressCount] = await Promise.all([
             withDbRetry(() =>
                 prisma.testRecord.count({
-                    where: {
-                        userId,
-                        testDate: { gte: today }
-                    }
+                    where: { userId, testDate: { gte: today } }
                 })
             ),
             withDbRetry(() =>
                 prisma.advisorSession.count({
-                    where: {
-                        userId,
-                        analysisStartedAt: { gte: tenMinutesAgo },
-                        completedAt: null
-                    }
+                    where: { userId, analysisStartedAt: { gte: tenMinutesAgo }, completedAt: null }
                 })
             )
         ]);
 
         const totalCount = count + inProgressCount;
-
-        // 普通用户限制：每日 10 次
-        const limit = 10;
+        const limit = getUserDailyLimit(user as any, false);
         return {
             canTest: totalCount < limit,
             remaining: Math.max(0, limit - totalCount),
@@ -115,30 +114,22 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // 查询当天的测试次数
     const whereConditions: Prisma.GuestUsageWhereInput[] = [{ ipAddress }];
     if (cookieId) whereConditions.push({ cookieId });
     if (fingerprint) whereConditions.push({ fingerprint });
 
     const todayCount = await withDbRetry(() =>
         prisma.guestUsage.findFirst({
-            where: {
-                OR: whereConditions,
-                lastTestAt: { gte: today }
-            },
+            where: { OR: whereConditions, lastTestAt: { gte: today } },
             orderBy: { todayCount: 'desc' }
         })
     );
 
     const count = todayCount?.todayCount || 0;
 
-    // 检查是否被封禁（任何匹配标识的封禁记录都拒绝）
     const blockedRecord = await withDbRetry(() =>
         prisma.guestUsage.findFirst({
-            where: {
-                OR: whereConditions,
-                isBlocked: true
-            }
+            where: { OR: whereConditions, isBlocked: true }
         })
     );
     if (blockedRecord) {
@@ -150,14 +141,9 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
         };
     }
 
-    // 统计访客进行中的请求
     const inProgressCount = await withDbRetry(() =>
         prisma.advisorSession.count({
-            where: {
-                ip: ipAddress, // ipAddress 已由 extractGuestIdentifiers 哈希过
-                analysisStartedAt: { gte: tenMinutesAgo },
-                completedAt: null
-            }
+            where: { ip: ipAddress, analysisStartedAt: { gte: tenMinutesAgo }, completedAt: null }
         })
     );
 
@@ -181,9 +167,159 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
 }
 
 /**
- * 记录一次测试行为
- * 
- * 幂等性保护：同一个 sessionId 只记录一次，防止超时重试导致重复扣额度
+ * 原子性预占额度：在数据库事务内检查限制并创建使用记录
+ *
+ * 最佳实践：在 AI 分析前调用，防止"结果已出但额度未扣"的 TOCTOU 竞态窗口。
+ * 如果分析最终失败，预占的额度不自动释放（服务器资源已消耗）。
+ *
+ * @returns ReserveUsageResult 预占成功时 success=true；失败时返回错误信息
+ */
+export async function reserveUsage(
+    request: NextRequest,
+    sessionId: string,
+    body?: Record<string, unknown>
+): Promise<ReserveUsageResult> {
+    const user = await getSession();
+    const identifiers = extractGuestIdentifiers(request, body);
+    const { ipAddress, cookieId, fingerprint, userAgent } = identifiers;
+
+    try {
+        return await withDbRetry(async () => {
+            return await prisma.$transaction(async (tx) => {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+
+                // 1. VIP 用户
+                if (isVipCheck(user)) {
+                    const userId = user!.id;
+                    const [count, inProgressCount] = await Promise.all([
+                        tx.testRecord.count({ where: { userId, testDate: { gte: today } } }),
+                        tx.advisorSession.count({ where: { userId, analysisStartedAt: { gte: tenMinutesAgo }, completedAt: null } })
+                    ]);
+                    const totalCount = count + inProgressCount;
+                    const limit = 100;
+                    if (totalCount >= limit) {
+                        return { success: false, error: '您的 VIP 今日测试次数已用完，请明天再试。', role: 'vip' };
+                    }
+                    await tx.testRecord.create({
+                        data: { userId, sessionId, testDate: new Date() }
+                    });
+                    return { success: true, role: 'vip' };
+                }
+
+                // 2. 普通注册用户
+                if (user) {
+                    const userId = user.id;
+                    const [count, inProgressCount] = await Promise.all([
+                        tx.testRecord.count({ where: { userId, testDate: { gte: today } } }),
+                        tx.advisorSession.count({ where: { userId, analysisStartedAt: { gte: tenMinutesAgo }, completedAt: null } })
+                    ]);
+                    const totalCount = count + inProgressCount;
+                    const limit = getUserDailyLimit(user as any, false);
+                    if (totalCount >= limit) {
+                        return { success: false, error: '今日测试次数已用完，请明天再试。', role: 'member' };
+                    }
+                    await tx.testRecord.create({
+                        data: { userId, sessionId, testDate: new Date() }
+                    });
+                    return { success: true, role: 'member' };
+                }
+
+                // 3. 访客
+                const whereConditions: Prisma.GuestUsageWhereInput[] = [{ ipAddress }];
+                if (cookieId) whereConditions.push({ cookieId });
+                if (fingerprint) whereConditions.push({ fingerprint });
+
+                const blockedRecord = await tx.guestUsage.findFirst({
+                    where: { OR: whereConditions, isBlocked: true }
+                });
+                if (blockedRecord) {
+                    return { success: false, error: blockedRecord.blockedReason || '您的访问已被限制，请联系客服。', role: 'guest' };
+                }
+
+                const todayRecord = await tx.guestUsage.findFirst({
+                    where: { OR: whereConditions, lastTestAt: { gte: today } },
+                    orderBy: { todayCount: 'desc' }
+                });
+
+                const guestInProgress = await tx.advisorSession.count({
+                    where: { ip: ipAddress, analysisStartedAt: { gte: tenMinutesAgo }, completedAt: null }
+                });
+
+                const currentCount = todayRecord?.todayCount || 0;
+                const totalCount = currentCount + guestInProgress;
+                const limit = 3;
+
+                if (totalCount >= limit) {
+                    return { success: false, error: '今日测试次数已用完，请明天再试。', role: 'guest' };
+                }
+
+                await tx.testRecord.create({
+                    data: { guestId: fingerprint || cookieId || ipAddress, sessionId, testDate: new Date() }
+                });
+
+                const existing = await tx.guestUsage.findFirst({
+                    where: {
+                        OR: [{ ipAddress }, ...(fingerprint ? [{ fingerprint }] : []), ...(cookieId ? [{ cookieId }] : [])]
+                    }
+                });
+
+                const now = new Date();
+                if (existing) {
+                    // 安全处理 lastResetDate 为 null 的边界情况
+                    const lastReset = existing.lastResetDate || existing.lastTestAt || now;
+                    const todayStart = new Date();
+                    todayStart.setHours(0, 0, 0, 0);
+                    const needsReset = !lastReset || new Date(lastReset).setHours(0, 0, 0, 0) < todayStart.getTime();
+
+                    await tx.guestUsage.update({
+                        where: { id: existing.id },
+                        data: {
+                            lastTestAt: now,
+                            testCount: { increment: 1 },
+                            todayCount: needsReset ? 1 : { increment: 1 },
+                            lastResetDate: needsReset ? todayStart : undefined,
+                            ipAddress,
+                            cookieId: cookieId || existing.cookieId,
+                            fingerprint: fingerprint || existing.fingerprint,
+                            userAgent
+                        }
+                    });
+                } else {
+                    await tx.guestUsage.create({
+                        data: {
+                            ipAddress,
+                            cookieId,
+                            fingerprint,
+                            userAgent,
+                            lastTestAt: now,
+                            testCount: 1,
+                            todayCount: 1,
+                            lastResetDate: now
+                        }
+                    });
+                }
+
+                return { success: true, role: 'guest' };
+            });
+        });
+    } catch (e: unknown) {
+        const err = e instanceof Error ? e : new Error(String(e));
+        // P2002 = unique constraint violation (already recorded) — 幂等行为，视为成功
+        if ((err as { code?: string }).code === 'P2002' || err.message?.includes('Unique constraint')) {
+            return { success: true, role: user ? (isVipCheck(user) ? 'vip' : 'member') : 'guest' };
+        }
+        console.error('Failed to reserve usage:', e);
+        return { success: false, error: '额度预占失败，请重试', role: 'guest' };
+    }
+}
+
+/**
+ * 记录一次测试行为（后置扣费模式）
+ *
+ * @deprecated 已废弃。请使用 {@link reserveUsage} 进行原子性预占，避免 TOCTOU 竞态条件。
+ * 保留此函数以确保向后兼容，新代码不应再调用。
  */
 export async function recordUsage(request: NextRequest, sessionId: string, body?: Record<string, unknown>): Promise<boolean> {
     const user = await getSession();
@@ -193,8 +329,6 @@ export async function recordUsage(request: NextRequest, sessionId: string, body?
     try {
         return await withDbRetry(async () => {
             await prisma.$transaction(async (tx) => {
-                // 1. 创建 TestRecord (用于所有角色计数)
-                // sessionId 有 @unique 约束，重复插入会抛出 P2002，事务回滚
                 await tx.testRecord.create({
                     data: {
                         userId: user?.id || null,
@@ -204,7 +338,6 @@ export async function recordUsage(request: NextRequest, sessionId: string, body?
                     }
                 });
 
-                // 2. 如果是访客，同时原子更新 GuestUsage
                 if (!user) {
                     const existing = await tx.guestUsage.findFirst({
                         where: {
@@ -218,10 +351,10 @@ export async function recordUsage(request: NextRequest, sessionId: string, body?
 
                     const now = new Date();
                     if (existing) {
-                        const lastReset = existing.lastResetDate || existing.lastTestAt;
+                        const lastReset = existing.lastResetDate || existing.lastTestAt || now;
                         const todayStart = new Date();
                         todayStart.setHours(0, 0, 0, 0);
-                        const needsReset = !lastReset || lastReset < todayStart;
+                        const needsReset = !lastReset || new Date(lastReset).setHours(0, 0, 0, 0) < todayStart.getTime();
 
                         await tx.guestUsage.update({
                             where: { id: existing.id },
@@ -245,7 +378,8 @@ export async function recordUsage(request: NextRequest, sessionId: string, body?
                                 userAgent,
                                 lastTestAt: now,
                                 testCount: 1,
-                                todayCount: 1
+                                todayCount: 1,
+                                lastResetDate: now
                             }
                         });
                     }
@@ -255,7 +389,6 @@ export async function recordUsage(request: NextRequest, sessionId: string, body?
         });
     } catch (e: unknown) {
         const err = e instanceof Error ? e : new Error(String(e));
-        // P2002 = unique constraint violation (already recorded) — 这是正常的幂等行为
         if ((err as { code?: string }).code === 'P2002' || err.message?.includes('Unique constraint')) {
             console.log(`[recordUsage] Session ${sessionId} already recorded, skipping duplicate.`);
             return true;

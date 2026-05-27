@@ -37,12 +37,36 @@ export async function signToken(payload: Record<string, unknown>, expiresIn: str
         .sign(JWT_SECRET);
 }
 
+export type TokenVerificationError = 'expired' | 'invalid_signature' | 'malformed' | 'unknown';
+
+export interface VerifyTokenResult {
+    payload: JWTPayload | null;
+    error?: TokenVerificationError;
+}
+
 export async function verifyToken(token: string): Promise<JWTPayload | null> {
+    const result = await verifyTokenDetailed(token);
+    return result.payload;
+}
+
+export async function verifyTokenDetailed(token: string): Promise<VerifyTokenResult> {
     try {
         const { payload } = await jwtVerify(token, JWT_SECRET);
-        return payload;
-    } catch (err) {
-        return null; // Invalid token
+        return { payload };
+    } catch (err: any) {
+        let error: TokenVerificationError = 'unknown';
+        if (err?.code === 'ERR_JWT_EXPIRED') {
+            error = 'expired';
+        } else if (err?.code === 'ERR_JWS_SIGNATURE_VERIFICATION_FAILED') {
+            error = 'invalid_signature';
+        } else if (err?.code === 'ERR_JWT_MALFORMED' || err?.code === 'ERR_JWS_INVALID') {
+            error = 'malformed';
+        }
+        // 安全日志：记录签名错误以便审计（不记录完整 token）
+        if (error === 'invalid_signature' || error === 'malformed') {
+            console.warn(`[Security] JWT ${error}: ${token.substring(0, 10)}...`);
+        }
+        return { payload: null, error };
     }
 }
 

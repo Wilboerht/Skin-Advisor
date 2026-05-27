@@ -5,7 +5,6 @@ import { extractJsonFromResponse } from "@/lib/advisor-utils";
 import { buildTextAnalysisPrompt, TEXT_ANALYSIS_SYSTEM_PROMPT } from "@/config/ai-prompts";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import prisma from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
 import { getSkinTypeLabel, getConcernLabel } from "@/lib/advisor-utils";
 // import { PRODUCTS_CATALOG } from "@/config/products"; // Deprecated, use DB or matchProducts
 import { determineSkinType, identifyConcerns } from "@/lib/advisor-utils";
@@ -15,7 +14,7 @@ import { resolveIPLocation } from "@/lib/geoip";
 import { getSession } from "@/lib/auth";
 import { hashIP } from "@/lib/privacy";
 
-import { checkUsageLimit, recordUsage } from "@/lib/usage-limit";
+import { checkUsageLimit, reserveUsage } from "@/lib/usage-limit";
 import { sendSkinReportTemplateMessage } from "@/lib/wechat";
 
 /** 清理推荐理由中的英文词汇，确保对用户友好 */
@@ -192,12 +191,25 @@ export async function POST(request: NextRequest) {
         // 6. 检查用户登录状态
         const user = await getSession();
 
+        // 6b. 原子性预占额度（免费重试不扣费）
+        // 在 session 创建前预占，避免"结果已出但额度未扣"的竞态窗口
+        if (!isFreeRetryAllowed && sessionId) {
+            const reserved = await reserveUsage(request, sessionId, body as Record<string, unknown>);
+            if (!reserved.success) {
+                return NextResponse.json(
+                    { error: reserved.error || "您已达到今日测试上限" },
+                    { status: 429, headers: rateLimitHeaders }
+                );
+            }
+        }
+
         // 保存会话占位记录（标记分析开始，不设置 completedAt——防止超时后状态不一致）
-        // 注意：原始问卷数据(answers)不入库，报告生成后仅存分析结果
+        // 同时保存问卷答案，用于历史审计与复购分析
         if (sessionId) {
             await prisma.advisorSession.upsert({
                 where: { sessionId },
                 update: {
+                    answers: answers as any,
                     analysisSource: faceAnalysis ? "hybrid" : "text",
                     faceScanUsed: !!faceAnalysis,
                     analysisStartedAt: new Date(),
@@ -210,6 +222,7 @@ export async function POST(request: NextRequest) {
                 },
                 create: {
                     sessionId,
+                    answers: answers as any,
                     analysisSource: faceAnalysis ? "hybrid" : "text",
                     faceScanUsed: !!faceAnalysis,
                     analysisStartedAt: new Date(),
@@ -257,15 +270,6 @@ export async function POST(request: NextRequest) {
                 userLocation: geoLocation,
                 nickname: nickname || "护肤达人"
             };
-
-            // AI 禁用模式下也扣除额度（防止无限免费分析）
-            if (sessionId && !isFreeRetryAllowed) {
-                try {
-                    await recordUsage(request, sessionId, body as Record<string, unknown>);
-                } catch (usageErr) {
-                    console.error("[AI-Disabled] recordUsage failed:", usageErr);
-                }
-            }
 
             // 持久化降级结果
             if (sessionId) {
@@ -517,7 +521,7 @@ export async function POST(request: NextRequest) {
                             province: geoLocation?.region,
                             city: geoLocation?.city,
                             expiresAt: expiresAt,
-                            answers: Prisma.JsonNull // 合并到 upsert 中，避免多余 updateMany
+                            // 保留已有的 answers，不覆盖问卷数据
                         },
                         create: {
                             sessionId,
@@ -566,20 +570,6 @@ export async function POST(request: NextRequest) {
                         `${baseUrl}/report/${sessionId}` // 这个分享页是现成的
                     ).catch(err => console.error("微信推送执行异常:", err));
                 }
-            }
-        }
-
-        // 10. 记录使用次数（AI 成功生成结果后才扣额度，免费重试不扣）
-        // 隔离保护：recordUsage 失败不覆盖已成功生成的分析结果，但连续失败需记录异常
-        if (sessionId && !isFreeRetryAllowed) {
-            try {
-                const recorded = await recordUsage(request, sessionId, body as Record<string, unknown>);
-                if (!recorded) {
-                    console.warn(`[analyze] recordUsage returned false for session ${sessionId}`);
-                }
-            } catch (usageErr) {
-                console.error("[analyze] recordUsage failed (non-blocking):", usageErr);
-                // 非阻塞：不中断用户响应，但异常会被保留在日志中供排查
             }
         }
 
