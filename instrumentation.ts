@@ -4,6 +4,13 @@
  */
 
 export async function register() {
+    // 严格跳过 Edge Runtime：instrumentation hook 在 Edge Runtime 中也会被调用，
+    // 但 avatar-queue-processor 依赖的 @volcengine/openapi 使用了 Node.js crypto 模块，
+    // 会导致 "The edge runtime does not support Node.js 'crypto' module" 错误
+    if (process.env.NEXT_RUNTIME === 'edge') {
+        return;
+    }
+
     console.log('[init] Application starting...');
 
     // 注册 Prisma 优雅关闭（仅 Node.js runtime）
