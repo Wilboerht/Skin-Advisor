@@ -161,12 +161,15 @@ export async function checkGuestLimit(
     let todayCount = primaryRecord.todayCount;
     // 安全处理 lastResetDate 为 null 的边界情况（理论上 schema 有 default，但防御性编码）
     const rawLastReset = primaryRecord.lastResetDate || primaryRecord.lastTestAt;
-    const lastReset = rawLastReset ? new Date(rawLastReset) : new Date();
-    lastReset.setHours(0, 0, 0, 0);
-
-    if (lastReset < today) {
-        // 需要重置
-        todayCount = 0;
+    if (!rawLastReset) {
+        todayCount = 0; // 安全重置：无历史记录时视为需要重置
+    } else {
+        const lastReset = new Date(rawLastReset);
+        lastReset.setHours(0, 0, 0, 0);
+        if (lastReset < today) {
+            // 需要重置
+            todayCount = 0;
+        }
     }
 
     const canTest = todayCount < DEFAULT_GUEST_LIMIT;

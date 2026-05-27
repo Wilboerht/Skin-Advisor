@@ -325,7 +325,11 @@ class AIRequestQueue {
      * 设置最大并发数（运行时动态调整）
      */
     setMaxConcurrent(value: number) {
-        this.maxConcurrent = Math.max(1, value);
+        if (typeof value !== 'number' || isNaN(value) || value < 1) {
+            console.warn(`[AIQueue] Invalid maxConcurrent: ${value}, ignoring update.`);
+            return;
+        }
+        this.maxConcurrent = Math.floor(value);
         aiLogger.info("Max concurrent updated", { maxConcurrent: this.maxConcurrent });
         // 尝试处理更多请求
         this.processQueue();

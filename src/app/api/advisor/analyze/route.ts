@@ -465,7 +465,7 @@ export async function POST(request: NextRequest) {
                 type: finalSkinType,
                 typeLabel: skinTypeLabel,
                 concerns: concerns,
-                skinAge: faceAnalysis?.skinAge?.estimated || 25
+                skinAge: faceAnalysis?.skinAge?.estimated ?? 25
             },
             analysis: {
                 summary: resultJson.summary || "根据您的问卷及面部数据，我们为您生成了这份综合分析报告。",

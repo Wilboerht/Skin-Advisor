@@ -192,19 +192,24 @@ export function getClientIP(request: Request): string {
     // Use the LAST value in X-Forwarded-For (closest to the server / most trusted)
     // instead of the FIRST value which can be spoofed by the client.
     const forwardedFor = request.headers.get("x-forwarded-for");
+    let rawIp: string | undefined;
     if (forwardedFor) {
         const ips = forwardedFor.split(",").map(s => s.trim()).filter(Boolean);
         if (ips.length > 0) {
-            return ips[ips.length - 1];
+            rawIp = ips[ips.length - 1];
         }
     }
 
     const realIP = request.headers.get("x-real-ip");
-    if (realIP) {
-        return realIP;
+    rawIp = rawIp || realIP || "unknown";
+
+    // 统一 loopback 处理，确保与 extractGuestIdentifiers 一致
+    // 避免开发环境中 hashIP(getClientIP) 与 extractGuestIdentifiers 返回的 ipAddress 不匹配
+    if (rawIp === '::1' || rawIp === '127.0.0.1') {
+        rawIp = 'local_dev_loopback';
     }
 
-    return "unknown";
+    return rawIp;
 }
 
 /** 双重限流结果 */

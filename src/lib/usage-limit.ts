@@ -276,7 +276,8 @@ export async function reserveUsage(
                 const existing = await tx.guestUsage.findFirst({
                     where: {
                         OR: [{ ipAddress }, ...(fingerprint ? [{ fingerprint }] : []), ...(cookieId ? [{ cookieId }] : [])]
-                    }
+                    },
+                    orderBy: { lastTestAt: 'desc' }
                 });
 
                 const now = new Date();
@@ -325,7 +326,7 @@ export async function reserveUsage(
             return { success: true, role: user ? (isVipCheck(user) ? 'vip' : 'member') : 'guest' };
         }
         console.error('Failed to reserve usage:', e);
-        return { success: false, error: '额度预占失败，请重试', role: 'guest' };
+        return { success: false, error: '额度预占失败，请重试', role: user ? (isVipCheck(user) ? 'vip' : 'member') : 'guest' };
     }
 }
 

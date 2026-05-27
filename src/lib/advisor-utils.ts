@@ -370,18 +370,18 @@ export function identifyConcerns(
         });
     }
 
-    // 3. 检查维度评分
+    // 3. 检查维度评分（防御性：前端传入的 faceAnalysis 可能只包含部分维度）
     if (faceAnalysis?.dimensions) {
-        if (faceAnalysis.dimensions.wrinkles.score < 60) concerns.add("wrinkles");
-        if (faceAnalysis.dimensions.spots.score < 60) concerns.add("spots");
-        if (faceAnalysis.dimensions.waterOil.score < 60) concerns.add("waterOil");
-        if (faceAnalysis.dimensions.acne.score < 60) concerns.add("acne");
-        if (faceAnalysis.dimensions.uvDamage.score < 60) concerns.add("anti_aging");
-        if (faceAnalysis.dimensions.sensitivity.score < 60) concerns.add("sensitivity");
-        if (faceAnalysis.dimensions.radiance.score < 60) concerns.add("dullness");
-        if (faceAnalysis.dimensions.darkCircles.score < 60) concerns.add("dark_circles");
-        if (faceAnalysis.dimensions.firmness.score < 60) concerns.add("anti_aging");
-        if (faceAnalysis.dimensions.skinTone.score < 60) concerns.add("dullness");
+        if (faceAnalysis.dimensions.wrinkles?.score < 60) concerns.add("wrinkles");
+        if (faceAnalysis.dimensions.spots?.score < 60) concerns.add("spots");
+        if (faceAnalysis.dimensions.waterOil?.score < 60) concerns.add("waterOil");
+        if (faceAnalysis.dimensions.acne?.score < 60) concerns.add("acne");
+        if (faceAnalysis.dimensions.uvDamage?.score < 60) concerns.add("anti_aging");
+        if (faceAnalysis.dimensions.sensitivity?.score < 60) concerns.add("sensitivity");
+        if (faceAnalysis.dimensions.radiance?.score < 60) concerns.add("dullness");
+        if (faceAnalysis.dimensions.darkCircles?.score < 60) concerns.add("dark_circles");
+        if (faceAnalysis.dimensions.firmness?.score < 60) concerns.add("anti_aging");
+        if (faceAnalysis.dimensions.skinTone?.score < 60) concerns.add("dullness");
     }
 
     // 4. 检查实验室指标（粗糙度）
