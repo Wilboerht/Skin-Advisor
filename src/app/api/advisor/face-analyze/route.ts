@@ -6,7 +6,6 @@ import { FaceAnalyzeRequestSchema } from "@/lib/schemas";
 import {
     VISION_ANALYSIS_SYSTEM_PROMPT,
     VISION_ANALYSIS_USER_PROMPT,
-    CLAUDE_VISION_PROMPT,
     QWEN_VISION_PROMPT,
     VIP_ANALYSIS_INSTRUCTION,
 } from "@/config/ai-prompts";
@@ -218,14 +217,10 @@ export async function POST(request: NextRequest) {
         aiLogger.info(`Starting face analysis for IP ${ip} with ${validImages.length} images`);
 
         // 3. 准备提示词与 Provider
-        const provider = process.env.AI_VISION_PROVIDER || "openai";
+        const provider = process.env.AI_VISION_PROVIDER || "qwen";
         let systemPrompt = VISION_ANALYSIS_SYSTEM_PROMPT;
 
-        if (provider === "anthropic") {
-            if (typeof CLAUDE_VISION_PROMPT !== 'undefined') {
-                systemPrompt = CLAUDE_VISION_PROMPT;
-            }
-        } else if (provider === "qwen") {
+        if (provider === "qwen") {
             systemPrompt = QWEN_VISION_PROMPT;
         }
 

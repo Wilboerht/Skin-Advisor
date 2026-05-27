@@ -15,14 +15,11 @@ import {
 // 类型定义
 // ============================================================================
 
-export type AIProvider = "openai" | "anthropic" | "qwen" | "deepseek" | "gemini";
+export type AIProvider = "deepseek" | "qwen";
 
 export interface ApiKeys {
-    openai?: string;
     deepseek?: string;
     qwen?: string;
-    anthropic?: string;
-    gemini?: string;
 }
 
 export interface AISettings {
@@ -40,33 +37,27 @@ export interface AISettings {
 // 默认设置
 // Helper to determine default models based on provider env
 const envProvider = process.env.AI_PROVIDER || "deepseek";
-const envVisionProvider = process.env.AI_VISION_PROVIDER || "openai";
+const envVisionProvider = process.env.AI_VISION_PROVIDER || "qwen";
 
 const DEFAULT_AI_SETTINGS: AISettings = {
     provider: envProvider as AIProvider,
     visionProvider: envVisionProvider as AIProvider,
-    model: process.env.AI_MODEL || (envProvider === "qwen" ? "qwen-plus" : envProvider === "openai" ? "gpt-4o" : envProvider === "anthropic" ? "claude-3-5-sonnet-20240620" : "deepseek-chat"),
-    visionModel: process.env.AI_VISION_MODEL || (envVisionProvider === "qwen" ? "qwen-vl-max" : envVisionProvider === "anthropic" ? "claude-3-5-sonnet-20240620" : "gpt-4o"),
+    model: process.env.AI_MODEL || (envProvider === "qwen" ? "qwen-plus" : "deepseek-chat"),
+    visionModel: process.env.AI_VISION_MODEL || (envVisionProvider === "qwen" ? "qwen-vl-max" : "deepseek-vl"),
     textSystemPrompt: TEXT_ANALYSIS_SYSTEM_PROMPT,
     visionSystemPrompt: "",
     maxTokens: 2000,
     temperature: 0.3,
     apiKeys: {
-        openai: process.env.OPENAI_API_KEY,
         deepseek: process.env.DEEPSEEK_API_KEY,
         qwen: process.env.QWEN_API_KEY,
-        anthropic: process.env.ANTHROPIC_API_KEY,
-        gemini: process.env.GEMINI_API_KEY,
     },
 };
 
 // 服务商降级链
 const PROVIDER_FALLBACK_CHAIN: Record<string, AIProvider[]> = {
-    deepseek: ["qwen", "openai", "gemini"],
-    qwen: ["deepseek", "openai", "gemini"],
-    openai: ["anthropic", "gemini", "deepseek"],
-    anthropic: ["openai", "gemini", "deepseek"],
-    gemini: ["openai", "anthropic", "deepseek"],
+    deepseek: ["qwen"],
+    qwen: ["deepseek"],
 };
 
 // 缓存配置
@@ -140,7 +131,7 @@ export async function isAIEnabled(): Promise<boolean> {
     // 2. 检查是否有有效的 API Key 配置
     // 如果没有任何 Key 可用，也可以视为 AI 不可用
     const settings = await getAISettings();
-    const provider = settings.provider || "openai";
+    const provider = settings.provider || "deepseek";
     const keys = getApiKeysForProvider(provider, settings);
 
     return keys.length > 0;
@@ -169,16 +160,10 @@ export function getProviderConfig(provider: AIProvider) {
     // 这是一个同步辅助函数，主要用于获取 BaseURL 等静态信息
     // 实际的 Key 获取应该使用 getApiKeysForProvider
     switch (provider) {
-        case "openai":
-            return { baseUrl: process.env.OPENAI_API_URL || "https://api.openai.com/v1" };
         case "deepseek":
             return { baseUrl: process.env.DEEPSEEK_API_URL || "https://api.deepseek.com/v1" };
         case "qwen":
             return { baseUrl: process.env.QWEN_API_URL || "https://dashscope.aliyuncs.com/compatible-mode/v1" };
-        case "anthropic":
-            return { baseUrl: process.env.ANTHROPIC_API_URL || "https://api.anthropic.com/v1/messages" };
-        case "gemini":
-            return { baseUrl: process.env.GEMINI_API_URL || "https://generativelanguage.googleapis.com/v1beta" };
         default:
             return { baseUrl: "" };
     }
@@ -211,7 +196,7 @@ export async function generateText(
     }
 
     const settings = await getAISettings();
-    const primaryProvider = preferredProvider || settings.provider || "openai";
+    const primaryProvider = preferredProvider || settings.provider || "deepseek";
     const primaryModel = settings.model;
 
     // 构建尝试队列
@@ -323,60 +308,7 @@ async function callProviderInternal(
         };
     }
 
-    // Anthropic 特殊处理
-    if (provider === "anthropic") {
-        const config = getProviderConfig("anthropic");
-        const { controller, cleanup } = createMergedAbortController(30000);
-        try {
-            const res = await fetch(config.baseUrl, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "x-api-key": apiKey,
-                    "anthropic-version": "2023-06-01"
-                },
-                body: JSON.stringify({
-                    model: model || "claude-3-5-sonnet-20240620",
-                    max_tokens: settings.maxTokens,
-                    system: systemPrompt,
-                    messages: [{ role: "user", content: userPrompt }],
-                    temperature: settings.temperature
-                }),
-                signal: controller.signal
-            });
-            if (!res.ok) throw new Error(`Anthropic Error: ${res.statusText}`);
-            const data = await res.json();
-            return data.content?.[0]?.text || "";
-        } finally {
-            cleanup();
-        }
-    }
-
-    // Gemini 特殊处理 (简版)
-    if (provider === "gemini") {
-        const config = getProviderConfig("gemini");
-        const url = `${config.baseUrl}/models/${model || 'gemini-1.5-flash'}:generateContent?key=${apiKey}`;
-        const { controller, cleanup } = createMergedAbortController(30000);
-        try {
-            const res = await fetch(url, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [{ text: systemPrompt + "\n\n" + userPrompt }]
-                    }]
-                }),
-                signal: controller.signal
-            });
-            if (!res.ok) throw new Error(`Gemini Error: ${res.statusText}`);
-            const data = await res.json();
-            return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-        } finally {
-            cleanup();
-        }
-    }
-
-    // OpenAI 兼容接口 (DeepSeek, Qwen, OpenAI)
+    // OpenAI 兼容接口 (DeepSeek, Qwen)
     // 合并外部 abort signal 和内部 30s 超时，防止 SDK 无限挂起
     const { controller, cleanup } = createMergedAbortController(30000);
     try {
@@ -408,10 +340,7 @@ function getModelForProvider(provider: string, settings: AISettings): string {
     switch (provider) {
         case "deepseek": return "deepseek-chat";
         case "qwen": return "qwen-plus";
-        case "gemini": return "gemini-1.5-flash";
-        case "anthropic": return "claude-3-5-sonnet-20240620";
-        case "openai": return "gpt-4o";
-        default: return "gpt-3.5-turbo";
+        default: return "deepseek-chat";
     }
 }
 

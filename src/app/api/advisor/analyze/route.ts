@@ -231,7 +231,7 @@ export async function POST(request: NextRequest) {
                     ip: hashIP(ip),
                     userId: user?.id || null
                 }
-            }).catch((err: unknown) => console.error("Session save error:", err));
+            });
         }
 
         // 5. 检查 AI 开关
@@ -332,7 +332,7 @@ export async function POST(request: NextRequest) {
         const systemPrompt = TEXT_ANALYSIS_SYSTEM_PROMPT;
 
         // 调用 AI
-        const provider = process.env.AI_PROVIDER || "openai";
+        const provider = process.env.AI_PROVIDER || "deepseek";
         console.log(`Starting text analysis with ${provider}...`);
 
         let resultJson: any;
@@ -399,7 +399,7 @@ export async function POST(request: NextRequest) {
                         benefits: catalogProduct.benefits || [],
                         affiliateLinks: catalogProduct.affiliateLinks || null,
                         howToUse: catalogProduct.howToUse || null,
-                        reason: sanitizeReason(p.reason || algorithmRecs.find((r: any) => r.id === p.id)?.reason || "为您精选的护肤产品")
+                        reason: sanitizeReason(p.reason || algorithmRecs.find((r: any) => String(r.id) === String(p.id))?.reason || "为您精选的护肤产品")
                     };
                 }
                 return null;
@@ -409,9 +409,9 @@ export async function POST(request: NextRequest) {
                 // 前3个为AI主推推荐，补充算法候选至10个
                 const aiTop3 = mappedProducts.slice(0, 3).map((p: any) => ({
                     ...p,
-                    reason: sanitizeReason(p.reason || algorithmRecs.find((r: any) => r.id === p.id)?.reason || "为您精选的护肤产品")
+                    reason: sanitizeReason(p.reason || algorithmRecs.find((r: any) => String(r.id) === String(p.id))?.reason || "为您精选的护肤产品")
                 }));
-                const remaining = algorithmRecs.filter((ar: any) => !aiTop3.some((p: any) => p.id === ar.id));
+                const remaining = algorithmRecs.filter((ar: any) => !aiTop3.some((p: any) => String(p.id) === String(ar.id)));
                 finalProducts = [...aiTop3, ...remaining].slice(0, 10);
             }
         }

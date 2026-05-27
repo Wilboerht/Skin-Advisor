@@ -9,7 +9,6 @@ import {
 import { aiLogger } from "./logger";
 import {
     VISION_ANALYSIS_SYSTEM_PROMPT,
-    CLAUDE_VISION_PROMPT,
     QWEN_VISION_PROMPT
 } from "@/config/ai-prompts";
 import { extractJsonFromResponse } from "./advisor-utils";
@@ -31,7 +30,7 @@ export async function analyzeImages(
     images: VisionImage[],
     _defaultSystemPrompt: string, // 保留参数兼容，但内部优先用配置
     userPrompt: string,
-    _defaultProvider: AIProvider = "openai",
+    _defaultProvider: AIProvider = "qwen",
     signal?: AbortSignal
 ) {
     // 如果外部 signal 已 abort，直接抛出
@@ -122,95 +121,8 @@ async function callVisionAPI(
     userPrompt: string,
     signal?: AbortSignal
 ): Promise<string> {
-
-    if (provider === "anthropic") {
-        return callClaudeVision(apiKey, model, images, systemPrompt, userPrompt, signal);
-    }
-
-    if (provider === "qwen") {
-        // 通义千问 VL 特殊处理
-        return callOpenAICompatibleVision(provider, apiKey, model, images, systemPrompt, userPrompt, signal);
-    }
-
-    if (provider === "gemini") {
-        return callGeminiVision(apiKey, model, images, systemPrompt, userPrompt, signal);
-    }
-
-    // Default: OpenAI Compatible
+    // DeepSeek 和 Qwen 均使用 OpenAI 兼容接口
     return callOpenAICompatibleVision(provider, apiKey, model, images, systemPrompt, userPrompt, signal);
-}
-
-async function callClaudeVision(
-    apiKey: string,
-    model: string,
-    images: VisionImage[],
-    systemPrompt: string,
-    userPrompt: string,
-    signal?: AbortSignal
-) {
-    const config = getProviderConfig("anthropic");
-
-    const imageContents = images.map(img => {
-        const matches = img.data.match(/^data:([^;]+);base64,(.+)$/);
-        if (!matches) throw new Error("Invalid image format");
-        return {
-            type: "image",
-            source: {
-                type: "base64",
-                media_type: matches[1],
-                data: matches[2]
-            }
-        };
-    });
-
-    // 合并外部 signal 和内部 timeout
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30000);
-    const onExternalAbort = () => {
-        clearTimeout(timeout);
-        controller.abort();
-    };
-    if (signal) {
-        signal.addEventListener('abort', onExternalAbort);
-    }
-
-    try {
-        const res = await fetch(config.baseUrl, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "x-api-key": apiKey,
-                "anthropic-version": "2023-06-01"
-            },
-            body: JSON.stringify({
-                model: model || "claude-3-5-sonnet-20240620",
-                max_tokens: 2500,
-                messages: [
-                    {
-                        role: "user",
-                        content: [
-                            ...imageContents,
-                            { type: "text", text: `${systemPrompt}\n\n${userPrompt}` }
-                        ]
-                    }
-                ]
-            }),
-            signal: controller.signal
-        });
-
-        if (!res.ok) {
-            const err = await res.text();
-            throw new Error(`Anthropic Vision Error: ${res.status} - ${err}`);
-        }
-
-        const data = await res.json();
-        return data.content?.[0]?.text || "";
-    } finally {
-        clearTimeout(timeout);
-        if (signal) {
-            signal.removeEventListener('abort', onExternalAbort);
-        }
-    }
 }
 
 async function callOpenAICompatibleVision(
@@ -259,82 +171,12 @@ async function callOpenAICompatibleVision(
     return response.choices[0]?.message?.content || "";
 }
 
-async function callGeminiVision(
-    apiKey: string,
-    model: string,
-    images: VisionImage[],
-    systemPrompt: string,
-    userPrompt: string,
-    signal?: AbortSignal
-) {
-    const config = getProviderConfig("gemini");
-    const targetModel = model || "gemini-1.5-flash";
-    const url = `${config.baseUrl}/models/${targetModel}:generateContent?key=${apiKey}`;
-
-    const parts: any[] = [
-        { text: `${systemPrompt}\n\n${userPrompt}` }
-    ];
-
-    images.forEach(img => {
-        const matches = img.data.match(/^data:([^;]+);base64,(.+)$/);
-        if (matches) {
-            parts.push({
-                inline_data: {
-                    mime_type: matches[1], // e.g., image/jpeg
-                    data: matches[2]       // raw base64
-                }
-            });
-        }
-    });
-
-    // 合并外部 signal 和内部 timeout
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30000);
-    const onExternalAbort = () => {
-        clearTimeout(timeout);
-        controller.abort();
-    };
-    if (signal) {
-        signal.addEventListener('abort', onExternalAbort);
-    }
-
-    try {
-        const res = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                contents: [{ parts: parts }],
-                generationConfig: {
-                    temperature: 0.4,
-                    maxOutputTokens: 2048
-                }
-            }),
-            signal: controller.signal
-        });
-
-        if (!res.ok) {
-            const errText = await res.text();
-            throw new Error(`Gemini Vision Error: ${res.status} - ${errText}`);
-        }
-
-        const data = await res.json();
-        return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    } finally {
-        clearTimeout(timeout);
-        if (signal) {
-            signal.removeEventListener('abort', onExternalAbort);
-        }
-    }
-}
-
 // 辅助：获取默认视觉模型
 function getDefaultVisionModel(provider: AIProvider): string {
     switch (provider) {
         case "qwen": return "qwen-vl-max";
-        case "anthropic": return "claude-3-5-sonnet-20240620";
-        case "openai": return "gpt-4o";
-        case "gemini": return "gemini-1.5-flash";
-        default: return "gpt-4o";
+        case "deepseek": return "deepseek-vl";
+        default: return "qwen-vl-max";
     }
 }
 
@@ -344,10 +186,9 @@ function getVisionSystemPrompt(provider: AIProvider, settings: AISettings): stri
     if (settings.visionSystemPrompt) return settings.visionSystemPrompt;
 
     // 否则根据 active provider 返回预设
-    if (provider === "anthropic") return CLAUDE_VISION_PROMPT || "";
     if (provider === "qwen") return QWEN_VISION_PROMPT || "";
 
-    // 默认
+    // 默认 (DeepSeek 等 OpenAI 兼容接口)
     return VISION_ANALYSIS_SYSTEM_PROMPT;
 }
 // ============================================================================
@@ -358,7 +199,7 @@ export async function analyzeComprehensiveMultimodal(
     images: VisionImage[],
     userAnswersContext: string,
     productsContext: string,
-    _defaultProvider: AIProvider = "openai"
+    _defaultProvider: AIProvider = "qwen"
 ) {
     const settings = await getAISettings();
     // 允许配置 overriding，否则用 settings.visionProvider 作为“主多模态模型”

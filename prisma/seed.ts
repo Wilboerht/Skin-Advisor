@@ -95,10 +95,10 @@ async function main() {
             data: {
                 key: aiSettingKey,
                 value: {
-                    provider: "openai",
-                    visionProvider: "openai",
-                    model: "gpt-4o",
-                    visionModel: "gpt-4o",
+                    provider: "deepseek",
+                    visionProvider: "qwen",
+                    model: "deepseek-chat",
+                    visionModel: "qwen-vl-max",
                     // SECURITY: API keys are NEVER stored in the database.
                     // They are always read from environment variables at runtime.
                     maxTokens: 2000,
