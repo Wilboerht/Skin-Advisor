@@ -95,7 +95,7 @@ async function main() {
             data: {
                 key: aiSettingKey,
                 value: {
-                    provider: "deepseek",
+                    provider: "qwen",
                     visionProvider: "qwen",
                     model: "deepseek-chat",
                     visionModel: "qwen-vl-max",

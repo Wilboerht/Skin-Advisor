@@ -332,7 +332,7 @@ export async function POST(request: NextRequest) {
         const systemPrompt = TEXT_ANALYSIS_SYSTEM_PROMPT;
 
         // 调用 AI
-        const provider = process.env.AI_PROVIDER || "deepseek";
+        const provider = process.env.AI_PROVIDER || "qwen";
         console.log(`Starting text analysis with ${provider}...`);
 
         let resultJson: any;

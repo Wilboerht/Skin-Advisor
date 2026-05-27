@@ -36,7 +36,7 @@ export interface AISettings {
 
 // 默认设置
 // Helper to determine default models based on provider env
-const envProvider = process.env.AI_PROVIDER || "deepseek";
+const envProvider = process.env.AI_PROVIDER || "qwen";
 const envVisionProvider = process.env.AI_VISION_PROVIDER || "qwen";
 
 const DEFAULT_AI_SETTINGS: AISettings = {
@@ -131,7 +131,7 @@ export async function isAIEnabled(): Promise<boolean> {
     // 2. 检查是否有有效的 API Key 配置
     // 如果没有任何 Key 可用，也可以视为 AI 不可用
     const settings = await getAISettings();
-    const provider = settings.provider || "deepseek";
+    const provider = settings.provider || "qwen";
     const keys = getApiKeysForProvider(provider, settings);
 
     return keys.length > 0;
@@ -196,7 +196,7 @@ export async function generateText(
     }
 
     const settings = await getAISettings();
-    const primaryProvider = preferredProvider || settings.provider || "deepseek";
+    const primaryProvider = preferredProvider || settings.provider || "qwen";
     const primaryModel = settings.model;
 
     // 构建尝试队列
