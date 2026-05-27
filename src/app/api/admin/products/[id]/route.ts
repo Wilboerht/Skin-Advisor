@@ -1,18 +1,15 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { verifyAdminSession, logAdminAction, getClientInfo } from "@/lib/admin-auth";
+import { withAdminAuth, requireRole, logAdminAction, getClientInfo } from "@/lib/admin-auth";
 
-export async function GET(
+// GET /api/admin/products/[id] - Get product details
+// Available to all authenticated admin roles (including editor)
+export const GET = withAdminAuth(async (
     request: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
-) {
+    { params }
+) => {
     try {
-        const admin = await verifyAdminSession();
-        if (!admin) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
-
         const { id } = await params;
         const product = await prisma.product.findUnique({
             where: { id }
@@ -22,18 +19,15 @@ export async function GET(
     } catch (error) {
         return NextResponse.json({ error: "Internal Error" }, { status: 500 });
     }
-}
+});
 
-export async function PUT(
+// PUT /api/admin/products/[id] - Update product
+// Available to all authenticated admin roles (including editor)
+export const PUT = withAdminAuth(async (
     request: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
-) {
+    { admin, params }
+) => {
     try {
-        const admin = await verifyAdminSession();
-        if (!admin) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
-
         const { id } = await params;
         const body = await request.json();
         const clientInfo = getClientInfo(request);
@@ -99,18 +93,15 @@ export async function PUT(
         console.error(error);
         return NextResponse.json({ error: "Failed to update" }, { status: 500 });
     }
-}
+});
 
-export async function DELETE(
+// DELETE /api/admin/products/[id] - Delete product
+// Restricted to super_admin and admin (editor cannot delete products)
+export const DELETE = requireRole("super_admin", "admin")(async (
     request: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
-) {
+    { admin, params }
+) => {
     try {
-        const admin = await verifyAdminSession();
-        if (!admin) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
-
         const { id } = await params;
         const clientInfo = getClientInfo(request);
 
@@ -126,7 +117,7 @@ export async function DELETE(
             const rules = await tx.recommendationRule.findMany();
             for (const rule of rules) {
                 const ruleProductIds = Array.isArray(rule.productIds)
-                    ? rule.productIds as string[]
+                    ? (rule.productIds as string[])
                     : [];
                 const cleanedIds = ruleProductIds.filter(pid => pid !== id);
                 if (cleanedIds.length !== ruleProductIds.length) {
@@ -157,4 +148,4 @@ export async function DELETE(
         }
         return NextResponse.json({ error: "Failed to delete" }, { status: 500 });
     }
-}
+});

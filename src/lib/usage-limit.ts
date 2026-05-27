@@ -1,6 +1,7 @@
 
 import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { getSession, isVipCheck } from '@/lib/auth';
 import { extractGuestIdentifiers } from './guest-limit';
 import { withDbRetry } from './utils';
@@ -25,7 +26,7 @@ export interface UsageLimitResult {
  * 2. 普通注册用户：每日 10 次
  * 3. VIP 用户：每日 100 次
  */
-export async function checkUsageLimit(request: NextRequest, body?: any): Promise<UsageLimitResult> {
+export async function checkUsageLimit(request: NextRequest, body?: Record<string, unknown>): Promise<UsageLimitResult> {
     const user = await getSession();
     const now = new Date();
 
@@ -117,7 +118,7 @@ export async function checkUsageLimit(request: NextRequest, body?: any): Promise
     today.setHours(0, 0, 0, 0);
 
     // 查询当天的测试次数
-    const whereConditions: any[] = [{ ipAddress }];
+    const whereConditions: Prisma.GuestUsageWhereInput[] = [{ ipAddress }];
     if (cookieId) whereConditions.push({ cookieId });
     if (fingerprint) whereConditions.push({ fingerprint });
 
@@ -186,7 +187,7 @@ export async function checkUsageLimit(request: NextRequest, body?: any): Promise
  * 
  * 幂等性保护：同一个 sessionId 只记录一次，防止超时重试导致重复扣额度
  */
-export async function recordUsage(request: NextRequest, sessionId: string, body?: any): Promise<boolean> {
+export async function recordUsage(request: NextRequest, sessionId: string, body?: Record<string, unknown>): Promise<boolean> {
     const user = await getSession();
     const identifiers = extractGuestIdentifiers(request, body);
     const { ipAddress, cookieId, fingerprint, userAgent } = identifiers;

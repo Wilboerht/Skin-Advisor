@@ -2,6 +2,7 @@
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { getClientIP } from "@/lib/ratelimit";
 import crypto from "crypto";
 
 interface AdminSession {
@@ -144,45 +145,13 @@ export async function verifyAdminSession(): Promise<AdminSession | null> {
 }
 
 /**
- * Extract the last non-empty IP from X-Forwarded-For, falling back to X-Real-IP.
- * We use the LAST value because the FIRST value can be spoofed by the client.
- */
-function extractTrustedIp(forwardedFor: string | null, realIp: string | null): string {
-    if (forwardedFor) {
-        const ips = forwardedFor.split(",").map(s => s.trim()).filter(Boolean);
-        if (ips.length > 0) {
-            // Return the last IP in the chain (closest to the server / most trusted proxy)
-            return ips[ips.length - 1];
-        }
-    }
-    if (realIp) {
-        return realIp;
-    }
-    return "unknown";
-}
-
-/**
  * Extract client info from request
  */
 export function getClientInfo(request: NextRequest) {
     return {
-        ip: extractTrustedIp(
-            request.headers.get("x-forwarded-for"),
-            request.headers.get("x-real-ip")
-        ),
+        ip: getClientIP(request),
         userAgent: request.headers.get("user-agent") || "unknown"
     };
-}
-
-/**
- * Get client IP from request (standalone utility for non-NextRequest usage)
- * Extracts the last non-empty value from X-Forwarded-For instead of the first.
- */
-export function getClientIP(request: Request): string {
-    return extractTrustedIp(
-        request.headers.get("x-forwarded-for"),
-        request.headers.get("x-real-ip")
-    );
 }
 
 /**

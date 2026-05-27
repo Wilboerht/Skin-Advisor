@@ -1,50 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir, readdir, stat, unlink } from "fs/promises";
+import { writeFile, mkdir } from "fs/promises";
 import path from "path";
+import { enforceStorageLimits } from "@/lib/shared-upload-utils";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
-
-// Storage guardrails (same as /api/upload)
-const MAX_UPLOAD_DIR_FILES = 500;
-const MAX_UPLOAD_DIR_SIZE_MB = 512;
-const UPLOAD_RETENTION_DAYS = 30;
-
-async function enforceStorageLimits(uploadDir: string): Promise<void> {
-    const entries = await readdir(uploadDir, { withFileTypes: true });
-    const files = entries.filter((e) => e.isFile());
-    if (files.length === 0) return;
-
-    const fileStats = await Promise.all(
-        files.map(async (f) => {
-            const s = await stat(path.join(uploadDir, f.name));
-            return { name: f.name, size: s.size, time: s.birthtimeMs || s.mtimeMs };
-        })
-    );
-    fileStats.sort((a, b) => a.time - b.time);
-
-    const cutoff = Date.now() - UPLOAD_RETENTION_DAYS * 24 * 60 * 60 * 1000;
-    for (const f of fileStats) {
-        if (f.time < cutoff) {
-            try { await unlink(path.join(uploadDir, f.name)); } catch { /* ignore */ }
-        }
-    }
-
-    const remaining = fileStats.filter((f) => f.time >= cutoff);
-    while (remaining.length > MAX_UPLOAD_DIR_FILES) {
-        const oldest = remaining.shift();
-        if (!oldest) break;
-        try { await unlink(path.join(uploadDir, oldest.name)); } catch { /* ignore */ }
-    }
-
-    let totalSize = remaining.reduce((sum, f) => sum + f.size, 0);
-    const maxBytes = MAX_UPLOAD_DIR_SIZE_MB * 1024 * 1024;
-    while (totalSize > maxBytes && remaining.length > 0) {
-        const oldest = remaining.shift();
-        if (!oldest) break;
-        try { await unlink(path.join(uploadDir, oldest.name)); totalSize -= oldest.size; } catch { /* ignore */ }
-    }
-}
 
 /**
  * PUT /api/local-upload

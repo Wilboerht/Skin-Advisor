@@ -83,7 +83,7 @@ export const ShareImageRequestSchema = z.object({
     skinType: z.string().optional(),
     date: z.string().optional(),
     summary: z.string().optional(),
-    radarData: z.record(z.string(), z.any()).optional(), // 维度数据
+    radarData: z.record(z.string(), z.unknown()).optional(), // 维度数据
     dimensions: z.record(z.string(), z.object({
         score: z.number().optional(),
         percentile: z.number().optional(),
@@ -119,7 +119,7 @@ export const FaceAnalyzeRequestSchema = z.object({
 }).refine(data => {
     if (data.image) return true;
     if (Array.isArray(data.images)) return data.images.length > 0;
-    if (data.images && typeof data.images === 'object') return !!(data.images as any).front;
+    if (data.images && typeof data.images === 'object') return !!(data.images as { front?: string }).front;
     return false;
 }, {
     message: "请至少提供一张正面照片"

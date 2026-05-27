@@ -6,7 +6,7 @@ import { Sparkles, LogOut } from "lucide-react";
 
 // --- Custom SVG Icons (Placeholders for your SVGs) ---
 // Each component accepts `className` to handle sizing and color changes
-const IconFaceScan = memo(function() { return (
+const IconFaceScan = memo(function IconFaceScan() { return (
     <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="17.9922" y="5" width="11.9999" height="37.9997" rx="1.99992" fill="url(#paint0_linear_2088_4549)" />
         <path d="M18.7941 5.99999C18.7941 5.99999 18.9941 5 23.9941 5C28.9941 5 29.1941 5.99999 29.1941 5.99999L29.4941 16.9999C29.994 16.9999 29.994 17.6666 29.994 17.9999V20.9999C30.494 21.0202 30.494 21.6665 30.494 21.9999V40.9997C30.494 42.1043 29.6006 42.9997 28.496 42.9997H23.9941H19.4922C18.3876 42.9997 17.4941 42.1051 17.4941 41.0005V21.9999C17.4941 21.1999 17.6608 20.9999 17.9941 20.9999V17.9999C17.9941 17.1999 18.1608 16.9999 18.4941 16.9999L18.7941 5.99999Z" stroke="#B795A7" strokeWidth="1.59993" strokeLinecap="round" strokeLinejoin="round" />
@@ -39,7 +39,7 @@ const IconFaceScan = memo(function() { return (
   );
 });
 
-const IconPigmentation = memo(function() { return (
+const IconPigmentation = memo(function IconPigmentation() { return (
     <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="7.59979" y="10.5986" width="32.7998" height="28.1998" fill="url(#paint0_linear_2121_4309)" />
         <path d="M9.42296 10.5499C11.6962 10.2844 15.9983 10 23.9981 10C31.9979 10 36.3 10.2844 38.5732 10.5499C40.0781 10.7256 40.998 11.957 40.998 13.4721V35.9998C40.998 37.6566 39.6548 38.9998 37.998 38.9998H9.99825C8.34139 38.9998 6.99823 37.6566 6.99823 35.9998V13.4721C6.99823 11.957 7.91808 10.7256 9.42296 10.5499Z" stroke="#D6C0AD" strokeWidth="1.60001" />
@@ -71,7 +71,7 @@ const IconPigmentation = memo(function() { return (
   );
 });
 
-const IconElasticity = memo(function() { return (
+const IconElasticity = memo(function IconElasticity() { return (
     <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="21.0004" y="4.00098" width="6" height="12" fill="url(#paint0_linear_2088_4438)" />
         <rect x="19.8009" y="15.999" width="8.4" height="28" fill="url(#paint1_radial_2088_4438)" />
@@ -110,7 +110,7 @@ const IconElasticity = memo(function() { return (
   );
 });
 
-const IconHydration = memo(function() { return (
+const IconHydration = memo(function IconHydration() { return (
     <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="11.793" y="5.7998" width="24.3998" height="36.3997" fill="url(#paint0_radial_2123_4611)" />
         <path d="M10.9941 6.99992C10.9941 5.89539 11.8895 5 12.9941 5H34.994C36.0986 5 36.9939 5.89539 36.9939 6.99992V9.32388C36.9939 9.72122 36.7235 10.0676 36.3381 10.1639C35.9882 10.2514 35.9882 10.7485 36.3381 10.836C36.7235 10.9324 36.9939 11.2787 36.9939 11.676V40.9998C36.9939 42.1043 36.0986 42.9997 34.994 42.9997H12.9941C11.8895 42.9997 10.9941 42.1043 10.9941 40.9998V11.5933C10.9941 11.2389 11.2209 10.9244 11.557 10.8123C11.8572 10.7123 11.8572 10.2877 11.557 10.1876C11.2209 10.0755 10.9941 9.76097 10.9941 9.40665V6.99992Z" stroke="#D2C9BC" strokeWidth="1.59993" />
@@ -138,7 +138,7 @@ const IconHydration = memo(function() { return (
   );
 });
 
-const IconSunDamage = memo(function() { return (
+const IconSunDamage = memo(function IconSunDamage() { return (
     <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="18.9868" y="6.97559" width="9.99979" height="1.92479" fill="white" />
         <mask id="mask0_2121_4240" maskUnits="userSpaceOnUse" x="18" y="6" width="12" height="37">
@@ -178,7 +178,7 @@ const IconSunDamage = memo(function() { return (
   );
 });
 
-const IconRedness = memo(function() { return (
+const IconRedness = memo(function IconRedness() { return (
     <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="9.78906" y="4.7998" width="28.3998" height="38.3997" rx="9.99984" fill="url(#paint0_radial_2121_4267)" />
         <path d="M11.9902 19C11.9902 19 15.1902 18 23.9901 18C32.7901 18 35.9901 19 35.9901 19" stroke="#DBBBA4" strokeWidth="1.19998" strokeLinecap="round" />
@@ -208,7 +208,7 @@ const IconRedness = memo(function() { return (
   );
 });
 
-const IconAcne = memo(function() { return (
+const IconAcne = memo(function IconAcne() { return (
     <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="18.7954" y="2" width="10.4" height="44" fill="url(#paint0_linear_2121_4179)" />
         <path d="M17.9945 3.82842C17.9945 3.29799 18.2285 2.80528 18.7276 2.62557C19.516 2.34166 21.0719 2 23.9945 2C26.9171 2 28.473 2.34166 29.2615 2.62557C29.7605 2.80528 29.9945 3.29799 29.9945 3.82842V44C29.9945 45.1046 29.0991 46 27.9945 46H19.9945C18.8899 46 17.9945 45.1046 17.9945 44V3.82842Z" stroke="#C1AFA1" strokeWidth="1.59998" strokeLinejoin="round" />
@@ -241,7 +241,7 @@ const IconAcne = memo(function() { return (
   );
 });
 
-const IconWrinkles = memo(function() { return (
+const IconWrinkles = memo(function IconWrinkles() { return (
     <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="5.69531" y="13.999" width="36.5979" height="19.7989" rx="1.99982" fill="url(#paint0_linear_2121_4220)" />
         <path d="M7.99721 14.0407C10.7442 13.738 15.6787 13.3984 23.9931 13.3984C32.2237 13.3984 37.1422 13.6995 39.9053 13.9713C41.7318 14.1509 42.992 15.6859 42.992 17.5212V31.3975C42.992 33.0542 41.649 34.3973 39.9923 34.3973H7.99387C6.33717 34.3973 4.99414 33.0542 4.99414 31.3975V17.548C4.99414 15.7493 6.20935 14.2378 7.99721 14.0407Z" stroke="#BFBAB6" strokeWidth="1.59986" />
@@ -272,7 +272,7 @@ const IconWrinkles = memo(function() { return (
   );
 });
 
-const IconTexture = memo(function() { return (
+const IconTexture = memo(function IconTexture() { return (
     <svg width="48" height="48" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M224.841 51.218H175.082C171.534 51.218 168.658 54.0941 168.658 57.642V173.865C168.658 177.413 171.534 180.289 175.082 180.289H224.841C228.389 180.289 231.265 177.413 231.265 173.865V57.642C231.265 54.0941 228.389 51.218 224.841 51.218Z" fill="url(#paint0_linear_22_2)" />
         <path d="M262.405 186.466H137.594C133.539 186.466 130.252 189.753 130.252 193.808V345.634C130.252 349.689 133.539 352.976 137.594 352.976H262.405C266.46 352.976 269.747 349.689 269.747 345.634V193.808C269.747 189.753 266.46 186.466 262.405 186.466Z" fill="url(#paint1_radial_22_2)" />
@@ -316,7 +316,8 @@ interface AnalyzingOverlayProps {
 export function AnalyzingOverlay({ progress, onCancel, waitingForAvatar, queuePosition, queueWaitSeconds }: AnalyzingOverlayProps) {
     const [activeIconIndex, setActiveIconIndex] = useState(0);
     const [showCancel, setShowCancel] = useState(false);
-    const [isMounted, setIsMounted] = useState(false);
+    // "use client" 组件在客户端运行时始终已挂载
+    const isMounted = typeof window !== 'undefined';
     const [isExiting, setIsExiting] = useState(false);
     const [stuckTime, setStuckTime] = useState(0);
     const stuckStartRef = useRef<number | null>(null);
@@ -347,7 +348,7 @@ export function AnalyzingOverlay({ progress, onCancel, waitingForAvatar, queuePo
             }
         } else {
             stuckStartRef.current = null;
-            setStuckTime(0);
+            // 不在这里同步 setState；isWaitingLLM 条件已控制显示，progress 离开范围后自然隐藏
             if (stuckIntervalRef.current) {
                 clearInterval(stuckIntervalRef.current);
                 stuckIntervalRef.current = null;
@@ -363,7 +364,6 @@ export function AnalyzingOverlay({ progress, onCancel, waitingForAvatar, queuePo
 
     // Cycle through icons for "loading" animation
     useEffect(() => {
-        setIsMounted(true);
         const interval = setInterval(() => {
             setActiveIconIndex((prev) => (prev + 1) % 9);
         }, 800);

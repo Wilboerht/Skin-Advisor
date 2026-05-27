@@ -36,15 +36,17 @@ export async function withDbRetry<T>(
     for (let i = 0; i <= retries; i++) {
         try {
             return await fn();
-        } catch (e: any) {
-            lastError = e;
+        } catch (e: unknown) {
+            lastError = e instanceof Error ? e : new Error(String(e));
             const isConnectionError =
-                e.message?.includes("Connection terminated unexpectedly") ||
-                e.message?.includes("Connection terminated due to connection timeout") ||
-                e.message?.includes("Can't reach database server");
+                e instanceof Error && (
+                    e.message.includes("Connection terminated unexpectedly") ||
+                    e.message.includes("Connection terminated due to connection timeout") ||
+                    e.message.includes("Can't reach database server")
+                );
 
             if (!isConnectionError || i === retries) {
-                throw e;
+                throw lastError;
             }
 
             console.warn(`[DB Retry] Connection error, retrying ${i + 1}/${retries}...`);

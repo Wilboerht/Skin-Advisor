@@ -1,18 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { verifyAdminSession, getClientInfo, logAdminAction } from "@/lib/admin-auth";
+import { requireRole, getClientInfo, logAdminAction } from "@/lib/admin-auth";
 
 // GET /api/admin/users/[id] - Get user details
-export async function GET(
+// Restricted to super_admin only
+export const GET = requireRole("super_admin")(async (
     request: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
-) {
+    { admin, params }
+) => {
     try {
-        const session = await verifyAdminSession();
-        if (!session) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
-
         const { id } = await params;
 
         const user = await prisma.user.findUnique({
@@ -56,19 +52,14 @@ export async function GET(
         console.error("Admin user GET error:", error);
         return NextResponse.json({ error: "Failed to fetch user" }, { status: 500 });
     }
-}
+});
 
 // PATCH /api/admin/users/[id] - Update user (disable/enable, update role, dailyTestLimit)
-export async function PATCH(
+export const PATCH = requireRole("super_admin")(async (
     request: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
-) {
+    { admin, params }
+) => {
     try {
-        const session = await verifyAdminSession();
-        if (!session) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
-
         const { id } = await params;
         const body = await request.json();
         const { role, name, dailyTestLimit, vipExpiresAt } = body;
@@ -123,7 +114,7 @@ export async function PATCH(
         // Log admin action
         const clientInfo = getClientInfo(request);
         await logAdminAction({
-            adminId: session.adminId,
+            adminId: admin.adminId,
             action: "update",
             resource: "User",
             resourceId: id,
@@ -143,19 +134,14 @@ export async function PATCH(
         console.error("Admin user PATCH error:", error);
         return NextResponse.json({ error: "Failed to update user" }, { status: 500 });
     }
-}
+});
 
 // DELETE /api/admin/users/[id] - Delete user
-export async function DELETE(
+export const DELETE = requireRole("super_admin")(async (
     request: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
-) {
+    { admin, params }
+) => {
     try {
-        const session = await verifyAdminSession();
-        if (!session) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
-
         const { id } = await params;
 
         const user = await prisma.user.findUnique({ where: { id } });
@@ -168,7 +154,7 @@ export async function DELETE(
         // Log admin action
         const clientInfo = getClientInfo(request);
         await logAdminAction({
-            adminId: session.adminId,
+            adminId: admin.adminId,
             action: "delete",
             resource: "User",
             resourceId: id,
@@ -181,4 +167,4 @@ export async function DELETE(
         console.error("Admin user DELETE error:", error);
         return NextResponse.json({ error: "Failed to delete user" }, { status: 500 });
     }
-}
+});

@@ -1,16 +1,13 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { verifyAdminSession } from "@/lib/admin-auth";
+import { withAdminAuth } from "@/lib/admin-auth";
 import { Prisma } from "@prisma/client";
 
-export async function GET(request: NextRequest) {
+// GET /api/admin/audit-logs - List audit logs with filtering
+// Available to all authenticated admin roles (including editor)
+export const GET = withAdminAuth(async (request) => {
     try {
-        const admin = await verifyAdminSession();
-        if (!admin) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
-
         const { searchParams } = new URL(request.url);
         const page = Math.max(1, parseInt(searchParams.get("page") || "1") || 1);
         const limit = Math.min(200, Math.max(1, parseInt(searchParams.get("limit") || "50") || 50));
@@ -116,4 +113,4 @@ export async function GET(request: NextRequest) {
             { status: 500 }
         );
     }
-}
+});

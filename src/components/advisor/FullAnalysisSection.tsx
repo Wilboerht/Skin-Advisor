@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import type { FullAnalysisSectionProps } from "./FullAnalysisSection.types";
 import { ScientificRadarChart } from "@/components/advisor/ScientificRadarChart";
 import { ProductRecommendationSection } from "@/components/advisor/ProductRecommendationSection";
@@ -28,7 +28,7 @@ export const FullAnalysisSection: React.FC<FullAnalysisSectionProps> = ({
   }, [faceAnalysis, socialGender, faGenderVal, normalizedConf]);
 
   // 自动弹窗
-  useMemo(() => {
+  useEffect(() => {
     if (isGenderMismatch) setShowGenderMismatchModal(true);
   }, [isGenderMismatch]);
 

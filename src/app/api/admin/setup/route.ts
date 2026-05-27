@@ -25,12 +25,18 @@ export async function POST(request: NextRequest) {
         const adminCount = await prisma.adminUser.count();
 
         if (adminCount > 0) {
-            // Existing admins: require authentication
+            // Existing admins: require super_admin authentication
             const admin = await verifyAdminSession();
             if (!admin) {
                 return NextResponse.json(
                     { success: false, error: "Unauthorized" },
                     { status: 401 }
+                );
+            }
+            if (admin.role !== "super_admin") {
+                return NextResponse.json(
+                    { success: false, error: "Forbidden - super_admin required" },
+                    { status: 403 }
                 );
             }
         }

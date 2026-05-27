@@ -15,8 +15,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
     const [copied, setCopied] = useState(false);
     const toast = useToast();
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const [mounted, setMounted] = useState(false);
-    useEffect(() => setMounted(true), []);
+    const mounted = typeof window !== 'undefined';
 
     // Clear timeout on unmount or when modal closes
     useEffect(() => {

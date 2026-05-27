@@ -1,14 +1,12 @@
 
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { verifyAdminSession } from "@/lib/admin-auth";
+import { withAdminAuth } from "@/lib/admin-auth";
 
-export async function GET() {
+// GET /api/admin/stats - Dashboard statistics
+// Available to all authenticated admin roles (including editor)
+export const GET = withAdminAuth(async () => {
     try {
-        const admin = await verifyAdminSession();
-        if (!admin) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
         // ===== 基础统计 =====
         const [
             totalUsers,
@@ -132,7 +130,7 @@ export async function GET() {
             { status: 500 }
         );
     }
-}
+});
 
 function getSkinTypeColor(type: string): string {
     const colors: Record<string, string> = {

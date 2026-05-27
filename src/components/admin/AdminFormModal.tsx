@@ -46,7 +46,8 @@ export function AdminFormModal({ isOpen, onClose, onSubmit, admin, loading }: Ad
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     useEffect(() => {
-        if (isOpen) {
+        if (!isOpen) return;
+        const raf = requestAnimationFrame(() => {
             if (admin) {
                 setUsername(admin.username);
                 setEmail(admin.email || "");
@@ -62,7 +63,8 @@ export function AdminFormModal({ isOpen, onClose, onSubmit, admin, loading }: Ad
             }
             setErrors({});
             setShowPassword(false);
-        }
+        });
+        return () => cancelAnimationFrame(raf);
     }, [isOpen, admin]);
 
     const validate = () => {

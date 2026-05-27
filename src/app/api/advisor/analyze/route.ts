@@ -175,7 +175,7 @@ export async function POST(request: NextRequest) {
         }
 
         if (!isFreeRetryAllowed) {
-            const usageLimit = await checkUsageLimit(request, body);
+            const usageLimit = await checkUsageLimit(request, body as Record<string, unknown>);
             if (!usageLimit.canTest) {
                 return NextResponse.json(
                     { error: usageLimit.error || "您已达到今日测试上限" },
@@ -261,7 +261,7 @@ export async function POST(request: NextRequest) {
             // AI 禁用模式下也扣除额度（防止无限免费分析）
             if (sessionId && !isFreeRetryAllowed) {
                 try {
-                    await recordUsage(request, sessionId, body);
+                    await recordUsage(request, sessionId, body as Record<string, unknown>);
                 } catch (usageErr) {
                     console.error("[AI-Disabled] recordUsage failed:", usageErr);
                 }
@@ -570,15 +570,16 @@ export async function POST(request: NextRequest) {
         }
 
         // 10. 记录使用次数（AI 成功生成结果后才扣额度，免费重试不扣）
-        // 隔离保护：recordUsage 失败不覆盖已成功生成的分析结果
+        // 隔离保护：recordUsage 失败不覆盖已成功生成的分析结果，但连续失败需记录异常
         if (sessionId && !isFreeRetryAllowed) {
             try {
-                const recorded = await recordUsage(request, sessionId, body);
+                const recorded = await recordUsage(request, sessionId, body as Record<string, unknown>);
                 if (!recorded) {
                     console.warn(`[analyze] recordUsage returned false for session ${sessionId}`);
                 }
             } catch (usageErr) {
                 console.error("[analyze] recordUsage failed (non-blocking):", usageErr);
+                // 非阻塞：不中断用户响应，但异常会被保留在日志中供排查
             }
         }
 

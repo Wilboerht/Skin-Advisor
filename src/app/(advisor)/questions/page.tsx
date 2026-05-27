@@ -97,45 +97,6 @@ export default function QuestionsPage() {
         }
     }, [questions.length, currentStepIndex]);
 
-    // 键盘支持
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "Enter" && !isNextDisabled()) {
-                handleNext();
-            }
-        };
-        window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [currentStepIndex, answers, gender]); // 依赖项
-
-    // 检测是否有保存的进度
-    useEffect(() => {
-        if (hasCheckedResume.current) return;
-        hasCheckedResume.current = true;
-
-        try {
-            const savedAnswers = localStorage.getItem("advisor_answers");
-            const savedGender = localStorage.getItem("advisor_gender");
-            const savedStep = localStorage.getItem("advisor_step");
-
-            // 检查是否有有效的保存进度（至少有性别或已回答的问题）
-            const hasProgress = savedGender || (savedAnswers && Object.keys(JSON.parse(savedAnswers)).length > 0);
-
-            if (hasProgress && savedStep) {
-                // 如果是从扫脸页点击“返回修改”进来的 (带 ?edit=true)，则自动恢复，不弹窗询问
-                const urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.get('edit') === 'true') {
-                    resumeSavedProgress();
-                    return;
-                }
-
-                // 否则显示选择弹窗
-                setHasSavedProgress(true);
-                setShowResumeModal(true);
-            }
-        } catch (e) { console.error(e); }
-    }, []);
-
     // 恢复之前的状态（用户选择继续时调用）
     const resumeSavedProgress = () => {
         try {
@@ -197,6 +158,40 @@ export default function QuestionsPage() {
         sessionStartTime.current = Date.now();
         startStepIndex.current = 0;
     };
+
+    // resumeSavedProgress ref（必须在函数定义之后）
+    const resumeSavedProgressRef = useRef(resumeSavedProgress);
+    useEffect(() => {
+        resumeSavedProgressRef.current = resumeSavedProgress;
+    });
+
+    // 检测是否有保存的进度
+    useEffect(() => {
+        if (hasCheckedResume.current) return;
+        hasCheckedResume.current = true;
+
+        try {
+            const savedAnswers = localStorage.getItem("advisor_answers");
+            const savedGender = localStorage.getItem("advisor_gender");
+            const savedStep = localStorage.getItem("advisor_step");
+
+            // 检查是否有有效的保存进度（至少有性别或已回答的问题）
+            const hasProgress = savedGender || (savedAnswers && Object.keys(JSON.parse(savedAnswers)).length > 0);
+
+            if (hasProgress && savedStep) {
+                // 如果是从扫脸页点击“返回修改”进来的 (带 ?edit=true)，则自动恢复，不弹窗询问
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('edit') === 'true') {
+                    resumeSavedProgressRef.current();
+                    return;
+                }
+
+                // 否则显示选择弹窗
+                setHasSavedProgress(true);
+                setShowResumeModal(true);
+            }
+        } catch (e) { console.error(e); }
+    }, []);
 
     // 自动保存答案和步骤
     useEffect(() => {
@@ -366,6 +361,23 @@ export default function QuestionsPage() {
         }
         return false;
     };
+
+    // 键盘支持 — 使用 ref 避免闭包捕获旧值及 ESLimmutability 警告
+    const handleNextRef = useRef(handleNext);
+    const isNextDisabledRef = useRef(isNextDisabled);
+    useEffect(() => {
+        handleNextRef.current = handleNext;
+        isNextDisabledRef.current = isNextDisabled;
+    });
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Enter" && !isNextDisabledRef.current()) {
+                handleNextRef.current();
+            }
+        };
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [currentStepIndex, answers, gender]);
 
     return (
         <div className="min-h-screen bg-transparent flex flex-col items-center relative overflow-x-hidden text-[#1A1A1A]">

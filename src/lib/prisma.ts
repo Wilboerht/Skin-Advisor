@@ -55,16 +55,5 @@ export default prisma;
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
-// 优雅关闭：在 PM2 / systemd 重启时释放数据库连接
-if (typeof process !== 'undefined' && process.on) {
-    process.on('SIGTERM', async () => {
-        console.log('[Prisma] SIGTERM received, disconnecting...');
-        await prisma.$disconnect();
-        process.exit(0);
-    });
-    process.on('SIGINT', async () => {
-        console.log('[Prisma] SIGINT received, disconnecting...');
-        await prisma.$disconnect();
-        process.exit(0);
-    });
-}
+// 优雅关闭信号处理已移至 instrumentation.ts（Node.js runtime only），
+// 避免 Edge Runtime 静态分析时检测到 process.on。

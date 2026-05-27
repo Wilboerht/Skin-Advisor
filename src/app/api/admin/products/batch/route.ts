@@ -1,16 +1,12 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { verifyAdminSession, logAdminAction, getClientInfo } from "@/lib/admin-auth";
+import { requireRole, logAdminAction, getClientInfo } from "@/lib/admin-auth";
 
 // POST - Batch operations on products
-export async function POST(request: NextRequest) {
+// Restricted to super_admin and admin (editor cannot perform batch operations)
+export const POST = requireRole("super_admin", "admin")(async (request, { admin }) => {
     try {
-        const admin = await verifyAdminSession();
-        if (!admin) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
-
         const body = await request.json();
         const { ids, action } = body;
         const clientInfo = getClientInfo(request);
@@ -79,12 +75,6 @@ export async function POST(request: NextRequest) {
                 break;
 
             case 'delete':
-                if (admin.role !== "super_admin") {
-                    return NextResponse.json(
-                        { success: false, error: "Forbidden: only super_admin can delete products" },
-                        { status: 403 }
-                    );
-                }
                 await prisma.$transaction(async (tx) => {
                     result = await tx.product.deleteMany({
                         where: { id: { in: ids } }
@@ -133,4 +123,4 @@ export async function POST(request: NextRequest) {
             { status: 500 }
         );
     }
-}
+});

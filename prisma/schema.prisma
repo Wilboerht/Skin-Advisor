@@ -62,7 +62,7 @@ model AdvisorSession {
   user            User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   // 头像生成队列关联（一对一）
-  avatarQueue     AvatarQueue?
+  avatarQueue     AvatarQueue? @relation("SessionToAvatar")
 
   createdAt       DateTime  @default(now())
 
@@ -315,7 +315,7 @@ model AvatarQueue {
   expiresAt       DateTime // 7 天后自动清理
 
   // 正式外键关系：关联到 AdvisorSession（一对一）
-  advisorSession  AdvisorSession? @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
+  advisorSession  AdvisorSession? @relation("SessionToAvatar", fields: [sessionId], references: [sessionId], onDelete: Cascade)
 
   // ===== 性能索引 =====
   @@index([status, createdAt])   // 队列处理器按状态+时间排序

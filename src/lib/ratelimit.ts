@@ -33,11 +33,25 @@ interface RequestRecord {
 /** 内存缓存 - 存储 IP 请求记录 */
 const rateLimitCache = new Map<string, RequestRecord>();
 
+/** 最大缓存条目数（防止内存无限增长） */
+const MAX_CACHE_SIZE = 10000;
+
 /** 缓存清理间隔（5分钟） */
 const CLEANUP_INTERVAL = 5 * 60 * 1000;
 
 /** 定期清理过期记录 */
 let cleanupTimer: ReturnType<typeof setInterval> | null = null;
+
+function enforceCacheLimit() {
+    if (rateLimitCache.size <= MAX_CACHE_SIZE) return;
+    // 删除最旧的 20% 条目（基于 windowStart）
+    const entries = Array.from(rateLimitCache.entries());
+    entries.sort((a, b) => a[1].windowStart - b[1].windowStart);
+    const deleteCount = Math.floor(MAX_CACHE_SIZE * 0.2);
+    for (let i = 0; i < deleteCount; i++) {
+        rateLimitCache.delete(entries[i][0]);
+    }
+}
 
 function startCleanup() {
     if (cleanupTimer) return;
@@ -139,6 +153,9 @@ export async function rateLimit(
 
     // 记录本次请求
     record.timestamps.push(now);
+
+    // 防止缓存无限增长
+    enforceCacheLimit();
 
     return {
         success: true,

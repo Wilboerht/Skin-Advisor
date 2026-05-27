@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { verifyAdminSession, getClientInfo, logAdminAction } from "@/lib/admin-auth";
+import { requireRole, getClientInfo, logAdminAction } from "@/lib/admin-auth";
 
 // GET /api/admin/export?type=products|users|sessions
-export async function GET(request: NextRequest) {
+// Restricted to super_admin and admin (editor cannot export sensitive data)
+export const GET = requireRole("super_admin", "admin")(async (request, { admin }) => {
     try {
-        const session = await verifyAdminSession();
-        if (!session) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
-
         const type = request.nextUrl.searchParams.get("type") || "products";
 
         let data: unknown[][] = [];
@@ -102,7 +98,7 @@ export async function GET(request: NextRequest) {
         // Log export action
         const clientInfo = getClientInfo(request);
         await logAdminAction({
-            adminId: session.adminId,
+            adminId: admin.adminId,
             action: "export",
             resource: type.charAt(0).toUpperCase() + type.slice(1),
             details: { count: data.length },
@@ -120,4 +116,4 @@ export async function GET(request: NextRequest) {
         console.error("Admin export error:", error);
         return NextResponse.json({ error: "Export failed" }, { status: 500 });
     }
-}
+});

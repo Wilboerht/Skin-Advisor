@@ -22,17 +22,17 @@ export async function getAISettings(): Promise<AISettings> {
             }
         });
 
-        const settingsMap: Record<string, any> = {};
+        const settingsMap: Record<string, unknown> = {};
         settings.forEach(s => {
             // Prisma JSON value might need parsing or casting
             settingsMap[s.key] = s.value;
         });
 
         return {
-            provider: settingsMap.aiProvider || process.env.AI_VISION_PROVIDER || "openai",
-            model: settingsMap.aiModel || process.env.OPENAI_API_MODEL || "gpt-4o",
-            temperature: Number(settingsMap.temperature ?? 0.7),
-            maxTokens: Number(settingsMap.maxTokens ?? 4096)
+            provider: (settingsMap.aiProvider as string | undefined) || process.env.AI_VISION_PROVIDER || "openai",
+            model: (settingsMap.aiModel as string | undefined) || process.env.OPENAI_API_MODEL || "gpt-4o",
+            temperature: Number((settingsMap.temperature as number | string | undefined) ?? 0.7),
+            maxTokens: Number((settingsMap.maxTokens as number | string | undefined) ?? 4096)
         };
     } catch (e) {
         console.warn("Failed to fetch settings from DB, falling back to defaults", e);

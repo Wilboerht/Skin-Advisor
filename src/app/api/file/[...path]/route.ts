@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { readFile } from "fs/promises";
 import path from "path";
 import { existsSync } from "fs";
+import { stat } from "fs/promises";
 
 export async function GET(
     request: NextRequest,
@@ -21,6 +22,12 @@ export async function GET(
         }
 
         if (!existsSync(filePath)) {
+            return new NextResponse("Not found", { status: 404 });
+        }
+
+        // 确保请求的是文件而非目录
+        const fileStat = await stat(filePath);
+        if (!fileStat.isFile()) {
             return new NextResponse("Not found", { status: 404 });
         }
 

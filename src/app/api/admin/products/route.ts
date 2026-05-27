@@ -1,15 +1,12 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { verifyAdminSession, logAdminAction, getClientInfo } from "@/lib/admin-auth";
+import { withAdminAuth, logAdminAction, getClientInfo } from "@/lib/admin-auth";
 
-export async function GET(request: NextRequest) {
+// GET /api/admin/products - List products with pagination
+// Available to all authenticated admin roles (including editor)
+export const GET = withAdminAuth(async (request) => {
     try {
-        const admin = await verifyAdminSession();
-        if (!admin) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
-
         const searchParams = request.nextUrl.searchParams;
         const page = Math.max(1, parseInt(searchParams.get("page") || "1") || 1);
         const limit = Math.min(500, Math.max(1, parseInt(searchParams.get("limit") || "50") || 50));
@@ -36,15 +33,12 @@ export async function GET(request: NextRequest) {
     } catch (error) {
         return NextResponse.json({ error: "Failed to fetch products" }, { status: 500 });
     }
-}
+});
 
-export async function POST(request: NextRequest) {
+// POST /api/admin/products - Create a new product
+// Available to all authenticated admin roles (including editor)
+export const POST = withAdminAuth(async (request, { admin }) => {
     try {
-        const admin = await verifyAdminSession();
-        if (!admin) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
-
         const body = await request.json();
         const clientInfo = getClientInfo(request);
 
@@ -133,4 +127,4 @@ export async function POST(request: NextRequest) {
         console.error(error);
         return NextResponse.json({ error: "Failed to create product" }, { status: 500 });
     }
-}
+});

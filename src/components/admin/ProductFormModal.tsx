@@ -15,12 +15,11 @@ interface ProductFormModalProps {
 }
 
 export function ProductFormModal({ isOpen, onClose, product, onSuccess }: ProductFormModalProps) {
-    const [mounted, setMounted] = useState(false);
+    const mounted = typeof window !== 'undefined';
     const [submitting, setSubmitting] = useState(false);
     const [isDirty, setIsDirty] = useState(false);
     const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
-    useEffect(() => setMounted(true), []);
 
     // 打开时重置滚动位置
     useEffect(() => {

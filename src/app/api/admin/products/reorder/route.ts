@@ -1,16 +1,12 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { verifyAdminSession } from "@/lib/admin-auth";
+import { requireRole } from "@/lib/admin-auth";
 
 // POST - Reorder products
-export async function POST(request: NextRequest) {
+// Restricted to super_admin and admin (editor cannot reorder products)
+export const POST = requireRole("super_admin", "admin")(async (request) => {
     try {
-        const admin = await verifyAdminSession();
-        if (!admin) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
-
         const body = await request.json();
         const { orderedIds } = body;
 
@@ -68,4 +64,4 @@ export async function POST(request: NextRequest) {
             { status: 500 }
         );
     }
-}
+});

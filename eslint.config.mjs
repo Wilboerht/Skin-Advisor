@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Ignore generated/third-party assets
+    "public/**/*.js",
+    "public/**/*.mjs",
   ]),
 ]);
 

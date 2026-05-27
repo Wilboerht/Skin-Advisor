@@ -1,6 +1,13 @@
 
 import prisma from "@/lib/prisma";
-import { QuestionnaireAnswers, getSkinTypeLabel, getConcernLabel } from "@/lib/advisor-utils";
+import { QuestionnaireAnswers } from "@/lib/advisor-utils";
+import type { Product } from "@prisma/client";
+
+/** 带算法评分的商品（由 getCandidateProducts 生成） */
+type ScoredProduct = Product & {
+    _score: number;
+    matchedBenefits: string[];
+};
 
 export interface ProductRecommendation {
     id: string;
@@ -281,7 +288,7 @@ export async function getCandidateProducts(
     answers: QuestionnaireAnswers,
     concerns: string[],
     limit: number = 10
-): Promise<any[]> {
+): Promise<ScoredProduct[]> {
     try {
         // 1. Fetch Active & In-Stock Products
         const allProducts = await prisma.product.findMany({
@@ -311,7 +318,7 @@ export async function getCandidateProducts(
         const forcedProductIds = new Set<string>();
 
         for (const rule of activeRules) {
-            const conditions = rule.conditions as any; // { skinType: ['oily'] }
+            const conditions = rule.conditions as { skinType?: string[]; concern?: string[] };
             let match = true;
 
             // Check Skin Type Condition
@@ -322,14 +329,15 @@ export async function getCandidateProducts(
             // Check Concern Condition
             if (match && conditions?.concern && Array.isArray(conditions.concern)) {
                 // If user has ANY of the rule's target concerns
-                const hasConcern = concerns.some(c => conditions.concern.includes(c));
+                const concernList = conditions.concern;
+                const hasConcern = concerns.some(c => concernList.includes(c));
                 if (!hasConcern) match = false;
             }
 
             if (match) {
                 // Rule Matched! Add products to forced list
                 if (Array.isArray(rule.productIds)) {
-                    rule.productIds.forEach((id: any) => forcedProductIds.add(String(id)));
+                    rule.productIds.forEach((id: unknown) => forcedProductIds.add(String(id)));
                 }
             }
         }
@@ -360,7 +368,7 @@ export async function getCandidateProducts(
 export async function recommendProducts(
     answers: QuestionnaireAnswers,
     concerns: string[],
-    preloadedProducts?: any[], // Optional: reuse already-fetched products to avoid duplicate DB query
+    preloadedProducts?: (Product & { _score?: number; matchedBenefits?: string[] })[], // Optional: reuse already-fetched products to avoid duplicate DB query
     limit: number = 3
 ): Promise<ProductRecommendation[]> {
     try {
@@ -383,24 +391,25 @@ export async function recommendProducts(
         const isPreScored = preloadedProducts && preloadedProducts.length > 0 && preloadedProducts[0]._score !== undefined;
 
         // 2. Score each product (skip if preloaded from getCandidateProducts which already scored)
-        let scored = allProducts.map(p => {
-            if (isPreScored) {
-                // Reuse pre-computed score from getCandidateProducts
+        let scored;
+        if (isPreScored && preloadedProducts) {
+            scored = preloadedProducts.map(p => ({
+                ...p,
+                rawScore: p._score!,
+                matchedBenefits: p.matchedBenefits || [],
+                price: p.price
+            }));
+        } else {
+            scored = allProducts.map(p => {
+                const { score, matchedBenefits } = calculateScore(p, skinType, concerns, answers);
                 return {
                     ...p,
-                    rawScore: p._score,
-                    matchedBenefits: p.matchedBenefits || [],
+                    rawScore: score,
+                    matchedBenefits,
                     price: p.price
                 };
-            }
-            const { score, matchedBenefits } = calculateScore(p, skinType, concerns, answers);
-            return {
-                ...p,
-                rawScore: score,
-                matchedBenefits,
-                price: p.price
-            };
-        });
+            });
+        }
 
         // 3. Apply RecommendationRule engine (skip if already applied by getCandidateProducts)
         if (!isPreScored) {
@@ -413,7 +422,7 @@ export async function recommendProducts(
                 const forcedProductIds = new Set<string>();
 
                 for (const rule of activeRules) {
-                    const conditions = rule.conditions as any;
+                    const conditions = rule.conditions as { skinType?: string[]; concern?: string[] };
                     let match = true;
 
                     if (conditions?.skinType && Array.isArray(conditions.skinType)) {
@@ -421,12 +430,13 @@ export async function recommendProducts(
                     }
 
                     if (match && conditions?.concern && Array.isArray(conditions.concern)) {
-                        const hasConcern = concerns.some(c => conditions.concern.includes(c));
+                        const concernList = conditions.concern;
+                        const hasConcern = concerns.some(c => concernList.includes(c));
                         if (!hasConcern) match = false;
                     }
 
                     if (match && Array.isArray(rule.productIds)) {
-                        rule.productIds.forEach((id: any) => forcedProductIds.add(String(id)));
+                        rule.productIds.forEach((id: unknown) => forcedProductIds.add(String(id)));
                     }
                 }
 
@@ -459,7 +469,7 @@ export async function recommendProducts(
             price: p.price,
             reason: generateSmartReason(p.matchedBenefits, concerns, skinType, index),
             score: p.rawScore,
-            affiliateLinks: p.affiliateLinks,
+            affiliateLinks: (p.affiliateLinks as Record<string, string> | null) || null,
             howToUse: p.howToUse || null,
             benefits: Array.isArray(p.benefits) ? p.benefits : [],
             keyIngredients: Array.isArray(p.keyIngredients) ? p.keyIngredients : []
