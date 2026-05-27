@@ -77,6 +77,7 @@ export interface SessionUser {
     name?: string;
     role: string;
     vipExpiresAt?: string | null; // ISO Date string
+    dailyTestLimit?: number | null; // 每日测试次数限制，管理员可调整
 }
 
 export async function getSession(): Promise<SessionUser | null> {
@@ -97,7 +98,8 @@ export async function getSession(): Promise<SessionUser | null> {
                 phone: (payload.phone as string) || null,
                 name: payload.name as string,
                 role: payload.role as string || 'user',
-                vipExpiresAt: (payload.vipExpiresAt as string | null | undefined) || null
+                vipExpiresAt: (payload.vipExpiresAt as string | null | undefined) || null,
+                dailyTestLimit: typeof payload.dailyTestLimit === 'number' ? payload.dailyTestLimit : null
             };
         }
         return null;

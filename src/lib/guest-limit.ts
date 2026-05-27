@@ -246,7 +246,8 @@ export async function recordGuestTest(
             const now = new Date();
 
             if (existingRecord) {
-                const lastReset = new Date(existingRecord.lastResetDate);
+                const rawLastReset = existingRecord.lastResetDate || existingRecord.lastTestAt;
+                const lastReset = rawLastReset ? new Date(rawLastReset) : new Date();
                 lastReset.setHours(0, 0, 0, 0);
                 const needsReset = lastReset < today;
 

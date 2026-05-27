@@ -284,9 +284,11 @@ export async function POST(request: NextRequest) {
                             analysisSource: "fallback",
                             completedAt: new Date(),
                             expiresAt
+                            // answers 已在前面保存，此处不覆盖
                         },
                         create: {
                             sessionId,
+                            answers: answers as any,
                             analysisResult: finalResult as any,
                             analysisSource: "fallback",
                             completedAt: new Date(),

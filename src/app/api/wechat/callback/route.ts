@@ -81,6 +81,7 @@ export async function GET(request: NextRequest) {
         const token = await signToken({
             sub: dbUser.id,
             role: dbUser.role,
+            dailyTestLimit: dbUser.dailyTestLimit
         }, "30d");
 
         // 4. 重定向去前端界面，而且带上包含凭证的 HttpOnly Cookie！

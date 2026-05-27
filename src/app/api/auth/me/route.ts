@@ -125,7 +125,7 @@ export async function GET(req: NextRequest) {
         }
 
         // Upsert user into local database so foreign keys (like History) don't break
-        await prisma.user.upsert({
+        const localUser = await prisma.user.upsert({
             where: { id: userPayload.id },
             update: {
                 phoneNumber: userPayload.phone,
@@ -164,7 +164,8 @@ export async function GET(req: NextRequest) {
                 email: responseUser.email || null,
                 phone: responseUser.phone || null,
                 name: responseUser.name,
-                role: responseUser.role
+                role: responseUser.role,
+                dailyTestLimit: localUser.dailyTestLimit
             }, "7d");
             response.cookies.set("auth_token", localToken, {
                 httpOnly: true,

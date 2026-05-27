@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
         };
 
         const limit = await checkUsageLimit(request, body);
-        const dailyLimit = limit.role === 'vip' ? 100 : limit.role === 'member' ? 10 : DEFAULT_GUEST_LIMIT;
+        const dailyLimit = limit.dailyLimit;
         const usedCount = Math.max(0, dailyLimit - limit.remaining);
 
         // 访客额外获取详细元数据（置信度、匹配方式等）

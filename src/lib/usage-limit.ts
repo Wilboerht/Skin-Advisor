@@ -13,6 +13,7 @@ export interface UsageLimitResult {
     canTest: boolean;
     error?: string;
     remaining: number;
+    dailyLimit: number;
     resetTime?: Date;
     role: 'guest' | 'member' | 'vip';
 }
@@ -29,9 +30,13 @@ export interface ReserveUsageResult {
 /**
  * 获取用户或访客的每日测试限制
  */
-function getUserDailyLimit(user: { dailyTestLimit: number | null } | null | undefined, isVip: boolean): number {
+function getUserDailyLimit(user: { dailyTestLimit?: number | null } | null | undefined, isVip: boolean): number {
     if (isVip) return 100;
-    if (user && typeof user.dailyTestLimit === 'number' && user.dailyTestLimit > 0) {
+    // ⚠️ 历史原因：schema 中 dailyTestLimit 的默认值为 1，但业务默认值应为 10。
+    // 管理员在后台显式修改后，该值通常会 != 1。
+    // 因此将 1 视为"未自定义"，回退到系统默认 10 次。
+    // 如果未来需要 genuinely 限制为 1 次，应将 schema 默认值改为 null 并相应调整此处逻辑。
+    if (user && typeof user.dailyTestLimit === 'number' && user.dailyTestLimit > 1) {
         return user.dailyTestLimit;
     }
     return 10;
@@ -73,6 +78,7 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
         return {
             canTest: totalCount < limit,
             remaining: Math.max(0, limit - totalCount),
+            dailyLimit: limit,
             role: 'vip',
             error: totalCount >= limit ? '您的 VIP 今日测试次数已用完，请明天再试。' : undefined
         };
@@ -84,7 +90,10 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        const [count, inProgressCount] = await Promise.all([
+        const [dbUser, count, inProgressCount] = await Promise.all([
+            withDbRetry(() =>
+                prisma.user.findUnique({ where: { id: userId }, select: { dailyTestLimit: true } })
+            ),
             withDbRetry(() =>
                 prisma.testRecord.count({
                     where: { userId, testDate: { gte: today } }
@@ -98,11 +107,12 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
         ]);
 
         const totalCount = count + inProgressCount;
-        const limit = getUserDailyLimit(user as any, false);
+        const limit = getUserDailyLimit(dbUser, isVipCheck(user));
         return {
             canTest: totalCount < limit,
             remaining: Math.max(0, limit - totalCount),
-            role: 'member',
+            dailyLimit: limit,
+            role: isVipCheck(user) ? 'vip' : 'member',
             error: totalCount >= limit ? '今日测试次数已用完，请明天再试。' : undefined
         };
     }
@@ -136,6 +146,7 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
         return {
             canTest: false,
             remaining: 0,
+            dailyLimit: 3,
             role: 'guest',
             error: blockedRecord.blockedReason || '您的访问已被限制，请联系客服。'
         };
@@ -154,6 +165,7 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
         return {
             canTest: false,
             remaining: 0,
+            dailyLimit: limit,
             role: 'guest',
             error: '今日测试次数已用完，请明天再试。'
         };
@@ -162,6 +174,7 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
     return {
         canTest: true,
         remaining: Math.max(0, limit - totalCount),
+        dailyLimit: limit,
         role: 'guest'
     };
 }
@@ -208,22 +221,23 @@ export async function reserveUsage(
                     return { success: true, role: 'vip' };
                 }
 
-                // 2. 普通注册用户
+                // 2. 普通注册用户（从数据库读取最新额度，避免 JWT 缓存滞后）
                 if (user) {
                     const userId = user.id;
-                    const [count, inProgressCount] = await Promise.all([
+                    const [dbUser, count, inProgressCount] = await Promise.all([
+                        tx.user.findUnique({ where: { id: userId }, select: { dailyTestLimit: true } }),
                         tx.testRecord.count({ where: { userId, testDate: { gte: today } } }),
                         tx.advisorSession.count({ where: { userId, analysisStartedAt: { gte: tenMinutesAgo }, completedAt: null } })
                     ]);
                     const totalCount = count + inProgressCount;
-                    const limit = getUserDailyLimit(user as any, false);
+                    const limit = getUserDailyLimit(dbUser, isVipCheck(user));
                     if (totalCount >= limit) {
-                        return { success: false, error: '今日测试次数已用完，请明天再试。', role: 'member' };
+                        return { success: false, error: '今日测试次数已用完，请明天再试。', role: isVipCheck(user) ? 'vip' : 'member' };
                     }
                     await tx.testRecord.create({
                         data: { userId, sessionId, testDate: new Date() }
                     });
-                    return { success: true, role: 'member' };
+                    return { success: true, role: isVipCheck(user) ? 'vip' : 'member' };
                 }
 
                 // 3. 访客
