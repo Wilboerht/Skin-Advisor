@@ -29,6 +29,6 @@ module.exports = {
         kill_timeout: 5000,
         listen_timeout: 10000,
         // 环境变量文件
-        env_file: './.env.production',
+        env_file: './.env',
     }]
 };
