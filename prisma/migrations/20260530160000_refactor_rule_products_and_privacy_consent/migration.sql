@@ -40,5 +40,6 @@ CREATE INDEX IF NOT EXISTS "GuestUsage_lastResetDate_idx"
 ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "privacyConsentAt" TIMESTAMP(3);
 ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "privacyConsentVersion" TEXT;
 ALTER TABLE "AdvisorSession" ADD COLUMN IF NOT EXISTS "privacyConsentAt" TIMESTAMP(3);
+ALTER TABLE "AdvisorSession" ADD COLUMN IF NOT EXISTS "privacyConsentVersion" TEXT;
 ALTER TABLE "GuestUsage" ADD COLUMN IF NOT EXISTS "privacyConsentAt" TIMESTAMP(3);
 ALTER TABLE "GuestUsage" ADD COLUMN IF NOT EXISTS "privacyConsentVersion" TEXT;
