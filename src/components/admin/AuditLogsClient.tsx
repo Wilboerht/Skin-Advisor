@@ -168,7 +168,7 @@ export default function AuditLogsClient() {
                 }
             }
         } catch (e) {
-            console.error(e);
+            // Silent fail: toast already shown
             toast.error("加载日志失败");
         } finally {
             setLoading(false);
@@ -272,7 +272,7 @@ export default function AuditLogsClient() {
                 toast.success("报告已生成并开始下载");
             }
         } catch (error) {
-            console.error(error);
+            // Silent fail: toast already shown
             toast.error("导出失败，请重试");
         } finally {
             setExporting(false);

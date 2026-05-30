@@ -1,10 +1,17 @@
 
 import prisma from "@/lib/prisma";
 import ProductsClient from "@/components/admin/ProductsClient";
+import { verifyAdminSession } from "@/lib/admin-auth";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProductsPage() {
+    const admin = await verifyAdminSession();
+    if (!admin) {
+        redirect("/admin/login");
+    }
+
     const products = await prisma.product.findMany({
         orderBy: { sortOrder: 'asc' },
         take: 1000

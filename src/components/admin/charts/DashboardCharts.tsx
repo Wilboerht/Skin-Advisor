@@ -44,7 +44,7 @@ export function useDashboardStats() {
             })
             .catch(err => {
                 if (err.name === 'AbortError') return;
-                console.error(err);
+                // Silent fail: charts will show empty state
                 toast.error(err instanceof Error ? err.message : "Network error loading stats");
             })
             .finally(() => setLoading(false));

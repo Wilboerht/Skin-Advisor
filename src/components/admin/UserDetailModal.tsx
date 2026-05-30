@@ -54,7 +54,7 @@ export function UserDetailModal({ isOpen, onClose, userId, onUpdate }: UserDetai
                     setNewLimit(data.dailyTestLimit || 1);
                 })
                 .catch((err) => {
-                    console.error(err);
+                    // Silent fail: toast already shown
                     setUser(null);
                     toast.error("加载用户详情失败");
                 })

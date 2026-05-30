@@ -31,7 +31,7 @@ export function SetupButton() {
                 toast.error("Setup failed: " + (data.error || "Unknown error"));
             }
         } catch (e) {
-            console.error(e);
+            // Silent fail: toast already shown
             toast.error("Network error during setup");
         } finally {
             setLoading(false);

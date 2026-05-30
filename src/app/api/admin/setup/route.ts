@@ -42,6 +42,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Validate setup secret from header or body
+        // Super admin can skip setup secret (already authenticated above)
         let providedSecret: string | null = null;
         const authHeader = request.headers.get("x-setup-secret");
         if (authHeader) {
@@ -55,7 +56,14 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        if (!providedSecret || providedSecret !== setupSecret) {
+        const isSuperAdmin = adminCount > 0;
+        if (!isSuperAdmin && (!providedSecret || providedSecret !== setupSecret)) {
+            return NextResponse.json(
+                { success: false, error: "Invalid setup secret" },
+                { status: 403 }
+            );
+        }
+        if (isSuperAdmin && providedSecret && providedSecret !== setupSecret) {
             return NextResponse.json(
                 { success: false, error: "Invalid setup secret" },
                 { status: 403 }
