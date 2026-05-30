@@ -307,10 +307,10 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     // --- 判定逻辑 ---
 
     // 基础标志位
-    // 大幅放宽阈值，用户体验优先，能拍到即可，不追求精确对准
-    const isLookingLeft = noseOffsetRatio > 0.06;
-    const isLookingRight = noseOffsetRatio < -0.06;
-    const isLookingCenter = Math.abs(noseOffsetRatio) < 0.45;
+    // 收紧阈值，确保多角度照片质量，提升 AI 分析准确性
+    const isLookingLeft = noseOffsetRatio > 0.10;
+    const isLookingRight = noseOffsetRatio < -0.10;
+    const isLookingCenter = Math.abs(noseOffsetRatio) < 0.30;
 
     // 抬头标志: tiltRatio 越小越仰头
     // 大幅放宽到 0.50，几乎只要抬头就能过
@@ -544,10 +544,10 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
           stableCountRef.current += 1;
           setFaceStatus("found");
 
-          // 大幅放宽稳定帧数要求，2帧即可拍照，体验更流畅
-          // 但下颚（抬头）步骤容易误判，需要更多稳定帧
-          const requiredFrames = currentStep === 'chin' ? 5 : 2;
-          const progressFrames = currentStep === 'chin' ? 6 : 3;
+          // 稳定帧数要求：前三步需 3 帧（150ms），给用户"定住"的心理预期
+          // 下颚（抬头）步骤容易误判，需要更多稳定帧
+          const requiredFrames = currentStep === 'chin' ? 5 : 3;
+          const progressFrames = currentStep === 'chin' ? 6 : 4;
 
           // 更新稳定进度
           setStabilityProgress(Math.min(100, (stableCountRef.current / progressFrames) * 100));
@@ -759,6 +759,12 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
       window.speechSynthesis.cancel();
     }
     speak("好");
+
+    // 震动反馈（支持移动设备），弥补 TTS 不可靠的场景
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate(50);
+    }
+
     justCapturedRef.current = Date.now(); // 标记刚拍完，用于下一步语音延迟对齐
 
     stableCountRef.current = 0;
