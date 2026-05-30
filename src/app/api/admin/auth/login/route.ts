@@ -77,6 +77,19 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        if (!admin.active) {
+            await logAdminAction({
+                action: "login_failed",
+                resource: "AdminUser",
+                details: { username, reason: "account_disabled" },
+                ...clientInfo
+            });
+            return NextResponse.json(
+                { error: "Account disabled" },
+                { status: 403 }
+            );
+        }
+
         const passwordValid = await bcrypt.compare(password, admin.password);
 
         if (!passwordValid) {
