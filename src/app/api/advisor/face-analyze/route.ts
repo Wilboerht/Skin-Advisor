@@ -11,6 +11,7 @@ import {
 } from "@/config/ai-prompts";
 import { getSession, isVipCheck } from "@/lib/auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { checkUsageLimit } from "@/lib/usage-limit";
 import { aiLogger } from "@/lib/logger";
 import { getDefaultFaceAnalysisResult } from "@/lib/advisor-utils";
 import { visionQueue } from "@/lib/ai-queue";
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
 
         // 1. 速率限制
         const ip = getClientIP(request);
-        const limit = await rateLimit(`face-analyze-${ip}`, "face-analyze", { maxRequests: 60 }); // Increased for testing
+        const limit = await rateLimit(`face-analyze-${ip}`, "face-analyze");
 
         const rateLimitHeaders = {
             "X-RateLimit-Limit": String(limit.limit),
@@ -57,6 +58,15 @@ export async function POST(request: NextRequest) {
         if (!limit.success) {
             return NextResponse.json(
                 { error: "请求过于频繁，请稍后再试" },
+                { status: 429, headers: rateLimitHeaders }
+            );
+        }
+
+        // 1.5 每日用量上限检查
+        const usageCheck = await checkUsageLimit(request);
+        if (!usageCheck.canTest) {
+            return NextResponse.json(
+                { error: usageCheck.error || "今日测试次数已用完，请明天再试" },
                 { status: 429, headers: rateLimitHeaders }
             );
         }
@@ -328,16 +338,11 @@ export async function POST(request: NextRequest) {
             }
 
             aiLogger.warn("Using fallback result due to AI error");
-            const fallbackResult = getDefaultFaceAnalysisResult();
-            return NextResponse.json({
-                ...fallbackResult,
-                dataSource: "fallback" as const,
-                validation: {
-                    ...(fallbackResult.validation || { isValid: true, message: "" }),
-                    isValid: false,
-                    message: "AI 服务暂时不可用，返回参考数据"
-                }
-            });
+            // 返回错误而不是假数据，避免误导用户
+            return NextResponse.json(
+                { error: "AI 分析服务暂时不可用，请稍后重试", code: "AI_UNAVAILABLE" },
+                { status: 503, headers: { "Retry-After": "60" } }
+            );
         } finally {
             // P3: 释放令牌
             if (acquired) {

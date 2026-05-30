@@ -80,21 +80,10 @@ export const POST = requireRole("super_admin", "admin")(async (request, { admin 
                         where: { id: { in: ids } }
                     });
 
-                    // Clean up RecommendationRule references
-                    const deletedIdSet = new Set<string>(ids);
-                    const rules = await tx.recommendationRule.findMany();
-                    for (const rule of rules) {
-                        const ruleProductIds = Array.isArray(rule.productIds)
-                            ? rule.productIds as string[]
-                            : [];
-                        const cleanedIds = ruleProductIds.filter(id => !deletedIdSet.has(id));
-                        if (cleanedIds.length !== ruleProductIds.length) {
-                            await tx.recommendationRule.update({
-                                where: { id: rule.id },
-                                data: { productIds: cleanedIds }
-                            });
-                        }
-                    }
+                    // Clean up RecommendationRule references via junction table
+                    await tx.recommendationRuleProduct.deleteMany({
+                        where: { productId: { in: ids } }
+                    });
                 });
                 break;
         }

@@ -180,6 +180,7 @@ class AIRequestQueue {
         this.acquireCount++;
         return new Promise<void>((headerResolve, headerReject) => {
             let timeout: ReturnType<typeof setTimeout> | null = null;
+            let resolved = false;
 
             const cleanup = () => {
                 if (timeout) clearTimeout(timeout);
@@ -188,22 +189,29 @@ class AIRequestQueue {
 
             const onAbort = () => {
                 cleanup();
-                this.acquireCount = Math.max(0, this.acquireCount - 1);
-                headerReject(new Error("Queue acquire aborted by signal"));
+                // 只有在任务尚未开始执行时才减计数并拒绝；
+                // 若已开始执行，由调用方的 finally / release() 负责清理
+                if (!resolved) {
+                    this.acquireCount = Math.max(0, this.acquireCount - 1);
+                    headerReject(new Error("Queue acquire aborted by signal"));
+                }
             };
 
             if (signal) signal.addEventListener('abort', onAbort);
 
             timeout = setTimeout(() => {
                 cleanup();
-                this.acquireCount = Math.max(0, this.acquireCount - 1);
-                headerReject(new Error(`Queue acquire timed out after ${timeoutMs}ms`));
+                if (!resolved) {
+                    this.acquireCount = Math.max(0, this.acquireCount - 1);
+                    headerReject(new Error(`Queue acquire timed out after ${timeoutMs}ms`));
+                }
             }, timeoutMs);
 
             this.enqueue("legacy-acquire", () => {
                 // 这个 Promise 会在任务开始执行时被创建，并一直挂起直到 release() 被调用
                 return new Promise<void>((done) => {
                     cleanup();
+                    resolved = true;
                     // 1. 任务已开始执行，通知 acquire 调用者可以继续了
                     headerResolve();
 
@@ -213,8 +221,10 @@ class AIRequestQueue {
             }).promise.catch(err => {
                 // 如果入队或执行出错
                 cleanup();
-                this.acquireCount = Math.max(0, this.acquireCount - 1);
-                headerReject(err);
+                if (!resolved) {
+                    this.acquireCount = Math.max(0, this.acquireCount - 1);
+                    headerReject(err);
+                }
             });
         });
     }
@@ -265,8 +275,17 @@ class AIRequestQueue {
 
         // 异步执行，不阻塞 processQueue 继续分发其他任务（如果有空闲槽位）
         (async () => {
+            // 安全网：任务最大执行时间，防止 legacy-acquire 等挂起任务永远占用槽位
+            const taskTimeoutMs = item.type === 'legacy-acquire' ? 120_000 : 300_000;
+            let timeoutId: ReturnType<typeof setTimeout> | undefined;
+            const timeoutPromise = new Promise<never>((_, reject) => {
+                timeoutId = setTimeout(() => reject(new Error(`Queue task timeout after ${taskTimeoutMs}ms`)), taskTimeoutMs);
+            });
+            timeoutPromise.catch(() => {}); // 防止输掉的 Promise 触发 unhandled rejection
+
             try {
-                const result = await item.execute();
+                const result = await Promise.race([item.execute(), timeoutPromise]);
+                clearTimeout(timeoutId);
                 const durationMs = Date.now() - (item.startedAt || 0);
 
                 // 更新平均执行时间
@@ -281,6 +300,7 @@ class AIRequestQueue {
 
                 item.resolve(result);
             } catch (error) {
+                clearTimeout(timeoutId);
                 aiLogger.error("Request failed", {
                     id: item.id,
                     type: item.type,

@@ -3,6 +3,7 @@ import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { enforceStorageLimits } from "@/lib/shared-upload-utils";
+import { getSession } from "@/lib/auth";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_MIME_TYPES = [
@@ -15,6 +16,12 @@ const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
 
 export async function POST(request: NextRequest) {
     try {
+        // 0. Authentication required
+        const session = await getSession();
+        if (!session) {
+            return NextResponse.json({ error: "请先登录后再上传文件" }, { status: 401 });
+        }
+
         // 1. Rate limiting per IP
         const ip = getClientIP(request);
         const limit = await rateLimit(`upload-ip-${ip}`, "default", {

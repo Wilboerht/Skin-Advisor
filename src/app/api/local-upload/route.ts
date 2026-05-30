@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { enforceStorageLimits } from "@/lib/shared-upload-utils";
+import { getSession } from "@/lib/auth";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
@@ -11,6 +12,12 @@ const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
  * Local file upload handler (fallback for OSS)
  */
 export async function PUT(request: NextRequest) {
+    // Authentication required
+    const session = await getSession();
+    if (!session) {
+        return NextResponse.json({ error: "请先登录后再上传文件" }, { status: 401 });
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const filePath = searchParams.get("path");
 

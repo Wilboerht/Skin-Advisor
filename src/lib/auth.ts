@@ -2,6 +2,7 @@
 import { compare, hash } from 'bcryptjs';
 import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
 import { cookies } from 'next/headers';
+import prisma from '@/lib/prisma';
 
 function getJwtSecret(): Uint8Array {
     const secret = process.env.JWT_SECRET;
@@ -92,14 +93,30 @@ export async function getSession(): Promise<SessionUser | null> {
     if (payload) {
         const userId = (payload.sub as string) || (payload.userId as string);
         if (userId) {
+            // 查询数据库确认用户当前状态（禁用/删除检测）
+            const dbUser = await prisma.user.findUnique({
+                where: { id: userId },
+                select: {
+                    id: true,
+                    email: true,
+                    phoneNumber: true,
+                    name: true,
+                    role: true,
+                    vipExpiresAt: true,
+                    dailyTestLimit: true
+                }
+            });
+            if (!dbUser || dbUser.role === 'disabled') {
+                return null;
+            }
             return {
-                id: userId,
-                email: (payload.email as string) || null,
-                phone: (payload.phone as string) || null,
-                name: payload.name as string,
-                role: payload.role as string || 'user',
-                vipExpiresAt: (payload.vipExpiresAt as string | null | undefined) || null,
-                dailyTestLimit: typeof payload.dailyTestLimit === 'number' ? payload.dailyTestLimit : null
+                id: dbUser.id,
+                email: dbUser.email,
+                phone: dbUser.phoneNumber || undefined,
+                name: dbUser.name || undefined,
+                role: dbUser.role,
+                vipExpiresAt: dbUser.vipExpiresAt?.toISOString() || null,
+                dailyTestLimit: dbUser.dailyTestLimit
             };
         }
         return null;

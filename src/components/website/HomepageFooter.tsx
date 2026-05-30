@@ -24,7 +24,7 @@ export function HomepageFooter() {
                     {/* ICP 备案 */}
                     <Link
                         href="https://beian.miit.gov.cn/"
-                        target="_blank"
+                        target="_blank" rel="noopener noreferrer"
                         className="!min-h-0 !min-w-0 hover:text-brand-gold transition-colors flex items-center"
                     >
                         沪ICP备2026014764号-1
@@ -34,7 +34,7 @@ export function HomepageFooter() {
 
                     <Link
                         href="http://www.beian.gov.cn/portal/registerSystemInfo"
-                        target="_blank"
+                        target="_blank" rel="noopener noreferrer"
                         className="!min-h-0 !min-w-0 hover:text-brand-gold transition-colors flex items-center gap-1"
                     >
                         <Image

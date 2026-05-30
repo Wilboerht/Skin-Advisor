@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
     } catch (error: any) {
         console.error("Avatar migration error:", error);
         return NextResponse.json(
-            { error: "Failed to migrate avatar", details: error.message },
+            { error: "头像迁移服务暂时不可用，请稍后重试" },
             { status: 500 }
         );
     }

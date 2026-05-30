@@ -10,10 +10,10 @@ CREATE TABLE IF NOT EXISTS "AvatarQueue" (
     "generatedUrl" TEXT,
     "source" TEXT,
     "errorMessage" TEXT,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "startedAt" DATETIME,
-    "completedAt" DATETIME,
-    "expiresAt" DATETIME NOT NULL
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "startedAt" TIMESTAMP(3),
+    "completedAt" TIMESTAMP(3),
+    "expiresAt" TIMESTAMP(3) NOT NULL
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS "AvatarQueue_sessionId_key" ON "AvatarQueue"("sessionId");

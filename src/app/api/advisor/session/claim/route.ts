@@ -21,32 +21,30 @@ export async function POST(request: NextRequest) {
 
         console.log(`📝 Claiming session ${sessionId} for user ${user.id}...`);
 
-        // Find the session
-        const session = await prisma.advisorSession.findUnique({
-            where: { sessionId },
-            select: { id: true, userId: true }
-        });
-
-        if (!session) {
-            console.warn(`Session ${sessionId} not found in database`);
-            return NextResponse.json({ error: "Session not found" }, { status: 404 });
-        }
-
-        // If session already claimed by someone else, prevent takeover
-        if (session.userId && session.userId !== user.id) {
-            console.warn(`Attempted takeover of session ${sessionId}: current owner ${session.userId}, requester ${user.id}`);
-            return NextResponse.json({ error: "Session already claimed" }, { status: 403 });
-        }
-
-        // Link the session
-        if (!session.userId) {
-            await prisma.advisorSession.update({
-                where: { sessionId },
+        // Atomic claim: only update if userId is null (not yet claimed)
+        try {
+            const updated = await prisma.advisorSession.updateMany({
+                where: { sessionId, userId: null },
                 data: { userId: user.id }
             });
-            console.log(`✅ Session ${sessionId} claimed by user ${user.id}`);
-        } else {
-            console.log(`Session ${sessionId} already claimed by user ${user.id}`);
+
+            if (updated.count === 0) {
+                // 可能已被其他用户认领，检查所有权
+                const session = await prisma.advisorSession.findUnique({
+                    where: { sessionId },
+                    select: { userId: true }
+                });
+                if (session?.userId && session.userId !== user.id) {
+                    console.warn(`Attempted takeover of session ${sessionId}: current owner ${session.userId}, requester ${user.id}`);
+                    return NextResponse.json({ error: "Session already claimed" }, { status: 403 });
+                }
+                console.log(`Session ${sessionId} already claimed by user ${user.id}`);
+            } else {
+                console.log(`✅ Session ${sessionId} claimed by user ${user.id}`);
+            }
+        } catch (e) {
+            console.error("Failed to claim session:", e);
+            return NextResponse.json({ error: "Failed to claim session" }, { status: 500 });
         }
 
         return NextResponse.json({ success: true });

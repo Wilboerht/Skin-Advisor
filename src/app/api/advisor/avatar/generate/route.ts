@@ -25,9 +25,15 @@ function estimateBase64SizeMB(base64: string): number {
 export async function POST(req: NextRequest) {
     try {
         const ip = getClientIP(req);
+        // 瞬时限流：10次/分钟
         const limitResult = await rateLimit(`avatar-generate-${ip}`, "default", { maxRequests: 10, windowMs: 60 * 1000 });
         if (!limitResult.success) {
-            return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
+            return NextResponse.json({ error: "请求过于频繁，请稍后再试" }, { status: 429 });
+        }
+        // 每日限流：20次/天/IP
+        const dailyLimit = await rateLimit(`avatar-generate-daily-${ip}`, "default", { maxRequests: 20, windowMs: 24 * 60 * 60 * 1000 });
+        if (!dailyLimit.success) {
+            return NextResponse.json({ error: "今日头像生成次数已达上限，请明天再试" }, { status: 429 });
         }
 
         const body = await req.json();
@@ -143,7 +149,7 @@ export async function POST(req: NextRequest) {
     } catch (error: any) {
         console.error("Avatar queue error:", error);
         return NextResponse.json(
-            { error: "Failed to enqueue avatar generation", details: error.message },
+            { error: "头像生成服务暂时不可用，请稍后重试" },
             { status: 500 }
         );
     }

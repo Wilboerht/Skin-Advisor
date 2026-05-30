@@ -6,6 +6,7 @@ import { DEFAULT_QUESTIONS, type Question } from "@/config/questions";
 import { QuestionStep } from "@/components/advisor/QuestionStep";
 import { ProgressBar } from "@/components/advisor/ProgressBar";
 import { GenderSelection } from "@/components/advisor/GenderSelection";
+import { PrivacyConsent, hasPrivacyConsent } from "@/components/advisor/PrivacyConsent";
 import { m, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, LogOut, ArrowRight, History } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
@@ -22,6 +23,7 @@ export default function QuestionsPage() {
     const [showExitConfirm, setShowExitConfirm] = useState(false);
     const [showResumeModal, setShowResumeModal] = useState(false);
     const [, setHasSavedProgress] = useState(false);
+    const [privacyConsented, setPrivacyConsented] = useState(false);
     const { trackQuestionnaireStart, trackQuestionnaireComplete } = useAdvisorAnalytics();
     const hasTrackedStart = useRef(false);
     const hasCheckedResume = useRef(false);
@@ -153,6 +155,7 @@ export default function QuestionsPage() {
         setShowResumeModal(false);
         setPendingAnswers(null);
         setShowQualityWarning(false);
+        setPrivacyConsented(false);
 
         // 重置防刷检测相关的计时器与索引
         sessionStartTime.current = Date.now();
@@ -324,7 +327,11 @@ export default function QuestionsPage() {
         }
     };
 
-    // 如果没有选择性别，显示性别选择组件
+    const handlePrivacyConsent = () => {
+        setPrivacyConsented(true);
+    };
+
+    // 如果没有选择性别，显示隐私同意或性别选择
     if (!gender) {
         return (
             <AnimatePresence mode="wait">
@@ -335,7 +342,11 @@ export default function QuestionsPage() {
                     className="flex min-h-screen flex-col items-center justify-center bg-transparent px-4"
                 >
                     <div className="w-full max-w-4xl">
-                        <GenderSelection onSelect={handleGenderSelect} />
+                        {privacyConsented ? (
+                            <GenderSelection onSelect={handleGenderSelect} />
+                        ) : (
+                            <PrivacyConsent onConsent={handlePrivacyConsent} />
+                        )}
                     </div>
 
                     <button

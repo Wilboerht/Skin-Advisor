@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const { answers, faceAnalysis, sessionId, nickname, freeRetry } = result.data;
+        const { answers, faceAnalysis, sessionId, nickname, freeRetry, privacyConsent } = result.data;
 
         // 3. 速率限制 (基础防刷) — 即使免费重试也需要基础限流
         const ip = getClientIP(request);
@@ -206,6 +206,10 @@ export async function POST(request: NextRequest) {
         // 保存会话占位记录（标记分析开始，不设置 completedAt——防止超时后状态不一致）
         // 同时保存问卷答案，用于历史审计与复购分析
         if (sessionId) {
+            const consentFields = privacyConsent ? {
+                privacyConsentAt: new Date(privacyConsent.consentedAt),
+                privacyConsentVersion: privacyConsent.version
+            } : {};
             await prisma.advisorSession.upsert({
                 where: { sessionId },
                 update: {
@@ -218,7 +222,8 @@ export async function POST(request: NextRequest) {
                     province: geoLocation?.region,
                     city: geoLocation?.city,
                     ip: hashIP(ip),
-                    userId: user?.id || null
+                    userId: user?.id || null,
+                    ...consentFields
                 },
                 create: {
                     sessionId,
@@ -229,7 +234,8 @@ export async function POST(request: NextRequest) {
                     province: geoLocation?.region,
                     city: geoLocation?.city,
                     ip: hashIP(ip),
-                    userId: user?.id || null
+                    userId: user?.id || null,
+                    ...consentFields
                 }
             });
         }

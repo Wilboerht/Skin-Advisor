@@ -147,7 +147,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
     const login = useCallback(async (credentials: LoginCredentials) => {
         try {
-            console.log("🔐 Sending login request to /api/auth/login...");
             const res = await fetch("/api/auth/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -161,12 +160,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
                 throw new Error(data.error || "Login failed");
             }
 
-            console.log("✅ Login successful, received user:", data.user?.id);
             setUser(data.user);
             setCachedUser(data.user);
 
             // 立即刷新 session 以确保 Cookie 已正确设置
-            console.log("🔄 Refreshing session to verify cookie...");
             await checkSession();
         } catch (err: unknown) {
             console.error("🔴 Login failed:", err);
@@ -188,9 +185,15 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const logout = useCallback(async () => {
-        await fetch("/api/auth/logout", { method: "POST" });
-        setUser(null);
-        setCachedUser(null);
+        try {
+            await fetch("/api/auth/logout", { method: "POST" });
+        } catch (e) {
+            console.error("Logout request failed", e);
+        } finally {
+            // 无论网络请求是否成功，都清除本地状态，确保用户感知到已登出
+            setUser(null);
+            setCachedUser(null);
+        }
     }, []);
 
     const isVip = !!(

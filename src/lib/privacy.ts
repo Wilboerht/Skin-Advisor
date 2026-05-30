@@ -13,9 +13,18 @@ import { createHash } from 'crypto';
  * across requests but not reproducible outside this deployment.
  */
 export function hashIP(ip: string): string {
-    const salt = process.env.IP_HASH_SALT || 'myskin-advisor-ip-salt';
+    const salt = process.env.IP_HASH_SALT;
+    if (!salt) {
+        if (process.env.NODE_ENV === 'production') {
+            throw new Error(
+                '🔴 CRITICAL: IP_HASH_SALT environment variable is not set. ' +
+                'Refusing to hash IPs in production with a hardcoded salt.'
+            );
+        }
+        console.warn('⚠️  IP_HASH_SALT not set — using development fallback. Do NOT use in production.');
+    }
     return createHash('sha256')
-        .update(`${salt}:${ip}`)
+        .update(`${salt || 'dev-only-ip-salt-not-for-production'}:${ip}`)
         .digest('hex')
         .substring(0, 16);
 }

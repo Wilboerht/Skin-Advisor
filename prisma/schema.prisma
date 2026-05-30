@@ -66,6 +66,10 @@ model AdvisorSession {
 
   createdAt       DateTime  @default(now())
 
+  // ===== 隐私同意 =====
+  privacyConsentAt    DateTime?
+  privacyConsentVersion String?
+
   // ===== 性能索引 =====
   @@index([userId])              // JOIN User 加速
   @@index([createdAt])           // 时间范围查询加速
@@ -88,11 +92,26 @@ model RecommendationRule {
   name        String
   priority    Int      @default(0)
   conditions  Json     // { skinType: ['oily'], concern: ['acne'] }
-  productIds  Json     // string[]
   message     String?  // 推荐理由
   active      Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  // 关联产品（中间表）
+  products    RecommendationRuleProduct[]
+
+  @@index([active, priority])
+}
+
+// 推荐规则与产品的中间表（替代 JSON 数组，解决 N+1 和批量更新问题）
+model RecommendationRuleProduct {
+  id        String   @id @default(cuid())
+  ruleId    String
+  productId String
+  rule      RecommendationRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  @@unique([ruleId, productId])
+  @@index([productId])
 }
 
 // ===== CMS 新增模型 =====
@@ -158,6 +177,10 @@ model User {
   pushSubscriptions PushSubscription[]
   reminderSettings  ReminderSettings?
   testRecords       TestRecord[]
+
+  // 隐私同意
+  privacyConsentAt     DateTime?
+  privacyConsentVersion String?
 }
 
 // 测试次数记录
@@ -200,16 +223,21 @@ model GuestUsage {
   isBlocked     Boolean  @default(false) // 是否被封禁
   blockedReason String?                  // 封禁原因
   blockedAt     DateTime?                // 封禁时间
-  
+
+  // 隐私同意记录
+  privacyConsentAt DateTime?
+  privacyConsentVersion String?
+
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  
+
   @@index([ipAddress])
   @@index([cookieId])
   @@index([fingerprint])
   @@index([lastTestAt])
   @@index([ipAddress, lastTestAt])
   @@index([isBlocked])           // 封禁状态过滤加速
+  @@index([lastResetDate])       // 每日限额重置加速
 }
 
 // 产品库
@@ -289,6 +317,8 @@ model WeatherCache {
   data        String   // JSON stringified SkinEnvData
   createdAt   DateTime @default(now())
   expiresAt   DateTime
+
+  @@index([expiresAt])
 }
 
 // 头像生成队列 - 解决火山引擎并发限制问题

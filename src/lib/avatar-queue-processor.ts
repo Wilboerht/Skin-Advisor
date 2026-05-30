@@ -23,8 +23,12 @@ function isPublicUrl(url: string): boolean {
 
     const hostname = parsed.hostname.toLowerCase();
 
-    // 拒绝 localhost 及 loopback
-    if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1" || hostname === "0:0:0:0:0:0:0:1") {
+    // 拒绝 localhost 及 loopback（包括完整 127.0.0.0/8 范围）
+    if (hostname === "localhost" || hostname === "0.0.0.0" || hostname === "::1" || hostname === "0:0:0:0:0:0:0:1") {
+      return false;
+    }
+    // 拒绝 127.0.0.0/8 所有地址
+    if (/^127\./.test(hostname)) {
       return false;
     }
 

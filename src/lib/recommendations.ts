@@ -311,7 +311,8 @@ export async function getCandidateProducts(
         // 3. Inject Forced Rules (Hard Rules)
         const activeRules = await prisma.recommendationRule.findMany({
             where: { active: true },
-            orderBy: { priority: 'desc' }
+            orderBy: { priority: 'desc' },
+            include: { products: { select: { productId: true } } }
         });
 
         // Simple Rule Engine
@@ -342,9 +343,7 @@ export async function getCandidateProducts(
 
             if (match) {
                 // Rule Matched! Add products to forced list
-                if (Array.isArray(rule.productIds)) {
-                    rule.productIds.forEach((id: unknown) => forcedProductIds.add(String(id)));
-                }
+                rule.products.forEach(p => forcedProductIds.add(p.productId));
             }
         }
 
@@ -422,7 +421,8 @@ export async function recommendProducts(
             try {
                 const activeRules = await prisma.recommendationRule.findMany({
                     where: { active: true },
-                    orderBy: { priority: 'desc' }
+                    orderBy: { priority: 'desc' },
+                    include: { products: { select: { productId: true } } }
                 });
 
                 const forcedProductIds = new Set<string>();
@@ -446,8 +446,8 @@ export async function recommendProducts(
                         if (!hasConcern) match = false;
                     }
 
-                    if (match && Array.isArray(rule.productIds)) {
-                        rule.productIds.forEach((id: unknown) => forcedProductIds.add(String(id)));
+                    if (match) {
+                        rule.products.forEach(p => forcedProductIds.add(p.productId));
                     }
                 }
 

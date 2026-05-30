@@ -136,8 +136,7 @@ export async function GET(req: NextRequest) {
     } catch (error: any) {
         console.error("Failed to fetch avatar status:", error);
         return NextResponse.json({
-            error: "Failed to fetch avatar status",
-            details: error.message
+            error: "获取头像状态失败，请稍后重试"
         }, { status: 500 });
     }
 }

@@ -8,7 +8,7 @@ CREATE TABLE "AdvisorQuestion" (
     "order" INTEGER NOT NULL DEFAULT 0,
     "active" BOOLEAN NOT NULL DEFAULT true,
     "gender" TEXT NOT NULL DEFAULT 'all',
-    "updatedAt" DATETIME NOT NULL
+    "updatedAt" TIMESTAMP(3) NOT NULL
 );
 
 -- CreateTable
@@ -19,8 +19,8 @@ CREATE TABLE "AdvisorSession" (
     "faceScanUsed" BOOLEAN NOT NULL DEFAULT false,
     "analysisSource" TEXT,
     "analysisResult" JSONB,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "completedAt" DATETIME
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "completedAt" TIMESTAMP(3)
 );
 
 -- CreateTable
@@ -28,7 +28,7 @@ CREATE TABLE "Setting" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "key" TEXT NOT NULL,
     "value" JSONB NOT NULL,
-    "updatedAt" DATETIME NOT NULL
+    "updatedAt" TIMESTAMP(3) NOT NULL
 );
 
 -- CreateIndex

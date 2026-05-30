@@ -350,7 +350,7 @@ function AdminLoginForm() {
         <div className="flex items-center justify-center gap-2 text-[9px] font-light tracking-normal text-brand-charcoal/40 whitespace-nowrap">
           <Link
             href="https://beian.miit.gov.cn/"
-            target="_blank"
+            target="_blank" rel="noopener noreferrer"
             className="hover:text-brand-gold transition-colors"
           >
             沪ICP备2026014764号-1
@@ -358,7 +358,7 @@ function AdminLoginForm() {
           <span className="text-brand-charcoal/20">|</span>
           <Link
             href="http://www.beian.gov.cn/portal/registerSystemInfo"
-            target="_blank"
+            target="_blank" rel="noopener noreferrer"
             className="flex items-center gap-1 hover:text-brand-gold transition-colors"
           >
             <Image

@@ -13,13 +13,15 @@ export default async function ResultPage(props: {
     const status = searchParams.status;
     let initialData = null;
 
+    // Fetch session early for ownership checks
+    const user = await getSession();
+
     // --- Server-Side Guest Protection ---
     // Check if user is logged in BEFORE fetching any sensitive data.
     // If guest has an id (trying to access a specific report), redirect to share page.
     // Exception: status=analyzing means analysis is in progress (no data yet),
     // the client-side will handle the redirect after analysis completes.
     if (id && status !== 'analyzing') {
-        const user = await getSession();
         if (!user) {
             // Guest trying to access full report → redirect to simplified share page
             redirect(`/report/guest?id=${id}`);
@@ -29,7 +31,7 @@ export default async function ResultPage(props: {
     if (id) {
         try {
             const session = await prisma.advisorSession.findUnique({
-                where: { sessionId: id },
+                where: { sessionId: id, userId: user?.id || undefined },
                 select: {
                     answers: true,
                     analysisResult: true,
@@ -73,10 +75,12 @@ export async function generateMetadata(props: {
     let description = "基于 AI 的深度肤质分析，为您定制专属护肤方案。";
     let ogImage = "/images/share-default.jpg"; // Fallback
 
-    if (id) {
+    // 只有登录用户才能获取详细 OG 元数据，防止信息泄露
+    const user = await getSession();
+    if (id && user) {
         try {
             const session = await prisma.advisorSession.findUnique({
-                where: { sessionId: id },
+                where: { sessionId: id, userId: user.id },
                 select: { analysisResult: true }
             });
 

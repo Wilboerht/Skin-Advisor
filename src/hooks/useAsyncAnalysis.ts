@@ -4,6 +4,7 @@ import { useAdvisorAnalytics } from './useAdvisorAnalytics';
 import { useAuth } from './useAuth';
 import { preprocessFaceImage } from '@/lib/image-processing';
 import { useRouter } from 'next/navigation';
+import { getPrivacyConsentPayload } from '@/components/advisor/PrivacyConsent';
 
 export interface AsyncAnalysisState {
     status: 'idle' | 'preparing' | 'analyzing_face' | 'analyzing_skin' | 'completed' | 'error';
@@ -90,8 +91,14 @@ export function useAsyncAnalysis() {
         const { promise: timeoutPromise, cancel: cancelTimeout } = createTimeoutPromise();
 
         const analysisPromise = async () => {
-            const answersStr = localStorage.getItem("advisor_answers");
-
+            let answersStr: string | null = null;
+            let nickname = "您";
+            try {
+                answersStr = localStorage.getItem("advisor_answers");
+                nickname = localStorage.getItem("advisor_nickname") || "您";
+            } catch (e) {
+                console.warn("localStorage access failed", e);
+            }
 
             if (!answersStr) {
                 throw new Error("Missing answer data");
@@ -100,7 +107,6 @@ export function useAsyncAnalysis() {
 
             // Pre-generate sessionId and nickname (needed for both avatar and analysis)
             const sessionId = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString();
-            const nickname = localStorage.getItem("advisor_nickname") || "您";
 
             // 1. Face Analysis
             let faceAnalysis = null;
@@ -176,28 +182,29 @@ export function useAsyncAnalysis() {
                             const maxRetries = 2;
                             
                             while (retries <= maxRetries) {
+                                let avatarTimeout: ReturnType<typeof setTimeout> | undefined;
                                 try {
-                                    const timeout = setTimeout(() => avatarAbortController.abort(), 60000);
+                                    avatarTimeout = setTimeout(() => avatarAbortController.abort(), 60000);
 
-                                    const response = await fetch("/api/advisor/avatar/generate", {
-                                        method: "POST",
-                                        headers: { "Content-Type": "application/json" },
-                                        body: JSON.stringify({
-                                            sessionId: sessionId,
-                                            nickname: nickname,
-                                            frontPhoto: frontPhotoForAvatar,
-                                            characteristics: {
-                                                // 年龄、肤色、发型由后端从 AI 分析结果中读取真实数据
-                                                // 此处仅传入用户明确填写的性别作为最终 fallback
-                                                gender: storedGender
-                                            }
-                                        }),
-                                        signal: avatarAbortController.signal
-                                    });
+                                const response = await fetch("/api/advisor/avatar/generate", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                        sessionId: sessionId,
+                                        nickname: nickname,
+                                        frontPhoto: frontPhotoForAvatar,
+                                        characteristics: {
+                                            // 年龄、肤色、发型由后端从 AI 分析结果中读取真实数据
+                                            // 此处仅传入用户明确填写的性别作为最终 fallback
+                                            gender: storedGender
+                                        }
+                                    }),
+                                    signal: avatarAbortController.signal
+                                });
 
-                                    clearTimeout(timeout);
+                                clearTimeout(avatarTimeout);
                                     
-                                    if (response.ok) {
+                                if (response.ok) {
                                         const data = await response.json();
 
                                         if (data.success && data.queued) {
@@ -268,6 +275,7 @@ export function useAsyncAnalysis() {
                                         break;
                                     }
                                 } catch (err) {
+                                    if (avatarTimeout) clearTimeout(avatarTimeout);
                                     if (err instanceof Error && err.name === 'AbortError') {
                                         console.warn("[Avatar] ⚠️  Request cancelled or timeout");
                                     } else {
@@ -343,9 +351,15 @@ export function useAsyncAnalysis() {
             // 2. Comprehensive Analysis (Text)
 
             // Check if this is a free retry (gender mismatch retry — won't consume quota)
-            const isFreeRetry = localStorage.getItem("advisor_free_retry") === "true";
+            let isFreeRetry = false;
+            try {
+                isFreeRetry = localStorage.getItem("advisor_free_retry") === "true";
+            } catch (e) {
+                console.warn("localStorage access failed", e);
+            }
             // NOTE: Do NOT clear localStorage here — only clear after server confirms success
 
+            const privacyConsent = getPrivacyConsentPayload();
             const analyzeRes = await fetchWithRetry("/api/advisor/analyze", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -354,6 +368,7 @@ export function useAsyncAnalysis() {
                     faceAnalysis: faceAnalysis || undefined,
                     sessionId: sessionId,
                     nickname: nickname,
+                    privacyConsent,
                     ...(isFreeRetry ? { freeRetry: true } : {})
                 })
             });
@@ -382,12 +397,20 @@ export function useAsyncAnalysis() {
 
             // Save Result (include sessionId for sharing recovery)
             result.sessionId = sessionId;
-            localStorage.setItem("advisor_result", JSON.stringify(result));
+            try {
+                localStorage.setItem("advisor_result", JSON.stringify(result));
+            } catch (e) {
+                console.warn("Failed to save result to localStorage", e);
+            }
             trackAnalysisComplete(result.dataSource === "comprehensive" ? "ai" : "fallback");
 
             // Only clear freeRetry flag after successful server response
             if (isFreeRetry) {
-                localStorage.removeItem("advisor_free_retry");
+                try {
+                    localStorage.removeItem("advisor_free_retry");
+                } catch (e) {
+                    console.warn("Failed to clear freeRetry flag", e);
+                }
             }
 
             setAnalysisState({ status: 'completed', progress: 100, error: null, queuePosition: undefined, queueWaitSeconds: undefined });

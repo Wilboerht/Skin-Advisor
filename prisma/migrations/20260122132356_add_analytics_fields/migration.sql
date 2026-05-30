@@ -1,42 +1,34 @@
--- RedefineTables
-PRAGMA defer_foreign_keys=ON;
-PRAGMA foreign_keys=OFF;
-CREATE TABLE "new_AdvisorSession" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "sessionId" TEXT NOT NULL,
-    "startedAt" DATETIME,
-    "questionnaireStartedAt" DATETIME,
-    "questionnaireCompletedAt" DATETIME,
-    "faceScanStartedAt" DATETIME,
-    "faceScanCompletedAt" DATETIME,
-    "analysisStartedAt" DATETIME,
-    "analysisCompletedAt" DATETIME,
-    "resultViewedAt" DATETIME,
-    "completedAt" DATETIME,
-    "answers" JSONB,
-    "faceScanUsed" BOOLEAN NOT NULL DEFAULT false,
-    "faceScanSkipped" BOOLEAN NOT NULL DEFAULT false,
-    "analysisSource" TEXT,
-    "analysisResult" JSONB,
-    "resultShared" BOOLEAN NOT NULL DEFAULT false,
-    "shareMethod" TEXT,
-    "userAgent" TEXT,
-    "ip" TEXT,
-    "deviceType" TEXT,
-    "browser" TEXT,
-    "os" TEXT,
-    "province" TEXT,
-    "city" TEXT,
-    "referrer" TEXT,
-    "fingerprint" TEXT,
-    "utmSource" TEXT,
-    "utmMedium" TEXT,
-    "utmCampaign" TEXT,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-INSERT INTO "new_AdvisorSession" ("analysisResult", "analysisSource", "answers", "completedAt", "createdAt", "faceScanUsed", "id", "sessionId") SELECT "analysisResult", "analysisSource", "answers", "completedAt", "createdAt", "faceScanUsed", "id", "sessionId" FROM "AdvisorSession";
-DROP TABLE "AdvisorSession";
-ALTER TABLE "new_AdvisorSession" RENAME TO "AdvisorSession";
-CREATE UNIQUE INDEX "AdvisorSession_sessionId_key" ON "AdvisorSession"("sessionId");
-PRAGMA foreign_keys=ON;
-PRAGMA defer_foreign_keys=OFF;
+-- PostgreSQL compatible: add analytics columns to AdvisorSession
+ALTER TABLE "AdvisorSession"
+    ADD COLUMN IF NOT EXISTS "startedAt" TIMESTAMP(3),
+    ADD COLUMN IF NOT EXISTS "questionnaireStartedAt" TIMESTAMP(3),
+    ADD COLUMN IF NOT EXISTS "questionnaireCompletedAt" TIMESTAMP(3),
+    ADD COLUMN IF NOT EXISTS "faceScanStartedAt" TIMESTAMP(3),
+    ADD COLUMN IF NOT EXISTS "faceScanCompletedAt" TIMESTAMP(3),
+    ADD COLUMN IF NOT EXISTS "analysisStartedAt" TIMESTAMP(3),
+    ADD COLUMN IF NOT EXISTS "analysisCompletedAt" TIMESTAMP(3),
+    ADD COLUMN IF NOT EXISTS "resultViewedAt" TIMESTAMP(3),
+    ADD COLUMN IF NOT EXISTS "completedAt" TIMESTAMP(3),
+    ADD COLUMN IF NOT EXISTS "answers" JSONB,
+    ADD COLUMN IF NOT EXISTS "faceScanUsed" BOOLEAN NOT NULL DEFAULT false,
+    ADD COLUMN IF NOT EXISTS "faceScanSkipped" BOOLEAN NOT NULL DEFAULT false,
+    ADD COLUMN IF NOT EXISTS "analysisSource" TEXT,
+    ADD COLUMN IF NOT EXISTS "analysisResult" JSONB,
+    ADD COLUMN IF NOT EXISTS "resultShared" BOOLEAN NOT NULL DEFAULT false,
+    ADD COLUMN IF NOT EXISTS "shareMethod" TEXT,
+    ADD COLUMN IF NOT EXISTS "userAgent" TEXT,
+    ADD COLUMN IF NOT EXISTS "ip" TEXT,
+    ADD COLUMN IF NOT EXISTS "deviceType" TEXT,
+    ADD COLUMN IF NOT EXISTS "browser" TEXT,
+    ADD COLUMN IF NOT EXISTS "os" TEXT,
+    ADD COLUMN IF NOT EXISTS "province" TEXT,
+    ADD COLUMN IF NOT EXISTS "city" TEXT,
+    ADD COLUMN IF NOT EXISTS "referrer" TEXT,
+    ADD COLUMN IF NOT EXISTS "fingerprint" TEXT,
+    ADD COLUMN IF NOT EXISTS "utmSource" TEXT,
+    ADD COLUMN IF NOT EXISTS "utmMedium" TEXT,
+    ADD COLUMN IF NOT EXISTS "utmCampaign" TEXT,
+    ADD COLUMN IF NOT EXISTS "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
+
+-- Ensure unique index on sessionId
+CREATE UNIQUE INDEX IF NOT EXISTS "AdvisorSession_sessionId_key" ON "AdvisorSession"("sessionId");

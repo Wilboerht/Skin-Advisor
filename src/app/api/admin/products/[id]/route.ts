@@ -113,20 +113,10 @@ export const DELETE = requireRole("super_admin", "admin")(async (
 
             await tx.product.delete({ where: { id } });
 
-            // Clean up RecommendationRule references
-            const rules = await tx.recommendationRule.findMany();
-            for (const rule of rules) {
-                const ruleProductIds = Array.isArray(rule.productIds)
-                    ? (rule.productIds as string[])
-                    : [];
-                const cleanedIds = ruleProductIds.filter(pid => pid !== id);
-                if (cleanedIds.length !== ruleProductIds.length) {
-                    await tx.recommendationRule.update({
-                        where: { id: rule.id },
-                        data: { productIds: cleanedIds }
-                    });
-                }
-            }
+            // Clean up RecommendationRule references via junction table
+            await tx.recommendationRuleProduct.deleteMany({
+                where: { productId: id }
+            });
 
             await tx.adminAuditLog.create({
                 data: {

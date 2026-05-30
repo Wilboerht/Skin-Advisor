@@ -164,7 +164,7 @@ export default function FaceScanPage() {
                         &copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.
                     </p>
                     <div className="flex items-center justify-center gap-3 text-[9px] sm:text-[10px] font-light text-[#1A1A1A]">
-                        <a href="https://beian.miit.gov.cn/" target="_blank" className="hover:text-brand-gold transition-colors">沪ICP备2026014764号-1</a>
+                        <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" className="hover:text-brand-gold transition-colors">沪ICP备2026014764号-1</a>
                         <span className="opacity-20">|</span>
                         <a href="#" className="flex items-center gap-1 hover:text-brand-gold transition-colors">
                             <img src="/images/beian.webp" alt="" className="w-3 h-3 opacity-80" />
