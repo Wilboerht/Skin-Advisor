@@ -10,7 +10,7 @@ export const PATCH = requireRole("super_admin")(async (request, { admin, params 
     try {
         const { id } = await params;
         const body = await request.json();
-        const { name, email, role, password } = body;
+        const { name, email, role, password, active } = body;
 
         const targetAdmin = await prisma.adminUser.findUnique({ where: { id } });
         if (!targetAdmin) {
@@ -68,6 +68,7 @@ export const PATCH = requireRole("super_admin")(async (request, { admin, params 
                 ...(email !== undefined && { email: email || null }),
                 ...(role !== undefined && { role }),
                 ...(hashedPassword && { password: hashedPassword }),
+                ...(active !== undefined && { active }),
             },
             select: {
                 id: true,
@@ -75,6 +76,7 @@ export const PATCH = requireRole("super_admin")(async (request, { admin, params 
                 email: true,
                 name: true,
                 role: true,
+                active: true,
                 createdAt: true,
                 updatedAt: true,
             },
@@ -94,6 +96,8 @@ export const PATCH = requireRole("super_admin")(async (request, { admin, params 
                 newEmail: email,
                 previousRole: targetAdmin.role,
                 newRole: role,
+                previousActive: targetAdmin.active,
+                newActive: active,
                 passwordChanged: !!hashedPassword,
             },
             ...clientInfo,

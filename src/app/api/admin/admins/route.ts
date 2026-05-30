@@ -30,6 +30,7 @@ export const GET = requireRole("super_admin")(async (request) => {
                 email: true,
                 name: true,
                 role: true,
+                active: true,
                 createdAt: true,
                 updatedAt: true,
             },
@@ -103,6 +104,7 @@ export const POST = requireRole("super_admin")(async (request, { admin }) => {
                 password: hashedPassword,
                 name: name || null,
                 role,
+                active: true,
             },
             select: {
                 id: true,
@@ -110,6 +112,7 @@ export const POST = requireRole("super_admin")(async (request, { admin }) => {
                 email: true,
                 name: true,
                 role: true,
+                active: true,
                 createdAt: true,
                 updatedAt: true,
             },

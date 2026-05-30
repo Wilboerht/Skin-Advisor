@@ -26,6 +26,7 @@ interface Admin {
     email: string | null;
     name: string | null;
     role: string;
+    active: boolean;
     createdAt: string;
     updatedAt: string;
 }
@@ -244,6 +245,28 @@ export function AdminsClient() {
         setDropdownId(null);
     };
 
+    const toggleActive = async (id: string, current: boolean) => {
+        setActionLoading(true);
+        try {
+            const res = await fetch(`/api/admin/admins/${id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ active: !current })
+            });
+            const result = await res.json();
+            if (res.ok && result.success) {
+                toast.success(current ? "账户已禁用" : "账户已启用");
+                fetchAdmins();
+            } else {
+                toast.error(result.error || "操作失败");
+            }
+        } catch {
+            toast.error("网络错误");
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
     const roleConfig = (role: string) => ROLE_LABELS[role] || ROLE_LABELS.editor;
 
     return (
@@ -293,6 +316,7 @@ export function AdminsClient() {
                             <tr>
                                 <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">管理员</th>
                                 <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">角色</th>
+                                <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">状态</th>
                                 <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">创建时间</th>
                                 <th className="px-6 py-4 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">操作</th>
                             </tr>
@@ -300,13 +324,13 @@ export function AdminsClient() {
                         <tbody className="divide-y divide-white/20">
                             {loading ? (
                                 <tr>
-                                    <td colSpan={4} className="px-6 py-12 text-center">
+                                    <td colSpan={5} className="px-6 py-12 text-center">
                                         <Loader2 className="w-6 h-6 animate-spin mx-auto text-[#1A1A1A]/40" />
                                     </td>
                                 </tr>
                             ) : admins.length === 0 ? (
                                 <tr>
-                                    <td colSpan={4} className="px-6 py-12 text-center text-[#1A1A1A]/40">
+                                    <td colSpan={5} className="px-6 py-12 text-center text-[#1A1A1A]/40">
                                         未找到符合条件的管理员。
                                     </td>
                                 </tr>
@@ -336,6 +360,19 @@ export function AdminsClient() {
                                                     <RoleIcon className="w-3 h-3" />
                                                     {role.label}
                                                 </span>
+                                            </td>
+                                            <td className="px-6 py-4 align-middle">
+                                                <button
+                                                    onClick={() => toggleActive(admin.id, admin.active)}
+                                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                                                        admin.active
+                                                            ? "bg-emerald-50 text-emerald-700"
+                                                            : "bg-red-50 text-red-700"
+                                                    }`}
+                                                >
+                                                    <span className={`w-1.5 h-1.5 rounded-full ${admin.active ? "bg-emerald-500" : "bg-red-500"}`} />
+                                                    {admin.active ? "已启用" : "已禁用"}
+                                                </button>
                                             </td>
                                             <td className="px-6 py-4 text-slate-600 align-middle">
                                                 {new Date(admin.createdAt).toLocaleDateString("zh-CN")}
@@ -390,6 +427,22 @@ export function AdminsClient() {
                             >
                                 <Pencil className="w-4 h-4 text-slate-500" />
                                 <span>编辑信息</span>
+                            </button>
+                            <button
+                                onClick={() => {
+                                    const admin = admins.find(a => a.id === dropdownId);
+                                    if (admin) {
+                                        setDropdownId(null);
+                                        setDropdownPos(null);
+                                        toggleActive(admin.id, admin.active);
+                                    }
+                                }}
+                                className={`w-full px-3 py-2 text-left text-sm hover:bg-[#1A1A1A]/5 flex items-center gap-2 ${
+                                    admins.find(a => a.id === dropdownId)?.active ? "text-red-600" : "text-emerald-600"
+                                }`}
+                            >
+                                <Shield className="w-4 h-4" />
+                                <span>{admins.find(a => a.id === dropdownId)?.active ? "禁用账户" : "启用账户"}</span>
                             </button>
                             <button
                                 onClick={() => {

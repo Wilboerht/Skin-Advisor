@@ -121,15 +121,13 @@ export async function verifyAdminSession(): Promise<AdminSession | null> {
             return null;
         }
 
-        // Verify admin exists in database
-        // NOTE: If AdminUser schema gains an `active` field in the future,
-        // add `active: true` check here to reject disabled accounts immediately.
+        // Verify admin exists and is active in database
         const admin = await prisma.adminUser.findUnique({
             where: { id: sessionData.adminId },
-            select: { id: true, username: true, role: true }
+            select: { id: true, username: true, role: true, active: true }
         });
 
-        if (!admin) {
+        if (!admin || !admin.active) {
             return null;
         }
 
