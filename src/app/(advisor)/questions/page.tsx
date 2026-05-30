@@ -264,6 +264,23 @@ export default function QuestionsPage() {
         setAnswers(newAnswers);
     };
 
+
+
+    const handlePrivacyConsent = () => {
+        setPrivacyConsented(true);
+    };
+
+    const handleBack = () => {
+        if (currentStepIndex > 0) {
+            setDirection(-1);
+            setCurrentStepIndex(prev => prev - 1);
+        } else {
+            // 如果在第一题点击返回，回到性别选择
+            setGender(null);
+            localStorage.removeItem("advisor_gender");
+        }
+    };
+
     // 真正执行提交的逻辑
     const processSubmission = (finalAnswers: Record<string, unknown>) => {
         localStorage.setItem("advisor_answers", JSON.stringify(finalAnswers));
@@ -316,20 +333,32 @@ export default function QuestionsPage() {
         handleNextWithAnswers(answers);
     };
 
-    const handleBack = () => {
-        if (currentStepIndex > 0) {
-            setDirection(-1);
-            setCurrentStepIndex(prev => prev - 1);
-        } else {
-            // 如果在第一题点击返回，回到性别选择
-            setGender(null);
-            localStorage.removeItem("advisor_gender");
+    // 安全检查
+    const isNextDisabled = () => {
+        if (!currentQuestion) return true;
+        const val = answers[currentQuestion.fieldName];
+        if (!val || (Array.isArray(val) && val.length === 0)) {
+            return true;
         }
+        return false;
     };
 
-    const handlePrivacyConsent = () => {
-        setPrivacyConsented(true);
-    };
+    // 键盘支持 — 使用 ref 避免闭包捕获旧值及 ESLimmutability 警告
+    const handleNextRef = useRef(handleNext);
+    const isNextDisabledRef = useRef(isNextDisabled);
+    useEffect(() => {
+        handleNextRef.current = handleNext;
+        isNextDisabledRef.current = isNextDisabled;
+    });
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Enter" && !isNextDisabledRef.current()) {
+                handleNextRef.current();
+            }
+        };
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [currentStepIndex, answers, gender]);
 
     // 如果没有选择性别，显示隐私同意或性别选择
     if (!gender) {
@@ -361,34 +390,7 @@ export default function QuestionsPage() {
         );
     }
 
-    // 安全检查
     if (!currentQuestion) return null;
-
-    const isNextDisabled = () => {
-        if (!currentQuestion) return true;
-        const val = answers[currentQuestion.fieldName];
-        if (!val || (Array.isArray(val) && val.length === 0)) {
-            return true;
-        }
-        return false;
-    };
-
-    // 键盘支持 — 使用 ref 避免闭包捕获旧值及 ESLimmutability 警告
-    const handleNextRef = useRef(handleNext);
-    const isNextDisabledRef = useRef(isNextDisabled);
-    useEffect(() => {
-        handleNextRef.current = handleNext;
-        isNextDisabledRef.current = isNextDisabled;
-    });
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "Enter" && !isNextDisabledRef.current()) {
-                handleNextRef.current();
-            }
-        };
-        window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [currentStepIndex, answers, gender]);
 
     return (
         <div className="min-h-screen bg-transparent flex flex-col items-center relative overflow-x-hidden text-[#1A1A1A]">
