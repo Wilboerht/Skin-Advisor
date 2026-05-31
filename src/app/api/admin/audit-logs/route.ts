@@ -2,11 +2,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { withAdminAuth } from "@/lib/admin-auth";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { Prisma } from "@prisma/client";
 
 // GET /api/admin/audit-logs - List audit logs with filtering
 // Available to all authenticated admin roles (including editor)
 export const GET = withAdminAuth(async (request) => {
+    // Rate limit
+    const ip = getClientIP(request);
+    const limitResult = await rateLimit(`admin-audit-logs-${ip}`, "default", { maxRequests: 60, windowMs: 60 * 1000 });
+    if (!limitResult.success) {
+        return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     try {
         const { searchParams } = new URL(request.url);
         const page = Math.max(1, parseInt(searchParams.get("page") || "1") || 1);

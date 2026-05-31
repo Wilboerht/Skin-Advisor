@@ -177,8 +177,9 @@ export async function logAdminAction(params: {
             }
         });
     } catch (error) {
-        console.error("Failed to log audit action:", error);
+        console.error("🔴 [SECURITY] Failed to log audit action:", error);
         // Don't throw - audit logging should not break main functionality
+        // But ops should be alerted: audit trail gaps indicate DB or infra issues
     }
 }
 

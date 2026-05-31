@@ -1,11 +1,19 @@
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { withAdminAuth } from "@/lib/admin-auth";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
 // GET /api/admin/stats - Dashboard statistics
 // Available to all authenticated admin roles (including editor)
-export const GET = withAdminAuth(async () => {
+export const GET = withAdminAuth(async (request: NextRequest) => {
+    // Rate limit
+    const ip = getClientIP(request);
+    const limitResult = await rateLimit(`admin-stats-${ip}`, "default", { maxRequests: 60, windowMs: 60 * 1000 });
+    if (!limitResult.success) {
+        return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     try {
         // ===== 基础统计 =====
         const [

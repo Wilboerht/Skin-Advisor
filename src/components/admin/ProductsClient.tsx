@@ -219,8 +219,8 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
         setSelectedIds([]);
     }, [categoryFilter, statusFilter]);
 
-    // Get unique categories
-    const categories = [...new Set(initialProducts.map(p => p.category))];
+    // Get unique categories from current products state (not stale initialProducts prop)
+    const categories = [...new Set(products.map(p => p.category))];
 
     // Filter products
     const filteredProducts = products.filter(p => {

@@ -24,7 +24,15 @@ function AdminLoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const rawRedirect = searchParams.get("redirect") || "/admin/products";
-  const redirectTo = /^\/admin\//.test(rawRedirect) ? rawRedirect : "/admin/products";
+  // Strict allowlist to prevent open redirect
+  const ALLOWED_REDIRECTS = [
+    "/admin/products",
+    "/admin/users",
+    "/admin/audit-logs",
+    "/admin/admins",
+    "/admin/recommendation-rules",
+  ];
+  const redirectTo = ALLOWED_REDIRECTS.includes(rawRedirect) ? rawRedirect : "/admin/products";
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");

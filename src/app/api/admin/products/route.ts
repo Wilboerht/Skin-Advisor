@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { withAdminAuth, logAdminAction, getClientInfo } from "@/lib/admin-auth";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
 // GET /api/admin/products - List products with pagination
 // Available to all authenticated admin roles (including editor)
@@ -38,6 +39,13 @@ export const GET = withAdminAuth(async (request) => {
 // POST /api/admin/products - Create a new product
 // Available to all authenticated admin roles (including editor)
 export const POST = withAdminAuth(async (request, { admin }) => {
+    // Rate limit
+    const ip = getClientIP(request);
+    const limitResult = await rateLimit(`admin-product-create-${ip}`, "default", { maxRequests: 30, windowMs: 60 * 1000 });
+    if (!limitResult.success) {
+        return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     try {
         const body = await request.json();
         const clientInfo = getClientInfo(request);
@@ -64,8 +72,8 @@ export const POST = withAdminAuth(async (request, { admin }) => {
             if (!Array.isArray(body.images) || body.images.length > 5) {
                 return NextResponse.json({ error: "images must be an array with at most 5 items" }, { status: 400 });
             }
-            if (!body.images.every((img: unknown) => typeof img === "string")) {
-                return NextResponse.json({ error: "Each image must be a string" }, { status: 400 });
+            if (!body.images.every((img: unknown) => typeof img === "string" && (img as string).length <= 500)) {
+                return NextResponse.json({ error: "Each image must be a string URL (max 500 chars)" }, { status: 400 });
             }
         }
         if (body.sortOrder !== undefined) {
@@ -100,10 +108,10 @@ export const POST = withAdminAuth(async (request, { admin }) => {
                     benefits: body.benefits || [],
                     negativeFor: body.negativeFor || [],
                     sortOrder: body.sortOrder || 0,
-                    active: body.active ?? true,
+                    active: body.active === true,
                     howToUse: body.howToUse || null,
                     affiliateLinks: body.affiliateLinks || null,
-                    featured: body.featured ?? false,
+                    featured: body.featured === true,
                 }
             });
 

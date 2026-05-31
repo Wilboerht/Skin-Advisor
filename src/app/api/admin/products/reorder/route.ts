@@ -1,11 +1,19 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { requireRole } from "@/lib/admin-auth";
+import { requireRole, logAdminAction, getClientInfo } from "@/lib/admin-auth";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
 // POST - Reorder products
 // Restricted to super_admin and admin (editor cannot reorder products)
-export const POST = requireRole("super_admin", "admin")(async (request) => {
+export const POST = requireRole("super_admin", "admin")(async (request, { admin }) => {
+    // Rate limit
+    const ip = getClientIP(request);
+    const limitResult = await rateLimit(`admin-product-reorder-${ip}`, "default", { maxRequests: 30, windowMs: 60 * 1000 });
+    if (!limitResult.success) {
+        return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     try {
         const body = await request.json();
         const { orderedIds } = body;
@@ -54,6 +62,16 @@ export const POST = requireRole("super_admin", "admin")(async (request) => {
                 })
             )
         );
+
+        // Audit log
+        const clientInfo = getClientInfo(request);
+        await logAdminAction({
+            adminId: admin.adminId,
+            action: "reorder",
+            resource: "Product",
+            details: { count: orderedIds.length },
+            ...clientInfo,
+        });
 
         return NextResponse.json({ success: true });
 

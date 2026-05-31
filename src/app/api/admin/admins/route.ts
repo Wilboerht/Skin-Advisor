@@ -1,12 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireRole, logAdminAction, getClientInfo } from "@/lib/admin-auth";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import bcrypt from "bcryptjs";
 
 const VALID_ROLES = ["super_admin", "admin", "editor"];
 
 // GET /api/admin/admins - List all admins
 export const GET = requireRole("super_admin")(async (request) => {
+    // Rate limit
+    const ip = getClientIP(request);
+    const limitResult = await rateLimit(`admin-admins-get-${ip}`, "default", { maxRequests: 60, windowMs: 60 * 1000 });
+    if (!limitResult.success) {
+        return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     try {
         const { searchParams } = new URL(request.url);
         const search = searchParams.get("search") || "";
@@ -48,6 +56,13 @@ export const GET = requireRole("super_admin")(async (request) => {
 
 // POST /api/admin/admins - Create a new admin
 export const POST = requireRole("super_admin")(async (request, { admin }) => {
+    // Rate limit
+    const ip = getClientIP(request);
+    const limitResult = await rateLimit(`admin-admins-create-${ip}`, "default", { maxRequests: 20, windowMs: 60 * 1000 });
+    if (!limitResult.success) {
+        return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     try {
         const body = await request.json();
         const { username, email, password, name, role } = body;
@@ -74,9 +89,19 @@ export const POST = requireRole("super_admin")(async (request, { admin }) => {
             );
         }
 
-        if (email && (typeof email !== "string" || !email.includes("@"))) {
+        // Improved email validation
+        const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (email && (typeof email !== "string" || !EMAIL_REGEX.test(email))) {
             return NextResponse.json(
                 { success: false, error: "无效的邮箱格式" },
+                { status: 400 }
+            );
+        }
+
+        // Name length validation
+        if (name !== undefined && (typeof name !== "string" || name.length > 200)) {
+            return NextResponse.json(
+                { success: false, error: "名字不能超过200个字符" },
                 { status: 400 }
             );
         }

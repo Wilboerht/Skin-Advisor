@@ -21,12 +21,25 @@ export function ProductFormModal({ isOpen, onClose, product, onSuccess }: Produc
     const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
 
-    // 打开时重置滚动位置
+    // 打开时重置滚动位置，并绑定 Escape 键关闭
     useEffect(() => {
         if (isOpen && scrollRef.current) {
             scrollRef.current.scrollTop = 0;
         }
-    }, [isOpen, product]);
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                if (showDiscardConfirm) {
+                    setShowDiscardConfirm(false);
+                } else {
+                    handleClose();
+                }
+            }
+        };
+        if (isOpen) {
+            document.addEventListener("keydown", handleKeyDown);
+        }
+        return () => document.removeEventListener("keydown", handleKeyDown);
+    }, [isOpen, product, showDiscardConfirm]);
 
     const handleSuccess = () => {
         onSuccess?.();

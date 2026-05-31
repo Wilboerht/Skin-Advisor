@@ -29,6 +29,14 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // Input length limits to prevent DoS
+        if (username.length > 255 || password.length > 255) {
+            return NextResponse.json(
+                { error: "Input too long" },
+                { status: 400 }
+            );
+        }
+
         const admin = await prisma.adminUser.findUnique({
             where: { username }
         });
@@ -123,8 +131,9 @@ export async function POST(request: NextRequest) {
             maxAge: 60 * 60 * 8 // 8 hours
         });
 
-        // Reset account-level rate limit on successful login
+        // Reset rate limits on successful login
         resetRateLimit(`admin-login-account-${admin.id}`, "login");
+        resetRateLimit(`admin-login-ip-${ip}`, "login");
 
         // Log successful login
         await logAdminAction({

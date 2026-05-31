@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireRole, getClientInfo, logAdminAction } from "@/lib/admin-auth";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
 // GET /api/admin/users/[id] - Get user details
 // Restricted to super_admin only
@@ -8,6 +9,13 @@ export const GET = requireRole("super_admin")(async (
     request: NextRequest,
     { admin, params }
 ) => {
+    // Rate limit
+    const ip = getClientIP(request);
+    const limitResult = await rateLimit(`admin-user-get-${ip}`, "default", { maxRequests: 60, windowMs: 60 * 1000 });
+    if (!limitResult.success) {
+        return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     try {
         const { id } = await params;
 
@@ -59,10 +67,22 @@ export const PATCH = requireRole("super_admin")(async (
     request: NextRequest,
     { admin, params }
 ) => {
+    // Rate limit
+    const ip = getClientIP(request);
+    const limitResult = await rateLimit(`admin-user-patch-${ip}`, "default", { maxRequests: 30, windowMs: 60 * 1000 });
+    if (!limitResult.success) {
+        return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     try {
         const { id } = await params;
         const body = await request.json();
         const { role, name, dailyTestLimit, vipExpiresAt } = body;
+
+        // Validate name length
+        if (name !== undefined && (typeof name !== "string" || name.length > 200)) {
+            return NextResponse.json({ error: "Invalid name (max 200 chars)" }, { status: 400 });
+        }
 
         const user = await prisma.user.findUnique({ where: { id } });
         if (!user) {
@@ -141,6 +161,13 @@ export const DELETE = requireRole("super_admin")(async (
     request: NextRequest,
     { admin, params }
 ) => {
+    // Rate limit
+    const ip = getClientIP(request);
+    const limitResult = await rateLimit(`admin-user-delete-${ip}`, "default", { maxRequests: 20, windowMs: 60 * 1000 });
+    if (!limitResult.success) {
+        return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     try {
         const { id } = await params;
 

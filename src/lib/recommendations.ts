@@ -293,8 +293,7 @@ export async function getCandidateProducts(
         // 1. Fetch Active & In-Stock Products
         const allProducts = await prisma.product.findMany({
             where: {
-                active: true,
-                deletedAt: null
+                active: true
             }
         });
 
@@ -382,8 +381,7 @@ export async function recommendProducts(
             ? preloadedProducts
             : await prisma.product.findMany({
                 where: {
-                    active: true,
-                    deletedAt: null
+                    active: true
                 }
             });
 

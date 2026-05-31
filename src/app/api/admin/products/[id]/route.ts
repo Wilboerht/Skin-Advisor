@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { withAdminAuth, requireRole, logAdminAction, getClientInfo } from "@/lib/admin-auth";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
 // GET /api/admin/products/[id] - Get product details
 // Available to all authenticated admin roles (including editor)
@@ -27,6 +28,13 @@ export const PUT = withAdminAuth(async (
     request: NextRequest,
     { admin, params }
 ) => {
+    // Rate limit
+    const ip = getClientIP(request);
+    const limitResult = await rateLimit(`admin-product-update-${ip}`, "default", { maxRequests: 30, windowMs: 60 * 1000 });
+    if (!limitResult.success) {
+        return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     try {
         const { id } = await params;
         const body = await request.json();
@@ -52,6 +60,41 @@ export const PUT = withAdminAuth(async (
                 { error: "No valid fields to update" },
                 { status: 400 }
             );
+        }
+
+        // Validate string fields
+        if (updateData.name !== undefined && (typeof updateData.name !== "string" || updateData.name.length > 200)) {
+            return NextResponse.json({ error: "Invalid name (max 200 chars)" }, { status: 400 });
+        }
+        if (updateData.category !== undefined && (typeof updateData.category !== "string" || updateData.category.length > 100)) {
+            return NextResponse.json({ error: "Invalid category (max 100 chars)" }, { status: 400 });
+        }
+        if (updateData.image !== undefined && (typeof updateData.image !== "string" || updateData.image.length > 500)) {
+            return NextResponse.json({ error: "Invalid image URL (max 500 chars)" }, { status: 400 });
+        }
+        if (updateData.description !== undefined && updateData.description !== null && (typeof updateData.description !== "string" || updateData.description.length > 5000)) {
+            return NextResponse.json({ error: "Description too long (max 5000 chars)" }, { status: 400 });
+        }
+        if (updateData.price !== undefined && updateData.price !== null && (typeof updateData.price !== "string" || updateData.price.length > 50)) {
+            return NextResponse.json({ error: "Invalid price (max 50 chars)" }, { status: 400 });
+        }
+
+        // Validate array fields
+        if (updateData.images !== undefined && updateData.images !== null) {
+            if (!Array.isArray(updateData.images) || updateData.images.length > 5) {
+                return NextResponse.json({ error: "images must be an array with at most 5 items" }, { status: 400 });
+            }
+            if (!updateData.images.every((img: unknown) => typeof img === "string" && (img as string).length <= 500)) {
+                return NextResponse.json({ error: "Each image must be a string URL (max 500 chars)" }, { status: 400 });
+            }
+        }
+
+        // Validate boolean fields
+        if (updateData.active !== undefined) {
+            updateData.active = updateData.active === true;
+        }
+        if (updateData.featured !== undefined) {
+            updateData.featured = updateData.featured === true;
         }
 
         const txResult = await prisma.$transaction(async (tx) => {
@@ -101,6 +144,13 @@ export const DELETE = requireRole("super_admin", "admin")(async (
     request: NextRequest,
     { admin, params }
 ) => {
+    // Rate limit
+    const ip = getClientIP(request);
+    const limitResult = await rateLimit(`admin-product-delete-${ip}`, "default", { maxRequests: 30, windowMs: 60 * 1000 });
+    if (!limitResult.success) {
+        return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     try {
         const { id } = await params;
         const clientInfo = getClientInfo(request);
@@ -112,11 +162,7 @@ export const DELETE = requireRole("super_admin", "admin")(async (
             }
 
             await tx.product.delete({ where: { id } });
-
-            // Clean up RecommendationRule references via junction table
-            await tx.recommendationRuleProduct.deleteMany({
-                where: { productId: id }
-            });
+            // Junction table records are automatically cleaned up via onDelete: Cascade
 
             await tx.adminAuditLog.create({
                 data: {

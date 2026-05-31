@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { deleteOSSFiles } from "@/lib/ali-oss";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { logAdminAction } from "@/lib/admin-auth";
 
 /**
  * POST /api/admin/cleanup-guests
@@ -115,6 +116,21 @@ export async function POST(req: NextRequest) {
                 // OSS 删失败不回滚 DB，因为数据合规优先
             }
         }
+
+        // Audit log — note: this endpoint uses ADMIN_SECRET bearer token, not session auth
+        await logAdminAction({
+            adminId: null,
+            action: "cleanup_guests",
+            resource: "AdvisorSession",
+            details: {
+                dbStats: deletedStats,
+                ossFilesDeleted: ossDeleted,
+                threshold: threeHoursAgo.toISOString(),
+                authMethod: "ADMIN_SECRET"
+            },
+            ip: ip,
+            userAgent: req.headers.get("user-agent") || "unknown",
+        });
 
         return NextResponse.json({
             success: true,

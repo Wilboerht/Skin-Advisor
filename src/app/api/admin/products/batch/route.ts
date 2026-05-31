@@ -2,10 +2,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireRole, logAdminAction, getClientInfo } from "@/lib/admin-auth";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
 // POST - Batch operations on products
 // Restricted to super_admin and admin (editor cannot perform batch operations)
 export const POST = requireRole("super_admin", "admin")(async (request, { admin }) => {
+    // Rate limit
+    const ip = getClientIP(request);
+    const limitResult = await rateLimit(`admin-product-batch-${ip}`, "default", { maxRequests: 20, windowMs: 60 * 1000 });
+    if (!limitResult.success) {
+        return NextResponse.json({ success: false, error: "Too many requests" }, { status: 429 });
+    }
+
     try {
         const body = await request.json();
         const { ids, action } = body;
@@ -79,11 +87,7 @@ export const POST = requireRole("super_admin", "admin")(async (request, { admin 
                     result = await tx.product.deleteMany({
                         where: { id: { in: ids } }
                     });
-
-                    // Clean up RecommendationRule references via junction table
-                    await tx.recommendationRuleProduct.deleteMany({
-                        where: { productId: { in: ids } }
-                    });
+                    // Junction table records are automatically cleaned up via onDelete: Cascade
                 });
                 break;
         }

@@ -109,6 +109,7 @@ model RecommendationRuleProduct {
   ruleId    String
   productId String
   rule      RecommendationRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  product   Product            @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([ruleId, productId])
   @@index([productId])
@@ -150,6 +151,9 @@ model AdminAuditLog {
   @@index([action])
   @@index([resource])
   @@index([createdAt])
+  @@index([resource, resourceId])
+  @@index([action, createdAt])
+  @@index([adminId, createdAt])
 }
 
 // 普通用户 (C端)
@@ -260,8 +264,6 @@ model Product {
   sortOrder         Int      @default(0)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
-  deletedAt         DateTime? // 软删除时间戳
-
   // ===== 性能索引 =====
   @@index([active, sortOrder])   // 推荐规则查询加速
 
@@ -271,12 +273,12 @@ model Product {
   negativeFor       Json     // string[] 不适合人群/负面标签，如 ["敏感肌", "痘痘肌", "孕妇"]
 
   // Relations
+  recommendationRules RecommendationRuleProduct[]
 
   // ===== 常用查询索引 =====
   @@index([category])
   @@index([active, featured])
   @@index([sortOrder])
-  @@index([deletedAt])
   @@index([active, category, sortOrder]) // 产品列表组合过滤
 }
 

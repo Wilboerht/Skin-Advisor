@@ -255,7 +255,8 @@ export default function AuditLogsClient() {
                         log.resource,
                         new Date(log.createdAt).toLocaleString(),
                         log.ip || "unknown",
-                        `"${JSON.stringify(log.details || {}).replace(/"/g, '""')}"`
+                        // Properly escape CSV: wrap in quotes, escape internal quotes, strip newlines
+                        `"${JSON.stringify(log.details || {}).replace(/"/g, '""').replace(/[\r\n]+/g, ' ')}"`
                     ].join(","))
                 ];
 

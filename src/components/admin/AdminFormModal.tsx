@@ -100,6 +100,17 @@ export function AdminFormModal({ isOpen, onClose, onSubmit, admin, loading }: Ad
         await onSubmit(data as { username?: string; email?: string; password?: string; name?: string; role: string });
     };
 
+    // Escape key to close modal
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") onClose();
+        };
+        if (isOpen) {
+            document.addEventListener("keydown", handleKeyDown);
+        }
+        return () => document.removeEventListener("keydown", handleKeyDown);
+    }, [isOpen, onClose]);
+
     if (!isOpen) return null;
 
     return createPortal(
