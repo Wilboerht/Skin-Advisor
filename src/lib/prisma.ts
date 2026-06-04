@@ -1,5 +1,5 @@
 /**
- * Prisma 客户端配置 (PostgreSQL / Supabase)
+ * Prisma 客户端配置 (PostgreSQL)
  */
 import { PrismaClient } from "@prisma/client";
 
@@ -35,7 +35,7 @@ const prismaClientSingleton = () => {
     pool.on("error", (err: Error) => {
         // 只记录非预期终端错误，连接重置在池中是常见的
         if (err.message.includes("Connection terminated unexpectedly")) {
-            console.warn("[Prisma Pool] Idle connection closed by server (expected behavior for Supabase/PgBouncer)");
+            console.warn("[Prisma Pool] Idle connection closed by server");
             return;
         }
         console.error("[Prisma Pool] Unexpected error:", err.message);

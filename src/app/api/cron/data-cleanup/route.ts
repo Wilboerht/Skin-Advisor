@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { deleteOSSFiles } from "@/lib/ali-oss";
-import { deleteSupabaseFiles } from "@/lib/supabase-storage";
 
 export const maxDuration = 60;
 
@@ -53,27 +52,13 @@ function extractQueueUrls(items: Array<{ frontPhoto: string | null; generatedUrl
 async function deleteCloudFiles(urls: string[]): Promise<number> {
     if (urls.length === 0) return 0;
 
-    const supabaseUrls = urls.filter((u) => u.includes("supabase.co"));
-    const ossUrls = urls.filter((u) => !u.includes("supabase.co"));
-
-    let deleted = 0;
-    if (supabaseUrls.length > 0) {
-        try {
-            await deleteSupabaseFiles(supabaseUrls);
-            deleted += supabaseUrls.length;
-        } catch (e) {
-            console.error("[Cleanup] Failed to delete Supabase files:", e);
-        }
+    try {
+        await deleteOSSFiles(urls);
+        return urls.length;
+    } catch (e) {
+        console.error("[Cleanup] Failed to delete OSS files:", e);
+        return 0;
     }
-    if (ossUrls.length > 0) {
-        try {
-            await deleteOSSFiles(ossUrls);
-            deleted += ossUrls.length;
-        } catch (e) {
-            console.error("[Cleanup] Failed to delete OSS files:", e);
-        }
-    }
-    return deleted;
 }
 
 async function cleanupSessions(

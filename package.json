@@ -16,7 +16,6 @@
     "@mediapipe/tasks-vision": "^0.10.32",
     "@prisma/adapter-pg": "^7.3.0",
     "@prisma/client": "^7.3.0",
-    "@supabase/supabase-js": "^2.93.2",
     "@types/geoip-lite": "^1.4.4",
     "@types/jsonwebtoken": "^9.0.10",
     "@vladmandic/face-api": "^1.7.15",

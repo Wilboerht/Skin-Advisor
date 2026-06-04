@@ -31,7 +31,7 @@ The platform is engineered for performance, SEO, and maintainability, utilizing 
 
 *   **Frontend Framework**: **Next.js 16 (App Router)** & **React 19** for server-side rendering and optimal Core Web Vitals.
 *   **Styling System**: **TailwindCSS** with a custom design system for consistent, premium aesthetics.
-*   **Data Layer**: **Prisma ORM** offering type-safe database access, supporting seamless transitions between **SQLite** (Dev) and **PostgreSQL** (Production/Supabase).
+*   **Data Layer**: **Prisma ORM** offering type-safe database access, supporting **SQLite** (Dev) and **PostgreSQL** (Production).
 *   **State Management**: Complex client-state handling with React Hooks and Context API for fluid user interactions.
 
 ## Design Philosophy

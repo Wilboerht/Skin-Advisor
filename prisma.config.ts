@@ -3,7 +3,7 @@
  * Prisma 7.x 使用 prisma.config.ts 管理数据源配置
  * 
  * 本地开发: 自动使用 SQLite (file:./prisma/dev.db)
- * 生产环境: 使用 Supabase PostgreSQL (通过环境变量)
+ * 生产环境: 使用 PostgreSQL (通过环境变量)
  */
 import { config } from "dotenv";
 import { defineConfig } from "prisma/config";

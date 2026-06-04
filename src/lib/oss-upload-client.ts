@@ -1,4 +1,14 @@
 /**
+ * 检查阿里云 OSS 是否已配置
+ */
+export function isOSSConfigured(): boolean {
+    return (
+        !!process.env.NEXT_PUBLIC_ALI_OSS_REGION ||
+        !!process.env.ALI_OSS_REGION
+    );
+}
+
+/**
  * 上传文件到阿里云 OSS (直传)
  * @param file 文件对象或 Blob
  * @param filename 文件名

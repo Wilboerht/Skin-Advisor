@@ -1,4 +1,3 @@
-import { deleteSupabaseFiles } from "./supabase-storage";
 import { deleteOSSFiles } from "./ali-oss";
 import fs from "fs/promises";
 import path from "path";
@@ -45,16 +44,11 @@ export async function deleteSourcePhoto(frontPhoto: string | null | undefined): 
     return;
   }
 
-  // 云端 URL
+  // 云端 URL (OSS)
   if (frontPhoto.startsWith("http")) {
     try {
-      if (frontPhoto.includes("supabase.co")) {
-        await deleteSupabaseFiles([frontPhoto]);
-        console.log(`[Privacy] Deleted Supabase source photo`);
-      } else {
-        await deleteOSSFiles([frontPhoto]);
-        console.log(`[Privacy] Deleted OSS source photo`);
-      }
+      await deleteOSSFiles([frontPhoto]);
+      console.log(`[Privacy] Deleted OSS source photo`);
     } catch (e) {
       console.error(`[Privacy] Failed to delete cloud source photo:`, e);
     }

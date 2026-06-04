@@ -1,10 +1,10 @@
 ---
-description: 如何部署到 Vercel (Supabase PostgreSQL)
+description: 如何部署到云服务器 (PostgreSQL + 阿里云 OSS)
 ---
 
-# 部署到 Vercel
+# 部署到云服务器
 
-本项目支持**本地 SQLite 开发 + 生产 PostgreSQL 部署**的混合模式。
+本项目使用**本地 SQLite 开发 + 生产 PostgreSQL 部署**的混合模式。
 
 ## 本地开发
 
@@ -14,58 +14,45 @@ description: 如何部署到 Vercel (Supabase PostgreSQL)
 npm run dev
 ```
 
-## 部署到 Vercel
+## 生产部署
 
-### 1. Vercel 环境变量配置
+### 1. 环境变量配置
 
-在 Vercel 项目设置中添加以下环境变量：
+创建 `.env` 文件，配置以下环境变量：
 
 | 变量名 | 值 | 说明 |
 |--------|-----|------|
-| `DATABASE_URL` | `postgresql://...` | Supabase 连接字符串 (带 pgbouncer) |
-| `DIRECT_URL` | `postgresql://...` | Supabase 直连字符串 (端口 5432) |
+| `DATABASE_URL` | `postgresql://...` | PostgreSQL 连接字符串 |
 | `QWEN_API_KEY` | `sk-xxx` | 通义千问 API Key |
 | `JWT_SECRET` | `your-secret` | JWT 密钥 |
-| `NEXT_PUBLIC_SUPABASE_URL` | `https://xxx.supabase.co` | Supabase URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `eyJxxx...` | Supabase Anon Key |
+| `ALI_OSS_REGION` | `oss-cn-xxx` | 阿里云 OSS 区域 |
+| `ALI_OSS_ACCESS_KEY_ID` | `xxx` | 阿里云 Access Key |
+| `ALI_OSS_ACCESS_KEY_SECRET` | `xxx` | 阿里云 Secret Key |
+| `ALI_OSS_BUCKET` | `your-bucket` | OSS Bucket 名称 |
 
-### 2. Vercel Build Command
-
-在 Vercel 项目设置 > Build & Development Settings 中设置：
-
-**Build Command:**
-```bash
-node scripts/prepare-production.js && next build
-```
-
-`prepare-production.js` 脚本会自动：
-1. 验证环境变量
-2. 将 Prisma schema 的 provider 切换为 `postgresql`
-3. 执行 `prisma generate`
-4. 执行 `prisma db push` 同步数据库结构
-5. 恢复运行时配置
-
-### 3. 部署
-
-直接推送代码到 Git 仓库即可触发 Vercel 自动部署。
-
-## 切换回本地开发
-
-部署完成后，**无需任何操作**！
-
-因为：
-- 本地使用 `.env.local` 配置 (SQLite)
-- Vercel 构建脚本只在云端执行，不影响本地代码
-- Git 会追踪原始的 `sqlite` 配置
-
-如果你在本地不小心运行了 `prepare-production.js`，只需：
+### 2. 构建与启动
 
 ```bash
-git checkout prisma/schema.prisma prisma.config.ts
+# 安装依赖
+npm install
+
+# 同步数据库结构
+npx prisma db push
 npx prisma generate
+
+# 构建
+npm run build
+
+# 使用 PM2 启动
+pm2 start ecosystem.config.js
 ```
+
+### 3. Nginx 反向代理配置
+
+配置 Nginx 反向代理到应用端口（如 3002），并设置静态资源缓存。
 
 ## 注意事项
 
-1. **不要提交生产环境的 schema 变更** - Vercel 构建时会自动处理
-2. **本地测试生产构建** - 如需本地测试 PostgreSQL，创建 `.env.production.local` 文件
+1. **生产环境使用 PostgreSQL**，确保数据库服务已启动
+2. **图片存储使用阿里云 OSS**，确保 OSS 配置正确
+3. **定时任务使用 Linux Crontab**，替代 Vercel Cron

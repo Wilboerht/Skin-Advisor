@@ -25,7 +25,7 @@ export function formatDateTime(date: Date | string | number) {
 
 /**
  * 数据库查询重试包装器
- * 针对 Supabase/PgBouncer 连接不稳定问题，自动重试连接断开错误
+ * 自动重试连接断开错误
  */
 export async function withDbRetry<T>(
     fn: () => Promise<T>,
