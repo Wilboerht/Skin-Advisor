@@ -79,16 +79,23 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
         const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
         const weeklyData: Record<string, { started: number; completed: number }> = {};
 
+        // Helper to get day name in Asia/Shanghai timezone
+        const getShanghaiDayName = (dateInput: Date | string) => {
+            const d = typeof dateInput === 'string'
+                ? new Date(dateInput + 'T12:00:00+08:00')
+                : dateInput;
+            return d.toLocaleDateString('en-US', { timeZone: TIMEZONE, weekday: 'short' });
+        };
+
         // Initialize all 7 days using Shanghai timezone
         for (let i = 6; i >= 0; i--) {
             const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-            const dayName = days[d.getDay()];
+            const dayName = getShanghaiDayName(d);
             weeklyData[dayName] = { started: 0, completed: 0 };
         }
 
         weeklyRaw.forEach(row => {
-            const rowDate = new Date(row.day + 'T00:00:00+08:00');
-            const dayName = days[rowDate.getDay()];
+            const dayName = getShanghaiDayName(row.day);
             if (weeklyData[dayName]) {
                 weeklyData[dayName].started = Number(row.started);
                 weeklyData[dayName].completed = Number(row.completed);

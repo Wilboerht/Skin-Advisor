@@ -104,7 +104,9 @@ export async function POST(request: NextRequest) {
         let productMsg = `Found ${productCount} existing products.`;
 
         if (productCount === 0) {
-            console.log("Seeding products...");
+            if (process.env.NODE_ENV !== "production") {
+                console.info("Seeding products...");
+            }
             for (const p of PRODUCTS_CATALOG) {
                 await prisma.product.create({
                     data: {
@@ -116,7 +118,7 @@ export async function POST(request: NextRequest) {
                         keyIngredients: p.keyIngredients,
                         suitableSkinTypes: p.suitableSkinTypes,
                         benefits: p.benefits,
-                        negativeFor: (p as any).negativeFor || [],
+                        negativeFor: p.negativeFor || [],
                         active: true,
                         featured: false
                     }

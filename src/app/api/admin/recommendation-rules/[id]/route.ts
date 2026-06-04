@@ -59,6 +59,8 @@ export const PUT = requireRole("super_admin", "admin")(async (req: NextRequest, 
             }
         }
 
+        const clientInfo = getClientInfo(req);
+
         await prisma.$transaction(async (tx) => {
             await tx.recommendationRule.update({
                 where: { id },
@@ -84,27 +86,29 @@ export const PUT = requireRole("super_admin", "admin")(async (req: NextRequest, 
                     });
                 }
             }
+
+            // Audit log inside transaction
+            await tx.adminAuditLog.create({
+                data: {
+                    adminId: admin.adminId,
+                    action: "update",
+                    resource: "RecommendationRule",
+                    resourceId: id,
+                    details: {
+                        name: oldRule.name,
+                        oldProductCount: oldRule.products.length,
+                        newProductCount: productIds?.length ?? oldRule.products.length,
+                        changes: Object.keys(ruleData),
+                    },
+                    ip: clientInfo.ip,
+                    userAgent: clientInfo.userAgent,
+                }
+            });
         });
 
         const updated = await prisma.recommendationRule.findUnique({
             where: { id },
             include: { products: { select: { productId: true } } }
-        });
-
-        // Audit log
-        const clientInfo = getClientInfo(req);
-        await logAdminAction({
-            adminId: admin.adminId,
-            action: "update",
-            resource: "RecommendationRule",
-            resourceId: id,
-            details: {
-                name: updated?.name,
-                oldProductCount: oldRule.products.length,
-                newProductCount: productIds?.length ?? oldRule.products.length,
-                changes: Object.keys(ruleData),
-            },
-            ...clientInfo,
         });
 
         return NextResponse.json({

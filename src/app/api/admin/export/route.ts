@@ -16,8 +16,8 @@ export const GET = requireRole("super_admin", "admin")(async (request, { admin }
 
     const type = request.nextUrl.searchParams.get("type") || "products";
 
-    // Sensitive exports require super_admin
-    if ((type === "sessions" || type === "audit-logs") && admin.role !== "super_admin") {
+    // Sensitive exports (PII) require super_admin
+    if ((type === "users" || type === "sessions" || type === "audit-logs") && admin.role !== "super_admin") {
         return NextResponse.json({ error: "Forbidden - super_admin required for this export" }, { status: 403 });
     }
 

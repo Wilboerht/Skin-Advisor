@@ -10,12 +10,7 @@ export const PATCH = requireRole("super_admin")(async (request, { admin, params 
     try {
         const { id } = await params;
         const body = await request.json();
-        let { name, email, role, password, active } = body;
-
-        // Normalize username if provided
-        if (body.username !== undefined) {
-            name = name?.toLowerCase().trim();
-        }
+        const { name, email, role, password, active } = body;
 
         const targetAdmin = await prisma.adminUser.findUnique({ where: { id } });
         if (!targetAdmin) {

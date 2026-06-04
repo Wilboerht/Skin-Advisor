@@ -15,6 +15,7 @@ const ADMIN_PUBLIC_PATHS = [
     "/admin/login",
     "/api/admin/auth/login",
     "/api/admin/setup",
+    "/api/admin/cleanup-guests", // 支持 ADMIN_SECRET Bearer token（定时任务）
 ];
 
 // 允许的源（生产环境应限制为实际域名）

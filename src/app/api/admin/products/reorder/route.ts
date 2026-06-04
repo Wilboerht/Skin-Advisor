@@ -43,33 +43,28 @@ export const POST = requireRole("super_admin", "admin")(async (request, { admin 
         }
 
         // Verify all IDs exist and the list is complete (contains all products)
-        const existingCount = await prisma.product.count({
-            where: { id: { in: orderedIds } }
-        });
-        if (existingCount !== orderedIds.length) {
-            return NextResponse.json(
-                { success: false, error: "Some product IDs do not exist" },
-                { status: 400 }
-            );
-        }
+        // Wrapped in transaction to avoid race conditions
+        await prisma.$transaction(async (tx) => {
+            const existingCount = await tx.product.count({
+                where: { id: { in: orderedIds } }
+            });
+            if (existingCount !== orderedIds.length) {
+                throw new Error("Some product IDs do not exist");
+            }
 
-        const totalProductCount = await prisma.product.count();
-        if (orderedIds.length !== totalProductCount) {
-            return NextResponse.json(
-                { success: false, error: `Reorder list must include all products (expected ${totalProductCount}, got ${orderedIds.length})` },
-                { status: 400 }
-            );
-        }
+            const totalProductCount = await tx.product.count();
+            if (orderedIds.length !== totalProductCount) {
+                throw new Error(`Reorder list must include all products (expected ${totalProductCount}, got ${orderedIds.length})`);
+            }
 
-        // Update sortOrder for each product
-        await prisma.$transaction(
-            orderedIds.map((id: string, index: number) =>
-                prisma.product.update({
-                    where: { id },
+            // Update sortOrder for each product
+            for (let index = 0; index < orderedIds.length; index++) {
+                await tx.product.update({
+                    where: { id: orderedIds[index] },
                     data: { sortOrder: index }
-                })
-            )
-        );
+                });
+            }
+        });
 
         // Audit log
         const clientInfo = getClientInfo(request);
@@ -85,6 +80,13 @@ export const POST = requireRole("super_admin", "admin")(async (request, { admin 
 
     } catch (error) {
         console.error("Reorder failed:", error);
+        const message = error instanceof Error ? error.message : "Internal server error";
+        if (message.includes("do not exist") || message.includes("must include all products")) {
+            return NextResponse.json(
+                { success: false, error: message },
+                { status: 400 }
+            );
+        }
         return NextResponse.json(
             { success: false, error: "Internal server error" },
             { status: 500 }

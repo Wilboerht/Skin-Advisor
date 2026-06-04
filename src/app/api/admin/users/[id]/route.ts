@@ -135,7 +135,14 @@ export const PATCH = requireRole("super_admin", "admin")(async (
                 updateData.previousRole = user.role;
             } else if (role !== "disabled" && user.role === "disabled") {
                 // Enabling user: restore previousRole if available
-                updateData.role = user.previousRole || role || "user";
+                const restoredRole = user.previousRole || role || "user";
+                if (!VALID_ROLES.includes(restoredRole)) {
+                    return NextResponse.json(
+                        { error: "Invalid previousRole state" },
+                        { status: 400 }
+                    );
+                }
+                updateData.role = restoredRole;
                 updateData.previousRole = null;
             } else {
                 updateData.role = role;

@@ -9,6 +9,7 @@ export interface ProductItem {
     keyIngredients: string[];
     suitableSkinTypes: string[];
     benefits: string[];
+    negativeFor?: string[];
 }
 
 export const PRODUCTS_CATALOG: ProductItem[] = [
