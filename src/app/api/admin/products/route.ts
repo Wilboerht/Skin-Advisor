@@ -5,7 +5,7 @@ import { withAdminAuth, logAdminAction, getClientInfo } from "@/lib/admin-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
 // GET /api/admin/products - List products with pagination
-// Available to all authenticated admin roles (including editor)
+// Available to super_admin and admin
 export const GET = withAdminAuth(async (request) => {
     try {
         const searchParams = request.nextUrl.searchParams;
@@ -37,7 +37,7 @@ export const GET = withAdminAuth(async (request) => {
 });
 
 // POST /api/admin/products - Create a new product
-// Available to all authenticated admin roles (including editor)
+// Available to super_admin and admin
 export const POST = withAdminAuth(async (request, { admin }) => {
     // Rate limit
     const ip = getClientIP(request);
@@ -60,6 +60,15 @@ export const POST = withAdminAuth(async (request, { admin }) => {
         if (!body.image || typeof body.image !== "string" || body.image.length > 500) {
             return NextResponse.json({ error: "Invalid image URL (required, max 500 chars)" }, { status: 400 });
         }
+        // Validate image URL format
+        try {
+            const imageUrl = new URL(body.image);
+            if (!['http:', 'https:'].includes(imageUrl.protocol)) {
+                return NextResponse.json({ error: "Invalid image URL scheme (must be http or https)" }, { status: 400 });
+            }
+        } catch {
+            return NextResponse.json({ error: "Invalid image URL format" }, { status: 400 });
+        }
         if (body.description && typeof body.description === "string" && body.description.length > 5000) {
             return NextResponse.json({ error: "Description too long (max 5000 chars)" }, { status: 400 });
         }
@@ -74,6 +83,17 @@ export const POST = withAdminAuth(async (request, { admin }) => {
             }
             if (!body.images.every((img: unknown) => typeof img === "string" && (img as string).length <= 500)) {
                 return NextResponse.json({ error: "Each image must be a string URL (max 500 chars)" }, { status: 400 });
+            }
+            // Validate each image URL format
+            for (const img of body.images) {
+                try {
+                    const imgUrl = new URL(img as string);
+                    if (!['http:', 'https:'].includes(imgUrl.protocol)) {
+                        return NextResponse.json({ error: "Invalid image URL scheme (must be http or https)" }, { status: 400 });
+                    }
+                } catch {
+                    return NextResponse.json({ error: "Invalid image URL format" }, { status: 400 });
+                }
             }
         }
         if (body.sortOrder !== undefined) {
@@ -92,6 +112,27 @@ export const POST = withAdminAuth(async (request, { admin }) => {
         }
         if (body.negativeFor !== undefined && !Array.isArray(body.negativeFor)) {
             return NextResponse.json({ error: "negativeFor must be an array" }, { status: 400 });
+        }
+        // Validate affiliateLinks values are valid URLs
+        if (body.affiliateLinks !== undefined && body.affiliateLinks !== null) {
+            if (typeof body.affiliateLinks !== "object" || Array.isArray(body.affiliateLinks)) {
+                return NextResponse.json({ error: "affiliateLinks must be an object" }, { status: 400 });
+            }
+            for (const [key, value] of Object.entries(body.affiliateLinks)) {
+                if (typeof value !== "string" || value.length > 500) {
+                    return NextResponse.json({ error: `Invalid affiliateLinks.${key} (must be a string URL, max 500 chars)` }, { status: 400 });
+                }
+                if (value) {
+                    try {
+                        const url = new URL(value);
+                        if (!['http:', 'https:'].includes(url.protocol)) {
+                            return NextResponse.json({ error: `Invalid affiliateLinks.${key} scheme (must be http or https)` }, { status: 400 });
+                        }
+                    } catch {
+                        return NextResponse.json({ error: `Invalid affiliateLinks.${key} format` }, { status: 400 });
+                    }
+                }
+            }
         }
 
         const [product] = await prisma.$transaction(async (tx) => {

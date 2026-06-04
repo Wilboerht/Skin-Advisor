@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { deleteOSSFiles } from "@/lib/ali-oss";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
-import { logAdminAction } from "@/lib/admin-auth";
+import { verifyAdminSession, logAdminAction } from "@/lib/admin-auth";
 
 /**
  * POST /api/admin/cleanup-guests
  * 自动清理超过 3 小时的游客数据
- * 必须携带 Authorization: Bearer <ADMIN_SECRET>
+ * 支持两种鉴权方式：
+ * 1. Authorization: Bearer <ADMIN_SECRET>（用于定时任务）
+ * 2. Admin Session Cookie（用于管理员手动触发）
  */
 export async function POST(req: NextRequest) {
     // Rate limit: max 10 requests per minute per IP
@@ -20,12 +22,23 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
 
-    // 1. 安全校验 (由环境变量控制密钥，防止外部恶意扫描触发)
+    // 1. 安全校验 - 支持 ADMIN_SECRET 或 admin session
     const authHeader = req.headers.get("authorization");
     const secret = process.env.ADMIN_SECRET;
+    const admin = await verifyAdminSession();
 
-    if (!secret || authHeader !== `Bearer ${secret}`) {
-        console.warn("[Cleanup] 鉴权失败或 ADMIN_SECRET 未在 .env 设定");
+    let authMethod: string;
+    let adminId: string | null = null;
+
+    if (admin) {
+        // 使用 admin session 鉴权
+        authMethod = "admin_session";
+        adminId = admin.adminId;
+    } else if (secret && authHeader === `Bearer ${secret}`) {
+        // 使用 ADMIN_SECRET 鉴权（定时任务等）
+        authMethod = "ADMIN_SECRET";
+    } else {
+        console.warn("[Cleanup] 鉴权失败：既无有效 admin session，也无正确的 ADMIN_SECRET");
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -33,19 +46,93 @@ export async function POST(req: NextRequest) {
         // 计算 3 小时前的时间点
         const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000);
 
-        // 2. 查找过期的游客会话 (没有绑定 userId)
-        const guestSessions = await prisma.advisorSession.findMany({
-            where: {
-                userId: null,
-                createdAt: { lt: threeHoursAgo }
-            },
-            select: {
-                sessionId: true,
-                analysisResult: true
-            }
-        });
+        // 2. 查找过期的游客会话 (没有绑定 userId)，分批处理避免参数超限
+        const DB_BATCH_SIZE = 500;
+        let totalDeletedSessions = 0;
+        let totalDeletedTestRecords = 0;
+        let totalDeletedAvatarQueues = 0;
+        const urlsToDelete: string[] = [];
+        let hasMore = true;
+        let processedCount = 0;
 
-        if (guestSessions.length === 0) {
+        while (hasMore) {
+            const guestSessions = await prisma.advisorSession.findMany({
+                where: {
+                    userId: null,
+                    createdAt: { lt: threeHoursAgo }
+                },
+                select: {
+                    sessionId: true,
+                    analysisResult: true
+                },
+                take: DB_BATCH_SIZE,
+            });
+
+            if (guestSessions.length === 0) {
+                hasMore = false;
+                break;
+            }
+
+            processedCount += guestSessions.length;
+            const sessionIds = guestSessions.map(s => s.sessionId);
+
+            // 3a. 提取所有关联的 AvatarQueue 记录
+            const avatarQueueItems = await prisma.avatarQueue.findMany({
+                where: { sessionId: { in: sessionIds } },
+                select: { frontPhoto: true, generatedUrl: true }
+            });
+            
+            // 3b. 收集 OSS 图片 URL
+            guestSessions.forEach(session => {
+                const result = session.analysisResult as Record<string, unknown>;
+                if (result?.generatedAvatar && typeof result.generatedAvatar === 'string' && result.generatedAvatar.startsWith('http')) {
+                    urlsToDelete.push(result.generatedAvatar);
+                }
+            });
+            avatarQueueItems.forEach(item => {
+                if (item.generatedUrl && item.generatedUrl.startsWith('http')) {
+                    urlsToDelete.push(item.generatedUrl);
+                }
+                if (item.frontPhoto && item.frontPhoto.startsWith('http')) {
+                    urlsToDelete.push(item.frontPhoto);
+                }
+            });
+
+            // 4. 执行数据库事务物理删除
+            const deletedStats = await prisma.$transaction(async (tx) => {
+                const avatarQueues = await tx.avatarQueue.deleteMany({
+                    where: { sessionId: { in: sessionIds } }
+                });
+
+                const testRecords = await tx.testRecord.deleteMany({
+                    where: {
+                        userId: null,
+                        sessionId: { in: sessionIds }
+                    }
+                });
+
+                const sessions = await tx.advisorSession.deleteMany({
+                    where: { sessionId: { in: sessionIds } }
+                });
+
+                return {
+                    sessions: sessions.count,
+                    testRecords: testRecords.count,
+                    avatarQueues: avatarQueues.count
+                };
+            });
+
+            totalDeletedSessions += deletedStats.sessions;
+            totalDeletedTestRecords += deletedStats.testRecords;
+            totalDeletedAvatarQueues += deletedStats.avatarQueues;
+
+            // If we got fewer than batch size, we're done
+            if (guestSessions.length < DB_BATCH_SIZE) {
+                hasMore = false;
+            }
+        }
+
+        if (processedCount === 0) {
             return NextResponse.json({ 
                 success: true, 
                 message: "没有发现过期的游客数据",
@@ -53,80 +140,36 @@ export async function POST(req: NextRequest) {
             });
         }
 
-        const sessionIds = guestSessions.map(s => s.sessionId);
-
-        // 3a. 提取所有关联的 AvatarQueue 记录（可能包含未同步到 analysisResult 的 avatar）
-        const avatarQueueItems = await prisma.avatarQueue.findMany({
-            where: { sessionId: { in: sessionIds } },
-            select: { frontPhoto: true, generatedUrl: true }
-        });
-        
-        // 3b. 提取所有关联的 OSS 图片 URL (analysisResult + AvatarQueue)
-        const urlsToDelete: string[] = [];
-        guestSessions.forEach(session => {
-            const result = session.analysisResult as Record<string, unknown>;
-            if (result?.generatedAvatar && typeof result.generatedAvatar === 'string' && result.generatedAvatar.startsWith('http')) {
-                urlsToDelete.push(result.generatedAvatar);
-            }
-        });
-        avatarQueueItems.forEach(item => {
-            if (item.generatedUrl && item.generatedUrl.startsWith('http')) {
-                urlsToDelete.push(item.generatedUrl);
-            }
-            if (item.frontPhoto && item.frontPhoto.startsWith('http')) {
-                urlsToDelete.push(item.frontPhoto);
-            }
-        });
-
-        // 4. 执行数据库事务物理删除
-        const deletedStats = await prisma.$transaction(async (tx) => {
-            // A. 删除 AvatarQueue 记录
-            const avatarQueues = await tx.avatarQueue.deleteMany({
-                where: { sessionId: { in: sessionIds } }
-            });
-
-            // B. 删除过期的测试记录 (针对无 userId 的旧记录)
-            const testRecords = await tx.testRecord.deleteMany({
-                where: {
-                    userId: null,
-                    sessionId: { in: sessionIds }
-                }
-            });
-
-            // C. 最后删除会话主表
-            const sessions = await tx.advisorSession.deleteMany({
-                where: { sessionId: { in: sessionIds } }
-            });
-
-            return {
-                sessions: sessions.count,
-                testRecords: testRecords.count,
-                avatarQueues: avatarQueues.count
-            };
-        });
-
         // 5. 异步调用 OSS 批量删除 API
         let ossDeleted = 0;
+        let ossFailed = 0;
         if (urlsToDelete.length > 0) {
             try {
                 await deleteOSSFiles(urlsToDelete);
                 ossDeleted = urlsToDelete.length;
             } catch (ossError) {
                 console.error("[Cleanup OSS Error]:", ossError);
+                ossFailed = urlsToDelete.length;
                 // OSS 删失败不回滚 DB，因为数据合规优先
             }
         }
 
-        // Audit log — note: this endpoint uses ADMIN_SECRET bearer token, not session auth
+        const deletedStats = {
+            sessions: totalDeletedSessions,
+            testRecords: totalDeletedTestRecords,
+            avatarQueues: totalDeletedAvatarQueues,
+        };
+
+        // Audit log
         await logAdminAction({
-            adminId: null,
+            adminId: adminId,
             action: "cleanup_guests",
             resource: "AdvisorSession",
             details: {
                 dbStats: deletedStats,
                 ossFilesDeleted: ossDeleted,
                 threshold: threeHoursAgo.toISOString(),
-                authMethod: "ADMIN_SECRET"
+                authMethod: authMethod,
             },
             ip: ip,
             userAgent: req.headers.get("user-agent") || "unknown",

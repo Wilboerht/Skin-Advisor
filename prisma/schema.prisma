@@ -124,7 +124,7 @@ model AdminUser {
   email     String?  @unique
   password  String   // 加密后的密码
   name      String?
-  // NOTE: role should ideally be an enum (super_admin, editor, admin).
+  // NOTE: role should ideally be an enum (super_admin, admin).
   // Kept as String for broader database compatibility.
   role      String   @default("admin")
   active    Boolean  @default(true)
@@ -169,9 +169,10 @@ model User {
   wechatUnionId   String?          @unique
   avatarUrl       String?
 
-  // NOTE: role should ideally be an enum (user, vip, disabled).
+  // NOTE: role should ideally be an enum (user, vip).
   // Kept as String for broader database compatibility.
   role            String           @default("user")
+  previousRole    String?          // 禁用前的角色，用于恢复
   vipExpiresAt    DateTime?        // VIP 会员过期时间
   dailyTestLimit  Int              @default(10) // 每日测试次数限制，管理员可调整（系统默认 10 次）
   createdAt       DateTime         @default(now())

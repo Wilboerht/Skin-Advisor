@@ -3,14 +3,19 @@ import prisma from "@/lib/prisma";
 import { requireRole, logAdminAction, getClientInfo } from "@/lib/admin-auth";
 import bcrypt from "bcryptjs";
 
-const VALID_ROLES = ["super_admin", "admin", "editor"];
+const VALID_ROLES = ["super_admin", "admin"];
 
 // PATCH /api/admin/admins/[id] - Update admin info
 export const PATCH = requireRole("super_admin")(async (request, { admin, params }) => {
     try {
         const { id } = await params;
         const body = await request.json();
-        const { name, email, role, password, active } = body;
+        let { name, email, role, password, active } = body;
+
+        // Normalize username if provided
+        if (body.username !== undefined) {
+            name = name?.toLowerCase().trim();
+        }
 
         const targetAdmin = await prisma.adminUser.findUnique({ where: { id } });
         if (!targetAdmin) {
@@ -28,8 +33,35 @@ export const PATCH = requireRole("super_admin")(async (request, { admin, params 
             );
         }
 
+        // Prevent demotion of the last active super_admin
+        if (role !== undefined && targetAdmin.role === "super_admin" && role !== "super_admin") {
+            const activeSuperAdminCount = await prisma.adminUser.count({
+                where: { role: "super_admin", active: true },
+            });
+            if (activeSuperAdminCount <= 1) {
+                return NextResponse.json(
+                    { success: false, error: "不能降级最后一个活跃的超级管理员" },
+                    { status: 400 }
+                );
+            }
+        }
+
+        // Prevent disabling the last active super_admin
+        if (active !== undefined && targetAdmin.role === "super_admin" && active === false) {
+            const activeSuperAdminCount = await prisma.adminUser.count({
+                where: { role: "super_admin", active: true },
+            });
+            if (activeSuperAdminCount <= 1) {
+                return NextResponse.json(
+                    { success: false, error: "不能禁用最后一个活跃的超级管理员" },
+                    { status: 400 }
+                );
+            }
+        }
+
         // Validate email
-        if (email !== undefined && email !== null && (typeof email !== "string" || !email.includes("@"))) {
+        const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (email !== undefined && email !== null && (typeof email !== "string" || !EMAIL_REGEX.test(email))) {
             return NextResponse.json(
                 { success: false, error: "无效的邮箱格式" },
                 { status: 400 }
@@ -134,14 +166,14 @@ export const DELETE = requireRole("super_admin")(async (request, { admin, params
             );
         }
 
-        // Cannot delete the last super_admin
+        // Cannot delete the last active super_admin
         if (targetAdmin.role === "super_admin") {
-            const superAdminCount = await prisma.adminUser.count({
-                where: { role: "super_admin" },
+            const activeSuperAdminCount = await prisma.adminUser.count({
+                where: { role: "super_admin", active: true },
             });
-            if (superAdminCount <= 1) {
+            if (activeSuperAdminCount <= 1) {
                 return NextResponse.json(
-                    { success: false, error: "不能删除最后一个超级管理员" },
+                    { success: false, error: "不能删除最后一个活跃的超级管理员" },
                     { status: 400 }
                 );
             }

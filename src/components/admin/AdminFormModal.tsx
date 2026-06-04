@@ -31,8 +31,7 @@ interface AdminFormModalProps {
 
 const ROLE_OPTIONS = [
     { value: "super_admin", label: "超级管理员", description: "拥有所有权限，可管理其他管理员" },
-    { value: "admin", label: "管理员", description: "可管理产品、用户和查看审计日志" },
-    { value: "editor", label: "编辑", description: "可管理产品内容" },
+    { value: "admin", label: "管理员", description: "可管理产品、推荐规则和查看审计日志" },
 ];
 
 export function AdminFormModal({ isOpen, onClose, onSubmit, admin, loading }: AdminFormModalProps) {

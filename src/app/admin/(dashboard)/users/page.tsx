@@ -9,5 +9,6 @@ export default async function UsersPage() {
     if (!admin) {
         redirect("/admin/login");
     }
+    // User management available to super_admin and admin
     return <UsersClient />;
 }

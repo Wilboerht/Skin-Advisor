@@ -5,7 +5,7 @@ import { requireRole, logAdminAction, getClientInfo } from "@/lib/admin-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
 // POST - Reorder products
-// Restricted to super_admin and admin (editor cannot reorder products)
+// Restricted to super_admin and admin
 export const POST = requireRole("super_admin", "admin")(async (request, { admin }) => {
     // Rate limit
     const ip = getClientIP(request);
@@ -42,13 +42,21 @@ export const POST = requireRole("super_admin", "admin")(async (request, { admin 
             );
         }
 
-        // Verify all IDs exist before updating
+        // Verify all IDs exist and the list is complete (contains all products)
         const existingCount = await prisma.product.count({
             where: { id: { in: orderedIds } }
         });
         if (existingCount !== orderedIds.length) {
             return NextResponse.json(
                 { success: false, error: "Some product IDs do not exist" },
+                { status: 400 }
+            );
+        }
+
+        const totalProductCount = await prisma.product.count();
+        if (orderedIds.length !== totalProductCount) {
+            return NextResponse.json(
+                { success: false, error: `Reorder list must include all products (expected ${totalProductCount}, got ${orderedIds.length})` },
                 { status: 400 }
             );
         }

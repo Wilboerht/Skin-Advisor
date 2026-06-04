@@ -6,7 +6,7 @@ import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { Prisma } from "@prisma/client";
 
 // GET /api/admin/audit-logs - List audit logs with filtering
-// Available to all authenticated admin roles (including editor)
+// Available to super_admin and admin
 export const GET = withAdminAuth(async (request) => {
     // Rate limit
     const ip = getClientIP(request);

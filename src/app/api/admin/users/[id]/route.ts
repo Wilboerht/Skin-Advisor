@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireRole, getClientInfo, logAdminAction } from "@/lib/admin-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { Prisma } from "@prisma/client";
 
 // GET /api/admin/users/[id] - Get user details
-// Restricted to super_admin only
-export const GET = requireRole("super_admin")(async (
+// Available to super_admin and admin
+export const GET = requireRole("super_admin", "admin")(async (
     request: NextRequest,
     { admin, params }
 ) => {
@@ -63,7 +64,7 @@ export const GET = requireRole("super_admin")(async (
 });
 
 // PATCH /api/admin/users/[id] - Update user (disable/enable, update role, dailyTestLimit)
-export const PATCH = requireRole("super_admin")(async (
+export const PATCH = requireRole("super_admin", "admin")(async (
     request: NextRequest,
     { admin, params }
 ) => {
@@ -121,14 +122,29 @@ export const PATCH = requireRole("super_admin")(async (
             }
         }
 
+        // Build update data with previousRole logic for disable/enable
+        const updateData: Prisma.UserUpdateInput = {};
+        if (name !== undefined) updateData.name = name;
+        if (dailyTestLimit !== undefined) updateData.dailyTestLimit = Number(dailyTestLimit);
+        if (vipExpiresAt !== undefined) updateData.vipExpiresAt = vipExpiresAt ? new Date(vipExpiresAt) : null;
+
+        if (role !== undefined) {
+            if (role === "disabled" && user.role !== "disabled") {
+                // Disabling user: save current role to previousRole
+                updateData.role = "disabled";
+                updateData.previousRole = user.role;
+            } else if (role !== "disabled" && user.role === "disabled") {
+                // Enabling user: restore previousRole if available
+                updateData.role = user.previousRole || role || "user";
+                updateData.previousRole = null;
+            } else {
+                updateData.role = role;
+            }
+        }
+
         const updatedUser = await prisma.user.update({
             where: { id },
-            data: {
-                ...(role !== undefined && { role }),
-                ...(name !== undefined && { name }),
-                ...(dailyTestLimit !== undefined && { dailyTestLimit: Number(dailyTestLimit) }),
-                ...(vipExpiresAt !== undefined && { vipExpiresAt: vipExpiresAt ? new Date(vipExpiresAt) : null }),
-            },
+            data: updateData,
         });
 
         // Log admin action
@@ -157,7 +173,7 @@ export const PATCH = requireRole("super_admin")(async (
 });
 
 // DELETE /api/admin/users/[id] - Delete user
-export const DELETE = requireRole("super_admin")(async (
+export const DELETE = requireRole("super_admin", "admin")(async (
     request: NextRequest,
     { admin, params }
 ) => {

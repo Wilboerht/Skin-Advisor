@@ -103,13 +103,18 @@ export async function deleteOSSFiles(urls: string[]) {
             } catch {
                 return url;
             }
-        });
+        }).filter(Boolean);
 
         if (names.length === 0) return;
 
-        // 批量删除
-        await ossClient.deleteMulti(names);
+        // Aliyun OSS deleteMulti has a hard limit of 1000 keys per request
+        const BATCH_SIZE = 1000;
+        for (let i = 0; i < names.length; i += BATCH_SIZE) {
+            const batch = names.slice(i, i + BATCH_SIZE);
+            await ossClient.deleteMulti(batch);
+        }
     } catch (e) {
         console.error("Failed to delete OSS files:", e);
+        throw e;
     }
 }

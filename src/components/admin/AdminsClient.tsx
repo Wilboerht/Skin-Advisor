@@ -6,7 +6,6 @@ import {
     MoreHorizontal,
     Shield,
     ShieldCheck,
-    ShieldAlert,
     Trash2,
     Loader2,
     Plus,
@@ -34,7 +33,7 @@ interface Admin {
 const ROLE_LABELS: Record<string, { label: string; color: string; bg: string; icon: typeof Shield }> = {
     super_admin: { label: "超级管理员", color: "text-amber-700", bg: "bg-amber-50", icon: ShieldCheck },
     admin: { label: "管理员", color: "text-blue-700", bg: "bg-blue-50", icon: Shield },
-    editor: { label: "编辑", color: "text-slate-600", bg: "bg-slate-100", icon: ShieldAlert },
+
 };
 
 export function AdminsClient() {
@@ -267,7 +266,7 @@ export function AdminsClient() {
         }
     };
 
-    const roleConfig = (role: string) => ROLE_LABELS[role] || ROLE_LABELS.editor;
+    const roleConfig = (role: string) => ROLE_LABELS[role] || ROLE_LABELS.admin;
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">

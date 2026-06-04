@@ -4,7 +4,7 @@ import { requireRole, logAdminAction, getClientInfo } from "@/lib/admin-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import bcrypt from "bcryptjs";
 
-const VALID_ROLES = ["super_admin", "admin", "editor"];
+const VALID_ROLES = ["super_admin", "admin"];
 
 // GET /api/admin/admins - List all admins
 export const GET = requireRole("super_admin")(async (request) => {
@@ -18,6 +18,9 @@ export const GET = requireRole("super_admin")(async (request) => {
     try {
         const { searchParams } = new URL(request.url);
         const search = searchParams.get("search") || "";
+        const page = Math.max(1, parseInt(searchParams.get("page") || "1") || 1);
+        const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "50") || 50));
+        const skip = (page - 1) * limit;
 
         const where = search
             ? {
@@ -29,22 +32,31 @@ export const GET = requireRole("super_admin")(async (request) => {
             }
             : {};
 
-        const admins = await prisma.adminUser.findMany({
-            where,
-            orderBy: { createdAt: "desc" },
-            select: {
-                id: true,
-                username: true,
-                email: true,
-                name: true,
-                role: true,
-                active: true,
-                createdAt: true,
-                updatedAt: true,
-            },
-        });
+        const [admins, total] = await Promise.all([
+            prisma.adminUser.findMany({
+                where,
+                orderBy: { createdAt: "desc" },
+                skip,
+                take: limit,
+                select: {
+                    id: true,
+                    username: true,
+                    email: true,
+                    name: true,
+                    role: true,
+                    active: true,
+                    createdAt: true,
+                    updatedAt: true,
+                },
+            }),
+            prisma.adminUser.count({ where }),
+        ]);
 
-        return NextResponse.json({ success: true, admins });
+        return NextResponse.json({
+            success: true,
+            admins,
+            pagination: { page, limit, total, totalPages: Math.ceil(total / limit) }
+        });
     } catch (error) {
         console.error("Admin list error:", error);
         return NextResponse.json(
@@ -65,7 +77,10 @@ export const POST = requireRole("super_admin")(async (request, { admin }) => {
 
     try {
         const body = await request.json();
-        const { username, email, password, name, role } = body;
+        let { username, email, password, name, role } = body;
+
+        // Normalize username to lowercase
+        username = username?.toLowerCase().trim();
 
         // Validation
         if (!username || typeof username !== "string" || username.length < 3 || username.length > 50) {

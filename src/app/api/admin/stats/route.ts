@@ -5,7 +5,7 @@ import { withAdminAuth } from "@/lib/admin-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
 // GET /api/admin/stats - Dashboard statistics
-// Available to all authenticated admin roles (including editor)
+// Available to super_admin and admin
 export const GET = withAdminAuth(async (request: NextRequest) => {
     // Rate limit
     const ip = getClientIP(request);
@@ -61,24 +61,25 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
         }));
 
         // ===== 周趋势 (使用 SQL 在数据库端按日期分组) =====
+        const TIMEZONE = 'Asia/Shanghai';
         const now = new Date();
         const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-        const weeklyRaw = await prisma.$queryRaw<Array<{ day: Date; started: bigint; completed: bigint }>>`
+        const weeklyRaw = await prisma.$queryRaw<Array<{ day: string; started: bigint; completed: bigint }>>`
             SELECT 
-                DATE("createdAt") as day,
+                TO_CHAR("createdAt" AT TIME ZONE 'UTC' AT TIME ZONE ${TIMEZONE}, 'YYYY-MM-DD') as day,
                 COUNT(*) as started,
                 COUNT("completedAt") as completed
             FROM "AdvisorSession"
             WHERE "createdAt" >= ${weekAgo}
-            GROUP BY DATE("createdAt")
+            GROUP BY TO_CHAR("createdAt" AT TIME ZONE 'UTC' AT TIME ZONE ${TIMEZONE}, 'YYYY-MM-DD')
             ORDER BY day
         `;
 
         const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
         const weeklyData: Record<string, { started: number; completed: number }> = {};
 
-        // Initialize all 7 days
+        // Initialize all 7 days using Shanghai timezone
         for (let i = 6; i >= 0; i--) {
             const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
             const dayName = days[d.getDay()];
@@ -86,7 +87,8 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
         }
 
         weeklyRaw.forEach(row => {
-            const dayName = days[new Date(row.day).getDay()];
+            const rowDate = new Date(row.day + 'T00:00:00+08:00');
+            const dayName = days[rowDate.getDay()];
             if (weeklyData[dayName]) {
                 weeklyData[dayName].started = Number(row.started);
                 weeklyData[dayName].completed = Number(row.completed);
@@ -99,8 +101,9 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
             completed: data.completed
         }));
 
-        // ===== 今日数据 =====
-        const todayStart = new Date();
+        // ===== 今日数据 (使用 Asia/Shanghai 时区) =====
+        const nowShanghai = new Date().toLocaleString('en-US', { timeZone: TIMEZONE });
+        const todayStart = new Date(nowShanghai);
         todayStart.setHours(0, 0, 0, 0);
 
         const [todaySessions, todayCompletions] = await Promise.all([

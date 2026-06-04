@@ -3,9 +3,9 @@ import prisma from "@/lib/prisma";
 import { requireRole, getClientInfo, logAdminAction } from "@/lib/admin-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
-// GET /api/admin/export?type=products|users|sessions
-// Restricted to super_admin and admin (editor cannot export sensitive data)
-// PII exports (users, sessions) restricted to super_admin only
+// GET /api/admin/export?type=products|users|sessions|audit-logs
+// Restricted to super_admin and admin
+// PII exports (users, sessions, audit-logs) restricted to super_admin only
 export const GET = requireRole("super_admin", "admin")(async (request, { admin }) => {
     // Rate limit
     const ip = getClientIP(request);
@@ -16,9 +16,9 @@ export const GET = requireRole("super_admin", "admin")(async (request, { admin }
 
     const type = request.nextUrl.searchParams.get("type") || "products";
 
-    // PII exports require super_admin
-    if ((type === "users" || type === "sessions") && admin.role !== "super_admin") {
-        return NextResponse.json({ error: "Forbidden - super_admin required for PII export" }, { status: 403 });
+    // Sensitive exports require super_admin
+    if ((type === "sessions" || type === "audit-logs") && admin.role !== "super_admin") {
+        return NextResponse.json({ error: "Forbidden - super_admin required for this export" }, { status: 403 });
     }
 
     try {
@@ -87,6 +87,40 @@ export const GET = requireRole("super_admin", "admin")(async (request, { admin }
                 filename = `sessions_export_${new Date().toISOString().split("T")[0]}.csv`;
                 break;
 
+            case "audit-logs":
+                const startDate = request.nextUrl.searchParams.get("startDate") || undefined;
+                const endDate = request.nextUrl.searchParams.get("endDate") || undefined;
+                const where: { createdAt?: { gte?: Date; lte?: Date } } = {};
+                if (startDate) {
+                    where.createdAt = { ...where.createdAt, gte: new Date(startDate) };
+                }
+                if (endDate) {
+                    const d = new Date(endDate);
+                    d.setDate(d.getDate() + 1);
+                    where.createdAt = { ...where.createdAt, lte: d };
+                }
+                const auditLogs = await prisma.adminAuditLog.findMany({
+                    where,
+                    orderBy: { createdAt: "desc" },
+                    take: 5000,
+                    include: {
+                        admin: { select: { username: true, name: true } }
+                    }
+                });
+                headers = ["ID", "Admin", "Action", "Resource", "ResourceID", "Details", "IP", "CreatedAt"];
+                data = auditLogs.map((log) => [
+                    log.id,
+                    log.admin?.name || log.admin?.username || "System",
+                    log.action,
+                    log.resource,
+                    log.resourceId || "",
+                    JSON.stringify(log.details || {}),
+                    log.ip || "",
+                    new Date(log.createdAt).toISOString(),
+                ]);
+                filename = `audit_logs_export_${new Date().toISOString().split("T")[0]}.csv`;
+                break;
+
             default:
                 return NextResponse.json({ error: "Invalid export type" }, { status: 400 });
         }
@@ -94,7 +128,8 @@ export const GET = requireRole("super_admin", "admin")(async (request, { admin }
         // Convert to CSV
         const escapeCSV = (val: unknown) => {
             let str = String(val ?? "");
-            const DANGEROUS_PREFIXES = /^[=+\-\@\t\r]/;
+            // Defend against CSV injection: prefix dangerous characters with apostrophe
+            const DANGEROUS_PREFIXES = /^[=+\-\@\t\r\|%0]/;
             if (DANGEROUS_PREFIXES.test(str)) {
                 str = "'" + str;
             }

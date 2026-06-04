@@ -46,6 +46,19 @@ export const PUT = requireRole("super_admin", "admin")(async (req: NextRequest, 
             return NextResponse.json({ error: "Rule not found" }, { status: 404 });
         }
 
+        // Validate all productIds exist before transaction
+        if (productIds !== undefined && productIds.length > 0) {
+            const existingProducts = await prisma.product.count({
+                where: { id: { in: productIds } }
+            });
+            if (existingProducts !== productIds.length) {
+                return NextResponse.json(
+                    { error: "Some product IDs do not exist" },
+                    { status: 400 }
+                );
+            }
+        }
+
         await prisma.$transaction(async (tx) => {
             await tx.recommendationRule.update({
                 where: { id },

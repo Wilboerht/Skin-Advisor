@@ -32,7 +32,7 @@ interface AuditLog {
     action: string;
     resource: string;
     resourceId: string | null;
-    details: any;
+    details: Record<string, unknown> | null;
     ip: string | null;
     userAgent: string | null;
     createdAt: string;
@@ -176,7 +176,10 @@ export default function AuditLogsClient() {
     };
 
     useEffect(() => {
-        fetchLogs();
+        const timer = setTimeout(() => {
+            fetchLogs();
+        }, 300);
+        return () => clearTimeout(timer);
     }, [page, selectedAdmin, selectedAction, selectedResource, timePreset, startDate, endDate]);
 
     const clearFilters = () => {
@@ -232,49 +235,31 @@ export default function AuditLogsClient() {
             }
 
             const params = new URLSearchParams({
-                adminId: selectedAdmin,
-                action: selectedAction,
-                resource: selectedResource,
-                startDate: exportStartDate,
-                endDate: exportEndDate,
-                limit: "1000", // Export up to 1000 logs
+                type: "audit-logs",
             });
+            if (exportStartDate) params.append("startDate", exportStartDate);
+            if (exportEndDate) params.append("endDate", exportEndDate);
 
-            const res = await fetch(`/api/admin/audit-logs?${params.toString()}`);
-            const data = await res.json();
-
-            if (data.success && data.data) {
-                const logsToExport = data.data;
-                const headers = ["ID", "管理员", "操作行为", "资源模块", "动作时间", "IP地址", "详细参数"];
-                const csvRows = [
-                    "\uFEFF" + headers.join(","), // UTF-8 BOM for Excel
-                    ...logsToExport.map((log: any) => [
-                        log.id,
-                        log.admin?.name || log.admin?.username || "系统",
-                        getActionLabel(log.action),
-                        log.resource,
-                        new Date(log.createdAt).toLocaleString(),
-                        log.ip || "unknown",
-                        // Properly escape CSV: wrap in quotes, escape internal quotes, strip newlines
-                        `"${JSON.stringify(log.details || {}).replace(/"/g, '""').replace(/[\r\n]+/g, ' ')}"`
-                    ].join(","))
-                ];
-
-                const csvString = csvRows.join("\n");
-                const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement("a");
-                link.href = url;
-                link.setAttribute("download", `审计日志报告_${new Date().toISOString().split('T')[0]}.csv`);
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
-                toast.success("报告已生成并开始下载");
+            // Use backend export API
+            const res = await fetch(`/api/admin/export?${params.toString()}`);
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || "导出失败");
             }
-        } catch (error) {
-            // Silent fail: toast already shown
-            toast.error("导出失败，请重试");
+
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            const filename = `audit_logs_export_${new Date().toISOString().split("T")[0]}.csv`;
+            link.setAttribute("download", filename);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            toast.success("报告已生成并开始下载");
+        } catch (err: unknown) {
+            toast.error(err instanceof Error ? err.message : "导出失败，请重试");
         } finally {
             setExporting(false);
         }

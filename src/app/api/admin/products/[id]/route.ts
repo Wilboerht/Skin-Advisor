@@ -5,7 +5,7 @@ import { withAdminAuth, requireRole, logAdminAction, getClientInfo } from "@/lib
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
 // GET /api/admin/products/[id] - Get product details
-// Available to all authenticated admin roles (including editor)
+// Available to super_admin and admin
 export const GET = withAdminAuth(async (
     request: NextRequest,
     { params }
@@ -23,7 +23,7 @@ export const GET = withAdminAuth(async (
 });
 
 // PUT /api/admin/products/[id] - Update product
-// Available to all authenticated admin roles (including editor)
+// Available to super_admin and admin
 export const PUT = withAdminAuth(async (
     request: NextRequest,
     { admin, params }
@@ -72,6 +72,16 @@ export const PUT = withAdminAuth(async (
         if (updateData.image !== undefined && (typeof updateData.image !== "string" || updateData.image.length > 500)) {
             return NextResponse.json({ error: "Invalid image URL (max 500 chars)" }, { status: 400 });
         }
+        if (updateData.image !== undefined) {
+            try {
+                const imageUrl = new URL(updateData.image);
+                if (!['http:', 'https:'].includes(imageUrl.protocol)) {
+                    return NextResponse.json({ error: "Invalid image URL scheme (must be http or https)" }, { status: 400 });
+                }
+            } catch {
+                return NextResponse.json({ error: "Invalid image URL format" }, { status: 400 });
+            }
+        }
         if (updateData.description !== undefined && updateData.description !== null && (typeof updateData.description !== "string" || updateData.description.length > 5000)) {
             return NextResponse.json({ error: "Description too long (max 5000 chars)" }, { status: 400 });
         }
@@ -86,6 +96,38 @@ export const PUT = withAdminAuth(async (
             }
             if (!updateData.images.every((img: unknown) => typeof img === "string" && (img as string).length <= 500)) {
                 return NextResponse.json({ error: "Each image must be a string URL (max 500 chars)" }, { status: 400 });
+            }
+            for (const img of updateData.images) {
+                try {
+                    const imgUrl = new URL(img as string);
+                    if (!['http:', 'https:'].includes(imgUrl.protocol)) {
+                        return NextResponse.json({ error: "Invalid image URL scheme (must be http or https)" }, { status: 400 });
+                    }
+                } catch {
+                    return NextResponse.json({ error: "Invalid image URL format" }, { status: 400 });
+                }
+            }
+        }
+
+        // Validate affiliateLinks
+        if (updateData.affiliateLinks !== undefined && updateData.affiliateLinks !== null) {
+            if (typeof updateData.affiliateLinks !== "object" || Array.isArray(updateData.affiliateLinks)) {
+                return NextResponse.json({ error: "affiliateLinks must be an object" }, { status: 400 });
+            }
+            for (const [key, value] of Object.entries(updateData.affiliateLinks as Record<string, unknown>)) {
+                if (typeof value !== "string" || (value as string).length > 500) {
+                    return NextResponse.json({ error: `Invalid affiliateLinks.${key} (must be a string URL, max 500 chars)` }, { status: 400 });
+                }
+                if (value) {
+                    try {
+                        const url = new URL(value as string);
+                        if (!['http:', 'https:'].includes(url.protocol)) {
+                            return NextResponse.json({ error: `Invalid affiliateLinks.${key} scheme (must be http or https)` }, { status: 400 });
+                        }
+                    } catch {
+                        return NextResponse.json({ error: `Invalid affiliateLinks.${key} format` }, { status: 400 });
+                    }
+                }
             }
         }
 
@@ -139,7 +181,7 @@ export const PUT = withAdminAuth(async (
 });
 
 // DELETE /api/admin/products/[id] - Delete product
-// Restricted to super_admin and admin (editor cannot delete products)
+// Restricted to super_admin and admin
 export const DELETE = requireRole("super_admin", "admin")(async (
     request: NextRequest,
     { admin, params }

@@ -40,6 +40,7 @@ export default function AdminSidebar() {
     const [collapsed, setCollapsed] = useState(false);
     const [showExportMenu, setShowExportMenu] = useState(false);
     const [adminRole, setAdminRole] = useState<string | null>(null);
+    const [adminName, setAdminName] = useState<string>("");
     const exportMenuRef = useRef<HTMLDivElement>(null);
 
     // Fetch current admin role for conditional menu rendering
@@ -49,6 +50,7 @@ export default function AdminSidebar() {
             .then((data: { user?: AdminMe } | null) => {
                 if (data?.user) {
                     setAdminRole(data.user.role);
+                    setAdminName(data.user.name || data.user.username);
                 }
             })
             .catch(() => { /* ignore */ });
@@ -189,10 +191,13 @@ export default function AdminSidebar() {
                                 >
                                     {[
                                         { id: 'products', label: '产品数据报表', icon: Package },
-                                        { id: 'users', label: '用户增长数据', icon: Users },
-                                        { id: 'sessions', label: '诊断请求记录', icon: Activity },
-
-                                    ].map((item) => (
+                                        ...(adminRole === 'super_admin' || adminRole === 'admin' ? [
+                                            { id: 'users', label: '用户增长数据', icon: Users },
+                                        ] : []),
+                                        ...(adminRole === 'super_admin' ? [
+                                            { id: 'sessions', label: '诊断请求记录', icon: Activity },
+                                        ] : []),
+                                    ].map((item) =>(
                                         <button
                                             key={item.id}
                                             onClick={() => handleExport(item.id)}

@@ -125,14 +125,33 @@ function Toggle({ label, checked, onChange, tooltip }: { label: string; checked:
 
 // ==================== 表单主体 ====================
 
+export interface ProductFormData {
+    id?: string;
+    name?: string;
+    category?: string;
+    price?: string;
+    image?: string;
+    images?: string[] | null;
+    description?: string | null;
+    howToUse?: string | null;
+    active?: boolean;
+    featured?: boolean;
+    keyIngredients?: string[] | null;
+    benefits?: string[] | null;
+    negativeFor?: string[] | null;
+    suitableSkinTypes?: string[] | null;
+    affiliateLinks?: Record<string, string> | null;
+}
+
 type FormErrors = Record<string, string>;
 
-function validate(formData: any, keyIngredients: string[], benefits: string[], images: string[]) {
+function validate(formData: Record<string, unknown>, keyIngredients: string[], benefits: string[], images: string[]) {
     const errors: FormErrors = {};
-    if (!formData.name?.trim()) errors.name = "产品名称为必填";
-    if (!formData.category) errors.category = "分类为必填";
-    if (!formData.price?.trim()) errors.price = "价格为必填";
-    if (!formData.description?.trim()) errors.description = "描述为必填";
+    const getString = (v: unknown): string => typeof v === "string" ? v : "";
+    if (!getString(formData.name).trim()) errors.name = "产品名称为必填";
+    if (!getString(formData.category).trim()) errors.category = "分类为必填";
+    if (!getString(formData.price).trim()) errors.price = "价格为必填";
+    if (!getString(formData.description).trim()) errors.description = "描述为必填";
     if (images.length === 0) errors.image = "请上传产品图片";
 
     if (!keyIngredients.length) errors.keyIngredients = "请填写核心成分";
@@ -147,7 +166,7 @@ export default function ProductForm({
     onSubmittingChange,
     onDirtyChange,
 }: {
-    initialData?: any;
+    initialData?: ProductFormData | null;
     onSuccess?: () => void;
     onCancel?: () => void;
     onSubmittingChange?: (submitting: boolean) => void;
@@ -207,8 +226,8 @@ export default function ProductForm({
             }
             setImages((prev) => [...prev, data.url]);
             toast.success("图片上传成功");
-        } catch (e: any) {
-            toast.error(e.message || "上传失败");
+        } catch (e: unknown) {
+            toast.error(e instanceof Error ? e.message : "上传失败");
         } finally {
             setUploading(false);
         }

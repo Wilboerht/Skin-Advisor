@@ -44,14 +44,14 @@ interface Product {
     category: string;
     price: string;
     image: string;
-    images?: any;
+    images?: string[] | null;
     description?: string;
     howToUse?: string | null;
-    keyIngredients?: any;
-    suitableSkinTypes?: any;
-    benefits?: any;
-    negativeFor?: any;
-    affiliateLinks?: any;
+    keyIngredients?: string[] | null;
+    suitableSkinTypes?: string[] | null;
+    benefits?: string[] | null;
+    negativeFor?: string[] | null;
+    affiliateLinks?: Record<string, string> | null;
     active: boolean;
     featured: boolean;
     sortOrder: number;
@@ -268,11 +268,11 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                     toast.success('排序已保存');
                 } else {
                     toast.error('保存失败');
-                    setProducts(initialProducts);
+                    router.refresh();
                 }
             } catch (e) {
                 toast.error('网络错误');
-                setProducts(initialProducts);
+                router.refresh();
             } finally {
                 setSaving(false);
             }
@@ -331,29 +331,44 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
     };
 
     const handleDelete = async () => {
-        const idsToDelete = deleteConfirm.batch ? selectedIds : (deleteConfirm.id ? [deleteConfirm.id] : []);
+        if (deleteConfirm.batch) {
+            // Batch delete
+            if (selectedIds.length === 0) return;
+            try {
+                const res = await fetch('/api/admin/products/batch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids: selectedIds, action: 'delete' }),
+                });
 
-        if (idsToDelete.length === 0) return;
-
-        try {
-            const res = await fetch('/api/admin/products/batch', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ids: idsToDelete, action: 'delete' }),
-            });
-
-            if (res.ok) {
-                toast.success('删除成功');
-                router.refresh();
-                setSelectedIds([]);
-            } else {
-                toast.error('删除失败');
+                if (res.ok) {
+                    toast.success('批量删除成功');
+                    router.refresh();
+                    setSelectedIds([]);
+                } else {
+                    toast.error('删除失败');
+                }
+            } catch (e) {
+                toast.error('网络错误');
             }
-        } catch (e) {
-            toast.error('网络错误');
-        } finally {
-            setDeleteConfirm({ show: false, id: null, batch: false });
+        } else if (deleteConfirm.id) {
+            // Single delete - use dedicated endpoint for proper audit logging
+            try {
+                const res = await fetch(`/api/admin/products/${deleteConfirm.id}`, {
+                    method: 'DELETE',
+                });
+
+                if (res.ok) {
+                    toast.success('删除成功');
+                    router.refresh();
+                } else {
+                    toast.error('删除失败');
+                }
+            } catch (e) {
+                toast.error('网络错误');
+            }
         }
+        setDeleteConfirm({ show: false, id: null, batch: false });
     };
 
     return (

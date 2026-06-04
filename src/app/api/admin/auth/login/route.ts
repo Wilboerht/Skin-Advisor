@@ -37,8 +37,10 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        const normalizedUsername = username.toLowerCase().trim();
+
         const admin = await prisma.adminUser.findUnique({
-            where: { username }
+            where: { username: normalizedUsername }
         });
 
         if (!admin) {
@@ -46,7 +48,7 @@ export async function POST(request: NextRequest) {
             await logAdminAction({
                 action: "login_failed",
                 resource: "AdminUser",
-                details: { username },
+                details: { username: normalizedUsername },
                 ...clientInfo
             });
 
@@ -76,7 +78,7 @@ export async function POST(request: NextRequest) {
             await logAdminAction({
                 action: "login_failed",
                 resource: "AdminUser",
-                details: { username, reason: "plaintext_password_rejected" },
+                details: { username: normalizedUsername, reason: "plaintext_password_rejected" },
                 ...clientInfo
             });
             return NextResponse.json(
@@ -89,7 +91,7 @@ export async function POST(request: NextRequest) {
             await logAdminAction({
                 action: "login_failed",
                 resource: "AdminUser",
-                details: { username, reason: "account_disabled" },
+                details: { username: normalizedUsername, reason: "account_disabled" },
                 ...clientInfo
             });
             return NextResponse.json(
@@ -104,7 +106,7 @@ export async function POST(request: NextRequest) {
             await logAdminAction({
                 action: "login_failed",
                 resource: "AdminUser",
-                details: { username },
+                details: { username: normalizedUsername },
                 ...clientInfo
             });
 
@@ -141,7 +143,7 @@ export async function POST(request: NextRequest) {
             action: "login",
             resource: "AdminUser",
             resourceId: admin.id,
-            details: { username: admin.username },
+            details: { username: normalizedUsername },
             ...clientInfo
         });
 

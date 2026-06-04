@@ -1,11 +1,12 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { requireRole, logAdminAction, getClientInfo } from "@/lib/admin-auth";
+import { requireRole, getClientInfo } from "@/lib/admin-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { Prisma } from "@prisma/client";
 
 // POST - Batch operations on products
-// Restricted to super_admin and admin (editor cannot perform batch operations)
+// Restricted to super_admin and admin
 export const POST = requireRole("super_admin", "admin")(async (request, { admin }) => {
     // Rate limit
     const ip = getClientIP(request);
@@ -53,55 +54,58 @@ export const POST = requireRole("super_admin", "admin")(async (request, { admin 
 
         let result: { count: number } | undefined;
 
-        switch (action) {
-            case 'activate':
-                result = await prisma.product.updateMany({
-                    where: { id: { in: ids } },
-                    data: { active: true }
-                });
-                break;
+        await prisma.$transaction(async (tx) => {
+            switch (action) {
+                case 'activate':
+                    result = await tx.product.updateMany({
+                        where: { id: { in: ids } },
+                        data: { active: true }
+                    });
+                    break;
 
-            case 'deactivate':
-                result = await prisma.product.updateMany({
-                    where: { id: { in: ids } },
-                    data: { active: false }
-                });
-                break;
+                case 'deactivate':
+                    result = await tx.product.updateMany({
+                        where: { id: { in: ids } },
+                        data: { active: false }
+                    });
+                    break;
 
-            case 'feature':
-                result = await prisma.product.updateMany({
-                    where: { id: { in: ids } },
-                    data: { featured: true }
-                });
-                break;
+                case 'feature':
+                    result = await tx.product.updateMany({
+                        where: { id: { in: ids } },
+                        data: { featured: true }
+                    });
+                    break;
 
-            case 'unfeature':
-                result = await prisma.product.updateMany({
-                    where: { id: { in: ids } },
-                    data: { featured: false }
-                });
-                break;
+                case 'unfeature':
+                    result = await tx.product.updateMany({
+                        where: { id: { in: ids } },
+                        data: { featured: false }
+                    });
+                    break;
 
-            case 'delete':
-                await prisma.$transaction(async (tx) => {
+                case 'delete':
                     result = await tx.product.deleteMany({
                         where: { id: { in: ids } }
                     });
                     // Junction table records are automatically cleaned up via onDelete: Cascade
-                });
-                break;
-        }
+                    break;
+            }
 
-        // Log audit
-        await logAdminAction({
-            adminId: admin.adminId,
-            action: `batch_${action}`,
-            resource: "Product",
-            details: {
-                affectedIds: ids,
-                count: result?.count || 0
-            },
-            ...clientInfo
+            // Log audit inside transaction
+            await tx.adminAuditLog.create({
+                data: {
+                    adminId: admin.adminId,
+                    action: `batch_${action}`,
+                    resource: "Product",
+                    details: {
+                        affectedIds: ids,
+                        count: result?.count || 0
+                    },
+                    ip: clientInfo.ip,
+                    userAgent: clientInfo.userAgent,
+                }
+            });
         });
 
         return NextResponse.json({

@@ -121,14 +121,17 @@ export function UsersClient() {
     const handleToggleStatus = async (user: User) => {
         setActionLoading(true);
         try {
-            const newRole = user.role === "disabled" ? "user" : "disabled";
+            const isDisabling = user.role !== "disabled";
+            const body = isDisabling
+                ? { role: "disabled", previousRole: user.role }
+                : { role: "user" };
             const res = await fetch(`/api/admin/users/${user.id}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ role: newRole }),
+                body: JSON.stringify(body),
             });
             if (res.ok) {
-                toast.success(newRole === "disabled" ? "用户已禁用" : "用户已启用");
+                toast.success(isDisabling ? "用户已禁用" : "用户已启用");
                 fetchUsers();
             } else {
                 toast.error("更新用户失败");
@@ -176,7 +179,7 @@ export function UsersClient() {
                 <div className="flex items-center gap-3">
                     <button
                         className="flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 transition-colors"
-                        onClick={() => {/* Add export logic if needed or leave as is */}}
+                        onClick={() => window.open('/api/admin/export?type=users', '_blank')}
                     >
                         <Download className="mr-2 h-4 w-4" />
                         导出用户

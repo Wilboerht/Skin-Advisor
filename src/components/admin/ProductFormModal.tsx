@@ -4,13 +4,13 @@ import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Package } from "lucide-react";
-import ProductForm from "./ProductForm";
+import ProductForm, { ProductFormData } from "./ProductForm";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 interface ProductFormModalProps {
     isOpen: boolean;
     onClose: () => void;
-    product?: any;
+    product?: ProductFormData | null;
     onSuccess?: () => void;
 }
 

@@ -54,6 +54,19 @@ export const POST = requireRole("super_admin", "admin")(async (req: NextRequest,
 
         const { productIds, ...ruleData } = parsed.data;
 
+        // Validate all productIds exist
+        if (productIds.length > 0) {
+            const existingProducts = await prisma.product.count({
+                where: { id: { in: productIds } }
+            });
+            if (existingProducts !== productIds.length) {
+                return NextResponse.json(
+                    { error: "Some product IDs do not exist" },
+                    { status: 400 }
+                );
+            }
+        }
+
         const rule = await prisma.recommendationRule.create({
             data: {
                 name: ruleData.name,

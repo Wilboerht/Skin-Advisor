@@ -1,17 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireRole } from "@/lib/admin-auth";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { Prisma } from "@prisma/client";
 
 // GET /api/admin/users - List users with pagination and search
-// Restricted to super_admin only (user management is sensitive)
-export const GET = requireRole("super_admin")(async (request) => {
+// Available to super_admin and admin
+export const GET = requireRole("super_admin", "admin")(async (request) => {
+    // Rate limit
+    const ip = getClientIP(request);
+    const limitResult = await rateLimit(`admin-users-get-${ip}`, "default", { maxRequests: 60, windowMs: 60 * 1000 });
+    if (!limitResult.success) {
+        return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     try {
         const searchParams = request.nextUrl.searchParams;
         const page = Math.max(1, parseInt(searchParams.get("page") || "1") || 1);
         const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "20") || 20));
         const search = (searchParams.get("search") || "").slice(0, 100);
-        const status = searchParams.get("status") || "all"; // all, active, inactive
+        const status = searchParams.get("status") || "all"; // all, active, inactive, vip
 
         const skip = (page - 1) * limit;
 
@@ -19,14 +27,14 @@ export const GET = requireRole("super_admin")(async (request) => {
 
         if (search) {
             where.OR = [
-                { email: { contains: search } },
-                { name: { contains: search } },
+                { email: { contains: search, mode: "insensitive" } },
+                { name: { contains: search, mode: "insensitive" } },
             ];
         }
 
         if (status !== "all") {
             if (status === "active") {
-                where.role = "user";
+                where.role = { not: "disabled" };
             } else if (status === "inactive") {
                 where.role = "disabled";
             } else if (status === "vip") {
