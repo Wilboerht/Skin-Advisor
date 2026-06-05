@@ -185,7 +185,7 @@ export interface AvatarQueueItem {
   status: string;
   attempts: number;
   nickname?: string | null;
-  characteristics?: any;
+  characteristics?: unknown;
   frontPhoto?: string | null;
 }
 
@@ -578,7 +578,7 @@ export async function processAvatarQueueItem(item: AvatarQueueItem) {
       );
 
       // 标记为待重试，而不是完成
-      const attempts = (item as any).attempts + 1;
+      const attempts = item.attempts + 1;
       if (attempts < 3) {
         await prisma.avatarQueue.update({
           where: { id: item.id },
@@ -617,7 +617,7 @@ export async function processAvatarQueueItem(item: AvatarQueueItem) {
     console.error(`[AvatarQueue] ❌ Failed to process ${item.id}: ${msg}`);
 
     // Update to failed
-    const attempts = item.sessionId ? (item as any).attempts + 1 : 1;
+    const attempts = item.attempts + 1;
     if (attempts < 3) {
       // Retry
       await prisma.avatarQueue.update({

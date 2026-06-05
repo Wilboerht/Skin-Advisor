@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import ShareLandingClient from "./ShareLandingClient";
 import prisma from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import type { SharedAnalysisResult } from "@/lib/advisor-utils";
 
 interface GuestReportPageProps {
     searchParams: Promise<{ id?: string }>;
@@ -37,8 +38,8 @@ export default async function GuestReportPage(props: GuestReportPageProps) {
     }
 
     // 显式 pick 需要的字段传给客户端，避免直接透传整个数据库原始对象
-    const raw = session.analysisResult as Record<string, unknown>;
-    const analysisResult: Record<string, unknown> = { ...raw };
+    const raw = session.analysisResult as SharedAnalysisResult;
+    const analysisResult: SharedAnalysisResult = { ...raw };
     // 兜底：如果 analysisResult 里没有 nickname，用 session 关联的用户名
     if (!analysisResult.nickname && session.user?.name) {
         analysisResult.nickname = session.user.name;
@@ -61,7 +62,7 @@ export async function generateMetadata(props: GuestReportPageProps): Promise<Met
         return { title: "MySkinToday Technology - 专业肤质检测" };
     }
 
-    const result = session.analysisResult as any;
+    const result = session.analysisResult as SharedAnalysisResult;
     const score = result.faceAnalysis?.overallScore || 85;
     const skinType = result.skinProfile?.typeLabel || "未知肤质";
 

@@ -117,6 +117,15 @@ export async function rateLimit(
     type: keyof typeof RATE_LIMIT_PRESETS = "default",
     options?: Partial<RateLimitOptions>
 ): Promise<RateLimitResult> {
+    // 安全检测：多实例部署下内存限流将失效
+    // 使用动态导入避免循环依赖（instance-check 依赖 prisma）
+    try {
+        const { detectMultiInstance } = await import("@/lib/instance-check");
+        await detectMultiInstance();
+    } catch {
+        // 检测失败不阻塞主流程
+    }
+
     // 启动清理定时器
     startCleanup();
 

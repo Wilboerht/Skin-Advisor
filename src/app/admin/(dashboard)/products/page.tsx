@@ -12,6 +12,8 @@ export default async function ProductsPage() {
         redirect("/admin/login");
     }
 
+    // NOTE: 当前业务场景产品数量不超过 20 个，1000 的 limit 是为了避免 SSR 时无限制加载。
+    // 若未来产品数量显著增长，应改为服务端分页（skip/take）+ 前端分页 UI。
     const products = await prisma.product.findMany({
         orderBy: { sortOrder: 'asc' },
         take: 1000

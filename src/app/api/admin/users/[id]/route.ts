@@ -27,6 +27,7 @@ export const GET = requireRole("super_admin", "admin")(async (
                 email: true,
                 name: true,
                 role: true,
+                previousRole: true,
                 avatarUrl: true,
                 vipExpiresAt: true,
                 dailyTestLimit: true,
@@ -128,24 +129,38 @@ export const PATCH = requireRole("super_admin", "admin")(async (
         if (dailyTestLimit !== undefined) updateData.dailyTestLimit = Number(dailyTestLimit);
         if (vipExpiresAt !== undefined) updateData.vipExpiresAt = vipExpiresAt ? new Date(vipExpiresAt) : null;
 
+        let actualNewRole: string | undefined;
+
         if (role !== undefined) {
             if (role === "disabled" && user.role !== "disabled") {
                 // Disabling user: save current role to previousRole
                 updateData.role = "disabled";
                 updateData.previousRole = user.role;
+                actualNewRole = "disabled";
             } else if (role !== "disabled" && user.role === "disabled") {
                 // Enabling user: restore previousRole if available
-                const restoredRole = user.previousRole || role || "user";
-                if (!VALID_ROLES.includes(restoredRole)) {
-                    return NextResponse.json(
-                        { error: "Invalid previousRole state" },
-                        { status: 400 }
-                    );
+                // Security: do NOT silently fallback to "user" if previousRole is missing.
+                // This prevents accidental role demotion (e.g. vip -> user).
+                const restoredRole = user.previousRole;
+                if (restoredRole && VALID_ROLES.includes(restoredRole)) {
+                    updateData.role = restoredRole;
+                    actualNewRole = restoredRole;
+                } else {
+                    // previousRole missing or invalid — accept explicit role from client
+                    if (!role || !VALID_ROLES.includes(role)) {
+                        return NextResponse.json(
+                            { error: "previousRole missing or invalid. Please explicitly specify a valid role." },
+                            { status: 400 }
+                        );
+                    }
+                    updateData.role = role;
+                    actualNewRole = role;
                 }
-                updateData.role = restoredRole;
                 updateData.previousRole = null;
             } else {
+                // Normal role change (not disable/enable toggle)
                 updateData.role = role;
+                actualNewRole = role;
             }
         }
 
@@ -163,11 +178,12 @@ export const PATCH = requireRole("super_admin", "admin")(async (
             resourceId: id,
             details: {
                 previousRole: user.role,
-                newRole: role,
+                newRole: actualNewRole,
                 previousDailyTestLimit: user.dailyTestLimit,
                 newDailyTestLimit: dailyTestLimit,
                 previousVipExpiresAt: user.vipExpiresAt,
-                newVipExpiresAt: vipExpiresAt
+                newVipExpiresAt: vipExpiresAt,
+                restoredFromPreviousRole: user.previousRole || null,
             },
             ...clientInfo,
         });

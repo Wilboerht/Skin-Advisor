@@ -12,6 +12,7 @@ interface User {
     email: string;
     name: string | null;
     role: string;
+    previousRole?: string | null;
     createdAt: string;
     _count: {
         advisorSessions: number;
@@ -119,11 +120,24 @@ export function UsersClient() {
     }, [search]);
 
     const handleToggleStatus = async (user: User) => {
+        const isDisabling = user.role !== "disabled";
+
+        if (!isDisabling && user.previousRole) {
+            // Enabling user: confirm the role that will be restored
+            const confirmed = window.confirm(
+                `确定要启用用户 "${user.name || user.email}" 吗？\n\n` +
+                `该用户将被恢复为之前的角色：${user.previousRole.toUpperCase()}`
+            );
+            if (!confirmed) {
+                setShowDropdown(null);
+                return;
+            }
+        }
+
         setActionLoading(true);
         try {
-            const isDisabling = user.role !== "disabled";
             const body = isDisabling
-                ? { role: "disabled", previousRole: user.role }
+                ? { role: "disabled" }
                 : { role: "user" };
             const res = await fetch(`/api/admin/users/${user.id}`, {
                 method: "PATCH",
@@ -131,10 +145,12 @@ export function UsersClient() {
                 body: JSON.stringify(body),
             });
             if (res.ok) {
-                toast.success(isDisabling ? "用户已禁用" : "用户已启用");
+                const data = await res.json();
+                toast.success(isDisabling ? "用户已禁用" : `用户已启用（角色：${data.role}）`);
                 fetchUsers();
             } else {
-                toast.error("更新用户失败");
+                const err = await res.json().catch(() => ({}));
+                toast.error(err.error || "更新用户失败");
             }
         } catch (error) {
             toast.error("网络错误");

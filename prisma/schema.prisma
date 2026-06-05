@@ -356,3 +356,13 @@ model AvatarQueue {
   @@index([expiresAt])           // 过期清理加速
 }
 
+// 应用实例注册表 — 用于检测多实例部署（限流兼容性告警）
+model AppInstance {
+  id        String   @id  // hostname-pid-启动时间戳
+  startedAt DateTime @default(now())
+  lastPing  DateTime @updatedAt
+  metadata  String?  // JSON: { hostname, version, nodeEnv }
+
+  @@index([lastPing])
+}
+

@@ -68,10 +68,10 @@ export async function GET(request: NextRequest) {
             });
         } else {
             // 如果用户以前存在，但是开放平台刚打通了 UnionID，可以在这顺手给他绑上
-            if (unionid && !(dbUser as any).wechatUnionId) {
+            if (unionid && !dbUser.wechatUnionId) {
                 dbUser = await prisma.user.update({
                     where: { id: dbUser.id },
-                    data: { wechatUnionId: unionid } as any
+                    data: { wechatUnionId: unionid }
                 });
             }
         }

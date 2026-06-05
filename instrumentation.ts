@@ -13,6 +13,23 @@ export async function register() {
 
     console.log('[init] Application starting...');
 
+    // 注册实例到多实例检测表（用于检测限流是否能在多实例下正常工作）
+    try {
+        const { registerInstance, unregisterInstance } = await import('@/lib/instance-check');
+        await registerInstance();
+
+        if (typeof process !== 'undefined' && process.on) {
+            process.on('SIGTERM', async () => {
+                await unregisterInstance();
+            });
+            process.on('SIGINT', async () => {
+                await unregisterInstance();
+            });
+        }
+    } catch (e) {
+        console.warn('[init] Instance check registration failed:', e);
+    }
+
     // 注册 Prisma 优雅关闭（仅 Node.js runtime）
     if (typeof process !== 'undefined' && process.on) {
         const { default: prisma } = await import('@/lib/prisma');

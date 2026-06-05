@@ -426,6 +426,42 @@ export function getConcernLabel(concern: string): string {
     return CONCERN_LABELS[concern] || concern;
 }
 
+// ============================================================================
+// 标准化分析结果（存储在 AdvisorSession.analysisResult 中的格式）
+// ============================================================================
+
+export interface SharedAnalysisResult {
+    nickname?: string;
+    generatedAvatar?: string | null;
+    skinProfile?: {
+        type?: string;
+        typeLabel?: string;
+        concerns?: string[];
+        skinAge?: number;
+    };
+    analysis?: {
+        summary?: string;
+    };
+    skinAnalysis?: {
+        summary?: string;
+        score?: number;
+        skinAge?: number;
+    };
+    faceAnalysis?: {
+        overallScore?: number;
+        dimensions?: {
+            waterOil?: { score?: number };
+            skinTone?: { score?: number };
+        };
+    };
+    gender?: {
+        value?: string;
+    };
+    products?: unknown[];
+    dataSource?: string;
+    userLocation?: string;
+}
+
 // Note: Product recommendation logic has been moved to src/lib/recommendations.ts
 // The matchProducts() mock function has been removed in favor of the real
 // recommendation engine (recommendProducts / getCandidateProducts).

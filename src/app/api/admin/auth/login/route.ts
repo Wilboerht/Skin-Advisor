@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
 
         // Set cookie with HMAC-signed session data
         const { createSignedSession } = await import("@/lib/admin-auth");
-        const signedSession = createSignedSession({
+        const signedSession = await createSignedSession({
             adminId: admin.id,
             username: admin.username,
             role: admin.role

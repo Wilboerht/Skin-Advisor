@@ -3,6 +3,7 @@ import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { enforceStorageLimits } from "@/lib/shared-upload-utils";
 import { getSession } from "@/lib/auth";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
@@ -16,6 +17,19 @@ export async function PUT(request: NextRequest) {
     const session = await getSession();
     if (!session) {
         return NextResponse.json({ error: "请先登录后再上传文件" }, { status: 401 });
+    }
+
+    // Rate limiting per IP
+    const ip = getClientIP(request);
+    const limit = await rateLimit(`local-upload-${ip}`, "default", {
+        maxRequests: 20,
+        windowMs: 60 * 1000,
+    });
+    if (!limit.success) {
+        return NextResponse.json(
+            { error: "上传过于频繁，请稍后再试" },
+            { status: 429 }
+        );
     }
 
     const searchParams = request.nextUrl.searchParams;

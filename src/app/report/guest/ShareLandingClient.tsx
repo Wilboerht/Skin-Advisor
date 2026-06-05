@@ -14,6 +14,7 @@ import { SharePoster } from '@/components/advisor/poster/SharePoster';
 import { ShareModal } from '@/components/advisor/ShareModal';
 import { AnalyzingOverlay } from '@/components/advisor/AnalyzingOverlay';
 import { toPng } from 'html-to-image';
+import type { SharedAnalysisResult } from '@/lib/advisor-utils';
 
 interface Dimension {
   score?: number;
@@ -21,7 +22,7 @@ interface Dimension {
 }
 
 interface ShareLandingProps {
-  analysisResult: any;
+  analysisResult: SharedAnalysisResult;
   sessionId: string;
 }
 

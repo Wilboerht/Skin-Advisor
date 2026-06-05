@@ -90,10 +90,7 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        const [dbUser, count, inProgressCount] = await Promise.all([
-            withDbRetry(() =>
-                prisma.user.findUnique({ where: { id: userId }, select: { dailyTestLimit: true } })
-            ),
+        const [count, inProgressCount] = await Promise.all([
             withDbRetry(() =>
                 prisma.testRecord.count({
                     where: { userId, testDate: { gte: today } }
@@ -107,7 +104,8 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
         ]);
 
         const totalCount = count + inProgressCount;
-        const limit = getUserDailyLimit(dbUser, isVipCheck(user));
+        // getSession() 已返回最新的 dailyTestLimit（每次调用都查数据库确认状态）
+        const limit = getUserDailyLimit(user, isVipCheck(user));
         return {
             canTest: totalCount < limit,
             remaining: Math.max(0, limit - totalCount),

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { verifySessionSignature } from "@/lib/session-verify";
 
 /**
  * Next.js 全局中间件
@@ -24,56 +25,6 @@ const ALLOWED_ORIGINS = [
     process.env.NEXT_PUBLIC_BASE_URL || "",
 ].filter(Boolean);
 
-/**
- * Edge Runtime 兼容的 Admin Session HMAC 验证
- * 使用 Web Crypto API 替代 Node.js crypto 模块
- */
-async function verifyAdminSessionEdge(signedValue: string): Promise<boolean> {
-    const separatorIndex = signedValue.lastIndexOf(".");
-    if (separatorIndex === -1) return false;
-
-    const data = signedValue.substring(0, separatorIndex);
-    const signature = signedValue.substring(separatorIndex + 1);
-
-    // 验证过期时间
-    try {
-        const parsed = JSON.parse(data);
-        if (typeof parsed.exp === "number" && Date.now() > parsed.exp) {
-            return false;
-        }
-    } catch {
-        return false;
-    }
-
-    const secret = process.env.ADMIN_SESSION_SECRET;
-    if (!secret) {
-        if (process.env.NODE_ENV === "production") return false;
-    }
-
-    const encoder = new TextEncoder();
-    const keyData = encoder.encode(secret || "dev-admin-session-secret-change-me");
-
-    try {
-        const key = await crypto.subtle.importKey(
-            "raw", keyData, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
-        );
-        const sigBuffer = await crypto.subtle.sign("HMAC", key, encoder.encode(data));
-        const expectedSig = Array.from(new Uint8Array(sigBuffer))
-            .map((b) => b.toString(16).padStart(2, "0"))
-            .join("");
-
-        // timing-safe comparison
-        if (signature.length !== expectedSig.length) return false;
-        let result = 0;
-        for (let i = 0; i < signature.length; i++) {
-            result |= signature.charCodeAt(i) ^ expectedSig.charCodeAt(i);
-        }
-        return result === 0;
-    } catch {
-        return false;
-    }
-}
-
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
     const response = NextResponse.next();
@@ -97,7 +48,10 @@ export async function middleware(request: NextRequest) {
     const isAdminApi = pathname.startsWith("/api/admin");
     if ((isAdminPage || isAdminApi) && !ADMIN_PUBLIC_PATHS.some((p) => pathname === p)) {
         const adminSession = request.cookies.get("admin_session")?.value;
-        const isValid = adminSession ? await verifyAdminSessionEdge(adminSession) : false;
+        const sessionData = adminSession
+            ? await verifySessionSignature(adminSession)
+            : null;
+        const isValid = sessionData?.adminId != null;
 
         if (!isValid) {
             if (isAdminApi) {
