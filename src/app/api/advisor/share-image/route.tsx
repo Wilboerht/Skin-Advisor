@@ -188,8 +188,7 @@ export async function GET(req: NextRequest) {
     } catch (e: any) {
         console.error("OG image generation failed:", e?.message || e);
         // Fallback: return a simple SVG so social media crawlers still get a valid image
-        // instead of a 500 error. This improves compatibility on non-Vercel environments
-        // where Satori/Yoga may fail due to missing native bindings.
+        // instead of a 500 error. Satori/Yoga may fail due to missing native bindings.
         const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630">
             <rect width="100%" height="100%" fill="#0F1115"/>
             <rect x="40" y="40" width="1120" height="550" rx="16" fill="none" stroke="#C9A86C" stroke-width="2" opacity="0.3"/>

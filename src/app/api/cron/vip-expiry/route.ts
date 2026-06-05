@@ -10,11 +10,11 @@ import prisma from "@/lib/prisma";
  * - 记录降级日志
  * 
  * 调用方式：
- * - Vercel Cron: 通过 vercel.json 配置每日自动调用
+ * - Linux Crontab: 0 2 * * * curl "https://your-domain/api/cron/vip-expiry?secret=YOUR_CRON_SECRET"
  * - 手动: GET /api/cron/vip-expiry?secret=YOUR_CRON_SECRET
  * 
  * 安全：
- * - 需要 CRON_SECRET 验证（Vercel Cron 会自动在 header 中注入）
+ * - 需要 CRON_SECRET 验证
  */
 
 export const maxDuration = 30; // 防止超时
@@ -22,7 +22,6 @@ export const maxDuration = 30; // 防止超时
 export async function GET(request: NextRequest) {
     try {
         // 1. 安全验证
-        // Vercel Cron Jobs 会通过 Authorization header 传递 CRON_SECRET
         const authHeader = request.headers.get("authorization");
         const cronSecret = process.env.CRON_SECRET;
 

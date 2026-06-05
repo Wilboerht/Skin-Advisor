@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 require('dotenv').config();
 /**
- * Cron 任务执行脚本（自托管环境替代 Vercel Cron）
+ * Cron 任务执行脚本（云服务器环境）
  *
  * 用法：
  *   node scripts/run-cron.js /api/cron/vip-expiry

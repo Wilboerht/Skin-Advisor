@@ -60,15 +60,6 @@ export async function PUT(request: NextRequest) {
     }
 
     try {
-        // 检查是否在 Vercel 无服务器环境（不支持本地文件系统持久化）
-        if (process.env.VERCEL) {
-            console.warn("本地上传不支持 Vercel 无服务器环境。请配置阿里云 OSS。");
-            return NextResponse.json(
-                { error: "云环境不支持本地存储，请配置阿里云 OSS" },
-                { status: 503 }
-            );
-        }
-
         // Read the file content
         const buffer = Buffer.from(await request.arrayBuffer());
 

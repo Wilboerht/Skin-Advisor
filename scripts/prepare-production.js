@@ -1,16 +1,15 @@
 #!/usr/bin/env node
 /**
- * 生产环境准备脚本
- * 
- * 在 Vercel 构建时自动执行：
- * 1. 验证环境变量
- * 2. 将 schema.prisma 的 provider 从 sqlite 切换为 postgresql
- * 3. 更新 prisma.config.ts 确保使用正确的数据源
- * 4. 执行 prisma generate
- * 5. 执行 prisma db push (使用 DIRECT_URL 直连)
- * 
+ * 生产环境准备脚本（云服务器部署）
+ *
+ * 构建前自动执行：
+ * 1. 验证必要的环境变量
+ * 2. 执行 prisma generate
+ * 3. 执行 prisma db push（同步数据库结构）
+ *
  * 使用方法：
- * - Vercel Build Command: node scripts/prepare-production.js && next build
+ * - 构建命令: node scripts/prepare-production.js && next build
+ * - PM2 启动: pm2 start ecosystem.config.js
  */
 
 const fs = require('fs');
@@ -18,7 +17,6 @@ const path = require('path');
 const { execSync } = require('child_process');
 
 const SCHEMA_PATH = path.join(__dirname, '..', 'prisma', 'schema.prisma');
-const CONFIG_PATH = path.join(__dirname, '..', 'prisma.config.ts');
 
 console.log('🚀 准备生产环境...\n');
 
@@ -26,74 +24,64 @@ console.log('🚀 准备生产环境...\n');
 // 0. 验证必要的环境变量
 // ========================================
 console.log('🔍 检查环境变量...');
-if (!process.env.DATABASE_URL) {
-  console.error('   ❌ 错误: DATABASE_URL 环境变量未设置！');
+
+const requiredVars = ['DATABASE_URL', 'JWT_SECRET', 'ADMIN_SESSION_SECRET'];
+const optionalVars = [
+  'CRON_SECRET',
+  'OFFICIAL_API_URL',
+  'QWEN_API_KEY',
+  'ALI_OSS_REGION',
+  'WECHAT_APP_ID',
+];
+
+let hasError = false;
+for (const key of requiredVars) {
+  if (!process.env[key]) {
+    console.error(`   ❌ 错误: ${key} 环境变量未设置！`);
+    hasError = true;
+  } else {
+    console.log(`   ✅ ${key}: 已设置`);
+  }
+}
+
+for (const key of optionalVars) {
+  if (!process.env[key]) {
+    console.warn(`   ⚠️  警告: ${key} 未设置（部分功能将不可用）`);
+  } else {
+    console.log(`   ✅ ${key}: 已设置`);
+  }
+}
+
+if (hasError) {
+  console.error('\n❌ 环境变量检查失败，请配置后重试。');
   process.exit(1);
 }
-if (!process.env.DIRECT_URL) {
-  console.error('   ❌ 错误: DIRECT_URL 环境变量未设置！');
-  console.error('   💡 提示: DIRECT_URL 应该使用端口 5432 (直连)，例如:');
-  console.error('      postgresql://user:pass@host:5432/postgres');
-  process.exit(1);
+
+// 检查数据库 URL 格式
+const dbUrl = process.env.DATABASE_URL || '';
+if (!dbUrl.startsWith('postgresql://')) {
+  console.warn('   ⚠️  警告: DATABASE_URL 不是 PostgreSQL 协议，当前值:', dbUrl.substring(0, 50));
 }
 
-// 验证端口是否正确
-const directUrlPort = process.env.DIRECT_URL.match(/:(\d+)\//)?.[1];
-if (directUrlPort === '6543') {
-  console.warn('   ⚠️ 警告: DIRECT_URL 使用了端口 6543 (Pooler)，应该使用端口 5432 (直连)');
-}
-
-console.log('   ✅ DATABASE_URL: ' + process.env.DATABASE_URL.substring(0, 50) + '...');
-console.log('   ✅ DIRECT_URL: ' + process.env.DIRECT_URL.substring(0, 50) + '...\n');
+console.log();
 
 // ========================================
-// 1. 修改 schema.prisma 的 datasource 块
+// 1. 确认 schema.prisma 使用 postgresql
 // ========================================
-console.log('📝 更新 prisma/schema.prisma...');
+console.log('📝 检查 prisma/schema.prisma...');
 let schemaContent = fs.readFileSync(SCHEMA_PATH, 'utf-8');
 
-// 替换整个 datasource 块 (Prisma 7.x: url 在 prisma.config.ts 中配置)
-schemaContent = schemaContent.replace(
-  /datasource\s+db\s*\{[^}]*\}/s,
-  `datasource db {
-  provider = "postgresql"
-}`
-);
-
-fs.writeFileSync(SCHEMA_PATH, schemaContent, 'utf-8');
-console.log('   ✅ datasource 已切换为 postgresql\n');
+const providerMatch = schemaContent.match(/provider\s*=\s*"(\w+)"/);
+if (providerMatch && providerMatch[1] !== 'postgresql') {
+  console.error(`   ❌ 错误: schema.prisma 的 provider 是 "${providerMatch[1]}"，生产环境必须使用 postgresql`);
+  process.exit(1);
+}
+console.log('   ✅ schema.prisma provider 检查通过 (postgresql)\n');
 
 // ========================================
-// 2. 更新 prisma.config.ts
+// 2. 执行 prisma generate
 // ========================================
-console.log('📝 更新 prisma.config.ts...');
-// 注意：prisma db push 需要使用 DIRECT_URL，所以这里 url 设置为 DIRECT_URL
-const newConfigContent = `/**
- * Prisma 配置文件 (生产环境)
- * 自动生成 - 请勿手动修改
- */
-import "dotenv/config";
-import { defineConfig } from "prisma/config";
-
-export default defineConfig({
-  schema: "prisma/schema.prisma",
-  migrations: {
-    path: "prisma/migrations",
-  },
-  datasource: {
-    // 使用 DIRECT_URL (端口 5432) 用于 Prisma CLI 操作
-    url: process.env.DIRECT_URL,
-  },
-});
-`;
-
-fs.writeFileSync(CONFIG_PATH, newConfigContent, 'utf-8');
-console.log('   ✅ prisma.config.ts 已更新 (使用 DIRECT_URL)\n');
-
-// ========================================
-// 3. 执行 prisma generate
-// ========================================
-console.log('⚙️ 执行 prisma generate...');
+console.log('⚙️  执行 prisma generate...');
 try {
   execSync('npx prisma generate', {
     stdio: 'inherit',
@@ -106,10 +94,10 @@ try {
 }
 
 // ========================================
-// 4. 执行 prisma db push
+// 3. 执行 prisma db push
 // ========================================
-console.log('⚙️ 执行 prisma db push...');
-console.log('   📡 连接到: ' + process.env.DIRECT_URL.replace(/:[^:@]+@/, ':****@').substring(0, 60) + '...');
+console.log('⚙️  执行 prisma db push...');
+console.log('   📡 连接到:', process.env.DATABASE_URL.replace(/:[^:@]+@/, ':****@').substring(0, 60) + '...');
 try {
   execSync('npx prisma db push', {
     stdio: 'inherit',
@@ -120,32 +108,6 @@ try {
   console.error('   ❌ prisma db push 失败');
   process.exit(1);
 }
-
-// ========================================
-// 5. 恢复 prisma.config.ts 用于运行时
-// ========================================
-console.log('📝 恢复 prisma.config.ts 用于运行时...');
-const runtimeConfigContent = `/**
- * Prisma 配置文件 (生产环境 - 运行时)
- * 自动生成 - 请勿手动修改
- */
-import "dotenv/config";
-import { defineConfig } from "prisma/config";
-
-export default defineConfig({
-  schema: "prisma/schema.prisma",
-  migrations: {
-    path: "prisma/migrations",
-  },
-  datasource: {
-    // 运行时使用 DATABASE_URL (Pooler, 端口 6543)
-    url: process.env.DATABASE_URL,
-  },
-});
-`;
-
-fs.writeFileSync(CONFIG_PATH, runtimeConfigContent, 'utf-8');
-console.log('   ✅ prisma.config.ts 已恢复为运行时配置\n');
 
 console.log('✅ 生产环境准备完成！');
 console.log('   下一步: next build\n');

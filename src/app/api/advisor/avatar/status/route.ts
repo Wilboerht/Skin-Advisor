@@ -61,7 +61,7 @@ export async function GET(req: NextRequest) {
                 });
             }
 
-            // 如果是 pending，尝试用乐观锁抢处理权（解决 Vercel 无后台 worker 问题）
+            // 如果是 pending，尝试用乐观锁抢处理权（on-demand 处理，无独立后台 worker）
             if (queueItem.status === "pending") {
                 try {
                     // 乐观锁：只有 status 还是 pending 时才更新为 processing

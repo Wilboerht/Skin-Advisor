@@ -1,5 +1,8 @@
 /**
  * Prisma 客户端配置 (PostgreSQL)
+ * 
+ * 部署环境：云服务器（单实例常驻进程，PM2 fork 模式）
+ * 连接池针对常驻进程优化，无需考虑 Serverless 冷启动问题。
  */
 import { PrismaClient } from "@prisma/client";
 
@@ -15,16 +18,12 @@ const prismaClientSingleton = () => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { PrismaPg } = require("@prisma/adapter-pg");
 
-    // Serverless 环境检测：Vercel / AWS Lambda 等多实例平台需要限制连接数
-    // 独立服务器部署（单实例常驻）可以使用更大的连接池
-    const isServerless = !!process.env.VERCEL || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
-
-    // 优化 PostgreSQL 连接池配置
+    // PostgreSQL 连接池配置（常驻进程优化）
     const pool = new Pool({
         connectionString: url,
-        max: isServerless ? 2 : 10,
-        min: isServerless ? 0 : 2, // 独立服务器保持最小连接以减少冷启动
-        idleTimeoutMillis: isServerless ? 30000 : 60000,
+        max: 10,
+        min: 2, // 保持最小连接以减少请求延迟
+        idleTimeoutMillis: 60000,
         connectionTimeoutMillis: 30000,
         statement_timeout: 30000,
         keepAlive: true,
