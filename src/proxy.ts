@@ -3,9 +3,9 @@ import type { NextRequest } from "next/server";
 import { verifySessionSignature } from "@/lib/session-verify";
 
 /**
- * Next.js 全局中间件
+ * Next.js 全局 Proxy（原 middleware）
  * 部署环境：云服务器（PM2 单实例常驻进程）
- * 注意：此中间件在 Edge Runtime 中运行，不使用 Node.js 原生 API
+ * 注意：此 proxy 在 Edge Runtime 中运行，不使用 Node.js 原生 API
  */
 
 // 敏感路径前缀列表（需要额外安全检查）
@@ -25,7 +25,7 @@ const ALLOWED_ORIGINS = [
     process.env.NEXT_PUBLIC_BASE_URL || "",
 ].filter(Boolean);
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
     const response = NextResponse.next();
 
