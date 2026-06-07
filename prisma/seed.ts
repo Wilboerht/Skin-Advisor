@@ -1,7 +1,22 @@
+import { config } from "dotenv";
+config({ path: ".env.local" });
+
 // Prisma 7.x 导入方式
 import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
+const url = process.env.DATABASE_URL;
+if (!url) {
+    throw new Error("DATABASE_URL environment variable is not set");
+}
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { Pool } = require("pg");
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { PrismaPg } = require("@prisma/adapter-pg");
+
+const pool = new Pool({ connectionString: url });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 const PRODUCTS_CATALOG = [
     {
