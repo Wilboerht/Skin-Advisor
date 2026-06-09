@@ -384,8 +384,8 @@ export function AnalyzingOverlay({ progress, onCancel, waitingForAvatar, queuePo
         if (p < 20) return "正在准备您的面部数据...";
         if (p < 45) return "正在识别面部轮廓与特征...";
         if (p < 60) return "正在进行皮肤纹理分析...";
-        if (p < 75) return "正在构建个性化 AI 分析模型...";
-        if (p < 85) return "正在安全删除您的面部照片...";
+        if (p < 75) return "正在构建个性化 AI 分析模型并安全删除您的面部照片...";
+        if (p < 90) return "AI 专家正在深度分析您的肌肤数据...";
         if (p < 90) {
             if (qPos && qPos > 0) {
                 if (stuckSeconds < 3) return "系统繁忙，AI 专家正在接入...";
