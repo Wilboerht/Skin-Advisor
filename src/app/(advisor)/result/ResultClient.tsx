@@ -79,25 +79,26 @@ interface ResultClientProps {
  * - 新格式: { skinProfile, analysis, products, dataSource }
  * - 旧格式: { skinAnalysis, faceAnalysis, products, ... }
  */
-function normalizeAnalysisResult(raw: any): ComprehensiveResult | null {
-    if (!raw) return null;
+function normalizeAnalysisResult(raw: unknown): ComprehensiveResult | null {
+    if (!raw || typeof raw !== 'object') return null;
+    const record = raw as Record<string, unknown>;
 
-    const skinProfile = raw.skinProfile || raw.skinAnalysis;
-    const analysis = raw.analysis || raw.skinAnalysis;
+    const skinProfile = (record.skinProfile as Record<string, unknown> | undefined) || (record.skinAnalysis as Record<string, unknown> | undefined);
+    const analysis = (record.analysis as Record<string, unknown> | undefined) || (record.skinAnalysis as Record<string, unknown> | undefined);
 
     return {
         skinProfile: {
-            type: skinProfile?.type || skinProfile?.skinType || "combination",
-            typeLabel: skinProfile?.typeLabel || skinProfile?.skinTypeLabel || "混合性肌肤",
-            concerns: skinProfile?.concerns || [],
-            skinAge: skinProfile?.skinAge,
+            type: (skinProfile?.type as string | undefined) || (skinProfile?.skinType as string | undefined) || "combination",
+            typeLabel: (skinProfile?.typeLabel as string | undefined) || (skinProfile?.skinTypeLabel as string | undefined) || "混合性肌肤",
+            concerns: (skinProfile?.concerns as string[] | undefined) || [],
+            skinAge: skinProfile?.skinAge as number | undefined,
         },
         analysis: {
-            summary: analysis?.summary || "分析完成。",
-            details: analysis?.details || [],
+            summary: (analysis?.summary as string | undefined) || "分析完成。",
+            details: (analysis?.details as string[] | undefined) || [],
         },
-        dataSource: raw.dataSource || (raw.source === "ai" ? "comprehensive" : "questionnaire"),
-        products: raw.products || [],
+        dataSource: (record.dataSource as ComprehensiveResult["dataSource"] | undefined) || (record.source === "ai" ? "comprehensive" : "questionnaire"),
+        products: (record.products as ComprehensiveResult["products"]) || [],
     };
 }
 
@@ -129,7 +130,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const [faceAnalysis, setFaceAnalysis] = useState<FaceAnalysisResult | null>(initialData?.faceAnalysis || null);
     const [userImage, setUserImage] = useState<string | undefined>(undefined);
     const [sideImages, setSideImages] = useState<Record<string, string>>({});
-    const initialAvatar = initialData?.generatedAvatar || (initialData?.result as any)?.generatedAvatar || null;
+    const initialAvatar = initialData?.generatedAvatar || (initialData?.result as Record<string, unknown> | undefined)?.generatedAvatar as string | null || null;
 
     const [generatedAvatar, setGeneratedAvatar] = useState<string | null>(initialAvatar);
     const [isAvatarLoading, setIsAvatarLoading] = useState(!initialAvatar);
@@ -181,8 +182,9 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
     const isGenderMismatch = useMemo(() => {
         if (!faceAnalysis || !socialGender) return false;
-        const faGenderVal = (faceAnalysis as any)?.gender?.value;
-        const faGenderConf = (faceAnalysis as any)?.gender?.confidence || 0;
+        const faGender = (faceAnalysis as unknown as Record<string, unknown>)?.gender as Record<string, unknown> | undefined;
+        const faGenderVal = faGender?.value as string | undefined;
+        const faGenderConf = (faGender?.confidence as number | undefined) || 0;
 
         // Normalize confidence (handle both 0-1 and 0-100)
         const normalizedConf = faGenderConf > 1 ? faGenderConf / 100 : faGenderConf;
@@ -623,7 +625,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     // Recover Bio-Factors from LocalStorage (Questionnaire Answers)
     // Extracted outside useMemo so handleDownload can reuse the same data for PDF consistency
     const bioFactors = useMemo(() => {
-        const factors: any = {};
+        const factors: Record<string, unknown> = {};
         if (typeof window !== 'undefined') {
             try {
                 const answersStr = localStorage.getItem("advisor_answers");
@@ -845,7 +847,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                         router.replace(`/result?id=${newSessionId}`, { scroll: false });
                     }, 50);
 
-                } catch (e: any) {
+                } catch (e: unknown) {
                     console.error("Async analysis error caught in component:", e);
                     // Reset ref so user can retry if they want (though they'd need to re-trigger the effect)
                     analysisStartedRef.current = false;
@@ -1119,7 +1121,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                     eyeArea: "眼周",
                                                     jawline: "下颌线"
                                                 }).map(([key, label]) => {
-                                                    // @ts-ignore
+                                                    // @ts-expect-error faceAnalysis zoneAnalysis typing is dynamic
                                                     const zoneData = faceAnalysis.zoneAnalysis[key];
                                                     if (!zoneData) return null;
                                                     return (

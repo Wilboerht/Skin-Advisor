@@ -42,6 +42,7 @@ function ResetPasswordForm() {
             if (!res.ok) throw new Error(data.error || "验证码发送失败");
             toast.success("验证码已发送");
             setCooldown(60);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             toast.error(error.message || "验证码发送失败");
         } finally {
@@ -87,6 +88,7 @@ function ResetPasswordForm() {
                 router.push("/login");
             }, 3000);
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             toast.error(error.message);
         } finally {

@@ -19,7 +19,6 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "Missing sessionId" }, { status: 400 });
         }
 
-        console.log(`📝 Claiming session ${sessionId} for user ${user.id}...`);
 
         // Atomic claim: only update if userId is null (not yet claimed)
         try {
@@ -38,9 +37,7 @@ export async function POST(request: NextRequest) {
                     console.warn(`Attempted takeover of session ${sessionId}: current owner ${session.userId}, requester ${user.id}`);
                     return NextResponse.json({ error: "Session already claimed" }, { status: 403 });
                 }
-                console.log(`Session ${sessionId} already claimed by user ${user.id}`);
             } else {
-                console.log(`✅ Session ${sessionId} claimed by user ${user.id}`);
             }
         } catch (e) {
             console.error("Failed to claim session:", e);

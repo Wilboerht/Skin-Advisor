@@ -32,7 +32,6 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        console.log(`🔄 Migrating guest avatar for user ${session.id}, sessionId: ${sessionId}`);
 
         // Approach 1: Use provided avatarUrl directly
         if (avatarUrl && typeof avatarUrl === "string") {
@@ -55,14 +54,12 @@ export async function POST(req: NextRequest) {
                     where: { id: session.id },
                     data: { avatarUrl }
                 });
-                console.log(`✅ User ${session.id} avatar updated from guest session`);
                 return NextResponse.json({ 
                     success: true, 
                     message: "Guest avatar migrated to user account",
                     avatarUrl
                 });
             } else {
-                console.log(`ℹ️  User ${session.id} already has a custom avatar, skipping migration`);
                 return NextResponse.json({ 
                     success: true, 
                     message: "User already has a custom avatar",
@@ -109,14 +106,12 @@ export async function POST(req: NextRequest) {
                         where: { id: session.id },
                         data: { avatarUrl: generatedAvatar }
                     });
-                    console.log(`✅ User ${session.id} avatar migrated from session ${sessionId}`);
                     return NextResponse.json({ 
                         success: true, 
                         message: "Guest avatar migrated to user account",
                         avatarUrl: generatedAvatar
                     });
                 } else {
-                    console.log(`ℹ️  User ${session.id} already has a custom avatar`);
                     return NextResponse.json({ 
                         success: true, 
                         message: "User already has a custom avatar",
@@ -124,7 +119,6 @@ export async function POST(req: NextRequest) {
                     });
                 }
             } else {
-                console.log(`ℹ️  No avatar found in session ${sessionId} or AvatarQueue`);
                 return NextResponse.json({ 
                     success: false,
                     message: "No avatar found in session",
@@ -135,6 +129,7 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({ success: false, message: "No avatar to migrate" });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
         console.error("Avatar migration error:", error);
         return NextResponse.json(

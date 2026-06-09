@@ -1,9 +1,10 @@
 
 import { Metadata } from "next";
-import ResultClient from "./ResultClient";
+import ResultClient, { type ComprehensiveResult } from "./ResultClient";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import type { FaceAnalysisResult } from "@/lib/advisor-utils";
 
 export default async function ResultPage(props: {
     searchParams: Promise<{ id?: string; status?: string }>;
@@ -45,11 +46,12 @@ export default async function ResultPage(props: {
                 if (session.expiresAt && new Date() > new Date(session.expiresAt)) {
                     initialData = null;
                 } else {
-                    const result = session.analysisResult as any;
+                    const rawResult = session.analysisResult as unknown as Record<string, unknown>;
+                    const result = rawResult as unknown as ComprehensiveResult;
                     initialData = {
-                        result: result as any,
-                        faceAnalysis: result.faceAnalysis || null,
-                        generatedAvatar: result.generatedAvatar || null
+                        result,
+                        faceAnalysis: rawResult.faceAnalysis as FaceAnalysisResult | null || null,
+                        generatedAvatar: rawResult.generatedAvatar as string | null || null
                     };
                 }
             }
@@ -72,7 +74,7 @@ export async function generateMetadata(props: {
     const searchParams = await props.searchParams;
     const id = searchParams.id;
     let title = "我的专业护肤报告 | MySkinToday Technology";
-    let description = "基于 AI 的深度肤质分析，为您定制专属护肤方案。";
+    const description = "基于 AI 的深度肤质分析，为您定制专属护肤方案。";
     let ogImage = "/images/share-default.jpg"; // Fallback
 
     // 只有登录用户才能获取详细 OG 元数据，防止信息泄露
@@ -85,9 +87,12 @@ export async function generateMetadata(props: {
             });
 
             if (session && session.analysisResult) {
-                const result = session.analysisResult as any;
-                const score = result.faceAnalysis?.overallScore || result.skinAnalysis?.score || 85;
-                const skinType = result.skinAnalysis?.typeLabel || result.skinProfile?.typeLabel || "未知肤质"; // check structure
+                const rawResult = session.analysisResult as unknown as Record<string, unknown>;
+                const result = rawResult as unknown as ComprehensiveResult;
+                const faceAnalysis = rawResult.faceAnalysis as Record<string, unknown> | undefined;
+                const skinAnalysis = rawResult.skinAnalysis as Record<string, unknown> | undefined;
+                const score = (faceAnalysis?.overallScore as number | undefined) || (skinAnalysis?.score as number | undefined) || 85;
+                const skinType = (skinAnalysis?.typeLabel as string | undefined) || result.skinProfile?.typeLabel || "未知肤质"; // check structure
                 // skinProfile.typeLabel seems to be the one in ComprehensiveResult interface
 
                 const params = new URLSearchParams();

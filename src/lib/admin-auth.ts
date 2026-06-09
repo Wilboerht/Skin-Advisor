@@ -2,6 +2,7 @@
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { getClientIP } from "@/lib/ratelimit";
 import { verifySessionSignature, createSignedSession } from "@/lib/session-verify";
 
@@ -70,7 +71,7 @@ export async function logAdminAction(params: {
     action: string;
     resource: string;
     resourceId?: string | null;
-    details?: Record<string, any>;
+    details?: Prisma.JsonValue;
     ip?: string;
     userAgent?: string;
 }) {
@@ -81,7 +82,7 @@ export async function logAdminAction(params: {
                 action: params.action,
                 resource: params.resource,
                 resourceId: params.resourceId || null,
-                details: params.details ? params.details : undefined,
+                details: params.details ?? undefined,
                 ip: params.ip,
                 userAgent: params.userAgent,
             }
@@ -96,13 +97,11 @@ export async function logAdminAction(params: {
 /**
  * Higher-order function to wrap API route handlers with admin auth
  */
-export function withAdminAuth(
-    handler: (
-        request: NextRequest,
-        context: { admin: AdminSession; params?: any }
-    ) => Promise<NextResponse>
-) {
-    return async (request: NextRequest, context?: { params?: any }) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function withAdminAuth<T = any>(
+    handler: (request: NextRequest, context: T & { admin: AdminSession }) => Promise<NextResponse>
+): (request: NextRequest, context: T) => Promise<NextResponse> {
+    return async (request: NextRequest, context: T) => {
         const admin = await verifyAdminSession();
 
         if (!admin) {
@@ -112,7 +111,7 @@ export function withAdminAuth(
             );
         }
 
-        return handler(request, { admin, params: context?.params });
+        return handler(request, { ...context, admin });
     };
 }
 
@@ -121,10 +120,10 @@ export function withAdminAuth(
  * Returns a wrapper that checks admin authentication AND role membership.
  */
 export function requireRole(...allowedRoles: string[]) {
-    return function <T extends (req: NextRequest, ctx: { admin: AdminSession; params?: any }) => Promise<NextResponse>>(
-        handler: T
-    ) {
-        return async (request: NextRequest, context?: { params?: any }) => {
+    return function <T = any>(
+        handler: (request: NextRequest, context: T & { admin: AdminSession }) => Promise<NextResponse>
+    ): (request: NextRequest, context: T) => Promise<NextResponse> {
+        return async (request: NextRequest, context: T) => {
             const admin = await verifyAdminSession();
 
             if (!admin) {
@@ -142,7 +141,7 @@ export function requireRole(...allowedRoles: string[]) {
                 );
             }
 
-            return handler(request, { admin, params: context?.params });
+            return handler(request, { ...context, admin });
         };
     };
 }

@@ -90,6 +90,7 @@ export function AuthModal() {
             console.log("✅ Login successful, closing modal...");
             toast.success("欢迎回来！");
             closeAuthModal();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             console.error("🔴 Login failed:", err.message);
             toast.error(err.message || "登录失败，请检查账号密码");
@@ -109,6 +110,7 @@ export function AuthModal() {
             await register({ name: regName, phone: regPhone, code: regCode, password: regPassword });
             toast.success("注册成功！");
             closeAuthModal();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             toast.error(err.message || "注册失败，请稍后重试");
         } finally {
@@ -134,6 +136,7 @@ export function AuthModal() {
             // Re-fetch user session to update state globally
             window.location.href = "/"; // Reload to refresh contexts naturally, or call context.refresh() 
             // We use standard reload to make sure everything initializes fresh with the new token
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             toast.error(err.message || "绑定失败，请稍后重试");
             setLoading(false);
@@ -175,6 +178,7 @@ export function AuthModal() {
             if (!res.ok) throw new Error(data.error?.message || data.error || "发送验证码失败");
             toast.success("验证码已发送");
             setRegCountdown(60);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             toast.error(error.message);
         } finally {
@@ -198,6 +202,7 @@ export function AuthModal() {
             setForgotSubmitted(true);
             setResetCountdown(60);
             toast.success("重置验证码已发送");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             toast.error(error.message);
         } finally {
@@ -232,6 +237,7 @@ export function AuthModal() {
             setResetCountdown(60);
             setMobileForgotStep("code");
             toast.success("重置验证码已发送");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             toast.error(error.message);
         } finally {
@@ -264,6 +270,7 @@ export function AuthModal() {
             setResetNewPassword("");
             setResetConfirmPassword("");
             setMobileForgotStep("success");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             toast.error(error.message);
         } finally {
@@ -295,6 +302,7 @@ export function AuthModal() {
             setResetNewPassword("");
             setResetConfirmPassword("");
             setForgotSubmitted(false);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             toast.error(error.message);
         } finally {

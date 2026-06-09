@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { analyzeImages, type VisionImage } from "@/lib/ai-vision";
+import type { AIProvider } from "@/lib/ai";
 import { isAIEnabled } from "@/lib/ai";
 import { FaceAnalyzeRequestSchema } from "@/lib/schemas";
 import {
@@ -139,6 +140,7 @@ export async function POST(request: NextRequest) {
                     buffer = await fs.readFile(filePath);
                     const ext = path.extname(filePath).toLowerCase();
                     mimeType = ext === '.png' ? 'image/png' : 'image/jpeg';
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 } catch (e: any) {
                     aiLogger.warn(`Failed to resolve local image path: ${imgData}`, { error: e.message });
                     return null;
@@ -149,6 +151,7 @@ export async function POST(request: NextRequest) {
                         const base64Data = imgData.split(',')[1];
                         mimeType = imgData.split(';')[0].split(':')[1] || 'image/jpeg';
                         buffer = Buffer.from(base64Data, 'base64');
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     } catch (e: any) {
                         aiLogger.warn("Failed to decode base64 image for compression", { error: e.message });
                         return imgData; // fallback
@@ -169,6 +172,7 @@ export async function POST(request: NextRequest) {
                         .jpeg({ quality: 75 })
                         .toBuffer();
                     mimeType = 'image/jpeg';
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 } catch (e: any) {
                     aiLogger.error("Image compression failed", e);
                 }
@@ -261,23 +265,24 @@ export async function POST(request: NextRequest) {
             aiLogger.debug(`[Queue] Lock acquired.`);
 
             // 4. 调用 AI 分析 (包含重试机制)
-            let analysisResult;
+            let analysisResult: Record<string, unknown>;
             try {
                 analysisResult = await analyzeImages(
                     validImages,
                     systemPrompt,
                     VISION_ANALYSIS_USER_PROMPT,
-                    provider as any,
+                    provider as AIProvider,
                     abortController.signal
-                );
-            } catch (e: any) {
-                if (e.message?.includes("cancelled") || e.name === 'AbortError') {
+                ) as Record<string, unknown>;
+            } catch (e: unknown) {
+                const err = e as Error;
+                if (err.message?.includes("cancelled") || err.name === 'AbortError') {
                     throw new Error("Face analysis cancelled (client timeout or disconnect)");
                 }
                 // Retry if payload error
-                const isPayloadError = e.message?.includes('400') || e.message?.includes('413') || e.message?.includes('base64') || e.message?.includes('too large') || e.message?.includes('content length') || e.message?.includes('payload');
+                const isPayloadError = err.message?.includes('400') || err.message?.includes('413') || err.message?.includes('base64') || err.message?.includes('too large') || err.message?.includes('content length') || err.message?.includes('payload');
                 if (isPayloadError) {
-                    aiLogger.warn(`[FaceAnalyze] Payload error (${e.message}), retrying with aggressive compression...`);
+                    aiLogger.warn(`[FaceAnalyze] Payload error (${err.message}), retrying with aggressive compression...`);
                     // 对现有图片做更强压缩（512px / quality 60），而不是重新加载
                     if (sharp) {
                         validImages = await Promise.all(validImages.map(async (img) => {
@@ -290,8 +295,8 @@ export async function POST(request: NextRequest) {
                                     .jpeg({ quality: 60 })
                                     .toBuffer();
                                 return { ...img, data: `data:image/jpeg;base64,${compressed.toString('base64')}` };
-                            } catch (compErr: any) {
-                                aiLogger.warn("Aggressive compression failed", compErr);
+                            } catch (compErr: unknown) {
+                                aiLogger.warn("Aggressive compression failed", { error: compErr as Error });
                                 return img;
                             }
                         }));
@@ -301,9 +306,9 @@ export async function POST(request: NextRequest) {
                         validImages,
                         systemPrompt,
                         VISION_ANALYSIS_USER_PROMPT,
-                        provider as any,
+                        provider as AIProvider,
                         abortController.signal
-                    );
+                    ) as Record<string, unknown>;
                     aiLogger.info(`[FaceAnalyze] Retry successful.`);
                 } else {
                     throw e;
@@ -311,12 +316,13 @@ export async function POST(request: NextRequest) {
             }
 
             // 5. 结果校验
-            if (analysisResult.validation && analysisResult.validation.isValid === false) {
-                aiLogger.warn(`Face validation failed: ${analysisResult.validation.message}`);
+            const validation = analysisResult.validation as Record<string, unknown> | undefined;
+            if (validation && validation.isValid === false) {
+                aiLogger.warn(`Face validation failed: ${validation.message}`);
                 return NextResponse.json(
                     {
                         error: "图片验证失败",
-                        message: analysisResult.validation.message || "未检测到清晰人脸，请重新拍摄",
+                        message: validation.message || "未检测到清晰人脸，请重新拍摄",
                         code: "VALIDATION_FAILED"
                     },
                     { status: 400 }
@@ -332,6 +338,7 @@ export async function POST(request: NextRequest) {
             });
 
         } catch (aiError: unknown) {
+            const aiErr = aiError as Error;
             const err = aiError instanceof Error ? aiError : new Error(String(aiError));
             aiLogger.error("AI Analysis Failed", { error: err.message });
 
@@ -367,7 +374,6 @@ export async function POST(request: NextRequest) {
                             console.warn(`[FaceAnalyze] Failed to delete uploaded photo ${url}:`, e);
                         }
                     }
-                    console.log(`[FaceAnalyze] Cleaned up ${uploadedFaceUrls.length} uploaded face photos`);
                 });
             }
         }

@@ -88,7 +88,6 @@ async function generateWanxiangAvatarAsync(prompt: string, frontPhoto: string | 
               const base64 = buffer.toString("base64");
               const mimeType = blob.type || "image/jpeg";
               images.push(`data:${mimeType};base64,${base64}`);
-              console.log("[Wanxiang] Converted local image to base64 for upload");
             }
           } else {
             console.warn("[Wanxiang] Failed to fetch local image:", res.status);
@@ -140,7 +139,6 @@ async function generateWanxiangAvatarAsync(prompt: string, frontPhoto: string | 
     throw new Error(`No task_id returned from Wanxiang submit: ${JSON.stringify(submitData)}`);
   }
 
-  console.log(`[Wanxiang] Task submitted, taskId=${taskId}`);
 
   // 2. 轮询查询结果（最长 60 秒）
   const maxAttempts = 60;
@@ -166,13 +164,11 @@ async function generateWanxiangAvatarAsync(prompt: string, frontPhoto: string | 
     if (status === "SUCCEEDED") {
       const url = queryData?.output?.results?.[0]?.url || queryData?.output?.image_url;
       if (url) {
-        console.log(`[Wanxiang] Task completed after ${i + 1} attempts`);
         return url;
       }
     } else if (status === "FAILED") {
       throw new Error(`Wanxiang task failed: ${queryData?.output?.message || JSON.stringify(queryData)}`);
     } else if (i % 5 === 0) {
-      console.log(`[Wanxiang] Still processing... (${i + 1}/${maxAttempts})`);
     }
   }
 
@@ -213,6 +209,7 @@ function mapSkinTone(score: number | undefined): string | null {
  */
 async function generateAvatarImage(
   frontPhoto: string | null | undefined,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   characteristics: any,
   nickname: string,
   sessionId: string
@@ -228,15 +225,12 @@ async function generateAvatarImage(
       select: { analysisResult: true },
     });
     if (session?.analysisResult) {
-      const result = session.analysisResult as any;
-      realGender = result.gender?.value;
-      realAge = result.skinAge?.estimated;
-      realSkinToneScore = result.dimensions?.skinTone?.score;
-      console.log(
-        `[Avatar] Real analysis data for ${sessionId}: gender=${realGender}, age=${realAge}, skinToneScore=${realSkinToneScore}`
-      );
-    } else {
-      console.log(`[Avatar] No analysis result yet for ${sessionId}, using fallback characteristics`);
+      const result = session.analysisResult as Record<string, unknown>;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const analysisResult = result as any;
+      realGender = analysisResult.gender?.value;
+      realAge = analysisResult.skinAge?.estimated;
+      realSkinToneScore = analysisResult.dimensions?.skinTone?.score;
     }
   } catch (e) {
     console.warn("[Avatar] Failed to fetch analysis result, using fallback characteristics:", e);
@@ -266,10 +260,8 @@ async function generateAvatarImage(
   // 策略 1: Wanxiang image2image
   if (process.env.WANXIANG_API_KEY || process.env.QWEN_API_KEY) {
     try {
-      console.log("🖼️ Attempting Wanxiang image2image...");
       imageUrl = await generateWanxiangAvatarAsync(prompt, frontPhoto);
       if (imageUrl) {
-        console.log("✅ Wanxiang image2image succeeded");
         source = "wanxiang";
         return { url: imageUrl, source };
       }
@@ -284,7 +276,6 @@ async function generateAvatarImage(
   if (process.env.VOLC_ACCESSKEY && process.env.VOLC_SECRETKEY) {
     try {
       if (frontPhoto) {
-        console.log("📸 Attempting Jimeng img2img...");
         imageUrl = await Promise.race([
           generateJimengAvatarAsync(prompt, frontPhoto, "jimeng_i2i_v30"),
           new Promise<never>((_, reject) =>
@@ -292,14 +283,12 @@ async function generateAvatarImage(
           ),
         ]);
         if (imageUrl) {
-          console.log("✅ Jimeng img2img succeeded");
           source = "jimeng_i2i";
           return { url: imageUrl, source };
         }
       }
 
       // 策略 3: Jimeng text2image（如果 frontPhoto 存在也传入，争取保留用户参考）
-      console.log("🎨 Attempting Jimeng text-to-image...");
       imageUrl = await Promise.race([
         generateJimengAvatarAsync(prompt, frontPhoto, "jimeng_t2i_v30"),
         new Promise<never>((_, reject) =>
@@ -307,7 +296,6 @@ async function generateAvatarImage(
         ),
       ]);
       if (imageUrl) {
-        console.log("✅ Jimeng t2i succeeded");
         source = "jimeng_t2i";
         return { url: imageUrl, source };
       }
@@ -348,7 +336,7 @@ async function generateJimengAvatarAsync(
     throw new Error("Jimeng credentials not configured");
   }
 
-  const service = new (Service as any)({
+  const service = new (Service as unknown as new (config: Record<string, unknown>) => { setAccessKeyId: (k: string) => void; setSecretKey: (k: string) => void; createJSONAPI: (name: string, params: Record<string, unknown>) => (body: Record<string, unknown>) => Promise<unknown> })({
     host: "cv.volcengineapi.com",
     region: "cn-beijing",
     serviceName: "cv",
@@ -358,7 +346,7 @@ async function generateJimengAvatarAsync(
   service.setSecretKey(secretKeyRaw);
 
   // Build request body
-  const reqBody: any = {
+  const reqBody: Record<string, unknown> = {
     req_key: reqKey,
     prompt: prompt,
     negative_prompt: "腮红,红晕,脸红,脸颊泛红,胭脂,blush,rosy cheeks,flushed cheeks,面部泛红,红色晕染,血色,面部红晕,绯红",
@@ -393,7 +381,6 @@ async function generateJimengAvatarAsync(
           } else {
             const base64 = buffer.toString("base64");
             reqBody.image_base64 = base64;
-            console.log("[Jimeng] Converted local image to base64 for upload");
           }
         } else {
           console.warn("[Jimeng] Failed to fetch local image:", res.status);
@@ -407,9 +394,6 @@ async function generateJimengAvatarAsync(
     reqBody.image_url = frontPhoto;
   }
 
-  console.log(
-    `[Jimeng] Submitting task: reqKey=${reqKey}, has_image=${!!frontPhoto}`
-  );
 
   try {
     // 新版 @volcengine/openapi 没有 service.json()，需要用 createJSONAPI()
@@ -418,17 +402,17 @@ async function generateJimengAvatarAsync(
     });
     const submitRes = await submitAPI(reqBody);
 
-    if (!submitRes || (submitRes as any).error || (submitRes as any).code !== 0) {
-      const error = (submitRes as any)?.error || (submitRes as any)?.code;
+    const submitResTyped = submitRes as Record<string, unknown>;
+    if (!submitRes || submitResTyped.error || submitResTyped.code !== 0) {
+      const error = submitResTyped.error || submitResTyped.code;
       throw new Error(`Jimeng submit failed: ${JSON.stringify(error)}`);
     }
 
-    const reqId = (submitRes as any)?.data?.req_id;
+    const reqId = (submitResTyped.data as Record<string, unknown> | undefined)?.req_id as string | undefined;
     if (!reqId) {
       throw new Error("No request ID returned from Jimeng submit");
     }
 
-    console.log(`[Jimeng] Task submitted, reqId=${reqId}, polling for result...`);
 
     // Poll for result (max 60 seconds)
     const getResultAPI = service.createJSONAPI("CVSync2AsyncGetResult", {
@@ -440,18 +424,17 @@ async function generateJimengAvatarAsync(
 
       const queryRes = await getResultAPI({ req_id: reqId });
 
-      const status = (queryRes as any)?.data?.task_status;
-      const resultUrl = (queryRes as any)?.data?.image_url;
+      const queryResTyped = queryRes as Record<string, unknown>;
+      const status = (queryResTyped.data as Record<string, unknown> | undefined)?.task_status as string | undefined;
+      const resultUrl = (queryResTyped.data as Record<string, unknown> | undefined)?.image_url as string | undefined;
 
       if (status === "succeed" && resultUrl) {
-        console.log(`[Jimeng] ✅ Task completed after ${i + 1} attempts`);
         return resultUrl;
       } else if (status === "failed") {
-        throw new Error(`Jimeng task failed: ${(queryRes as any)?.data?.fail_reason}`);
+        throw new Error(`Jimeng task failed: ${(queryResTyped.data as Record<string, unknown> | undefined)?.fail_reason as string}`);
       } else if (status === "processing") {
         // Continue polling
         if (i % 5 === 0) {
-          console.log(`[Jimeng] Still processing... (${i + 1}/${maxAttempts})`);
         }
       }
     }
@@ -468,13 +451,9 @@ async function generateJimengAvatarAsync(
  * 处理单个队列项
  */
 export async function processAvatarQueueItem(item: AvatarQueueItem) {
-  console.log(
-    `[AvatarQueue] Processing ${item.id} for session ${item.sessionId}`
-  );
 
   // 乐观锁：只有 pending 状态才处理（防止并发重复执行）
   if (item.status !== "pending") {
-    console.log(`[AvatarQueue] ${item.id} status=${item.status}, skipping duplicate processing`);
     return;
   }
 
@@ -525,7 +504,6 @@ export async function processAvatarQueueItem(item: AvatarQueueItem) {
               frontPhoto: null, // 清空原始照片数据
             },
           });
-          console.log(`[AvatarQueue] ✅ Avatar generated but session not yet created. Stored in avatarQueue for later sync.`);
           return;
         }
 
@@ -554,7 +532,7 @@ export async function processAvatarQueueItem(item: AvatarQueueItem) {
             WHERE "sessionId" = ${item.sessionId}
           `;
         } else {
-          const currentResult = (session.analysisResult as any) || {};
+          const currentResult = (session.analysisResult as Record<string, unknown> | null) || {};
           await tx.advisorSession.update({
             where: { sessionId: item.sessionId },
             data: {
@@ -566,7 +544,6 @@ export async function processAvatarQueueItem(item: AvatarQueueItem) {
           });
         }
 
-        console.log(`[AvatarQueue] ✅ Successfully updated session ${item.sessionId} with avatar`);
       });
 
       // 事务成功后，删除原始源照片（本地/云端）
@@ -588,9 +565,7 @@ export async function processAvatarQueueItem(item: AvatarQueueItem) {
             errorMessage: `Failed to sync with session: ${msg}`,
           },
         });
-        console.log(
-          `[AvatarQueue] Marked for retry (${attempts}/3): ${item.id}`
-        );
+
       } else {
         // 尝试 3 次后放弃，标记为失败
         await prisma.avatarQueue.update({
@@ -628,9 +603,7 @@ export async function processAvatarQueueItem(item: AvatarQueueItem) {
           errorMessage: msg,
         },
       });
-      console.log(
-        `[AvatarQueue] Marked for retry (${attempts}/3): ${item.id}`
-      );
+  
     } else {
       // Give up
       await prisma.avatarQueue.update({
@@ -681,7 +654,6 @@ export function startAvatarQueueProcessor(checkIntervalMs: number = 2000) {
             where: { id: item.id, status: "processing" },
             data: { status: "pending", errorMessage: "Processing timeout, will retry" }
           });
-          console.log(`[AvatarQueue] Reset stalled processing item: ${item.id}`);
         } catch (e) {
           console.error(`[AvatarQueue] Failed to reset stalled item ${item.id}:`, e);
         }
@@ -714,7 +686,6 @@ export function startAvatarQueueProcessor(checkIntervalMs: number = 2000) {
       });
 
       if (result.count > 0) {
-        console.log(`[AvatarQueue] Cleaned up ${result.count} expired items`);
       }
     } catch (error) {
       console.error("[AvatarQueue] Processor error:", error);
@@ -729,12 +700,10 @@ export function startAvatarQueueProcessor(checkIntervalMs: number = 2000) {
   }
 
   // Start processing
-  console.log(`[AvatarQueue] Processor started (checking every ${checkIntervalMs}ms)`);
   processQueue();
 
   // Return stop function
   return () => {
     isActive = false;
-    console.log("[AvatarQueue] Processor stopped");
   };
 }

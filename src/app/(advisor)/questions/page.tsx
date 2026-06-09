@@ -92,10 +92,13 @@ export default function QuestionsPage() {
     const questions = getFilteredQuestions(committedAnswers, gender);
     const currentQuestion = questions[currentStepIndex];
 
-    // 4. 确保 stepIndex 有效
+    // 4. 确保 stepIndex 有效（使用 requestAnimationFrame 避免同步 setState）
     useEffect(() => {
         if (questions.length > 0 && currentStepIndex >= questions.length) {
-            setCurrentStepIndex(questions.length - 1);
+            const id = requestAnimationFrame(() => {
+                setCurrentStepIndex(questions.length - 1);
+            });
+            return () => cancelAnimationFrame(id);
         }
     }, [questions.length, currentStepIndex]);
 
@@ -189,9 +192,12 @@ export default function QuestionsPage() {
                     return;
                 }
 
-                // 否则显示选择弹窗
-                setHasSavedProgress(true);
-                setShowResumeModal(true);
+                // 否则显示选择弹窗（延迟到下一帧避免同步 setState）
+                const id = requestAnimationFrame(() => {
+                    setHasSavedProgress(true);
+                    setShowResumeModal(true);
+                });
+                return () => cancelAnimationFrame(id);
             }
         } catch (e) { console.error(e); }
     }, []);

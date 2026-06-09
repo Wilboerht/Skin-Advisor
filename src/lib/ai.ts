@@ -214,6 +214,7 @@ export async function generateText(
             const result = await callProviderWithRetry(provider as AIProvider, model, systemPrompt, userPrompt, settings, signal);
             aiLogger.info(`AI Generation Success using provider: ${provider}`);
             return result;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             if (error.name === 'AbortError' || signal?.aborted) {
                 throw new Error("Request cancelled by client.");
@@ -250,6 +251,7 @@ async function callProviderWithRetry(
         try {
             if (i > 0) aiLogger.info(`Retrying with key ${i + 1}/${apiKeys.length} for ${provider}`);
             return await callProviderInternal(provider, apiKey, model, systemPrompt, userPrompt, settings, signal);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             if (error.name === 'AbortError' || signal?.aborted) {
                 throw error;

@@ -169,7 +169,7 @@ export function useAsyncAnalysis() {
                     const validResults = preprocessResults.filter((r): r is NonNullable<typeof r> => r !== null);
 
                     // 2. 根据网络状况决定上传策略（弱网减少上传数量）
-                    const conn = (navigator as any).connection;
+                    const conn = (navigator as unknown as Record<string, unknown>).connection as Record<string, unknown> | undefined;
                     const networkType = conn?.effectiveType as string | undefined;
 
                     const shouldUploadAngle = (key: string): boolean => {
@@ -374,13 +374,14 @@ export function useAsyncAnalysis() {
                                 }
                                 throw new Error(errorData.message || errorData.error || "面部分析失败");
                             }
-                        } catch (e: any) {
+                        } catch (e: unknown) {
+                            const err = e as Error;
                             console.error("Face analysis fetch failed", e);
                             // Check if the error is from fetchWithRetry's specific message
-                            if (e.message.includes("Request failed: 429")) {
+                            if (err.message.includes("Request failed: 429")) {
                                 throw new Error("请求过于频繁，请稍后重试");
                             }
-                            if (e.message.includes("Request failed: 5") || e.message.includes("Failed to fetch")) {
+                            if (err.message.includes("Request failed: 5") || err.message.includes("Failed to fetch")) {
                                 throw new Error("AI 服务暂时繁忙，请稍后重试");
                             }
                             throw e; // Rethrow to stop the process and show error state

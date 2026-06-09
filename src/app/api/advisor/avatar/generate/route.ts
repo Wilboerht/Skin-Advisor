@@ -66,7 +66,6 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        console.log(`📝 Enqueuing avatar generation for session ${sessionId}...`);
 
         // 确保 AdvisorSession 存在（avatar generate 可能在 analyze 完成前被并行调用）
         await prisma.advisorSession.upsert({
@@ -92,6 +91,7 @@ export async function POST(req: NextRequest) {
                     attempts: 0
                 }
             });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (e: any) {
             if (e.code === 'P2002') {
                 // 记录已存在（并发请求或重复提交），查询当前状态返回
@@ -130,7 +130,6 @@ export async function POST(req: NextRequest) {
             }
         });
 
-        console.log(`✅ Enqueued avatar generation (queueId: ${queueItem.id}, position: #${position + 1})`);
 
         // 立即触发异步处理（fire-and-forget）
         processAvatarQueueItem(queueItem).catch(err => {
@@ -146,6 +145,7 @@ export async function POST(req: NextRequest) {
             message: `头像正在生成队列中，位置: #${position + 1}，预计等待 ${Math.max(10, position * 8)}秒`
         });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
         console.error("Avatar queue error:", error);
         return NextResponse.json(

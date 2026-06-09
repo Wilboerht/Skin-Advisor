@@ -6,33 +6,32 @@ import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { createHash } from "crypto";
 
 // 简单的内存缓存，防止外部官方 API 慢导致每个请求都阻塞 10s+
-const meCache = new Map<string, { data: any; timestamp: number }>();
+// 注意：Next.js Serverless 环境中内存缓存不共享，仅做单请求级减负
+const meCache = new Map<string, { data: unknown; timestamp: number }>();
 const ME_CACHE_TTL_MS = 5000; // 5 秒缓存
-const MAX_CACHE_SIZE = 1000;
+const MAX_CACHE_SIZE = 100;
 
 function getCacheKey(cookieStr: string): string {
     return createHash('sha256').update(cookieStr).digest('hex');
 }
 
-function setMeCache(key: string, value: { data: any; timestamp: number }) {
+function getMeCache(key: string): unknown | null {
+    const entry = meCache.get(key);
+    if (!entry) return null;
+    if (Date.now() - entry.timestamp > ME_CACHE_TTL_MS) {
+        meCache.delete(key);
+        return null;
+    }
+    return entry.data;
+}
+
+function setMeCache(key: string, data: unknown) {
     if (meCache.size >= MAX_CACHE_SIZE) {
-        const oldestKey = meCache.keys().next().value;
+        const oldestKey = meCache.keys().next().value as string | undefined;
         if (oldestKey) meCache.delete(oldestKey);
     }
-    meCache.set(key, value);
+    meCache.set(key, { data, timestamp: Date.now() });
 }
-
-function cleanupExpiredCache() {
-    const now = Date.now();
-    for (const [key, entry] of meCache.entries()) {
-        if (now - entry.timestamp > ME_CACHE_TTL_MS * 2) {
-            meCache.delete(key);
-        }
-    }
-}
-
-// 启动定时清理，每30秒执行一次，避免请求触发时的性能抖动
-setInterval(cleanupExpiredCache, 30000);
 
 function mirrorOfficialSessionCookie(officialResponse: Response, response: NextResponse) {
     const cookies = officialResponse.headers.getSetCookie();
@@ -78,12 +77,11 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        cleanupExpiredCache();
         const cacheKey = getCacheKey(allCookies);
-        const cached = meCache.get(cacheKey);
-        if (cached && Date.now() - cached.timestamp < ME_CACHE_TTL_MS) {
+        const cached = getMeCache(cacheKey);
+        if (cached) {
             // Cache hit — skip external API call
-            return NextResponse.json(cached.data);
+            return NextResponse.json(cached);
         }
 
         const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";
@@ -152,7 +150,7 @@ export async function GET(req: NextRequest) {
         const responsePayload = { user: responseUser };
 
         // 写入缓存，5s 内相同 cookie 的请求不再访问外部 API
-        setMeCache(cacheKey, { data: responsePayload, timestamp: Date.now() });
+        setMeCache(cacheKey, responsePayload);
 
         const response = NextResponse.json(responsePayload);
 

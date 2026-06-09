@@ -185,6 +185,7 @@ export async function GET(req: NextRequest) {
                 ] : undefined,
             }
         );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
         console.error("OG image generation failed:", e?.message || e);
         // Fallback: return a simple SVG so social media crawlers still get a valid image

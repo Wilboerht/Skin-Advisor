@@ -105,7 +105,6 @@ export async function POST(request: NextRequest) {
 
         if (productCount === 0) {
             if (process.env.NODE_ENV !== "production") {
-                console.info("Seeding products...");
             }
             for (const p of PRODUCTS_CATALOG) {
                 await prisma.product.create({

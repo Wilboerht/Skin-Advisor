@@ -2,7 +2,7 @@
  * 阿里云 OSS 工具类
  * 用于生成直传签名和处理 OSS 相关操作
  */
-// @ts-ignore
+// @ts-expect-error ali-oss lacks official ESM type declarations
 import OSS from "ali-oss";
 
 // OSS 配置检查

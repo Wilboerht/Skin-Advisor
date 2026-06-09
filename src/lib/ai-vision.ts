@@ -75,7 +75,7 @@ export async function analyzeImages(
                 const result = await callVisionAPI(provider, apiKey, model, images, systemPrompt, finalUserPrompt, signal);
 
                 // 解析与验证
-                const jsonData = extractJsonFromResponse<any>(result);
+                const jsonData = extractJsonFromResponse<Record<string, unknown>>(result);
                 if (!jsonData) throw new Error("Failed to parse JSON from Vision API");
 
                 // 结构验证：必须包含核心分析字段，且 dimensions 应为对象
@@ -88,6 +88,7 @@ export async function analyzeImages(
 
                 return jsonData; // 成功返回
 
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } catch (error: any) {
                 if (error.name === 'AbortError' || signal?.aborted) {
                     throw new Error("Vision request cancelled by client.");
@@ -136,6 +137,7 @@ async function callOpenAICompatibleVision(
 ) {
     const client = createOpenAIClient(provider, apiKey);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const content: any[] = [
         { type: "text", text: userPrompt }
     ];
@@ -165,7 +167,7 @@ async function callOpenAICompatibleVision(
             max_tokens: 2500,
             temperature: 0.2
         },
-        { signal: signal as any }
+        { signal: signal as AbortSignal | undefined }
     );
 
     return response.choices[0]?.message?.content || "";
@@ -235,10 +237,11 @@ export async function analyzeComprehensiveMultimodal(
             if (i > 0) aiLogger.warn(`Multimodal Retry: Key ${i + 1}`);
 
             const result = await callVisionAPI(provider, apiKey, model, images, systemPrompt, userPrompt);
-            const json = extractJsonFromResponse<any>(result);
+            const json = extractJsonFromResponse<Record<string, unknown>>(result);
             if (!json) throw new Error("Failed to parse comprehensive JSON");
             return json;
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (e: any) {
             lastError = e;
             const isAuthOrRate = e.status === 401 || e.status === 429 || String(e).includes("429");

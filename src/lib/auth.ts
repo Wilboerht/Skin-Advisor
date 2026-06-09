@@ -54,6 +54,7 @@ export async function verifyTokenDetailed(token: string): Promise<VerifyTokenRes
     try {
         const { payload } = await jwtVerify(token, JWT_SECRET);
         return { payload };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
         let error: TokenVerificationError = 'unknown';
         if (err?.code === 'ERR_JWT_EXPIRED') {

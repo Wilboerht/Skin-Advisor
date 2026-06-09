@@ -305,7 +305,7 @@ export const advisorStorage = {
         return null;
     },
 
-    async saveResult(result: any): Promise<boolean> {
+    async saveResult(result: Record<string, unknown>): Promise<boolean> {
         if (isIndexedDBAvailable()) {
             try {
                 const success = await saveResult(result);
@@ -329,11 +329,11 @@ export const advisorStorage = {
         }
     },
 
-    async getResult(): Promise<any | null> {
+    async getResult(): Promise<Record<string, unknown> | null> {
         if (localStorage.getItem("advisor_result_idb") && isIndexedDBAvailable()) {
             try {
                 const result = await getResult();
-                if (result) return result;
+                if (result) return result as Record<string, unknown>;
             } catch (e) {
                 console.warn("IndexedDB get failed, trying localStorage");
             }

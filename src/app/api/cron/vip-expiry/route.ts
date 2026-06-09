@@ -92,10 +92,6 @@ export async function GET(request: NextRequest) {
             expiredAt: u.vipExpiresAt?.toISOString(),
         }));
 
-        console.log(
-            `[VIP-Cron] ✅ Downgraded ${updateResult.count} expired VIP users:`,
-            JSON.stringify(logDetails, null, 2)
-        );
 
         // 5. 返回结果
         return NextResponse.json({

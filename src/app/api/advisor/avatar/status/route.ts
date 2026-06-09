@@ -71,7 +71,6 @@ export async function GET(req: NextRequest) {
                     });
 
                     if (updated.count > 0) {
-                        console.log(`[AvatarQueue] On-demand processing triggered for ${sessionId}`);
                         // 异步处理，不阻塞响应
                         processAvatarQueueItem(queueItem).catch(err => {
                             console.error(`[AvatarQueue] On-demand processing failed for ${sessionId}:`, err);
@@ -133,6 +132,7 @@ export async function GET(req: NextRequest) {
             queueStatus: "completed"
         });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
         console.error("Failed to fetch avatar status:", error);
         return NextResponse.json({

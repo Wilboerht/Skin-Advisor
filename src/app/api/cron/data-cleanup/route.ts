@@ -136,7 +136,6 @@ export async function GET(request: NextRequest) {
         const userCutoff = new Date(now - USER_RETENTION_MS);
 
         // ===== 1. 清理游客数据（超过 3 小时）=====
-        console.log(`[Cleanup] Guest cutoff: ${guestCutoff.toISOString()}`);
         const guestSessions = await prisma.advisorSession.findMany({
             where: {
                 userId: null,
@@ -147,11 +146,9 @@ export async function GET(request: NextRequest) {
                 analysisResult: true,
             },
         });
-        console.log(`[Cleanup] Found ${guestSessions.length} expired guest sessions`);
         await cleanupSessions(guestSessions, stats);
 
         // ===== 2. 清理注册用户超期数据（超过 3 个月）=====
-        console.log(`[Cleanup] User cutoff: ${userCutoff.toISOString()}`);
         const oldUserSessions = await prisma.advisorSession.findMany({
             where: {
                 userId: { not: null },
@@ -162,7 +159,6 @@ export async function GET(request: NextRequest) {
                 analysisResult: true,
             },
         });
-        console.log(`[Cleanup] Found ${oldUserSessions.length} expired user sessions (> 3 months)`);
         await cleanupSessions(oldUserSessions, stats);
 
         // ===== 3. 清理注册用户超量数据（3 个月内每个用户最多保留 100 条）=====
@@ -180,10 +176,8 @@ export async function GET(request: NextRequest) {
             ORDER BY "createdAt" ASC
         `;
 
-        console.log(`[Cleanup] Found ${excessSessions.length} excess user sessions to delete`);
         await cleanupSessions(excessSessions, stats);
 
-        console.log("[Cleanup] Done:", stats);
 
         return NextResponse.json({
             success: true,

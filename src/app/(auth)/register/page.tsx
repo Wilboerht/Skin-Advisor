@@ -42,6 +42,7 @@ export default function RegisterPage() {
             if (!res.ok) throw new Error(data.error || "验证码发送失败");
             toast.success("验证码已发送");
             setCooldown(60);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             toast.error(err.message || "验证码发送失败");
         } finally {

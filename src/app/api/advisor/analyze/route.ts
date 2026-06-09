@@ -213,6 +213,7 @@ export async function POST(request: NextRequest) {
             await prisma.advisorSession.upsert({
                 where: { sessionId },
                 update: {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     answers: answers as any,
                     analysisSource: faceAnalysis ? "hybrid" : "text",
                     faceScanUsed: !!faceAnalysis,
@@ -227,6 +228,7 @@ export async function POST(request: NextRequest) {
                 },
                 create: {
                     sessionId,
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     answers: answers as any,
                     analysisSource: faceAnalysis ? "hybrid" : "text",
                     faceScanUsed: !!faceAnalysis,
@@ -244,14 +246,16 @@ export async function POST(request: NextRequest) {
         const aiEnabled = await isAIEnabled();
 
         if (!aiEnabled) {
-            console.log("AI Disabled, using fallback analysis");
             // 降级模式：使用规则引擎生成面部分析数据
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const fallbackFace = fallbackAnalysis(answers as any);
 
             // 补全产品推荐 (DB)
             const fallbackSkinType = fallbackFace.skinType.type;
             const enrichedAnswers = { ...answers, skinType: fallbackSkinType };
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const concerns = identifyConcerns(enrichedAnswers as any, fallbackFace);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const products = await recommendProducts(enrichedAnswers as any, concerns);
 
             // 构造符合 ComprehensiveResult 结构的数据
@@ -286,6 +290,7 @@ export async function POST(request: NextRequest) {
                     await prisma.advisorSession.upsert({
                         where: { sessionId },
                         update: {
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             analysisResult: finalResult as any,
                             analysisSource: "fallback",
                             completedAt: new Date(),
@@ -294,7 +299,9 @@ export async function POST(request: NextRequest) {
                         },
                         create: {
                             sessionId,
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             answers: answers as any,
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             analysisResult: finalResult as any,
                             analysisSource: "fallback",
                             completedAt: new Date(),
@@ -311,12 +318,15 @@ export async function POST(request: NextRequest) {
 
         // 6. 构建 AI 提示词与调用
         // Resolve Skin Type (Priority: Face Analysis > User Answer)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const finalSkinType = determineSkinType(answers, (faceAnalysis as any) || undefined);
         const skinTypeLabel = getSkinTypeLabel(finalSkinType);
         const enrichedAnswers = { ...answers, skinType: finalSkinType };
 
         // FETCH PRODUCTS (Candidate Selection / RAG Lite)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const concerns = identifyConcerns(enrichedAnswers as any, faceAnalysis as any); // Pre-calculate concerns
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const candidateProducts = await getCandidateProducts(enrichedAnswers as any, concerns, 10); // Top 10
 
         const concernLabels = concerns.map(c => getConcernLabel(c));
@@ -325,9 +335,12 @@ export async function POST(request: NextRequest) {
             skinTypeLabel,
             ageRange: answers.ageRange,
             concerns: concernLabels,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             medicalBeauty: (answers as any).medicalBeauty,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             sleep: (answers as any).sleepQuality,
             faceAnalysis: faceAnalysis ? {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 skinType: faceAnalysis.skinType as any,
                 dimensions: faceAnalysis.dimensions,
                 overallScore: faceAnalysis.overallScore
@@ -339,7 +352,6 @@ export async function POST(request: NextRequest) {
 
         // 调用 AI
         const provider = process.env.AI_PROVIDER || "qwen";
-        console.log(`Starting text analysis with ${provider}...`);
 
         let resultJson: any;
         let queueAcquired = false;
@@ -358,8 +370,10 @@ export async function POST(request: NextRequest) {
                 throw new Error("Request cancelled during queue wait.");
             }
 
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const resultText = await generateText(systemPrompt, userPrompt, provider as any, abortController.signal);
             resultJson = extractJsonFromResponse<any>(resultText);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (e: any) {
             if (e.message?.includes("cancelled") || e.name === 'AbortError') {
                 console.warn("Text analysis cancelled (client timeout or disconnect)");
@@ -385,6 +399,7 @@ export async function POST(request: NextRequest) {
         let finalProducts: any[] = [];
 
         // 预先用算法生成10个带推荐理由的候选（用于兜底和补充）
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const algorithmRecs = await recommendProducts(enrichedAnswers as any, concerns, candidateProducts, 10);
 
         if (resultJson.products && Array.isArray(resultJson.products)) {
@@ -424,7 +439,6 @@ export async function POST(request: NextRequest) {
 
         // 如果 AI 没返回有效产品 (或映射全失败)，使用推荐算法兜底
         if (finalProducts.length === 0) {
-            console.log("AI products invalid/empty, using recommendation engine fallback");
             finalProducts = algorithmRecs;
         }
 
@@ -514,6 +528,7 @@ export async function POST(request: NextRequest) {
 
                     // Merge current results with any existing data (like generatedAvatar)
                     const mergedResult = {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         ...(existingSession?.analysisResult as any || {}),
                         ...sanitizedResult,
                         ...(avatarQueueItem?.generatedUrl ? { generatedAvatar: avatarQueueItem.generatedUrl } : {}),
@@ -523,6 +538,7 @@ export async function POST(request: NextRequest) {
                     await tx.advisorSession.upsert({
                         where: { sessionId },
                         update: {
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             analysisResult: mergedResult as any,
                             analysisSource: "hybrid",
                             completedAt: new Date(),
@@ -533,6 +549,7 @@ export async function POST(request: NextRequest) {
                         },
                         create: {
                             sessionId,
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             analysisResult: mergedResult as any,
                             analysisSource: "hybrid",
                             completedAt: new Date(),

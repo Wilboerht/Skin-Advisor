@@ -16,8 +16,9 @@ export async function GET(
         const uploadDir = path.join(process.cwd(), "public", "uploads");
         const filePath = path.join(uploadDir, relativePath);
 
-        // 防止目录遍历攻击
-        if (!filePath.startsWith(uploadDir)) {
+        // 防止目录遍历攻击（使用 path.sep 确保精确前缀匹配）
+        const resolvedUploadDir = path.resolve(uploadDir);
+        if (!filePath.startsWith(resolvedUploadDir + path.sep) && filePath !== resolvedUploadDir) {
             return new NextResponse("Forbidden", { status: 403 });
         }
 
