@@ -5,12 +5,13 @@ import { ChevronLeft, ChevronRight, ChevronUp, ScanLine, Check } from "lucide-re
 import { cn } from "@/lib/utils";
 
 type CaptureStep = "front" | "left" | "right" | "chin";
-type FaceStatus = "none" | "detecting" | "found" | "ready";
+type FaceStatus = "none" | "detecting" | "found" | "ready" | "success";
 
 interface FaceScanOverlayProps {
     currentStep: CaptureStep;
     faceStatus: FaceStatus;
     stabilityProgress: number;
+    successStep?: CaptureStep | null;
 }
 
 /**
@@ -21,6 +22,7 @@ export function FaceScanOverlay({
     currentStep,
     faceStatus,
     stabilityProgress,
+    successStep,
 }: FaceScanOverlayProps) {
 
     const getBorderColor = () => {
@@ -62,6 +64,37 @@ export function FaceScanOverlay({
                             animate={{ scale: 1.08, opacity: [0, 1, 0] }}
                             transition={{ duration: 0.6 }}
                         />
+                    )}
+
+                    {/* 拍摄成功确认态 */}
+                    {faceStatus === "success" && successStep && (
+                        <m.div
+                            className="absolute inset-0 flex items-center justify-center z-20"
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            {/* 绿色实心椭圆边框 */}
+                            <div className="absolute inset-0 rounded-[50%] border-[3px] border-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.4)]" />
+
+                            {/* 中央成功提示 */}
+                            <m.div
+                                className="relative z-10 flex flex-col items-center gap-2"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.15, duration: 0.3 }}
+                            >
+                                <div className="h-14 w-14 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg">
+                                    <Check className="h-7 w-7 text-white" strokeWidth={3} />
+                                </div>
+                                <span className="text-white text-base font-medium drop-shadow-md">
+                                    {successStep === "front" && "正脸拍摄完成"}
+                                    {successStep === "left" && "左转拍摄完成"}
+                                    {successStep === "right" && "右转拍摄完成"}
+                                    {successStep === "chin" && "下颚拍摄完成"}
+                                </span>
+                            </m.div>
+                        </m.div>
                     )}
                 </div>
 

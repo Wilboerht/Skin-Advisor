@@ -35,7 +35,7 @@ interface FaceCaptureProps {
 }
 
 type LightLevel = "excellent" | "good" | "low" | "too_dark" | "too_bright" | "uneven" | "unknown";
-type FaceStatus = "none" | "detecting" | "found" | "ready";
+type FaceStatus = "none" | "detecting" | "found" | "ready" | "success";
 
 // 拍照步骤类型
 type CaptureStep = "front" | "left" | "right" | "chin";
@@ -89,6 +89,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
   const [isInCooldown, setIsInCooldown] = useState<boolean>(false); // 冷却状态 UI 显示
   const [cooldownProgress, setCooldownProgress] = useState<number>(0); // 冷却进度 0-100
   const [isMuted, setIsMuted] = useState(false); // 静音状态
+  const [showSuccessForStep, setShowSuccessForStep] = useState<CaptureStep | null>(null); // 拍摄成功确认态
   const [isLoading, setIsLoading] = useState(true);
   const [faceStatus, setFaceStatus] = useState<FaceStatus>("none");
   const [showManualButton, setShowManualButton] = useState(false); // 是否显示手动拍照按钮
@@ -777,40 +778,51 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
       // **关键修复：启用冷却期，防止连续拍照**
       cooldownRef.current = true;
       setIsInCooldown(true);
-      setFaceStatus("none");
-      setStabilityProgress(0);
-      setCooldownProgress(0);
 
-      // 进入下一步
-      setCurrentStep(nextStep);
+      // ★ 拍摄成功确认：先展示完成状态，再进入下一步
+      setFaceStatus("success");
+      setShowSuccessForStep(currentStep);
 
-      // 冷却期：下颚步骤给用户更多准备时间，防止还没反应过来就拍完
-      // 注意：这里用 nextStep 判断，因为 currentStep 还没更新
-      const cooldownDuration = nextStep === 'chin' ? 2000 : 800;
-      const progressInterval = 50; // 每 50ms 更新一次进度
-      let elapsed = 0;
+      // 成功提示持续 1000ms，然后切换步骤并继续冷却
+      const successDisplayDuration = 1000;
 
-      // Clear any existing timer first
-      if (progressTimerRef.current) {
-        clearInterval(progressTimerRef.current);
-        progressTimerRef.current = null;
-      }
+      setTimeout(() => {
+        setFaceStatus("none");
+        setShowSuccessForStep(null);
+        setStabilityProgress(0);
+        setCooldownProgress(0);
 
-      progressTimerRef.current = setInterval(() => {
-        elapsed += progressInterval;
-        const progress = Math.min(100, (elapsed / cooldownDuration) * 100);
-        setCooldownProgress(progress);
+        // 进入下一步
+        setCurrentStep(nextStep);
 
-        if (elapsed >= cooldownDuration) {
-          if (progressTimerRef.current) {
-            clearInterval(progressTimerRef.current);
-            progressTimerRef.current = null;
-          }
-          cooldownRef.current = false;
-          setIsInCooldown(false);
-          setCooldownProgress(0);
+        // 冷却期：下颚步骤给用户更多准备时间
+        // 成功提示已经给了用户缓冲，冷却期适当缩短
+        const cooldownDuration = nextStep === 'chin' ? 1000 : 400;
+        const progressInterval = 50;
+        let elapsed = 0;
+
+        // Clear any existing timer first
+        if (progressTimerRef.current) {
+          clearInterval(progressTimerRef.current);
+          progressTimerRef.current = null;
         }
-      }, progressInterval);
+
+        progressTimerRef.current = setInterval(() => {
+          elapsed += progressInterval;
+          const progress = Math.min(100, (elapsed / cooldownDuration) * 100);
+          setCooldownProgress(progress);
+
+          if (elapsed >= cooldownDuration) {
+            if (progressTimerRef.current) {
+              clearInterval(progressTimerRef.current);
+              progressTimerRef.current = null;
+            }
+            cooldownRef.current = false;
+            setIsInCooldown(false);
+            setCooldownProgress(0);
+          }
+        }, progressInterval);
+      }, successDisplayDuration);
 
     } else {
       // 所有步骤完成 - 直接调用 onCapture 并传递所有照片
@@ -1196,7 +1208,13 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
                     isCurrent ? "opacity-100" : "opacity-40"
                   )}>
                     {isCompleted ? (
-                      <div className="h-1.5 w-1.5 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.8)]" />
+                      <m.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="h-4 w-4 rounded-full bg-emerald-500 flex items-center justify-center"
+                      >
+                        <Check className="h-2.5 w-2.5 text-white" strokeWidth={3} />
+                      </m.div>
                     ) : (
                       <div className={cn("h-1.5 w-1.5 rounded-full transition-all", isCurrent ? "bg-white scale-125" : "bg-white")} />
                     )}
@@ -1219,6 +1237,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
             currentStep={currentStep}
             faceStatus={faceStatus}
             stabilityProgress={stabilityProgress}
+            successStep={showSuccessForStep}
           />
         </div>
       )}
@@ -1235,7 +1254,11 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
             className="text-center mb-4"
           >
             <h3 className="text-2xl md:text-3xl font-serif text-white mb-2 drop-shadow-md">
-              {isInCooldown ? "请保持..." : currentStepConfig?.instruction}
+              {faceStatus === "success" && showSuccessForStep
+                ? `${CAPTURE_STEPS.find(s => s.step === showSuccessForStep)?.label}拍摄完成`
+                : isInCooldown
+                  ? "请准备下一张..."
+                  : currentStepConfig?.instruction}
             </h3>
 
             {/* 辅助状态：光线 和 自动拍照提示 */}
