@@ -29,6 +29,7 @@ export function FaceScanOverlay({
         switch (faceStatus) {
             case "found": return "border-brand-gold";
             case "ready": return "border-emerald-500";
+            case "success": return "border-emerald-500";
             default: return "border-white/40";
         }
     };
@@ -100,7 +101,7 @@ export function FaceScanOverlay({
 
                 {/* 扫描激光 */}
                 <AnimatePresence>
-                    {currentStep === "front" && faceStatus !== "ready" && (
+                    {currentStep === "front" && faceStatus !== "ready" && faceStatus !== "success" && (
                         <m.div
                             className="absolute left-[8%] right-[8%] h-[2px] bg-gradient-to-r from-transparent via-brand-gold to-transparent shadow-[0_0_15px_rgba(234,179,8,0.5)]"
                             initial={{ top: "10%", opacity: 0 }}

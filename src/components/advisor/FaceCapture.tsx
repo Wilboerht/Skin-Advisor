@@ -72,6 +72,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
   const lastSpeakTimeRef = useRef<number>(0); // 语音防抖时间戳
   const lastSpokenPhraseRef = useRef<string>(""); // 避免短时间内重复播报同一句话
   const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null); // 冷却进度定时器
+  const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null); // 成功提示定时器
 
   const [stream, setStream] = useState<MediaStream | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -774,6 +775,9 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     // 检查是否还有下一步
     const nextStep = getNextStep(currentStep);
 
+    // 成功提示持续 1000ms
+    const successDisplayDuration = 1000;
+
     if (nextStep) {
       // **关键修复：启用冷却期，防止连续拍照**
       cooldownRef.current = true;
@@ -783,10 +787,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
       setFaceStatus("success");
       setShowSuccessForStep(currentStep);
 
-      // 成功提示持续 1000ms，然后切换步骤并继续冷却
-      const successDisplayDuration = 1000;
-
-      setTimeout(() => {
+      successTimerRef.current = setTimeout(() => {
         setFaceStatus("none");
         setShowSuccessForStep(null);
         setStabilityProgress(0);
@@ -822,36 +823,46 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
             setCooldownProgress(0);
           }
         }, progressInterval);
+
+        successTimerRef.current = null;
       }, successDisplayDuration);
 
     } else {
-      // 所有步骤完成 - 直接调用 onCapture 并传递所有照片
-      setIsAllCaptured(true);
+      // ★ 最后一张也显示拍摄成功提示
+      setFaceStatus("success");
+      setShowSuccessForStep(currentStep);
 
-      // 停止面部检测
-      if (faceDetectionRef.current) {
-        cancelAnimationFrame(faceDetectionRef.current);
-        faceDetectionRef.current = null;
-      }
+      successTimerRef.current = setTimeout(() => {
+        // 所有步骤完成 - 直接调用 onCapture 并传递所有照片
+        setIsAllCaptured(true);
 
-      // 停止摄像头
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-        streamRef.current = null;
-      }
-      if (videoRef.current) {
-        videoRef.current.srcObject = null;
-      }
-      setStream(null);
+        // 停止面部检测
+        if (faceDetectionRef.current) {
+          cancelAnimationFrame(faceDetectionRef.current);
+          faceDetectionRef.current = null;
+        }
 
-      // 直接调用 onCapture，传递所有四张照片
-      const allImages: FaceCaptureImages = {
-        front: currentStep === "front" ? imageData : capturedImages.front!,
-        left: currentStep === "left" ? imageData : capturedImages.left!,
-        right: currentStep === "right" ? imageData : capturedImages.right!,
-        chin: imageData, // 最后一步一定是 chin
-      };
-      onCapture(allImages);
+        // 停止摄像头
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach((track) => track.stop());
+          streamRef.current = null;
+        }
+        if (videoRef.current) {
+          videoRef.current.srcObject = null;
+        }
+        setStream(null);
+
+        // 直接调用 onCapture，传递所有四张照片
+        const allImages: FaceCaptureImages = {
+          front: currentStep === "front" ? imageData : capturedImages.front!,
+          left: currentStep === "left" ? imageData : capturedImages.left!,
+          right: currentStep === "right" ? imageData : capturedImages.right!,
+          chin: imageData, // 最后一步一定是 chin
+        };
+        onCapture(allImages);
+
+        successTimerRef.current = null;
+      }, successDisplayDuration);
     }
     }, 0);
   }, [facingMode, currentStep, getNextStep, stream, capturedImages, onCapture, speak]);
@@ -1005,6 +1016,10 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
       if (progressTimerRef.current) {
         clearInterval(progressTimerRef.current);
         progressTimerRef.current = null;
+      }
+      if (successTimerRef.current) {
+        clearTimeout(successTimerRef.current);
+        successTimerRef.current = null;
       }
       if (typeof window !== 'undefined' && window.speechSynthesis) {
         window.speechSynthesis.cancel();
