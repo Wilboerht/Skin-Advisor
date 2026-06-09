@@ -390,8 +390,8 @@ export function useAsyncAnalysis() {
                 }
             }
 
-            // Bump to next major phase smoothly
-            setAnalysisState(prev => ({ ...prev, status: 'analyzing_skin', progress: Math.max(prev.progress, 45) }));
+            // Bump to next major phase smoothly (keep current progress, no hard jump)
+            setAnalysisState(prev => ({ ...prev, status: 'analyzing_skin' }));
 
             // 2. Comprehensive Analysis (Text)
 
@@ -497,10 +497,10 @@ export function useAsyncAnalysis() {
                         target = 20;
                         increment = 0.25; // Faster start, users feel it begins quickly
                     } else if (prev.status === 'analyzing_face') {
-                        target = 45;
+                        target = 60;
                         increment = 0.12; // Moderate pace
                     } else if (prev.status === 'analyzing_skin') {
-                        target = 75; // Stop at 75% while waiting for LLM
+                        target = 85; // Stop at 85% while waiting for LLM
                         const remaining = target - prev.progress;
                         if (remaining > 20) increment = 0.18;
                         else if (remaining > 10) increment = 0.10;
