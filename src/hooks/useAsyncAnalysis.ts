@@ -2,7 +2,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAdvisorAnalytics } from './useAdvisorAnalytics';
 import { useAuth } from './useAuth';
-import { preprocessFaceImage } from '@/lib/image-processing';
+import { preprocessFaceImage, getBase64Size } from '@/lib/image-processing';
 import { useRouter } from 'next/navigation';
 import { getPrivacyConsentPayload } from '@/components/advisor/PrivacyConsent';
 
@@ -131,40 +131,59 @@ export function useAsyncAnalysis() {
                         { key: 'chin', label: 'chin' },
                     ];
 
-                    for (const { key, label } of angles) {
-                        const imgData = images[key];
-                        if (!imgData) continue;
+                    // 1. Parallel preprocessing (skip already small images)
+                    const preprocessResults = await Promise.all(
+                        angles.map(async ({ key, label }) => {
+                            const imgData = images[key];
+                            if (!imgData) return null;
 
-                        try {
-                            let finalData = imgData;
-                            // Only preprocess if not already a URL (local data)
-                            if (finalData.startsWith('data:')) {
-                                const processed = await preprocessFaceImage(imgData);
-                                finalData = processed.imageData;
-
-                                try {
-                                    // Upload to cloud storage (for all users — reduces DB bloat and API payload size)
-                                    const { uploadImage } = await import("@/lib/upload-client");
-                                    const blob = await (await fetch(finalData)).blob();
-                                    const url = await uploadImage(blob, `face-${label}.jpg`);
-                                    if (url) {
-                                        finalData = url;
-                                        console.log(`Uploaded ${label} to cloud storage:`, url);
+                            try {
+                                let finalData = imgData;
+                                // Only preprocess if base64 and larger than 300KB
+                                if (finalData.startsWith('data:')) {
+                                    const base64Size = getBase64Size(finalData);
+                                    if (base64Size < 300 * 1024) {
+                                        console.log(`[Preprocess] ${label} already small (${Math.round(base64Size / 1024)}KB), skipping`);
+                                    } else {
+                                        const processed = await preprocessFaceImage(imgData);
+                                        finalData = processed.imageData;
                                     }
-                                } catch (uploadError) {
-                                    console.warn(`Cloud upload failed for ${label}, using base64`, uploadError);
                                 }
+                                return { key, label, finalData, originalData: imgData, needsUpload: finalData.startsWith('data:') };
+                            } catch (e) {
+                                console.warn(`Preprocessing failed for ${label}`, e);
+                                return { key, label, finalData: imgData, originalData: imgData, needsUpload: imgData.startsWith('data:') };
                             }
-                            visionImages.push({ data: finalData, angle: label });
-                            if (key === 'front') {
-                                frontPhotoForAvatar = finalData;
+                        })
+                    );
+
+                    const validResults = preprocessResults.filter((r): r is NonNullable<typeof r> => r !== null);
+
+                    // 2. Parallel upload
+                    const uploadResults = await Promise.all(
+                        validResults.map(async (result) => {
+                            if (!result.needsUpload) return result; // Already a URL
+
+                            try {
+                                const { uploadImage } = await import("@/lib/upload-client");
+                                const blob = await (await fetch(result.finalData)).blob();
+                                const url = await uploadImage(blob, `face-${result.label}.jpg`);
+                                if (url) {
+                                    console.log(`Uploaded ${result.label} to cloud storage:`, url);
+                                    return { ...result, finalData: url };
+                                }
+                            } catch (uploadError) {
+                                console.warn(`Cloud upload failed for ${result.label}, using base64`, uploadError);
                             }
-                        } catch (e) {
-                            console.warn(`Preprocessing failed for ${label}`, e);
-                            visionImages.push({ data: imgData, angle: label });
-                            if (key === 'front') {
-                                frontPhotoForAvatar = imgData;
-                            }
+                            return result;
+                        })
+                    );
+
+                    // 3. Assemble vision images
+                    for (const result of uploadResults) {
+                        visionImages.push({ data: result.finalData, angle: result.label });
+                        if (result.key === 'front') {
+                            frontPhotoForAvatar = result.finalData;
                         }
                     }
 
