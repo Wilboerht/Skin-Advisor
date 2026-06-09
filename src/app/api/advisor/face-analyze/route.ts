@@ -220,6 +220,12 @@ export async function POST(request: NextRequest) {
         // Initial Load (Compressed Quality to prevent Payload Too Large & reduce latency)
         let validImages = await loadImages(true);
 
+        // 收集需要清理的非 front 上传照片（front 留给 avatar processor）
+        const isFrontAngle = (angle: string | undefined) => angle === "正脸" || angle === "front";
+        const uploadedFaceUrls = validImages
+            .filter(img => !!img.data && img.data.startsWith('http') && !isFrontAngle(img.angle))
+            .map(img => img.data);
+
         if (validImages.length === 0) {
             return NextResponse.json({ error: "无有效图片数据" }, { status: 400 });
         }
@@ -348,6 +354,21 @@ export async function POST(request: NextRequest) {
             if (acquired) {
                 visionQueue.release();
                 aiLogger.debug(`[Queue] Lock released. Stats:`, visionQueue.getStats() as any);
+            }
+
+            // 清理非 front 的上传照片（front 留给 avatar processor）
+            if (uploadedFaceUrls.length > 0) {
+                Promise.resolve().then(async () => {
+                    const { deleteSourcePhoto } = await import("@/lib/file-cleanup");
+                    for (const url of uploadedFaceUrls) {
+                        try {
+                            await deleteSourcePhoto(url);
+                        } catch (e) {
+                            console.warn(`[FaceAnalyze] Failed to delete uploaded photo ${url}:`, e);
+                        }
+                    }
+                    console.log(`[FaceAnalyze] Cleaned up ${uploadedFaceUrls.length} uploaded face photos`);
+                });
             }
         }
 
