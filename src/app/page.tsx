@@ -5,7 +5,23 @@ import { useRouter } from "next/navigation";
 import { Link } from "next-view-transitions";
 import { LazyMotion, domAnimation, AnimatePresence, m } from "framer-motion";
 import Image from "next/image";
-import { ArrowRight, House, Loader2, MapPin, User, ClipboardList, X, CircleAlert } from "lucide-react";
+import { ArrowRight, Loader2, MapPin, ClipboardList, X, CircleAlert } from "lucide-react";
+
+function HomeSvg({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+      <path d="M20.5603 10.1887L13.0603 2.68875C12.779 2.40766 12.3977 2.24976 12 2.24976C11.6024 2.24976 11.221 2.40766 10.9397 2.68875L3.4397 10.1887C3.29973 10.3277 3.18878 10.493 3.1133 10.6752C3.03782 10.8574 2.99931 11.0528 3.00001 11.25V20.25C3.00001 20.4489 3.07903 20.6397 3.21968 20.7803C3.36033 20.921 3.5511 21 3.75001 21H9.75001C9.94892 21 10.1397 20.921 10.2803 20.7803C10.421 20.6397 10.5 20.4489 10.5 20.25V15H13.5V20.25C13.5 20.4489 13.579 20.6397 13.7197 20.7803C13.8603 20.921 14.0511 21 14.25 21H20.25C20.4489 21 20.6397 20.921 20.7803 20.7803C20.921 20.6397 21 20.4489 21 20.25V11.25C21.0007 11.0528 20.9622 10.8574 20.8867 10.6752C20.8112 10.493 20.7003 10.3277 20.5603 10.1887ZM19.5 19.5H15V14.25C15 14.0511 14.921 13.8603 14.7803 13.7197C14.6397 13.579 14.4489 13.5 14.25 13.5H9.75001C9.5511 13.5 9.36033 13.579 9.21968 13.7197C9.07903 13.8603 9.00001 14.0511 9.00001 14.25V19.5H4.50001V11.25L12 3.75L19.5 11.25V19.5Z" fill="currentColor" />
+    </svg>
+  );
+}
+
+function UserSvg({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+      <path d="M18.6651 9.2612C18.6651 5.78276 15.8823 3 12.4039 3C8.92544 3 6.14268 5.78276 6.14268 9.2612C6.14268 11.6265 7.39492 13.644 9.34285 14.6876C6.69923 15.7311 4.68173 18.0269 4.12518 20.9488C4.05561 21.2966 4.26432 21.714 4.68173 21.7836H4.82087C5.16872 21.7836 5.44699 21.5749 5.51656 21.2271C6.14268 17.9573 8.99501 15.592 12.3343 15.5224H12.4735C15.8826 15.5224 18.6651 12.7396 18.6651 9.2612ZM7.53433 9.2612C7.53433 6.54801 9.69097 4.39138 12.4042 4.39138C15.1173 4.39138 17.274 6.54801 17.274 9.2612C17.274 11.9048 15.1173 14.0615 12.4737 14.131H12.2647C9.6214 14.0615 7.53433 11.9048 7.53433 9.2612ZM16.9957 15.592C16.6479 15.3833 16.2304 15.4528 16.0217 15.8007C15.813 16.1485 15.8826 16.5659 16.2304 16.7746C17.8305 17.8877 18.9436 19.4183 19.2915 21.2271C19.361 21.5749 19.6393 21.7836 19.9872 21.7836H20.1263C20.4741 21.714 20.7524 21.3662 20.6829 20.9488C20.2654 18.7921 18.9436 16.9138 16.9957 15.592Z" fill="currentColor" />
+    </svg>
+  );
+}
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -301,9 +317,9 @@ export default function Home() {
                 <div className="absolute top-6 left-1/2 -translate-x-1/2 w-[90%] flex items-center justify-between z-50">
                   <a
                     href="https://nihplod.cn"
-                    className="group flex items-center gap-2 text-[13px] font-medium tracking-[0.2em] text-[#3D4430]/30 hover:text-[#3D4430] transition-colors duration-500 no-underline cursor-pointer relative z-10"
+                    className="group flex items-center gap-2 text-[13px] font-medium tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] transition-colors duration-500 no-underline cursor-pointer relative z-10"
                   >
-                    <House className="w-4 h-4 opacity-40 group-hover:opacity-100 transition-opacity duration-500" />
+                    <HomeSvg className="w-6 h-6 sm:w-4 sm:h-4 transition-opacity duration-500" />
                     <span className="hidden sm:inline relative">
                       返回官网
                       <span className="absolute -bottom-0.5 left-0 w-0 h-[1px] bg-[#3D4430]/30 group-hover:w-full transition-all duration-500 ease-out" />
@@ -314,9 +330,9 @@ export default function Home() {
                     {user ? (
                       <button
                         onClick={() => setShowProfileModal(true)}
-                        className="group flex items-center gap-2 text-[13px] font-medium tracking-[0.2em] text-[#3D4430]/30 hover:text-[#3D4430] transition-colors duration-500 cursor-pointer"
+                        className="group flex items-center gap-2 text-[13px] font-medium tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] transition-colors duration-500 cursor-pointer"
                       >
-                        <User className="w-4 h-4 opacity-40 group-hover:opacity-100 transition-opacity duration-500" />
+                        <UserSvg className="w-6 h-6 sm:w-4 sm:h-4 transition-opacity duration-500" />
                         <span className="hidden sm:inline relative">
                           {user.name || '测肤记录'}
                           <span className="absolute -bottom-0.5 left-0 w-0 h-[1px] bg-[#3D4430]/30 group-hover:w-full transition-all duration-500 ease-out" />
@@ -325,9 +341,9 @@ export default function Home() {
                     ) : (
                       <button
                         onClick={() => openAuthModal('login')}
-                        className="group flex items-center gap-2 text-[13px] font-medium tracking-[0.2em] text-[#3D4430]/30 hover:text-[#3D4430] transition-colors duration-500 cursor-pointer"
+                        className="group flex items-center gap-2 text-[13px] font-medium tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] transition-colors duration-500 cursor-pointer"
                       >
-                        <User className="w-4 h-4 opacity-40 group-hover:opacity-100 transition-opacity duration-500" />
+                        <UserSvg className="w-6 h-6 sm:w-4 sm:h-4 transition-opacity duration-500" />
                         <span className="hidden sm:inline relative">
                           登录 / 注册
                           <span className="absolute -bottom-0.5 left-0 w-0 h-[1px] bg-[#3D4430]/30 group-hover:w-full transition-all duration-500 ease-out" />

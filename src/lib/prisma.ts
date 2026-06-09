@@ -6,11 +6,37 @@
  */
 import { PrismaClient } from "@prisma/client";
 
+/**
+ * 当 DATABASE_URL 未设置时，返回一个 PrismaClient 空壳（stub）。
+ * 模块可以正常加载，但所有 DB 操作都会返回 rejected Promise。
+ * 这样不连数据库也能启动开发服务器，适合纯前端样式调试。
+ */
+function createPrismaStub(): PrismaClient {
+    const handler: ProxyHandler<any> = {
+        get(_, prop) {
+            if (prop === "$disconnect") return () => Promise.resolve();
+            if (prop === "then") return undefined;
+            if (prop === "catch") return undefined;
+            if (prop === "finally") return undefined;
+            return new Proxy(() => {}, handler);
+        },
+        apply() {
+            return Promise.reject(
+                new Error("DATABASE_URL is not set")
+            );
+        },
+    };
+    return new Proxy({} as PrismaClient, handler);
+}
+
 const prismaClientSingleton = () => {
     const url = process.env.DATABASE_URL;
 
     if (!url) {
-        throw new Error("DATABASE_URL environment variable is not set");
+        console.warn(
+            "[Prisma] DATABASE_URL is not set. Returning a stub client. DB operations will fail."
+        );
+        return createPrismaStub();
     }
 
     // eslint-disable-next-line @typescript-eslint/no-require-imports
