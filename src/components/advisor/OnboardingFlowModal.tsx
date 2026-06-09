@@ -194,10 +194,10 @@ export function OnboardingFlowModal({
                                 >
                                     <div className="flex justify-center mb-8 text-[#3D4430]">
                                         <Image
-                                            src="/images/wave-bye.svg"
+                                            src="/images/hi.svg"
                                             alt="Wave"
-                                            width={40}
-                                            height={40}
+                                            width={48}
+                                            height={48}
                                             className="opacity-80"
                                             priority
                                         />
