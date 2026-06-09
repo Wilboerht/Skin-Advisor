@@ -114,7 +114,16 @@ export function useAsyncAnalysis() {
 
             // Use advisorStorage to get images (supports IndexedDB)
             const { advisorStorage } = await import("@/lib/advisor-storage");
-            const images = await advisorStorage.getFaceImages();
+            const rawImages = await advisorStorage.getFaceImages();
+            const processedImages = await advisorStorage.getProcessedImages();
+
+            // 合并：预处理有的用预处理的，没有的用原始的
+            const images = rawImages ? {
+                front: processedImages?.front || rawImages.front,
+                left: processedImages?.left || rawImages.left,
+                right: processedImages?.right || rawImages.right,
+                chin: processedImages?.chin || rawImages.chin,
+            } : processedImages;
 
             // if (imagesStr) { -> Handled by checking if images is not null
             if (images) {

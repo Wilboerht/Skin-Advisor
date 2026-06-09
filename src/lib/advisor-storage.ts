@@ -349,6 +349,35 @@ export const advisorStorage = {
         return null;
     },
 
+    async saveProcessedImages(images: { front?: string; left?: string; right?: string; chin?: string }): Promise<boolean> {
+        try {
+            localStorage.setItem("advisor_processed_images", JSON.stringify({
+                images,
+                timestamp: Date.now(),
+            }));
+            return true;
+        } catch (e) {
+            console.error("Failed to save processed images", e);
+            return false;
+        }
+    },
+
+    async getProcessedImages(): Promise<{ front?: string; left?: string; right?: string; chin?: string } | null> {
+        try {
+            const str = localStorage.getItem("advisor_processed_images");
+            if (!str) return null;
+            const data = JSON.parse(str);
+            // 24小时过期
+            if (Date.now() - data.timestamp > 24 * 60 * 60 * 1000) {
+                localStorage.removeItem("advisor_processed_images");
+                return null;
+            }
+            return data.images;
+        } catch (e) {
+            return null;
+        }
+    },
+
     async clearAll(): Promise<void> {
         // Clear IndexedDB
         if (isIndexedDBAvailable()) {
@@ -364,6 +393,7 @@ export const advisorStorage = {
         localStorage.removeItem("advisor_face_images_idb");
         localStorage.removeItem("advisor_result");
         localStorage.removeItem("advisor_result_idb");
+        localStorage.removeItem("advisor_processed_images");
         localStorage.removeItem("advisor_step");
     },
 };

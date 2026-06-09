@@ -72,10 +72,73 @@ export default function FaceScanPage() {
 
         const { advisorStorage } = await import("@/lib/advisor-storage");
 
-
         const success = await advisorStorage.saveFaceImages(images);
 
         if (success) {
+            // ★ 后台立即预处理+上传（不阻塞跳转）
+            Promise.resolve().then(async () => {
+                try {
+                    const { preprocessFaceImage, getBase64Size } = await import("@/lib/image-processing");
+                    const { uploadImage } = await import("@/lib/upload-client");
+
+                    const angles = [
+                        { key: 'front' as const, label: 'front' },
+                        { key: 'left' as const, label: 'left' },
+                        { key: 'right' as const, label: 'right' },
+                        { key: 'chin' as const, label: 'chin' },
+                    ];
+
+                    const processedEntries = await Promise.all(
+                        angles.map(async ({ key, label }) => {
+                            const imgData = images[key];
+                            if (!imgData) return null;
+
+                            let finalData = imgData;
+
+                            // 预处理：base64 且 >300KB 才处理
+                            if (finalData.startsWith('data:')) {
+                                const base64Size = getBase64Size(finalData);
+                                if (base64Size < 300 * 1024) {
+                                    console.log(`[Background] ${label} already small (${Math.round(base64Size / 1024)}KB), skipping preprocess`);
+                                } else {
+                                    try {
+                                        const { imageData } = await preprocessFaceImage(imgData);
+                                        finalData = imageData;
+                                    } catch (e) {
+                                        console.warn(`[Background] Preprocess failed for ${label}`, e);
+                                    }
+                                }
+                            }
+
+                            // 上传（只有 base64 才需要上传）
+                            if (finalData.startsWith('data:')) {
+                                try {
+                                    const blob = await (await fetch(finalData)).blob();
+                                    const url = await uploadImage(blob, `face-${label}.jpg`);
+                                    if (url) finalData = url;
+                                } catch (e) {
+                                    console.warn(`[Background] Upload failed for ${label}`, e);
+                                }
+                            }
+
+                            return { key, finalData };
+                        })
+                    );
+
+                    const processed: Record<string, string> = {};
+                    for (const entry of processedEntries) {
+                        if (entry) processed[entry.key] = entry.finalData;
+                    }
+
+                    if (Object.keys(processed).length > 0) {
+                        await advisorStorage.saveProcessedImages(processed);
+                        console.log("[Background] Preprocess+upload complete", Object.keys(processed));
+                    }
+                } catch (e) {
+                    console.warn("[Background] Preprocess+upload task failed", e);
+                }
+            });
+
             trackFaceScanComplete();
             router.push("/result?status=analyzing");
             return;
