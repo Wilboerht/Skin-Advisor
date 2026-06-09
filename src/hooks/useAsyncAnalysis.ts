@@ -168,10 +168,26 @@ export function useAsyncAnalysis() {
 
                     const validResults = preprocessResults.filter((r): r is NonNullable<typeof r> => r !== null);
 
-                    // 2. Parallel upload
+                    // 2. 根据网络状况决定上传策略（弱网减少上传数量）
+                    const conn = (navigator as any).connection;
+                    const networkType = conn?.effectiveType as string | undefined;
+
+                    const shouldUploadAngle = (key: string): boolean => {
+                        if (key === 'front') return true; // 正脸始终上传
+                        if (!networkType || networkType === '4g') return true; // 好网络或检测不到，全传
+                        if (networkType === '3g') return key === 'left'; // 3g 只传正脸+左侧
+                        return false; // 2g / slow-2g 只传正脸
+                    };
+
                     const uploadResults = await Promise.all(
                         validResults.map(async (result) => {
                             if (!result.needsUpload) return result; // Already a URL
+
+                            // 弱网跳过非必要角度，直接用 base64
+                            if (!shouldUploadAngle(result.key)) {
+                                console.log(`[Network] Skipping upload for ${result.label} (${networkType}), using base64`);
+                                return result;
+                            }
 
                             try {
                                 const { uploadImage } = await import("@/lib/upload-client");
