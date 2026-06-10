@@ -836,7 +836,7 @@ export function AuthModal() {
                             <img
                                 src="/NIHPLOD-logo.svg"
                                 alt="NIHPLOD"
-                                className="object-contain h-auto w-[100px]"
+                                className="object-contain h-auto w-[110px]"
                             />
                         )}
                     </div>
@@ -986,6 +986,10 @@ export function AuthModal() {
                         {/* ====== REGISTER ====== */}
                         {view === "register" && (
                             <div className="flex flex-col gap-10">
+                                <div className="text-center pt-[6px] pb-4">
+                                    <h2 className="text-[24px] font-medium tracking-[0.2em] text-[#00263E]">注册会员</h2>
+                                    <div className="mx-auto mt-2 w-[70px] border-b-[1.5px] border-[#00263E]" />
+                                </div>
                                 <form onSubmit={handleRegister} className="w-full space-y-6">
                                     <div>
                                         <input
@@ -1103,6 +1107,10 @@ export function AuthModal() {
                         {/* ====== FORGOT PASSWORD ====== */}
                         {view === "forgot_password" && (
                             <div className="flex flex-col gap-10">
+                                <div className="text-center pt-[6px] pb-4">
+                                    <h2 className="text-[24px] font-medium tracking-[0.2em] text-[#00263E]">找回密码</h2>
+                                    <div className="mx-auto mt-2 w-[70px] border-b-[1.5px] border-[#00263E]" />
+                                </div>
                                 <div className="space-y-6">
                                 {mobileForgotStep === "phone" && (
                                     <div className="space-y-6">
