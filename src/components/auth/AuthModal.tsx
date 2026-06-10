@@ -6,7 +6,8 @@ import { useAuthModal } from "./AuthModalContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/Toast";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Loader2, Eye, EyeOff, ArrowRight, ArrowLeft, Phone, CheckCircle, Check, KeyRound, CheckCircle2 } from "lucide-react";
+import { X, Loader2, Eye, EyeOff, ArrowRight, ArrowLeft, Phone, CheckCircle, Check, KeyRound, CheckCircle2, ChevronLeft, ArrowLeftRight } from "lucide-react";
+import { useIsMobile } from "@/hooks/useMediaQuery";
 
 export function AuthModal() {
     const { isOpen, view, openAuthModal, closeAuthModal, setAuthView } = useAuthModal();
@@ -51,6 +52,12 @@ export function AuthModal() {
     const [mobileAgreed, setMobileAgreed] = useState(false);
     const [mobileForgotStep, setMobileForgotStep] = useState<"phone" | "code" | "password" | "success">("phone");
 
+    // Mobile login method toggle
+    const [loginMethod, setLoginMethod] = useState<"password" | "code">("password");
+    const [loginCode, setLoginCode] = useState("");
+    const [loginCodeCountdown, setLoginCodeCountdown] = useState(0);
+    const [loginCodeSending, setLoginCodeSending] = useState(false);
+
     // Reset states when modal opens/closes
     useEffect(() => {
         if (!isOpen) {
@@ -61,6 +68,10 @@ export function AuthModal() {
             setResetCountdown(0);
             setMobileAgreed(false);
             setMobileForgotStep("phone");
+            setLoginMethod("password");
+            setLoginCode("");
+            setLoginCodeCountdown(0);
+            setLoginCodeSending(false);
         }
     }, [isOpen]);
 
@@ -81,8 +92,55 @@ export function AuthModal() {
         return () => clearTimeout(timer);
     }, [resetCountdown]);
 
+    useEffect(() => {
+        let timer: NodeJS.Timeout;
+        if (loginCodeCountdown > 0) {
+            timer = setTimeout(() => setLoginCodeCountdown(prev => prev - 1), 1000);
+        }
+        return () => clearTimeout(timer);
+    }, [loginCodeCountdown]);
+
+    const isMobile = useIsMobile();
+
+    // 禁止背景滚动（移动端使用 fixed 定位防止 iOS 弹性滚动）
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = "hidden";
+            if (isMobile) {
+                const scrollY = window.scrollY;
+                document.body.style.position = "fixed";
+                document.body.style.width = "100%";
+                document.body.style.top = `-${scrollY}px`;
+            }
+        } else {
+            document.body.style.overflow = "unset";
+            if (isMobile) {
+                const scrollY = document.body.style.top;
+                document.body.style.position = "";
+                document.body.style.width = "";
+                document.body.style.top = "";
+                if (scrollY) {
+                    window.scrollTo(0, parseInt(scrollY) * -1);
+                }
+            }
+        }
+        return () => {
+            document.body.style.overflow = "unset";
+            if (isMobile) {
+                document.body.style.position = "";
+                document.body.style.width = "";
+                document.body.style.top = "";
+            }
+        };
+    }, [isOpen, isMobile]);
+
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (loginMethod === "code") {
+            toast.error("验证码登录功能即将上线，请使用密码登录");
+            setLoginMethod("password");
+            return;
+        }
         setLoading(true);
         try {
             console.log("🔐 Starting login request...");
@@ -217,6 +275,31 @@ export function AuthModal() {
         setResetNewPassword("");
         setResetConfirmPassword("");
         setMobileForgotStep("phone");
+    };
+
+    // 手机端登录面板：发送登录验证码
+    const handleSendLoginCode = async () => {
+        if (!/^1[3-9]\d{9}$/.test(loginPhone)) {
+            toast.error("请输入正确的手机号");
+            return;
+        }
+        setLoginCodeSending(true);
+        try {
+            const res = await fetch("/api/auth/send-code", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ phone: loginPhone, type: "login" })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error?.message || data.error || "发送失败");
+            setLoginCodeCountdown(60);
+            toast.success("验证码已发送");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (error: any) {
+            toast.error(error.message);
+        } finally {
+            setLoginCodeSending(false);
+        }
     };
 
     // 手机端专用：发送重置验证码
@@ -738,199 +821,292 @@ export function AuthModal() {
                     initial={{ x: "100%" }}
                     animate={{ x: 0, transition: { duration: 0.8, ease: [0.8, 0, 0.13, 1] } }}
                     exit={{ x: "100%", transition: { duration: 0.8, ease: [0.9, 0, 0.17, 1] } }}
-                    className="md:hidden fixed inset-0 z-[99999] bg-white flex flex-col"
+                    className="md:hidden fixed inset-0 z-[99999] bg-[#F8F7F3] flex flex-col"
                 >
-                    <div className="flex-1 flex flex-col justify-center px-6 overflow-y-auto">
-                        {/* Logo */}
-                        <div className="mx-auto mb-12 flex justify-center">
-                            <img
-                                src="/NIHPLOD-logo.svg"
-                                alt="NIHPLOD Logo"
-                                className="object-contain h-auto w-[140px]"
-                            />
-                        </div>
+                    {/* 手机端顶部栏 */}
+                    <div className="flex-shrink-0 h-[56px] w-full flex items-center relative">
+                        <button
+                            type="button"
+                            onClick={closeAuthModal}
+                            className="absolute left-0 top-0 bottom-0 flex items-center justify-center px-4 py-[10px]"
+                        >
+                            <ChevronLeft className="h-6 w-6 text-[#00263E]" />
+                        </button>
+                    </div>
+
+                    <div className="flex-1 flex flex-col overflow-y-auto scrollbar-hide">
+                        <div className="flex-1 flex flex-col px-6">
 
                         {/* ====== LOGIN ====== */}
                         {view === "login" && (
-                            <form onSubmit={handleLogin} className="space-y-6">
-                                <div>
-                                    <input
-                                        type="tel"
-                                        inputMode="numeric"
-                                        pattern="[0-9]*"
-                                        autoComplete="tel"
-                                        required
-                                        value={loginPhone}
-                                        onChange={(e) => setLoginPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
-                                        placeholder="手机号"
-                                        className="w-full bg-transparent border-0 border-b border-brand-charcoal/25 rounded-none py-3 px-0 text-base tracking-wide text-brand-charcoal placeholder:text-brand-charcoal/40 placeholder:text-sm placeholder:tracking-wider focus:outline-none focus:border-brand-gold/60 transition-colors"
+                            <div className="flex flex-col gap-14">
+                                <div className="flex justify-center">
+                                    <img
+                                        src="/NIHPLOD-logo.svg"
+                                        alt="NIHPLOD Logo"
+                                        className="object-contain h-auto w-[140px]"
                                     />
                                 </div>
-                                <div>
-                                    <input
-                                        type="password"
-                                        required
-                                        value={loginPassword}
-                                        onChange={(e) => setLoginPassword(e.target.value)}
-                                        placeholder="密码"
-                                        maxLength={32}
-                                        className="w-full bg-transparent border-0 border-b border-brand-charcoal/25 rounded-none py-3 px-0 text-base tracking-wide text-brand-charcoal placeholder:text-brand-charcoal/40 placeholder:text-sm placeholder:tracking-wider focus:outline-none focus:border-brand-gold/60 transition-colors"
-                                    />
-                                    <div className="mt-3 text-right">
+                                <form onSubmit={handleLogin} className="w-full space-y-6">
+                                    <div>
+                                        <input
+                                            type="tel"
+                                            inputMode="numeric"
+                                            pattern="[0-9]*"
+                                            autoComplete="tel"
+                                            required
+                                            value={loginPhone}
+                                            onChange={(e) => setLoginPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
+                                            placeholder="手机号"
+                                            className="w-full bg-transparent border-0 border-b border-brand-charcoal/25 rounded-none py-3 px-0 text-base tracking-wide text-brand-charcoal placeholder:text-brand-charcoal/40 placeholder:text-sm placeholder:tracking-wider focus:outline-none focus:border-brand-gold/60 transition-colors"
+                                        />
+                                    </div>
+
+                                    {/* 验证码输入 - 仅验证码登录时显示 */}
+                                    {loginMethod === "code" && (
+                                        <div className="relative flex gap-2 animate-fade-scale-in">
+                                            <input
+                                                type="text"
+                                                inputMode="numeric"
+                                                pattern="[0-9]*"
+                                                value={loginCode}
+                                                onChange={(e) => setLoginCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                                                placeholder="验证码"
+                                                className="flex-1 bg-transparent border-0 border-b border-brand-charcoal/25 rounded-none py-3 px-0 text-base tracking-wide text-brand-charcoal placeholder:text-brand-charcoal/40 placeholder:text-sm placeholder:tracking-wider focus:outline-none focus:border-brand-gold/60 transition-colors"
+                                            />
+                                            <div className="flex flex-col gap-1">
+                                                <button
+                                                    type="button"
+                                                    onClick={handleSendLoginCode}
+                                                    disabled={loginCodeCountdown > 0 || loginPhone.length !== 11 || loginCodeSending}
+                                                    className="inline-flex h-12 min-h-0 items-center justify-center px-4 text-xs font-medium tracking-wider text-brand-charcoal/60 border border-brand-charcoal/25 disabled:opacity-30 transition-all"
+                                                >
+                                                    {loginCodeCountdown > 0 ? `${loginCodeCountdown}s` : "获取验证码"}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* 密码输入 - 仅密码登录时显示 */}
+                                    {loginMethod === "password" && (
+                                        <div className="animate-fade-scale-in">
+                                            <input
+                                                type="password"
+                                                required
+                                                value={loginPassword}
+                                                onChange={(e) => setLoginPassword(e.target.value)}
+                                                placeholder="密码"
+                                                maxLength={32}
+                                                className="w-full bg-transparent border-0 border-b border-brand-charcoal/25 rounded-none py-3 px-0 text-base tracking-wide text-brand-charcoal placeholder:text-brand-charcoal/40 placeholder:text-sm placeholder:tracking-wider focus:outline-none focus:border-brand-gold/60 transition-colors"
+                                            />
+                                        </div>
+                                    )}
+
+                                    <div className="flex items-center justify-between">
                                         <button
                                             type="button"
-                                            onClick={handleForgotPassword}
-                                            className="inline-flex items-center gap-1.5 text-xs tracking-wider text-brand-charcoal/50 hover:text-brand-charcoal transition-colors"
+                                            onClick={() => {
+                                                setLoginMethod(loginMethod === "password" ? "code" : "password");
+                                                setLoginCode("");
+                                                setLoginPassword("");
+                                            }}
+                                            className={`inline-flex h-7 min-h-0 items-center gap-1.5 text-xs tracking-wider transition-colors ${
+                                                loginMethod === "code"
+                                                    ? "text-brand-charcoal"
+                                                    : "text-brand-charcoal/50 hover:text-brand-charcoal"
+                                            }`}
                                         >
-                                            <KeyRound className="h-3 w-3" strokeWidth={2} />
-                                            找回密码
+                                            <ArrowLeftRight className="h-3 w-3" strokeWidth={2} />
+                                            {loginMethod === "password" ? "验证码登录" : "密码登录"}
+                                        </button>
+                                        {loginMethod === "password" && (
+                                            <button
+                                                type="button"
+                                                onClick={handleForgotPassword}
+                                                className="inline-flex h-7 min-h-0 items-center text-xs tracking-wider text-brand-charcoal/50 hover:text-brand-charcoal transition-colors"
+                                            >
+                                                找回密码
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    <label className="flex cursor-pointer items-center gap-2.5 group/agreement">
+                                        <div className="relative flex-shrink-0">
+                                            <input
+                                                type="checkbox"
+                                                checked={mobileAgreed}
+                                                onChange={(e) => setMobileAgreed(e.target.checked)}
+                                                className="peer sr-only"
+                                            />
+                                            <div className="h-4 w-4 rounded border border-brand-charcoal/25 bg-transparent transition-all peer-checked:bg-[#00263e]/50 peer-checked:border-[#00263e]/50" />
+                                            <Check className="absolute inset-0 m-auto h-3 w-3 scale-0 text-white transition-transform peer-checked:scale-100" strokeWidth={3} />
+                                        </div>
+                                        <span className="text-xs text-brand-charcoal/50 tracking-wide">
+                                            我已阅读并同意
+                                            <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《用户协议》</a>
+                                            和
+                                            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《隐私政策》</a>
+                                        </span>
+                                    </label>
+
+                                    <div className="pt-2">
+                                        <button
+                                            type="submit"
+                                            disabled={loading || !mobileAgreed}
+                                            className="w-full py-3.5 text-sm font-medium tracking-[0.2em] text-brand-charcoal border border-brand-charcoal/25 hover:bg-brand-charcoal/[0.03] active:scale-[0.98] transition-all disabled:opacity-40"
+                                        >
+                                            <span className="relative z-10 flex items-center justify-center gap-2">
+                                                {loading ? (
+                                                    <div className="h-4 w-4 border-2 border-brand-charcoal/20 border-t-brand-charcoal rounded-full animate-spin" />
+                                                ) : "立即登录"}
+                                            </span>
                                         </button>
                                     </div>
-                                </div>
+                                </form>
 
-                                <label className="flex cursor-pointer items-center gap-2.5 pt-2 group/agreement">
-                                    <div className="relative flex-shrink-0">
-                                        <input
-                                            type="checkbox"
-                                            checked={mobileAgreed}
-                                            onChange={(e) => setMobileAgreed(e.target.checked)}
-                                            className="peer sr-only"
-                                        />
-                                        <div className="h-4 w-4 rounded border border-brand-charcoal/25 bg-transparent transition-all peer-checked:bg-brand-gold peer-checked:border-brand-gold" />
-                                        <Check className="absolute inset-0 m-auto h-3 w-3 scale-0 text-white transition-transform peer-checked:scale-100" strokeWidth={3} />
-                                    </div>
-                                    <span className="text-xs text-brand-charcoal/50 tracking-wide">
-                                        我已阅读并同意
-                                        <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《用户协议》</a>
-                                        和
-                                        <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《隐私政策》</a>
-                                    </span>
-                                </label>
-
-                                <div className="pt-2">
+                                <div className="flex flex-col gap-1">
                                     <button
-                                        type="submit"
-                                        disabled={loading || !mobileAgreed}
-                                        className="w-full py-3.5 text-sm font-medium tracking-[0.2em] text-brand-charcoal border border-brand-charcoal/25 hover:bg-brand-charcoal/[0.03] active:scale-[0.98] transition-all disabled:opacity-40"
+                                        type="button"
+                                        onClick={() => setAuthView("register")}
+                                        className="inline-flex h-7 min-h-0 items-center justify-center text-xs text-brand-charcoal/40 tracking-wide hover:text-brand-charcoal/70 transition-colors"
                                     >
-                                        <span className="relative z-10 flex items-center justify-center gap-2">
-                                            {loading ? (
-                                                <div className="h-4 w-4 border-2 border-brand-charcoal/20 border-t-brand-charcoal rounded-full animate-spin" />
-                                            ) : "立即登录"}
-                                        </span>
+                                        还没有账户？立即注册
                                     </button>
                                 </div>
-                            </form>
+                            </div>
                         )}
 
                         {/* ====== REGISTER ====== */}
                         {view === "register" && (
-                            <form onSubmit={handleRegister} className="space-y-6">
-                                <div>
-                                    <input
-                                        type="text"
-                                        required
-                                        value={regName}
-                                        onChange={(e) => setRegName(e.target.value)}
-                                        placeholder="姓名"
-                                        className="w-full bg-transparent border-0 border-b border-brand-charcoal/25 rounded-none py-3 px-0 text-base tracking-wide text-brand-charcoal placeholder:text-brand-charcoal/40 placeholder:text-sm placeholder:tracking-wider focus:outline-none focus:border-brand-gold/60 transition-colors"
-                                    />
+                            <div className="flex flex-col gap-10">
+                                {/* 标题区域 */}
+                                <div className="text-center pt-[6px] pb-4">
+                                    <h2 className="text-[24px] font-medium tracking-[0.2em] text-[#00263E]">注册会员</h2>
+                                    <div className="mx-auto mt-2 w-[70px] border-b-[1.5px] border-[#00263E]" />
                                 </div>
-                                <div>
-                                    <input
-                                        type="tel"
-                                        inputMode="numeric"
-                                        pattern="[0-9]*"
-                                        autoComplete="tel"
-                                        required
-                                        value={regPhone}
-                                        onChange={(e) => setRegPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
-                                        placeholder="手机号"
-                                        className="w-full bg-transparent border-0 border-b border-brand-charcoal/25 rounded-none py-3 px-0 text-base tracking-wide text-brand-charcoal placeholder:text-brand-charcoal/40 placeholder:text-sm placeholder:tracking-wider focus:outline-none focus:border-brand-gold/60 transition-colors"
-                                    />
-                                </div>
-                                <div className="relative flex gap-2">
-                                    <input
-                                        type="text"
-                                        required
-                                        maxLength={6}
-                                        value={regCode}
-                                        onChange={(e) => setRegCode(e.target.value)}
-                                        placeholder="验证码"
-                                        className="flex-1 bg-transparent border-0 border-b border-brand-charcoal/25 rounded-none py-3 px-0 text-base tracking-wide text-brand-charcoal placeholder:text-brand-charcoal/40 placeholder:text-sm placeholder:tracking-wider focus:outline-none focus:border-brand-gold/60 transition-colors"
-                                    />
+                                <form onSubmit={handleRegister} className="w-full space-y-6">
+                                    <div>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={regName}
+                                            onChange={(e) => setRegName(e.target.value)}
+                                            placeholder="姓名"
+                                            className="w-full bg-transparent border-0 border-b border-brand-charcoal/25 rounded-none py-3 px-0 text-base tracking-wide text-brand-charcoal placeholder:text-brand-charcoal/40 placeholder:text-sm placeholder:tracking-wider focus:outline-none focus:border-brand-gold/60 transition-colors"
+                                        />
+                                    </div>
+                                    <div>
+                                        <input
+                                            type="tel"
+                                            inputMode="numeric"
+                                            pattern="[0-9]*"
+                                            autoComplete="tel"
+                                            required
+                                            value={regPhone}
+                                            onChange={(e) => setRegPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
+                                            placeholder="手机号"
+                                            className="w-full bg-transparent border-0 border-b border-brand-charcoal/25 rounded-none py-3 px-0 text-base tracking-wide text-brand-charcoal placeholder:text-brand-charcoal/40 placeholder:text-sm placeholder:tracking-wider focus:outline-none focus:border-brand-gold/60 transition-colors"
+                                        />
+                                    </div>
+                                    <div className="relative flex gap-2">
+                                        <input
+                                            type="text"
+                                            required
+                                            maxLength={6}
+                                            value={regCode}
+                                            onChange={(e) => setRegCode(e.target.value)}
+                                            placeholder="验证码"
+                                            className="flex-1 bg-transparent border-0 border-b border-brand-charcoal/25 rounded-none py-3 px-0 text-base tracking-wide text-brand-charcoal placeholder:text-brand-charcoal/40 placeholder:text-sm placeholder:tracking-wider focus:outline-none focus:border-brand-gold/60 transition-colors"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleSendRegCode}
+                                            disabled={regCodeSending || regCountdown > 0 || !regPhone}
+                                            className="shrink-0 self-end mb-2 px-3 py-1 text-xs font-medium tracking-wider text-brand-charcoal/60 border border-brand-charcoal/25 disabled:opacity-30 transition-all"
+                                        >
+                                            {regCountdown > 0 ? `${regCountdown}s` : "获取验证码"}
+                                        </button>
+                                    </div>
+                                    <div>
+                                        <input
+                                            type="password"
+                                            required
+                                            minLength={6}
+                                            value={regPassword}
+                                            onChange={(e) => setRegPassword(e.target.value)}
+                                            placeholder="密码（至少6位）"
+                                            maxLength={32}
+                                            className="w-full bg-transparent border-0 border-b border-brand-charcoal/25 rounded-none py-3 px-0 text-base tracking-wide text-brand-charcoal placeholder:text-brand-charcoal/40 placeholder:text-sm placeholder:tracking-wider focus:outline-none focus:border-brand-gold/60 transition-colors"
+                                        />
+                                    </div>
+                                    <div>
+                                        <input
+                                            type="password"
+                                            required
+                                            minLength={6}
+                                            value={regConfirmPassword}
+                                            onChange={(e) => setRegConfirmPassword(e.target.value)}
+                                            placeholder="确认密码"
+                                            maxLength={32}
+                                            className="w-full bg-transparent border-0 border-b border-brand-charcoal/25 rounded-none py-3 px-0 text-base tracking-wide text-brand-charcoal placeholder:text-brand-charcoal/40 placeholder:text-sm placeholder:tracking-wider focus:outline-none focus:border-brand-gold/60 transition-colors"
+                                        />
+                                    </div>
+
+                                    <label className="flex cursor-pointer items-center gap-2.5 pt-2 group/agreement">
+                                        <div className="relative flex-shrink-0">
+                                            <input
+                                                type="checkbox"
+                                                checked={mobileAgreed}
+                                                onChange={(e) => setMobileAgreed(e.target.checked)}
+                                                className="peer sr-only"
+                                            />
+                                            <div className="h-4 w-4 rounded border border-brand-charcoal/25 bg-transparent transition-all peer-checked:bg-brand-gold peer-checked:border-brand-gold" />
+                                            <Check className="absolute inset-0 m-auto h-3 w-3 scale-0 text-white transition-transform peer-checked:scale-100" strokeWidth={3} />
+                                        </div>
+                                        <span className="text-xs text-brand-charcoal/50 tracking-wide">
+                                            我已阅读并同意
+                                            <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《用户协议》</a>
+                                            和
+                                            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《隐私政策》</a>
+                                        </span>
+                                    </label>
+
+                                    <div className="pt-2">
+                                        <button
+                                            type="submit"
+                                            disabled={loading || !mobileAgreed}
+                                            className="w-full py-3.5 text-sm font-medium tracking-[0.2em] text-brand-charcoal border border-brand-charcoal/25 hover:bg-brand-charcoal/[0.03] active:scale-[0.98] transition-all disabled:opacity-40"
+                                        >
+                                            <span className="relative z-10 flex items-center justify-center gap-2">
+                                                {loading ? (
+                                                    <div className="h-4 w-4 border-2 border-brand-charcoal/20 border-t-brand-charcoal rounded-full animate-spin" />
+                                                ) : "立即注册"}
+                                            </span>
+                                        </button>
+                                    </div>
+                                </form>
+
+                                <div className="flex flex-col gap-1">
                                     <button
                                         type="button"
-                                        onClick={handleSendRegCode}
-                                        disabled={regCodeSending || regCountdown > 0 || !regPhone}
-                                        className="shrink-0 self-end mb-2 px-3 py-1 text-xs font-medium tracking-wider text-brand-charcoal/60 border border-brand-charcoal/25 disabled:opacity-30 transition-all"
+                                        onClick={() => setAuthView("login")}
+                                        className="inline-flex h-7 min-h-0 items-center justify-center text-xs text-brand-charcoal/40 tracking-wide hover:text-brand-charcoal/70 transition-colors"
                                     >
-                                        {regCountdown > 0 ? `${regCountdown}s` : "获取验证码"}
+                                        已有账户？返回登录
                                     </button>
                                 </div>
-                                <div>
-                                    <input
-                                        type="password"
-                                        required
-                                        minLength={6}
-                                        value={regPassword}
-                                        onChange={(e) => setRegPassword(e.target.value)}
-                                        placeholder="密码（至少6位）"
-                                        maxLength={32}
-                                        className="w-full bg-transparent border-0 border-b border-brand-charcoal/25 rounded-none py-3 px-0 text-base tracking-wide text-brand-charcoal placeholder:text-brand-charcoal/40 placeholder:text-sm placeholder:tracking-wider focus:outline-none focus:border-brand-gold/60 transition-colors"
-                                    />
-                                </div>
-                                <div>
-                                    <input
-                                        type="password"
-                                        required
-                                        minLength={6}
-                                        value={regConfirmPassword}
-                                        onChange={(e) => setRegConfirmPassword(e.target.value)}
-                                        placeholder="确认密码"
-                                        maxLength={32}
-                                        className="w-full bg-transparent border-0 border-b border-brand-charcoal/25 rounded-none py-3 px-0 text-base tracking-wide text-brand-charcoal placeholder:text-brand-charcoal/40 placeholder:text-sm placeholder:tracking-wider focus:outline-none focus:border-brand-gold/60 transition-colors"
-                                    />
-                                </div>
-
-                                <label className="flex cursor-pointer items-center gap-2.5 pt-2 group/agreement">
-                                    <div className="relative flex-shrink-0">
-                                        <input
-                                            type="checkbox"
-                                            checked={mobileAgreed}
-                                            onChange={(e) => setMobileAgreed(e.target.checked)}
-                                            className="peer sr-only"
-                                        />
-                                        <div className="h-4 w-4 rounded border border-brand-charcoal/25 bg-transparent transition-all peer-checked:bg-brand-gold peer-checked:border-brand-gold" />
-                                        <Check className="absolute inset-0 m-auto h-3 w-3 scale-0 text-white transition-transform peer-checked:scale-100" strokeWidth={3} />
-                                    </div>
-                                    <span className="text-xs text-brand-charcoal/50 tracking-wide">
-                                        我已阅读并同意
-                                        <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《用户协议》</a>
-                                        和
-                                        <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《隐私政策》</a>
-                                    </span>
-                                </label>
-
-                                <div className="pt-2">
-                                    <button
-                                        type="submit"
-                                        disabled={loading || !mobileAgreed}
-                                        className="w-full py-3.5 text-sm font-medium tracking-[0.2em] text-brand-charcoal border border-brand-charcoal/25 hover:bg-brand-charcoal/[0.03] active:scale-[0.98] transition-all disabled:opacity-40"
-                                    >
-                                        <span className="relative z-10 flex items-center justify-center gap-2">
-                                            {loading ? (
-                                                <div className="h-4 w-4 border-2 border-brand-charcoal/20 border-t-brand-charcoal rounded-full animate-spin" />
-                                            ) : "立即注册"}
-                                        </span>
-                                    </button>
-                                </div>
-                            </form>
+                            </div>
                         )}
 
                         {/* ====== FORGOT PASSWORD ====== */}
                         {view === "forgot_password" && (
-                            <div className="space-y-6">
+                            <div className="flex flex-col gap-10">
+                                {/* 标题区域 */}
+                                <div className="text-center pt-[6px] pb-4">
+                                    <h2 className="text-[24px] font-medium tracking-[0.2em] text-[#00263E]">找回密码</h2>
+                                    <div className="mx-auto mt-2 w-[70px] border-b-[1.5px] border-[#00263E]" />
+                                </div>
+                                <div className="space-y-6">
                                 {mobileForgotStep === "phone" && (
                                     <div className="space-y-6">
                                         <div>
@@ -1065,12 +1241,29 @@ export function AuthModal() {
                                         </button>
                                     </div>
                                 )}
+                                </div>
+                                {mobileForgotStep !== "success" && (
+                                    <div className="flex flex-col gap-1">
+                                        <button
+                                            type="button"
+                                            onClick={() => setAuthView("login")}
+                                            className="inline-flex h-7 min-h-0 items-center justify-center text-xs text-brand-charcoal/40 tracking-wide hover:text-brand-charcoal/70 transition-colors"
+                                        >
+                                            返回登录
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         )}
 
                         {/* ====== WECHAT BIND ====== */}
                         {view === "wechat_bind" && (
-                            <form onSubmit={handleWechatBind} className="space-y-6">
+                            <div className="flex flex-col gap-10">
+                                <div className="text-center pt-[6px] pb-4">
+                                    <h2 className="text-[24px] font-medium tracking-[0.2em] text-[#00263E]">绑定手机号</h2>
+                                    <div className="mx-auto mt-2 w-[70px] border-b-[1.5px] border-[#00263E]" />
+                                </div>
+                            <form onSubmit={handleWechatBind} className="w-full space-y-6">
                                 <p className="text-center text-sm text-brand-charcoal/60 tracking-wide">
                                     微信授权成功，请绑定手机号以完成登录。
                                 </p>
@@ -1134,46 +1327,16 @@ export function AuthModal() {
                                     </button>
                                 </div>
                             </form>
+                            </div>
                         )}
+                        </div>
                     </div>
 
-                    {/* 底部操作区 */}
-                    <div className="flex flex-col items-center gap-4 py-8">
-                        {view === "login" && (
-                            <button
-                                type="button"
-                                onClick={() => setAuthView("register")}
-                                className="text-xs text-brand-charcoal/40 tracking-wide hover:text-brand-charcoal/70 transition-colors"
-                            >
-                                还没有账户？立即注册
-                            </button>
-                        )}
-                        {view === "register" && (
-                            <button
-                                type="button"
-                                onClick={() => setAuthView("login")}
-                                className="text-xs text-brand-charcoal/40 tracking-wide hover:text-brand-charcoal/70 transition-colors"
-                            >
-                                已有账户？返回登录
-                            </button>
-                        )}
-                        {view === "forgot_password" && mobileForgotStep !== "success" && (
-                            <button
-                                type="button"
-                                onClick={() => setAuthView("login")}
-                                className="text-xs text-brand-charcoal/40 tracking-wide hover:text-brand-charcoal/70 transition-colors"
-                            >
-                                返回登录
-                            </button>
-                        )}
-
-                        <button
-                            type="button"
-                            onClick={closeAuthModal}
-                            className="flex h-9 w-9 items-center justify-center rounded-full border border-brand-charcoal/15 text-brand-charcoal/40 hover:border-brand-charcoal/30 hover:text-brand-charcoal/70 hover:bg-brand-charcoal/[0.03] transition-all"
-                        >
-                            <X className="h-4 w-4" strokeWidth={1.5} />
-                        </button>
+                    {/* 手机端页脚 */}
+                    <div className="flex-shrink-0 pt-4 pb-4 text-center mx-6">
+                        <p className="text-[10px] font-medium tracking-[0.12em] text-[rgba(123,114,108,0.3)] uppercase">
+                            &copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.
+                        </p>
                     </div>
                 </motion.div>
             )}
