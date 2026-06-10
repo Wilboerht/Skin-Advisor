@@ -835,7 +835,7 @@ export function AuthModal() {
                     </div>
 
                     <div className="flex-1 flex flex-col overflow-y-auto scrollbar-hide">
-                        <div className="flex-1 flex flex-col px-6">
+                        <div className="min-h-full flex flex-col justify-center px-6">
 
                         {/* ====== LOGIN ====== */}
                         {view === "login" && (
@@ -1101,10 +1101,12 @@ export function AuthModal() {
                         {/* ====== FORGOT PASSWORD ====== */}
                         {view === "forgot_password" && (
                             <div className="flex flex-col gap-10">
-                                {/* 标题区域 */}
-                                <div className="text-center pt-[6px] pb-4">
-                                    <h2 className="text-[24px] font-medium tracking-[0.2em] text-[#00263E]">找回密码</h2>
-                                    <div className="mx-auto mt-2 w-[70px] border-b-[1.5px] border-[#00263E]" />
+                                <div className="flex justify-center">
+                                    <img
+                                        src="/NIHPLOD-logo.svg"
+                                        alt="NIHPLOD Logo"
+                                        className="object-contain h-auto w-[140px]"
+                                    />
                                 </div>
                                 <div className="space-y-6">
                                 {mobileForgotStep === "phone" && (
@@ -1152,10 +1154,10 @@ export function AuthModal() {
                                         <div className="flex gap-3">
                                             <button
                                                 type="button"
-                                                onClick={() => setMobileForgotStep("phone")}
+                                                onClick={() => setAuthView("login")}
                                                 className="flex-1 py-3 text-xs font-medium tracking-[0.2em] text-brand-charcoal/60 border border-brand-charcoal/25 hover:bg-brand-charcoal/[0.03] active:scale-[0.98] transition-all"
                                             >
-                                                返回
+                                                返回登录
                                             </button>
                                             <button
                                                 type="button"
