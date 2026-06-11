@@ -433,10 +433,10 @@ export function AuthModal() {
                     className="fixed inset-0 z-[99998] bg-black/20 backdrop-blur-md"
                 />
                 <motion.div
-                    key="pc-panel"
+                    key={`pc-panel-${view}`}
                     initial={{ x: "100%" }}
                     animate={{ x: 0, transition: { duration: 0.8, ease: [0.8, 0, 0.13, 1] } }}
-                    exit={{ x: "100%", transition: { duration: 0.8, ease: [0.9, 0, 0.17, 1] } }}
+                    exit={{ x: 0, opacity: 1, transition: { duration: 0.8, ease: [0.8, 0, 0.13, 1] } }}
                     className="hidden md:flex fixed inset-y-0 right-0 w-full bg-white flex-col z-[99999]"
                 >
                         {/* 关闭按钮 */}
@@ -711,7 +711,11 @@ export function AuthModal() {
 
                                 {/* ====== FORGOT PASSWORD ====== */}
                                 {view === "forgot_password" && (
-                                    <>
+                                    <motion.div
+                                        initial={{ x: 40, opacity: 0 }}
+                                        animate={{ x: 0, opacity: 1 }}
+                                        transition={{ duration: 0.5, ease: [0.8, 0, 0.13, 1] }}
+                                    >
                                         <h1 className="text-center text-[2rem] font-light tracking-[0.15em] text-brand-charcoal mb-12">
                                             {forgotSubmitted ? "重置密码" : "找回密码"}
                                         </h1>
@@ -821,7 +825,7 @@ export function AuthModal() {
                                                 返回登录
                                             </button>
                                         </div>
-                                    </>
+                                    </motion.div>
                                 )}
 
                                 {/* ====== WECHAT BIND ====== */}
@@ -900,10 +904,10 @@ export function AuthModal() {
             )}
             {isOpen && (
                 <motion.div
-                    key="mobile-modal"
+                    key={`mobile-modal-${view}`}
                     initial={{ x: "100%" }}
                     animate={{ x: 0, transition: { duration: 0.8, ease: [0.8, 0, 0.13, 1] } }}
-                    exit={{ x: "100%", transition: { duration: 0.8, ease: [0.9, 0, 0.17, 1] } }}
+                    exit={{ x: 0, opacity: 1, transition: { duration: 0.8, ease: [0.8, 0, 0.13, 1] } }}
                     className="md:hidden fixed inset-0 z-[99999] p-4 bg-[#F8F7F3] flex flex-col"
                 >
                     {/* 手机端顶部栏 */}
@@ -1220,7 +1224,12 @@ export function AuthModal() {
 
                         {/* ====== FORGOT PASSWORD ====== */}
                         {view === "forgot_password" && (
-                            <div className="flex flex-col gap-10">
+                            <motion.div
+                                initial={{ x: 40, opacity: 0 }}
+                                animate={{ x: 0, opacity: 1 }}
+                                transition={{ duration: 0.5, ease: [0.8, 0, 0.13, 1] }}
+                                className="flex flex-col gap-10"
+                            >
                                 <div className="text-center pt-[6px] pb-4">
                                     <h2 className="text-[24px] font-medium tracking-[0.2em] text-[#00263E]">找回密码</h2>
                                     <div className="mx-auto mt-2 w-[70px] border-b-[1.5px] border-[#00263E]" />
@@ -1372,7 +1381,7 @@ export function AuthModal() {
                                         </button>
                                     </div>
                                 )}
-                            </div>
+                            </motion.div>
                         )}
 
                         {/* ====== WECHAT BIND ====== */}
