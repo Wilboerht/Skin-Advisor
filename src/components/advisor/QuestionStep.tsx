@@ -49,7 +49,7 @@ export function QuestionStep({
         animate="center"
         exit="exit"
         transition={transition}
-        className="w-full max-w-5xl mx-auto px-4"
+        className="w-full"
       >
         {/* Header - Centered & Clean */}
         <div className="text-center mb-10 md:mb-14">

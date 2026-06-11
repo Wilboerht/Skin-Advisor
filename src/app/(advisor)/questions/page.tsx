@@ -4,11 +4,10 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { DEFAULT_QUESTIONS, type Question } from "@/config/questions";
 import { QuestionStep } from "@/components/advisor/QuestionStep";
-import { ProgressBar } from "@/components/advisor/ProgressBar";
+import Image from "next/image";
 import { GenderSelection } from "@/components/advisor/GenderSelection";
 
 import { m, AnimatePresence } from "framer-motion";
-import Image from "next/image";
 import { ChevronLeft, ChevronRight, LogOut, ArrowRight, History } from "lucide-react";
 import { HomeSvg } from "@/components/icons/HomeSvg";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
@@ -420,41 +419,41 @@ export default function QuestionsPage() {
     if (!currentQuestion) return null;
 
     return (
-        <div className="min-h-screen bg-[#F5F2E9] flex flex-col items-center relative overflow-x-hidden text-[#1A1A1A]">
+        <div className="flex min-h-screen flex-col bg-[#F5F2E9] p-4 text-[#1A1A1A]">
 
-            {/* Top Bar: Progress, Back & Exit */}
-            <div className="w-[90%] mx-auto py-8 flex items-center justify-between z-20 shrink-0">
-                <div className="w-12 h-12 flex items-center justify-center">
-                    {/* 手机端：返回按钮 */}
-                    <button
-                        onClick={handleBack}
-                        className={cn(
-                            "sm:hidden w-10 h-10 flex items-center justify-center rounded-full text-[#4A3728]/50 hover:text-[#4A3728] hover:bg-[#4A3728]/5 active:bg-[#4A3728]/10 transition-all duration-300",
-                            (currentStepIndex === 0 && !gender) ? "opacity-0 pointer-events-none" : "opacity-100"
-                        )}
-                        aria-label="上一题"
-                    >
-                        <ChevronLeft className="h-5 w-5" />
-                    </button>
-                    {/* 桌面端：题号 */}
-                    <span className="hidden sm:inline text-xs font-bold tracking-widest text-[#4A3728]/50">0{currentStepIndex + 1}</span>
-                </div>
+            {/* Top Bar: Back & Logo & Exit */}
+            <div className="relative flex items-center justify-center p-4 z-20 shrink-0">
+                <button
+                    onClick={handleBack}
+                    className={cn(
+                        "absolute left-0 p-2 text-[#3D4430]/40 hover:text-[#3D4430] transition-colors rounded-full hover:bg-[#3D4430]/5",
+                        (currentStepIndex === 0 && !gender) ? "opacity-0 pointer-events-none" : "opacity-100"
+                    )}
+                    aria-label="上一题"
+                >
+                    <ChevronLeft className="w-6 h-6" strokeWidth={1.5} />
+                </button>
 
-                <div className="flex-1 max-w-xs mx-auto px-4 opacity-0 sm:opacity-100 transition-opacity">
-                    <ProgressBar current={currentStepIndex + 1} total={questions.length} compact />
-                </div>
+                <Image
+                    src="/NIHPLOD-logo.svg"
+                    alt="NIHPLOD"
+                    width={120}
+                    height={30}
+                    className="h-7 sm:h-8 object-contain"
+                    priority
+                />
 
                 <button
                     onClick={() => setShowExitConfirm(true)}
                     aria-label="退出测评"
-                    className="group w-12 h-12 flex items-center justify-end text-[#4A3728]/50 hover:text-[#4A3728] transition-colors"
+                    className="group absolute right-0 p-2 text-[#3D4430]/40 hover:text-[#3D4430] transition-colors rounded-full hover:bg-[#3D4430]/5"
                 >
-                    <LogOut className="h-5 w-5 transition-transform group-hover:translate-x-1 duration-300" />
+                    <LogOut className="w-6 h-6" strokeWidth={1.5} />
                 </button>
             </div>
 
             {/* Main Content Area */}
-            <div className="flex-1 w-full max-w-5xl mx-auto px-6 flex flex-col justify-center z-10 min-h-0">
+            <div className="flex-1 flex items-center justify-center w-full max-w-4xl mx-auto z-10">
                 <AnimatePresence mode="wait" custom={direction}>
                     <m.div
                         key={currentStepIndex}
