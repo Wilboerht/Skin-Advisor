@@ -499,7 +499,7 @@ export default function QuestionsPage() {
             </div>
 
             {/* Main Content Area */}
-            <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scrollbar-hide relative w-full max-w-4xl mx-auto z-10 px-4">
+            <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scrollbar-hide relative w-full max-w-4xl mx-auto z-10 px-4 mb-4">
                 <div className="min-h-full flex items-center justify-center">
                     <AnimatePresence mode="wait" custom={direction}>
                         <m.div
@@ -530,9 +530,11 @@ export default function QuestionsPage() {
 
             {/* Footer */}
             <div className="py-6 opacity-40 shrink-0 text-center">
-                <p className="text-center text-[10px] sm:text-[11px] font-light tracking-widest text-[#1A1A1A] leading-tight">
-                    &copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.
-                </p>
+                {currentQuestion.type !== "multiple" && (
+                    <p className="text-center text-[10px] sm:text-[11px] font-light tracking-widest text-[#1A1A1A] leading-tight">
+                        &copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.
+                    </p>
+                )}
             </div>
 
             {/* Floating Navigation Controls */}
