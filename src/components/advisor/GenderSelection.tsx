@@ -1,6 +1,7 @@
 "use client";
 
 import { m } from "framer-motion";
+import Image from "next/image";
 import { Venus, Mars } from "lucide-react";
 
 interface GenderSelectionProps {
@@ -25,12 +26,36 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
 
     return (
         <div className="flex w-full flex-col items-center">
-            <m.div
-                variants={container}
-                initial="hidden"
-                animate="show"
-                className="grid w-full gap-3 sm:gap-5 sm:grid-cols-2"
+            <m.h2
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-8 sm:mb-10 text-center font-serif text-2xl md:text-3xl text-[#1A1A1A]"
             >
+                开始之前，请选择您的性别
+            </m.h2>
+
+            <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-8 w-full">
+                <m.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5 }}
+                    className="relative w-32 h-32 sm:w-40 sm:h-40 flex-shrink-0"
+                >
+                    <Image
+                        src="/images/gender-decoration.svg"
+                        alt=""
+                        fill
+                        className="object-contain"
+                        priority
+                    />
+                </m.div>
+
+                <m.div
+                    variants={container}
+                    initial="hidden"
+                    animate="show"
+                    className="grid w-full gap-3 sm:gap-5"
+                >
                 <m.button
                     variants={item}
                     onClick={() => onSelect("female")}
@@ -42,7 +67,7 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
                         WebkitBackfaceVisibility: "hidden",
                         perspective: "1000px"
                     }}
-                    className="group relative flex flex-row sm:flex-col items-center gap-4 sm:gap-4 rounded-xl border border-[#3D4430]/15 bg-[#F0EDE1]/60 px-5 sm:px-8 py-5 sm:py-10 text-left sm:text-center backdrop-blur-md transition-all duration-300 hover:border-[#B795A7]/40 hover:bg-[#FDF8FA]/80 hover:shadow-[0_16px_40px_-8px_rgba(183,149,167,0.12)]"
+                    className="group relative flex flex-row items-center gap-4 rounded-xl border border-[#3D4430]/15 bg-[#F0EDE1]/60 px-5 sm:px-8 py-5 sm:py-6 text-left backdrop-blur-md transition-all duration-300 hover:border-[#B795A7]/40 hover:bg-[#FDF8FA]/80 hover:shadow-[0_16px_40px_-8px_rgba(183,149,167,0.12)]"
                 >
                     <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none rounded-xl" />
                     
@@ -67,7 +92,7 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
                         WebkitBackfaceVisibility: "hidden",
                         perspective: "1000px"
                     }}
-                    className="group relative flex flex-row sm:flex-col items-center gap-4 sm:gap-4 rounded-xl border border-[#3D4430]/15 bg-[#F0EDE1]/60 px-5 sm:px-8 py-5 sm:py-10 text-left sm:text-center backdrop-blur-md transition-all duration-300 hover:border-[#5E6C75]/40 hover:bg-[#F8FAFB]/80 hover:shadow-[0_16px_40px_-8px_rgba(94,108,117,0.12)]"
+                    className="group relative flex flex-row items-center gap-4 rounded-xl border border-[#3D4430]/15 bg-[#F0EDE1]/60 px-5 sm:px-8 py-5 sm:py-6 text-left backdrop-blur-md transition-all duration-300 hover:border-[#5E6C75]/40 hover:bg-[#F8FAFB]/80 hover:shadow-[0_16px_40px_-8px_rgba(94,108,117,0.12)]"
                 >
                     <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none rounded-xl" />
                     
@@ -81,6 +106,7 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
                     </div>
                 </m.button>
             </m.div>
+        </div>
         </div>
     );
 }
