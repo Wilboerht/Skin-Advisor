@@ -33,6 +33,7 @@ interface AuthContextType {
     loading: boolean;
     isInitialized: boolean;
     login: (credentials: LoginCredentials) => Promise<void>;
+    loginWithCode: (credentials: { phone: string; code: string }) => Promise<void>;
     register: (userData: RegisterData) => Promise<void>;
     logout: () => Promise<void>;
     refresh: () => Promise<void>;
@@ -171,6 +172,31 @@ export function UserProvider({ children }: { children: ReactNode }) {
         }
     }, [checkSession]);
 
+    const loginWithCode = useCallback(async (credentials: { phone: string; code: string }) => {
+        try {
+            const res = await fetch("/api/auth/login-code", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(credentials),
+                credentials: "include"
+            });
+            const data = await res.json();
+            
+            if (!res.ok) {
+                console.error("🔴 LoginCode API returned error:", data.error);
+                throw new Error(data.error || "Login failed");
+            }
+
+            setUser(data.user);
+            setCachedUser(data.user);
+
+            await checkSession();
+        } catch (err: unknown) {
+            console.error("🔴 LoginWithCode failed:", err);
+            throw err;
+        }
+    }, [checkSession]);
+
     const register = useCallback(async (userData: RegisterData) => {
         const res = await fetch("/api/auth/register", {
             method: "POST",
@@ -210,6 +236,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         loading,
         isInitialized,
         login,
+        loginWithCode,
         register,
         logout,
         refresh: checkSession

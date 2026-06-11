@@ -11,7 +11,7 @@ import { useIsMobile } from "@/hooks/useMediaQuery";
 
 export function AuthModal() {
     const { isOpen, view, openAuthModal, closeAuthModal, setAuthView } = useAuthModal();
-    const { login, register } = useAuth();
+    const { login, loginWithCode, register } = useAuth();
     const toast = useToast();
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -136,15 +136,15 @@ export function AuthModal() {
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (loginMethod === "code") {
-            toast.error("验证码登录功能即将上线，请使用密码登录");
-            setLoginMethod("password");
-            return;
-        }
         setLoading(true);
         try {
-            console.log("🔐 Starting login request...");
-            await login({ phone: loginPhone, password: loginPassword });
+            if (loginMethod === "code") {
+                console.log("🔐 Starting code login request...");
+                await loginWithCode({ phone: loginPhone, code: loginCode });
+            } else {
+                console.log("🔐 Starting password login request...");
+                await login({ phone: loginPhone, password: loginPassword });
+            }
             console.log("✅ Login successful, closing modal...");
             toast.success("欢迎回来！");
             closeAuthModal();
@@ -467,33 +467,72 @@ export function AuthModal() {
                                                 />
                                             </div>
 
-                                            <div>
-                                                <div className="relative">
+                                            {loginMethod === "code" && (
+                                                <div className="relative flex gap-3">
                                                     <input
-                                                        type={showPassword ? "text" : "password"}
+                                                        type="text"
                                                         required
-                                                        value={loginPassword}
-                                                        onChange={(e) => setLoginPassword(e.target.value)}
-                                                        className={`${pcInputClass} pr-10`}
-                                                        placeholder="密码"
+                                                        maxLength={6}
+                                                        value={loginCode}
+                                                        onChange={(e) => setLoginCode(e.target.value)}
+                                                        className={`${pcInputClass} flex-1`}
+                                                        placeholder="验证码"
                                                     />
                                                     <button
                                                         type="button"
-                                                        onClick={() => setShowPassword(!showPassword)}
-                                                        className="absolute right-0 top-1/2 -translate-y-1/2 text-brand-charcoal/40 hover:text-brand-charcoal/70 transition-colors"
+                                                        onClick={handleSendLoginCode}
+                                                        disabled={loginCodeSending || loginCodeCountdown > 0 || !loginPhone}
+                                                        className="shrink-0 self-end mb-2 px-4 py-2 text-xs font-medium tracking-wider text-brand-charcoal/60 border border-brand-charcoal/25 disabled:opacity-30 transition-all hover:bg-brand-charcoal/[0.02]"
                                                     >
-                                                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                                        {loginCodeCountdown > 0 ? `${loginCodeCountdown}s` : "获取验证码"}
                                                     </button>
                                                 </div>
-                                                <div className="mt-4 text-right">
-                                                    <button
-                                                        type="button"
-                                                        onClick={handleForgotPassword}
-                                                        className="text-xs tracking-wider text-brand-charcoal/50 hover:text-brand-charcoal transition-colors"
-                                                    >
-                                                        忘记密码？
-                                                    </button>
+                                            )}
+
+                                            {loginMethod === "password" && (
+                                                <div>
+                                                    <div className="relative">
+                                                        <input
+                                                            type={showPassword ? "text" : "password"}
+                                                            required
+                                                            value={loginPassword}
+                                                            onChange={(e) => setLoginPassword(e.target.value)}
+                                                            className={`${pcInputClass} pr-10`}
+                                                            placeholder="密码"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setShowPassword(!showPassword)}
+                                                            className="absolute right-0 top-1/2 -translate-y-1/2 text-brand-charcoal/40 hover:text-brand-charcoal/70 transition-colors"
+                                                        >
+                                                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                                        </button>
+                                                    </div>
+                                                    <div className="mt-4 text-right">
+                                                        <button
+                                                            type="button"
+                                                            onClick={handleForgotPassword}
+                                                            className="text-xs tracking-wider text-brand-charcoal/50 hover:text-brand-charcoal transition-colors"
+                                                        >
+                                                            忘记密码？
+                                                        </button>
+                                                    </div>
                                                 </div>
+                                            )}
+
+                                            <div className="flex items-center justify-between">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setLoginMethod(loginMethod === "password" ? "code" : "password");
+                                                        setLoginCode("");
+                                                        setLoginPassword("");
+                                                    }}
+                                                    className="text-xs tracking-wider text-brand-charcoal/50 hover:text-brand-charcoal transition-colors inline-flex items-center gap-1.5"
+                                                >
+                                                    <ArrowLeftRight className="h-3 w-3" strokeWidth={2} />
+                                                    {loginMethod === "password" ? "验证码登录" : "密码登录"}
+                                                </button>
                                             </div>
 
                                             <div className="pt-2">
