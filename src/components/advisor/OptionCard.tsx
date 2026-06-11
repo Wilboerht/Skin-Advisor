@@ -51,7 +51,7 @@ export function OptionCard({
                 perspective: "1000px"
             }}
             className={cn(
-                "group relative w-full rounded-lg text-left border px-6 py-5 flex items-center gap-5 backdrop-blur-md transition-all duration-300 overflow-hidden",
+                "group relative w-full rounded-lg text-left border px-4 sm:px-6 py-3 sm:py-5 flex items-center gap-3 sm:gap-5 backdrop-blur-md transition-all duration-300 overflow-hidden",
                 isSelected
                     ? "bg-[#F8F5EE] border-[#8B7355]/40 shadow-[0_2px_12px_-2px_rgba(139,115,85,0.08)]"
                     : "bg-white/50 border-[#D4CFC5]/70 hover:border-[#8B7355]/30 hover:bg-[#F5F2EA]/60 shadow-sm hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.03)]"
@@ -59,7 +59,7 @@ export function OptionCard({
         >
             {/* Left accent bar */}
             <div className={cn(
-                "absolute left-0 top-4 bottom-4 w-[2px] transition-all duration-300",
+                "absolute left-0 top-3 bottom-3 sm:top-4 sm:bottom-4 w-[2px] transition-all duration-300",
                 isSelected ? "bg-[#8B7355]" : "bg-transparent"
             )} />
             <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none rounded-lg" />

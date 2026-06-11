@@ -34,6 +34,7 @@ export default function QuestionsPage() {
     const [showQualityWarning, setShowQualityWarning] = useState(false);
     const [pendingAnswers, setPendingAnswers] = useState<Record<string, unknown> | null>(null);
     const [showFadeMask, setShowFadeMask] = useState(false);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     // 从 API 获取问题列表（数据库优先，静态降级）
     const [allQuestions, setAllQuestions] = useState<Question[]>(DEFAULT_QUESTIONS);
@@ -364,32 +365,40 @@ export default function QuestionsPage() {
     // 底部渐隐遮罩：一屏能显示完时不显示；翻到最底下时消失
     useEffect(() => {
         const check = () => {
-            const scrollHeight = document.documentElement.scrollHeight;
-            const innerHeight = window.innerHeight;
-            const scrollY = window.scrollY;
+            const container = scrollContainerRef.current;
+            if (!container) return;
+
+            const scrollHeight = container.scrollHeight;
+            const clientHeight = container.clientHeight;
+            const scrollTop = container.scrollTop;
 
             // 一屏能显示完，不显示遮罩
-            if (scrollHeight <= innerHeight + 1) {
+            if (scrollHeight <= clientHeight + 1) {
                 setShowFadeMask(false);
                 return;
             }
 
             // 滚动到底部附近，隐藏遮罩
-            const nearBottom = scrollY + innerHeight >= scrollHeight - 10;
+            const nearBottom = scrollTop + clientHeight >= scrollHeight - 10;
             setShowFadeMask(!nearBottom);
         };
 
         check();
-        window.addEventListener("scroll", check, { passive: true });
+        const container = scrollContainerRef.current;
+        if (container) {
+            container.addEventListener("scroll", check, { passive: true });
+        }
         window.addEventListener("resize", check);
 
         const observer = new ResizeObserver(check);
-        if (document.documentElement) {
-            observer.observe(document.documentElement);
+        if (container) {
+            observer.observe(container);
         }
 
         return () => {
-            window.removeEventListener("scroll", check);
+            if (container) {
+                container.removeEventListener("scroll", check);
+            }
             window.removeEventListener("resize", check);
             observer.disconnect();
         };
@@ -403,7 +412,7 @@ export default function QuestionsPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="flex min-h-screen flex-col bg-[#F5F2E9] p-4"
+                    className="h-screen overflow-hidden flex flex-col bg-[#F5F2E9] p-4"
                 >
                     {/* Top Bar */}
                     <div className="relative flex items-center justify-center p-4">
@@ -431,8 +440,10 @@ export default function QuestionsPage() {
                         </button>
                     </div>
 
-                    <div className="flex-1 flex items-center justify-center w-full max-w-4xl mx-auto">
-                        <GenderSelection onSelect={handleGenderSelect} />
+                    <div className="flex-1 overflow-y-auto scrollbar-hide w-full max-w-4xl mx-auto">
+                        <div className="min-h-full flex items-center justify-center">
+                            <GenderSelection onSelect={handleGenderSelect} />
+                        </div>
                     </div>
 
                     {/* Footer */}
@@ -454,7 +465,7 @@ export default function QuestionsPage() {
     if (!currentQuestion) return null;
 
     return (
-        <div className="flex min-h-screen flex-col bg-[#F5F2E9] p-4 text-[#1A1A1A]">
+        <div className="h-screen overflow-hidden flex flex-col bg-[#F5F2E9] p-4 text-[#1A1A1A]">
 
             {/* Top Bar: Back & Logo & Exit */}
             <div className="relative flex items-center justify-center p-4 z-20 shrink-0">
@@ -488,39 +499,41 @@ export default function QuestionsPage() {
             </div>
 
             {/* Main Content Area */}
-            <div className="flex-1 flex items-center justify-center w-full max-w-4xl mx-auto z-10">
-                <AnimatePresence mode="wait" custom={direction}>
-                    <m.div
-                        key={currentStepIndex}
-                        custom={direction}
-                        initial={{ opacity: 0, x: direction > 0 ? 30 : -30 }} // Reduced movement for cleaner feel
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: direction > 0 ? -30 : 30 }}
-                        transition={{ duration: 0.4, ease: [0.2, 0.8, 0.2, 1] }}
-                        className="w-full"
-                    >
-                        <QuestionStep
-                            question={currentQuestion}
-                            selectedValue={(answers[currentQuestion.fieldName] as string | string[] | null) || null}
-                            onSelect={handleSelect}
-                            direction={direction}
-                        />
-                    </m.div>
-                </AnimatePresence>
+            <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scrollbar-hide relative w-full max-w-4xl mx-auto z-10 px-4">
+                <div className="min-h-full flex items-center justify-center">
+                    <AnimatePresence mode="wait" custom={direction}>
+                        <m.div
+                            key={currentStepIndex}
+                            custom={direction}
+                            initial={{ opacity: 0, x: direction > 0 ? 30 : -30 }} // Reduced movement for cleaner feel
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: direction > 0 ? -30 : 30 }}
+                            transition={{ duration: 0.4, ease: [0.2, 0.8, 0.2, 1] }}
+                            className="w-full"
+                        >
+                            <QuestionStep
+                                question={currentQuestion}
+                                selectedValue={(answers[currentQuestion.fieldName] as string | string[] | null) || null}
+                                onSelect={handleSelect}
+                                direction={direction}
+                            />
+                        </m.div>
+                    </AnimatePresence>
+                </div>
+
+                {/* Bottom Fade Mask - 底部渐隐遮挡 */}
+                <div className={cn(
+                    "absolute bottom-0 left-0 right-0 h-24 pointer-events-none z-20 bg-gradient-to-t from-[#F0EDE1] via-[#F0EDE1]/80 to-transparent transition-opacity duration-300",
+                    showFadeMask ? "opacity-100" : "opacity-0"
+                )} />
             </div>
 
             {/* Footer */}
-            <div className="py-6 opacity-40 shrink-0">
+            <div className="py-6 opacity-40 shrink-0 text-center">
                 <p className="text-center text-[10px] sm:text-[11px] font-light tracking-widest text-[#1A1A1A] leading-tight">
                     &copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.
                 </p>
             </div>
-
-            {/* Bottom Fade Mask - 底部渐隐遮挡 */}
-            <div className={cn(
-                "fixed bottom-0 left-0 right-0 h-24 pointer-events-none z-20 bg-gradient-to-t from-[#F0EDE1] via-[#F0EDE1]/80 to-transparent transition-opacity duration-300",
-                showFadeMask ? "opacity-100" : "opacity-0"
-            )} />
 
             {/* Floating Navigation Controls */}
             {/* Left Corner: Back - Desktop Only */}
