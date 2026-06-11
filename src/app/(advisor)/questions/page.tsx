@@ -392,14 +392,6 @@ export default function QuestionsPage() {
                     <div className="flex-1 flex items-center justify-center w-full max-w-4xl mx-auto">
                         <GenderSelection onSelect={handleGenderSelect} />
                     </div>
-
-                    <button
-                        onClick={() => router.push("/")}
-                        className="flex items-center justify-center gap-2 py-8 text-xs text-[#1A1A1A]/40 hover:text-[#1A1A1A] transition-colors tracking-widest uppercase font-medium"
-                    >
-                        <LogOut size={12} strokeWidth={2.5} />
-                        退出测试
-                    </button>
                 </m.div>
             </AnimatePresence>
         );
