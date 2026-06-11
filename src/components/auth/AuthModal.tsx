@@ -436,7 +436,7 @@ export function AuthModal() {
                     key={`pc-panel-${view}`}
                     initial={{ x: "100%" }}
                     animate={{ x: 0, transition: { duration: 0.8, ease: [0.8, 0, 0.13, 1] } }}
-                    exit={{ opacity: 0, transition: { duration: 0.5, ease: [0.8, 0, 0.13, 1] } }}
+                    exit={{ x: "100%", transition: { duration: 0.5, ease: [0.8, 0, 0.13, 1] } }}
                     className="hidden md:flex fixed inset-y-0 right-0 w-full bg-white flex-col z-[99999]"
                 >
                         {/* 关闭按钮 */}
@@ -907,7 +907,7 @@ export function AuthModal() {
                     key={`mobile-modal-${view}`}
                     initial={{ x: "100%" }}
                     animate={{ x: 0, transition: { duration: 0.8, ease: [0.8, 0, 0.13, 1] } }}
-                    exit={{ opacity: 0, transition: { duration: 0.5, ease: [0.8, 0, 0.13, 1] } }}
+                    exit={{ x: "100%", transition: { duration: 0.5, ease: [0.8, 0, 0.13, 1] } }}
                     className="md:hidden fixed inset-0 z-[99999] p-4 bg-[#F8F7F3] flex flex-col"
                 >
                     {/* 手机端顶部栏 */}
