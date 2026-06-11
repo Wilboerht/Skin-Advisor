@@ -67,16 +67,16 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuid
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.1, duration: 0.5 }}
-                                className="flex flex-col items-center text-center gap-6 sm:gap-8 mb-10 sm:mb-14"
+                                className="flex flex-col items-center text-center"
                             >
-                                <div className="space-y-4">
-                                    <h3 className="text-3xl md:text-4xl font-serif text-[#1A1A1A] tracking-tight">
-                                        开始面部扫描
-                                    </h3>
-                                    <p className="text-[15px] text-[#4A3728]/60 font-light tracking-wide max-w-sm mx-auto">
-                                        为了获得最准确的分析结果，请遵循以下建议
-                                    </p>
-                                </div>
+                                <h3 className="text-3xl md:text-4xl font-serif text-[#1A1A1A] tracking-tight mb-6">
+                                    开始面部扫描
+                                </h3>
+                                <img
+                                    src="/images/gender-decoration.svg"
+                                    alt=""
+                                    className="w-28 h-28 mx-auto opacity-60 mb-6"
+                                />
                             </motion.div>
 
                             {/* Checklist Content */}
