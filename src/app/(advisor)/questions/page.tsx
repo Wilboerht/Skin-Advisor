@@ -367,7 +367,7 @@ export default function QuestionsPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="flex min-h-screen flex-col items-center justify-center bg-transparent px-4"
+                    className="flex min-h-screen flex-col items-center justify-center bg-[#F5F2E9] px-4"
                 >
                     <div className="w-full max-w-4xl">
                         <GenderSelection onSelect={handleGenderSelect} />
@@ -388,7 +388,7 @@ export default function QuestionsPage() {
     if (!currentQuestion) return null;
 
     return (
-        <div className="min-h-screen bg-transparent flex flex-col items-center relative overflow-x-hidden text-[#1A1A1A]">
+        <div className="min-h-screen bg-[#F5F2E9] flex flex-col items-center relative overflow-x-hidden text-[#1A1A1A]">
 
             {/* Top Bar: Progress, Back & Exit */}
             <div className="w-[90%] mx-auto py-8 flex items-center justify-between z-20 shrink-0">
