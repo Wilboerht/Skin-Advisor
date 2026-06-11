@@ -5,7 +5,6 @@
 
 
 import prisma from "@/lib/prisma";
-import { Service } from "@volcengine/openapi";
 
 const MAX_LOCAL_FILE_SIZE_MB = 15;
 const MAX_LOCAL_FILE_SIZE_BYTES = MAX_LOCAL_FILE_SIZE_MB * 1024 * 1024;
@@ -336,6 +335,7 @@ async function generateJimengAvatarAsync(
     throw new Error("Jimeng credentials not configured");
   }
 
+  const { Service } = await import("@volcengine/openapi");
   const service = new (Service as unknown as new (config: Record<string, unknown>) => { setAccessKeyId: (k: string) => void; setSecretKey: (k: string) => void; createJSONAPI: (name: string, params: Record<string, unknown>) => (body: Record<string, unknown>) => Promise<unknown> })({
     host: "cv.volcengineapi.com",
     region: "cn-beijing",

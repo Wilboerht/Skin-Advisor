@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  webpack: (config) => {
+    config.module = config.module || {};
+    config.module.exprContextCritical = false;
+    config.module.unknownContextCritical = false;
+    return config;
+  },
   output: 'standalone',
   images: {
     remotePatterns: [
