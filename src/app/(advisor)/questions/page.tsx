@@ -440,7 +440,7 @@ export default function QuestionsPage() {
                         </button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto scrollbar-hide w-full max-w-4xl mx-auto">
+                    <div className="flex-1 overflow-y-auto scrollbar-hide w-full max-w-4xl mx-auto px-4">
                         <div className="min-h-full flex items-center justify-center">
                             <GenderSelection onSelect={handleGenderSelect} />
                         </div>
