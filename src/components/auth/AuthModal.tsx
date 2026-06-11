@@ -542,7 +542,7 @@ export function AuthModal() {
                                                     className={pcBtnClass}
                                                 >
                                                     {loading ? (
-                                                        <div className="h-4 w-4 border-2 border-brand-charcoal/20 border-t-brand-charcoal rounded-full animate-spin" />
+                                                        <div className="h-5 w-5 border-2 border-brand-charcoal/20 border-t-brand-charcoal rounded-full animate-spin" />
                                                     ) : "登录"}
                                                 </button>
                                             </div>
@@ -670,7 +670,7 @@ export function AuthModal() {
                                                     className={pcBtnClass}
                                                 >
                                                     {loading ? (
-                                                        <div className="h-4 w-4 border-2 border-brand-charcoal/20 border-t-brand-charcoal rounded-full animate-spin" />
+                                                        <div className="h-5 w-5 border-2 border-brand-charcoal/20 border-t-brand-charcoal rounded-full animate-spin" />
                                                     ) : "注册"}
                                                 </button>
                                             </div>
@@ -749,7 +749,7 @@ export function AuthModal() {
                                                     className={pcBtnClass}
                                                 >
                                                     {loading ? (
-                                                        <div className="h-4 w-4 border-2 border-brand-charcoal/20 border-t-brand-charcoal rounded-full animate-spin" />
+                                                        <div className="h-5 w-5 border-2 border-brand-charcoal/20 border-t-brand-charcoal rounded-full animate-spin" />
                                                     ) : "确认重置"}
                                                 </button>
                                                 <div className="text-center">
@@ -785,7 +785,7 @@ export function AuthModal() {
                                                     className={pcBtnClass}
                                                 >
                                                     {loading ? (
-                                                        <div className="h-4 w-4 border-2 border-brand-charcoal/20 border-t-brand-charcoal rounded-full animate-spin" />
+                                                        <div className="h-5 w-5 border-2 border-brand-charcoal/20 border-t-brand-charcoal rounded-full animate-spin" />
                                                     ) : "发送验证码"}
                                                 </button>
                                             </form>
@@ -863,7 +863,7 @@ export function AuthModal() {
                                                 className={pcBtnClass}
                                             >
                                                 {loading ? (
-                                                    <div className="h-4 w-4 border-2 border-brand-charcoal/20 border-t-brand-charcoal rounded-full animate-spin" />
+                                                    <div className="h-5 w-5 border-2 border-brand-charcoal/20 border-t-brand-charcoal rounded-full animate-spin" />
                                                 ) : (
                                                     <>绑定手机号 <CheckCircle size={16} /></>
                                                 )}
@@ -1024,11 +1024,11 @@ export function AuthModal() {
                                             type="button"
                                             onClick={handleLogin}
                                             disabled={loading || !mobileAgreed}
-                                            className="w-full py-3.5 text-sm font-medium tracking-[0.2em] text-brand-charcoal border border-brand-charcoal/25 hover:bg-brand-charcoal/[0.03] active:scale-[0.98] transition-all disabled:opacity-40"
+                                            className="w-full py-3.5 min-h-12 text-sm font-medium tracking-[0.2em] text-brand-charcoal border border-brand-charcoal/25 hover:bg-brand-charcoal/[0.03] active:scale-[0.98] transition-all disabled:opacity-40"
                                         >
                                             <span className="relative z-10 flex items-center justify-center gap-2">
                                                 {loading ? (
-                                                    <div className="h-4 w-4 border-2 border-brand-charcoal/20 border-t-brand-charcoal rounded-full animate-spin" />
+                                                    <div className="h-5 w-5 border-2 border-brand-charcoal/20 border-t-brand-charcoal rounded-full animate-spin" />
                                                 ) : "立即登录"}
                                             </span>
                                         </button>
@@ -1170,7 +1170,7 @@ export function AuthModal() {
                                         >
                                             <span className="relative z-10 flex items-center justify-center gap-2">
                                                 {loading ? (
-                                                    <div className="h-4 w-4 border-2 border-brand-charcoal/20 border-t-brand-charcoal rounded-full animate-spin" />
+                                                    <div className="h-5 w-5 border-2 border-brand-charcoal/20 border-t-brand-charcoal rounded-full animate-spin" />
                                                 ) : "立即注册"}
                                             </span>
                                         </button>
@@ -1307,7 +1307,7 @@ export function AuthModal() {
                                         >
                                             <span className="relative z-10 flex items-center justify-center gap-2">
                                                 {loading ? (
-                                                    <div className="h-4 w-4 border-2 border-brand-charcoal/20 border-t-brand-charcoal rounded-full animate-spin" />
+                                                    <div className="h-5 w-5 border-2 border-brand-charcoal/20 border-t-brand-charcoal rounded-full animate-spin" />
                                                 ) : "确认重置"}
                                             </span>
                                         </button>
@@ -1409,7 +1409,7 @@ export function AuthModal() {
                                     >
                                         <span className="relative z-10 flex items-center justify-center gap-2">
                                             {loading ? (
-                                                <div className="h-4 w-4 border-2 border-brand-charcoal/20 border-t-brand-charcoal rounded-full animate-spin" />
+                                                <div className="h-5 w-5 border-2 border-brand-charcoal/20 border-t-brand-charcoal rounded-full animate-spin" />
                                             ) : (
                                                 <>绑定手机号 <CheckCircle size={16} /></>
                                             )}
