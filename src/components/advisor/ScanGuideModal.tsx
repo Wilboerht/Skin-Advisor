@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Sparkles, Sun, Smartphone } from "lucide-react";
+import { ArrowRight, Sparkles, Sun, ScanEye } from "lucide-react";
 import Image from "next/image";
 
 interface ScanGuideModalProps {
@@ -13,22 +13,9 @@ interface ScanGuideModalProps {
 
 export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuideModalProps) {
     const guideItems = [
-        {
-            icon: Sparkles,
-            title: "保持素颜",
-            desc: "请在扫描前彻底卸除底妆、防晒及彩妆产品，清洁面部并静待5分钟，以确保AI能够识别您最真实的肌肤纹理、色斑分布与毛孔状态，避免残留化妆品干扰分析精度。",
-            fullWidth: true
-        },
-        {
-            icon: Sun,
-            title: "光源充足",
-            desc: "确保面部光线均匀，避免背光"
-        },
-        {
-            icon: Smartphone,
-            title: "对准镜头",
-            desc: "平视镜头，将面部置于引导框中央"
-        }
+        { icon: Sparkles, title: "保持素颜" },
+        { icon: Sun, title: "光线充足" },
+        { icon: ScanEye, title: "对准镜头" }
     ];
 
     return (
@@ -65,28 +52,21 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuid
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.2, duration: 0.5 }}
-                            className="w-full grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-10"
+                            className="w-full flex items-center justify-center mb-10"
                         >
                             {guideItems.map((item, index) => {
                                 const Icon = item.icon;
                                 return (
-                                    <div
-                                        key={index}
-                                        className={`flex flex-col h-full p-4 sm:p-5 rounded-lg bg-white/50 border border-[#D4CFC5]/60 hover:border-[#8B7355]/25 hover:bg-[#F8F5EE]/80 transition-all duration-300 group ${item.fullWidth ? 'sm:col-span-2' : ''}`}
-                                    >
-                                        <div className="flex items-center sm:items-start gap-3 sm:gap-4">
-                                            <div className="flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-[#4A3728]/[0.04] group-hover:bg-[#4A3728]/[0.08] transition-colors duration-300 flex items-center justify-center text-[#4A3728]">
-                                                <Icon className="w-4 h-4 sm:w-[18px] sm:h-[18px]" strokeWidth={1.5} />
-                                            </div>
-                                            <div className="flex-1 sm:pt-0.5">
-                                                <h4 className="text-sm sm:text-[15px] font-medium text-[#1A1A1A] sm:mb-1.5 tracking-wide">
-                                                    {item.title}
-                                                </h4>
-                                                <p className="hidden sm:block text-[13px] text-[#5E5E5E]/80 leading-relaxed font-light">
-                                                    {item.desc}
-                                                </p>
-                                            </div>
+                                    <div key={index} className="flex items-center">
+                                        <div className="flex flex-col items-center gap-3 px-6 sm:px-10">
+                                            <Icon className="w-6 h-6 text-[#4A3728]/50" strokeWidth={1.5} />
+                                            <span className="text-sm text-[#1A1A1A]/70 font-light tracking-wide">
+                                                {item.title}
+                                            </span>
                                         </div>
+                                        {index < guideItems.length - 1 && (
+                                            <div className="w-px h-10 bg-[#4A3728]/15" />
+                                        )}
                                     </div>
                                 );
                             })}
