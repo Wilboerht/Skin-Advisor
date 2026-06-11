@@ -39,7 +39,7 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.5 }}
-                    className="relative w-32 h-32 sm:w-40 sm:h-40 flex-shrink-0"
+                    className="relative w-40 h-40 sm:w-64 sm:h-64 flex-shrink-0"
                 >
                     <Image
                         src="/images/gender-decoration.svg"
