@@ -368,7 +368,7 @@ export default function QuestionsPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="flex min-h-screen flex-col items-center justify-center bg-[#F5F2E9] px-4"
+                    className="flex min-h-screen flex-col items-center justify-center bg-[#F5F2E9] p-4"
                 >
                     {/* Top Bar */}
                     <div className="fixed top-0 left-0 right-0 z-30 flex items-center justify-center px-4 py-4 sm:py-6">
