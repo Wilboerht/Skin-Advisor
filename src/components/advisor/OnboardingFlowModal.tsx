@@ -327,7 +327,7 @@ export function OnboardingFlowModal({
 
                                         {/* Region List */}
                                         <div className="flex-1 relative flex flex-col min-h-0">
-                                            <div className="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar">
+                                            <div className="flex-1 overflow-y-auto px-6 py-4 pb-24 custom-scrollbar">
                                                 {regionOptions.map((group) => (
                                                     <div key={group.group} className="mb-9 last:mb-2">
                                                         <div className="flex items-center gap-4 mb-4">
@@ -351,18 +351,16 @@ export function OnboardingFlowModal({
                                                     </div>
                                                 ))}
                                             </div>
-                                            {/* Bottom Fade Mask */}
-                                            <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none z-20 bg-gradient-to-t from-[#FDFBF7] via-[#FDFBF7]/80 to-transparent" />
-                                        </div>
 
-                                        {/* Footer */}
-                                        <div className="shrink-0 p-6 text-center border-t border-[#3D4430]/5">
-                                            <button
-                                                onClick={handleSkipRegion}
-                                                className="text-[12px] tracking-[0.15em] text-[#3D4430]/30 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
-                                            >
-                                                暂不提供
-                                            </button>
+                                            {/* Footer with gradient mask background */}
+                                            <div className="absolute bottom-0 left-0 right-0 pt-14 pb-6 text-center pointer-events-none bg-gradient-to-t from-[#FDFBF7] via-[#FDFBF7] to-transparent">
+                                                <button
+                                                    onClick={handleSkipRegion}
+                                                    className="pointer-events-auto text-[12px] tracking-[0.15em] text-[#3D4430]/30 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
+                                                >
+                                                    暂不提供
+                                                </button>
+                                            </div>
                                         </div>
                                     </m.div>
                                 )}
