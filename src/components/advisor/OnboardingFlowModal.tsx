@@ -198,7 +198,6 @@ export function OnboardingFlowModal({
                                             alt="Wave"
                                             width={48}
                                             height={48}
-                                            className="opacity-80"
                                             priority
                                         />
                                     </div>
@@ -327,7 +326,7 @@ export function OnboardingFlowModal({
 
                                         {/* Region List */}
                                         <div className="flex-1 relative flex flex-col min-h-0">
-                                            <div className="flex-1 overflow-y-auto px-6 py-4 pb-24 custom-scrollbar">
+                                            <div className="flex-1 overflow-y-auto px-6 py-4 pb-24 scrollbar-hide">
                                                 {regionOptions.map((group) => (
                                                     <div key={group.group} className="mb-9 last:mb-2">
                                                         <div className="flex items-center gap-4 mb-4">
