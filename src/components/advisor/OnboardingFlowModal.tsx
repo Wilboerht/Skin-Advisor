@@ -203,7 +203,7 @@ export function OnboardingFlowModal({
                                         />
                                     </div>
 
-                                    <h3 className="mb-3 text-2xl md:text-3xl font-serif text-[#1A1A1A]">
+                                    <h3 className="mb-4 text-2xl md:text-3xl font-serif text-[#1A1A1A]">
                                         您好，请问怎么称呼？
                                     </h3>
 
@@ -383,7 +383,7 @@ export function OnboardingFlowModal({
                                         <ShieldCheck className="h-10 w-10 md:h-12 md:w-12 opacity-90" strokeWidth={1.2} />
                                     </div>
 
-                                    <h3 className="mb-6 text-2xl md:text-3xl font-serif text-[#1A1A1A]">
+                                    <h3 className="mb-4 text-2xl md:text-3xl font-serif text-[#1A1A1A]">
                                         服务确认与授权
                                     </h3>
 
