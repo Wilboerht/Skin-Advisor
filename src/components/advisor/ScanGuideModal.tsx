@@ -132,28 +132,22 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuid
                                     {onCancel && (
                                         <button
                                             onClick={onCancel}
-                                            className="px-4 h-10 text-[#4A3728]/50 hover:text-[#4A3728] text-[13px] font-medium tracking-[0.15em] transition-all duration-300 flex items-center justify-center group"
+                                            className="px-3 py-2 text-[#3D4430]/60 hover:text-[#3D4430] text-[13px] tracking-[0.1em] transition-colors duration-300"
                                         >
-                                            <span className="relative">
-                                                返回修改问卷
-                                                <span className="absolute -bottom-1 left-0 right-0 h-[1px] bg-current scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-center opacity-30" />
-                                            </span>
+                                            返回修改问卷
                                         </button>
                                     )}
 
                                     {(onCancel && onExit) && (
-                                        <div className="w-px h-3 bg-[#4A3728]/10" />
+                                        <div className="w-px h-4 bg-[#3D4430]/15" />
                                     )}
 
                                     {onExit && (
                                         <button
                                             onClick={onExit}
-                                            className="px-4 h-10 text-[#4A3728]/50 hover:text-[#4A3728] text-[13px] font-medium tracking-[0.15em] transition-all duration-300 flex items-center justify-center group"
+                                            className="px-3 py-2 text-[#3D4430]/60 hover:text-[#3D4430] text-[13px] tracking-[0.1em] transition-colors duration-300"
                                         >
-                                            <span className="relative">
-                                                退出测试
-                                                <span className="absolute -bottom-1 left-0 right-0 h-[1px] bg-current scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-center opacity-30" />
-                                            </span>
+                                            退出测试
                                         </button>
                                     )}
                                 </div>
