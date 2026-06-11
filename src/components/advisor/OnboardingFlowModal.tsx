@@ -267,7 +267,9 @@ export function OnboardingFlowModal({
                                         </h3>
 
                                         <p className="mb-9 text-sm md:text-base text-[#5E5E5E] leading-relaxed font-light max-w-sm mx-auto">
-                                            为获得更精准的分析数据，我们需要您授权当前的地理位置信息（仅用于环境数据分析），在结合温度、气候、空气湿度、紫外线等多维数据后生成更个性化的定制化报告。
+                                            为获得更精准的分析数据，我们需要您授权当前的地理位置信息（仅用于环境数据分析），<br className="sm:hidden" />
+                                            在结合温度、气候、空气湿度、紫外线等多维数据后<br className="sm:hidden" />
+                                            生成更个性化的定制化报告。
                                         </p>
 
                                         <div className="space-y-4">
