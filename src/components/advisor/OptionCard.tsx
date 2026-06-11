@@ -116,7 +116,7 @@ export function OptionCard({
                             initial={{ pathLength: 0 }}
                             animate={{ pathLength: 1 }}
                             transition={{ duration: 0.2, ease: "easeOut", delay: 0.1 }}
-                            points="20 6 9 17 4 12"
+                            points="4 12 9 17 20 6"
                         />
                     </m.svg>
                 )}
