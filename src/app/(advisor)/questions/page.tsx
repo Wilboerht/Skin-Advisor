@@ -368,7 +368,7 @@ export default function QuestionsPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="flex min-h-screen flex-col bg-[#F5F2E9] px-4"
+                    className="flex min-h-screen flex-col bg-[#F5F2E9] p-4"
                 >
                     {/* Top Bar */}
                     <div className="relative flex items-center justify-center p-4">
