@@ -9,7 +9,8 @@ import { GenderSelection } from "@/components/advisor/GenderSelection";
 
 import { m, AnimatePresence } from "framer-motion";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, LogOut, ArrowRight, History, Home } from "lucide-react";
+import { ChevronLeft, ChevronRight, LogOut, ArrowRight, History } from "lucide-react";
+import { HomeSvg } from "@/components/icons/HomeSvg";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { cn } from "@/lib/utils";
 import { preloadAllFaceModels } from "@/lib/preload-models";
@@ -392,7 +393,7 @@ export default function QuestionsPage() {
                             className="absolute right-0 p-2 text-[#3D4430]/40 hover:text-[#3D4430] transition-colors rounded-full hover:bg-[#3D4430]/5"
                             aria-label="回到首页"
                         >
-                            <Home className="w-5 h-5" strokeWidth={1.5} />
+                            <HomeSvg className="w-5 h-5" />
                         </button>
                     </div>
 
