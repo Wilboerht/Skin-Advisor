@@ -30,7 +30,7 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
                 animate={{ opacity: 1, y: 0 }}
                 className="mb-6 sm:mb-8 text-center"
             >
-                <span className="mb-3 inline-block rounded-md bg-[#3D4430]/5 px-4 py-1.5 text-[11px] font-medium tracking-wider text-[#3D4430]">
+                <span className="mb-3 inline-block text-[11px] font-medium tracking-wider text-[#3D4430]/60">
                     开始之前
                 </span>
                 <h2 className="font-serif text-2xl md:text-3xl text-[#1A1A1A]">
