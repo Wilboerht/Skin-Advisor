@@ -26,22 +26,6 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
     return (
         <div className="flex w-full flex-col items-center">
             <m.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-6 sm:mb-8 text-center"
-            >
-                <span className="mb-3 inline-block text-[11px] font-medium tracking-wider text-[#3D4430]/60">
-                    开始之前
-                </span>
-                <h2 className="font-serif text-2xl md:text-3xl text-[#1A1A1A]">
-                    为了提供更精准的建议
-                </h2>
-                <p className="mt-2 text-sm text-[#5E5E5E] font-light">
-                    请选择您的适用性别，我们将为您定制专属问卷
-                </p>
-            </m.div>
-
-            <m.div
                 variants={container}
                 initial="hidden"
                 animate="show"
@@ -97,15 +81,6 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
                     </div>
                 </m.button>
             </m.div>
-
-            <m.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-                className="mt-6 sm:mt-8 text-xs text-[#3D4430]/40"
-            >
-                * 不同性别的皮肤生理特征存在差异，区分分析更科学
-            </m.p>
         </div>
     );
 }
