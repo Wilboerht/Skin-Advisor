@@ -69,13 +69,13 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuid
                                 transition={{ delay: 0.1, duration: 0.5 }}
                                 className="flex flex-col items-center text-center"
                             >
-                                <h3 className="text-3xl md:text-4xl font-serif text-[#1A1A1A] tracking-tight mb-8 sm:mb-10">
+                                <h3 className="text-3xl md:text-4xl font-serif text-[#1A1A1A] tracking-tight mb-12">
                                     开始面部扫描
                                 </h3>
                                 <img
                                     src="/images/gender-decoration.svg"
                                     alt=""
-                                    className="w-28 h-28 sm:w-36 sm:h-36 mx-auto mb-8 sm:mb-10"
+                                    className="w-32 h-32 sm:w-40 sm:h-40 mx-auto mb-12"
                                 />
                             </motion.div>
 
@@ -127,30 +127,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuid
                                     <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
                                 </button>
 
-                                {/* Secondary Actions */}
-                                <div className="flex items-center justify-center gap-4 w-full">
-                                    {onCancel && (
-                                        <button
-                                            onClick={onCancel}
-                                            className="px-3 py-2 text-[#3D4430]/60 hover:text-[#3D4430] text-[13px] tracking-[0.1em] transition-colors duration-300"
-                                        >
-                                            返回修改问卷
-                                        </button>
-                                    )}
 
-                                    {(onCancel && onExit) && (
-                                        <div className="w-px h-4 bg-[#3D4430]/15" />
-                                    )}
-
-                                    {onExit && (
-                                        <button
-                                            onClick={onExit}
-                                            className="px-3 py-2 text-[#3D4430]/60 hover:text-[#3D4430] text-[13px] tracking-[0.1em] transition-colors duration-300"
-                                        >
-                                            退出测试
-                                        </button>
-                                    )}
-                                </div>
                             </motion.div>
                         </div>
                     </div>
