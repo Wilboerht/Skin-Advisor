@@ -378,7 +378,7 @@ export default function QuestionsPage() {
                             className="absolute left-0 p-2 text-[#3D4430]/40 hover:text-[#3D4430] transition-colors rounded-full hover:bg-[#3D4430]/5"
                             aria-label="返回"
                         >
-                            <ChevronLeft className="w-5 h-5" strokeWidth={1.5} />
+                            <ChevronLeft className="w-6 h-6" strokeWidth={1.5} />
                         </button>
                         <Image
                             src="/NIHPLOD-logo.svg"
@@ -393,7 +393,7 @@ export default function QuestionsPage() {
                             className="absolute right-0 p-2 text-[#3D4430]/40 hover:text-[#3D4430] transition-colors rounded-full hover:bg-[#3D4430]/5"
                             aria-label="回到首页"
                         >
-                            <HomeSvg className="w-5 h-5" />
+                            <HomeSvg className="w-6 h-6" />
                         </button>
                     </div>
 
