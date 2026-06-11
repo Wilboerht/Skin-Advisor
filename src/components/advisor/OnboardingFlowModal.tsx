@@ -403,13 +403,13 @@ export function OnboardingFlowModal({
                                                     className="sr-only"
                                                 />
                                                 <m.div
-                                                    className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 transition-colors duration-300 ${isAgreed ? "bg-[#8B7355] border-[#8B7355]" : "bg-transparent border-[#3D4430]/15 group-hover:border-[#8B7355]/60"}`}
+                                                    className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors duration-300 ${isAgreed ? "bg-[#8B7355] border-[#8B7355]" : "bg-transparent border-[#3D4430]/15 group-hover:border-[#8B7355]/60"}`}
                                                     animate={isAgreed ? { scale: [1, 0.92, 1.04, 1] } : { scale: 1 }}
                                                     transition={{ duration: 0.4, ease: "easeOut" }}
                                                 >
                                                     {isAgreed && (
                                                         <m.svg
-                                                            className="w-4 h-4 text-white"
+                                                            className="w-3 h-3 text-white"
                                                             viewBox="0 0 24 24"
                                                             fill="none"
                                                             stroke="currentColor"
