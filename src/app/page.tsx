@@ -359,7 +359,7 @@ export default function Home() {
                     {/* Logo */}
                     <button
                       onClick={() => setShowBrandModal(true)}
-                      className="cursor-pointer bg-transparent border-none outline-none p-0 mb-14 md:mb-20"
+                      className="cursor-pointer bg-transparent border-none outline-none p-0 mb-10 md:mb-14"
                     >
                       <Image
                         src="/NIHPLOD-logo.svg"
@@ -372,12 +372,12 @@ export default function Home() {
                     </button>
 
                     {/* Title */}
-                    <h1 className="text-[36px] sm:text-[44px] md:text-[52px] font-serif text-[#1A1A1A] font-normal leading-[1.1] tracking-tight mb-12 md:mb-16">
+                    <h1 className="text-[36px] sm:text-[44px] md:text-[52px] font-serif text-[#1A1A1A] font-normal leading-[1.1] tracking-tight mb-10 md:mb-14">
                       在线素颜测肤
                     </h1>
 
                     {/* Description */}
-                    <p className="text-[#5C5855]/90 leading-[1.9] mb-16 md:mb-24 max-w-xl mx-auto font-light text-sm sm:text-base tracking-wide opacity-0 animate-fade-in-up" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
+                    <p className="text-[#5C5855]/90 leading-[1.9] mb-10 md:mb-14 max-w-xl mx-auto font-light text-sm sm:text-base tracking-wide opacity-0 animate-fade-in-up" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
                       为了精准分析你的肌肤状态并生成专业定制化报告，<br className="hidden sm:block" />接下来我们将引导您<br className="sm:hidden" />进行个性化问卷调查与多维面部肌肤分析，<br />整个过程预计占用 <span className="text-[#3D4430]/80">2-5 分钟</span>。
                     </p>
 
