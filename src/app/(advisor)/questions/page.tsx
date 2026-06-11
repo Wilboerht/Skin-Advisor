@@ -474,8 +474,12 @@ export default function QuestionsPage() {
                 </AnimatePresence>
             </div>
 
-            {/* Ghost footer to balance the top bar height for perfect centering between Header and Bottom Buttons */}
-            <div className="h-[112px] shrink-0 pointer-events-none" aria-hidden="true" />
+            {/* Footer */}
+            <div className="py-6 opacity-40 shrink-0">
+                <p className="text-center text-[10px] sm:text-[11px] font-light tracking-widest text-[#1A1A1A] leading-tight">
+                    &copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.
+                </p>
+            </div>
 
             {/* Bottom Fade Mask - 底部渐隐遮挡 */}
             <div className="fixed bottom-0 left-0 right-0 h-24 pointer-events-none z-20 bg-gradient-to-t from-[#F0EDE1] via-[#F0EDE1]/80 to-transparent" />
