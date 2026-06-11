@@ -227,10 +227,10 @@ export function OnboardingFlowModal({
                                     <button
                                         onClick={handleNicknameNext}
                                         disabled={!nickname.trim()}
-                                        className="group inline-flex items-center gap-2 py-2 text-[15px] tracking-[0.2em] font-medium text-[#8B7355] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all duration-300 bg-transparent border-none outline-none mx-auto"
+                                        className="group relative inline-flex items-center justify-center gap-4 px-10 py-3.5 sm:px-14 border border-[#3D4430]/25 hover:border-[#3D4430]/50 hover:bg-[#3D4430]/[0.03] text-[13px] sm:text-[14px] tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500"
                                     >
-                                        <span className="border-b border-[#8B7355]/30 pb-0.5 group-hover:border-[#8B7355] transition-colors">下一步</span>
-                                        <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+                                        <span>下一步</span>
+                                        <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-2" />
                                     </button>
                                 </m.div>
                             </div>
@@ -274,17 +274,17 @@ export function OnboardingFlowModal({
                                             <button
                                                 onClick={handleLocationAcceptWrapper}
                                                 disabled={isLocating}
-                                                className="group inline-flex items-center gap-2 py-2 text-[15px] tracking-[0.2em] font-medium text-[#8B7355] disabled:opacity-30 disabled:cursor-wait cursor-pointer transition-all duration-300 bg-transparent border-none outline-none mx-auto"
+                                                className="group relative inline-flex items-center justify-center gap-4 px-10 py-3.5 sm:px-14 border border-[#3D4430]/25 hover:border-[#3D4430]/50 hover:bg-[#3D4430]/[0.03] text-[13px] sm:text-[14px] tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] font-medium disabled:opacity-40 disabled:cursor-wait cursor-pointer transition-all duration-500"
                                             >
                                                 {isLocating ? (
                                                     <>
-                                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                                        <Loader2 className="w-4 h-4 animate-spin" />
                                                         <span>正在定位...</span>
                                                     </>
                                                 ) : (
                                                     <>
-                                                        <span className="border-b border-[#8B7355]/30 pb-0.5 group-hover:border-[#8B7355] transition-colors">允许访问</span>
-                                                        <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+                                                        <span>允许访问</span>
+                                                        <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-2" />
                                                     </>
                                                 )}
                                             </button>
@@ -434,10 +434,10 @@ export function OnboardingFlowModal({
                                         <button
                                             onClick={handleLegalSubmit}
                                             disabled={!isAgreed}
-                                            className="group inline-flex items-center gap-2 py-2 text-[15px] tracking-[0.2em] font-medium text-[#8B7355] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all duration-300 bg-transparent border-none outline-none"
+                                            className="group relative inline-flex items-center justify-center gap-4 px-10 py-3.5 sm:px-14 border border-[#3D4430]/25 hover:border-[#3D4430]/50 hover:bg-[#3D4430]/[0.03] text-[13px] sm:text-[14px] tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500"
                                         >
-                                            <span className="border-b border-[#8B7355]/30 pb-0.5 group-hover:border-[#8B7355] transition-colors">开始测试</span>
-                                            <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+                                            <span>开始测试</span>
+                                            <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-2" />
                                         </button>
 
                                         <button
