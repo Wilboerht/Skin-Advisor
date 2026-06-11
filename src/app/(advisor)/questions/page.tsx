@@ -8,6 +8,7 @@ import { ProgressBar } from "@/components/advisor/ProgressBar";
 import { GenderSelection } from "@/components/advisor/GenderSelection";
 
 import { m, AnimatePresence } from "framer-motion";
+import Image from "next/image";
 import { ChevronLeft, ChevronRight, LogOut, ArrowRight, History } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { cn } from "@/lib/utils";
@@ -369,6 +370,25 @@ export default function QuestionsPage() {
                     exit={{ opacity: 0 }}
                     className="flex min-h-screen flex-col items-center justify-center bg-[#F5F2E9] px-4"
                 >
+                    {/* Top Bar */}
+                    <div className="fixed top-0 left-0 right-0 z-30 flex items-center justify-center px-4 py-4 sm:py-6">
+                        <button
+                            onClick={() => router.push("/")}
+                            className="absolute left-4 sm:left-6 p-2 text-[#3D4430]/40 hover:text-[#3D4430] transition-colors rounded-full hover:bg-[#3D4430]/5"
+                            aria-label="返回"
+                        >
+                            <ChevronLeft className="w-5 h-5" strokeWidth={1.5} />
+                        </button>
+                        <Image
+                            src="/NIHPLOD-logo.svg"
+                            alt="NIHPLOD"
+                            width={120}
+                            height={30}
+                            className="h-7 sm:h-8 object-contain"
+                            priority
+                        />
+                    </div>
+
                     <div className="w-full max-w-4xl">
                         <GenderSelection onSelect={handleGenderSelect} />
                     </div>
