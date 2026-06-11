@@ -9,7 +9,7 @@ import { GenderSelection } from "@/components/advisor/GenderSelection";
 
 import { m, AnimatePresence } from "framer-motion";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, LogOut, ArrowRight, History } from "lucide-react";
+import { ChevronLeft, ChevronRight, LogOut, ArrowRight, History, Home } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { cn } from "@/lib/utils";
 import { preloadAllFaceModels } from "@/lib/preload-models";
@@ -387,11 +387,30 @@ export default function QuestionsPage() {
                             className="h-7 sm:h-8 object-contain"
                             priority
                         />
+                        <button
+                            onClick={() => router.push("/")}
+                            className="absolute right-0 p-2 text-[#3D4430]/40 hover:text-[#3D4430] transition-colors rounded-full hover:bg-[#3D4430]/5"
+                            aria-label="回到首页"
+                        >
+                            <Home className="w-5 h-5" strokeWidth={1.5} />
+                        </button>
                     </div>
 
                     <div className="flex-1 flex items-center justify-center w-full max-w-4xl mx-auto">
                         <GenderSelection onSelect={handleGenderSelect} />
                     </div>
+
+                    {/* Footer */}
+                    <m.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 1.2, delay: 1 }}
+                        className="py-6 opacity-40"
+                    >
+                        <p className="text-center text-[10px] sm:text-[11px] font-light tracking-widest text-[#1A1A1A] leading-tight">
+                            &copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.
+                        </p>
+                    </m.div>
                 </m.div>
             </AnimatePresence>
         );
