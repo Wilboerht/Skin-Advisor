@@ -27,14 +27,14 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuid
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.4 }}
-                    className="fixed inset-0 z-[300] bg-[#FAF8F5] flex flex-col items-center overflow-y-auto"
+                    className="fixed inset-0 z-[300] bg-[#FAF8F5] flex flex-col items-center overflow-y-auto p-4"
                 >
                     {/* Top Bar */}
-                    <div className="relative flex items-center justify-center px-4 py-4 z-20 shrink-0 w-full">
+                    <div className="relative flex items-center justify-center py-4 z-20 shrink-0 w-full">
                         {onCancel && (
                             <button
                                 onClick={onCancel}
-                                className="absolute left-4 p-2 text-[#3D4430]/40 hover:text-[#3D4430] transition-colors rounded-full hover:bg-[#3D4430]/5"
+                                className="absolute left-0 p-2 text-[#3D4430]/40 hover:text-[#3D4430] transition-colors rounded-full hover:bg-[#3D4430]/5"
                                 aria-label="返回"
                             >
                                 <ChevronLeft className="w-6 h-6" strokeWidth={1.5} />
@@ -51,7 +51,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuid
                         {onExit && (
                             <button
                                 onClick={onExit}
-                                className="absolute right-4 p-2 text-[#3D4430]/40 hover:text-[#3D4430] transition-colors rounded-full hover:bg-[#3D4430]/5"
+                                className="absolute right-0 p-2 text-[#3D4430]/40 hover:text-[#3D4430] transition-colors rounded-full hover:bg-[#3D4430]/5"
                                 aria-label="退出测试"
                             >
                                 <HomeSvg className="w-6 h-6" />
@@ -61,7 +61,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuid
 
                     {/* Content */}
                     <div className="flex-1 flex flex-col items-center justify-center w-full">
-                        <div className="w-full max-w-2xl px-6 py-8 md:py-16 flex flex-col items-center">
+                        <div className="w-full max-w-2xl p-4 flex flex-col items-center">
                             {/* Header */}
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}
@@ -121,10 +121,10 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuid
                                         }
                                         onConfirm();
                                     }}
-                                    className="w-full max-w-sm h-12 rounded-xl sm:rounded-md bg-[#8B5E3C] hover:bg-[#7A4E2C] sm:bg-[#4A3728] sm:hover:bg-[#3D2E20] text-[#FDFBF7] text-[14px] font-medium tracking-[0.15em] transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-2 group mb-5"
+                                    className="group relative w-full max-w-sm inline-flex items-center justify-center gap-4 px-10 py-3.5 sm:px-14 border border-[#3D4430]/25 hover:border-[#3D4430]/50 hover:bg-[#3D4430]/[0.03] text-[13px] sm:text-[14px] tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] font-medium cursor-pointer transition-all duration-500 mb-5"
                                 >
                                     <span>我已准备好</span>
-                                    <ArrowRight className="w-4 h-4 opacity-70 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-1" />
+                                    <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
                                 </button>
 
                                 {/* Secondary Actions */}
@@ -159,6 +159,13 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuid
                                 </div>
                             </motion.div>
                         </div>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="py-6 opacity-40 shrink-0 text-center">
+                        <p className="text-center text-[10px] sm:text-[11px] font-light tracking-widest text-[#1A1A1A] leading-tight">
+                            &copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.
+                        </p>
                     </div>
                 </motion.div>
             )}
