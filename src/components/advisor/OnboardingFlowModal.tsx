@@ -192,7 +192,7 @@ export function OnboardingFlowModal({
                                     initial="hidden"
                                     animate={currentScreen === "nickname" ? "visible" : "hidden"}
                                 >
-                                    <div className="flex justify-center mb-8 text-[#3D4430]">
+                                    <div className="flex justify-center mb-9 text-[#3D4430]">
                                         <Image
                                             src="/images/hi.svg"
                                             alt="Wave"
@@ -207,7 +207,7 @@ export function OnboardingFlowModal({
                                         您好，请问怎么称呼？
                                     </h3>
 
-                                    <p className="mb-8 md:mb-10 text-sm md:text-base text-[#5E5E5E] leading-relaxed font-light">
+                                    <p className="mb-9 text-sm md:text-base text-[#5E5E5E] leading-relaxed font-light">
                                         输入昵称，让报告更有温度
                                     </p>
 
@@ -217,7 +217,7 @@ export function OnboardingFlowModal({
                                         onChange={(e) => setNickname(e.target.value)}
                                         placeholder="输入您的昵称"
                                         maxLength={10}
-                                        className="w-full bg-transparent border-0 border-b border-[#3D4430]/20 rounded-none py-4 px-0 mb-8 text-center text-[#1A1A1A] focus:outline-none focus:border-[#3D4430]/40 transition-colors placeholder:text-[#3D4430]/25 text-[15px] tracking-wide"
+                                        className="w-full bg-transparent border-0 border-b border-[#3D4430]/20 rounded-none py-4 px-0 mb-9 text-center text-[#1A1A1A] focus:outline-none focus:border-[#3D4430]/40 transition-colors placeholder:text-[#3D4430]/25 text-[15px] tracking-wide"
                                         onKeyDown={(e) => {
                                             if (e.key === "Enter") handleNicknameNext();
                                         }}
@@ -258,7 +258,7 @@ export function OnboardingFlowModal({
                                         exit={{ opacity: 0, x: -20 }}
                                         transition={{ duration: 0.3 }}
                                     >
-                                        <div className="flex justify-center mb-8 text-[#8B7355]">
+                                        <div className="flex justify-center mb-9 text-[#8B7355]">
                                             <MapPin className="h-10 w-10 md:h-12 md:w-12 opacity-90" strokeWidth={1.2} />
                                         </div>
 
@@ -266,7 +266,7 @@ export function OnboardingFlowModal({
                                             开启定位服务
                                         </h3>
 
-                                        <p className="mb-10 text-sm md:text-base text-[#5E5E5E] leading-relaxed font-light max-w-sm mx-auto">
+                                        <p className="mb-9 text-sm md:text-base text-[#5E5E5E] leading-relaxed font-light max-w-sm mx-auto">
                                             为获得更精准的分析数据，我们需要您授权当前的地理位置信息（仅用于环境数据分析），在结合温度、气候、空气湿度、紫外线等多维数据后生成更个性化的定制化报告。
                                         </p>
 
@@ -324,7 +324,7 @@ export function OnboardingFlowModal({
                                         {/* Region List */}
                                         <div className="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar">
                                             {regionOptions.map((group) => (
-                                                <div key={group.group} className="mb-8 last:mb-2">
+                                                <div key={group.group} className="mb-9 last:mb-2">
                                                     <div className="flex items-center gap-4 mb-4">
                                                         <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-[#8B7355]/10" />
                                                         <span className="text-[11px] font-bold text-[#8B7355]/60 uppercase tracking-[0.25em]">
@@ -379,7 +379,7 @@ export function OnboardingFlowModal({
                                     initial="hidden"
                                     animate={currentScreen === "legal" ? "visible" : "hidden"}
                                 >
-                                    <div className="flex justify-center mb-8 text-[#8B7355]">
+                                    <div className="flex justify-center mb-9 text-[#8B7355]">
                                         <ShieldCheck className="h-10 w-10 md:h-12 md:w-12 opacity-90" strokeWidth={1.2} />
                                     </div>
 
@@ -387,7 +387,7 @@ export function OnboardingFlowModal({
                                         服务确认与授权
                                     </h3>
 
-                                    <div className="p-6 mb-10 text-left max-w-md mx-auto">
+                                    <div className="p-6 mb-9 text-left max-w-md mx-auto">
                                         <label className="flex items-start gap-4 cursor-pointer group">
                                             <div className="mt-0.5 relative flex items-center">
                                                 <input
