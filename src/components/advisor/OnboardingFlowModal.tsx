@@ -428,7 +428,7 @@ export function OnboardingFlowModal({
                                                 </m.div>
                                             </div>
                                             <span className="text-sm text-[#5E5E5E] leading-relaxed font-normal select-none">
-                                                我已年满 14 周岁（未满 14 周岁已获得监护人许可），且已阅读并同意我们的
+                                                请确认您已年满 14 周岁（未满 14 周岁已获得监护人许可），且已阅读并同意我们的
                                                 <a href="https://nihplod.cn/privacy" target="_blank" rel="noopener noreferrer" className="text-[#3D4430] font-medium underline underline-offset-4 mx-1">隐私政策</a>
                                                 与
                                                 <a href="https://nihplod.cn/terms" target="_blank" rel="noopener noreferrer" className="text-[#3D4430] font-medium underline underline-offset-4 mx-1">服务条款</a>。
