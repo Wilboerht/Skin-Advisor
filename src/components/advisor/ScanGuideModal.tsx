@@ -75,7 +75,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuid
                                 <img
                                     src="/images/gender-decoration.svg"
                                     alt=""
-                                    className="w-28 h-28 mx-auto opacity-60 mb-6"
+                                    className="w-28 h-28 mx-auto mb-6"
                                 />
                             </motion.div>
 
