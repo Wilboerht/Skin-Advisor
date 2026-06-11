@@ -28,6 +28,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/Toast";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { getGuestIdentity, type GuestIdentity } from "@/lib/guest-identity";
+import { CONSENT_VERSION } from "@/components/advisor/PrivacyConsent";
 import dynamic from "next/dynamic";
 
 const ProfileModal = dynamic(() => import("@/components/auth/ProfileModal").then((mod) => mod.ProfileModal), { ssr: false });
@@ -163,6 +164,12 @@ export default function Home() {
     if (!sessionStorage.getItem("locationConsent")) {
         safeStorage.setSession("locationConsent", "declined");
     }
+
+    // Record privacy consent from the legal step
+    safeStorage.set("advisor_privacy_consent", JSON.stringify({
+        version: CONSENT_VERSION,
+        consentedAt: new Date().toISOString()
+    }));
     
     recordAndStartTest();
   };

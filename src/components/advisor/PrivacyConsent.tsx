@@ -9,7 +9,7 @@ interface PrivacyConsentProps {
     onConsent: () => void;
 }
 
-const CONSENT_VERSION = "2025-06-01";
+export const CONSENT_VERSION = "2025-06-01";
 
 export function PrivacyConsent({ onConsent }: PrivacyConsentProps) {
     const [agreed, setAgreed] = useState(false);
