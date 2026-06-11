@@ -34,7 +34,7 @@ export default function RootLayout({
     <ViewTransitions>
       <html lang="zh-CN">
         <body
-          className={`antialiased`}
+          className={`antialiased bg-[#F5F2E9]`}
           suppressHydrationWarning
         >
           <ToastProvider>
