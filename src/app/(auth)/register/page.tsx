@@ -44,7 +44,8 @@ export default function RegisterPage() {
             setCooldown(60);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
-            toast.error(err.message || "验证码发送失败");
+            console.error("[RegisterSendCode]", err.message);
+            toast.error("验证码发送失败，请稍后重试");
         } finally {
             setSendingCode(false);
         }

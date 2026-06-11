@@ -44,7 +44,8 @@ function ResetPasswordForm() {
             setCooldown(60);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
-            toast.error(error.message || "验证码发送失败");
+            console.error("[ResetPasswordSendCode]", error.message);
+            toast.error("验证码发送失败，请稍后重试");
         } finally {
             setSendingCode(false);
         }
@@ -90,7 +91,8 @@ function ResetPasswordForm() {
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
-            toast.error(error.message);
+            console.error("[ResetPassword]", error.message);
+            toast.error("重置失败，请稍后重试");
         } finally {
             setLoading(false);
         }

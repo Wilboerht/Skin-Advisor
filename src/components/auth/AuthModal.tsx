@@ -151,7 +151,7 @@ export function AuthModal() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             console.error("🔴 Login failed:", err.message);
-            toast.error(err.message || "登录失败，请检查账号密码");
+            toast.error("登录失败，请检查账号密码");
         } finally {
             setLoading(false);
         }
@@ -170,7 +170,8 @@ export function AuthModal() {
             closeAuthModal();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
-            toast.error(err.message || "注册失败，请稍后重试");
+            console.error("🔴 Register failed:", err.message);
+            toast.error("注册失败，请稍后重试");
         } finally {
             setLoading(false);
         }
@@ -196,7 +197,8 @@ export function AuthModal() {
             // We use standard reload to make sure everything initializes fresh with the new token
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
-            toast.error(err.message || "绑定失败，请稍后重试");
+            console.error("🔴 Wechat bind failed:", err.message);
+            toast.error("绑定失败，请稍后重试");
             setLoading(false);
         }
     };
@@ -211,7 +213,12 @@ export function AuthModal() {
             if (data.success) {
                 window.location.href = data.data.authUrl;
             } else {
-                toast.error(data.error?.message || "获取微信授权失败");
+                const msg = data.error?.message || "获取微信授权失败";
+                if (/appid.*未配置/i.test(msg)) {
+                    console.warn("[WechatLogin]", msg);
+                } else {
+                    toast.error(msg);
+                }
             }
         } catch {
             toast.error("网络错误，请重试");
@@ -238,7 +245,8 @@ export function AuthModal() {
             setRegCountdown(60);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
-            toast.error(error.message);
+            console.error("[SendRegCode]", error.message);
+            toast.error("发送失败，请稍后重试");
         } finally {
             setRegCodeSending(false);
         }
@@ -262,7 +270,8 @@ export function AuthModal() {
             toast.success("重置验证码已发送");
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
-            toast.error(error.message);
+            console.error("[SendRegCode]", error.message);
+            toast.error("发送失败，请稍后重试");
         } finally {
             setLoading(false);
         }
@@ -296,7 +305,8 @@ export function AuthModal() {
             toast.success("验证码已发送");
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
-            toast.error(error.message);
+            console.error("[SendRegCode]", error.message);
+            toast.error("发送失败，请稍后重试");
         } finally {
             setLoginCodeSending(false);
         }
@@ -322,7 +332,8 @@ export function AuthModal() {
             toast.success("重置验证码已发送");
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
-            toast.error(error.message);
+            console.error("[SendRegCode]", error.message);
+            toast.error("发送失败，请稍后重试");
         } finally {
             setLoading(false);
         }
@@ -355,7 +366,8 @@ export function AuthModal() {
             setMobileForgotStep("success");
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
-            toast.error(error.message);
+            console.error("[SendRegCode]", error.message);
+            toast.error("发送失败，请稍后重试");
         } finally {
             setLoading(false);
         }
@@ -387,7 +399,8 @@ export function AuthModal() {
             setForgotSubmitted(false);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
-            toast.error(error.message);
+            console.error("[SendRegCode]", error.message);
+            toast.error("发送失败，请稍后重试");
         } finally {
             setLoading(false);
         }
@@ -1046,7 +1059,7 @@ export function AuthModal() {
                                     <button
                                         type="button"
                                         onClick={handleWechatLogin}
-                                        disabled={loading}
+                                        disabled={loading || !mobileAgreed}
                                         className="w-full py-3.5 text-sm font-medium tracking-[0.2em] text-brand-charcoal border border-brand-charcoal/25 hover:bg-brand-charcoal/[0.03] active:scale-[0.98] transition-all disabled:opacity-40 flex items-center justify-center gap-2"
                                     >
                                         <svg className="w-5 h-5 text-[#07C160]" viewBox="0 0 24 24" fill="currentColor">

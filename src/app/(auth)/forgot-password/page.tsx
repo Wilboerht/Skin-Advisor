@@ -30,7 +30,8 @@ export default function ForgotPasswordPage() {
             toast.success("重置验证码已发送");
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
-            toast.error(error.message);
+            console.error("[ForgotPassword]", error.message);
+            toast.error("请求失败，请稍后重试");
         } finally {
             setLoading(false);
         }
