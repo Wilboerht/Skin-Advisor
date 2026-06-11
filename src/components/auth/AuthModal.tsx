@@ -1038,7 +1038,7 @@ export function AuthModal() {
                                                     onChange={(e) => setMobileAgreed(e.target.checked)}
                                                     className="peer sr-only"
                                                 />
-                                                <div className="h-4 w-4 rounded border border-brand-charcoal/25 bg-transparent transition-all peer-checked:bg-[#00263e]/50 peer-checked:border-[#00263e]/50" />
+                                                <div className="h-4 w-4 rounded border border-brand-charcoal/25 bg-transparent transition-all peer-checked:bg-brand-charcoal/50 peer-checked:border-brand-charcoal/50" />
                                                 <Check className="absolute inset-0 m-auto h-3 w-3 scale-0 text-white transition-transform peer-checked:scale-100" strokeWidth={3} />
                                             </div>
                                             <span className="text-xs text-brand-charcoal/50 tracking-wide">
