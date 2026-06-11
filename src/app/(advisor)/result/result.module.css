@@ -1,33 +1,6 @@
-﻿/* Notion-like Design System */
+/* Notion-like Design System */
 /* Colors from Notion's palette */
-:root {
-    --notion-bg: #FFFFFF;
-    --notion-text: #37352F;
-    --notion-gray: #787774;
-    --notion-border: #E9E9E7;
-    --notion-hover: #F1F1EF;
-    --notion-selection: #CDE6F7;
-
-    /* Notion Pastels */
-    --tag-gray-bg: #F1F1EF;
-    --tag-gray-text: #787774;
-    --tag-brown-bg: #F4EEEE;
-    --tag-brown-text: #9F6B53;
-    --tag-orange-bg: #FAEBDD;
-    --tag-orange-text: #D9730D;
-    --tag-yellow-bg: #FBF3DB;
-    --tag-yellow-text: #CB912F;
-    --tag-green-bg: #EDF3EC;
-    --tag-green-text: #448361;
-    --tag-blue-bg: #E6F3F7;
-    --tag-blue-text: #337EA9;
-    --tag-purple-bg: #F6F3F9;
-    --tag-purple-text: #9065B0;
-    --tag-pink-bg: #F9F2F5;
-    --tag-pink-text: #C14C8A;
-    --tag-red-bg: #FDEEB;
-    --tag-red-text: #D44C47;
-}
+/* Note: CSS variables moved to globals.css because :root is not allowed in CSS Modules */
 
 .container {
     width: 100%;
