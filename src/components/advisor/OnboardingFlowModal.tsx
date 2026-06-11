@@ -207,7 +207,7 @@ export function OnboardingFlowModal({
                                         您好，请问怎么称呼？
                                     </h3>
 
-                                    <p className="mb-10 text-sm md:text-base text-[#5E5E5E] leading-relaxed font-light">
+                                    <p className="mb-8 md:mb-10 text-sm md:text-base text-[#5E5E5E] leading-relaxed font-light">
                                         输入昵称，让报告更有温度
                                     </p>
 
