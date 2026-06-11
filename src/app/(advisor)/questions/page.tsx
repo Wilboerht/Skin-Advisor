@@ -368,13 +368,13 @@ export default function QuestionsPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="flex min-h-screen flex-col items-center justify-center bg-[#F5F2E9] p-4"
+                    className="flex min-h-screen flex-col bg-[#F5F2E9] px-4"
                 >
                     {/* Top Bar */}
-                    <div className="fixed top-0 left-0 right-0 z-30 flex items-center justify-center px-4 py-4 sm:py-6">
+                    <div className="relative flex items-center justify-center p-4">
                         <button
                             onClick={() => router.push("/")}
-                            className="absolute left-4 sm:left-6 p-2 text-[#3D4430]/40 hover:text-[#3D4430] transition-colors rounded-full hover:bg-[#3D4430]/5"
+                            className="absolute left-0 p-2 text-[#3D4430]/40 hover:text-[#3D4430] transition-colors rounded-full hover:bg-[#3D4430]/5"
                             aria-label="返回"
                         >
                             <ChevronLeft className="w-5 h-5" strokeWidth={1.5} />
@@ -389,13 +389,13 @@ export default function QuestionsPage() {
                         />
                     </div>
 
-                    <div className="w-full max-w-4xl">
+                    <div className="flex-1 flex items-center justify-center w-full max-w-4xl mx-auto">
                         <GenderSelection onSelect={handleGenderSelect} />
                     </div>
 
                     <button
                         onClick={() => router.push("/")}
-                        className="fixed bottom-8 flex items-center gap-2 text-xs text-[#1A1A1A]/40 hover:text-[#1A1A1A] transition-colors tracking-widest uppercase font-medium"
+                        className="flex items-center justify-center gap-2 py-8 text-xs text-[#1A1A1A]/40 hover:text-[#1A1A1A] transition-colors tracking-widest uppercase font-medium"
                     >
                         <LogOut size={12} strokeWidth={2.5} />
                         退出测试
