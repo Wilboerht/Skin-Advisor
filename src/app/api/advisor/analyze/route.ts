@@ -566,7 +566,33 @@ export async function POST(request: NextRequest) {
                 );
             }
 
-            // 微信模板消息推送已移除（本地微信登录功能已下线）
+            // ====== 微信公众号模板消息推送（通过官网内部 API） ======
+            if (user?.id) {
+                const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://advisor.nihplod.cn";
+                const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";
+                const internalSecret = process.env.INTERNAL_API_SECRET;
+
+                const score = faceAnalysis?.overallScore || 85;
+                let primaryConcern = "肤色暗沉或不均";
+                if (concerns && concerns.length > 0) {
+                    primaryConcern = concerns.join("、");
+                }
+
+                // 异步触发，绝不阻塞前端响应时间
+                fetch(`${officialApiUrl}/api/internal/wechat/send-template`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        ...(internalSecret ? { "X-Internal-API-Secret": internalSecret } : {}),
+                    },
+                    body: JSON.stringify({
+                        userId: user.id,
+                        score,
+                        primaryConcern,
+                        reportUrl: `${baseUrl}/report/${sessionId}`,
+                    }),
+                }).catch(err => console.error("[WechatTemplate] 官网模板消息调用异常:", err));
+            }
         }
 
         return NextResponse.json(sanitizedResult, { headers: rateLimitHeaders });
