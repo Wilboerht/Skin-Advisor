@@ -31,7 +31,7 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
                 className="mb-6 sm:mb-8 text-center"
             >
                 <span className="mb-3 inline-block rounded-md bg-[#3D4430]/5 px-4 py-1.5 text-[11px] font-medium tracking-wider text-[#3D4430]">
-                    第一步
+                    开始之前
                 </span>
                 <h2 className="font-serif text-2xl md:text-3xl text-[#1A1A1A]">
                     为了提供更精准的建议
