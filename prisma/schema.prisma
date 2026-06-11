@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
 }
 
 // AI 顾问用户会话 - 行为追踪
@@ -164,9 +164,6 @@ model User {
   password        String?
   name            String?
   
-  // 微信授权相关字段
-  wechatOpenId    String?          @unique
-  wechatUnionId   String?          @unique
   avatarUrl       String?
 
   // NOTE: role should ideally be an enum (user, vip).
