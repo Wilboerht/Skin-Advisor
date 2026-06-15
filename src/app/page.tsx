@@ -403,7 +403,13 @@ export default function Home() {
                         )}
                       </button>
 
-
+                      <Link
+                        href="/skin-types"
+                        className="group inline-flex items-center justify-center gap-3 text-[13px] sm:text-[14px] tracking-[0.2em] text-[#3D4430]/60 hover:text-[#3D4430] font-medium transition-colors duration-500"
+                      >
+                        <span>探索 10 种肌肤类型</span>
+                        <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-2" />
+                      </Link>
                     </div>
                   </div>
                 </div>
