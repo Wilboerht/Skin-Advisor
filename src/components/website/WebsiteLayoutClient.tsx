@@ -10,9 +10,9 @@ import { BottomNavBar } from "@/components/website/BottomNavBar";
  * WebsiteLayoutClient
  * 
  * 作用：
- * 1. 提供 LayoutContext (管理抽屉状态)
+ * 1. 提供 LayoutContext (管理底部导航菜单和 Bento 背景状态)
  * 2. 渲染全局单一的 KineticBackground
- * 3. 增加 BentoBackground (抽屉收起时显示)
+ * 3. 增加 BentoBackground (showBento 为 true 时显示)
  * 4. 增加 BottomNavBar (Dock 式底部导航)
  * 5. 包装页面内容
  */

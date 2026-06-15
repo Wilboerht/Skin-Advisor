@@ -69,7 +69,7 @@ export function BottomNavBar() {
                 )}
             </AnimatePresence>
 
-            {/* 底部导航栏 - 抽屉展开时平滑滑出 */}
+            {/* 底部导航栏 - 菜单收起时滑入，菜单展开时显示弹出层 */}
             <AnimatePresence>
                 {isVisible && (
                     <motion.header
