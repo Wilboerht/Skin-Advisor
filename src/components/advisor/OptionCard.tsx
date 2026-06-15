@@ -54,7 +54,7 @@ export function OptionCard({
                 "group relative w-full rounded-lg text-left border px-4 sm:px-6 py-3 sm:py-5 flex items-center gap-3 sm:gap-5 backdrop-blur-md transition-all duration-300 overflow-hidden",
                 isSelected
                     ? "bg-[#F8F5EE] border-[#8B7355]/40 shadow-[0_2px_12px_-2px_rgba(139,115,85,0.08)]"
-                    : "bg-white/50 border-[#D4CFC5]/70 hover:border-[#8B7355]/30 hover:bg-[#F5F2EA]/60 shadow-sm hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.03)]"
+                    : "bg-[#FDFBF7] border-[#D4CFC5] hover:border-[#8B7355]/40 hover:bg-[#F8F5EE] shadow-[0_1px_4px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.06)]"
             )}
         >
             {/* Left accent bar */}
@@ -77,14 +77,14 @@ export function OptionCard({
             <div className="flex-1 min-w-0">
                 <p className={cn(
                     "text-[15px] tracking-wide mb-0.5 transition-colors duration-300",
-                    isSelected ? "text-[#1A1A1A] font-semibold" : "text-[#3D4430]/85 font-medium"
+                    isSelected ? "text-[#1A1A1A] font-semibold" : "text-[#3D4430] font-medium"
                 )}>
                     {label}
                 </p>
                 {description && (
                     <p className={cn(
                         "text-xs font-light leading-relaxed transition-colors duration-300",
-                        isSelected ? "text-[#8B7355]/80" : "text-[#5E5E5E]/60"
+                        isSelected ? "text-[#8B7355]/80" : "text-[#5E5E5E]/80"
                     )}>
                         {description}
                     </p>
@@ -97,7 +97,7 @@ export function OptionCard({
                     "w-5 h-5 rounded-sm border flex items-center justify-center transition-all duration-300",
                     isSelected
                         ? "border-[#8B7355] bg-[#8B7355] text-white"
-                        : "border-[#D4CFC5]/60 group-hover:border-[#8B7355]/30"
+                        : "border-[#D4CFC5] group-hover:border-[#8B7355]/40"
                 )}
                 animate={isSelected ? { scale: [1, 0.8, 1.15, 1] } : { scale: 1 }}
                 transition={{ duration: 0.4, ease: "easeOut" }}
