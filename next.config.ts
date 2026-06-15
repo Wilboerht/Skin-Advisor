@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
     config.module.unknownContextCritical = false;
     return config;
   },
+  turbopack: {},
   output: 'standalone',
   images: {
     remotePatterns: [
