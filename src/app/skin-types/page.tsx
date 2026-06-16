@@ -65,15 +65,15 @@ export default function ResultIndexPage() {
                   className="absolute -right-3 -bottom-14 w-36 h-64 md:w-48 md:h-80 object-contain opacity-100 group-hover:scale-105 transition-transform duration-500 pointer-events-none select-none"
                 />
                 <div className="relative z-10">
-                  <h2 className="text-2xl md:text-3xl font-serif text-[#1A1A1A] mb-3 group-hover:text-[#3D4430] transition-colors duration-500">
+                  <h2 className="text-2xl md:text-3xl font-serif text-[#1A1A1A] mb-2 group-hover:text-[#3D4430] transition-colors duration-500">
                     {type.typeName}
                   </h2>
-                  <p className="text-sm text-[#5E5E5E] leading-relaxed mb-6 line-clamp-2 font-light">
+                  <p className="text-xs text-[#5E5E5E] leading-relaxed mb-5 line-clamp-2 font-light">
                     {type.m1.persona}
                   </p>
-                  <div className="inline-flex items-center text-sm font-medium tracking-wide text-[#3D4430]/80 group-hover:text-[#3D4430] transition-colors duration-300">
+                  <div className="inline-flex items-center text-xs font-medium tracking-wide text-[#3D4430]/80 group-hover:text-[#3D4430] transition-colors duration-300">
                     查看完整解读
-                    <ArrowRight className="w-4 h-4 ml-1.5 transition-transform duration-500 group-hover:translate-x-1" />
+                    <ArrowRight className="w-3.5 h-3.5 ml-1.5 transition-transform duration-500 group-hover:translate-x-1" />
                   </div>
                 </div>
               </Link>
