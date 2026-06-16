@@ -158,7 +158,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
           {data.m5.quote && (
             <div className="text-center max-w-2xl mx-auto p-8 rounded-2xl bg-[#1B3A5C] text-white">
               <Sparkles className="w-6 h-6 mx-auto mb-4 opacity-70" />
-              <blockquote className="text-xl md:text-2xl font-light italic leading-relaxed">
+              <blockquote className="text-xl md:text-2xl font-light leading-relaxed">
                 {data.m5.quote}
               </blockquote>
             </div>
@@ -262,7 +262,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
             <RadarChart data={data.m8.radar} fillColor={theme.from} strokeColor={theme.stroke} />
             {data.m8.interpretation && (
               <div className="mt-8 text-center max-w-2xl mx-auto">
-                <blockquote className="text-lg md:text-xl font-light italic text-[#1B3A5C]">
+                <blockquote className="text-lg md:text-xl font-light text-[#1B3A5C]">
                   {data.m8.interpretation}
                 </blockquote>
               </div>
