@@ -21,7 +21,7 @@ export default function ResultIndexPage() {
 
       {/* Hero */}
       <section className="relative pt-44 pb-20 md:pt-60 md:pb-28 px-6 md:px-12 lg:px-20 overflow-hidden">
-        <div className="relative z-10 max-w-4xl mx-auto text-center">
+        <div className="relative z-10 max-w-5xl mx-auto text-center">
           <p
             className="text-xs uppercase tracking-[0.3em] text-[#8B7355] mb-5 opacity-0 animate-fade-in-up"
             style={{ animationFillMode: "forwards" }}
@@ -45,7 +45,7 @@ export default function ResultIndexPage() {
 
       {/* 类型卡片 */}
       <section className="pb-24 md:pb-32 px-6 md:px-12 lg:px-20">
-        <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-5">
+        <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-5">
           {orderedTypes.map((type, i) => {
             if (!type) return null;
             return (
