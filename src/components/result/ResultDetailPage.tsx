@@ -2,7 +2,7 @@
 
 import React, { useMemo } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Sparkles, Droplets, Shield, Sun, Moon, Heart } from "lucide-react";
+import { ArrowLeft, ArrowRight, Sparkles, Shield, Sun, Moon, Heart } from "lucide-react";
 import RadarChart from "./RadarChart";
 import ShareButtons from "./ShareButtons";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
@@ -39,51 +39,6 @@ function formatParagraphs(text: string): React.ReactElement {
   );
 }
 
-function HeroDecor({ theme }: { theme: { from: string; to: string } }) {
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      <svg
-        className="absolute -right-20 -bottom-32 w-[600px] h-[600px] opacity-10"
-        viewBox="0 0 200 200"
-        fill="none"
-      >
-        <path
-          d="M40 100c0-30 25-55 55-55s55 25 55 55-25 55-55 55"
-          stroke="currentColor"
-          strokeWidth="0.8"
-          fill="none"
-        />
-        <path
-          d="M55 100c0-22 18-40 40-40s40 18 40 40-18 40-40 40"
-          stroke="currentColor"
-          strokeWidth="0.6"
-          fill="none"
-        />
-        <path
-          d="M70 100c0-15 12-27 27-27s27 12 27 27-12 27-27 27"
-          stroke="currentColor"
-          strokeWidth="0.4"
-          fill="none"
-        />
-      </svg>
-      <svg
-        className="absolute right-[10%] top-[15%] w-24 h-24 opacity-20"
-        viewBox="0 0 100 60"
-        fill="none"
-      >
-        <path
-          d="M10 35c10-15 30-20 45-10 10 6 20 5 30-5 5-5 10-5 15 0-10 10-25 15-40 10-15-5-30 0-40 10-5 5-10 5-10-5z"
-          fill="currentColor"
-        />
-      </svg>
-      <div
-        className="absolute -left-40 top-0 w-[500px] h-[500px] rounded-full blur-3xl opacity-30"
-        style={{ background: `radial-gradient(circle, ${theme.from}40 0%, transparent 70%)` }}
-      />
-    </div>
-  );
-}
-
 export default function ResultDetailPage({ data }: ResultDetailPageProps) {
   const theme = typeThemes[data.route] || typeThemes.jiejinkuangmo;
   const index = getSkinTypeIndex(data.route);
@@ -98,46 +53,27 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
   return (
     <article className="min-h-screen bg-[#FAF8F5] text-[#1A1A1A]">
       {/* 顶部导航 */}
-      <WebsiteNavbar variant="dark" />
+      <WebsiteNavbar />
 
       {/* Hero */}
       <section
-        className="relative min-h-[78vh] flex flex-col justify-center px-6 md:px-12 lg:px-20 overflow-hidden"
-        style={{
-          background: `linear-gradient(135deg, ${theme.from} 0%, ${theme.to} 100%)`,
-          color: theme.heroText,
-        }}
+        className="relative min-h-[520px] md:min-h-[560px] flex flex-col justify-center px-6 md:px-12 lg:px-20 overflow-hidden bg-[#F8F7F3] text-[#1A1A1A]"
       >
-        <HeroDecor theme={theme} />
-
-        <div className="relative z-10 max-w-6xl mx-auto w-full pt-24 pb-16">
-          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-10">
-            <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-current/20 bg-white/10 backdrop-blur-sm text-sm tracking-wider mb-6">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>{data.scoreRange} 分 · {data.m1.scoreRange || data.scoreRange}</span>
-              </div>
-              <h1 className="text-5xl md:text-7xl lg:text-8xl font-light tracking-tight leading-[0.95] mb-6">
-                {data.typeName}
-              </h1>
-              <p className="text-lg md:text-xl opacity-90 font-light leading-relaxed max-w-xl mb-8">
-                {data.m1.persona}
-              </p>
-              <blockquote className="border-l-2 border-current/30 pl-5 italic text-base md:text-lg opacity-85">
-                {data.m1.slogan}
-              </blockquote>
+        <div className="relative z-10 max-w-6xl mx-auto w-full pt-28 pb-14">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-[#1A1A1A]/10 bg-[#1A1A1A]/[0.02] text-[13px] tracking-wider mb-5">
+              <Sparkles className="w-3 h-3" />
+              <span>{data.scoreRange} 分 · {data.m1.scoreRange || data.scoreRange}</span>
             </div>
-            <div className="lg:w-[320px] flex-shrink-0">
-              <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Droplets className="w-24 h-24 opacity-30" />
-                </div>
-                <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/40 to-transparent">
-                  <p className="text-sm uppercase tracking-widest opacity-80">NIHPLOD Monaco</p>
-                  <p className="text-xs opacity-60 mt-1">源自地中海的肌肤哲学</p>
-                </div>
-              </div>
-            </div>
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-light tracking-tight leading-[0.95] mb-5">
+              {data.typeName}
+            </h1>
+            <p className="text-base md:text-lg opacity-80 font-light leading-relaxed max-w-xl mb-6">
+              {data.m1.persona}
+            </p>
+            <p className="text-[15px] md:text-base text-[#5E5E5E] font-light tracking-wide leading-relaxed">
+              {data.m1.slogan}
+            </p>
           </div>
         </div>
       </section>
