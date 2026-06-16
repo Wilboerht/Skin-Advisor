@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Sparkles, Shield, Sun, Moon, Heart } from "lucide-react";
 import RadarChart from "./RadarChart";
@@ -57,9 +58,9 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
 
       {/* Hero */}
       <section
-        className="relative min-h-[520px] md:min-h-[560px] flex flex-col justify-center px-6 md:px-12 lg:px-20 overflow-hidden bg-[#F8F7F3] text-[#1A1A1A]"
+        className="relative min-h-[520px] md:min-h-[560px] px-6 md:px-12 lg:px-20 overflow-hidden bg-[#F8F7F3] text-[#1A1A1A]"
       >
-        <div className="relative z-10 max-w-6xl mx-auto w-full pt-28 pb-14">
+        <div className="relative z-10 max-w-6xl mx-auto w-full pt-28 pb-14 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-[#1A1A1A]/10 bg-[#1A1A1A]/[0.02] text-[13px] tracking-wider mb-5">
               <Sparkles className="w-3 h-3" />
@@ -74,6 +75,16 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
             <p className="text-[15px] md:text-base text-[#5E5E5E] font-light tracking-wide leading-relaxed">
               {data.m1.slogan}
             </p>
+          </div>
+          <div className="relative hidden lg:block h-[420px] xl:h-[480px]">
+            <Image
+              src={`/images/character/${data.scoreRange}/${data.scoreRange}_female.png`}
+              alt={`${data.typeName} 形象`}
+              fill
+              className="object-contain object-bottom"
+              sizes="(max-width: 1280px) 45vw, 33vw"
+              priority
+            />
           </div>
         </div>
       </section>
