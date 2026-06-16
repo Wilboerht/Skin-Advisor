@@ -27,7 +27,7 @@ export default function ResultIndexPage() {
             className="text-2xl md:text-3xl font-serif text-[#1A1A1A] mb-4 opacity-0 animate-fade-in-up"
             style={{ animationFillMode: "forwards" }}
           >
-            找到你的肌肤性格
+            发现你的肌肤性格类型
           </h1>
           <p
             className="text-[15px] md:text-base text-[#5E5E5E] font-light max-w-xl mx-auto leading-relaxed mb-5 opacity-0 animate-fade-in-up"
@@ -62,7 +62,7 @@ export default function ResultIndexPage() {
                   alt=""
                   width={160}
                   height={260}
-                  className="absolute -right-3 -bottom-3 w-36 h-64 md:w-48 md:h-80 object-contain opacity-100 group-hover:scale-105 transition-transform duration-500 pointer-events-none select-none"
+                  className="absolute -right-3 -bottom-14 w-36 h-64 md:w-48 md:h-80 object-contain opacity-100 group-hover:scale-105 transition-transform duration-500 pointer-events-none select-none"
                 />
                 <div className="relative z-10">
                   <h2 className="text-2xl md:text-3xl font-serif text-[#1A1A1A] mb-3 group-hover:text-[#3D4430] transition-colors duration-500">
