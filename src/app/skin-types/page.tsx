@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { skinTypes, routeOrder } from "@/lib/result-content";
-import { Navbar } from "./_components/Navbar";
+import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
 
 export const metadata: Metadata = {
   title: "肌肤测试结果类型 | NIHPLOD",
@@ -17,7 +17,7 @@ export default function ResultIndexPage() {
   return (
     <main className="relative min-h-screen text-[#1A1A1A]">
       {/* 顶部导航 */}
-      <Navbar />
+      <WebsiteNavbar />
 
       {/* Hero */}
       <section className="relative pt-44 pb-20 md:pt-60 md:pb-28 px-6 md:px-12 lg:px-20 overflow-hidden">

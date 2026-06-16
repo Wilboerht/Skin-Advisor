@@ -14,7 +14,7 @@ const navItems = [
   { label: "更多服务", href: "#" },
 ];
 
-export function Navbar() {
+export function WebsiteNavbar() {
   const [scrolled, setScrolled] = useState(false);
   const { openAuthModal } = useAuthModal();
   const pathname = usePathname();
