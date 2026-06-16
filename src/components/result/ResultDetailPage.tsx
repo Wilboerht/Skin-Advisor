@@ -5,7 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { Sparkles, Shield, Sun, Moon, Heart } from "lucide-react";
 import RadarChart from "./RadarChart";
-import ShareButtons from "./ShareButtons";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
 import type { SkinTypeData } from "@/lib/result-content";
 interface ResultDetailPageProps {
@@ -309,8 +308,6 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
         </div>
       </section>
 
-      {/* Share */}
-      <ShareButtons m10={data.m10} />
 
       {/* Footer */}
       <footer className="py-8 px-6 text-center border-t border-[rgba(61,68,48,0.08)]">
