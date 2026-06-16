@@ -36,7 +36,7 @@ export function WebsiteNavbar() {
           : "bg-transparent border-b border-transparent"
       }`}
     >
-      <div className="max-w-7xl mx-auto grid grid-cols-[1fr_auto_1fr] items-center">
+      <div className="w-full grid grid-cols-[1fr_auto_1fr] items-center">
         <Link href="/" className="cursor-pointer justify-self-start">
           <Image
             src="/NIHPLOD-logo.svg"
