@@ -21,24 +21,6 @@ export default function ResultIndexPage() {
 
       {/* Hero */}
       <section className="relative pt-44 pb-20 md:pt-60 md:pb-28 px-6 md:px-12 lg:px-20 overflow-hidden">
-        {/* 装饰弧线 */}
-        <svg
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-auto opacity-[0.04] pointer-events-none"
-          viewBox="0 0 800 400"
-          fill="none"
-        >
-          <path
-            d="M-100 200c200-120 500-120 800 0"
-            stroke="#3D4430"
-            strokeWidth="1"
-          />
-          <path
-            d="M-100 240c200-100 500-100 800 0"
-            stroke="#3D4430"
-            strokeWidth="0.8"
-          />
-        </svg>
-
         <div className="relative z-10 max-w-4xl mx-auto text-center">
           <p
             className="text-xs uppercase tracking-[0.3em] text-[#8B7355] mb-5 opacity-0 animate-fade-in-up"
