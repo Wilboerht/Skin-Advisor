@@ -20,7 +20,7 @@ export default function ResultIndexPage() {
       <Navbar />
 
       {/* Hero */}
-      <section className="relative pt-40 pb-20 md:pt-56 md:pb-28 px-6 md:px-12 lg:px-20 overflow-hidden">
+      <section className="relative pt-44 pb-20 md:pt-60 md:pb-28 px-6 md:px-12 lg:px-20 overflow-hidden">
         {/* 装饰弧线 */}
         <svg
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-auto opacity-[0.04] pointer-events-none"

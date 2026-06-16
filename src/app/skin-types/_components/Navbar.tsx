@@ -43,7 +43,7 @@ export function Navbar() {
             alt="NIHPLOD"
             width={120}
             height={36}
-            className="h-8 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity duration-500"
+            className="h-9 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity duration-500"
           />
         </Link>
 
