@@ -76,7 +76,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
               {data.m1.slogan}
             </p>
           </div>
-          <div className="relative hidden lg:block h-[420px] xl:h-[480px]">
+          <div className="relative hidden lg:block w-full max-w-xs aspect-[3/4] mx-auto">
             <Image
               src={`/images/character/${data.scoreRange}/${data.scoreRange}_female.png`}
               alt={`${data.typeName} 形象`}
