@@ -68,12 +68,12 @@ export default function ResultIndexPage() {
                   <h2 className="text-xl md:text-2xl font-serif tracking-wide text-[#1A1A1A] mb-2 group-hover:text-[#3D4430] transition-colors duration-500">
                     {type.typeName}
                   </h2>
-                  <p className="text-xs text-[#5E5E5E] leading-relaxed mb-5 line-clamp-2 font-light">
+                  <p className="text-xs text-[#5E5E5E]/70 leading-relaxed mb-5 line-clamp-2 font-extralight">
                     {type.m1.persona}
                   </p>
-                  <div className="inline-flex items-center text-xs font-medium tracking-wide text-[#3D4430]/80 group-hover:text-[#3D4430] transition-colors duration-300">
+                  <div className="inline-flex items-center text-xs font-medium tracking-[0.15em] text-[#3D4430] group-hover:text-[#3D4430]/80 transition-colors duration-300">
                     查看完整解读
-                    <ArrowRight className="w-3.5 h-3.5 ml-1.5 transition-transform duration-500 group-hover:translate-x-1" />
+                    <ArrowRight className="w-3.5 h-3.5 ml-1.5 transition-transform duration-500 group-hover:translate-x-1.5" />
                   </div>
                 </div>
               </Link>
