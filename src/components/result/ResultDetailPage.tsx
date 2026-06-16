@@ -308,6 +308,24 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
         </div>
       </section>
 
+      {/* CTA */}
+      <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-white">
+        <div className="max-w-3xl mx-auto text-center">
+          <p className="text-xs uppercase tracking-[0.25em] text-[#8A8A8A] mb-3">Start Your Journey</p>
+          <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-4">
+            想知道你的真实肤质类型吗？
+          </h2>
+          <p className="text-[#5E5E5E] font-light leading-relaxed mb-10 max-w-xl mx-auto">
+            回答几个简单问题，即可获得专属肌肤诊断与护肤建议。
+          </p>
+          <Link
+            href="/questions"
+            className="inline-flex items-center justify-center px-8 py-3.5 bg-[#1B3A5C] text-white text-sm uppercase tracking-[0.15em] rounded-full hover:bg-[#1B3A5C]/90 transition-colors duration-300"
+          >
+            立即测试
+          </Link>
+        </div>
+      </section>
 
       {/* Footer */}
       <footer className="py-8 px-6 text-center border-t border-[rgba(61,68,48,0.08)]">
