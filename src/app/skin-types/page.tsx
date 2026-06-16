@@ -55,7 +55,7 @@ export default function ResultIndexPage() {
               <Link
                 key={type.route}
                 href={`/result/${type.route}`}
-                className="group relative rounded-2xl border border-[rgba(61,68,48,0.1)] bg-white/55 backdrop-blur-md p-7 md:p-9 transition-all duration-500 hover:shadow-[0_16px_32px_rgba(61,68,48,0.08)] hover:-translate-y-1"
+                className="group relative rounded-2xl border border-[rgba(61,68,48,0.08)] bg-[#FAF9F6] p-7 md:p-9 transition-all duration-500 hover:shadow-[0_16px_32px_rgba(61,68,48,0.08)] hover:-translate-y-1"
               >
                 <Image
                   src="/images/gender-decoration.svg"
@@ -64,11 +64,11 @@ export default function ResultIndexPage() {
                   height={260}
                   className="absolute -right-3 -bottom-14 w-36 h-64 md:w-48 md:h-80 object-contain opacity-100 group-hover:scale-105 transition-transform duration-500 pointer-events-none select-none"
                 />
-                <div className="relative z-10">
+                <div className="relative z-10 pr-20 md:pr-24">
                   <h2 className="text-xl md:text-2xl font-serif tracking-wide text-[#1A1A1A] mb-2 group-hover:text-[#3D4430] transition-colors duration-500">
                     {type.typeName}
                   </h2>
-                  <p className="text-sm text-[#5E5E5E]/70 leading-relaxed mb-5 line-clamp-2 font-light">
+                  <p className="text-sm text-[#5E5E5E]/70 leading-relaxed mb-5 line-clamp-1 font-light">
                     {type.m1.persona}
                   </p>
                   <div className="inline-flex items-center text-xs font-medium tracking-[0.15em] text-[#3D4430] group-hover:text-[#3D4430]/80 transition-colors duration-300">
