@@ -29,11 +29,19 @@ export default function ResultIndexPage() {
             找到你的肌肤性格
           </h1>
           <p
-            className="text-[15px] md:text-base text-[#5E5E5E] font-light max-w-xl mx-auto leading-relaxed opacity-0 animate-fade-in-up"
+            className="text-[15px] md:text-base text-[#5E5E5E] font-light max-w-xl mx-auto leading-relaxed mb-8 opacity-0 animate-fade-in-up"
             style={{ animationDelay: "0.1s", animationFillMode: "forwards" }}
           >
-            10种摩纳哥臻奢护肤人格，从进阶狂魔到御龄主宰。
+            每一种肌肤，都有自己的性格。从素颜状态出发，读懂肌肤真正需要什么。
           </p>
+          <Link
+            href="/"
+            className="group relative inline-flex items-center justify-center gap-4 px-12 py-4 sm:px-16 border border-[#3D4430]/25 hover:border-[#3D4430]/50 hover:bg-[#3D4430]/[0.03] text-[13px] sm:text-[14px] tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] font-medium cursor-pointer transition-all duration-500 opacity-0 animate-fade-in-up"
+            style={{ animationDelay: "0.2s", animationFillMode: "forwards" }}
+          >
+            <span>开始测肤</span>
+            <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-2" />
+          </Link>
         </div>
       </section>
 
