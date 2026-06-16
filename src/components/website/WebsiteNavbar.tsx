@@ -4,12 +4,12 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { User } from "lucide-react";
+import { User, ExternalLink } from "lucide-react";
 import { HomeSvg } from "@/components/icons/HomeSvg";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 
 const navItems = [
-  { label: "素颜测试", href: "/" },
+  { label: "素颜测肤", href: "/" },
   { label: "肌肤性格", href: "/skin-types" },
   { label: "更多服务", href: "#" },
 ];
@@ -36,8 +36,8 @@ export function WebsiteNavbar() {
           : "bg-transparent border-b border-transparent"
       }`}
     >
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
-        <Link href="/" className="cursor-pointer">
+      <div className="max-w-7xl mx-auto grid grid-cols-[1fr_auto_1fr] items-center">
+        <Link href="/" className="cursor-pointer justify-self-start">
           <Image
             src="/NIHPLOD-logo.svg"
             alt="NIHPLOD"
@@ -48,7 +48,7 @@ export function WebsiteNavbar() {
         </Link>
 
         {/* 中间导航 */}
-        <div className="hidden md:flex items-center gap-8 lg:gap-10">
+        <div className="hidden md:flex items-center justify-center gap-8 lg:gap-10">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
             return (
@@ -68,9 +68,19 @@ export function WebsiteNavbar() {
               </Link>
             );
           })}
+          <a
+            href="https://nihplod.cn/about"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group relative flex items-center gap-1.5 text-[15px] font-medium tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] transition-colors duration-500"
+          >
+            探索旎柏
+            <ExternalLink className="w-3.5 h-3.5 transition-transform duration-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            <span className="absolute -bottom-0.5 left-0 w-0 h-[1px] bg-[#3D4430]/30 group-hover:w-full transition-all duration-500 ease-out" />
+          </a>
         </div>
 
-        <div className="flex items-center gap-5 md:gap-7">
+        <div className="flex items-center justify-end gap-5 md:gap-7">
           <button
             onClick={() => openAuthModal("login")}
             className="group flex items-center gap-2 text-[15px] font-medium tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] transition-colors duration-500 cursor-pointer"
@@ -81,16 +91,18 @@ export function WebsiteNavbar() {
               <span className="absolute -bottom-0.5 left-0 w-0 h-[1px] bg-[#3D4430]/30 group-hover:w-full transition-all duration-500 ease-out" />
             </span>
           </button>
-          <Link
-            href="/"
-            className="group flex items-center gap-2 text-[15px] font-medium tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] transition-colors duration-500"
-          >
-            <HomeSvg className="w-6 h-6 sm:w-5 sm:h-5 transition-opacity duration-500" />
-            <span className="hidden sm:inline relative">
-              首页
-              <span className="absolute -bottom-0.5 left-0 w-0 h-[1px] bg-[#3D4430]/30 group-hover:w-full transition-all duration-500 ease-out" />
-            </span>
-          </Link>
+          {pathname !== "/" && (
+            <Link
+              href="/"
+              className="group flex items-center gap-2 text-[15px] font-medium tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] transition-colors duration-500"
+            >
+              <HomeSvg className="w-6 h-6 sm:w-5 sm:h-5 transition-opacity duration-500" />
+              <span className="hidden sm:inline relative">
+                首页
+                <span className="absolute -bottom-0.5 left-0 w-0 h-[1px] bg-[#3D4430]/30 group-hover:w-full transition-all duration-500 ease-out" />
+              </span>
+            </Link>
+          )}
         </div>
       </div>
     </nav>
