@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Image from "next/image";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { skinTypes, routeOrder } from "@/lib/result-content";
+import { Navbar } from "./_components/Navbar";
 
 export const metadata: Metadata = {
   title: "肌肤测试结果类型 | NIHPLOD",
@@ -17,26 +17,7 @@ export default function ResultIndexPage() {
   return (
     <main className="relative min-h-screen text-[#1A1A1A]">
       {/* 顶部导航 */}
-      <nav className="fixed top-0 left-0 right-0 z-50 px-6 md:px-12 lg:px-20 py-6 md:py-7 bg-[#F5F2E9]/80 backdrop-blur-md border-b border-[rgba(61,68,48,0.06)] transition-colors duration-500">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/" className="cursor-pointer">
-            <Image
-              src="/NIHPLOD-logo.svg"
-              alt="NIHPLOD"
-              width={120}
-              height={36}
-              className="h-8 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity duration-500"
-            />
-          </Link>
-          <Link
-            href="/"
-            className="group flex items-center gap-2 text-sm font-medium tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] transition-colors duration-500"
-          >
-            <span className="hidden sm:inline">返回首页</span>
-            <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1" />
-          </Link>
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Hero */}
       <section className="relative pt-40 pb-20 md:pt-56 md:pb-28 px-6 md:px-12 lg:px-20 overflow-hidden">
