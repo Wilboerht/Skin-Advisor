@@ -63,7 +63,7 @@ export default function ServicesPage() {
               访问线下门店
             </h1>
             <p className="text-[#5E5E5E] font-light leading-relaxed mb-8">
-              前往 NIHPLOD 官方门店、合作专柜，或高端酒店水疗门店，体验专业肌肤检测与专属护肤服务。
+              前往 NIHPLOD 官方门店、合作专柜与臻选酒店水疗中心，体验专业肌肤检测与专属护肤服务。
             </p>
 
             <div className="space-y-5">
