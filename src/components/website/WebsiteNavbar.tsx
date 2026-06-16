@@ -11,7 +11,7 @@ import { useAuthModal } from "@/components/auth/AuthModalContext";
 const navItems = [
   { label: "素颜测肤", href: "/" },
   { label: "肌肤性格", href: "/skin-types" },
-  { label: "更多服务", href: "#" },
+  { label: "更多服务", href: "/services" },
 ];
 
 export function WebsiteNavbar() {
