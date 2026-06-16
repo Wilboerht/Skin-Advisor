@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
 import { motion } from "framer-motion";
 
 /**
@@ -17,19 +16,6 @@ export function KineticBackground() {
             <div className="kinetic-dot-pattern" />
 
             {/* 动态光团已移除 */}
-
-            {/* 全局背景水印 - PC 端 */}
-            <div className="kinetic-watermark">
-                <Image
-                    src="/images/watermark.svg"
-                    alt="Watermark PC"
-                    width={2800}
-                    height={800}
-                    style={{ objectFit: 'contain' }}
-                    className="hidden md:block"
-                    priority
-                />
-            </div>
 
             {/* 矿物纹质感叠加层 */}
             <div className="texture-overlay absolute inset-0 opacity-[0.03]" />
