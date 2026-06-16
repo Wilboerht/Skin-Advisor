@@ -93,9 +93,9 @@ export default function ResultIndexPage() {
       </section>
 
       {/* 页脚 */}
-      <footer className="py-12 px-6 text-center border-t border-[rgba(61,68,48,0.1)]">
-        <p className="text-[11px] tracking-widest text-[#5E5E5E]/70">
-          NIHPLOD 旎柏 · 源自摩纳哥的臻奢功效型护肤品牌
+      <footer className="py-8 px-6 text-center border-t border-[rgba(61,68,48,0.08)]">
+        <p className="text-[11px] tracking-widest text-[#5E5E5E]/60">
+          © {new Date().getFullYear()} NIHPLOD. All Rights Reserved.
         </p>
       </footer>
     </main>
