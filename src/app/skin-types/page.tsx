@@ -68,7 +68,7 @@ export default function ResultIndexPage() {
                   <h2 className="text-xl md:text-2xl font-serif tracking-wide text-[#1A1A1A] mb-2 group-hover:text-[#3D4430] transition-colors duration-500">
                     {type.typeName}
                   </h2>
-                  <p className="text-xs text-[#5E5E5E]/70 leading-relaxed mb-5 line-clamp-2 font-extralight">
+                  <p className="text-sm text-[#5E5E5E]/70 leading-relaxed mb-5 line-clamp-2 font-light">
                     {type.m1.persona}
                   </p>
                   <div className="inline-flex items-center text-xs font-medium tracking-[0.15em] text-[#3D4430] group-hover:text-[#3D4430]/80 transition-colors duration-300">
