@@ -375,7 +375,7 @@
   position: fixed;
   inset: 0;
   z-index: -1;
-  background-color: #F5F2E9;
+  background-color: #F8F7F3;
 }
 
 /* 全屏背景容器 - 带边距和圆角 */
@@ -420,7 +420,7 @@
 /* ========== 首页专用样式 (一模一样) ========== */
 
 .home-container {
-  --home-bg: #F5F2E9;
+  --home-bg: #F8F7F3;
   --home-text: #3A3530;
   --home-morandi: #A89F91;
   --home-dark: #6B655E;
