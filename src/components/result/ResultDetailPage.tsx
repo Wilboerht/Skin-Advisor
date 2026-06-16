@@ -2,9 +2,10 @@
 
 import React, { useMemo } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Sparkles, Droplets, Shield, Sun, Moon, Heart } from "lucide-react";
+import { ArrowLeft, ArrowRight, Sparkles, Droplets, Shield, Sun, Moon, Heart, ChevronRight, Home } from "lucide-react";
 import RadarChart from "./RadarChart";
 import ShareButtons from "./ShareButtons";
+import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
 import type { SkinTypeData } from "@/lib/result-content";
 import { skinTypes, routeOrder, getSkinTypeIndex } from "@/lib/result-content";
 
@@ -96,6 +97,9 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
 
   return (
     <article className="min-h-screen bg-[#FAF8F5] text-[#1A1A1A]">
+      {/* 顶部导航 */}
+      <WebsiteNavbar variant="dark" />
+
       {/* Hero */}
       <section
         className="relative min-h-[78vh] flex flex-col justify-center px-6 md:px-12 lg:px-20 overflow-hidden"
@@ -105,7 +109,39 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
         }}
       >
         <HeroDecor theme={theme} />
-        <div className="relative z-10 max-w-6xl mx-auto w-full pt-24 pb-16">
+
+        <div className="relative z-10 max-w-6xl mx-auto w-full pt-44 md:pt-56 pb-16">
+          {/* Breadcrumb */}
+          <nav className="mb-6 md:mb-8" aria-label="面包屑导航">
+            <ol className="flex items-center flex-wrap gap-2 text-sm">
+              <li>
+                <Link
+                  href="/"
+                  className="group inline-flex items-center gap-1.5 opacity-80 hover:opacity-100 transition-opacity"
+                >
+                  <Home className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">首页</span>
+                </Link>
+              </li>
+              <li className="opacity-50" aria-hidden="true">
+                <ChevronRight className="w-3.5 h-3.5" />
+              </li>
+              <li>
+                <Link
+                  href="/skin-types"
+                  className="opacity-80 hover:opacity-100 transition-opacity"
+                >
+                  肌肤性格
+                </Link>
+              </li>
+              <li className="opacity-50" aria-hidden="true">
+                <ChevronRight className="w-3.5 h-3.5" />
+              </li>
+              <li className="font-medium opacity-100" aria-current="page">
+                {data.typeName}
+              </li>
+            </ol>
+          </nav>
           <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-10">
             <div className="max-w-2xl">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-current/20 bg-white/10 backdrop-blur-sm text-sm tracking-wider mb-6">

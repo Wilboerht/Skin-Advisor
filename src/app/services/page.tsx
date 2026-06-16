@@ -58,10 +58,10 @@ export default function ServicesPage() {
             </div>
           </div>
 
-          {/* 右侧：访问线下门店 */}
+          {/* 右侧：前往线下门店 */}
           <div>
             <h1 className="text-2xl md:text-3xl font-serif text-[#1A1A1A] mb-4">
-              访问线下门店
+              前往线下门店
             </h1>
             <p className="text-[#5E5E5E] font-light leading-relaxed mb-8">
               前往 NIHPLOD 官方门店、合作专柜与臻选酒店水疗中心，体验专业肌肤检测与专属护肤服务。
