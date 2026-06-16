@@ -51,7 +51,7 @@ export default function ResultIndexPage() {
 
       {/* 类型卡片 */}
       <section className="pb-24 md:pb-32 px-6 md:px-12 lg:px-20">
-        <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-6">
+        <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-x-7 gap-y-10">
           {orderedTypes.map((type, i) => {
             if (!type) return null;
             return (
