@@ -308,9 +308,9 @@ export default function Home() {
               />
 
               {/* Main Content Area */}
-              <main className="main-content relative z-10 w-full flex h-full flex-col items-center justify-center text-center pb-16 lg:pb-12">
+              <main className="main-content relative z-10 w-full min-h-screen flex flex-col items-center justify-center text-center px-6 pt-24 md:pt-28 pb-24">
                 {/* Center AI Actions */}
-                <div className="z-10 flex flex-col items-center text-center px-6 max-w-3xl mx-auto pt-28 md:pt-36 lg:pt-44">
+                <div className="z-10 flex flex-col items-center text-center max-w-3xl mx-auto">
                   <div className="animate-fade-in-up flex flex-col items-center">
                     {/* Eyebrow */}
                     <p className="text-xs uppercase tracking-[0.3em] text-[#8B7355] mb-6 md:mb-8 opacity-0 animate-fade-in-up" style={{ animationFillMode: 'forwards' }}>

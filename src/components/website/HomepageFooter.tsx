@@ -12,7 +12,7 @@ export function HomepageFooter() {
             animate={{ opacity: 1 }}
             transition={{ duration: 1.2, delay: 1 }}
         >
-            {/* 1. 版权文本 & 备案信息栏 */}
+            {/* 版权文本 & 备案信息栏 */}
             <div className="flex flex-col items-center gap-1 opacity-40 pointer-events-auto">
                 {/* 版权声明 */}
                 <p className="text-[10px] sm:text-[11px] font-light tracking-widest text-[#1A1A1A] relative z-10 leading-tight">
