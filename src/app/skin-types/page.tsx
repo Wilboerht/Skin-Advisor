@@ -16,7 +16,7 @@ export default function ResultIndexPage() {
     .filter(Boolean);
 
   return (
-    <main className="relative min-h-screen text-[#1A1A1A]">
+    <main className="relative min-h-screen text-[#1A1A1A] bg-[#F8F7F3]">
       {/* 顶部导航 */}
       <WebsiteNavbar />
 

@@ -29,7 +29,7 @@ const stores = [
 
 export default function ServicesPage() {
   return (
-    <main className="relative min-h-screen text-[#1A1A1A]">
+    <main className="relative min-h-screen text-[#1A1A1A] bg-[#F8F7F3]">
       <WebsiteNavbar />
 
       <section className="pt-32 md:pt-40 pb-20 md:pb-28 px-6 md:px-12 lg:px-20">

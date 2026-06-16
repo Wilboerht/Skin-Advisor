@@ -299,7 +299,7 @@ export default function Home() {
         transition={{ duration: 0.7, ease: [0.65, 0, 0.35, 1] }}
       >
         <div className="h-full">
-          <div className="relative z-20 w-full h-full bg-[#F5F2E9]">
+          <div className="relative z-20 w-full h-full bg-[#F8F7F3]">
             <div className="home-container relative h-full w-full">
               {/* Spotlight Follow */}
               <div
