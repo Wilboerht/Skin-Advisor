@@ -22,21 +22,15 @@ export default function ResultIndexPage() {
       {/* Hero */}
       <section className="relative pt-32 pb-12 md:pt-40 md:pb-16 px-6 md:px-12 lg:px-20 overflow-hidden">
         <div className="relative z-10 max-w-5xl mx-auto text-center">
-          <p
-            className="text-xs uppercase tracking-[0.3em] text-[#8B7355] mb-4 opacity-0 animate-fade-in-up"
+          <h1
+            className="text-2xl md:text-3xl font-serif text-[#1A1A1A] mb-4 opacity-0 animate-fade-in-up"
             style={{ animationFillMode: "forwards" }}
           >
-            NIHPLOD Skin Archetypes
-          </p>
-          <h1
-            className="text-4xl md:text-6xl font-serif text-[#1A1A1A] font-normal tracking-tight mb-5 opacity-0 animate-fade-in-up"
-            style={{ animationDelay: "0.1s", animationFillMode: "forwards" }}
-          >
-            肌肤测试结果类型
+            找到你的肌肤性格
           </h1>
           <p
-            className="text-base md:text-[17px] text-[#5E5E5E] font-light max-w-2xl mx-auto leading-relaxed opacity-0 animate-fade-in-up"
-            style={{ animationDelay: "0.2s", animationFillMode: "forwards" }}
+            className="text-[15px] md:text-base text-[#5E5E5E] font-light max-w-xl mx-auto leading-relaxed opacity-0 animate-fade-in-up"
+            style={{ animationDelay: "0.1s", animationFillMode: "forwards" }}
           >
             10种摩纳哥臻奢护肤人格，从进阶狂魔到御龄主宰。
           </p>
