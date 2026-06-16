@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight } from "lucide-react";
+import { HomeSvg } from "@/components/icons/HomeSvg";
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -37,10 +37,10 @@ export function Navbar() {
         </Link>
         <Link
           href="/"
-          className="group flex items-center gap-2 text-sm font-medium tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] transition-colors duration-500"
+          className="group flex items-center gap-2 text-[13px] font-medium tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] transition-colors duration-500"
         >
-          <span className="hidden sm:inline">返回首页</span>
-          <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1" />
+          <HomeSvg className="w-5 h-5 sm:w-4 sm:h-4 transition-opacity duration-500" />
+          <span className="hidden sm:inline relative">首页</span>
         </Link>
       </div>
     </nav>
