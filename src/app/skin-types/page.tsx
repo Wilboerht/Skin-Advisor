@@ -107,6 +107,8 @@ export default function ResultIndexPage() {
       {/* 页脚 */}
       <footer className="py-8 px-6 text-center border-t border-[rgba(61,68,48,0.08)]">
         <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-[11px] tracking-widest text-[#5E5E5E]/60">
+          <p>© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
+          <span className="hidden sm:inline text-[#5E5E5E]/30">·</span>
           <div className="flex items-center gap-4">
             <Link href="/privacy" className="hover:text-[#3D4430] transition-colors duration-300">
               隐私政策
@@ -116,8 +118,6 @@ export default function ResultIndexPage() {
               服务条款
             </Link>
           </div>
-          <span className="hidden sm:inline text-[#5E5E5E]/30">·</span>
-          <p>© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
         </div>
       </footer>
     </main>
