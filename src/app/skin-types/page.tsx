@@ -18,7 +18,7 @@ export default function ResultIndexPage() {
     <main className="relative min-h-screen text-[#1A1A1A]">
       {/* 顶部导航 */}
       <nav className="fixed top-0 left-0 right-0 z-50 px-6 md:px-12 lg:px-20 py-6 md:py-7 bg-[#F5F2E9]/80 backdrop-blur-md border-b border-[rgba(61,68,48,0.06)] transition-colors duration-500">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link href="/" className="cursor-pointer">
             <Image
               src="/NIHPLOD-logo.svg"
@@ -82,7 +82,7 @@ export default function ResultIndexPage() {
 
       {/* 类型卡片 */}
       <section className="pb-24 md:pb-32 px-6 md:px-12 lg:px-20">
-        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-5">
+        <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-5">
           {orderedTypes.map((type, i) => {
             if (!type) return null;
             return (
