@@ -39,8 +39,11 @@ export function Navbar() {
           href="/"
           className="group flex items-center gap-2 text-[13px] font-medium tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] transition-colors duration-500"
         >
-          <HomeSvg className="w-5 h-5 sm:w-4 sm:h-4 transition-opacity duration-500" />
-          <span className="hidden sm:inline relative">首页</span>
+          <HomeSvg className="w-6 h-6 sm:w-5 sm:h-5 transition-opacity duration-500" />
+          <span className="hidden sm:inline relative">
+            首页
+            <span className="absolute -bottom-0.5 left-0 w-0 h-[1px] bg-[#3D4430]/30 group-hover:w-full transition-all duration-500 ease-out" />
+          </span>
         </Link>
       </div>
     </nav>
