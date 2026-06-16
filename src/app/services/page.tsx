@@ -10,21 +10,21 @@ export const metadata: Metadata = {
 };
 
 const stores = [
-  { city: "上海", name: "NIHPLOD 上海恒隆广场店", address: "上海市静安区南京西路 1266 号恒隆广场 B1-108" },
-  { city: "上海", name: "NIHPLOD 上海国金中心店", address: "上海市浦东新区陆家嘴世纪大道 8 号国金中心 LG1-18" },
-  { city: "北京", name: "NIHPLOD 北京 SKP 店", address: "北京市朝阳区建国路 87 号 SKP 一层化妆品区" },
-  { city: "北京", name: "NIHPLOD 北京国贸商城店", address: "北京市朝阳区建国路 88 号国贸商城南区 B1" },
-  { city: "杭州", name: "NIHPLOD 杭州万象城店", address: "杭州市上城区富春路 701 号万象城 B1-112" },
-  { city: "成都", name: "NIHPLOD 成都 IFS 店", address: "成都市锦江区红星路三段 1 号 IFS 国际金融中心 L2-08" },
-  { city: "深圳", name: "深圳湾万象城 · 旎柏专柜", address: "深圳市南山区科苑南路 2888 号深圳湾万象城 B1" },
-  { city: "广州", name: "广州太古汇 · 旎柏体验点", address: "广州市天河区天河路 383 号太古汇 MU层" },
-  { city: "南京", name: "南京德基广场 · 旎柏专柜", address: "南京市玄武区中山路 18 号德基广场二期 B1" },
-  { city: "上海", name: "上海半岛酒店 · 旎柏水疗中心", address: "上海市黄浦区中山东一路 32 号上海半岛酒店 3 层" },
-  { city: "上海", name: "上海璞丽酒店 · 旎柏护肤水疗", address: "上海市静安区常德路 1 号璞丽酒店 2 层" },
-  { city: "北京", name: "北京瑰丽酒店 · 旎柏水疗", address: "北京市朝阳区呼家楼京广中心北京瑰丽酒店 5 层" },
-  { city: "北京", name: "北京宝格丽酒店 · 旎柏奢宠水疗", address: "北京市朝阳区新源南路 8 号院北京宝格丽酒店 B1" },
-  { city: "杭州", name: "杭州西子湖四季酒店 · 旎柏水疗", address: "杭州市西湖区灵隐路 5 号杭州西子湖四季酒店 1 层" },
-  { city: "成都", name: "成都博舍 · 旎柏谧静水疗", address: "成都市锦江区笔帖式街 81 号成都博舍 B1 层" },
+  { city: "上海", name: "NIHPLOD 上海 · 滨江精品店", address: "上海市滨江新区淮海中路 1888 号滨江广场 B1-102" },
+  { city: "上海", name: "NIHPLOD 上海 · 东方概念店", address: "上海市浦东新区世纪大道 168 号东方国际中心 LG1-12" },
+  { city: "北京", name: "NIHPLOD 北京 · 晨曦广场店", address: "北京市朝阳区光华路 99 号晨曦广场一层美妆区" },
+  { city: "北京", name: "NIHPLOD 北京 · 银河商城店", address: "北京市朝阳区建国门外大街 66 号银河商城南区 B1" },
+  { city: "杭州", name: "NIHPLOD 杭州 · 西湖概念店", address: "杭州市西湖区龙井路 288 号西湖天地 B1-108" },
+  { city: "成都", name: "NIHPLOD 成都 · 天府精品店", address: "成都市锦江区人民南路 888 号天府国际广场 L2-18" },
+  { city: "深圳", name: "深圳 · 旎柏精品专柜", address: "深圳市南山区滨海大道 1688 号滨海万象中心 B1" },
+  { city: "广州", name: "广州 · 旎柏体验空间", address: "广州市天河区珠江新城华夏路 388 号星辰汇 MU层" },
+  { city: "南京", name: "南京 · 旎柏专柜", address: "南京市玄武区珠江路 288 号金陵广场二期 B1" },
+  { city: "上海", name: "上海 · 旎柏水疗中心", address: "上海市黄浦区外滩滨江路 88 号滨江花园酒店 3 层" },
+  { city: "上海", name: "上海 · 旎柏护肤水疗", address: "上海市静安区南京西路 666 号静安庄园酒店 2 层" },
+  { city: "北京", name: "北京 · 旎柏水疗", address: "北京市朝阳区三里屯北路 18 号三里屯花园酒店 5 层" },
+  { city: "北京", name: "北京 · 旎柏奢宠水疗", address: "北京市朝阳区亮马桥路 88 号亮马河府邸酒店 B1" },
+  { city: "杭州", name: "杭州 · 旎柏谧静水疗", address: "杭州市西湖区杨公堤 66 号西子庄园酒店 1 层" },
+  { city: "成都", name: "成都 · 旎柏谧静水疗", address: "成都市锦江区合江亭街 88 号合江庭院酒店 B1 层" },
 ];
 
 export default function ServicesPage() {
