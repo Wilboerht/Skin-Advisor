@@ -33,7 +33,7 @@ export default function ResultIndexPage() {
             发现你的肌肤性格类型
           </h1>
           <p
-            className="text-[15px] md:text-base text-[#5E5E5E] font-light max-w-xl mx-auto leading-relaxed mb-7 opacity-0 animate-fade-in-up"
+            className="text-[15px] md:text-base text-[#5E5E5E] font-light max-w-xl mx-auto leading-relaxed mb-5 opacity-0 animate-fade-in-up"
             style={{ animationDelay: "0.1s", animationFillMode: "forwards" }}
           >
             每一种肌肤，都有自己的性格。从素颜状态出发，读懂肌肤真正需要什么。
@@ -91,7 +91,7 @@ export default function ResultIndexPage() {
           <h2 className="text-2xl md:text-3xl font-serif text-[#1A1A1A] mb-4">
             探索更多专属服务
           </h2>
-          <p className="text-[15px] md:text-base text-[#5E5E5E]/70 font-light leading-relaxed mb-8">
+          <p className="text-[15px] md:text-base text-[#5E5E5E]/70 font-light leading-relaxed mb-5">
             添加 NIHPLOD 专属护肤顾问，或前往线下门店获取一对一肌肤分析及体验专属护肤服务。
           </p>
           <Link
@@ -106,9 +106,19 @@ export default function ResultIndexPage() {
 
       {/* 页脚 */}
       <footer className="py-8 px-6 text-center border-t border-[rgba(61,68,48,0.08)]">
-        <p className="text-[11px] tracking-widest text-[#5E5E5E]/60">
-          © {new Date().getFullYear()} NIHPLOD. All Rights Reserved.
-        </p>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-[11px] tracking-widest text-[#5E5E5E]/60">
+          <div className="flex items-center gap-4">
+            <Link href="/privacy" className="hover:text-[#3D4430] transition-colors duration-300">
+              隐私政策
+            </Link>
+            <span className="text-[#5E5E5E]/30">·</span>
+            <Link href="/terms" className="hover:text-[#3D4430] transition-colors duration-300">
+              服务条款
+            </Link>
+          </div>
+          <span className="hidden sm:inline text-[#5E5E5E]/30">·</span>
+          <p>© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
+        </div>
       </footer>
     </main>
   );
