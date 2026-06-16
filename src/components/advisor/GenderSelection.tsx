@@ -42,7 +42,7 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
                     className="relative w-40 h-40 sm:w-64 sm:h-64 flex-shrink-0"
                 >
                     <Image
-                        src="/images/gender-decoration.svg"
+                        src="/images/gender-decoration.png"
                         alt=""
                         fill
                         className="object-contain"

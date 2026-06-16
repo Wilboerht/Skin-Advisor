@@ -73,7 +73,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuid
                                     开始面部扫描
                                 </h3>
                                 <img
-                                    src="/images/gender-decoration.svg"
+                                    src="/images/gender-decoration.png"
                                     alt=""
                                     className="w-32 h-32 sm:w-40 sm:h-40 mx-auto mb-12"
                                 />
