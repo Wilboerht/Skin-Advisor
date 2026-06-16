@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import { MapPin } from "lucide-react";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
 
@@ -90,9 +91,19 @@ export default function ServicesPage() {
 
       {/* 页脚 */}
       <footer className="py-8 px-6 text-center border-t border-[rgba(61,68,48,0.08)]">
-        <p className="text-[11px] font-light tracking-widest text-[#1A1A1A]/60">
-          &copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.
-        </p>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-xs tracking-widest text-[#5E5E5E]/60">
+          <p>© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
+          <span className="hidden sm:inline text-[#5E5E5E]/30">·</span>
+          <div className="flex items-center gap-4">
+            <Link href="/privacy" className="hover:text-[#3D4430] transition-colors duration-300">
+              隐私政策
+            </Link>
+            <span className="text-[#5E5E5E]/30">·</span>
+            <Link href="/terms" className="hover:text-[#3D4430] transition-colors duration-300">
+              服务条款
+            </Link>
+          </div>
+        </div>
       </footer>
     </main>
   );
