@@ -21,7 +21,7 @@ export default function ResultIndexPage() {
       <WebsiteNavbar />
 
       {/* Hero */}
-      <section className="relative pt-32 pb-12 md:pt-40 md:pb-16 px-6 md:px-12 lg:px-20 overflow-hidden">
+      <section className="relative pt-32 pb-16 md:pt-40 md:pb-20 px-6 md:px-12 lg:px-20 overflow-hidden">
         <div className="relative z-10 max-w-5xl mx-auto text-center">
           <h1
             className="text-2xl md:text-3xl font-serif text-[#1A1A1A] mb-4 opacity-0 animate-fade-in-up"
