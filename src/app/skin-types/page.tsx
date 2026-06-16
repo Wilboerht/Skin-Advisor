@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { skinTypes, routeOrder } from "@/lib/result-content";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
@@ -54,18 +55,16 @@ export default function ResultIndexPage() {
               <Link
                 key={type.route}
                 href={`/result/${type.route}`}
-                className="group relative overflow-hidden rounded-2xl border border-[rgba(61,68,48,0.1)] bg-white/55 backdrop-blur-md p-7 md:p-9 transition-all duration-500 hover:shadow-[0_16px_32px_rgba(61,68,48,0.08)] hover:-translate-y-1"
+                className="group relative rounded-2xl border border-[rgba(61,68,48,0.1)] bg-white/55 backdrop-blur-md p-7 md:p-9 transition-all duration-500 hover:shadow-[0_16px_32px_rgba(61,68,48,0.08)] hover:-translate-y-1"
               >
-                <div className="absolute top-0 right-0 w-36 h-36 bg-[rgba(139,115,85,0.06)] rounded-bl-full transition-all duration-500 group-hover:scale-110 group-hover:bg-[rgba(139,115,85,0.1)]" />
+                <Image
+                  src="/images/gender-decoration.svg"
+                  alt=""
+                  width={160}
+                  height={260}
+                  className="absolute -right-3 -bottom-3 w-36 h-64 md:w-48 md:h-80 object-contain opacity-100 group-hover:scale-105 transition-transform duration-500 pointer-events-none select-none"
+                />
                 <div className="relative z-10">
-                  <div className="flex items-center justify-between mb-5">
-                    <span className="text-xs uppercase tracking-[0.2em] text-[#8B7355]">
-                      {type.scoreRange} 分
-                    </span>
-                    <span className="text-2xl font-light text-[#3D4430]/30">
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                  </div>
                   <h2 className="text-2xl md:text-3xl font-serif text-[#1A1A1A] mb-3 group-hover:text-[#3D4430] transition-colors duration-500">
                     {type.typeName}
                   </h2>
