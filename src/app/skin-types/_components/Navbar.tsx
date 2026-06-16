@@ -9,9 +9,9 @@ import { HomeSvg } from "@/components/icons/HomeSvg";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 
 const navItems = [
-  { label: "素颜测试", href: "/questions" },
+  { label: "素颜测试", href: "/" },
   { label: "肌肤性格", href: "/skin-types" },
-  { label: "服务", href: "#" },
+  { label: "更多服务", href: "#" },
 ];
 
 export function Navbar() {
@@ -55,18 +55,16 @@ export function Navbar() {
               <Link
                 key={item.label}
                 href={item.href}
-                className={`group relative text-sm font-medium tracking-[0.2em] transition-colors duration-500 ${
+                className={`group relative text-[15px] font-medium tracking-[0.2em] transition-colors duration-500 ${
                   isActive
                     ? "text-[#3D4430]"
                     : "text-[#3D4430]/70 hover:text-[#3D4430]"
                 }`}
               >
                 {item.label}
-                <span
-                  className={`absolute -bottom-0.5 left-0 h-[1px] bg-[#3D4430]/30 transition-all duration-500 ease-out ${
-                    isActive ? "w-full" : "w-0 group-hover:w-full"
-                  }`}
-                />
+                {!isActive && (
+                  <span className="absolute -bottom-0.5 left-0 w-0 h-[1px] bg-[#3D4430]/30 group-hover:w-full transition-all duration-500 ease-out" />
+                )}
               </Link>
             );
           })}
@@ -75,7 +73,7 @@ export function Navbar() {
         <div className="flex items-center gap-5 md:gap-7">
           <button
             onClick={() => openAuthModal("login")}
-            className="group flex items-center gap-2 text-sm font-medium tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] transition-colors duration-500 cursor-pointer"
+            className="group flex items-center gap-2 text-[15px] font-medium tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] transition-colors duration-500 cursor-pointer"
           >
             <User className="w-5 h-5 sm:w-[1.125rem] sm:h-[1.125rem] transition-opacity duration-500" />
             <span className="hidden sm:inline relative">
@@ -85,7 +83,7 @@ export function Navbar() {
           </button>
           <Link
             href="/"
-            className="group flex items-center gap-2 text-sm font-medium tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] transition-colors duration-500"
+            className="group flex items-center gap-2 text-[15px] font-medium tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] transition-colors duration-500"
           >
             <HomeSvg className="w-6 h-6 sm:w-5 sm:h-5 transition-opacity duration-500" />
             <span className="hidden sm:inline relative">
