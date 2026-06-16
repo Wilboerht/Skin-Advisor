@@ -3,13 +3,11 @@
 import React, { useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Sparkles, Shield, Sun, Moon, Heart } from "lucide-react";
+import { Sparkles, Shield, Sun, Moon, Heart } from "lucide-react";
 import RadarChart from "./RadarChart";
 import ShareButtons from "./ShareButtons";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
 import type { SkinTypeData } from "@/lib/result-content";
-import { skinTypes, routeOrder, getSkinTypeIndex } from "@/lib/result-content";
-
 interface ResultDetailPageProps {
   data: SkinTypeData;
 }
@@ -42,9 +40,6 @@ function formatParagraphs(text: string): React.ReactElement {
 
 export default function ResultDetailPage({ data }: ResultDetailPageProps) {
   const theme = typeThemes[data.route] || typeThemes.jiejinkuangmo;
-  const index = getSkinTypeIndex(data.route);
-  const prev = index > 0 ? skinTypes.find((t) => t.route === routeOrder[index - 1]) : null;
-  const next = index < routeOrder.length - 1 ? skinTypes.find((t) => t.route === routeOrder[index + 1]) : null;
 
   const ingredientHeaders = useMemo(() => {
     if (!data.m7.ingredientTable.length) return [];
@@ -317,48 +312,19 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       {/* Share */}
       <ShareButtons m10={data.m10} />
 
-      {/* Navigation Footer */}
-      <footer className="py-12 px-6 md:px-12 lg:px-20 border-t border-[rgba(61,68,48,0.08)]">
-        <div className="max-w-5xl mx-auto">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-10">
-            {prev ? (
-              <Link
-                href={`/result/${prev.route}`}
-                className="group flex items-center gap-3 text-[#5E5E5E] hover:text-[#1A1A1A] transition-colors"
-              >
-                <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-                <div className="text-left">
-                  <p className="text-xs text-[#8A8A8A]">上一个类型</p>
-                  <p className="text-sm font-medium">{prev.typeName}</p>
-                </div>
-              </Link>
-            ) : (
-              <div />
-            )}
-            <Link
-              href="/skin-types"
-              className="text-sm uppercase tracking-[0.2em] text-[#8A8A8A] hover:text-[#1A1A1A] transition-colors"
-            >
-              全部类型
+      {/* Footer */}
+      <footer className="py-8 px-6 text-center border-t border-[rgba(61,68,48,0.08)]">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-xs tracking-widest text-[#5E5E5E]/60">
+          <p>© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
+          <span className="hidden sm:inline text-[#5E5E5E]/30">·</span>
+          <div className="flex items-center gap-4">
+            <Link href="/privacy" className="hover:text-[#3D4430] transition-colors duration-300">
+              隐私政策
             </Link>
-            {next ? (
-              <Link
-                href={`/result/${next.route}`}
-                className="group flex items-center gap-3 text-[#5E5E5E] hover:text-[#1A1A1A] transition-colors"
-              >
-                <div className="text-right">
-                  <p className="text-xs text-[#8A8A8A]">下一个类型</p>
-                  <p className="text-sm font-medium">{next.typeName}</p>
-                </div>
-                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-              </Link>
-            ) : (
-              <div />
-            )}
-          </div>
-          <div className="border-t border-[rgba(61,68,48,0.08)] pt-8 text-center text-xs text-[#5E5E5E]/60">
-            <p>NIHPLOD 旎柏 · 源自摩纳哥的臻奢功效型护肤品牌</p>
-            <p className="mt-1">品牌名取自 DOLPHIN 的倒写，灵感来自地中海宽吻海豚皮肤每两小时更新一次的自愈力</p>
+            <span className="text-[#5E5E5E]/30">·</span>
+            <Link href="/terms" className="hover:text-[#3D4430] transition-colors duration-300">
+              服务条款
+            </Link>
           </div>
         </div>
       </footer>
