@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { skinTypes, routeOrder } from "@/lib/result-content";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
 
@@ -23,6 +23,9 @@ export default function ResultIndexPage() {
       {/* Hero */}
       <section className="relative pt-32 pb-20 md:pt-40 md:pb-24 px-6 md:px-12 lg:px-20 overflow-hidden">
         <div className="relative z-10 max-w-5xl mx-auto text-center">
+          <div className="flex justify-center mb-4 opacity-0 animate-fade-in-up" style={{ animationFillMode: "forwards" }}>
+            <Sparkles className="w-8 h-8 text-[#8B7355]" />
+          </div>
           <h1
             className="text-2xl md:text-3xl font-serif text-[#1A1A1A] mb-4 opacity-0 animate-fade-in-up"
             style={{ animationFillMode: "forwards" }}
@@ -30,7 +33,7 @@ export default function ResultIndexPage() {
             发现你的肌肤性格类型
           </h1>
           <p
-            className="text-[15px] md:text-base text-[#5E5E5E] font-light max-w-xl mx-auto leading-relaxed mb-5 opacity-0 animate-fade-in-up"
+            className="text-[15px] md:text-base text-[#5E5E5E] font-light max-w-xl mx-auto leading-relaxed mb-7 opacity-0 animate-fade-in-up"
             style={{ animationDelay: "0.1s", animationFillMode: "forwards" }}
           >
             每一种肌肤，都有自己的性格。从素颜状态出发，读懂肌肤真正需要什么。
@@ -82,15 +85,23 @@ export default function ResultIndexPage() {
         </div>
       </section>
 
-      {/* 返回 CTA */}
-      <section className="pb-20 md:pb-28 px-6 text-center">
-        <Link
-          href="/"
-          className="group inline-flex items-center gap-3 text-[13px] sm:text-[14px] tracking-[0.2em] text-[#3D4430]/60 hover:text-[#3D4430] font-medium transition-colors duration-500"
-        >
-          <ArrowLeft className="w-4 h-4 transition-transform duration-500 group-hover:-translate-x-1" />
-          <span>返回测肤首页</span>
-        </Link>
+      {/* 服务 CTA */}
+      <section className="pb-24 md:pb-32 px-6 text-center">
+        <div className="max-w-2xl mx-auto">
+          <h2 className="text-2xl md:text-3xl font-serif text-[#1A1A1A] mb-4">
+            探索更多专属服务
+          </h2>
+          <p className="text-[15px] md:text-base text-[#5E5E5E]/70 font-light leading-relaxed mb-8">
+            添加 NIHPLOD 专属护肤顾问，或前往线下门店体验一对一肌肤分析。
+          </p>
+          <Link
+            href="/services"
+            className="group relative inline-flex items-center justify-center gap-4 px-12 py-4 sm:px-16 border border-[#3D4430]/25 hover:border-[#3D4430]/50 hover:bg-[#3D4430]/[0.03] text-[13px] sm:text-[14px] tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] font-medium cursor-pointer transition-all duration-500"
+          >
+            <span>了解更多服务</span>
+            <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-2" />
+          </Link>
+        </div>
       </section>
 
       {/* 页脚 */}
