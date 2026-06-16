@@ -307,17 +307,17 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       <ShareButtons m10={data.m10} />
 
       {/* Navigation Footer */}
-      <footer className="py-12 px-6 md:px-12 lg:px-20 bg-[#1A1A1A] text-white">
+      <footer className="py-12 px-6 md:px-12 lg:px-20 border-t border-[rgba(61,68,48,0.08)]">
         <div className="max-w-5xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-10">
             {prev ? (
               <Link
                 href={`/result/${prev.route}`}
-                className="group flex items-center gap-3 text-white/80 hover:text-white transition-colors"
+                className="group flex items-center gap-3 text-[#5E5E5E] hover:text-[#1A1A1A] transition-colors"
               >
                 <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
                 <div className="text-left">
-                  <p className="text-xs text-white/50">上一个类型</p>
+                  <p className="text-xs text-[#8A8A8A]">上一个类型</p>
                   <p className="text-sm font-medium">{prev.typeName}</p>
                 </div>
               </Link>
@@ -326,17 +326,17 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
             )}
             <Link
               href="/skin-types"
-              className="text-sm uppercase tracking-[0.2em] text-white/60 hover:text-white transition-colors"
+              className="text-sm uppercase tracking-[0.2em] text-[#8A8A8A] hover:text-[#1A1A1A] transition-colors"
             >
               全部类型
             </Link>
             {next ? (
               <Link
                 href={`/result/${next.route}`}
-                className="group flex items-center gap-3 text-white/80 hover:text-white transition-colors"
+                className="group flex items-center gap-3 text-[#5E5E5E] hover:text-[#1A1A1A] transition-colors"
               >
                 <div className="text-right">
-                  <p className="text-xs text-white/50">下一个类型</p>
+                  <p className="text-xs text-[#8A8A8A]">下一个类型</p>
                   <p className="text-sm font-medium">{next.typeName}</p>
                 </div>
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
@@ -345,7 +345,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
               <div />
             )}
           </div>
-          <div className="border-t border-white/10 pt-8 text-center text-xs text-white/40">
+          <div className="border-t border-[rgba(61,68,48,0.08)] pt-8 text-center text-xs text-[#5E5E5E]/60">
             <p>NIHPLOD 旎柏 · 源自摩纳哥的臻奢功效型护肤品牌</p>
             <p className="mt-1">品牌名取自 DOLPHIN 的倒写，灵感来自地中海宽吻海豚皮肤每两小时更新一次的自愈力</p>
           </div>
