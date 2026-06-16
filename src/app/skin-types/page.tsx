@@ -92,7 +92,7 @@ export default function ResultIndexPage() {
             探索更多专属服务
           </h2>
           <p className="text-[15px] md:text-base text-[#5E5E5E]/70 font-light leading-relaxed mb-8">
-            添加 NIHPLOD 专属护肤顾问，或前往线下门店体验一对一肌肤分析。
+            添加 NIHPLOD 专属护肤顾问，或前往线下门店获取一对一肌肤分析及体验专属护肤服务。
           </p>
           <Link
             href="/services"
