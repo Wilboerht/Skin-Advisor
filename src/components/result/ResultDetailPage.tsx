@@ -128,10 +128,10 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
                 <p className="text-sm font-medium text-[#1A1A1A]">晨间仪式</p>
                 <p className="text-xs text-[#8A8A8A] mt-1">温和清洁 · 精华滋养 · 防晒锁护</p>
               </div>
-              <div className="p-6 rounded-xl bg-[#1B3A5C] text-white">
+              <div className="p-6 rounded-xl bg-[#F5F2ED] border border-[#E8E2D9]">
                 <Moon className="w-6 h-6 text-[#C9A86C] mb-3" />
-                <p className="text-sm font-medium">夜间修护</p>
-                <p className="text-xs text-white/70 mt-1">深层精华 · 脂质体面膜 · 面霜封存</p>
+                <p className="text-sm font-medium text-[#1A1A1A]">夜间修护</p>
+                <p className="text-xs text-[#8A8A8A] mt-1">深层精华 · 脂质体面膜 · 面霜封存</p>
               </div>
             </div>
             <div className="md:col-span-8">
