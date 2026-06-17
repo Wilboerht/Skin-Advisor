@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useMounted } from "@/hooks/use-mounted";
 import { useToast } from "@/components/ui/Toast";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
 import { m } from "framer-motion";
@@ -55,11 +56,27 @@ export function useDashboardStats() {
 }
 
 export function SkinTypeDistribution({ data }: { data?: StatsData['skinTypeDistribution'] }) {
+    const mounted = useMounted();
     const chartData = data && data.length > 0 ? data : [
         { name: 'No Data', value: 1, fill: '#E5E5E5' }
     ];
 
     const hasData = data && data.some(d => d.value > 0);
+
+    if (!mounted) {
+        return (
+            <m.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="rounded-2xl bg-white p-6 border border-[#1A1A1A]/5 h-[340px] flex flex-col"
+            >
+                <h3 className="text-lg font-serif text-[#1A1A1A] mb-1">肤质分布</h3>
+                <p className="text-xs text-[#1A1A1A]/40 mb-6 uppercase tracking-wider">User Skin Type Analysis</p>
+                <div className="flex-1 w-full min-h-0" />
+            </m.div>
+        );
+    }
 
     return (
         <m.div
@@ -120,8 +137,24 @@ export function SkinTypeDistribution({ data }: { data?: StatsData['skinTypeDistr
 }
 
 export function WeeklyGrowth({ data }: { data?: StatsData['weeklyGrowth'] }) {
+    const mounted = useMounted();
     const chartData = data || [];
     const hasData = chartData.some(d => d.started > 0 || d.completed > 0);
+
+    if (!mounted) {
+        return (
+            <m.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="rounded-2xl bg-white p-6 border border-[#1A1A1A]/5 h-[340px] flex flex-col"
+            >
+                <h3 className="text-lg font-serif text-[#1A1A1A] mb-1">周测肤趋势</h3>
+                <p className="text-xs text-[#1A1A1A]/40 mb-6 uppercase tracking-wider">Latest 7 Days</p>
+                <div className="flex-1 w-full min-h-0" />
+            </m.div>
+        );
+    }
 
     return (
         <m.div

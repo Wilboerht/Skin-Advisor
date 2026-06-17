@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useMounted } from "@/hooks/use-mounted";
 import {
     PolarAngleAxis,
     PolarGrid,
@@ -135,6 +136,7 @@ export function SkinRadarChart({
     showLabels = true,
     animated = true,
 }: SkinRadarChartProps) {
+    const mounted = useMounted();
     const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
     // 转换数据格式
@@ -151,6 +153,15 @@ export function SkinRadarChart({
             setActiveIndex(state.activeTooltipIndex);
         }
     };
+
+    if (!mounted) {
+        return (
+            <div
+                className="relative aspect-square w-full"
+                style={{ maxWidth: size, maxHeight: size }}
+            />
+        );
+    }
 
     return (
         <div className="relative aspect-square w-full" style={{ maxWidth: size, maxHeight: size }}>

@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
+import { useMounted } from "@/hooks/use-mounted";
 import type { RadarDimension } from "@/lib/result-content";
 
 interface RadarChartProps {
@@ -22,12 +23,17 @@ export default function RadarChart({
   fillColor = "#1B3A5C",
   strokeColor = "#B76E79",
 }: RadarChartProps) {
+  const mounted = useMounted();
   const chartData = data.map((d) => ({
     subject: d.dimension,
     score: d.score,
     fullMark: 100,
     interpretation: d.interpretation,
   }));
+
+  if (!mounted) {
+    return <div className="w-full h-[360px] md:h-[420px]" />;
+  }
 
   return (
     <div className="w-full h-[360px] md:h-[420px]">

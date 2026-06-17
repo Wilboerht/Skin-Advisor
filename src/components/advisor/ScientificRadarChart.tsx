@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
+import { useMounted } from "@/hooks/use-mounted";
 import {
     Bar,
     BarChart,
@@ -34,6 +35,7 @@ const getScoreColor = (score: number) => {
 };
 
 export function ScientificRadarChart({ dimensions, size = 300, activeDimension, onDimensionSelect }: ScientificRadarChartProps) {
+    const mounted = useMounted();
     const [initialLoad, setInitialLoad] = useState(true);
     useEffect(() => {
         const timer = setTimeout(() => setInitialLoad(false), 1200);
@@ -46,6 +48,10 @@ export function ScientificRadarChart({ dimensions, size = 300, activeDimension, 
         score: dimensions[key]?.score ?? 50,
         fullMark: 100,
     })), [dimensions]);
+
+    if (!mounted) {
+        return <div className="w-full relative" style={{ height: "480px" }} />;
+    }
 
     return (
         <div className="w-full relative" style={{ height: "480px" }}>
