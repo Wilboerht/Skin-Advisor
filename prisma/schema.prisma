@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 // AI 顾问用户会话 - 行为追踪

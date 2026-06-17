@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { containsInsensitive } from "@/lib/prisma-search";
 import { requireRole, logAdminAction, getClientInfo } from "@/lib/admin-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import bcrypt from "bcryptjs";
@@ -25,9 +26,9 @@ export const GET = requireRole("super_admin")(async (request) => {
         const where = search
             ? {
                 OR: [
-                    { username: { contains: search, mode: "insensitive" as const } },
-                    { email: { contains: search, mode: "insensitive" as const } },
-                    { name: { contains: search, mode: "insensitive" as const } },
+                    { username: containsInsensitive(search) },
+                    { email: containsInsensitive(search) },
+                    { name: containsInsensitive(search) },
                 ],
             }
             : {};

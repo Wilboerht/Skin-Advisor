@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { containsInsensitive } from "@/lib/prisma-search";
 import { requireRole } from "@/lib/admin-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { Prisma } from "@prisma/client";
@@ -27,8 +28,8 @@ export const GET = requireRole("super_admin", "admin")(async (request) => {
 
         if (search) {
             where.OR = [
-                { email: { contains: search, mode: "insensitive" } },
-                { name: { contains: search, mode: "insensitive" } },
+                { email: containsInsensitive(search) },
+                { name: containsInsensitive(search) },
             ];
         }
 
