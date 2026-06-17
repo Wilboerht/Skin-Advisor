@@ -499,20 +499,6 @@ export default function QuestionsPage() {
             </div>
 
             {/* Floating Navigation Controls */}
-            {/* Left Corner: Back - Desktop Only */}
-            <div className="fixed bottom-8 left-[5%] lg:bottom-12 z-30 hidden sm:block">
-                <button
-                    onClick={handleBack}
-                    className={cn(
-                        "px-7 py-2.5 rounded-md text-[13px] font-medium tracking-widest hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2 bg-white/60 backdrop-blur-md border border-[#3D4430]/10 text-[#3D4430]/70 hover:text-[#3D4430] hover:border-[#3D4430]/20 hover:bg-white/80",
-                        (currentStepIndex === 0 && !gender) ? "opacity-0 pointer-events-none translate-y-4" : "opacity-100 translate-y-0"
-                    )}
-                >
-                    <ChevronLeft className="h-4 w-4" />
-                    <span>上一题</span>
-                </button>
-            </div>
-
             {/* Right Corner: Next */}
             <div className={cn(
                 "fixed z-30",
