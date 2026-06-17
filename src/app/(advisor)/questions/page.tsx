@@ -384,7 +384,7 @@ export default function QuestionsPage() {
                             alt="NIHPLOD"
                             width={120}
                             height={30}
-                            className="h-9 w-auto object-contain"
+                            className="h-10 w-auto object-contain"
                             priority
                         />
                         <button
@@ -443,7 +443,7 @@ export default function QuestionsPage() {
                     alt="NIHPLOD"
                     width={120}
                     height={30}
-                    className="h-9 w-auto object-contain"
+                    className="h-10 w-auto object-contain"
                     priority
                 />
 
@@ -475,6 +475,8 @@ export default function QuestionsPage() {
                                 selectedValue={(answers[currentQuestion.fieldName] as string | string[] | null) || null}
                                 onSelect={handleSelect}
                                 direction={direction}
+                                currentStep={currentStepIndex + 1}
+                                totalSteps={questions.length}
                             />
                         </m.div>
                     </AnimatePresence>
