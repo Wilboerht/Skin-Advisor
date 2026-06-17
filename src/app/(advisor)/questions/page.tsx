@@ -418,10 +418,11 @@ export default function QuestionsPage() {
                     <div className="relative flex items-center justify-center p-4">
                         <button
                             onClick={() => router.push("/")}
-                            className="absolute left-0 p-2 text-[#3D4430]/40 hover:text-[#3D4430] transition-colors rounded-full hover:bg-[#3D4430]/5"
+                            className="absolute left-2 px-2 py-1.5 flex items-center gap-1 text-[#3D4430]/40 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5"
                             aria-label="返回"
                         >
-                            <ChevronLeft className="w-6 h-6" strokeWidth={1.5} />
+                            <ChevronLeft className="w-5 h-5" strokeWidth={1.5} />
+                            <span className="text-[13px] font-medium tracking-wide">返回</span>
                         </button>
                         <Image
                             src="/NIHPLOD-logo.svg"
@@ -433,10 +434,11 @@ export default function QuestionsPage() {
                         />
                         <button
                             onClick={() => router.push("/")}
-                            className="absolute right-0 p-2 text-[#3D4430]/40 hover:text-[#3D4430] transition-colors rounded-full hover:bg-[#3D4430]/5"
+                            className="absolute right-2 px-2 py-1.5 flex items-center gap-1 text-[#3D4430]/40 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5"
                             aria-label="回到首页"
                         >
-                            <HomeSvg className="w-6 h-6" />
+                            <HomeSvg className="w-5 h-5" />
+                            <span className="text-[13px] font-medium tracking-wide">退出</span>
                         </button>
                     </div>
 
@@ -472,12 +474,13 @@ export default function QuestionsPage() {
                 <button
                     onClick={handleBack}
                     className={cn(
-                        "absolute left-0 p-2 text-[#3D4430]/40 hover:text-[#3D4430] transition-colors rounded-full hover:bg-[#3D4430]/5",
+                        "absolute left-2 px-2 py-1.5 flex items-center gap-1 text-[#3D4430]/40 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5",
                         (currentStepIndex === 0 && !gender) ? "opacity-0 pointer-events-none" : "opacity-100"
                     )}
                     aria-label="上一题"
                 >
-                    <ChevronLeft className="w-6 h-6" strokeWidth={1.5} />
+                    <ChevronLeft className="w-5 h-5" strokeWidth={1.5} />
+                    <span className="text-[13px] font-medium tracking-wide">返回</span>
                 </button>
 
                 <Image
@@ -492,9 +495,10 @@ export default function QuestionsPage() {
                 <button
                     onClick={() => setShowExitConfirm(true)}
                     aria-label="退出测评"
-                    className="absolute right-0 p-2 text-[#3D4430]/40 hover:text-[#3D4430] transition-colors rounded-full hover:bg-[#3D4430]/5"
+                    className="absolute right-2 px-2 py-1.5 flex items-center gap-1 text-[#3D4430]/40 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5"
                 >
-                    <HomeSvg className="w-6 h-6" />
+                    <HomeSvg className="w-5 h-5" />
+                    <span className="text-[13px] font-medium tracking-wide">退出</span>
                 </button>
             </div>
 
