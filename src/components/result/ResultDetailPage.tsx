@@ -118,7 +118,6 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       {/* Daily Routine */}
       <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-[#F8F7F3]">
         <div className="max-w-4xl mx-auto">
-          <p className="text-xs uppercase tracking-[0.25em] text-[#8A8A8A] mb-3">Ritual</p>
           <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-10">
             {data.m4.title || "护肤日常"}
           </h2>
@@ -145,7 +144,6 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       {/* Advantages */}
       <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-[#F8F7F3]">
         <div className="max-w-5xl mx-auto">
-          <p className="text-xs uppercase tracking-[0.25em] text-[#8A8A8A] mb-3">Highlights</p>
           <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-12">
             {data.m5.title || "优势高光"}
           </h2>
@@ -179,7 +177,6 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       {/* Blind Spots */}
       <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-white">
         <div className="max-w-4xl mx-auto">
-          <p className="text-xs uppercase tracking-[0.25em] text-[#8A8A8A] mb-3">Gentle Reminders</p>
           <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-10">
             {data.m6.title || "潜在盲区"}
           </h2>
@@ -200,7 +197,6 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       {/* Skincare Formula */}
       <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-[#F8F7F3]">
         <div className="max-w-5xl mx-auto">
-          <p className="text-xs uppercase tracking-[0.25em] text-[#8A8A8A] mb-3">Formula</p>
           <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-4">
             {data.m7.title || `${data.typeName}的精准护肤公式`}
           </h2>
@@ -284,7 +280,6 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       {/* Persona */}
       <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-[#F8F7F3]">
         <div className="max-w-4xl mx-auto">
-          <p className="text-xs uppercase tracking-[0.25em] text-[#8A8A8A] mb-3">Persona</p>
           <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-10">
             {data.m9.title || "同类画像"}
           </h2>
