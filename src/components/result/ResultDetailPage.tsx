@@ -87,7 +87,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
         </div>
       </section>
 
-      {/* Introduction */}
+      {/* Introduction + Skin Decode */}
       <section className="py-20 md:py-32 px-6 md:px-12 lg:px-20 bg-white">
         <div className="max-w-3xl mx-auto">
           {data.m2.openingQuote && (
@@ -98,24 +98,25 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
           <div className="prose prose-stone max-w-none">
             {formatParagraphs(data.m2.portrait)}
           </div>
-        </div>
-      </section>
-
-      {/* Skin Decode */}
-      <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-[#F8F7F3]">
-        <div className="max-w-4xl mx-auto">
-          <p className="text-xs uppercase tracking-[0.25em] text-[#8A8A8A] mb-3">Decode</p>
-          <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-10">
-            {data.m3.title || "肤质解码"}
-          </h2>
-          <div className="bg-white rounded-2xl p-8 md:p-12 shadow-sm border border-[#E8E2D9]">
-            {formatParagraphs(data.m3.analysis)}
-          </div>
+          {(data.m3.title?.trim() || data.m3.analysis?.trim()) && (
+            <div className="mt-16 md:mt-20">
+              {data.m3.title?.trim() && (
+                <h2 className="text-2xl md:text-3xl font-light text-[#1A1A1A] tracking-tight mb-6">
+                  {data.m3.title}
+                </h2>
+              )}
+              {data.m3.analysis?.trim() && (
+                <div className="text-[#4A4A4A] leading-[1.85] text-[15px] md:text-base">
+                  {formatParagraphs(data.m3.analysis)}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </section>
 
       {/* Daily Routine */}
-      <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-white">
+      <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-[#F8F7F3]">
         <div className="max-w-4xl mx-auto">
           <p className="text-xs uppercase tracking-[0.25em] text-[#8A8A8A] mb-3">Ritual</p>
           <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-10">
