@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { DEFAULT_QUESTIONS, type Question } from "@/config/questions";
 import { QuestionStep } from "@/components/advisor/QuestionStep";
 import Image from "next/image";
+import Link from "next/link";
 import { GenderSelection } from "@/components/advisor/GenderSelection";
 
 import { m, AnimatePresence } from "framer-motion";
@@ -408,11 +409,17 @@ export default function QuestionsPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ duration: 1.2, delay: 1 }}
-                        className="py-6 opacity-40"
+                        className="py-6 opacity-40 px-4"
                     >
-                        <p className="text-center text-[10px] sm:text-[11px] font-light tracking-widest text-[#1A1A1A] leading-tight">
-                            &copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.
-                        </p>
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-center text-[10px] sm:text-[11px] font-light tracking-widest text-[#1A1A1A] leading-tight">
+                            <p>&copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
+                            <span className="hidden sm:inline text-[#1A1A1A]/30">·</span>
+                            <div className="flex items-center gap-4">
+                                <Link href="/privacy" className="hover:text-[#3D4430] transition-colors duration-300">隐私政策</Link>
+                                <span className="text-[#1A1A1A]/30">·</span>
+                                <Link href="/terms" className="hover:text-[#3D4430] transition-colors duration-300">服务条款</Link>
+                            </div>
+                        </div>
                     </m.div>
                 </m.div>
             </AnimatePresence>
@@ -490,11 +497,17 @@ export default function QuestionsPage() {
             </div>
 
             {/* Footer */}
-            <div className="py-6 opacity-40 shrink-0 text-center">
+            <div className="py-6 opacity-40 shrink-0 text-center px-4">
                 {currentQuestion.type !== "multiple" && (
-                    <p className="text-center text-[10px] sm:text-[11px] font-light tracking-widest text-[#1A1A1A] leading-tight">
-                        &copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.
-                    </p>
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-[10px] sm:text-[11px] font-light tracking-widest text-[#1A1A1A] leading-tight">
+                        <p>&copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
+                        <span className="hidden sm:inline text-[#1A1A1A]/30">·</span>
+                        <div className="flex items-center gap-4">
+                            <Link href="/privacy" className="hover:text-[#3D4430] transition-colors duration-300">隐私政策</Link>
+                            <span className="text-[#1A1A1A]/30">·</span>
+                            <Link href="/terms" className="hover:text-[#3D4430] transition-colors duration-300">服务条款</Link>
+                        </div>
+                    </div>
                 )}
             </div>
 
