@@ -13,11 +13,6 @@ export interface M2Data {
   portrait: string;
 }
 
-export interface M3Data {
-  title: string;
-  analysis: string;
-}
-
 export interface M4Data {
   title: string;
   scene?: string;
@@ -91,7 +86,6 @@ export interface SkinTypeData {
   route: string;
   m1: M1Data;
   m2: M2Data;
-  m3: M3Data;
   m4: M4Data;
   m5: M5Data;
   m6: M6Data;
