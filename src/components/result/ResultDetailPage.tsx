@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Heart, Sun, Home, ShoppingBag, SoapDispenserDroplet, Info, ArrowRight } from "lucide-react";
+import { Sun, Home, ShoppingBag, SoapDispenserDroplet, Info, ArrowRight } from "lucide-react";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
 import Threads from "@/components/ui/Threads";
 import type { SkinTypeData } from "@/lib/result-content";
@@ -140,14 +140,14 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
               {data.m7.formulaCore}
             </p>
           )}
-          <div className="grid md:grid-cols-2 gap-6 mb-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
             {data.m7.suggestions.map((sug, i) => (
-              <div key={i} className="bg-white rounded-2xl p-8 shadow-sm border border-[#E8E2D9]">
-                <div className="flex items-center gap-3 mb-4">
-                  <Heart className="w-5 h-5 text-[#B76E79]" />
-                  <h3 className="text-base font-medium text-[#1A1A1A]">{sug.title}</h3>
-                </div>
-                <p className="text-sm text-[#5E5E5E] leading-[1.85]">{sug.content}</p>
+              <div key={i} className="bg-white rounded-2xl p-6 shadow-sm border border-[#E8E2D9] flex flex-col">
+                <span className="flex items-center justify-center w-8 h-8 rounded-full bg-[#1B3A5C] text-white text-sm font-medium mb-4">
+                  {i + 1}
+                </span>
+                <h3 className="text-base font-medium text-[#1A1A1A] mb-3">{sug.title}</h3>
+                <p className="text-sm text-[#5E5E5E] leading-[1.85] flex-1">{sug.content}</p>
               </div>
             ))}
           </div>
@@ -158,7 +158,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
                 <thead>
                   <tr className="border-b border-[#D9D0C3]">
                     {ingredientHeaders.map((h) => (
-                      <th key={h} className="text-left py-3 px-4 font-medium text-[#8A8A8A] uppercase tracking-wider text-xs">
+                      <th key={h} className="text-left py-3 px-4 font-semibold text-[#1B3A5C] uppercase tracking-wider text-sm">
                         {h}
                       </th>
                     ))}
@@ -168,7 +168,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
                   {data.m7.ingredientTable.map((row, i) => (
                     <tr key={i} className="border-b border-[#E8E2D9] last:border-0 hover:bg-white/60">
                       {ingredientHeaders.map((h) => (
-                        <td key={h} className="py-4 px-4 text-[#4A4A4A]">
+                        <td key={h} className="py-4 px-4 text-[#4A4A4A] font-light">
                           {row[h]}
                         </td>
                       ))}
