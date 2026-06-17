@@ -59,22 +59,12 @@ export function QuestionStep({
         <div className="text-center mb-8 md:mb-10 pt-4 sm:pt-12 md:pt-8">
           {/* Progress Indicator */}
           <m.div
-            className="mb-5 md:mb-6"
+            className="text-xs md:text-sm tracking-[0.2em] text-[#8B7355] font-medium mb-5 md:mb-6"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.05, duration: 0.5 }}
           >
-            <div className="text-xs md:text-sm tracking-[0.2em] text-[#8B7355] font-medium mb-2.5 md:mb-3">
-              第 {currentStep} / {totalSteps} 题
-            </div>
-            <div className="w-full max-w-[200px] md:max-w-[240px] mx-auto h-1 md:h-1.5 bg-[#D4CFC5] rounded-full overflow-hidden">
-              <m.div
-                className="h-full bg-[#8B7355] rounded-full"
-                initial={{ width: 0 }}
-                animate={{ width: `${(currentStep / totalSteps) * 100}%` }}
-                transition={{ duration: 0.5, ease: [0.2, 0.8, 0.2, 1] }}
-              />
-            </div>
+            第 {currentStep} / {totalSteps} 题
           </m.div>
           <m.h2
             className="text-2xl md:text-4xl font-serif text-[#1A1A1A] mb-4 leading-snug max-w-3xl mx-auto"

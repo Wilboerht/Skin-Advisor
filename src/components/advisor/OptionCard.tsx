@@ -51,7 +51,7 @@ export function OptionCard({
                 perspective: "1000px"
             }}
             className={cn(
-                "group relative w-full rounded-lg text-left border px-4 sm:px-6 py-3 sm:py-5 flex items-center gap-3 sm:gap-5 backdrop-blur-md transition-all duration-300 overflow-hidden",
+                "group relative w-full rounded-lg md:rounded-xl text-left border px-4 sm:px-6 md:px-8 py-3 sm:py-5 md:py-6 flex items-center gap-3 sm:gap-5 backdrop-blur-md transition-all duration-300 overflow-hidden",
                 isSelected
                     ? "bg-[#F8F5EE] border-[#8B7355]/40 shadow-[0_2px_12px_-2px_rgba(139,115,85,0.08)]"
                     : "bg-[#FDFBF7] border-[#D4CFC5] hover:border-[#8B7355]/40 hover:bg-[#F8F5EE] shadow-[0_1px_4px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.06)]"
@@ -59,7 +59,7 @@ export function OptionCard({
         >
             {/* Left accent bar */}
             <div className={cn(
-                "absolute left-0 top-3 bottom-3 sm:top-4 sm:bottom-4 w-[2px] transition-all duration-300",
+                "absolute left-0 top-3 bottom-3 sm:top-4 sm:bottom-4 md:top-5 md:bottom-5 w-[2px] md:w-[3px] transition-all duration-300",
                 isSelected ? "bg-[#8B7355]" : "bg-transparent"
             )} />
             <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none rounded-lg" />
@@ -76,14 +76,14 @@ export function OptionCard({
             {/* Text Content */}
             <div className="flex-1 min-w-0">
                 <p className={cn(
-                    "text-[15px] tracking-wide mb-0.5 transition-colors duration-300",
+                    "text-[15px] md:text-base tracking-wide mb-0.5 md:mb-1 transition-colors duration-300",
                     isSelected ? "text-[#1A1A1A] font-semibold" : "text-[#3D4430] font-medium"
                 )}>
                     {label}
                 </p>
                 {description && (
                     <p className={cn(
-                        "text-xs font-light leading-relaxed transition-colors duration-300",
+                        "text-xs md:text-sm font-light leading-relaxed transition-colors duration-300",
                         isSelected ? "text-[#8B7355]/80" : "text-[#5E5E5E]/80"
                     )}>
                         {description}
@@ -94,7 +94,7 @@ export function OptionCard({
             {/* Checkmark - Only shows when selected, very minimal */}
             <m.div
                 className={cn(
-                    "w-5 h-5 rounded-sm border flex items-center justify-center transition-all duration-300",
+                    "w-5 h-5 md:w-6 md:h-6 rounded-sm border flex items-center justify-center transition-all duration-300",
                     isSelected
                         ? "border-[#8B7355] bg-[#8B7355] text-white"
                         : "border-[#D4CFC5] group-hover:border-[#8B7355]/40"
