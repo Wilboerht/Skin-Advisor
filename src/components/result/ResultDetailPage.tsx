@@ -143,9 +143,11 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
           {data.m5.quote && (
             <div className="text-center max-w-4xl mx-auto py-10 md:py-14 px-6">
               <blockquote className="text-xl md:text-2xl font-light leading-relaxed text-[#1A1A1A] tracking-wide md:whitespace-nowrap">
-                <span className="text-[#C9A86C]/50 font-bold">「</span>
+                <span className="text-2xl md:text-4xl font-bold" style={{ color: theme.from, opacity: 0.5 }}>「</span>
+                {" "}
                 {data.m5.quote}
-                <span className="text-[#C9A86C]/50 font-bold">」</span>
+                {" "}
+                <span className="text-2xl md:text-4xl font-bold" style={{ color: theme.from, opacity: 0.5 }}>」</span>
               </blockquote>
             </div>
           )}
