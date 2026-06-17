@@ -5,7 +5,6 @@ export interface M1Data {
   scoreRange: string;
   persona: string;
   slogan: string;
-  visualDirection: string;
 }
 
 export interface M2Data {
@@ -54,21 +53,6 @@ export interface M7Data {
   onlyOneSet: string;
 }
 
-export interface M9Data {
-  title: string;
-  lifestyle: string;
-  aesthetic: string;
-  spirit: string;
-  occasions: string;
-}
-
-export interface M10Data {
-  xiaohongshu: string;
-  wechat: string;
-  phrases: string[];
-  hashtags: string[];
-}
-
 export interface SkinTypeData {
   typeName: string;
   scoreRange: string;
@@ -79,8 +63,6 @@ export interface SkinTypeData {
   m5: M5Data;
   m6: M6Data;
   m7: M7Data;
-  m9: M9Data;
-  m10: M10Data;
 }
 
 export const skinTypes = resultContent as unknown as SkinTypeData[];
