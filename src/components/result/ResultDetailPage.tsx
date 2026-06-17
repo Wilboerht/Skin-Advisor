@@ -1,29 +1,14 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
-import { Sun, Moon, Heart } from "lucide-react";
-import RadarChart from "./RadarChart";
+import { Heart, Sun, Home, ShoppingBag, SoapDispenserDroplet, Info } from "lucide-react";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
 import type { SkinTypeData } from "@/lib/result-content";
 interface ResultDetailPageProps {
   data: SkinTypeData;
 }
-
-const typeThemes: Record<string, { from: string; to: string; accent: string; stroke: string; heroText: string }> = {
-  jiejinkuangmo: { from: "#1B3A5C", to: "#F5F1EB", accent: "#B76E79", stroke: "#B76E79", heroText: "#FFFFFF" },
-  kangkuadaren: { from: "#0A1628", to: "#E8E4E0", accent: "#C9A86C", stroke: "#1B3A5C", heroText: "#FFFFFF" },
-  tangpingwanjia: { from: "#7EB5D6", to: "#FAF8F5", accent: "#E8DCC4", stroke: "#7EB5D6", heroText: "#1A1A1A" },
-  rouguangdaren: { from: "#F0EDE6", to: "#D4AF7A", accent: "#D4A5A5", stroke: "#2E5A6B", heroText: "#1A1A1A" },
-  wenfuwanjia: { from: "#7A8B99", to: "#F5F1EB", accent: "#C9B896", stroke: "#1E3A4C", heroText: "#FFFFFF" },
-  shengtukuangmo: { from: "#1B4965", to: "#5FA8D3", accent: "#D4A574", stroke: "#1B4965", heroText: "#FFFFFF" },
-  shirundaren: { from: "#C9A86C", to: "#1B3A5C", accent: "#D4AF7A", stroke: "#C9A86C", heroText: "#FFFFFF" },
-  donglingwanjia: { from: "#0A1628", to: "#E8D5D0", accent: "#C9A86C", stroke: "#1B3A5C", heroText: "#FFFFFF" },
-  tianfukuangmo: { from: "#B8C4CE", to: "#F5F0E8", accent: "#C9A86C", stroke: "#B8C4CE", heroText: "#1A1A1A" },
-  yulingzhuzai: { from: "#0A1628", to: "#C9A96E", accent: "#C9A96E", stroke: "#0A1628", heroText: "#FFFFFF" },
-};
 
 function formatParagraphs(text: string): React.ReactElement {
   const paragraphs = text.split("\n\n").filter((p) => p.trim());
@@ -47,10 +32,6 @@ function formatParagraphs(text: string): React.ReactElement {
 }
 
 export default function ResultDetailPage({ data }: ResultDetailPageProps) {
-  const theme = typeThemes[data.route] || typeThemes.jiejinkuangmo;
-  const hasRoutineTabs = Boolean(data.m4.morning && data.m4.night);
-  const [activeRoutine, setActiveRoutine] = useState<"morning" | "night">("morning");
-
   const ingredientHeaders = useMemo(() => {
     if (!data.m7.ingredientTable.length) return [];
     return Object.keys(data.m7.ingredientTable[0]);
@@ -156,69 +137,38 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
 
       {/* Daily Routine */}
       <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-[#F8F7F3]">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-10">
             {data.m4.title || "我们建议的护肤日常"}
           </h2>
-          <div className="grid md:grid-cols-12 gap-8">
-            <div className="md:col-span-4 space-y-6">
-              <button
-                type="button"
-                onClick={() => hasRoutineTabs && setActiveRoutine("morning")}
-                disabled={!hasRoutineTabs}
-                className={`w-full text-left p-6 rounded-xl transition-all ${
-                  hasRoutineTabs
-                    ? activeRoutine === "morning"
-                      ? "bg-[#F5F2ED] border-2 border-[#C9A86C] shadow-sm cursor-pointer"
-                      : "bg-[#FAF8F5] border border-[#E8E2D9] hover:border-[#C9A86C]/50 cursor-pointer"
-                    : "bg-[#F5F2ED] border border-[#E8E2D9]"
-                }`}
-              >
-                <Sun className="w-6 h-6 text-[#C9A86C] mb-3" />
-                <p className="text-base font-medium text-[#1A1A1A]">晨间仪式</p>
-                <p className="text-xs text-[#8A8A8A] mt-1">温和清洁 · 精华滋养 · 防晒锁护</p>
-              </button>
-              <button
-                type="button"
-                onClick={() => hasRoutineTabs && setActiveRoutine("night")}
-                disabled={!hasRoutineTabs}
-                className={`w-full text-left p-6 rounded-xl transition-all ${
-                  hasRoutineTabs
-                    ? activeRoutine === "night"
-                      ? "bg-[#F5F2ED] border-2 border-[#C9A86C] shadow-sm cursor-pointer"
-                      : "bg-[#FAF8F5] border border-[#E8E2D9] hover:border-[#C9A86C]/50 cursor-pointer"
-                    : "bg-[#F5F2ED] border border-[#E8E2D9]"
-                }`}
-              >
-                <Moon className="w-6 h-6 text-[#C9A86C] mb-3" />
-                <p className="text-base font-medium text-[#1A1A1A]">夜间修护</p>
-                <p className="text-xs text-[#8A8A8A] mt-1">深层精华 · 脂质体面膜 · 面霜封存</p>
-              </button>
-              {!hasRoutineTabs && (
-                <p className="text-xs text-[#8A8A8A] px-1">
-                  你的护肤节奏从容统一，以下日常适用于晨间与夜间。
-                </p>
-              )}
-            </div>
-            <div className="md:col-span-8 relative">
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.div
-                  key={hasRoutineTabs ? activeRoutine : "scene"}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.25, ease: "easeInOut" }}
+          <div className="grid md:grid-cols-2 gap-6">
+            {[
+              { title: "优雅日常", subtitle: "每日专属的精简守护", icon: Sun },
+              { title: "居家仪式", subtitle: "享受 DIY 的美好时光", icon: Home },
+              { title: "单品好物", subtitle: "随时随地按需使用", icon: ShoppingBag },
+              { title: "专业水疗", subtitle: "沉静式悦己体验", icon: SoapDispenserDroplet },
+            ].map((item, i) => {
+              const Icon = item.icon;
+              return (
+                <a
+                  key={i}
+                  href="https://nihplod.cn/guide"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group block bg-white rounded-2xl p-8 shadow-sm border border-[#E8E2D9] hover:shadow-md hover:border-[#C9A86C]/50 transition-all"
                 >
-                  {formatParagraphs(
-                    hasRoutineTabs
-                      ? activeRoutine === "morning"
-                        ? data.m4.morning!
-                        : data.m4.night!
-                      : data.m4.scene || ""
-                  )}
-                </motion.div>
-              </AnimatePresence>
-            </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <h3 className="text-xl font-medium text-[#1A1A1A] mb-1 group-hover:text-[#1B3A5C] transition-colors">
+                        {item.title}
+                      </h3>
+                      <p className="text-sm text-[#8A8A8A] leading-[1.85]">{item.subtitle}</p>
+                    </div>
+                    <Icon className="w-11 h-11 text-[#C9A86C] stroke-[1.25] flex-shrink-0" />
+                  </div>
+                </a>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -296,42 +246,23 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
           )}
 
           {data.m7.onlyOneSet && (
-            <div className="bg-[#1B3A5C] text-white rounded-2xl p-8 md:p-10">
-              <p className="text-xs uppercase tracking-[0.25em] text-white/60 mb-3">If Only One Set</p>
-              <h3 className="text-xl md:text-2xl font-light mb-4">如果只能选一套</h3>
-              <p className="text-base text-white/90 leading-[1.85]">{data.m7.onlyOneSet}</p>
+            <div className="relative bg-[#F5F1EB] text-[#1A1A1A] rounded-2xl p-8 md:p-10 border border-dashed border-[#D4C4A8] overflow-hidden">
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-3 bg-[#F8F7F3] rounded-b-xl border-b border-dashed border-[#D4C4A8]" aria-hidden="true" />
+              <h3 className="text-xl md:text-2xl font-light mb-5 pt-2">如果只能选一套</h3>
+              <p className="text-base text-[#5E5E5E] leading-[1.85] mb-6">{data.m7.onlyOneSet}</p>
+              <div className="flex items-center justify-center gap-3 text-xs tracking-widest text-[#C9A86C] uppercase">
+                <span className="w-8 h-px border-t border-dashed border-[#C9A86C]/60" />
+                <span>行李限额 · 四件必备</span>
+                <span className="w-8 h-px border-t border-dashed border-[#C9A86C]/60" />
+              </div>
             </div>
           )}
-        </div>
-      </section>
-
-      {/* Radar Chart */}
-      <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-white">
-        <div className="max-w-4xl mx-auto">
-          <p className="text-xs uppercase tracking-[0.25em] text-[#8A8A8A] mb-3">Radar</p>
-          <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-4">
-            肤质雷达图
-          </h2>
-          <p className="text-base text-[#8A8A8A] mb-10 max-w-xl leading-[1.85]">
-            五维肌肤画像：水润度、细腻度、光泽度、紧致度、稳定度。
-          </p>
-          <div className="bg-[#FDFCFA] rounded-2xl p-6 md:p-10 border border-[#E8E2D9]">
-            <RadarChart data={data.m8.radar} fillColor={theme.from} strokeColor={theme.stroke} />
-            {data.m8.interpretation && (
-              <div className="mt-8 text-center max-w-2xl mx-auto">
-                <blockquote className="text-lg md:text-xl font-light text-[#1B3A5C] leading-[1.85]">
-                  {data.m8.interpretation}
-                </blockquote>
-              </div>
-            )}
-          </div>
         </div>
       </section>
 
       {/* CTA */}
       <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-white">
         <div className="max-w-3xl mx-auto text-center">
-          <p className="text-xs uppercase tracking-[0.25em] text-[#8A8A8A] mb-3">Start Your Journey</p>
           <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-4">
             想知道你的真实肤质类型吗？
           </h2>
@@ -349,6 +280,12 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
 
       {/* Footer */}
       <footer className="py-8 px-6 text-center border-t border-[rgba(61,68,48,0.08)]">
+        <p className="flex items-start justify-center gap-2 text-[10px] sm:text-xs text-[#8A8A8A] leading-[1.8] max-w-2xl mx-auto mb-6">
+          <Info className="w-3.5 h-3.5 text-[#C9A86C] flex-shrink-0 mt-0.5 stroke-[2]" />
+          <span>
+            该类型仅表示此综合评分下普遍情况，不代表您的素颜测肤结果。请完成测试，以获取您的专属素颜分析报告。
+          </span>
+        </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-xs tracking-widest text-[#5E5E5E]/60">
           <p>© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
           <span className="hidden sm:inline text-[#5E5E5E]/30">·</span>
