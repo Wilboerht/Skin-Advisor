@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Heart, Sun, Home, ShoppingBag, SoapDispenserDroplet, Info } from "lucide-react";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
 import Threads from "@/components/ui/Threads";
+import StarBorder from "@/components/ui/StarBorder";
 import type { SkinTypeData } from "@/lib/result-content";
 interface ResultDetailPageProps {
   data: SkinTypeData;
@@ -279,12 +280,15 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
           <p className="text-base text-[#5E5E5E] font-light leading-[1.85] mb-10 max-w-xl mx-auto">
             回答几个简单问题，即可获得专属肌肤诊断与护肤建议。
           </p>
-          <Link
+          <StarBorder
+            as={Link}
             href="/questions"
-            className="inline-flex items-center justify-center px-8 py-3.5 bg-[#1B3A5C] text-white text-sm uppercase tracking-[0.15em] rounded-full hover:bg-[#1B3A5C]/90 transition-colors duration-300"
+            color="#C9A86C"
+            speed="6s"
+            thickness={1}
           >
             立即测试
-          </Link>
+          </StarBorder>
         </div>
       </section>
 
