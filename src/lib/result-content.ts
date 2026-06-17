@@ -54,17 +54,6 @@ export interface M7Data {
   onlyOneSet: string;
 }
 
-export interface RadarDimension {
-  dimension: string;
-  score: number;
-  interpretation: string;
-}
-
-export interface M8Data {
-  radar: RadarDimension[];
-  interpretation: string;
-}
-
 export interface M9Data {
   title: string;
   lifestyle: string;
@@ -90,7 +79,6 @@ export interface SkinTypeData {
   m5: M5Data;
   m6: M6Data;
   m7: M7Data;
-  m8: M8Data;
   m9: M9Data;
   m10: M10Data;
 }
