@@ -21,7 +21,7 @@ export default function ResultIndexPage() {
       <WebsiteNavbar />
 
       {/* Hero */}
-      <section className="relative pt-32 pb-20 md:pt-40 md:pb-24 px-6 md:px-12 lg:px-20 overflow-hidden">
+      <section className="relative pt-32 pb-28 md:pt-40 md:pb-36 px-6 md:px-12 lg:px-20 overflow-hidden">
         <div className="relative z-10 max-w-5xl mx-auto text-center">
           <div className="flex justify-center mb-4 opacity-0 animate-fade-in-up" style={{ animationFillMode: "forwards" }}>
             <Sparkles className="w-8 h-8 text-[#8B7355]" />

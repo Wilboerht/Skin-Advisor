@@ -142,7 +142,9 @@ export default function Threads({
     if (!containerRef.current) return;
     const container = containerRef.current;
 
-    const renderer = new Renderer({ alpha: true });
+    // 限制 DPR，避免高分辨率屏幕过度消耗 GPU
+    const dpr = Math.min(window.devicePixelRatio, 1.5);
+    const renderer = new Renderer({ alpha: true, dpr });
     const gl = renderer.gl;
     gl.clearColor(0, 0, 0, 0);
     gl.enable(gl.BLEND);
@@ -194,7 +196,35 @@ export default function Threads({
       container.addEventListener("mouseleave", handleMouseLeave);
     }
 
+    // 性能控制：页面不可见或不在视口内时暂停渲染
+    let isPageVisible = true;
+    let isInViewport = true;
+
+    function handleVisibilityChange() {
+      isPageVisible = !document.hidden;
+    }
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        isInViewport = entry.isIntersecting;
+      },
+      { threshold: 0 }
+    );
+    observer.observe(container);
+
+    // 限制帧率到 30fps，降低持续渲染开销
+    const targetFPS = 30;
+    const frameInterval = 1000 / targetFPS;
+    let lastTime = 0;
+
     function update(t: number) {
+      animationFrameId.current = requestAnimationFrame(update);
+
+      if (!isPageVisible || !isInViewport) return;
+      if (t - lastTime < frameInterval) return;
+      lastTime = t;
+
       if (enableMouseInteraction) {
         const smoothing = 0.05;
         currentMouse[0] += smoothing * (targetMouse[0] - currentMouse[0]);
@@ -208,13 +238,14 @@ export default function Threads({
       program.uniforms.iTime.value = t * 0.001;
 
       renderer.render({ scene: mesh });
-      animationFrameId.current = requestAnimationFrame(update);
     }
     animationFrameId.current = requestAnimationFrame(update);
 
     return () => {
       if (animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
       window.removeEventListener("resize", resize);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      observer.disconnect();
 
       if (enableMouseInteraction) {
         container.removeEventListener("mousemove", handleMouseMove);
