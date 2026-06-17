@@ -72,7 +72,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
         </div>
       </section>
 
-      {/* Introduction + Skin Decode */}
+      {/* Introduction */}
       <section className="py-20 md:py-32 px-6 md:px-12 lg:px-20 bg-white">
         <div className="max-w-3xl mx-auto">
           {data.m2.openingQuote && (
@@ -168,26 +168,28 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       </section>
 
       {/* Blind Spots */}
-      <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-white">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-10">
-            {data.m6.title || "潜在盲区"}
-          </h2>
-          <div className="space-y-8">
-            {data.m6.reminders.map((rem, i) => (
-              <div key={i} className="flex gap-6">
-                <span className="text-3xl md:text-4xl font-extralight text-[#C9A86C]/40 leading-none w-10 text-right">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <div className="flex-1">
-                  <h3 className="text-lg font-medium text-[#1A1A1A] mb-3">{rem.title}</h3>
-                  <p className="text-sm text-[#5E5E5E] leading-[1.85]">{rem.content}</p>
+      {data.m6.reminders.length > 0 && (
+        <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-white">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-10">
+              {data.m6.title || "潜在盲区"}
+            </h2>
+            <div className="space-y-8">
+              {data.m6.reminders.map((rem, i) => (
+                <div key={i} className="flex gap-6">
+                  <span className="text-3xl md:text-4xl font-extralight text-[#C9A86C]/40 leading-none w-10 text-right">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-medium text-[#1A1A1A] mb-3">{rem.title}</h3>
+                    <p className="text-sm text-[#5E5E5E] leading-[1.85]">{rem.content}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Skincare Formula */}
       <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-[#F8F7F3]">
