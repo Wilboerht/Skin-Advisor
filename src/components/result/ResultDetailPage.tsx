@@ -103,9 +103,9 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       {/* Advantages */}
       <section className="relative overflow-hidden py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-white">
         <Threads
-          className="absolute inset-0 z-0 pointer-events-none"
+          className="absolute top-[40%] left-0 right-0 -translate-y-1/2 h-[95%] z-0 pointer-events-none"
           color={[0.941, 0.929, 0.882]}
-          amplitude={1}
+          amplitude={1.5}
           distance={0}
           enableMouseInteraction={false}
         />
