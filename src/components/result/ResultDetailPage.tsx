@@ -122,7 +122,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-[#F8F7F3]">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-10">
-            {data.m4.title || "护肤日常"}
+            {data.m4.title || "我们建议的护肤日常"}
           </h2>
           <div className="grid md:grid-cols-12 gap-8">
             <div className="md:col-span-4 space-y-6">
