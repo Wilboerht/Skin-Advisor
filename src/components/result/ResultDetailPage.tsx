@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Heart, Sun, Home, ShoppingBag, SoapDispenserDroplet, Info } from "lucide-react";
+import { Heart, Sun, Home, ShoppingBag, SoapDispenserDroplet, Info, ArrowRight } from "lucide-react";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
 import Threads from "@/components/ui/Threads";
 import type { SkinTypeData } from "@/lib/result-content";
@@ -181,7 +181,9 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
 
           {data.m7.onlyOneSet && (
             <div className="max-w-3xl">
-              <h3 className="text-2xl md:text-3xl font-light mb-5">最小必要集合</h3>
+              <span className="inline-block px-4 py-1.5 mb-5 text-[11px] uppercase tracking-[0.2em] text-[#1B3A5C] bg-[#1B3A5C]/[0.04] rounded-full border border-[#1B3A5C]/10">
+                最小必要集合
+              </span>
               <p className="text-base text-[#5E5E5E] leading-[1.85]">{data.m7.onlyOneSet}</p>
             </div>
           )}
@@ -194,7 +196,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
           <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-10">
             {data.m4.title || "我们建议的护肤日常"}
           </h2>
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="flex flex-col gap-4 max-w-4xl mx-auto">
             {[
               { title: "优雅日常", subtitle: "每日专属的精简守护", icon: Sun },
               { title: "居家仪式", subtitle: "享受 DIY 的美好时光", icon: Home },
@@ -208,17 +210,18 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
                   href="https://nihplod.cn/guide"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group block bg-white rounded-2xl p-8 shadow-sm border border-[#E8E2D9] hover:shadow-md hover:border-[#C9A86C]/50 transition-all"
+                  className="group flex items-center gap-5 md:gap-6 bg-[#FAF9F6] rounded-2xl p-5 md:p-6 border border-[#E8E2D9] hover:shadow-md hover:border-[#C9A86C]/50 transition-all"
                 >
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <h3 className="text-xl font-medium text-[#1A1A1A] mb-1 group-hover:text-[#1B3A5C] transition-colors">
-                        {item.title}
-                      </h3>
-                      <p className="text-sm text-[#8A8A8A] leading-[1.85]">{item.subtitle}</p>
-                    </div>
-                    <Icon className="w-11 h-11 text-[#C9A86C] stroke-[1.25] flex-shrink-0" />
+                  <div className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-white border border-[#E8E2D9] flex-shrink-0">
+                    <Icon className="w-6 h-6 md:w-7 md:h-7 text-[#C9A86C] stroke-[1.25]" />
                   </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg md:text-xl font-medium text-[#1A1A1A] mb-0.5 group-hover:text-[#1B3A5C] transition-colors">
+                      {item.title}
+                    </h3>
+                    <p className="text-sm text-[#8A8A8A] leading-relaxed">{item.subtitle}</p>
+                  </div>
+                  <ArrowRight className="w-5 h-5 text-[#C9A86C]/60 group-hover:text-[#C9A86C] group-hover:translate-x-1 transition-all flex-shrink-0" />
                 </a>
               );
             })}
