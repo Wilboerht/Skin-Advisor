@@ -4,7 +4,7 @@ import React, { useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Shield, Sun, Moon, Heart } from "lucide-react";
+import { Sun, Moon, Heart } from "lucide-react";
 import RadarChart from "./RadarChart";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
 import type { SkinTypeData } from "@/lib/result-content";
@@ -229,12 +229,14 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
           <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-10">
             {data.m6.title || "潜在盲区"}
           </h2>
-          <div className="divide-y divide-[#E8E2D9]">
+          <div className="space-y-8">
             {data.m6.reminders.map((rem, i) => (
-              <div key={i} className="flex gap-5 py-6 first:pt-0 last:pb-0">
-                <Shield className="w-5 h-5 text-[#B76E79] flex-shrink-0 mt-0.5" />
-                <div>
-                  <h3 className="text-base font-medium text-[#1A1A1A] mb-3">{rem.title}</h3>
+              <div key={i} className="flex gap-6">
+                <span className="text-3xl md:text-4xl font-extralight text-[#C9A86C]/40 leading-none w-10 text-right">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <div className="flex-1">
+                  <h3 className="text-lg font-medium text-[#1A1A1A] mb-3">{rem.title}</h3>
                   <p className="text-sm text-[#5E5E5E] leading-[1.85]">{rem.content}</p>
                 </div>
               </div>
