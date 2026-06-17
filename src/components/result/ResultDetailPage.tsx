@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Sun, Home, ShoppingBag, SoapDispenserDroplet, Info, ArrowRight } from "lucide-react";
+import { Sun, Home, ShoppingBag, SoapDispenserDroplet, Info } from "lucide-react";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
 import Threads from "@/components/ui/Threads";
 import type { SkinTypeData } from "@/lib/result-content";
@@ -191,17 +191,17 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       </section>
 
       {/* Daily Routine */}
-      <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-white">
+      <section className="py-16 md:py-20 px-6 md:px-12 lg:px-20 bg-white">
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-10">
+          <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-8">
             {data.m4.title || "我们建议的护肤日常"}
           </h2>
-          <div className="flex flex-col gap-4 max-w-4xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
             {[
-              { title: "优雅日常", subtitle: "每日专属的精简守护", icon: Sun },
-              { title: "居家仪式", subtitle: "享受 DIY 的美好时光", icon: Home },
-              { title: "单品好物", subtitle: "随时随地按需使用", icon: ShoppingBag },
-              { title: "专业水疗", subtitle: "沉静式悦己体验", icon: SoapDispenserDroplet },
+              { title: "优雅日常", subtitle: "每日精简守护", icon: Sun },
+              { title: "居家仪式", subtitle: "DIY 悦己时光", icon: Home },
+              { title: "单品好物", subtitle: "随时按需使用", icon: ShoppingBag },
+              { title: "专业水疗", subtitle: "沉静式体验", icon: SoapDispenserDroplet },
             ].map((item, i) => {
               const Icon = item.icon;
               return (
@@ -210,18 +210,15 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
                   href="https://nihplod.cn/guide"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group flex items-center gap-5 md:gap-6 bg-[#FAF9F6] rounded-2xl p-5 md:p-6 border border-[#E8E2D9] hover:shadow-md hover:border-[#C9A86C]/50 transition-all"
+                  className="group flex flex-col items-center text-center bg-[#FAF9F6] rounded-xl p-4 md:p-5 border border-[#E8E2D9] hover:shadow-sm hover:border-[#C9A86C]/50 transition-all"
                 >
-                  <div className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-white border border-[#E8E2D9] flex-shrink-0">
-                    <Icon className="w-6 h-6 md:w-7 md:h-7 text-[#C9A86C] stroke-[1.25]" />
+                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-white border border-[#E8E2D9] mb-3">
+                    <Icon className="w-5 h-5 text-[#C9A86C] stroke-[1.25]" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg md:text-xl font-medium text-[#1A1A1A] mb-0.5 group-hover:text-[#1B3A5C] transition-colors">
-                      {item.title}
-                    </h3>
-                    <p className="text-sm text-[#8A8A8A] leading-relaxed">{item.subtitle}</p>
-                  </div>
-                  <ArrowRight className="w-5 h-5 text-[#C9A86C]/60 group-hover:text-[#C9A86C] group-hover:translate-x-1 transition-all flex-shrink-0" />
+                  <h3 className="text-sm md:text-base font-medium text-[#1A1A1A] mb-1 group-hover:text-[#1B3A5C] transition-colors">
+                    {item.title}
+                  </h3>
+                  <p className="text-xs text-[#8A8A8A] leading-relaxed">{item.subtitle}</p>
                 </a>
               );
             })}
