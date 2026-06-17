@@ -4,7 +4,7 @@ import React, { useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Shield, Sun, Moon, Heart } from "lucide-react";
+import { Shield, Sun, Moon, Heart } from "lucide-react";
 import RadarChart from "./RadarChart";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
 import type { SkinTypeData } from "@/lib/result-content";
@@ -210,11 +210,12 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
             ))}
           </div>
           {data.m5.quote && (
-            <div className="text-center max-w-2xl mx-auto p-8 rounded-2xl bg-[#1B3A5C] text-white">
-              <Sparkles className="w-6 h-6 mx-auto mb-4 opacity-70" />
-              <blockquote className="text-xl md:text-2xl font-light leading-relaxed">
+            <div className="text-center max-w-2xl mx-auto py-10 md:py-14 px-6">
+              <span className="block text-4xl md:text-5xl text-[#C9A86C]/40 font-serif leading-none mb-4">"</span>
+              <blockquote className="text-xl md:text-2xl font-light leading-relaxed text-[#1A1A1A] tracking-wide">
                 {data.m5.quote}
               </blockquote>
+              <span className="block text-4xl md:text-5xl text-[#C9A86C]/40 font-serif leading-none mt-4 rotate-180">"</span>
             </div>
           )}
         </div>
