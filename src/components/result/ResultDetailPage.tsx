@@ -129,68 +129,6 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
         </div>
       </section>
 
-      {/* Daily Routine */}
-      <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-[#F8F7F3]">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-10">
-            {data.m4.title || "我们建议的护肤日常"}
-          </h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            {[
-              { title: "优雅日常", subtitle: "每日专属的精简守护", icon: Sun },
-              { title: "居家仪式", subtitle: "享受 DIY 的美好时光", icon: Home },
-              { title: "单品好物", subtitle: "随时随地按需使用", icon: ShoppingBag },
-              { title: "专业水疗", subtitle: "沉静式悦己体验", icon: SoapDispenserDroplet },
-            ].map((item, i) => {
-              const Icon = item.icon;
-              return (
-                <a
-                  key={i}
-                  href="https://nihplod.cn/guide"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group block bg-white rounded-2xl p-8 shadow-sm border border-[#E8E2D9] hover:shadow-md hover:border-[#C9A86C]/50 transition-all"
-                >
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <h3 className="text-xl font-medium text-[#1A1A1A] mb-1 group-hover:text-[#1B3A5C] transition-colors">
-                        {item.title}
-                      </h3>
-                      <p className="text-sm text-[#8A8A8A] leading-[1.85]">{item.subtitle}</p>
-                    </div>
-                    <Icon className="w-11 h-11 text-[#C9A86C] stroke-[1.25] flex-shrink-0" />
-                  </div>
-                </a>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Blind Spots */}
-      {data.m6.reminders.length > 0 && (
-        <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-white">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-10">
-              {data.m6.title || "潜在盲区"}
-            </h2>
-            <div className="space-y-8">
-              {data.m6.reminders.map((rem, i) => (
-                <div key={i} className="flex gap-6">
-                  <span className="text-3xl md:text-4xl font-extralight text-[#C9A86C]/40 leading-none w-10 text-right">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-medium text-[#1A1A1A] mb-3">{rem.title}</h3>
-                    <p className="text-sm text-[#5E5E5E] leading-[1.85]">{rem.content}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
       {/* Skincare Formula */}
       <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-[#F8F7F3]">
         <div className="max-w-5xl mx-auto">
@@ -247,6 +185,44 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
               <p className="text-base text-[#5E5E5E] leading-[1.85]">{data.m7.onlyOneSet}</p>
             </div>
           )}
+        </div>
+      </section>
+
+      {/* Daily Routine */}
+      <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-white">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-10">
+            {data.m4.title || "我们建议的护肤日常"}
+          </h2>
+          <div className="grid md:grid-cols-2 gap-6">
+            {[
+              { title: "优雅日常", subtitle: "每日专属的精简守护", icon: Sun },
+              { title: "居家仪式", subtitle: "享受 DIY 的美好时光", icon: Home },
+              { title: "单品好物", subtitle: "随时随地按需使用", icon: ShoppingBag },
+              { title: "专业水疗", subtitle: "沉静式悦己体验", icon: SoapDispenserDroplet },
+            ].map((item, i) => {
+              const Icon = item.icon;
+              return (
+                <a
+                  key={i}
+                  href="https://nihplod.cn/guide"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group block bg-white rounded-2xl p-8 shadow-sm border border-[#E8E2D9] hover:shadow-md hover:border-[#C9A86C]/50 transition-all"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <h3 className="text-xl font-medium text-[#1A1A1A] mb-1 group-hover:text-[#1B3A5C] transition-colors">
+                        {item.title}
+                      </h3>
+                      <p className="text-sm text-[#8A8A8A] leading-[1.85]">{item.subtitle}</p>
+                    </div>
+                    <Icon className="w-11 h-11 text-[#C9A86C] stroke-[1.25] flex-shrink-0" />
+                  </div>
+                </a>
+              );
+            })}
+          </div>
         </div>
       </section>
 

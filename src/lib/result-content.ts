@@ -30,16 +30,6 @@ export interface M5Data {
   quote: string;
 }
 
-export interface Reminder {
-  title: string;
-  content: string;
-}
-
-export interface M6Data {
-  title: string;
-  reminders: Reminder[];
-}
-
 export interface Suggestion {
   title: string;
   content: string;
@@ -61,7 +51,6 @@ export interface SkinTypeData {
   m2: M2Data;
   m4: M4Data;
   m5: M5Data;
-  m6: M6Data;
   m7: M7Data;
 }
 
