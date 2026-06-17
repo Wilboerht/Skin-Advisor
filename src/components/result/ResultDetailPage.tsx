@@ -3,6 +3,7 @@
 import React, { useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Shield, Sun, Moon, Heart } from "lucide-react";
 import RadarChart from "./RadarChart";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
@@ -163,14 +164,24 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
                 </p>
               )}
             </div>
-            <div className="md:col-span-8">
-              {formatParagraphs(
-                hasRoutineTabs
-                  ? activeRoutine === "morning"
-                    ? data.m4.morning!
-                    : data.m4.night!
-                  : data.m4.scene || ""
-              )}
+            <div className="md:col-span-8 relative">
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={hasRoutineTabs ? activeRoutine : "scene"}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.25, ease: "easeInOut" }}
+                >
+                  {formatParagraphs(
+                    hasRoutineTabs
+                      ? activeRoutine === "morning"
+                        ? data.m4.morning!
+                        : data.m4.night!
+                      : data.m4.scene || ""
+                  )}
+                </motion.div>
+              </AnimatePresence>
             </div>
           </div>
         </div>
