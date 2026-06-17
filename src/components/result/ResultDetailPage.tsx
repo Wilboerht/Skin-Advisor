@@ -119,7 +119,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       </section>
 
       {/* Advantages */}
-      <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-[#F8F7F3]">
+      <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-white">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-12">
             {data.m5.title || "优势高光"}
@@ -142,11 +142,11 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
           </div>
           {data.m5.quote && (
             <div className="text-center max-w-4xl mx-auto py-10 md:py-14 px-6">
-              <span className="block text-4xl md:text-5xl text-[#C9A86C]/40 font-serif leading-none mb-4">"</span>
               <blockquote className="text-xl md:text-2xl font-light leading-relaxed text-[#1A1A1A] tracking-wide md:whitespace-nowrap">
+                <span className="text-[#C9A86C]/50 font-bold">「</span>
                 {data.m5.quote}
+                <span className="text-[#C9A86C]/50 font-bold">」</span>
               </blockquote>
-              <span className="block text-4xl md:text-5xl text-[#C9A86C]/40 font-serif leading-none mt-4 rotate-180">"</span>
             </div>
           )}
         </div>
