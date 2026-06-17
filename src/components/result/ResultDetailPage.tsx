@@ -70,10 +70,10 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-light tracking-tight leading-[0.95] mb-5">
               {data.typeName}
             </h1>
-            <p className="text-base opacity-80 font-light leading-relaxed max-w-xl mb-6">
+            <p className="text-base opacity-80 font-light leading-[1.85] max-w-xl mb-6">
               {data.m1.persona}
             </p>
-            <p className="text-base text-[#5E5E5E] font-light tracking-wide leading-relaxed">
+            <p className="text-base text-[#5E5E5E] font-light leading-[1.85]">
               {data.m1.slogan}
             </p>
           </div>
@@ -104,7 +104,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
           {(data.m3.title?.trim() || data.m3.analysis?.trim()) && (
             <div className="mt-16 md:mt-20">
               {data.m3.title?.trim() && (
-                <h2 className="text-2xl md:text-3xl font-light text-[#1A1A1A] tracking-tight mb-6">
+                <h2 className="text-2xl md:text-3xl font-light text-[#1A1A1A] tracking-tight mb-10">
                   {data.m3.title}
                 </h2>
               )}
@@ -121,7 +121,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       {/* Advantages */}
       <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-white">
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-12">
+          <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-10">
             {data.m5.title || "优势高光"}
           </h2>
           <div className="grid md:grid-cols-2 gap-6 mb-12">
@@ -136,7 +136,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
                   </span>
                   <h3 className="text-lg font-medium text-[#1A1A1A]">{adv.title}</h3>
                 </div>
-                <p className="text-[#5E5E5E] leading-relaxed text-base">{adv.content}</p>
+                <p className="text-[#5E5E5E] leading-[1.85] text-sm">{adv.content}</p>
               </div>
             ))}
           </div>
@@ -234,8 +234,8 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
               <div key={i} className="flex gap-5 py-6 first:pt-0 last:pb-0">
                 <Shield className="w-5 h-5 text-[#B76E79] flex-shrink-0 mt-0.5" />
                 <div>
-                  <h3 className="text-base font-medium text-[#1A1A1A] mb-2">{rem.title}</h3>
-                  <p className="text-base text-[#5E5E5E] leading-relaxed">{rem.content}</p>
+                  <h3 className="text-base font-medium text-[#1A1A1A] mb-3">{rem.title}</h3>
+                  <p className="text-sm text-[#5E5E5E] leading-[1.85]">{rem.content}</p>
                 </div>
               </div>
             ))}
@@ -250,7 +250,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
             {data.m7.title || `${data.typeName}的精准护肤公式`}
           </h2>
           {data.m7.formulaCore && (
-            <p className="text-lg text-[#8A8A8A] font-light mb-10 tracking-wide">
+            <p className="text-lg text-[#8A8A8A] font-light mb-10 leading-[1.85]">
               {data.m7.formulaCore}
             </p>
           )}
@@ -261,14 +261,14 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
                   <Heart className="w-5 h-5 text-[#B76E79]" />
                   <h3 className="text-base font-medium text-[#1A1A1A]">{sug.title}</h3>
                 </div>
-                <p className="text-base text-[#5E5E5E] leading-relaxed">{sug.content}</p>
+                <p className="text-sm text-[#5E5E5E] leading-[1.85]">{sug.content}</p>
               </div>
             ))}
           </div>
 
           {data.m7.ingredientTable.length > 0 && (
             <div className="overflow-x-auto mb-12">
-              <table className="w-full text-base border-collapse">
+              <table className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="border-b border-[#D9D0C3]">
                     {ingredientHeaders.map((h) => (
@@ -297,7 +297,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
             <div className="bg-[#1B3A5C] text-white rounded-2xl p-8 md:p-10">
               <p className="text-xs uppercase tracking-[0.25em] text-white/60 mb-3">If Only One Set</p>
               <h3 className="text-xl md:text-2xl font-light mb-4">如果只能选一套</h3>
-              <p className="text-base text-white/90 leading-relaxed">{data.m7.onlyOneSet}</p>
+              <p className="text-base text-white/90 leading-[1.85]">{data.m7.onlyOneSet}</p>
             </div>
           )}
         </div>
@@ -310,14 +310,14 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
           <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-4">
             肤质雷达图
           </h2>
-          <p className="text-base text-[#8A8A8A] mb-10 max-w-xl">
+          <p className="text-base text-[#8A8A8A] mb-10 max-w-xl leading-[1.85]">
             五维肌肤画像：水润度、细腻度、光泽度、紧致度、稳定度。
           </p>
           <div className="bg-[#FDFCFA] rounded-2xl p-6 md:p-10 border border-[#E8E2D9]">
             <RadarChart data={data.m8.radar} fillColor={theme.from} strokeColor={theme.stroke} />
             {data.m8.interpretation && (
               <div className="mt-8 text-center max-w-2xl mx-auto">
-                <blockquote className="text-lg md:text-xl font-light text-[#1B3A5C]">
+                <blockquote className="text-lg md:text-xl font-light text-[#1B3A5C] leading-[1.85]">
                   {data.m8.interpretation}
                 </blockquote>
               </div>
@@ -333,7 +333,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
           <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-4">
             想知道你的真实肤质类型吗？
           </h2>
-          <p className="text-base text-[#5E5E5E] font-light leading-relaxed mb-10 max-w-xl mx-auto">
+          <p className="text-base text-[#5E5E5E] font-light leading-[1.85] mb-10 max-w-xl mx-auto">
             回答几个简单问题，即可获得专属肌肤诊断与护肤建议。
           </p>
           <Link
