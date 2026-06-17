@@ -20,7 +20,9 @@ export interface M3Data {
 
 export interface M4Data {
   title: string;
-  scene: string;
+  scene?: string;
+  morning?: string;
+  night?: string;
 }
 
 export interface Advantage {

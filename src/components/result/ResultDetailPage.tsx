@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Sparkles, Shield, Sun, Moon, Heart } from "lucide-react";
@@ -47,6 +47,8 @@ function formatParagraphs(text: string): React.ReactElement {
 
 export default function ResultDetailPage({ data }: ResultDetailPageProps) {
   const theme = typeThemes[data.route] || typeThemes.jiejinkuangmo;
+  const hasRoutineTabs = Boolean(data.m4.morning && data.m4.night);
+  const [activeRoutine, setActiveRoutine] = useState<"morning" | "night">("morning");
 
   const ingredientHeaders = useMemo(() => {
     if (!data.m7.ingredientTable.length) return [];
@@ -123,19 +125,52 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
           </h2>
           <div className="grid md:grid-cols-12 gap-8">
             <div className="md:col-span-4 space-y-6">
-              <div className="p-6 rounded-xl bg-[#F5F2ED] border border-[#E8E2D9]">
+              <button
+                type="button"
+                onClick={() => hasRoutineTabs && setActiveRoutine("morning")}
+                disabled={!hasRoutineTabs}
+                className={`w-full text-left p-6 rounded-xl transition-all ${
+                  hasRoutineTabs
+                    ? activeRoutine === "morning"
+                      ? "bg-[#F5F2ED] border-2 border-[#C9A86C] shadow-sm cursor-pointer"
+                      : "bg-[#FAF8F5] border border-[#E8E2D9] hover:border-[#C9A86C]/50 cursor-pointer"
+                    : "bg-[#F5F2ED] border border-[#E8E2D9]"
+                }`}
+              >
                 <Sun className="w-6 h-6 text-[#C9A86C] mb-3" />
                 <p className="text-sm font-medium text-[#1A1A1A]">晨间仪式</p>
                 <p className="text-xs text-[#8A8A8A] mt-1">温和清洁 · 精华滋养 · 防晒锁护</p>
-              </div>
-              <div className="p-6 rounded-xl bg-[#F5F2ED] border border-[#E8E2D9]">
+              </button>
+              <button
+                type="button"
+                onClick={() => hasRoutineTabs && setActiveRoutine("night")}
+                disabled={!hasRoutineTabs}
+                className={`w-full text-left p-6 rounded-xl transition-all ${
+                  hasRoutineTabs
+                    ? activeRoutine === "night"
+                      ? "bg-[#F5F2ED] border-2 border-[#C9A86C] shadow-sm cursor-pointer"
+                      : "bg-[#FAF8F5] border border-[#E8E2D9] hover:border-[#C9A86C]/50 cursor-pointer"
+                    : "bg-[#F5F2ED] border border-[#E8E2D9]"
+                }`}
+              >
                 <Moon className="w-6 h-6 text-[#C9A86C] mb-3" />
                 <p className="text-sm font-medium text-[#1A1A1A]">夜间修护</p>
                 <p className="text-xs text-[#8A8A8A] mt-1">深层精华 · 脂质体面膜 · 面霜封存</p>
-              </div>
+              </button>
+              {!hasRoutineTabs && (
+                <p className="text-xs text-[#8A8A8A] px-1">
+                  你的护肤节奏从容统一，以下日常适用于晨间与夜间。
+                </p>
+              )}
             </div>
             <div className="md:col-span-8">
-              {formatParagraphs(data.m4.scene)}
+              {formatParagraphs(
+                hasRoutineTabs
+                  ? activeRoutine === "morning"
+                    ? data.m4.morning!
+                    : data.m4.night!
+                  : data.m4.scene || ""
+              )}
             </div>
           </div>
         </div>
