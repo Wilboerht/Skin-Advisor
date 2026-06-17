@@ -56,24 +56,26 @@ export function QuestionStep({
         className="w-full"
       >
         {/* Header - Centered & Clean */}
-        <div className="text-center mb-8 md:mb-10 pt-4 sm:pt-12 md:pt-8">
-          {/* Progress Indicator */}
-          <m.div
-            className="text-xs md:text-sm tracking-[0.2em] text-[#8B7355] font-medium mb-5 md:mb-6"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.05, duration: 0.5 }}
-          >
-            第 {currentStep} / {totalSteps} 题
-          </m.div>
-          <m.h2
-            className="text-2xl md:text-4xl font-serif text-[#1A1A1A] mb-4 leading-snug max-w-3xl mx-auto"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1, duration: 0.5 }}
-          >
-            {question.question}
-          </m.h2>
+        <div className="text-left mb-8 md:mb-10 pt-4 sm:pt-12 md:pt-8">
+          <div className="flex flex-wrap items-baseline gap-2 md:gap-3 mb-4">
+            {/* Progress Indicator */}
+            <m.div
+              className="text-xs md:text-sm tracking-[0.15em] text-[#8B7355] font-medium"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.05, duration: 0.5 }}
+            >
+              NO.第 {currentStep} / {totalSteps} 题
+            </m.div>
+            <m.h2
+              className="text-2xl md:text-3xl font-serif text-[#1A1A1A] leading-snug"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1, duration: 0.5 }}
+            >
+              {question.question}
+            </m.h2>
+          </div>
 
           {question.subtext && (
             <m.p
