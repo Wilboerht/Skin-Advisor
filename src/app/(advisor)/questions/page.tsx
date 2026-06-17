@@ -8,7 +8,7 @@ import Image from "next/image";
 import { GenderSelection } from "@/components/advisor/GenderSelection";
 
 import { m, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, LogOut, ArrowRight, History } from "lucide-react";
+import { ChevronLeft, ChevronRight, LogOut, ArrowRight } from "lucide-react";
 import { HomeSvg } from "@/components/icons/HomeSvg";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { cn } from "@/lib/utils";
@@ -22,11 +22,8 @@ export default function QuestionsPage() {
     const [committedAnswers, setCommittedAnswers] = useState<Record<string, unknown>>({});
     const [direction, setDirection] = useState(0);
     const [showExitConfirm, setShowExitConfirm] = useState(false);
-    const [showResumeModal, setShowResumeModal] = useState(false);
-    const [, setHasSavedProgress] = useState(false);
     const { trackQuestionnaireStart, trackQuestionnaireComplete } = useAdvisorAnalytics();
     const hasTrackedStart = useRef(false);
-    const hasCheckedResume = useRef(false);
 
     // 追踪答题质量
     const sessionStartTime = useRef(0);
@@ -104,7 +101,7 @@ export default function QuestionsPage() {
         }
     }, [questions.length, currentStepIndex]);
 
-    // 恢复之前的状态（用户选择继续时调用）
+    // 恢复之前的状态（从扫脸页点击“返回修改”时调用）
     const resumeSavedProgress = () => {
         try {
             const savedAnswers = localStorage.getItem("advisor_answers");
@@ -138,31 +135,6 @@ export default function QuestionsPage() {
                 }
             }
         } catch (e) { console.error(e); }
-
-        setShowResumeModal(false);
-    };
-
-    // 重新开始（清除保存的进度）
-    const startFresh = () => {
-        localStorage.removeItem("advisor_answers");
-        localStorage.removeItem("advisor_gender");
-        localStorage.removeItem("advisor_step");
-        localStorage.removeItem("advisor_face_images");
-        localStorage.removeItem("advisor_result");
-        // 保留昵称和头像，因为这可能是刚才在首页设置的
-        // localStorage.removeItem("advisor_nickname");
-        // localStorage.removeItem("advisor_avatar");
-
-        setGender(null);
-        setAnswers({});
-        setCommittedAnswers({});
-        setCurrentStepIndex(0);
-        setShowResumeModal(false);
-        setPendingAnswers(null);
-        setShowQualityWarning(false);
-        // 重置防刷检测相关的计时器与索引
-        sessionStartTime.current = Date.now();
-        startStepIndex.current = 0;
     };
 
     // resumeSavedProgress ref（必须在函数定义之后）
@@ -171,33 +143,16 @@ export default function QuestionsPage() {
         resumeSavedProgressRef.current = resumeSavedProgress;
     });
 
-    // 检测是否有保存的进度
+    // 从扫脸页点击“返回修改”时自动恢复进度
+    const hasCheckedResume = useRef(false);
     useEffect(() => {
         if (hasCheckedResume.current) return;
         hasCheckedResume.current = true;
 
         try {
-            const savedAnswers = localStorage.getItem("advisor_answers");
-            const savedGender = localStorage.getItem("advisor_gender");
-            const savedStep = localStorage.getItem("advisor_step");
-
-            // 检查是否有有效的保存进度（至少有性别或已回答的问题）
-            const hasProgress = savedGender || (savedAnswers && Object.keys(JSON.parse(savedAnswers)).length > 0);
-
-            if (hasProgress && savedStep) {
-                // 如果是从扫脸页点击“返回修改”进来的 (带 ?edit=true)，则自动恢复，不弹窗询问
-                const urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.get('edit') === 'true') {
-                    resumeSavedProgressRef.current();
-                    return;
-                }
-
-                // 否则显示选择弹窗（延迟到下一帧避免同步 setState）
-                const id = requestAnimationFrame(() => {
-                    setHasSavedProgress(true);
-                    setShowResumeModal(true);
-                });
-                return () => cancelAnimationFrame(id);
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('edit') === 'true') {
+                resumeSavedProgressRef.current();
             }
         } catch (e) { console.error(e); }
     }, []);
@@ -676,46 +631,6 @@ export default function QuestionsPage() {
                 )}
             </AnimatePresence>
 
-            {/* Resume Progress Modal */}
-            <AnimatePresence>
-                {showResumeModal && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                        <m.div
-                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                            className="absolute inset-0 bg-[#FDFBF7]/90 backdrop-blur-sm"
-                        />
-                        <m.div
-                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                            className="relative w-full max-w-sm bg-white/70 backdrop-blur-xl p-8 shadow-[0_24px_48px_-12px_rgba(0,0,0,0.08)] border border-[#D4CFC5] text-center rounded-xl overflow-hidden"
-                        >
-                            <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }} />
-                            <div className="relative z-10">
-                                <h3 className="text-xl font-serif text-[#1A1A1A] mb-2">未完成的测试</h3>
-                                <p className="text-sm text-[#5E5E5E] mb-8 font-light leading-relaxed">
-                                    为您自动找回了上次的进度，<br />是否立即继续完成？
-                                </p>
-                                <div className="flex flex-col items-center gap-4">
-                                    <button
-                                        onClick={resumeSavedProgress}
-                                        className="w-full h-11 rounded-md bg-[#4A3728] hover:bg-[#3D2E20] text-[#FDFBF7] text-[13px] font-medium tracking-[0.15em] transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-2"
-                                    >
-                                        <span>继续上次测试</span>
-                                        <ArrowRight className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                        onClick={startFresh}
-                                        className="text-[12px] tracking-[0.15em] text-[#3D4430]/40 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
-                                    >
-                                        暂时不用，重新开始
-                                    </button>
-                                </div>
-                            </div>
-                        </m.div>
-                    </div>
-                )}
-            </AnimatePresence>
         </div>
     );
 }
