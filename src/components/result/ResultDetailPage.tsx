@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Heart, Sun, Home, ShoppingBag, SoapDispenserDroplet, Info } from "lucide-react";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
+import Threads from "@/components/ui/Threads";
 import type { SkinTypeData } from "@/lib/result-content";
 interface ResultDetailPageProps {
   data: SkinTypeData;
@@ -100,8 +101,15 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       </section>
 
       {/* Advantages */}
-      <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-white">
-        <div className="max-w-5xl mx-auto">
+      <section className="relative overflow-hidden py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-white">
+        <Threads
+          className="absolute inset-0 z-0 pointer-events-none"
+          color={[0.92, 0.84, 0.66]}
+          amplitude={1}
+          distance={0}
+          enableMouseInteraction={false}
+        />
+        <div className="relative z-10 max-w-5xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-10">
             {data.m5.title || "优势高光"}
           </h2>
