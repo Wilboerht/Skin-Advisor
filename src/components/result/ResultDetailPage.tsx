@@ -118,6 +118,40 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
         </div>
       </section>
 
+      {/* Advantages */}
+      <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-[#F8F7F3]">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-12">
+            {data.m5.title || "优势高光"}
+          </h2>
+          <div className="grid md:grid-cols-2 gap-6 mb-12">
+            {data.m5.advantages.map((adv, i) => (
+              <div
+                key={i}
+                className="bg-white rounded-2xl p-8 shadow-sm border border-[#E8E2D9] hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="flex items-center justify-center w-8 h-8 rounded-full bg-[#1B3A5C] text-white text-sm font-medium">
+                    {i + 1}
+                  </span>
+                  <h3 className="text-lg font-medium text-[#1A1A1A]">{adv.title}</h3>
+                </div>
+                <p className="text-[#5E5E5E] leading-relaxed text-sm">{adv.content}</p>
+              </div>
+            ))}
+          </div>
+          {data.m5.quote && (
+            <div className="text-center max-w-4xl mx-auto py-10 md:py-14 px-6">
+              <span className="block text-4xl md:text-5xl text-[#C9A86C]/40 font-serif leading-none mb-4">"</span>
+              <blockquote className="text-xl md:text-2xl font-light leading-relaxed text-[#1A1A1A] tracking-wide md:whitespace-nowrap">
+                {data.m5.quote}
+              </blockquote>
+              <span className="block text-4xl md:text-5xl text-[#C9A86C]/40 font-serif leading-none mt-4 rotate-180">"</span>
+            </div>
+          )}
+        </div>
+      </section>
+
       {/* Daily Routine */}
       <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-[#F8F7F3]">
         <div className="max-w-4xl mx-auto">
@@ -184,40 +218,6 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
               </AnimatePresence>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Advantages */}
-      <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-[#F8F7F3]">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-12">
-            {data.m5.title || "优势高光"}
-          </h2>
-          <div className="grid md:grid-cols-2 gap-6 mb-12">
-            {data.m5.advantages.map((adv, i) => (
-              <div
-                key={i}
-                className="bg-white rounded-2xl p-8 shadow-sm border border-[#E8E2D9] hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="flex items-center justify-center w-8 h-8 rounded-full bg-[#1B3A5C] text-white text-sm font-medium">
-                    {i + 1}
-                  </span>
-                  <h3 className="text-lg font-medium text-[#1A1A1A]">{adv.title}</h3>
-                </div>
-                <p className="text-[#5E5E5E] leading-relaxed text-sm">{adv.content}</p>
-              </div>
-            ))}
-          </div>
-          {data.m5.quote && (
-            <div className="text-center max-w-4xl mx-auto py-10 md:py-14 px-6">
-              <span className="block text-4xl md:text-5xl text-[#C9A86C]/40 font-serif leading-none mb-4">"</span>
-              <blockquote className="text-xl md:text-2xl font-light leading-relaxed text-[#1A1A1A] tracking-wide md:whitespace-nowrap">
-                {data.m5.quote}
-              </blockquote>
-              <span className="block text-4xl md:text-5xl text-[#C9A86C]/40 font-serif leading-none mt-4 rotate-180">"</span>
-            </div>
-          )}
         </div>
       </section>
 
