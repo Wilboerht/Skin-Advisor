@@ -246,14 +246,22 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
           )}
 
           {data.m7.onlyOneSet && (
-            <div className="relative bg-[#F5F1EB] text-[#1A1A1A] rounded-2xl p-8 md:p-10 border border-dashed border-[#D4C4A8] overflow-hidden">
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-3 bg-[#F8F7F3] rounded-b-xl border-b border-dashed border-[#D4C4A8]" aria-hidden="true" />
-              <h3 className="text-xl md:text-2xl font-light mb-5 pt-2">如果只能选一套</h3>
-              <p className="text-base text-[#5E5E5E] leading-[1.85] mb-6">{data.m7.onlyOneSet}</p>
-              <div className="flex items-center justify-center gap-3 text-xs tracking-widest text-[#C9A86C] uppercase">
-                <span className="w-8 h-px border-t border-dashed border-[#C9A86C]/60" />
-                <span>行李限额 · 四件必备</span>
-                <span className="w-8 h-px border-t border-dashed border-[#C9A86C]/60" />
+            <div className="bg-[#F5F1EB] rounded-2xl overflow-hidden border border-[#E8E2D9]">
+              <div className="grid md:grid-cols-2 gap-0">
+                <div className="p-8 md:p-10 flex flex-col justify-center">
+                  <h3 className="text-xl md:text-2xl font-light mb-5">如果只能选一套</h3>
+                  <p className="text-base text-[#5E5E5E] leading-[1.85] mb-6">{data.m7.onlyOneSet}</p>
+                  <div className="flex items-center gap-3 text-xs tracking-widest text-[#C9A86C] uppercase">
+                    <span className="w-6 h-px border-t border-dashed border-[#C9A86C]/60" />
+                    <span>行李限额 · 四件必备</span>
+                  </div>
+                </div>
+                <div className="relative min-h-[240px] md:min-h-full bg-[#E8E2D9]">
+                  {/* 替换为风景 UI 图片 */}
+                  <div className="absolute inset-0 flex items-center justify-center text-sm text-[#8A8A8A]">
+                    风景 UI 图片占位
+                  </div>
+                </div>
               </div>
             </div>
           )}
