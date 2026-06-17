@@ -34,7 +34,7 @@ function formatParagraphs(text: string): React.ReactElement {
         return (
           <p
             key={i}
-            className={`mb-5 last:mb-0 text-[#4A4A4A] leading-[1.85] text-[15px] md:text-base ${
+            className={`mb-5 last:mb-0 text-[#4A4A4A] leading-[1.85] text-base ${
               isSignature ? "text-right" : ""
             }`}
           >
@@ -70,10 +70,10 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-light tracking-tight leading-[0.95] mb-5">
               {data.typeName}
             </h1>
-            <p className="text-base md:text-lg opacity-80 font-light leading-relaxed max-w-xl mb-6">
+            <p className="text-base opacity-80 font-light leading-relaxed max-w-xl mb-6">
               {data.m1.persona}
             </p>
-            <p className="text-[15px] md:text-base text-[#5E5E5E] font-light tracking-wide leading-relaxed">
+            <p className="text-base text-[#5E5E5E] font-light tracking-wide leading-relaxed">
               {data.m1.slogan}
             </p>
           </div>
@@ -109,7 +109,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
                 </h2>
               )}
               {data.m3.analysis?.trim() && (
-                <div className="text-[#4A4A4A] leading-[1.85] text-[15px] md:text-base">
+                <div className="text-[#4A4A4A] leading-[1.85] text-base">
                   {formatParagraphs(data.m3.analysis)}
                 </div>
               )}
@@ -136,18 +136,18 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
                   </span>
                   <h3 className="text-lg font-medium text-[#1A1A1A]">{adv.title}</h3>
                 </div>
-                <p className="text-[#5E5E5E] leading-relaxed text-sm">{adv.content}</p>
+                <p className="text-[#5E5E5E] leading-relaxed text-base">{adv.content}</p>
               </div>
             ))}
           </div>
           {data.m5.quote && (
             <div className="text-center max-w-4xl mx-auto py-10 md:py-14 px-6">
               <blockquote className="text-xl md:text-2xl font-light leading-relaxed text-[#1A1A1A] tracking-wide md:whitespace-nowrap">
-                <span className="text-2xl md:text-4xl font-bold" style={{ color: theme.from, opacity: 0.5 }}>「</span>
+                <span className="text-2xl md:text-4xl font-bold text-[#F0EDE1]">「</span>
                 {" "}
                 {data.m5.quote}
                 {" "}
-                <span className="text-2xl md:text-4xl font-bold" style={{ color: theme.from, opacity: 0.5 }}>」</span>
+                <span className="text-2xl md:text-4xl font-bold text-[#F0EDE1]">」</span>
               </blockquote>
             </div>
           )}
@@ -175,7 +175,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
                 }`}
               >
                 <Sun className="w-6 h-6 text-[#C9A86C] mb-3" />
-                <p className="text-sm font-medium text-[#1A1A1A]">晨间仪式</p>
+                <p className="text-base font-medium text-[#1A1A1A]">晨间仪式</p>
                 <p className="text-xs text-[#8A8A8A] mt-1">温和清洁 · 精华滋养 · 防晒锁护</p>
               </button>
               <button
@@ -191,7 +191,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
                 }`}
               >
                 <Moon className="w-6 h-6 text-[#C9A86C] mb-3" />
-                <p className="text-sm font-medium text-[#1A1A1A]">夜间修护</p>
+                <p className="text-base font-medium text-[#1A1A1A]">夜间修护</p>
                 <p className="text-xs text-[#8A8A8A] mt-1">深层精华 · 脂质体面膜 · 面霜封存</p>
               </button>
               {!hasRoutineTabs && (
@@ -229,13 +229,13 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
           <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-10">
             {data.m6.title || "潜在盲区"}
           </h2>
-          <div className="space-y-6">
+          <div className="divide-y divide-[#E8E2D9]">
             {data.m6.reminders.map((rem, i) => (
-              <div key={i} className="flex gap-5 p-6 rounded-xl bg-[#FDFCFA] border border-[#E8E2D9]">
+              <div key={i} className="flex gap-5 py-6 first:pt-0 last:pb-0">
                 <Shield className="w-5 h-5 text-[#B76E79] flex-shrink-0 mt-0.5" />
                 <div>
                   <h3 className="text-base font-medium text-[#1A1A1A] mb-2">{rem.title}</h3>
-                  <p className="text-sm text-[#5E5E5E] leading-relaxed">{rem.content}</p>
+                  <p className="text-base text-[#5E5E5E] leading-relaxed">{rem.content}</p>
                 </div>
               </div>
             ))}
@@ -261,14 +261,14 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
                   <Heart className="w-5 h-5 text-[#B76E79]" />
                   <h3 className="text-base font-medium text-[#1A1A1A]">{sug.title}</h3>
                 </div>
-                <p className="text-sm text-[#5E5E5E] leading-relaxed">{sug.content}</p>
+                <p className="text-base text-[#5E5E5E] leading-relaxed">{sug.content}</p>
               </div>
             ))}
           </div>
 
           {data.m7.ingredientTable.length > 0 && (
             <div className="overflow-x-auto mb-12">
-              <table className="w-full text-sm border-collapse">
+              <table className="w-full text-base border-collapse">
                 <thead>
                   <tr className="border-b border-[#D9D0C3]">
                     {ingredientHeaders.map((h) => (
@@ -297,7 +297,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
             <div className="bg-[#1B3A5C] text-white rounded-2xl p-8 md:p-10">
               <p className="text-xs uppercase tracking-[0.25em] text-white/60 mb-3">If Only One Set</p>
               <h3 className="text-xl md:text-2xl font-light mb-4">如果只能选一套</h3>
-              <p className="text-white/90 leading-relaxed">{data.m7.onlyOneSet}</p>
+              <p className="text-base text-white/90 leading-relaxed">{data.m7.onlyOneSet}</p>
             </div>
           )}
         </div>
@@ -310,7 +310,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
           <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-4">
             肤质雷达图
           </h2>
-          <p className="text-[#8A8A8A] mb-10 max-w-xl">
+          <p className="text-base text-[#8A8A8A] mb-10 max-w-xl">
             五维肌肤画像：水润度、细腻度、光泽度、紧致度、稳定度。
           </p>
           <div className="bg-[#FDFCFA] rounded-2xl p-6 md:p-10 border border-[#E8E2D9]">
@@ -326,37 +326,6 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
         </div>
       </section>
 
-      {/* Persona */}
-      <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-[#F8F7F3]">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-10">
-            {data.m9.title || "同类画像"}
-          </h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            {[
-              { title: "生活方式", content: data.m9.lifestyle },
-              { title: "审美偏好", content: data.m9.aesthetic },
-              { title: "精神气质", content: data.m9.spirit },
-              { title: "可能出现的场合", content: data.m9.occasions },
-            ]
-              .filter((item) => item.content)
-              .map((item, i) => (
-                <div
-                  key={i}
-                  className={`bg-white rounded-2xl p-8 shadow-sm border border-[#E8E2D9] ${
-                    item.title === "可能出现的场合" ? "md:col-span-2" : ""
-                  }`}
-                >
-                  <h3 className="text-sm uppercase tracking-wider text-[#8A8A8A] mb-4">{item.title}</h3>
-                  <div className="text-[#4A4A4A] leading-relaxed text-sm">
-                    {formatParagraphs(item.content)}
-                  </div>
-                </div>
-              ))}
-          </div>
-        </div>
-      </section>
-
       {/* CTA */}
       <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-white">
         <div className="max-w-3xl mx-auto text-center">
@@ -364,7 +333,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
           <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-4">
             想知道你的真实肤质类型吗？
           </h2>
-          <p className="text-[#5E5E5E] font-light leading-relaxed mb-10 max-w-xl mx-auto">
+          <p className="text-base text-[#5E5E5E] font-light leading-relaxed mb-10 max-w-xl mx-auto">
             回答几个简单问题，即可获得专属肌肤诊断与护肤建议。
           </p>
           <Link
