@@ -64,10 +64,6 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       >
         <div className="relative z-10 max-w-6xl mx-auto w-full pt-28 pb-14 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-[#1A1A1A]/10 bg-[#1A1A1A]/[0.02] text-[13px] tracking-wider mb-5">
-              <Sparkles className="w-3 h-3" />
-              <span>{data.scoreRange} 分 · {data.m1.scoreRange || data.scoreRange}</span>
-            </div>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-light tracking-tight leading-[0.95] mb-5">
               {data.typeName}
             </h1>

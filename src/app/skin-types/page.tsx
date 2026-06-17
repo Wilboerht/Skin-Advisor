@@ -65,9 +65,9 @@ export default function ResultIndexPage() {
                   alt=""
                   width={160}
                   height={260}
-                  className="absolute -right-3 -bottom-10 w-32 h-56 md:w-40 md:h-72 object-contain opacity-100 group-hover:scale-105 transition-transform duration-500 pointer-events-none select-none"
+                  className="absolute -right-3 -bottom-4 w-28 h-48 md:w-36 md:h-64 object-contain opacity-100 group-hover:scale-105 transition-transform duration-500 pointer-events-none select-none"
                 />
-                <div className="relative z-10 pr-20 md:pr-24">
+                <div className="relative z-10 pr-16 md:pr-20">
                   <h2 className="text-xl md:text-2xl font-serif tracking-wide text-[#1A1A1A] mb-2 group-hover:text-[#3D4430] transition-colors duration-500">
                     {type.typeName}
                   </h2>
