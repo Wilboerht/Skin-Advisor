@@ -57,15 +57,16 @@ export function QuestionStep({
       >
         {/* Header - Centered & Clean */}
         <div className="text-left mb-8 md:mb-10 pt-4 sm:pt-12 md:pt-8">
-          <div className="flex flex-wrap items-baseline gap-2 md:gap-3 mb-4">
+          <div className="flex flex-wrap items-baseline gap-3 md:gap-4 mb-4">
             {/* Progress Indicator */}
             <m.div
-              className="text-xs md:text-sm tracking-[0.15em] text-[#8B7355] font-medium"
+              className="flex items-end gap-1 md:gap-1.5 tracking-[0.1em] text-[#8B7355] font-light"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.05, duration: 0.5 }}
             >
-              NO.第 {currentStep} / {totalSteps} 题
+              <span className="text-4xl md:text-5xl">NO.</span>
+              <span className="text-xl md:text-2xl">{String(currentStep).padStart(2, "0")}/{String(totalSteps).padStart(2, "0")}</span>
             </m.div>
             <m.h2
               className="text-2xl md:text-3xl font-serif text-[#1A1A1A] leading-snug"
