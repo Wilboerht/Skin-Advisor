@@ -28,11 +28,19 @@ function formatParagraphs(text: string): React.ReactElement {
   const paragraphs = text.split("\n\n").filter((p) => p.trim());
   return (
     <>
-      {paragraphs.map((p, i) => (
-        <p key={i} className="mb-5 last:mb-0 text-[#4A4A4A] leading-[1.85] text-[15px] md:text-base">
-          {p.trim()}
-        </p>
-      ))}
+      {paragraphs.map((p, i) => {
+        const isSignature = p.trimStart().startsWith("——");
+        return (
+          <p
+            key={i}
+            className={`mb-5 last:mb-0 text-[#4A4A4A] leading-[1.85] text-[15px] md:text-base ${
+              isSignature ? "text-right" : ""
+            }`}
+          >
+            {p.trim()}
+          </p>
+        );
+      })}
     </>
   );
 }
@@ -98,7 +106,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       </section>
 
       {/* Skin Decode */}
-      <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-[#F5F2ED]">
+      <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-[#F8F7F3]">
         <div className="max-w-4xl mx-auto">
           <p className="text-xs uppercase tracking-[0.25em] text-[#8A8A8A] mb-3">Decode</p>
           <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-10">
@@ -138,7 +146,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       </section>
 
       {/* Advantages */}
-      <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-[#F5F2ED]">
+      <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-[#F8F7F3]">
         <div className="max-w-5xl mx-auto">
           <p className="text-xs uppercase tracking-[0.25em] text-[#8A8A8A] mb-3">Highlights</p>
           <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-12">
@@ -193,7 +201,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       </section>
 
       {/* Skincare Formula */}
-      <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-[#F5F2ED]">
+      <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-[#F8F7F3]">
         <div className="max-w-5xl mx-auto">
           <p className="text-xs uppercase tracking-[0.25em] text-[#8A8A8A] mb-3">Formula</p>
           <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-4">
@@ -277,7 +285,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       </section>
 
       {/* Persona */}
-      <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-[#F5F2ED]">
+      <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-[#F8F7F3]">
         <div className="max-w-4xl mx-auto">
           <p className="text-xs uppercase tracking-[0.25em] text-[#8A8A8A] mb-3">Persona</p>
           <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-10">
