@@ -10,21 +10,10 @@ export const metadata: Metadata = {
 };
 
 const stores = [
-  { city: "上海", name: "NIHPLOD 上海 · 滨江精品店", address: "上海市滨江新区淮海中路 1888 号滨江广场 B1-102" },
-  { city: "上海", name: "NIHPLOD 上海 · 东方概念店", address: "上海市浦东新区世纪大道 168 号东方国际中心 LG1-12" },
-  { city: "北京", name: "NIHPLOD 北京 · 晨曦广场店", address: "北京市朝阳区光华路 99 号晨曦广场一层美妆区" },
-  { city: "北京", name: "NIHPLOD 北京 · 银河商城店", address: "北京市朝阳区建国门外大街 66 号银河商城南区 B1" },
-  { city: "杭州", name: "NIHPLOD 杭州 · 西湖概念店", address: "杭州市西湖区龙井路 288 号西湖天地 B1-108" },
-  { city: "成都", name: "NIHPLOD 成都 · 天府精品店", address: "成都市锦江区人民南路 888 号天府国际广场 L2-18" },
-  { city: "深圳", name: "深圳 · 旎柏精品专柜", address: "深圳市南山区滨海大道 1688 号滨海万象中心 B1" },
-  { city: "广州", name: "广州 · 旎柏体验空间", address: "广州市天河区珠江新城华夏路 388 号星辰汇 MU层" },
-  { city: "南京", name: "南京 · 旎柏专柜", address: "南京市玄武区珠江路 288 号金陵广场二期 B1" },
-  { city: "上海", name: "上海 · 旎柏水疗中心", address: "上海市黄浦区外滩滨江路 88 号滨江花园酒店 3 层" },
-  { city: "上海", name: "上海 · 旎柏护肤水疗", address: "上海市静安区南京西路 666 号静安庄园酒店 2 层" },
-  { city: "北京", name: "北京 · 旎柏水疗", address: "北京市朝阳区三里屯北路 18 号三里屯花园酒店 5 层" },
-  { city: "北京", name: "北京 · 旎柏奢宠水疗", address: "北京市朝阳区亮马桥路 88 号亮马河府邸酒店 B1" },
-  { city: "杭州", name: "杭州 · 旎柏谧静水疗", address: "杭州市西湖区杨公堤 66 号西子庄园酒店 1 层" },
-  { city: "成都", name: "成都 · 旎柏谧静水疗", address: "成都市锦江区合江亭街 88 号合江庭院酒店 B1 层" },
+  { type: "Hotel SPA", name: "日出东方凯宾斯基", city: "北京", address: "北京市怀柔区雁栖湖南路11号院" },
+  { type: "Hotel SPA", name: "香格里拉", city: "义乌", address: "浙江省义乌市福田路6号、8号" },
+  { type: "Hotel SPA", name: "托尼洛 · 兰博基尼书苑酒店", city: "苏州", address: "江苏省苏州工业园区星港街168号" },
+  { type: "Hotel SPA", name: "泰禾凯宾斯基", city: "福州", address: "福建省福州市晋安区横屿路1号" },
 ];
 
 export default function ServicesPage() {
@@ -69,18 +58,23 @@ export default function ServicesPage() {
 
             <div className="space-y-5">
               {stores.map((store, i) => (
-                <div key={i} className="flex items-start gap-3">
+                <div key={i} className="grid grid-cols-[auto_1fr] gap-x-3 items-start">
                   <MapPin className="w-4 h-4 text-[#8B7355] mt-1 shrink-0" />
-                  <div>
-                    <span className="text-xs uppercase tracking-[0.15em] text-[#8B7355] mr-2">
+                  <div className="grid grid-cols-[2.5rem_1fr] gap-x-3 gap-y-0.5 items-baseline">
+                    <span className="text-xs uppercase tracking-[0.15em] text-[#8B7355]">
                       {store.city}
                     </span>
-                    <h3 className="text-[15px] font-medium text-[#1A1A1A] inline">
-                      {store.name}
-                    </h3>
-                    <p className="text-sm text-[#5E5E5E] font-light leading-relaxed mt-0.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-[15px] font-medium text-[#1A1A1A]">
+                        {store.name}
+                      </h3>
+                      <span className="inline-flex items-center px-2 py-0.5 text-[10px] uppercase tracking-[0.1em] rounded-full bg-[#F5F2ED] text-[#8B7355] border border-[#8B7355]/15">
+                        {store.type}
+                      </span>
+                    </div>
+                    <div className="col-start-2 text-sm text-[#5E5E5E] font-light leading-relaxed">
                       {store.address}
-                    </p>
+                    </div>
                   </div>
                 </div>
               ))}
