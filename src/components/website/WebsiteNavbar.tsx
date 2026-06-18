@@ -247,7 +247,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
 
         {/* 菜单面板 */}
         <div
-          className={`absolute top-0 right-0 h-full w-[min(320px,85vw)] bg-[#F8F7F3] shadow-2xl transform transition-transform duration-500 ease-out ${
+          className={`absolute top-0 right-0 h-full w-[min(320px,85vw)] bg-[#F8F7F3] shadow-2xl rounded-l-3xl transform transition-transform duration-500 ease-out ${
             mobileMenuOpen ? "translate-x-0" : "translate-x-full"
           }`}
         >
