@@ -43,7 +43,7 @@ export default function ServicesPage() {
       <section className="flex-1 flex flex-col justify-center pt-24 md:pt-28 pb-6 md:pb-8 px-6 md:px-12 lg:px-20">
         <div className="w-full max-w-4xl mx-auto text-center">
           {/* Headline */}
-          <div className="mb-6 md:mb-8">
+          <div className="mb-12">
             <h1 className="text-2xl md:text-3xl font-serif text-[#1B3A5C] mb-3 md:mb-4 leading-tight tracking-tight">
               通过专业顾问评估
               <br className="hidden md:block" />
@@ -55,24 +55,9 @@ export default function ServicesPage() {
           </div>
 
           {/* Main Content */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center mb-7 md:mb-9">
-            {/* QR Code */}
-            <div className="flex flex-col items-center order-2 md:order-1">
-              <div className="relative w-40 h-40 md:w-48 md:h-48 rounded-2xl overflow-hidden border border-[#1B3A5C]/10 bg-white p-4 shadow-sm">
-                <Image
-                  src="/images/advisor-qr.jpg"
-                  alt="NIHPLOD 专属护肤顾问微信二维码"
-                  fill
-                  className="object-contain p-2"
-                />
-              </div>
-              <p className="mt-3 text-xs md:text-[13px] text-[#5E5E5E] font-light tracking-wide">
-                微信扫码 · 添加专属顾问
-              </p>
-            </div>
-
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center mb-12">
             {/* Benefits */}
-            <div className="text-left order-1 md:order-2 md:pl-4">
+            <div className="text-left order-1 md:pr-4">
               <h2 className="text-[15px] md:text-base font-medium text-[#1B3A5C] mb-3 tracking-wide">
                 顾问评估包含
               </h2>
@@ -93,6 +78,21 @@ export default function ServicesPage() {
                 先进行 AI 测肤
                 <ArrowRight className="w-3.5 h-3.5 md:w-4 md:h-4" />
               </ViewTransitionLink>
+            </div>
+
+            {/* QR Code */}
+            <div className="flex flex-col items-center md:items-end order-2">
+              <div className="relative w-40 h-40 md:w-48 md:h-48 rounded-2xl overflow-hidden border border-[#1B3A5C]/10 bg-white p-4 shadow-sm">
+                <Image
+                  src="/images/advisor-qr.jpg"
+                  alt="NIHPLOD 专属护肤顾问微信二维码"
+                  fill
+                  className="object-contain p-2"
+                />
+              </div>
+              <p className="mt-3 text-xs md:text-[13px] text-[#5E5E5E] font-light tracking-wide">
+                微信扫码 · 添加专属顾问
+              </p>
             </div>
           </div>
 
