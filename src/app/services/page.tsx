@@ -43,7 +43,7 @@ export default function ServicesPage() {
       <section className="flex-1 flex items-center pt-24 md:pt-28 pb-10 md:pb-12 px-6 md:px-12 lg:px-20">
         <div className="w-full max-w-4xl mx-auto text-center">
           {/* Headline */}
-          <h1 className="text-2xl md:text-4xl font-serif text-[#3D4430] mb-4 leading-snug">
+          <h1 className="text-2xl md:text-4xl font-serif text-[#1B3A5C] mb-4 leading-snug">
             通过专业顾问评估
             <br className="hidden md:block" />
             更好地了解你的肌肤
@@ -56,7 +56,7 @@ export default function ServicesPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-12 items-start mb-10 md:mb-12">
             {/* QR Code */}
             <div className="flex flex-col items-center">
-              <div className="relative w-44 h-44 md:w-52 md:h-52 rounded-2xl overflow-hidden border border-[#3D4430]/10 bg-white p-4 shadow-sm">
+              <div className="relative w-44 h-44 md:w-52 md:h-52 rounded-2xl overflow-hidden border border-[#1B3A5C]/10 bg-white p-4 shadow-sm">
                 <Image
                   src="/images/advisor-qr.jpg"
                   alt="NIHPLOD 专属护肤顾问微信二维码"
@@ -71,13 +71,13 @@ export default function ServicesPage() {
 
             {/* Benefits */}
             <div className="text-left">
-              <h2 className="text-[15px] font-medium text-[#3D4430] mb-4 tracking-wide">
+              <h2 className="text-[15px] font-medium text-[#1B3A5C] mb-4 tracking-wide">
                 顾问评估包含
               </h2>
               <ul className="space-y-3 mb-6">
                 {benefits.map((item, i) => (
                   <li key={i} className="flex items-start gap-3">
-                    <CheckCircle2 className="w-4 h-4 text-[#8B7355] mt-0.5 shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-[#1B3A5C] mt-0.5 shrink-0" />
                     <span className="text-[14px] text-[#5E5E5E] font-light leading-relaxed">
                       {item}
                     </span>
@@ -86,7 +86,7 @@ export default function ServicesPage() {
               </ul>
               <ViewTransitionLink
                 href="/questions"
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#3D4430] text-[#F8F7F3] text-[13px] tracking-[0.1em] rounded-full hover:bg-[#3D4430]/90 transition-all duration-300 hover:shadow-lg hover:shadow-[#3D4430]/10 hover:-translate-y-0.5"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#1B3A5C] text-[#F8F7F3] text-[13px] tracking-[0.1em] rounded-full hover:bg-[#1B3A5C]/90 transition-all duration-300 hover:shadow-lg hover:shadow-[#1B3A5C]/10 hover:-translate-y-0.5"
               >
                 先进行 AI 测肤
                 <ArrowRight className="w-4 h-4" />
@@ -95,14 +95,14 @@ export default function ServicesPage() {
           </div>
 
           {/* Steps */}
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-center gap-6 md:gap-10 pt-8 md:pt-10 border-t border-[#3D4430]/8">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-center gap-6 md:gap-10 pt-8 md:pt-10 border-t border-[#1B3A5C]/8">
             {steps.map((step, i) => (
               <div key={i} className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-[#F5F2ED] flex items-center justify-center text-[#8B7355] shrink-0">
+                <div className="w-8 h-8 rounded-full bg-[#EDF1F5] flex items-center justify-center text-[#1B3A5C] shrink-0">
                   <step.icon className="w-4 h-4" />
                 </div>
                 <div className="text-left">
-                  <h3 className="text-[14px] font-medium text-[#3D4430]">
+                  <h3 className="text-[14px] font-medium text-[#1B3A5C]">
                     {step.title}
                   </h3>
                   <p className="text-[12px] text-[#5E5E5E] font-light leading-relaxed">
@@ -116,16 +116,16 @@ export default function ServicesPage() {
       </section>
 
       {/* 页脚 */}
-      <footer className="py-5 md:py-6 px-6 text-center border-t border-[rgba(61,68,48,0.08)]">
+      <footer className="py-5 md:py-6 px-6 text-center border-t border-[rgba(27,58,92,0.08)]">
         <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-xs tracking-widest text-[#5E5E5E]/60">
           <p>© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
           <span className="hidden sm:inline text-[#5E5E5E]/30">·</span>
           <div className="flex items-center gap-4">
-            <Link href="/privacy" className="hover:text-[#3D4430] transition-colors duration-300">
+            <Link href="/privacy" className="hover:text-[#1B3A5C] transition-colors duration-300">
               隐私政策
             </Link>
             <span className="text-[#5E5E5E]/30">·</span>
-            <Link href="/terms" className="hover:text-[#3D4430] transition-colors duration-300">
+            <Link href="/terms" className="hover:text-[#1B3A5C] transition-colors duration-300">
               服务条款
             </Link>
           </div>
