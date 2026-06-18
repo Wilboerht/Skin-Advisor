@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Loader2, MapPin, ShieldCheck, ArrowRight, ChevronLeft, X } from "lucide-react";
+import { Loader2, MapPin, ShieldCheck, ArrowRight } from "lucide-react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion as m } from "framer-motion";
 import Image from "next/image";
 
@@ -52,6 +53,11 @@ export function OnboardingFlowModal({
     const [locationView, setLocationView] = useState<LocationSubView>("main");
     const [isAgreed, setIsAgreed] = useState(false);
     const [maxVisitedIndex, setMaxVisitedIndex] = useState(0);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     const screens = getScreens();
     const totalScreens = screens.length;
@@ -172,12 +178,15 @@ export function OnboardingFlowModal({
                     transition={{ duration: 0.7, ease: [0.65, 0, 0.35, 1] }}
                 >
                     {/* ---- Slides Wrapper ---- */}
-                    <div className="h-full flex" style={slideContainerStyle}>
+                    <div className="h-full flex relative z-10" style={slideContainerStyle}>
                         {/* Slide: Nickname */}
                         {hasNicknameScreen && (
                             <div
                                 className="h-full flex flex-col items-center justify-center px-6 relative"
                                 style={{ backgroundColor: getBgColor(), flex: "0 0 100vw", backfaceVisibility: "hidden", willChange: "transform" }}
+                                onClick={(e) => {
+                                    if (e.target === e.currentTarget) onClose();
+                                }}
                             >
                                 {/* Subtle texture overlay */}
                                 <div
@@ -223,25 +232,14 @@ export function OnboardingFlowModal({
                                         autoFocus
                                     />
 
-                                    <div className="space-y-4">
-                                        <button
-                                            onClick={handleNicknameNext}
-                                            disabled={!nickname.trim()}
-                                            className="group relative inline-flex items-center justify-center gap-4 px-10 py-3.5 sm:px-14 border border-[#3D4430]/25 hover:border-[#3D4430]/50 hover:bg-[#3D4430]/[0.03] text-[13px] sm:text-[14px] tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500"
-                                        >
-                                            <span>下一步</span>
-                                            <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-2" />
-                                        </button>
-
-                                        <div>
-                                            <button
-                                                onClick={onClose}
-                                                className="py-2 text-[12px] tracking-widest text-[#3D4430]/30 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
-                                            >
-                                                关闭
-                                            </button>
-                                        </div>
-                                    </div>
+                                    <button
+                                        onClick={handleNicknameNext}
+                                        disabled={!nickname.trim()}
+                                        className="group relative inline-flex items-center justify-center gap-4 px-10 py-3.5 sm:px-14 border border-[#3D4430]/25 hover:border-[#3D4430]/50 hover:bg-[#3D4430]/[0.03] text-[13px] sm:text-[14px] tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500"
+                                    >
+                                        <span>下一步</span>
+                                        <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-2" />
+                                    </button>
                                 </m.div>
                             </div>
                         )}
@@ -250,6 +248,15 @@ export function OnboardingFlowModal({
                         <div
                             className="h-full flex flex-col items-center justify-center px-6 relative"
                             style={{ backgroundColor: getBgColor(), flex: "0 0 100vw", backfaceVisibility: "hidden", willChange: "transform" }}
+                            onClick={(e) => {
+                                if (e.target === e.currentTarget) {
+                                    if (locationView === "region") {
+                                        setLocationView("main");
+                                    } else {
+                                        onClose();
+                                    }
+                                }
+                            }}
                         >
                             <div
                                 className="absolute inset-0 opacity-[0.03] pointer-events-none"
@@ -309,15 +316,6 @@ export function OnboardingFlowModal({
                                                     手动选择地区
                                                 </button>
                                             </div>
-
-                                            <div>
-                                                <button
-                                                    onClick={onClose}
-                                                    className="py-2 text-[12px] tracking-widest text-[#3D4430]/30 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
-                                                >
-                                                    关闭
-                                                </button>
-                                            </div>
                                         </div>
                                     </m.div>
                                 ) : (
@@ -331,13 +329,6 @@ export function OnboardingFlowModal({
                                     >
                                         {/* Region Select Header */}
                                         <div className="shrink-0 pt-16 pb-4 px-6 text-center">
-                                            <button
-                                                onClick={() => setLocationView("main")}
-                                                className="mb-3 py-2 text-[12px] tracking-widest text-[#3D4430]/30 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
-                                                aria-label="返回"
-                                            >
-                                                返回
-                                            </button>
                                             <h3 className="text-xl md:text-2xl font-serif text-[#1A1A1A] tracking-wider">选择所在地区</h3>
                                             <p className="text-[13px] text-[#5E5E5E] mt-2 font-light opacity-80">根据当地气候为您提供更精准的分析建议</p>
                                         </div>
@@ -552,6 +543,15 @@ export function OnboardingFlowModal({
                         </div>
                     )}
 
+                    {/* Logo hit area rendered via portal so it can overlay the navbar */}
+                    {mounted && currentScreen !== "legal" && createPortal(
+                        <button
+                            onClick={onClose}
+                            className="fixed top-5 md:top-7 left-6 md:left-12 lg:left-20 z-[100001] h-8 md:h-9 w-32 bg-transparent border-none cursor-pointer"
+                            aria-label="关闭"
+                        />,
+                        document.body
+                    )}
 
                 </m.div>
             )}
