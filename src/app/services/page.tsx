@@ -50,22 +50,22 @@ export default function ServicesPage() {
       <section className="flex-1 flex flex-col justify-center pt-20 md:pt-24 pb-5 md:pb-6 px-6 md:px-12 lg:px-20">
         <div className="w-full max-w-5xl mx-auto text-center">
           {/* Headline */}
-          <div className="mb-16">
-            <div className="flex justify-center mb-3 md:mb-4 text-[#1B3A5C]">
-              <Headset className="w-7 h-7 md:w-8 md:h-8" />
+          <div className="mb-[80px]">
+            <div className="flex justify-center mb-4 text-[#1B3A5C]">
+              <Headset className="w-8 h-8" />
             </div>
-            <h1 className="text-2xl md:text-3xl font-serif text-[#1B3A5C] mb-2 md:mb-3 leading-tight tracking-tight">
+            <h1 className="text-2xl md:text-3xl font-serif text-[#1A1A1A] mb-4 leading-tight tracking-tight">
               通过专业顾问评估
               <br className="hidden md:block" />
               更好地了解你的肌肤
             </h1>
-            <p className="text-[15px] md:text-base text-[#5E5E5E] font-light leading-snug max-w-2xl mx-auto">
+            <p className="text-[15px] md:text-base text-[#5E5E5E] font-light leading-snug max-w-2xl mx-auto mb-5">
               NIHPLOD 专属护肤顾问将结合你的 AI 测肤结果、日常习惯与护肤目标，提供一对一深度评估与长期陪伴。
             </p>
           </div>
 
           {/* Main Content */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-6 lg:gap-8 items-start mb-14 md:mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-6 lg:gap-8 items-start mb-[80px]">
             {/* Benefits */}
             <div className="text-left order-1">
               <h2 className="text-[15px] md:text-base font-medium text-[#1B3A5C] mb-3 tracking-wide">
