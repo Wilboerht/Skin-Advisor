@@ -250,33 +250,33 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                   </div>
                 </Link>
               ) : (
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-full bg-[#3D4430]/8 flex items-center justify-center text-[#3D4430]/50 shrink-0">
+                <button
+                  onClick={handleLoginClick}
+                  className="w-full flex items-center gap-4 group cursor-pointer"
+                >
+                  <div className="w-14 h-14 rounded-full bg-[#3D4430]/8 flex items-center justify-center text-[#3D4430]/50 shrink-0 group-hover:bg-[#3D4430]/12 transition-colors duration-300">
                     <User className="w-7 h-7" />
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 text-left">
                     <p className="text-[15px] font-medium text-[#1A1A1A]">
                       未登录
                     </p>
                     <p className="text-[13px] text-[#5E5E5E]/70 mt-0.5">
-                      登录后查看专属肌肤分析
+                      点击登录或注册
                     </p>
-                    <div className="flex items-center gap-3 mt-3">
-                      <button
-                        onClick={handleLoginClick}
-                        className="px-5 py-2 text-[13px] font-medium tracking-[0.15em] rounded-full bg-[#3D4430] text-[#F8F7F3] hover:bg-[#3D4430]/90 transition-colors duration-300 cursor-pointer"
-                      >
-                        登录
-                      </button>
-                      <button
-                        onClick={handleRegisterClick}
-                        className="px-5 py-2 text-[13px] font-medium tracking-[0.15em] rounded-full border border-[#3D4430]/25 text-[#3D4430] hover:bg-[#3D4430]/5 transition-colors duration-300 cursor-pointer"
-                      >
-                        注册
-                      </button>
-                    </div>
                   </div>
-                </div>
+                  <svg
+                    className="w-5 h-5 text-[#3D4430]/30 group-hover:text-[#3D4430]/50 transition-colors duration-300"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M9 18l6-6-6-6" />
+                  </svg>
+                </button>
               )}
             </div>
 
