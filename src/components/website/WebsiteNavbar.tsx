@@ -131,8 +131,12 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                     : "text-[#3D4430]/70 hover:text-[#3D4430]"
                 }`}
               >
-                <div className="w-7 h-7 rounded-full bg-[#3D4430]/10 flex items-center justify-center text-[#3D4430] text-xs font-serif shrink-0">
-                  {(user.name || user.email || user.phone || "U").charAt(0).toUpperCase()}
+                <div className="relative w-7 h-7 rounded-full overflow-hidden bg-[#3D4430]/10 flex items-center justify-center text-[#3D4430] text-xs font-serif shrink-0">
+                  {user.avatar ? (
+                    <Image src={user.avatar} alt="" fill unoptimized className="object-cover" />
+                  ) : (
+                    (user.name || user.email || user.phone || "U").charAt(0).toUpperCase()
+                  )}
                 </div>
                 <span className="hidden lg:inline relative max-w-[120px] truncate">
                   {user.name || user.email || user.phone || "用户"}
@@ -172,8 +176,12 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                     : "text-[#3D4430]/70 hover:text-[#3D4430] hover:bg-[#3D4430]/5"
                 }`}
               >
-                <div className="w-7 h-7 rounded-full bg-[#3D4430]/10 flex items-center justify-center text-[#3D4430] text-xs font-serif">
-                  {(user.name || user.email || user.phone || "U").charAt(0).toUpperCase()}
+                <div className="relative w-7 h-7 rounded-full overflow-hidden bg-[#3D4430]/10 flex items-center justify-center text-[#3D4430] text-xs font-serif">
+                  {user.avatar ? (
+                    <Image src={user.avatar} alt="" fill unoptimized className="object-cover" />
+                  ) : (
+                    (user.name || user.email || user.phone || "U").charAt(0).toUpperCase()
+                  )}
                 </div>
               </Link>
             ) : (
@@ -263,10 +271,14 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                   onClick={handleNavClick}
                   className="flex items-center gap-4 group"
                 >
-                  <div className="w-14 h-14 rounded-full bg-[#3D4430]/10 flex items-center justify-center text-[#3D4430] shrink-0">
-                    <span className="text-lg font-serif">
-                      {(user.name || user.email || user.phone || "U").charAt(0).toUpperCase()}
-                    </span>
+                  <div className="relative w-14 h-14 rounded-full overflow-hidden bg-[#3D4430]/10 flex items-center justify-center text-[#3D4430] shrink-0">
+                    {user.avatar ? (
+                      <Image src={user.avatar} alt="" fill unoptimized className="object-cover" />
+                    ) : (
+                      <span className="text-lg font-serif">
+                        {(user.name || user.email || user.phone || "U").charAt(0).toUpperCase()}
+                      </span>
+                    )}
                   </div>
                   <div className="min-w-0">
                     <p className="text-[15px] font-medium text-[#1A1A1A] truncate">
