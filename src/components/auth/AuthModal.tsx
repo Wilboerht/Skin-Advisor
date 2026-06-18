@@ -617,16 +617,13 @@ export function AuthModal() {
                                             </button>
                                         </div>
 
-                                        <div className="mt-6 text-center flex flex-col gap-1">
-                                            <p className="text-xs tracking-[0.15em] text-brand-charcoal/40 uppercase">
-                                                还没有账号？
-                                            </p>
+                                        <div className="mt-6 text-center">
                                             <button
                                                 type="button"
                                                 onClick={() => setAuthView("register")}
-                                                className={pcBtnClass}
+                                                className="inline-flex h-7 min-h-0 items-center justify-center text-xs text-brand-charcoal/40 tracking-wide hover:text-brand-charcoal/70 transition-colors"
                                             >
-                                                立即注册
+                                                还没有账号？立即注册
                                             </button>
                                         </div>
                                     </>
