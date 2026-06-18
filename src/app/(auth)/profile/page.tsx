@@ -284,12 +284,12 @@ export default function ProfilePage() {
         </m.div>
 
         {/* History List */}
-        <div className="space-y-4">
+        <div className="rounded-2xl bg-white/60 backdrop-blur-sm border border-[#3D4430]/8 overflow-hidden">
           {loadingHistory ? (
             <m.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="h-64 flex flex-col items-center justify-center gap-4 rounded-2xl bg-white/40 border border-[#3D4430]/8"
+              className="h-64 flex flex-col items-center justify-center gap-4"
             >
               <Loader2 className="w-6 h-6 text-[#3D4430]/40 animate-spin" />
               <span className="text-[14px] tracking-wide text-[#5E5E5E]">加载记录中...</span>
@@ -299,7 +299,7 @@ export default function ProfilePage() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.25 }}
-              className="text-center py-20 md:py-28 rounded-2xl bg-white/60 backdrop-blur-sm border border-[#3D4430]/8"
+              className="text-center py-20 md:py-28"
             >
               <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-[#3D4430]/8 flex items-center justify-center text-[#3D4430]/40">
                 <Clock className="w-8 h-8" />
@@ -317,108 +317,117 @@ export default function ProfilePage() {
               </Link>
             </m.div>
           ) : (
-            auditHistory.map((session, i) => {
-              const result = session.analysisResult;
-              const score = result?.faceAnalysis?.overallScore;
-              const skinType = result?.skinProfile?.typeLabel || result?.skinType?.typeLabel;
-              const concerns = result?.skinProfile?.concerns || result?.concerns || [];
-              const skinAge = result?.skinProfile?.skinAge || result?.faceAnalysis?.skinAge;
-              const dateInfo = formatDate(session.completedAt);
+            <>
+              {/* List Header */}
+              <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3.5 bg-[#F5F2ED]/70 border-b border-[#3D4430]/8 text-[12px] tracking-[0.1em] text-[#5E5E5E]/70 uppercase">
+                <div className="col-span-3">测肤时间</div>
+                <div className="col-span-2">肤质类型</div>
+                <div className="col-span-4">主要问题</div>
+                <div className="col-span-2 text-right">综合评分</div>
+                <div className="col-span-1" />
+              </div>
 
-              return (
-                <m.div
-                  key={session.sessionId}
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.25 + i * 0.05, ease: [0.16, 1, 0.3, 1] }}
-                >
-                  <Link
-                    href={`/result?id=${session.sessionId}`}
-                    className="group block rounded-2xl bg-white/60 backdrop-blur-sm border border-[#3D4430]/8 p-5 md:p-6 transition-all duration-500 hover:bg-white/90 hover:shadow-xl hover:shadow-[#3D4430]/5 hover:-translate-y-1"
+              {/* List Items */}
+              {auditHistory.map((session, i) => {
+                const result = session.analysisResult;
+                const score = result?.faceAnalysis?.overallScore;
+                const skinType = result?.skinProfile?.typeLabel || result?.skinType?.typeLabel;
+                const concerns = result?.skinProfile?.concerns || result?.concerns || [];
+                const skinAge = result?.skinProfile?.skinAge || result?.faceAnalysis?.skinAge;
+                const dateInfo = formatDate(session.completedAt);
+
+                return (
+                  <m.div
+                    key={session.sessionId}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.25 + i * 0.05, ease: [0.16, 1, 0.3, 1] }}
+                    className={`group ${i !== auditHistory.length - 1 ? "border-b border-[#3D4430]/6" : ""}`}
                   >
-                    <div className="flex items-start gap-4 md:gap-6">
-                      {/* Date */}
-                      <div className="hidden sm:flex flex-col items-center justify-center w-16 h-16 rounded-xl bg-[#F5F2ED] border border-[#3D4430]/6 shrink-0">
-                        <span className="text-[11px] text-[#5E5E5E] tracking-wider">{dateInfo.label}</span>
-                        <span className="text-[11px] text-[#5E5E5E]/70">{dateInfo.weekday}</span>
-                      </div>
-
-                      {/* Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2 mb-2">
-                          <span className="sm:hidden text-[12px] text-[#5E5E5E]/70">
-                            {dateInfo.full}
-                          </span>
-                          <span className="hidden sm:inline text-[12px] text-[#5E5E5E]/70">
-                            {dateInfo.full}
-                          </span>
+                    <Link
+                      href={`/result?id=${session.sessionId}`}
+                      className="block px-5 py-4 md:px-6 md:py-4 transition-all duration-300 hover:bg-[#F5F2ED]/50"
+                    >
+                      <div className="grid grid-cols-12 gap-3 md:gap-4 items-center">
+                        {/* Time */}
+                        <div className="col-span-12 md:col-span-3">
+                          <div className="flex items-center gap-3">
+                            <span className="text-[13px] md:text-[14px] text-[#3D4430] font-medium">
+                              {dateInfo.full.split(" ")[0]}
+                            </span>
+                            <span className="text-[12px] md:text-[13px] text-[#5E5E5E]/70">
+                              {dateInfo.full.split(" ")[1]}
+                            </span>
+                          </div>
                         </div>
 
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="min-w-0">
-                            {skinType ? (
-                              <h3 className="font-serif text-lg md:text-xl text-[#3D4430] mb-2 truncate">
-                                {skinType}
-                              </h3>
-                            ) : (
-                              <h3 className="font-serif text-lg md:text-xl text-[#3D4430] mb-2">
-                                皮肤分析报告
-                              </h3>
-                            )}
-
-                            <div className="flex flex-wrap items-center gap-2">
-                              {skinType && (
-                                <span className="px-2.5 py-1 text-[12px] rounded-full bg-[#E6F3F7] text-[#337EA9] font-medium">
-                                  {skinType}
-                                </span>
-                              )}
-                              {skinAge && (
-                                <span className="px-2.5 py-1 text-[12px] rounded-full bg-[#F1F1EF] text-[#787774] font-medium">
-                                  肤龄 {skinAge}
-                                </span>
-                              )}
-                              {concerns.slice(0, 3).map((c, idx) => {
-                                const palette = concernPalette[idx % concernPalette.length];
-                                return (
-                                  <span
-                                    key={idx}
-                                    className={`px-2.5 py-1 text-[12px] rounded-full font-medium ${palette.bg} ${palette.text}`}
-                                  >
-                                    {c}
-                                  </span>
-                                );
-                              })}
-                              {concerns.length > 3 && (
-                                <span className="text-[12px] text-[#5E5E5E]/70">
-                                  +{concerns.length - 3}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Score */}
-                          {score && (
-                            <div className="shrink-0 flex flex-col items-end">
-                              <div
-                                className={`w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center bg-gradient-to-br ${scoreGradient(score)} text-white shadow-lg`}
-                              >
-                                <span className="text-base md:text-lg font-semibold">{score}</span>
-                              </div>
-                              <span className="mt-1.5 text-[11px] tracking-wider text-[#5E5E5E]/70">综合评分</span>
-                            </div>
+                        {/* Skin Type */}
+                        <div className="col-span-6 md:col-span-2">
+                          {skinType ? (
+                            <span className="inline-flex px-2.5 py-1 text-[12px] rounded-full bg-[#E6F3F7] text-[#337EA9] font-medium">
+                              {skinType}
+                            </span>
+                          ) : (
+                            <span className="text-[13px] text-[#5E5E5E]/60">—</span>
                           )}
                         </div>
-                      </div>
 
-                      {/* Arrow */}
-                      <div className="hidden md:flex shrink-0 self-center">
-                        <ChevronRight className="w-5 h-5 text-[#3D4430]/20 transition-all duration-300 group-hover:text-[#3D4430]/50 group-hover:translate-x-1" />
+                        {/* Concerns */}
+                        <div className="col-span-12 md:col-span-4 order-last md:order-none mt-1 md:mt-0">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {concerns.slice(0, 3).map((c, idx) => {
+                              const palette = concernPalette[idx % concernPalette.length];
+                              return (
+                                <span
+                                  key={idx}
+                                  className={`px-2 py-0.5 text-[11px] rounded-full font-medium ${palette.bg} ${palette.text}`}
+                                >
+                                  {c}
+                                </span>
+                              );
+                            })}
+                            {concerns.length === 0 && (
+                              <span className="text-[12px] text-[#5E5E5E]/50">暂无问题标签</span>
+                            )}
+                            {concerns.length > 3 && (
+                              <span className="text-[11px] text-[#5E5E5E]/60">
+                                +{concerns.length - 3}
+                              </span>
+                            )}
+                            {skinAge && (
+                              <span className="ml-1 text-[11px] text-[#5E5E5E]/60">
+                                肤龄 {skinAge}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Score */}
+                        <div className="col-span-6 md:col-span-2 text-right">
+                          {score ? (
+                            <div className="inline-flex items-center gap-2">
+                              <div
+                                className={`w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-br ${scoreGradient(score)} text-white text-[12px] font-semibold`}
+                              >
+                                {score}
+                              </div>
+                              <span className="hidden md:inline text-[12px] text-[#5E5E5E]/70">综合评分</span>
+                            </div>
+                          ) : (
+                            <span className="text-[13px] text-[#5E5E5E]/60">—</span>
+                          )}
+                        </div>
+
+                        {/* Arrow */}
+                        <div className="hidden md:col-span-1 md:flex justify-end">
+                          <ChevronRight className="w-4 h-4 text-[#3D4430]/20 transition-all duration-300 group-hover:text-[#3D4430]/50 group-hover:translate-x-0.5" />
+                        </div>
                       </div>
-                    </div>
-                  </Link>
-                </m.div>
-              );
-            })
+                    </Link>
+                  </m.div>
+                );
+              })}
+            </>
           )}
         </div>
 
