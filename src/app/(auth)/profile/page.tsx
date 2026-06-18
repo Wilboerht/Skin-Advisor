@@ -15,7 +15,12 @@ import {
   Sparkles,
   TrendingUp,
   Award,
-  Calendar
+  Calendar,
+  Camera,
+  Pencil,
+  Check,
+  X,
+  ExternalLink
 } from "lucide-react";
 import { LazyMotion, domAnimation, m } from "framer-motion";
 import Image from "next/image";
@@ -49,8 +54,34 @@ const scoreGradient = (score?: number) => {
   return "from-[#C45A4A] to-[#D67A6A]";
 };
 
+interface BrandActivity {
+  id: string;
+  title: string;
+  description: string;
+  link: string;
+  external: boolean;
+}
+
+// 品牌活动配置：后续可扩展为 CMS/API 读取
+const BRAND_ACTIVITIES: BrandActivity[] = [
+  {
+    id: "vip",
+    title: "会员专属礼遇",
+    description: "加入 NIHPLOD 会员，解锁专属护肤方案、优先体验新品与限量会员活动。",
+    link: "https://nihplod.cn",
+    external: true,
+  },
+  {
+    id: "skin-test",
+    title: "AI 素颜测肤",
+    description: "随时随地获取专业级肌肤分析，生成你的专属定制化护肤建议。",
+    link: "/questions",
+    external: false,
+  },
+];
+
 export default function ProfilePage() {
-  const { user, loading, logout, isVip } = useAuth();
+  const { user, loading, logout, isVip, refresh } = useAuth();
   const router = useRouter();
   const [auditHistory, setAuditHistory] = useState<HistorySession[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
@@ -58,6 +89,65 @@ export default function ProfilePage() {
   const [limit] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [total, setTotal] = useState(0);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState("");
+  const [updatingAvatar, setUpdatingAvatar] = useState(false);
+
+  const maskPhone = (phone?: string | null) => {
+    if (!phone) return "—";
+    if (phone.length <= 7) return phone;
+    return phone.slice(0, 3) + "****" + phone.slice(-4);
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    setUpdatingAvatar(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const uploadRes = await fetch("/api/upload", { method: "POST", body: formData });
+      const uploadData = await uploadRes.json();
+      if (!uploadRes.ok || !uploadData.url) throw new Error(uploadData.error || "上传失败");
+
+      const updateRes = await fetch("/api/user/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ avatar: uploadData.url }),
+      });
+      if (!updateRes.ok) throw new Error("保存失败");
+      await refresh();
+    } catch (err) {
+      console.error("Avatar update error:", err);
+      alert(err instanceof Error ? err.message : "头像更新失败");
+    } finally {
+      setUpdatingAvatar(false);
+    }
+  };
+
+  const handleSaveName = async () => {
+    if (!user) return;
+    const trimmed = editedName.trim();
+    if (!trimmed) return;
+    try {
+      const res = await fetch("/api/user/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: trimmed }),
+      });
+      if (!res.ok) throw new Error("保存失败");
+      await refresh();
+      setIsEditingName(false);
+    } catch (err) {
+      console.error("Name update error:", err);
+      alert("昵称更新失败");
+    }
+  };
+
+  const startEditName = () => {
+    setEditedName(user?.name || "");
+    setIsEditingName(true);
+  };
 
   useEffect(() => {
     if (!loading && !user) {
@@ -176,7 +266,8 @@ export default function ProfilePage() {
           className="mb-12 md:mb-16"
         >
           <div className="flex flex-col md:flex-row md:items-end gap-6 md:gap-10">
-            <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden bg-[#3D4430]/8 ring-1 ring-[#3D4430]/10">
+            {/* Avatar with upload */}
+            <label className="relative w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden bg-[#3D4430]/8 ring-1 ring-[#3D4430]/10 cursor-pointer group shrink-0">
               {avatarUrl ? (
                 <Image
                   src={avatarUrl}
@@ -190,7 +281,21 @@ export default function ProfilePage() {
                   {(user.name?.[0] || "?").toUpperCase()}
                 </div>
               )}
-            </div>
+              <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition-all duration-300">
+                {updatingAvatar ? (
+                  <Loader2 className="w-5 h-5 text-white animate-spin opacity-0 group-hover:opacity-100" />
+                ) : (
+                  <Camera className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                )}
+              </div>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleAvatarChange}
+                disabled={updatingAvatar}
+                className="sr-only"
+              />
+            </label>
 
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-3">
@@ -202,12 +307,59 @@ export default function ProfilePage() {
                   </span>
                 )}
               </div>
-              <h1 className="font-serif text-3xl md:text-5xl text-[#3D4430] mb-2">
-                你好，{user.name || "朋友"}
-              </h1>
-              <p className="text-[15px] text-[#5E5E5E] tracking-wide">
-                以下是您的 AI 测肤历史记录与护肤档案
-              </p>
+
+              {/* Editable name */}
+              <div className="flex items-center gap-3 mb-2">
+                {isEditingName ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={editedName}
+                      onChange={(e) => setEditedName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleSaveName();
+                        if (e.key === "Escape") setIsEditingName(false);
+                      }}
+                      maxLength={20}
+                      autoFocus
+                      className="px-3 py-1.5 text-2xl md:text-4xl font-serif text-[#3D4430] bg-white/70 border border-[#3D4430]/15 rounded-lg focus:outline-none focus:border-[#3D4430]/40"
+                    />
+                    <button
+                      onClick={handleSaveName}
+                      className="p-2 rounded-full text-[#3D4430]/70 hover:text-[#3D4430] hover:bg-[#3D4430]/10 transition-colors"
+                      aria-label="保存昵称"
+                    >
+                      <Check className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => setIsEditingName(false)}
+                      className="p-2 rounded-full text-[#3D4430]/70 hover:text-[#3D4430] hover:bg-[#3D4430]/10 transition-colors"
+                      aria-label="取消"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <h1 className="font-serif text-3xl md:text-5xl text-[#3D4430]">
+                      你好，{user.name || "朋友"}
+                    </h1>
+                    <button
+                      onClick={startEditName}
+                      className="p-2 rounded-full text-[#3D4430]/40 hover:text-[#3D4430] hover:bg-[#3D4430]/10 transition-colors"
+                      aria-label="编辑昵称"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[15px] text-[#5E5E5E] tracking-wide">
+                <span>手机号：{maskPhone(user.phone)}</span>
+                <span className="hidden sm:inline text-[#3D4430]/20">|</span>
+                <span>以下是您的 AI 测肤历史记录与护肤档案</span>
+              </div>
             </div>
 
             <Link
@@ -462,6 +614,52 @@ export default function ProfilePage() {
             </button>
           </m.div>
         )}
+
+        {/* Brand Activities */}
+        <m.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          className="mt-16 md:mt-20"
+        >
+          <div className="flex items-center gap-4 mb-6 md:mb-8">
+            <h2 className="font-serif text-2xl md:text-3xl text-[#3D4430]">品牌活动</h2>
+            <div className="flex-1 h-px bg-[#3D4430]/10" />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            {BRAND_ACTIVITIES.map((activity) => {
+              const CardWrapper = activity.external ? "a" : Link;
+              return (
+                <CardWrapper
+                  key={activity.id}
+                  href={activity.link}
+                  target={activity.external ? "_blank" : undefined}
+                  rel={activity.external ? "noopener noreferrer" : undefined}
+                  className="group relative overflow-hidden rounded-2xl bg-white/60 backdrop-blur-sm border border-[#3D4430]/8 p-6 transition-all duration-500 hover:bg-white/80 hover:shadow-xl hover:shadow-[#3D4430]/5 hover:-translate-y-1"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <h3 className="font-serif text-lg md:text-xl text-[#3D4430] mb-2">
+                        {activity.title}
+                      </h3>
+                      <p className="text-[13px] md:text-[14px] text-[#5E5E5E] leading-relaxed">
+                        {activity.description}
+                      </p>
+                    </div>
+                    <div className="shrink-0 w-10 h-10 rounded-full bg-[#3D4430]/8 flex items-center justify-center text-[#3D4430]/70 group-hover:bg-[#3D4430] group-hover:text-[#F8F7F3] transition-all duration-300">
+                      {activity.external ? (
+                        <ExternalLink className="w-4 h-4" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4" />
+                      )}
+                    </div>
+                  </div>
+                </CardWrapper>
+              );
+            })}
+          </div>
+        </m.section>
 
         {/* Footer hint */}
         <div className="mt-16 pt-8 border-t border-[#3D4430]/10 text-center">
