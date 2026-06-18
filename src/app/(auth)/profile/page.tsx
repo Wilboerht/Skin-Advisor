@@ -17,7 +17,7 @@ import {
   Award,
   Calendar
 } from "lucide-react";
-import { m } from "framer-motion";
+import { LazyMotion, domAnimation, m } from "framer-motion";
 import Image from "next/image";
 
 interface AnalysisResult {
@@ -137,6 +137,7 @@ export default function ProfilePage() {
   const avatarUrl = user?.avatar;
 
   return (
+    <LazyMotion features={domAnimation}>
     <div className="min-h-screen bg-[#F8F7F3] text-[#1A1A1A]">
       {/* Header */}
       <header className="sticky top-0 z-50 w-full bg-[#F8F7F3]/80 backdrop-blur-md border-b border-[#3D4430]/6">
@@ -461,5 +462,6 @@ export default function ProfilePage() {
         </div>
       </main>
     </div>
+    </LazyMotion>
   );
 }
