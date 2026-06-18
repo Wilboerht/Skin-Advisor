@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { Fragment } from "react";
 import { Link as ViewTransitionLink } from "next-view-transitions";
 import { ScanLine, MessageCircle, HeadphonesIcon, ArrowRight, CheckCircle2, Headset } from "lucide-react";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
@@ -126,19 +127,41 @@ export default function ServicesPage() {
           </div>
 
           {/* Steps */}
-          <div className="relative max-w-2xl mx-auto">
-            <div className="hidden md:block absolute top-4 left-[calc(16.67%+8px)] right-[calc(16.67%+8px)] h-[1px] bg-[#1B3A5C]/10" />
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-6">
+          <div className="max-w-2xl mx-auto">
+            {/* Desktop: 3 steps with two separate connecting lines */}
+            <div className="hidden md:grid grid-cols-5 items-center gap-0">
               {steps.map((step, i) => (
-                <div key={i} className="flex items-center gap-3 md:flex-col md:text-center md:gap-2 z-10">
-                  <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-[#EDF1F7] border border-[#1B3A5C]/5 flex items-center justify-center text-[#1B3A5C] shrink-0">
-                    <step.icon className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                  </div>
-                  <div className="text-left md:text-center">
-                    <h3 className="text-[13px] md:text-[14px] font-medium text-[#1A1A1A] mb-0">
+                <Fragment key={i}>
+                  <div className="flex flex-col items-center text-center">
+                    <div className="w-9 h-9 rounded-full bg-[#EDF1F7] border border-[#1B3A5C]/5 flex items-center justify-center text-[#1B3A5C]">
+                      <step.icon className="w-4 h-4" />
+                    </div>
+                    <h3 className="text-[14px] font-medium text-[#1A1A1A] mt-3 mb-1">
                       {step.title}
                     </h3>
-                    <p className="text-[11px] md:text-[12px] text-[#5E5E5E] font-light leading-relaxed">
+                    <p className="text-[12px] text-[#5E5E5E] font-light leading-relaxed">
+                      {step.desc}
+                    </p>
+                  </div>
+                  {i < steps.length - 1 && (
+                    <div className="h-[1px] bg-[#1B3A5C]/10 w-full" />
+                  )}
+                </Fragment>
+              ))}
+            </div>
+
+            {/* Mobile: vertical stack */}
+            <div className="flex flex-col md:hidden gap-4">
+              {steps.map((step, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-[#EDF1F7] border border-[#1B3A5C]/5 flex items-center justify-center text-[#1B3A5C] shrink-0">
+                    <step.icon className="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <h3 className="text-[13px] font-medium text-[#1A1A1A] mb-0">
+                      {step.title}
+                    </h3>
+                    <p className="text-[11px] text-[#5E5E5E] font-light leading-relaxed">
                       {step.desc}
                     </p>
                   </div>
