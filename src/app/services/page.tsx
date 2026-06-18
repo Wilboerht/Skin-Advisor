@@ -82,17 +82,19 @@ export default function ServicesPage() {
 
             {/* QR Code */}
             <div className="flex flex-col items-center md:items-end order-2">
-              <div className="relative w-40 h-40 md:w-48 md:h-48 rounded-2xl overflow-hidden border border-[#1B3A5C]/10 bg-white p-4 shadow-sm">
-                <Image
-                  src="/images/advisor-qr.jpg"
-                  alt="NIHPLOD 专属护肤顾问微信二维码"
-                  fill
-                  className="object-contain p-2"
-                />
+              <div className="flex flex-col items-center">
+                <div className="relative w-40 h-40 md:w-48 md:h-48 rounded-2xl overflow-hidden border border-[#1B3A5C]/10 bg-white p-4 shadow-sm">
+                  <Image
+                    src="/images/advisor-qr.jpg"
+                    alt="NIHPLOD 专属护肤顾问微信二维码"
+                    fill
+                    className="object-contain p-2"
+                  />
+                </div>
+                <p className="mt-3 text-xs md:text-[13px] text-[#5E5E5E] font-light tracking-wide text-center">
+                  微信扫码 · 添加专属顾问
+                </p>
               </div>
-              <p className="mt-3 text-xs md:text-[13px] text-[#5E5E5E] font-light tracking-wide">
-                微信扫码 · 添加专属顾问
-              </p>
             </div>
           </div>
 
