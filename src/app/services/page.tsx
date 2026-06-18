@@ -55,9 +55,9 @@ export default function ServicesPage() {
           </div>
 
           {/* Main Content */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-start mb-7 md:mb-9">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center mb-7 md:mb-9">
             {/* QR Code */}
-            <div className="flex flex-col items-center md:items-end order-2 md:order-1">
+            <div className="flex flex-col items-center order-2 md:order-1">
               <div className="relative w-40 h-40 md:w-48 md:h-48 rounded-2xl overflow-hidden border border-[#1B3A5C]/10 bg-white p-4 shadow-sm">
                 <Image
                   src="/images/advisor-qr.jpg"
@@ -72,29 +72,27 @@ export default function ServicesPage() {
             </div>
 
             {/* Benefits */}
-            <div className="text-left order-1 md:order-2">
-              <div className="bg-white rounded-2xl border border-[#1B3A5C]/5 p-5 md:p-6 shadow-sm">
-                <h2 className="text-[15px] md:text-base font-medium text-[#1B3A5C] mb-3 tracking-wide">
-                  顾问评估包含
-                </h2>
-                <ul className="space-y-2.5 mb-5">
-                  {benefits.map((item, i) => (
-                    <li key={i} className="flex items-start gap-3">
-                      <CheckCircle2 className="w-4 h-4 text-[#1B3A5C] mt-0.5 shrink-0" />
-                      <span className="text-[13px] md:text-[14px] text-[#5E5E5E] font-light leading-relaxed">
-                        {item}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-                <ViewTransitionLink
-                  href="/questions"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#1B3A5C] text-white text-[12px] md:text-[13px] tracking-[0.1em] rounded-full hover:bg-[#1B3A5C]/90 transition-all duration-300 hover:shadow-lg hover:shadow-[#1B3A5C]/10 hover:-translate-y-0.5"
-                >
-                  先进行 AI 测肤
-                  <ArrowRight className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                </ViewTransitionLink>
-              </div>
+            <div className="text-left order-1 md:order-2 md:pl-4">
+              <h2 className="text-[15px] md:text-base font-medium text-[#1B3A5C] mb-3 tracking-wide">
+                顾问评估包含
+              </h2>
+              <ul className="space-y-2.5 mb-5">
+                {benefits.map((item, i) => (
+                  <li key={i} className="flex items-start gap-3">
+                    <CheckCircle2 className="w-4 h-4 text-[#1B3A5C] mt-0.5 shrink-0" />
+                    <span className="text-[13px] md:text-[14px] text-[#5E5E5E] font-light leading-relaxed">
+                      {item}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <ViewTransitionLink
+                href="/questions"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#1B3A5C] text-white text-[12px] md:text-[13px] tracking-[0.1em] rounded-full hover:bg-[#1B3A5C]/90 transition-all duration-300 hover:shadow-lg hover:shadow-[#1B3A5C]/10 hover:-translate-y-0.5"
+              >
+                先进行 AI 测肤
+                <ArrowRight className="w-3.5 h-3.5 md:w-4 md:h-4" />
+              </ViewTransitionLink>
             </div>
           </div>
 
