@@ -23,7 +23,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { openAuthModal } = useAuthModal();
-  const { user, isVip, loading: authLoading } = useUser();
+  const { user, isVip } = useUser();
   const pathname = usePathname();
   const isDark = variant === "dark" && !scrolled;
 
@@ -121,34 +121,74 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
           </div>
 
           <div className="flex items-center justify-end gap-3 md:gap-7">
-            {/* 登录按钮 */}
-            <button
-              onClick={() => openAuthModal("login")}
-              className={`group hidden md:flex items-center gap-2 text-[15px] font-medium tracking-[0.2em] transition-colors duration-500 cursor-pointer ${
-                isDark
-                  ? "text-white/70 hover:text-white"
-                  : "text-[#3D4430]/70 hover:text-[#3D4430]"
-              }`}
-            >
-              <User className="w-5 h-5 sm:w-[1.125rem] sm:h-[1.125rem] transition-opacity duration-500" />
-              <span className="hidden sm:inline relative">
-                登录
-                <span className="absolute -bottom-0.5 left-0 w-0 h-[1px] bg-[#3D4430]/30 group-hover:w-full transition-all duration-500 ease-out" />
-              </span>
-            </button>
+            {/* 桌面端：已登录显示用户入口，未登录显示登录按钮 */}
+            {user ? (
+              <Link
+                href="/profile"
+                className={`group hidden md:flex items-center gap-2 text-[15px] font-medium tracking-[0.2em] transition-colors duration-500 cursor-pointer ${
+                  isDark
+                    ? "text-white/70 hover:text-white"
+                    : "text-[#3D4430]/70 hover:text-[#3D4430]"
+                }`}
+              >
+                <div className="w-7 h-7 rounded-full bg-[#3D4430]/10 flex items-center justify-center text-[#3D4430] text-xs font-serif shrink-0">
+                  {(user.name || user.email || user.phone || "U").charAt(0).toUpperCase()}
+                </div>
+                <span className="hidden lg:inline relative max-w-[120px] truncate">
+                  {user.name || user.email || user.phone || "用户"}
+                  {isVip && (
+                    <span className="ml-2 text-[10px] tracking-wider px-1.5 py-0.5 rounded-full bg-[#3D4430] text-[#F8F7F3] font-medium align-middle">
+                      VIP
+                    </span>
+                  )}
+                  <span className="absolute -bottom-0.5 left-0 w-0 h-[1px] bg-[#3D4430]/30 group-hover:w-full transition-all duration-500 ease-out" />
+                </span>
+              </Link>
+            ) : (
+              <button
+                onClick={() => openAuthModal("login")}
+                className={`group hidden md:flex items-center gap-2 text-[15px] font-medium tracking-[0.2em] transition-colors duration-500 cursor-pointer ${
+                  isDark
+                    ? "text-white/70 hover:text-white"
+                    : "text-[#3D4430]/70 hover:text-[#3D4430]"
+                }`}
+              >
+                <User className="w-5 h-5 sm:w-[1.125rem] sm:h-[1.125rem] transition-opacity duration-500" />
+                <span className="hidden sm:inline relative">
+                  登录
+                  <span className="absolute -bottom-0.5 left-0 w-0 h-[1px] bg-[#3D4430]/30 group-hover:w-full transition-all duration-500 ease-out" />
+                </span>
+              </button>
+            )}
 
-            {/* 移动端登录图标 */}
-            <button
-              onClick={() => openAuthModal("login")}
-              aria-label="登录"
-              className={`md:hidden group flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-500 cursor-pointer ${
-                isDark
-                  ? "text-white/70 hover:text-white hover:bg-white/10"
-                  : "text-[#3D4430]/70 hover:text-[#3D4430] hover:bg-[#3D4430]/5"
-              }`}
-            >
-              <User className="w-5 h-5 transition-opacity duration-500" />
-            </button>
+            {/* 移动端用户图标：已登录跳转个人中心，未登录打开登录面板 */}
+            {user ? (
+              <Link
+                href="/profile"
+                aria-label="个人中心"
+                className={`md:hidden group flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-500 ${
+                  isDark
+                    ? "text-white/70 hover:text-white hover:bg-white/10"
+                    : "text-[#3D4430]/70 hover:text-[#3D4430] hover:bg-[#3D4430]/5"
+                }`}
+              >
+                <div className="w-7 h-7 rounded-full bg-[#3D4430]/10 flex items-center justify-center text-[#3D4430] text-xs font-serif">
+                  {(user.name || user.email || user.phone || "U").charAt(0).toUpperCase()}
+                </div>
+              </Link>
+            ) : (
+              <button
+                onClick={() => openAuthModal("login")}
+                aria-label="登录"
+                className={`md:hidden group flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-500 cursor-pointer ${
+                  isDark
+                    ? "text-white/70 hover:text-white hover:bg-white/10"
+                    : "text-[#3D4430]/70 hover:text-[#3D4430] hover:bg-[#3D4430]/5"
+                }`}
+              >
+                <User className="w-5 h-5 transition-opacity duration-500" />
+              </button>
+            )}
 
             {/* 首页链接 */}
             {pathname !== "/" && (
