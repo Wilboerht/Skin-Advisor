@@ -30,7 +30,7 @@ export default function ResultIndexPage() {
             className="text-2xl md:text-3xl font-serif text-[#1A1A1A] mb-4 opacity-0 animate-fade-in-up"
             style={{ animationFillMode: "forwards" }}
           >
-            发现你的肌肤性格类型
+            发现你的肌肤形象类型
           </h1>
           <p
             className="text-[15px] md:text-base text-[#5E5E5E] font-light max-w-xl mx-auto leading-relaxed mb-5 opacity-0 animate-fade-in-up"

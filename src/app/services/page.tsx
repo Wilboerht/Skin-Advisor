@@ -56,7 +56,7 @@ export default function ServicesPage() {
                 线上顾问服务
               </h1>
               <p className="text-[#5E5E5E] font-light leading-relaxed mb-7 md:mb-8 text-sm md:text-[15px]">
-                添加 NIHPLOD 专属护肤顾问微信，获取一对一素颜肌肤分析、产品推荐与护肤方案定制。
+                添加 NIHPLOD 专属护肤顾问微信，获取一对一素颜肌肤分析、产品推荐与护肤方案定制。顾问将根据您的肌肤状态、生活习惯与护肤目标，提供专业解答与专属建议。
               </p>
 
               {/* Steps */}
