@@ -83,7 +83,7 @@ export default function ServicesPage() {
                 ))}
               </ul>
               <ViewTransitionLink
-                href="/questions"
+                href="/"
                 className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#1B3A5C] text-white text-[12px] md:text-[13px] tracking-[0.1em] rounded-full hover:bg-[#1B3A5C]/90 transition-all duration-300 hover:shadow-lg hover:shadow-[#1B3A5C]/10 hover:-translate-y-0.5"
               >
                 先进行 AI 测肤
