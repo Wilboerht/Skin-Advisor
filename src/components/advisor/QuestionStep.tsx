@@ -60,7 +60,7 @@ export function QuestionStep({
           <div className="flex flex-wrap items-baseline gap-3 md:gap-4 mb-4">
             {/* Progress Indicator */}
             <m.div
-              className="flex items-end gap-1 md:gap-1.5 tracking-[0.1em] text-[#8B7355] font-light"
+              className="flex items-end gap-1 md:gap-1.5 tracking-[0.1em] text-[#1B3A5C] font-light"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.05, duration: 0.5 }}

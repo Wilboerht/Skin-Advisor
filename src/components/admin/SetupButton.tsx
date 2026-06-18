@@ -42,7 +42,7 @@ export function SetupButton() {
         <button
             onClick={handleSetup}
             disabled={loading}
-            className="rounded-full bg-[#1A1A1A] px-6 py-3 text-xs font-bold tracking-widest text-white hover:bg-[#3D4430] transition-all uppercase flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-full bg-[#1A1A1A] px-6 py-3 text-xs font-bold tracking-widest text-white hover:bg-[#1B3A5C] transition-all uppercase flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
             {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
             {loading ? "Initializing..." : "Run Setup / Seed Data"}

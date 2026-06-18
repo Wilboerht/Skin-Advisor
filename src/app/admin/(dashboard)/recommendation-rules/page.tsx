@@ -199,7 +199,7 @@ export default function RecommendationRulesPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-96">
-                <Loader2 className="w-8 h-8 animate-spin text-[#3D4430]" />
+                <Loader2 className="w-8 h-8 animate-spin text-[#1B3A5C]" />
             </div>
         );
     }
@@ -215,14 +215,14 @@ export default function RecommendationRulesPage() {
                 </div>
                 <button
                     onClick={openCreate}
-                    className="flex items-center gap-2 rounded-full bg-[#1A1A1A] px-5 py-2.5 text-xs font-bold tracking-widest text-white hover:bg-[#3D4430] transition-all uppercase"
+                    className="flex items-center gap-2 rounded-full bg-[#1A1A1A] px-5 py-2.5 text-xs font-bold tracking-widest text-white hover:bg-[#1B3A5C] transition-all uppercase"
                 >
                     <Plus className="w-4 h-4" />
                     新建规则
                 </button>
             </div>
 
-            <div className="bg-white rounded-xl border border-[#3D4430]/10 overflow-hidden">
+            <div className="bg-white rounded-xl border border-[#1B3A5C]/10 overflow-hidden">
                 <table className="w-full text-left">
                     <thead className="bg-[#F8F7F4] text-xs font-bold tracking-wider text-[#5E5E5E] uppercase">
                         <tr>
@@ -234,11 +234,11 @@ export default function RecommendationRulesPage() {
                             <th className="px-6 py-4 text-right">操作</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#3D4430]/5">
+                    <tbody className="divide-y divide-[#1B3A5C]/5">
                         {rules.length === 0 && (
                             <tr>
                                 <td colSpan={6} className="px-6 py-12 text-center text-sm text-[#5E5E5E]">
-                                    <Sparkles className="w-8 h-8 mx-auto mb-3 text-[#3D4430]/20" />
+                                    <Sparkles className="w-8 h-8 mx-auto mb-3 text-[#1B3A5C]/20" />
                                     暂无推荐规则
                                 </td>
                             </tr>
@@ -252,7 +252,7 @@ export default function RecommendationRulesPage() {
                                     )}
                                 </td>
                                 <td className="px-6 py-4">
-                                    <span className="inline-flex items-center rounded-md bg-[#3D4430]/5 px-2.5 py-0.5 text-xs font-medium text-[#3D4430]">
+                                    <span className="inline-flex items-center rounded-md bg-[#1B3A5C]/5 px-2.5 py-0.5 text-xs font-medium text-[#1B3A5C]">
                                         {rule.priority}
                                     </span>
                                 </td>
@@ -272,7 +272,7 @@ export default function RecommendationRulesPage() {
                                             onChange={() => toggleActive(rule.id, rule.active)}
                                             className="sr-only peer"
                                         />
-                                        <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#3D4430]/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#3D4430]"></div>
+                                        <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#1B3A5C]/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#1B3A5C]"></div>
                                     </label>
                                 </td>
                                 <td className="px-6 py-4 text-right">
@@ -323,7 +323,7 @@ export default function RecommendationRulesPage() {
                                         <h3 className="text-lg font-bold text-[#2C2C2C] tracking-tight">
                                             {editingRule ? "编辑规则" : "新建推荐规则"}
                                         </h3>
-                                        <p className="text-xs text-[#8B7355]">
+                                        <p className="text-xs text-[#1B3A5C]">
                                             {editingRule ? "修改推荐规则信息" : "创建肤质与产品的关联规则"}
                                         </p>
                                     </div>
@@ -380,7 +380,7 @@ export default function RecommendationRulesPage() {
                                                         onClick={() => toggleSelection(type, selectedSkinTypes, setSelectedSkinTypes)}
                                                         className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                                                             selectedSkinTypes.includes(type)
-                                                                ? "bg-[#3D4430] text-white"
+                                                                ? "bg-[#1B3A5C] text-white"
                                                                 : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                                                         }`}
                                                     >
@@ -407,7 +407,7 @@ export default function RecommendationRulesPage() {
                                                         onClick={() => toggleSelection(concern, selectedConcerns, setSelectedConcerns)}
                                                         className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                                                             selectedConcerns.includes(concern)
-                                                                ? "bg-[#3D4430] text-white"
+                                                                ? "bg-[#1B3A5C] text-white"
                                                                 : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                                                         }`}
                                                     >
@@ -449,7 +449,7 @@ export default function RecommendationRulesPage() {
                                                                 type="checkbox"
                                                                 checked={selectedProductIds.includes(product.id)}
                                                                 onChange={() => toggleSelection(product.id, selectedProductIds, setSelectedProductIds)}
-                                                                className="rounded border-slate-300 text-[#3D4430] focus:ring-[#3D4430]"
+                                                                className="rounded border-slate-300 text-[#1B3A5C] focus:ring-[#1B3A5C]"
                                                             />
                                                             <span className="text-sm text-slate-700">{product.name}</span>
                                                             <span className="text-xs text-slate-400 ml-auto">{product.category}</span>
@@ -468,7 +468,7 @@ export default function RecommendationRulesPage() {
                                                 type="checkbox"
                                                 checked={formActive}
                                                 onChange={(e) => setFormActive(e.target.checked)}
-                                                className="rounded border-slate-300 text-[#3D4430] focus:ring-[#3D4430]"
+                                                className="rounded border-slate-300 text-[#1B3A5C] focus:ring-[#1B3A5C]"
                                             />
                                             <span className="text-sm text-slate-700">启用此规则</span>
                                         </label>
@@ -486,7 +486,7 @@ export default function RecommendationRulesPage() {
                                         <button
                                             type="submit"
                                             disabled={submitting}
-                                            className="flex-1 px-4 py-3 text-sm font-bold text-white bg-[#1A1A1A] hover:bg-[#3D4430] rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg disabled:opacity-70"
+                                            className="flex-1 px-4 py-3 text-sm font-bold text-white bg-[#1A1A1A] hover:bg-[#1B3A5C] rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg disabled:opacity-70"
                                         >
                                             {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
                                             {editingRule ? "保存修改" : "创建规则"}

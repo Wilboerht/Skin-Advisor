@@ -34,7 +34,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuid
                         {onCancel && (
                             <button
                                 onClick={onCancel}
-                                className="absolute left-0 p-2 text-[#3D4430]/40 hover:text-[#3D4430] transition-colors rounded-full hover:bg-[#3D4430]/5"
+                                className="absolute left-0 p-2 text-[#1B3A5C]/40 hover:text-[#1B3A5C] transition-colors rounded-full hover:bg-[#1B3A5C]/5"
                                 aria-label="返回"
                             >
                                 <ChevronLeft className="w-6 h-6" strokeWidth={1.5} />
@@ -51,7 +51,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuid
                         {onExit && (
                             <button
                                 onClick={onExit}
-                                className="absolute right-0 p-2 text-[#3D4430]/40 hover:text-[#3D4430] transition-colors rounded-full hover:bg-[#3D4430]/5"
+                                className="absolute right-0 p-2 text-[#1B3A5C]/40 hover:text-[#1B3A5C] transition-colors rounded-full hover:bg-[#1B3A5C]/5"
                                 aria-label="退出测试"
                             >
                                 <HomeSvg className="w-6 h-6" />
@@ -121,7 +121,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuid
                                         }
                                         onConfirm();
                                     }}
-                                    className="group relative w-full max-w-sm inline-flex items-center justify-center gap-4 px-10 py-3.5 sm:px-14 border border-[#3D4430]/25 hover:border-[#3D4430]/50 hover:bg-[#3D4430]/[0.03] text-[13px] sm:text-[14px] tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] font-medium cursor-pointer transition-all duration-500 mb-5"
+                                    className="group relative w-full max-w-sm inline-flex items-center justify-center gap-4 px-10 py-3.5 sm:px-14 border border-[#1B3A5C]/25 hover:border-[#1B3A5C]/50 hover:bg-[#1B3A5C]/[0.03] text-[13px] sm:text-[14px] tracking-[0.2em] text-[#1B3A5C]/70 hover:text-[#1B3A5C] font-medium cursor-pointer transition-all duration-500 mb-5"
                                 >
                                     <span>我已准备好</span>
                                     <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />

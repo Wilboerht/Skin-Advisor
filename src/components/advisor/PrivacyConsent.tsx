@@ -22,7 +22,7 @@ export function PrivacyConsent({ onConsent }: PrivacyConsentProps) {
                 animate={{ opacity: 1, y: 0 }}
                 className="mb-6 sm:mb-8 text-center"
             >
-                <span className="mb-3 inline-block rounded-md bg-[#3D4430]/5 px-4 py-1.5 text-[11px] font-medium tracking-wider text-[#3D4430]">
+                <span className="mb-3 inline-block rounded-md bg-[#1B3A5C]/5 px-4 py-1.5 text-[11px] font-medium tracking-wider text-[#1B3A5C]">
                     开始之前
                 </span>
                 <h2 className="font-serif text-2xl md:text-3xl text-[#1A1A1A]">
@@ -41,10 +41,10 @@ export function PrivacyConsent({ onConsent }: PrivacyConsentProps) {
                 className="w-full max-w-lg space-y-4"
             >
                 {/* 核心摘要卡片 */}
-                <div className="rounded-xl border border-[#3D4430]/10 bg-white/60 backdrop-blur-md p-5 sm:p-6 space-y-4">
+                <div className="rounded-xl border border-[#1B3A5C]/10 bg-white/60 backdrop-blur-md p-5 sm:p-6 space-y-4">
                     <div className="flex items-start gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#3D4430]/5">
-                            <Shield className="h-5 w-5 text-[#3D4430]" strokeWidth={1.5} />
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#1B3A5C]/5">
+                            <Shield className="h-5 w-5 text-[#1B3A5C]" strokeWidth={1.5} />
                         </div>
                         <div>
                             <h3 className="text-sm font-medium text-[#1A1A1A]">数据收集范围</h3>
@@ -54,11 +54,11 @@ export function PrivacyConsent({ onConsent }: PrivacyConsentProps) {
                         </div>
                     </div>
 
-                    <div className="h-px bg-[#3D4430]/10" />
+                    <div className="h-px bg-[#1B3A5C]/10" />
 
                     <div className="flex items-start gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#3D4430]/5">
-                            <Shield className="h-5 w-5 text-[#3D4430]" strokeWidth={1.5} />
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#1B3A5C]/5">
+                            <Shield className="h-5 w-5 text-[#1B3A5C]" strokeWidth={1.5} />
                         </div>
                         <div>
                             <h3 className="text-sm font-medium text-[#1A1A1A]">数据存储与安全</h3>
@@ -68,11 +68,11 @@ export function PrivacyConsent({ onConsent }: PrivacyConsentProps) {
                         </div>
                     </div>
 
-                    <div className="h-px bg-[#3D4430]/10" />
+                    <div className="h-px bg-[#1B3A5C]/10" />
 
                     <div className="flex items-start gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#3D4430]/5">
-                            <Shield className="h-5 w-5 text-[#3D4430]" strokeWidth={1.5} />
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#1B3A5C]/5">
+                            <Shield className="h-5 w-5 text-[#1B3A5C]" strokeWidth={1.5} />
                         </div>
                         <div>
                             <h3 className="text-sm font-medium text-[#1A1A1A]">AI 分析说明</h3>
@@ -86,7 +86,7 @@ export function PrivacyConsent({ onConsent }: PrivacyConsentProps) {
                 {/* 详细条款折叠 */}
                 <button
                     onClick={() => setShowDetails(!showDetails)}
-                    className="flex items-center gap-1 text-xs text-[#3D4430]/60 hover:text-[#3D4430] transition-colors mx-auto"
+                    className="flex items-center gap-1 text-xs text-[#1B3A5C]/60 hover:text-[#1B3A5C] transition-colors mx-auto"
                 >
                     <span>{showDetails ? "收起" : "查看完整隐私政策与服务条款"}</span>
                     <ChevronRight
@@ -99,7 +99,7 @@ export function PrivacyConsent({ onConsent }: PrivacyConsentProps) {
                     <m.div
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: "auto", opacity: 1 }}
-                        className="rounded-lg border border-[#3D4430]/10 bg-[#F8F7F4] p-4 text-xs text-[#5E5E5E] leading-relaxed space-y-2 max-h-48 overflow-y-auto"
+                        className="rounded-lg border border-[#1B3A5C]/10 bg-[#F8F7F4] p-4 text-xs text-[#5E5E5E] leading-relaxed space-y-2 max-h-48 overflow-y-auto"
                     >
                         <p>1. 我们尊重并保护所有用户的个人隐私权。</p>
                         <p>2. 面部照片仅用于 AI 肤质分析，不会用于人脸识别训练或其他商业用途。</p>
@@ -122,8 +122,8 @@ export function PrivacyConsent({ onConsent }: PrivacyConsentProps) {
                             <div className={cn(
                                 "h-5 w-5 rounded border transition-all duration-200 flex items-center justify-center shrink-0 mt-0.5",
                                 agreed
-                                    ? "bg-[#3D4430] border-[#3D4430]"
-                                    : "border-[#3D4430]/20 bg-white group-hover:border-[#3D4430]/40"
+                                    ? "bg-[#1B3A5C] border-[#1B3A5C]"
+                                    : "border-[#1B3A5C]/20 bg-white group-hover:border-[#1B3A5C]/40"
                             )}>
                                 {agreed && (
                                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -134,9 +134,9 @@ export function PrivacyConsent({ onConsent }: PrivacyConsentProps) {
                         </div>
                         <span className="text-xs text-[#5E5E5E] leading-relaxed">
                             我已阅读并同意
-                            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-[#3D4430] underline underline-offset-2 mx-0.5">《隐私政策》</a>
+                            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-[#1B3A5C] underline underline-offset-2 mx-0.5">《隐私政策》</a>
                             和
-                            <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-[#3D4430] underline underline-offset-2 mx-0.5">《服务条款》</a>
+                            <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-[#1B3A5C] underline underline-offset-2 mx-0.5">《服务条款》</a>
                             ，了解并同意上述数据收集与使用方式。
                         </span>
                     </label>
