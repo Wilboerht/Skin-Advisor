@@ -60,7 +60,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
   return (
     <>
       <nav
-        className={`fixed top-0 left-0 right-0 z-50 px-6 md:px-12 lg:px-20 py-5 md:py-7 transition-all duration-500 ${
+        className={`fixed top-0 left-0 right-0 z-[100000] px-6 md:px-12 lg:px-20 py-5 md:py-7 transition-all duration-500 ${
           scrolled
             ? "bg-[#F8F7F3]/80 backdrop-blur-md border-b border-[rgba(61,68,48,0.06)]"
             : isDark
@@ -235,7 +235,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
 
       {/* 移动端全屏菜单 */}
       <div
-        className={`fixed inset-0 z-[60] md:hidden transition-all duration-500 ${
+        className={`fixed inset-0 z-[100001] md:hidden transition-all duration-500 ${
           mobileMenuOpen ? "visible opacity-100" : "invisible opacity-0"
         }`}
       >
