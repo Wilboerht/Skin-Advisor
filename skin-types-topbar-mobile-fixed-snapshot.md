@@ -1,0 +1,145 @@
+- generic [ref=e1]:
+  - main:
+    - main [ref=e2]:
+      - navigation [ref=e3]:
+        - generic [ref=e4]:
+          - link "NIHPLOD" [ref=e5] [cursor=pointer]:
+            - /url: /
+            - img "NIHPLOD" [ref=e6]
+          - generic [ref=e7]:
+            - button "登录" [ref=e8] [cursor=pointer]:
+              - img [ref=e9]
+            - link "首页" [ref=e12] [cursor=pointer]:
+              - /url: /
+              - img [ref=e13]
+            - button "打开菜单" [expanded] [active] [ref=e15] [cursor=pointer]:
+              - img [ref=e16]
+      - generic [ref=e137]:
+        - button "关闭菜单" [ref=e139] [cursor=pointer]:
+          - img [ref=e140]
+        - navigation [ref=e143]:
+          - link "素颜测肤" [ref=e144] [cursor=pointer]:
+            - /url: /
+          - link "肌肤性格" [ref=e145] [cursor=pointer]:
+            - /url: /skin-types
+          - link "更多服务" [ref=e146] [cursor=pointer]:
+            - /url: /services
+          - link "探索旎柏" [ref=e147] [cursor=pointer]:
+            - /url: https://nihplod.cn/about
+            - text: 探索旎柏
+            - img [ref=e148]
+        - generic [ref=e153]:
+          - button "登录" [ref=e154] [cursor=pointer]:
+            - img [ref=e155]
+            - text: 登录
+          - link "首页" [ref=e158] [cursor=pointer]:
+            - /url: /
+            - img [ref=e159]
+            - text: 首页
+      - generic [ref=e18]:
+        - img [ref=e20]
+        - heading "发现你的肌肤性格类型" [level=1] [ref=e23]
+        - paragraph [ref=e24]: 每一种肌肤，都有自己的性格。从素颜状态出发，读懂肌肤真正需要什么。
+        - link "前往测肤" [ref=e25] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e26]: 前往测肤
+          - img [ref=e27]
+      - generic [ref=e30]:
+        - link "进阶狂魔 你正在从\"好\"迈向\"卓越\"的途中，每一寸肌肤都在蓄力。 查看完整解读" [ref=e31] [cursor=pointer]:
+          - /url: /result/jiejinkuangmo
+          - generic [ref=e32]:
+            - heading "进阶狂魔" [level=2] [ref=e33]
+            - paragraph [ref=e34]: 你正在从"好"迈向"卓越"的途中，每一寸肌肤都在蓄力。
+            - generic [ref=e35]:
+              - text: 查看完整解读
+              - img [ref=e36]
+        - link "抗垮达人 你比时间更聪明，早已在皱纹到来之前布置好了防线。 查看完整解读" [ref=e38] [cursor=pointer]:
+          - /url: /result/kangkuadaren
+          - generic [ref=e39]:
+            - heading "抗垮达人" [level=2] [ref=e40]
+            - paragraph [ref=e41]: 你比时间更聪明，早已在皱纹到来之前布置好了防线。
+            - generic [ref=e42]:
+              - text: 查看完整解读
+              - img [ref=e43]
+        - link "躺平玩家 省心干皮，佛系养护也能保持好状态——你的肌肤天生懂得省力之道 查看完整解读" [ref=e45] [cursor=pointer]:
+          - /url: /result/tangpingwanjia
+          - generic [ref=e46]:
+            - heading "躺平玩家" [level=2] [ref=e47]
+            - paragraph [ref=e48]: 省心干皮，佛系养护也能保持好状态——你的肌肤天生懂得省力之道
+            - generic [ref=e49]:
+              - text: 查看完整解读
+              - img [ref=e50]
+        - link "柔光达人 原生雾感柔光，氛围感素颜代表——你的肌肤天生自带高级滤镜 查看完整解读" [ref=e52] [cursor=pointer]:
+          - /url: /result/rouguangdaren
+          - generic [ref=e53]:
+            - heading "柔光达人" [level=2] [ref=e54]
+            - paragraph [ref=e55]: 原生雾感柔光，氛围感素颜代表——你的肌肤天生自带高级滤镜
+            - generic [ref=e56]:
+              - text: 查看完整解读
+              - img [ref=e57]
+        - link "稳肤玩家 肤质零波动，换季作息全 hold 住 查看完整解读" [ref=e59] [cursor=pointer]:
+          - /url: /result/wenfuwanjia
+          - generic [ref=e60]:
+            - heading "稳肤玩家" [level=2] [ref=e61]
+            - paragraph [ref=e62]: 肤质零波动，换季作息全 hold 住
+            - generic [ref=e63]:
+              - text: 查看完整解读
+              - img [ref=e64]
+        - link "生图狂魔 高清镜头的克星，原相机直出的完美肤质 查看完整解读" [ref=e66] [cursor=pointer]:
+          - /url: /result/shengtukuangmo
+          - generic [ref=e67]:
+            - heading "生图狂魔" [level=2] [ref=e68]
+            - paragraph [ref=e69]: 高清镜头的克星，原相机直出的完美肤质
+            - generic [ref=e70]:
+              - text: 查看完整解读
+              - img [ref=e71]
+        - link "奢润达人 高阶奢护养成，水润饱满的顶配干皮 查看完整解读" [ref=e73] [cursor=pointer]:
+          - /url: /result/shirundaren
+          - generic [ref=e74]:
+            - heading "奢润达人" [level=2] [ref=e75]
+            - paragraph [ref=e76]: 高阶奢护养成，水润饱满的顶配干皮
+            - generic [ref=e77]:
+              - text: 查看完整解读
+              - img [ref=e78]
+        - link "冻龄玩家 岁月无痕，真实年龄成为永久秘密 查看完整解读" [ref=e80] [cursor=pointer]:
+          - /url: /result/donglingwanjia
+          - generic [ref=e81]:
+            - heading "冻龄玩家" [level=2] [ref=e82]
+            - paragraph [ref=e83]: 岁月无痕，真实年龄成为永久秘密
+            - generic [ref=e84]:
+              - text: 查看完整解读
+              - img [ref=e85]
+        - link "天赋狂魔 你的肌肤自带修复天赋，从容应对每一次外界挑战。 查看完整解读" [ref=e87] [cursor=pointer]:
+          - /url: /result/tianfukuangmo
+          - generic [ref=e88]:
+            - heading "天赋狂魔" [level=2] [ref=e89]
+            - paragraph [ref=e90]: 你的肌肤自带修复天赋，从容应对每一次外界挑战。
+            - generic [ref=e91]:
+              - text: 查看完整解读
+              - img [ref=e92]
+        - link "御龄主宰 你已成功驾驭时间，让肌肤停留在最佳状态。 查看完整解读" [ref=e94] [cursor=pointer]:
+          - /url: /result/yulingzhuzai
+          - generic [ref=e95]:
+            - heading "御龄主宰" [level=2] [ref=e96]
+            - paragraph [ref=e97]: 你已成功驾驭时间，让肌肤停留在最佳状态。
+            - generic [ref=e98]:
+              - text: 查看完整解读
+              - img [ref=e99]
+      - generic [ref=e102]:
+        - heading "探索更多专属服务" [level=2] [ref=e103]
+        - paragraph [ref=e104]: 添加 NIHPLOD 专属护肤顾问，或前往线下门店获取一对一肌肤分析及体验专属护肤服务。
+        - link "了解更多服务" [ref=e105] [cursor=pointer]:
+          - /url: /services
+          - generic [ref=e106]: 了解更多服务
+          - img [ref=e107]
+      - generic [ref=e110]:
+        - paragraph [ref=e111]: © 2026 NIHPLOD. All Rights Reserved.
+        - generic [ref=e112]:
+          - link "隐私政策" [ref=e113] [cursor=pointer]:
+            - /url: /privacy
+          - generic [ref=e114]: ·
+          - link "服务条款" [ref=e115] [cursor=pointer]:
+            - /url: /terms
+  - button "Open Next.js Dev Tools" [ref=e130] [cursor=pointer]:
+    - img [ref=e131]
+  - alert [ref=e129]
