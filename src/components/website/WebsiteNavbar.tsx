@@ -57,11 +57,6 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
     openAuthModal("login");
   };
 
-  const handleRegisterClick = () => {
-    setMobileMenuOpen(false);
-    openAuthModal("register");
-  };
-
   return (
     <>
       <nav
