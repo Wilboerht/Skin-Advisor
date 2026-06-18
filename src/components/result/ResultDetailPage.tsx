@@ -45,7 +45,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
 
       {/* Hero */}
       <section
-        className="relative min-h-[520px] md:min-h-[560px] px-6 md:px-12 lg:px-20 overflow-hidden bg-[#F5F7FA] text-[#1A1A1A]"
+        className="relative min-h-[520px] md:min-h-[560px] px-6 md:px-12 lg:px-20 overflow-hidden bg-[#F8F7F3] text-[#1A1A1A]"
       >
         <div className="relative z-10 max-w-6xl mx-auto w-full pt-28 pb-14 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           <div className="max-w-2xl">
@@ -130,7 +130,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       </section>
 
       {/* Skincare Formula */}
-      <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-[#F5F7FA]">
+      <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-[#F8F7F3]">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-4">
             {data.m7.title || `${data.typeName}的精准护肤公式`}
@@ -245,7 +245,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       </section>
 
       {/* Footer */}
-      <footer className="py-8 px-6 text-center border-t border-[rgba(27, 58, 92, 0.08)]">
+      <footer className="py-8 px-6 text-center border-t border-[rgba(61,68,48,0.08)]">
         <p className="flex items-start justify-center gap-2 text-[10px] sm:text-xs text-[#8A8A8A] leading-[1.8] max-w-2xl mx-auto mb-6">
           <Info className="w-3.5 h-3.5 text-[#C9A86C] flex-shrink-0 mt-0.5 stroke-[2]" />
           <span>
@@ -256,11 +256,11 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
           <p>© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
           <span className="hidden sm:inline text-[#5E5E5E]/30">·</span>
           <div className="flex items-center gap-4">
-            <Link href="/privacy" className="hover:text-[#1B3A5C] transition-colors duration-300">
+            <Link href="/privacy" className="hover:text-[#3D4430] transition-colors duration-300">
               隐私政策
             </Link>
             <span className="text-[#5E5E5E]/30">·</span>
-            <Link href="/terms" className="hover:text-[#1B3A5C] transition-colors duration-300">
+            <Link href="/terms" className="hover:text-[#3D4430] transition-colors duration-300">
               服务条款
             </Link>
           </div>

@@ -16,7 +16,7 @@ export default function ResultIndexPage() {
     .filter(Boolean);
 
   return (
-    <main className="relative min-h-screen text-[#1A1A1A] bg-[#F5F7FA]">
+    <main className="relative min-h-screen text-[#1A1A1A] bg-[#F8F7F3]">
       {/* 顶部导航 */}
       <WebsiteNavbar />
 
@@ -24,7 +24,7 @@ export default function ResultIndexPage() {
       <section className="relative pt-32 pb-28 md:pt-40 md:pb-36 px-6 md:px-12 lg:px-20 overflow-hidden">
         <div className="relative z-10 max-w-5xl mx-auto text-center">
           <div className="flex justify-center mb-4 opacity-0 animate-fade-in-up" style={{ animationFillMode: "forwards" }}>
-            <Sparkles className="w-8 h-8 text-[#1B3A5C]" />
+            <Sparkles className="w-8 h-8 text-[#8B7355]" />
           </div>
           <h1
             className="text-2xl md:text-3xl font-serif text-[#1A1A1A] mb-4 opacity-0 animate-fade-in-up"
@@ -40,7 +40,7 @@ export default function ResultIndexPage() {
           </p>
           <Link
             href="/"
-            className="group relative inline-flex items-center justify-center gap-4 px-12 py-4 sm:px-16 border border-[#1B3A5C]/25 hover:border-[#1B3A5C]/50 hover:bg-[#1B3A5C]/[0.03] text-[13px] sm:text-[14px] tracking-[0.2em] text-[#1B3A5C]/70 hover:text-[#1B3A5C] font-medium cursor-pointer transition-all duration-500 opacity-0 animate-fade-in-up"
+            className="group relative inline-flex items-center justify-center gap-4 px-12 py-4 sm:px-16 border border-[#3D4430]/25 hover:border-[#3D4430]/50 hover:bg-[#3D4430]/[0.03] text-[13px] sm:text-[14px] tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] font-medium cursor-pointer transition-all duration-500 opacity-0 animate-fade-in-up"
             style={{ animationDelay: "0.2s", animationFillMode: "forwards" }}
           >
             <span>前往测肤</span>
@@ -58,7 +58,7 @@ export default function ResultIndexPage() {
               <Link
                 key={type.route}
                 href={`/result/${type.route}`}
-                className="group relative rounded-2xl border border-[rgba(27, 58, 92, 0.08)] bg-[#FAF9F6] p-7 md:p-9 transition-all duration-500 hover:shadow-[0_16px_32px_rgba(27, 58, 92, 0.08)] hover:-translate-y-1"
+                className="group relative rounded-2xl border border-[rgba(61,68,48,0.08)] bg-[#FAF9F6] p-7 md:p-9 transition-all duration-500 hover:shadow-[0_16px_32px_rgba(61,68,48,0.08)] hover:-translate-y-1"
               >
                 <Image
                   src={`/images/character/${type.scoreRange}/${type.scoreRange}_female.png`}
@@ -68,13 +68,13 @@ export default function ResultIndexPage() {
                   className="absolute -right-3 -bottom-4 w-32 h-56 md:w-36 md:h-64 object-contain opacity-100 group-hover:scale-105 transition-transform duration-500 pointer-events-none select-none"
                 />
                 <div className="relative z-10 pr-20 md:pr-20">
-                  <h2 className="text-xl md:text-2xl font-serif tracking-wide text-[#1A1A1A] mb-2 group-hover:text-[#1B3A5C] transition-colors duration-500">
+                  <h2 className="text-xl md:text-2xl font-serif tracking-wide text-[#1A1A1A] mb-2 group-hover:text-[#3D4430] transition-colors duration-500">
                     {type.typeName}
                   </h2>
                   <p className="text-sm text-[#5E5E5E]/70 leading-relaxed mb-5 line-clamp-1 font-light">
                     {type.m1.persona}
                   </p>
-                  <div className="inline-flex items-center text-xs font-medium tracking-[0.15em] text-[#1B3A5C] group-hover:text-[#1B3A5C]/80 transition-colors duration-300">
+                  <div className="inline-flex items-center text-xs font-medium tracking-[0.15em] text-[#3D4430] group-hover:text-[#3D4430]/80 transition-colors duration-300">
                     查看完整解读
                     <ArrowRight className="w-3.5 h-3.5 ml-1.5 transition-transform duration-500 group-hover:translate-x-1.5" />
                   </div>
@@ -96,7 +96,7 @@ export default function ResultIndexPage() {
           </p>
           <Link
             href="/services"
-            className="group relative inline-flex items-center justify-center gap-4 px-12 py-4 sm:px-16 border border-[#1B3A5C]/25 hover:border-[#1B3A5C]/50 hover:bg-[#1B3A5C]/[0.03] text-[13px] sm:text-[14px] tracking-[0.2em] text-[#1B3A5C]/70 hover:text-[#1B3A5C] font-medium cursor-pointer transition-all duration-500"
+            className="group relative inline-flex items-center justify-center gap-4 px-12 py-4 sm:px-16 border border-[#3D4430]/25 hover:border-[#3D4430]/50 hover:bg-[#3D4430]/[0.03] text-[13px] sm:text-[14px] tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] font-medium cursor-pointer transition-all duration-500"
           >
             <span>了解更多服务</span>
             <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-2" />
@@ -105,16 +105,16 @@ export default function ResultIndexPage() {
       </section>
 
       {/* 页脚 */}
-      <footer className="py-8 px-6 text-center border-t border-[rgba(27, 58, 92, 0.08)]">
+      <footer className="py-8 px-6 text-center border-t border-[rgba(61,68,48,0.08)]">
         <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-xs tracking-widest text-[#5E5E5E]/60">
           <p>© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
           <span className="hidden sm:inline text-[#5E5E5E]/30">·</span>
           <div className="flex items-center gap-4">
-            <Link href="/privacy" className="hover:text-[#1B3A5C] transition-colors duration-300">
+            <Link href="/privacy" className="hover:text-[#3D4430] transition-colors duration-300">
               隐私政策
             </Link>
             <span className="text-[#5E5E5E]/30">·</span>
-            <Link href="/terms" className="hover:text-[#1B3A5C] transition-colors duration-300">
+            <Link href="/terms" className="hover:text-[#3D4430] transition-colors duration-300">
               服务条款
             </Link>
           </div>

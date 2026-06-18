@@ -207,7 +207,7 @@ export function WeeklyGrowth({ data }: { data?: StatsData['weeklyGrowth'] }) {
                             <Bar
                                 dataKey="completed"
                                 name="completed"
-                                fill="#1B3A5C"
+                                fill="#3D4430"
                                 radius={[4, 4, 0, 0]}
                                 barSize={16}
                             />

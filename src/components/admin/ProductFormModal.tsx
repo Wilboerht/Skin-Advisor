@@ -90,7 +90,7 @@ export function ProductFormModal({ isOpen, onClose, product, onSuccess }: Produc
                                     <h3 className="text-lg font-bold text-[#2C2C2C] tracking-tight">
                                         {product ? "编辑产品" : "新建产品"}
                                     </h3>
-                                    <p className="text-xs text-[#1B3A5C]">
+                                    <p className="text-xs text-[#8B7355]">
                                         {product ? "修改产品信息" : "填写产品信息并发布到前端展示"}
                                     </p>
                                 </div>

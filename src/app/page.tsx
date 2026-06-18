@@ -280,7 +280,7 @@ export default function Home() {
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[9999] bg-[#FDFBF7] flex flex-col items-center justify-center pointer-events-none"
           >
-            <Loader2 className="w-10 h-10 text-[#1B3A5C] animate-spin mb-6" />
+            <Loader2 className="w-10 h-10 text-[#3D4430] animate-spin mb-6" />
             <p className="text-[#5E5E5E] text-[15px] font-medium tracking-wide">即将进入 AI 问卷...</p>
           </m.div>
         )}
@@ -297,7 +297,7 @@ export default function Home() {
         transition={{ duration: 0.7, ease: [0.65, 0, 0.35, 1] }}
       >
         <div className="h-full">
-          <div className="relative z-20 w-full h-full bg-[#F5F7FA]">
+          <div className="relative z-20 w-full h-full bg-[#F8F7F3]">
             <div className="home-container relative h-full w-full">
               {/* Spotlight Follow */}
               <div
@@ -311,7 +311,7 @@ export default function Home() {
                 <div className="z-10 flex flex-col items-center text-center max-w-3xl mx-auto">
                   <div className="animate-fade-in-up flex flex-col items-center">
                     {/* Eyebrow */}
-                    <p className="text-xs uppercase tracking-[0.3em] text-[#1B3A5C] mb-6 md:mb-8 opacity-0 animate-fade-in-up" style={{ animationFillMode: 'forwards' }}>
+                    <p className="text-xs uppercase tracking-[0.3em] text-[#8B7355] mb-6 md:mb-8 opacity-0 animate-fade-in-up" style={{ animationFillMode: 'forwards' }}>
                       AI Skin Analysis
                     </p>
 
@@ -322,7 +322,7 @@ export default function Home() {
 
                     {/* Description */}
                     <p className="text-[#5C5855]/90 leading-[1.9] mb-12 md:mb-16 max-w-xl mx-auto font-light text-sm sm:text-base tracking-wide opacity-0 animate-fade-in-up" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
-                      为了精准分析你的肌肤状态并生成专业定制化报告，<br className="hidden sm:block" />接下来我们将引导您<br className="sm:hidden" />进行个性化问卷调查与多维面部肌肤分析，<br />整个过程预计占用 <span className="text-[#1B3A5C]/80">2-5 分钟</span>。
+                      为了精准分析你的肌肤状态并生成专业定制化报告，<br className="hidden sm:block" />接下来我们将引导您<br className="sm:hidden" />进行个性化问卷调查与多维面部肌肤分析，<br />整个过程预计占用 <span className="text-[#3D4430]/80">2-5 分钟</span>。
                     </p>
 
                     {/* CTA + Guide + History */}
@@ -330,7 +330,7 @@ export default function Home() {
                       <button
                         onClick={handleStart}
                         disabled={isLoading || checkingLimit}
-                        className="group relative inline-flex items-center justify-center gap-4 px-12 py-4 sm:px-16 border border-[#1B3A5C]/25 hover:border-[#1B3A5C]/50 hover:bg-[#1B3A5C]/[0.03] text-[13px] sm:text-[14px] tracking-[0.2em] text-[#1B3A5C]/70 hover:text-[#1B3A5C] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500"
+                        className="group relative inline-flex items-center justify-center gap-4 px-12 py-4 sm:px-16 border border-[#3D4430]/25 hover:border-[#3D4430]/50 hover:bg-[#3D4430]/[0.03] text-[13px] sm:text-[14px] tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500"
                       >
                         {isLoading || checkingLimit ? (
                           <>
@@ -399,7 +399,7 @@ export default function Home() {
                 background: 'linear-gradient(180deg, #F8F6F1 0%, #F3F0E9 100%)',
                 borderRadius: 24,
                 boxShadow: '0 32px 64px -16px rgba(45, 42, 38, 0.25), inset 0 1px 1px rgba(255,255,255,0.6)',
-                border: '1px solid rgba(27, 58, 92, 0.15)',
+                border: '1px solid rgba(139, 115, 85, 0.15)',
               }}
               onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
@@ -407,7 +407,7 @@ export default function Home() {
               <button
                 onClick={() => setShowGuideModal(false)}
                 className="absolute top-5 right-5 z-20 w-8 h-8 flex items-center justify-center rounded-full transition-colors"
-                style={{ background: 'rgba(27, 58, 92, 0.08)', color: '#1B3A5C' }}
+                style={{ background: 'rgba(139, 115, 85, 0.08)', color: '#8B7355' }}
               >
                 <X size={15} strokeWidth={2.5} />
               </button>
@@ -438,17 +438,17 @@ export default function Home() {
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.1 + i * 0.06 }}
                       className="flex items-start gap-3 px-4 py-3.5 rounded-xl transition-colors"
-                      style={{ background: 'rgba(27, 58, 92, 0.04)' }}
+                      style={{ background: 'rgba(139, 115, 85, 0.04)' }}
                       onMouseEnter={(e) => {
-                        (e.currentTarget as HTMLElement).style.background = 'rgba(27, 58, 92, 0.08)';
+                        (e.currentTarget as HTMLElement).style.background = 'rgba(139, 115, 85, 0.08)';
                       }}
                       onMouseLeave={(e) => {
-                        (e.currentTarget as HTMLElement).style.background = 'rgba(27, 58, 92, 0.04)';
+                        (e.currentTarget as HTMLElement).style.background = 'rgba(139, 115, 85, 0.04)';
                       }}
                     >
                       <span
                         className="mt-1 w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-[10px] font-bold"
-                        style={{ background: 'rgba(27, 58, 92, 0.1)', color: '#1B3A5C' }}
+                        style={{ background: 'rgba(61, 68, 48, 0.1)', color: '#3D4430' }}
                       >
                         {i + 1}
                       </span>
@@ -613,7 +613,7 @@ export default function Home() {
 
                   {/* Text */}
                   <div className="flex flex-col justify-center text-left py-2">
-                    <p className="text-[13px] text-[#1B3A5C] tracking-[0.25em] uppercase font-medium mb-5">
+                    <p className="text-[13px] text-[#8B7355] tracking-[0.25em] uppercase font-medium mb-5">
                       化繁为简 · 逆转时光
                     </p>
                     <h3 className="text-[26px] md:text-[32px] font-serif text-[#1A1A1A] mb-6 leading-tight tracking-tight">
@@ -632,9 +632,9 @@ export default function Home() {
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => setShowBrandModal(false)}
-                    className="inline-flex items-center gap-2 py-2 text-[14px] tracking-[0.2em] font-medium text-[#1B3A5C] cursor-pointer transition-all duration-300 bg-transparent border-none outline-none group"
+                    className="inline-flex items-center gap-2 py-2 text-[14px] tracking-[0.2em] font-medium text-[#8B7355] cursor-pointer transition-all duration-300 bg-transparent border-none outline-none group"
                   >
-                    <span className="border-b border-[#1B3A5C]/30 pb-0.5 group-hover:border-[#1B3A5C] transition-colors">前往官网</span>
+                    <span className="border-b border-[#8B7355]/30 pb-0.5 group-hover:border-[#8B7355] transition-colors">前往官网</span>
                     <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
                   </a>
                 </div>

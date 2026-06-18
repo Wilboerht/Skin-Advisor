@@ -154,9 +154,9 @@ function getSkinTypeColor(type: string): string {
     const colors: Record<string, string> = {
         'dry': '#5B8FB9',
         'oily': '#C19F70',
-        'combination': '#1B3A5C',
+        'combination': '#8B7355',
         'sensitive': '#D97706',
-        'normal': '#1B3A5C'
+        'normal': '#3D4430'
     };
     return colors[type] || '#6B7280';
 }

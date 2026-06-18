@@ -63,7 +63,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
         style={{ pointerEvents: "none" }}
         className={`fixed top-0 left-0 right-0 z-[100000] px-6 md:px-12 lg:px-20 py-5 md:py-7 transition-all duration-500 ${
           scrolled
-            ? "bg-[#F5F7FA]/80 backdrop-blur-md border-b border-[rgba(27, 58, 92, 0.06)]"
+            ? "bg-[#F8F7F3]/80 backdrop-blur-md border-b border-[rgba(61,68,48,0.06)]"
             : isDark
               ? "bg-transparent border-b border-transparent"
               : "bg-transparent border-b border-transparent"
@@ -92,15 +92,15 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                   href={item.href}
                   className={`group relative text-[15px] font-medium tracking-[0.2em] transition-colors duration-500 ${
                     isActive
-                      ? isDark ? "text-white" : "text-[#1B3A5C]"
+                      ? isDark ? "text-white" : "text-[#3D4430]"
                       : isDark
                         ? "text-white/70 hover:text-white"
-                        : "text-[#1B3A5C]/70 hover:text-[#1B3A5C]"
+                        : "text-[#3D4430]/70 hover:text-[#3D4430]"
                   }`}
                 >
                   {item.label}
                   {!isActive && (
-                    <span className="absolute -bottom-0.5 left-0 w-0 h-[1px] bg-[#1B3A5C]/30 group-hover:w-full transition-all duration-500 ease-out" />
+                    <span className="absolute -bottom-0.5 left-0 w-0 h-[1px] bg-[#3D4430]/30 group-hover:w-full transition-all duration-500 ease-out" />
                   )}
                 </Link>
               );
@@ -112,12 +112,12 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
               className={`group relative flex items-center gap-1.5 text-[15px] font-medium tracking-[0.2em] transition-colors duration-500 ${
                 isDark
                   ? "text-white/70 hover:text-white"
-                  : "text-[#1B3A5C]/70 hover:text-[#1B3A5C]"
+                  : "text-[#3D4430]/70 hover:text-[#3D4430]"
               }`}
             >
               探索旎柏
               <ExternalLink className="w-3.5 h-3.5 transition-transform duration-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-              <span className="absolute -bottom-0.5 left-0 w-0 h-[1px] bg-[#1B3A5C]/30 group-hover:w-full transition-all duration-500 ease-out" />
+              <span className="absolute -bottom-0.5 left-0 w-0 h-[1px] bg-[#3D4430]/30 group-hover:w-full transition-all duration-500 ease-out" />
             </a>
           </div>
 
@@ -129,10 +129,10 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                 className={`group hidden md:flex items-center gap-2 text-[15px] font-medium tracking-[0.2em] transition-colors duration-500 cursor-pointer ${
                   isDark
                     ? "text-white/70 hover:text-white"
-                    : "text-[#1B3A5C]/70 hover:text-[#1B3A5C]"
+                    : "text-[#3D4430]/70 hover:text-[#3D4430]"
                 }`}
               >
-                <div className="relative w-7 h-7 rounded-full overflow-hidden bg-[#1B3A5C]/10 flex items-center justify-center text-[#1B3A5C] text-xs font-serif shrink-0">
+                <div className="relative w-7 h-7 rounded-full overflow-hidden bg-[#3D4430]/10 flex items-center justify-center text-[#3D4430] text-xs font-serif shrink-0">
                   {user.avatar ? (
                     <Image src={user.avatar} alt="" fill unoptimized className="object-cover" />
                   ) : (
@@ -142,11 +142,11 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                 <span className="hidden lg:inline relative max-w-[120px] truncate">
                   {user.name || user.email || user.phone || "用户"}
                   {isVip && (
-                    <span className="ml-2 text-[10px] tracking-wider px-1.5 py-0.5 rounded-full bg-[#1B3A5C] text-[#F5F7FA] font-medium align-middle">
+                    <span className="ml-2 text-[10px] tracking-wider px-1.5 py-0.5 rounded-full bg-[#3D4430] text-[#F8F7F3] font-medium align-middle">
                       VIP
                     </span>
                   )}
-                  <span className="absolute -bottom-0.5 left-0 w-0 h-[1px] bg-[#1B3A5C]/30 group-hover:w-full transition-all duration-500 ease-out" />
+                  <span className="absolute -bottom-0.5 left-0 w-0 h-[1px] bg-[#3D4430]/30 group-hover:w-full transition-all duration-500 ease-out" />
                 </span>
               </Link>
             ) : (
@@ -155,13 +155,13 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                 className={`group hidden md:flex items-center gap-2 text-[15px] font-medium tracking-[0.2em] transition-colors duration-500 cursor-pointer ${
                   isDark
                     ? "text-white/70 hover:text-white"
-                    : "text-[#1B3A5C]/70 hover:text-[#1B3A5C]"
+                    : "text-[#3D4430]/70 hover:text-[#3D4430]"
                 }`}
               >
                 <User className="w-5 h-5 sm:w-[1.125rem] sm:h-[1.125rem] transition-opacity duration-500" />
                 <span className="hidden sm:inline relative">
                   登录
-                  <span className="absolute -bottom-0.5 left-0 w-0 h-[1px] bg-[#1B3A5C]/30 group-hover:w-full transition-all duration-500 ease-out" />
+                  <span className="absolute -bottom-0.5 left-0 w-0 h-[1px] bg-[#3D4430]/30 group-hover:w-full transition-all duration-500 ease-out" />
                 </span>
               </button>
             )}
@@ -174,10 +174,10 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                 className={`md:hidden group flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-500 ${
                   isDark
                     ? "text-white/70 hover:text-white hover:bg-white/10"
-                    : "text-[#1B3A5C]/70 hover:text-[#1B3A5C] hover:bg-[#1B3A5C]/5"
+                    : "text-[#3D4430]/70 hover:text-[#3D4430] hover:bg-[#3D4430]/5"
                 }`}
               >
-                <div className="relative w-7 h-7 rounded-full overflow-hidden bg-[#1B3A5C]/10 flex items-center justify-center text-[#1B3A5C] text-xs font-serif">
+                <div className="relative w-7 h-7 rounded-full overflow-hidden bg-[#3D4430]/10 flex items-center justify-center text-[#3D4430] text-xs font-serif">
                   {user.avatar ? (
                     <Image src={user.avatar} alt="" fill unoptimized className="object-cover" />
                   ) : (
@@ -192,7 +192,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                 className={`md:hidden group flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-500 cursor-pointer ${
                   isDark
                     ? "text-white/70 hover:text-white hover:bg-white/10"
-                    : "text-[#1B3A5C]/70 hover:text-[#1B3A5C] hover:bg-[#1B3A5C]/5"
+                    : "text-[#3D4430]/70 hover:text-[#3D4430] hover:bg-[#3D4430]/5"
                 }`}
               >
                 <User className="w-5 h-5 transition-opacity duration-500" />
@@ -206,13 +206,13 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                 className={`group hidden md:flex items-center gap-2 text-[15px] font-medium tracking-[0.2em] transition-colors duration-500 ${
                   isDark
                     ? "text-white/70 hover:text-white"
-                    : "text-[#1B3A5C]/70 hover:text-[#1B3A5C]"
+                    : "text-[#3D4430]/70 hover:text-[#3D4430]"
                 }`}
               >
                 <HomeSvg className="w-6 h-6 sm:w-5 sm:h-5 transition-opacity duration-500" />
                 <span className="hidden sm:inline relative">
                   首页
-                  <span className="absolute -bottom-0.5 left-0 w-0 h-[1px] bg-[#1B3A5C]/30 group-hover:w-full transition-all duration-500 ease-out" />
+                  <span className="absolute -bottom-0.5 left-0 w-0 h-[1px] bg-[#3D4430]/30 group-hover:w-full transition-all duration-500 ease-out" />
                 </span>
               </Link>
             )}
@@ -225,7 +225,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
               className={`md:hidden group flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-500 cursor-pointer ${
                 isDark
                   ? "text-white/70 hover:text-white hover:bg-white/10"
-                  : "text-[#1B3A5C]/70 hover:text-[#1B3A5C] hover:bg-[#1B3A5C]/5"
+                  : "text-[#3D4430]/70 hover:text-[#3D4430] hover:bg-[#3D4430]/5"
               }`}
             >
               <Menu className="w-5 h-5 transition-opacity duration-500" />
@@ -248,7 +248,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
 
         {/* 菜单面板 */}
         <div
-          className={`absolute top-0 right-0 h-full w-[min(320px,85vw)] bg-[#F5F7FA] shadow-2xl rounded-l-3xl transform transition-transform duration-500 ease-out ${
+          className={`absolute top-0 right-0 h-full w-[min(320px,85vw)] bg-[#F8F7F3] shadow-2xl rounded-l-3xl transform transition-transform duration-500 ease-out ${
             mobileMenuOpen ? "translate-x-0" : "translate-x-full"
           }`}
         >
@@ -258,7 +258,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
               <button
                 onClick={() => setMobileMenuOpen(false)}
                 aria-label="关闭菜单"
-                className="group flex items-center justify-center w-10 h-10 rounded-full text-[#1B3A5C]/70 hover:text-[#1B3A5C] hover:bg-[#1B3A5C]/5 transition-colors duration-500 cursor-pointer"
+                className="group flex items-center justify-center w-10 h-10 rounded-full text-[#3D4430]/70 hover:text-[#3D4430] hover:bg-[#3D4430]/5 transition-colors duration-500 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -272,7 +272,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                   onClick={handleNavClick}
                   className="flex items-center gap-4 group"
                 >
-                  <div className="relative w-14 h-14 rounded-full overflow-hidden bg-[#1B3A5C]/10 flex items-center justify-center text-[#1B3A5C] shrink-0">
+                  <div className="relative w-14 h-14 rounded-full overflow-hidden bg-[#3D4430]/10 flex items-center justify-center text-[#3D4430] shrink-0">
                     {user.avatar ? (
                       <Image src={user.avatar} alt="" fill unoptimized className="object-cover" />
                     ) : (
@@ -287,7 +287,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                     </p>
                     <div className="flex items-center gap-2 mt-1">
                       {isVip && (
-                        <span className="text-[11px] tracking-wider px-2 py-0.5 rounded-full bg-[#1B3A5C] text-[#F5F7FA] font-medium">
+                        <span className="text-[11px] tracking-wider px-2 py-0.5 rounded-full bg-[#3D4430] text-[#F8F7F3] font-medium">
                           VIP
                         </span>
                       )}
@@ -302,7 +302,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                   onClick={handleLoginClick}
                   className="w-full flex items-center gap-4 group cursor-pointer"
                 >
-                  <div className="w-14 h-14 rounded-full bg-[#1B3A5C]/8 flex items-center justify-center text-[#1B3A5C]/50 shrink-0 group-hover:bg-[#1B3A5C]/12 transition-colors duration-300">
+                  <div className="w-14 h-14 rounded-full bg-[#3D4430]/8 flex items-center justify-center text-[#3D4430]/50 shrink-0 group-hover:bg-[#3D4430]/12 transition-colors duration-300">
                     <User className="w-7 h-7" />
                   </div>
                   <div className="flex-1 min-w-0 text-left">
@@ -314,7 +314,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                     </p>
                   </div>
                   <svg
-                    className="w-5 h-5 text-[#1B3A5C]/30 group-hover:text-[#1B3A5C]/50 transition-colors duration-300"
+                    className="w-5 h-5 text-[#3D4430]/30 group-hover:text-[#3D4430]/50 transition-colors duration-300"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -339,8 +339,8 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                     onClick={handleNavClick}
                     className={`group relative px-4 py-4 text-[15px] font-medium tracking-[0.2em] rounded-xl transition-all duration-300 ${
                       isActive
-                        ? "text-[#1B3A5C] bg-[#1B3A5C]/8"
-                        : "text-[#1B3A5C]/70 hover:text-[#1B3A5C] hover:bg-[#1B3A5C]/5"
+                        ? "text-[#3D4430] bg-[#3D4430]/8"
+                        : "text-[#3D4430]/70 hover:text-[#3D4430] hover:bg-[#3D4430]/5"
                     }`}
                   >
                     {item.label}
@@ -352,7 +352,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={handleNavClick}
-                className="group flex items-center gap-2 px-4 py-4 text-[15px] font-medium tracking-[0.2em] text-[#1B3A5C]/70 hover:text-[#1B3A5C] hover:bg-[#1B3A5C]/5 rounded-xl transition-all duration-300"
+                className="group flex items-center gap-2 px-4 py-4 text-[15px] font-medium tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] hover:bg-[#3D4430]/5 rounded-xl transition-all duration-300"
               >
                 探索旎柏
                 <ExternalLink className="w-3.5 h-3.5" />
@@ -364,7 +364,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                 <Link
                   href="/"
                   onClick={handleNavClick}
-                  className="group flex items-center gap-3 px-4 py-4 text-[15px] font-medium tracking-[0.2em] text-[#1B3A5C]/70 hover:text-[#1B3A5C] hover:bg-[#1B3A5C]/5 rounded-xl transition-all duration-300"
+                  className="group flex items-center gap-3 px-4 py-4 text-[15px] font-medium tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] hover:bg-[#3D4430]/5 rounded-xl transition-all duration-300"
                 >
                   <HomeSvg className="w-5 h-5" />
                   首页

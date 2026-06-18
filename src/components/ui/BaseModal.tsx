@@ -41,7 +41,7 @@ export function BaseModal({
                     />
 
                     <m.div
-                        className={`relative z-10 w-full max-w-sm shadow-[0_20px_40px_-10px_rgba(0,0,0,0.05)] border border-[#1B3A5C]/5 ${className}`}
+                        className={`relative z-10 w-full max-w-sm shadow-[0_20px_40px_-10px_rgba(0,0,0,0.05)] border border-[#3D4430]/5 ${className}`}
                         initial={{ opacity: 0, scale: 0.95, y: 10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 10 }}

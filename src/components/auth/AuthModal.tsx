@@ -931,7 +931,7 @@ export function AuthModal() {
                     initial={{ x: "100%" }}
                     animate={{ x: 0, transition: { duration: 0.8, ease: [0.8, 0, 0.13, 1] } }}
                     exit={{ x: "100%", transition: { duration: 0.5, ease: [0.8, 0, 0.13, 1] } }}
-                    className="md:hidden fixed inset-0 z-[99999] p-4 bg-[#F5F7FA] flex flex-col"
+                    className="md:hidden fixed inset-0 z-[99999] p-4 bg-[#F8F7F3] flex flex-col"
                 >
                     {/* 手机端顶部栏 */}
                     <div className="flex-shrink-0 h-[56px] w-full flex items-center justify-center relative">
@@ -1095,7 +1095,7 @@ export function AuthModal() {
                                             <div className="w-full border-t border-brand-charcoal/10"></div>
                                         </div>
                                         <div className="relative flex justify-center text-xs">
-                                            <span className="px-4 bg-[#F5F7FA] text-brand-charcoal/40 tracking-wide">其他登录方式</span>
+                                            <span className="px-4 bg-[#F8F7F3] text-brand-charcoal/40 tracking-wide">其他登录方式</span>
                                         </div>
                                     </div>
 

@@ -18,8 +18,8 @@
   --default-color-space: srgb;
 
   --color-cream: #F0EDE1;
-  --color-olive: #1B3A5C;
-  --color-olive-light: rgba(27, 58, 92, 0.15);
+  --color-olive: #3D4430;
+  --color-olive-light: rgba(61, 68, 48, 0.15);
   --color-text-primary: #1A1A1A;
   --color-text-secondary: #5E5E5E;
   --color-white: #ffffff;
@@ -82,7 +82,7 @@
   --color-brand-gold-light: #D4B77A;
   --color-brand-gold-dark: #B8975B;
   --color-brand-cream: #FAF8F5;
-  --color-brand-cream-dark: #EDF1F7;
+  --color-brand-cream-dark: #F5F2ED;
   --color-brand-charcoal: #2C2C2C;
   --color-brand-charcoal-light: #4A4A4A;
   --color-brand-blush: #F5E6E0;
@@ -103,8 +103,8 @@
   :root {
     /* Brand Colors - fallback/vars for non-tailwind usage */
     --color-cream: #F0EDE1;
-    --color-olive: #1B3A5C;
-    --color-olive-light: rgba(27, 58, 92, 0.15);
+    --color-olive: #3D4430;
+    --color-olive-light: rgba(61, 68, 48, 0.15);
     --color-text-primary: #1A1A1A;
     --color-text-secondary: #5E5E5E;
     --color-white: #ffffff;
@@ -204,7 +204,7 @@
     background-color: transparent;
     color: var(--color-olive);
     transform: translateY(-2px);
-    box-shadow: 0 10px 30px rgba(27, 58, 92, 0.15);
+    box-shadow: 0 10px 30px rgba(61, 68, 48, 0.15);
   }
 
   .btn-secondary {
@@ -247,7 +247,7 @@
 
   .card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 16px 32px rgba(27, 58, 92, 0.08);
+    box-shadow: 0 16px 32px rgba(61, 68, 48, 0.08);
   }
 
   /* Glass Premium Design System */
@@ -262,9 +262,9 @@
 
   .glass-premium-primary {
     position: relative;
-    background-color: rgba(27, 58, 92, 0.08); /* 奢侈品极简：由亮金改为极淡暖棕 */
-    color: #1B3A5C; 
-    border: 0.5px solid rgba(27, 58, 92, 0.3);
+    background-color: rgba(139, 115, 85, 0.08); /* 奢侈品极简：由亮金改为极淡暖棕 */
+    color: #8B7355; 
+    border: 0.5px solid rgba(139, 115, 85, 0.3);
     -webkit-backdrop-filter: blur(4px);
     backdrop-filter: blur(4px);
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
@@ -275,10 +275,10 @@
   }
 
   .glass-premium-primary:hover:not(:disabled) {
-    background-color: rgba(27, 58, 92, 0.15);
-    border-color: rgba(27, 58, 92, 0.5);
+    background-color: rgba(139, 115, 85, 0.15);
+    border-color: rgba(139, 115, 85, 0.5);
     transform: translateY(-2px);
-    box-shadow: 0 5px 20px rgba(27, 58, 92, 0.1);
+    box-shadow: 0 5px 20px rgba(139, 115, 85, 0.1);
   }
 
   .glass-premium-primary:active:not(:disabled) {
@@ -301,13 +301,13 @@
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(27, 58, 92, 0.15);
+    background: rgba(139, 115, 85, 0.15);
     border-radius: 10px;
     transition: all 0.3s ease;
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(27, 58, 92, 0.3);
+    background: rgba(139, 115, 85, 0.3);
   }
 
   /* ========== Custom Scrollbar for Modals ========== */
@@ -375,7 +375,7 @@
   position: fixed;
   inset: 0;
   z-index: -1;
-  background-color: #F5F7FA;
+  background-color: #F8F7F3;
 }
 
 /* 全屏背景容器 - 带边距和圆角 */
@@ -420,7 +420,7 @@
 /* ========== 首页专用样式 (一模一样) ========== */
 
 .home-container {
-  --home-bg: #F5F7FA;
+  --home-bg: #F8F7F3;
   --home-text: #3A3530;
   --home-morandi: #A89F91;
   --home-dark: #6B655E;

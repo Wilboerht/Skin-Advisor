@@ -21,7 +21,7 @@ export const INGREDIENT_CATEGORIES = {
     moisturizer: { label: '保湿成分', color: '#5B8FB9' },
     antioxidant: { label: '抗氧化', color: '#8B5A2B' },
     exfoliant: { label: '去角质', color: '#D97706' },
-    soothing: { label: '舒缓修护', color: '#1B3A5C' },
+    soothing: { label: '舒缓修护', color: '#3D4430' },
     sunscreen: { label: '防晒', color: '#F59E0B' },
     other: { label: '其他', color: '#6B7280' },
 };

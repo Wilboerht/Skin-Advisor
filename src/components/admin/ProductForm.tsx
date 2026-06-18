@@ -112,7 +112,7 @@ function Toggle({ label, checked, onChange, tooltip }: { label: string; checked:
             </button>
             {tooltip && (
                 <div className="relative">
-                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#E8E2D9] text-[10px] font-bold text-[#1B3A5C] cursor-help">?</span>
+                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#E8E2D9] text-[10px] font-bold text-[#8B7355] cursor-help">?</span>
                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 px-3 py-2 bg-[#2C2C2C] text-white text-xs rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-50">
                         {tooltip}
                         <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-[#2C2C2C]" />
@@ -635,7 +635,7 @@ export default function ProductForm({
                     {!onCancel && (
                         <Link
                             href="/admin/products"
-                            className="flex items-center gap-1.5 text-sm font-medium text-[#1B3A5C] hover:text-[#C9A86C] transition-colors"
+                            className="flex items-center gap-1.5 text-sm font-medium text-[#8B7355] hover:text-[#C9A86C] transition-colors"
                         >
                             <ChevronLeft className="w-4 h-4" />
                             返回产品列表

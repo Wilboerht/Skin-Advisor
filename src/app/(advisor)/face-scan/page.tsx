@@ -247,7 +247,7 @@ export default function FaceScanPage() {
                         transition={{ duration: 0.4 }}
                         className="fixed inset-0 z-[9999] bg-[#FDFBF7] flex flex-col items-center justify-center"
                     >
-                        <Loader2 className="w-10 h-10 text-[#1B3A5C] animate-spin mb-6" />
+                        <Loader2 className="w-10 h-10 text-[#3D4430] animate-spin mb-6" />
                         <p className="text-[#5E5E5E] text-[15px] font-medium tracking-wide">正在启动 AI 面部扫描...</p>
                         <p className="text-[#8C8C8C] text-[13px] mt-2 font-light">首次加载需要几秒钟</p>
                     </m.div>

@@ -201,7 +201,7 @@ export function OnboardingFlowModal({
                                     initial="hidden"
                                     animate={currentScreen === "nickname" ? "visible" : "hidden"}
                                 >
-                                    <div className="flex justify-center mb-9 text-[#1B3A5C]">
+                                    <div className="flex justify-center mb-9 text-[#3D4430]">
                                         <Image
                                             src="/images/hi.svg"
                                             alt="Wave"
@@ -225,7 +225,7 @@ export function OnboardingFlowModal({
                                         onChange={(e) => setNickname(e.target.value)}
                                         placeholder="输入您的昵称"
                                         maxLength={10}
-                                        className="w-full bg-transparent border-0 border-b border-[#1B3A5C]/20 rounded-none py-4 px-0 mb-9 text-center text-[#1A1A1A] focus:outline-none focus:border-[#1B3A5C]/40 transition-colors placeholder:text-[#1B3A5C]/25 text-[15px] tracking-wide"
+                                        className="w-full bg-transparent border-0 border-b border-[#3D4430]/20 rounded-none py-4 px-0 mb-9 text-center text-[#1A1A1A] focus:outline-none focus:border-[#3D4430]/40 transition-colors placeholder:text-[#3D4430]/25 text-[15px] tracking-wide"
                                         onKeyDown={(e) => {
                                             if (e.key === "Enter") handleNicknameNext();
                                         }}
@@ -235,7 +235,7 @@ export function OnboardingFlowModal({
                                     <button
                                         onClick={handleNicknameNext}
                                         disabled={!nickname.trim()}
-                                        className="group relative inline-flex items-center justify-center gap-4 px-10 py-3.5 sm:px-14 border border-[#1B3A5C]/25 hover:border-[#1B3A5C]/50 hover:bg-[#1B3A5C]/[0.03] text-[13px] sm:text-[14px] tracking-[0.2em] text-[#1B3A5C]/70 hover:text-[#1B3A5C] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500"
+                                        className="group relative inline-flex items-center justify-center gap-4 px-10 py-3.5 sm:px-14 border border-[#3D4430]/25 hover:border-[#3D4430]/50 hover:bg-[#3D4430]/[0.03] text-[13px] sm:text-[14px] tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500"
                                     >
                                         <span>下一步</span>
                                         <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-2" />
@@ -275,7 +275,7 @@ export function OnboardingFlowModal({
                                         exit={{ opacity: 0, x: -20 }}
                                         transition={{ duration: 0.3 }}
                                     >
-                                        <div className="flex justify-center mb-9 text-[#1B3A5C]">
+                                        <div className="flex justify-center mb-9 text-[#8B7355]">
                                             <MapPin className="h-10 w-10 md:h-12 md:w-12 opacity-90" strokeWidth={1.2} />
                                         </div>
 
@@ -293,7 +293,7 @@ export function OnboardingFlowModal({
                                             <button
                                                 onClick={handleLocationAcceptWrapper}
                                                 disabled={isLocating}
-                                                className="group relative inline-flex items-center justify-center gap-4 px-10 py-3.5 sm:px-14 border border-[#1B3A5C]/25 hover:border-[#1B3A5C]/50 hover:bg-[#1B3A5C]/[0.03] text-[13px] sm:text-[14px] tracking-[0.2em] text-[#1B3A5C]/70 hover:text-[#1B3A5C] font-medium disabled:opacity-40 disabled:cursor-wait cursor-pointer transition-all duration-500"
+                                                className="group relative inline-flex items-center justify-center gap-4 px-10 py-3.5 sm:px-14 border border-[#3D4430]/25 hover:border-[#3D4430]/50 hover:bg-[#3D4430]/[0.03] text-[13px] sm:text-[14px] tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] font-medium disabled:opacity-40 disabled:cursor-wait cursor-pointer transition-all duration-500"
                                             >
                                                 {isLocating ? (
                                                     <>
@@ -311,7 +311,7 @@ export function OnboardingFlowModal({
                                             <div>
                                                 <button
                                                     onClick={handleDecline}
-                                                    className="py-2 text-[12px] tracking-widest text-[#1B3A5C]/30 hover:text-[#1B3A5C] transition-colors bg-transparent border-none cursor-pointer"
+                                                    className="py-2 text-[12px] tracking-widest text-[#3D4430]/30 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
                                                 >
                                                     手动选择地区
                                                 </button>
@@ -339,18 +339,18 @@ export function OnboardingFlowModal({
                                                 {regionOptions.map((group) => (
                                                     <div key={group.group} className="mb-9 last:mb-2">
                                                         <div className="flex items-center gap-4 mb-4">
-                                                            <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-[#1B3A5C]/10" />
-                                                            <span className="text-[11px] font-bold text-[#1B3A5C]/60 uppercase tracking-[0.25em]">
+                                                            <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-[#8B7355]/10" />
+                                                            <span className="text-[11px] font-bold text-[#8B7355]/60 uppercase tracking-[0.25em]">
                                                                 {group.group}
                                                             </span>
-                                                            <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-[#1B3A5C]/10" />
+                                                            <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-[#8B7355]/10" />
                                                         </div>
                                                         <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                                                             {group.regions.map((region) => (
                                                                 <button
                                                                     key={region}
                                                                     onClick={() => handleRegionOption(region)}
-                                                                    className="py-3 px-2 rounded-xl text-[13px] text-[#1B3A5C] bg-white/50 hover:bg-[#1B3A5C]/10 hover:text-[#1B3A5C] border border-[#1B3A5C]/5 hover:border-[#1B3A5C]/20 transition-all duration-300 font-medium active:scale-95"
+                                                                    className="py-3 px-2 rounded-xl text-[13px] text-[#3D4430] bg-white/50 hover:bg-[#8B7355]/10 hover:text-[#8B7355] border border-[#3D4430]/5 hover:border-[#8B7355]/20 transition-all duration-300 font-medium active:scale-95"
                                                                 >
                                                                     {region}
                                                                 </button>
@@ -364,7 +364,7 @@ export function OnboardingFlowModal({
                                             <div className="absolute bottom-0 left-0 right-0 pt-14 pb-6 text-center pointer-events-none bg-gradient-to-t from-[#FDFBF7] via-[#FDFBF7] to-transparent">
                                                 <button
                                                     onClick={handleSkipRegion}
-                                                    className="pointer-events-auto text-[12px] tracking-[0.15em] text-[#1B3A5C]/30 hover:text-[#1B3A5C] transition-colors bg-transparent border-none cursor-pointer"
+                                                    className="pointer-events-auto text-[12px] tracking-[0.15em] text-[#3D4430]/30 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
                                                 >
                                                     暂不提供
                                                 </button>
@@ -393,7 +393,7 @@ export function OnboardingFlowModal({
                                     initial="hidden"
                                     animate={currentScreen === "legal" ? "visible" : "hidden"}
                                 >
-                                    <div className="flex justify-center mb-9 text-[#1B3A5C]">
+                                    <div className="flex justify-center mb-9 text-[#8B7355]">
                                         <ShieldCheck className="h-10 w-10 md:h-12 md:w-12 opacity-90" strokeWidth={1.2} />
                                     </div>
 
@@ -411,7 +411,7 @@ export function OnboardingFlowModal({
                                                     className="sr-only"
                                                 />
                                                 <m.div
-                                                    className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors duration-300 ${isAgreed ? "bg-[#1B3A5C] border-[#1B3A5C]" : "bg-transparent border-[#1B3A5C]/15 group-hover:border-[#1B3A5C]/60"}`}
+                                                    className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors duration-300 ${isAgreed ? "bg-[#8B7355] border-[#8B7355]" : "bg-transparent border-[#3D4430]/15 group-hover:border-[#8B7355]/60"}`}
                                                     animate={isAgreed ? { scale: [1, 0.92, 1.04, 1] } : { scale: 1 }}
                                                     transition={{ duration: 0.4, ease: "easeOut" }}
                                                 >
@@ -437,9 +437,9 @@ export function OnboardingFlowModal({
                                             </div>
                                             <span className="text-sm text-[#5E5E5E] leading-relaxed font-normal select-none">
                                                 请确认您已年满 14 周岁（未满 14 周岁已获得监护人许可），且已阅读并同意我们的
-                                                <a href="https://nihplod.cn/privacy" target="_blank" rel="noopener noreferrer" className="text-[#1B3A5C] font-medium underline underline-offset-4 mx-1">隐私政策</a>
+                                                <a href="https://nihplod.cn/privacy" target="_blank" rel="noopener noreferrer" className="text-[#3D4430] font-medium underline underline-offset-4 mx-1">隐私政策</a>
                                                 与
-                                                <a href="https://nihplod.cn/terms" target="_blank" rel="noopener noreferrer" className="text-[#1B3A5C] font-medium underline underline-offset-4 mx-1">服务条款</a>。
+                                                <a href="https://nihplod.cn/terms" target="_blank" rel="noopener noreferrer" className="text-[#3D4430] font-medium underline underline-offset-4 mx-1">服务条款</a>。
                                             </span>
                                         </label>
                                     </div>
@@ -448,7 +448,7 @@ export function OnboardingFlowModal({
                                         <button
                                             onClick={handleLegalSubmit}
                                             disabled={!isAgreed}
-                                            className="group relative inline-flex items-center justify-center gap-4 px-10 py-3.5 sm:px-14 border border-[#1B3A5C]/25 hover:border-[#1B3A5C]/50 hover:bg-[#1B3A5C]/[0.03] text-[13px] sm:text-[14px] tracking-[0.2em] text-[#1B3A5C]/70 hover:text-[#1B3A5C] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500"
+                                            className="group relative inline-flex items-center justify-center gap-4 px-10 py-3.5 sm:px-14 border border-[#3D4430]/25 hover:border-[#3D4430]/50 hover:bg-[#3D4430]/[0.03] text-[13px] sm:text-[14px] tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500"
                                         >
                                             <span>开始测试</span>
                                             <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-2" />
@@ -456,7 +456,7 @@ export function OnboardingFlowModal({
 
                                         <button
                                             onClick={onClose}
-                                            className="py-2 text-[12px] tracking-widest text-[#1B3A5C]/30 hover:text-[#1B3A5C] transition-colors bg-transparent border-none cursor-pointer"
+                                            className="py-2 text-[12px] tracking-widest text-[#3D4430]/30 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
                                         >
                                             暂不测试
                                         </button>
@@ -488,7 +488,7 @@ export function OnboardingFlowModal({
                                                 {/* Active pulse ring */}
                                                 {isActive && (
                                                     <m.span
-                                                        className="absolute w-full h-full rounded-full bg-[#1B3A5C]/20"
+                                                        className="absolute w-full h-full rounded-full bg-[#8B7355]/20"
                                                         initial={{ scale: 1, opacity: 0.6 }}
                                                         animate={{ scale: 2.2, opacity: 0 }}
                                                         transition={{
@@ -503,10 +503,10 @@ export function OnboardingFlowModal({
                                                 <m.span
                                                     className={`relative block rounded-full border transition-colors duration-500 ${
                                                         isActive
-                                                            ? "bg-[#1B3A5C] border-[#1B3A5C]"
+                                                            ? "bg-[#8B7355] border-[#8B7355]"
                                                             : isCompleted
-                                                                ? "bg-[#1B3A5C] border-[#1B3A5C]"
-                                                                : "bg-transparent border-[#1B3A5C]/20"
+                                                                ? "bg-[#8B7355] border-[#8B7355]"
+                                                                : "bg-transparent border-[#3D4430]/20"
                                                     }`}
                                                     animate={{
                                                         width: isActive ? 10 : 8,
@@ -522,9 +522,9 @@ export function OnboardingFlowModal({
 
                                             {/* Connecting line */}
                                             {index < screens.length - 1 && (
-                                                <div className="relative w-8 md:w-10 h-[1.5px] mx-1.5 overflow-hidden rounded-full bg-[#1B3A5C]/8">
+                                                <div className="relative w-8 md:w-10 h-[1.5px] mx-1.5 overflow-hidden rounded-full bg-[#3D4430]/8">
                                                     <m.div
-                                                        className="absolute inset-y-0 left-0 bg-[#1B3A5C]/50 rounded-full"
+                                                        className="absolute inset-y-0 left-0 bg-[#8B7355]/50 rounded-full"
                                                         initial={{ width: "0%" }}
                                                         animate={{
                                                             width: isCompleted ? "100%" : "0%",

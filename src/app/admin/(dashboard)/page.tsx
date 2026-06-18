@@ -97,8 +97,8 @@ export default function AdminDashboardPage() {
                         </div>
                     </div>
                     <div className="flex items-center gap-4 p-4 rounded-xl bg-[#F8F7F4]">
-                        <div className="w-10 h-10 rounded-full bg-[#1B3A5C]/20 flex items-center justify-center">
-                            <CheckCircle className="w-5 h-5 text-[#1B3A5C]" />
+                        <div className="w-10 h-10 rounded-full bg-[#3D4430]/20 flex items-center justify-center">
+                            <CheckCircle className="w-5 h-5 text-[#3D4430]" />
                         </div>
                         <div>
                             <p className="text-2xl font-bold text-[#1A1A1A]">{overview?.todayCompletions || 0}</p>

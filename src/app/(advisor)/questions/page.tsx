@@ -374,7 +374,7 @@ export default function QuestionsPage() {
                     <div className="relative flex items-center justify-center p-4">
                         <button
                             onClick={() => router.push("/")}
-                            className="absolute left-2 px-3 py-2 flex items-center gap-1.5 text-[#1B3A5C]/40 hover:text-[#1B3A5C] transition-colors rounded-md hover:bg-[#1B3A5C]/5"
+                            className="absolute left-2 px-3 py-2 flex items-center gap-1.5 text-[#3D4430]/40 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5"
                             aria-label="返回"
                         >
                             <ChevronLeft className="w-6 h-6" strokeWidth={1.5} />
@@ -390,7 +390,7 @@ export default function QuestionsPage() {
                         />
                         <button
                             onClick={() => router.push("/")}
-                            className="absolute right-2 px-3 py-2 flex items-center gap-1.5 text-[#1B3A5C]/40 hover:text-[#1B3A5C] transition-colors rounded-md hover:bg-[#1B3A5C]/5"
+                            className="absolute right-2 px-3 py-2 flex items-center gap-1.5 text-[#3D4430]/40 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5"
                             aria-label="回到首页"
                         >
                             <HomeSvg className="w-6 h-6" />
@@ -415,9 +415,9 @@ export default function QuestionsPage() {
                             <p>&copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
                             <span className="hidden sm:inline text-[#1A1A1A]/30">·</span>
                             <div className="flex items-center gap-4">
-                                <Link href="/privacy" className="hover:text-[#1B3A5C] transition-colors duration-300">隐私政策</Link>
+                                <Link href="/privacy" className="hover:text-[#3D4430] transition-colors duration-300">隐私政策</Link>
                                 <span className="text-[#1A1A1A]/30">·</span>
-                                <Link href="/terms" className="hover:text-[#1B3A5C] transition-colors duration-300">服务条款</Link>
+                                <Link href="/terms" className="hover:text-[#3D4430] transition-colors duration-300">服务条款</Link>
                             </div>
                         </div>
                     </m.div>
@@ -436,7 +436,7 @@ export default function QuestionsPage() {
                 <button
                     onClick={handleBack}
                     className={cn(
-                        "absolute left-2 px-3 py-2 flex items-center gap-1.5 text-[#1B3A5C]/40 hover:text-[#1B3A5C] transition-colors rounded-md hover:bg-[#1B3A5C]/5",
+                        "absolute left-2 px-3 py-2 flex items-center gap-1.5 text-[#3D4430]/40 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5",
                         (currentStepIndex === 0 && !gender) ? "opacity-0 pointer-events-none" : "opacity-100"
                     )}
                     aria-label="上一题"
@@ -457,7 +457,7 @@ export default function QuestionsPage() {
                 <button
                     onClick={() => setShowExitConfirm(true)}
                     aria-label="退出测评"
-                    className="absolute right-2 px-3 py-2 flex items-center gap-1.5 text-[#1B3A5C]/40 hover:text-[#1B3A5C] transition-colors rounded-md hover:bg-[#1B3A5C]/5"
+                    className="absolute right-2 px-3 py-2 flex items-center gap-1.5 text-[#3D4430]/40 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5"
                 >
                     <HomeSvg className="w-6 h-6" />
                     <span className="text-[14px] font-medium tracking-wide">退出</span>
@@ -503,9 +503,9 @@ export default function QuestionsPage() {
                         <p>&copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
                         <span className="hidden sm:inline text-[#1A1A1A]/30">·</span>
                         <div className="flex items-center gap-4">
-                            <Link href="/privacy" className="hover:text-[#1B3A5C] transition-colors duration-300">隐私政策</Link>
+                            <Link href="/privacy" className="hover:text-[#3D4430] transition-colors duration-300">隐私政策</Link>
                             <span className="text-[#1A1A1A]/30">·</span>
-                            <Link href="/terms" className="hover:text-[#1B3A5C] transition-colors duration-300">服务条款</Link>
+                            <Link href="/terms" className="hover:text-[#3D4430] transition-colors duration-300">服务条款</Link>
                         </div>
                     </div>
                 )}
@@ -573,7 +573,7 @@ export default function QuestionsPage() {
                                     </button>
                                     <button
                                         onClick={() => router.push("/")}
-                                        className="text-[12px] tracking-[0.15em] text-[#1B3A5C]/40 hover:text-[#1B3A5C] transition-colors bg-transparent border-none cursor-pointer"
+                                        className="text-[12px] tracking-[0.15em] text-[#3D4430]/40 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
                                     >
                                         退出并返回首页
                                     </button>
@@ -621,7 +621,7 @@ export default function QuestionsPage() {
                                     </button>
                                     <button
                                         onClick={() => setShowQualityWarning(false)}
-                                        className="text-[12px] tracking-[0.15em] text-[#1B3A5C]/40 hover:text-[#1B3A5C] transition-colors bg-transparent border-none cursor-pointer"
+                                        className="text-[12px] tracking-[0.15em] text-[#3D4430]/40 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
                                     >
                                         返回检查
                                     </button>
