@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { User, ExternalLink, Menu, X } from "lucide-react";
 import { HomeSvg } from "@/components/icons/HomeSvg";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
+import { useUser } from "@/components/auth/UserProvider";
 
 const navItems = [
   { label: "素颜测肤", href: "/" },
@@ -22,6 +23,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { openAuthModal } = useAuthModal();
+  const { user, isVip, loading: authLoading } = useUser();
   const pathname = usePathname();
   const isDark = variant === "dark" && !scrolled;
 
@@ -53,6 +55,11 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
   const handleLoginClick = () => {
     setMobileMenuOpen(false);
     openAuthModal("login");
+  };
+
+  const handleRegisterClick = () => {
+    setMobileMenuOpen(false);
+    openAuthModal("register");
   };
 
   return (
@@ -203,7 +210,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
         >
           <div className="flex flex-col h-full px-6 py-5">
             {/* 顶部关闭按钮 */}
-            <div className="flex items-center justify-end mb-10">
+            <div className="flex items-center justify-end mb-6">
               <button
                 onClick={() => setMobileMenuOpen(false)}
                 aria-label="关闭菜单"
@@ -211,6 +218,66 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
               >
                 <X className="w-5 h-5" />
               </button>
+            </div>
+
+            {/* 用户信息 / 登录入口 */}
+            <div className="mb-8 px-4">
+              {user ? (
+                <Link
+                  href="/profile"
+                  onClick={handleNavClick}
+                  className="flex items-center gap-4 group"
+                >
+                  <div className="w-14 h-14 rounded-full bg-[#3D4430]/10 flex items-center justify-center text-[#3D4430] shrink-0">
+                    <span className="text-lg font-serif">
+                      {(user.name || user.email || user.phone || "U").charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[15px] font-medium text-[#1A1A1A] truncate">
+                      {user.name || user.email || user.phone || "用户"}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      {isVip && (
+                        <span className="text-[11px] tracking-wider px-2 py-0.5 rounded-full bg-[#3D4430] text-[#F8F7F3] font-medium">
+                          VIP
+                        </span>
+                      )}
+                      <span className="text-[13px] text-[#5E5E5E]/70">
+                        查看个人中心
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              ) : (
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-full bg-[#3D4430]/8 flex items-center justify-center text-[#3D4430]/50 shrink-0">
+                    <User className="w-7 h-7" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[15px] font-medium text-[#1A1A1A]">
+                      未登录
+                    </p>
+                    <p className="text-[13px] text-[#5E5E5E]/70 mt-0.5">
+                      登录后查看专属肌肤分析
+                    </p>
+                    <div className="flex items-center gap-3 mt-3">
+                      <button
+                        onClick={handleLoginClick}
+                        className="px-5 py-2 text-[13px] font-medium tracking-[0.15em] rounded-full bg-[#3D4430] text-[#F8F7F3] hover:bg-[#3D4430]/90 transition-colors duration-300 cursor-pointer"
+                      >
+                        登录
+                      </button>
+                      <button
+                        onClick={handleRegisterClick}
+                        className="px-5 py-2 text-[13px] font-medium tracking-[0.15em] rounded-full border border-[#3D4430]/25 text-[#3D4430] hover:bg-[#3D4430]/5 transition-colors duration-300 cursor-pointer"
+                      >
+                        注册
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* 导航链接 */}
@@ -244,17 +311,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
               </a>
             </nav>
 
-            <div className="mt-8 mb-8 h-px bg-[#3D4430]/10" />
-
-            {/* 底部操作 */}
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={handleLoginClick}
-                className="group flex items-center gap-3 px-4 py-4 text-[15px] font-medium tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] hover:bg-[#3D4430]/5 rounded-xl transition-all duration-300 cursor-pointer"
-              >
-                <User className="w-5 h-5" />
-                登录
-              </button>
+            <div className="mt-auto pt-8">
               {pathname !== "/" && (
                 <Link
                   href="/"
