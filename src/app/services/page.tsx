@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { Link as ViewTransitionLink } from "next-view-transitions";
-import { ScanLine, MessageCircle, HeadphonesIcon, ArrowRight, CheckCircle2, Headset } from "lucide-react";
+import { ArrowRight, CheckCircle2, Headset } from "lucide-react";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
 
 export const metadata: Metadata = {
@@ -26,17 +26,14 @@ const outcomes = [
 
 const steps = [
   {
-    icon: ScanLine,
     title: "扫码添加",
     desc: "添加专属护肤顾问微信",
   },
   {
-    icon: MessageCircle,
     title: "提交肌肤信息",
     desc: "发送照片与 AI 测肤结果",
   },
   {
-    icon: HeadphonesIcon,
     title: "获得评估报告",
     desc: "顾问输出分析与护肤方案",
   },
@@ -127,15 +124,15 @@ export default function ServicesPage() {
 
           {/* Steps */}
           <div className="relative max-w-2xl mx-auto">
-            <div className="hidden md:block absolute top-4 left-[calc(16.67%+8px)] right-[calc(16.67%+8px)] h-[1px] bg-[#1B3A5C]/10" />
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-6">
+            <div className="hidden md:block absolute top-5 left-16 right-16 h-[1px] bg-[#1B3A5C]/10" />
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 md:gap-4">
               {steps.map((step, i) => (
-                <div key={i} className="flex items-center gap-3 md:flex-col md:text-center md:gap-2 z-10">
-                  <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-[#EDF1F7] border border-[#1B3A5C]/5 flex items-center justify-center text-[#1B3A5C] shrink-0">
-                    <step.icon className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                <div key={i} className="flex items-center md:flex-col gap-3 md:gap-0 md:text-center z-10 w-full md:w-auto">
+                  <div className="w-10 h-10 rounded-full bg-[#1B3A5C] text-white flex items-center justify-center text-[13px] font-medium shrink-0">
+                    {i + 1}
                   </div>
-                  <div className="text-left md:text-center">
-                    <h3 className="text-[13px] md:text-[14px] font-medium text-[#1B3A5C] mb-0">
+                  <div className="text-left md:text-center md:mt-3">
+                    <h3 className="text-[13px] md:text-[14px] font-medium text-[#1A1A1A] mb-0.5 md:mb-1">
                       {step.title}
                     </h3>
                     <p className="text-[11px] md:text-[12px] text-[#5E5E5E] font-light leading-relaxed">
