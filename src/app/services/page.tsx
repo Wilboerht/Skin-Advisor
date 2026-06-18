@@ -37,26 +37,28 @@ const steps = [
 
 export default function ServicesPage() {
   return (
-    <main className="relative flex flex-col min-h-screen text-[#1A1A1A] bg-[#F5F7FA]">
+    <main className="relative flex flex-col min-h-screen text-[#1A1A1A] bg-[#F8F7F3]">
       <WebsiteNavbar />
 
-      <section className="flex-1 flex items-center pt-24 md:pt-28 pb-10 md:pb-12 px-6 md:px-12 lg:px-20">
+      <section className="flex-1 flex flex-col justify-center pt-24 md:pt-28 pb-6 md:pb-8 px-6 md:px-12 lg:px-20">
         <div className="w-full max-w-4xl mx-auto text-center">
           {/* Headline */}
-          <h1 className="text-2xl md:text-4xl font-serif text-[#1B3A5C] mb-4 leading-snug">
-            通过专业顾问评估
-            <br className="hidden md:block" />
-            更好地了解你的肌肤
-          </h1>
-          <p className="text-[#5E5E5E] font-light leading-relaxed mb-8 md:mb-10 max-w-xl mx-auto text-sm md:text-[15px]">
-            NIHPLOD 专属护肤顾问将结合你的 AI 测肤结果、日常习惯与护肤目标，提供一对一深度评估与长期陪伴。
-          </p>
+          <div className="mb-6 md:mb-8">
+            <h1 className="text-2xl md:text-3xl font-serif text-[#1B3A5C] mb-3 md:mb-4 leading-tight tracking-tight">
+              通过专业顾问评估
+              <br className="hidden md:block" />
+              更好地了解你的肌肤
+            </h1>
+            <p className="text-[15px] md:text-base text-[#5E5E5E] font-light leading-relaxed max-w-xl mx-auto">
+              NIHPLOD 专属护肤顾问将结合你的 AI 测肤结果、日常习惯与护肤目标，提供一对一深度评估与长期陪伴。
+            </p>
+          </div>
 
           {/* Main Content */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-12 items-start mb-10 md:mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-start mb-7 md:mb-9">
             {/* QR Code */}
-            <div className="flex flex-col items-center">
-              <div className="relative w-44 h-44 md:w-52 md:h-52 rounded-2xl overflow-hidden border border-[#1B3A5C]/10 bg-white p-4 shadow-sm">
+            <div className="flex flex-col items-center md:items-end order-2 md:order-1">
+              <div className="relative w-40 h-40 md:w-48 md:h-48 rounded-2xl overflow-hidden border border-[#1B3A5C]/10 bg-white p-4 shadow-sm">
                 <Image
                   src="/images/advisor-qr.jpg"
                   alt="NIHPLOD 专属护肤顾问微信二维码"
@@ -64,53 +66,58 @@ export default function ServicesPage() {
                   className="object-contain p-2"
                 />
               </div>
-              <p className="mt-4 text-xs md:text-sm text-[#5E5E5E] font-light tracking-wide">
+              <p className="mt-3 text-xs md:text-[13px] text-[#5E5E5E] font-light tracking-wide">
                 微信扫码 · 添加专属顾问
               </p>
             </div>
 
             {/* Benefits */}
-            <div className="text-left">
-              <h2 className="text-[15px] font-medium text-[#1B3A5C] mb-4 tracking-wide">
-                顾问评估包含
-              </h2>
-              <ul className="space-y-3 mb-6">
-                {benefits.map((item, i) => (
-                  <li key={i} className="flex items-start gap-3">
-                    <CheckCircle2 className="w-4 h-4 text-[#1B3A5C] mt-0.5 shrink-0" />
-                    <span className="text-[14px] text-[#5E5E5E] font-light leading-relaxed">
-                      {item}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              <ViewTransitionLink
-                href="/questions"
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#1B3A5C] text-[#FFFFFF] text-[13px] tracking-[0.1em] rounded-full hover:bg-[#1B3A5C]/90 transition-all duration-300 hover:shadow-lg hover:shadow-[#1B3A5C]/10 hover:-translate-y-0.5"
-              >
-                先进行 AI 测肤
-                <ArrowRight className="w-4 h-4" />
-              </ViewTransitionLink>
+            <div className="text-left order-1 md:order-2">
+              <div className="bg-white rounded-2xl border border-[#1B3A5C]/5 p-5 md:p-6 shadow-sm">
+                <h2 className="text-[15px] md:text-base font-medium text-[#1B3A5C] mb-3 tracking-wide">
+                  顾问评估包含
+                </h2>
+                <ul className="space-y-2.5 mb-5">
+                  {benefits.map((item, i) => (
+                    <li key={i} className="flex items-start gap-3">
+                      <CheckCircle2 className="w-4 h-4 text-[#1B3A5C] mt-0.5 shrink-0" />
+                      <span className="text-[13px] md:text-[14px] text-[#5E5E5E] font-light leading-relaxed">
+                        {item}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <ViewTransitionLink
+                  href="/questions"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#1B3A5C] text-white text-[12px] md:text-[13px] tracking-[0.1em] rounded-full hover:bg-[#1B3A5C]/90 transition-all duration-300 hover:shadow-lg hover:shadow-[#1B3A5C]/10 hover:-translate-y-0.5"
+                >
+                  先进行 AI 测肤
+                  <ArrowRight className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                </ViewTransitionLink>
+              </div>
             </div>
           </div>
 
           {/* Steps */}
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-center gap-6 md:gap-10 pt-8 md:pt-10 border-t border-[#1B3A5C]/8">
-            {steps.map((step, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-[#EDF1F5] flex items-center justify-center text-[#1B3A5C] shrink-0">
-                  <step.icon className="w-4 h-4" />
+          <div className="relative max-w-2xl mx-auto">
+            <div className="hidden md:block absolute top-4 left-[calc(16.67%+8px)] right-[calc(16.67%+8px)] h-[1px] bg-[#1B3A5C]/10" />
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-6">
+              {steps.map((step, i) => (
+                <div key={i} className="flex items-center gap-3 md:flex-col md:text-center md:gap-2 z-10">
+                  <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-[#EDF1F7] border border-[#1B3A5C]/5 flex items-center justify-center text-[#1B3A5C] shrink-0">
+                    <step.icon className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                  </div>
+                  <div className="text-left md:text-center">
+                    <h3 className="text-[13px] md:text-[14px] font-medium text-[#1B3A5C] mb-0">
+                      {step.title}
+                    </h3>
+                    <p className="text-[11px] md:text-[12px] text-[#5E5E5E] font-light leading-relaxed">
+                      {step.desc}
+                    </p>
+                  </div>
                 </div>
-                <div className="text-left">
-                  <h3 className="text-[14px] font-medium text-[#1B3A5C]">
-                    {step.title}
-                  </h3>
-                  <p className="text-[12px] text-[#5E5E5E] font-light leading-relaxed">
-                    {step.desc}
-                  </p>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </section>
