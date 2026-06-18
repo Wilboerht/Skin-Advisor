@@ -1,6 +1,46 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { verifyPassword, signToken } from "@/lib/auth";
+
+async function tryDevLocalLogin(phone: string, password: string): Promise<NextResponse | null> {
+    if (process.env.NODE_ENV === "production") return null;
+
+    const localUser = await prisma.user.findUnique({
+        where: { phoneNumber: phone }
+    });
+    if (!localUser || !localUser.password) return null;
+
+    const passwordValid = await verifyPassword(password, localUser.password);
+    if (!passwordValid) return null;
+
+    const token = await signToken({
+        sub: localUser.id,
+        email: localUser.email,
+        phone: localUser.phoneNumber,
+        name: localUser.name,
+        role: localUser.role,
+        dailyTestLimit: localUser.dailyTestLimit
+    }, "7d");
+
+    const response = NextResponse.json({
+        user: {
+            id: localUser.id,
+            phone: localUser.phoneNumber,
+            name: localUser.name || localUser.phoneNumber,
+            avatar: localUser.avatarUrl,
+            role: localUser.role
+        }
+    });
+    response.cookies.set("auth_token", token, {
+        httpOnly: true,
+        secure: false,
+        sameSite: "lax",
+        maxAge: 7 * 24 * 60 * 60,
+        path: "/"
+    });
+    return response;
+}
 
 function mirrorOfficialSessionCookie(officialResponse: Response, response: NextResponse) {
     const cookies = officialResponse.headers.getSetCookie();
@@ -48,7 +88,7 @@ async function parseOfficialJson(officialResponse: Response) {
     }
     try {
         return await officialResponse.json();
-    } catch (err) {
+    } catch {
         const text = await officialResponse.text();
         console.error("Official API JSON parse failed", text.slice(0, 300));
         return null;
@@ -56,24 +96,30 @@ async function parseOfficialJson(officialResponse: Response) {
 }
 
 export async function POST(req: NextRequest) {
+    let body: { phone?: string; password?: string } = {};
     try {
-        const ip = getClientIP(req);
-        const ipLimit = await rateLimit(`login-ip-${ip}`, "login");
-        if (!ipLimit.success) {
-            return NextResponse.json(
-                { error: "登录尝试过于频繁，请 15 分钟后再试" },
-                { status: 429 }
-            );
-        }
+        body = await req.json();
+    } catch {
+        return NextResponse.json({ error: "请求格式错误" }, { status: 400 });
+    }
 
-        const body = await req.json();
-        if (!body.phone || !body.password) {
-            return NextResponse.json(
-                { error: "缺少手机号或密码" },
-                { status: 400 }
-            );
-        }
+    if (!body.phone || !body.password) {
+        return NextResponse.json(
+            { error: "缺少手机号或密码" },
+            { status: 400 }
+        );
+    }
 
+    const ip = getClientIP(req);
+    const ipLimit = await rateLimit(`login-ip-${ip}`, "login");
+    if (!ipLimit.success) {
+        return NextResponse.json(
+            { error: "登录尝试过于频繁，请 15 分钟后再试" },
+            { status: 429 }
+        );
+    }
+
+    try {
         // 代理到官网密码登录接口
         const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";
         
@@ -100,6 +146,9 @@ export async function POST(req: NextRequest) {
         }
 
         if (!officialResponse.ok || !responseData.success) {
+            const devResponse = await tryDevLocalLogin(body.phone, body.password);
+            if (devResponse) return devResponse;
+
             return NextResponse.json(
                 { error: responseData.error?.message || "登录失败" },
                 { status: officialResponse.status || 401 }
@@ -152,6 +201,11 @@ export async function POST(req: NextRequest) {
 
     } catch (e) {
         console.error("Login Proxy Error", e);
+
+        // 开发环境：官方接口不可达时，尝试本地账号密码验证
+        const devResponse = await tryDevLocalLogin(body.phone, body.password);
+        if (devResponse) return devResponse;
+
         return NextResponse.json({ error: "应用系统异常，请稍后重试" }, { status: 500 });
     }
 }

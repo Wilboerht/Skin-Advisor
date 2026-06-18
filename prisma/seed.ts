@@ -3,6 +3,7 @@ config({ path: ".env.local" });
 
 // Prisma 7.x 导入方式
 import { PrismaClient } from "@prisma/client";
+import { hashPassword } from "../src/lib/auth"; // 仅用于开发测试账号，生产 seed 不会执行
 
 const url = process.env.DATABASE_URL;
 if (!url) {
@@ -164,6 +165,28 @@ async function main() {
         });
     }
     console.log("Products seeded.");
+
+    // Seed dev test user (development only)
+    if (process.env.NODE_ENV !== "production") {
+        console.log("Seeding dev test user...");
+        const devPhone = "18700000000";
+        const devPassword = await hashPassword("123456");
+        await prisma.user.upsert({
+            where: { phoneNumber: devPhone },
+            update: {
+                password: devPassword,
+                name: "开发测试账号",
+                role: "user"
+            },
+            create: {
+                phoneNumber: devPhone,
+                password: devPassword,
+                name: "开发测试账号",
+                role: "user"
+            }
+        });
+        console.log("Dev test user created/updated:", devPhone);
+    }
 
     console.log("Seeding finished.");
 }

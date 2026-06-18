@@ -66,14 +66,43 @@ function mirrorOfficialSessionCookie(officialResponse: Response, response: NextR
 }
 
 
+async function getLocalSessionUser(): Promise<NextResponse | null> {
+    try {
+        const localUser = await getSession();
+        if (!localUser) return null;
+
+        const dbUser = await prisma.user.findUnique({
+            where: { id: localUser.id },
+            select: { id: true, phoneNumber: true, name: true, avatarUrl: true, role: true }
+        });
+        if (!dbUser) return null;
+
+        return NextResponse.json({
+            user: {
+                id: dbUser.id,
+                phone: dbUser.phoneNumber,
+                name: dbUser.name || dbUser.phoneNumber,
+                avatar: dbUser.avatarUrl,
+                role: dbUser.role || "user"
+            }
+        });
+    } catch (err) {
+        console.error("[auth/me] Local session lookup failed:", err);
+        return null;
+    }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function GET(req: NextRequest) {
     const cookieStore = await cookies();
     // 官网下发的是 user_token 或者 auth_token，但统一通过 cookie 转发
     // 我们获取当前所有的 cookie
     const allCookies = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ');
 
+    // 没有官网 cookie 时，直接尝试本地 token（开发环境本地登录只签发 auth_token）
     if (!allCookies) {
-        return NextResponse.json({ user: null });
+        const localResponse = await getLocalSessionUser();
+        return localResponse || NextResponse.json({ user: null });
     }
 
     try {
@@ -85,7 +114,7 @@ export async function GET(req: NextRequest) {
         }
 
         const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";
-        
+
         // Add a timeout to prevent long hangs if the official API is unreachable
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒超时：针对 demo 服务器不稳定的环境
@@ -102,13 +131,16 @@ export async function GET(req: NextRequest) {
         const contentType = officialResponse.headers.get("content-type");
         if (!contentType || !contentType.includes("application/json")) {
             console.error("Official API returned non-JSON response", await officialResponse.text());
-            return NextResponse.json({ user: null });
+            const localResponse = await getLocalSessionUser();
+            return localResponse || NextResponse.json({ user: null });
         }
 
         const data = await officialResponse.json();
 
         if (!officialResponse.ok || !data.success) {
-            return NextResponse.json({ user: null });
+            // 官网未识别时，回退到本地 token（开发环境本地登录场景）
+            const localResponse = await getLocalSessionUser();
+            return localResponse || NextResponse.json({ user: null });
         }
 
         const userPayload = data.data.user;
@@ -185,31 +217,8 @@ export async function GET(req: NextRequest) {
         console.error("Me GET Proxy Error", e);
 
         // 官网 API 不可用时的降级方案：尝试用本地 token 直接识别用户
-        try {
-            const localUser = await getSession();
-            if (localUser) {
-                const dbUser = await prisma.user.findUnique({
-                    where: { id: localUser.id },
-                    select: { id: true, phoneNumber: true, name: true, avatarUrl: true, role: true }
-                });
-                if (dbUser) {
-                    // Official API unreachable, serving user from local DB
-                    return NextResponse.json({
-                        user: {
-                            id: dbUser.id,
-                            phone: dbUser.phoneNumber,
-                            name: dbUser.name || dbUser.phoneNumber,
-                            avatar: dbUser.avatarUrl,
-                            role: dbUser.role || "user"
-                        }
-                    });
-                }
-            }
-        } catch (localErr) {
-            console.error("[auth/me] Local fallback also failed:", localErr);
-        }
-
-        return NextResponse.json({ user: null });
+        const localResponse = await getLocalSessionUser();
+        return localResponse || NextResponse.json({ user: null });
     }
 }
 
