@@ -477,7 +477,7 @@ export function AuthModal() {
                                         <h1 className="text-center text-[2rem] font-light tracking-[0.15em] text-brand-charcoal mb-14">
                                             登录
                                         </h1>
-                                        <form onSubmit={handleLogin} className="space-y-10">
+                                        <form id="pc-login-form" onSubmit={handleLogin} className="space-y-10">
                                             <div>
                                                 <input
                                                     type="tel"
@@ -512,33 +512,22 @@ export function AuthModal() {
                                             )}
 
                                             {loginMethod === "password" && (
-                                                <div>
-                                                    <div className="relative">
-                                                        <input
-                                                            type={showPassword ? "text" : "password"}
-                                                            required
-                                                            value={loginPassword}
-                                                            onChange={(e) => setLoginPassword(e.target.value)}
-                                                            className={`${pcInputClass} pr-10`}
-                                                            placeholder="密码"
-                                                        />
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setShowPassword(!showPassword)}
-                                                            className="absolute right-0 top-1/2 -translate-y-1/2 text-brand-charcoal/40 hover:text-brand-charcoal/70 transition-colors"
-                                                        >
-                                                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                                                        </button>
-                                                    </div>
-                                                    <div className="mt-4 text-right">
-                                                        <button
-                                                            type="button"
-                                                            onClick={handleForgotPassword}
-                                                            className="text-xs tracking-wider text-brand-charcoal/50 hover:text-brand-charcoal transition-colors"
-                                                        >
-                                                            忘记密码？
-                                                        </button>
-                                                    </div>
+                                                <div className="relative">
+                                                    <input
+                                                        type={showPassword ? "text" : "password"}
+                                                        required
+                                                        value={loginPassword}
+                                                        onChange={(e) => setLoginPassword(e.target.value)}
+                                                        className={`${pcInputClass} pr-10`}
+                                                        placeholder="密码"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowPassword(!showPassword)}
+                                                        className="absolute right-0 top-1/2 -translate-y-1/2 text-brand-charcoal/40 hover:text-brand-charcoal/70 transition-colors"
+                                                    >
+                                                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                                    </button>
                                                 </div>
                                             )}
 
@@ -555,22 +544,57 @@ export function AuthModal() {
                                                     <ArrowLeftRight className="h-3 w-3" strokeWidth={2} />
                                                     {loginMethod === "password" ? "验证码登录" : "密码登录"}
                                                 </button>
+                                                {loginMethod === "password" && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleForgotPassword}
+                                                        className="text-xs tracking-wider text-brand-charcoal/50 hover:text-brand-charcoal transition-colors"
+                                                    >
+                                                        忘记密码？
+                                                    </button>
+                                                )}
                                             </div>
 
-                                            <div className="pt-2">
-                                                <button
-                                                    type="submit"
-                                                    disabled={loading}
-                                                    className={pcBtnClass}
-                                                >
-                                                    {loading ? (
-                                                        <div className="h-5 w-5 border-2 border-brand-charcoal/20 border-t-brand-charcoal rounded-full animate-spin" />
-                                                    ) : "登录"}
-                                                </button>
-                                            </div>
+                                            <motion.div
+                                                key={agreementShake}
+                                                initial={{ x: 0 }}
+                                                animate={{ x: [-5, 5, -5, 5, -3, 3, 0] }}
+                                                transition={{ duration: 0.4 }}
+                                            >
+                                                <label className="flex cursor-pointer items-center gap-2.5 group/agreement">
+                                                    <div className="relative flex-shrink-0">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={mobileAgreed}
+                                                            onChange={(e) => setMobileAgreed(e.target.checked)}
+                                                            className="peer sr-only"
+                                                        />
+                                                        <div className="h-4 w-4 rounded border border-brand-charcoal/25 bg-transparent transition-all peer-checked:bg-brand-charcoal/50 peer-checked:border-brand-charcoal/50" />
+                                                        <Check className="absolute inset-0 m-auto h-3 w-3 scale-0 text-white transition-transform peer-checked:scale-100" strokeWidth={3} />
+                                                    </div>
+                                                    <span className="text-xs text-brand-charcoal/50 tracking-wide">
+                                                        我已阅读并同意
+                                                        <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《用户协议》</a>
+                                                        和
+                                                        <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《隐私政策》</a>
+                                                    </span>
+                                                </label>
+                                            </motion.div>
+
                                         </form>
 
-                                        <div className="mt-10 text-center space-y-5">
+                                        <div className="mt-6 flex flex-col gap-6 text-center">
+                                            <button
+                                                type="submit"
+                                                form="pc-login-form"
+                                                disabled={loading}
+                                                className={`${pcBtnClass} ${!mobileAgreed && !loading ? 'opacity-40 cursor-not-allowed' : ''}`}
+                                            >
+                                                {loading ? (
+                                                    <div className="h-5 w-5 border-2 border-brand-charcoal/20 border-t-brand-charcoal rounded-full animate-spin" />
+                                                ) : "登录"}
+                                            </button>
+
                                             <div className="relative">
                                                 <div className="absolute inset-0 flex items-center">
                                                     <div className="w-full border-t border-brand-charcoal/10"></div>
@@ -579,11 +603,12 @@ export function AuthModal() {
                                                     <span className="px-4 bg-white text-brand-charcoal/40 tracking-wider uppercase">其他登录方式</span>
                                                 </div>
                                             </div>
+
                                             <button
                                                 type="button"
                                                 onClick={handleWechatLogin}
                                                 disabled={loading}
-                                                className="w-full py-4 text-sm font-medium tracking-[0.2em] text-brand-charcoal border border-brand-charcoal/25 hover:bg-brand-charcoal/[0.03] active:scale-[0.98] transition-all disabled:opacity-40 flex items-center justify-center gap-2"
+                                                className={`w-full py-4 text-sm font-medium tracking-[0.2em] text-brand-charcoal border border-brand-charcoal/25 hover:bg-brand-charcoal/[0.03] active:scale-[0.98] transition-all disabled:opacity-40 flex items-center justify-center gap-2 ${!mobileAgreed && !loading ? 'opacity-40 cursor-not-allowed' : ''}`}
                                             >
                                                 <svg className="w-5 h-5 text-[#07C160]" viewBox="0 0 24 24" fill="currentColor">
                                                     <path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 0 1 .213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 0 0 .167-.054l1.903-1.114a.864.864 0 0 1 .717-.098 10.16 10.16 0 0 0 2.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178A1.17 1.17 0 0 1 4.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178 1.17 1.17 0 0 1-1.162-1.178c0-.651.52-1.18 1.162-1.18zm5.34 2.867c-1.797-.052-3.746.512-5.28 1.786-1.72 1.428-2.687 3.72-1.78 6.22.942 2.453 3.666 4.229 6.884 4.229.826 0 1.622-.12 2.361-.336a.722.722 0 0 1 .598.082l1.584.926a.272.272 0 0 0 .14.045c.134 0 .24-.11.24-.245 0-.06-.024-.12-.04-.178l-.327-1.233a.582.582 0 0 1-.023-.156.49.49 0 0 1 .201-.398C23.024 18.48 24 16.82 24 14.98c0-3.21-2.931-5.837-6.656-6.088-.182-.013-.373-.027-.545-.035h-.06zm-2.89 3.217c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.97-.982zm4.844 0c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.969-.982z" />
@@ -592,11 +617,12 @@ export function AuthModal() {
                                             </button>
                                         </div>
 
-                                        <div className="mt-10 text-center space-y-5">
+                                        <div className="mt-6 text-center flex flex-col gap-1">
                                             <p className="text-xs tracking-[0.15em] text-brand-charcoal/40 uppercase">
                                                 还没有账号？
                                             </p>
                                             <button
+                                                type="button"
                                                 onClick={() => setAuthView("register")}
                                                 className={pcBtnClass}
                                             >
