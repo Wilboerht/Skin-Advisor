@@ -7,11 +7,20 @@ import { useAuth } from "@/hooks/useAuth";
 import { Link } from "next-view-transitions";
 import { ArrowLeft, Clock, Loader2, ChevronRight, ChevronLeft, Calendar, BarChart3, ScanFace, LogOut } from "lucide-react";
 import { m } from "framer-motion";
+import Image from "next/image";
+
+interface AnalysisResult {
+    faceAnalysis?: { overallScore?: number; skinAge?: number };
+    skinProfile?: { typeLabel?: string; concerns?: string[]; skinAge?: number };
+    skinType?: { typeLabel?: string };
+    concerns?: string[];
+    generatedAvatar?: string;
+}
 
 interface HistorySession {
     sessionId: string;
     completedAt: string;
-    analysisResult: any;
+    analysisResult?: AnalysisResult;
 }
 
 // Notion pastel tag colors
@@ -154,22 +163,39 @@ export default function ProfilePage() {
                 <m.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="mb-8"
+                    className="mb-8 flex items-center gap-4"
                 >
-                    <h1
-                        style={{
-                            fontSize: '2.5rem',
-                            fontWeight: 700,
-                            color: '#37352F',
-                            margin: '0 0 8px 0',
-                            lineHeight: 1.2,
-                        }}
+                    <div
+                        className="relative w-16 h-16 rounded-full flex items-center justify-center text-xl font-semibold overflow-hidden shrink-0"
+                        style={{ background: 'rgba(61, 68, 48, 0.1)', color: '#3D4430' }}
                     >
-                        你好，{user.name || "朋友"}
-                    </h1>
-                    <p style={{ fontSize: '0.9rem', color: '#787774' }}>
-                        以下是您的测肤历史记录
-                    </p>
+                        {(() => {
+                            const latestAvatar = auditHistory[0]?.analysisResult?.generatedAvatar;
+                            if (latestAvatar) {
+                                return <Image src={latestAvatar} alt="" fill unoptimized className="object-cover" />;
+                            }
+                            if (user?.avatar) {
+                                return <Image src={user.avatar} alt="" fill unoptimized className="object-cover" />;
+                            }
+                            return (user?.name?.[0] || "?").toUpperCase();
+                        })()}
+                    </div>
+                    <div>
+                        <h1
+                            style={{
+                                fontSize: '2rem',
+                                fontWeight: 700,
+                                color: '#37352F',
+                                margin: '0 0 4px 0',
+                                lineHeight: 1.2,
+                            }}
+                        >
+                            你好，{user.name || "朋友"}
+                        </h1>
+                        <p style={{ fontSize: '0.9rem', color: '#787774' }}>
+                            以下是您的测肤历史记录
+                        </p>
+                    </div>
                 </m.div>
 
                 {/* Stats */}

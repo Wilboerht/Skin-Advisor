@@ -17,7 +17,6 @@ import { getGuestIdentity, type GuestIdentity } from "@/lib/guest-identity";
 import { CONSENT_VERSION } from "@/components/advisor/PrivacyConsent";
 import dynamic from "next/dynamic";
 
-const ProfileModal = dynamic(() => import("@/components/auth/ProfileModal").then((mod) => mod.ProfileModal), { ssr: false });
 const BaseModal = dynamic(() => import("@/components/ui/BaseModal").then((mod) => mod.BaseModal), { ssr: false });
 const OnboardingFlowModal = dynamic(() => import("@/components/advisor/OnboardingFlowModal").then((mod) => mod.OnboardingFlowModal), { ssr: false });
 const HomepageFooter = dynamic(() => import("@/components/website/HomepageFooter").then((mod) => mod.HomepageFooter), { ssr: false });
@@ -85,7 +84,6 @@ export default function Home() {
 
   // Location/Region states
   const [isLocating, setIsLocating] = useState(false);
-  const [showProfileModal, setShowProfileModal] = useState(false);
   const [showBrandModal, setShowBrandModal] = useState(false);
 
   // Region options moved outside component
@@ -646,10 +644,6 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      <ProfileModal
-        isOpen={showProfileModal}
-        onClose={() => setShowProfileModal(false)}
-      />
     </LazyMotion>
   );
 }

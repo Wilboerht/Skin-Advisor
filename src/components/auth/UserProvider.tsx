@@ -11,6 +11,7 @@ export interface User {
     name?: string;
     role: string;
     vipExpiresAt?: string | null;
+    avatar?: string | null;
 }
 
 interface LoginCredentials {
