@@ -60,6 +60,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
   return (
     <>
       <nav
+        style={{ pointerEvents: "none" }}
         className={`fixed top-0 left-0 right-0 z-[100000] px-6 md:px-12 lg:px-20 py-5 md:py-7 transition-all duration-500 ${
           scrolled
             ? "bg-[#F8F7F3]/80 backdrop-blur-md border-b border-[rgba(61,68,48,0.06)]"
@@ -68,7 +69,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
               : "bg-transparent border-b border-transparent"
         }`}
       >
-        <div className="w-full grid grid-cols-[auto_1fr] md:grid-cols-[1fr_auto_1fr] items-center">
+        <div style={{ pointerEvents: "auto" }} className="w-full grid grid-cols-[auto_1fr] md:grid-cols-[1fr_auto_1fr] items-center">
           <Link href="/" className="cursor-pointer justify-self-start">
             <Image
               src="/NIHPLOD-logo.svg"

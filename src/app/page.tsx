@@ -568,7 +568,7 @@ export default function Home() {
             {/* Close Button */}
             <button
               onClick={() => setShowBrandModal(false)}
-              className="fixed top-6 right-6 z-[310] w-10 h-10 flex items-center justify-center text-[#1A1A1A]/30 hover:text-[#1A1A1A] hover:bg-black/5 transition-all duration-300 bg-transparent border-none cursor-pointer"
+              className="fixed top-6 right-6 z-[100001] w-10 h-10 flex items-center justify-center text-[#1A1A1A]/30 hover:text-[#1A1A1A] hover:bg-black/5 transition-all duration-300 bg-transparent border-none cursor-pointer"
               aria-label="关闭"
             >
               <X className="w-5 h-5" />

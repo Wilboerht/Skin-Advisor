@@ -223,14 +223,25 @@ export function OnboardingFlowModal({
                                         autoFocus
                                     />
 
-                                    <button
-                                        onClick={handleNicknameNext}
-                                        disabled={!nickname.trim()}
-                                        className="group relative inline-flex items-center justify-center gap-4 px-10 py-3.5 sm:px-14 border border-[#3D4430]/25 hover:border-[#3D4430]/50 hover:bg-[#3D4430]/[0.03] text-[13px] sm:text-[14px] tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500"
-                                    >
-                                        <span>下一步</span>
-                                        <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-2" />
-                                    </button>
+                                    <div className="space-y-4">
+                                        <button
+                                            onClick={handleNicknameNext}
+                                            disabled={!nickname.trim()}
+                                            className="group relative inline-flex items-center justify-center gap-4 px-10 py-3.5 sm:px-14 border border-[#3D4430]/25 hover:border-[#3D4430]/50 hover:bg-[#3D4430]/[0.03] text-[13px] sm:text-[14px] tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500"
+                                        >
+                                            <span>下一步</span>
+                                            <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-2" />
+                                        </button>
+
+                                        <div>
+                                            <button
+                                                onClick={onClose}
+                                                className="py-2 text-[12px] tracking-widest text-[#3D4430]/30 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
+                                            >
+                                                关闭
+                                            </button>
+                                        </div>
+                                    </div>
                                 </m.div>
                             </div>
                         )}
@@ -298,6 +309,15 @@ export function OnboardingFlowModal({
                                                     手动选择地区
                                                 </button>
                                             </div>
+
+                                            <div>
+                                                <button
+                                                    onClick={onClose}
+                                                    className="py-2 text-[12px] tracking-widest text-[#3D4430]/30 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
+                                                >
+                                                    关闭
+                                                </button>
+                                            </div>
                                         </div>
                                     </m.div>
                                 ) : (
@@ -309,17 +329,15 @@ export function OnboardingFlowModal({
                                         exit={{ opacity: 0, x: 40 }}
                                         transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
                                     >
-                                        {/* Back Button - fixed top-left for region view */}
-                                        <button
-                                            onClick={() => setLocationView("main")}
-                                            className="fixed top-6 left-6 z-[110] w-10 h-10 flex items-center justify-center rounded-full text-[#1A1A1A]/30 hover:text-[#1A1A1A] hover:bg-black/5 transition-all duration-300 bg-transparent border-none cursor-pointer"
-                                            aria-label="返回"
-                                        >
-                                            <ChevronLeft className="w-5 h-5" strokeWidth={1.5} />
-                                        </button>
-
                                         {/* Region Select Header */}
                                         <div className="shrink-0 pt-16 pb-4 px-6 text-center">
+                                            <button
+                                                onClick={() => setLocationView("main")}
+                                                className="mb-3 py-2 text-[12px] tracking-widest text-[#3D4430]/30 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
+                                                aria-label="返回"
+                                            >
+                                                返回
+                                            </button>
                                             <h3 className="text-xl md:text-2xl font-serif text-[#1A1A1A] tracking-wider">选择所在地区</h3>
                                             <p className="text-[13px] text-[#5E5E5E] mt-2 font-light opacity-80">根据当地气候为您提供更精准的分析建议</p>
                                         </div>
@@ -456,17 +474,6 @@ export function OnboardingFlowModal({
                             </div>
                         )}
                     </div>
-
-                    {/* ---- Close Button (not shown on legal step or region select) ---- */}
-                    {currentScreen !== "legal" && locationView !== "region" && (
-                        <button
-                            onClick={onClose}
-                            className="fixed top-6 right-6 z-[110] w-10 h-10 flex items-center justify-center rounded-full text-[#1A1A1A]/30 hover:text-[#1A1A1A] hover:bg-black/5 transition-all duration-300 bg-transparent border-none cursor-pointer"
-                            aria-label="关闭"
-                        >
-                            <X className="w-5 h-5" />
-                        </button>
-                    )}
 
                     {/* ---- Progress Indicators (connected steps) ---- */}
                     {/* Hidden in region select sub-view to avoid overlapping the footer */}
