@@ -5,7 +5,7 @@ import { cookies } from 'next/headers';
 import prisma from '@/lib/prisma';
 
 function getJwtSecret(): Uint8Array {
-    const secret = process.env.JWT_SECRET;
+    const secret = process.env.JWT_SECRET?.trim();
     if (!secret) {
         if (process.env.NODE_ENV === 'production') {
             throw new Error(
@@ -92,7 +92,10 @@ export async function getSession(): Promise<SessionUser | null> {
 
     const payload = await verifyToken(tokenValue);
     if (payload) {
-        const userId = (payload.sub as string) || (payload.userId as string);
+        const userId =
+            typeof payload.sub === 'string' ? payload.sub :
+            typeof payload.userId === 'string' ? payload.userId :
+            null;
         if (userId) {
             // 查询数据库确认用户当前状态（禁用/删除检测）
             const dbUser = await prisma.user.findUnique({

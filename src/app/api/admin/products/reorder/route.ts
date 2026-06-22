@@ -43,8 +43,10 @@ export const POST = requireRole("super_admin", "admin")(async (request, { admin 
         }
 
         // Verify all IDs exist and the list is complete (contains all products)
-        // Wrapped in transaction to avoid race conditions
+        // Wrapped in transaction with PostgreSQL advisory lock to avoid concurrent reorder conflicts
         await prisma.$transaction(async (tx) => {
+            await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('product_reorder'))`;
+
             const existingCount = await tx.product.count({
                 where: { id: { in: orderedIds } }
             });

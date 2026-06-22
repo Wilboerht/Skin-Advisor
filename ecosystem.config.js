@@ -24,11 +24,11 @@ module.exports = {
         max_restarts: 10,
         min_uptime: '10s',
         // 内存限制
-        max_memory_restart: '1G',
+        max_memory_restart: '2G',
         // 优雅关闭
         kill_timeout: 5000,
         listen_timeout: 10000,
         // 环境变量文件
-        env_file: './.env',
+        env_file: './.env.production',
     }]
 };

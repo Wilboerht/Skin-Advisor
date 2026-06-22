@@ -1,5 +1,6 @@
 
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { PRODUCTS_CATALOG } from "@/config/products";
@@ -57,13 +58,14 @@ export async function POST(request: NextRequest) {
         }
 
         const isSuperAdmin = adminCount > 0;
-        if (!isSuperAdmin && (!providedSecret || providedSecret !== setupSecret)) {
+        const secretValid = typeof providedSecret === "string" && safeTimingEqual(providedSecret, setupSecret);
+        if (!isSuperAdmin && !secretValid) {
             return NextResponse.json(
                 { success: false, error: "Invalid setup secret" },
                 { status: 403 }
             );
         }
-        if (isSuperAdmin && providedSecret && providedSecret !== setupSecret) {
+        if (isSuperAdmin && providedSecret && !secretValid) {
             return NextResponse.json(
                 { success: false, error: "Invalid setup secret" },
                 { status: 403 }
@@ -72,59 +74,72 @@ export async function POST(request: NextRequest) {
 
         // 2. Admin - Only create if not exists, NEVER reset existing password
         const adminPassword = process.env.ADMIN_INITIAL_PASSWORD;
-        let adminMsg: string;
-        const existingAdmin = await prisma.adminUser.findUnique({
+        let hashedPassword: string | null = null;
+
+        const existingAdminOutside = await prisma.adminUser.findUnique({
             where: { username: "admin" }
         });
-
-        if (!existingAdmin) {
-            // Only create admin if it doesn't exist and an initial password is configured
+        if (!existingAdminOutside) {
             if (!adminPassword) {
                 return NextResponse.json(
                     { success: false, error: "ADMIN_INITIAL_PASSWORD not configured" },
                     { status: 500 }
                 );
             }
-            const hashedPassword = await bcrypt.hash(adminPassword, 12);
-            await prisma.adminUser.create({
-                data: {
-                    username: "admin",
-                    password: hashedPassword,
-                    name: "System Admin",
-                    role: "super_admin"
-                }
-            });
-            adminMsg = "Admin user created";
-        } else {
-            adminMsg = "Admin user already exists, password left unchanged";
+            hashedPassword = await bcrypt.hash(adminPassword, 12);
         }
 
         // 3. Products - Manual entry only
-        const productCount = await prisma.product.count();
-        let productMsg = `Found ${productCount} existing products.`;
+        // Wrap seeding in a transaction to avoid duplicate admin/products under concurrency.
+        const seedResult = await prisma.$transaction(async (tx) => {
+            let adminMsg: string;
+            const existingAdmin = await tx.adminUser.findUnique({
+                where: { username: "admin" }
+            });
 
-        if (productCount === 0) {
-            if (process.env.NODE_ENV !== "production") {
-            }
-            for (const p of PRODUCTS_CATALOG) {
-                await prisma.product.create({
+            if (!existingAdmin) {
+                // hashedPassword is guaranteed non-null here because of the outside check
+                await tx.adminUser.create({
                     data: {
-                        name: p.name,
-                        category: p.category,
-                        image: p.image,
-                        price: p.price,
-                        description: p.description,
-                        keyIngredients: p.keyIngredients,
-                        suitableSkinTypes: p.suitableSkinTypes,
-                        benefits: p.benefits,
-                        negativeFor: p.negativeFor || [],
-                        active: true,
-                        featured: false
+                        username: "admin",
+                        password: hashedPassword!,
+                        name: "System Admin",
+                        role: "super_admin"
                     }
                 });
+                adminMsg = "Admin user created";
+            } else {
+                adminMsg = "Admin user already exists, password left unchanged";
             }
-            productMsg = `Seeded ${PRODUCTS_CATALOG.length} products successfully.`;
-        }
+
+            const productCount = await tx.product.count();
+            let productMsg = `Found ${productCount} existing products.`;
+
+            if (productCount === 0) {
+                for (const p of PRODUCTS_CATALOG) {
+                    await tx.product.create({
+                        data: {
+                            name: p.name,
+                            category: p.category,
+                            image: p.image,
+                            price: p.price,
+                            description: p.description,
+                            keyIngredients: p.keyIngredients,
+                            suitableSkinTypes: p.suitableSkinTypes,
+                            benefits: p.benefits,
+                            negativeFor: p.negativeFor || [],
+                            active: true,
+                            featured: false
+                        }
+                    });
+                }
+                productMsg = `Seeded ${PRODUCTS_CATALOG.length} products successfully.`;
+            }
+
+            return { adminMsg, productMsg };
+        });
+
+        const { adminMsg, productMsg } = seedResult;
 
         return NextResponse.json({
             success: true,
@@ -134,5 +149,14 @@ export async function POST(request: NextRequest) {
     } catch (error) {
         console.error("Setup failed:", error);
         return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    }
+}
+
+function safeTimingEqual(a: string, b: string): boolean {
+    if (a.length !== b.length) return false;
+    try {
+        return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
+    } catch {
+        return false;
     }
 }

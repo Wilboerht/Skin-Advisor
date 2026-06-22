@@ -224,8 +224,14 @@ export function useAsyncAnalysis() {
                         (async () => {
                             let retries = 0;
                             const maxRetries = 2;
-                            
-                            while (retries <= maxRetries) {
+                            let aborted = false;
+
+                            abortController.signal.addEventListener('abort', () => {
+                                aborted = true;
+                                avatarAbortController.abort();
+                            });
+
+                            while (retries <= maxRetries && !aborted) {
                                 let avatarTimeout: ReturnType<typeof setTimeout> | undefined;
                                 try {
                                     avatarTimeout = setTimeout(() => avatarAbortController.abort(), 60000);
@@ -257,7 +263,7 @@ export function useAsyncAnalysis() {
                                                     // 带过期时间的 localStorage 存储（24小时）
                                                     const payload = JSON.stringify({
                                                         url: data.generatedUrl,
-                                                        expiresAt: Date.now() + 24 * 60 * 60 * 1000
+                                                        expiresAt: Date.now() + 10 * 60 * 1000
                                                     });
                                                     // 大小检查：localStorage 通常限制 5MB
                                                     if (payload.length > 4 * 1024 * 1024) {
@@ -280,7 +286,7 @@ export function useAsyncAnalysis() {
                                                 try {
                                                     const payload = JSON.stringify({
                                                         url: data.url,
-                                                        expiresAt: Date.now() + 24 * 60 * 60 * 1000
+                                                        expiresAt: Date.now() + 10 * 60 * 1000
                                                     });
                                                     if (payload.length > 4 * 1024 * 1024) {
                                                         console.warn("[Avatar] ⚠️  Avatar URL too large for localStorage, skipping");
@@ -322,11 +328,13 @@ export function useAsyncAnalysis() {
                                     if (avatarTimeout) clearTimeout(avatarTimeout);
                                     if (err instanceof Error && err.name === 'AbortError') {
                                         console.warn("[Avatar] ⚠️  Request cancelled or timeout");
+                                        aborted = true;
+                                        break;
                                     } else {
                                         console.error("[Avatar] ❌ Generation failed:", err);
                                     }
-                                    
-                                    if (retries < maxRetries) {
+
+                                    if (retries < maxRetries && !aborted) {
                                         retries++;
                                         await new Promise(r => setTimeout(r, 2000));
                                         continue;

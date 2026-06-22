@@ -17,7 +17,13 @@ export async function PUT(req: NextRequest) {
             updateData.name = name.trim().slice(0, 20);
         }
         if (typeof avatar === "string") {
-            updateData.avatarUrl = avatar.trim();
+            const trimmed = avatar.trim();
+            const allowedSchemes = ["http:", "https:", "data:"];
+            const hasAllowedScheme = allowedSchemes.some((scheme) => trimmed.startsWith(scheme));
+            if (trimmed && !hasAllowedScheme) {
+                return NextResponse.json({ error: "头像 URL 协议不合法" }, { status: 400 });
+            }
+            updateData.avatarUrl = trimmed;
         }
 
         if (Object.keys(updateData).length === 0) {

@@ -10,5 +10,5 @@ export default async function AuditLogsPage() {
     if (!admin) {
         redirect("/admin/login");
     }
-    return <AuditLogsClient />;
+    return <AuditLogsClient role={admin.role} />;
 }

@@ -43,7 +43,7 @@ export const DEFAULT_QUESTIONS: Question[] = [
     },
     {
         id: "q2",
-        fieldName: "concerns",
+        fieldName: "primaryConcern",
         question: "您最想改善的肌肤问题是？",
         subtext: "可多选 (最多3项)",
         type: "multiple",
@@ -80,11 +80,6 @@ export const DEFAULT_QUESTIONS: Question[] = [
             { value: "no", label: "否" },
             { value: "yes", label: "是" },
         ],
-        dependsOn: { // Only for females
-            field: "gender",
-            value: "female",
-            operator: "equals"
-        }
     },
     {
         id: "q5",
@@ -97,13 +92,6 @@ export const DEFAULT_QUESTIONS: Question[] = [
             { value: "acid", label: "刷酸/焕肤类", description: "果酸、水杨酸、壬二酸等" },
             { value: "injection", label: "注射/微针类", description: "水光针、微针、肉毒等" },
         ],
-        dependsOn: {
-            // Complex logic not fully supported by simple type, 
-            // but let's just keep it simple or remove dependency if pregnancy is now female only
-            field: "pregnancy",
-            value: "no", // If pregnant, usually advised against many procedures, but let's keep logic simple
-            operator: "equals"
-        }
     },
     {
         id: "q6",
@@ -139,11 +127,6 @@ export const DEFAULT_QUESTIONS: Question[] = [
             { value: "follicular", label: "滤泡期 (经后一周/状态好)", description: "肌肤状态最佳，适合精细护理" },
             { value: "luteal", label: "黄体期 (经前一周/易冒痘)", description: "油脂分泌增加，注意清洁" },
         ],
-        dependsOn: {
-            field: "gender",
-            value: "female",
-            operator: "equals"
-        }
     },
     {
         id: "q9",

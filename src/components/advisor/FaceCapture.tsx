@@ -90,6 +90,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
   const [isInCooldown, setIsInCooldown] = useState<boolean>(false); // 冷却状态 UI 显示
   const [cooldownProgress, setCooldownProgress] = useState<number>(0); // 冷却进度 0-100
   const [isMuted, setIsMuted] = useState(false); // 静音状态
+  const [reducedMotion, setReducedMotion] = useState(false); // 减少动效偏好
   const [showSuccessForStep, setShowSuccessForStep] = useState<CaptureStep | null>(null); // 拍摄成功确认态
   const [isLoading, setIsLoading] = useState(true);
   const [faceStatus, setFaceStatus] = useState<FaceStatus>("none");
@@ -125,6 +126,16 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     currentStep: string;
     displayBox: { x: number; y: number; width: number; height: number } | null;
   } | null>(null);
+
+  // 检测用户是否偏好减少动效（同步影响震动与语音播报）
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mql = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReducedMotion(mql.matches);
+    const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
+  }, []);
 
   /**
    * 初始化摄像头
@@ -288,7 +299,6 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     const faceLeft = positions[0];
     const faceRight = positions[16];
     const chin = positions[8];
-    const _noseBridge = positions[27];
 
     // 计算眼睛中心
     const eyesCenterX = (leftEyeOuter.x + rightEyeOuter.x) / 2;
@@ -316,8 +326,6 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
 
     // 抬头标志: tiltRatio 越小越仰头
     // 大幅放宽到 0.50，几乎只要抬头就能过
-    const isLookingUp = tiltRatio < 0.50;
-
     // 优先匹配当前目标步骤 (Bias towards user intent)
 
     if (targetStep === 'left') {
@@ -440,7 +448,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
 
   /* 语音播报函数 */
   const speak = useCallback((text: string) => {
-    if (isMuted || typeof window === 'undefined') return;
+    if (isMuted || reducedMotion || typeof window === 'undefined') return;
     try {
       // 防止同一个指令在短时间内重复堆积
       if (window.speechSynthesis.speaking && text === lastSpokenPhraseRef.current) {
@@ -456,7 +464,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     } catch (e) {
       console.error("Speech synthesis failed", e);
     }
-  }, [isMuted]);
+  }, [isMuted, reducedMotion]);
 
   /**
    * 检测面部和头部朝向
@@ -763,7 +771,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     speak("好");
 
     // 震动反馈（支持移动设备），弥补 TTS 不可靠的场景
-    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+    if (!reducedMotion && typeof navigator !== 'undefined' && navigator.vibrate) {
       navigator.vibrate(50);
     }
 

@@ -5,7 +5,6 @@ import { TEXT_ANALYSIS_SYSTEM_PROMPT } from "@/config/ai-prompts";
 import {
     extractJsonFromResponse,
     getDefaultFaceAnalysisResult,
-    determineSkinType,
     identifyConcerns,
     type QuestionnaireAnswers,
     type FaceAnalysisResult
@@ -97,14 +96,11 @@ export async function getAISettings(): Promise<AISettings> {
         if (setting?.value) {
             const dbSettings = setting.value as Partial<AISettings>;
             // 合并默认值
+            // 注意：apiKeys 仅允许来自环境变量，禁止从数据库覆盖，防止密钥泄露或被篡改
             cachedSettings = {
                 ...DEFAULT_AI_SETTINGS,
                 ...dbSettings,
-                // 确保 API Keys 合并 (DB 优先，Env 兜底)
-                apiKeys: {
-                    ...DEFAULT_AI_SETTINGS.apiKeys,
-                    ...(dbSettings.apiKeys || {}),
-                },
+                apiKeys: DEFAULT_AI_SETTINGS.apiKeys,
             };
         } else {
             cachedSettings = { ...DEFAULT_AI_SETTINGS };
@@ -208,7 +204,7 @@ export async function generateText(
     let lastError: Error | null = null;
 
     for (const provider of providerQueue) {
-        const model = provider === primaryProvider ? primaryModel : getModelForProvider(provider, settings);
+        const model = provider === primaryProvider ? primaryModel : getModelForProvider(provider);
 
         try {
             const result = await callProviderWithRetry(provider as AIProvider, model, systemPrompt, userPrompt, settings, signal);
@@ -337,7 +333,7 @@ async function callProviderInternal(
 // 工具函数
 // ============================================================================
 
-function getModelForProvider(provider: string, settings: AISettings): string {
+function getModelForProvider(provider: string): string {
     // 简单映射默认模型
     switch (provider) {
         case "deepseek": return "deepseek-chat";
@@ -401,11 +397,6 @@ export function fallbackAnalysis(answers: QuestionnaireAnswers): FaceAnalysisRes
 
     // 2. 关注点映射
     const concerns = identifyConcerns(answers);
-    const concernsMap: Record<string, string> = {
-        aging: "抗衰老", wrinkles: "细纹", dullness: "暗沉",
-        dryness: "干燥", acne: "痘痘", sensitivity: "敏感"
-    };
-
     result.priorityAreas = concerns;
 
     // 3. 维度调整

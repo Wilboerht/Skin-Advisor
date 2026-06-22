@@ -193,32 +193,48 @@ export function resetRateLimit(
     rateLimitCache.delete(cacheKey);
 }
 
+/** 可信代理层数（从请求头最右端向左排除的代理数量） */
+const TRUSTED_PROXY_HOPS = (() => {
+    const raw = process.env.TRUSTED_PROXY_HOPS;
+    if (!raw) return 0;
+    const n = Number(raw);
+    return Number.isFinite(n) && n >= 0 ? n : 0;
+})();
+
+function normalizeClientIp(ip: string): string {
+    if (ip === '::1' || ip === '127.0.0.1') {
+        return 'local_dev_loopback';
+    }
+    return ip;
+}
+
 /**
  * 获取客户端 IP 地址
  * 支持代理环境
+ *
+ * 优先级：
+ * 1. X-Real-IP（通常由最外层可信代理设置）
+ * 2. X-Forwarded-For：按 TRUSTED_PROXY_HOPS 从右向左取真实客户端 IP
+ * 3. 未配置可信代理时，使用 X-Forwarded-For 最后一个值（离服务器最近的一跳）
  */
 export function getClientIP(request: Request): string {
-    // Use the LAST value in X-Forwarded-For (closest to the server / most trusted)
-    // instead of the FIRST value which can be spoofed by the client.
+    const realIp = request.headers.get("x-real-ip");
+    if (realIp) {
+        return normalizeClientIp(realIp.trim());
+    }
+
     const forwardedFor = request.headers.get("x-forwarded-for");
-    let rawIp: string | undefined;
     if (forwardedFor) {
         const ips = forwardedFor.split(",").map(s => s.trim()).filter(Boolean);
         if (ips.length > 0) {
-            rawIp = ips[ips.length - 1];
+            const idx = TRUSTED_PROXY_HOPS > 0
+                ? Math.max(0, ips.length - TRUSTED_PROXY_HOPS - 1)
+                : ips.length - 1;
+            return normalizeClientIp(ips[idx]);
         }
     }
 
-    const realIP = request.headers.get("x-real-ip");
-    rawIp = rawIp || realIP || "unknown";
-
-    // 统一 loopback 处理，确保与 extractGuestIdentifiers 一致
-    // 避免开发环境中 hashIP(getClientIP) 与 extractGuestIdentifiers 返回的 ipAddress 不匹配
-    if (rawIp === '::1' || rawIp === '127.0.0.1') {
-        rawIp = 'local_dev_loopback';
-    }
-
-    return rawIp;
+    return "unknown";
 }
 
 /** 双重限流结果 */

@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import { logAdminAction, getClientInfo } from "@/lib/admin-auth";
 import { rateLimit, getClientIP, resetRateLimit } from "@/lib/ratelimit";
+import { ADMIN_SESSION_COOKIE_NAME } from "@/lib/session-verify";
 
 export async function POST(request: NextRequest) {
     const clientInfo = getClientInfo(request);
@@ -39,8 +40,22 @@ export async function POST(request: NextRequest) {
 
         const normalizedUsername = username.toLowerCase().trim();
 
+        const INVALID_CREDENTIALS_RESPONSE = NextResponse.json(
+            { error: "Invalid credentials" },
+            { status: 401 }
+        );
+
         const admin = await prisma.adminUser.findUnique({
-            where: { username: normalizedUsername }
+            where: { username: normalizedUsername },
+            select: {
+                id: true,
+                username: true,
+                name: true,
+                role: true,
+                active: true,
+                password: true,
+                passwordChangedAt: true,
+            }
         });
 
         if (!admin) {
@@ -52,10 +67,7 @@ export async function POST(request: NextRequest) {
                 ...clientInfo
             });
 
-            return NextResponse.json(
-                { error: "Invalid credentials" },
-                { status: 401 }
-            );
+            return INVALID_CREDENTIALS_RESPONSE;
         }
 
         // Account-level rate limit: max 5 attempts per 15 minutes per account
@@ -94,10 +106,7 @@ export async function POST(request: NextRequest) {
                 details: { username: normalizedUsername, reason: "account_disabled" },
                 ...clientInfo
             });
-            return NextResponse.json(
-                { error: "Account disabled" },
-                { status: 403 }
-            );
+            return INVALID_CREDENTIALS_RESPONSE;
         }
 
         const passwordValid = await bcrypt.compare(password, admin.password);
@@ -110,10 +119,7 @@ export async function POST(request: NextRequest) {
                 ...clientInfo
             });
 
-            return NextResponse.json(
-                { error: "Invalid credentials" },
-                { status: 401 }
-            );
+            return INVALID_CREDENTIALS_RESPONSE;
         }
 
         // Set cookie with HMAC-signed session data
@@ -121,11 +127,12 @@ export async function POST(request: NextRequest) {
         const signedSession = await createSignedSession({
             adminId: admin.id,
             username: admin.username,
-            role: admin.role
+            role: admin.role,
+            passwordChangedAt: admin.passwordChangedAt?.toISOString() || null,
         });
 
         const cookieStore = await cookies();
-        cookieStore.set("admin_session", signedSession, {
+        cookieStore.set(ADMIN_SESSION_COOKIE_NAME, signedSession, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "strict",

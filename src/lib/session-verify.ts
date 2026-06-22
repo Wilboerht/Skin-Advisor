@@ -9,6 +9,13 @@
 
 const SESSION_MAX_AGE_MS = 8 * 60 * 60 * 1000;
 
+/**
+ * Admin session cookie 名称
+ * 生产环境使用 __Host- 前缀以强化 Cookie 安全（要求 Path=/、Secure、无 Domain）
+ */
+export const ADMIN_SESSION_COOKIE_NAME =
+    process.env.NODE_ENV === "production" ? "__Host-admin_session" : "admin_session";
+
 function getSessionSecret(): string {
     const secret = process.env.ADMIN_SESSION_SECRET;
     if (!secret) {

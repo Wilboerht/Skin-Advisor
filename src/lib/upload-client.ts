@@ -6,6 +6,18 @@ import { uploadImageToOSS, isOSSConfigured } from "./oss-upload-client";
 
 export type StorageProvider = "oss" | "local";
 
+const MAX_UPLOAD_SIZE = 10 * 1024 * 1024; // 10MB
+const ALLOWED_UPLOAD_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
+function validateImageFile(file: Blob): void {
+    if (!file.type || !ALLOWED_UPLOAD_TYPES.includes(file.type)) {
+        throw new Error("不支持的图片格式，仅支持 jpg/png/webp/gif");
+    }
+    if (file.size > MAX_UPLOAD_SIZE) {
+        throw new Error("图片大小超过 10MB 限制");
+    }
+}
+
 /**
  * 上传图片到云存储
  * @param file 文件对象或 Blob
@@ -16,6 +28,8 @@ export async function uploadImage(
     file: Blob,
     filename: string = "image.jpg"
 ): Promise<string> {
+    validateImageFile(file);
+
     // 优先使用阿里云 OSS
     if (isOSSConfigured()) {
         try {

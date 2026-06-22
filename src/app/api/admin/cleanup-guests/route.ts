@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
 import prisma from "@/lib/prisma";
 import { deleteOSSFiles } from "@/lib/ali-oss";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
@@ -34,9 +35,14 @@ export async function POST(req: NextRequest) {
         // 使用 admin session 鉴权
         authMethod = "admin_session";
         adminId = admin.adminId;
-    } else if (secret && authHeader === `Bearer ${secret}`) {
+    } else if (secret && authHeader?.startsWith("Bearer ")) {
         // 使用 ADMIN_SECRET 鉴权（定时任务等）
-        authMethod = "ADMIN_SECRET";
+        const provided = authHeader.slice(7);
+        if (safeTimingEqual(provided, secret)) {
+            authMethod = "ADMIN_SECRET";
+        } else {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
     } else {
         console.warn("[Cleanup] 鉴权失败：既无有效 admin session，也无正确的 ADMIN_SECRET");
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -191,5 +197,14 @@ export async function POST(req: NextRequest) {
             success: false,
             error: "清理失败"
         }, { status: 500 });
+    }
+}
+
+function safeTimingEqual(a: string, b: string): boolean {
+    if (a.length !== b.length) return false;
+    try {
+        return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
+    } catch {
+        return false;
     }
 }

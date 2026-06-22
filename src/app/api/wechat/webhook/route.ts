@@ -1,6 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 
+// 防重放：5 分钟时间窗 + nonce 去重
+const WEBHOOK_TIME_WINDOW_MS = 5 * 60 * 1000;
+const seenNonces = new Set<string>();
+const MAX_NONCES = 10000;
+
+function isReplay(timestamp: string, nonce: string): boolean {
+    const ts = parseInt(timestamp, 10) * 1000;
+    if (Number.isNaN(ts)) return true;
+    if (Math.abs(Date.now() - ts) > WEBHOOK_TIME_WINDOW_MS) return true;
+    if (seenNonces.has(nonce)) return true;
+    seenNonces.add(nonce);
+    if (seenNonces.size > MAX_NONCES) {
+        const first = seenNonces.values().next().value as string | undefined;
+        if (first) seenNonces.delete(first);
+    }
+    return false;
+}
+
 export async function GET(request: NextRequest) {
     // 从请求 URL 的查询参数中获取微信传入的验证参数
     const searchParams = request.nextUrl.searchParams;
@@ -19,6 +37,11 @@ export async function GET(request: NextRequest) {
     // 参数校验
     if (!signature || !timestamp || !nonce) {
         return new NextResponse("Invalid Request", { status: 400 });
+    }
+
+    // 防重放检查
+    if (isReplay(timestamp, nonce)) {
+        return new NextResponse("Invalid timestamp or replayed nonce", { status: 403 });
     }
 
     // 微信官方的验证规则：
@@ -58,6 +81,11 @@ export async function POST(request: NextRequest) {
 
     if (!signature || !timestamp || !nonce) {
         return new NextResponse("Invalid Request", { status: 400 });
+    }
+
+    // 防重放检查
+    if (isReplay(timestamp, nonce)) {
+        return new NextResponse("Invalid timestamp or replayed nonce", { status: 403 });
     }
 
     const arr = [token, timestamp, nonce].sort();

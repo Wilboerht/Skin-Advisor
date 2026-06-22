@@ -90,15 +90,25 @@ function animateValue({
   onUpdate,
   onEnd,
 }: AnimateValueOptions) {
+  let rafId: number | null = null;
   const t0 = performance.now() + delay;
   function tick() {
     const elapsed = performance.now() - t0;
     const t = Math.min(elapsed / duration, 1);
     onUpdate(start + (end - start) * ease(t));
-    if (t < 1) requestAnimationFrame(tick);
-    else if (onEnd) onEnd();
+    if (t < 1) {
+      rafId = requestAnimationFrame(tick);
+    } else if (onEnd) {
+      onEnd();
+    }
   }
-  setTimeout(() => requestAnimationFrame(tick), delay);
+  const timeoutId = setTimeout(() => {
+    rafId = requestAnimationFrame(tick);
+  }, delay);
+  return () => {
+    clearTimeout(timeoutId);
+    if (rafId !== null) cancelAnimationFrame(rafId);
+  };
 }
 
 interface BorderGlowProps {
@@ -191,43 +201,47 @@ export default function BorderGlow({
     card.classList.add("sweep-active");
     card.style.setProperty("--cursor-angle", `${angleStart}deg`);
 
-    animateValue({
-      duration: 500,
-      onUpdate: (v) => card.style.setProperty("--edge-proximity", `${v}`),
-    });
-    animateValue({
-      ease: easeInCubic,
-      duration: 1500,
-      end: 50,
-      onUpdate: (v) => {
-        card.style.setProperty(
-          "--cursor-angle",
-          `${((angleEnd - angleStart) * (v / 100) + angleStart).toFixed(3)}deg`
-        );
-      },
-    });
-    animateValue({
-      ease: easeOutCubic,
-      delay: 1500,
-      duration: 2250,
-      start: 50,
-      end: 100,
-      onUpdate: (v) => {
-        card.style.setProperty(
-          "--cursor-angle",
-          `${((angleEnd - angleStart) * (v / 100) + angleStart).toFixed(3)}deg`
-        );
-      },
-    });
-    animateValue({
-      ease: easeInCubic,
-      delay: 2500,
-      duration: 1500,
-      start: 100,
-      end: 0,
-      onUpdate: (v) => card.style.setProperty("--edge-proximity", `${v}`),
-      onEnd: () => card.classList.remove("sweep-active"),
-    });
+    const cancelFns = [
+      animateValue({
+        duration: 500,
+        onUpdate: (v) => card.style.setProperty("--edge-proximity", `${v}`),
+      }),
+      animateValue({
+        ease: easeInCubic,
+        duration: 1500,
+        end: 50,
+        onUpdate: (v) => {
+          card.style.setProperty(
+            "--cursor-angle",
+            `${((angleEnd - angleStart) * (v / 100) + angleStart).toFixed(3)}deg`
+          );
+        },
+      }),
+      animateValue({
+        ease: easeOutCubic,
+        delay: 1500,
+        duration: 2250,
+        start: 50,
+        end: 100,
+        onUpdate: (v) => {
+          card.style.setProperty(
+            "--cursor-angle",
+            `${((angleEnd - angleStart) * (v / 100) + angleStart).toFixed(3)}deg`
+          );
+        },
+      }),
+      animateValue({
+        ease: easeInCubic,
+        delay: 2500,
+        duration: 1500,
+        start: 100,
+        end: 0,
+        onUpdate: (v) => card.style.setProperty("--edge-proximity", `${v}`),
+        onEnd: () => card.classList.remove("sweep-active"),
+      }),
+    ];
+
+    return () => cancelFns.forEach((fn) => fn());
   }, [animated]);
 
   const glowVars = buildGlowVars(glowColor, glowIntensity);

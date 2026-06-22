@@ -44,7 +44,7 @@ interface AuthContextType {
 
 const AUTH_CACHE_KEY = 'auth_user_cache';
 const AUTH_CACHE_EXPIRY_KEY = 'auth_user_cache_expiry';
-const CACHE_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
+const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
 
 function isCachedVipExpired(user: User): boolean {
     if (user.role !== 'vip') return false;
@@ -65,7 +65,8 @@ function getCachedUser(): { user: User | null; needsRefresh: boolean } {
         if (!cached) return { user: null, needsRefresh: false };
 
         const user: User = JSON.parse(cached);
-        if (isCachedVipExpired(user)) {
+        // 缓存中缺少敏感字段时强制刷新
+        if (isCachedVipExpired(user) || !('role' in user)) {
             return { user, needsRefresh: true };
         }
         return { user, needsRefresh: false };
@@ -78,17 +79,16 @@ function setCachedUser(user: User | null) {
     if (typeof window === 'undefined') return;
     try {
         if (user) {
-            localStorage.setItem(AUTH_CACHE_KEY, JSON.stringify(user));
-            let cacheDuration = CACHE_DURATION_MS;
-            if (user.role === 'vip' && user.vipExpiresAt) {
-                const vipRemainingMs = new Date(user.vipExpiresAt).getTime() - Date.now();
-                if (vipRemainingMs > 0) {
-                    cacheDuration = Math.min(cacheDuration, vipRemainingMs);
-                } else {
-                    cacheDuration = 0;
-                }
-            }
-            localStorage.setItem(AUTH_CACHE_EXPIRY_KEY, String(Date.now() + cacheDuration));
+            // 不缓存敏感字段（role / vipExpiresAt），缩短缓存时间
+            const cacheable = {
+                id: user.id,
+                email: user.email,
+                phone: user.phone,
+                name: user.name,
+                avatar: user.avatar,
+            };
+            localStorage.setItem(AUTH_CACHE_KEY, JSON.stringify(cacheable));
+            localStorage.setItem(AUTH_CACHE_EXPIRY_KEY, String(Date.now() + CACHE_DURATION_MS));
         } else {
             localStorage.removeItem(AUTH_CACHE_KEY);
             localStorage.removeItem(AUTH_CACHE_EXPIRY_KEY);

@@ -16,5 +16,18 @@ services:
       timeout: 5s
       retries: 5
 
+  app:
+    image: skin-advisor:latest
+    container_name: skin-advisor-app
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/skin_advisor
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   postgres_data:

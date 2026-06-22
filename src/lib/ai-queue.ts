@@ -130,10 +130,8 @@ class AIRequestQueue {
     enqueue<T>(type: string, execute: () => Promise<T>): EnqueueResult<T> {
         const id = this.generateId();
 
-        // 计算当前位置
-        const position = this.runningCount >= this.maxConcurrent
-            ? this.queue.length + 1
-            : 0;
+        // 计算当前位置（始终按排队长度 + 1，避免有空位时返回 0 导致前端显示混乱）
+        const position = this.queue.length + 1;
 
         const promise = new Promise<T>((resolve, reject) => {
             const item: QueueItem<T> = {

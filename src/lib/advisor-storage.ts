@@ -10,6 +10,9 @@ const STORES = {
     results: "results",
 };
 
+// 人脸照片与分析结果属于敏感数据，默认仅保留 1 小时，避免长期留存本地
+const MAX_STORAGE_AGE_MS = 60 * 60 * 1000;
+
 let dbInstance: IDBDatabase | null = null;
 
 /**
@@ -110,7 +113,12 @@ export async function getFaceImages(): Promise<{
 
             request.onsuccess = () => {
                 if (request.result) {
-                    resolve(request.result.images);
+                    if (Date.now() - request.result.timestamp > MAX_STORAGE_AGE_MS) {
+                        // 过期数据视为不存在（由 clearExpiredData 统一清理）
+                        resolve(null);
+                    } else {
+                        resolve(request.result.images);
+                    }
                 } else {
                     resolve(null);
                 }
@@ -167,7 +175,11 @@ export async function getResult(): Promise<unknown | null> {
 
             request.onsuccess = () => {
                 if (request.result) {
-                    resolve(request.result.result);
+                    if (Date.now() - request.result.timestamp > MAX_STORAGE_AGE_MS) {
+                        resolve(null);
+                    } else {
+                        resolve(request.result.result);
+                    }
                 } else {
                     resolve(null);
                 }

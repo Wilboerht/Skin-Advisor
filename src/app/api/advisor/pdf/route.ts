@@ -54,6 +54,7 @@ const rgb = (hex: string): [number, number, number] => {
 };
 
 import { resolveIPLocation } from "@/lib/geoip";
+import { getClientIP } from "@/lib/ratelimit";
 
 export async function POST(request: NextRequest) {
     try {
@@ -67,7 +68,7 @@ export async function POST(request: NextRequest) {
 
         // Auto-detect location if missing
         if (!location || (!location.province && !location.city)) {
-            const ip = request.headers.get("x-forwarded-for") || "127.0.0.1";
+            const ip = getClientIP(request);
             const geo = resolveIPLocation(ip);
             if (geo) {
                 location = {

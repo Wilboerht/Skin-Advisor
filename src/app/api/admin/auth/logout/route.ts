@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { verifyAdminSession, logAdminAction, getClientInfo } from "@/lib/admin-auth";
+import { ADMIN_SESSION_COOKIE_NAME } from "@/lib/session-verify";
 
 export async function POST(request: NextRequest) {
     try {
@@ -11,7 +12,12 @@ export async function POST(request: NextRequest) {
         }
 
         const cookieStore = await cookies();
-        cookieStore.delete("admin_session");
+        cookieStore.delete({
+            name: ADMIN_SESSION_COOKIE_NAME,
+            path: "/",
+            sameSite: "strict",
+            secure: process.env.NODE_ENV === "production",
+        });
 
         const clientInfo = getClientInfo(request);
         await logAdminAction({

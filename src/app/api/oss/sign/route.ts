@@ -30,7 +30,15 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "Missing filename or type" }, { status: 400 });
         }
 
-        // 2. 生成签名
+        // 2. 白名单校验：仅允许图片 MIME 与扩展名
+        const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+        const ALLOWED_EXTS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
+        const ext = filename.slice(filename.lastIndexOf(".")).toLowerCase();
+        if (!ALLOWED_TYPES.includes(type) || !ALLOWED_EXTS.includes(ext)) {
+            return NextResponse.json({ error: "仅支持 jpg/png/webp/gif 图片上传" }, { status: 400 });
+        }
+
+        // 3. 生成签名
         const signature = await generateUploadSignature(filename, type);
 
         return NextResponse.json({

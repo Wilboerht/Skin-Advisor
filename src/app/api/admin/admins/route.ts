@@ -78,13 +78,13 @@ export const POST = requireRole("super_admin")(async (request, { admin }) => {
 
     try {
         const body = await request.json();
-        let { username, email, password, name, role } = body;
+        const { username, email, password, name, role } = body;
 
         // Normalize username to lowercase
-        username = username?.toLowerCase().trim();
+        const normalizedUsername = typeof username === 'string' ? username.toLowerCase().trim() : '';
 
         // Validation
-        if (!username || typeof username !== "string" || username.length < 3 || username.length > 50) {
+        if (!normalizedUsername || normalizedUsername.length < 3 || normalizedUsername.length > 50) {
             return NextResponse.json(
                 { success: false, error: "用户名必须为3-50个字符" },
                 { status: 400 }
@@ -125,7 +125,7 @@ export const POST = requireRole("super_admin")(async (request, { admin }) => {
         // Check uniqueness
         const existing = await prisma.adminUser.findFirst({
             where: {
-                OR: [{ username }, ...(email ? [{ email }] : [])],
+                OR: [{ username: normalizedUsername }, ...(email ? [{ email }] : [])],
             },
         });
 
@@ -140,7 +140,7 @@ export const POST = requireRole("super_admin")(async (request, { admin }) => {
 
         const newAdmin = await prisma.adminUser.create({
             data: {
-                username,
+                username: normalizedUsername,
                 email: email || null,
                 password: hashedPassword,
                 name: name || null,

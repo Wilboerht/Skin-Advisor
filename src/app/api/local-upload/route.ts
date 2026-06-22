@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
+import { writeFile, mkdir, realpath } from "fs/promises";
 import path from "path";
 import { enforceStorageLimits } from "@/lib/shared-upload-utils";
 import { getSession } from "@/lib/auth";
@@ -87,11 +87,25 @@ export async function PUT(request: NextRequest) {
         // Ensure directory exists
         await mkdir(dir, { recursive: true });
 
+        // Resolve symlinks to prevent writing outside the upload root
+        const realUploadRoot = await realpath(uploadRoot);
+        const realDir = await realpath(dir);
+        const realFullPath = path.join(realDir, path.basename(fullPath));
+        if (
+            !realFullPath.startsWith(realUploadRoot + path.sep) &&
+            realFullPath !== realUploadRoot
+        ) {
+            return NextResponse.json(
+                { error: "Path traversal detected" },
+                { status: 403 }
+            );
+        }
+
         // Enforce storage limits before writing
         await enforceStorageLimits(uploadRoot);
 
         // Write file
-        await writeFile(fullPath, buffer);
+        await writeFile(realFullPath, buffer);
 
         return NextResponse.json({ success: true });
     } catch (error) {

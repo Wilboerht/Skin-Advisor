@@ -12,13 +12,13 @@ import { PrismaClient } from "@prisma/client";
  * 这样不连数据库也能启动开发服务器，适合纯前端样式调试。
  */
 function createPrismaStub(): PrismaClient {
-    const handler: ProxyHandler<any> = {
+    const handler: ProxyHandler<object> = {
         get(_, prop) {
             if (prop === "$disconnect") return () => Promise.resolve();
             if (prop === "then") return undefined;
             if (prop === "catch") return undefined;
             if (prop === "finally") return undefined;
-            return new Proxy(() => {}, handler);
+            return new Proxy(() => {}, handler) as unknown;
         },
         apply() {
             return Promise.reject(
@@ -26,7 +26,7 @@ function createPrismaStub(): PrismaClient {
             );
         },
     };
-    return new Proxy({} as PrismaClient, handler);
+    return new Proxy({} as object, handler) as PrismaClient;
 }
 
 const prismaClientSingleton = () => {
@@ -51,7 +51,6 @@ const prismaClientSingleton = () => {
         min: 2, // 保持最小连接以减少请求延迟
         idleTimeoutMillis: 60000,
         connectionTimeoutMillis: 30000,
-        statement_timeout: 30000,
         keepAlive: true,
         keepAliveInitialDelayMillis: 10000,
     });

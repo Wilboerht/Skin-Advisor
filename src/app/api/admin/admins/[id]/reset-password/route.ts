@@ -37,7 +37,10 @@ export const POST = requireRole("super_admin")(async (request, { admin, params }
 
         await prisma.adminUser.update({
             where: { id },
-            data: { password: hashedPassword },
+            data: {
+                password: hashedPassword,
+                passwordChangedAt: new Date(),
+            },
         });
 
         // Log audit

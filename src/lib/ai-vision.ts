@@ -1,7 +1,6 @@
 import {
     getAISettings,
     getApiKeysForProvider,
-    getProviderConfig,
     createOpenAIClient,
     type AIProvider,
     type AISettings
@@ -244,9 +243,10 @@ export async function analyzeComprehensiveMultimodal(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (e: any) {
             lastError = e;
-            const isAuthOrRate = e.status === 401 || e.status === 429 || String(e).includes("429");
-            if (!isAuthOrRate && i < apiKeys.length - 1) continue; // Try next key
-            if (isAuthOrRate) continue; // Try next key
+            const status = e.status as number | undefined;
+            // 仅对 401/429/5xx 等可重试错误尝试下一个 key，400 等客户端错误直接失败
+            const isRetryable = status === 401 || status === 429 || (typeof status === "number" && status >= 500);
+            if (isRetryable && i < apiKeys.length - 1) continue; // Try next key
         }
     }
     throw lastError || new Error("Multimodal analysis failed");

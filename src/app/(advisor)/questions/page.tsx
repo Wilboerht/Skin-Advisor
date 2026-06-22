@@ -9,7 +9,7 @@ import Link from "next/link";
 import { GenderSelection } from "@/components/advisor/GenderSelection";
 
 import { m, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, LogOut, ArrowRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 import { HomeSvg } from "@/components/icons/HomeSvg";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { cn } from "@/lib/utils";
@@ -66,7 +66,7 @@ export default function QuestionsPage() {
 
     const getFilteredQuestions = (currentAnswers: Record<string, unknown>, currentGender: typeof gender) => {
         return allQuestions.filter(q => {
-            if (currentGender === "male" && q.fieldName === "pregnancy") return false;
+            if (currentGender === "male" && (q.fieldName === "pregnancy" || q.fieldName === "menstrualCycle")) return false;
 
             if (q.dependsOn) {
                 const dependencyAnswer = currentAnswers[q.dependsOn.field];
@@ -316,7 +316,7 @@ export default function QuestionsPage() {
         };
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [currentStepIndex, answers, gender]);
+    }, []);
 
     // 底部渐隐遮罩：一屏能显示完时不显示；翻到最底下时消失
     useEffect(() => {

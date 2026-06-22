@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readFile } from "fs/promises";
+import { readFile, realpath } from "fs/promises";
 import path from "path";
 import { existsSync } from "fs";
 import { stat } from "fs/promises";
@@ -16,14 +16,17 @@ export async function GET(
         const uploadDir = path.join(process.cwd(), "public", "uploads");
         const filePath = path.join(uploadDir, relativePath);
 
-        // 防止目录遍历攻击（使用 path.sep 确保精确前缀匹配）
-        const resolvedUploadDir = path.resolve(uploadDir);
-        if (!filePath.startsWith(resolvedUploadDir + path.sep) && filePath !== resolvedUploadDir) {
-            return new NextResponse("Forbidden", { status: 403 });
-        }
-
+        // 防止目录遍历攻击（使用 realpath 解析符号链接后再做前缀匹配）
+        const realUploadDir = await realpath(uploadDir);
         if (!existsSync(filePath)) {
             return new NextResponse("Not found", { status: 404 });
+        }
+        const realFilePath = await realpath(filePath);
+        if (
+            !realFilePath.startsWith(realUploadDir + path.sep) &&
+            realFilePath !== realUploadDir
+        ) {
+            return new NextResponse("Forbidden", { status: 403 });
         }
 
         // 确保请求的是文件而非目录

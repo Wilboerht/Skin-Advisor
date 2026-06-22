@@ -22,7 +22,11 @@ export interface GuestIdentity {
  */
 function setCookie(name: string, value: string, maxAge: number): void {
     if (typeof document === 'undefined') return;
-    document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${maxAge}; SameSite=Lax`;
+    // Secure flag only on HTTPS to avoid dropping the cookie on local HTTP dev.
+    // HttpOnly cannot be set from JavaScript; to enforce HttpOnly this cookie
+    // must be migrated to a server-side Set-Cookie header.
+    const secure = typeof window !== 'undefined' && window.location.protocol === 'https:';
+    document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${maxAge}; SameSite=Lax${secure ? '; Secure' : ''}`;
 }
 
 /**

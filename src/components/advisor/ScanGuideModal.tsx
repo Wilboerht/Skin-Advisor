@@ -115,9 +115,13 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuid
                                     onClick={() => {
                                         // 关键体验修复：利用用户的首次显式点击解锁 iOS Safari 的语音合成引擎
                                         if (typeof window !== 'undefined' && window.speechSynthesis) {
-                                            const wakeUpStr = new SpeechSynthesisUtterance('');
-                                            wakeUpStr.volume = 0;
-                                            window.speechSynthesis.speak(wakeUpStr);
+                                            try {
+                                                const wakeUpStr = new SpeechSynthesisUtterance('');
+                                                wakeUpStr.volume = 0;
+                                                window.speechSynthesis.speak(wakeUpStr);
+                                            } catch (e) {
+                                                console.warn("[ScanGuide] speechSynthesis wake-up failed:", e);
+                                            }
                                         }
                                         onConfirm();
                                     }}

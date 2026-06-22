@@ -32,12 +32,10 @@ export interface ReserveUsageResult {
  */
 function getUserDailyLimit(user: { dailyTestLimit?: number | null } | null | undefined, isVip: boolean): number {
     if (isVip) return 100;
-    // ⚠️ 历史原因：schema 中 dailyTestLimit 的默认值为 1，但业务默认值应为 10。
-    // 管理员在后台显式修改后，该值通常会 != 1。
-    // 因此将 1 视为"未自定义"，回退到系统默认 10 次。
-    // 如果未来需要 genuinely 限制为 1 次，应将 schema 默认值改为 null 并相应调整此处逻辑。
-    if (user && typeof user.dailyTestLimit === 'number' && user.dailyTestLimit > 1) {
-        return user.dailyTestLimit;
+    // dailyTestLimit 为 null/undefined 时回退到系统默认 10 次；
+    // 显式设置为 0-1 均视为有效自定义值（0 表示禁用测试）。
+    if (user && typeof user.dailyTestLimit === 'number') {
+        return Math.max(0, user.dailyTestLimit);
     }
     return 10;
 }

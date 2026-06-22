@@ -77,27 +77,42 @@ async function generateWanxiangAvatarAsync(prompt: string, frontPhoto: string | 
         if (!isPublicUrl(fullUrl)) {
           console.warn("[Wanxiang] Blocked non-public URL:", fullUrl);
         } else {
-          const res = await fetch(fullUrl);
-          if (res.ok) {
-            const blob = await res.blob();
-            const buffer = Buffer.from(await blob.arrayBuffer());
-            if (buffer.length > MAX_LOCAL_FILE_SIZE_BYTES) {
-              console.warn(`[Wanxiang] Local image too large: ${(buffer.length / 1024 / 1024).toFixed(1)}MB > ${MAX_LOCAL_FILE_SIZE_MB}MB`);
+          const controller = new AbortController();
+          const imgTimeout = setTimeout(() => controller.abort(), 30000);
+          try {
+            const res = await fetch(fullUrl, {
+              signal: controller.signal,
+              redirect: "error",
+            });
+            if (res.ok) {
+              const blob = await res.blob();
+              const buffer = Buffer.from(await blob.arrayBuffer());
+              if (buffer.length > MAX_LOCAL_FILE_SIZE_BYTES) {
+                console.warn(`[Wanxiang] Local image too large: ${(buffer.length / 1024 / 1024).toFixed(1)}MB > ${MAX_LOCAL_FILE_SIZE_MB}MB`);
+              } else {
+                const base64 = buffer.toString("base64");
+                const mimeType = blob.type || "image/jpeg";
+                images.push(`data:${mimeType};base64,${base64}`);
+              }
             } else {
-              const base64 = buffer.toString("base64");
-              const mimeType = blob.type || "image/jpeg";
-              images.push(`data:${mimeType};base64,${base64}`);
+              console.warn("[Wanxiang] Failed to fetch local image:", res.status);
             }
-          } else {
-            console.warn("[Wanxiang] Failed to fetch local image:", res.status);
+          } finally {
+            clearTimeout(imgTimeout);
           }
         }
       } catch (e) {
         console.warn("[Wanxiang] Failed to convert local image to base64:", e);
       }
+    } else if (frontPhoto.startsWith("http:") || frontPhoto.startsWith("https:")) {
+      // 公网 URL：先校验 SSRF 白名单再交给万象服务器
+      if (!isPublicUrl(frontPhoto)) {
+        console.warn("[Wanxiang] Blocked non-public URL:", frontPhoto);
+      } else {
+        images.push(frontPhoto);
+      }
     } else {
-      // 公网 URL：万象服务器可以直接访问
-      images.push(frontPhoto);
+      console.warn("[Wanxiang] Unsupported image URL scheme:", frontPhoto);
     }
   }
 
@@ -238,7 +253,6 @@ async function generateAvatarImage(
   // Build prompt
   const rawGender = realGender || characteristics?.gender;
   const isMale = rawGender === "male" || rawGender === "男";
-  const gender = isMale ? "男" : "女";
   const age = realAge ?? characteristics?.age ?? 25;
   const skinTone = mapSkinTone(realSkinToneScore) || characteristics?.skinTone || "健康肤色";
   const hairStyle = characteristics?.hairStyle || "日常发型";
@@ -372,26 +386,41 @@ async function generateJimengAvatarAsync(
       if (!isPublicUrl(fullUrl)) {
         console.warn("[Jimeng] Blocked non-public URL:", fullUrl);
       } else {
-        const res = await fetch(fullUrl);
-        if (res.ok) {
-          const blob = await res.blob();
-          const buffer = Buffer.from(await blob.arrayBuffer());
-          if (buffer.length > MAX_LOCAL_FILE_SIZE_BYTES) {
-            console.warn(`[Jimeng] Local image too large: ${(buffer.length / 1024 / 1024).toFixed(1)}MB > ${MAX_LOCAL_FILE_SIZE_MB}MB`);
+        const controller = new AbortController();
+        const imgTimeout = setTimeout(() => controller.abort(), 30000);
+        try {
+          const res = await fetch(fullUrl, {
+            signal: controller.signal,
+            redirect: "error",
+          });
+          if (res.ok) {
+            const blob = await res.blob();
+            const buffer = Buffer.from(await blob.arrayBuffer());
+            if (buffer.length > MAX_LOCAL_FILE_SIZE_BYTES) {
+              console.warn(`[Jimeng] Local image too large: ${(buffer.length / 1024 / 1024).toFixed(1)}MB > ${MAX_LOCAL_FILE_SIZE_MB}MB`);
+            } else {
+              const base64 = buffer.toString("base64");
+              reqBody.image_base64 = base64;
+            }
           } else {
-            const base64 = buffer.toString("base64");
-            reqBody.image_base64 = base64;
+            console.warn("[Jimeng] Failed to fetch local image:", res.status);
           }
-        } else {
-          console.warn("[Jimeng] Failed to fetch local image:", res.status);
+        } finally {
+          clearTimeout(imgTimeout);
         }
       }
     } catch (e) {
       console.warn("[Jimeng] Failed to convert local image to base64:", e);
     }
+  } else if (frontPhoto && (frontPhoto.startsWith("http:") || frontPhoto.startsWith("https:"))) {
+    // URL reference: 先校验 SSRF 白名单
+    if (!isPublicUrl(frontPhoto)) {
+      console.warn("[Jimeng] Blocked non-public URL:", frontPhoto);
+    } else {
+      reqBody.image_url = frontPhoto;
+    }
   } else if (frontPhoto) {
-    // URL reference
-    reqBody.image_url = frontPhoto;
+    console.warn("[Jimeng] Unsupported image URL scheme:", frontPhoto);
   }
 
 

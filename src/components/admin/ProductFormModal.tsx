@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Package } from "lucide-react";
@@ -21,6 +21,15 @@ export function ProductFormModal({ isOpen, onClose, product, onSuccess }: Produc
     const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
 
+    const handleClose = useCallback(() => {
+        if (submitting) return;
+        if (isDirty) {
+            setShowDiscardConfirm(true);
+        } else {
+            onClose();
+        }
+    }, [submitting, isDirty, onClose]);
+
     // 打开时重置滚动位置，并绑定 Escape 键关闭
     useEffect(() => {
         if (isOpen && scrollRef.current) {
@@ -39,20 +48,11 @@ export function ProductFormModal({ isOpen, onClose, product, onSuccess }: Produc
             document.addEventListener("keydown", handleKeyDown);
         }
         return () => document.removeEventListener("keydown", handleKeyDown);
-    }, [isOpen, product, showDiscardConfirm]);
+    }, [isOpen, product, showDiscardConfirm, handleClose]);
 
     const handleSuccess = () => {
         onSuccess?.();
         onClose();
-    };
-
-    const handleClose = () => {
-        if (submitting) return;
-        if (isDirty) {
-            setShowDiscardConfirm(true);
-        } else {
-            onClose();
-        }
     };
 
     const handleConfirmDiscard = () => {

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
+import { useMounted } from "@/hooks/use-mounted";
 import { X, AlertTriangle, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -29,8 +30,7 @@ export function ConfirmModal({
     loading = false,
 }: ConfirmModalProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [mounted, setMounted] = useState(false);
-    useEffect(() => setMounted(true), []);
+    const mounted = useMounted();
 
     const handleConfirm = async () => {
         setIsSubmitting(true);
@@ -155,6 +155,8 @@ export function useConfirm() {
         onConfirm: () => { },
     });
 
+    const resolveRef = useRef<((value: boolean) => void) | undefined>(undefined);
+
     const confirm = useCallback(
         (options: {
             title: string;
@@ -163,6 +165,7 @@ export function useConfirm() {
             confirmText?: string;
         }): Promise<boolean> => {
             return new Promise((resolve) => {
+                resolveRef.current = resolve;
                 setState({
                     isOpen: true,
                     title: options.title,
@@ -171,7 +174,8 @@ export function useConfirm() {
                     confirmText: options.confirmText || "确认",
                     onConfirm: () => {
                         setState((prev) => ({ ...prev, isOpen: false }));
-                        resolve(true);
+                        resolveRef.current?.(true);
+                        resolveRef.current = undefined;
                     },
                 });
             });
@@ -181,6 +185,8 @@ export function useConfirm() {
 
     const close = useCallback(() => {
         setState((prev) => ({ ...prev, isOpen: false }));
+        resolveRef.current?.(false);
+        resolveRef.current = undefined;
     }, []);
 
     const ConfirmDialog = useCallback(

@@ -33,6 +33,9 @@ const safeStorage = {
   remove: (key: string) => {
     try { localStorage.removeItem(key); } catch (e) { console.warn("Failed to remove from localStorage", e); }
   },
+  getSession: (key: string) => {
+    try { return sessionStorage.getItem(key); } catch (e) { return null; }
+  },
   setSession: (key: string, value: string) => {
     try { sessionStorage.setItem(key, value); } catch (e) { console.warn("Failed to write to sessionStorage", e); }
   }
@@ -145,7 +148,7 @@ export default function Home() {
     setIsLoading(true);
     
     // Ensure consent is recorded if not already set by location/region steps
-    if (!sessionStorage.getItem("locationConsent")) {
+    if (!safeStorage.getSession("locationConsent")) {
         safeStorage.setSession("locationConsent", "declined");
     }
 

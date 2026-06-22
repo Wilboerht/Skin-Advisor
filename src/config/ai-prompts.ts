@@ -149,10 +149,6 @@ export function buildTextAnalysisPrompt(params: {
   };
 
   const sleepMap: Record<string, string> = {
-    gt8: "8小时以上 (充足)",
-    "6-8": "6-8小时 (正常)",
-    lt6: "6小时以下 (不足)",
-    irregular: "作息不规律",
     good: "很好 (精力充沛)",
     fair: "一般 (偶尔疲劳)",
     poor: "较差 (经常熬夜/失眠)"
@@ -172,7 +168,7 @@ export function buildTextAnalysisPrompt(params: {
 
 逻辑判断规则：
 1. 若有"医美经历"，请推荐温和、修护类的精简流程，避免刺激性成分（如因刷酸/微针后）。
-2. 若睡眠"不足"或"不规律"，请重点关注抗氧化、去暗沉和夜间修护。
+2. 若睡眠"较差"，请重点关注抗氧化、去暗沉和夜间修护。
 
 ${params.faceAnalysis ? `面部分析数据:\n${JSON.stringify(params.faceAnalysis, null, 2)}` : ""}
 

@@ -24,7 +24,6 @@ export const AnalyzeRequestSchema = z.object({
     answers: z.object({
         skinType: z.string().optional(),
         primaryConcern: z.union([z.string(), z.array(z.string())]).optional(),
-        concerns: z.array(z.string()).optional(),
         ageRange: z.string().optional(),
         gender: z.string().optional(),
 

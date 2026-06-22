@@ -1,4 +1,4 @@
-import { registerInstance, unregisterInstance } from './instance-check';
+import { registerInstance, unregisterInstance, stopHeartbeat } from './instance-check';
 import prisma from './prisma';
 import { startAvatarQueueProcessor } from './avatar-queue-processor';
 
@@ -10,9 +10,11 @@ export async function initNode() {
         await registerInstance();
 
         process.on('SIGTERM', async () => {
+            stopHeartbeat();
             await unregisterInstance();
         });
         process.on('SIGINT', async () => {
+            stopHeartbeat();
             await unregisterInstance();
         });
     } catch (e) {

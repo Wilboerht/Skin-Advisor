@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { getClientIP } from "@/lib/ratelimit";
-import { verifySessionSignature, createSignedSession } from "@/lib/session-verify";
+import { verifySessionSignature, createSignedSession, ADMIN_SESSION_COOKIE_NAME } from "@/lib/session-verify";
 
 interface AdminSession {
     adminId: string;
@@ -19,7 +19,7 @@ interface AdminSession {
 export async function verifyAdminSession(): Promise<AdminSession | null> {
     try {
         const cookieStore = await cookies();
-        const sessionCookie = cookieStore.get("admin_session");
+        const sessionCookie = cookieStore.get(ADMIN_SESSION_COOKIE_NAME);
 
         if (!sessionCookie?.value) {
             return null;
@@ -35,10 +35,17 @@ export async function verifyAdminSession(): Promise<AdminSession | null> {
         // Verify admin exists and is active in database
         const admin = await prisma.adminUser.findUnique({
             where: { id: sessionData.adminId as string },
-            select: { id: true, username: true, role: true, active: true }
+            select: { id: true, username: true, role: true, active: true, passwordChangedAt: true }
         });
 
         if (!admin || !admin.active) {
+            return null;
+        }
+
+        // If password has been changed since session was issued, invalidate the session
+        const sessionPasswordChangedAt = sessionData.passwordChangedAt as string | null | undefined;
+        const currentPasswordChangedAt = admin.passwordChangedAt?.toISOString() || null;
+        if (sessionPasswordChangedAt !== currentPasswordChangedAt) {
             return null;
         }
 
@@ -120,6 +127,7 @@ export function withAdminAuth<T = any>(
  * Returns a wrapper that checks admin authentication AND role membership.
  */
 export function requireRole(...allowedRoles: string[]) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return function <T = any>(
         handler: (request: NextRequest, context: T & { admin: AdminSession }) => Promise<NextResponse>
     ): (request: NextRequest, context: T) => Promise<NextResponse> {

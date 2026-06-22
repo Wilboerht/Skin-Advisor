@@ -71,10 +71,16 @@ export async function GET(req: NextRequest) {
                     });
 
                     if (updated.count > 0) {
-                        // 异步处理，不阻塞响应
-                        processAvatarQueueItem(queueItem).catch(err => {
-                            console.error(`[AvatarQueue] On-demand processing failed for ${sessionId}:`, err);
+                        // 重新确认状态，确保本次乐观锁成功抢到处理权
+                        const refreshed = await prisma.avatarQueue.findUnique({
+                            where: { sessionId }
                         });
+                        if (refreshed?.status === "processing") {
+                            // 异步处理，不阻塞响应；使用原对象触发处理器
+                            processAvatarQueueItem(queueItem).catch(err => {
+                                console.error(`[AvatarQueue] On-demand processing failed for ${sessionId}:`, err);
+                            });
+                        }
                     }
                 } catch (e) {
                     console.warn("[AvatarQueue] Failed to trigger on-demand processing:", e);

@@ -5,6 +5,7 @@ import { motion as m } from "framer-motion";
 import { Lock, Sparkles, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/ui/Toast";
 
 interface VIPFeatureCardProps {
     userImage?: string;
@@ -14,6 +15,7 @@ interface VIPFeatureCardProps {
 
 export function VIPFeatureCard({ userImage, className, onUnlock }: VIPFeatureCardProps) {
     const router = useRouter();
+    const toast = useToast();
 
     const handleUnlock = () => {
         if (onUnlock) {
@@ -21,7 +23,7 @@ export function VIPFeatureCard({ userImage, className, onUnlock }: VIPFeatureCar
             return;
         }
         // Default action: Show toast or redirect
-        alert("VIP 升级功能即将上线\n敬请期待更多高级分析功能！");
+        toast.info("VIP 升级功能即将上线，敬请期待更多高级分析功能！");
         // router.push("/pricing"); // Future
     };
 

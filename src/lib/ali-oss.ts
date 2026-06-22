@@ -51,7 +51,7 @@ if (isOSSConfigured()) {
 export async function generateUploadSignature(filename: string, type: string) {
     // 生成随机文件路径: advisor/日期/随机ID.ext
     const date = new Date().toISOString().split("T")[0];
-    const randomId = Math.random().toString(36).substring(2, 10);
+    const randomId = crypto.randomUUID();
     const ext = filename.split(".").pop()?.toLowerCase() || "jpg";
     const objectName = `advisor/${date}/${randomId}.${ext}`;
 
@@ -86,6 +86,22 @@ export async function generateUploadSignature(filename: string, type: string) {
     };
 }
 
+function getAllowedOSSHosts(): string[] {
+    const hosts = new Set<string>();
+    if (ossConfig.bucket && ossConfig.region) {
+        hosts.add(`${ossConfig.bucket}.${ossConfig.region}.aliyuncs.com`);
+    }
+    const publicDomain = process.env.ALI_OSS_PUBLIC_DOMAIN;
+    if (publicDomain) {
+        try {
+            hosts.add(new URL(publicDomain).hostname.toLowerCase());
+        } catch {
+            // ignore invalid public domain
+        }
+    }
+    return Array.from(hosts);
+}
+
 /**
  * 批量删除 OSS 文件
  * @param urls 文件的完整 URL 或 objectName 列表
@@ -93,17 +109,28 @@ export async function generateUploadSignature(filename: string, type: string) {
 export async function deleteOSSFiles(urls: string[]) {
     if (!ossClient) return;
 
+    const allowedHosts = getAllowedOSSHosts();
+
     try {
-        // 提取 objectName
+        // 提取 objectName，并校验 URL 是否属于本 bucket/自定义域名
         const names = urls.map(url => {
             try {
                 const urlObj = new URL(url);
+                if (!allowedHosts.includes(urlObj.hostname.toLowerCase())) {
+                    console.warn(`[OSS] Skipping delete of non-OSS URL: ${url}`);
+                    return null;
+                }
                 // 移除开头的 /
                 return urlObj.pathname.substring(1);
             } catch {
+                // Treat raw object names with basic safety checks
+                if (url.startsWith("/") || url.includes("..") || url.includes("\\")) {
+                    console.warn(`[OSS] Skipping unsafe object name: ${url}`);
+                    return null;
+                }
                 return url;
             }
-        }).filter(Boolean);
+        }).filter((name): name is string => Boolean(name));
 
         if (names.length === 0) return;
 

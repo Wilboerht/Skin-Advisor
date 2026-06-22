@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { verifySessionSignature } from "@/lib/session-verify";
+import { verifySessionSignature, ADMIN_SESSION_COOKIE_NAME } from "@/lib/session-verify";
 
 /**
  * Next.js 全局 Proxy（原 middleware）
@@ -47,7 +47,7 @@ export async function proxy(request: NextRequest) {
     const isAdminPage = pathname.startsWith("/admin");
     const isAdminApi = pathname.startsWith("/api/admin");
     if ((isAdminPage || isAdminApi) && !ADMIN_PUBLIC_PATHS.some((p) => pathname === p)) {
-        const adminSession = request.cookies.get("admin_session")?.value;
+        const adminSession = request.cookies.get(ADMIN_SESSION_COOKIE_NAME)?.value;
         const sessionData = adminSession
             ? await verifySessionSignature(adminSession)
             : null;
@@ -79,10 +79,12 @@ export async function proxy(request: NextRequest) {
         if (pathname.startsWith("/api/cron")) {
             const authHeader = request.headers.get("authorization");
             const cronSecret = process.env.CRON_SECRET;
-            if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-                if (request.nextUrl.searchParams.get("secret") !== cronSecret) {
-                    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-                }
+            // 未配置 CRON_SECRET 时直接拒绝，避免路径被公开访问
+            if (!cronSecret) {
+                return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            }
+            if (authHeader !== `Bearer ${cronSecret}` && request.nextUrl.searchParams.get("secret") !== cronSecret) {
+                return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
             }
         }
     }

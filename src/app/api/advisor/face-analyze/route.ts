@@ -12,7 +12,7 @@ import {
 } from "@/config/ai-prompts";
 import { getSession, isVipCheck } from "@/lib/auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
-import { checkUsageLimit } from "@/lib/usage-limit";
+import { reserveUsage } from "@/lib/usage-limit";
 import { aiLogger } from "@/lib/logger";
 import { getDefaultFaceAnalysisResult } from "@/lib/advisor-utils";
 import { visionQueue } from "@/lib/ai-queue";
@@ -63,11 +63,12 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // 1.5 每日用量上限检查
-        const usageCheck = await checkUsageLimit(request);
-        if (!usageCheck.canTest) {
+        // 1.5 每日用量上限预占（face-analyze 独立消耗一次额度）
+        const faceSessionId = crypto.randomUUID();
+        const usageReserve = await reserveUsage(request, faceSessionId);
+        if (!usageReserve.success) {
             return NextResponse.json(
-                { error: usageCheck.error || "今日测试次数已用完，请明天再试" },
+                { error: usageReserve.error || "今日测试次数已用完，请明天再试" },
                 { status: 429, headers: rateLimitHeaders }
             );
         }

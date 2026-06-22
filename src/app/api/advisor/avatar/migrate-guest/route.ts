@@ -70,11 +70,18 @@ export async function POST(req: NextRequest) {
 
         // Approach 2: Get avatar from session or AvatarQueue
         if (sessionId) {
-            // 2a: Check AdvisorSession.analysisResult
+            // 2a: Check AdvisorSession.analysisResult (仅限游客 session，即 userId 为 null)
             const advisorSession = await prisma.advisorSession.findUnique({
                 where: { sessionId },
-                select: { analysisResult: true }
+                select: { analysisResult: true, userId: true }
             });
+
+            if (advisorSession?.userId) {
+                return NextResponse.json(
+                    { error: "该会话已绑定用户，无法迁移游客头像" },
+                    { status: 403 }
+                );
+            }
 
             let generatedAvatar: string | null = null;
 

@@ -115,7 +115,11 @@ function getDateRangeFromPreset(preset: string) {
     }
 }
 
-export default function AuditLogsClient() {
+interface AuditLogsClientProps {
+    role: string;
+}
+
+export default function AuditLogsClient({ role }: AuditLogsClientProps) {
     const [logs, setLogs] = useState<AuditLog[]>([]);
     const [loading, setLoading] = useState(true);
     const [exporting, setExporting] = useState(false);
@@ -276,14 +280,16 @@ export default function AuditLogsClient() {
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <button
-                        onClick={handleExport}
-                        disabled={exporting || logs.length === 0}
-                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm disabled:opacity-50"
-                    >
-                        {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                        导出记录
-                    </button>
+                    {role === "super_admin" && (
+                        <button
+                            onClick={handleExport}
+                            disabled={exporting || logs.length === 0}
+                            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm disabled:opacity-50"
+                        >
+                            {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                            导出记录
+                        </button>
+                    )}
                     <button
                         onClick={() => fetchLogs()}
                         disabled={loading}

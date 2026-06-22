@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { hashIP } from '@/lib/privacy';
+import { getClientIP } from '@/lib/ratelimit';
 
 // 默认游客每日测试次数限制
 export const DEFAULT_GUEST_LIMIT = 3;
@@ -34,20 +35,8 @@ export function extractGuestIdentifiers(request: NextRequest, body?: {
     fingerprint?: string;
     guestId?: string;
 }): GuestIdentifiers {
-    // 获取 IP 地址 — 使用 X-Forwarded-For 的最后一个值（最接近服务器/最可信），防止客户端伪造
-    const forwardedFor = request.headers.get('x-forwarded-for');
-    const realIp = request.headers.get('x-real-ip');
-    let rawIp: string | undefined;
-    if (forwardedFor) {
-        const ips = forwardedFor.split(',').map(s => s.trim()).filter(Boolean);
-        if (ips.length > 0) rawIp = ips[ips.length - 1];
-    }
-    rawIp = rawIp || realIp || 'unknown';
-
-    // 如果是本地开发环境的回环地址,使用固定标记（保证同一设备的限制一致性）
-    if (rawIp === '::1' || rawIp === '127.0.0.1') {
-        rawIp = 'local_dev_loopback';
-    }
+    // 获取客户端 IP（已处理可信代理与 X-Real-IP 优先级）
+    const rawIp = getClientIP(request);
 
     // Hash the IP for privacy — raw IP is never stored or returned
     const ipAddress = hashIP(rawIp);

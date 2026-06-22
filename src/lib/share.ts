@@ -133,7 +133,7 @@ export function shareToWeibo(data: ShareData): void {
     }
 
     const weiboUrl = `https://service.weibo.com/share/share.php?${params.toString()}`;
-    window.open(weiboUrl, "_blank", "width=600,height=500");
+    window.open(weiboUrl, "_blank", "width=600,height=500,noopener=yes,noreferrer=yes");
 }
 
 /**

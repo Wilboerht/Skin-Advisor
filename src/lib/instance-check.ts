@@ -18,6 +18,11 @@ let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 let lastAlertTime = 0;
 let hasWarned = false;
 
+// 缓存活跃实例数，避免每次限流都查询数据库
+let cachedInstanceCount: number | null = null;
+let cachedInstanceCountAt = 0;
+const INSTANCE_COUNT_CACHE_MS = 30_000;
+
 function generateInstanceId(): string {
     const hostname = typeof process !== "undefined" ? process.env.HOSTNAME || getHostname() : "unknown";
     const pid = typeof process !== "undefined" ? process.pid : 0;
@@ -60,13 +65,17 @@ export async function registerInstance(): Promise<void> {
 /**
  * 注销当前实例（优雅关闭时调用）
  */
-export async function unregisterInstance(): Promise<void> {
-    if (!instanceId) return;
-
+export function stopHeartbeat(): void {
     if (heartbeatTimer) {
         clearInterval(heartbeatTimer);
         heartbeatTimer = null;
     }
+}
+
+export async function unregisterInstance(): Promise<void> {
+    if (!instanceId) return;
+
+    stopHeartbeat();
 
     try {
         await prisma.appInstance.delete({ where: { id: instanceId } });
@@ -82,11 +91,18 @@ export async function unregisterInstance(): Promise<void> {
  * 检查当前活跃实例数量
  */
 export async function getActiveInstanceCount(): Promise<number> {
+    const now = Date.now();
+    if (cachedInstanceCount !== null && now - cachedInstanceCountAt < INSTANCE_COUNT_CACHE_MS) {
+        return cachedInstanceCount;
+    }
+
     const cutoff = new Date(Date.now() - INSTANCE_TIMEOUT_MS);
     try {
         const count = await prisma.appInstance.count({
             where: { lastPing: { gte: cutoff } },
         });
+        cachedInstanceCount = count;
+        cachedInstanceCountAt = now;
         return count;
     } catch {
         return 1; // 如果查询失败，保守返回 1
@@ -132,7 +148,7 @@ function buildMetadata(): string {
     });
 }
 
-function startHeartbeat(): void {
+export function startHeartbeat(): void {
     if (heartbeatTimer) return;
 
     heartbeatTimer = setInterval(async () => {

@@ -1,5 +1,5 @@
 import { deleteOSSFiles } from "./ali-oss";
-import fs from "fs/promises";
+import fs, { realpath } from "fs/promises";
 import path from "path";
 
 /**
@@ -36,7 +36,18 @@ export async function deleteSourcePhoto(frontPhoto: string | null | undefined): 
         return;
       }
 
-      await fs.unlink(filePath);
+      // Resolve symlinks to ensure we only delete files inside the upload root
+      const realUploadRoot = await realpath(uploadRoot);
+      const realFilePath = await realpath(filePath);
+      if (
+        !realFilePath.startsWith(realUploadRoot + path.sep) &&
+        realFilePath !== realUploadRoot
+      ) {
+        console.warn(`[Privacy] Blocked symlink escape: ${frontPhoto}`);
+        return;
+      }
+
+      await fs.unlink(realFilePath);
       console.log(`[Privacy] Deleted local source photo: ${frontPhoto}`);
     } catch {
       // 忽略删除失败（文件可能已被清理）
