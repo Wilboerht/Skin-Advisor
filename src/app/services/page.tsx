@@ -16,7 +16,7 @@ export default function ServicesPage() {
 
       <section className="flex-1 flex items-center px-6 md:px-12 lg:px-20 pt-28 md:pt-24 pb-20">
         <div className="w-full max-w-5xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-[7fr_3fr] gap-12 lg:gap-20 items-center">
             {/* 左侧文字 */}
             <div className="order-2 lg:order-1">
               <h1 className="text-2xl md:text-3xl font-serif text-[#1A1A1A] leading-[1.1] mb-8">
