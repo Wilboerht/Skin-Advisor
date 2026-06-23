@@ -43,7 +43,7 @@ export default function ServicesPage() {
             {/* 右侧二维码 */}
             <div className="order-1 lg:order-2 flex justify-start lg:justify-end">
               <div className="inline-block text-center">
-                <div className="relative w-44 h-44 md:w-60 md:h-60 bg-white rounded-2xl p-5 mb-4 shadow-[0_4px_24px_rgba(61,68,48,0.08)]">
+                <div className="relative w-52 h-52 md:w-60 md:h-60 bg-white rounded-2xl p-5 mb-4 shadow-[0_4px_24px_rgba(61,68,48,0.08)]">
                   <Image
                     src="/images/advisor-qr.jpg"
                     alt="NIHPLOD 护肤顾问微信二维码"
