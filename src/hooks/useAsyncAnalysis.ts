@@ -106,7 +106,15 @@ export function useAsyncAnalysis() {
             const answers = JSON.parse(answersStr);
 
             // Pre-generate sessionId and nickname (needed for both avatar and analysis)
-            const sessionId = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString();
+            // 性别不一致免费重试场景：复用原 sessionId，让后端识别为同一会话的免费重试
+            let sessionId: string;
+            let freeRetrySessionId: string | null = null;
+            try {
+                freeRetrySessionId = localStorage.getItem("advisor_free_retry_session_id");
+            } catch (e) {
+                console.warn("localStorage access failed", e);
+            }
+            sessionId = freeRetrySessionId || (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString());
 
             // 1. Face Analysis
             let faceAnalysis = null;
@@ -215,6 +223,24 @@ export function useAsyncAnalysis() {
                     // Trigger background avatar generation in PARALLEL with face analysis
                     // Non-blocking: failures are silently logged, don't affect result display
                     const storedGender = localStorage.getItem("advisor_gender") || answers?.gender || 'female';
+
+                    // 强制 frontPhoto 为公网 URL：base64 可能达数 MB，直接作为 JSON body 容易触发 413
+                    if (frontPhotoForAvatar && frontPhotoForAvatar.startsWith('data:')) {
+                        try {
+                            const { uploadImage } = await import("@/lib/upload-client");
+                            const blob = await (await fetch(frontPhotoForAvatar)).blob();
+                            const url = await uploadImage(blob, `face-front-avatar.jpg`);
+                            if (url) {
+                                frontPhotoForAvatar = url;
+                            } else {
+                                frontPhotoForAvatar = null;
+                            }
+                        } catch (e) {
+                            console.warn("[Avatar] Failed to upload front photo for avatar, skipping avatar generation", e);
+                            frontPhotoForAvatar = null;
+                        }
+                    }
+
                     if (frontPhotoForAvatar) {
                         console.log("[Avatar] Starting background generation (parallel with face analysis)...");
                         const avatarAbortController = new AbortController();
@@ -353,7 +379,8 @@ export function useAsyncAnalysis() {
                             const faceRes = await fetchWithRetry("/api/advisor/face-analyze", {
                                 method: "POST",
                                 headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ images: visionImages })
+                                body: JSON.stringify({ sessionId, images: visionImages }),
+                                signal: abortController.signal
                             });
 
                             if (faceRes.ok) {
@@ -423,7 +450,8 @@ export function useAsyncAnalysis() {
                     nickname: nickname,
                     privacyConsent,
                     ...(isFreeRetry ? { freeRetry: true } : {})
-                })
+                }),
+                signal: abortController.signal
             });
 
             // 读取队列状态
@@ -461,6 +489,7 @@ export function useAsyncAnalysis() {
             if (isFreeRetry) {
                 try {
                     localStorage.removeItem("advisor_free_retry");
+                    localStorage.removeItem("advisor_free_retry_session_id");
                 } catch (e) {
                     console.warn("Failed to clear freeRetry flag", e);
                 }

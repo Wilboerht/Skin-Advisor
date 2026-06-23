@@ -124,14 +124,29 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
     if (cookieId) whereConditions.push({ cookieId });
     if (fingerprint) whereConditions.push({ fingerprint });
 
-    const todayCount = await withDbRetry(() =>
-        prisma.guestUsage.findFirst({
-            where: { OR: whereConditions, lastTestAt: { gte: today } },
+    // 优先按最可信标识（fingerprint > cookie > ip）匹配，避免共享 IP 误伤同一局域网其他用户
+    const todayRecord = await withDbRetry(async () => {
+        if (fingerprint) {
+            const r = await prisma.guestUsage.findFirst({
+                where: { fingerprint, lastTestAt: { gte: today } },
+                orderBy: { todayCount: 'desc' }
+            });
+            if (r) return r;
+        }
+        if (cookieId) {
+            const r = await prisma.guestUsage.findFirst({
+                where: { cookieId, lastTestAt: { gte: today } },
+                orderBy: { todayCount: 'desc' }
+            });
+            if (r) return r;
+        }
+        return prisma.guestUsage.findFirst({
+            where: { ipAddress, lastTestAt: { gte: today } },
             orderBy: { todayCount: 'desc' }
-        })
-    );
+        });
+    });
 
-    const count = todayCount?.todayCount || 0;
+    const count = todayRecord?.todayCount || 0;
 
     const blockedRecord = await withDbRetry(() =>
         prisma.guestUsage.findFirst({
@@ -248,10 +263,26 @@ export async function reserveUsage(
                     return { success: false, error: blockedRecord.blockedReason || '您的访问已被限制，请联系客服。', role: 'guest' };
                 }
 
-                const todayRecord = await tx.guestUsage.findFirst({
-                    where: { OR: whereConditions, lastTestAt: { gte: today } },
-                    orderBy: { todayCount: 'desc' }
-                });
+                // 优先按最可信标识匹配，避免共享 IP 误伤
+                let todayRecord = null;
+                if (fingerprint) {
+                    todayRecord = await tx.guestUsage.findFirst({
+                        where: { fingerprint, lastTestAt: { gte: today } },
+                        orderBy: { todayCount: 'desc' }
+                    });
+                }
+                if (!todayRecord && cookieId) {
+                    todayRecord = await tx.guestUsage.findFirst({
+                        where: { cookieId, lastTestAt: { gte: today } },
+                        orderBy: { todayCount: 'desc' }
+                    });
+                }
+                if (!todayRecord) {
+                    todayRecord = await tx.guestUsage.findFirst({
+                        where: { ipAddress, lastTestAt: { gte: today } },
+                        orderBy: { todayCount: 'desc' }
+                    });
+                }
 
                 const guestInProgress = await tx.advisorSession.count({
                     where: { ip: ipAddress, analysisStartedAt: { gte: tenMinutesAgo }, completedAt: null }
@@ -269,12 +300,26 @@ export async function reserveUsage(
                     data: { guestId: fingerprint || cookieId || ipAddress, sessionId, testDate: new Date() }
                 });
 
-                const existing = await tx.guestUsage.findFirst({
-                    where: {
-                        OR: [{ ipAddress }, ...(fingerprint ? [{ fingerprint }] : []), ...(cookieId ? [{ cookieId }] : [])]
-                    },
-                    orderBy: { lastTestAt: 'desc' }
-                });
+                // 更新时同样优先选择最可信标识对应的记录
+                let existing = null;
+                if (fingerprint) {
+                    existing = await tx.guestUsage.findFirst({
+                        where: { fingerprint },
+                        orderBy: { lastTestAt: 'desc' }
+                    });
+                }
+                if (!existing && cookieId) {
+                    existing = await tx.guestUsage.findFirst({
+                        where: { cookieId },
+                        orderBy: { lastTestAt: 'desc' }
+                    });
+                }
+                if (!existing) {
+                    existing = await tx.guestUsage.findFirst({
+                        where: { ipAddress },
+                        orderBy: { lastTestAt: 'desc' }
+                    });
+                }
 
                 const now = new Date();
                 if (existing) {
@@ -406,5 +451,60 @@ export async function recordUsage(request: NextRequest, sessionId: string, body?
         }
         console.error('Failed to record usage:', e);
         return false;
+    }
+}
+
+/**
+ * 回滚已预占的额度（用于 AI 服务不可用、图片验证失败等明确非用户原因的场景）
+ *
+ * 规则：
+ * 1. 登录/VIP 用户：删除本次创建的 TestRecord
+ * 2. 游客：将 GuestUsage 的 testCount/todayCount 减 1（不低于 0）
+ */
+export async function rollbackUsage(
+    request: NextRequest,
+    sessionId: string,
+    body?: Record<string, unknown>
+): Promise<void> {
+    const user = await getSession();
+    const identifiers = extractGuestIdentifiers(request, body);
+    const { ipAddress, cookieId, fingerprint } = identifiers;
+
+    try {
+        await withDbRetry(async () => {
+            await prisma.$transaction(async (tx) => {
+                // 1. 删除 TestRecord（登录用户或游客都会创建）
+                await tx.testRecord.deleteMany({
+                    where: { sessionId }
+                });
+
+                // 2. 游客回滚 GuestUsage 计数
+                if (!user) {
+                    const existing = await tx.guestUsage.findFirst({
+                        where: {
+                            OR: [
+                                { ipAddress },
+                                ...(fingerprint ? [{ fingerprint }] : []),
+                                ...(cookieId ? [{ cookieId }] : [])
+                            ]
+                        },
+                        orderBy: { lastTestAt: 'desc' }
+                    });
+
+                    if (existing && (existing.testCount > 0 || existing.todayCount > 0)) {
+                        await tx.guestUsage.update({
+                            where: { id: existing.id },
+                            data: {
+                                testCount: Math.max(0, existing.testCount - 1),
+                                todayCount: Math.max(0, existing.todayCount - 1)
+                            }
+                        });
+                    }
+                }
+            });
+        });
+    } catch (e: unknown) {
+        console.error(`[rollbackUsage] Failed to rollback usage for session ${sessionId}:`, e);
+        // 回滚失败不应影响主流程，仅记录日志
     }
 }

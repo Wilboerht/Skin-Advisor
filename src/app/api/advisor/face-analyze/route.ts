@@ -12,7 +12,7 @@ import {
 } from "@/config/ai-prompts";
 import { getSession, isVipCheck } from "@/lib/auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
-import { reserveUsage } from "@/lib/usage-limit";
+import { reserveUsage, rollbackUsage } from "@/lib/usage-limit";
 import { aiLogger } from "@/lib/logger";
 import { getDefaultFaceAnalysisResult } from "@/lib/advisor-utils";
 import { visionQueue } from "@/lib/ai-queue";
@@ -29,6 +29,10 @@ export async function POST(request: NextRequest) {
         abortController.abort();
     };
     request.signal.addEventListener('abort', onClientAbort);
+
+    // 在 try 外部声明，供 catch/finally 回滚额度时使用
+    let body: Record<string, unknown> | undefined;
+    let faceSessionId: string | undefined;
 
     try {
         // 0. 检查 AI 开关
@@ -63,32 +67,33 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // 1.5 每日用量上限预占（face-analyze 独立消耗一次额度）
-        const faceSessionId = crypto.randomUUID();
-        const usageReserve = await reserveUsage(request, faceSessionId);
-        if (!usageReserve.success) {
-            return NextResponse.json(
-                { error: usageReserve.error || "今日测试次数已用完，请明天再试" },
-                { status: 429, headers: rateLimitHeaders }
-            );
-        }
-
         // 2. 解析与验证（带 guard，malformed JSON 返回 400 而非 500）
-        let body: unknown;
+        let rawBody: unknown;
         try {
-            body = await request.json();
+            rawBody = await request.json();
         } catch {
             return NextResponse.json(
                 { error: "无效的请求体，请检查 JSON 格式" },
                 { status: 400 }
             );
         }
+        body = rawBody as Record<string, unknown>;
         const result = FaceAnalyzeRequestSchema.safeParse(body);
 
         if (!result.success) {
             return NextResponse.json(
                 { error: "无效的请求数据", details: result.error.flatten() },
                 { status: 400 }
+            );
+        }
+
+        // 1.5 每日用量上限预占（复用业务 sessionId，避免与 analyze 重复扣费）
+        faceSessionId = result.data.sessionId || crypto.randomUUID();
+        const usageReserve = await reserveUsage(request, faceSessionId, body);
+        if (!usageReserve.success) {
+            return NextResponse.json(
+                { error: usageReserve.error || "今日测试次数已用完，请明天再试" },
+                { status: 429, headers: rateLimitHeaders }
             );
         }
 
@@ -121,19 +126,10 @@ export async function POST(request: NextRequest) {
                     const uploadRoot = path.resolve(process.cwd(), 'public', 'uploads');
                     const normalized = path.normalize(relativePath);
 
-                    if (path.isAbsolute(normalized) || normalized.startsWith('..') || normalized.includes('..' + path.sep)) {
-                        aiLogger.warn(`Blocked path traversal attempt: ${imgData}`);
-                        return null;
-                    }
-
-                    let filePath: string;
-                    if (normalized.startsWith('uploads/') || normalized.startsWith('uploads\\')) {
-                        filePath = path.resolve(process.cwd(), 'public', normalized);
-                    } else {
-                        filePath = path.resolve(uploadRoot, normalized);
-                    }
-
-                    if (!filePath.startsWith(uploadRoot + path.sep) && filePath !== uploadRoot) {
+                    // 统一使用标准化后的绝对路径做白名单校验，避免平台分隔符差异被绕过
+                    const filePath = path.resolve(uploadRoot, normalized);
+                    const resolvedRoot = path.resolve(uploadRoot);
+                    if (!filePath.startsWith(resolvedRoot + path.sep) && filePath !== resolvedRoot) {
                         aiLogger.warn(`Blocked out-of-bounds file access: ${imgData}`);
                         return null;
                     }
@@ -320,6 +316,8 @@ export async function POST(request: NextRequest) {
             const validation = analysisResult.validation as Record<string, unknown> | undefined;
             if (validation && validation.isValid === false) {
                 aiLogger.warn(`Face validation failed: ${validation.message}`);
+                // 图片验证失败属于非用户主动消耗额度场景，回滚预占
+                await rollbackUsage(request, faceSessionId, body as Record<string, unknown>);
                 return NextResponse.json(
                     {
                         error: "图片验证失败",
@@ -345,6 +343,8 @@ export async function POST(request: NextRequest) {
 
             // 队列超时特有错误
             if (err.message?.includes("Queue timeout") || err.message?.includes("Server busy")) {
+                // 服务端繁忙/队列超时，非用户原因，回滚预占
+                await rollbackUsage(request, faceSessionId, body as Record<string, unknown>);
                 return NextResponse.json(
                     { error: "服务器繁忙，请稍后再试", code: "SERVER_BUSY" },
                     { status: 503, headers: { "Retry-After": "30" } }
@@ -352,6 +352,8 @@ export async function POST(request: NextRequest) {
             }
 
             aiLogger.warn("Using fallback result due to AI error");
+            // AI 服务不可用，非用户原因，回滚预占
+            await rollbackUsage(request, faceSessionId, body as Record<string, unknown>);
             // 返回错误而不是假数据，避免误导用户
             return NextResponse.json(
                 { error: "AI 分析服务暂时不可用，请稍后重试", code: "AI_UNAVAILABLE" },
@@ -386,6 +388,10 @@ export async function POST(request: NextRequest) {
                 { error: "分析请求已取消，请重试" },
                 { status: 499 }
             );
+        }
+        // 服务器内部错误，非用户原因，回滚预占
+        if (faceSessionId) {
+            await rollbackUsage(request, faceSessionId, body);
         }
         console.error("Critical error in face analysis:", err);
         return NextResponse.json(

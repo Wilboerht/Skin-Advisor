@@ -117,7 +117,11 @@ export async function getAISettings(): Promise<AISettings> {
 /**
  * 检查 AI 功能是否全局启用
  * 优先检查环境变量，其次使用默认策略
+ * 增加 API Key 可用性校验，避免配置了无效 Key 时误导用户进入分析流程
  */
+let keyValidationCache: { valid: boolean; timestamp: number } | null = null;
+const KEY_VALIDATION_CACHE_MS = 5 * 60 * 1000;
+
 export async function isAIEnabled(): Promise<boolean> {
     // 1. 环境变量强制开关 (最高优先级)
     if (process.env.AI_ENABLED === "false") {
@@ -125,12 +129,31 @@ export async function isAIEnabled(): Promise<boolean> {
     }
 
     // 2. 检查是否有有效的 API Key 配置
-    // 如果没有任何 Key 可用，也可以视为 AI 不可用
     const settings = await getAISettings();
     const provider = settings.provider || "qwen";
     const keys = getApiKeysForProvider(provider, settings);
+    if (keys.length === 0) return false;
 
-    return keys.length > 0;
+    // 3. 缓存有效期内直接返回上次校验结果，避免每次请求都 ping 服务商
+    if (keyValidationCache && Date.now() - keyValidationCache.timestamp < KEY_VALIDATION_CACHE_MS) {
+        return keyValidationCache.valid;
+    }
+
+    // 4. 轻量校验：尝试调用 models 列表验证 Key 可用性
+    let valid = false;
+    for (const apiKey of keys) {
+        try {
+            const client = createOpenAIClient(provider as AIProvider, apiKey);
+            await client.models.list();
+            valid = true;
+            break;
+        } catch (e) {
+            aiLogger.warn(`AI key validation failed for ${provider}:`, { error: String(e) });
+        }
+    }
+
+    keyValidationCache = { valid, timestamp: Date.now() };
+    return valid;
 }
 
 /**

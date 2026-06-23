@@ -102,6 +102,33 @@ function normalizeAnalysisResult(raw: unknown): ComprehensiveResult | null {
     };
 }
 
+// Lab Report 行渲染（抽离到组件外部，避免每次渲染重新创建）
+function renderLabRow(param: string, value: string, ref: string, status: string) {
+    // Determine status color based on keywords
+    const goodKeywords = ['正常', 'Normal', '紧致', '细腻', '均匀', '透亮', 'Type I', '少', 'Balanced'];
+    const isGood = goodKeywords.some(k => status.includes(k));
+
+    return (
+        <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 py-2.5 border-b border-dashed border-[#3d2f25]/10 last:border-0 items-center hover:bg-[#3d2f25]/5 transition-colors">
+            <div className="sm:col-span-5 text-[12px] text-[#8c7a6b] font-mono tracking-tight uppercase">
+                {param}
+            </div>
+            <div className="sm:col-span-3 text-left sm:text-right font-mono text-[13px] font-semibold text-[#3d2f25]">
+                {value}
+            </div>
+            <div className="sm:col-span-2 text-left sm:text-right font-mono text-[11px] text-[#a89582]">
+                <span className="sm:hidden mr-2 text-[#a89582]">Ref:</span>
+                {ref}
+            </div>
+            <div className="sm:col-span-2 text-left sm:text-right font-mono text-[11px] font-bold">
+                <span className={isGood ? 'text-[#8c7a6b]' : 'text-[#c45a4a]'}>
+                    {status} {isGood ? '' : '▲'}
+                </span>
+            </div>
+        </div>
+    );
+}
+
 // Wrapper component with Suspense for useSearchParams
 export default function ResultClient(props: ResultClientProps) {
     return (
@@ -174,7 +201,11 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             { min: 65, max: 69, percentile: 74 },
             { min: 60, max: 64, percentile: 68 },
             { min: 55, max: 59, percentile: 62 },
-            { min: 0, max: 54, percentile: 55 },
+            { min: 45, max: 54, percentile: 55 },
+            { min: 35, max: 44, percentile: 45 },
+            { min: 25, max: 34, percentile: 35 },
+            { min: 15, max: 24, percentile: 25 },
+            { min: 0, max: 14, percentile: 15 },
         ];
         const match = scoreToPercentile.find((r) => score >= r.min && score <= r.max);
         return match ? match.percentile : 75;
@@ -210,8 +241,13 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         localStorage.removeItem("advisor_result");
         localStorage.removeItem("advisor_step");
 
+        // 保留原 sessionId，供免费重试流程复用（后端需校验该 session 已完成过分析且未使用过重试）
+        const currentSessionId = sessionId;
+        if (currentSessionId) {
+            localStorage.setItem("advisor_free_retry_session_id", currentSessionId);
+        }
+
         // Set a flag for "Free Retry" bypass - recognized by the question/analyze flow
-        // Note: The backend must support this, or we assume a frontend check
         localStorage.setItem("advisor_free_retry", "true");
 
         // Mark as acknowledged so we don't loop if they come back to this same result (unlikely if cleared)
@@ -229,32 +265,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
 
 
-    // Helper for Lab Report
-    const renderLabRow = (param: string, value: string, ref: string, status: string) => {
-        // Determine status color based on keywords
-        const goodKeywords = ['正常', 'Normal', '紧致', '细腻', '均匀', '透亮', 'Type I', '少', 'Balanced'];
-        const isGood = goodKeywords.some(k => status.includes(k));
-
-        return (
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 py-2.5 border-b border-dashed border-[#3d2f25]/10 last:border-0 items-center hover:bg-[#3d2f25]/5 transition-colors">
-                <div className="sm:col-span-5 text-[12px] text-[#8c7a6b] font-mono tracking-tight uppercase">
-                    {param}
-                </div>
-                <div className="sm:col-span-3 text-left sm:text-right font-mono text-[13px] font-semibold text-[#3d2f25]">
-                    {value}
-                </div>
-                <div className="sm:col-span-2 text-left sm:text-right font-mono text-[11px] text-[#a89582]">
-                    <span className="sm:hidden mr-2 text-[#a89582]">Ref:</span>
-                    {ref}
-                </div>
-                <div className="sm:col-span-2 text-left sm:text-right font-mono text-[11px] font-bold">
-                    <span className={isGood ? 'text-[#8c7a6b]' : 'text-[#c45a4a]'}>
-                        {status} {isGood ? '' : '▲'}
-                    </span>
-                </div>
-            </div>
-        );
-    };
+    // renderLabRow 已抽为组件外部函数，避免每次渲染重新创建
 
 
     // Initialize & Restore Data
@@ -375,7 +386,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         };
 
         loadClientData();
-    }, [initialData, router, trackResultView, toast]);
+    }, [initialData, router, trackResultView, toast, sessionId, searchParams]);
 
     // --- Avatar Polling ---
     // Poll for avatar generation if we don't have one yet
@@ -828,8 +839,11 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     // CHECK GUEST STATUS: Redirect to simplified report
                     // Use ref to get fresh state (closure might have stale user)
                     if (!userRef.current) {
+                        if (!newSessionId) {
+                            throw new Error("会话 ID 丢失，请重新测试");
+                        }
                         setIsRedirecting(true);
-                        // Ensure overlay stays while redirecting
+                        // 结果已保存到 localStorage，guest 页面可兜底读取
                         router.replace(`/report/guest?id=${newSessionId}`);
                         return;
                     }

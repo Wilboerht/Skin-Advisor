@@ -43,6 +43,15 @@ type CaptureStep = "front" | "left" | "right" | "chin";
 // 头部朝向类型
 type HeadPose = "front" | "left" | "right" | "chin" | "unknown";
 
+// 头部姿态判定阈值配置（便于后续 A/B 校准或外部配置）
+const HEAD_POSE_THRESHOLDS = {
+  lookingLeft: 0.10,
+  lookingRight: -0.10,
+  centerHorizontal: 0.30,
+  chinNoseOffsetMax: 0.55,
+  chinTiltMax: 0.15,
+};
+
 // 步骤配置
 const CAPTURE_STEPS: { step: CaptureStep; label: string; instruction: string; icon: React.ReactNode }[] = [
   { step: "front", label: "正脸", instruction: "请正对镜头", icon: <User className="h-6 w-6" /> },
@@ -186,7 +195,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
         return;
       }
 
-      console.log("Camera stream obtained:", mediaStream!.id, mediaStream!.getVideoTracks()[0].label);
+      DEBUG && console.log("Camera stream obtained:", mediaStream!.id, mediaStream!.getVideoTracks()[0].label);
 
       // Try to apply advanced constraints after stream is obtained
       try {
@@ -200,7 +209,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
           });
         }
       } catch (e) {
-        console.warn("Could not apply beautification constraints:", e);
+        DEBUG && console.warn("Could not apply beautification constraints:", e);
       }
 
       streamRef.current = mediaStream!;
@@ -213,7 +222,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
       console.error("Camera error:", err);
 
       if ((err as Error)?.name === 'AbortError') {
-        console.warn("Camera init interrupted, ignoring.");
+        DEBUG && console.warn("Camera init interrupted, ignoring.");
         return;
       }
 
@@ -248,7 +257,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
       setModelsLoaded(true);
       setFaceApiLoaded(true);
       setModelLoadFailed(false);
-      console.log("Face detection models reused from preload");
+      DEBUG && console.log("Face detection models reused from preload");
       onModelsLoaded?.();
       return;
     }
@@ -270,7 +279,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
       setModelsLoaded(true);
       setFaceApiLoaded(true);
       setModelLoadFailed(false);
-      console.log("Face detection models loaded (including landmarks)");
+      DEBUG && console.log("Face detection models loaded (including landmarks)");
       onModelsLoaded?.();
     } catch (err) {
       console.error("Failed to load face detection:", err);
@@ -320,9 +329,9 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
 
     // 基础标志位
     // 收紧阈值，确保多角度照片质量，提升 AI 分析准确性
-    const isLookingLeft = noseOffsetRatio > 0.10;
-    const isLookingRight = noseOffsetRatio < -0.10;
-    const isLookingCenter = Math.abs(noseOffsetRatio) < 0.30;
+    const isLookingLeft = noseOffsetRatio > HEAD_POSE_THRESHOLDS.lookingLeft;
+    const isLookingRight = noseOffsetRatio < HEAD_POSE_THRESHOLDS.lookingRight;
+    const isLookingCenter = Math.abs(noseOffsetRatio) < HEAD_POSE_THRESHOLDS.centerHorizontal;
 
     // 抬头标志: tiltRatio 越小越仰头
     // 大幅放宽到 0.50，几乎只要抬头就能过
@@ -343,7 +352,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
       // 注意：不同人面部比例差异大（鼻子长短、下巴长短），正常平视的 tiltRatio
       // 可能在 0.25~0.55 之间波动。阈值设得太低（如 0.30）会导致很多用户正常
       // 平视时被误判为抬头。收紧到 0.15 确保只有真正明显的抬头动作才会触发。
-      if (tiltRatio < 0.15 && Math.abs(noseOffsetRatio) < 0.55) {
+      if (tiltRatio < HEAD_POSE_THRESHOLDS.chinTiltMax && Math.abs(noseOffsetRatio) < HEAD_POSE_THRESHOLDS.chinNoseOffsetMax) {
         return "chin";
       }
     }
@@ -731,16 +740,9 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
       canvas.width = outputWidth;
       canvas.height = outputHeight;
 
-      // 前置摄像头需要镜像处理
-      if (facingMode === "user") {
-        ctx.translate(outputWidth, 0);
-        ctx.scale(-1, 1);
-        // 镜像时需要调整 cropX
-        const mirroredCropX = videoWidth - cropX - cropWidth;
-        ctx.drawImage(video, mirroredCropX, cropY, cropWidth, cropHeight, 0, 0, outputWidth, outputHeight);
-      } else {
-        ctx.drawImage(video, cropX, cropY, cropWidth, cropHeight, 0, 0, outputWidth, outputHeight);
-      }
+      // 前置摄像头不再做水平镜像，上传给 AI 的图像与摄像头原始帧保持一致，
+      // 避免 avatar 生成与面部分析出现左右颠倒
+      ctx.drawImage(video, cropX, cropY, cropWidth, cropHeight, 0, 0, outputWidth, outputHeight);
 
       // Encode with standard quality to reduce base64 size for the API
       imageData = canvas.toDataURL("image/jpeg", 0.75);
@@ -748,11 +750,6 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
       // 没有面部检测框，使用原始方式
       canvas.width = videoWidth;
       canvas.height = videoHeight;
-
-      if (facingMode === "user") {
-        ctx.translate(canvas.width, 0);
-        ctx.scale(-1, 1);
-      }
 
       ctx.drawImage(video, 0, 0);
       imageData = canvas.toDataURL("image/jpeg", 0.75);
@@ -885,15 +882,29 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     const canvas = canvasRef.current;
     const video = videoRef.current;
 
+    // 等待视频就绪，避免 drawImage 抛异常
+    if (video.readyState < 2) return;
+
     canvas.width = 100; // 小尺寸用于快速分析
     canvas.height = 75;
 
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
-    ctx.drawImage(video, 0, 0, 100, 75);
+    try {
+      ctx.drawImage(video, 0, 0, 100, 75);
+    } catch (e) {
+      console.warn("[FaceCapture] drawImage failed in analyzeLightLevel:", e);
+      return;
+    }
 
-    const imageData = ctx.getImageData(0, 0, 100, 75);
+    let imageData: ImageData;
+    try {
+      imageData = ctx.getImageData(0, 0, 100, 75);
+    } catch (e) {
+      console.warn("[FaceCapture] getImageData failed in analyzeLightLevel:", e);
+      return;
+    }
     const data = imageData.data;
     const pixelCount = data.length / 4;
 
@@ -1004,7 +1015,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     if (stream && videoRef.current) {
       videoRef.current.srcObject = stream;
       videoRef.current.play().catch(e => {
-        console.warn("Video play error (handled):", e);
+        DEBUG && console.warn("Video play error (handled):", e);
       });
     }
   }, [stream]);

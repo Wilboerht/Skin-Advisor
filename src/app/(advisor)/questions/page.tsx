@@ -36,6 +36,7 @@ export default function QuestionsPage() {
 
     // 从 API 获取问题列表（数据库优先，静态降级）
     const [allQuestions, setAllQuestions] = useState<Question[]>(DEFAULT_QUESTIONS);
+    const [questionsError, setQuestionsError] = useState<string | null>(null);
     const hasFetchedQuestions = useRef(false);
 
     useEffect(() => {
@@ -50,9 +51,13 @@ export default function QuestionsPage() {
                     if (Array.isArray(data) && data.length > 0) {
                         setAllQuestions(data);
                     }
+                } else {
+                    console.error("Failed to fetch questions from API, using defaults:", res.status);
+                    setQuestionsError("问题列表加载失败，已使用默认问题。");
                 }
             } catch (e) {
                 console.error("Failed to fetch questions from API, using defaults:", e);
+                setQuestionsError("问题列表加载失败，已使用默认问题。");
             }
         };
         fetchQuestions();
@@ -463,6 +468,22 @@ export default function QuestionsPage() {
                     <span className="text-[14px] font-medium tracking-wide">退出</span>
                 </button>
             </div>
+
+            {/* 问题列表加载失败提示 */}
+            {questionsError && (
+                <div className="shrink-0 px-4 pb-2">
+                    <div className="max-w-4xl mx-auto rounded-lg bg-amber-50 border border-amber-200 px-4 py-2 text-xs text-amber-800 flex items-center justify-between">
+                        <span>{questionsError}</span>
+                        <button
+                            onClick={() => setQuestionsError(null)}
+                            className="ml-3 text-amber-600 hover:text-amber-900"
+                            aria-label="关闭提示"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Main Content Area */}
             <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scrollbar-hide relative w-full max-w-4xl mx-auto z-10 px-4 mb-4">

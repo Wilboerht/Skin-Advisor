@@ -195,17 +195,20 @@ function calculateScore(
 
         // 关注点负面匹配
         if (concerns.includes("acne") && negativeTags.some(t => ["致痘", "痘痘肌", "闷痘"].includes(t))) {
-            score -= 300;
+            score = 0;
+            reasons.push("⚠️ 不适合您的肤质/状况");
         }
         if (concerns.includes("sensitivity") && negativeTags.some(t => ["刺激", "敏感肌", "酒精", "香精"].includes(t))) {
-            score -= 300;
+            score = 0;
+            reasons.push("⚠️ 不适合您的肤质/状况");
         }
         if (concerns.includes("anti_aging") && negativeTags.some(t => ["孕妇", "哺乳期"].includes(t))) {
-            score -= 200;
+            score = 0;
+            reasons.push("⚠️ 不适合您的肤质/状况");
         }
     }
 
-    // Base Score fallback
+    // Base Score fallback：有负面理由时保持 0 分，不允许被恢复为保底分
     const hasNegativeReason = reasons.some(r => r.includes("不适合"));
     if (score < 0) score = 0;
     if (score === 0 && !hasNegativeReason) score = 10;

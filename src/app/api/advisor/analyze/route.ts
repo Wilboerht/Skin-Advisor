@@ -15,6 +15,34 @@ import { getSession } from "@/lib/auth";
 import { hashIP } from "@/lib/privacy";
 
 import { checkUsageLimit, reserveUsage } from "@/lib/usage-limit";
+import { extractGuestIdentifiers } from "@/lib/guest-limit";
+
+/** 从服务端 User-Agent 解析设备信息 */
+function parseDeviceInfo(userAgent: string | null) {
+    if (!userAgent) return { deviceType: null as string | null, browser: null as string | null, os: null as string | null };
+    const ua = userAgent.toLowerCase();
+    let deviceType: string | null = 'desktop';
+    if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) {
+        deviceType = 'tablet';
+    } else if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/i.test(userAgent)) {
+        deviceType = 'mobile';
+    }
+
+    let browser: string | null = 'unknown';
+    if (userAgent.includes('Firefox')) browser = 'firefox';
+    else if (userAgent.includes('Edg')) browser = 'edge';
+    else if (userAgent.includes('Chrome')) browser = 'chrome';
+    else if (userAgent.includes('Safari')) browser = 'safari';
+
+    let os: string | null = 'unknown';
+    if (userAgent.includes('Win')) os = 'windows';
+    else if (userAgent.includes('Mac')) os = 'macos';
+    else if (userAgent.includes('Linux')) os = 'linux';
+    else if (userAgent.includes('Android')) os = 'android';
+    else if (userAgent.includes('iPhone') || userAgent.includes('iPad')) os = 'ios';
+
+    return { deviceType, browser, os };
+}
 
 /** 清理推荐理由中的英文词汇，确保对用户友好 */
 function sanitizeReason(reason: string): string {
@@ -107,6 +135,10 @@ export async function POST(request: NextRequest) {
         }
 
         const { answers, faceAnalysis, sessionId, nickname, freeRetry, privacyConsent } = result.data;
+
+        // 提取客户端标识（用于会话归属与审计）
+        const identifiers = extractGuestIdentifiers(request, body as Record<string, unknown>);
+        const ipHash = hashIP(getClientIP(request));
 
         // 3. 速率限制 (基础防刷) — 即使免费重试也需要基础限流
         const ip = getClientIP(request);
@@ -549,12 +581,18 @@ export async function POST(request: NextRequest) {
                         create: {
                             sessionId,
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            answers: answers as any,
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             analysisResult: mergedResult as any,
                             analysisSource: "hybrid",
                             completedAt: new Date(),
                             province: geoLocation?.region,
                             city: geoLocation?.city,
-                            expiresAt: expiresAt
+                            expiresAt: expiresAt,
+                            ip: ipHash,
+                            userId: user?.id || null,
+                            userAgent: identifiers.userAgent,
+                            ...parseDeviceInfo(identifiers.userAgent)
                         }
                     });
                 });
@@ -578,6 +616,11 @@ export async function POST(request: NextRequest) {
                     primaryConcern = concerns.join("、");
                 }
 
+                // 登录用户报告链接为 /result?id=...；游客（理论上不会走到此分支，因为 user?.id 才触发）为 /report/guest?id=...
+                const reportUrl = user?.id
+                    ? `${baseUrl}/result?id=${sessionId}`
+                    : `${baseUrl}/report/guest?id=${sessionId}`;
+
                 // 异步触发，绝不阻塞前端响应时间
                 fetch(`${officialApiUrl}/api/internal/wechat/send-template`, {
                     method: "POST",
@@ -589,7 +632,7 @@ export async function POST(request: NextRequest) {
                         userId: user.id,
                         score,
                         primaryConcern,
-                        reportUrl: `${baseUrl}/report/${sessionId}`,
+                        reportUrl,
                     }),
                 }).catch(err => console.error("[WechatTemplate] 官网模板消息调用异常:", err));
             }

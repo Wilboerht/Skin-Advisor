@@ -173,7 +173,6 @@ export const FullAnalysisSection: React.FC<FullAnalysisSectionProps> = ({
           </ul>
         </div>
       )}
-      {/* TODO: 可继续补充实验室数据、AI问答、PDF下载等内容 */}
       {/* 实验室数据区块 */}
       {faceAnalysis?.hydration && (
         <div className="mb-6">

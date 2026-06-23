@@ -104,6 +104,7 @@ export const ShareImageRequestSchema = z.object({
 // ============================================================================
 
 export const FaceAnalyzeRequestSchema = z.object({
+    sessionId: z.string().uuid().optional(), // 业务会话 ID，用于复用额度
     images: z.union([
         // 支持新的数组格式 [{ data: "base64", angle: "front" }]
         z.array(z.object({
