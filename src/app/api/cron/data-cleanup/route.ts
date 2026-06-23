@@ -4,8 +4,8 @@ import { deleteOSSFiles } from "@/lib/ali-oss";
 
 export const maxDuration = 60;
 
-// 游客保留 3 小时
-const GUEST_RETENTION_MS = 3 * 60 * 60 * 1000;
+// 游客保留 1 小时
+const GUEST_RETENTION_MS = 1 * 60 * 60 * 1000;
 // 注册用户保留 3 个月 (90 天)
 const USER_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 // 单个用户最多保留报告数
@@ -135,7 +135,7 @@ export async function GET(request: NextRequest) {
         const guestCutoff = new Date(now - GUEST_RETENTION_MS);
         const userCutoff = new Date(now - USER_RETENTION_MS);
 
-        // ===== 1. 清理游客数据（超过 3 小时）=====
+        // ===== 1. 清理游客数据（超过 1 小时）=====
         const guestSessions = await prisma.advisorSession.findMany({
             where: {
                 userId: null,

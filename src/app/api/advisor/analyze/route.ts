@@ -537,10 +537,10 @@ export async function POST(request: NextRequest) {
 
         // 9. Persist Result to DB (all users including guests)
         if (sessionId) {
-            // 游客报告保留3小时，注册用户报告保留3个月
+            // 游客报告保留1小时，注册用户报告保留3个月
             const expiresAt = user?.id
                 ? new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
-                : new Date(Date.now() + 3 * 60 * 60 * 1000);
+                : new Date(Date.now() + 1 * 60 * 60 * 1000);
 
             // Persist result to DB — do NOT swallow errors (ghost analysis bug)
             try {

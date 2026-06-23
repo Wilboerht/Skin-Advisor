@@ -7,7 +7,7 @@ import { verifyAdminSession, logAdminAction } from "@/lib/admin-auth";
 
 /**
  * POST /api/admin/cleanup-guests
- * 自动清理超过 3 小时的游客数据
+ * 自动清理超过 1 小时的游客数据
  * 支持两种鉴权方式：
  * 1. Authorization: Bearer <ADMIN_SECRET>（用于定时任务）
  * 2. Admin Session Cookie（用于管理员手动触发）
@@ -49,8 +49,8 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-        // 计算 3 小时前的时间点
-        const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000);
+        // 计算 1 小时前的时间点
+        const oneHourAgo = new Date(Date.now() - 1 * 60 * 60 * 1000);
 
         // 2. 查找过期的游客会话 (没有绑定 userId)，分批处理避免参数超限
         const DB_BATCH_SIZE = 500;
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
             const guestSessions = await prisma.advisorSession.findMany({
                 where: {
                     userId: null,
-                    createdAt: { lt: threeHoursAgo }
+                    createdAt: { lt: oneHourAgo }
                 },
                 select: {
                     sessionId: true,
@@ -174,7 +174,7 @@ export async function POST(req: NextRequest) {
             details: {
                 dbStats: deletedStats,
                 ossFilesDeleted: ossDeleted,
-                threshold: threeHoursAgo.toISOString(),
+                threshold: oneHourAgo.toISOString(),
                 authMethod: authMethod,
             },
             ip: ip,
@@ -184,7 +184,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({
             success: true,
             timestamp: new Date().toISOString(),
-            message: `成功清理 ${threeHoursAgo.toISOString()} 之前的游客数据`,
+            message: `成功清理 ${oneHourAgo.toISOString()} 之前的游客数据`,
             data: {
                 dbStats: deletedStats,
                 ossFilesDeleted: ossDeleted
