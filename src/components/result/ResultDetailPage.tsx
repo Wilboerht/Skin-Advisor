@@ -55,9 +55,11 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
             <p className="text-base opacity-80 font-light leading-[1.85] max-w-xl mb-6">
               {data.m1.persona}
             </p>
-            <p className="text-base text-[#5E5E5E] font-light leading-[1.85]">
-              {data.m1.slogan}
-            </p>
+            {data.m1.slogan && (
+              <p className="text-base text-[#5E5E5E] font-light leading-[1.85]">
+                {data.m1.slogan}
+              </p>
+            )}
           </div>
           <div className="relative hidden lg:block w-full max-w-xs aspect-[3/4] ml-auto">
             <Image
