@@ -17,8 +17,10 @@ import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useToast } from "@/components/ui/Toast";
 import { useAuth } from "@/hooks/useAuth";
 import type { FaceAnalysisResult } from "@/lib/advisor-utils";
+import { getRankPercentile } from "@/lib/result-utils";
+import { STORAGE_KEYS } from "@/lib/storage-keys";
 
-import { ScientificRadarChart } from "@/components/advisor/ScientificRadarChart";
+import { ScientificBarChart } from "@/components/advisor/ScientificBarChart";
 
 
 
@@ -27,7 +29,7 @@ import { SharePoster } from "@/components/advisor/poster/SharePoster";
 import { ShareModal } from "@/components/advisor/ShareModal";
 import { toPng } from "html-to-image";
 import { ContactAdvisorModal } from "@/components/advisor/ContactAdvisorModal";
-import ReportCards from "@/components/advisor/ReportCards";
+import ResultCards from "@/components/advisor/ResultCards";
 
 // Import the new CSS Module
 import styles from "./result.module.css";
@@ -186,25 +188,10 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const posterRef = useRef<HTMLDivElement>(null);
 
 
-    const rankPercentile = useMemo(() => {
-        const score = faceAnalysis?.overallScore ?? 0;
-        const scoreToPercentile: { min: number; max: number; percentile: number }[] = [
-            { min: 90, max: 99, percentile: 95 },
-            { min: 80, max: 89, percentile: 90 },
-            { min: 75, max: 79, percentile: 85 },
-            { min: 70, max: 74, percentile: 80 },
-            { min: 65, max: 69, percentile: 74 },
-            { min: 60, max: 64, percentile: 68 },
-            { min: 55, max: 59, percentile: 62 },
-            { min: 45, max: 54, percentile: 55 },
-            { min: 35, max: 44, percentile: 45 },
-            { min: 25, max: 34, percentile: 35 },
-            { min: 15, max: 24, percentile: 25 },
-            { min: 0, max: 14, percentile: 15 },
-        ];
-        const match = scoreToPercentile.find((r) => score >= r.min && score <= r.max);
-        return match ? match.percentile : 75;
-    }, [faceAnalysis?.overallScore]);
+    const rankPercentile = useMemo(
+        () => getRankPercentile(faceAnalysis?.overallScore ?? 0),
+        [faceAnalysis?.overallScore]
+    );
 
     const isGenderMismatch = useMemo(() => {
         if (!faceAnalysis || !socialGender) return false;
@@ -222,7 +209,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     useEffect(() => {
         if (!loading && result && faceAnalysis && isGenderMismatch) {
             // Check if user already acknowledged the mismatch (prevents modal reappearing on refresh)
-            const acked = typeof window !== 'undefined' && localStorage.getItem('advisor_gender_mismatch_ack') === 'true';
+            const acked = typeof window !== 'undefined' && localStorage.getItem(STORAGE_KEYS.ADVISOR_GENDER_MISMATCH_ACK) === 'true';
             if (!acked) {
                 setShowGenderMismatchModal(true);
             }
@@ -231,29 +218,29 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
     const handleMismatchRetry = () => {
         // Clear previous answers to force a fresh start
-        localStorage.removeItem("advisor_answers");
-        localStorage.removeItem("advisor_face_images");
-        localStorage.removeItem("advisor_result");
-        localStorage.removeItem("advisor_step");
+        localStorage.removeItem(STORAGE_KEYS.ADVISOR_ANSWERS);
+        localStorage.removeItem(STORAGE_KEYS.ADVISOR_FACE_IMAGES);
+        localStorage.removeItem(STORAGE_KEYS.ADVISOR_RESULT);
+        localStorage.removeItem(STORAGE_KEYS.ADVISOR_STEP);
 
         // 保留原 sessionId，供免费重试流程复用（后端需校验该 session 已完成过分析且未使用过重试）
         const currentSessionId = sessionId;
         if (currentSessionId) {
-            localStorage.setItem("advisor_free_retry_session_id", currentSessionId);
+            localStorage.setItem(STORAGE_KEYS.ADVISOR_FREE_RETRY_SESSION_ID, currentSessionId);
         }
 
         // Set a flag for "Free Retry" bypass - recognized by the question/analyze flow
-        localStorage.setItem("advisor_free_retry", "true");
+        localStorage.setItem(STORAGE_KEYS.ADVISOR_FREE_RETRY, "true");
 
         // Mark as acknowledged so we don't loop if they come back to this same result (unlikely if cleared)
-        localStorage.setItem('advisor_gender_mismatch_ack', 'true');
+        localStorage.setItem(STORAGE_KEYS.ADVISOR_GENDER_MISMATCH_ACK, 'true');
 
         router.push("/questions");
     };
 
     const handleMismatchContinue = () => {
         setShowGenderMismatchModal(false);
-        localStorage.setItem('advisor_gender_mismatch_ack', 'true');
+        localStorage.setItem(STORAGE_KEYS.ADVISOR_GENDER_MISMATCH_ACK, 'true');
         toast.success("确认成功");
     };
 
@@ -277,7 +264,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     setSideImages(images);
                 } else {
                     // Fallback: try legacy localStorage directly
-                    const imgStr = localStorage.getItem("advisor_face_images");
+                    const imgStr = localStorage.getItem(STORAGE_KEYS.ADVISOR_FACE_IMAGES);
                     if (imgStr) {
                         const legacyImages = JSON.parse(imgStr);
                         if (legacyImages.front) setUserImage(legacyImages.front);
@@ -286,11 +273,11 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 }
 
                 // Restore Nickname
-                const storedNickname = localStorage.getItem("advisor_nickname");
+                const storedNickname = localStorage.getItem(STORAGE_KEYS.ADVISOR_NICKNAME);
                 if (storedNickname) setUserNickname(storedNickname);
 
                 // Restore Gender
-                const storedGender = localStorage.getItem("advisor_gender");
+                const storedGender = localStorage.getItem(STORAGE_KEYS.ADVISOR_GENDER);
                 if (storedGender) setSocialGender(storedGender);
             } catch (e) {
                 console.error("Storage load error:", e);
@@ -300,7 +287,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             if (!initialData) {
                 try {
                     setLoading(true);
-                    const advisorResultStr = localStorage.getItem("advisor_result");
+                    const advisorResultStr = localStorage.getItem(STORAGE_KEYS.ADVISOR_RESULT);
 
                     if (advisorResultStr) {
                         try {
@@ -328,7 +315,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 // Handle session management logic (formerly at lines 313+)
                                 const previousSessionId = sessionId;
                                 if (advisorResult.sessionId && advisorResult.sessionId !== previousSessionId) {
-                                    localStorage.removeItem('advisor_gender_mismatch_ack');
+                                    localStorage.removeItem(STORAGE_KEYS.ADVISOR_GENDER_MISMATCH_ACK);
                                 }
 
                                 // If we successfully recovered data, remove 'analyzing' status from URL to stop re-analysis
@@ -387,7 +374,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         // For guests: try to get avatar from localStorage first
         if (!user) {
             try {
-                const guestAvatarRaw = localStorage.getItem(`guest_avatar_${sessionId}`);
+                const guestAvatarRaw = localStorage.getItem(STORAGE_KEYS.guestAvatar(sessionId));
                 if (guestAvatarRaw) {
                     let guestAvatarUrl: string | null = null;
                     // 兼容旧格式（纯字符串 URL）和新格式（带过期时间的 JSON）
@@ -397,7 +384,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                         try {
                             const parsed = JSON.parse(guestAvatarRaw);
                             if (parsed.expiresAt && Date.now() > parsed.expiresAt) {
-                                localStorage.removeItem(`guest_avatar_${sessionId}`);
+                                localStorage.removeItem(STORAGE_KEYS.guestAvatar(sessionId));
                             } else if (parsed.url) {
                                 guestAvatarUrl = parsed.url;
                             }
@@ -519,7 +506,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         }
 
         // Check if there's a guest avatar in localStorage for this session
-        const guestAvatarRaw = localStorage.getItem(`guest_avatar_${sessionId}`);
+        const guestAvatarRaw = localStorage.getItem(STORAGE_KEYS.guestAvatar(sessionId));
         if (!guestAvatarRaw) {
             return;
         }
@@ -531,7 +518,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         (async () => {
             try {
                 // Check if there's a guest avatar in localStorage
-                const guestAvatarRaw = localStorage.getItem(`guest_avatar_${sessionId}`);
+                const guestAvatarRaw = localStorage.getItem(STORAGE_KEYS.guestAvatar(sessionId));
                 let guestAvatarUrl: string | null = null;
                 if (guestAvatarRaw) {
                     if (guestAvatarRaw.startsWith('http') || guestAvatarRaw.startsWith('data:')) {
@@ -562,7 +549,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                         const data = await response.json();
                         if (data.success && !data.skipped) {
                             // Remove from localStorage since it's now stored on server
-                            localStorage.removeItem(`guest_avatar_${sessionId}`);
+                            localStorage.removeItem(STORAGE_KEYS.guestAvatar(sessionId));
                         }
                     } else {
                         console.warn("Avatar migration failed:", response.status);
@@ -590,14 +577,14 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     // Save result as image for sharing (image generation in progress)
 
     const handleRetake = async () => {
-        localStorage.removeItem("advisor_answers");
-        localStorage.removeItem("advisor_gender");
-        localStorage.removeItem("advisor_face_images");
-        localStorage.removeItem("advisor_result");
+        localStorage.removeItem(STORAGE_KEYS.ADVISOR_ANSWERS);
+        localStorage.removeItem(STORAGE_KEYS.ADVISOR_GENDER);
+        localStorage.removeItem(STORAGE_KEYS.ADVISOR_FACE_IMAGES);
+        localStorage.removeItem(STORAGE_KEYS.ADVISOR_RESULT);
 
-        localStorage.removeItem("advisor_step");
-        localStorage.removeItem("advisor_gender_mismatch_ack");
-        localStorage.removeItem("advisor_free_retry");
+        localStorage.removeItem(STORAGE_KEYS.ADVISOR_STEP);
+        localStorage.removeItem(STORAGE_KEYS.ADVISOR_GENDER_MISMATCH_ACK);
+        localStorage.removeItem(STORAGE_KEYS.ADVISOR_FREE_RETRY);
 
         // Clear IndexedDB face images & cached results
         try {
@@ -667,7 +654,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         const claimSession = async () => {
             try {
                 // Check if already claimed this session (to avoid redundant calls)
-                const claimedKey = `claimed_${sessionId}`;
+                const claimedKey = STORAGE_KEYS.claimedSession(sessionId);
                 if (localStorage.getItem(claimedKey)) return;
 
                 const res = await fetch("/api/advisor/session/claim", {
@@ -717,7 +704,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     }
 
                     // Clear previous ack so mismatch modal can re-appear for new analysis
-                    localStorage.removeItem('advisor_gender_mismatch_ack');
+                    localStorage.removeItem(STORAGE_KEYS.ADVISOR_GENDER_MISMATCH_ACK);
 
                     // IMPORTANT: Set result state FIRST before updating URL
                     setResult(newResult);
@@ -725,8 +712,11 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                     // Small delay to ensure state update is processed before potential route change logic
                     setTimeout(() => {
-                        // Update URL with sessionId for bookmark/refresh support
-                        router.replace(`/result?id=${newSessionId}`, { scroll: false });
+                        // 登录用户的结果归档到 /reports/:id；游客只看当前结果 /result
+                        const resultUrl = user
+                            ? `/reports/${newSessionId}`
+                            : '/result';
+                        router.replace(resultUrl, { scroll: false });
                     }, 50);
 
                 } catch (e: unknown) {
@@ -737,7 +727,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             };
             execute();
         }
-    }, [searchParams, result, analysisState.status, runAnalysis, router]);
+    }, [searchParams, result, analysisState.status, runAnalysis, router, user]);
 
     // Error State
     if (analysisState.status === 'error') {
@@ -933,7 +923,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     <main className={styles.main}>
 
                         {/* Report Summary Cards */}
-                        <ReportCards
+                        <ResultCards
                             score={faceAnalysis?.overallScore || 0}
                             skinAge={result?.skinProfile?.skinAge || 25}
                             dimensions={faceAnalysis?.dimensions || {}}
@@ -1097,7 +1087,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                 {/* 十维分析条形图 */}
                                                 {faceAnalysis?.dimensions && (
                                                     <div className="mb-2">
-                                                        <ScientificRadarChart
+                                                        <ScientificBarChart
                                                             dimensions={faceAnalysis.dimensions}
                                                         />
                                                     </div>

@@ -5,6 +5,7 @@ import { useAuth } from './useAuth';
 import { preprocessFaceImage, getBase64Size } from '@/lib/image-processing';
 import { useRouter } from 'next/navigation';
 import { getPrivacyConsentPayload } from '@/components/advisor/PrivacyConsent';
+import { STORAGE_KEYS } from '@/lib/storage-keys';
 
 export interface AsyncAnalysisState {
     status: 'idle' | 'preparing' | 'analyzing_face' | 'analyzing_skin' | 'completed' | 'error';
@@ -94,8 +95,8 @@ export function useAsyncAnalysis() {
             let answersStr: string | null = null;
             let nickname = "您";
             try {
-                answersStr = localStorage.getItem("advisor_answers");
-                nickname = localStorage.getItem("advisor_nickname") || "您";
+                answersStr = localStorage.getItem(STORAGE_KEYS.ADVISOR_ANSWERS);
+                nickname = localStorage.getItem(STORAGE_KEYS.ADVISOR_NICKNAME) || "您";
             } catch (e) {
                 console.warn("localStorage access failed", e);
             }
@@ -110,7 +111,7 @@ export function useAsyncAnalysis() {
             let sessionId: string;
             let freeRetrySessionId: string | null = null;
             try {
-                freeRetrySessionId = localStorage.getItem("advisor_free_retry_session_id");
+                freeRetrySessionId = localStorage.getItem(STORAGE_KEYS.ADVISOR_FREE_RETRY_SESSION_ID);
             } catch (e) {
                 console.warn("localStorage access failed", e);
             }
@@ -218,7 +219,7 @@ export function useAsyncAnalysis() {
 
                     // Trigger background avatar generation in PARALLEL with face analysis
                     // Non-blocking: failures are silently logged, don't affect result display
-                    const storedGender = localStorage.getItem("advisor_gender") || answers?.gender || 'female';
+                    const storedGender = localStorage.getItem(STORAGE_KEYS.ADVISOR_GENDER) || answers?.gender || 'female';
 
                     // 强制 frontPhoto 为公网 URL：base64 可能达数 MB，直接作为 JSON body 容易触发 413
                     if (frontPhotoForAvatar && frontPhotoForAvatar.startsWith('data:')) {
@@ -291,7 +292,7 @@ export function useAsyncAnalysis() {
                                                     if (payload.length > 4 * 1024 * 1024) {
                                                         console.warn("[Avatar] ⚠️  Avatar URL too large for localStorage, skipping");
                                                     } else {
-                                                        localStorage.setItem(`guest_avatar_${sessionId}`, payload);
+                                                        localStorage.setItem(STORAGE_KEYS.guestAvatar(sessionId), payload);
                                                         console.log(`[Avatar] ✅ Avatar already generated, stored in localStorage`);
                                                     }
                                                 } catch (e) {
@@ -313,7 +314,7 @@ export function useAsyncAnalysis() {
                                                     if (payload.length > 4 * 1024 * 1024) {
                                                         console.warn("[Avatar] ⚠️  Avatar URL too large for localStorage, skipping");
                                                     } else {
-                                                        localStorage.setItem(`guest_avatar_${sessionId}`, payload);
+                                                        localStorage.setItem(STORAGE_KEYS.guestAvatar(sessionId), payload);
                                                         console.log(`[Avatar] ✅ Guest avatar stored in localStorage from ${data.source}`);
                                                     }
                                                 } catch (e) {
@@ -429,7 +430,7 @@ export function useAsyncAnalysis() {
             // Check if this is a free retry (gender mismatch retry — won't consume quota)
             let isFreeRetry = false;
             try {
-                isFreeRetry = localStorage.getItem("advisor_free_retry") === "true";
+                isFreeRetry = localStorage.getItem(STORAGE_KEYS.ADVISOR_FREE_RETRY) === "true";
             } catch (e) {
                 console.warn("localStorage access failed", e);
             }
@@ -475,7 +476,7 @@ export function useAsyncAnalysis() {
             // Save Result (include sessionId for sharing recovery)
             result.sessionId = sessionId;
             try {
-                localStorage.setItem("advisor_result", JSON.stringify(result));
+                localStorage.setItem(STORAGE_KEYS.ADVISOR_RESULT, JSON.stringify(result));
             } catch (e) {
                 console.warn("Failed to save result to localStorage", e);
             }
@@ -484,8 +485,8 @@ export function useAsyncAnalysis() {
             // Only clear freeRetry flag after successful server response
             if (isFreeRetry) {
                 try {
-                    localStorage.removeItem("advisor_free_retry");
-                    localStorage.removeItem("advisor_free_retry_session_id");
+                    localStorage.removeItem(STORAGE_KEYS.ADVISOR_FREE_RETRY);
+                    localStorage.removeItem(STORAGE_KEYS.ADVISOR_FREE_RETRY_SESSION_ID);
                 } catch (e) {
                     console.warn("Failed to clear freeRetry flag", e);
                 }

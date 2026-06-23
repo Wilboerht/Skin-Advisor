@@ -616,8 +616,8 @@ export async function POST(request: NextRequest) {
                     primaryConcern = concerns.join("、");
                 }
 
-                // 报告链接统一为 /result?id=...
-                const reportUrl = `${baseUrl}/result?id=${sessionId}`;
+                // 报告链接统一为 /reports/:id
+                const reportUrl = `${baseUrl}/reports/${sessionId}`;
 
                 // 异步触发，绝不阻塞前端响应时间
                 fetch(`${officialApiUrl}/api/internal/wechat/send-template`, {

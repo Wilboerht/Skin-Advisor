@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Share2, Loader2 } from 'lucide-react';
 import Image from 'next/image';
+import { getRankPercentile, getTZoneLabel } from '@/lib/result-utils';
 
 
 interface Dimension {
@@ -11,7 +12,7 @@ interface Dimension {
   percentile?: number;
 }
 
-interface ReportCardsProps {
+interface ResultCardsProps {
   score: number;
   skinAge: number;
   dimensions: Record<string, Dimension | undefined>;
@@ -55,7 +56,7 @@ const AnimatedNumber = ({ value, duration = 1.5 }: { value: number; duration?: n
   );
 };
 
-export default function ReportCards({
+export default function ResultCards({
   score,
   skinAge,
   dimensions,
@@ -68,33 +69,19 @@ export default function ReportCards({
   professionalClassName,
   professionalStyle,
   comprehensiveReport,
-}: ReportCardsProps) {
+}: ResultCardsProps) {
   const currentAvatar = generatedAvatar || null;
 
-  // 基于综合评分计算全国排名百分比（与report页面一致）
-  const rankPercentile = useMemo(() => {
-    const scoreVal = typeof score === 'number' ? score : 75;
-    const scoreToPercentile: { min: number; max: number; percentile: number }[] = [
-      { min: 90, max: 99,  percentile: 95 },
-      { min: 80, max: 89,  percentile: 90 },
-      { min: 75, max: 79,  percentile: 85 },
-      { min: 70, max: 74,  percentile: 80 },
-      { min: 65, max: 69,  percentile: 74 },
-      { min: 60, max: 64,  percentile: 68 },
-      { min: 55, max: 59,  percentile: 62 },
-      { min: 0,  max: 54,  percentile: 55 },
-    ];
-    const match = scoreToPercentile.find((r) => scoreVal >= r.min && scoreVal <= r.max);
-    return match ? match.percentile : 75;
-  }, [score]);
+  // 基于综合评分计算全国排名百分比
+  const rankPercentile = useMemo(
+    () => getRankPercentile(typeof score === 'number' ? score : 75),
+    [score]
+  );
 
-  const getTZoneLabel = useMemo(() => {
-    const waterOil = dimensions?.waterOil;
-    const s = waterOil?.score ?? 0;
-    if (s >= 80) return 'T区平衡';
-    if (s >= 60) return 'T区略油';
-    return 'T区偏油';
-  }, [dimensions]);
+  const tZoneLabel = useMemo(
+    () => getTZoneLabel(dimensions?.waterOil?.score ?? 0),
+    [dimensions]
+  );
 
 
 
@@ -317,7 +304,7 @@ export default function ReportCards({
               <div className="flex flex-row lg:flex-col items-center lg:items-start gap-2 lg:justify-between w-full h-full relative z-20">
                 <p className="text-[11px] lg:text-xs text-[#7a6552] font-medium shrink-0">油脂分泌</p>
                 <div className="flex items-baseline">
-                  <span className="text-[11px] lg:text-xl font-bold text-[#5c4937] leading-tight">{getTZoneLabel}</span>
+                  <span className="text-[11px] lg:text-xl font-bold text-[#5c4937] leading-tight">{tZoneLabel}</span>
                 </div>
               </div>
             </motion.div>

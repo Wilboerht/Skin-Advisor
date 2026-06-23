@@ -63,7 +63,7 @@ export default function ResultIndexPage() {
             return (
               <Link
                 key={type.route}
-                href={`/result/${type.route}`}
+                href={`/skin-types/${type.route}`}
                 className="group relative rounded-2xl border border-[rgba(61,68,48,0.08)] bg-[#FAF9F6] p-7 md:p-9 transition-all duration-500 hover:shadow-[0_16px_32px_rgba(61,68,48,0.08)] hover:-translate-y-1"
               >
                 <Image

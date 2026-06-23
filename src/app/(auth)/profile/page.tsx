@@ -358,7 +358,7 @@ export default function ProfilePage() {
                     return (
                       <Link
                         key={session.sessionId}
-                        href={`/result?id=${session.sessionId}`}
+                        href={`/reports/${session.sessionId}`}
                         className="group block bg-white rounded-2xl p-5 shadow-[0_2px_12px_rgba(61,68,48,0.04)] hover:shadow-[0_4px_20px_rgba(61,68,48,0.08)] transition-shadow"
                       >
                         <div className="flex items-start justify-between gap-4 mb-3">

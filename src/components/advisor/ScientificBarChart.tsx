@@ -15,7 +15,7 @@ import {
 import type { SkinDimensions, SkinDimensionKey } from "@/lib/advisor-utils";
 import { DIMENSION_LABELS } from "@/lib/advisor-utils";
 
-interface ScientificRadarChartProps {
+interface ScientificBarChartProps {
     dimensions: SkinDimensions;
     size?: number;
     activeDimension?: string | null;
@@ -34,7 +34,7 @@ const getScoreColor = (score: number) => {
     return "#ef4444"; // Red
 };
 
-export function ScientificRadarChart({ dimensions, size = 300, activeDimension, onDimensionSelect }: ScientificRadarChartProps) {
+export function ScientificBarChart({ dimensions, size = 300, activeDimension, onDimensionSelect }: ScientificBarChartProps) {
     const mounted = useMounted();
     const [initialLoad, setInitialLoad] = useState(true);
     useEffect(() => {
