@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     description: data.m1.persona,
     openGraph: {
       title: `${data.typeName} · NIHPLOD肌肤测试`,
-      description: data.m1.slogan,
+      description: data.m1.persona,
       type: "article",
     },
   };

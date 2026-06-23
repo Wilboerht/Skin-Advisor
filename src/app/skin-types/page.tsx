@@ -91,25 +91,6 @@ export default function ResultIndexPage() {
         </div>
       </section>
 
-      {/* 服务 CTA */}
-      <section className="py-24 md:py-32 px-6 text-center border-t border-[rgba(61,68,48,0.08)]">
-        <div className="max-w-2xl mx-auto">
-          <h2 className="text-2xl md:text-3xl font-serif text-[#1A1A1A] mb-4">
-            获取更多专属服务
-          </h2>
-          <p className="text-[15px] md:text-base text-[#5E5E5E]/70 font-light leading-relaxed mb-[30px]">
-            添加 NIHPLOD 护肤顾问微信，与顾问一对一沟通你的肌肤状态。
-          </p>
-          <Link
-            href="/services"
-            className="group relative inline-flex items-center justify-center gap-3 px-10 py-3.5 border border-[#1B3A5C]/30 hover:border-[#1B3A5C]/60 hover:bg-[#1B3A5C]/[0.03] text-[13px] sm:text-[14px] tracking-[0.15em] text-[#1B3A5C]/80 hover:text-[#1B3A5C] font-medium cursor-pointer transition-all duration-500"
-          >
-            <span>顾问服务</span>
-            <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
-          </Link>
-        </div>
-      </section>
-
       {/* 页脚 */}
       <footer className="py-8 px-6 text-center border-t border-[rgba(61,68,48,0.08)]">
         <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-xs tracking-widest text-[#5E5E5E]/60">

@@ -4,13 +4,9 @@ export interface M1Data {
   typeName: string;
   scoreRange: string;
   persona: string;
-  slogan: string;
 }
 
-export interface M2Data {
-  openingQuote: string;
-  portrait: string;
-}
+export interface M2Data {}
 
 export interface M4Data {
   title: string;
@@ -27,7 +23,6 @@ export interface Advantage {
 export interface M5Data {
   title: string;
   advantages: Advantage[];
-  quote: string;
 }
 
 export interface Suggestion {

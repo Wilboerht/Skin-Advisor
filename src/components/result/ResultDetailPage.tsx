@@ -6,7 +6,6 @@ import Link from "next/link";
 import { Sun, Home, ShoppingBag, SoapDispenserDroplet, Info } from "lucide-react";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
 import Threads from "@/components/ui/Threads";
-import { LetterEnvelope } from "./LetterEnvelope";
 import type { SkinTypeData } from "@/lib/result-content";
 interface ResultDetailPageProps {
   data: SkinTypeData;
@@ -56,11 +55,6 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
             <p className="text-base opacity-80 font-light leading-[1.85] max-w-xl mb-6">
               {data.m1.persona}
             </p>
-            {data.m1.slogan && (
-              <p className="text-base text-[#5E5E5E] font-light leading-[1.85]">
-                {data.m1.slogan}
-              </p>
-            )}
           </div>
           <div className="relative hidden lg:block w-full max-w-xs aspect-[3/4] ml-auto">
             <Image
@@ -72,16 +66,6 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
               priority
             />
           </div>
-        </div>
-      </section>
-
-      {/* Introduction */}
-      <section className="py-20 md:py-32 px-6 md:px-12 lg:px-20 bg-white">
-        <div className="max-w-3xl mx-auto">
-          <LetterEnvelope
-            letterImageSrc={`/images/letters/${data.route}.jpg`}
-            alt={`${data.typeName} 信件`}
-          />
         </div>
       </section>
 
@@ -114,17 +98,6 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
               </div>
             ))}
           </div>
-          {data.m5.quote && (
-            <div className="text-center max-w-4xl mx-auto py-10 md:py-14 px-6">
-              <blockquote className="text-xl md:text-2xl font-light leading-relaxed text-[#1A1A1A] tracking-wide md:whitespace-nowrap">
-                <span className="text-2xl md:text-4xl font-bold text-[#F0EDE1]">「</span>
-                {" "}
-                {data.m5.quote}
-                {" "}
-                <span className="text-2xl md:text-4xl font-bold text-[#F0EDE1]">」</span>
-              </blockquote>
-            </div>
-          )}
         </div>
       </section>
 
