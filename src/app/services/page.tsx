@@ -19,10 +19,10 @@ export default function ServicesPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
             {/* 左侧文字 */}
             <div className="order-2 lg:order-1">
-              <h1 className="text-2xl md:text-3xl font-serif text-[#1A1A1A] leading-[1.1] mb-6">
+              <h1 className="text-2xl md:text-3xl font-serif text-[#1A1A1A] leading-[1.1] mb-8">
                 顾问服务
               </h1>
-              <p className="text-[15px] md:text-base text-[#5E5E5E] font-light leading-relaxed max-w-lg mb-10">
+              <p className="text-[15px] md:text-base text-[#5E5E5E] font-light leading-relaxed max-w-lg mb-8">
                 如果你希望获得更具体的护肤建议，可以添加 NIHPLOD 护肤顾问微信，与顾问一对一沟通。
               </p>
 
@@ -42,8 +42,8 @@ export default function ServicesPage() {
 
             {/* 右侧二维码 */}
             <div className="order-1 lg:order-2 flex justify-start lg:justify-end">
-              <div className="inline-block">
-                <div className="relative w-44 h-44 md:w-52 md:h-52 bg-white rounded-2xl p-5 mb-4 shadow-[0_4px_24px_rgba(61,68,48,0.08)]">
+              <div className="inline-block text-center">
+                <div className="relative w-44 h-44 md:w-60 md:h-60 bg-white rounded-2xl p-5 mb-4 shadow-[0_4px_24px_rgba(61,68,48,0.08)]">
                   <Image
                     src="/images/advisor-qr.jpg"
                     alt="NIHPLOD 护肤顾问微信二维码"
