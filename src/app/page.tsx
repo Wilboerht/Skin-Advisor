@@ -314,17 +314,17 @@ export default function Home() {
                 <div className="z-10 flex flex-col items-center text-center max-w-3xl mx-auto">
                   <div className="animate-fade-in-up flex flex-col items-center">
                     {/* Eyebrow */}
-                    <p className="text-xs uppercase tracking-[0.3em] text-[#8B7355] mb-6 md:mb-8 opacity-0 animate-fade-in-up" style={{ animationFillMode: 'forwards' }}>
+                    <p className="text-xs uppercase tracking-[0.3em] text-[#8B7355] mb-10 md:mb-12 opacity-0 animate-fade-in-up" style={{ animationFillMode: 'forwards' }}>
                       AI Skin Analysis
                     </p>
 
                     {/* Title */}
-                    <h1 className="text-[40px] sm:text-[48px] md:text-[58px] font-serif text-[#1A1A1A] font-normal leading-[1.1] tracking-tight mb-8 md:mb-10">
+                    <h1 className="text-[40px] sm:text-[48px] md:text-[58px] font-serif text-[#1A1A1A] font-normal leading-[1.1] tracking-tight mb-10 md:mb-12">
                       在线素颜测肤
                     </h1>
 
                     {/* Description */}
-                    <p className="text-[#5C5855]/90 leading-[1.9] mb-12 md:mb-16 max-w-xl mx-auto font-light text-sm sm:text-base tracking-wide opacity-0 animate-fade-in-up" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
+                    <p className="text-[#5C5855]/90 leading-[1.9] mb-10 md:mb-12 max-w-xl mx-auto font-light text-sm sm:text-base tracking-wide opacity-0 animate-fade-in-up" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
                       为了精准分析你的肌肤状态并生成专业定制化报告，<br className="hidden sm:block" />接下来我们将引导您<br className="sm:hidden" />进行个性化问卷调查与多维面部肌肤分析，<br />整个过程预计占用 <span className="text-[#3D4430]/80">2-5 分钟</span>。
                     </p>
 
@@ -333,7 +333,7 @@ export default function Home() {
                       <button
                         onClick={handleStart}
                         disabled={isLoading || checkingLimit}
-                        className="group relative inline-flex items-center justify-center gap-4 px-12 py-4 sm:px-16 border border-[#3D4430]/25 hover:border-[#3D4430]/50 hover:bg-[#3D4430]/[0.03] text-[13px] sm:text-[14px] tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500"
+                        className="group relative inline-flex items-center justify-center gap-3 px-12 py-4 sm:px-16 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500 hover:bg-[#1B3A5C] hover:text-white"
                       >
                         {isLoading || checkingLimit ? (
                           <>

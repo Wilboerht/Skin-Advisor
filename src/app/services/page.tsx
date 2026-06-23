@@ -23,7 +23,7 @@ export default function ServicesPage() {
                 顾问服务
               </h1>
               <p className="text-[15px] md:text-base text-[#5E5E5E] font-light leading-relaxed max-w-lg mb-8">
-                如果你希望获得更具体的护肤建议，可以添加 NIHPLOD 护肤顾问微信，与顾问一对一沟通。
+                如需获得更具针对性的护肤建议，欢迎添加 NIHPLOD 护肤顾问微信，由专业顾问为您提供一对一咨询服务。
               </p>
 
               <div className="grid grid-cols-3 gap-5 max-w-lg">

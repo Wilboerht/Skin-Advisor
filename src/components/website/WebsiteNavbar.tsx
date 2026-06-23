@@ -11,7 +11,7 @@ import { useUser } from "@/components/auth/UserProvider";
 
 const navItems = [
   { label: "素颜测肤", href: "/" },
-  { label: "肌肤形象", href: "/skin-types" },
+  { label: "肌智派", href: "/skin-types" },
   { label: "顾问服务", href: "/services" },
 ];
 
