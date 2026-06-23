@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Share2, Lock, Loader2 } from 'lucide-react';
+import { Share2, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 
 
@@ -20,8 +20,6 @@ interface ReportCardsProps {
   isAvatarLoading?: boolean;
   summary?: string;
   onShare: () => void;
-  isLoggedIn: boolean;
-  onLoginClick?: () => void;
   onUnlockClick?: () => void;
   professionalClassName?: string;
   professionalStyle?: React.CSSProperties;
@@ -66,8 +64,6 @@ export default function ReportCards({
   isAvatarLoading,
   summary,
   onShare,
-  isLoggedIn,
-  onLoginClick,
   onUnlockClick,
   professionalClassName,
   professionalStyle,
@@ -121,7 +117,7 @@ export default function ReportCards({
             <div className="hidden lg:flex relative items-center justify-center w-[72px] h-[24px]">
               <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-[#e6d0a8] via-[#f5dfb8] to-[#d4b483] shadow-sm" />
               <div className="absolute inset-[1px] rounded-lg bg-white/20 backdrop-blur-[1px] border border-white/30" />
-              <span className="relative z-10 text-[#3d2f25] text-xs font-bold tracking-widest">分享版</span>
+              <span className="relative z-10 text-[#3d2f25] text-xs font-bold tracking-widest">报告概览</span>
             </div>
 
             {/* Avatar with Ring */}
@@ -158,7 +154,7 @@ export default function ReportCards({
             <div className="flex lg:hidden relative items-center justify-center w-[72px] h-[24px] mb-6">
               <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-[#e6d0a8] via-[#f5dfb8] to-[#d4b483] shadow-sm" />
               <div className="absolute inset-[1px] rounded-lg bg-white/20 backdrop-blur-[1px] border border-white/30" />
-              <span className="relative z-10 text-[#3d2f25] text-xs font-bold tracking-widest">分享版</span>
+              <span className="relative z-10 text-[#3d2f25] text-xs font-bold tracking-widest">报告概览</span>
             </div>
 
             <div className="hidden lg:flex h-[24px] items-center mb-6">
@@ -251,23 +247,6 @@ export default function ReportCards({
               </p>
             </div>
 
-            {!isLoggedIn && onLoginClick && (
-              <motion.button
-                whileHover={{ scale: 1.03, y: -1 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={onLoginClick}
-                className="relative focus:outline-none flex items-center justify-center h-[34px] lg:h-[42px] px-5 lg:px-8 rounded-full shadow-[0_8px_20px_-6px_rgba(0,0,0,0.15)] border border-white/60 group overflow-hidden transition-all mt-auto lg:mt-0"
-                style={{
-                  background: 'linear-gradient(135deg, #ffffff 0%, #f8f0e3 50%, #f0e6d8 100%)',
-                }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/40 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 pointer-events-none" />
-                <span className="relative z-10 text-[#5c4937] text-xs lg:text-[12px] font-bold tracking-wider flex items-center justify-center gap-2 whitespace-nowrap">
-                  登录查看完整报告
-                  <Lock className="w-3 h-3 text-[#5c4937] stroke-[2.5] shrink-0" />
-                </span>
-              </motion.button>
-            )}
           </div>
 
           {/* Right Cards Grid */}
@@ -343,42 +322,21 @@ export default function ReportCards({
               </div>
             </motion.div>
 
-            {/* Last slot: Login Unlock or Unlocked */}
-            {!isLoggedIn ? (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                whileHover={{ scale: 1.03, backgroundColor: '#F5EDE2' }}
-                whileTap={{ scale: 0.97 }}
-                transition={{ delay: 0.4 }}
-                onClick={onLoginClick}
-                className="p-3 lg:p-4 rounded-xl lg:rounded-2xl flex flex-row lg:flex-col items-center lg:items-center lg:justify-center lg:gap-3 lg:aspect-[2/3] border border-dashed border-white/50 cursor-pointer group transition-colors min-h-[48px] lg:min-h-0"
-                style={{ background: '#E8E2D6' }}
-              >
-                <div className="flex lg:flex-col items-center gap-2">
-                  <div className="w-5 h-5 lg:w-8 lg:h-8 rounded-lg bg-white/80 flex items-center justify-center shadow-sm group-hover:bg-white transition-colors">
-                    <Lock className="w-3 h-3 lg:w-4 lg:h-4 text-[#8c7a6b]" />
-                  </div>
-                  <p className="text-[#5c4937] text-[11px] lg:hidden font-medium">更多数据待解锁</p>
-                </div>
-                <p className="hidden lg:block text-[#5c4937] text-xs font-medium text-center">登录</p>
-              </motion.div>
-            ) : (
-              <div
-                className="hidden lg:flex p-3 lg:p-4 rounded-xl lg:rounded-2xl flex-row lg:flex-col items-center lg:items-start justify-between lg:aspect-[2/3] min-h-[48px] lg:min-h-0 relative overflow-hidden"
-                style={{
-                  background: 'linear-gradient(180deg, #E8E2D6 0%, #F5F0E6 100%)',
-                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.4)',
-                }}
-              >
-                <div className="flex flex-row lg:flex-col items-center lg:items-start gap-2 lg:justify-between w-full h-full relative z-20">
-                  <p className="text-[12px] lg:text-xs text-[#7a6552] font-medium shrink-0">详情</p>
-                  <div className="flex items-center">
-                    <span className="text-[13px] lg:text-xl font-bold text-[#5c4937]">已解锁</span>
-                  </div>
+            {/* Last slot: Unlocked */}
+            <div
+              className="hidden lg:flex p-3 lg:p-4 rounded-xl lg:rounded-2xl flex-row lg:flex-col items-center lg:items-start justify-between lg:aspect-[2/3] min-h-[48px] lg:min-h-0 relative overflow-hidden"
+              style={{
+                background: 'linear-gradient(180deg, #E8E2D6 0%, #F5F0E6 100%)',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.4)',
+              }}
+            >
+              <div className="flex flex-row lg:flex-col items-center lg:items-start gap-2 lg:justify-between w-full h-full relative z-20">
+                <p className="text-[12px] lg:text-xs text-[#7a6552] font-medium shrink-0">详情</p>
+                <div className="flex items-center">
+                  <span className="text-[13px] lg:text-xl font-bold text-[#5c4937]">已解锁</span>
                 </div>
               </div>
-            )}
+            </div>
           </div>
         </div>
         {comprehensiveReport}

@@ -616,10 +616,8 @@ export async function POST(request: NextRequest) {
                     primaryConcern = concerns.join("、");
                 }
 
-                // 登录用户报告链接为 /result?id=...；游客（理论上不会走到此分支，因为 user?.id 才触发）为 /report/guest?id=...
-                const reportUrl = user?.id
-                    ? `${baseUrl}/result?id=${sessionId}`
-                    : `${baseUrl}/report/guest?id=${sessionId}`;
+                // 报告链接统一为 /result?id=...
+                const reportUrl = `${baseUrl}/result?id=${sessionId}`;
 
                 // 异步触发，绝不阻塞前端响应时间
                 fetch(`${officialApiUrl}/api/internal/wechat/send-template`, {

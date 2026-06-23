@@ -17,19 +17,13 @@ export default async function ResultPage(props: {
     // Fetch session early for ownership checks
     const user = await getSession();
 
-    // --- Server-Side Guest Protection ---
-    // Check if user is logged in BEFORE fetching any sensitive data.
-    // If guest has an id (trying to access a specific report), redirect to share page.
-    // Exception: status=analyzing means analysis is in progress (no data yet),
-    // the client-side will handle the redirect after analysis completes.
-    if (id && status !== 'analyzing') {
-        if (!user) {
-            // Guest trying to access full report → redirect to simplified share page
-            redirect(`/report/guest?id=${id}`);
-        }
+    // Guests should not access specific report IDs directly (reports are private).
+    // They can view the current result on /result (loaded from localStorage by the client).
+    if (id && status !== 'analyzing' && !user) {
+        redirect('/result');
     }
 
-    if (id) {
+    if (id && user) {
         try {
             const session = await prisma.advisorSession.findUnique({
                 where: { sessionId: id, userId: user?.id || undefined },

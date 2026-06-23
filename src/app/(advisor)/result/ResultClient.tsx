@@ -21,7 +21,6 @@ import type { FaceAnalysisResult } from "@/lib/advisor-utils";
 import { ScientificRadarChart } from "@/components/advisor/ScientificRadarChart";
 
 
-import { useAuthModal } from "@/components/auth/AuthModalContext";
 
 import { FloatingToolbar } from "@/components/advisor/FloatingToolbar";
 import { SharePoster } from "@/components/advisor/poster/SharePoster";
@@ -147,7 +146,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const toast = useToast();
     const { trackResultView, trackResultShare, trackProductClick } = useAdvisorAnalytics();
     const { user, loading: authLoading, isInitialized: authInitialized } = useAuth();
-    const { openAuthModal } = useAuthModal();
     const searchParams = useSearchParams();
     const { runAnalysis, analysisState } = useAsyncAnalysis();
 
@@ -166,7 +164,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         estimatedWaitTime?: number;
         message?: string;
     } | null>(null);
-    const [userLocation, setUserLocation] = useState<{ province?: string; city?: string; lat?: number; lon?: number } | null>(null);
     const [userNickname, setUserNickname] = useState<string>("您");
     // Session ID for sharing - initialized from props or will be set after analysis
     const [sessionId, setSessionId] = useState<string | undefined>(id);
@@ -175,8 +172,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     // UI State
     const [loading, setLoading] = useState(!initialData);
     const hasTrackedView = useRef(false);
-
-    const [isRedirecting, setIsRedirecting] = useState(false);
 
     // Gender Mismatch State
     const [showGenderMismatchModal, setShowGenderMismatchModal] = useState(false);
@@ -287,17 +282,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                         const legacyImages = JSON.parse(imgStr);
                         if (legacyImages.front) setUserImage(legacyImages.front);
                         setSideImages(legacyImages);
-                    }
-                }
-
-                const locationStr = localStorage.getItem("userRegion");
-                if (locationStr) {
-                    try {
-                        // Attempt to parse if it's JSON, otherwise treat as string
-                        const loc = JSON.parse(locationStr);
-                        setUserLocation(loc);
-                    } catch {
-                        setUserLocation({ province: locationStr });
                     }
                 }
 
@@ -525,37 +509,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         };
     }, [sessionId, generatedAvatar, isAvatarLoading, user]);
 
-    // --- Guest Protection Guard ---
-    // Prevent direct access to full report by guests via URL
-    useEffect(() => {
-        // Skip if still loading auth/data or essential data missing
-        if (loading || authLoading || !authInitialized || !result || !sessionId) return;
-
-        // Skip if currently running analysis (handled by specific analysis effect)
-        if (searchParams.get('status') === 'analyzing') return;
-
-        // Skip if result was loaded from this device's localStorage
-        // (same device = session owner, no need to restrict even if auth fails)
-        // BUT only if the cached sessionId matches the current URL sessionId
-        if (!initialData) {
-            try {
-                const cached = localStorage.getItem("advisor_result");
-                if (cached) {
-                    const parsed = JSON.parse(cached);
-                    if (parsed.sessionId === sessionId) return;
-                }
-            } catch {
-                // ignore parse errors, fall through to redirect
-            }
-        }
-
-        // If Guest accessing full report via URL -> Redirect to Share Page (Simplified)
-        if (!user) {
-            setIsRedirecting(true);
-            router.replace(`/report/guest?id=${sessionId}`);
-        }
-    }, [user, authLoading, authInitialized, loading, result, sessionId, searchParams, router, initialData]);
-
     // --- Guest Avatar Migration ---
     // When a user views a report, migrate any guest avatar from localStorage to their account
     const avatarMigrationRef = useRef(false);
@@ -633,81 +586,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     // --- Environment Data Integration ---
     // REMOVED: Weather component has been disabled per user request
 
-    // Recover Bio-Factors from LocalStorage (Questionnaire Answers)
-    // Extracted outside useMemo so handleDownload can reuse the same data for PDF consistency
-    const bioFactors = useMemo(() => {
-        const factors: Record<string, unknown> = {};
-        if (typeof window !== 'undefined') {
-            try {
-                const answersStr = localStorage.getItem("advisor_answers");
-                if (answersStr) {
-                    const answers = JSON.parse(answersStr);
-                    const stressVal = JSON.stringify(answers.stressLevel || "").toLowerCase();
-                    const sleepVal = JSON.stringify(answers.sleepQuality || "").toLowerCase();
-
-                    if (stressVal.includes("high") || stressVal.includes("大") || stressVal.includes("强")) factors.stressLevel = "high";
-                    else if (stressVal.includes("low") || stressVal.includes("小")) factors.stressLevel = "low";
-                    else factors.stressLevel = "medium";
-
-                    if (sleepVal.includes("poor") || sleepVal.includes("差") || sleepVal.includes("less")) factors.sleepQuality = "poor";
-                    else if (sleepVal.includes("good") || sleepVal.includes("好")) factors.sleepQuality = "good";
-                    else factors.sleepQuality = "fair";
-
-                    if (answers.menstrualCycle === "luteal") factors.menstrualPhase = "luteal";
-                    if (answers.gender) factors.gender = answers.gender;
-                }
-            } catch (e) {
-                console.error("Failed to parse bio-factors", e);
-            }
-        }
-        return factors;
-    }, []);
-
     // Actions
     // Save result as image for sharing (image generation in progress)
-
-
-    const handleDownload = async () => {
-        if (!result) return;
-
-        // PDF 下载限制为登录功能 — 作为注册钩子
-        if (!user) {
-            toast.info("注册后即可下载完整 PDF 报告");
-            openAuthModal("register");
-            return;
-        }
-
-        toast.info("正在生成 PDF 报告...");
-        try {
-            const response = await fetch("/api/advisor/pdf", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    skinProfile: result.skinProfile,
-                    analysis: result.analysis,
-                    faceAnalysis: faceAnalysis,
-                    location: userLocation,
-                    bioFactors: bioFactors
-                })
-            });
-
-            if (!response.ok) throw new Error("PDF generation failed");
-
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `SkinAnalysis_Report_${new Date().toISOString().slice(0, 10)}.pdf`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-            toast.success("PDF 下载成功");
-        } catch (e) {
-            console.error(e);
-            toast.error("生成失败，请稍后重试");
-        }
-    };
 
     const handleRetake = async () => {
         localStorage.removeItem("advisor_answers");
@@ -811,10 +691,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     // --- Async Analysis Integration ---
     // searchParams and useAsyncAnalysis are declared at the top of the component
 
-    // Track user state for async access
-    const userRef = useRef(user);
-    useEffect(() => { userRef.current = user; }, [user]);
-
     // Trigger Async Analysis
     const analysisStartedRef = useRef(false);
     useEffect(() => {
@@ -836,21 +712,13 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                         setSessionId(newSessionId);
                     }
 
-                    // CHECK GUEST STATUS: Redirect to simplified report
-                    // Use ref to get fresh state (closure might have stale user)
-                    if (!userRef.current) {
-                        if (!newSessionId) {
-                            throw new Error("会话 ID 丢失，请重新测试");
-                        }
-                        setIsRedirecting(true);
-                        // 结果已保存到 localStorage，guest 页面可兜底读取
-                        router.replace(`/report/guest?id=${newSessionId}`);
-                        return;
+                    if (!newSessionId) {
+                        throw new Error("会话 ID 丢失，请重新测试");
                     }
 
                     // Clear previous ack so mismatch modal can re-appear for new analysis
                     localStorage.removeItem('advisor_gender_mismatch_ack');
-                    
+
                     // IMPORTANT: Set result state FIRST before updating URL
                     setResult(newResult);
                     if (newFace) setFaceAnalysis(newFace);
@@ -924,7 +792,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const isAsyncAnalyzing = searchParams.get('status') === 'analyzing' || analysisState.status !== 'idle';
     // 分析完成后，如果头像还在生成，继续显示 loading（前端轮询最多 120 秒超时，不会无限等待）
     const isWaitingForAvatar = !!result && isAvatarLoading && !generatedAvatar;
-    const showLoading = loading || (!result && isAsyncAnalyzing) || isRedirecting || isWaitingForAvatar;
+    const showLoading = loading || (!result && isAsyncAnalyzing) || isWaitingForAvatar;
 
     // Fallback if truly nothing to show (not loading, no result)
     if (!result && !showLoading) {
@@ -1074,8 +942,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             isAvatarLoading={isAvatarLoading}
                             summary={result?.analysis?.summary}
                             onShare={() => setShowShareModal(true)}
-                            isLoggedIn={!!user}
-                            onLoginClick={() => openAuthModal('register')}
 
                             comprehensiveReport={
                                 <>
