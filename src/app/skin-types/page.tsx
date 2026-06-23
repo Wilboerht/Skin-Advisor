@@ -22,8 +22,6 @@ export default function ResultIndexPage() {
 
       {/* Hero */}
       <section className="relative pt-32 pb-24 md:pt-40 md:pb-32 px-6 md:px-12 lg:px-20 overflow-hidden">
-        {/* 背景装饰 */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] md:w-[800px] md:h-[800px] rounded-full bg-[#C9A86C]/[0.06] blur-3xl pointer-events-none" />
 
         <div className="relative z-10 max-w-5xl mx-auto text-center">
           <p
