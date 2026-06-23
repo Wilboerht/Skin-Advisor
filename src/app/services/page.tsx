@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { HeartHandshake, LineChart, Sparkles } from "lucide-react";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
 
 export const metadata: Metadata = {
@@ -21,9 +22,22 @@ export default function ServicesPage() {
               <h1 className="text-2xl md:text-3xl font-serif text-[#1A1A1A] leading-[1.1] mb-6">
                 顾问服务
               </h1>
-              <p className="text-[15px] md:text-base text-[#5E5E5E] font-light leading-relaxed max-w-lg">
+              <p className="text-[15px] md:text-base text-[#5E5E5E] font-light leading-relaxed max-w-lg mb-10">
                 如果你希望获得更具体的护肤建议，可以添加 NIHPLOD 护肤顾问微信，与顾问一对一沟通。
               </p>
+
+              <div className="grid grid-cols-3 gap-5 max-w-lg">
+                {[
+                  { icon: HeartHandshake, text: "专属顾问" },
+                  { icon: LineChart, text: "跟踪调整" },
+                  { icon: Sparkles, text: "定制方案" },
+                ].map(({ icon: Icon, text }) => (
+                  <div key={text} className="flex items-center gap-3 text-[#3D4430]">
+                    <Icon className="w-4 h-4 text-[#3D4430]" strokeWidth={1.5} />
+                    <span className="text-sm font-light tracking-wide">{text}</span>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* 右侧二维码 */}
@@ -49,7 +63,7 @@ export default function ServicesPage() {
       </section>
 
       {/* 页脚 */}
-      <footer className="py-8 px-6 text-center border-t border-[rgba(61,68,48,0.08)]">
+      <footer className="py-8 px-6 text-center">
         <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-xs tracking-widest text-[#5E5E5E]/60">
           <p>© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
           <span className="hidden sm:inline text-[#5E5E5E]/30">·</span>

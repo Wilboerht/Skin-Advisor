@@ -92,7 +92,7 @@ export default function ResultIndexPage() {
       </section>
 
       {/* 页脚 */}
-      <footer className="py-8 px-6 text-center border-t border-[rgba(61,68,48,0.08)]">
+      <footer className="py-8 px-6 text-center">
         <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-xs tracking-widest text-[#5E5E5E]/60">
           <p>© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
           <span className="hidden sm:inline text-[#5E5E5E]/30">·</span>
