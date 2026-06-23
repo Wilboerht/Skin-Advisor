@@ -47,7 +47,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       <section
         className="relative min-h-[520px] md:min-h-[560px] px-6 md:px-12 lg:px-20 overflow-hidden bg-[#F8F7F3] text-[#1A1A1A]"
       >
-        <div className="relative z-10 max-w-6xl mx-auto w-full pt-28 pb-14 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+        <div className="relative z-10 max-w-5xl mx-auto w-full pt-28 pb-14 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           <div className="max-w-2xl">
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-light tracking-tight leading-[0.95] mb-5">
               {data.typeName}
