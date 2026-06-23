@@ -39,7 +39,7 @@ export default function ResultIndexPage() {
             发现你的肌肤形象类型
           </h1>
           <p
-            className="text-[15px] md:text-base text-[#5E5E5E] font-light max-w-xl mx-auto leading-relaxed mb-8 opacity-0 animate-fade-in-up"
+            className="text-[15px] md:text-base text-[#5E5E5E] font-light max-w-xl mx-auto leading-relaxed mb-[30px] opacity-0 animate-fade-in-up"
             style={{ animationDelay: "0.1s", animationFillMode: "forwards" }}
           >
             每一种肌肤，都有自己的性格。从素颜状态出发，读懂肌肤真正需要什么。
@@ -92,20 +92,20 @@ export default function ResultIndexPage() {
       </section>
 
       {/* 服务 CTA */}
-      <section className="pb-24 md:pb-32 px-6 text-center">
+      <section className="py-24 md:py-32 px-6 text-center border-t border-[rgba(61,68,48,0.08)]">
         <div className="max-w-2xl mx-auto">
           <h2 className="text-2xl md:text-3xl font-serif text-[#1A1A1A] mb-4">
-            探索更多专属服务
+            需要更具体的建议？
           </h2>
-          <p className="text-[15px] md:text-base text-[#5E5E5E]/70 font-light leading-relaxed mb-5">
-            添加 NIHPLOD 专属护肤顾问，或前往线下门店获取一对一肌肤分析及体验专属护肤服务。
+          <p className="text-[15px] md:text-base text-[#5E5E5E]/70 font-light leading-relaxed mb-8">
+            添加 NIHPLOD 护肤顾问微信，与顾问一对一沟通你的肌肤状态。
           </p>
           <Link
             href="/services"
-            className="group relative inline-flex items-center justify-center gap-4 px-12 py-4 sm:px-16 border border-[#3D4430]/25 hover:border-[#3D4430]/50 hover:bg-[#3D4430]/[0.03] text-[13px] sm:text-[14px] tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] font-medium cursor-pointer transition-all duration-500"
+            className="group relative inline-flex items-center justify-center gap-3 px-10 py-3.5 border border-[#1B3A5C]/30 hover:border-[#1B3A5C]/60 hover:bg-[#1B3A5C]/[0.03] text-[13px] sm:text-[14px] tracking-[0.15em] text-[#1B3A5C]/80 hover:text-[#1B3A5C] font-medium cursor-pointer transition-all duration-500"
           >
-            <span>了解更多服务</span>
-            <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-2" />
+            <span>顾问服务</span>
+            <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
           </Link>
         </div>
       </section>
