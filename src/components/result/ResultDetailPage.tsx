@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Sun, Home, ShoppingBag, SoapDispenserDroplet, Info } from "lucide-react";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
 import Threads from "@/components/ui/Threads";
+import { LetterEnvelope } from "./LetterEnvelope";
 import type { SkinTypeData } from "@/lib/result-content";
 interface ResultDetailPageProps {
   data: SkinTypeData;
@@ -77,14 +78,10 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       {/* Introduction */}
       <section className="py-20 md:py-32 px-6 md:px-12 lg:px-20 bg-white">
         <div className="max-w-3xl mx-auto">
-          {data.m2.openingQuote && (
-            <blockquote className="text-2xl md:text-3xl lg:text-4xl font-light text-[#1B3A5C] leading-snug mb-12 text-center">
-              {data.m2.openingQuote}
-            </blockquote>
-          )}
-          <div className="prose prose-stone max-w-none">
-            {formatParagraphs(data.m2.portrait)}
-          </div>
+          <LetterEnvelope
+            letterImageSrc={`/images/letters/${data.route}.jpg`}
+            alt={`${data.typeName} 信件`}
+          />
         </div>
       </section>
 
