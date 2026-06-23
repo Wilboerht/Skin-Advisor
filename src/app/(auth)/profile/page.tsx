@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "next-view-transitions";
 import {
-  ArrowLeft,
   Clock,
   Loader2,
   ChevronRight,
@@ -13,18 +12,18 @@ import {
   ScanFace,
   LogOut,
   Sparkles,
-  TrendingUp,
-  Award,
-  Calendar,
+  Smartphone,
   Camera,
   Pencil,
   Check,
   X,
-  ExternalLink,
-  Smartphone
+  Calendar,
+  Award,
 } from "lucide-react";
 import { LazyMotion, domAnimation, m } from "framer-motion";
 import Image from "next/image";
+import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
+import { skinTypes } from "@/lib/result-content";
 
 interface AnalysisResult {
   faceAnalysis?: { overallScore?: number; skinAge?: number };
@@ -39,46 +38,6 @@ interface HistorySession {
   completedAt: string;
   analysisResult?: AnalysisResult;
 }
-
-const concernPalette = [
-  { bg: "bg-stone-100", text: "text-stone-600" },
-  { bg: "bg-stone-100", text: "text-stone-600" },
-  { bg: "bg-stone-100", text: "text-stone-600" },
-  { bg: "bg-stone-100", text: "text-stone-600" },
-  { bg: "bg-stone-100", text: "text-stone-600" },
-];
-
-const scoreGradient = (score?: number) => {
-  if (!score) return "from-neutral-400 to-neutral-500";
-  if (score >= 85) return "from-emerald-500 to-emerald-600";
-  if (score >= 70) return "from-amber-500 to-amber-600";
-  return "from-rose-500 to-rose-600";
-};
-
-interface BrandActivity {
-  id: string;
-  title: string;
-  description: string;
-  link: string;
-  external: boolean;
-}
-
-const BRAND_ACTIVITIES: BrandActivity[] = [
-  {
-    id: "vip",
-    title: "会员专属礼遇",
-    description: "解锁专属护肤方案、优先体验新品与限量会员活动",
-    link: "https://nihplod.cn",
-    external: true,
-  },
-  {
-    id: "skin-test",
-    title: "AI 素颜测肤",
-    description: "获取专业级肌肤分析与定制化护肤建议",
-    link: "/questions",
-    external: false,
-  },
-];
 
 export default function ProfilePage() {
   const { user, loading, logout, isVip, refresh } = useAuth();
@@ -183,17 +142,7 @@ export default function ProfilePage() {
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
-    const now = new Date();
-    const isToday = date.toDateString() === now.toDateString();
-    const isYesterday = new Date(now.getTime() - 86400000).toDateString() === date.toDateString();
-
-    let label = "";
-    if (isToday) label = "今天";
-    else if (isYesterday) label = "昨天";
-    else label = date.toLocaleDateString("zh-CN", { month: "short", day: "numeric" });
-
     return {
-      label,
       full: date.toLocaleDateString("zh-CN", {
         year: "numeric",
         month: "2-digit",
@@ -201,19 +150,21 @@ export default function ProfilePage() {
         hour: "2-digit",
         minute: "2-digit",
       }),
-      weekday: date.toLocaleDateString("zh-CN", { weekday: "short" }),
+      short: date.toLocaleDateString("zh-CN", { month: "short", day: "numeric" }),
+      relative: date.toLocaleDateString("zh-CN", { month: "long", day: "numeric" }),
     };
   };
 
   if (loading || !user) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-neutral-400 animate-spin" />
+      <div className="min-h-screen bg-[#F8F7F3] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-[#C9A86C] animate-spin" />
       </div>
     );
   }
 
-  const latestScore = auditHistory[0]?.analysisResult?.faceAnalysis?.overallScore;
+  const latestResult = auditHistory[0]?.analysisResult;
+  const latestScore = latestResult?.faceAnalysis?.overallScore;
   const avgScore =
     auditHistory.length > 0
       ? Math.round(
@@ -224,71 +175,70 @@ export default function ProfilePage() {
         )
       : null;
 
+  const latestSkinTypeLabel =
+    latestResult?.skinProfile?.typeLabel || latestResult?.skinType?.typeLabel;
+  const latestSkinTypeData = skinTypes.find((t) => t.typeName === latestSkinTypeLabel);
+
   const avatarUrl = user?.avatar;
 
   return (
     <LazyMotion features={domAnimation}>
-      <div className="min-h-screen bg-white text-neutral-900">
-        {/* Header */}
-        <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-neutral-100">
-          <div className="max-w-3xl mx-auto h-16 md:h-20 flex items-center justify-between px-6 md:px-10">
-            <Link
-              href="/"
-              className="flex items-center gap-3 text-neutral-500 hover:text-neutral-900 transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              <span className="text-[15px] font-medium tracking-[0.05em]">个人中心</span>
-            </Link>
+      <div className="min-h-screen bg-[#F8F7F3] text-[#1A1A1A]">
+        <WebsiteNavbar />
 
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 text-[13px] tracking-[0.05em] text-neutral-500 hover:text-neutral-900 transition-colors"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">退出登录</span>
-            </button>
-          </div>
-        </header>
+        <main className="pt-20 md:pt-24 pb-20 md:pb-28">
+          <div className="max-w-2xl mx-auto">
+            {/* Cover */}
+            <div className="relative h-40 md:h-52 bg-gradient-to-br from-[#E8E4D9] via-[#F0EDE3] to-[#E8E4D9]" />
 
-        {/* Main Content */}
-        <main className="max-w-3xl mx-auto px-6 md:px-10 py-10 md:py-16">
-          {/* Profile */}
-          <m.section
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="mb-12 md:mb-16"
-          >
-            <div className="flex flex-col items-center text-center">
-              {/* Avatar */}
-              <label className="relative w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden bg-neutral-100 cursor-pointer group mb-5">
-                {avatarUrl ? (
-                  <Image src={avatarUrl} alt="" fill unoptimized className="object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-2xl md:text-3xl font-medium text-neutral-500">
-                    {(user.name?.[0] || "?").toUpperCase()}
-                  </div>
-                )}
-                <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition-all duration-300">
-                  {updatingAvatar ? (
-                    <Loader2 className="w-4 h-4 text-white animate-spin opacity-0 group-hover:opacity-100" />
+            {/* Avatar + basic info */}
+            <div className="relative px-6 md:px-8 pb-5">
+              <div className="flex justify-between items-end -mt-16 md:-mt-20 mb-4">
+                <label className="relative w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden bg-[#ECEBE6] border-4 border-[#F8F7F3] cursor-pointer group shadow-lg">
+                  {avatarUrl ? (
+                    <Image src={avatarUrl} alt="" fill unoptimized className="object-cover" />
                   ) : (
-                    <Camera className="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="w-full h-full flex items-center justify-center text-4xl md:text-5xl font-medium text-[#8A8A8A]">
+                      {(user.name?.[0] || "?").toUpperCase()}
+                    </div>
+                  )}
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition-all duration-300">
+                    {updatingAvatar ? (
+                      <Loader2 className="w-5 h-5 text-white animate-spin opacity-0 group-hover:opacity-100" />
+                    ) : (
+                      <Camera className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    )}
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    onChange={handleAvatarChange}
+                    disabled={updatingAvatar}
+                    className="sr-only"
+                  />
+                </label>
+
+                <div className="relative w-28 h-36 md:w-36 md:h-44 mb-2">
+                  {latestSkinTypeData ? (
+                    <Image
+                      src={`/images/character/${latestSkinTypeData.scoreRange}/${latestSkinTypeData.scoreRange}_female.png`}
+                      alt={latestSkinTypeData.typeName}
+                      fill
+                      className="object-contain object-bottom"
+                      sizes="(max-width: 768px) 112px, 144px"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-end justify-center pb-2 text-[#C9A86C]/40">
+                      <ScanFace className="w-12 h-12" strokeWidth={1} />
+                    </div>
                   )}
                 </div>
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/gif"
-                  onChange={handleAvatarChange}
-                  disabled={updatingAvatar}
-                  className="sr-only"
-                />
-              </label>
+              </div>
 
               {/* Name */}
               <div className="mb-3">
                 {isEditingName ? (
-                  <div className="flex items-center justify-center gap-2">
+                  <div className="flex items-center gap-2">
                     <input
                       type="text"
                       value={editedName}
@@ -299,31 +249,31 @@ export default function ProfilePage() {
                       }}
                       maxLength={20}
                       autoFocus
-                      className="px-3 py-1.5 text-xl md:text-2xl font-semibold text-neutral-900 bg-neutral-50 border border-neutral-200 rounded-lg focus:outline-none focus:border-neutral-400 text-center"
+                      className="px-3 py-1.5 text-xl md:text-2xl font-semibold text-[#1A1A1A] bg-white border border-[rgba(61,68,48,0.12)] rounded-lg focus:outline-none focus:border-[#3D4430]"
                     />
                     <button
                       onClick={handleSaveName}
-                      className="p-1.5 rounded-full text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 transition-colors"
+                      className="p-1.5 rounded-full text-[#5E5E5E] hover:text-[#1A1A1A] hover:bg-[rgba(61,68,48,0.06)] transition-colors"
                       aria-label="保存昵称"
                     >
                       <Check className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => setIsEditingName(false)}
-                      className="p-1.5 rounded-full text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 transition-colors"
+                      className="p-1.5 rounded-full text-[#5E5E5E] hover:text-[#1A1A1A] hover:bg-[rgba(61,68,48,0.06)] transition-colors"
                       aria-label="取消"
                     >
                       <X className="w-4 h-4" />
                     </button>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center gap-2">
-                    <h1 className="text-2xl md:text-3xl font-semibold text-neutral-900">
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-2xl md:text-3xl font-semibold text-[#1A1A1A]">
                       {user.name || "朋友"}
                     </h1>
                     <button
                       onClick={startEditName}
-                      className="p-1.5 rounded-full text-neutral-300 hover:text-neutral-600 hover:bg-neutral-100 transition-colors"
+                      className="p-1.5 rounded-full text-[#8A8A8A] hover:text-[#3D4430] hover:bg-[rgba(61,68,48,0.06)] transition-colors"
                       aria-label="编辑昵称"
                     >
                       <Pencil className="w-3.5 h-3.5" />
@@ -333,254 +283,192 @@ export default function ProfilePage() {
               </div>
 
               {/* Meta */}
-              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[14px] text-neutral-500 mb-6">
+              <div className="flex flex-wrap items-center gap-3 text-[14px] text-[#5E5E5E] mb-4">
                 {isVip && (
-                  <span className="inline-flex items-center gap-1 text-neutral-900">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    VIP 会员
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#3D4430] text-[#F8F7F3]">
+                    <Sparkles className="w-3 h-3" />
+                    VIP
                   </span>
                 )}
                 <div className="flex items-center gap-1.5">
                   <Smartphone className="w-3.5 h-3.5" />
                   <span>{maskPhone(user.phone)}</span>
                 </div>
+                <div className="flex items-center gap-1.5 text-[#8A8A8A]">
+                  <Calendar className="w-3.5 h-3.5" />
+                  <span>加入于 {new Date().getFullYear()}</span>
+                </div>
               </div>
 
-              {/* CTA */}
-              <Link
-                href="/questions"
-                className="inline-flex items-center justify-center gap-2 h-10 px-6 rounded-full text-[13px] tracking-[0.05em] font-medium text-neutral-700 border border-neutral-200 hover:border-neutral-400 hover:text-neutral-900 transition-all duration-300"
-              >
-                <ScanFace className="w-4 h-4" />
-                再次测肤
-              </Link>
-            </div>
-          </m.section>
-
-          {/* Stats */}
-          <m.section
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-            className="mb-12 md:mb-16"
-          >
-            <div className="grid grid-cols-3 gap-6 md:gap-10 py-6 border-y border-neutral-100">
-              <div className="text-center">
-                <div className="text-[11px] tracking-[0.1em] uppercase text-neutral-400 mb-1.5">累计测肤</div>
-                <div className="text-2xl md:text-3xl font-semibold text-neutral-900">{auditHistory.length}</div>
-                <div className="text-[11px] text-neutral-400 mt-0.5">次</div>
-              </div>
-              <div className="text-center">
-                <div className="text-[11px] tracking-[0.1em] uppercase text-neutral-400 mb-1.5">最近评分</div>
-                <div className="text-2xl md:text-3xl font-semibold text-neutral-900">{latestScore ?? "—"}</div>
-                <div className="text-[11px] text-neutral-400 mt-0.5">{latestScore ? "分" : "暂无"}</div>
-              </div>
-              <div className="text-center">
-                <div className="text-[11px] tracking-[0.1em] uppercase text-neutral-400 mb-1.5">平均评分</div>
-                <div className="text-2xl md:text-3xl font-semibold text-neutral-900">{avgScore ?? "—"}</div>
-                <div className="text-[11px] text-neutral-400 mt-0.5">{avgScore ? "分" : "暂无"}</div>
+              {/* Stats row */}
+              <div className="flex items-center gap-6 text-[14px]">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-semibold text-[#1A1A1A]">{auditHistory.length}</span>
+                  <span className="text-[#5E5E5E]">次测肤</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-semibold text-[#1A1A1A]">{latestScore ?? "—"}</span>
+                  <span className="text-[#5E5E5E]">最近评分</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-semibold text-[#1A1A1A]">{avgScore ?? "—"}</span>
+                  <span className="text-[#5E5E5E]">平均评分</span>
+                </div>
               </div>
             </div>
-          </m.section>
 
-          {/* History */}
-          <m.section
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="mb-12 md:mb-16"
-          >
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-base md:text-lg font-semibold text-neutral-900">测肤记录</h2>
-              {total > 0 && (
-                <span className="text-[12px] text-neutral-400">共 {total} 条</span>
-              )}
-            </div>
+            {/* Divider */}
+            <div className="border-b border-[rgba(61,68,48,0.08)]" />
 
-            <div className="border border-neutral-100 rounded-2xl overflow-hidden">
+            {/* History */}
+            <m.section
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+              className="px-6 md:px-8 py-6"
+            >
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="text-base md:text-lg font-semibold text-[#1A1A1A]">测肤记录</h2>
+                {total > 0 && <span className="text-[12px] text-[#8A8A8A]">共 {total} 条</span>}
+              </div>
+
               {loadingHistory ? (
-                <m.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="h-48 flex flex-col items-center justify-center gap-4"
-                >
-                  <Loader2 className="w-5 h-5 text-neutral-300 animate-spin" />
-                  <span className="text-[13px] text-neutral-400">加载记录中...</span>
-                </m.div>
+                <div className="h-48 flex flex-col items-center justify-center gap-4">
+                  <Loader2 className="w-5 h-5 text-[#C9A86C] animate-spin" />
+                  <span className="text-[13px] text-[#8A8A8A]">加载记录中...</span>
+                </div>
               ) : auditHistory.length === 0 ? (
-                <m.div
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.25 }}
-                  className="text-center py-14 md:py-20"
-                >
-                  <div className="w-12 h-12 mx-auto mb-4 rounded-2xl bg-neutral-50 flex items-center justify-center text-neutral-300">
+                <div className="text-center py-14 md:py-20">
+                  <div className="w-12 h-12 mx-auto mb-4 rounded-2xl bg-[rgba(61,68,48,0.06)] flex items-center justify-center text-[#C9A86C]">
                     <Clock className="w-6 h-6" strokeWidth={1.5} />
                   </div>
-                  <h3 className="text-[15px] font-medium text-neutral-900 mb-1.5">暂无测肤记录</h3>
-                  <p className="text-[13px] text-neutral-400 mb-5">开始第一次 AI 皮肤分析</p>
+                  <h3 className="text-[15px] font-medium text-[#1A1A1A] mb-1.5">暂无测肤记录</h3>
+                  <p className="text-[13px] text-[#8A8A8A] mb-5">开始第一次 AI 皮肤分析</p>
                   <Link
                     href="/questions"
-                    className="inline-flex items-center gap-2 h-9 px-5 rounded-full text-[12px] tracking-[0.05em] font-medium text-neutral-700 border border-neutral-200 hover:border-neutral-400 hover:text-neutral-900 transition-all duration-300"
+                    className="inline-flex items-center gap-2 h-9 px-5 rounded-full text-[12px] tracking-[0.05em] text-[#1B3A5C] border border-[#1B3A5C]/20 hover:border-[#1B3A5C]/40 hover:bg-[#1B3A5C]/[0.04] transition-all duration-300"
                   >
                     <ScanFace className="w-3.5 h-3.5" />
                     立即测肤
                   </Link>
-                </m.div>
+                </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm border-collapse">
-                    <thead>
-                      <tr className="border-b border-neutral-100">
-                        <th className="text-left py-3 px-4 md:px-5 font-medium text-[11px] text-neutral-400 uppercase tracking-wider">时间</th>
-                        <th className="text-left py-3 px-4 md:px-5 font-medium text-[11px] text-neutral-400 uppercase tracking-wider">肤质</th>
-                        <th className="text-left py-3 px-4 md:px-5 font-medium text-[11px] text-neutral-400 uppercase tracking-wider">问题</th>
-                        <th className="text-right py-3 px-4 md:px-5 font-medium text-[11px] text-neutral-400 uppercase tracking-wider">评分</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {auditHistory.map((session) => {
-                        const result = session.analysisResult;
-                        const score = result?.faceAnalysis?.overallScore;
-                        const skinType = result?.skinProfile?.typeLabel || result?.skinType?.typeLabel;
-                        const concerns = result?.skinProfile?.concerns || result?.concerns || [];
-                        const skinAge = result?.skinProfile?.skinAge || result?.faceAnalysis?.skinAge;
-                        const dateInfo = formatDate(session.completedAt);
+                <div className="space-y-3">
+                  {auditHistory.map((session) => {
+                    const result = session.analysisResult;
+                    const score = result?.faceAnalysis?.overallScore;
+                    const skinType = result?.skinProfile?.typeLabel || result?.skinType?.typeLabel;
+                    const concerns = result?.skinProfile?.concerns || result?.concerns || [];
+                    const skinAge = result?.skinProfile?.skinAge || result?.faceAnalysis?.skinAge;
+                    const dateInfo = formatDate(session.completedAt);
 
-                        return (
-                          <tr
-                            key={session.sessionId}
-                            className="border-b border-neutral-50 last:border-0 hover:bg-neutral-50/50 transition-colors"
-                          >
-                            <td className="py-3.5 px-4 md:px-5">
-                              <Link href={`/result?id=${session.sessionId}`} className="block">
-                                <div className="text-[13px] text-neutral-900">{dateInfo.full.split(" ")[0]}</div>
-                                <div className="text-[11px] text-neutral-400">{dateInfo.full.split(" ")[1]}</div>
-                              </Link>
-                            </td>
-                            <td className="py-3.5 px-4 md:px-5">
-                              <Link href={`/result?id=${session.sessionId}`} className="block">
-                                {skinType ? (
-                                  <span className="text-[12px] text-neutral-600">{skinType}</span>
-                                ) : (
-                                  <span className="text-[12px] text-neutral-300">—</span>
-                                )}
-                              </Link>
-                            </td>
-                            <td className="py-3.5 px-4 md:px-5">
-                              <Link href={`/result?id=${session.sessionId}`} className="block">
-                                <div className="flex flex-wrap items-center gap-1.5">
-                                  {concerns.slice(0, 2).map((c, idx) => (
-                                    <span
-                                      key={idx}
-                                      className="px-2 py-0.5 text-[10px] rounded-full bg-neutral-100 text-neutral-600"
-                                    >
-                                      {c}
-                                    </span>
-                                  ))}
-                                  {concerns.length === 0 && (
-                                    <span className="text-[11px] text-neutral-300">—</span>
-                                  )}
-                                  {concerns.length > 2 && (
-                                    <span className="text-[10px] text-neutral-400">+{concerns.length - 2}</span>
-                                  )}
-                                  {skinAge && (
-                                    <span className="text-[10px] text-neutral-400">肤龄 {skinAge}</span>
-                                  )}
-                                </div>
-                              </Link>
-                            </td>
-                            <td className="py-3.5 px-4 md:px-5 text-right">
-                              <Link href={`/result?id=${session.sessionId}`} className="inline-flex items-center justify-end gap-2">
-                                {score ? (
-                                  <>
-                                    <span className="text-[13px] font-medium text-neutral-900">{score}</span>
-                                    <ChevronRight className="w-3.5 h-3.5 text-neutral-300" />
-                                  </>
-                                ) : (
-                                  <span className="text-[12px] text-neutral-300">—</span>
-                                )}
-                              </Link>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                    return (
+                      <Link
+                        key={session.sessionId}
+                        href={`/result?id=${session.sessionId}`}
+                        className="group block bg-white rounded-2xl p-5 shadow-[0_2px_12px_rgba(61,68,48,0.04)] hover:shadow-[0_4px_20px_rgba(61,68,48,0.08)] transition-shadow"
+                      >
+                        <div className="flex items-start justify-between gap-4 mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-[rgba(61,68,48,0.06)] flex items-center justify-center text-[#3D4430]">
+                              <Award className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <div className="text-[14px] font-medium text-[#1A1A1A]">
+                                {skinType || "肌肤分析"}
+                              </div>
+                              <div className="text-[12px] text-[#8A8A8A]">{dateInfo.relative}</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 text-[#1A1A1A]">
+                            <span className="text-lg font-semibold">{score ?? "—"}</span>
+                            {score && <span className="text-[11px] text-[#8A8A8A]">分</span>}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2">
+                          {concerns.slice(0, 3).map((c, idx) => (
+                            <span
+                              key={idx}
+                              className="px-2.5 py-1 text-[11px] rounded-full bg-[rgba(61,68,48,0.08)] text-[#5E5E5E]"
+                            >
+                              {c}
+                            </span>
+                          ))}
+                          {concerns.length > 3 && (
+                            <span className="text-[11px] text-[#8A8A8A]">+{concerns.length - 3}</span>
+                          )}
+                          {skinAge && (
+                            <span className="text-[11px] text-[#8A8A8A]">肤龄 {skinAge}</span>
+                          )}
+                        </div>
+
+                        <div className="mt-4 flex items-center text-[12px] text-[#1B3A5C] font-medium">
+                          <span>查看报告</span>
+                          <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                        </div>
+                      </Link>
+                    );
+                  })}
                 </div>
               )}
-            </div>
 
-            {totalPages > 1 && (
-              <m.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.4 }}
-                className="flex items-center justify-between mt-6"
-              >
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page <= 1 || loadingHistory}
-                  className="flex items-center gap-1.5 text-[12px] text-neutral-400 hover:text-neutral-900 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                  上一页
-                </button>
-
-                <span className="text-[12px] text-neutral-400">
-                  {page} / {totalPages}
-                </span>
-
-                <button
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page >= totalPages || loadingHistory}
-                  className="flex items-center gap-1.5 text-[12px] text-neutral-400 hover:text-neutral-900 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                >
-                  下一页
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </m.div>
-            )}
-          </m.section>
-
-          {/* Brand Activities */}
-          <m.section
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <h2 className="text-base md:text-lg font-semibold text-neutral-900 mb-5">品牌活动</h2>
-
-            <div className="space-y-3">
-              {BRAND_ACTIVITIES.map((activity) => {
-                const CardWrapper = activity.external ? "a" : Link;
-                return (
-                  <CardWrapper
-                    key={activity.id}
-                    href={activity.link}
-                    target={activity.external ? "_blank" : undefined}
-                    rel={activity.external ? "noopener noreferrer" : undefined}
-                    className="group flex items-center justify-between py-4 px-5 border border-neutral-100 rounded-2xl hover:border-neutral-200 hover:bg-neutral-50/30 transition-all duration-300"
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-6">
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page <= 1 || loadingHistory}
+                    className="flex items-center gap-1.5 text-[12px] text-[#8A8A8A] hover:text-[#1A1A1A] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   >
-                    <div>
-                      <h3 className="text-[14px] font-medium text-neutral-900 mb-0.5 group-hover:text-neutral-700 transition-colors">
-                        {activity.title}
-                      </h3>
-                      <p className="text-[12px] text-neutral-400">{activity.description}</p>
-                    </div>
-                    <div className="shrink-0 text-neutral-300 group-hover:text-neutral-500 transition-colors ml-4">
-                      {activity.external ? (
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      ) : (
-                        <ChevronRight className="w-3.5 h-3.5" />
-                      )}
-                    </div>
-                  </CardWrapper>
-                );
-              })}
+                    <ChevronLeft className="w-4 h-4" />
+                    上一页
+                  </button>
+
+                  <span className="text-[12px] text-[#8A8A8A]">
+                    {page} / {totalPages}
+                  </span>
+
+                  <button
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page >= totalPages || loadingHistory}
+                    className="flex items-center gap-1.5 text-[12px] text-[#8A8A8A] hover:text-[#1A1A1A] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    下一页
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </m.section>
+
+            {/* Logout */}
+            <div className="px-6 md:px-8 pb-8 text-center">
+              <button
+                onClick={handleLogout}
+                className="inline-flex items-center gap-2 text-[13px] tracking-[0.05em] text-[#8A8A8A] hover:text-[#1A1A1A] transition-colors"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                退出登录
+              </button>
             </div>
-          </m.section>
+          </div>
         </main>
+
+        {/* Footer */}
+        <footer className="py-8 px-6 text-center">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-xs tracking-widest text-[#5E5E5E]/60">
+            <p>© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
+            <span className="hidden sm:inline text-[#5E5E5E]/30">·</span>
+            <div className="flex items-center gap-4">
+              <Link href="/privacy" className="hover:text-[#3D4430] transition-colors duration-300">
+                隐私政策
+              </Link>
+              <span className="text-[#5E5E5E]/30">·</span>
+              <Link href="/terms" className="hover:text-[#3D4430] transition-colors duration-300">
+                服务条款
+              </Link>
+            </div>
+          </div>
+        </footer>
       </div>
     </LazyMotion>
   );
