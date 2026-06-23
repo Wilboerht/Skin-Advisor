@@ -167,11 +167,10 @@ model User {
   
   avatarUrl       String?
 
-  // NOTE: role should ideally be an enum (user, vip).
+  // NOTE: role should ideally be an enum (user, disabled).
   // Kept as String for broader database compatibility.
   role            String           @default("user")
   previousRole    String?          // 禁用前的角色，用于恢复
-  vipExpiresAt    DateTime?        // VIP 会员过期时间
   dailyTestLimit  Int              @default(10) // 每日测试次数限制，管理员可调整（系统默认 10 次）
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt

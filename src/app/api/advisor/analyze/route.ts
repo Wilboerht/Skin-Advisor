@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // 4. 检查使用限制 (Guest/Member/VIP)
+        // 4. 检查使用限制 (Guest/Member)
         let isFreeRetryAllowed = false;
         if (freeRetry && sessionId) {
             // Validate freeRetry eligibility server-side:

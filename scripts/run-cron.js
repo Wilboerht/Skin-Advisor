@@ -4,11 +4,9 @@ require('dotenv').config();
  * Cron 任务执行脚本（云服务器环境）
  *
  * 用法：
- *   node scripts/run-cron.js /api/cron/vip-expiry
  *   node scripts/run-cron.js /api/cron/data-cleanup
  *
  * 配合 Linux crontab：
- *   0 2 * * * cd /path/to/app && /usr/bin/node scripts/run-cron.js /api/cron/vip-expiry >> /var/log/myskin-cron.log 2>&1
  *   */30 * * * * cd /path/to/app && /usr/bin/node scripts/run-cron.js /api/cron/data-cleanup >> /var/log/myskin-cron.log 2>&1
  */
 

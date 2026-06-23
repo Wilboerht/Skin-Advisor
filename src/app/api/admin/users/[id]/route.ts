@@ -29,7 +29,6 @@ export const GET = requireRole("super_admin", "admin")(async (
                 role: true,
                 previousRole: true,
                 avatarUrl: true,
-                vipExpiresAt: true,
                 dailyTestLimit: true,
                 createdAt: true,
                 updatedAt: true,
@@ -79,7 +78,7 @@ export const PATCH = requireRole("super_admin", "admin")(async (
     try {
         const { id } = await params;
         const body = await request.json();
-        const { role, name, dailyTestLimit, vipExpiresAt } = body;
+        const { role, name, dailyTestLimit } = body;
 
         // Validate name length
         if (name !== undefined && (typeof name !== "string" || name.length > 200)) {
@@ -91,7 +90,7 @@ export const PATCH = requireRole("super_admin", "admin")(async (
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
-        const VALID_ROLES = ["user", "vip", "disabled"];
+        const VALID_ROLES = ["user", "disabled"];
         if (role !== undefined) {
             if (!VALID_ROLES.includes(role)) {
                 return NextResponse.json({ error: "Invalid role" }, { status: 400 });
@@ -113,21 +112,10 @@ export const PATCH = requireRole("super_admin", "admin")(async (
             }
         }
 
-        if (vipExpiresAt !== undefined && vipExpiresAt !== null) {
-            const d = new Date(vipExpiresAt);
-            if (isNaN(d.getTime())) {
-                return NextResponse.json(
-                    { error: "Invalid vipExpiresAt" },
-                    { status: 400 }
-                );
-            }
-        }
-
         // Build update data with previousRole logic for disable/enable
         const updateData: Prisma.UserUpdateInput = {};
         if (name !== undefined) updateData.name = name;
         if (dailyTestLimit !== undefined) updateData.dailyTestLimit = Number(dailyTestLimit);
-        if (vipExpiresAt !== undefined) updateData.vipExpiresAt = vipExpiresAt ? new Date(vipExpiresAt) : null;
 
         let actualNewRole: string | undefined;
 
@@ -140,7 +128,7 @@ export const PATCH = requireRole("super_admin", "admin")(async (
             } else if (role !== "disabled" && user.role === "disabled") {
                 // Enabling user: restore previousRole if available
                 // Security: do NOT silently fallback to "user" if previousRole is missing.
-                // This prevents accidental role demotion (e.g. vip -> user).
+                // This prevents accidental role demotion.
                 const restoredRole = user.previousRole;
                 if (restoredRole && VALID_ROLES.includes(restoredRole)) {
                     updateData.role = restoredRole;
@@ -181,8 +169,6 @@ export const PATCH = requireRole("super_admin", "admin")(async (
                 newRole: actualNewRole,
                 previousDailyTestLimit: user.dailyTestLimit,
                 newDailyTestLimit: dailyTestLimit,
-                previousVipExpiresAt: user.vipExpiresAt?.toISOString() || null,
-                newVipExpiresAt: vipExpiresAt?.toISOString() || null,
                 restoredFromPreviousRole: user.previousRole || null,
             },
             ...clientInfo,

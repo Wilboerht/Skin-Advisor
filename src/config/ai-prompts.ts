@@ -271,9 +271,9 @@ export const COMPREHENSIVE_ANALYSIS_SYSTEM_PROMPT = `
 5. **所有输出文本必须使用纯中文，禁止出现任何英文单词或英文等级（如 average/good/excellent/poor 等），请将英文概念翻译为对应的中文描述。**
 `;
 
-export const VIP_ANALYSIS_INSTRUCTION = `
-# 👑 VIP 深度分析模式 (必须执行)
-当前用户为 VIP 尊贵会员。请超越常规肉眼观察，提供类似皮肤镜检测的微观分析：
+export const REGISTERED_USER_DEEP_ANALYSIS_INSTRUCTION = `
+# 深度分析模式 (必须执行)
+当前用户为已登录会员。请超越常规肉眼观察，提供类似皮肤镜检测的微观分析：
 
 1. **核心维度深挖**：
    - **皮脂/水油 (WaterOil)**: 详细描述油脂分泌在各区域的差异，如"T区油脂溢出导致...而U区呈现补偿性干燥"。

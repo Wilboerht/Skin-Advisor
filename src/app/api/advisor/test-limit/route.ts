@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession, isVipCheck } from "@/lib/auth";
 import {
     extractGuestIdentifiers,
-    checkGuestLimit,
-    DEFAULT_GUEST_LIMIT
+    checkGuestLimit
 } from "@/lib/guest-limit";
 import { checkUsageLimit } from "@/lib/usage-limit";
 

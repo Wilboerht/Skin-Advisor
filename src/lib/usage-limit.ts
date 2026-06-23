@@ -2,7 +2,7 @@
 import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
-import { getSession, isVipCheck } from '@/lib/auth';
+import { getSession } from '@/lib/auth';
 import { extractGuestIdentifiers } from './guest-limit';
 import { withDbRetry } from './utils';
 
@@ -15,7 +15,7 @@ export interface UsageLimitResult {
     remaining: number;
     dailyLimit: number;
     resetTime?: Date;
-    role: 'guest' | 'member' | 'vip';
+    role: 'guest' | 'member';
 }
 
 /**
@@ -24,14 +24,13 @@ export interface UsageLimitResult {
 export interface ReserveUsageResult {
     success: boolean;
     error?: string;
-    role: 'guest' | 'member' | 'vip';
+    role: 'guest' | 'member';
 }
 
 /**
- * 获取用户或访客的每日测试限制
+ * 获取登录用户的每日测试限制
  */
-function getUserDailyLimit(user: { dailyTestLimit?: number | null } | null | undefined, isVip: boolean): number {
-    if (isVip) return 100;
+function getUserDailyLimit(user: { dailyTestLimit?: number | null } | null | undefined): number {
     // dailyTestLimit 为 null/undefined 时回退到系统默认 10 次；
     // 显式设置为 0-1 均视为有效自定义值（0 表示禁用测试）。
     if (user && typeof user.dailyTestLimit === 'number') {
@@ -45,44 +44,13 @@ function getUserDailyLimit(user: { dailyTestLimit?: number | null } | null | und
  *
  * 规则：
  * 1. 访客：每日 3 次
- * 2. 普通注册用户：每日 10 次（管理员可通过 dailyTestLimit 调整）
- * 3. VIP 用户：每日 100 次
+ * 2. 登录用户：每日 10 次（管理员可通过 dailyTestLimit 调整）
  */
 export async function checkUsageLimit(request: NextRequest, body?: Record<string, unknown>): Promise<UsageLimitResult> {
     const user = await getSession();
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
 
-    // 1. 如果是 VIP 用户
-    if (isVipCheck(user)) {
-        const userId = user!.id;
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        const [count, inProgressCount] = await Promise.all([
-            withDbRetry(() =>
-                prisma.testRecord.count({
-                    where: { userId, testDate: { gte: today } }
-                })
-            ),
-            withDbRetry(() =>
-                prisma.advisorSession.count({
-                    where: { userId, analysisStartedAt: { gte: tenMinutesAgo }, completedAt: null }
-                })
-            )
-        ]);
-
-        const totalCount = count + inProgressCount;
-        const limit = 100;
-        return {
-            canTest: totalCount < limit,
-            remaining: Math.max(0, limit - totalCount),
-            dailyLimit: limit,
-            role: 'vip',
-            error: totalCount >= limit ? '您的 VIP 今日测试次数已用完，请明天再试。' : undefined
-        };
-    }
-
-    // 2. 如果是普通注册用户
+    // 1. 如果是登录用户
     if (user) {
         const userId = user.id;
         const today = new Date();
@@ -103,17 +71,17 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
 
         const totalCount = count + inProgressCount;
         // getSession() 已返回最新的 dailyTestLimit（每次调用都查数据库确认状态）
-        const limit = getUserDailyLimit(user, isVipCheck(user));
+        const limit = getUserDailyLimit(user);
         return {
             canTest: totalCount < limit,
             remaining: Math.max(0, limit - totalCount),
             dailyLimit: limit,
-            role: isVipCheck(user) ? 'vip' : 'member',
+            role: 'member',
             error: totalCount >= limit ? '今日测试次数已用完，请明天再试。' : undefined
         };
     }
 
-    // 3. 如果是访客 — 每日 3 次
+    // 2. 如果是访客 — 每日 3 次
     const identifiers = extractGuestIdentifiers(request, body);
     const { ipAddress, cookieId, fingerprint } = identifiers;
 
@@ -214,25 +182,7 @@ export async function reserveUsage(
                 today.setHours(0, 0, 0, 0);
                 const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
 
-                // 1. VIP 用户
-                if (isVipCheck(user)) {
-                    const userId = user!.id;
-                    const [count, inProgressCount] = await Promise.all([
-                        tx.testRecord.count({ where: { userId, testDate: { gte: today } } }),
-                        tx.advisorSession.count({ where: { userId, analysisStartedAt: { gte: tenMinutesAgo }, completedAt: null } })
-                    ]);
-                    const totalCount = count + inProgressCount;
-                    const limit = 100;
-                    if (totalCount >= limit) {
-                        return { success: false, error: '您的 VIP 今日测试次数已用完，请明天再试。', role: 'vip' };
-                    }
-                    await tx.testRecord.create({
-                        data: { userId, sessionId, testDate: new Date() }
-                    });
-                    return { success: true, role: 'vip' };
-                }
-
-                // 2. 普通注册用户（从数据库读取最新额度，避免 JWT 缓存滞后）
+                // 1. 登录用户（从数据库读取最新额度，避免 JWT 缓存滞后）
                 if (user) {
                     const userId = user.id;
                     const [dbUser, count, inProgressCount] = await Promise.all([
@@ -241,17 +191,17 @@ export async function reserveUsage(
                         tx.advisorSession.count({ where: { userId, analysisStartedAt: { gte: tenMinutesAgo }, completedAt: null } })
                     ]);
                     const totalCount = count + inProgressCount;
-                    const limit = getUserDailyLimit(dbUser, isVipCheck(user));
+                    const limit = getUserDailyLimit(dbUser);
                     if (totalCount >= limit) {
-                        return { success: false, error: '今日测试次数已用完，请明天再试。', role: isVipCheck(user) ? 'vip' : 'member' };
+                        return { success: false, error: '今日测试次数已用完，请明天再试。', role: 'member' };
                     }
                     await tx.testRecord.create({
                         data: { userId, sessionId, testDate: new Date() }
                     });
-                    return { success: true, role: isVipCheck(user) ? 'vip' : 'member' };
+                    return { success: true, role: 'member' };
                 }
 
-                // 3. 访客
+                // 2. 访客
                 const whereConditions: Prisma.GuestUsageWhereInput[] = [{ ipAddress }];
                 if (cookieId) whereConditions.push({ cookieId });
                 if (fingerprint) whereConditions.push({ fingerprint });
@@ -364,10 +314,10 @@ export async function reserveUsage(
         const err = e instanceof Error ? e : new Error(String(e));
         // P2002 = unique constraint violation (already recorded) — 幂等行为，视为成功
         if ((err as { code?: string }).code === 'P2002' || err.message?.includes('Unique constraint')) {
-            return { success: true, role: user ? (isVipCheck(user) ? 'vip' : 'member') : 'guest' };
+            return { success: true, role: user ? 'member' : 'guest' };
         }
         console.error('Failed to reserve usage:', e);
-        return { success: false, error: '额度预占失败，请重试', role: user ? (isVipCheck(user) ? 'vip' : 'member') : 'guest' };
+        return { success: false, error: '额度预占失败，请重试', role: user ? 'member' : 'guest' };
     }
 }
 
@@ -458,7 +408,7 @@ export async function recordUsage(request: NextRequest, sessionId: string, body?
  * 回滚已预占的额度（用于 AI 服务不可用、图片验证失败等明确非用户原因的场景）
  *
  * 规则：
- * 1. 登录/VIP 用户：删除本次创建的 TestRecord
+ * 1. 登录用户：删除本次创建的 TestRecord
  * 2. 游客：将 GuestUsage 的 testCount/todayCount 减 1（不低于 0）
  */
 export async function rollbackUsage(

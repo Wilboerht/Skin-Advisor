@@ -1,13 +1,12 @@
 /**
  * 面部识别模型预加载工具
  * 
- * 在用户进入问卷时后台预加载 face-api 和 MediaPipe 模型
+ * 在用户进入问卷时后台预加载 face-api 模型
  * 这样当用户完成问卷进入拍照步骤时，模型已经加载完毕，提升体验
  */
 
 /** 跟踪预加载状态 */
 let faceApiPreloadPromise: Promise<unknown> | null = null;
-let mediaPipePreloadPromise: Promise<unknown> | null = null;
 
 /**
  * 预加载 face-api.js 模型（TinyFaceDetector + faceLandmark68Net）
@@ -46,55 +45,18 @@ export function preloadFaceApi() {
 }
 
 /**
- * 预加载 MediaPipe FaceLandmarker 模型
- * 用于 VIP 用户的高级分析功能
- */
-export function preloadMediaPipe() {
-  // 避免重复加载
-  if (mediaPipePreloadPromise) {
-    return mediaPipePreloadPromise;
-  }
-
-  mediaPipePreloadPromise = (async () => {
-    try {
-      console.log("[Preload] Starting MediaPipe FaceLandmarker preload...");
-      const startTime = performance.now();
-
-      // 导入 initFaceLandmarker 并触发初始化
-      const { initFaceLandmarker } = await import("@/lib/mediapipe-utils");
-      await initFaceLandmarker();
-
-      const duration = performance.now() - startTime;
-      console.log(`[Preload] MediaPipe FaceLandmarker loaded successfully (${duration.toFixed(0)}ms)`);
-      return true;
-    } catch (err) {
-      console.error("[Preload] Failed to preload MediaPipe:", err);
-      // 不抛出错误，MediaPipe 是可选的（VIP 专属功能）
-      return false;
-    }
-  })();
-
-  return mediaPipePreloadPromise;
-}
-
-/**
  * 预加载所有面部识别相关模型
  * 在进入问卷时调用，这样在用户完成问卷进入拍照时模型就已就绪
  * 
  * @returns Promise 返回所有预加载任务的结果
- * 可以忽略返回值（火烧不管），或者在需要时 await
+ * 可以忽略返回值，或者在需要时 await
  */
 export function preloadAllFaceModels(): Promise<void> {
-  console.log("[Preload] Starting all face detection models preload...");
-
-  // 并行启动两个预加载任务
-  const faceApiPromise = preloadFaceApi();
-  const mediaPipePromise = preloadMediaPipe();
+  console.log("[Preload] Starting face detection models preload...");
 
   // 返回 Promise，但不阻塞调用方
   // 在后台静默加载，即使 Promise reject 也不会抛出错误
-  return Promise.all([faceApiPromise, mediaPipePromise]).then(() => undefined).catch(err => {
-    console.error("[Preload] Some models failed to preload:", err);
-    // 不重新抛出错误，应用可以继续运行
+  return preloadFaceApi().then(() => undefined).catch(err => {
+    console.error("[Preload] face-api model failed to preload:", err);
   });
 }

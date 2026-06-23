@@ -106,7 +106,7 @@ async function cleanupSessions(
 
 export async function GET(request: NextRequest) {
     try {
-        // 安全验证（与 vip-expiry cron 保持一致）
+        // 安全验证（与其他 cron 保持一致）
         const authHeader = request.headers.get("authorization");
         const cronSecret = process.env.CRON_SECRET;
 

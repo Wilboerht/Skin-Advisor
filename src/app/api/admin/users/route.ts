@@ -20,7 +20,7 @@ export const GET = requireRole("super_admin", "admin")(async (request) => {
         const page = Math.max(1, parseInt(searchParams.get("page") || "1") || 1);
         const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "20") || 20));
         const search = (searchParams.get("search") || "").slice(0, 100);
-        const status = searchParams.get("status") || "all"; // all, active, inactive, vip
+        const status = searchParams.get("status") || "all"; // all, active, inactive
 
         const skip = (page - 1) * limit;
 
@@ -38,8 +38,6 @@ export const GET = requireRole("super_admin", "admin")(async (request) => {
                 where.role = { not: "disabled" };
             } else if (status === "inactive") {
                 where.role = "disabled";
-            } else if (status === "vip") {
-                where.role = "vip";
             } else {
                 return NextResponse.json({ error: "Invalid status" }, { status: 400 });
             }

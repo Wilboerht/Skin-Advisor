@@ -118,9 +118,6 @@ crontab -e
 添加以下内容（将 `YOUR_CRON_SECRET` 和域名替换为实际值）：
 
 ```cron
-# VIP 过期自动降级（每天凌晨 2:00）
-0 2 * * * curl -s "https://your-domain.com/api/cron/vip-expiry?secret=YOUR_CRON_SECRET" >> /var/log/skin-advisor/cron-vip.log 2>&1
-
 # 数据清理（每 30 分钟）
 */30 * * * * curl -s "https://your-domain.com/api/cron/data-cleanup?secret=YOUR_CRON_SECRET" >> /var/log/skin-advisor/cron-cleanup.log 2>&1
 ```

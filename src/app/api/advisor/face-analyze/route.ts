@@ -8,13 +8,13 @@ import {
     VISION_ANALYSIS_SYSTEM_PROMPT,
     VISION_ANALYSIS_USER_PROMPT,
     QWEN_VISION_PROMPT,
-    VIP_ANALYSIS_INSTRUCTION,
+    REGISTERED_USER_DEEP_ANALYSIS_INSTRUCTION,
 } from "@/config/ai-prompts";
-import { getSession, isVipCheck } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { reserveUsage, rollbackUsage } from "@/lib/usage-limit";
 import { aiLogger } from "@/lib/logger";
-import { getDefaultFaceAnalysisResult } from "@/lib/advisor-utils";
+
 import { visionQueue } from "@/lib/ai-queue";
 
 export const maxDuration = 60; // 防止超时
@@ -241,16 +241,15 @@ export async function POST(request: NextRequest) {
             systemPrompt = QWEN_VISION_PROMPT;
         }
 
-        // --- VIP Prompt Injection ---
+        // --- Registered user deep analysis prompt injection ---
         const session = await getSession();
-        // Use shared isVipCheck which validates role + vipExpiresAt expiration
-        const isVip = isVipCheck(session);
+        const isLoggedIn = !!session;
 
-        if (isVip && VIP_ANALYSIS_INSTRUCTION) {
-            systemPrompt += `\n\n${VIP_ANALYSIS_INSTRUCTION}`;
-            aiLogger.info(`[FaceAnalyze] VIP mode activated for user ${session?.id}`);
+        if (isLoggedIn && REGISTERED_USER_DEEP_ANALYSIS_INSTRUCTION) {
+            systemPrompt += `\n\n${REGISTERED_USER_DEEP_ANALYSIS_INSTRUCTION}`;
+            aiLogger.info(`[FaceAnalyze] Deep analysis mode activated for user ${session?.id}`);
         }
-        // ----------------------------
+        // --------------------------------------------------------
 
         let acquired = false;
         try {

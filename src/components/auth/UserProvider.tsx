@@ -10,7 +10,6 @@ export interface User {
     phone?: string | null;
     name?: string;
     role: string;
-    vipExpiresAt?: string | null;
     avatar?: string | null;
 }
 
@@ -30,7 +29,6 @@ interface RegisterData {
 
 interface AuthContextType {
     user: User | null;
-    isVip: boolean;
     loading: boolean;
     isInitialized: boolean;
     login: (credentials: LoginCredentials) => Promise<void>;
@@ -46,12 +44,6 @@ const AUTH_CACHE_KEY = 'auth_user_cache';
 const AUTH_CACHE_EXPIRY_KEY = 'auth_user_cache_expiry';
 const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
 
-function isCachedVipExpired(user: User): boolean {
-    if (user.role !== 'vip') return false;
-    if (!user.vipExpiresAt) return false;
-    return new Date(user.vipExpiresAt).getTime() <= Date.now();
-}
-
 function getCachedUser(): { user: User | null; needsRefresh: boolean } {
     if (typeof window === 'undefined') return { user: null, needsRefresh: false };
     try {
@@ -66,7 +58,7 @@ function getCachedUser(): { user: User | null; needsRefresh: boolean } {
 
         const user: User = JSON.parse(cached);
         // 缓存中缺少敏感字段时强制刷新
-        if (isCachedVipExpired(user) || !('role' in user)) {
+        if (!('role' in user)) {
             return { user, needsRefresh: true };
         }
         return { user, needsRefresh: false };
@@ -79,7 +71,7 @@ function setCachedUser(user: User | null) {
     if (typeof window === 'undefined') return;
     try {
         if (user) {
-            // 不缓存敏感字段（role / vipExpiresAt），缩短缓存时间
+            // 不缓存敏感字段（role），缩短缓存时间
             const cacheable = {
                 id: user.id,
                 email: user.email,
@@ -223,17 +215,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
         }
     }, []);
 
-    const isVip = !!(
-        user &&
-        (
-            (user.role === 'vip' && (!user.vipExpiresAt || new Date(user.vipExpiresAt).getTime() > Date.now())) ||
-            ['admin', 'super_admin'].includes(user.role)
-        )
-    );
-
     const value = {
         user,
-        isVip,
         loading,
         isInitialized,
         login,

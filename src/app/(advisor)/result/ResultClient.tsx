@@ -1189,8 +1189,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             }
                         />
 
-                            {/* VIP Analysis Section removed per user request */}
-
                         {/* 定制化分析数据详情 Modal - Page Level */}
                         <AnimatePresence>
                             {showLabData && (

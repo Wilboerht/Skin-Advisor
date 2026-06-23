@@ -23,7 +23,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { openAuthModal } = useAuthModal();
-  const { user, isVip } = useUser();
+  const { user } = useUser();
   const pathname = usePathname();
   const isDark = variant === "dark" && !scrolled;
 
@@ -141,11 +141,6 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                 </div>
                 <span className="hidden lg:inline relative max-w-[120px] truncate">
                   {user.name || user.email || user.phone || "用户"}
-                  {isVip && (
-                    <span className="ml-2 text-[10px] tracking-wider px-1.5 py-0.5 rounded-full bg-[#3D4430] text-[#F8F7F3] font-medium align-middle">
-                      VIP
-                    </span>
-                  )}
                   <span className="absolute -bottom-0.5 left-0 w-0 h-[1px] bg-[#3D4430]/30 group-hover:w-full transition-all duration-500 ease-out" />
                 </span>
               </Link>
@@ -286,11 +281,6 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                       {user.name || user.email || user.phone || "用户"}
                     </p>
                     <div className="flex items-center gap-2 mt-1">
-                      {isVip && (
-                        <span className="text-[11px] tracking-wider px-2 py-0.5 rounded-full bg-[#3D4430] text-[#F8F7F3] font-medium">
-                          VIP
-                        </span>
-                      )}
                       <span className="text-[13px] text-[#5E5E5E]/70">
                         查看个人中心
                       </span>

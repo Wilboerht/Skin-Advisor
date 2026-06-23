@@ -11,7 +11,6 @@ import {
   ChevronLeft,
   ScanFace,
   LogOut,
-  Sparkles,
   Smartphone,
   Camera,
   Pencil,
@@ -40,7 +39,7 @@ interface HistorySession {
 }
 
 export default function ProfilePage() {
-  const { user, loading, logout, isVip, refresh } = useAuth();
+  const { user, loading, logout, refresh } = useAuth();
   const router = useRouter();
   const [auditHistory, setAuditHistory] = useState<HistorySession[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
@@ -284,12 +283,6 @@ export default function ProfilePage() {
 
               {/* Meta */}
               <div className="flex flex-wrap items-center gap-3 text-[14px] text-[#5E5E5E] mb-4">
-                {isVip && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#3D4430] text-[#F8F7F3]">
-                    <Sparkles className="w-3 h-3" />
-                    VIP
-                  </span>
-                )}
                 <div className="flex items-center gap-1.5">
                   <Smartphone className="w-3.5 h-3.5" />
                   <span>{maskPhone(user.phone)}</span>
