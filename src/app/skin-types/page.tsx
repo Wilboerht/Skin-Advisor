@@ -95,9 +95,9 @@ export default function ResultIndexPage() {
       <section className="py-24 md:py-32 px-6 text-center border-t border-[rgba(61,68,48,0.08)]">
         <div className="max-w-2xl mx-auto">
           <h2 className="text-2xl md:text-3xl font-serif text-[#1A1A1A] mb-4">
-            需要更具体的建议？
+            获取更多专属服务
           </h2>
-          <p className="text-[15px] md:text-base text-[#5E5E5E]/70 font-light leading-relaxed mb-8">
+          <p className="text-[15px] md:text-base text-[#5E5E5E]/70 font-light leading-relaxed mb-[30px]">
             添加 NIHPLOD 护肤顾问微信，与顾问一对一沟通你的肌肤状态。
           </p>
           <Link
