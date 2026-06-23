@@ -22,6 +22,9 @@ export default function ResultIndexPage() {
 
       {/* Hero */}
       <section className="relative pt-32 pb-24 md:pt-40 md:pb-32 px-6 md:px-12 lg:px-20 overflow-hidden">
+        {/* 背景装饰 */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] md:w-[800px] md:h-[800px] rounded-full bg-[#C9A86C]/[0.06] blur-3xl pointer-events-none" />
+
         <div className="relative z-10 max-w-5xl mx-auto text-center">
           <p
             className="text-[11px] tracking-[0.25em] text-[#8B7355] uppercase mb-5 opacity-0 animate-fade-in-up"
@@ -43,7 +46,7 @@ export default function ResultIndexPage() {
           </p>
           <Link
             href="/"
-            className="group relative inline-flex items-center justify-center gap-3 px-10 py-3.5 bg-transparent border border-[#1B3A5C] text-[#1B3A5C] rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#1B3A5C] hover:text-white opacity-0 animate-fade-in-up"
+            className="group relative inline-flex items-center justify-center gap-3 px-10 py-3.5 bg-[#1B3A5C] text-white text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#1B3A5C]/90 opacity-0 animate-fade-in-up"
             style={{ animationDelay: "0.2s", animationFillMode: "forwards" }}
           >
             <span>前往测肤</span>
