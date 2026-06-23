@@ -103,7 +103,7 @@ export interface LabAnalysisResult {
     wrinkleGrade: { value: string; status: string }; // Grade 1-3
 }
 
-// 可选的 8 维度评分接口 (用于 SkinRadarChart)
+// 10 维度评分接口 (用于 ScientificRadarChart)
 export type SkinDimensions = FaceAnalysisResult['dimensions'];
 export type SkinDimensionKey = keyof SkinDimensions;
 
