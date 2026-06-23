@@ -156,15 +156,11 @@ export function useAsyncAnalysis() {
 
                             try {
                                 let finalData = imgData;
-                                // Only preprocess if base64 and larger than 300KB
+                                // Always preprocess base64 images to keep payload small,
+                                // even if they are already under 300KB.
                                 if (finalData.startsWith('data:')) {
-                                    const base64Size = getBase64Size(finalData);
-                                    if (base64Size < 300 * 1024) {
-                                        console.log(`[Preprocess] ${label} already small (${Math.round(base64Size / 1024)}KB), skipping`);
-                                    } else {
-                                        const processed = await preprocessFaceImage(imgData);
-                                        finalData = processed.imageData;
-                                    }
+                                    const processed = await preprocessFaceImage(imgData);
+                                    finalData = processed.imageData;
                                 }
                                 return { key, label, finalData, originalData: imgData, needsUpload: finalData.startsWith('data:') };
                             } catch (e) {
