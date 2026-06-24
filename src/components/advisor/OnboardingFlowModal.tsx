@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Loader2, MapPin, ShieldCheck, ArrowRight, LogOut } from "lucide-react";
+import { Loader2, MapPin, ShieldCheck, ArrowRight, LogOut, Search } from "lucide-react";
 import { AnimatePresence, motion as m, useReducedMotion } from "framer-motion";
 import Image from "next/image";
 
@@ -52,6 +52,7 @@ export function OnboardingFlowModal({
     const [locationView, setLocationView] = useState<LocationSubView>("main");
     const [isAgreed, setIsAgreed] = useState(false);
     const [maxVisitedIndex, setMaxVisitedIndex] = useState(0);
+    const [regionSearch, setRegionSearch] = useState("");
     const prefersReducedMotion = useReducedMotion();
     const screens = getScreens();
     const totalScreens = screens.length;
@@ -64,6 +65,7 @@ export function OnboardingFlowModal({
             setLocationView("main");
             setIsAgreed(false);
             setMaxVisitedIndex(0);
+            setRegionSearch("");
         }
     }, [isOpen]);
 
@@ -253,7 +255,7 @@ export function OnboardingFlowModal({
                                     <button
                                         onClick={handleNicknameNext}
                                         disabled={!nickname.trim()}
-                                        className="group relative inline-flex items-center justify-center gap-4 px-10 py-3.5 sm:px-14 border border-[#3D4430]/25 hover:border-[#3D4430]/50 hover:bg-[#3D4430]/[0.03] text-[13px] sm:text-[14px] tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500"
+                                        className="group relative inline-flex items-center justify-center gap-4 px-10 py-3.5 sm:px-14 border border-[#3D4430]/25 hover:border-[#3D4430]/50 hover:bg-[#3D4430]/[0.03] text-[13px] sm:text-[14px] tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] font-medium disabled:bg-[#3D4430]/[0.03] disabled:border-[#3D4430]/10 disabled:text-[#3D4430]/35 disabled:cursor-not-allowed disabled:hover:bg-transparent cursor-pointer transition-all duration-500"
                                     >
                                         <span>下一步</span>
                                         <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-2" />
@@ -302,7 +304,7 @@ export function OnboardingFlowModal({
                                             <button
                                                 onClick={handleLocationAcceptWrapper}
                                                 disabled={isLocating}
-                                                className="group relative inline-flex items-center justify-center gap-4 px-10 py-3.5 sm:px-14 border border-[#3D4430]/25 hover:border-[#3D4430]/50 hover:bg-[#3D4430]/[0.03] text-[13px] sm:text-[14px] tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] font-medium disabled:opacity-40 disabled:cursor-wait cursor-pointer transition-all duration-500"
+                                                className="group relative inline-flex items-center justify-center gap-4 px-10 py-3.5 sm:px-14 border border-[#3D4430]/25 hover:border-[#3D4430]/50 hover:bg-[#3D4430]/[0.03] text-[13px] sm:text-[14px] tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] font-medium disabled:bg-[#3D4430]/[0.03] disabled:border-[#3D4430]/10 disabled:text-[#3D4430]/35 disabled:cursor-wait disabled:hover:bg-transparent cursor-pointer transition-all duration-500"
                                             >
                                                 {isLocating ? (
                                                     <>
@@ -320,7 +322,7 @@ export function OnboardingFlowModal({
                                             <div>
                                                 <button
                                                     onClick={handleDecline}
-                                                    className="py-2 text-[12px] tracking-widest text-[#3D4430]/30 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
+                                                    className="py-2 text-[12px] tracking-widest text-[#3D4430]/45 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
                                                 >
                                                     手动选择地区
                                                 </button>
@@ -330,54 +332,88 @@ export function OnboardingFlowModal({
                                 ) : (
                                     <m.div
                                         key="location-region"
-                                        className="relative z-10 w-full max-w-lg h-full flex flex-col"
+                                        className="relative z-10 w-full max-w-5xl h-full mx-auto flex flex-col px-4 sm:px-6"
                                         initial={{ opacity: 0, x: 40 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         exit={{ opacity: 0, x: 40 }}
                                         transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
                                     >
                                         {/* Region Select Header */}
-                                        <div className="shrink-0 pt-16 pb-4 px-6 text-center">
+                                        <div className="shrink-0 pt-24 md:pt-28 pb-4 md:pb-6 text-center">
                                             <h3 className="text-xl md:text-2xl font-serif text-[#1A1A1A] tracking-wider">选择所在地区</h3>
                                             <p className="text-[13px] text-[#5E5E5E] mt-2 font-light opacity-80">根据当地气候为您提供更精准的分析建议</p>
+
+                                            {/* Search */}
+                                            <div className="mt-4 md:mt-5 relative max-w-sm mx-auto">
+                                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3D4430]/30" strokeWidth={1.5} />
+                                                <input
+                                                    type="text"
+                                                    value={regionSearch}
+                                                    onChange={(e) => setRegionSearch(e.target.value)}
+                                                    placeholder="搜索省份 / 城市"
+                                                    className="w-full bg-white/60 border border-[#3D4430]/10 rounded-full py-2.5 pl-10 pr-4 text-sm text-center text-[#1A1A1A] placeholder:text-[#3D4430]/30 focus:outline-none focus:border-[#8B7355]/40 transition-colors"
+                                                />
+                                                {regionSearch && (
+                                                    <button
+                                                        onClick={() => setRegionSearch("")}
+                                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-[#3D4430]/40 hover:text-[#3D4430] px-1.5 py-0.5 rounded-full bg-[#3D4430]/5 hover:bg-[#3D4430]/10 transition-colors"
+                                                    >
+                                                        清除
+                                                    </button>
+                                                )}
+                                            </div>
                                         </div>
 
                                         {/* Region List */}
-                                        <div className="flex-1 relative flex flex-col min-h-0">
-                                            <div className="flex-1 overflow-y-auto px-6 py-4 pb-24 scrollbar-hide">
-                                                {regionOptions.map((group) => (
-                                                    <div key={group.group} className="mb-9 last:mb-2">
-                                                        <div className="flex items-center gap-4 mb-4">
-                                                            <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-[#8B7355]/10" />
-                                                            <span className="text-[11px] font-bold text-[#8B7355]/60 uppercase tracking-[0.25em]">
+                                        <div className="flex-1 overflow-y-auto px-2 md:px-4 pb-24 scrollbar-hide">
+                                            {(() => {
+                                                const filtered = regionOptions
+                                                    .map((group) => ({
+                                                        ...group,
+                                                        regions: group.regions.filter((r) => r.includes(regionSearch.trim())),
+                                                    }))
+                                                    .filter((group) => group.regions.length > 0);
+
+                                                if (filtered.length === 0) {
+                                                    return (
+                                                        <div className="text-center py-12 text-[#5E5E5E]/60 text-sm">
+                                                            未找到匹配的地区
+                                                        </div>
+                                                    );
+                                                }
+
+                                                return filtered.map((group) => (
+                                                    <div key={group.group} className="mb-5 md:mb-6 last:mb-2">
+                                                        <div className="flex items-center gap-3 mb-2.5 md:mb-3">
+                                                            <span className="text-[11px] font-bold text-[#8B7355]/70 uppercase tracking-[0.2em]">
                                                                 {group.group}
                                                             </span>
-                                                            <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-[#8B7355]/10" />
+                                                            <div className="h-[1px] flex-1 bg-[#8B7355]/10" />
                                                         </div>
-                                                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                                                        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2 md:gap-3">
                                                             {group.regions.map((region) => (
                                                                 <button
                                                                     key={region}
                                                                     onClick={() => handleRegionOption(region)}
-                                                                    className="py-3 px-2 rounded-xl text-[13px] text-[#3D4430] bg-white/50 hover:bg-[#8B7355]/10 hover:text-[#8B7355] border border-[#3D4430]/5 hover:border-[#8B7355]/20 transition-all duration-300 font-medium active:scale-95"
+                                                                    className="py-2.5 md:py-3 px-1 rounded-xl text-[12px] md:text-[13px] text-[#3D4430] bg-white/50 hover:bg-[#8B7355]/10 hover:text-[#8B7355] border border-[#3D4430]/5 hover:border-[#8B7355]/20 transition-all duration-300 font-medium active:scale-95"
                                                                 >
                                                                     {region}
                                                                 </button>
                                                             ))}
                                                         </div>
                                                     </div>
-                                                ))}
-                                            </div>
+                                                ));
+                                            })()}
+                                        </div>
 
-                                            {/* Footer with gradient mask background */}
-                                            <div className="absolute bottom-0 left-0 right-0 pt-14 pb-6 text-center pointer-events-none bg-gradient-to-t from-[#FDFBF7] via-[#FDFBF7] to-transparent">
-                                                <button
-                                                    onClick={handleSkipRegion}
-                                                    className="pointer-events-auto text-[12px] tracking-[0.15em] text-[#3D4430]/30 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
-                                                >
-                                                    暂不提供
-                                                </button>
-                                            </div>
+                                        {/* Footer */}
+                                        <div className="absolute bottom-0 left-0 right-0 pt-8 pb-5 md:pb-6 text-center pointer-events-none bg-gradient-to-t from-[#FDFBF7] via-[#FDFBF7]/95 to-transparent">
+                                            <button
+                                                onClick={handleSkipRegion}
+                                                className="pointer-events-auto text-[12px] tracking-[0.15em] text-[#3D4430]/55 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
+                                            >
+                                                暂不提供
+                                            </button>
                                         </div>
                                     </m.div>
                                 )}
@@ -410,8 +446,8 @@ export function OnboardingFlowModal({
                                         服务确认与授权
                                     </h3>
 
-                                    <div className="p-6 mb-9 text-left max-w-md mx-auto">
-                                        <div className="flex items-start gap-4">
+                                    <div className="p-5 md:p-6 mb-9 text-left max-w-md mx-auto bg-white/40 border border-[#3D4430]/8 rounded-xl">
+                                        <div className="flex items-start gap-3.5 md:gap-4">
                                             <label
                                                 htmlFor="legal-agree"
                                                 className="mt-0.5 relative flex items-center cursor-pointer group"
@@ -484,7 +520,7 @@ export function OnboardingFlowModal({
                                         <button
                                             onClick={handleLegalSubmit}
                                             disabled={!isAgreed}
-                                            className="group relative inline-flex items-center justify-center gap-4 px-10 py-3.5 sm:px-14 border border-[#3D4430]/25 hover:border-[#3D4430]/50 hover:bg-[#3D4430]/[0.03] text-[13px] sm:text-[14px] tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500"
+                                            className="group relative inline-flex items-center justify-center gap-4 px-10 py-3.5 sm:px-14 border border-[#3D4430]/25 hover:border-[#3D4430]/50 hover:bg-[#3D4430]/[0.03] text-[13px] sm:text-[14px] tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] font-medium disabled:bg-[#3D4430]/[0.03] disabled:border-[#3D4430]/10 disabled:text-[#3D4430]/35 disabled:cursor-not-allowed disabled:hover:bg-transparent cursor-pointer transition-all duration-500"
                                         >
                                             <span>开始测试</span>
                                             <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-2" />
@@ -492,7 +528,7 @@ export function OnboardingFlowModal({
 
                                         <button
                                             onClick={onClose}
-                                            className="py-2 text-[12px] tracking-widest text-[#3D4430]/30 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
+                                            className="py-2 text-[12px] tracking-widest text-[#3D4430]/45 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
                                         >
                                             暂不测试
                                         </button>
@@ -502,75 +538,39 @@ export function OnboardingFlowModal({
                         )}
                     </div>
 
-                    {/* ---- Progress Indicators (connected steps) ---- */}
+                    {/* ---- Progress Indicators (minimal text) ---- */}
                     {/* Hidden in region select sub-view to avoid overlapping the footer */}
                     {locationView !== "region" && (
                         <div className="fixed bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 z-[110]">
-                            <div className="flex items-center">
+                            <div className="flex items-center gap-3 md:gap-4 text-[11px] md:text-xs tracking-[0.12em]">
                                 {screens.map((screen, index) => {
                                     const isActive = index === activeIndex;
                                     const isCompleted = index < activeIndex;
                                     const isClickable = index <= maxVisitedIndex;
+                                    const label = screen === "nickname" ? "称呼" : screen === "location" ? "定位" : "授权";
 
                                     return (
-                                        <div key={screen} className="flex items-center">
-                                            {/* Step dot */}
+                                        <div key={screen} className="flex items-center gap-3 md:gap-4">
                                             <button
                                                 onClick={() => isClickable && goTo(index)}
-                                                className="relative flex items-center justify-center focus:outline-none"
-                                                aria-label={`跳转到第 ${index + 1} 步`}
                                                 disabled={!isClickable}
+                                                aria-label={`跳转到第 ${index + 1} 步：${label}`}
+                                                className={`flex items-baseline gap-1.5 transition-colors duration-500 focus:outline-none ${
+                                                    isActive
+                                                        ? "text-[#8B7355]"
+                                                        : isCompleted
+                                                            ? "text-[#3D4430]/55 hover:text-[#3D4430]/80"
+                                                            : "text-[#3D4430]/25"
+                                                }`}
                                             >
-                                                {/* Active pulse ring */}
-                                                {isActive && (
-                                                    <m.span
-                                                        className="absolute w-full h-full rounded-full bg-[#8B7355]/20"
-                                                        initial={{ scale: 1, opacity: 0.6 }}
-                                                        animate={{ scale: 2.2, opacity: 0 }}
-                                                        transition={{
-                                                            duration: 1.8,
-                                                            repeat: Infinity,
-                                                            ease: "easeOut",
-                                                        }}
-                                                    />
-                                                )}
-
-                                                {/* Dot core */}
-                                                <m.span
-                                                    className={`relative block rounded-full border transition-colors duration-500 ${
-                                                        isActive
-                                                            ? "bg-[#8B7355] border-[#8B7355]"
-                                                            : isCompleted
-                                                                ? "bg-[#8B7355] border-[#8B7355]"
-                                                                : "bg-transparent border-[#3D4430]/20"
-                                                    }`}
-                                                    animate={{
-                                                        width: isActive ? 10 : 8,
-                                                        height: isActive ? 10 : 8,
-                                                    }}
-                                                    transition={{
-                                                        type: "spring",
-                                                        stiffness: 400,
-                                                        damping: 25,
-                                                    }}
-                                                />
+                                                <span className="text-[9px] md:text-[10px] opacity-60">
+                                                    {String(index + 1).padStart(2, "0")}
+                                                </span>
+                                                <span className={isActive ? "font-medium" : ""}>{label}</span>
                                             </button>
 
-                                            {/* Connecting line */}
                                             {index < screens.length - 1 && (
-                                                <div className="relative w-8 md:w-10 h-[1.5px] mx-1.5 overflow-hidden rounded-full bg-[#3D4430]/8">
-                                                    <m.div
-                                                        className="absolute inset-y-0 left-0 bg-[#8B7355]/50 rounded-full"
-                                                        initial={{ width: "0%" }}
-                                                        animate={{
-                                                            width: isCompleted ? "100%" : "0%",
-                                                        }}
-                                                        transition={{
-                                                            duration: 0.6,
-                                                            ease: [0.32, 0.72, 0, 1],
-                                                        }}
-                                                    />
-                                                </div>
+                                                <span className="text-[#3D4430]/15 select-none">/</span>
                                             )}
                                         </div>
                                     );
