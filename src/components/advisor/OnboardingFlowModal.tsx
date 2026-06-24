@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Loader2, MapPin, ShieldCheck, ArrowRight, LogOut, Search } from "lucide-react";
+import { Loader2, MapPin, ShieldCheck, ArrowRight, LogOut } from "lucide-react";
 import { AnimatePresence, motion as m, useReducedMotion } from "framer-motion";
 import Image from "next/image";
 
@@ -342,16 +342,17 @@ export function OnboardingFlowModal({
                                         <div className="shrink-0 pt-24 md:pt-28 pb-4 md:pb-6 text-center">
                                             <h3 className="text-xl md:text-2xl font-serif text-[#1A1A1A] tracking-wider">选择所在地区</h3>
                                             <p className="text-[13px] text-[#5E5E5E] mt-2 font-light opacity-80">根据当地气候为您提供更精准的分析建议</p>
+                                        </div>
 
-                                            {/* Search */}
-                                            <div className="mt-4 md:mt-5 relative max-w-sm mx-auto">
-                                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3D4430]/30" strokeWidth={1.5} />
+                                        {/* Search with blur overlay */}
+                                        <div className="shrink-0">
+                                            <div className="relative max-w-sm mx-auto">
                                                 <input
                                                     type="text"
                                                     value={regionSearch}
                                                     onChange={(e) => setRegionSearch(e.target.value)}
                                                     placeholder="搜索省份 / 城市"
-                                                    className="w-full bg-white/60 border border-[#3D4430]/10 rounded-full py-2.5 pl-10 pr-4 text-sm text-center text-[#1A1A1A] placeholder:text-[#3D4430]/30 focus:outline-none focus:border-[#8B7355]/40 transition-colors"
+                                                    className="w-full bg-white/60 border border-[#3D4430]/10 rounded-full py-2.5 px-4 text-sm text-[#1A1A1A] placeholder:text-[#3D4430]/30 focus:outline-none focus:border-[#8B7355]/40 transition-colors"
                                                 />
                                                 {regionSearch && (
                                                     <button
@@ -362,6 +363,8 @@ export function OnboardingFlowModal({
                                                     </button>
                                                 )}
                                             </div>
+                                            {/* Blur overlay below search box */}
+                                            <div className="mt-2 h-6 bg-gradient-to-b from-[#FDFBF7]/90 via-[#FDFBF7]/70 to-transparent backdrop-blur-[2px] pointer-events-none" />
                                         </div>
 
                                         {/* Region List */}
