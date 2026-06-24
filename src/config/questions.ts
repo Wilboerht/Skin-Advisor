@@ -99,9 +99,9 @@ export const DEFAULT_QUESTIONS: Question[] = [
         question: "您最近的睡眠质量如何？",
         type: "single",
         options: [
-            { value: "good", label: "很好 (精力充沛)", description: "每晚睡眠质量高，旨起精神充沛" },
+            { value: "good", label: "很好 (精力充沛)", description: "每晚睡眠质量高，晨起精神充沛" },
             { value: "fair", label: "一般 (偶尔疲劳)", description: "睡眠质量起伏不定" },
-            { value: "poor", label: "较差 (经常熬夜/失眠)", description: "睡眠不足、6小时，或难以入睡" },
+            { value: "poor", label: "较差 (经常熬夜/失眠)", description: "睡眠不足（如仅6小时），或难以入睡" },
         ],
     },
     {
@@ -118,7 +118,7 @@ export const DEFAULT_QUESTIONS: Question[] = [
     {
         id: "q8",
         fieldName: "menstrualCycle",
-        question: "生理周期阶段？",
+        question: "您当前的生理周期阶段是？",
         subtext: "用于精准匹配'生理期护肤'模式",
         type: "single",
         options: [
@@ -131,7 +131,7 @@ export const DEFAULT_QUESTIONS: Question[] = [
     {
         id: "q9",
         fieldName: "allergies",
-        question: "你有以下过敏情况吗？",
+        question: "您有以下过敏情况吗？",
         subtext: "多选 (无可跳过或选没有)",
         type: "multiple",
         options: [
