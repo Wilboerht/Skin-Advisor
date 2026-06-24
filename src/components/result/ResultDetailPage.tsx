@@ -201,15 +201,6 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       {/* CTA */}
       <section className="py-20 md:py-28 px-6 md:px-12 lg:px-20 bg-white">
         <div className="max-w-3xl mx-auto text-center">
-          <div className="relative w-full max-w-[200px] mx-auto mb-5 aspect-[646/386]">
-            <Image
-              src="/images/CTA-N.png"
-              alt="NIHPLOD 护肤顾问"
-              fill
-              className="object-contain"
-              sizes="(max-width: 768px) 80vw, 448px"
-            />
-          </div>
           <h2 className="text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-4">
             想知道你的真实肤质类型吗？
           </h2>
