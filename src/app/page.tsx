@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Link } from "next-view-transitions";
-import { LazyMotion, domAnimation, AnimatePresence, m } from "framer-motion";
+import { LazyMotion, domAnimation, AnimatePresence, m, useReducedMotion } from "framer-motion";
 import Image from "next/image";
 import { ArrowRight, Loader2, MapPin, ClipboardList, X, CircleAlert } from "lucide-react";
 
@@ -60,6 +60,7 @@ export default function Home() {
   const { user, refresh: refreshUser } = useAuth();
 
   const spotlightRef = useRef<HTMLDivElement>(null);
+  const prefersReducedMotion = useReducedMotion();
 
   // 柔光聚光灯跟随效果
   useEffect(() => {
@@ -210,30 +211,35 @@ export default function Home() {
       }
 
       const res = await fetch(`/api/advisor/test-limit?${params.toString()}`);
-      if (res.ok) {
-        const data = await res.json();
-        setTestLimitInfo(data);
-
-        // Frontend safeguard: if frontend thinks user is logged in but backend treats as guest,
-        // the JWT token may be invalid/mismatched. Refresh user state and warn.
-        if (user && data.isGuest) {
-          console.warn("[Auth Mismatch] Frontend has user but backend returned guest. Refreshing session...");
-          await refreshUser();
-          toast.info("登录状态已刷新，请重新尝试");
-          // After refresh, allow the test to proceed; next check will use fresh state
-          return true;
-        }
-
-        // Check if blocked
-        if (data.isBlocked) {
-          return false;
-        }
-        return data.canTest;
+      if (!res.ok) {
+        const errorText = await res.text().catch(() => "未知错误");
+        console.error("Test limit check failed:", res.status, errorText);
+        toast.error("测试次数检查失败，请稍后重试或联系客服");
+        return true; // Allow on error so the user is not blocked by a transient server issue
       }
-      return true; // Allow on error
+
+      const data = await res.json();
+      setTestLimitInfo(data);
+
+      // Frontend safeguard: if frontend thinks user is logged in but backend treats as guest,
+      // the JWT token may be invalid/mismatched. Refresh user state and warn.
+      if (user && data.isGuest) {
+        console.warn("[Auth Mismatch] Frontend has user but backend returned guest. Refreshing session...");
+        await refreshUser();
+        toast.info("登录状态已刷新，请重新尝试");
+        // After refresh, allow the test to proceed; next check will use fresh state
+        return true;
+      }
+
+      // Check if blocked
+      if (data.isBlocked) {
+        return false;
+      }
+      return data.canTest;
     } catch (err) {
       console.error("Failed to check test limit:", err);
-      return true; // Allow on error
+      toast.error("测试次数检查失败，请稍后重试");
+      return true; // Allow on error so the user is not blocked by a transient network issue
     } finally {
       setCheckingLimit(false);
     }
@@ -295,9 +301,9 @@ export default function Home() {
       {/* 内容区域容器 - 全屏显示 */}
       <m.div
         className="fixed inset-0 z-20"
-        initial={{ opacity: 0, scale: 0.98 }}
-        animate={isHomeExiting ? { y: "-100%" } : { opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.7, ease: [0.65, 0, 0.35, 1] }}
+        initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.98 }}
+        animate={isHomeExiting ? (prefersReducedMotion ? { opacity: 0 } : { y: "-100%" }) : { opacity: 1, scale: 1, y: 0 }}
+        transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.7, ease: [0.65, 0, 0.35, 1] }}
       >
         <div className="h-full">
           <div className="relative z-20 w-full h-full bg-[#F8F7F3]">

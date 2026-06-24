@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Loader2, MapPin, ShieldCheck, ArrowRight } from "lucide-react";
-import { createPortal } from "react-dom";
-import { AnimatePresence, motion as m } from "framer-motion";
+import { Loader2, MapPin, ShieldCheck, ArrowRight, X } from "lucide-react";
+import { AnimatePresence, motion as m, useReducedMotion } from "framer-motion";
 import Image from "next/image";
 
 interface OnboardingFlowProps {
@@ -53,12 +52,7 @@ export function OnboardingFlowModal({
     const [locationView, setLocationView] = useState<LocationSubView>("main");
     const [isAgreed, setIsAgreed] = useState(false);
     const [maxVisitedIndex, setMaxVisitedIndex] = useState(0);
-    const [mounted, setMounted] = useState(false);
-
-    useEffect(() => {
-        setMounted(true);
-    }, []);
-
+    const prefersReducedMotion = useReducedMotion();
     const screens = getScreens();
     const totalScreens = screens.length;
     const currentScreen = screens[activeIndex];
@@ -153,17 +147,19 @@ export function OnboardingFlowModal({
     const getBgColor = () => "#FDFBF7";
 
     // Content entrance animation variants (horizontal to match slide direction)
-    const contentVariants = {
-        hidden: { opacity: 0, x: 20 },
-        visible: { opacity: 1, x: 0, transition: { duration: 0.6, delay: 0.35, ease: "easeOut" as const } },
-    };
+    const contentVariants = prefersReducedMotion
+        ? { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { duration: 0 } } }
+        : {
+            hidden: { opacity: 0, x: 20 },
+            visible: { opacity: 1, x: 0, transition: { duration: 0.6, delay: 0.35, ease: "easeOut" as const } },
+        };
 
     // Slide transition style (horizontal, vw-based to avoid subpixel jitter)
     const slideContainerStyle: React.CSSProperties = {
         width: `${totalScreens * 100}vw`,
         transform: `translateX(-${activeIndex * 100}vw)`,
-        transition: "transform 0.9s cubic-bezier(0.32, 0.72, 0, 1)",
-        willChange: "transform",
+        transition: prefersReducedMotion ? "none" : "transform 0.9s cubic-bezier(0.32, 0.72, 0, 1)",
+        willChange: prefersReducedMotion ? undefined : "transform",
         backfaceVisibility: "hidden",
     };
 
@@ -171,12 +167,36 @@ export function OnboardingFlowModal({
         <AnimatePresence>
             {isOpen && (
                 <m.div
-                    className="fixed inset-0 z-[100] overflow-hidden"
-                    initial={{ y: "100%" }}
-                    animate={{ y: 0 }}
-                    exit={{ y: "100%" }}
-                    transition={{ duration: 0.7, ease: [0.65, 0, 0.35, 1] }}
+                    className="fixed inset-0 z-[100002] overflow-hidden"
+                    initial={prefersReducedMotion ? { opacity: 0 } : { y: "100%" }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={prefersReducedMotion ? { opacity: 0 } : { y: "100%" }}
+                    transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.7, ease: [0.65, 0, 0.35, 1] }}
                 >
+                    {/* ---- App Bar / Header ---- */}
+                    <header className="fixed top-0 left-0 right-0 z-[100003] flex items-center justify-between px-6 md:px-12 lg:px-20 py-5 md:py-6 bg-[#FDFBF7]/95 backdrop-blur-sm border-b border-[#1A1A1A]/5">
+                        <button
+                            onClick={onClose}
+                            className="group flex items-center gap-2 text-[#1A1A1A]/80 hover:text-[#1A1A1A] transition-colors cursor-pointer bg-transparent border-none"
+                            aria-label="关闭"
+                        >
+                            <Image
+                                src="/NIHPLOD-logo.svg"
+                                alt="NIHPLOD"
+                                width={120}
+                                height={30}
+                                className="h-6 md:h-7 object-contain opacity-80 group-hover:opacity-100 transition-opacity"
+                            />
+                        </button>
+                        <button
+                            onClick={onClose}
+                            className="w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-full text-[#1A1A1A]/40 hover:text-[#1A1A1A] hover:bg-[#1A1A1A]/5 transition-all cursor-pointer bg-transparent border-none"
+                            aria-label="关闭"
+                        >
+                            <X className="w-5 h-5" strokeWidth={1.5} />
+                        </button>
+                    </header>
+
                     {/* ---- Slides Wrapper ---- */}
                     <div className="h-full flex relative z-10" style={slideContainerStyle}>
                         {/* Slide: Nickname */}
@@ -402,9 +422,13 @@ export function OnboardingFlowModal({
                                     </h3>
 
                                     <div className="p-6 mb-9 text-left max-w-md mx-auto">
-                                        <label className="flex items-start gap-4 cursor-pointer group">
-                                            <div className="mt-0.5 relative flex items-center">
+                                        <div className="flex items-start gap-4">
+                                            <label
+                                                htmlFor="legal-agree"
+                                                className="mt-0.5 relative flex items-center cursor-pointer group"
+                                            >
                                                 <input
+                                                    id="legal-agree"
                                                     type="checkbox"
                                                     checked={isAgreed}
                                                     onChange={(e) => setIsAgreed(e.target.checked)}
@@ -434,14 +458,37 @@ export function OnboardingFlowModal({
                                                         </m.svg>
                                                     )}
                                                 </m.div>
-                                            </div>
-                                            <span className="text-sm text-[#5E5E5E] leading-relaxed font-normal select-none">
+                                            </label>
+                                            <span
+                                                className="text-sm text-[#5E5E5E] leading-relaxed font-normal select-none cursor-pointer"
+                                                onClick={(e) => {
+                                                    if ((e.target as HTMLElement).tagName !== "A") {
+                                                        setIsAgreed((prev) => !prev);
+                                                    }
+                                                }}
+                                            >
                                                 请确认您已年满 14 周岁（未满 14 周岁已获得监护人许可），且已阅读并同意我们的
-                                                <a href="https://nihplod.cn/privacy" target="_blank" rel="noopener noreferrer" className="text-[#3D4430] font-medium underline underline-offset-4 mx-1">隐私政策</a>
+                                                <a
+                                                    href="https://nihplod.cn/privacy"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-[#3D4430] font-medium underline underline-offset-4 mx-1"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    隐私政策
+                                                </a>
                                                 与
-                                                <a href="https://nihplod.cn/terms" target="_blank" rel="noopener noreferrer" className="text-[#3D4430] font-medium underline underline-offset-4 mx-1">服务条款</a>。
+                                                <a
+                                                    href="https://nihplod.cn/terms"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-[#3D4430] font-medium underline underline-offset-4 mx-1"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    服务条款
+                                                </a>。
                                             </span>
-                                        </label>
+                                        </div>
                                     </div>
 
                                     <div className="flex flex-col items-center space-y-4">
@@ -541,16 +588,6 @@ export function OnboardingFlowModal({
                                 })}
                             </div>
                         </div>
-                    )}
-
-                    {/* Logo hit area rendered via portal so it can overlay the navbar */}
-                    {mounted && currentScreen !== "legal" && createPortal(
-                        <button
-                            onClick={onClose}
-                            className="fixed top-5 md:top-7 left-6 md:left-12 lg:left-20 z-[100001] h-8 md:h-9 w-32 bg-transparent border-none cursor-pointer"
-                            aria-label="关闭"
-                        />,
-                        document.body
                     )}
 
                 </m.div>
