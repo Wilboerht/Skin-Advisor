@@ -43,6 +43,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
     const addToast = React.useCallback(
         (message: string, type: ToastType, duration = 3000) => {
+            console.log("[Toast] addToast called:", message, type);
             const id = Math.random().toString(36).substring(2, 9);
             setToasts((prev) => [...prev, { id, message, type, duration }]);
 
@@ -82,6 +83,7 @@ function ToastContainer({
     toasts: Toast[];
     removeToast: (id: string) => void;
 }) {
+    console.log("[Toast] ToastContainer render, toasts count:", toasts.length);
     return (
         <div className="fixed top-4 left-1/2 z-[100000] flex w-full max-w-sm -translate-x-1/2 flex-col gap-2 px-4 sm:top-6">
             <AnimatePresence>

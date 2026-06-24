@@ -214,7 +214,9 @@ export default function Home() {
       if (!res.ok) {
         const errorText = await res.text().catch(() => "未知错误");
         console.error("Test limit check failed:", res.status, errorText);
+        console.log("About to call toast.error");
         toast.error("测试次数检查失败，请稍后重试或联系客服");
+        console.log("After toast.error");
         return true; // Allow on error so the user is not blocked by a transient server issue
       }
 

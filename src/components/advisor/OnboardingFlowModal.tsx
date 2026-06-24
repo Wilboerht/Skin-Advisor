@@ -184,8 +184,8 @@ export function OnboardingFlowModal({
                                 src="/NIHPLOD-logo.svg"
                                 alt="NIHPLOD"
                                 width={120}
-                                height={30}
-                                className="h-6 md:h-7 object-contain opacity-80 group-hover:opacity-100 transition-opacity"
+                                height={36}
+                                className="h-8 md:h-9 w-auto object-contain opacity-80 group-hover:opacity-100 transition-opacity"
                             />
                         </button>
                         <button
