@@ -545,16 +545,15 @@ export default function QuestionsPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 20 }}
-                            whileHover={!isNextDisabled() ? { scale: 1.02 } : {}}
                             whileTap={!isNextDisabled() ? { scale: 0.98 } : {}}
                             onClick={handleNext}
                             disabled={isNextDisabled()}
                             className={cn(
                                 "relative overflow-hidden w-full sm:w-auto text-[13px] sm:text-[13px] font-medium tracking-[0.15em] transition-colors duration-300 flex items-center justify-center gap-2",
-                                "py-3.5 sm:py-3 rounded-xl sm:rounded-md sm:px-9 border bg-transparent",
+                                "py-3.5 sm:py-3 sm:px-9 bg-transparent border-b",
                                 isNextDisabled()
-                                    ? "border-[#8B7355]/30 text-[#8B7355]/30 cursor-not-allowed"
-                                    : "border-[#8B7355] text-[#8B7355] hover:text-white before:absolute before:inset-0 before:bg-[#8B7355] before:w-0 hover:before:w-full before:transition-all before:duration-300 before:ease-out before:left-0 before:right-auto"
+                                    ? "text-[#00263e]/30 border-[#00263e]/30 cursor-not-allowed"
+                                    : "text-[#00263e] border-[#00263e] before:absolute before:inset-0 before:bg-[#00263e]/10 before:w-0 hover:before:w-full before:transition-all before:duration-300 before:ease-out before:left-0 before:right-auto"
                             )}
                         >
                             <span className="relative z-10">
