@@ -550,14 +550,14 @@ export default function QuestionsPage() {
                             onClick={handleNext}
                             disabled={isNextDisabled()}
                             className={cn(
-                                "w-full sm:w-auto text-[13px] sm:text-[13px] font-medium tracking-[0.15em] transition-all duration-300 flex items-center justify-center gap-2",
+                                "relative overflow-hidden w-full sm:w-auto text-[13px] sm:text-[13px] font-medium tracking-[0.15em] transition-colors duration-300 flex items-center justify-center gap-2",
                                 "py-3.5 sm:py-3 rounded-xl sm:rounded-md sm:px-9 border bg-transparent",
                                 isNextDisabled()
                                     ? "border-[#8B7355]/30 text-[#8B7355]/30 cursor-not-allowed"
-                                    : "border-[#8B7355] text-[#8B7355] hover:bg-[#8B7355] hover:text-white"
+                                    : "border-[#8B7355] text-[#8B7355] hover:text-white before:absolute before:inset-0 before:bg-[#8B7355] before:w-0 hover:before:w-full before:transition-all before:duration-300 before:ease-out before:left-0 before:right-auto"
                             )}
                         >
-                            <span>
+                            <span className="relative z-10">
                                 {(() => {
                                     if (isNextDisabled()) return "请至少选择一项";
                                     const selectedCount = (() => {
@@ -573,7 +573,7 @@ export default function QuestionsPage() {
                                     return `已选 ${selectedCount} 项，点击继续`;
                                 })()}
                             </span>
-                            {!isNextDisabled() && <ChevronRight className="h-4 w-4" />}
+                            {!isNextDisabled() && <ChevronRight className="relative z-10 h-4 w-4" />}
                         </m.button>
                     )}
                 </AnimatePresence>
