@@ -389,7 +389,7 @@ export default function QuestionsPage() {
                             alt="NIHPLOD"
                             width={120}
                             height={30}
-                            className="h-10 w-auto object-contain"
+                            className="h-8 md:h-9 w-auto object-contain"
                             priority
                         />
                         <button
@@ -456,7 +456,7 @@ export default function QuestionsPage() {
                     alt="NIHPLOD"
                     width={120}
                     height={30}
-                    className="h-10 w-auto object-contain"
+                    className="h-8 md:h-9 w-auto object-contain"
                     priority
                 />
 
