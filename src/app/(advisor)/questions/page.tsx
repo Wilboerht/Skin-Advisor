@@ -375,7 +375,7 @@ export default function QuestionsPage() {
                     className="h-screen overflow-hidden flex flex-col bg-[#F5F2E9] p-4"
                 >
                     {/* Top Bar */}
-                    <div className="relative flex items-center justify-center p-4 border-b border-[#3D4430]/5">
+                    <div className="relative flex items-center justify-center pt-4 pb-8 px-4 border-b border-[#3D4430]/5">
                         <button
                             onClick={() => router.push("/")}
                             className="absolute left-2 px-3 py-2 flex items-center gap-1.5 text-[#3D4430]/70 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5"
@@ -436,7 +436,7 @@ export default function QuestionsPage() {
         <div className="h-screen overflow-hidden flex flex-col bg-[#F5F2E9] p-4 text-[#1A1A1A]">
 
             {/* Top Bar: Back & Logo & Exit */}
-            <div className="relative flex items-center justify-center p-4 z-20 shrink-0 border-b border-[#3D4430]/5">
+            <div className="relative flex items-center justify-center pt-4 pb-8 px-4 z-20 shrink-0 border-b border-[#3D4430]/5">
                 <button
                     onClick={handleBack}
                     className={cn(
