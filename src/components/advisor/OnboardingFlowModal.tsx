@@ -205,9 +205,6 @@ export function OnboardingFlowModal({
                             <div
                                 className="h-full flex flex-col items-center justify-center px-6 relative"
                                 style={{ backgroundColor: getBgColor(), flex: "0 0 100vw", backfaceVisibility: "hidden", willChange: "transform" }}
-                                onClick={(e) => {
-                                    if (e.target === e.currentTarget) onClose();
-                                }}
                             >
                                 {/* Subtle texture overlay */}
                                 <div
@@ -269,15 +266,6 @@ export function OnboardingFlowModal({
                         <div
                             className="h-full flex flex-col items-center justify-center px-6 relative"
                             style={{ backgroundColor: getBgColor(), flex: "0 0 100vw", backfaceVisibility: "hidden", willChange: "transform" }}
-                            onClick={(e) => {
-                                if (e.target === e.currentTarget) {
-                                    if (locationView === "region") {
-                                        setLocationView("main");
-                                    } else {
-                                        onClose();
-                                    }
-                                }
-                            }}
                         >
                             <div
                                 className="absolute inset-0 opacity-[0.03] pointer-events-none"
