@@ -52,21 +52,23 @@ export function OptionCard({
             className={cn(
                 "group relative w-full rounded-lg md:rounded-xl text-left border px-4 sm:px-5 md:px-6 py-3 sm:py-4 md:py-5 flex items-center gap-3 sm:gap-4 backdrop-blur-md transition-all duration-300 overflow-hidden",
                 isSelected
-                    ? "bg-[#F8F5EE] border-[#8B7355] shadow-[0_4px_20px_-4px_rgba(139,115,85,0.12)]"
-                    : "bg-transparent border-[#D4CFC5] hover:border-[#8B7355]/40 hover:bg-[#F8F5EE]/50"
+                    ? "bg-[#F8F5EE] border-[#8B7355] shadow-[0_8px_30px_-8px_rgba(139,115,85,0.18)] ring-1 ring-[#8B7355]/10"
+                    : "bg-transparent border-[#D4CFC5]/50 hover:border-[#8B7355]/30 hover:bg-[#F8F5EE]/30"
             )}
         >
-            {/* Left accent bar */}
+            {/* Left accent bar - gradient, rounded, only visible when selected */}
             <div className={cn(
-                "absolute left-0 top-3 bottom-3 sm:top-4 sm:bottom-4 md:top-5 md:bottom-5 transition-all duration-300",
-                isSelected ? "w-[3px] md:w-[4px] bg-[#8B7355]" : "w-[2px] md:w-[3px] bg-transparent"
+                "absolute left-0 top-4 bottom-4 sm:top-5 sm:bottom-5 md:top-6 md:bottom-6 w-[2px] md:w-[3px] rounded-r-full transition-all duration-300",
+                isSelected
+                    ? "bg-gradient-to-b from-[#8B7355] via-[#A68B6A] to-[#8B7355] opacity-100"
+                    : "bg-transparent opacity-0"
             )} />
             <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none rounded-lg" />
             {/* Emoji - Simplified */}
             {emoji && (
                 <div className={cn(
-                    "text-2xl transition-opacity duration-300",
-                    isSelected ? "opacity-100" : "opacity-80 group-hover:opacity-100"
+                    "text-2xl transition-all duration-300",
+                    isSelected ? "opacity-100 scale-105" : "opacity-70 group-hover:opacity-100"
                 )}>
                     {emoji}
                 </div>
@@ -76,48 +78,39 @@ export function OptionCard({
             <div className="flex-1 min-w-0">
                 <p className={cn(
                     "text-[15px] md:text-base tracking-wide mb-0.5 md:mb-1 transition-colors duration-300",
-                    isSelected ? "text-[#1A1A1A] font-semibold" : "text-[#3D4430] font-medium"
+                    isSelected ? "text-[#1A1A1A] font-semibold" : "text-[#3D4430]/80 font-medium"
                 )}>
                     {label}
                 </p>
                 {description && (
                     <p className={cn(
-                        "text-xs md:text-sm font-light leading-relaxed transition-colors duration-300",
-                        isSelected ? "text-[#8B7355]/80" : "text-[#5E5E5E]/80"
+                        "text-xs md:text-sm leading-relaxed transition-colors duration-300",
+                        isSelected ? "text-[#8B7355] font-normal" : "text-[#5E5E5E]/60 font-light"
                     )}>
                         {description}
                     </p>
                 )}
             </div>
 
-            {/* Checkmark - Only shows when selected, very minimal */}
+            {/* Checkmark - Rounded, elevated when selected */}
             <m.div
                 className={cn(
-                    "w-5 h-5 md:w-6 md:h-6 rounded-sm border flex items-center justify-center transition-all duration-300",
+                    "w-5 h-5 md:w-6 md:h-6 rounded-full border flex items-center justify-center transition-all duration-300",
                     isSelected
-                        ? "border-[#8B7355] bg-[#8B7355] text-white"
+                        ? "border-[#8B7355] bg-[#8B7355] text-white shadow-[0_2px_8px_rgba(139,115,85,0.3)]"
                         : "border-[#D4CFC5] group-hover:border-[#8B7355]/40"
                 )}
-                animate={isSelected ? { scale: [1, 0.8, 1.15, 1] } : { scale: 1 }}
+                animate={isSelected ? { scale: [1, 0.85, 1.1, 1] } : { scale: 1 }}
                 transition={{ duration: 0.4, ease: "easeOut" }}
             >
                 {isSelected && (
-                    <m.svg
-                        className="w-3 h-3 text-white"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
+                    <m.div
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.2, ease: "easeOut", delay: 0.1 }}
                     >
-                        <m.polyline
-                            initial={{ pathLength: 0 }}
-                            animate={{ pathLength: 1 }}
-                            transition={{ duration: 0.2, ease: "easeOut", delay: 0.1 }}
-                            points="4 12 9 17 20 6"
-                        />
-                    </m.svg>
+                        <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                    </m.div>
                 )}
             </m.div>
 
