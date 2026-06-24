@@ -38,8 +38,7 @@ export function OptionCard({
                 ease: [0.2, 0.8, 0.2, 1], // Power easing
             }}
             whileHover={{ 
-                y: -6, 
-                // Removed scale to prevent text blurring, using purely translation and shadow for elevation
+                // Subtle hover: no lift, only color/shadow transition handled by Tailwind
                 transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] } 
             }}
             whileTap={{ scale: 0.98 }}
@@ -51,16 +50,16 @@ export function OptionCard({
                 perspective: "1000px"
             }}
             className={cn(
-                "group relative w-full rounded-lg md:rounded-xl text-left border px-4 sm:px-6 md:px-8 py-3 sm:py-5 md:py-6 flex items-center gap-3 sm:gap-5 backdrop-blur-md transition-all duration-300 overflow-hidden",
+                "group relative w-full rounded-lg md:rounded-xl text-left border px-4 sm:px-5 md:px-6 py-3 sm:py-4 md:py-5 flex items-center gap-3 sm:gap-4 backdrop-blur-md transition-all duration-300 overflow-hidden",
                 isSelected
-                    ? "bg-[#F8F5EE] border-[#8B7355]/40 shadow-[0_2px_12px_-2px_rgba(139,115,85,0.08)]"
-                    : "bg-[#FDFBF7] border-[#D4CFC5] hover:border-[#8B7355]/40 hover:bg-[#F8F5EE] shadow-[0_1px_4px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.06)]"
+                    ? "bg-[#F8F5EE] border-[#8B7355] shadow-[0_4px_20px_-4px_rgba(139,115,85,0.12)]"
+                    : "bg-transparent border-[#D4CFC5] hover:border-[#8B7355]/40 hover:bg-[#F8F5EE]/50"
             )}
         >
             {/* Left accent bar */}
             <div className={cn(
-                "absolute left-0 top-3 bottom-3 sm:top-4 sm:bottom-4 md:top-5 md:bottom-5 w-[2px] md:w-[3px] transition-all duration-300",
-                isSelected ? "bg-[#8B7355]" : "bg-transparent"
+                "absolute left-0 top-3 bottom-3 sm:top-4 sm:bottom-4 md:top-5 md:bottom-5 transition-all duration-300",
+                isSelected ? "w-[3px] md:w-[4px] bg-[#8B7355]" : "w-[2px] md:w-[3px] bg-transparent"
             )} />
             <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none rounded-lg" />
             {/* Emoji - Simplified */}

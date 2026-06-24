@@ -1,6 +1,8 @@
 "use client";
 
 import { m, AnimatePresence, useReducedMotion } from "framer-motion";
+import { ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { type Question } from "@/config/questions";
 import { OptionCard } from "./OptionCard";
 import {
@@ -14,6 +16,7 @@ interface QuestionStepProps {
   question: Question;
   selectedValue: string | string[] | null;
   onSelect: (value: string) => void;
+  onNext: () => void;
   direction: number; // 1: 向前, -1: 向后
   currentStep: number;
   totalSteps: number;
@@ -32,6 +35,7 @@ export function QuestionStep({
   question,
   selectedValue,
   onSelect,
+  onNext,
   direction,
   currentStep,
   totalSteps,
@@ -42,6 +46,18 @@ export function QuestionStep({
   // 根据用户偏好选择动画配置
   const variants = prefersReducedMotion ? reducedMotionVariants : slideVariants;
   const transition = prefersReducedMotion ? reducedMotionTransition : slideTransition;
+
+  const isNextDisabled = !selectedValue || (Array.isArray(selectedValue) && selectedValue.length === 0);
+  const selectedCount = Array.isArray(selectedValue) ? selectedValue.length : selectedValue ? 1 : 0;
+  const showNextButton = question.type === "multiple" || (currentStep === totalSteps && !isNextDisabled);
+
+  const nextLabel = (() => {
+    if (isNextDisabled) return "请至少选择一项";
+    if (currentStep === totalSteps) {
+      return question.type === "multiple" ? `已选 ${selectedCount} 项，开始面部检测` : "开始面部检测";
+    }
+    return `已选 ${selectedCount} 项，点击继续`;
+  })();
 
   return (
     <AnimatePresence mode="wait" custom={direction}>
@@ -57,30 +73,33 @@ export function QuestionStep({
       >
         {/* Header - Centered & Clean */}
         <div className="text-center mb-6 md:mb-8 pt-2 sm:pt-8 md:pt-4">
-          <div className="flex flex-wrap items-baseline justify-center gap-3 md:gap-4 mb-4">
-            {/* Progress Indicator */}
-            <m.div
-              className="flex items-end gap-1 md:gap-1.5 tracking-[0.1em] text-[#8B7355] font-light"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.05, duration: 0.5 }}
-            >
-              <span className="text-4xl md:text-5xl">NO.</span>
-              <span className="text-xl md:text-2xl">{String(currentStep).padStart(2, "0")}/{String(totalSteps).padStart(2, "0")}</span>
-            </m.div>
-            <m.h2
-              className="text-2xl md:text-3xl font-serif text-[#1A1A1A] leading-snug"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1, duration: 0.5 }}
-            >
-              {question.question}
-            </m.h2>
-          </div>
+          {/* Progress Indicator */}
+          <m.div
+            className="flex items-center justify-center gap-3 mb-3"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.05, duration: 0.5 }}
+          >
+            <span className="text-[11px] md:text-xs tracking-[0.25em] text-[#8B7355]/50 font-medium uppercase">
+              NO.
+            </span>
+            <span className="text-sm md:text-base text-[#8B7355] font-light tracking-wider">
+              {String(currentStep).padStart(2, "0")} / {String(totalSteps).padStart(2, "0")}
+            </span>
+          </m.div>
+
+          <m.h2
+            className="text-2xl md:text-3xl lg:text-4xl font-serif text-[#1A1A1A] leading-snug"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, duration: 0.5 }}
+          >
+            {question.question}
+          </m.h2>
 
           {question.subtext && (
             <m.p
-              className="text-sm md:text-[15px] text-[#5E5E5E] font-light leading-relaxed max-w-lg mx-auto text-center"
+              className="mt-3 text-sm md:text-[15px] text-[#5E5E5E] font-light leading-relaxed max-w-lg mx-auto text-center"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2, duration: 0.5 }}
@@ -111,6 +130,35 @@ export function QuestionStep({
             );
           })}
         </div>
+
+        {/* Next Button - Centered below options */}
+        <AnimatePresence>
+          {showNextButton && (
+            <m.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+              className="mt-8 md:mt-10 flex justify-center"
+            >
+              <button
+                type="button"
+                onClick={onNext}
+                disabled={isNextDisabled}
+                className={cn(
+                  "relative overflow-hidden text-[13px] font-medium tracking-[0.15em] transition-colors duration-300 flex items-center justify-center gap-2",
+                  "py-3 px-8 bg-transparent border-b",
+                  isNextDisabled
+                    ? "text-[#8B7355]/30 border-[#8B7355]/30 cursor-not-allowed"
+                    : "text-[#8B7355] border-[#8B7355] before:absolute before:inset-0 before:bg-[#8B7355]/10 before:w-0 hover:before:w-full before:transition-all before:duration-300 before:ease-out before:left-0 before:right-auto"
+                )}
+              >
+                <span className="relative z-10">{nextLabel}</span>
+                {!isNextDisabled && <ChevronRight className="relative z-10 h-4 w-4" />}
+              </button>
+            </m.div>
+          )}
+        </AnimatePresence>
       </m.div>
     </AnimatePresence>
   );

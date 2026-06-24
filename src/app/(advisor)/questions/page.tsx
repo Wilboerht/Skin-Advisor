@@ -9,7 +9,7 @@ import Link from "next/link";
 import { GenderSelection } from "@/components/advisor/GenderSelection";
 
 import { m, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, ArrowRight, LogOut } from "lucide-react";
+import { ChevronLeft, ArrowRight, LogOut } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { cn } from "@/lib/utils";
 import { preloadAllFaceModels } from "@/lib/preload-models";
@@ -503,6 +503,7 @@ export default function QuestionsPage() {
                                 question={currentQuestion}
                                 selectedValue={(answers[currentQuestion.fieldName] as string | string[] | null) || null}
                                 onSelect={handleSelect}
+                                onNext={handleNext}
                                 direction={direction}
                                 currentStep={currentStepIndex + 1}
                                 totalSteps={questions.length}
@@ -533,50 +534,6 @@ export default function QuestionsPage() {
                 )}
             </div>
 
-            {/* Floating Navigation Controls */}
-            {/* Right Corner: Next */}
-            <div className={cn(
-                "fixed z-30",
-                "bottom-6 left-6 right-6 sm:bottom-8 sm:left-auto sm:right-[5%] lg:bottom-12"
-            )}>
-                <AnimatePresence>
-                    {((currentQuestion.type === "multiple") || (currentStepIndex === questions.length - 1 && !isNextDisabled())) && (
-                        <m.button
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 20 }}
-                            whileTap={!isNextDisabled() ? { scale: 0.98 } : {}}
-                            onClick={handleNext}
-                            disabled={isNextDisabled()}
-                            className={cn(
-                                "relative overflow-hidden w-full sm:w-auto text-[13px] sm:text-[13px] font-medium tracking-[0.15em] transition-colors duration-300 flex items-center justify-center gap-2",
-                                "py-3.5 sm:py-3 sm:px-9 bg-transparent border-b",
-                                isNextDisabled()
-                                    ? "text-[#8B7355]/30 border-[#8B7355]/30 cursor-not-allowed"
-                                    : "text-[#8B7355] border-[#8B7355] before:absolute before:inset-0 before:bg-[#8B7355]/10 before:w-0 hover:before:w-full before:transition-all before:duration-300 before:ease-out before:left-0 before:right-auto"
-                            )}
-                        >
-                            <span className="relative z-10">
-                                {(() => {
-                                    if (isNextDisabled()) return "请至少选择一项";
-                                    const selectedCount = (() => {
-                                        const val = answers[currentQuestion.fieldName];
-                                        if (!val) return 0;
-                                        return Array.isArray(val) ? val.length : 1;
-                                    })();
-                                    if (currentStepIndex === questions.length - 1) {
-                                        return currentQuestion.type === "multiple"
-                                            ? `已选 ${selectedCount} 项，开始面部检测`
-                                            : "开始面部检测";
-                                    }
-                                    return `已选 ${selectedCount} 项，点击继续`;
-                                })()}
-                            </span>
-                            {!isNextDisabled() && <ChevronRight className="relative z-10 h-4 w-4" />}
-                        </m.button>
-                    )}
-                </AnimatePresence>
-            </div>
 
             {/* Simple Exit Modal */}
             <AnimatePresence>
