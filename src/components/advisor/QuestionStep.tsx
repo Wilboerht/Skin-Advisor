@@ -124,7 +124,7 @@ export function QuestionStep({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.3, delay: 0.1 }}
-              className="mt-8 md:mt-10 flex justify-center"
+              className="mt-6 md:mt-10 flex justify-center"
             >
               <button
                 type="button"
