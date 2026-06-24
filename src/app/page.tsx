@@ -45,10 +45,11 @@ const safeStorage = {
 const regionOptions = [
   { group: "华北/东北", regions: ["北京", "天津", "河北", "山西", "内蒙古", "黑龙江", "吉林", "辽宁"] },
   { group: "华东", regions: ["上海", "江苏", "浙江", "山东", "安徽", "江西"] },
-  { group: "华南", regions: ["广东", "广西", "海南", "福建", "台湾"] },
+  { group: "华南", regions: ["广东", "广西", "海南", "福建", "台湾", "香港", "澳门"] },
   { group: "华中/西南", regions: ["湖北", "湖南", "河南", "四川", "重庆", "贵州", "云南"] },
   { group: "西北", regions: ["陕西", "甘肃", "宁夏", "新疆"] },
   { group: "高原", regions: ["西藏", "青海"] },
+  { group: "海外", regions: ["其它"] },
 ];
 
 export default function Home() {

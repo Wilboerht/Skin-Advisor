@@ -356,16 +356,14 @@ export function OnboardingFlowModal({
                                                 />
                                                 {/* Decorative watermark placeholder */}
                                                 {!regionSearch && (
-                                                    <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
-                                                        <div className="w-7 h-7 rounded-full bg-[#8B7355]/80 flex items-center justify-center overflow-hidden">
-                                                            <Image
-                                                                src="/images/watermark.png"
-                                                                alt=""
-                                                                width={18}
-                                                                height={18}
-                                                                className="w-[18px] h-[18px] object-contain opacity-90 drop-shadow-sm"
-                                                            />
-                                                        </div>
+                                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                                        <Image
+                                                            src="/images/watermark.png"
+                                                            alt=""
+                                                            width={20}
+                                                            height={20}
+                                                            className="w-5 h-5 object-contain opacity-90 drop-shadow-[0_1px_1px_rgba(61,68,48,0.4)]"
+                                                        />
                                                     </div>
                                                 )}
                                                 {regionSearch && (
