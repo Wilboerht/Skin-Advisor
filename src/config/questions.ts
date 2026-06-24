@@ -28,7 +28,7 @@ export interface Question {
 export const DEFAULT_QUESTIONS: Question[] = [
 
     {
-        id: "q1",
+        id: "skinType",
         fieldName: "skinType",
         question: "您感觉您的肤质属于哪一种？",
         type: "single",
@@ -42,10 +42,10 @@ export const DEFAULT_QUESTIONS: Question[] = [
         ],
     },
     {
-        id: "q2",
+        id: "primaryConcern",
         fieldName: "primaryConcern",
         question: "您最想改善的肌肤问题是？",
-        subtext: "可多选 (最多3项)",
+        subtext: "可多选（最多 3 项），完成后点击下一步",
         type: "multiple",
         options: [
             { value: "aging", label: "细纹/松弛", description: "眼周、法令纹、嘴角纹路" },
@@ -58,7 +58,7 @@ export const DEFAULT_QUESTIONS: Question[] = [
     },
 
     {
-        id: "q3b",
+        id: "ageRange",
         fieldName: "ageRange",
         question: "您的年龄段是？",
         type: "single",
@@ -72,7 +72,7 @@ export const DEFAULT_QUESTIONS: Question[] = [
         ],
     },
     {
-        id: "q4",
+        id: "pregnancy",
         fieldName: "pregnancy",
         question: "您目前处于备孕期、孕期或哺乳期吗？",
         type: "single",
@@ -82,7 +82,7 @@ export const DEFAULT_QUESTIONS: Question[] = [
         ],
     },
     {
-        id: "q5",
+        id: "medicalBeauty",
         fieldName: "medicalBeauty",
         question: "近三个月是否做过光电/酸类医美项目？",
         type: "single",
@@ -94,7 +94,7 @@ export const DEFAULT_QUESTIONS: Question[] = [
         ],
     },
     {
-        id: "q6",
+        id: "sleepQuality",
         fieldName: "sleepQuality",
         question: "您最近的睡眠质量如何？",
         type: "single",
@@ -105,7 +105,7 @@ export const DEFAULT_QUESTIONS: Question[] = [
         ],
     },
     {
-        id: "q7",
+        id: "stressLevel",
         fieldName: "stressLevel",
         question: "您最近的工作/生活压力感受？",
         type: "single",
@@ -116,10 +116,10 @@ export const DEFAULT_QUESTIONS: Question[] = [
         ],
     },
     {
-        id: "q8",
+        id: "menstrualCycle",
         fieldName: "menstrualCycle",
         question: "您当前的生理周期阶段是？",
-        subtext: "用于精准匹配'生理期护肤'模式",
+        subtext: "用于精准匹配生理期护肤模式",
         type: "single",
         options: [
             { value: "na", label: "不适用", description: "男性或绝经期等" },
@@ -129,10 +129,10 @@ export const DEFAULT_QUESTIONS: Question[] = [
         ],
     },
     {
-        id: "q9",
+        id: "allergies",
         fieldName: "allergies",
         question: "您有以下过敏情况吗？",
-        subtext: "多选 (无可跳过或选没有)",
+        subtext: "可多选，无过敏可跳过或选「没有过敏史」，完成后点击下一步",
         type: "multiple",
         options: [
             { value: "none", label: "没有过敏史", description: "从未对护肤品或成分过敏" },
@@ -144,7 +144,7 @@ export const DEFAULT_QUESTIONS: Question[] = [
         ],
     },
     {
-        id: "q11",
+        id: "budget",
         fieldName: "budget",
         question: "您的护肤预算是？",
         type: "single",

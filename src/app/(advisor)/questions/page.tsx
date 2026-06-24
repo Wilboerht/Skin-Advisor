@@ -556,7 +556,22 @@ export default function QuestionsPage() {
                                     : "bg-[#7A6B5E] text-[#FDFBF7] hover:bg-[#6A5B4E] hover:shadow-[0_12px_32px_-8px_rgba(74,55,40,0.22)] sm:bg-[#4A3728] sm:hover:bg-[#3D2E20] sm:hover:shadow-[0_12px_32px_-8px_rgba(74,55,40,0.35)]"
                             )}
                         >
-                            <span>{currentStepIndex === questions.length - 1 ? "面部检测" : "下一步"}</span>
+                            <span>
+                                {(() => {
+                                    if (isNextDisabled()) return "请至少选择一项";
+                                    const selectedCount = (() => {
+                                        const val = answers[currentQuestion.fieldName];
+                                        if (!val) return 0;
+                                        return Array.isArray(val) ? val.length : 1;
+                                    })();
+                                    if (currentStepIndex === questions.length - 1) {
+                                        return currentQuestion.type === "multiple"
+                                            ? `已选 ${selectedCount} 项，开始面部检测`
+                                            : "开始面部检测";
+                                    }
+                                    return `已选 ${selectedCount} 项，点击继续`;
+                                })()}
+                            </span>
                             {!isNextDisabled() && <ChevronRight className="h-4 w-4" />}
                         </m.button>
                     )}
