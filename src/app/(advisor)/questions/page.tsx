@@ -9,8 +9,7 @@ import Link from "next/link";
 import { GenderSelection } from "@/components/advisor/GenderSelection";
 
 import { m, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
-import { HomeSvg } from "@/components/icons/HomeSvg";
+import { ChevronLeft, ChevronRight, ArrowRight, LogOut } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { cn } from "@/lib/utils";
 import { preloadAllFaceModels } from "@/lib/preload-models";
@@ -376,14 +375,14 @@ export default function QuestionsPage() {
                     className="h-screen overflow-hidden flex flex-col bg-[#F5F2E9] p-4"
                 >
                     {/* Top Bar */}
-                    <div className="relative flex items-center justify-center p-4">
+                    <div className="relative flex items-center justify-center p-4 border-b border-[#3D4430]/5">
                         <button
                             onClick={() => router.push("/")}
-                            className="absolute left-2 px-3 py-2 flex items-center gap-1.5 text-[#3D4430]/40 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5"
-                            aria-label="返回"
+                            className="absolute left-2 px-3 py-2 flex items-center gap-1.5 text-[#3D4430]/70 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5"
+                            aria-label="回首页"
                         >
-                            <ChevronLeft className="w-6 h-6" strokeWidth={1.5} />
-                            <span className="text-[14px] font-medium tracking-wide">返回</span>
+                            <ChevronLeft className="w-5 h-5" strokeWidth={1.5} />
+                            <span className="hidden sm:inline text-[14px] font-medium tracking-wide">回首页</span>
                         </button>
                         <Image
                             src="/NIHPLOD-logo.svg"
@@ -395,11 +394,11 @@ export default function QuestionsPage() {
                         />
                         <button
                             onClick={() => router.push("/")}
-                            className="absolute right-2 px-3 py-2 flex items-center gap-1.5 text-[#3D4430]/40 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5"
+                            className="absolute right-2 px-3 py-2 flex items-center gap-1.5 text-[#3D4430]/70 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5"
                             aria-label="回到首页"
                         >
-                            <HomeSvg className="w-6 h-6" />
-                            <span className="text-[14px] font-medium tracking-wide">退出</span>
+                            <LogOut className="w-5 h-5" strokeWidth={1.5} />
+                            <span className="hidden sm:inline text-[14px] font-medium tracking-wide">退出</span>
                         </button>
                     </div>
 
@@ -437,17 +436,19 @@ export default function QuestionsPage() {
         <div className="h-screen overflow-hidden flex flex-col bg-[#F5F2E9] p-4 text-[#1A1A1A]">
 
             {/* Top Bar: Back & Logo & Exit */}
-            <div className="relative flex items-center justify-center p-4 z-20 shrink-0">
+            <div className="relative flex items-center justify-center p-4 z-20 shrink-0 border-b border-[#3D4430]/5">
                 <button
                     onClick={handleBack}
                     className={cn(
-                        "absolute left-2 px-3 py-2 flex items-center gap-1.5 text-[#3D4430]/40 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5",
+                        "absolute left-2 px-3 py-2 flex items-center gap-1.5 text-[#3D4430]/70 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5",
                         (currentStepIndex === 0 && !gender) ? "opacity-0 pointer-events-none" : "opacity-100"
                     )}
-                    aria-label="上一题"
+                    aria-label={!gender ? "回首页" : "上一题"}
                 >
-                    <ChevronLeft className="w-6 h-6" strokeWidth={1.5} />
-                    <span className="text-[14px] font-medium tracking-wide">返回</span>
+                    <ChevronLeft className="w-5 h-5" strokeWidth={1.5} />
+                    <span className="hidden sm:inline text-[14px] font-medium tracking-wide">
+                        {!gender ? "回首页" : "上一题"}
+                    </span>
                 </button>
 
                 <Image
@@ -462,10 +463,10 @@ export default function QuestionsPage() {
                 <button
                     onClick={() => setShowExitConfirm(true)}
                     aria-label="退出测评"
-                    className="absolute right-2 px-3 py-2 flex items-center gap-1.5 text-[#3D4430]/40 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5"
+                    className="absolute right-2 px-3 py-2 flex items-center gap-1.5 text-[#3D4430]/70 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5"
                 >
-                    <HomeSvg className="w-6 h-6" />
-                    <span className="text-[14px] font-medium tracking-wide">退出</span>
+                    <LogOut className="w-5 h-5" strokeWidth={1.5} />
+                    <span className="hidden sm:inline text-[14px] font-medium tracking-wide">退出</span>
                 </button>
             </div>
 
