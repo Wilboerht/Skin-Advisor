@@ -352,8 +352,20 @@ export function OnboardingFlowModal({
                                                     value={regionSearch}
                                                     onChange={(e) => setRegionSearch(e.target.value)}
                                                     placeholder="搜索省份 / 城市"
-                                                    className="w-full bg-white/60 border border-[#3D4430]/10 rounded-full py-2.5 px-4 text-sm text-[#1A1A1A] placeholder:text-[#3D4430]/30 focus:outline-none focus:border-[#8B7355]/40 transition-colors"
+                                                    className="w-full bg-white/60 border border-[#3D4430]/10 rounded-full py-2.5 pl-4 pr-10 text-sm text-[#1A1A1A] placeholder:text-[#3D4430]/30 focus:outline-none focus:border-[#8B7355]/40 transition-colors"
                                                 />
+                                                {/* Decorative watermark placeholder */}
+                                                {!regionSearch && (
+                                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-30">
+                                                        <Image
+                                                            src="/images/watermark.png"
+                                                            alt=""
+                                                            width={16}
+                                                            height={16}
+                                                            className="w-4 h-4 object-contain"
+                                                        />
+                                                    </div>
+                                                )}
                                                 {regionSearch && (
                                                     <button
                                                         onClick={() => setRegionSearch("")}
