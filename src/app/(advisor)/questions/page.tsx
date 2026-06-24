@@ -30,7 +30,6 @@ export default function QuestionsPage() {
     const startStepIndex = useRef(0);
     const [showQualityWarning, setShowQualityWarning] = useState(false);
     const [pendingAnswers, setPendingAnswers] = useState<Record<string, unknown> | null>(null);
-    const [showFadeMask, setShowFadeMask] = useState(false);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     // 从 API 获取问题列表（数据库优先，静态降级）
@@ -322,47 +321,6 @@ export default function QuestionsPage() {
         return () => window.removeEventListener("keydown", handleKeyDown);
     }, []);
 
-    // 底部渐隐遮罩：一屏能显示完时不显示；翻到最底下时消失
-    useEffect(() => {
-        const check = () => {
-            const container = scrollContainerRef.current;
-            if (!container) return;
-
-            const scrollHeight = container.scrollHeight;
-            const clientHeight = container.clientHeight;
-            const scrollTop = container.scrollTop;
-
-            // 一屏能显示完，不显示遮罩
-            if (scrollHeight <= clientHeight + 1) {
-                setShowFadeMask(false);
-                return;
-            }
-
-            // 滚动到底部附近，隐藏遮罩
-            const nearBottom = scrollTop + clientHeight >= scrollHeight - 10;
-            setShowFadeMask(!nearBottom);
-        };
-
-        check();
-        const container = scrollContainerRef.current;
-        if (container) {
-            container.addEventListener("scroll", check, { passive: true });
-        }
-        window.addEventListener("resize", check);
-
-        const observer = new ResizeObserver(check);
-        if (container) {
-            observer.observe(container);
-        }
-
-        return () => {
-            if (container) {
-                container.removeEventListener("scroll", check);
-            }
-            window.removeEventListener("resize", check);
-            observer.disconnect();
-        };
-    }, [currentStepIndex, questions.length, answers]);
 
     // 如果没有选择性别，显示隐私同意或性别选择
     if (!gender) {
@@ -512,11 +470,6 @@ export default function QuestionsPage() {
                     </AnimatePresence>
                 </div>
 
-                {/* Bottom Fade Mask - 底部渐隐遮挡 */}
-                <div className={cn(
-                    "absolute bottom-0 left-0 right-0 h-24 pointer-events-none z-20 bg-gradient-to-t from-[#F0EDE1] via-[#F0EDE1]/80 to-transparent transition-opacity duration-300",
-                    showFadeMask ? "opacity-100" : "opacity-0"
-                )} />
             </div>
 
             {/* Footer */}
