@@ -255,7 +255,7 @@ export function OnboardingFlowModal({
                                     <button
                                         onClick={handleNicknameNext}
                                         disabled={!nickname.trim()}
-                                        className="group relative inline-flex items-center justify-center gap-3 px-12 py-4 sm:px-16 border border-[#3D4430] text-[#3D4430] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500 hover:bg-[#3D4430] hover:text-white"
+                                        className="group relative inline-flex items-center justify-center gap-3 px-12 py-4 sm:px-16 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500 hover:bg-[#1B3A5C] hover:text-white"
                                     >
                                         <span>下一步</span>
                                         <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-2" />
@@ -304,7 +304,7 @@ export function OnboardingFlowModal({
                                             <button
                                                 onClick={handleLocationAcceptWrapper}
                                                 disabled={isLocating}
-                                                className="group relative inline-flex items-center justify-center gap-3 px-12 py-4 sm:px-16 border border-[#3D4430] text-[#3D4430] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium disabled:opacity-40 disabled:cursor-wait cursor-pointer transition-all duration-500 hover:bg-[#3D4430] hover:text-white"
+                                                className="group relative inline-flex items-center justify-center gap-3 px-12 py-4 sm:px-16 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium disabled:opacity-40 disabled:cursor-wait cursor-pointer transition-all duration-500 hover:bg-[#1B3A5C] hover:text-white"
                                             >
                                                 {isLocating ? (
                                                     <>
@@ -520,7 +520,7 @@ export function OnboardingFlowModal({
                                         <button
                                             onClick={handleLegalSubmit}
                                             disabled={!isAgreed}
-                                            className="group relative inline-flex items-center justify-center gap-3 px-12 py-4 sm:px-16 border border-[#3D4430] text-[#3D4430] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500 hover:bg-[#3D4430] hover:text-white"
+                                            className="group relative inline-flex items-center justify-center gap-3 px-12 py-4 sm:px-16 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500 hover:bg-[#1B3A5C] hover:text-white"
                                         >
                                             <span>开始测试</span>
                                             <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-2" />
