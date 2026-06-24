@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Loader2, MapPin, ShieldCheck, ArrowRight, X } from "lucide-react";
+import { Loader2, MapPin, ShieldCheck, ArrowRight, LogOut } from "lucide-react";
 import { AnimatePresence, motion as m, useReducedMotion } from "framer-motion";
 import Image from "next/image";
 
@@ -190,10 +190,11 @@ export function OnboardingFlowModal({
                         </button>
                         <button
                             onClick={onClose}
-                            className="w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-full text-[#1A1A1A]/40 hover:text-[#1A1A1A] hover:bg-[#1A1A1A]/5 transition-all cursor-pointer bg-transparent border-none"
-                            aria-label="关闭"
+                            className="flex items-center gap-2 px-4 py-2 rounded-full text-[#1A1A1A]/60 hover:text-[#1A1A1A] hover:bg-[#1A1A1A]/5 transition-all cursor-pointer bg-transparent border-none"
+                            aria-label="退出"
                         >
-                            <X className="w-5 h-5" strokeWidth={1.5} />
+                            <LogOut className="w-4 h-4" strokeWidth={1.5} />
+                            <span className="text-sm tracking-wide">退出</span>
                         </button>
                     </header>
 
