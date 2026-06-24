@@ -73,21 +73,6 @@ export function QuestionStep({
       >
         {/* Header - Centered & Clean */}
         <div className="text-center mb-6 md:mb-8 pt-2 sm:pt-8 md:pt-4">
-          {/* Progress Indicator */}
-          <m.div
-            className="flex items-center justify-center gap-3 mb-3"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.05, duration: 0.5 }}
-          >
-            <span className="text-[11px] md:text-xs tracking-[0.25em] text-[#8B7355]/50 font-medium uppercase">
-              NO.
-            </span>
-            <span className="text-sm md:text-base text-[#8B7355] font-light tracking-wider">
-              {String(currentStep).padStart(2, "0")} / {String(totalSteps).padStart(2, "0")}
-            </span>
-          </m.div>
-
           <m.h2
             className="text-2xl md:text-3xl lg:text-4xl font-serif text-[#1A1A1A] leading-snug"
             initial={{ opacity: 0, y: 10 }}
