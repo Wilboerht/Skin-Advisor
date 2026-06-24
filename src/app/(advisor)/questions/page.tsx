@@ -372,7 +372,7 @@ export default function QuestionsPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="h-screen overflow-hidden flex flex-col bg-[#F5F2E9] p-4"
+                    className="h-screen overflow-hidden flex flex-col bg-[#F5F2E9]"
                 >
                     {/* Top Bar */}
                     <div className="relative flex items-center justify-center py-5 md:py-7 px-6 md:px-12 lg:px-20 border-b border-[#3D4430]/5">
@@ -433,7 +433,7 @@ export default function QuestionsPage() {
     if (!currentQuestion) return null;
 
     return (
-        <div className="h-screen overflow-hidden flex flex-col bg-[#F5F2E9] p-4 text-[#1A1A1A]">
+        <div className="h-screen overflow-hidden flex flex-col bg-[#F5F2E9] text-[#1A1A1A]">
 
             {/* Top Bar: Back & Logo & Exit */}
             <div className="relative flex items-center justify-center py-5 md:py-7 px-6 md:px-12 lg:px-20 z-20 shrink-0 border-b border-[#3D4430]/5">
@@ -537,7 +537,7 @@ export default function QuestionsPage() {
             {/* Right Corner: Next */}
             <div className={cn(
                 "fixed z-30",
-                "bottom-4 left-4 right-4 sm:bottom-8 sm:left-auto sm:right-[5%] lg:bottom-12"
+                "bottom-6 left-6 right-6 sm:bottom-8 sm:left-auto sm:right-[5%] lg:bottom-12"
             )}>
                 <AnimatePresence>
                     {((currentQuestion.type === "multiple") || (currentStepIndex === questions.length - 1 && !isNextDisabled())) && (
