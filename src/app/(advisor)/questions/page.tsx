@@ -521,17 +521,15 @@ export default function QuestionsPage() {
 
             {/* Footer */}
             <div className="py-6 opacity-40 shrink-0 text-center px-4">
-                {currentQuestion.type !== "multiple" && (
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-[10px] sm:text-[11px] font-light tracking-widest text-[#1A1A1A] leading-tight">
-                        <p>&copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
-                        <span className="hidden sm:inline text-[#1A1A1A]/30">·</span>
-                        <div className="flex items-center gap-4">
-                            <Link href="/privacy" className="hover:text-[#3D4430] transition-colors duration-300">隐私政策</Link>
-                            <span className="text-[#1A1A1A]/30">·</span>
-                            <Link href="/terms" className="hover:text-[#3D4430] transition-colors duration-300">服务条款</Link>
-                        </div>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-[10px] sm:text-[11px] font-light tracking-widest text-[#1A1A1A] leading-tight">
+                    <p>&copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
+                    <span className="hidden sm:inline text-[#1A1A1A]/30">·</span>
+                    <div className="flex items-center gap-4">
+                        <Link href="/privacy" className="hover:text-[#3D4430] transition-colors duration-300">隐私政策</Link>
+                        <span className="text-[#1A1A1A]/30">·</span>
+                        <Link href="/terms" className="hover:text-[#3D4430] transition-colors duration-300">服务条款</Link>
                     </div>
-                )}
+                </div>
             </div>
 
 
