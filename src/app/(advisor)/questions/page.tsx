@@ -402,7 +402,7 @@ export default function QuestionsPage() {
                         </button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto scrollbar-hide w-full max-w-4xl mx-auto px-4">
+                    <div className="flex-1 overflow-y-auto scrollbar-hide w-full max-w-5xl mx-auto px-4 md:px-8">
                         <div className="min-h-full flex items-center justify-center">
                             <GenderSelection onSelect={handleGenderSelect} />
                         </div>
@@ -487,7 +487,7 @@ export default function QuestionsPage() {
             )}
 
             {/* Main Content Area */}
-            <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scrollbar-hide relative w-full max-w-4xl mx-auto z-10 px-4 mb-4">
+            <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scrollbar-hide relative w-full max-w-5xl mx-auto z-10 px-4 md:px-8 mb-4">
                 <div className="min-h-full flex items-center justify-center">
                     <AnimatePresence mode="wait" custom={direction}>
                         <m.div
@@ -552,8 +552,8 @@ export default function QuestionsPage() {
                                 "relative overflow-hidden w-full sm:w-auto text-[13px] sm:text-[13px] font-medium tracking-[0.15em] transition-colors duration-300 flex items-center justify-center gap-2",
                                 "py-3.5 sm:py-3 sm:px-9 bg-transparent border-b",
                                 isNextDisabled()
-                                    ? "text-[#00263e]/30 border-[#00263e]/30 cursor-not-allowed"
-                                    : "text-[#00263e] border-[#00263e] before:absolute before:inset-0 before:bg-[#00263e]/10 before:w-0 hover:before:w-full before:transition-all before:duration-300 before:ease-out before:left-0 before:right-auto"
+                                    ? "text-[#8B7355]/30 border-[#8B7355]/30 cursor-not-allowed"
+                                    : "text-[#8B7355] border-[#8B7355] before:absolute before:inset-0 before:bg-[#8B7355]/10 before:w-0 hover:before:w-full before:transition-all before:duration-300 before:ease-out before:left-0 before:right-auto"
                             )}
                         >
                             <span className="relative z-10">

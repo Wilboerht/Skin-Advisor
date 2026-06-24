@@ -56,8 +56,8 @@ export function QuestionStep({
         className="w-full"
       >
         {/* Header - Centered & Clean */}
-        <div className="text-left mb-8 md:mb-10 pt-4 sm:pt-12 md:pt-8">
-          <div className="flex flex-wrap items-baseline gap-3 md:gap-4 mb-4">
+        <div className="text-center mb-6 md:mb-8 pt-2 sm:pt-8 md:pt-4">
+          <div className="flex flex-wrap items-baseline justify-center gap-3 md:gap-4 mb-4">
             {/* Progress Indicator */}
             <m.div
               className="flex items-end gap-1 md:gap-1.5 tracking-[0.1em] text-[#8B7355] font-light"
@@ -80,7 +80,7 @@ export function QuestionStep({
 
           {question.subtext && (
             <m.p
-              className="text-sm md:text-[15px] text-[#5E5E5E] font-light leading-relaxed max-w-lg mx-auto"
+              className="text-sm md:text-[15px] text-[#5E5E5E] font-light leading-relaxed max-w-lg mx-auto text-center"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2, duration: 0.5 }}
@@ -91,7 +91,7 @@ export function QuestionStep({
         </div>
 
         {/* Options - Grid Layout on Desktop */}
-        <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6">
+        <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
           {question.options.map((option, index) => {
             const isSelected = Array.isArray(selectedValue)
               ? selectedValue.includes(option.value)
