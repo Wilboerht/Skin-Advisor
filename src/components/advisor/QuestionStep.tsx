@@ -72,7 +72,7 @@ export function QuestionStep({
         className="w-full"
       >
         {/* Header - Centered & Clean */}
-        <div className="text-center mb-6 md:mb-8 pt-2 sm:pt-8 md:pt-4">
+        <div className="text-center mb-6 md:mb-8 pt-8 sm:pt-10 md:pt-6">
           <m.h2
             className="text-2xl md:text-3xl lg:text-4xl font-serif text-[#1A1A1A] leading-snug"
             initial={{ opacity: 0, y: 10 }}
