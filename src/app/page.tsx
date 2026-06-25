@@ -79,6 +79,15 @@ export default function Home() {
     router.prefetch("/questions");
   }, [initSession, router]);
 
+  // 首页锁定 body 滚动，防止 iPhone 上出现滚动条 / overscroll
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
+
   // Nickname state
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
   const [showGuideModal, setShowGuideModal] = useState(false);
