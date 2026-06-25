@@ -131,11 +131,11 @@ export function QuestionStep({
                 onClick={onNext}
                 disabled={isNextDisabled}
                 className={cn(
-                  "relative overflow-hidden text-[13px] font-medium tracking-[0.15em] transition-colors duration-300 flex items-center justify-center gap-2",
+                  "text-[13px] font-medium tracking-[0.15em] transition-colors duration-300 flex items-center justify-center gap-2",
                   "py-3 px-8 bg-transparent border-b",
                   isNextDisabled
                     ? "text-[#8B7355]/30 border-[#8B7355]/30 cursor-not-allowed"
-                    : "text-[#8B7355] border-[#8B7355] before:absolute before:inset-0 before:bg-[#8B7355]/10 before:w-0 hover:before:w-full before:transition-all before:duration-300 before:ease-out before:left-0 before:right-auto"
+                    : "text-[#8B7355] border-[#8B7355] hover:text-[#5C4A35] hover:border-[#5C4A35]"
                 )}
               >
                 <span className="relative z-10">{nextLabel}</span>
