@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FaceCapture, type FaceCaptureImages } from "@/components/advisor/FaceCapture";
 import { m, AnimatePresence } from "framer-motion";
-import { ChevronLeft, Loader2 } from "lucide-react";
-import Link from "next/link";
+import { ChevronLeft, Loader2, LogOut, ArrowRight } from "lucide-react";
+import Image from "next/image";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useToast } from "@/components/ui/Toast";
 import { ScanGuideModal } from "@/components/advisor/ScanGuideModal";
@@ -19,6 +19,7 @@ export default function FaceScanPage() {
     const [isModalOpen, setIsModalOpen] = useState(true);
     const [isPreparing, setIsPreparing] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showExitConfirm, setShowExitConfirm] = useState(false);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [preloadedFaceApi, setPreloadedFaceApi] = useState<any>(null);
 
@@ -168,30 +169,35 @@ export default function FaceScanPage() {
     };
 
     return (
-        <div className="relative min-h-screen w-full bg-transparent flex flex-col items-center p-4">
-            {/* Top Navigation Bar: 90% Width */}
-            <header className="w-full flex justify-center z-[110] shrink-0">
-                <div className="w-[90%] py-6 flex items-center justify-between relative">
-                    <Link
-                        href="/questions"
-                        className="flex items-center justify-center w-10 h-10 rounded-full text-[#1A1A1A]/60 hover:text-[#1A1A1A] hover:bg-[#4A3728]/5 active:bg-[#4A3728]/10 transition-all duration-300 sm:px-5 sm:py-2.5 sm:rounded-full sm:bg-white/40 sm:backdrop-blur-md sm:border sm:border-white/40 sm:shadow-sm sm:gap-2 sm:w-auto sm:h-auto sm:hover:bg-white/80 sm:hover:shadow-xl"
-                    >
-                        <ChevronLeft className="h-5 w-5 sm:h-4 sm:w-4" />
-                        <span className="hidden sm:inline text-xs font-bold tracking-widest uppercase">返回</span>
-                    </Link>
+        <div className="relative h-screen overflow-hidden w-full bg-[#F5F2E9] flex flex-col items-center">
+            {/* Top Bar —— 复用 /questions 统一样式 */}
+            <header className={`w-full relative flex items-center justify-center py-5 md:py-7 px-4 md:px-12 lg:px-20 z-[310] shrink-0 border-b border-[#3D4430]/5 transition-colors duration-300 ${isModalOpen ? 'bg-[#FAF8F5]' : 'bg-[#F5F2E9]'}`}>
+                <button
+                    onClick={() => router.push("/questions")}
+                    className="absolute left-4 md:left-12 lg:left-20 px-3 py-2 flex items-center gap-1.5 text-[#3D4430]/70 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5"
+                    aria-label="返回"
+                >
+                    <ChevronLeft className="w-5 h-5" strokeWidth={1.5} />
+                    <span className="hidden sm:inline text-[14px] font-medium tracking-wide">返回</span>
+                </button>
 
-                    {/* Centered Brand Logo */}
-                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none flex items-center justify-center">
-                        <img
-                            src="/NIHPLOD-logo.svg"
-                            alt="NIHPLOD 旎柏"
-                            className="h-7 md:h-8 object-contain opacity-90 mix-blend-multiply"
-                        />
-                    </div>
+                <Image
+                    src="/NIHPLOD-logo.svg"
+                    alt="NIHPLOD"
+                    width={120}
+                    height={30}
+                    className="h-8 md:h-9 w-auto object-contain"
+                    priority
+                />
 
-                    {/* Placeholder to maintain flex balance */}
-                    <div className="w-10 h-10" />
-                </div>
+                <button
+                    onClick={() => setShowExitConfirm(true)}
+                    className="absolute right-4 md:right-12 lg:right-20 px-3 py-2 flex items-center gap-1.5 text-[#3D4430]/70 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5"
+                    aria-label="退出测试"
+                >
+                    <LogOut className="w-5 h-5" strokeWidth={1.5} />
+                    <span className="hidden sm:inline text-[14px] font-medium tracking-wide">退出</span>
+                </button>
             </header>
 
             {/* Main Content: Mirror Container pushed to center */}
@@ -202,7 +208,7 @@ export default function FaceScanPage() {
                             initial={{ opacity: 0, scale: 0.9, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                            className="relative w-full max-w-[480px] aspect-[3/4] max-h-[70vh] bg-black rounded-[2rem] overflow-hidden shadow-2xl ring-8 ring-white/50 z-10 flex flex-col"
+                            className="relative w-full max-w-[480px] aspect-[3/4] max-h-[70vh] bg-black rounded-[2rem] overflow-hidden shadow-[0_24px_70px_-18px_rgba(0,0,0,0.28)] ring-[5px] ring-[#FAF8F5] z-10 flex flex-col before:absolute before:inset-0 before:rounded-[2rem] before:ring-1 before:ring-inset before:ring-white/15 before:pointer-events-none"
                         >
                             {/* Real Camera Component */}
                             <FaceCapture
@@ -215,7 +221,8 @@ export default function FaceScanPage() {
                 </AnimatePresence>
             </div>
 
-            {/* Footer with Copyright & Registration */}
+            {/* Footer with Copyright & Registration —— Modal 打开时隐藏，避免与 ScanGuideModal 内 footer 重复 */}
+            {!isModalOpen && (
             <m.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -236,6 +243,7 @@ export default function FaceScanPage() {
                     </div>
                 </div>
             </m.div>
+            )}
 
             {/* 全屏加载遮罩：模型加载中 */}
             <AnimatePresence>
@@ -247,10 +255,56 @@ export default function FaceScanPage() {
                         transition={{ duration: 0.4 }}
                         className="fixed inset-0 z-[9999] bg-[#FDFBF7] flex flex-col items-center justify-center"
                     >
-                        <Loader2 className="w-10 h-10 text-[#3D4430] animate-spin mb-6" />
-                        <p className="text-[#5E5E5E] text-[15px] font-medium tracking-wide">正在启动 AI 面部扫描...</p>
-                        <p className="text-[#8C8C8C] text-[13px] mt-2 font-light">首次加载需要几秒钟</p>
+                        <Loader2 className="w-10 h-10 text-[#8B7355] animate-spin mb-8" />
+                        <p className="text-[#1A1A1A] text-xl md:text-2xl font-serif tracking-wide">正在准备 AI 面部扫描</p>
+                        <p className="text-[#5E5E5E] text-sm md:text-[15px] mt-3 font-light max-w-xs text-center leading-relaxed">首次加载模型需要几秒钟，请保持耐心</p>
                     </m.div>
+                )}
+            </AnimatePresence>
+
+            {/* Exit Confirmation Modal —— 复用 /questions 风格 */}
+            <AnimatePresence>
+                {showExitConfirm && (
+                    <div className="fixed inset-0 z-[400] flex items-center justify-center p-4">
+                        <m.div
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-[#FDFBF7]/90 backdrop-blur-sm"
+                            onClick={() => setShowExitConfirm(false)}
+                        />
+                        <m.div
+                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                            className="relative w-full max-w-sm bg-white/70 backdrop-blur-xl p-8 shadow-[0_24px_48px_-12px_rgba(0,0,0,0.08)] border border-[#D4CFC5] text-center rounded-xl overflow-hidden"
+                        >
+                            <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }} />
+                            <div className="relative z-10">
+                                <h3 className="text-xl font-serif text-[#1A1A1A] mb-2">结束测试？</h3>
+                                <p className="text-sm text-[#5E5E5E] mb-8 font-light leading-relaxed">
+                                    您的进度已自动保存，<br />下次返回可直接从此处继续。
+                                </p>
+                                <div className="flex flex-col items-center gap-4">
+                                    <button
+                                        onClick={() => setShowExitConfirm(false)}
+                                        className="w-full h-11 rounded-md bg-[#4A3728] hover:bg-[#3D2E20] text-[#FDFBF7] text-[13px] font-medium tracking-[0.15em] transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-2"
+                                    >
+                                        <span>继续测试</span>
+                                        <ArrowRight className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                        onClick={async () => {
+                                            const { advisorStorage } = await import("@/lib/advisor-storage");
+                                            await advisorStorage.clearAll();
+                                            router.push("/");
+                                        }}
+                                        className="text-[12px] tracking-[0.15em] text-[#3D4430]/40 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
+                                    >
+                                        退出并返回首页
+                                    </button>
+                                </div>
+                            </div>
+                        </m.div>
+                    </div>
                 )}
             </AnimatePresence>
 
@@ -261,14 +315,6 @@ export default function FaceScanPage() {
                     setHasStarted(true);
                     setIsPreparing(true);
                     setIsModalOpen(false);
-                }}
-                onCancel={() => {
-                    router.push("/questions?edit=true");
-                }}
-                onExit={async () => {
-                    const { advisorStorage } = await import("@/lib/advisor-storage");
-                    await advisorStorage.clearAll();
-                    router.push("/");
                 }}
             />
         </div>
