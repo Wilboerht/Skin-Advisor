@@ -201,7 +201,7 @@ export default function FaceScanPage() {
             </header>
 
             {/* Main Content: Mirror Container pushed to center */}
-            <div className="flex-1 flex flex-col items-center justify-center w-full min-h-0">
+            <div className="flex-1 flex flex-col items-center justify-center w-full min-h-0 px-4 md:px-0">
                 <AnimatePresence>
                     {hasStarted && (
                         <m.div 
