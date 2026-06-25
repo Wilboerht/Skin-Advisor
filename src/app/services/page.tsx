@@ -11,30 +11,30 @@ export const metadata: Metadata = {
 
 export default function ServicesPage() {
   return (
-    <main className="relative flex flex-col min-h-screen text-[#1A1A1A] bg-[#F8F7F3]">
+    <main className="relative flex flex-col h-dvh overflow-hidden text-[#1A1A1A] bg-[#F8F7F3]">
       <WebsiteNavbar />
 
-      <section className="flex-1 flex items-center px-6 md:px-12 lg:px-20 pt-28 md:pt-24 pb-20">
+      <section className="flex-1 flex items-center px-6 md:px-12 lg:px-20 pt-24 md:pt-28 pb-10 md:pb-20 min-h-0">
         <div className="w-full max-w-5xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-[7fr_3fr] gap-12 lg:gap-20 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-[7fr_3fr] gap-8 md:gap-12 lg:gap-20 items-center">
             {/* 左侧文字 */}
             <div className="order-2 lg:order-1">
-              <h1 className="text-2xl md:text-3xl font-serif text-[#1A1A1A] leading-[1.1] mb-8">
+              <h1 className="text-xl md:text-3xl font-serif text-[#1A1A1A] leading-[1.1] mb-4 md:mb-8">
                 顾问服务
               </h1>
-              <p className="text-[15px] md:text-base text-[#5E5E5E] font-light leading-relaxed max-w-lg mb-8">
+              <p className="text-[13px] md:text-base text-[#5E5E5E] font-light leading-relaxed max-w-lg mb-4 md:mb-8">
                 如需获得更具针对性的护肤建议，欢迎添加 NIHPLOD 护肤顾问微信，由专业顾问为您提供一对一咨询服务。
               </p>
 
-              <div className="grid grid-cols-3 gap-5 max-w-lg">
+              <div className="grid grid-cols-3 gap-3 md:gap-5 max-w-lg">
                 {[
                   { icon: HeartHandshake, text: "专属顾问" },
                   { icon: LineChart, text: "跟踪调整" },
                   { icon: Sparkles, text: "定制方案" },
                 ].map(({ icon: Icon, text }) => (
-                  <div key={text} className="flex items-center gap-3 text-[#3D4430]">
-                    <Icon className="w-4 h-4 text-[#3D4430]" strokeWidth={1.5} />
-                    <span className="text-sm font-light tracking-wide">{text}</span>
+                  <div key={text} className="flex items-center gap-2 md:gap-3 text-[#3D4430]">
+                    <Icon className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#3D4430]" strokeWidth={1.5} />
+                    <span className="text-xs md:text-sm font-light tracking-wide">{text}</span>
                   </div>
                 ))}
               </div>
@@ -43,17 +43,17 @@ export default function ServicesPage() {
             {/* 右侧二维码 */}
             <div className="order-1 lg:order-2 flex justify-start lg:justify-end">
               <div className="inline-block text-center">
-                <div className="relative w-52 h-52 md:w-60 md:h-60 bg-white rounded-2xl p-5 mb-4 shadow-[0_4px_24px_rgba(61,68,48,0.08)]">
+                <div className="relative w-36 h-36 md:w-52 md:h-52 lg:w-60 lg:h-60 bg-white rounded-2xl p-3 md:p-5 mb-3 md:mb-4 shadow-[0_4px_24px_rgba(61,68,48,0.08)]">
                   <Image
                     src="/images/advisor-qr.jpg"
                     alt="NIHPLOD 护肤顾问微信二维码"
                     fill
-                    sizes="(max-width: 768px) 176px, 208px"
+                    sizes="(max-width: 768px) 144px, (max-width: 1024px) 208px, 240px"
                     loading="eager"
-                    className="object-contain p-3"
+                    className="object-contain p-2 md:p-3"
                   />
                 </div>
-                <p className="text-[12px] text-[#5E5E5E] font-light tracking-[0.1em]">
+                <p className="text-[10px] md:text-[12px] text-[#5E5E5E] font-light tracking-[0.1em]">
                   微信扫码 · 添加顾问
                 </p>
               </div>
@@ -63,8 +63,8 @@ export default function ServicesPage() {
       </section>
 
       {/* 页脚 */}
-      <footer className="py-8 px-6 text-center">
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-xs tracking-widest text-[#5E5E5E]/60">
+      <footer className="py-4 md:py-8 px-6 text-center shrink-0">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-4 text-[10px] md:text-xs tracking-widest text-[#5E5E5E]/60">
           <p>© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
           <span className="hidden sm:inline text-[#5E5E5E]/30">·</span>
           <div className="flex items-center gap-4">
