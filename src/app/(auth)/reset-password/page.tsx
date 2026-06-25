@@ -4,11 +4,9 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { Link } from "next-view-transitions";
 import { Loader2, Lock, Eye, EyeOff, CheckCircle } from "lucide-react";
-import { useToast } from "@/components/ui/Toast";
 
 function ResetPasswordForm() {
     const router = useRouter();
-    const toast = useToast();
 
     const [phone, setPhone] = useState("");
     const [code, setCode] = useState("");
@@ -28,7 +26,6 @@ function ResetPasswordForm() {
 
     const sendCode = async () => {
         if (cooldown || !phone) {
-            toast.error(!phone ? "请先输入手机号" : "请稍后再试");
             return;
         }
         setSendingCode(true);
@@ -40,12 +37,10 @@ function ResetPasswordForm() {
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "验证码发送失败");
-            toast.success("验证码已发送");
             setCooldown(60);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error("[ResetPasswordSendCode]", error.message);
-            toast.error("验证码发送失败，请稍后重试");
         } finally {
             setSendingCode(false);
         }
@@ -55,17 +50,14 @@ function ResetPasswordForm() {
         e.preventDefault();
 
         if (!phone || !code) {
-            toast.error("请输入手机号和验证码");
             return;
         }
 
         if (password !== confirmPassword) {
-            toast.error("两次输入的密码不一致");
             return;
         }
 
         if (password.length < 6) {
-            toast.error("密码长度至少为 6 位");
             return;
         }
 
@@ -82,7 +74,6 @@ function ResetPasswordForm() {
             if (!res.ok) throw new Error(data.error || "重置失败");
 
             setSuccess(true);
-            toast.success("密码重置成功");
 
             // Auto redirect after 3 seconds
             setTimeout(() => {
@@ -92,7 +83,6 @@ function ResetPasswordForm() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error("[ResetPassword]", error.message);
-            toast.error("重置失败，请稍后重试");
         } finally {
             setLoading(false);
         }

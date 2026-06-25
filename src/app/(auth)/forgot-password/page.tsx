@@ -4,13 +4,11 @@ import { useState } from "react";
 import { Link } from "next-view-transitions";
 import { ArrowLeft, Loader2, Phone, CheckCircle } from "lucide-react";
 import { m } from "framer-motion";
-import { useToast } from "@/components/ui/Toast";
 
 export default function ForgotPasswordPage() {
     const [phone, setPhone] = useState("");
     const [loading, setLoading] = useState(false);
     const [submitted, setSubmitted] = useState(false);
-    const toast = useToast();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -27,11 +25,9 @@ export default function ForgotPasswordPage() {
             if (!res.ok) throw new Error(data.error || "请求失败");
 
             setSubmitted(true);
-            toast.success("重置验证码已发送");
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error("[ForgotPassword]", error.message);
-            toast.error("请求失败，请稍后重试");
         } finally {
             setLoading(false);
         }

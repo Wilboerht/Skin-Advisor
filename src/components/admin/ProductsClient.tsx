@@ -34,7 +34,6 @@ import {
     Filter,
     ChevronDown
 } from "lucide-react";
-import { useToast } from "@/components/ui/Toast";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { ProductFormModal } from "./ProductFormModal";
 
@@ -197,7 +196,6 @@ const SortableProductRow = memo(function SortableProductRow({
 
 export default function ProductsClient({ initialProducts }: ProductsClientProps) {
     const router = useRouter();
-    const toast = useToast();
     const [products, setProducts] = useState(initialProducts);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [saving, setSaving] = useState(false);
@@ -243,7 +241,6 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
 
     const handleDragEnd = async (event: DragEndEvent) => {
         if (hasActiveFilters) {
-            toast.info('请清除筛选条件后再进行排序');
             return;
         }
 
@@ -265,13 +262,10 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                 });
 
                 if (res.ok) {
-                    toast.success('排序已保存');
-                } else {
-                    toast.error('保存失败');
-                    router.refresh();
+                                    } else {
+                                        router.refresh();
                 }
             } catch (e) {
-                toast.error('网络错误');
                 router.refresh();
             } finally {
                 setSaving(false);
@@ -297,7 +291,6 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
 
     const handleBatchAction = async (action: string) => {
         if (selectedIds.length === 0) {
-            toast.info('请先选择产品');
             return;
         }
 
@@ -310,21 +303,11 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
             });
 
             if (res.ok) {
-                const actionNames: Record<string, string> = {
-                    activate: '上架',
-                    deactivate: '下架',
-                    feature: '设为精选置顶',
-                    unfeature: '取消精选置顶',
-                    delete: '删除'
-                };
-                toast.success(`${actionNames[action]}成功`);
                 router.refresh();
                 setSelectedIds([]);
             } else {
-                toast.error('操作失败');
             }
         } catch (e) {
-            toast.error('网络错误');
         } finally {
             setBatchLoading(null);
         }
@@ -342,14 +325,11 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                 });
 
                 if (res.ok) {
-                    toast.success('批量删除成功');
                     router.refresh();
                     setSelectedIds([]);
                 } else {
-                    toast.error('删除失败');
                 }
             } catch (e) {
-                toast.error('网络错误');
             }
         } else if (deleteConfirm.id) {
             // Single delete - use dedicated endpoint for proper audit logging
@@ -359,13 +339,10 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                 });
 
                 if (res.ok) {
-                    toast.success('删除成功');
                     router.refresh();
                 } else {
-                    toast.error('删除失败');
                 }
             } catch (e) {
-                toast.error('网络错误');
             }
         }
         setDeleteConfirm({ show: false, id: null, batch: false });

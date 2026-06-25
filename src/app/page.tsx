@@ -11,7 +11,6 @@ import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
 
-import { useToast } from "@/components/ui/Toast";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { getGuestIdentity, type GuestIdentity } from "@/lib/guest-identity";
 import { CONSENT_VERSION } from "@/components/advisor/PrivacyConsent";
@@ -55,7 +54,6 @@ const regionOptions = [
 export default function Home() {
   const router = useRouter();
   const { openAuthModal } = useAuthModal();
-  const toast = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const { initSession } = useAdvisorAnalytics();
   const { user, refresh: refreshUser } = useAuth();
@@ -215,7 +213,6 @@ export default function Home() {
       if (!res.ok) {
         const errorText = await res.text().catch(() => "未知错误");
         console.error("Test limit check failed:", res.status, errorText);
-        toast.error("测试次数检查失败，请稍后重试或联系客服");
         return true; // Allow on error so the user is not blocked by a transient server issue
       }
 
@@ -227,7 +224,6 @@ export default function Home() {
       if (user && data.isGuest) {
         console.warn("[Auth Mismatch] Frontend has user but backend returned guest. Refreshing session...");
         await refreshUser();
-        toast.info("登录状态已刷新，请重新尝试");
         // After refresh, allow the test to proceed; next check will use fresh state
         return true;
       }
@@ -239,12 +235,11 @@ export default function Home() {
       return data.canTest;
     } catch (err) {
       console.error("Failed to check test limit:", err);
-      toast.error("测试次数检查失败，请稍后重试");
       return true; // Allow on error so the user is not blocked by a transient network issue
     } finally {
       setCheckingLimit(false);
     }
-  }, [guestIdentity, user, refreshUser, toast]);
+  }, [guestIdentity, user, refreshUser]);
 
   // Start test directly — usage will be recorded by analyze API
   const recordAndStartTest = useCallback(async () => {
@@ -270,7 +265,6 @@ export default function Home() {
 
   const handleNicknameSubmit = () => {
     if (!nickname.trim()) {
-      toast.error("请输入您的昵称");
       return;
     }
     // Save nickname to localStorage

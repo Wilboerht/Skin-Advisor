@@ -22,7 +22,6 @@ import {
     Eye
 } from "lucide-react";
 import { LogDetailModal } from "./LogDetailModal";
-import { useToast } from "@/components/ui/Toast";
 import { cn } from "@/lib/utils";
 
 interface AuditLog {
@@ -128,7 +127,6 @@ export default function AuditLogsClient({ role }: AuditLogsClientProps) {
     const [totalPages, setTotalPages] = useState(1);
     const [showFilters, setShowFilters] = useState(false);
     const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
-    const toast = useToast();
 
     // Filters
     const [filterOptions, setFilterOptions] = useState<FilterOptions>({ admins: [], actions: [], resources: [] });
@@ -172,8 +170,7 @@ export default function AuditLogsClient({ role }: AuditLogsClientProps) {
                 }
             }
         } catch (e) {
-            // Silent fail: toast already shown
-            toast.error("加载日志失败");
+            console.error("加载日志失败:", e);
         } finally {
             setLoading(false);
         }
@@ -261,9 +258,7 @@ export default function AuditLogsClient({ role }: AuditLogsClientProps) {
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
-            toast.success("报告已生成并开始下载");
         } catch (err: unknown) {
-            toast.error(err instanceof Error ? err.message : "导出失败，请重试");
         } finally {
             setExporting(false);
         }

@@ -6,13 +6,11 @@ import { Link } from "next-view-transitions";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2, ArrowRight, Eye, EyeOff } from "lucide-react";
-import { useToast } from "@/components/ui/Toast";
 import { m } from "framer-motion";
 
 export default function RegisterPage() {
     const router = useRouter();
     const { register } = useAuth();
-    const toast = useToast();
 
     const [name, setName] = useState("");
     const [phone, setPhone] = useState("");
@@ -40,12 +38,10 @@ export default function RegisterPage() {
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "验证码发送失败");
-            toast.success("验证码已发送");
             setCooldown(60);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             console.error("[RegisterSendCode]", err.message);
-            toast.error("验证码发送失败，请稍后重试");
         } finally {
             setSendingCode(false);
         }
@@ -57,10 +53,8 @@ export default function RegisterPage() {
 
         try {
             await register({ name, phone, code, password });
-            toast.success("注册成功！");
             router.push("/"); // Redirect to home
         } catch (err) {
-            toast.error("注册失败，请稍后重试");
         } finally {
             setLoading(false);
         }

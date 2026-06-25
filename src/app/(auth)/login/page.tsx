@@ -6,13 +6,11 @@ import { Link } from "next-view-transitions";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2, ArrowRight, Eye, EyeOff } from "lucide-react";
-import { useToast } from "@/components/ui/Toast";
 import { m } from "framer-motion";
 
 export default function LoginPage() {
     const router = useRouter();
     const { login } = useAuth();
-    const toast = useToast();
 
     const [phone, setPhone] = useState("");
     const [password, setPassword] = useState("");
@@ -25,10 +23,8 @@ export default function LoginPage() {
 
         try {
             await login({ phone, password });
-            toast.success("欢迎回来！");
             router.push("/"); // Redirect to home or previous page
         } catch (err) {
-            toast.error("登录失败，请检查账号密码");
         } finally {
             setLoading(false);
         }

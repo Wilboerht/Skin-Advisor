@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useToast } from "@/components/ui/Toast";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -35,7 +34,6 @@ export default function RecommendationRulesPage() {
     const [showModal, setShowModal] = useState(false);
     const [editingRule, setEditingRule] = useState<RecommendationRule | null>(null);
     const [submitting, setSubmitting] = useState(false);
-    const toast = useToast();
 
     // Form state
     const [formName, setFormName] = useState("");
@@ -53,9 +51,8 @@ export default function RecommendationRulesPage() {
             const data = await res.json();
             setRules(data);
         } catch {
-            toast.error("加载推荐规则失败");
         }
-    }, [toast]);
+    }, []);
 
     const fetchProducts = useCallback(async () => {
         try {
@@ -112,11 +109,9 @@ export default function RecommendationRulesPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!formName.trim()) {
-            toast.error("请输入规则名称");
             return;
         }
         if (selectedSkinTypes.length === 0 && selectedConcerns.length === 0) {
-            toast.error("请至少选择一个肤质类型或肌肤问题");
             return;
         }
 
@@ -144,7 +139,6 @@ export default function RecommendationRulesPage() {
                     const err = await res.json();
                     throw new Error(err.error || "更新失败");
                 }
-                toast.success("规则已更新");
             } else {
                 const res = await fetch("/api/admin/recommendation-rules", {
                     method: "POST",
@@ -155,13 +149,11 @@ export default function RecommendationRulesPage() {
                     const err = await res.json();
                     throw new Error(err.error || "创建失败");
                 }
-                toast.success("规则已创建");
             }
             setShowModal(false);
             resetForm();
             fetchRules();
         } catch (err: unknown) {
-            toast.error(err instanceof Error ? err.message : "操作失败");
         } finally {
             setSubmitting(false);
         }
@@ -176,9 +168,7 @@ export default function RecommendationRulesPage() {
             });
             if (!res.ok) throw new Error("Failed to update");
             setRules(prev => prev.map(r => r.id === id ? { ...r, active: !active } : r));
-            toast.success("状态已更新");
         } catch {
-            toast.error("更新失败");
         }
     };
 
@@ -190,9 +180,7 @@ export default function RecommendationRulesPage() {
             });
             if (!res.ok) throw new Error("Failed to delete");
             setRules(prev => prev.filter(r => r.id !== id));
-            toast.success("规则已删除");
         } catch {
-            toast.error("删除失败");
         }
     };
 

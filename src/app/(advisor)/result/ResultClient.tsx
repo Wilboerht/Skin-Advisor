@@ -15,7 +15,6 @@ import {
     X
 } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
-import { useToast } from "@/components/ui/Toast";
 import { useAuth } from "@/hooks/useAuth";
 import type { FaceAnalysisResult } from "@/lib/advisor-utils";
 import { getRankPercentile, getCharacterImage } from "@/lib/result-utils";
@@ -144,7 +143,6 @@ export default function ResultClient(props: ResultClientProps) {
 
 function ResultClientContent({ id, initialData }: ResultClientProps) {
     const router = useRouter();
-    const toast = useToast();
     const { trackResultView, trackResultShare, trackProductClick } = useAdvisorAnalytics();
     const { user, loading: authLoading, isInitialized: authInitialized } = useAuth();
     const searchParams = useSearchParams();
@@ -239,7 +237,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const handleMismatchContinue = () => {
         setShowGenderMismatchModal(false);
         localStorage.setItem(STORAGE_KEYS.ADVISOR_GENDER_MISMATCH_ACK, 'true');
-        toast.success("确认成功");
     };
 
 
@@ -344,7 +341,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                 } catch (e) {
                     console.error("Failed to restore result:", e);
-                    toast.error("数据加载失败");
                 } finally {
                     setLoading(false);
                 }
@@ -360,7 +356,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         };
 
         loadClientData();
-    }, [initialData, router, trackResultView, toast, sessionId, searchParams]);
+    }, [initialData, router, trackResultView, sessionId, searchParams]);
 
     // --- Avatar Polling ---
     // Poll for avatar generation if we don't have one yet
@@ -475,7 +471,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             if (avatarPollRef.current.failureCount >= 5) {
                 console.warn("Avatar polling stopped after 5 failures - using fallback");
                 setIsAvatarLoading(false);
-                toast.info("AI 形象照生成失败，已使用原始照片");
                 setAvatarQueueStatus(null);
             }
         };
@@ -488,7 +483,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 console.warn("Avatar generation timeout (120s) - using original photo");
                 setIsAvatarLoading(false);
                 setAvatarQueueStatus(null);
-                toast.info("AI 形象照生成超时，已切换为原始照片");
             }
         }, 120000);
         
@@ -607,7 +601,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         if (!posterRef.current || isGeneratingPoster) return;
         try {
             setIsGeneratingPoster(true);
-            toast.info("正在生成分享海报...");
             // 等待图片加载
             const images = Array.from(posterRef.current.getElementsByTagName("img"));
             await Promise.all(
@@ -643,10 +636,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             link.href = blobUrl;
             link.click();
             URL.revokeObjectURL(blobUrl);
-            toast.success("海报已保存到相册");
         } catch (error) {
             console.error("海报生成失败:", error);
-            toast.error("海报生成失败，请重试");
         } finally {
             setIsGeneratingPoster(false);
         }

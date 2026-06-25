@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Search, MoreHorizontal, User as UserIcon, Shield, ShieldOff, Trash2, Eye, Loader2, ChevronLeft, ChevronRight, Download, ChevronDown } from "lucide-react";
-import { useToast } from "@/components/ui/Toast";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { UserDetailModal } from "./UserDetailModal";
 
@@ -72,8 +71,6 @@ export function UsersClient() {
     // Add state for detail modal
     const [detailUser, setDetailUser] = useState<string | null>(null);
 
-    const toast = useToast();
-
     const fetchUsers = useCallback(async () => {
         setLoading(true);
         try {
@@ -89,14 +86,12 @@ export function UsersClient() {
                 setUsers(data.users);
                 setPagination(data.pagination);
             } else {
-                toast.error("加载用户失败");
             }
         } catch (error) {
-            toast.error("加载用户失败");
         } finally {
             setLoading(false);
         }
-    }, [page, search, status, toast]);
+    }, [page, search, status]);
 
     const fetchUsersRef = useRef(fetchUsers);
     const pageRef = useRef(page);
@@ -146,14 +141,11 @@ export function UsersClient() {
             });
             if (res.ok) {
                 const data = await res.json();
-                toast.success(isDisabling ? "用户已禁用" : `用户已启用（角色：${data.role}）`);
                 fetchUsers();
             } else {
                 const err = await res.json().catch(() => ({}));
-                toast.error(err.error || "更新用户失败");
             }
         } catch (error) {
-            toast.error("网络错误");
         } finally {
             setActionLoading(false);
             setShowDropdown(null);
@@ -168,15 +160,12 @@ export function UsersClient() {
                 method: "DELETE",
             });
             if (res.ok) {
-                toast.success("用户已删除");
                 setShowDeleteModal(false);
                 setSelectedUser(null);
                 fetchUsers();
             } else {
-                toast.error("删除用户失败");
             }
         } catch (error) {
-            toast.error("网络错误");
         } finally {
             setActionLoading(false);
         }

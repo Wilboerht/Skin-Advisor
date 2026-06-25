@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useMounted } from "@/hooks/use-mounted";
-import { useToast } from "@/components/ui/Toast";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
 import { m } from "framer-motion";
 import { Loader2 } from "lucide-react";
@@ -25,7 +24,6 @@ interface StatsData {
 export function useDashboardStats() {
     const [stats, setStats] = useState<StatsData | null>(null);
     const [loading, setLoading] = useState(true);
-    const toast = useToast();
 
     useEffect(() => {
         const controller = new AbortController();
@@ -40,17 +38,14 @@ export function useDashboardStats() {
                 if (data.success) {
                     setStats(data.data);
                 } else {
-                    toast.error(data.error || "Failed to load dashboard stats");
                 }
             })
             .catch(err => {
                 if (err.name === 'AbortError') return;
-                // Silent fail: charts will show empty state
-                toast.error(err instanceof Error ? err.message : "Network error loading stats");
             })
             .finally(() => setLoading(false));
         return () => controller.abort();
-    }, [toast]);
+    }, []);
 
     return { stats, loading };
 }

@@ -4,28 +4,23 @@
 import { useState } from "react";
 import { Trash2, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useToast } from "@/components/ui/Toast";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 export default function DeleteProductButton({ id }: { id: string }) {
     const [loading, setLoading] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
     const router = useRouter();
-    const toast = useToast();
 
     const handleDelete = async () => {
         setLoading(true);
         try {
             const res = await fetch(`/api/admin/products/${id}`, { method: "DELETE" });
             if (res.ok) {
-                toast.success("Product deleted");
-                router.refresh();
+                                router.refresh();
             } else {
-                toast.error("Failed to delete");
-            }
+                            }
         } catch (e) {
-            toast.error("Network error");
-        } finally {
+                    } finally {
             setLoading(false);
             setShowConfirm(false);
         }
