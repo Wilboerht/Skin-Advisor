@@ -63,7 +63,7 @@ export default function ServicesPage() {
       </section>
 
       {/* 页脚 */}
-      <footer className="py-4 md:py-8 px-6 text-center shrink-0">
+      <footer className="pt-4 md:pt-8 pb-[calc(1rem+env(safe-area-inset-bottom,16px))] md:pb-[calc(2rem+env(safe-area-inset-bottom,16px))] px-6 text-center shrink-0">
         <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-4 text-[10px] md:text-xs tracking-widest text-[#5E5E5E]/60">
           <p>© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
           <span className="hidden sm:inline text-[#5E5E5E]/30">·</span>
