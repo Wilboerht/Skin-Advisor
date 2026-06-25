@@ -56,7 +56,6 @@ const DEFAULT_AI_SETTINGS: AISettings = {
 // 服务商降级链
 const PROVIDER_FALLBACK_CHAIN: Record<string, AIProvider[]> = {
     deepseek: ["qwen"],
-    qwen: ["deepseek"],
 };
 
 // 缓存配置

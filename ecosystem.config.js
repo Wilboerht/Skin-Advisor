@@ -12,6 +12,7 @@ module.exports = {
         env: {
             NODE_ENV: 'production',
             PORT: 3002,
+            QWEN_API_KEY: 'REDACTED_QWEN_API_KEY',
         },
         // 日志配置
         log_file: './logs/combined.log',
