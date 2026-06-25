@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { User, ExternalLink, Menu, X } from "lucide-react";
+import { User, ExternalLink, Menu } from "lucide-react";
 import { HomeSvg } from "@/components/icons/HomeSvg";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { useUser } from "@/components/auth/UserProvider";
@@ -248,16 +248,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
           }`}
         >
           <div className="flex flex-col h-full px-6 pt-[calc(1.25rem+env(safe-area-inset-top,0px))] pb-[calc(1.25rem+env(safe-area-inset-bottom,16px))]">
-            {/* 顶部关闭按钮 */}
-            <div className="flex items-center justify-end mb-6">
-              <button
-                onClick={() => setMobileMenuOpen(false)}
-                aria-label="关闭菜单"
-                className="group flex items-center justify-center w-10 h-10 rounded-full text-[#3D4430]/70 hover:text-[#3D4430] hover:bg-[#3D4430]/5 transition-colors duration-500 cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+            {/* 用户信息 / 登录入口 */}
 
             {/* 用户信息 / 登录入口 */}
             <div className="mb-8 px-4">
