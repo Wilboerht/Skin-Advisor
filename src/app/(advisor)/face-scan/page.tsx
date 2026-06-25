@@ -213,14 +213,14 @@ export default function FaceScanPage() {
             </header>
 
             {/* Main Content: Mirror Container pushed to center */}
-            <div className="flex-1 flex flex-col items-center justify-center w-full min-h-0 px-4 md:px-0">
+            <div className="flex-1 flex flex-col items-center justify-center w-full min-h-0 px-6 md:px-0">
                 <AnimatePresence>
                     {hasStarted && (
                         <m.div 
                             initial={{ opacity: 0, scale: 0.9, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                            className="relative w-full max-w-[480px] aspect-[3/4] max-h-[70vh] bg-black rounded-[2rem] overflow-hidden shadow-[0_24px_70px_-18px_rgba(0,0,0,0.28)] ring-[5px] ring-[#FAF8F5] z-10 flex flex-col before:absolute before:inset-0 before:rounded-[2rem] before:ring-1 before:ring-inset before:ring-white/15 before:pointer-events-none"
+                            className="relative w-full max-w-[420px] md:max-w-[480px] aspect-[3/4] max-h-[65vh] md:max-h-[70vh] bg-black rounded-[2rem] overflow-hidden shadow-[0_24px_70px_-18px_rgba(0,0,0,0.28)] ring-[5px] ring-[#FAF8F5] z-10 flex flex-col before:absolute before:inset-0 before:rounded-[2rem] before:ring-1 before:ring-inset before:ring-white/15 before:pointer-events-none"
                         >
                             {/* Real Camera Component */}
                             <FaceCapture
