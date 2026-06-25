@@ -24,8 +24,6 @@ import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { ScientificBarChart } from "@/components/advisor/ScientificBarChart";
 
 
-
-import { FloatingToolbar } from "@/components/advisor/FloatingToolbar";
 import { SharePoster } from "@/components/advisor/poster/SharePoster";
 import { ShareModal } from "@/components/advisor/ShareModal";
 import { toPng } from "html-to-image";
@@ -1336,14 +1334,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                     {/* Save Report Banner for unauthenticated users */}
                     <SaveReportBanner />
-
-                    {/* Floating Toolbar */}
-                    <FloatingToolbar
-                        onSharePoster={() => setShowShareModal(true)}
-                        onRetake={() => router.push("/questions")}
-                        onChat={() => setShowContactAdvisor(true)}
-                        onHome={() => router.push("/")}
-                    />
 
                     <ShareModal
                         isOpen={showShareModal}
