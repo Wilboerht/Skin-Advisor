@@ -21,7 +21,7 @@ export default function ResultIndexPage() {
       <WebsiteNavbar />
 
       {/* Hero */}
-      <section className="relative pt-32 pb-24 md:pt-40 md:pb-32 px-6 md:px-12 lg:px-20 overflow-hidden">
+      <section className="relative pt-24 md:pt-40 pb-16 md:pb-32 px-6 md:px-12 lg:px-20 overflow-hidden">
 
         <div className="relative z-10 max-w-5xl mx-auto text-center">
           <p
@@ -54,15 +54,15 @@ export default function ResultIndexPage() {
       </section>
 
       {/* 类型卡片 */}
-      <section className="pb-28 md:pb-36 px-6 md:px-12 lg:px-20">
-        <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-x-7 gap-y-10">
+      <section className="pb-20 md:pb-36 px-6 md:px-12 lg:px-20">
+        <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-x-5 md:gap-x-7 gap-y-6 md:gap-y-10">
           {orderedTypes.map((type, i) => {
             if (!type) return null;
             return (
               <Link
                 key={type.route}
                 href={`/skin-types/${type.route}`}
-                className="group relative rounded-2xl border border-[rgba(61,68,48,0.08)] bg-[#FAF9F6] p-7 md:p-9 transition-all duration-500 hover:shadow-[0_16px_32px_rgba(61,68,48,0.08)] hover:-translate-y-1"
+                className="group relative rounded-2xl border border-[rgba(61,68,48,0.08)] bg-[#FAF9F6] p-5 md:p-9 transition-all duration-500 hover:shadow-[0_16px_32px_rgba(61,68,48,0.08)] hover:-translate-y-1"
               >
                 <Image
                   src={`/images/character/${type.scoreRange}/${type.scoreRange}_female.png`}
@@ -90,11 +90,11 @@ export default function ResultIndexPage() {
       </section>
 
       {/* 页脚 */}
-      <footer className="py-8 px-6 text-center">
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-xs tracking-widest text-[#5E5E5E]/60">
+      <footer className="pt-6 md:pt-8 pb-[calc(1.5rem+env(safe-area-inset-bottom,16px))] px-6 text-center">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-4 text-[10px] md:text-xs tracking-widest text-[#5E5E5E]/60">
           <p>© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
           <span className="hidden sm:inline text-[#5E5E5E]/30">·</span>
-          <div className="flex items-center gap-4">
+          <div className="hidden sm:flex items-center gap-4">
             <Link href="/privacy" className="hover:text-[#3D4430] transition-colors duration-300">
               隐私政策
             </Link>
