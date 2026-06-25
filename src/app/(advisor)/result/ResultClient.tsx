@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 import { House, MessageCircle } from "lucide-react";
 import { useAsyncAnalysis } from "@/hooks/useAsyncAnalysis";
 import { motion as m, AnimatePresence } from "framer-motion";
@@ -472,6 +473,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             if (avatarPollRef.current.failureCount >= 5) {
                 console.warn("Avatar polling stopped after 5 failures - using fallback");
                 setIsAvatarLoading(false);
+                toast.info("AI 形象照生成失败，已使用原始照片");
+                setAvatarQueueStatus(null);
             }
         };
 
@@ -483,6 +486,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 console.warn("Avatar generation timeout (120s) - using original photo");
                 setIsAvatarLoading(false);
                 setAvatarQueueStatus(null);
+                toast.info("AI 形象照生成超时，已切换为原始照片");
             }
         }, 120000);
         
@@ -741,10 +745,13 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     {/* Header */}
                     <div className="p-10 pt-14 text-center pb-1">
                         <div className="mb-7 flex justify-center">
-                            <img
+                            <Image
                                 src="/NIHPLOD-logo.svg"
                                 alt="NIHPLOD"
-                                className="h-[34px] object-contain"
+                                width={120}
+                                height={30}
+                                className="h-[34px] w-auto object-contain"
+                                priority
                             />
                         </div>
                         <h3 className="text-base font-bold" style={{ color: '#5c4937' }}>
@@ -847,8 +854,11 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                                 <div className="space-y-6">
                                     <p className="text-[14px] text-[#37352F] leading-[1.8] text-justify px-1">
-                                        为了确保报告建议的严谨性，智能识别引擎对多维数据进行了对冲校验，发现当前的<span className="font-semibold bg-[#F1F1EF] px-1.5 py-0.5 rounded text-[#37352F] mx-1 border border-[#E9E9E7]">底层算法数据模型</span>
-                                        与您在问卷中选择的<span className="font-semibold bg-[#F1F1EF] px-1.5 py-0.5 rounded text-[#37352F] mx-1 border border-[#E9E9E7]">性别选项 ({socialGender === 'male' ? '男' : '女'})</span> 存在一定程度的不一致。
+                                        AI 面部识别结果显示您的面部特征更接近
+                                        <span className="font-semibold bg-[#F1F1EF] px-1.5 py-0.5 rounded text-[#37352F] mx-1 border border-[#E9E9E7]">{faceAnalysis?.gender?.value === 'male' ? '男性' : '女性'}</span>
+                                        ，但您在问卷中填写的是
+                                        <span className="font-semibold bg-[#F1F1EF] px-1.5 py-0.5 rounded text-[#37352F] mx-1 border border-[#E9E9E7]">{socialGender === 'male' ? '男' : '女'}</span>
+                                        ，二者不一致。
                                     </p>
 
                                     {/* Notion Callout Block - Yellow */}
@@ -890,10 +900,13 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 <div className={styles.container}>
                     {/* Logo */}
                     <div className="w-full flex justify-center pt-14 pb-3">
-                        <img
-                            src="/images/NIHPLOD-logo.svg"
-                            alt="NIHPLOD MONACO"
-                            className="h-8 sm:h-10 object-contain"
+                        <Image
+                            src="/NIHPLOD-logo.svg"
+                            alt="NIHPLOD"
+                            width={120}
+                            height={30}
+                            className="h-8 sm:h-10 w-auto object-contain"
+                            priority
                         />
                     </div>
 
