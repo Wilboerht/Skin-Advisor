@@ -247,7 +247,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
             mobileMenuOpen ? "translate-x-0" : "translate-x-full"
           }`}
         >
-          <div className="flex flex-col h-full px-6 py-5">
+          <div className="flex flex-col h-full px-6 pt-[calc(1.25rem+env(safe-area-inset-top,0px))] pb-[calc(1.25rem+env(safe-area-inset-bottom,16px))]">
             {/* 顶部关闭按钮 */}
             <div className="flex items-center justify-end mb-6">
               <button
