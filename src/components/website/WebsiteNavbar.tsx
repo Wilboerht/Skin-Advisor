@@ -248,8 +248,19 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
           }`}
         >
           <div className="flex flex-col h-full px-6 pt-[calc(1.25rem+env(safe-area-inset-top,0px))] pb-[calc(1.25rem+env(safe-area-inset-bottom,16px))]">
+            {/* Logo */}
+            <div className="flex justify-center mt-6 mb-8">
+              <Image
+                src="/NIHPLOD-logo.svg"
+                alt="NIHPLOD"
+                width={120}
+                height={36}
+                className="h-7 w-auto object-contain opacity-80"
+              />
+            </div>
+
             {/* 用户信息 / 登录入口 */}
-            <div className="mt-6 mb-8 px-4">
+            <div className="mb-8 px-4">
               {user ? (
                 <Link
                   href="/profile"
