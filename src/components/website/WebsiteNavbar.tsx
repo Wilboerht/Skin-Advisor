@@ -76,7 +76,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
               alt="NIHPLOD"
               width={120}
               height={36}
-              className={`h-8 md:h-9 w-auto object-contain transition-opacity duration-500 ${
+              className={`h-7 md:h-9 w-auto object-contain transition-opacity duration-500 ${
                 isDark ? "invert opacity-90 hover:opacity-100" : "opacity-80 hover:opacity-100"
               }`}
             />
