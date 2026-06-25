@@ -118,6 +118,11 @@ export default function ResultCards({
                         height={92}
                         className="w-full h-full object-cover object-top"
                         priority
+                        onError={(e) => {
+                          // 男性图片缺失时降级为女性图片
+                          const fallback = characterImage.replace('_male', '_female');
+                          (e.target as HTMLImageElement).src = fallback;
+                        }}
                       />
                   </div>
                 </div>
