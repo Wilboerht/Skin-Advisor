@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Sparkles, Sun, ScanEye, LogOut } from "lucide-react";
+import { ArrowRight, Sparkles, Sun, ScanEye, LogOut, ChevronLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -35,27 +35,31 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuid
                     className="fixed inset-0 z-[320] bg-[#FAF8F5] flex flex-col items-center overflow-y-auto overscroll-contain"
                 >
                     {/* ---- App Bar / Header ---- */}
-                    <header className="fixed top-0 left-0 right-0 z-[330] flex items-center justify-between px-6 md:px-12 lg:px-20 py-5 md:py-6 bg-[#FAF8F5]/95 backdrop-blur-sm border-b border-[#1A1A1A]/5">
+                    <header className="fixed top-0 left-0 right-0 z-[330] flex items-center justify-center px-6 md:px-12 lg:px-20 py-5 md:py-6 bg-[#FAF8F5]/95 backdrop-blur-sm border-b border-[#1A1A1A]/5">
                         <button
                             onClick={handleClose}
-                            className="group flex items-center gap-2 text-[#1A1A1A]/80 hover:text-[#1A1A1A] transition-colors cursor-pointer bg-transparent border-none"
-                            aria-label="关闭"
+                            className="absolute left-4 md:left-12 lg:left-20 px-3 py-2 flex items-center gap-1.5 text-[#3D4430]/70 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5 cursor-pointer bg-transparent border-none"
+                            aria-label="返回"
                         >
-                            <Image
-                                src="/NIHPLOD-logo.svg"
-                                alt="NIHPLOD"
-                                width={120}
-                                height={36}
-                                className="h-7 md:h-9 w-auto object-contain opacity-80 group-hover:opacity-100 transition-opacity"
-                            />
+                            <ChevronLeft className="w-5 h-5" strokeWidth={1.5} />
+                            <span className="hidden sm:inline text-[14px] font-medium tracking-wide">返回</span>
                         </button>
+
+                        <Image
+                            src="/NIHPLOD-logo.svg"
+                            alt="NIHPLOD"
+                            width={120}
+                            height={36}
+                            className="h-7 md:h-9 w-auto object-contain opacity-80"
+                        />
+
                         <button
                             onClick={handleClose}
-                            className="flex items-center gap-2 px-4 py-2 rounded-full text-[#1A1A1A]/60 hover:text-[#1A1A1A] hover:bg-[#1A1A1A]/5 transition-all cursor-pointer bg-transparent border-none"
+                            className="absolute right-4 md:right-12 lg:right-20 px-3 py-2 flex items-center gap-1.5 text-[#3D4430]/70 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5 cursor-pointer bg-transparent border-none"
                             aria-label="退出"
                         >
-                            <LogOut className="w-4 h-4" strokeWidth={1.5} />
-                            <span className="text-sm tracking-wide">退出</span>
+                            <LogOut className="w-5 h-5" strokeWidth={1.5} />
+                            <span className="hidden sm:inline text-[14px] font-medium tracking-wide">退出</span>
                         </button>
                     </header>
 
