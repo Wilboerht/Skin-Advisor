@@ -2,9 +2,9 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Share2, Loader2 } from 'lucide-react';
+import { Share2 } from 'lucide-react';
 import Image from 'next/image';
-import { getRankPercentile, getTZoneLabel } from '@/lib/result-utils';
+import { getRankPercentile, getTZoneLabel, getCharacterImage, getSkinTypeName } from '@/lib/result-utils';
 
 
 interface Dimension {
@@ -17,8 +17,7 @@ interface ResultCardsProps {
   skinAge: number;
   dimensions: Record<string, Dimension | undefined>;
   nickname: string;
-  generatedAvatar?: string | null;
-  isAvatarLoading?: boolean;
+  gender?: string;
   summary?: string;
   onShare: () => void;
   onUnlockClick?: () => void;
@@ -61,8 +60,7 @@ export default function ResultCards({
   skinAge,
   dimensions,
   nickname,
-  generatedAvatar,
-  isAvatarLoading,
+  gender = 'female',
   summary,
   onShare,
   onUnlockClick,
@@ -70,7 +68,8 @@ export default function ResultCards({
   professionalStyle,
   comprehensiveReport,
 }: ResultCardsProps) {
-  const currentAvatar = generatedAvatar || null;
+  const characterImage = getCharacterImage(score, gender);
+  const skinTypeName = getSkinTypeName(score);
 
   // 基于综合评分计算全国排名百分比
   const rankPercentile = useMemo(
@@ -107,25 +106,19 @@ export default function ResultCards({
               <span className="relative z-10 text-[#3d2f25] text-xs font-bold tracking-widest">报告概览</span>
             </div>
 
-            {/* Avatar with Ring */}
+            {/* Character Illustration */}
             <div className="relative flex items-center justify-center w-[92px] h-[92px]">
               <div className="absolute inset-0 rounded-full p-[2.5px] bg-gradient-to-br from-[#e6d0a8] via-[#f5dfb8] to-[#d4b483] shadow-sm">
                 <div className="w-full h-full rounded-full bg-white p-[1px]">
                     <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center bg-gradient-to-br from-[#f8f0e3] to-[#f5dfb8]">
-                    {isAvatarLoading ? (
-                      <Loader2 className="w-6 h-6 text-[#c4b5a2] animate-spin" />
-                    ) : (
                       <Image
-                        src={currentAvatar || '/user-placeholder.svg'}
-                        alt="avatar"
+                        src={characterImage}
+                        alt={skinTypeName}
                         width={92}
                         height={92}
                         className="w-full h-full object-cover object-top"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = '/user-placeholder.svg';
-                        }}
+                        priority
                       />
-                    )}
                   </div>
                 </div>
               </div>

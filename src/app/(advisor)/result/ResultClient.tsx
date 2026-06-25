@@ -18,7 +18,7 @@ import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useToast } from "@/components/ui/Toast";
 import { useAuth } from "@/hooks/useAuth";
 import type { FaceAnalysisResult } from "@/lib/advisor-utils";
-import { getRankPercentile } from "@/lib/result-utils";
+import { getRankPercentile, getCharacterImage } from "@/lib/result-utils";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 
 import { ScientificBarChart } from "@/components/advisor/ScientificBarChart";
@@ -942,8 +942,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             skinAge={result?.skinProfile?.skinAge || 25}
                             dimensions={faceAnalysis?.dimensions || {}}
                             nickname={userNickname}
-                            generatedAvatar={generatedAvatar}
-                            isAvatarLoading={isAvatarLoading}
+                            gender={socialGender}
                             summary={result?.analysis?.summary}
                             onShare={() => setShowShareModal(true)}
 
@@ -1367,7 +1366,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                             skinTone={faceAnalysis?.dimensions?.skinTone?.score || 0}
                                             waterOil={faceAnalysis?.dimensions?.waterOil?.score || 0}
                                             percentile={rankPercentile}
-                                            avatar={generatedAvatar}
+                                            avatar={getCharacterImage(faceAnalysis?.overallScore || 0, socialGender)}
                                             posterTemplate="/images/poster-template.webp"
                                         />
                                     </div>
