@@ -20,12 +20,11 @@ const PRODUCT_IMAGES = [
 interface AnalyzingOverlayProps {
     progress: number;
     onCancel?: () => void;
-    waitingForAvatar?: boolean;
     queuePosition?: number;
     queueWaitSeconds?: number;
 }
 
-export function AnalyzingOverlay({ progress, onCancel, waitingForAvatar, queuePosition, queueWaitSeconds }: AnalyzingOverlayProps) {
+export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitSeconds }: AnalyzingOverlayProps) {
     const [activeIconIndex, setActiveIconIndex] = useState(0);
     const [showCancel, setShowCancel] = useState(false);
     // "use client" 组件在客户端运行时始终已挂载
@@ -91,8 +90,7 @@ export function AnalyzingOverlay({ progress, onCancel, waitingForAvatar, queuePo
     }, []);
 
     // Dynamic status messages based on progress, wait time, and queue info
-    const getStatusText = useCallback((p: number, stuckSeconds: number, isWaitingAvatar?: boolean, qPos?: number) => {
-        if (isWaitingAvatar) return "正在绘制您的专属形象...";
+    const getStatusText = useCallback((p: number, stuckSeconds: number, qPos?: number) => {
         if (p < 20) return "正在准备您的面部数据...";
         if (p < 45) return "正在识别面部轮廓与特征...";
         if (p < 60) return "正在进行皮肤纹理分析...";
@@ -112,7 +110,7 @@ export function AnalyzingOverlay({ progress, onCancel, waitingForAvatar, queuePo
         return "即将为您呈现专属肌肤报告...";
     }, []);
 
-    const statusText = getStatusText(progress, stuckTime, waitingForAvatar, queuePosition);
+    const statusText = getStatusText(progress, stuckTime, queuePosition);
     const isWaitingLLM = progress >= 75 && progress < 90;
     const hasQueued = (queuePosition !== undefined && queuePosition > 0);
 

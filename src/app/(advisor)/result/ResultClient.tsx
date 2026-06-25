@@ -158,10 +158,9 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const [faceAnalysis, setFaceAnalysis] = useState<FaceAnalysisResult | null>(initialData?.faceAnalysis || null);
     const [userImage, setUserImage] = useState<string | undefined>(undefined);
     const [sideImages, setSideImages] = useState<Record<string, string>>({});
-    const initialAvatar = initialData?.generatedAvatar || (initialData?.result as Record<string, unknown> | undefined)?.generatedAvatar as string | null || null;
 
-    const [generatedAvatar, setGeneratedAvatar] = useState<string | null>(initialAvatar);
-    const [isAvatarLoading, setIsAvatarLoading] = useState(!initialAvatar);
+    const [generatedAvatar, setGeneratedAvatar] = useState<string | null>(null);
+    const [isAvatarLoading, setIsAvatarLoading] = useState(false); // Avatar disabled — using character illustrations
     const [avatarQueueStatus, setAvatarQueueStatus] = useState<{
         position?: number;
         estimatedWaitTime?: number;
@@ -792,9 +791,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
     // Enhanced Loading State
     const isAsyncAnalyzing = searchParams.get('status') === 'analyzing' || analysisState.status !== 'idle';
-    // 分析完成后，如果头像还在生成，继续显示 loading（前端轮询最多 120 秒超时，不会无限等待）
-    const isWaitingForAvatar = !!result && isAvatarLoading && !generatedAvatar;
-    const showLoading = loading || (!result && isAsyncAnalyzing) || isWaitingForAvatar;
+    const showLoading = loading || (!result && isAsyncAnalyzing);
 
     // Fallback if truly nothing to show (not loading, no result)
     if (!result && !showLoading) {
@@ -822,9 +819,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 {showLoading && (
                     <AnalyzingOverlay
                         key="analyzing-overlay"
-                        progress={isWaitingForAvatar ? 99 : analysisState.progress}
+                        progress={analysisState.progress}
                         onCancel={() => router.push('/questions?edit=true')}
-                        waitingForAvatar={isWaitingForAvatar}
                         queuePosition={analysisState.queuePosition}
                         queueWaitSeconds={analysisState.queueWaitSeconds}
                     />

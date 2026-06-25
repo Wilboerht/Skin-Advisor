@@ -63,6 +63,35 @@ export function useAsyncAnalysis() {
     const router = useRouter();
 
     const isRunningRef = useRef(false);
+    const smoothProgressRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    // 平滑进度条：长时间等待时自动缓慢推进，避免用户感觉卡死
+    useEffect(() => {
+        if (analysisState.status !== 'completed' && analysisState.status !== 'error' && analysisState.status !== 'idle' && analysisState.progress < 90) {
+            if (smoothProgressRef.current) return; // already running
+            smoothProgressRef.current = setInterval(() => {
+                setAnalysisState(prev => {
+                    if (prev.progress >= 90 || prev.status === 'completed' || prev.status === 'error') {
+                        return prev;
+                    }
+                    // 越靠近 90 越慢，最低 +1/3s
+                    const step = prev.progress > 75 ? 1 : prev.progress > 50 ? 2 : 3;
+                    return { ...prev, progress: Math.min(prev.progress + step, 89) };
+                });
+            }, 1500);
+        } else {
+            if (smoothProgressRef.current) {
+                clearInterval(smoothProgressRef.current);
+                smoothProgressRef.current = null;
+            }
+        }
+        return () => {
+            if (smoothProgressRef.current) {
+                clearInterval(smoothProgressRef.current);
+                smoothProgressRef.current = null;
+            }
+        };
+    }, [analysisState.status, analysisState.progress]);
 
     const runAnalysis = useCallback(async () => {
         // 并发保护：防止双击或重渲染导致多个分析流程竞争
@@ -212,163 +241,6 @@ export function useAsyncAnalysis() {
                     // 3. Assemble vision images
                     for (const result of uploadResults) {
                         visionImages.push({ data: result.finalData, angle: result.label });
-                        if (result.key === 'front') {
-                            frontPhotoForAvatar = result.finalData;
-                        }
-                    }
-
-                    // Trigger background avatar generation in PARALLEL with face analysis
-                    // Non-blocking: failures are silently logged, don't affect result display
-                    const storedGender = localStorage.getItem(STORAGE_KEYS.ADVISOR_GENDER) || answers?.gender || 'female';
-
-                    // 强制 frontPhoto 为公网 URL：base64 可能达数 MB，直接作为 JSON body 容易触发 413
-                    if (frontPhotoForAvatar && frontPhotoForAvatar.startsWith('data:')) {
-                        try {
-                            const { uploadImage } = await import("@/lib/upload-client");
-                            const blob = await (await fetch(frontPhotoForAvatar)).blob();
-                            const url = await uploadImage(blob, `face-front-avatar.jpg`);
-                            if (url) {
-                                frontPhotoForAvatar = url;
-                            } else {
-                                frontPhotoForAvatar = null;
-                            }
-                        } catch (e) {
-                            console.warn("[Avatar] Failed to upload front photo for avatar, skipping avatar generation", e);
-                            frontPhotoForAvatar = null;
-                        }
-                    }
-
-                    if (frontPhotoForAvatar) {
-                        console.log("[Avatar] Starting background generation (parallel with face analysis)...");
-                        const avatarAbortController = new AbortController();
-                        // 主流程取消时同步取消 avatar 请求
-                        abortController.signal.addEventListener('abort', () => avatarAbortController.abort());
-
-                        (async () => {
-                            let retries = 0;
-                            const maxRetries = 2;
-                            let aborted = false;
-
-                            abortController.signal.addEventListener('abort', () => {
-                                aborted = true;
-                                avatarAbortController.abort();
-                            });
-
-                            while (retries <= maxRetries && !aborted) {
-                                let avatarTimeout: ReturnType<typeof setTimeout> | undefined;
-                                try {
-                                    avatarTimeout = setTimeout(() => avatarAbortController.abort(), 60000);
-
-                                const response = await fetch("/api/advisor/avatar/generate", {
-                                    method: "POST",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({
-                                        sessionId: sessionId,
-                                        nickname: nickname,
-                                        frontPhoto: frontPhotoForAvatar,
-                                        characteristics: {
-                                            // 年龄、肤色、发型由后端从 AI 分析结果中读取真实数据
-                                            // 此处仅传入用户明确填写的性别作为最终 fallback
-                                            gender: storedGender
-                                        }
-                                    }),
-                                    signal: avatarAbortController.signal
-                                });
-
-                                clearTimeout(avatarTimeout);
-                                    
-                                if (response.ok) {
-                                        const data = await response.json();
-
-                                        if (data.success && data.queued) {
-                                            if (data.generatedUrl) {
-                                                try {
-                                                    // 带过期时间的 localStorage 存储（24小时）
-                                                    const payload = JSON.stringify({
-                                                        url: data.generatedUrl,
-                                                        expiresAt: Date.now() + 10 * 60 * 1000
-                                                    });
-                                                    // 大小检查：localStorage 通常限制 5MB
-                                                    if (payload.length > 4 * 1024 * 1024) {
-                                                        console.warn("[Avatar] ⚠️  Avatar URL too large for localStorage, skipping");
-                                                    } else {
-                                                        localStorage.setItem(STORAGE_KEYS.guestAvatar(sessionId), payload);
-                                                        console.log(`[Avatar] ✅ Avatar already generated, stored in localStorage`);
-                                                    }
-                                                } catch (e) {
-                                                    console.warn("[Avatar] ⚠️  Failed to store avatar in localStorage:", e);
-                                                }
-                                            } else {
-                                                console.log(`[Avatar] ✅ Enqueued for generation (position: #${data.position})`);
-                                            }
-                                            break;
-                                        }
-
-                                        if (data.success && data.url && typeof data.url === 'string') {
-                                            if (data.isGuest) {
-                                                try {
-                                                    const payload = JSON.stringify({
-                                                        url: data.url,
-                                                        expiresAt: Date.now() + 10 * 60 * 1000
-                                                    });
-                                                    if (payload.length > 4 * 1024 * 1024) {
-                                                        console.warn("[Avatar] ⚠️  Avatar URL too large for localStorage, skipping");
-                                                    } else {
-                                                        localStorage.setItem(STORAGE_KEYS.guestAvatar(sessionId), payload);
-                                                        console.log(`[Avatar] ✅ Guest avatar stored in localStorage from ${data.source}`);
-                                                    }
-                                                } catch (e) {
-                                                    console.warn("[Avatar] ⚠️  Failed to store guest avatar in localStorage:", e);
-                                                }
-                                            } else {
-                                                console.log(`[Avatar] ✅ User avatar generation succeeded from ${data.source}`);
-                                            }
-                                            break;
-                                        }
-
-                                        console.warn("[Avatar] ❌ Unexpected response format:", data);
-                                        if (retries < maxRetries) {
-                                            retries++;
-                                            await new Promise(r => setTimeout(r, 1000));
-                                            continue;
-                                        } else {
-                                            break;
-                                        }
-                                    } else if (response.status >= 500) {
-                                        console.warn(`[Avatar] ⚠️  Server error (${response.status}), retrying...`);
-                                        if (retries < maxRetries) {
-                                            retries++;
-                                            await new Promise(r => setTimeout(r, 2000 * Math.pow(1.5, retries)));
-                                            continue;
-                                        } else {
-                                            break;
-                                        }
-                                    } else {
-                                        console.error(`[Avatar] ❌ API error (${response.status})`);
-                                        break;
-                                    }
-                                } catch (err) {
-                                    if (avatarTimeout) clearTimeout(avatarTimeout);
-                                    if (err instanceof Error && err.name === 'AbortError') {
-                                        console.warn("[Avatar] ⚠️  Request cancelled or timeout");
-                                        aborted = true;
-                                        break;
-                                    } else {
-                                        console.error("[Avatar] ❌ Generation failed:", err);
-                                    }
-
-                                    if (retries < maxRetries && !aborted) {
-                                        retries++;
-                                        await new Promise(r => setTimeout(r, 2000));
-                                        continue;
-                                    } else {
-                                        break;
-                                    }
-                                }
-                            }
-                            
-                            console.log("[Avatar] Background process complete (frontend will poll for results)");
-                        })();
                     }
 
                     if (visionImages.length > 0) {
