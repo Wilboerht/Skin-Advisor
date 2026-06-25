@@ -26,7 +26,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuid
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.4 }}
-                    className="fixed inset-0 z-[300] bg-[#FAF8F5] flex flex-col items-center overflow-y-auto pt-16 md:pt-20"
+                    className="fixed inset-0 z-[320] bg-[#FAF8F5] flex flex-col items-center overflow-y-auto overscroll-contain pt-16 md:pt-20"
                 >
                     {/* Content */}
                     <div className="flex-1 flex flex-col items-center justify-center w-full px-4 md:px-8">
