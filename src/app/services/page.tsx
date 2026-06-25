@@ -18,7 +18,7 @@ export default function ServicesPage() {
         <div className="w-full max-w-5xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-[7fr_3fr] gap-8 md:gap-12 lg:gap-20 items-center">
             {/* 左侧文字 */}
-            <div className="order-2 lg:order-1">
+            <div>
               <h1 className="text-xl md:text-3xl font-serif text-[#1A1A1A] leading-[1.1] mb-4 md:mb-8">
                 顾问服务
               </h1>
@@ -41,8 +41,8 @@ export default function ServicesPage() {
             </div>
 
             {/* 右侧二维码 */}
-            <div className="order-1 lg:order-2 flex justify-start lg:justify-end">
-              <div className="inline-block text-center">
+            <div className="flex justify-start lg:justify-end">
+              <div className="inline-block text-left md:text-center">
                 <div className="relative w-36 h-36 md:w-52 md:h-52 lg:w-60 lg:h-60 bg-white rounded-2xl p-3 md:p-5 mb-3 md:mb-4 shadow-[0_4px_24px_rgba(61,68,48,0.08)]">
                   <Image
                     src="/images/advisor-qr.jpg"
@@ -67,7 +67,7 @@ export default function ServicesPage() {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-4 text-[10px] md:text-xs tracking-widest text-[#5E5E5E]/60">
           <p>© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
           <span className="hidden sm:inline text-[#5E5E5E]/30">·</span>
-          <div className="flex items-center gap-4">
+          <div className="hidden sm:flex items-center gap-4">
             <Link href="/privacy" className="hover:text-[#3D4430] transition-colors duration-300">
               隐私政策
             </Link>
