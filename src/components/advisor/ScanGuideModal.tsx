@@ -1,7 +1,8 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Sparkles, Sun, ScanEye } from "lucide-react";
+import { ArrowRight, Sparkles, Sun, ScanEye, LogOut } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 
 interface ScanGuideModalProps {
@@ -18,6 +19,11 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuid
         { icon: ScanEye, title: "对准镜头" }
     ];
 
+    const handleClose = () => {
+        if (onExit) onExit();
+        else if (onCancel) onCancel();
+    };
+
     return (
         <AnimatePresence>
             {isOpen && (
@@ -26,10 +32,35 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuid
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.4 }}
-                    className="fixed inset-0 z-[320] bg-[#FAF8F5] flex flex-col items-center overflow-y-auto overscroll-contain pt-16 md:pt-20"
+                    className="fixed inset-0 z-[320] bg-[#FAF8F5] flex flex-col items-center overflow-y-auto overscroll-contain"
                 >
+                    {/* ---- App Bar / Header ---- */}
+                    <header className="fixed top-0 left-0 right-0 z-[330] flex items-center justify-between px-6 md:px-12 lg:px-20 py-5 md:py-6 bg-[#FAF8F5]/95 backdrop-blur-sm border-b border-[#1A1A1A]/5">
+                        <button
+                            onClick={handleClose}
+                            className="group flex items-center gap-2 text-[#1A1A1A]/80 hover:text-[#1A1A1A] transition-colors cursor-pointer bg-transparent border-none"
+                            aria-label="关闭"
+                        >
+                            <Image
+                                src="/NIHPLOD-logo.svg"
+                                alt="NIHPLOD"
+                                width={120}
+                                height={36}
+                                className="h-7 md:h-9 w-auto object-contain opacity-80 group-hover:opacity-100 transition-opacity"
+                            />
+                        </button>
+                        <button
+                            onClick={handleClose}
+                            className="flex items-center gap-2 px-4 py-2 rounded-full text-[#1A1A1A]/60 hover:text-[#1A1A1A] hover:bg-[#1A1A1A]/5 transition-all cursor-pointer bg-transparent border-none"
+                            aria-label="退出"
+                        >
+                            <LogOut className="w-4 h-4" strokeWidth={1.5} />
+                            <span className="text-sm tracking-wide">退出</span>
+                        </button>
+                    </header>
+
                     {/* Content */}
-                    <div className="flex-1 flex flex-col items-center justify-center w-full px-4 md:px-8">
+                    <div className="flex-1 flex flex-col items-center justify-center w-full px-4 md:px-8 pt-16 md:pt-20">
                         <div className="w-full max-w-2xl flex flex-col items-center">
                             {/* Header */}
                             <motion.div
