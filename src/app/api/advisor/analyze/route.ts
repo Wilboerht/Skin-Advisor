@@ -423,16 +423,8 @@ export async function POST(request: NextRequest) {
                     skinTypeAnalysis: `检测到的主要肤质特征为：${getSkinTypeLabel(fallbackFace.skinType.type)}。`,
                     concernAnalysis: fallbackFace.recommendations?.map((r: string) => `• ${r}`) || [],
                     lifestyleTips: fallbackFace.recommendations || [],
+                    faceAnalysis: fallbackFace,
                 };
-                // 用 fallback 结果增强 finalFaceAnalysis
-                if (finalFaceAnalysis) {
-                    finalFaceAnalysis.recommendations = [
-                        ...(finalFaceAnalysis.recommendations || []),
-                        ...(fallbackFace.recommendations || [])
-                    ];
-                } else {
-                    finalFaceAnalysis = fallbackFace;
-                }
             } catch (fallbackErr) {
                 console.error("Fallback analysis also failed", fallbackErr);
                 resultJson = {};
