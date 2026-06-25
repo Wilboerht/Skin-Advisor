@@ -132,10 +132,10 @@ export function QuestionStep({
                 disabled={isNextDisabled}
                 className={cn(
                   "text-[13px] font-medium tracking-[0.15em] transition-colors duration-300 flex items-center justify-center gap-2",
-                  "py-3 px-8 bg-transparent border-b",
+                  "py-3 px-8 bg-transparent",
                   isNextDisabled
-                    ? "text-[#8B7355]/30 border-[#8B7355]/30 cursor-not-allowed"
-                    : "text-[#8B7355] border-[#8B7355] hover:text-[#5C4A35] hover:border-[#5C4A35]"
+                    ? "text-[#8B7355]/30 cursor-not-allowed"
+                    : "text-[#8B7355] hover:text-[#5C4A35]"
                 )}
               >
                 <span className="relative z-10">{nextLabel}</span>
