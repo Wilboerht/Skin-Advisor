@@ -321,10 +321,15 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                                 // If we successfully recovered data, remove 'analyzing' status from URL to stop re-analysis
                                 if (searchParams.get('status') === 'analyzing') {
-                                    const params = new URLSearchParams(searchParams.toString());
-                                    params.delete('status');
-                                    if (advisorResult.sessionId) params.set('id', advisorResult.sessionId);
-                                    router.replace(`/result?${params.toString()}`, { scroll: false });
+                                    // 登录用户直接跳转到 /reports/:id，避免先到 /result?id=xxx 再重定向的多余一次跳转
+                                    if (user && advisorResult.sessionId) {
+                                        router.replace(`/reports/${advisorResult.sessionId}`, { scroll: false });
+                                    } else {
+                                        const params = new URLSearchParams(searchParams.toString());
+                                        params.delete('status');
+                                        if (advisorResult.sessionId) params.set('id', advisorResult.sessionId);
+                                        router.replace(`/result?${params.toString()}`, { scroll: false });
+                                    }
                                 }
                                 setLoading(false);
                                 return; // Successfully recovered
