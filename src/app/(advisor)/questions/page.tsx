@@ -330,7 +330,7 @@ export default function QuestionsPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="h-screen overflow-hidden flex flex-col bg-[#F5F2E9]"
+                    className="h-dvh overflow-hidden flex flex-col bg-[#F5F2E9]"
                 >
                     {/* Top Bar */}
                     <div className="relative flex items-center justify-center py-5 md:py-7 px-4 md:px-12 lg:px-20 border-b border-[#3D4430]/5">
@@ -371,7 +371,7 @@ export default function QuestionsPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ duration: 1.2, delay: 1 }}
-                        className="py-6 opacity-40 px-4"
+                        className="pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,16px))] opacity-40 px-4"
                     >
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-center text-[10px] sm:text-[11px] font-light tracking-widest text-[#1A1A1A] leading-tight">
                             <p>&copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
@@ -391,7 +391,7 @@ export default function QuestionsPage() {
     if (!currentQuestion) return null;
 
     return (
-        <div className="h-screen overflow-hidden flex flex-col bg-[#F5F2E9] text-[#1A1A1A]">
+        <div className="h-dvh overflow-hidden flex flex-col bg-[#F5F2E9] text-[#1A1A1A]">
 
             {/* Top Bar: Back & Logo & Exit */}
             <div className="relative flex items-center justify-center py-5 md:py-7 px-4 md:px-12 lg:px-20 z-20 shrink-0 border-b border-[#3D4430]/5">
@@ -473,7 +473,7 @@ export default function QuestionsPage() {
             </div>
 
             {/* Footer */}
-            <div className="py-6 opacity-40 shrink-0 text-center px-4">
+            <div className="pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,16px))] opacity-40 shrink-0 text-center px-4">
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-[10px] sm:text-[11px] font-light tracking-widest text-[#1A1A1A] leading-tight">
                     <p>&copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
                     <span className="hidden sm:inline text-[#1A1A1A]/30">·</span>

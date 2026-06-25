@@ -169,7 +169,7 @@ export default function FaceScanPage() {
     };
 
     return (
-        <div className="relative h-screen overflow-hidden w-full bg-[#F5F2E9] flex flex-col items-center">
+        <div className="relative h-dvh overflow-hidden w-full bg-[#F5F2E9] flex flex-col items-center">
             {/* Top Bar —— 复用 /questions 统一样式 */}
             <header className={`w-full relative flex items-center justify-center py-5 md:py-7 px-4 md:px-12 lg:px-20 z-[310] shrink-0 border-b border-[#3D4430]/5 transition-colors duration-300 ${isModalOpen ? 'bg-[#FAF8F5]' : 'bg-[#F5F2E9]'}`}>
                 <button
@@ -186,7 +186,7 @@ export default function FaceScanPage() {
                     alt="NIHPLOD"
                     width={120}
                     height={30}
-                    className="h-8 md:h-9 w-auto object-contain"
+                    className="h-7 md:h-9 w-auto object-contain"
                     priority
                 />
 
