@@ -115,14 +115,13 @@ export default function ResultCards({
                     {isAvatarLoading ? (
                       <Loader2 className="w-6 h-6 text-[#c4b5a2] animate-spin" />
                     ) : (
-                      <motion.img
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
+                      <Image
                         src={currentAvatar || '/user-placeholder.svg'}
                         alt="avatar"
+                        width={92}
+                        height={92}
                         className="w-full h-full object-cover object-top"
                         onError={(e) => {
-                          // avatar image failed to load, fallback already handled
                           (e.target as HTMLImageElement).src = '/user-placeholder.svg';
                         }}
                       />
@@ -177,12 +176,12 @@ export default function ResultCards({
               </motion.button>
 
               <div className="hidden sm:flex items-center -ml-[10px] z-10">
-                <img src="/images/share-hint.svg" alt="分享提示" className="h-[58px] w-auto object-contain -mt-2" />
+                <Image src="/images/share-hint.svg" alt="分享提示" width={58} height={58} className="h-[58px] w-auto object-contain -mt-2" />
               </div>
             </div>
 
             <div className="flex sm:hidden items-center ml-0 mt-1 opacity-90">
-              <img src="/images/mobile-share-hint.svg" alt="分享提示" className="h-[42px] w-auto object-contain" />
+              <Image src="/images/mobile-share-hint.svg" alt="分享提示" width={42} height={42} className="h-[42px] w-auto object-contain" />
             </div>
           </div>
 

@@ -358,7 +358,7 @@ export async function POST(request: NextRequest) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const concerns = identifyConcerns(enrichedAnswers as any, faceAnalysis as any); // Pre-calculate concerns
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const candidateProducts = await getCandidateProducts(enrichedAnswers as any, concerns, 10); // Top 10
+        const candidateProducts = await getCandidateProducts(enrichedAnswers as any, concerns, 3);
 
         const concernLabels = concerns.map(c => getConcernLabel(c));
 
@@ -413,9 +413,30 @@ export async function POST(request: NextRequest) {
                     { status: 499 }
                 );
             }
-            console.error("AI Generation failed, falling back", e);
-            // Fallback if AI text gen fails but we have DB
-            resultJson = {};
+            console.error("AI Generation failed, falling back to rule engine", e);
+            // 使用规则引擎生成完整降级报告，而非空对象
+            try {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const fallbackFace = fallbackAnalysis(answers as any);
+                resultJson = {
+                    summary: fallbackFace.skinType.description || "基于您的问卷数据生成的初步分析报告。",
+                    skinTypeAnalysis: `检测到的主要肤质特征为：${getSkinTypeLabel(fallbackFace.skinType.type)}。`,
+                    concernAnalysis: fallbackFace.recommendations?.map((r: string) => `• ${r}`) || [],
+                    lifestyleTips: fallbackFace.recommendations || [],
+                };
+                // 用 fallback 结果增强 finalFaceAnalysis
+                if (finalFaceAnalysis) {
+                    finalFaceAnalysis.recommendations = [
+                        ...(finalFaceAnalysis.recommendations || []),
+                        ...(fallbackFace.recommendations || [])
+                    ];
+                } else {
+                    finalFaceAnalysis = fallbackFace;
+                }
+            } catch (fallbackErr) {
+                console.error("Fallback analysis also failed", fallbackErr);
+                resultJson = {};
+            }
         } finally {
             if (queueAcquired) {
                 analysisQueue.release();
@@ -431,7 +452,7 @@ export async function POST(request: NextRequest) {
 
         // 预先用算法生成10个带推荐理由的候选（用于兜底和补充）
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const algorithmRecs = await recommendProducts(enrichedAnswers as any, concerns, candidateProducts, 10);
+        const algorithmRecs = await recommendProducts(enrichedAnswers as any, concerns, candidateProducts, 3);
 
         if (resultJson.products && Array.isArray(resultJson.products)) {
             const mappedProducts = resultJson.products.map((p: any) => {
@@ -458,13 +479,10 @@ export async function POST(request: NextRequest) {
             }).filter(Boolean);
 
             if (mappedProducts.length > 0) {
-                // 前3个为AI主推推荐，补充算法候选至10个
-                const aiTop3 = mappedProducts.slice(0, 3).map((p: any) => ({
-                    ...p,
-                    reason: sanitizeReason(p.reason || algorithmRecs.find((r: any) => String(r.id) === String(p.id))?.reason || "为您精选的护肤产品")
-                }));
-                const remaining = algorithmRecs.filter((ar: any) => !aiTop3.some((p: any) => String(p.id) === String(ar.id)));
-                finalProducts = [...aiTop3, ...remaining].slice(0, 10);
+                // AI 主推，不足 3 个时用算法推荐补足
+                finalProducts = mappedProducts.slice(0, 3);
+                const remaining = algorithmRecs.filter((ar: any) => !finalProducts.some((p: any) => String(p.id) === String(ar.id)));
+                finalProducts = [...finalProducts, ...remaining].slice(0, 3);
             }
         }
 

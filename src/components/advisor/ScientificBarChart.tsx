@@ -38,7 +38,8 @@ export function ScientificBarChart({ dimensions, size = 300, activeDimension, on
     const mounted = useMounted();
     const [initialLoad, setInitialLoad] = useState(true);
     useEffect(() => {
-        const timer = setTimeout(() => setInitialLoad(false), 1200);
+        // 与 animationDuration(1000ms) 对齐，动画结束后关闭以允许后续 hover 交互
+        const timer = setTimeout(() => setInitialLoad(false), 1100);
         return () => clearTimeout(timer);
     }, []);
 

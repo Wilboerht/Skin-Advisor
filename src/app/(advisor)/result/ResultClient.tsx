@@ -1256,7 +1256,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     {/* 4. Products - 突破 main 容器限制，占页面 80% */}
                     <div className="w-[80%] mx-auto">
                         <ProductRecommendationSection
-                            products={(result.products || []).slice(0, 3).map(p => ({
+                            products={(result.products || []).map(p => ({
                                 id: p.id,
                                 name: p.name,
                                 nameEn: p.nameEn,
@@ -1305,16 +1305,15 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                             {/* Minimal Footer Text */}
                             <div className="text-center">
-                                <div className="flex flex-col md:flex-row justify-center items-center gap-2 md:gap-6 text-xs mb-3">
-                                    <span className="opacity-90" style={{ color: '#5c4937' }}>© 2026 NIHPLOD. All Rights Reserved.</span>
-                                    <span className="hidden md:inline" style={{ color: '#5c4937', opacity: 0.4 }}>•</span>
+                                <div className="flex flex-col md:flex-row justify-center items-center gap-2 md:gap-6 text-xs mb-3 text-[var(--result-text-primary)]">
+                                    <span className="opacity-90">© 2026 NIHPLOD. All Rights Reserved.</span>
+                                    <span className="hidden md:inline opacity-40">•</span>
                                     <div className="flex gap-4 font-medium">
                                         <a
                                             href="https://nihplod.cn/terms"
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="transition-colors"
-                                            style={{ color: '#5c4937', opacity: 0.8 }}
+                                            className="transition-colors opacity-80 hover:opacity-100"
                                         >
                                             服务条款
                                         </a>
@@ -1322,14 +1321,13 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                             href="https://nihplod.cn/privacy"
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="transition-colors"
-                                            style={{ color: '#5c4937', opacity: 0.8 }}
+                                            className="transition-colors opacity-80 hover:opacity-100"
                                         >
                                             隐私政策
                                         </a>
                                     </div>
                                 </div>
-                                <p className="text-xs" style={{ color: '#5c4937', opacity: 0.7 }}>
+                                <p className="text-xs opacity-70 text-[var(--result-text-primary)]">
                                     *AI 分析结果受图像质量影响仅供参考，不构成医疗诊断建议
                                 </p>
                             </div>
