@@ -173,7 +173,7 @@ export default function FaceScanPage() {
             {/* Top Bar —— 复用 /questions 统一样式 */}
             <header className={`w-full relative flex items-center justify-center py-5 md:py-7 px-4 md:px-12 lg:px-20 z-[310] shrink-0 border-b border-[#3D4430]/5 transition-colors duration-300 ${isModalOpen ? 'bg-[#FAF8F5]' : 'bg-[#F5F2E9]'}`}>
                 <button
-                    onClick={() => router.push("/questions")}
+                    onClick={() => router.push("/questions?edit=true")}
                     className="absolute left-4 md:left-12 lg:left-20 px-3 py-2 flex items-center gap-1.5 text-[#3D4430]/70 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5"
                     aria-label="返回"
                 >
