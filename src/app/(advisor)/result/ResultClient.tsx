@@ -766,7 +766,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 重新拍摄
                             </button>
                             <button
-                                onClick={() => router.push('/questions')}
+                                onClick={() => router.push('/questions?edit=true')}
                                 className="flex w-full items-center justify-center gap-2 rounded-full border border-[#5c4937]/10 bg-white py-3 text-sm font-medium text-[#5c4937] transition-colors hover:bg-[#5c4937]/5 active:scale-95"
                             >
                                 返回重新测试
@@ -793,7 +793,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     <h3 className="text-lg font-medium text-[#5c4937] mb-2">报告加载失败</h3>
                     <p className="text-sm text-[#8c7a6b] mb-6">数据可能已过期或不存在</p>
                     <button
-                        onClick={() => router.push("/questions")}
+                        onClick={() => router.push("/questions?edit=true")}
                         className="inline-flex items-center justify-center gap-2 rounded-full bg-[#5c4937] px-6 py-3 text-sm font-medium text-white shadow-lg transition-transform active:scale-95"
                     >
                         <RotateCcw className="w-4 h-4" />
@@ -811,7 +811,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     <AnalyzingOverlay
                         key="analyzing-overlay"
                         progress={isWaitingForAvatar ? 99 : analysisState.progress}
-                        onCancel={() => router.push('/questions')}
+                        onCancel={() => router.push('/questions?edit=true')}
                         waitingForAvatar={isWaitingForAvatar}
                         queuePosition={analysisState.queuePosition}
                         queueWaitSeconds={analysisState.queueWaitSeconds}
