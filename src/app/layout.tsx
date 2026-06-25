@@ -13,6 +13,7 @@ export const metadata: Metadata = {
     ],
   },
   manifest: '/site.webmanifest',
+  themeColor: '#F5F2E9',
 };
 
 import { ViewTransitions } from "next-view-transitions";
