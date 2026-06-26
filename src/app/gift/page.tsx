@@ -225,7 +225,7 @@ export default function GiftPage() {
       {/* 无活动 - 玩法预告 */}
       {pageState === "no_campaign" && (
         <section className="relative z-10 pb-20 md:pb-36 px-6 md:px-12 lg:px-20">
-          <div className="max-w-3xl mx-auto">
+          <div className="max-w-4xl mx-auto">
             <div className="text-center mb-8 md:mb-10">
               <p className="text-[15px] md:text-base text-[#5E5E5E]/80 font-light leading-relaxed max-w-md mx-auto">
                 简单三步，即可参与活动赢取 NIHPLOD 限定礼遇。
@@ -247,7 +247,7 @@ export default function GiftPage() {
               <div className="space-y-4">
                 {[
                   { step: "01", title: "完成测肤", desc: "获取你的专属肌肤形象类型" },
-                  { step: "02", title: "分享小红书", desc: "发布海报并 @NIHPLOD旎柏" },
+                  { step: "02", title: "分享小红书", desc: "发布海报并 @NIHPLOD" },
                   { step: "03", title: "解锁礼遇", desc: "提交分享链接，等待开奖" },
                 ].map((item, i) => (
                   <div
@@ -352,7 +352,7 @@ export default function GiftPage() {
       {/* 活动规则 */}
       {pageState === "show_campaign" && campaign && (
         <section className="relative z-10 pb-20 md:pb-36 px-6 md:px-12 lg:px-20">
-          <div className="max-w-3xl mx-auto">
+          <div className="max-w-4xl mx-auto">
             <div className="text-center mb-8 md:mb-10">
               <p className="text-[15px] md:text-base text-[#5E5E5E]/80 font-light leading-relaxed max-w-md mx-auto">
                 简单四步，即可参与活动赢取 NIHPLOD 限定礼遇。
@@ -374,7 +374,7 @@ export default function GiftPage() {
               <div className="space-y-4">
                 {[
                   { step: "01", title: "生成专属海报", desc: "点击下方按钮，生成您的专属活动海报与小红书分享文案" },
-                  { step: "02", title: "分享到小红书", desc: "将海报发布到您的小红书账号，附上活动文案并 @NIHPLOD旎柏" },
+                  { step: "02", title: "分享到小红书", desc: "将海报发布到您的小红书账号，附上活动文案并 @NIHPLOD" },
                   { step: "03", title: "提交参与信息", desc: "在本页填写您的小红书分享链接，提交后等待审核" },
                   { step: "04", title: "等待开奖", desc: `审核通过后即可参与抽奖，开奖时间：${campaign.drawDate ? formatDate(campaign.drawDate) : "敬请期待"}` },
                 ].map((item, i) => (
