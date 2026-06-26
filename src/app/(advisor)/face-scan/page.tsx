@@ -379,6 +379,8 @@ export default function FaceScanPage() {
                     setIsPreparing(true);
                     setIsModalOpen(false);
                 }}
+                onExit={() => router.push("/questions?edit=true")}
+                onCancel={() => router.push("/questions?edit=true")}
             />
         </div>
     );
