@@ -535,14 +535,14 @@ export default function QuestionsPage() {
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                         <m.div
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                            className="absolute inset-0 bg-black/20"
+                            className="absolute inset-0 bg-[#F5F2E9]/80 backdrop-blur-sm"
                             onClick={() => setShowQualityWarning(false)}
                         />
                         <m.div
                             initial={{ opacity: 0, scale: 0.95, y: 10 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                            className="relative w-full max-w-sm bg-white rounded-lg p-8 text-center border border-[#E9E9E7]"
+                            className="relative w-full max-w-sm bg-[#FDFBF7] rounded-lg p-8 text-center border border-[#E9E9E7]"
                         >
                             <h3 className="text-lg font-medium text-[#1A1A1A] mb-2">确认提交？</h3>
                             <p className="text-sm text-[#5E5E5E] mb-8 leading-relaxed">
@@ -557,7 +557,7 @@ export default function QuestionsPage() {
                                         startStepIndex.current = currentStepIndex;
                                         if (pendingAnswers) processSubmission(pendingAnswers);
                                     }}
-                                    className="w-full h-11 rounded-lg border border-[#E9E9E7] text-[#1A1A1A] hover:bg-[#F5F5F5] text-[13px] font-medium tracking-[0.1em] transition-colors flex items-center justify-center gap-2"
+                                    className="w-full h-11 rounded-lg bg-[#1A1A1A] text-white hover:bg-[#333] text-[13px] font-medium tracking-[0.1em] transition-colors flex items-center justify-center gap-2"
                                 >
                                     <span>我已确认，去提交</span>
                                     <ArrowRight className="w-4 h-4" />
