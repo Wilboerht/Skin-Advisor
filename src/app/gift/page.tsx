@@ -310,38 +310,28 @@ export default function GiftPage() {
       {/* 奖品展示 */}
       {pageState === "show_campaign" && campaign && (
         <section className="relative z-10 pb-20 md:pb-36 px-6 md:px-12 lg:px-20">
-          <div className="max-w-5xl mx-auto">
-            <div className="text-center mb-10 md:mb-12">
-              <p className="text-[11px] tracking-[0.25em] text-[#8B7355] uppercase mb-3">Prizes</p>
-              <h2 className="text-xl md:text-2xl font-serif text-[#1A1A1A]">本期好礼</h2>
+          <div className="max-w-2xl mx-auto">
+            <div className="text-center mb-8 md:mb-10">
+              <p className="text-[15px] md:text-base text-[#5E5E5E]/80 font-light leading-relaxed max-w-md mx-auto">
+                本期好礼
+              </p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-3 gap-4 md:gap-6 place-items-center">
               {Array.isArray(campaign.prizes) && campaign.prizes.map((prize, i) => (
                 <div
                   key={i}
-                  className="group relative rounded-2xl border border-[rgba(61,68,48,0.08)] bg-[#FAF9F6] overflow-hidden transition-all duration-500 hover:shadow-[0_16px_32px_rgba(61,68,48,0.08)] hover:-translate-y-1"
+                  className="relative w-full aspect-square max-w-[80px] p-3 flex items-center justify-center"
                 >
-                  <div className="aspect-square relative overflow-hidden bg-[#F0EDE1]/50">
-                    {prize.image ? (
-                      <Image
-                        src={prize.image}
-                        alt={prize.name}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Gift className="w-12 h-12 text-[#8B7355]/30" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-5 md:p-6">
-                    <h3 className="text-base font-serif text-[#1A1A1A] mb-1">{prize.name}</h3>
-                    {prize.description && (
-                      <p className="text-sm text-[#5E5E5E]/70 leading-relaxed mb-2">{prize.description}</p>
-                    )}
-                    <p className="text-xs text-[#8B7355]">共 {prize.quantity} 份</p>
-                  </div>
+                  {prize.image ? (
+                    <Image
+                      src={prize.image}
+                      alt={prize.name}
+                      fill
+                      className="object-contain p-3"
+                    />
+                  ) : (
+                    <Gift className="w-10 h-10 text-[#8B7355]/30" />
+                  )}
                 </div>
               ))}
             </div>
