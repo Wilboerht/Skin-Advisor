@@ -49,10 +49,14 @@ const SCORE_RANGES = [
  * @param gender 性别 "female" | "male"
  * @returns 角色图片路径，如 "/images/character/80-83/80-83_male.png"
  */
+// 部分分数段仅有 female 图片，male 缺失时回退
+const MALE_MISSING_RANGES = ["64-67", "68-71", "72-75", "76-79", "80-83", "92-95", "96-100"];
+
 export function getCharacterImage(score: number, gender: string): string {
     const match = SCORE_RANGES.find(r => score >= r.min && score <= r.max);
     const range = match?.range || "60-63";
-    const genderSuffix = gender === "male" ? "male" : "female";
+    const actualGender = gender === "male" && MALE_MISSING_RANGES.includes(range) ? "female" : gender;
+    const genderSuffix = actualGender === "male" ? "male" : "female";
     return `/images/character/${range}/${range}_${genderSuffix}.png`;
 }
 

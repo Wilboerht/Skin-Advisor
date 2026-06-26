@@ -19,6 +19,7 @@ interface ProductDetailModalProps {
 export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailModalProps) {
     const [mounted, setMounted] = useState(false);
     const [openAccordion, setOpenAccordion] = useState<string | null>(null);
+    const [imageError, setImageError] = useState(false);
 
     useEffect(() => {
         setMounted(true);
@@ -88,7 +89,7 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
 
                         {/* Left - Image */}
                         <div className="relative aspect-square w-full flex-shrink-0 bg-[#F5F0E8] lg:h-full lg:w-[45%] lg:aspect-auto">
-                            {product.image ? (
+                            {product.image && !imageError ? (
                                 <Image
                                     src={product.image}
                                     alt={product.name}
@@ -97,11 +98,12 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                                     sizes="(max-width: 1024px) 100vw, 42vw"
                                     quality={90}
                                     priority
-                                    unoptimized={product.image?.startsWith('/') && !product.image?.startsWith('//')}
+                                    unoptimized={product.image?.startsWith('/') || product.image?.startsWith('https://')}
+                                    onError={() => setImageError(true)}
                                 />
                             ) : (
                                 <div className="flex h-full items-center justify-center text-[#8c7a6b]/50">
-                                    <span className="text-sm">暂无图片</span>
+                                    <span className="text-sm">{imageError ? "图片加载失败" : "暂无图片"}</span>
                                 </div>
                             )}
                         </div>
