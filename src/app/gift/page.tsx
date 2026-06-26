@@ -316,22 +316,26 @@ export default function GiftPage() {
                 本期好礼
               </p>
             </div>
-            <div className="grid grid-cols-3 gap-4 md:gap-6 place-items-center">
+            <div className="grid grid-cols-3 gap-4 md:gap-6 place-items-start text-center">
               {Array.isArray(campaign.prizes) && campaign.prizes.map((prize, i) => (
-                <div
-                  key={i}
-                  className="relative w-full aspect-square max-w-[80px] p-3 flex items-center justify-center"
-                >
-                  {prize.image ? (
-                    <Image
-                      src={prize.image}
-                      alt={prize.name}
-                      fill
-                      className="object-contain p-3"
-                    />
-                  ) : (
-                    <Gift className="w-10 h-10 text-[#8B7355]/30" />
+                <div key={i} className="flex flex-col items-center w-full">
+                  <div className="relative w-full aspect-square max-w-[80px] p-3 flex items-center justify-center mb-3">
+                    {prize.image ? (
+                      <Image
+                        src={prize.image}
+                        alt={prize.name}
+                        fill
+                        className="object-contain p-2"
+                      />
+                    ) : (
+                      <Gift className="w-8 h-8 text-[#8B7355]/30" />
+                    )}
+                  </div>
+                  <h3 className="text-sm font-medium text-[#1A1A1A] mb-1 leading-tight">{prize.name}</h3>
+                  {prize.description && (
+                    <p className="text-xs text-[#5E5E5E] leading-relaxed mb-1">{prize.description}</p>
                   )}
+                  <p className="text-xs text-[#8B7355]">共 {prize.quantity} 份</p>
                 </div>
               ))}
             </div>
