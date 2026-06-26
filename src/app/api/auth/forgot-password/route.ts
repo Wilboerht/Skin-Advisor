@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ phone })
+            body: JSON.stringify({ phone, type: "reset" })
         });
 
         const responseData = await officialResponse.json();
