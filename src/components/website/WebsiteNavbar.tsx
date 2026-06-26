@@ -100,7 +100,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                 >
                   {item.label}
                   {item.badge && (
-                    <span className="absolute -top-2.5 -right-1 translate-x-full inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-medium tracking-normal bg-red-500/90 text-white leading-tight whitespace-nowrap">
+                    <span className="absolute -top-2.5 left-full -ml-1 inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-medium tracking-normal bg-red-500/90 text-white leading-tight whitespace-nowrap">
                       {item.badge}
                     </span>
                   )}
