@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
 // GET /api/products - 公开产品列表（无需登录）
 export async function GET(request: NextRequest) {
     try {
+        const ip = getClientIP(request);
+        const ipLimit = await rateLimit(`products-ip-${ip}`, "default", { maxRequests: 60, windowMs: 60 * 1000 });
+        if (!ipLimit.success) {
+            return NextResponse.json({ error: "请求过于频繁，请稍后再试" }, { status: 429 });
+        }
         const { searchParams } = new URL(request.url);
         const ids = searchParams.get('ids'); // 逗号分隔的 ID 列表
 

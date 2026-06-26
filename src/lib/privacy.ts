@@ -15,16 +15,16 @@ import { createHash } from 'crypto';
 export function hashIP(ip: string): string {
     const salt = process.env.IP_HASH_SALT;
     if (!salt) {
-        if (process.env.NODE_ENV === 'production') {
+        if (process.env.NODE_ENV !== 'development') {
             throw new Error(
                 '🔴 CRITICAL: IP_HASH_SALT environment variable is not set. ' +
-                'Refusing to hash IPs in production with a hardcoded salt.'
+                'Refusing to hash IPs without a proper salt in non-development environment.'
             );
         }
         console.warn('⚠️  IP_HASH_SALT not set — using development fallback. Do NOT use in production.');
     }
     return createHash('sha256')
-        .update(`${salt || 'dev-only-ip-salt-not-for-production'}:${ip}`)
+        .update(`${salt!}:${ip}`)
         .digest('hex')
         .substring(0, 16);
 }

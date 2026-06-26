@@ -20,8 +20,11 @@ export async function POST(req: NextRequest) {
         if (!body.code || !body.password) {
             return NextResponse.json({ error: "缺少必填项" }, { status: 400 });
         }
-        if (body.password.length < 6) {
-            return NextResponse.json({ error: "密码长度至少为 6 位" }, { status: 400 });
+        if (body.password.length < 8) {
+            return NextResponse.json({ error: "密码长度至少为 8 位" }, { status: 400 });
+        }
+        if (!/[a-zA-Z]/.test(body.password) || !/[0-9]/.test(body.password)) {
+            return NextResponse.json({ error: "密码需包含字母和数字" }, { status: 400 });
         }
 
         const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";

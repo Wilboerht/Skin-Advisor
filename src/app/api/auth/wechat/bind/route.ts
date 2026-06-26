@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
 export async function POST(req: NextRequest) {
     try {
+        const ip = getClientIP(req);
+        const ipLimit = await rateLimit(`wechat-bind-ip-${ip}`, "login", { maxRequests: 5, windowMs: 15 * 60 * 1000 });
+        if (!ipLimit.success) {
+            return NextResponse.json({ error: "请求过于频繁，请稍后再试" }, { status: 429 });
+        }
+
         const body = await req.json();
 
         const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Loader2, MapPin, ShieldCheck, ArrowRight, LogOut } from "lucide-react";
 import { AnimatePresence, motion as m, useReducedMotion } from "framer-motion";
 import Image from "next/image";
+import { useToast } from "@/components/ui/Toast";
 
 interface OnboardingFlowProps {
     isOpen: boolean;
@@ -36,6 +37,7 @@ export function OnboardingFlowModal({
     regionOptions,
     isLoggedIn
 }: OnboardingFlowProps) {
+    const toast = useToast();
     // Determine which screens to show
     const hasNicknameScreen = !isLoggedIn || !nickname;
     const hasLegalScreen = !isLoggedIn;
@@ -110,6 +112,7 @@ export function OnboardingFlowModal({
                 goNext();
             }
         } catch (e) {
+            toast.warning("无法获取位置信息，请手动选择所在地区");
             setLocationView("region");
         }
     };
@@ -425,7 +428,7 @@ export function OnboardingFlowModal({
                                         <div className="absolute bottom-0 left-0 right-0 pt-8 pb-5 md:pb-6 text-center pointer-events-none bg-gradient-to-t from-[#FDFBF7] via-[#FDFBF7]/95 to-transparent">
                                             <button
                                                 onClick={handleSkipRegion}
-                                                className="pointer-events-auto text-[12px] tracking-[0.15em] text-[#3D4430]/55 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
+                                                className="pointer-events-auto text-[12px] tracking-[0.15em] text-[#3D4430]/70 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
                                             >
                                                 暂不提供
                                             </button>
@@ -543,7 +546,7 @@ export function OnboardingFlowModal({
 
                                         <button
                                             onClick={onClose}
-                                            className="py-2 text-[12px] tracking-widest text-[#3D4430]/45 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
+                                            className="py-2 text-[12px] tracking-widest text-[#3D4430]/70 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
                                         >
                                             暂不测试
                                         </button>

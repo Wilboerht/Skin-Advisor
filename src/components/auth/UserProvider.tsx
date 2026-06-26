@@ -74,8 +74,6 @@ function setCachedUser(user: User | null) {
             // 不缓存敏感字段（role），缩短缓存时间
             const cacheable = {
                 id: user.id,
-                email: user.email,
-                phone: user.phone,
                 name: user.name,
                 avatar: user.avatar,
             };

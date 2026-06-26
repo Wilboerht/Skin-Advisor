@@ -70,6 +70,14 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "缺少必填项" }, { status: 400 });
         }
 
+        // 密码复杂度校验：至少8位，包含字母和数字
+        if (body.password.length < 8) {
+            return NextResponse.json({ error: "密码长度至少为 8 位" }, { status: 400 });
+        }
+        if (!/[a-zA-Z]/.test(body.password) || !/[0-9]/.test(body.password)) {
+            return NextResponse.json({ error: "密码需包含字母和数字" }, { status: 400 });
+        }
+
         // 官网注册接口需要: phone, code, password, confirmPassword
         // 我们在这个 proxy 里包装一层
         const registerPayload = {

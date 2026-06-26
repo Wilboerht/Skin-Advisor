@@ -81,7 +81,7 @@ export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitS
 
         const timeoutId = setTimeout(() => {
             setShowCancel(true);
-        }, 5000);
+        }, 2000);
 
         return () => {
             clearInterval(interval);
@@ -260,13 +260,15 @@ export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitS
                         </AnimatePresence>
                     </div>
 
-                    {/* Progress Bar - Minimalist Line with streamer effect when waiting */}
+                    {/* Progress Bar — pulses when waiting for AI response */}
                     <div className="w-full max-w-[280px] relative h-[4px] bg-[#E9E9E7] rounded-full overflow-hidden">
                         <m.div
                             className="absolute top-0 bottom-0 left-0 bg-[#D4B78F]"
                             initial={{ width: 0 }}
-                            animate={{ width: `${progress}%` }}
-                            transition={{ type: "spring", stiffness: 50, damping: 20 }}
+                            animate={isWaitingLLM 
+                                ? { width: ["88%", "92%", "88%"], transition: { duration: 2, repeat: Infinity, ease: "easeInOut" } }
+                                : { width: `${progress}%`, transition: { type: "spring", stiffness: 50, damping: 20 } }
+                            }
                         />
                         {/* Streamer effect: active waiting indicator when LLM is thinking */}
                         {isWaitingLLM && (

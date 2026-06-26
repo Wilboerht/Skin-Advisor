@@ -20,6 +20,7 @@ export default function FaceScanPage() {
     const [isPreparing, setIsPreparing] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showExitConfirm, setShowExitConfirm] = useState(false);
+    const [storageError, setStorageError] = useState(false);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [preloadedFaceApi, setPreloadedFaceApi] = useState<any>(null);
 
@@ -42,8 +43,9 @@ export default function FaceScanPage() {
             answers = localStorage.getItem("advisor_answers");
         } catch (e) {
             console.warn("Storage API disabled or unavailable", e);
-            // 兜底策略：如果浏览器彻底禁用了 Storage，跳过校验直接放行，避免无限拦截造成死循环
-            answers = "fallback_allowed";
+            // Storage 不可用时重定向回问卷页，由问卷页引导用户
+            router.replace("/questions");
+            return;
         }
 
         if (!answers) {
@@ -178,6 +180,8 @@ export default function FaceScanPage() {
         }
 
         toast.error("存储空间不足，请清理浏览器缓存后重试");
+        setIsSubmitting(false);
+        setStorageError(true);
     };
 
     return (
@@ -310,6 +314,53 @@ export default function FaceScanPage() {
                                             router.push("/");
                                         }}
                                         className="text-[12px] tracking-[0.15em] text-[#3D4430]/40 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
+                                    >
+                                        退出并返回首页
+                                    </button>
+                                </div>
+                            </div>
+                        </m.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Storage Error Modal —— 存储空间不足时的逃生出口 */}
+            <AnimatePresence>
+                {storageError && (
+                    <div className="fixed inset-0 z-[400] flex items-center justify-center p-4">
+                        <m.div
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-[#FDFBF7]/90 backdrop-blur-sm"
+                        />
+                        <m.div
+                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                            className="relative w-full max-w-sm bg-white/70 backdrop-blur-xl p-8 shadow-[0_24px_48px_-12px_rgba(0,0,0,0.08)] border border-[#D4CFC5] text-center rounded-xl overflow-hidden"
+                        >
+                            <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }} />
+                            <div className="relative z-10">
+                                <h3 className="text-xl font-serif text-[#1A1A1A] mb-2">存储空间不足</h3>
+                                <p className="text-sm text-[#5E5E5E] mb-8 font-light leading-relaxed">
+                                    浏览器存储空间已满，无法保存照片。<br />请清理浏览器缓存后重新尝试。
+                                </p>
+                                <div className="flex flex-col items-center gap-3">
+                                    <button
+                                        onClick={() => {
+                                            setStorageError(false);
+                                            setIsSubmitting(false);
+                                        }}
+                                        className="w-full h-11 rounded-md bg-[#4A3728] hover:bg-[#3D2E20] text-[#FDFBF7] text-[13px] font-medium tracking-[0.15em] transition-all duration-300 active:scale-[0.98]"
+                                    >
+                                        重新尝试拍照
+                                    </button>
+                                    <button
+                                        onClick={async () => {
+                                            const { advisorStorage } = await import("@/lib/advisor-storage");
+                                            await advisorStorage.clearAll();
+                                            router.push("/");
+                                        }}
+                                        className="text-[12px] tracking-[0.15em] text-[#3D4430]/40 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer mt-2"
                                     >
                                         退出并返回首页
                                     </button>

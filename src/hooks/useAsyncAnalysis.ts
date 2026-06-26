@@ -294,8 +294,13 @@ export function useAsyncAnalysis() {
                 }
             }
 
-            // Bump to next major phase smoothly (keep current progress, no hard jump)
-            setAnalysisState(prev => ({ ...prev, status: 'analyzing_skin' }));
+            // 面部分析完成 → 推进进度条
+            if (faceAnalysis) {
+                setAnalysisState(prev => ({ ...prev, progress: Math.max(prev.progress, 45) }));
+            }
+
+            // Bump to next major phase smoothly
+            setAnalysisState(prev => ({ ...prev, status: 'analyzing_skin', progress: Math.max(prev.progress, 55) }));
 
             // 2. Comprehensive Analysis (Text)
 

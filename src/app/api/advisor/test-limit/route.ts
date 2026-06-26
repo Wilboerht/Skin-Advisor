@@ -48,8 +48,7 @@ export async function GET(request: NextRequest) {
         console.error("Failed to check test limit:", error);
         const errorMessage = error instanceof Error ? error.message : String(error);
         return NextResponse.json({
-            error: "Failed to check test limit",
-            details: errorMessage
+            error: "Failed to check test limit"
         }, { status: 500 });
     }
 }

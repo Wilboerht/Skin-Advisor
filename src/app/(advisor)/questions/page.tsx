@@ -11,11 +11,13 @@ import { GenderSelection } from "@/components/advisor/GenderSelection";
 import { m, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ArrowRight, LogOut } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
+import { useToast } from "@/components/ui/Toast";
 import { cn } from "@/lib/utils";
 import { preloadAllFaceModels } from "@/lib/preload-models";
 
 export default function QuestionsPage() {
     const router = useRouter();
+    const toast = useToast();
     const [gender, setGender] = useState<"female" | "male" | null>(null);
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
     const [answers, setAnswers] = useState<Record<string, unknown>>({});
@@ -215,6 +217,8 @@ export default function QuestionsPage() {
                 } else {
                     if (currentVal.length < 3) { // 最多选3个
                         newAnswers[currentQuestion.fieldName] = [...currentVal, value];
+                    } else {
+                        toast.info("最多选择 3 项");
                     }
                 }
             }

@@ -7,17 +7,16 @@ import prisma from '@/lib/prisma';
 function getJwtSecret(): Uint8Array {
     const secret = process.env.JWT_SECRET?.trim();
     if (!secret) {
-        if (process.env.NODE_ENV === 'production') {
+        if (process.env.NODE_ENV !== 'development') {
             throw new Error(
                 '🔴 CRITICAL: JWT_SECRET environment variable is not set. ' +
-                'Refusing to start in production with a hardcoded secret. ' +
+                'Refusing to start without a proper secret in non-development environment. ' +
                 'Set JWT_SECRET in your environment variables.'
             );
         }
-        // Development fallback only — never used in production
         console.warn('⚠️  JWT_SECRET not set — using development fallback. Do NOT use in production.');
     }
-    return new TextEncoder().encode(secret || 'dev_only_fallback_secret_not_for_production');
+    return new TextEncoder().encode(secret!);
 }
 
 const JWT_SECRET = getJwtSecret();
