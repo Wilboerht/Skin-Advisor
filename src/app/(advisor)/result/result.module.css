@@ -16,9 +16,9 @@
     min-height: 100vh;
     overflow-x: hidden;
     background-color: var(--result-bg);
-    background-image: url('/images/result-bg.webp');
-    background-size: cover;
-    background-position: center;
+    /* background-image: url('/images/result-bg.webp'); */
+    /* background-size: cover; */
+    /* background-position: center; */
     color: var(--result-text-primary);
     font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
     line-height: 1.5;
