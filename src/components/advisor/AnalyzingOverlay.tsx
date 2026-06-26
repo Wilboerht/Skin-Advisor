@@ -283,7 +283,7 @@ export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitS
                     </div>
 
                     {/* Percentage + Wait hint */}
-                    <div className="flex flex-col items-center gap-1">
+                    <div className="flex flex-col items-center gap-2">
                         <span className="text-xs text-[#9A9A9A] font-mono tracking-widest">
                             {Math.round(progress)}%
                         </span>
@@ -313,7 +313,7 @@ export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitS
             {/* 3. Analysis Icons Row (9 Metrics) */}
             <div className="absolute bottom-24 w-full px-4 z-50">
                 <m.div
-                    className="flex flex-nowrap items-center justify-center gap-1.5 sm:gap-4 md:gap-6 max-w-[95vw] sm:max-w-2xl mx-auto"
+                    className="flex flex-nowrap items-center justify-center gap-2 sm:gap-4 md:gap-6 max-w-[95vw] sm:max-w-2xl mx-auto"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5, duration: 0.8 }}
