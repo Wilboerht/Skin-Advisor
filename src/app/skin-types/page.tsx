@@ -53,22 +53,22 @@ export default function ResultIndexPage() {
 
           {/* 参与有礼活动 */}
           <div
-            className="mt-10 md:mt-14 mx-auto max-w-xl opacity-0 animate-fade-in-up"
+            className="mt-10 md:mt-14 mx-auto max-w-2xl opacity-0 animate-fade-in-up"
             style={{ animationDelay: "0.3s", animationFillMode: "forwards" }}
           >
-            <div className="group flex flex-col sm:flex-row items-center gap-5 sm:gap-6 p-5 md:p-6 rounded-2xl border border-[rgba(61,68,48,0.08)] bg-[#FAF9F6] transition-all duration-500 hover:shadow-[0_16px_32px_rgba(61,68,48,0.08)] hover:-translate-y-0.5">
-              <div className="shrink-0 w-14 h-14 md:w-16 md:h-16 flex items-center justify-center">
+            <div className="group flex flex-col sm:flex-row items-center gap-5 sm:gap-7 p-6 md:p-7 rounded-2xl border border-[rgba(61,68,48,0.08)] bg-[#FAF9F6]">
+              <div className="shrink-0 w-12 h-12 md:w-14 md:h-14 flex items-center justify-center">
                 <Image
                   src="/images/watermark.png"
                   alt=""
-                  width={64}
-                  height={64}
-                  className="w-full h-full object-contain opacity-90"
+                  width={56}
+                  height={56}
+                  className="w-full h-full object-contain opacity-90 drop-shadow-[0_1px_1px_rgba(61,68,48,0.4)]"
                   unoptimized
                 />
               </div>
-              <div className="flex-1 text-center sm:text-left">
-                <p className="text-sm font-medium text-[#1A1A1A] mb-1">肌智派送好礼</p>
+              <div className="flex-1 min-w-0 text-center sm:text-left">
+                <p className="text-[15px] font-medium text-[#1A1A1A] mb-1">肌智派送好礼</p>
                 <p className="text-[13px] text-[#5E5E5E]/80 leading-relaxed">
                   分享你的肌肤形象类型，参与 NIHPLOD 限定礼遇活动
                 </p>
