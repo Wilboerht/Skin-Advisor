@@ -37,14 +37,28 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         };
     }, []);
 
+    const toastIdCounter = React.useRef(0);
+    const MAX_TOASTS = 4;
+
     const removeToast = React.useCallback((id: string) => {
         setToasts((prev) => prev.filter((t) => t.id !== id));
     }, []);
 
     const addToast = React.useCallback(
         (message: string, type: ToastType, duration = 3000) => {
-            const id = Math.random().toString(36).substring(2, 9);
-            setToasts((prev) => [...prev, { id, message, type, duration }]);
+            const id = `${++toastIdCounter.current}-${Date.now()}`;
+            setToasts((prev) => {
+                const next = [...prev, { id, message, type, duration }];
+                // 超过上限时移除最早的 toast
+                if (next.length > MAX_TOASTS) {
+                    const removed = next.shift();
+                    if (removed) {
+                        const timer = timeoutRefs.current.values().next().value;
+                        if (timer) clearTimeout(timer);
+                    }
+                }
+                return next;
+            });
 
             if (duration > 0) {
                 const timer = setTimeout(() => {
@@ -82,72 +96,47 @@ function ToastContainer({
     toasts: Toast[];
     removeToast: (id: string) => void;
 }) {
-    return null;
+    // pause-on-hover: mouse/touch suspends auto-dismiss
+    const [pausedIds, setPausedIds] = React.useState<Set<string>>(new Set());
 
-    const typeStyles = {
-        success: {
-            bg: "bg-emerald-50/95",
-            border: "border-emerald-100",
-            accent: "bg-emerald-500",
-            text: "text-emerald-800",
-            icon: "text-emerald-500",
-        },
-        error: {
-            bg: "bg-red-50/95",
-            border: "border-red-100",
-            accent: "bg-red-500",
-            text: "text-red-800",
-            icon: "text-red-500",
-        },
-        warning: {
-            bg: "bg-amber-50/95",
-            border: "border-amber-100",
-            accent: "bg-amber-500",
-            text: "text-amber-800",
-            icon: "text-amber-500",
-        },
-        info: {
-            bg: "bg-blue-50/95",
-            border: "border-blue-100",
-            accent: "bg-blue-500",
-            text: "text-slate-800",
-            icon: "text-blue-500",
-        },
+    const iconColor = {
+        success: "text-emerald-500",
+        error: "text-red-500",
+        warning: "text-amber-500",
+        info: "text-blue-500",
+    };
+    const IconComponent = {
+        success: CheckCircle,
+        error: AlertCircle,
+        warning: AlertTriangle,
+        info: Info,
     };
 
     return (
-        <div className="fixed top-4 left-1/2 z-[100000] flex w-full max-w-sm -translate-x-1/2 flex-col gap-2 px-4 sm:top-6">
+        <div
+            className="fixed top-4 left-1/2 z-[100000] flex w-full max-w-xs -translate-x-1/2 flex-col items-center gap-2 px-4"
+            style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+        >
             <AnimatePresence>
                 {toasts.map((t) => {
-                    const s = typeStyles[t.type];
+                    const Icon = IconComponent[t.type];
                     return (
-                        <motion.div
-                            key={t.id}
-                            initial={{ opacity: 0, y: -16, scale: 0.96 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.15 } }}
-                            layout
-                            className={`relative flex items-center gap-3 rounded-xl pl-4 pr-3 py-3.5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08)] backdrop-blur-md border overflow-hidden ${s.bg} ${s.border}`}
-                        >
-                            {/* Left accent bar */}
-                            <div className={`absolute left-0 top-0 bottom-0 w-[3px] rounded-r-full ${s.accent}`} />
-
-                            {t.type === "success" && <CheckCircle className={`h-5 w-5 shrink-0 ${s.icon}`} strokeWidth={1.5} />}
-                            {t.type === "error" && <AlertCircle className={`h-5 w-5 shrink-0 ${s.icon}`} strokeWidth={1.5} />}
-                            {t.type === "warning" && <AlertTriangle className={`h-5 w-5 shrink-0 ${s.icon}`} strokeWidth={1.5} />}
-                            {t.type === "info" && <Info className={`h-5 w-5 shrink-0 ${s.icon}`} strokeWidth={1.5} />}
-
-                            <p className={`flex-1 text-[13px] font-medium leading-snug ${s.text}`}>
-                                {t.message}
-                            </p>
-
-                            <button
-                                onClick={() => removeToast(t.id)}
-                                className="shrink-0 rounded-full p-1.5 hover:bg-black/5 transition-colors"
-                            >
-                                <X className="h-3.5 w-3.5 text-black/25" strokeWidth={2} />
-                            </button>
-                        </motion.div>
+                    <motion.div
+                        key={t.id}
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8, transition: { duration: 0.15 } }}
+                        layout
+                        onMouseEnter={() => setPausedIds((prev) => new Set(prev).add(t.id))}
+                        onMouseLeave={() => setPausedIds((prev) => { const next = new Set(prev); next.delete(t.id); return next; })}
+                        onTouchStart={() => setPausedIds((prev) => new Set(prev).add(t.id))}
+                        onTouchEnd={() => setTimeout(() => setPausedIds((prev) => { const next = new Set(prev); next.delete(t.id); return next; }), 2000)}
+                        onClick={() => removeToast(t.id)}
+                        className="flex items-center gap-2.5 rounded-2xl bg-white/90 backdrop-blur-xl px-4 py-2.5 text-[13px] leading-snug text-[#1A1A1A] cursor-pointer select-none shadow-[0_2px_16px_-2px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.04)]"
+                    >
+                        <Icon className={`h-4 w-4 shrink-0 ${iconColor[t.type]}`} strokeWidth={2} />
+                        <span className="font-normal tracking-wide">{t.message}</span>
+                    </motion.div>
                     );
                 })}
             </AnimatePresence>
