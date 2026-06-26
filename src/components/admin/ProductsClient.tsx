@@ -2,6 +2,7 @@
 
 import { useState, memo, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/ui/Toast";
 import Image from "next/image";
 import {
     DndContext,
@@ -196,6 +197,7 @@ const SortableProductRow = memo(function SortableProductRow({
 
 export default function ProductsClient({ initialProducts }: ProductsClientProps) {
     const router = useRouter();
+    const toast = useToast();
     const [products, setProducts] = useState(initialProducts);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [saving, setSaving] = useState(false);
@@ -266,6 +268,7 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                                         router.refresh();
                 }
             } catch (e) {
+                toast.error("排序保存失败");
                 router.refresh();
             } finally {
                 setSaving(false);
@@ -306,8 +309,10 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                 router.refresh();
                 setSelectedIds([]);
             } else {
+                toast.error("批量操作失败");
             }
         } catch (e) {
+            toast.error("网络异常，请稍后重试");
         } finally {
             setBatchLoading(null);
         }
@@ -328,11 +333,13 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                     router.refresh();
                     setSelectedIds([]);
                 } else {
+                    toast.error("批量删除失败");
                 }
             } catch (e) {
+                toast.error("网络异常，请稍后重试");
             }
         } else if (deleteConfirm.id) {
-            // Single delete - use dedicated endpoint for proper audit logging
+            // Single delete
             try {
                 const res = await fetch(`/api/admin/products/${deleteConfirm.id}`, {
                     method: 'DELETE',
@@ -341,8 +348,10 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                 if (res.ok) {
                     router.refresh();
                 } else {
+                    toast.error("删除失败");
                 }
             } catch (e) {
+                toast.error("网络异常，请稍后重试");
             }
         }
         setDeleteConfirm({ show: false, id: null, batch: false });

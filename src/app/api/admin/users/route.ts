@@ -5,15 +5,28 @@ import { requireRole } from "@/lib/admin-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { Prisma } from "@prisma/client";
 
+// PII 脱敏工具
+function maskEmail(email: string): string {
+    const [local, domain] = email.split("@");
+    if (local.length <= 1) return `*@${domain}`;
+    return `${local[0]}***@${domain}`;
+}
+function maskPhone(phone: string): string {
+    if (phone.length < 7) return phone;
+    return `${phone.slice(0, 3)}****${phone.slice(-4)}`;
+}
+
 // GET /api/admin/users - List users with pagination and search
 // Available to super_admin and admin
-export const GET = requireRole("super_admin", "admin")(async (request) => {
+export const GET = requireRole("super_admin", "admin")(async (request, { admin }) => {
     // Rate limit
     const ip = getClientIP(request);
     const limitResult = await rateLimit(`admin-users-get-${ip}`, "default", { maxRequests: 60, windowMs: 60 * 1000 });
     if (!limitResult.success) {
         return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
+
+    const isSuperAdmin = admin.role === "super_admin";
 
     try {
         const searchParams = request.nextUrl.searchParams;
@@ -64,7 +77,11 @@ export const GET = requireRole("super_admin", "admin")(async (request) => {
         ]);
 
         return NextResponse.json({
-            users,
+            users: isSuperAdmin ? users : users.map(u => ({
+                ...u,
+                email: u.email ? maskEmail(u.email) : null,
+                phoneNumber: u.phoneNumber ? maskPhone(u.phoneNumber) : null,
+            })),
             pagination: {
                 page,
                 limit,

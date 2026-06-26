@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { Search, MoreHorizontal, User as UserIcon, Shield, ShieldOff, Trash2, Eye, Loader2, ChevronLeft, ChevronRight, Download, ChevronDown } from "lucide-react";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { UserDetailModal } from "./UserDetailModal";
+import { useToast } from "@/components/ui/Toast";
 
 interface User {
     id: string;
@@ -30,6 +31,7 @@ interface Pagination {
 }
 
 export function UsersClient() {
+    const toast = useToast();
     const [mounted, setMounted] = useState(false);
     useEffect(() => setMounted(true), []);
     const [users, setUsers] = useState<User[]>([]);
@@ -86,8 +88,10 @@ export function UsersClient() {
                 setUsers(data.users);
                 setPagination(data.pagination);
             } else {
+                toast.error("加载用户列表失败");
             }
         } catch (error) {
+            toast.error("网络异常，请稍后重试");
         } finally {
             setLoading(false);
         }
@@ -143,9 +147,11 @@ export function UsersClient() {
                 const data = await res.json();
                 fetchUsers();
             } else {
-                const err = await res.json().catch(() => ({}));
+                const errData = await res.json().catch(() => null);
+                toast.error((errData as { message?: string })?.message || "操作失败");
             }
         } catch (error) {
+            toast.error("网络异常，请稍后重试");
         } finally {
             setActionLoading(false);
             setShowDropdown(null);
@@ -164,8 +170,10 @@ export function UsersClient() {
                 setSelectedUser(null);
                 fetchUsers();
             } else {
+                toast.error("删除失败");
             }
         } catch (error) {
+            toast.error("网络异常，请稍后重试");
         } finally {
             setActionLoading(false);
         }

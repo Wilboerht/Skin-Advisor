@@ -22,6 +22,7 @@ import {
     Eye
 } from "lucide-react";
 import { LogDetailModal } from "./LogDetailModal";
+import { useToast } from "@/components/ui/Toast";
 import { cn } from "@/lib/utils";
 
 interface AuditLog {
@@ -119,6 +120,7 @@ interface AuditLogsClientProps {
 }
 
 export default function AuditLogsClient({ role }: AuditLogsClientProps) {
+    const toast = useToast();
     const [logs, setLogs] = useState<AuditLog[]>([]);
     const [loading, setLoading] = useState(true);
     const [exporting, setExporting] = useState(false);
@@ -171,6 +173,7 @@ export default function AuditLogsClient({ role }: AuditLogsClientProps) {
             }
         } catch (e) {
             console.error("加载日志失败:", e);
+            toast.error("加载日志失败");
         } finally {
             setLoading(false);
         }
@@ -259,6 +262,7 @@ export default function AuditLogsClient({ role }: AuditLogsClientProps) {
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
         } catch (err: unknown) {
+            toast.error("导出失败，请稍后重试");
         } finally {
             setExporting(false);
         }
