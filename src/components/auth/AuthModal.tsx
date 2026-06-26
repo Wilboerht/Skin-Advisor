@@ -180,6 +180,10 @@ export function AuthModal() {
             toast.error("两次密码输入不一致，请重新输入");
             return;
         }
+        if (!mobileAgreed) {
+            setAgreementShake(n => n + 1);
+            return;
+        }
         setLoading(true);
         try {
             await register({ name: regName, phone: regPhone, code: regCode, password: regPassword });
@@ -742,10 +746,36 @@ export function AuthModal() {
                                                 </button>
                                             </div>
 
+                                            <motion.div
+                                                key={agreementShake}
+                                                initial={{ x: 0 }}
+                                                animate={{ x: [-5, 5, -5, 5, -3, 3, 0] }}
+                                                transition={{ duration: 0.4 }}
+                                            >
+                                                <label className="flex cursor-pointer items-center gap-2.5 group/agreement">
+                                                    <div className="relative flex-shrink-0">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={mobileAgreed}
+                                                            onChange={(e) => setMobileAgreed(e.target.checked)}
+                                                            className="peer sr-only"
+                                                        />
+                                                        <div className="h-4 w-4 rounded border border-brand-charcoal/25 bg-transparent transition-all peer-checked:bg-brand-charcoal/50 peer-checked:border-brand-charcoal/50" />
+                                                        <Check className="absolute inset-0 m-auto h-3 w-3 scale-0 text-white transition-transform peer-checked:scale-100" strokeWidth={3} />
+                                                    </div>
+                                                    <span className="text-xs text-brand-charcoal/50 tracking-wide">
+                                                        我已阅读并同意
+                                                        <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《用户协议》</a>
+                                                        和
+                                                        <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《隐私政策》</a>
+                                                    </span>
+                                                </label>
+                                            </motion.div>
+
                                             <div className="pt-2">
                                                 <button
                                                     type="submit"
-                                                    disabled={loading}
+                                                    disabled={loading || !mobileAgreed}
                                                     className={pcBtnClass}
                                                 >
                                                     {loading ? (
@@ -1117,8 +1147,7 @@ export function AuthModal() {
                                 <div className="flex flex-col gap-6">
                                     <div className="pt-2">
                                         <button
-                                            type="button"
-                                            onClick={handleLogin}
+                                            type="submit"
                                             disabled={loading}
                                             className={`w-full py-3.5 min-h-12 text-sm font-medium tracking-[0.2em] text-brand-charcoal border border-brand-charcoal/25 hover:bg-brand-charcoal/[0.03] active:scale-[0.98] transition-all disabled:opacity-40 ${!mobileAgreed && !loading ? 'opacity-40 cursor-not-allowed' : ''}`}
                                         >
