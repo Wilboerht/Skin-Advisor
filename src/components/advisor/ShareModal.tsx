@@ -92,13 +92,6 @@ export function ShareModal({
                                             )}
                                         </span>
                                     </button>
-
-                                    <button
-                                        onClick={onClose}
-                                        className="w-full py-2.5 text-sm font-medium text-[#c4b5a2] hover:text-[#8c7a6b] transition-colors"
-                                    >
-                                        再等一下
-                                    </button>
                                 </div>
                             </div>
 
