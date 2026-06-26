@@ -585,6 +585,20 @@ export default function GiftPage() {
         </section>
       )}
 
+      {/* 活动说明 */}
+      {(pageState === "show_campaign" || pageState === "no_campaign") && (
+        <section className="relative z-10 pb-12 md:pb-20 px-6 md:px-12 lg:px-20">
+          <div className="max-w-3xl mx-auto text-center">
+            <h3 className="text-sm font-medium text-[#1A1A1A] mb-3">活动说明</h3>
+            <div className="space-y-2 text-xs text-[#5E5E5E]/80 leading-relaxed">
+              <p>本活动由 NIHPLOD 主办，最终解释权归 NIHPLOD 所有。</p>
+              <p>奖品以实物为准，数量有限，送完即止。每位用户仅限参与一次。</p>
+              <p>参与活动即表示同意活动规则，如发现作弊或违规行为，主办方有权取消参与资格。</p>
+            </div>
+          </div>
+        </section>
+      )}
+
       </div>
 
       {/* 页脚 */}
