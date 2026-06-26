@@ -143,6 +143,20 @@ export default function ResultClient(props: ResultClientProps) {
 
 function ResultClientContent({ id, initialData }: ResultClientProps) {
     const router = useRouter();
+
+    // 入口守卫：必须通过首页引导弹窗后才能查看结果
+    useEffect(() => {
+        try {
+            const hasResult = localStorage.getItem("advisor_result");
+            const hasAnswers = localStorage.getItem("advisor_answers");
+            const hasConsent = localStorage.getItem("advisor_privacy_consent");
+            if (!hasResult && !hasAnswers && !hasConsent) {
+                router.replace("/");
+            }
+        } catch {
+            router.replace("/");
+        }
+    }, [router]);
     const { trackResultView, trackResultShare, trackProductClick } = useAdvisorAnalytics();
     const { user, loading: authLoading, isInitialized: authInitialized } = useAuth();
     const searchParams = useSearchParams();

@@ -38,6 +38,19 @@ export default function QuestionsPage() {
     // 从 API 获取问题列表（数据库优先，静态降级）
     const [allQuestions, setAllQuestions] = useState<Question[]>(DEFAULT_QUESTIONS);
     const [questionsError, setQuestionsError] = useState<string | null>(null);
+
+    // 入口守卫：必须通过首页引导弹窗后才能进入问卷
+    useEffect(() => {
+        try {
+            const hasConsent = localStorage.getItem("advisor_privacy_consent");
+            const hasAnswers = localStorage.getItem("advisor_answers");
+            if (!hasConsent && !hasAnswers) {
+                router.replace("/");
+            }
+        } catch {
+            router.replace("/");
+        }
+    }, [router]);
     const hasFetchedQuestions = useRef(false);
 
     useEffect(() => {

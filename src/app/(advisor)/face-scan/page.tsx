@@ -49,6 +49,12 @@ export default function FaceScanPage() {
         }
 
         if (!answers) {
+            // 额外检查：是否有隐私授权（防止直接输入URL绕过）
+            const hasConsent = localStorage.getItem("advisor_privacy_consent");
+            if (!hasConsent) {
+                router.replace("/");
+                return;
+            }
             router.replace("/questions");
             return;
         }
