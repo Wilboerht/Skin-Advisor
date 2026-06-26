@@ -4,14 +4,14 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { User, ExternalLink, Menu } from "lucide-react";
+import { User, ExternalLink, Menu, Gift } from "lucide-react";
 import { HomeSvg } from "@/components/icons/HomeSvg";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { useUser } from "@/components/auth/UserProvider";
 
 const navItems = [
   { label: "素颜测肤", href: "/" },
-  { label: "肌智派", href: "/gift", badge: "送好礼" },
+  { label: "肌智派", href: "/skin-types", icon: Gift },
   { label: "顾问服务", href: "/services" },
 ];
 
@@ -90,7 +90,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                 <Link
                   key={item.label}
                   href={item.href}
-                  className={`group relative text-[15px] font-medium tracking-[0.2em] transition-colors duration-500 ${
+                  className={`group relative ${item.icon ? "flex items-center gap-1.5" : ""} text-[15px] font-medium tracking-[0.2em] transition-colors duration-500 ${
                     isActive
                       ? isDark ? "text-white" : "text-[#3D4430]"
                       : isDark
@@ -99,10 +99,8 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                   }`}
                 >
                   {item.label}
-                  {item.badge && (
-                    <span className="absolute -top-2.5 left-full -ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-medium tracking-normal bg-red-500/90 text-white leading-tight whitespace-nowrap">
-                      {item.badge}
-                    </span>
+                  {item.icon && (
+                    <item.icon className="w-3.5 h-3.5 transition-transform duration-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                   )}
                   {!isActive && (
                     <span className="absolute -bottom-0.5 left-0 w-0 h-[1px] bg-[#3D4430]/30 group-hover:w-full transition-all duration-500 ease-out" />
@@ -332,17 +330,15 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                     key={item.label}
                     href={item.href}
                     onClick={handleNavClick}
-                    className={`group relative px-4 py-4 text-[15px] font-medium tracking-[0.2em] rounded-xl transition-all duration-300 ${
+                    className={`group relative ${item.icon ? "flex items-center gap-2" : ""} px-4 py-4 text-[15px] font-medium tracking-[0.2em] rounded-xl transition-all duration-300 ${
                       isActive
                         ? "text-[#3D4430] bg-[#3D4430]/8"
                         : "text-[#3D4430]/70 hover:text-[#3D4430] hover:bg-[#3D4430]/5"
                     }`}
                   >
                     {item.label}
-                    {item.badge && (
-                      <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-medium tracking-normal bg-red-500/90 text-white leading-tight whitespace-nowrap">
-                        {item.badge}
-                      </span>
+                    {item.icon && (
+                      <item.icon className="w-3.5 h-3.5" />
                     )}
                   </Link>
                 );
