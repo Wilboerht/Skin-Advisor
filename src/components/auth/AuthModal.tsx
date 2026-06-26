@@ -194,6 +194,13 @@ export function AuthModal() {
         }
     };
 
+    const handleCancelWechatBind = () => {
+        // 清除临时 wechat_bind_token cookie
+        document.cookie = "wechat_bind_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        toast.error("微信登录已取消，请使用手机号登录");
+        closeAuthModal();
+    };
+
     const handleWechatBind = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -209,9 +216,10 @@ export function AuthModal() {
 
             toast.success("绑定成功！");
 
-            // Re-fetch user session to update state globally
-            window.location.href = "/"; // Reload to refresh contexts naturally, or call context.refresh() 
-            // We use standard reload to make sure everything initializes fresh with the new token
+            // 检查是否有 pending redirect
+            const redirectUrl = sessionStorage.getItem("auth_redirect");
+            sessionStorage.removeItem("auth_redirect");
+            window.location.href = redirectUrl || "/";
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             console.error("🔴 Wechat bind failed:", err.message);
@@ -227,9 +235,13 @@ export function AuthModal() {
         }
         setLoading(true);
         try {
-            // Include full origin to make sure redirect works across domains
-            const currentUrl = window.location.origin + window.location.pathname + window.location.search;
-            const res = await fetch(`/api/auth/wechat?redirect=${encodeURIComponent(currentUrl)}`);
+            // 构建 OAuth 回调 URL：保留 redirect 以便登录后自动跳转
+            const redirectTarget = sessionStorage.getItem("auth_redirect");
+            const baseUrl = window.location.origin + window.location.pathname;
+            const returnUrl = redirectTarget
+                ? `${baseUrl}?auth=login&redirect=${encodeURIComponent(redirectTarget)}`
+                : window.location.origin + window.location.pathname + window.location.search;
+            const res = await fetch(`/api/auth/wechat?redirect=${encodeURIComponent(returnUrl)}`);
             const data = await res.json();
             if (data.success) {
                 window.location.href = data.data.authUrl;
@@ -441,7 +453,7 @@ export function AuthModal() {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.3 }}
-                    onClick={closeAuthModal}
+                    onClick={view === "wechat_bind" ? undefined : closeAuthModal}
                     className="fixed inset-0 z-[99998] bg-black/20 backdrop-blur-md"
                 />
                 <motion.div
@@ -451,17 +463,27 @@ export function AuthModal() {
                     exit={{ x: "100%", transition: { duration: 0.5, ease: [0.8, 0, 0.13, 1] } }}
                     className="hidden md:flex fixed inset-y-0 right-0 w-full bg-white flex-col z-[99999]"
                 >
-                        {/* 关闭按钮 */}
-                        <button
-                            onClick={closeAuthModal}
-                            disabled={loading}
-                            className="absolute top-8 right-8 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-brand-charcoal/5 text-brand-charcoal/40 backdrop-blur-sm transition-all hover:bg-brand-charcoal/10 hover:text-brand-charcoal/70"
-                        >
-                            <X size={20} strokeWidth={1.5} />
-                        </button>
+                        {/* 关闭/取消按钮 */}
+                        {view === "wechat_bind" ? (
+                            <button
+                                onClick={handleCancelWechatBind}
+                                disabled={loading}
+                                className="absolute top-8 right-8 z-20 flex items-center gap-1.5 px-4 py-2 text-sm tracking-wider text-brand-charcoal/50 hover:text-brand-charcoal/70 transition-colors"
+                            >
+                                取消绑定
+                            </button>
+                        ) : (
+                            <button
+                                onClick={closeAuthModal}
+                                disabled={loading}
+                                className="absolute top-8 right-8 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-brand-charcoal/5 text-brand-charcoal/40 backdrop-blur-sm transition-all hover:bg-brand-charcoal/10 hover:text-brand-charcoal/70"
+                            >
+                                <X size={20} strokeWidth={1.5} />
+                            </button>
+                        )}
 
                         {/* 返回按钮（非登录页） */}
-                        {view !== 'login' && (
+                        {view !== 'login' && view !== 'wechat_bind' && (
                             <button
                                 onClick={() => setAuthView('login')}
                                 disabled={loading}
@@ -949,7 +971,11 @@ export function AuthModal() {
                     <div className="flex-shrink-0 h-[56px] w-full flex items-center justify-center relative">
                         <button
                             type="button"
-                            onClick={view === "forgot_password" ? () => { setAuthView("login"); setMobileForgotStep("phone"); } : closeAuthModal}
+                            onClick={
+                                view === "wechat_bind" ? handleCancelWechatBind :
+                                view === "forgot_password" ? () => { setAuthView("login"); setMobileForgotStep("phone"); } :
+                                closeAuthModal
+                            }
                             className="absolute left-0 top-0 bottom-0 flex items-center justify-center px-4 py-[10px]"
                         >
                             <ChevronLeft className="h-6 w-6 text-[#00263E]" />
