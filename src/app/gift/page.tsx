@@ -206,16 +206,12 @@ export default function GiftPage() {
 
             {pageState === "show_campaign" && campaign && (
               <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8">
-                <div className="flex items-center gap-2 text-sm text-[#5E5E5E]">
-                  <Clock className="w-4 h-4 text-[#8B7355]" />
-                  <span>{formatDate(campaign.startDate)} - {formatDate(campaign.endDate)}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-[#5E5E5E]">
+                <div className={`flex items-center gap-2 ${new Date() >= new Date(campaign.startDate) ? "text-xs" : "text-sm"} text-[#5E5E5E]`}>
                   <Users className="w-4 h-4 text-[#8B7355]" />
                   <span>已参与 {campaign.entryCount} 人{campaign.maxEntries > 0 ? ` / ${campaign.maxEntries}` : ""}</span>
                 </div>
                 {campaign.drawDate && (
-                  <div className="flex items-center gap-2 text-sm text-[#5E5E5E]">
+                  <div className={`flex items-center gap-2 ${new Date() >= new Date(campaign.startDate) ? "text-xs" : "text-sm"} text-[#5E5E5E]`}>
                     <Sparkles className="w-4 h-4 text-[#8B7355]" />
                     <span>开奖时间：{formatDate(campaign.drawDate)}</span>
                   </div>
@@ -357,30 +353,61 @@ export default function GiftPage() {
       {pageState === "show_campaign" && campaign && (
         <section className="relative z-10 pb-20 md:pb-36 px-6 md:px-12 lg:px-20">
           <div className="max-w-3xl mx-auto">
-            <div className="text-center mb-10 md:mb-12">
-              <p className="text-[11px] tracking-[0.25em] text-[#8B7355] uppercase mb-3">How to Join</p>
-              <h2 className="text-xl md:text-2xl font-serif text-[#1A1A1A]">参与方式</h2>
+            <div className="text-center mb-8 md:mb-10">
+              <p className="text-[15px] md:text-base text-[#5E5E5E]/80 font-light leading-relaxed max-w-md mx-auto">
+                简单四步，即可参与活动赢取 NIHPLOD 限定礼遇。
+              </p>
             </div>
-            <div className="space-y-4">
-              {[
-                { step: "01", title: "生成专属海报", desc: "点击下方按钮，生成您的专属活动海报与小红书分享文案" },
-                { step: "02", title: "分享到小红书", desc: "将海报发布到您的小红书账号，附上活动文案并 @NIHPLOD旎柏" },
-                { step: "03", title: "提交参与信息", desc: "在本页填写您的小红书分享链接，提交后等待审核" },
-                { step: "04", title: "等待开奖", desc: `审核通过后即可参与抽奖，开奖时间：${campaign.drawDate ? formatDate(campaign.drawDate) : "敬请期待"}` },
-              ].map((item, i) => (
-                <div
-                  key={i}
-                  className="group flex items-start gap-5 p-5 rounded-2xl border border-[rgba(61,68,48,0.06)] bg-[#FAF9F6] transition-all duration-300 hover:bg-[#F5F3EE]"
-                >
-                  <span className="shrink-0 w-10 h-10 rounded-xl bg-[#3D4430]/5 flex items-center justify-center text-sm font-serif text-[#3D4430]">
-                    {item.step}
-                  </span>
-                  <div>
-                    <h3 className="text-[15px] font-medium text-[#1A1A1A] mb-1">{item.title}</h3>
-                    <p className="text-sm text-[#5E5E5E]/80 leading-relaxed">{item.desc}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center max-w-4xl mx-auto mb-8 md:mb-10">
+              {/* 左侧人物 IP */}
+              <div className="relative w-full max-w-[260px] md:max-w-[300px] aspect-[3/4] mx-auto">
+                <Image
+                  src="/images/character/84-87/84-87_female.png"
+                  alt="NIHPLOD 肌肤形象"
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              </div>
+
+              {/* 右侧步骤 */}
+              <div className="space-y-4">
+                {[
+                  { step: "01", title: "生成专属海报", desc: "点击下方按钮，生成您的专属活动海报与小红书分享文案" },
+                  { step: "02", title: "分享到小红书", desc: "将海报发布到您的小红书账号，附上活动文案并 @NIHPLOD旎柏" },
+                  { step: "03", title: "提交参与信息", desc: "在本页填写您的小红书分享链接，提交后等待审核" },
+                  { step: "04", title: "等待开奖", desc: `审核通过后即可参与抽奖，开奖时间：${campaign.drawDate ? formatDate(campaign.drawDate) : "敬请期待"}` },
+                ].map((item, i) => (
+                  <div
+                    key={i}
+                    className="flex items-start gap-4 p-5 rounded-2xl bg-white shadow-sm border border-[#E8E2D9]"
+                  >
+                    <span className="shrink-0 w-8 h-8 rounded-full bg-[#1B3A5C] flex items-center justify-center text-sm font-medium text-white">
+                      {parseInt(item.step)}
+                    </span>
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-medium text-[#1A1A1A] mb-1">{item.title}</h3>
+                      <p className="text-[13px] text-[#5E5E5E] leading-[1.85]">{item.desc}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link
+                href="/"
+                className="group relative inline-flex items-center justify-center gap-3 px-10 py-3.5 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#1B3A5C] hover:text-white"
+              >
+                <span>开始测肤</span>
+                <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
+              </Link>
+              <Link
+                href="/skin-types"
+                className="group relative inline-flex items-center justify-center gap-3 px-10 py-3.5 border border-[#8B7355] text-[#8B7355] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#8B7355] hover:text-white"
+              >
+                <span>了解肌肤类型</span>
+                <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
+              </Link>
             </div>
           </div>
         </section>
