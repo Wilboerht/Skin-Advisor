@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles, Gift } from "lucide-react";
 import { skinTypes, routeOrder } from "@/lib/result-content";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
 
@@ -50,6 +50,31 @@ export default function ResultIndexPage() {
             <span>前往测肤</span>
             <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
           </Link>
+
+          {/* 参与有礼活动 */}
+          <div
+            className="mt-10 md:mt-14 mx-auto max-w-xl opacity-0 animate-fade-in-up"
+            style={{ animationDelay: "0.3s", animationFillMode: "forwards" }}
+          >
+            <div className="group flex flex-col sm:flex-row items-center gap-5 sm:gap-6 p-5 md:p-6 rounded-2xl border border-[rgba(61,68,48,0.08)] bg-[#FAF9F6] transition-all duration-500 hover:shadow-[0_16px_32px_rgba(61,68,48,0.08)] hover:-translate-y-0.5">
+              <div className="shrink-0 w-14 h-14 rounded-full bg-[#8B7355]/10 flex items-center justify-center text-[#8B7355]">
+                <Gift className="w-6 h-6" />
+              </div>
+              <div className="flex-1 text-center sm:text-left">
+                <p className="text-sm font-medium text-[#1A1A1A] mb-1">肌智派送好礼</p>
+                <p className="text-[13px] text-[#5E5E5E]/80 leading-relaxed">
+                  分享你的肌肤形象类型，参与 NIHPLOD 限定礼遇活动
+                </p>
+              </div>
+              <Link
+                href="/gift"
+                className="shrink-0 inline-flex items-center gap-2 px-6 py-2.5 bg-[#1B3A5C] text-white rounded-lg text-[13px] tracking-[0.1em] font-medium transition-all duration-500 hover:bg-[#142a43]"
+              >
+                <span>立即参与</span>
+                <ArrowRight className="w-3.5 h-3.5 transition-transform duration-500 group-hover:translate-x-1" />
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 
