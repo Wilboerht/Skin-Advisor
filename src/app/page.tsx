@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Link } from "next-view-transitions";
 import { LazyMotion, domAnimation, AnimatePresence, m, useReducedMotion } from "framer-motion";
 import Image from "next/image";
@@ -53,6 +53,7 @@ const regionOptions = [
 
 export default function Home() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { openAuthModal } = useAuthModal();
   const [isLoading, setIsLoading] = useState(false);
   const { initSession } = useAdvisorAnalytics();
@@ -87,6 +88,24 @@ export default function Home() {
       document.body.style.overflow = originalOverflow;
     };
   }, []);
+
+  // 检测 URL 参数 ?auth=login|register|forgot_password 打开对应弹窗
+  useEffect(() => {
+    const authView = searchParams.get("auth");
+    const redirectUrl = searchParams.get("redirect");
+    if (authView === "login" || authView === "register" || authView === "forgot_password") {
+      // 保存 redirect URL 到 sessionStorage，供 AuthModal 登录成功后使用
+      if (redirectUrl) {
+        sessionStorage.setItem("auth_redirect", redirectUrl);
+      }
+      openAuthModal(authView);
+      // 清除 URL 参数，避免刷新重复触发
+      const url = new URL(window.location.href);
+      url.searchParams.delete("auth");
+      url.searchParams.delete("redirect");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, [searchParams, openAuthModal]);
 
   // Nickname state
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);

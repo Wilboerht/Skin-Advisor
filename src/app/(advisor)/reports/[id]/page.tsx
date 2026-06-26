@@ -16,7 +16,7 @@ export default async function ReportDetailPage(props: {
 
     // 历史报告必须登录查看
     if (!user) {
-        redirect(`/login?redirect=/reports/${id}`);
+        redirect(`/?auth=login&redirect=${encodeURIComponent(`/reports/${id}`)}`);
     }
 
     if (id) {

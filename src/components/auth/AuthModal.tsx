@@ -135,6 +135,18 @@ export function AuthModal() {
         };
     }, [isOpen, isMobile]);
 
+    // 登录/注册成功后处理 redirect
+    const handleAuthSuccess = () => {
+        const redirectUrl = sessionStorage.getItem("auth_redirect");
+        if (redirectUrl) {
+            sessionStorage.removeItem("auth_redirect");
+            closeAuthModal();
+            router.push(redirectUrl);
+        } else {
+            closeAuthModal();
+        }
+    };
+
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!mobileAgreed) {
@@ -152,7 +164,7 @@ export function AuthModal() {
             }
             console.log("✅ Login successful, closing modal...");
             toast.success("欢迎回来！");
-            closeAuthModal();
+            handleAuthSuccess();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             console.error("🔴 Login failed:", err.message);
@@ -172,7 +184,7 @@ export function AuthModal() {
         try {
             await register({ name: regName, phone: regPhone, code: regCode, password: regPassword });
             toast.success("注册成功！");
-            closeAuthModal();
+            handleAuthSuccess();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             console.error("🔴 Register failed:", err.message);
