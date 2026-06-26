@@ -57,12 +57,12 @@ export default function ResultIndexPage() {
             style={{ animationDelay: "0.3s", animationFillMode: "forwards" }}
           >
             <div className="group flex flex-col sm:flex-row items-center gap-5 sm:gap-6 p-5 md:p-6 rounded-2xl border border-[rgba(61,68,48,0.08)] bg-[#FAF9F6] transition-all duration-500 hover:shadow-[0_16px_32px_rgba(61,68,48,0.08)] hover:-translate-y-0.5">
-              <div className="shrink-0 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center">
+              <div className="shrink-0 w-14 h-14 md:w-16 md:h-16 flex items-center justify-center">
                 <Image
                   src="/images/watermark.png"
                   alt=""
-                  width={40}
-                  height={40}
+                  width={64}
+                  height={64}
                   className="w-full h-full object-contain opacity-90"
                   unoptimized
                 />
