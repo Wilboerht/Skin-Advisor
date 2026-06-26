@@ -490,42 +490,39 @@ export default function QuestionsPage() {
             </div>
 
 
-            {/* Simple Exit Modal */}
+            {/* Exit Modal */}
             <AnimatePresence>
                 {showExitConfirm && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                         <m.div
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                            className="absolute inset-0 bg-[#FDFBF7]/90 backdrop-blur-sm"
+                            className="absolute inset-0 bg-black/20"
                             onClick={() => setShowExitConfirm(false)}
                         />
                         <m.div
                             initial={{ opacity: 0, scale: 0.95, y: 10 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                            className="relative w-full max-w-sm bg-white/70 backdrop-blur-xl p-8 shadow-[0_24px_48px_-12px_rgba(0,0,0,0.08)] border border-[#D4CFC5] text-center rounded-xl overflow-hidden"
+                            className="relative w-full max-w-sm bg-white rounded-lg p-8 text-center border border-[#E9E9E7]"
                         >
-                            <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }} />
-                            <div className="relative z-10">
-                                <h3 className="text-xl font-serif text-[#1A1A1A] mb-2">结束测试？</h3>
-                                <p className="text-sm text-[#5E5E5E] mb-8 font-light leading-relaxed">
-                                    您的进度已自动保存，<br />下次返回可直接从此处继续。
-                                </p>
-                                <div className="flex flex-col items-center gap-4">
-                                    <button
-                                        onClick={() => setShowExitConfirm(false)}
-                                        className="w-full h-11 rounded-md bg-[#4A3728] hover:bg-[#3D2E20] text-[#FDFBF7] text-[13px] font-medium tracking-[0.15em] transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-2"
-                                    >
-                                        <span>继续测试</span>
-                                        <ArrowRight className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                        onClick={() => router.push("/")}
-                                        className="text-[12px] tracking-[0.15em] text-[#3D4430]/40 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
-                                    >
-                                        退出并返回首页
-                                    </button>
-                                </div>
+                            <h3 className="text-lg font-medium text-[#1A1A1A] mb-2">结束测试？</h3>
+                            <p className="text-sm text-[#5E5E5E] mb-8 leading-relaxed">
+                                您的进度已自动保存，<br />下次返回可直接从此处继续。
+                            </p>
+                            <div className="flex flex-col items-center gap-3">
+                                <button
+                                    onClick={() => setShowExitConfirm(false)}
+                                    className="w-full h-11 rounded-lg border border-[#E9E9E7] text-[#1A1A1A] hover:bg-[#F5F5F5] text-[13px] font-medium tracking-[0.1em] transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <span>继续测试</span>
+                                    <ArrowRight className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={() => router.push("/")}
+                                    className="text-[12px] tracking-[0.1em] text-[#3D4430]/70 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
+                                >
+                                    退出并返回首页
+                                </button>
                             </div>
                         </m.div>
                     </div>
@@ -538,42 +535,39 @@ export default function QuestionsPage() {
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                         <m.div
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                            className="absolute inset-0 bg-[#FDFBF7]/90 backdrop-blur-sm"
+                            className="absolute inset-0 bg-black/20"
                             onClick={() => setShowQualityWarning(false)}
                         />
                         <m.div
                             initial={{ opacity: 0, scale: 0.95, y: 10 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                            className="relative w-full max-w-sm bg-white/70 backdrop-blur-xl p-8 shadow-[0_24px_48px_-12px_rgba(0,0,0,0.08)] border border-[#D4CFC5] text-center rounded-xl overflow-hidden"
+                            className="relative w-full max-w-sm bg-white rounded-lg p-8 text-center border border-[#E9E9E7]"
                         >
-                            <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }} />
-                            <div className="relative z-10">
-                                <h3 className="text-xl font-serif text-[#1A1A1A] mb-2">确认提交？</h3>
-                                <p className="text-sm text-[#5E5E5E] mb-8 font-light leading-relaxed">
-                                    我们检测到您的填写速度较快。<br />
-                                    建议您再次核对，确保 AI 能为您提供<span className="text-[#1A1A1A] font-medium"> 最精准 </span>的分析结果。
-                                </p>
-                                <div className="flex flex-col items-center gap-4">
-                                    <button
-                                        onClick={() => {
-                                            setShowQualityWarning(false);
-                                            sessionStartTime.current = Date.now();
-                                            startStepIndex.current = currentStepIndex;
-                                            if (pendingAnswers) processSubmission(pendingAnswers);
-                                        }}
-                                        className="w-full h-11 rounded-md bg-[#4A3728] hover:bg-[#3D2E20] text-[#FDFBF7] text-[13px] font-medium tracking-[0.15em] transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-2"
-                                    >
-                                        <span>我已确认，去提交</span>
-                                        <ArrowRight className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                        onClick={() => setShowQualityWarning(false)}
-                                        className="text-[12px] tracking-[0.15em] text-[#3D4430]/40 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
-                                    >
-                                        返回检查
-                                    </button>
-                                </div>
+                            <h3 className="text-lg font-medium text-[#1A1A1A] mb-2">确认提交？</h3>
+                            <p className="text-sm text-[#5E5E5E] mb-8 leading-relaxed">
+                                我们检测到您的填写速度较快。<br />
+                                建议您再次核对，确保 AI 能为您提供<span className="text-[#1A1A1A] font-medium"> 最精准 </span>的分析结果。
+                            </p>
+                            <div className="flex flex-col items-center gap-3">
+                                <button
+                                    onClick={() => {
+                                        setShowQualityWarning(false);
+                                        sessionStartTime.current = Date.now();
+                                        startStepIndex.current = currentStepIndex;
+                                        if (pendingAnswers) processSubmission(pendingAnswers);
+                                    }}
+                                    className="w-full h-11 rounded-lg border border-[#E9E9E7] text-[#1A1A1A] hover:bg-[#F5F5F5] text-[13px] font-medium tracking-[0.1em] transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <span>我已确认，去提交</span>
+                                    <ArrowRight className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={() => setShowQualityWarning(false)}
+                                    className="text-[12px] tracking-[0.1em] text-[#3D4430]/70 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
+                                >
+                                    返回检查
+                                </button>
                             </div>
                         </m.div>
                     </div>
