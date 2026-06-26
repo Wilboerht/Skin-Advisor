@@ -269,12 +269,19 @@ export default function GiftPage() {
                 ))}
               </div>
             </div>
-            <div className="text-center">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 href="/"
                 className="group relative inline-flex items-center justify-center gap-3 px-10 py-3.5 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#1B3A5C] hover:text-white"
               >
                 <span>开始测肤</span>
+                <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
+              </Link>
+              <Link
+                href="/skin-types"
+                className="group relative inline-flex items-center justify-center gap-3 px-10 py-3.5 border border-[#8B7355] text-[#8B7355] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#8B7355] hover:text-white"
+              >
+                <span>了解肌肤类型</span>
                 <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
               </Link>
             </div>
