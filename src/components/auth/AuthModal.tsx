@@ -952,7 +952,9 @@ export function AuthModal() {
                     </div>
 
                     <div className="flex-1 flex flex-col overflow-y-auto scrollbar-hide">
-                        <div className="min-h-full flex flex-col justify-center px-6">
+                        <div className="min-h-full flex flex-col px-6
+                                        before:content-[''] before:flex-[1_0_0]
+                                        after:content-[''] after:flex-[1_0_0]">
 
                         {/* ====== LOGIN ====== */}
                         {view === "login" && (
