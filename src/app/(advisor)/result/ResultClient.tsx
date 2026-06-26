@@ -1278,14 +1278,14 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             <div className="flex justify-center mb-10 gap-4">
                                 <button
                                     onClick={() => setShowContactAdvisor(true)}
-                                    className="glass-premium-primary group relative inline-flex items-center justify-center gap-2 sm:gap-3 px-5 py-2.5 sm:px-10 sm:py-3.5 rounded-full text-[12px] sm:text-[15px] tracking-[0.15em] font-medium disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer transition-all duration-300"
+                                    className="glass-premium-primary group relative inline-flex items-center justify-center gap-2 sm:gap-3 px-5 py-2.5 sm:px-10 sm:py-3.5 rounded-lg text-[12px] sm:text-[15px] tracking-[0.15em] font-medium disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer transition-all duration-300"
                                 >
                                     <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
                                     <span>联系顾问</span>
                                 </button>
                                 <button
                                     onClick={() => router.push('/')}
-                                    className="glass-premium-primary group relative inline-flex items-center justify-center gap-2 sm:gap-3 px-5 py-2.5 sm:px-10 sm:py-3.5 rounded-full text-[12px] sm:text-[15px] tracking-[0.15em] font-medium disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer transition-all duration-300"
+                                    className="glass-premium-primary group relative inline-flex items-center justify-center gap-2 sm:gap-3 px-5 py-2.5 sm:px-10 sm:py-3.5 rounded-lg text-[12px] sm:text-[15px] tracking-[0.15em] font-medium disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer transition-all duration-300"
                                 >
                                     <House className="w-4 h-4 sm:w-5 sm:h-5" />
                                     <span>回到首页</span>
