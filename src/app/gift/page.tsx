@@ -177,7 +177,7 @@ export default function GiftPage() {
           <h1 className="text-2xl md:text-3xl font-serif text-[#1A1A1A] mb-5 opacity-0 animate-fade-in-up" style={{ animationFillMode: "forwards" }}>
             肌智派送好礼
           </h1>
-          <p className="text-[15px] md:text-base text-[#5E5E5E] font-light max-w-xl mx-auto leading-relaxed mb-[30px] opacity-0 animate-fade-in-up" style={{ animationDelay: "0.1s", animationFillMode: "forwards" }}>
+          <p className="text-[15px] md:text-base text-[#5E5E5E] font-light max-w-xl mx-auto leading-relaxed mb-5 opacity-0 animate-fade-in-up" style={{ animationDelay: "0.1s", animationFillMode: "forwards" }}>
             分享你的肌肤形象类型，与 NIHPLOD 一起探索护肤之美，解锁限定礼遇。
           </p>
 
@@ -262,8 +262,8 @@ export default function GiftPage() {
                       {parseInt(item.step)}
                     </span>
                     <div className="min-w-0">
-                      <h3 className="text-[15px] font-medium text-[#1A1A1A] mb-1">{item.title}</h3>
-                      <p className="text-sm text-[#5E5E5E] leading-[1.85]">{item.desc}</p>
+                      <h3 className="text-sm font-medium text-[#1A1A1A] mb-1">{item.title}</h3>
+                      <p className="text-[13px] text-[#5E5E5E] leading-[1.85]">{item.desc}</p>
                     </div>
                   </div>
                 ))}
