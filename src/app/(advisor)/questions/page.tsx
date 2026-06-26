@@ -9,7 +9,7 @@ import Link from "next/link";
 import { GenderSelection } from "@/components/advisor/GenderSelection";
 
 import { m, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ArrowRight, LogOut } from "lucide-react";
+import { ChevronLeft, ArrowRight, LogOut, Loader2 } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useToast } from "@/components/ui/Toast";
 import { cn } from "@/lib/utils";
@@ -32,6 +32,7 @@ export default function QuestionsPage() {
     const startStepIndex = useRef(0);
     const [showQualityWarning, setShowQualityWarning] = useState(false);
     const [pendingAnswers, setPendingAnswers] = useState<Record<string, unknown> | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     // 从 API 获取问题列表（数据库优先，静态降级）
@@ -248,6 +249,7 @@ export default function QuestionsPage() {
 
     // 真正执行提交的逻辑
     const processSubmission = (finalAnswers: Record<string, unknown>) => {
+        setIsSubmitting(true);
         localStorage.setItem("advisor_answers", JSON.stringify(finalAnswers));
         // 不再此处清除进度，以便用户从扫脸页返回时能恢复问卷位置
         trackQuestionnaireComplete(finalAnswers);
@@ -396,6 +398,21 @@ export default function QuestionsPage() {
 
     return (
         <div className="h-dvh overflow-hidden flex flex-col bg-[#F5F2E9] text-[#1A1A1A]">
+
+            {/* 提交中加载遮罩 */}
+            <AnimatePresence>
+                {isSubmitting && (
+                    <m.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[60] bg-[#F5F2E9]/90 backdrop-blur-sm flex flex-col items-center justify-center gap-4"
+                    >
+                        <Loader2 className="w-8 h-8 text-[#3D4430] animate-spin" />
+                        <p className="text-sm text-[#5E5E5E] tracking-wide">正在准备面部扫描...</p>
+                    </m.div>
+                )}
+            </AnimatePresence>
 
             {/* Top Bar: Back & Logo & Exit */}
             <div className="relative flex items-center justify-center py-5 md:py-7 px-4 md:px-12 lg:px-20 z-20 shrink-0 border-b border-[#3D4430]/5">
