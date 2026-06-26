@@ -11,7 +11,7 @@ import { useUser } from "@/components/auth/UserProvider";
 
 const navItems = [
   { label: "素颜测肤", href: "/" },
-  { label: "肌智派", href: "/skin-types" },
+  { label: "肌智派", href: "/gift", badge: "送好礼" },
   { label: "顾问服务", href: "/services" },
 ];
 
@@ -99,6 +99,11 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                   }`}
                 >
                   {item.label}
+                  {item.badge && (
+                    <span className="absolute -top-2.5 -right-1 translate-x-full inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-medium tracking-normal bg-red-500/90 text-white leading-tight whitespace-nowrap">
+                      {item.badge}
+                    </span>
+                  )}
                   {!isActive && (
                     <span className="absolute -bottom-0.5 left-0 w-0 h-[1px] bg-[#3D4430]/30 group-hover:w-full transition-all duration-500 ease-out" />
                   )}
@@ -334,6 +339,11 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                     }`}
                   >
                     {item.label}
+                    {item.badge && (
+                      <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-medium tracking-normal bg-red-500/90 text-white leading-tight whitespace-nowrap">
+                        {item.badge}
+                      </span>
+                    )}
                   </Link>
                 );
               })}

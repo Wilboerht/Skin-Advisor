@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Link } from "next-view-transitions";
 import { LazyMotion, domAnimation, AnimatePresence, m, useReducedMotion } from "framer-motion";
 import Image from "next/image";
-import { ArrowRight, Loader2, MapPin, ClipboardList, X, CircleAlert } from "lucide-react";
+import { ArrowRight, Loader2, MapPin, ClipboardList, X, CircleAlert, Gift } from "lucide-react";
 
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
@@ -363,6 +363,15 @@ export default function Home() {
                         )}
                       </button>
 
+                      {/* 肌智派送好礼入口 */}
+                      <Link
+                        href="/gift"
+                        className="group relative inline-flex items-center gap-2 text-[13px] tracking-[0.15em] text-[#8B7355] hover:text-[#3D4430] transition-colors duration-500"
+                      >
+                        <Gift className="w-4 h-4" />
+                        <span>肌智派送好礼</span>
+                        <ArrowRight className="w-3.5 h-3.5 transition-transform duration-500 group-hover:translate-x-1" />
+                      </Link>
 
                     </div>
                   </div>

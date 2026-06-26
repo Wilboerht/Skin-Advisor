@@ -180,6 +180,7 @@ model User {
   pushSubscriptions PushSubscription[]
   reminderSettings  ReminderSettings?
   testRecords       TestRecord[]
+  campaignEntries   CampaignEntry[]
 
   // 隐私同意
   privacyConsentAt     DateTime?
@@ -361,5 +362,78 @@ model AppInstance {
   metadata  String?  // JSON: { hostname, version, nodeEnv }
 
   @@index([lastPing])
+}
+
+// ===== 肌智派送好礼 · 活动系统 =====
+
+// 活动/抽奖
+model Campaign {
+  id          String   @id @default(cuid())
+  title       String                  // 活动标题，如"六月肌智派好礼"
+  subtitle    String?                 // 副标题
+  description String?                 // 活动描述/规则（Markdown）
+  coverImage  String?                 // 活动封面图 URL
+  status      String   @default("draft") // draft | active | ended
+  startDate   DateTime
+  endDate     DateTime
+  prizes      Json                    // 奖品列表 [{name, image, quantity, description?}]
+  shareText   String?                 // 小红书分享文案模板（支持 {{nickname}} 占位符）
+  rules       String?                 // 活动规则（Markdown）
+  maxEntries  Int      @default(0)    // 参与上限（0=不限制）
+  drawDate    DateTime?               // 开奖时间（显示用）
+  winnerIds   Json?                   // 中奖用户 entryId 数组
+  sortOrder   Int      @default(0)    // 排序权重
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  entries     CampaignEntry[]
+
+  @@index([status, startDate])
+  @@index([sortOrder])
+}
+
+// 活动参与记录
+model CampaignEntry {
+  id          String   @id @default(cuid())
+  campaignId  String
+  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  guestId     String?                 // 游客标识（指纹）
+  
+  status      String   @default("pending") // pending | verified | rejected | won
+  
+  // 小红书分享凭证
+  proofImage  String?                 // 用户上传的分享截图 OSS URL
+  shareLink   String?                 // 用户提交的小红书分享链接
+  
+  // 抽奖相关
+  lotteryCode String?  @unique        // 抽奖码（如 NPL-XXXX）
+  prizeName   String?                 // 中奖奖品名
+  
+  // 提交人联系信息
+  contactName  String?                // 中奖联系人姓名
+  contactPhone String?                // 中奖联系人电话
+  contactEmail String?                // 中奖联系人邮箱
+  
+  // 审核信息
+  reviewerId   String?                // 审核人（AdminUser id）
+  reviewNote   String?                // 审核备注
+  reviewedAt   DateTime?
+  verifiedAt   DateTime?
+  
+  // 中奖信息
+  wonAt        DateTime?
+  claimedAt    DateTime?              // 领奖时间
+  claimNote    String?                // 领奖备注
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([campaignId, userId])
+  @@unique([campaignId, guestId])
+  @@index([campaignId, status])
+  @@index([userId])
+  @@index([lotteryCode])
 }
 

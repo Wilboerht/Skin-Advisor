@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { House, MessageCircle } from "lucide-react";
+import { House, MessageCircle, Gift, ArrowRight } from "lucide-react";
 import { useAsyncAnalysis } from "@/hooks/useAsyncAnalysis";
 import { motion as m, AnimatePresence } from "framer-motion";
 import {
@@ -1303,6 +1303,18 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 >
                                     <House className="w-4 h-4 sm:w-5 sm:h-5" />
                                     <span>回到首页</span>
+                                </button>
+                            </div>
+
+                            {/* 肌智派送好礼 CTA Banner */}
+                            <div className="flex justify-center mb-10">
+                                <button
+                                    onClick={() => router.push('/gift')}
+                                    className="group relative inline-flex items-center gap-3 px-6 py-3 rounded-xl border border-dashed border-[#8B7355]/30 bg-[#8B7355]/[0.03] text-[13px] tracking-[0.15em] text-[#8B7355] hover:text-[#3D4430] hover:border-[#3D4430]/30 hover:bg-[#3D4430]/5 transition-all duration-500"
+                                >
+                                    <Gift className="w-4 h-4" />
+                                    <span>肌智派送好礼 · 参与抽奖</span>
+                                    <ArrowRight className="w-3.5 h-3.5 transition-transform duration-500 group-hover:translate-x-1" />
                                 </button>
                             </div>
 
