@@ -46,7 +46,6 @@ export default function GiftPage() {
   const [pageState, setPageState] = useState<PageState>("loading")
   const [campaign, setCampaign] = useState<CampaignData | null>(null)
   const [entry, setEntry] = useState<EntryData | null>(null)
-  const [error, setError] = useState("")
 
   // Participation form
   const [shareLink, setShareLink] = useState("")
@@ -165,56 +164,48 @@ export default function GiftPage() {
   }
 
   return (
-    <main className="relative min-h-screen text-[#1A1A1A] bg-[#F8F7F3]">
+    <main className="relative min-h-screen flex flex-col text-[#1A1A1A] bg-[#F8F7F3] overflow-hidden">
       <WebsiteNavbar />
 
-      {/* Hero */}
-      <section className="relative pt-24 md:pt-40 pb-16 md:pb-32 px-6 md:px-12 lg:px-20 overflow-hidden">
+      <div className="flex-1">
+        {/* Hero */}
+      <section className="relative pt-24 md:pt-40 pb-16 md:pb-32 px-6 md:px-12 lg:px-20">
         <div className="relative z-10 max-w-5xl mx-auto text-center">
-          {pageState === "loading" && (
-            <div className="flex flex-col items-center gap-4 py-20">
-              <Loader2 className="w-8 h-8 text-[#3D4430] animate-spin" />
-              <p className="text-[#5E5E5E] text-sm">加载中...</p>
-            </div>
-          )}
+          <p className="text-[11px] tracking-[0.25em] text-[#8B7355] uppercase mb-5 opacity-0 animate-fade-in-up" style={{ animationFillMode: "forwards" }}>
+            NIHPLOD Gift Campaign
+          </p>
+          <h1 className="text-2xl md:text-3xl font-serif text-[#1A1A1A] mb-5 opacity-0 animate-fade-in-up" style={{ animationFillMode: "forwards" }}>
+            肌智派送好礼
+          </h1>
+          <p className="text-[15px] md:text-base text-[#5E5E5E] font-light max-w-xl mx-auto leading-relaxed mb-[30px] opacity-0 animate-fade-in-up" style={{ animationDelay: "0.1s", animationFillMode: "forwards" }}>
+            分享你的肌肤形象类型，与 NIHPLOD 一起探索护肤之美，解锁限定礼遇。
+          </p>
 
-          {pageState === "no_campaign" && (
-            <div className="flex flex-col items-center gap-4 py-20">
-              <Gift className="w-12 h-12 text-[#8B7355]/40" />
-              <p className="text-[#5E5E5E] text-sm">暂无进行中的活动，敬请期待</p>
-              <Link
-                href="/"
-                className="inline-flex items-center gap-2 mt-4 px-6 py-2.5 border border-[#3D4430]/20 rounded-lg text-sm text-[#3D4430] hover:bg-[#3D4430]/5 transition-colors"
-              >
-                返回首页
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          )}
+          {/* 状态信息 */}
+          <div className="opacity-0 animate-fade-in-up" style={{ animationDelay: "0.2s", animationFillMode: "forwards" }}>
+            {pageState === "loading" && (
+              <div className="inline-flex items-center gap-2 text-sm text-[#5E5E5E]">
+                <Loader2 className="w-4 h-4 text-[#8B7355] animate-spin" />
+                正在加载活动信息…
+              </div>
+            )}
 
-          {pageState === "error" && (
-            <div className="flex flex-col items-center gap-4 py-20">
-              <AlertCircle className="w-12 h-12 text-red-400" />
-              <p className="text-[#5E5E5E] text-sm">加载失败，请刷新重试</p>
-            </div>
-          )}
+            {pageState === "no_campaign" && (
+              <div className="inline-flex items-center gap-2 text-sm text-[#5E5E5E]">
+                <Sparkles className="w-4 h-4 text-[#8B7355]" />
+                <span>下一期活动筹备中，敬请期待</span>
+              </div>
+            )}
 
-          {pageState === "show_campaign" && campaign && (
-            <>
-              <p className="text-[11px] tracking-[0.25em] text-[#8B7355] uppercase mb-5 opacity-0 animate-fade-in-up" style={{ animationFillMode: "forwards" }}>
-                NIHPLOD Gift Campaign
-              </p>
-              <h1 className="text-2xl md:text-3xl font-serif text-[#1A1A1A] mb-5 opacity-0 animate-fade-in-up" style={{ animationFillMode: "forwards" }}>
-                {campaign.title}
-              </h1>
-              {campaign.subtitle && (
-                <p className="text-[15px] md:text-base text-[#5E5E5E] font-light max-w-xl mx-auto leading-relaxed mb-[30px] opacity-0 animate-fade-in-up" style={{ animationDelay: "0.1s", animationFillMode: "forwards" }}>
-                  {campaign.subtitle}
-                </p>
-              )}
+            {pageState === "error" && (
+              <div className="inline-flex items-center gap-2 text-sm text-red-600">
+                <AlertCircle className="w-4 h-4" />
+                加载失败，请刷新页面重试
+              </div>
+            )}
 
-              {/* 活动时间 */}
-              <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8 mb-8 opacity-0 animate-fade-in-up" style={{ animationDelay: "0.15s", animationFillMode: "forwards" }}>
+            {pageState === "show_campaign" && campaign && (
+              <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8">
                 <div className="flex items-center gap-2 text-sm text-[#5E5E5E]">
                   <Clock className="w-4 h-4 text-[#8B7355]" />
                   <span>{formatDate(campaign.startDate)} - {formatDate(campaign.endDate)}</span>
@@ -230,23 +221,104 @@ export default function GiftPage() {
                   </div>
                 )}
               </div>
-            </>
-          )}
+            )}
+          </div>
         </div>
       </section>
 
+      {/* 无活动 - 玩法预告 */}
+      {pageState === "no_campaign" && (
+        <section className="relative z-10 pb-20 md:pb-36 px-6 md:px-12 lg:px-20">
+          <div className="max-w-3xl mx-auto">
+            <div className="text-center mb-8 md:mb-10">
+              <p className="text-[15px] md:text-base text-[#5E5E5E]/80 font-light leading-relaxed max-w-md mx-auto">
+                简单三步，即可参与活动赢取 NIHPLOD 限定礼遇。
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center max-w-4xl mx-auto mb-8 md:mb-10">
+              {/* 左侧人物 IP */}
+              <div className="relative w-full max-w-[260px] md:max-w-[300px] aspect-[3/4] mx-auto">
+                <Image
+                  src="/images/character/84-87/84-87_female.png"
+                  alt="NIHPLOD 肌肤形象"
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              </div>
+
+              {/* 右侧步骤 */}
+              <div className="space-y-4">
+                {[
+                  { step: "01", title: "完成测肤", desc: "获取你的专属肌肤形象类型" },
+                  { step: "02", title: "分享小红书", desc: "发布海报并 @NIHPLOD旎柏" },
+                  { step: "03", title: "解锁礼遇", desc: "提交分享链接，等待开奖" },
+                ].map((item, i) => (
+                  <div
+                    key={i}
+                    className="flex items-start gap-4 p-5 rounded-2xl bg-white shadow-sm border border-[#E8E2D9]"
+                  >
+                    <span className="shrink-0 w-8 h-8 rounded-full bg-[#1B3A5C] flex items-center justify-center text-sm font-medium text-white">
+                      {parseInt(item.step)}
+                    </span>
+                    <div className="min-w-0">
+                      <h3 className="text-[15px] font-medium text-[#1A1A1A] mb-1">{item.title}</h3>
+                      <p className="text-sm text-[#5E5E5E] leading-[1.85]">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="text-center">
+              <Link
+                href="/"
+                className="group relative inline-flex items-center justify-center gap-3 px-10 py-3.5 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#1B3A5C] hover:text-white"
+              >
+                <span>开始测肤</span>
+                <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* 错误状态 */}
+      {pageState === "error" && (
+        <section className="relative z-10 pb-20 md:pb-36 px-6 md:px-12 lg:px-20">
+          <div className="max-w-md mx-auto text-center">
+            <div className="rounded-2xl border border-[rgba(61,68,48,0.08)] bg-[#FAF9F6] p-5 md:p-9">
+              <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-5">
+                <AlertCircle className="w-6 h-6 text-red-400" />
+              </div>
+              <h2 className="text-lg font-serif text-[#1A1A1A] mb-2">活动信息加载失败</h2>
+              <p className="text-sm text-[#5E5E5E]/80 mb-6">请检查网络连接后刷新页面，或稍后再试。</p>
+              <button
+                onClick={() => fetchCampaign()}
+                className="group relative inline-flex items-center justify-center gap-3 px-10 py-3.5 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#1B3A5C] hover:text-white"
+              >
+                <Loader2 className="w-4 h-4" />
+                <span>重新加载</span>
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* 奖品展示 */}
       {pageState === "show_campaign" && campaign && (
-        <section className="pb-16 md:pb-24 px-6 md:px-12 lg:px-20">
+        <section className="relative z-10 pb-20 md:pb-36 px-6 md:px-12 lg:px-20">
           <div className="max-w-5xl mx-auto">
-            <h2 className="text-center text-xl font-serif text-[#1A1A1A] mb-10">🎁 本期好礼</h2>
+            <div className="text-center mb-10 md:mb-12">
+              <p className="text-[11px] tracking-[0.25em] text-[#8B7355] uppercase mb-3">Prizes</p>
+              <h2 className="text-xl md:text-2xl font-serif text-[#1A1A1A]">本期好礼</h2>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {Array.isArray(campaign.prizes) && campaign.prizes.map((prize, i) => (
                 <div
                   key={i}
-                  className="group relative rounded-2xl border border-[rgba(61,68,48,0.08)] bg-[#FAF9F6] p-6 md:p-8 transition-all duration-500 hover:shadow-[0_16px_32px_rgba(61,68,48,0.08)] hover:-translate-y-1"
+                  className="group relative rounded-2xl border border-[rgba(61,68,48,0.08)] bg-[#FAF9F6] overflow-hidden transition-all duration-500 hover:shadow-[0_16px_32px_rgba(61,68,48,0.08)] hover:-translate-y-1"
                 >
-                  <div className="aspect-square relative mb-4 rounded-xl overflow-hidden bg-[#F0EDE1]/50">
+                  <div className="aspect-square relative overflow-hidden bg-[#F0EDE1]/50">
                     {prize.image ? (
                       <Image
                         src={prize.image}
@@ -260,11 +332,13 @@ export default function GiftPage() {
                       </div>
                     )}
                   </div>
-                  <h3 className="text-base font-serif text-[#1A1A1A] mb-1">{prize.name}</h3>
-                  {prize.description && (
-                    <p className="text-sm text-[#5E5E5E]/70 leading-relaxed mb-2">{prize.description}</p>
-                  )}
-                  <p className="text-xs text-[#8B7355]">共 {prize.quantity} 份</p>
+                  <div className="p-5 md:p-6">
+                    <h3 className="text-base font-serif text-[#1A1A1A] mb-1">{prize.name}</h3>
+                    {prize.description && (
+                      <p className="text-sm text-[#5E5E5E]/70 leading-relaxed mb-2">{prize.description}</p>
+                    )}
+                    <p className="text-xs text-[#8B7355]">共 {prize.quantity} 份</p>
+                  </div>
                 </div>
               ))}
             </div>
@@ -274,9 +348,12 @@ export default function GiftPage() {
 
       {/* 活动规则 */}
       {pageState === "show_campaign" && campaign && (
-        <section className="pb-16 md:pb-24 px-6 md:px-12 lg:px-20">
+        <section className="relative z-10 pb-20 md:pb-36 px-6 md:px-12 lg:px-20">
           <div className="max-w-3xl mx-auto">
-            <h2 className="text-center text-xl font-serif text-[#1A1A1A] mb-8">📋 参与方式</h2>
+            <div className="text-center mb-10 md:mb-12">
+              <p className="text-[11px] tracking-[0.25em] text-[#8B7355] uppercase mb-3">How to Join</p>
+              <h2 className="text-xl md:text-2xl font-serif text-[#1A1A1A]">参与方式</h2>
+            </div>
             <div className="space-y-4">
               {[
                 { step: "01", title: "生成专属海报", desc: "点击下方按钮，生成您的专属活动海报与小红书分享文案" },
@@ -304,21 +381,25 @@ export default function GiftPage() {
 
       {/* CTA 参与区域 */}
       {pageState === "show_campaign" && campaign && (
-        <section className="pb-20 md:pb-36 px-6 md:px-12 lg:px-20">
+        <section className="relative z-10 pb-20 md:pb-36 px-6 md:px-12 lg:px-20">
           <div className="max-w-2xl mx-auto">
-            <div className="rounded-2xl border border-[rgba(61,68,48,0.1)] bg-[#FAF9F6] p-8 md:p-10">
+            <div className="rounded-2xl border border-[rgba(61,68,48,0.08)] bg-[#FAF9F6] p-5 md:p-9">
               {/* 未登录 */}
               {!user && (
-                <div className="text-center space-y-4">
-                  <Gift className="w-10 h-10 text-[#8B7355] mx-auto" />
-                  <h3 className="text-lg font-serif text-[#1A1A1A]">登录后参与活动</h3>
-                  <p className="text-sm text-[#5E5E5E]">登录您的 NIHPLOD 账户，即可参与肌智派送好礼活动</p>
+                <div className="text-center space-y-5">
+                  <div className="w-14 h-14 rounded-full bg-[#8B7355]/10 flex items-center justify-center mx-auto">
+                    <Gift className="w-6 h-6 text-[#8B7355]" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-serif text-[#1A1A1A] mb-1">登录后参与活动</h3>
+                    <p className="text-sm text-[#5E5E5E]">登录您的 NIHPLOD 账户，即可参与肌智派送好礼活动</p>
+                  </div>
                   <button
                     onClick={() => openAuthModal("login")}
-                    className="inline-flex items-center gap-2 px-8 py-3 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent rounded-lg text-sm tracking-[0.15em] font-medium hover:bg-[#1B3A5C] hover:text-white transition-all duration-500"
+                    className="group relative inline-flex items-center justify-center gap-3 px-10 py-3.5 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#1B3A5C] hover:text-white"
                   >
                     立即登录
-                    <ArrowRight className="w-4 h-4" />
+                    <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
                   </button>
                 </div>
               )}
@@ -339,7 +420,7 @@ export default function GiftPage() {
                   </div>
                   <div>
                     <h3 className="text-lg font-serif text-[#1A1A1A] mb-2">
-                      {entry.status === "won" ? "🎉 恭喜中奖！" : "您已成功参与"}
+                      {entry.status === "won" ? "恭喜中奖！" : "您已成功参与"}
                     </h3>
                     <div className="flex flex-col items-center gap-2">
                       <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${statusColors[entry.status] || "bg-gray-100 text-gray-600"}`}>
@@ -369,7 +450,9 @@ export default function GiftPage() {
               {user && !entry && (
                 <div className="space-y-6">
                   <div className="text-center">
-                    <Gift className="w-10 h-10 text-[#8B7355] mx-auto mb-3" />
+                    <div className="w-14 h-14 rounded-full bg-[#8B7355]/10 flex items-center justify-center mx-auto mb-4">
+                      <Gift className="w-6 h-6 text-[#8B7355]" />
+                    </div>
                     <h3 className="text-lg font-serif text-[#1A1A1A] mb-1">参与活动</h3>
                     <p className="text-sm text-[#5E5E5E]">请先分享到小红书，然后提交分享链接</p>
                   </div>
@@ -377,7 +460,7 @@ export default function GiftPage() {
                   {/* 分享文案 */}
                   {campaign.shareText && (
                     <div className="space-y-2">
-                      <label className="text-xs font-medium text-[#5E5E5E] tracking-wide">📱 小红书分享文案（点击复制）</label>
+                      <label className="text-xs font-medium text-[#5E5E5E] tracking-wide">小红书分享文案（点击复制）</label>
                       <div className="relative">
                         <div
                           onClick={handleCopyShareText}
@@ -449,12 +532,12 @@ export default function GiftPage() {
                     <button
                       onClick={handleSubmit}
                       disabled={submitting || !shareLink.trim()}
-                      className="w-full flex items-center justify-center gap-2 px-8 py-3.5 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent rounded-lg text-sm tracking-[0.15em] font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#1B3A5C] hover:text-white transition-all duration-500"
+                      className="w-full flex items-center justify-center gap-2 px-8 py-3.5 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#1B3A5C] hover:text-white transition-all duration-500"
                     >
                       {submitting ? (
                         <>
                           <Loader2 className="w-4 h-4 animate-spin" />
-                          提交中...
+                          提交中…
                         </>
                       ) : (
                         <>
@@ -474,8 +557,10 @@ export default function GiftPage() {
         </section>
       )}
 
+      </div>
+
       {/* 页脚 */}
-      <footer className="pt-6 md:pt-8 pb-[calc(1.5rem+env(safe-area-inset-bottom,16px))] px-6 text-center">
+      <footer className="relative z-10 pt-6 md:pt-8 pb-[calc(1.5rem+env(safe-area-inset-bottom,16px))] px-6 text-center border-t border-[rgba(61,68,48,0.06)]">
         <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-4 text-[10px] md:text-xs tracking-widest text-[#5E5E5E]/60">
           <p>© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
           <span className="hidden sm:inline text-[#5E5E5E]/30">·</span>
@@ -488,10 +573,7 @@ export default function GiftPage() {
               服务条款
             </Link>
           </div>
-          <span className="hidden sm:inline text-[#5E5E5E]/30">·</span>
-          <Link href="/gift" className="hover:text-[#3D4430] transition-colors duration-300">
-            肌智派送好礼
-          </Link>
+
         </div>
       </footer>
     </main>
