@@ -20,9 +20,6 @@ export const STORAGE_KEYS = {
     // 地理位置
     USER_REGION: 'userRegion',
 
-    // 游客头像（按 sessionId 存储）
-    guestAvatar: (sessionId: string) => `guest_avatar_${sessionId}`,
-
     // 会话认领标记（按 sessionId 存储）
     claimedSession: (sessionId: string) => `claimed_${sessionId}`,
 } as const;

@@ -740,8 +740,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
       canvas.width = outputWidth;
       canvas.height = outputHeight;
 
-      // 前置摄像头不再做水平镜像，上传给 AI 的图像与摄像头原始帧保持一致，
-      // 避免 avatar 生成与面部分析出现左右颠倒
+      // 前置摄像头不再做水平镜像，上传给 AI 的图像与摄像头原始帧保持一致
       ctx.drawImage(video, cropX, cropY, cropWidth, cropHeight, 0, 0, outputWidth, outputHeight);
 
       // Encode with standard quality to reduce base64 size for the API

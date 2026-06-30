@@ -63,35 +63,6 @@ export function useAsyncAnalysis() {
     const router = useRouter();
 
     const isRunningRef = useRef(false);
-    const smoothProgressRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-    // 平滑进度条：长时间等待时自动缓慢推进，避免用户感觉卡死
-    useEffect(() => {
-        if (analysisState.status !== 'completed' && analysisState.status !== 'error' && analysisState.status !== 'idle' && analysisState.progress < 90) {
-            if (smoothProgressRef.current) return; // already running
-            smoothProgressRef.current = setInterval(() => {
-                setAnalysisState(prev => {
-                    if (prev.progress >= 90 || prev.status === 'completed' || prev.status === 'error') {
-                        return prev;
-                    }
-                    // 越靠近 90 越慢，最低 +1/3s
-                    const step = prev.progress > 75 ? 1 : prev.progress > 50 ? 2 : 3;
-                    return { ...prev, progress: Math.min(prev.progress + step, 89) };
-                });
-            }, 1500);
-        } else {
-            if (smoothProgressRef.current) {
-                clearInterval(smoothProgressRef.current);
-                smoothProgressRef.current = null;
-            }
-        }
-        return () => {
-            if (smoothProgressRef.current) {
-                clearInterval(smoothProgressRef.current);
-                smoothProgressRef.current = null;
-            }
-        };
-    }, [analysisState.status, analysisState.progress]);
 
     const runAnalysis = useCallback(async () => {
         // 并发保护：防止双击或重渲染导致多个分析流程竞争
@@ -112,8 +83,8 @@ export function useAsyncAnalysis() {
             const promise = new Promise<never>((_, reject) => {
                 timeoutId = setTimeout(() => {
                     abortController.abort();
-                    reject(new Error("分析超时 (180秒)。请检查网络连接后重试。"));
-                }, 180 * 1000); // 3 minutes
+                    reject(new Error("分析超时 (90秒)。请检查网络连接后重试。"));
+                }, 90 * 1000); // 90 seconds, aligned with server timeout
             });
             return { promise, cancel: () => clearTimeout(timeoutId) };
         };
@@ -135,20 +106,18 @@ export function useAsyncAnalysis() {
             }
             const answers = JSON.parse(answersStr);
 
-            // Pre-generate sessionId and nickname (needed for both avatar and analysis)
+            // Pre-generate sessionId and nickname for analysis
             // 性别不一致免费重试场景：复用原 sessionId，让后端识别为同一会话的免费重试
-            let sessionId: string;
             let freeRetrySessionId: string | null = null;
             try {
                 freeRetrySessionId = localStorage.getItem(STORAGE_KEYS.ADVISOR_FREE_RETRY_SESSION_ID);
             } catch (e) {
                 console.warn("localStorage access failed", e);
             }
-            sessionId = freeRetrySessionId || (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString());
+            const sessionId = freeRetrySessionId || (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString());
 
             // 1. Face Analysis
             let faceAnalysis = null;
-            let frontPhotoForAvatar: string | null = null;
 
             // Use advisorStorage to get images (supports IndexedDB)
             const { advisorStorage } = await import("@/lib/advisor-storage");

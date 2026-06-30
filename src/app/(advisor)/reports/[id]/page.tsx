@@ -39,8 +39,7 @@ export default async function ReportDetailPage(props: {
                     const result = rawResult as unknown as ComprehensiveResult;
                     initialData = {
                         result,
-                        faceAnalysis: rawResult.faceAnalysis as FaceAnalysisResult | null || null,
-                        generatedAvatar: rawResult.generatedAvatar as string | null || null
+                        faceAnalysis: rawResult.faceAnalysis as FaceAnalysisResult | null || null
                     };
                 }
             }

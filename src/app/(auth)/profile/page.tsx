@@ -29,7 +29,6 @@ interface AnalysisResult {
   skinProfile?: { typeLabel?: string; concerns?: string[]; skinAge?: number };
   skinType?: { typeLabel?: string };
   concerns?: string[];
-  generatedAvatar?: string;
 }
 
 interface HistorySession {

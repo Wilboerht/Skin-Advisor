@@ -3,23 +3,23 @@ import fs, { realpath } from "fs/promises";
 import path from "path";
 
 /**
- * 删除头像生成的原始源照片（本地文件/云端对象）
+ * 删除上传的源照片（本地文件/云端对象）
  */
-export async function deleteSourcePhoto(frontPhoto: string | null | undefined): Promise<void> {
-  if (!frontPhoto) return;
+export async function deleteSourcePhoto(photoUrl: string | null | undefined): Promise<void> {
+  if (!photoUrl) return;
 
   // Base64 data URI: 无持久化文件需要删除
-  if (frontPhoto.startsWith("data:")) return;
+  if (photoUrl.startsWith("data:")) return;
 
   // 本地文件路径
-  if (frontPhoto.startsWith("/")) {
+  if (photoUrl.startsWith("/")) {
     try {
-      const relativePath = frontPhoto.slice(1);
+      const relativePath = photoUrl.slice(1);
       const normalized = path.normalize(relativePath);
 
       // 路径穿越防护
       if (path.isAbsolute(normalized) || normalized.startsWith("..") || normalized.includes(".." + path.sep)) {
-        console.warn(`[Privacy] Blocked path traversal attempt: ${frontPhoto}`);
+        console.warn(`[Privacy] Blocked path traversal attempt: ${photoUrl}`);
         return;
       }
 
@@ -32,7 +32,7 @@ export async function deleteSourcePhoto(frontPhoto: string | null | undefined): 
       }
 
       if (!filePath.startsWith(uploadRoot + path.sep) && filePath !== uploadRoot) {
-        console.warn(`[Privacy] Blocked out-of-bounds file access: ${frontPhoto}`);
+        console.warn(`[Privacy] Blocked out-of-bounds file access: ${photoUrl}`);
         return;
       }
 
@@ -43,12 +43,12 @@ export async function deleteSourcePhoto(frontPhoto: string | null | undefined): 
         !realFilePath.startsWith(realUploadRoot + path.sep) &&
         realFilePath !== realUploadRoot
       ) {
-        console.warn(`[Privacy] Blocked symlink escape: ${frontPhoto}`);
+        console.warn(`[Privacy] Blocked symlink escape: ${photoUrl}`);
         return;
       }
 
       await fs.unlink(realFilePath);
-      console.log(`[Privacy] Deleted local source photo: ${frontPhoto}`);
+      console.log(`[Privacy] Deleted local source photo: ${photoUrl}`);
     } catch {
       // 忽略删除失败（文件可能已被清理）
     }
@@ -56,9 +56,9 @@ export async function deleteSourcePhoto(frontPhoto: string | null | undefined): 
   }
 
   // 云端 URL (OSS)
-  if (frontPhoto.startsWith("http")) {
+  if (photoUrl.startsWith("http")) {
     try {
-      await deleteOSSFiles([frontPhoto]);
+      await deleteOSSFiles([photoUrl]);
       console.log(`[Privacy] Deleted OSS source photo`);
     } catch (e) {
       console.error(`[Privacy] Failed to delete cloud source photo:`, e);

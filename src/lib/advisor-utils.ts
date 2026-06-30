@@ -90,17 +90,17 @@ export interface FaceAnalysisResult {
 
 export interface LabAnalysisResult {
     skinPh: { value: number; range: string; status: string }; // e.g. 5.5
-    tewl: { value: number; unit: string; status: string }; // e.g. 8.5 g/m2/h
-    elasticity: { value: number; unit: string; status: string }; // R2
-    melanin: { value: number; unit: string; status: string }; // MI
-    erythema: { value: number; unit: string; status: string }; // EI
-    glogau: { value: string; status: string }; // I, II, III
-    homogeneity: { value: number; unit: string; status: string }; // CV%
-    porphyrins: { value: number; status: string }; // count
-    sebum: { value: string; status: string }; // high/low
-    roughness: { value: number; unit: string; status: string }; // µm
-    glossiness: { value: number; unit: string; status: string }; // GU
-    wrinkleGrade: { value: string; status: string }; // Grade 1-3
+    tewl: { value: number; unit: string; range?: string; status: string }; // e.g. 8.5 g/m2/h
+    elasticity: { value: number; unit: string; range?: string; status: string }; // R2
+    melanin: { value: number; unit: string; range?: string; status: string }; // MI
+    erythema: { value: number; unit: string; range?: string; status: string }; // EI
+    glogau: { value: string; range?: string; status: string }; // I, II, III
+    homogeneity: { value: number; unit: string; range?: string; status: string }; // CV%
+    porphyrins: { value: number; range?: string; status: string }; // count
+    sebum: { value: string; range?: string; status: string }; // high/low
+    roughness: { value: number; unit: string; range?: string; status: string }; // µm
+    glossiness: { value: number; unit: string; range?: string; status: string }; // GU
+    wrinkleGrade: { value: string; range?: string; status: string }; // Grade 1-3
 }
 
 // 10 维度评分接口 (用于 ScientificBarChart)
@@ -432,7 +432,6 @@ export function getConcernLabel(concern: string): string {
 
 export interface SharedAnalysisResult {
     nickname?: string;
-    generatedAvatar?: string | null;
     skinProfile?: {
         type?: string;
         typeLabel?: string;

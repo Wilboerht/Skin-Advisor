@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { deleteOSSFiles } from "@/lib/ali-oss";
 
 export const maxDuration = 60;
 
@@ -14,76 +13,18 @@ const MAX_USER_REPORTS = 100;
 interface CleanupStats {
     sessions: number;
     testRecords: number;
-    avatarQueues: number;
-    cloudFiles: number;
-}
-
-function extractAvatarUrls(sessions: Array<{ analysisResult: unknown }>): string[] {
-    const urls: string[] = [];
-    for (const session of sessions) {
-        const result = session.analysisResult as Record<string, unknown> | null;
-        if (
-            result?.generatedAvatar &&
-            typeof result.generatedAvatar === "string" &&
-            result.generatedAvatar.startsWith("http")
-        ) {
-            urls.push(result.generatedAvatar);
-        }
-    }
-    return urls;
-}
-
-/**
- * 从 AvatarQueue 中提取需要删除的 cloud 文件 URL
- */
-function extractQueueUrls(items: Array<{ frontPhoto: string | null; generatedUrl: string | null }>): string[] {
-    const urls: string[] = [];
-    for (const item of items) {
-        if (item.generatedUrl && item.generatedUrl.startsWith("http")) {
-            urls.push(item.generatedUrl);
-        }
-        if (item.frontPhoto && item.frontPhoto.startsWith("http")) {
-            urls.push(item.frontPhoto);
-        }
-    }
-    return urls;
-}
-
-async function deleteCloudFiles(urls: string[]): Promise<number> {
-    if (urls.length === 0) return 0;
-
-    try {
-        await deleteOSSFiles(urls);
-        return urls.length;
-    } catch (e) {
-        console.error("[Cleanup] Failed to delete OSS files:", e);
-        return 0;
-    }
 }
 
 async function cleanupSessions(
-    sessions: Array<{ sessionId: string; analysisResult: unknown }>,
+    sessions: Array<{ sessionId: string }>,
     stats: CleanupStats
 ): Promise<void> {
     if (sessions.length === 0) return;
 
     const sessionIds = sessions.map((s) => s.sessionId);
-    const urlsToDelete = extractAvatarUrls(sessions);
-
-    // 清理 AvatarQueue 中残留的原始照片和生成的 avatar（可能未同步到 analysisResult）
-    const avatarQueueItems = await prisma.avatarQueue.findMany({
-        where: { sessionId: { in: sessionIds } },
-        select: { frontPhoto: true, generatedUrl: true },
-    });
-
-    const queueUrls = extractQueueUrls(avatarQueueItems);
-    urlsToDelete.push(...queueUrls);
 
     const deletedStats = await prisma.$transaction(async (tx) => {
         const testRecords = await tx.testRecord.deleteMany({
-            where: { sessionId: { in: sessionIds } },
-        });
-        const avatarQueues = await tx.avatarQueue.deleteMany({
             where: { sessionId: { in: sessionIds } },
         });
         const advisorSessions = await tx.advisorSession.deleteMany({
@@ -91,17 +32,12 @@ async function cleanupSessions(
         });
         return {
             testRecords: testRecords.count,
-            avatarQueues: avatarQueues.count,
             sessions: advisorSessions.count,
         };
     });
 
-    const cloudDeleted = await deleteCloudFiles(urlsToDelete);
-
     stats.sessions += deletedStats.sessions;
     stats.testRecords += deletedStats.testRecords;
-    stats.avatarQueues += deletedStats.avatarQueues;
-    stats.cloudFiles += cloudDeleted;
 }
 
 export async function GET(request: NextRequest) {
@@ -127,8 +63,6 @@ export async function GET(request: NextRequest) {
         const stats: CleanupStats = {
             sessions: 0,
             testRecords: 0,
-            avatarQueues: 0,
-            cloudFiles: 0,
         };
 
         const now = Date.now();
@@ -143,7 +77,6 @@ export async function GET(request: NextRequest) {
             },
             select: {
                 sessionId: true,
-                analysisResult: true,
             },
         });
         await cleanupSessions(guestSessions, stats);
@@ -156,14 +89,13 @@ export async function GET(request: NextRequest) {
             },
             select: {
                 sessionId: true,
-                analysisResult: true,
             },
         });
         await cleanupSessions(oldUserSessions, stats);
 
         // ===== 3. 清理注册用户超量数据（3 个月内每个用户最多保留 100 条）=====
         // 使用 window function 一次性获取所有超量记录，避免 N+1 查询
-        const excessSessions = await prisma.$queryRaw<Array<{ sessionId: string; analysisResult: unknown }>>`
+        const excessSessions = await prisma.$queryRaw<Array<{ sessionId: string }>>`
             SELECT "sessionId", "analysisResult"
             FROM (
                 SELECT "sessionId", "analysisResult", "createdAt",

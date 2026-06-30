@@ -1,6 +1,5 @@
 import { registerInstance, unregisterInstance, stopHeartbeat } from './instance-check';
 import prisma from './prisma';
-import { startAvatarQueueProcessor } from './avatar-queue-processor';
 
 export async function initNode() {
     console.log('[init] Application starting...');
@@ -33,11 +32,5 @@ export async function initNode() {
         process.exit(0);
     });
 
-    if (process.env.NODE_ENV === 'production') {
-        console.log('[init] Starting avatar queue processor...');
-        // 启动后台队列处理器，每 2 秒检查一次
-        startAvatarQueueProcessor(2000);
-    } else {
-        console.log('[init] Skipping avatar queue processor in development');
-    }
+    console.log('[init] Node initialization complete');
 }

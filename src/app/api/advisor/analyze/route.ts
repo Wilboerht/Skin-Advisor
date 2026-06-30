@@ -16,6 +16,7 @@ import { hashIP } from "@/lib/privacy";
 
 import { checkUsageLimit, reserveUsage } from "@/lib/usage-limit";
 import { extractGuestIdentifiers } from "@/lib/guest-limit";
+import DOMPurify from 'isomorphic-dompurify';
 
 /** 从服务端 User-Agent 解析设备信息 */
 function parseDeviceInfo(userAgent: string | null) {
@@ -72,8 +73,6 @@ function sanitizeReason(reason: string): string {
     }
     return sanitized;
 }
-
-import DOMPurify from 'isomorphic-dompurify';
 
 /**
  * 递归清理 AI 输出中的潜在危险 HTML/JS 内容
@@ -555,24 +554,17 @@ export async function POST(request: NextRequest) {
             // Persist result to DB — do NOT swallow errors (ghost analysis bug)
             try {
                 await prisma.$transaction(async (tx) => {
-                    // Fetch existing session first to avoid overwriting parallel avatar data
+                    // Fetch existing session first to avoid overwriting parallel data
                     const existingSession = await tx.advisorSession.findUnique({
                         where: { sessionId },
                         select: { analysisResult: true }
                     });
 
-                    // Also check avatarQueue in case avatar was generated before session was created
-                    const avatarQueueItem = await tx.avatarQueue.findUnique({
-                        where: { sessionId },
-                        select: { generatedUrl: true }
-                    });
-
-                    // Merge current results with any existing data (like generatedAvatar)
+                    // Merge current results with any existing data
                     const mergedResult = {
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         ...(existingSession?.analysisResult as any || {}),
                         ...sanitizedResult,
-                        ...(avatarQueueItem?.generatedUrl ? { generatedAvatar: avatarQueueItem.generatedUrl } : {}),
                         ...(isFreeRetryAllowed ? { freeRetryUsed: true } : {})
                     };
 

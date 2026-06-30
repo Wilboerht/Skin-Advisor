@@ -131,7 +131,7 @@ sudo chown $(whoami):$(whoami) /var/log/skin-advisor
 
 ## 注意事项
 
-1. **PM2 必须使用 fork 模式 + 单实例**（`instances: 1, exec_mode: 'fork'`）。当前应用使用内存中的 AvatarQueue 处理器，cluster 模式会导致多个进程竞争处理同一队列。
+1. **PM2 必须使用 fork 模式 + 单实例**（`instances: 1, exec_mode: 'fork'`）。当前应用使用内存中限流器，cluster 模式会导致多个进程竞争处理同一限流计数。
 2. **生产环境必须使用 PostgreSQL**，SQLite 仅用于本地开发。
 3. **图片存储推荐使用阿里云 OSS**。如果使用本地存储，确保 `public/uploads` 目录有持久化存储（云服务器本地磁盘即可）。
 4. **内存限流限制**：当前 `ratelimit.ts` 使用进程内内存 Map，仅在单实例部署下有效。如需水平扩展，需迁移到 Redis。

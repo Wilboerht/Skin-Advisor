@@ -19,6 +19,7 @@ import { useAuth } from "@/hooks/useAuth";
 import type { FaceAnalysisResult } from "@/lib/advisor-utils";
 import { getRankPercentile, getCharacterImage } from "@/lib/result-utils";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
+import { computeLabAnalysis } from "@/lib/analysis-lab";
 
 import { ScientificBarChart } from "@/components/advisor/ScientificBarChart";
 
@@ -69,7 +70,6 @@ interface ResultClientProps {
     initialData?: {
         result: ComprehensiveResult;
         faceAnalysis: FaceAnalysisResult | null;
-        generatedAvatar?: string | null;
     } | null;
 }
 
@@ -169,13 +169,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const [userImage, setUserImage] = useState<string | undefined>(undefined);
     const [sideImages, setSideImages] = useState<Record<string, string>>({});
 
-    const [generatedAvatar, setGeneratedAvatar] = useState<string | null>(null);
-    const [isAvatarLoading, setIsAvatarLoading] = useState(false); // Avatar disabled — using character illustrations
-    const [avatarQueueStatus, setAvatarQueueStatus] = useState<{
-        position?: number;
-        estimatedWaitTime?: number;
-        message?: string;
-    } | null>(null);
     const [userNickname, setUserNickname] = useState<string>("您");
     // Session ID for sharing - initialized from props or will be set after analysis
     const [sessionId, setSessionId] = useState<string | undefined>(id);
@@ -371,218 +364,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
         loadClientData();
     }, [initialData, router, trackResultView, sessionId, searchParams]);
-
-    // --- Avatar Polling ---
-    // Poll for avatar generation if we don't have one yet
-    // For guests: also check localStorage first
-    // Improved robustness: error handling, retry logic, timeout feedback
-    const avatarPollRef = useRef({ failureCount: 0, hasStarted: false });
-
-    useEffect(() => {
-        if (!sessionId || generatedAvatar || !isAvatarLoading) {
-            avatarPollRef.current.hasStarted = false;
-            return;
-        }
-
-        // For guests: try to get avatar from localStorage first
-        if (!user) {
-            try {
-                const guestAvatarRaw = localStorage.getItem(STORAGE_KEYS.guestAvatar(sessionId));
-                if (guestAvatarRaw) {
-                    let guestAvatarUrl: string | null = null;
-                    // 兼容旧格式（纯字符串 URL）和新格式（带过期时间的 JSON）
-                    if (guestAvatarRaw.startsWith('http') || guestAvatarRaw.startsWith('data:')) {
-                        guestAvatarUrl = guestAvatarRaw;
-                    } else {
-                        try {
-                            const parsed = JSON.parse(guestAvatarRaw);
-                            if (parsed.expiresAt && Date.now() > parsed.expiresAt) {
-                                localStorage.removeItem(STORAGE_KEYS.guestAvatar(sessionId));
-                            } else if (parsed.url) {
-                                guestAvatarUrl = parsed.url;
-                            }
-                        } catch {
-                            // 解析失败则忽略
-                        }
-                    }
-                    if (guestAvatarUrl) {
-                        setGeneratedAvatar(guestAvatarUrl);
-                        setIsAvatarLoading(false);
-                        return;
-                    }
-                }
-            } catch (e) {
-                // ignore localStorage read errors
-            }
-        }
-
-        // Prevent multiple simultaneous polls
-        if (avatarPollRef.current.hasStarted) {
-            return;
-        }
-
-        avatarPollRef.current.hasStarted = true;
-        avatarPollRef.current.failureCount = 0;
-
-        const pollAvatar = async () => {
-            // 页面在后台标签页时不发起网络请求，节省电池和流量
-            if (typeof document !== "undefined" && document.hidden) return;
-
-            try {
-                const response = await fetch(`/api/advisor/avatar/status?sessionId=${sessionId}&t=${Date.now()}`);
-                
-                if (response.ok) {
-                    const data = await response.json();
-
-                    // 处理失败状态：停止轮询
-                    if (data.queueStatus === 'failed') {
-                        console.warn("Avatar generation failed, stopping poll");
-                        setIsAvatarLoading(false);
-                        setAvatarQueueStatus(null);
-                        return;
-                    }
-                    
-                    // 更新队列状态
-                    if (data.queueStatus && data.queueStatus !== 'completed') {
-                        setAvatarQueueStatus({
-                            position: data.queuePosition,
-                            estimatedWaitTime: data.estimatedWaitTime,
-                            message: data.message
-                        });
-                    }
-                    
-                    // Validate avatar URL format
-                    if (data.generatedAvatar && typeof data.generatedAvatar === 'string') {
-                        // Basic URL validation
-                        if (data.generatedAvatar.startsWith('http') || data.generatedAvatar.startsWith('data:')) {
-                            setGeneratedAvatar(data.generatedAvatar);
-                            setIsAvatarLoading(false);
-                            setAvatarQueueStatus(null);
-                            return;
-                        }
-                    }
-                    
-                    // Reset error count on successful connection
-                    avatarPollRef.current.failureCount = 0;
-                } else if (response.status === 404) {
-                    // SessionID not found (shouldn't happen in normal flow)
-                    avatarPollRef.current.failureCount = 999; // Force timeout
-                } else if (response.status >= 500) {
-                    // Server error, increment failure counter
-                    avatarPollRef.current.failureCount++;
-                    console.warn(`Avatar API server error (${response.status}), failures: ${avatarPollRef.current.failureCount}`);
-                } else {
-                    // Other HTTP errors
-                    avatarPollRef.current.failureCount++;
-                    console.warn(`Avatar API error (${response.status})`);
-                }
-            } catch (err) {
-                avatarPollRef.current.failureCount++;
-                console.error(`Failed to poll avatar (attempt ${avatarPollRef.current.failureCount}):`, err);
-            }
-
-            // Stop after 5 consecutive failures
-            if (avatarPollRef.current.failureCount >= 5) {
-                console.warn("Avatar polling stopped after 5 failures - using fallback");
-                setIsAvatarLoading(false);
-                setAvatarQueueStatus(null);
-            }
-        };
-
-        // 固定轮询间隔 3s，不随 queueStatus 变化而重启 effect
-        const pollInterval = setInterval(pollAvatar, 3000);
-        const pollTimeout = setTimeout(() => {
-            clearInterval(pollInterval);
-            if (isAvatarLoading) {
-                console.warn("Avatar generation timeout (120s) - using original photo");
-                setIsAvatarLoading(false);
-                setAvatarQueueStatus(null);
-            }
-        }, 120000);
-        
-        // Immediate first poll to catch avatar if already available
-        pollAvatar();
-
-        return () => {
-            clearInterval(pollInterval);
-            clearTimeout(pollTimeout);
-            avatarPollRef.current.hasStarted = false;
-        };
-    }, [sessionId, generatedAvatar, isAvatarLoading, user]);
-
-    // --- Guest Avatar Migration ---
-    // When a user views a report, migrate any guest avatar from localStorage to their account
-    const avatarMigrationRef = useRef(false);
-
-    useEffect(() => {
-        if (!sessionId || !user || avatarMigrationRef.current) {
-            return;
-        }
-
-        // Check if there's a guest avatar in localStorage for this session
-        const guestAvatarRaw = localStorage.getItem(STORAGE_KEYS.guestAvatar(sessionId));
-        if (!guestAvatarRaw) {
-            return;
-        }
-
-        // Mark as migration started to prevent duplicate calls
-        avatarMigrationRef.current = true;
-
-        const abortController = new AbortController();
-        (async () => {
-            try {
-                // Check if there's a guest avatar in localStorage
-                const guestAvatarRaw = localStorage.getItem(STORAGE_KEYS.guestAvatar(sessionId));
-                let guestAvatarUrl: string | null = null;
-                if (guestAvatarRaw) {
-                    if (guestAvatarRaw.startsWith('http') || guestAvatarRaw.startsWith('data:')) {
-                        guestAvatarUrl = guestAvatarRaw;
-                    } else {
-                        try {
-                            const parsed = JSON.parse(guestAvatarRaw);
-                            if (parsed.url) guestAvatarUrl = parsed.url;
-                        } catch {
-                            // ignore
-                        }
-                    }
-                }
-
-                if (guestAvatarUrl) {
-                    const response = await fetch("/api/advisor/avatar/migrate-guest", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        credentials: "include",
-                        signal: abortController.signal,
-                        body: JSON.stringify({
-                            sessionId,
-                            avatarUrl: guestAvatarUrl
-                        })
-                    });
-
-                    if (response.ok) {
-                        const data = await response.json();
-                        if (data.success && !data.skipped) {
-                            // Remove from localStorage since it's now stored on server
-                            localStorage.removeItem(STORAGE_KEYS.guestAvatar(sessionId));
-                        }
-                    } else {
-                        console.warn("Avatar migration failed:", response.status);
-                    }
-                }
-            } catch (err) {
-                if (err instanceof Error && err.name === 'AbortError') {
-                    // 组件卸载导致的取消，静默处理
-                    return;
-                }
-                console.error("❌ Failed to migrate guest avatar:", err);
-                // Non-blocking error - don't show to user, just log
-            }
-        })();
-
-        return () => {
-            abortController.abort();
-        };
-    }, [sessionId, user]);
 
     // --- Environment Data Integration ---
     // REMOVED: Weather component has been disabled per user request
@@ -1125,111 +906,20 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                     <div className="col-span-2 text-right">状态 (Status)</div>
                                                 </div>
 
-                                                {/* Group 1: Biophysical Profile */}
-                                                <div>
-                                                    <h5 className="text-[12px] font-bold font-mono text-[#8c7a6b] tracking-wide uppercase mb-3 px-2 py-1 bg-[#3d2f25]/8 border-l-[3px] border-[#3d2f25]/20">
-                                                        I. 生物物理特性 (Biophysical Profile)
-                                                    </h5>
-                                                    <div className="space-y-1">
-                                                        {renderLabRow("皮肤 pH 值 (Est. pH)",
-                                                            faceAnalysis?.labAnalysis?.skinPh?.value ? `${faceAnalysis.labAnalysis.skinPh.value}` :
-                                                                (faceAnalysis?.dimensions ? (5.5 + (faceAnalysis.dimensions.waterOil.score < 60 ? 0.4 : -0.2) + ((faceAnalysis.dimensions.waterOil.score % 100) / 1000 * 3)).toFixed(1) : '?'),
-                                                            faceAnalysis?.labAnalysis?.skinPh?.range || "4.5 - 5.5",
-                                                            faceAnalysis?.labAnalysis?.skinPh?.status || (faceAnalysis?.dimensions ? (faceAnalysis.dimensions.waterOil.score < 60 ? '偏碱' : '正常') : '-'))}
-
-                                                        {renderLabRow("经表皮失水率 (TEWL)",
-                                                            faceAnalysis?.labAnalysis?.tewl?.value ? `${faceAnalysis.labAnalysis.tewl.value} ${faceAnalysis.labAnalysis.tewl.unit || 'g/m²/h'}` :
-                                                                (faceAnalysis?.dimensions ? `${(20 - (faceAnalysis.dimensions.sensitivity.score / 100) * 12).toFixed(1)} g/m²/h` : '?'),
-                                                            "< 10.0 g/m²/h",
-                                                            faceAnalysis?.labAnalysis?.tewl?.status || (faceAnalysis?.dimensions ? (faceAnalysis.dimensions.sensitivity.score > 80 ? '正常' : '偏高') : '-'))}
-
-                                                        {renderLabRow("角质层含水量 (Hydration)",
-                                                            faceAnalysis?.hydration?.level ? (faceAnalysis.hydration.percent ? `${faceAnalysis.hydration.percent} AU` :
-                                                                (faceAnalysis.dimensions ? `${(20 + (faceAnalysis.dimensions.waterOil.score / 100) * 40).toFixed(1)} AU` : '?')) : '?',
-                                                            "> 35.0 AU",
-                                                            faceAnalysis?.hydration?.level ? (faceAnalysis.hydration.level === 'low' ? '偏低' : '正常') : '-')}
-
-                                                        {renderLabRow("真皮层弹性 (Elasticity R2)",
-                                                            faceAnalysis?.labAnalysis?.elasticity?.value ? `${faceAnalysis.labAnalysis.elasticity.value}` :
-                                                                (faceAnalysis?.dimensions ? `${(0.4 + (faceAnalysis.dimensions.firmness.score / 100) * 0.5).toFixed(2)}` : '?'),
-                                                            "> 0.70",
-                                                            faceAnalysis?.labAnalysis?.elasticity?.status || (faceAnalysis?.dimensions ? (faceAnalysis.dimensions.firmness.score > 60 ? '紧致' : '松弛') : '-'))}
+                                                {computeLabAnalysis(faceAnalysis).map((group) => (
+                                                    <div key={group.titleEn}>
+                                                        <h5 className="text-[12px] font-bold font-mono text-[#8c7a6b] tracking-wide uppercase mb-3 px-2 py-1 bg-[#3d2f25]/8 border-l-[3px] border-[#3d2f25]/20">
+                                                            {group.title} ({group.titleEn})
+                                                        </h5>
+                                                        <div className="space-y-1">
+                                                            {group.metrics.map((metric) => (
+                                                                <div key={metric.param}>
+                                                                    {renderLabRow(metric.param, metric.value, metric.ref, metric.status)}
+                                                                </div>
+                                                            ))}
+                                                        </div>
                                                     </div>
-                                                </div>
-
-                                                {/* Group 2: Pigmentation & Vascularity */}
-                                                <div>
-                                                    <h5 className="text-[12px] font-bold font-mono text-[#8c7a6b] tracking-wide uppercase mb-3 px-2 py-1 bg-[#3d2f25]/8 border-l-[3px] border-[#3d2f25]/20">
-                                                        II. 色基分布分析 (Chromophore Map)
-                                                    </h5>
-                                                    <div className="space-y-1">
-                                                        {renderLabRow("黑色素指数 (Melanin Index)",
-                                                            faceAnalysis?.labAnalysis?.melanin?.value ? `${faceAnalysis.labAnalysis.melanin.value} MI` :
-                                                                (faceAnalysis?.dimensions ? `${Math.round(220 - (faceAnalysis.dimensions.spots.score * 1.5))} MI` : '?'),
-                                                            "< 150 MI",
-                                                            faceAnalysis?.labAnalysis?.melanin?.status || (faceAnalysis?.dimensions ? (faceAnalysis.dimensions.spots.score < 60 ? '偏高' : '正常') : '-'))}
-
-                                                        {renderLabRow("红斑指数 (Erythema Index)",
-                                                            faceAnalysis?.labAnalysis?.erythema?.value ? `${faceAnalysis.labAnalysis.erythema.value} EI` :
-                                                                (faceAnalysis?.dimensions ? `${Math.round(350 - (faceAnalysis.dimensions.sensitivity.score * 2.2))} EI` : '?'),
-                                                            "< 200 EI",
-                                                            faceAnalysis?.labAnalysis?.erythema?.status || (faceAnalysis?.dimensions ? (faceAnalysis.dimensions.sensitivity.score < 60 ? '偏高' : '正常') : '-'))}
-
-                                                        {renderLabRow("光老化等级 (Glogau Scale)",
-                                                            faceAnalysis?.labAnalysis?.glogau?.value ? `${faceAnalysis.labAnalysis.glogau.value}` : (faceAnalysis?.dimensions ? (faceAnalysis.dimensions.uvDamage.score > 40 ? 'III 型' : faceAnalysis.dimensions.uvDamage.score > 30 ? 'II 型' : 'I 型') : '?'),
-                                                            "Age Dependent",
-                                                            faceAnalysis?.labAnalysis?.glogau?.status || "-")}
-
-                                                        {renderLabRow("肤色均匀度 (Homogeneity)",
-                                                            faceAnalysis?.labAnalysis?.homogeneity?.value ? `${faceAnalysis.labAnalysis.homogeneity.value}${faceAnalysis.labAnalysis.homogeneity.unit || '%'}` :
-                                                                (faceAnalysis?.dimensions ? `${(8 + (100 - faceAnalysis.dimensions.skinTone.score) * 0.15).toFixed(1)}% C.V.` : '?'),
-                                                            "< 15% C.V.",
-                                                            faceAnalysis?.labAnalysis?.homogeneity?.status || (faceAnalysis?.dimensions ? (faceAnalysis.dimensions.skinTone.score > 80 ? '均匀' : '不均') : '-'))}
-
-                                                        {renderLabRow("眼周色素对比度 (Periorbital Contrast)",
-                                                            (faceAnalysis?.dimensions?.darkCircles) ?
-                                                                `${(1.2 + (100 - faceAnalysis.dimensions.darkCircles.score) * 0.05).toFixed(1)} Delta E` : '?',
-                                                            "< 3.0 Delta E",
-                                                            (faceAnalysis?.dimensions?.darkCircles) ? (faceAnalysis.dimensions.darkCircles.score > 80 ? '正常' : '明显') : '-')}
-                                                    </div>
-                                                </div>
-
-                                                {/* Group 3: Surface & Microbiome */}
-                                                <div>
-                                                    <h5 className="text-[12px] font-bold font-mono text-[#8c7a6b] tracking-wide uppercase mb-3 px-2 py-1 bg-[#3d2f25]/8 border-l-[3px] border-[#3d2f25]/20">
-                                                        III. 表面与微生态 (Surface & Microbiome)
-                                                    </h5>
-                                                    <div className="space-y-1">
-                                                        {renderLabRow("卟啉计数 (Porphyrins)",
-                                                            faceAnalysis?.labAnalysis?.porphyrins?.value ? `${faceAnalysis.labAnalysis.porphyrins.value}` :
-                                                                (faceAnalysis?.dimensions ? `${Math.round(40 - (faceAnalysis.dimensions.acne.score * 0.35))}` : '?'),
-                                                            "Low Risk",
-                                                            faceAnalysis?.labAnalysis?.porphyrins?.status || (faceAnalysis?.dimensions ? (faceAnalysis.dimensions.acne.score < 60 ? '偏多' : faceAnalysis.dimensions.acne.score < 80 ? '中等' : '少') : '-'))}
-
-                                                        {renderLabRow("皮脂分泌率 (Sebum Rate)",
-                                                            faceAnalysis?.labAnalysis?.sebum?.value ? `${faceAnalysis.labAnalysis.sebum.value}` :
-                                                                (faceAnalysis?.dimensions ? (faceAnalysis.dimensions.waterOil.score < 60 ? 'High' : 'Normal') : '?'),
-                                                            "Balanced",
-                                                            faceAnalysis?.labAnalysis?.sebum?.status || (faceAnalysis?.dimensions ? (faceAnalysis.dimensions.waterOil.score < 60 ? '旺盛' : '正常') : '-'))}
-
-                                                        {renderLabRow("皮肤平滑度 (Roughness Ra)",
-                                                            faceAnalysis?.labAnalysis?.roughness?.value ? `${faceAnalysis.labAnalysis.roughness.value} ${faceAnalysis.labAnalysis.roughness.unit || 'µm'}` :
-                                                                (faceAnalysis?.dimensions ? `${(5 + (100 - faceAnalysis.dimensions.firmness.score) * 0.15).toFixed(1)} µm` : '?'),
-                                                            "< 10.0 µm",
-                                                            faceAnalysis?.labAnalysis?.roughness?.status || (faceAnalysis?.dimensions ? (faceAnalysis.dimensions.firmness.score < 70 ? '粗糙' : '细腻') : '-'))}
-
-                                                        {renderLabRow("光泽度指数 (Glossiness GU)",
-                                                            faceAnalysis?.labAnalysis?.glossiness?.value ? `${faceAnalysis.labAnalysis.glossiness.value} ${faceAnalysis.labAnalysis.glossiness.unit || 'GU'}` :
-                                                                (faceAnalysis?.dimensions ? `${(faceAnalysis.dimensions.radiance.score * 0.1).toFixed(1)} GU` : '?'),
-                                                            "> 6.0 GU",
-                                                            faceAnalysis?.labAnalysis?.glossiness?.status || (faceAnalysis?.dimensions ? (faceAnalysis.dimensions.radiance.score > 60 ? '透亮' : '暗沉') : '-'))}
-
-                                                        {renderLabRow("皱纹严重度分级 (Wrinkle Severity)",
-                                                            faceAnalysis?.labAnalysis?.wrinkleGrade?.value ? `${faceAnalysis.labAnalysis.wrinkleGrade.value}` : (faceAnalysis?.dimensions ? (faceAnalysis.dimensions.wrinkles.score > 80 ? 'Grade 1 (None)' : faceAnalysis.dimensions.wrinkles.score > 60 ? 'Grade 2 (Fine)' : 'Grade 3 (Deep)') : '?'),
-                                                            "Grade 1",
-                                                            faceAnalysis?.labAnalysis?.wrinkleGrade?.status || (faceAnalysis?.dimensions ? (faceAnalysis.dimensions.wrinkles.score > 60 ? '正常' : '明显') : '-'))}
-                                                    </div>
-                                                </div>
+                                                ))}
                                             </div>
 
                                             <div className="mt-6 pt-4 border-t border-dashed border-[#3d2f25]/15">

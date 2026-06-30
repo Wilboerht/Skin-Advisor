@@ -221,10 +221,9 @@ export async function POST(request: NextRequest) {
         // Initial Load (Compressed Quality to prevent Payload Too Large & reduce latency)
         let validImages = await loadImages(true);
 
-        // 收集需要清理的非 front 上传照片（front 留给 avatar processor）
-        const isFrontAngle = (angle: string | undefined) => angle === "正脸" || angle === "front";
+        // 收集所有需要清理的上传照片 URL
         const uploadedFaceUrls = validImages
-            .filter(img => !!img.data && img.data.startsWith('http') && !isFrontAngle(img.angle))
+            .filter(img => !!img.data && img.data.startsWith('http'))
             .map(img => img.data);
 
         if (validImages.length === 0) {
@@ -365,7 +364,7 @@ export async function POST(request: NextRequest) {
                 aiLogger.debug(`[Queue] Lock released. Stats:`, visionQueue.getStats() as any);
             }
 
-            // 清理非 front 的上传照片（front 留给 avatar processor）
+            // 清理上传的照片
             if (uploadedFaceUrls.length > 0) {
                 Promise.resolve().then(async () => {
                     const { deleteSourcePhoto } = await import("@/lib/file-cleanup");

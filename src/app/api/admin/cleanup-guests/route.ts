@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import prisma from "@/lib/prisma";
-import { deleteOSSFiles } from "@/lib/ali-oss";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { verifyAdminSession, logAdminAction } from "@/lib/admin-auth";
 
@@ -56,8 +55,6 @@ export async function POST(req: NextRequest) {
         const DB_BATCH_SIZE = 500;
         let totalDeletedSessions = 0;
         let totalDeletedTestRecords = 0;
-        let totalDeletedAvatarQueues = 0;
-        const urlsToDelete: string[] = [];
         let hasMore = true;
         let processedCount = 0;
 
@@ -68,8 +65,7 @@ export async function POST(req: NextRequest) {
                     createdAt: { lt: oneHourAgo }
                 },
                 select: {
-                    sessionId: true,
-                    analysisResult: true
+                    sessionId: true
                 },
                 take: DB_BATCH_SIZE,
             });
@@ -82,34 +78,8 @@ export async function POST(req: NextRequest) {
             processedCount += guestSessions.length;
             const sessionIds = guestSessions.map(s => s.sessionId);
 
-            // 3a. 提取所有关联的 AvatarQueue 记录
-            const avatarQueueItems = await prisma.avatarQueue.findMany({
-                where: { sessionId: { in: sessionIds } },
-                select: { frontPhoto: true, generatedUrl: true }
-            });
-            
-            // 3b. 收集 OSS 图片 URL
-            guestSessions.forEach(session => {
-                const result = session.analysisResult as Record<string, unknown>;
-                if (result?.generatedAvatar && typeof result.generatedAvatar === 'string' && result.generatedAvatar.startsWith('http')) {
-                    urlsToDelete.push(result.generatedAvatar);
-                }
-            });
-            avatarQueueItems.forEach(item => {
-                if (item.generatedUrl && item.generatedUrl.startsWith('http')) {
-                    urlsToDelete.push(item.generatedUrl);
-                }
-                if (item.frontPhoto && item.frontPhoto.startsWith('http')) {
-                    urlsToDelete.push(item.frontPhoto);
-                }
-            });
-
-            // 4. 执行数据库事务物理删除
+            // 3. 执行数据库事务物理删除
             const deletedStats = await prisma.$transaction(async (tx) => {
-                const avatarQueues = await tx.avatarQueue.deleteMany({
-                    where: { sessionId: { in: sessionIds } }
-                });
-
                 const testRecords = await tx.testRecord.deleteMany({
                     where: {
                         userId: null,
@@ -123,14 +93,12 @@ export async function POST(req: NextRequest) {
 
                 return {
                     sessions: sessions.count,
-                    testRecords: testRecords.count,
-                    avatarQueues: avatarQueues.count
+                    testRecords: testRecords.count
                 };
             });
 
             totalDeletedSessions += deletedStats.sessions;
             totalDeletedTestRecords += deletedStats.testRecords;
-            totalDeletedAvatarQueues += deletedStats.avatarQueues;
 
             // If we got fewer than batch size, we're done
             if (guestSessions.length < DB_BATCH_SIZE) {
@@ -146,24 +114,9 @@ export async function POST(req: NextRequest) {
             });
         }
 
-        // 5. 异步调用 OSS 批量删除 API
-        let ossDeleted = 0;
-        let ossFailed = 0;
-        if (urlsToDelete.length > 0) {
-            try {
-                await deleteOSSFiles(urlsToDelete);
-                ossDeleted = urlsToDelete.length;
-            } catch (ossError) {
-                console.error("[Cleanup OSS Error]:", ossError);
-                ossFailed = urlsToDelete.length;
-                // OSS 删失败不回滚 DB，因为数据合规优先
-            }
-        }
-
         const deletedStats = {
             sessions: totalDeletedSessions,
             testRecords: totalDeletedTestRecords,
-            avatarQueues: totalDeletedAvatarQueues,
         };
 
         // Audit log
@@ -173,7 +126,6 @@ export async function POST(req: NextRequest) {
             resource: "AdvisorSession",
             details: {
                 dbStats: deletedStats,
-                ossFilesDeleted: ossDeleted,
                 threshold: oneHourAgo.toISOString(),
                 authMethod: authMethod,
             },
@@ -186,8 +138,7 @@ export async function POST(req: NextRequest) {
             timestamp: new Date().toISOString(),
             message: `成功清理 ${oneHourAgo.toISOString()} 之前的游客数据`,
             data: {
-                dbStats: deletedStats,
-                ossFilesDeleted: ossDeleted
+                dbStats: deletedStats
             }
         });
 

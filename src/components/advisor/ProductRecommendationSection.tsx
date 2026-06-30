@@ -62,9 +62,15 @@ export function ProductRecommendationSection({
             return;
         }
 
+        // calculateScore 的理论最高分估算：
+        // 关注点匹配每匹配一项 +30（通常 2-4 项），年龄段 +25，肤质 +20，预算 +15，推荐 +10。
+        // 常规自然匹配下最高分约为 150；强制推荐商品会被额外 +1000 提升排序，
+        // 这里用 150 作为匹配度百分比的归一化基准，使其封顶在 99%。
+        const MAX_HEURISTIC_SCORE = 150;
+
         const processed = products.map(product => {
-            const baseScore = product.score ?? 50;
-            const matchScore = Math.min(99, Math.round((baseScore / 150) * 100));
+            const baseScore = Math.max(0, product.score ?? 50);
+            const matchScore = Math.min(99, Math.round((baseScore / MAX_HEURISTIC_SCORE) * 100));
 
             let dimensionLink: ProductCardData['dimensionLink'] = null;
             if (faceAnalysis?.dimensions) {
