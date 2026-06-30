@@ -683,6 +683,9 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
             {result && (
                 <div className={styles.container}>
+                    {/* Save Report Banner for unauthenticated users */}
+                    <SaveReportBanner />
+
                     {/* Logo */}
                     <div className="w-full flex justify-center pt-14 pb-3">
                         <Image
@@ -1030,9 +1033,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             </div>
                         </div>
                     </footer>
-
-                    {/* Save Report Banner for unauthenticated users */}
-                    <SaveReportBanner />
 
                     <ShareModal
                         isOpen={showShareModal}
