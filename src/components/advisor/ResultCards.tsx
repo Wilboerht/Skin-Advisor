@@ -91,7 +91,7 @@ export default function ResultCards({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="relative rounded-[20px] lg:rounded-[24px] p-6 lg:p-8 border border-[#3d2f25]/8 overflow-visible"
+        className="relative rounded-[20px] lg:rounded-[24px] p-6 lg:p-10 border border-[#3d2f25]/8 overflow-visible"
         style={{
           background: '#F5F2ED',
         }}
