@@ -100,8 +100,8 @@ export default function ResultCards({
           {/* Left: Text Content */}
           <div className="flex flex-col justify-center z-10">
             {/* Greeting */}
-            <p className="text-[#a89582] text-xs lg:text-sm leading-none mb-3 lg:mb-4">
-              亲爱的 <span className="text-[#8c7a6b]">{nickname}</span>
+            <p className="text-[#5c4937] text-xs lg:text-xs leading-none mb-3 lg:mb-4 font-medium tracking-wide">
+              亲爱的 <span>{nickname}</span>
             </p>
 
             <h2 className="text-[24px] font-bold text-[#3d2f25] leading-snug tracking-tight mb-1 lg:mb-2">
