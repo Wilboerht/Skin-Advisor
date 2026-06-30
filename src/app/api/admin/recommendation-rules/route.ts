@@ -10,6 +10,7 @@ const RuleSchema = z.object({
     conditions: z.object({
         skinType: z.array(z.string()).optional(),
         concern: z.array(z.string()).optional(),
+        persona: z.array(z.string()).optional(),
     }).strict(),
     message: z.string().max(2000).optional(),
     active: z.boolean().default(true),

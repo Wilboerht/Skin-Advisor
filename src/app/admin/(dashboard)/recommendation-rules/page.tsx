@@ -26,6 +26,16 @@ interface RecommendationRule {
 
 const SKIN_TYPES = ["dry", "oily", "combination", "sensitive", "normal"];
 const CONCERNS = ["acne", "wrinkles", "dark spots", "redness", "pores", "dullness", "blackheads", "dryness"];
+const PERSONAS = [
+    { value: "sensitive", label: "敏敏派" },
+    { value: "minimalist", label: "极简派" },
+    { value: "luxury", label: "奢华派" },
+    { value: "ageless", label: "冻龄派" },
+    { value: "desert", label: "沙漠派" },
+    { value: "oily", label: "油条派" },
+    { value: "combination", label: "混合派" },
+    { value: "guardian", label: "守护派" },
+];
 
 export default function RecommendationRulesPage() {
     const [rules, setRules] = useState<RecommendationRule[]>([]);
@@ -42,6 +52,7 @@ export default function RecommendationRulesPage() {
     const [formActive, setFormActive] = useState(true);
     const [selectedSkinTypes, setSelectedSkinTypes] = useState<string[]>([]);
     const [selectedConcerns, setSelectedConcerns] = useState<string[]>([]);
+    const [selectedPersonas, setSelectedPersonas] = useState<string[]>([]);
     const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
 
     const fetchRules = useCallback(async () => {
@@ -76,6 +87,7 @@ export default function RecommendationRulesPage() {
         setFormActive(true);
         setSelectedSkinTypes([]);
         setSelectedConcerns([]);
+        setSelectedPersonas([]);
         setSelectedProductIds([]);
         setEditingRule(null);
     };
@@ -91,9 +103,10 @@ export default function RecommendationRulesPage() {
         setFormPriority(rule.priority);
         setFormMessage(rule.message || "");
         setFormActive(rule.active);
-        const cond = rule.conditions as { skinType?: string[]; concern?: string[] };
+        const cond = rule.conditions as { skinType?: string[]; concern?: string[]; persona?: string[] };
         setSelectedSkinTypes(cond.skinType || []);
         setSelectedConcerns(cond.concern || []);
+        setSelectedPersonas(cond.persona || []);
         setSelectedProductIds(rule.productIds || []);
         setShowModal(true);
     };
@@ -111,7 +124,7 @@ export default function RecommendationRulesPage() {
         if (!formName.trim()) {
             return;
         }
-        if (selectedSkinTypes.length === 0 && selectedConcerns.length === 0) {
+        if (selectedSkinTypes.length === 0 && selectedConcerns.length === 0 && selectedPersonas.length === 0) {
             return;
         }
 
@@ -123,6 +136,7 @@ export default function RecommendationRulesPage() {
                 conditions: {
                     ...(selectedSkinTypes.length > 0 && { skinType: selectedSkinTypes }),
                     ...(selectedConcerns.length > 0 && { concern: selectedConcerns }),
+                    ...(selectedPersonas.length > 0 && { persona: selectedPersonas }),
                 },
                 message: formMessage.trim() || undefined,
                 active: formActive,
@@ -245,9 +259,22 @@ export default function RecommendationRulesPage() {
                                     </span>
                                 </td>
                                 <td className="px-6 py-4">
-                                    <pre className="text-xs text-[#5E5E5E] bg-[#F8F7F4] rounded-md p-2 max-w-xs overflow-x-auto">
-                                        {JSON.stringify(rule.conditions, null, 2)}
-                                    </pre>
+                                    <div className="flex flex-wrap gap-1 max-w-xs">
+                                        {(rule.conditions as { skinType?: string[] })?.skinType?.map(s => (
+                                            <span key={s} className="px-1.5 py-0.5 text-[10px] bg-blue-50 text-blue-700 rounded">{s}</span>
+                                        ))}
+                                        {(rule.conditions as { concern?: string[] })?.concern?.map(c => (
+                                            <span key={c} className="px-1.5 py-0.5 text-[10px] bg-purple-50 text-purple-700 rounded">{c}</span>
+                                        ))}
+                                        {(rule.conditions as { persona?: string[] })?.persona?.map(r => (
+                                            <span key={r} className="px-1.5 py-0.5 text-[10px] bg-amber-50 text-amber-700 rounded">
+                                                {PERSONAS.find(p => p.value === r)?.label || r}
+                                            </span>
+                                        ))}
+                                        {!((rule.conditions as { skinType?: string[] })?.skinType?.length || (rule.conditions as { concern?: string[] })?.concern?.length || (rule.conditions as { persona?: string[] })?.persona?.length) && (
+                                            <span className="text-xs text-slate-400">—</span>
+                                        )}
+                                    </div>
                                 </td>
                                 <td className="px-6 py-4 text-sm text-[#5E5E5E]">
                                     {rule.productIds.length} 个产品
@@ -400,6 +427,29 @@ export default function RecommendationRulesPage() {
                                                         }`}
                                                     >
                                                         {concern}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Conditions - Personas */}
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                                                IP 形象（8 派）
+                                            </label>
+                                            <div className="flex flex-wrap gap-2">
+                                                {PERSONAS.map(p => (
+                                                    <button
+                                                        key={p.value}
+                                                        type="button"
+                                                        onClick={() => toggleSelection(p.value, selectedPersonas, setSelectedPersonas)}
+                                                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                                                            selectedPersonas.includes(p.value)
+                                                                ? "bg-[#3D4430] text-white"
+                                                                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                                        }`}
+                                                    >
+                                                        {p.label}
                                                     </button>
                                                 ))}
                                             </div>

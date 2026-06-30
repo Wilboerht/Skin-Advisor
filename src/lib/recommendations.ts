@@ -21,6 +21,8 @@ export interface ProductRecommendation {
     matchedBenefits?: string[];
     affiliateLinks?: Record<string, string> | null;
     howToUse?: string | null;
+    /** 推荐来源：persona（IP 池内）| algorithm（池外补充） */
+    source?: "persona" | "algorithm";
 }
 
 /** 关注点到功效标签的映射 */
@@ -284,14 +286,45 @@ function generateSmartReason(
     return "适合日常护肤使用，维持肌肤健康";
 }
 
+/** 规则匹配条件（扩展 persona） */
+interface RuleConditions {
+    skinType?: string[];
+    concern?: string[];
+    persona?: string[];
+}
+
+/** 检查规则条件是否匹配当前用户 */
+function ruleMatches(
+    rawConditions: unknown,
+    skinType: string,
+    concerns: string[],
+    persona?: string
+): boolean {
+    if (!rawConditions || typeof rawConditions !== 'object' || Array.isArray(rawConditions)) return false;
+    const conditions = rawConditions as RuleConditions;
+    if (conditions.skinType?.length && !conditions.skinType.includes(skinType)) return false;
+    if (conditions.concern?.length && !concerns.some(c => conditions.concern!.includes(c))) return false;
+    if (conditions.persona?.length && (!persona || !conditions.persona.includes(persona))) return false;
+    return true;
+}
+
+/** 判断规则是否包含 persona 条件 */
+function ruleHasPersonaCondition(rawConditions: unknown): boolean {
+    if (!rawConditions || typeof rawConditions !== 'object' || Array.isArray(rawConditions)) return false;
+    const conditions = rawConditions as RuleConditions;
+    return !!conditions.persona?.length;
+}
+
 /**
  * Pre-filter products for AI context (RAG Lite)
  * Returns top N products based on heuristic scoring to save tokens
+ * @param persona — IP 形象 key，如 "guardian"，限制产品池
  */
 export async function getCandidateProducts(
     answers: QuestionnaireAnswers,
     concerns: string[],
-    limit: number = 10
+    limit: number = 10,
+    persona?: string
 ): Promise<ScoredProduct[]> {
     try {
         // 1. Fetch Active & In-Stock Products
@@ -318,47 +351,48 @@ export async function getCandidateProducts(
             include: { products: { select: { productId: true } } }
         });
 
-        // Simple Rule Engine
+        // Simple Rule Engine — persona-aware
         const forcedProductIds = new Set<string>();
+        const personaProductIds = new Set<string>();
 
         for (const rule of activeRules) {
-            // 防御性校验：确保 conditions 是合法对象
-            const rawConditions = rule.conditions;
-            if (!rawConditions || typeof rawConditions !== 'object' || Array.isArray(rawConditions)) {
-                console.warn(`[RecommendationRule] Rule ${rule.id} has invalid conditions, skipping.`);
-                continue;
-            }
-            const conditions = rawConditions as { skinType?: string[]; concern?: string[] };
-            let match = true;
+            if (!ruleMatches(rule.conditions, skinType, concerns, persona)) continue;
 
-            // Check Skin Type Condition
-            if (conditions?.skinType && Array.isArray(conditions.skinType)) {
-                if (!conditions.skinType.includes(skinType)) match = false;
-            }
-
-            // Check Concern Condition
-            if (match && conditions?.concern && Array.isArray(conditions.concern)) {
-                // If user has ANY of the rule's target concerns
-                const concernList = conditions.concern;
-                const hasConcern = concerns.some(c => concernList.includes(c));
-                if (!hasConcern) match = false;
-            }
-
-            if (match) {
-                // Rule Matched! Add products to forced list
-                rule.products.forEach(p => forcedProductIds.add(p.productId));
-            }
+            rule.products.forEach(p => {
+                forcedProductIds.add(p.productId);
+                if (ruleHasPersonaCondition(rule.conditions)) {
+                    personaProductIds.add(p.productId);
+                }
+            });
         }
 
         // Boost forced products score to ensure they are in top list
         scored = scored.map(p => {
             if (forcedProductIds.has(p.id)) {
-                return { ...p, _score: p._score + 1000 }; // Massive boost
+                return { ...p, _score: p._score + 1000 };
             }
             return p;
         });
 
-        // 4. Sort & Slice
+        // 4. Persona pool restriction: if persona rules matched, limit to that pool
+        if (persona && personaProductIds.size > 0) {
+            const pool = scored
+                .filter(p => personaProductIds.has(p.id))
+                .sort((a, b) => b._score - a._score);
+
+            if (pool.length >= limit) {
+                return pool.slice(0, limit);
+            }
+
+            // 池内不足，从池外补位并标记为 "algorithm"
+            const rest = scored
+                .filter(p => !personaProductIds.has(p.id))
+                .sort((a, b) => b._score - a._score);
+
+            return [...pool, ...rest].slice(0, limit);
+        }
+
+        // 5. Non-persona scenario: keep original logic
         scored.sort((a, b) => b._score - a._score);
 
         return scored.slice(0, limit);
@@ -377,7 +411,8 @@ export async function recommendProducts(
     answers: QuestionnaireAnswers,
     concerns: string[],
     preloadedProducts?: (Product & { _score?: number; matchedBenefits?: string[] })[], // Optional: reuse already-fetched products to avoid duplicate DB query
-    limit: number = 3
+    limit: number = 3,
+    persona?: string
 ): Promise<ProductRecommendation[]> {
     try {
         // 1. Use preloaded products if available, otherwise fetch from DB
@@ -430,27 +465,8 @@ export async function recommendProducts(
                 const forcedProductIds = new Set<string>();
 
                 for (const rule of activeRules) {
-                    const rawConditions = rule.conditions;
-                    if (!rawConditions || typeof rawConditions !== 'object' || Array.isArray(rawConditions)) {
-                        console.warn(`[RecommendationRule] Rule ${rule.id} has invalid conditions, skipping.`);
-                        continue;
-                    }
-                    const conditions = rawConditions as { skinType?: string[]; concern?: string[] };
-                    let match = true;
-
-                    if (conditions?.skinType && Array.isArray(conditions.skinType)) {
-                        if (!conditions.skinType.includes(skinType)) match = false;
-                    }
-
-                    if (match && conditions?.concern && Array.isArray(conditions.concern)) {
-                        const concernList = conditions.concern;
-                        const hasConcern = concerns.some(c => concernList.includes(c));
-                        if (!hasConcern) match = false;
-                    }
-
-                    if (match) {
-                        rule.products.forEach(p => forcedProductIds.add(p.productId));
-                    }
+                    if (!ruleMatches(rule.conditions, skinType, concerns, persona)) continue;
+                    rule.products.forEach(p => forcedProductIds.add(p.productId));
                 }
 
                 // Boost forced products
@@ -470,6 +486,22 @@ export async function recommendProducts(
         // 4. Sort by score desc
         scored.sort((a, b) => b.rawScore - a.rawScore);
 
+        // Compute persona pool for source tagging
+        let personaPoolIds = new Set<string>();
+        if (persona) {
+            try {
+                const personaRules = await prisma.recommendationRule.findMany({
+                    where: { active: true },
+                    include: { products: { select: { productId: true } } },
+                });
+                for (const rule of personaRules) {
+                    if (ruleMatches(rule.conditions, skinType, concerns, persona) && ruleHasPersonaCondition(rule.conditions)) {
+                        rule.products.forEach(p => personaPoolIds.add(p.productId));
+                    }
+                }
+            } catch { /* silent */ }
+        }
+
         // 5. Select Top N
         const top = scored.slice(0, limit);
 
@@ -485,7 +517,8 @@ export async function recommendProducts(
             affiliateLinks: (p.affiliateLinks as Record<string, string> | null) || null,
             howToUse: p.howToUse || null,
             benefits: Array.isArray(p.benefits) ? p.benefits : [],
-            keyIngredients: Array.isArray(p.keyIngredients) ? p.keyIngredients : []
+            keyIngredients: Array.isArray(p.keyIngredients) ? p.keyIngredients : [],
+            source: personaPoolIds.has(p.id) ? "persona" as const : "algorithm" as const,
         }));
 
     } catch (e) {

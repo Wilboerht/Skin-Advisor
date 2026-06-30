@@ -32,6 +32,8 @@ export interface ProductCardData {
         dimension: string;
         score: number;
     } | null; // 关联的维度评分
+    /** 推荐来源：persona（IP 池内）| algorithm（池外补充） */
+    source?: "persona" | "algorithm";
 }
 
 interface ProductCardProps {
@@ -140,6 +142,12 @@ export function ProductCard({
                     <div className={cn("w-full h-full flex items-center justify-center", isCompact ? "text-[#8c7a6b]/50" : "text-white/30")}>
                         <ShoppingCart className="w-12 h-12" />
                     </div>
+                )}
+                {/* 补充推荐标签 */}
+                {product.source === "algorithm" && (
+                    <span className="absolute top-3 left-3 z-10 px-2 py-0.5 text-[10px] bg-[#3D4430]/90 text-white rounded-full font-medium shadow-sm">
+                        基于测肤补充
+                    </span>
                 )}
             </div>
 

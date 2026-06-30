@@ -23,6 +23,7 @@ const DIMENSION_LABELS: Record<string, string> = {
 interface ProductRecommendationSectionProps {
     products: ProductCardData[];
     isLoading?: boolean;
+    personaLabel?: string;
     faceAnalysis?: {
         dimensions?: Record<string, { score: number }>;
     } | null;
@@ -34,6 +35,7 @@ interface ProductRecommendationSectionProps {
 export function ProductRecommendationSection({
     products,
     isLoading = false,
+    personaLabel,
     faceAnalysis,
     onProductClick,
     className,
@@ -159,8 +161,14 @@ export function ProductRecommendationSection({
                 viewport={{ once: true }}
                 className="text-center mb-5"
             >
-                <h2 className="text-2xl font-bold text-[#3d2f25] tracking-wide">甄选产品推荐</h2>
-                <p className="text-sm text-[#8c7a6b] mt-2">基于您的肤质分析，为您精选以下产品</p>
+                <h2 className="text-2xl font-bold text-[#3d2f25] tracking-wide">
+                    {personaLabel ? `你的「${personaLabel}」甄选三件套` : "甄选产品推荐"}
+                </h2>
+                <p className="text-sm text-[#8c7a6b] mt-2">
+                    {personaLabel
+                        ? "基于你的肌肤形象，从专属方案中精选最适合入手的 3 件"
+                        : "基于您的肤质分析，为您精选以下产品"}
+                </p>
             </m.div>
 
             {/* 产品展示区域 */}

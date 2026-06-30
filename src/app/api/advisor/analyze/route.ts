@@ -13,6 +13,7 @@ import { recommendProducts, getCandidateProducts } from "@/lib/recommendations";
 import { resolveIPLocation } from "@/lib/geoip";
 import { getSession } from "@/lib/auth";
 import { hashIP } from "@/lib/privacy";
+import { matchCharacterIP } from "@/lib/result-utils";
 
 import { checkUsageLimit, reserveUsage } from "@/lib/usage-limit";
 import { extractGuestIdentifiers } from "@/lib/guest-limit";
@@ -307,6 +308,12 @@ export async function POST(request: NextRequest) {
                 faceAnalysis: fallbackFace,
                 products: products,
                 dataSource: "questionnaire" as const,
+                persona: matchCharacterIP({
+                    score: fallbackFace.overallScore ?? 0,
+                    skinType: fallbackSkinType,
+                    budget: answers.budget,
+                    skincareFrequency: answers.skincareFrequency,
+                }).key,
                 userLocation: geoLocation,
                 nickname: nickname || "护肤达人"
             };
@@ -355,9 +362,16 @@ export async function POST(request: NextRequest) {
 
         // FETCH PRODUCTS (Candidate Selection / RAG Lite)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const concerns = identifyConcerns(enrichedAnswers as any, faceAnalysis as any); // Pre-calculate concerns
+        const concerns = identifyConcerns(enrichedAnswers as any, faceAnalysis as any);
+        // Determine persona via matchCharacterIP (8-pie system)
+        const personaKey = matchCharacterIP({
+            score: faceAnalysis?.overallScore ?? 0,
+            skinType: finalSkinType,
+            budget: answers.budget,
+            skincareFrequency: answers.skincareFrequency,
+        }).key;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const candidateProducts = await getCandidateProducts(enrichedAnswers as any, concerns, 3);
+        const candidateProducts = await getCandidateProducts(enrichedAnswers as any, concerns, 3, personaKey);
 
         const concernLabels = concerns.map(c => getConcernLabel(c));
 
@@ -443,7 +457,7 @@ export async function POST(request: NextRequest) {
 
         // 预先用算法生成10个带推荐理由的候选（用于兜底和补充）
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const algorithmRecs = await recommendProducts(enrichedAnswers as any, concerns, candidateProducts, 3);
+        const algorithmRecs = await recommendProducts(enrichedAnswers as any, concerns, candidateProducts, 3, personaKey);
 
         if (resultJson.products && Array.isArray(resultJson.products)) {
             const mappedProducts = resultJson.products.map((p: any) => {
@@ -537,6 +551,7 @@ export async function POST(request: NextRequest) {
             products: finalProducts,
             faceAnalysis: finalFaceAnalysis, // Ensure faceAnalysis is propagated
             dataSource: "hybrid",
+            persona: personaKey,          // IP 形象 key (8-pie)
             userLocation: geoLocation,
             nickname: nickname || "护肤达人" // Include user nickname for sharing
         };

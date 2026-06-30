@@ -36,6 +36,7 @@ import { ProductRecommendationSection } from "@/components/advisor/ProductRecomm
 import type { ProductCardData } from "@/components/advisor/ProductCard";
 import { SaveReportBanner } from "@/components/advisor/SaveReportBanner";
 import { AnalyzingOverlay } from "@/components/advisor/AnalyzingOverlay";
+import { skinTypes } from "@/lib/result-content";
 
 // Types
 export interface ComprehensiveResult {
@@ -63,6 +64,7 @@ export interface ComprehensiveResult {
         howToUse?: string | null;
     }>;
     dataSource: "comprehensive" | "questionnaire";
+    persona?: string; // IP 形象 key，如 "guardian"
 }
 
 interface ResultClientProps {
@@ -967,9 +969,11 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 benefits: p.benefits || [],
                                 affiliateLinks: p.affiliateLinks || null,
                                 howToUse: p.howToUse || null,
+                                source: (p as { source?: "persona" | "algorithm" }).source,
                             } as ProductCardData))}
                             isLoading={loading}
                             faceAnalysis={faceAnalysis}
+                            personaLabel={result?.persona ? skinTypes.find(t => t.ipKey === result.persona)?.typeName : undefined}
                             onProductClick={(productId) => {
                                 const product = result.products?.find(p => p.id === productId);
                                 if (product) {
