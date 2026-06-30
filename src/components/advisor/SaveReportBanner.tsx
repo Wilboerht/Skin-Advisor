@@ -31,7 +31,7 @@ export function SaveReportBanner({ className = "" }: SaveReportBannerProps) {
                     <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-2.5">
                         <div className="flex items-center justify-center gap-3 text-[12px] sm:text-[13px] text-[#5c4937]">
                             <span>
-                                保存分析报告，注册后可追踪肤质变化
+                                成为旎柏注册会员，保存分析报告，追踪肤质变化
                             </span>
                             <button
                                 onClick={() => openAuthModal("register")}
