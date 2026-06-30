@@ -97,45 +97,11 @@ export default function ResultCards({
           boxShadow: '0 10px 40px -10px rgba(0,0,0,0.1), inset 0 2px 0 rgba(255,255,255,0.7)',
         }}
       >
-        <div className="flex flex-row-reverse lg:flex-row items-start gap-4 lg:gap-10 relative z-10 w-full">
-          {/* Left Column: Tag + Avatar */}
-          <div className="flex flex-col items-end lg:items-start gap-4 shrink-0">
-            <div className="hidden lg:flex relative items-center justify-center w-[72px] h-[24px]">
-              <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-[#e6d0a8] via-[#f5dfb8] to-[#d4b483] shadow-sm" />
-              <div className="absolute inset-[1px] rounded-lg bg-white/20 backdrop-blur-[1px] border border-white/30" />
-              <span className="relative z-10 text-[#3d2f25] text-xs font-bold tracking-widest">报告概览</span>
-            </div>
-
-            {/* Character Illustration */}
-            <div className="relative flex items-center justify-center w-[92px] h-[92px]">
-              <div className="absolute inset-0 rounded-full p-[2.5px] bg-gradient-to-br from-[#e6d0a8] via-[#f5dfb8] to-[#d4b483] shadow-sm">
-                <div className="w-full h-full rounded-full bg-white p-[1px]">
-                    <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center bg-gradient-to-br from-[#f8f0e3] to-[#f5dfb8]">
-                      <Image
-                        src={characterImage}
-                        alt={skinTypeName}
-                        width={92}
-                        height={92}
-                        className="w-full h-full object-cover object-top"
-                        priority
-                        onError={(e) => {
-                          // 男性图片缺失时降级为女性图片
-                          const fallback = characterImage.replace('_male', '_female');
-                          (e.target as HTMLImageElement).src = fallback;
-                        }}
-                      />
-                  </div>
-                </div>
-              </div>
-              <div className="absolute -bottom-0.5 -right-0.5 bg-[#2d2a26] text-white text-[9px] px-2 py-0.5 rounded-full whitespace-nowrap z-20 border-[1.5px] border-white shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
-                {nickname}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-col z-10 flex-1 pt-[2px]">
-            {/* Mobile Tag */}
-            <div className="flex lg:hidden relative items-center justify-center w-[72px] h-[24px] mb-6">
+        <div className="flex items-start justify-between gap-4 lg:gap-10 relative z-10 w-full">
+          {/* Left: Text Content */}
+          <div className="flex flex-col z-10 flex-1 pt-[2px] min-w-0">
+            {/* Tag */}
+            <div className="flex relative items-center justify-center w-[72px] h-[24px] mb-6">
               <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-[#e6d0a8] via-[#f5dfb8] to-[#d4b483] shadow-sm" />
               <div className="absolute inset-[1px] rounded-lg bg-white/20 backdrop-blur-[1px] border border-white/30" />
               <span className="relative z-10 text-[#3d2f25] text-xs font-bold tracking-widest">报告概览</span>
@@ -172,11 +138,25 @@ export default function ResultCards({
                   分享我的素颜证书
                 </span>
               </motion.button>
-
             </div>
-
           </div>
 
+          {/* Right: Character IP Image */}
+          <div className="shrink-0 flex items-end">
+            <Image
+              src={characterImage}
+              alt={skinTypeName}
+              width={200}
+              height={200}
+              className="w-[120px] h-[120px] lg:w-[180px] lg:h-[180px] object-contain object-top"
+              priority
+              onError={(e) => {
+                // 男性图片缺失时降级为女性图片
+                const fallback = characterImage.replace('_male', '_female');
+                (e.target as HTMLImageElement).src = fallback;
+              }}
+            />
+          </div>
         </div>
       </motion.div>
 
