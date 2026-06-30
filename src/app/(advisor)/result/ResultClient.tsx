@@ -852,7 +852,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     exit={{ opacity: 0 }}
                                 >
                                     <m.div
-                                        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                                        className="absolute inset-0 bg-[#3d2f25]/25 backdrop-blur-sm"
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
                                         exit={{ opacity: 0 }}
@@ -860,7 +860,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     />
                                     <m.div
                                         className="relative z-10 w-full max-w-3xl max-h-[85vh] rounded-2xl border border-[#3d2f25]/10 shadow-2xl flex flex-col"
-                                        style={{ background: 'linear-gradient(180deg, #F5EDE2 0%, #EDE4D6 100%)' }}
+                                        style={{ background: '#F5F2ED' }}
                                         initial={{ opacity: 0, scale: 0.95, y: 20 }}
                                         animate={{ opacity: 1, scale: 1, y: 0 }}
                                         exit={{ opacity: 0, scale: 0.95, y: 20 }}

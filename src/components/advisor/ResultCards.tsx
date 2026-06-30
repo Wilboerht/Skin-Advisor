@@ -205,7 +205,7 @@ export default function ResultCards({
                   maskRepeat: 'no-repeat',
                   WebkitMaskPosition: 'center',
                   maskPosition: 'center',
-                  backgroundColor: '#F4D03F',
+                  backgroundColor: 'rgba(244, 208, 63, 0.35)',
                 }}
               />
               <div
@@ -220,7 +220,7 @@ export default function ResultCards({
                   maskRepeat: 'no-repeat',
                   WebkitMaskPosition: 'center',
                   maskPosition: 'center',
-                  backgroundColor: '#F4D03F',
+                  backgroundColor: 'rgba(244, 208, 63, 0.35)',
                 }}
               />
               <div
@@ -235,12 +235,12 @@ export default function ResultCards({
                   maskRepeat: 'no-repeat',
                   WebkitMaskPosition: 'center',
                   maskPosition: 'center',
-                  backgroundColor: '#C9877A',
+                  backgroundColor: 'rgba(201, 135, 122, 0.45)',
                 }}
               />
               <div
                 aria-hidden="true"
-                className="block absolute -bottom-2 -left-3 lg:-bottom-5 lg:-left-5 w-8 h-8 lg:w-12 lg:h-12 z-10 pointer-events-none opacity-80"
+                className="block absolute -bottom-2 -left-3 lg:-bottom-5 lg:-left-5 w-8 h-8 lg:w-12 lg:h-12 z-10 pointer-events-none"
                 style={{
                   WebkitMaskImage: 'url(/images/vector-decor.svg)',
                   maskImage: 'url(/images/vector-decor.svg)',
@@ -250,7 +250,7 @@ export default function ResultCards({
                   maskRepeat: 'no-repeat',
                   WebkitMaskPosition: 'center',
                   maskPosition: 'center',
-                  backgroundColor: '#C9A86C',
+                  backgroundColor: 'rgba(201, 168, 108, 0.55)',
                 }}
               />
 
