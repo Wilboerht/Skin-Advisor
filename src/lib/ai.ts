@@ -446,7 +446,10 @@ export function fallbackAnalysis(answers: QuestionnaireAnswers): FaceAnalysisRes
     });
 
     // 4. 水分推断
-    result.hydration.level = answers.skinType === "dry" ? "low" : "medium";
+    result.hydration = {
+        level: answers.skinType === "dry" ? "low" : "medium",
+        description: answers.skinType === "dry" ? "肌肤水分含量偏低，需加强保湿" : "肌肤水分含量尚可，注意维持水油平衡"
+    };
 
     // 5. 建议生成
     result.recommendations = [

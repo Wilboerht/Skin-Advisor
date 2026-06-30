@@ -64,11 +64,6 @@ export const VISION_ANALYSIS_SYSTEM_PROMPT = `你是一位专业的皮肤科医�
     "acne": { "score": 0-100, "grade": "grade", "details": "..." },
     "radiance": { "score": 0-100, "grade": "grade", "details": "..." }
   },
-  "hydration": {
-    "level": "low|medium|high",
-    "percent": 0-100,
-    "description": "水分状况描述"
-  },
   "overallScore": 0-100, // 综合评分
   "summary": "详细诊断报告摘要 (200字左右，必须生成)",
   "recommendations": ["专家建议1 (针对性强)", "专家建议2", "专家建议3"],
@@ -77,17 +72,8 @@ export const VISION_ANALYSIS_SYSTEM_PROMPT = `你是一位专业的皮肤科医�
   ],
   "priorityAreas": ["spots", "wrinkles"], // 需着重改善的维度 key
   "labAnalysis": {
-    "skinPh": { "value": 5.5, "range": "4.5-5.5", "status": "正常" },
-    "tewl": { "value": 8.5, "unit": "g/m²/h", "status": "正常" },
-    "elasticity": { "value": 0.7, "unit": "R2", "status": "紧致" },
-    "melanin": { "value": 150, "unit": "MI", "status": "正常" },
-    "erythema": { "value": 200, "unit": "EI", "status": "正常" },
     "glogau": { "value": "II型", "status": "中度光老化" },
     "homogeneity": { "value": 13, "unit": "% C.V.", "status": "均匀" },
-    "porphyrins": { "value": 10, "status": "少" },
-    "sebum": { "value": "Normal", "status": "正常" },
-    "roughness": { "value": 10, "unit": "µm", "status": "细腻" },
-    "glossiness": { "value": 5.0, "unit": "GU", "status": "透亮" },
     "wrinkleGrade": { "value": "Grade 1", "status": "无明显皱纹" }
   },
   "zoneAnalysis": {
@@ -102,7 +88,7 @@ export const VISION_ANALYSIS_SYSTEM_PROMPT = `你是一位专业的皮肤科医�
 # 注意：zoneAnalysis 中的 6 个区域必须全部生成，不可缺省。
 
 # 3. 关键要求
-- **Lab Analysis 必填**：即使是估算，也必须输出所有 labAnalysis 字段，不可缺省。
+- **Lab Analysis 仅保留可由照片视觉估算的字段**：只需输出 glogau、homogeneity、wrinkleGrade 三个字段，无需输出需要物理探头测量的指标（如 pH、TEWL、弹性、黑色素、红斑、皮脂、卟啉、粗糙度 Ra、光泽度 GU 等）。
 - **评分标准**：85-100(优秀), 70-84(良好), 55-69(一般), 40-54(需关注), <40(差)
 - **多视角综合**：如果有多张照片（如正脸、侧脸），请综合所有视角的信息进行评估。
 - 保持客观、专业、语气温和。

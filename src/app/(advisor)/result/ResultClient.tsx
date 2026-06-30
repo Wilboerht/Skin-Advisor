@@ -915,7 +915,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                 <div className="flex gap-3 items-start text-[12px] leading-relaxed text-[#5c4937]">
                                                     <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-[#C9A86C]" />
                                                     <div className="space-y-2">
-                                                        <p className="font-bold text-[#3d2f25] uppercase tracking-wide">数据说明 (Data Disclaimer)</p>
+                                                        <p className="font-medium text-[#3d2f25]">数据说明 (Data Disclaimer)</p>
                                                         <p>
                                                             <span className="font-semibold text-[#3d2f25]">* AI ESTIMATE:</span> 上述数值均由 AI 算法基于您的面部图像特征（纹理、色泽、对比度）反演推算得出，<span className="border-b border-[#3d2f25]/20 text-[#3d2f25]">并非物理探头实测数据</span>。
                                                         </p>

@@ -70,7 +70,7 @@ export interface FaceAnalysisResult {
         acne: DimensionScore; // 09 粉刺/痤疮
         radiance: DimensionScore; // 10 光泽度
     };
-    hydration: {
+    hydration?: {
         level: string;
         percent?: number;
         description: string;
@@ -89,18 +89,10 @@ export interface FaceAnalysisResult {
 }
 
 export interface LabAnalysisResult {
-    skinPh: { value: number; range: string; status: string }; // e.g. 5.5
-    tewl: { value: number; unit: string; range?: string; status: string }; // e.g. 8.5 g/m2/h
-    elasticity: { value: number; unit: string; range?: string; status: string }; // R2
-    melanin: { value: number; unit: string; range?: string; status: string }; // MI
-    erythema: { value: number; unit: string; range?: string; status: string }; // EI
-    glogau: { value: string; range?: string; status: string }; // I, II, III
-    homogeneity: { value: number; unit: string; range?: string; status: string }; // CV%
-    porphyrins: { value: number; range?: string; status: string }; // count
-    sebum: { value: string; range?: string; status: string }; // high/low
-    roughness: { value: number; unit: string; range?: string; status: string }; // µm
-    glossiness: { value: number; unit: string; range?: string; status: string }; // GU
-    wrinkleGrade: { value: string; range?: string; status: string }; // Grade 1-3
+    // 仅保留可由照片视觉估算的指标
+    glogau?: { value: string; range?: string; status: string }; // I, II, III
+    homogeneity?: { value: number; unit: string; range?: string; status: string }; // CV%
+    wrinkleGrade?: { value: string; range?: string; status: string }; // Grade 1-3
 }
 
 // 10 维度评分接口 (用于 ScientificBarChart)
@@ -191,17 +183,8 @@ export function getDefaultFaceAnalysisResult(): FaceAnalysisResult {
             jawline: { condition: "紧致", advice: "无需特殊护理", firmness: 90, contour: 85 }
         },
         labAnalysis: {
-            skinPh: { value: 5.5, range: "4.5-5.5", status: "正常" },
-            tewl: { value: 8.5, unit: "g/m²/h", status: "正常" },
-            elasticity: { value: 0.75, unit: "R2", status: "紧致" },
-            melanin: { value: 120, unit: "MI", status: "正常" },
-            erythema: { value: 180, unit: "EI", status: "正常" },
             glogau: { value: "II 型", status: "轻中度" },
             homogeneity: { value: 14, unit: "% C.V.", status: "均匀" },
-            porphyrins: { value: 15, status: "少量" },
-            sebum: { value: "Normal", status: "正常" },
-            roughness: { value: 8.5, unit: "µm", status: "细腻" },
-            glossiness: { value: 5.5, unit: "GU", status: "透亮" },
             wrinkleGrade: { value: "Grade 1", status: "无皱纹" }
         }
     };
@@ -384,12 +367,7 @@ export function identifyConcerns(
         if (faceAnalysis.dimensions.skinTone?.score < 60) concerns.add("dullness");
     }
 
-    // 4. 检查实验室指标（粗糙度）
-    if (faceAnalysis?.labAnalysis?.roughness && faceAnalysis.labAnalysis.roughness.value > 15) {
-        concerns.add("roughness");
-    }
-
-    // 5. 检查区域分析中的纹理/粗糙问题
+    // 4. 检查区域分析中的纹理/粗糙问题
     if (faceAnalysis?.zoneAnalysis) {
         const zones = [faceAnalysis.zoneAnalysis.forehead, faceAnalysis.zoneAnalysis.tZone, faceAnalysis.zoneAnalysis.leftCheek, faceAnalysis.zoneAnalysis.rightCheek];
         const hasRoughZone = zones.some(z => z.texture !== undefined && z.texture < 50);

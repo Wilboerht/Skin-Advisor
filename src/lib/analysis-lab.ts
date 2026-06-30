@@ -124,6 +124,126 @@ function computeWrinkleGrade(faceAnalysis: FaceAnalysisResult | null): LabMetric
     };
 }
 
+function computeAcne(faceAnalysis: FaceAnalysisResult | null): LabMetric {
+    const dims = getDimensions(faceAnalysis);
+    const acne = dims?.acne?.score ?? 0;
+
+    const value = dims
+        ? acne >= 75
+            ? "轻微"
+            : acne >= 55
+                ? "中等"
+                : "严重"
+        : "?";
+    const status = dims ? (acne >= 60 ? "少量" : "偏多") : "-";
+
+    return {
+        param: "痘痘 / 痤疮 (Acne Severity)",
+        value,
+        ref: "≥ 60 为正常",
+        status,
+    };
+}
+
+function computeSpots(faceAnalysis: FaceAnalysisResult | null): LabMetric {
+    const dims = getDimensions(faceAnalysis);
+    const spots = dims?.spots?.score ?? 0;
+
+    const value = dims
+        ? spots >= 75
+            ? "少量"
+            : spots >= 50
+                ? "中等"
+                : "明显"
+        : "?";
+    const status = dims ? (spots >= 60 ? "少量" : "偏多") : "-";
+
+    return {
+        param: "色斑 / 色素沉着 (Pigmentation)",
+        value,
+        ref: "≥ 60 为正常",
+        status,
+    };
+}
+
+function computeSensitivity(faceAnalysis: FaceAnalysisResult | null): LabMetric {
+    const dims = getDimensions(faceAnalysis);
+    const sensitivity = dims?.sensitivity?.score ?? 0;
+
+    const value = dims
+        ? sensitivity >= 70
+            ? "正常"
+            : sensitivity >= 45
+                ? "轻度敏感"
+                : "敏感"
+        : "?";
+    const status = dims ? (sensitivity >= 60 ? "正常" : "泛红") : "-";
+
+    return {
+        param: "泛红 / 敏感 (Redness/Sensitivity)",
+        value,
+        ref: "≥ 60 为正常",
+        status,
+    };
+}
+
+function computeOiliness(faceAnalysis: FaceAnalysisResult | null): LabMetric {
+    const dims = getDimensions(faceAnalysis);
+    const waterOil = dims?.waterOil?.score ?? 0;
+
+    const value = dims
+        ? waterOil >= 60
+            ? "正常"
+            : "失衡"
+        : "?";
+    const status = dims ? (waterOil >= 60 ? "正常" : "失衡") : "-";
+
+    return {
+        param: "油光状态 (Oiliness)",
+        value,
+        ref: "≥ 60 为正常",
+        status,
+    };
+}
+
+function computeRadiance(faceAnalysis: FaceAnalysisResult | null): LabMetric {
+    const dims = getDimensions(faceAnalysis);
+    const radiance = dims?.radiance?.score ?? 0;
+
+    const value = dims
+        ? radiance >= 60
+            ? "透亮"
+            : "暗沉"
+        : "?";
+    const status = dims ? (radiance >= 60 ? "透亮" : "暗沉") : "-";
+
+    return {
+        param: "肤色亮度 / 暗沉 (Radiance)",
+        value,
+        ref: "≥ 60 为透亮",
+        status,
+    };
+}
+
+function computeFirmness(faceAnalysis: FaceAnalysisResult | null): LabMetric {
+    const dims = getDimensions(faceAnalysis);
+    const firmness = dims?.firmness?.score ?? 0;
+
+    const value = dims
+        ? firmness >= 60
+            ? "紧致"
+            : "松弛"
+        : "?";
+    const status = dims ? (firmness >= 60 ? "紧致" : "松弛") : "-";
+
+    return {
+        param: "皮肤紧致度 (Firmness)",
+        value,
+        ref: "≥ 60 为紧致",
+        status,
+    };
+}
+
 export function computeLabAnalysis(faceAnalysis: FaceAnalysisResult | null): LabMetricGroup[] {
     return [
         {
@@ -134,6 +254,12 @@ export function computeLabAnalysis(faceAnalysis: FaceAnalysisResult | null): Lab
                 computeHomogeneity(faceAnalysis),
                 computePeriorbitalContrast(faceAnalysis),
                 computeWrinkleGrade(faceAnalysis),
+                computeAcne(faceAnalysis),
+                computeSpots(faceAnalysis),
+                computeSensitivity(faceAnalysis),
+                computeOiliness(faceAnalysis),
+                computeRadiance(faceAnalysis),
+                computeFirmness(faceAnalysis),
             ],
         },
     ];
