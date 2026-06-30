@@ -187,10 +187,10 @@ export function ProductRecommendationSection({
                             <div
                                 key={product.id}
                                 className={cn(
-                                    "flex-shrink-0 snap-center",
+                                    "snap-center",
                                     centered
-                                        ? "w-full max-w-[245px]"
-                                        : "w-[85vw] sm:w-[45vw] md:w-[32vw] lg:w-[28vw] xl:w-[25vw]"
+                                        ? "flex-1 min-w-[220px] max-w-[290px]"
+                                        : "flex-shrink-0 w-[85vw] sm:w-[45vw] md:w-[32vw] lg:w-[28vw] xl:w-[25vw]"
                                 )}
                             >
                                 <div className="relative">
