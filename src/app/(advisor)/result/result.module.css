@@ -3,15 +3,13 @@
    Design tokens centralized here to avoid
    inline style color duplication
    ======================================== */
-:root {
+.container {
     --result-text-primary: #5c4937;
     --result-text-secondary: #8c7a6b;
     --result-text-heading: #3d2f25;
     --result-bg: #f0ede1;
     --result-border: #3d2f25;
-}
 
-.container {
     width: 100%;
     min-height: 100vh;
     overflow-x: hidden;
