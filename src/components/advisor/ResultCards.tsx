@@ -137,7 +137,7 @@ export default function ResultCards({
               alt={skinTypeName}
               width={320}
               height={320}
-              className="w-[160px] h-[160px] sm:w-[220px] sm:h-[220px] lg:w-[320px] lg:h-[320px] object-contain"
+              className="w-[160px] h-[160px] sm:w-[220px] sm:h-[220px] lg:w-[320px] lg:h-[320px] object-contain object-right"
               priority
               onError={(e) => {
                 // 男性图片缺失时降级为女性图片
