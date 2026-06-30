@@ -100,11 +100,11 @@ export default function ResultCards({
           {/* Left: Text Content */}
           <div className="flex flex-col z-10 flex-1 pt-[2px] min-w-0 pb-2">
             {/* Greeting */}
-            <p className="text-[#a89582] text-xs lg:text-sm leading-none mb-4 lg:mb-5">
+            <p className="text-[#a89582] text-xs lg:text-sm leading-none mb-2 lg:mb-3">
               亲爱的 <span className="text-[#8c7a6b]">{nickname}</span>
             </p>
 
-            <h2 className="text-xl lg:text-[28px] font-bold text-[#3d2f25] leading-snug tracking-tight mb-2 lg:mb-3">
+            <h2 className="text-xl lg:text-[28px] font-bold text-[#3d2f25] leading-snug tracking-tight mb-1 lg:mb-2">
               你的肌肤类型是「{skinTypeName}」
             </h2>
 
