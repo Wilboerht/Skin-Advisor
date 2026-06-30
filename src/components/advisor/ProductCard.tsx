@@ -176,10 +176,10 @@ export function ProductCard({
                                     e.stopPropagation();
                                     onViewDetail?.(product);
                                 }}
-                                className="flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-full bg-[#C8A97E] text-white hover:bg-[#B89A6E] transition-colors"
+                                className="group/btn inline-flex items-center gap-1.5 px-4 py-2 text-[13px] font-medium rounded-full border border-[#5c4937]/30 text-[#5c4937] bg-transparent hover:bg-[#5c4937]/5 hover:border-[#5c4937]/50 transition-colors"
                             >
                                 查看详情
-                                <ChevronRight className="w-3 h-3" />
+                                <ChevronRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover/btn:translate-x-0.5" />
                             </button>
                         ) : (
                             <>
