@@ -157,7 +157,7 @@ export function ProductRecommendationSection({
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="text-center mb-10"
+                className="text-center mb-5"
             >
                 <h2 className="text-2xl font-bold text-[#3d2f25] tracking-wide">甄选产品推荐</h2>
                 <p className="text-sm text-[#8c7a6b] mt-2">基于您的肤质分析，为您精选以下产品</p>
@@ -167,7 +167,7 @@ export function ProductRecommendationSection({
             <div className="relative">
                 {/* 滚动容器 */}
                 {isLoading ? (
-                    <div className={cn("flex gap-4 px-[2%] sm:px-[4%] md:px-[6%]", centered && "justify-center")}>
+                    <div className={cn("flex gap-3 px-[2%] sm:px-[4%] md:px-[6%]", centered && "justify-center")}>
                         {[0, 1, 2].map(i => (
                             <div key={i} className="flex-shrink-0 w-[85vw] sm:w-[45vw] md:w-[32vw] lg:w-[28vw]">
                                 <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/10 h-[380px] animate-pulse" />
@@ -178,7 +178,7 @@ export function ProductRecommendationSection({
                     <div
                         ref={scrollRef}
                         className={cn(
-                            "flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 pt-4",
+                            "flex gap-3 overflow-x-auto snap-x snap-mandatory pb-3 pt-3",
                             centered ? "justify-center" : "px-[2%] sm:px-[4%] md:px-[6%]"
                         )}
                         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', overscrollBehaviorX: 'contain' }}
