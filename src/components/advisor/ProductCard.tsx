@@ -121,7 +121,7 @@ export function ProductCard({
             onClick={handleCardClick}
         >
             {/* 图片区域 */}
-            <div className={cn("relative overflow-hidden", isCompact ? "aspect-[4/3] p-3" : "bg-white/5 aspect-square")}>
+            <div className={cn("relative overflow-hidden", isCompact ? "aspect-square p-3" : "bg-white/5 aspect-square")}>
                 {!imageError ? (
                     <div className="relative w-full h-full overflow-hidden rounded-[16px]">
                         <Image
