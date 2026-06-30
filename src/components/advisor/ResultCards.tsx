@@ -104,12 +104,12 @@ export default function ResultCards({
               亲爱的 <span className="text-[#8c7a6b]">{nickname}</span>
             </p>
 
-            <h2 className="text-xl lg:text-[28px] font-bold text-[#3d2f25] leading-snug tracking-tight mb-1 lg:mb-2">
+            <h2 className="text-[24px] font-bold text-[#3d2f25] leading-snug tracking-tight mb-1 lg:mb-2">
               你的肌肤类型是「{skinTypeName}」
             </h2>
 
-            <h3 className="text-xl lg:text-[28px] font-bold text-[#3d2f25] leading-snug tracking-tight mb-3 lg:mb-4">
-              素颜评分超越了全国 <span className="text-xl lg:text-[28px] px-0.5 text-[#00263e]">{rankPercentile}%</span> 的用户
+            <h3 className="text-[24px] font-bold text-[#3d2f25] leading-snug tracking-tight mb-3 lg:mb-4">
+              素颜评分超越了全国 <span className="text-[24px] px-0.5 text-[#00263e]">{rankPercentile}%</span> 的用户
             </h3>
 
             <p className="text-[#8c7a6b] text-xs lg:text-sm leading-relaxed mb-5 lg:mb-6 max-w-[95%] lg:max-w-[420px]">
@@ -190,70 +190,6 @@ export default function ResultCards({
                 boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)',
               }}
             >
-              <div className="hidden lg:block absolute inset-0 overflow-hidden rounded-[inherit] pointer-events-none">
-                <div className="absolute -top-3 -right-3 w-8 h-8 bg-blue-500/70 blur-[25px] rounded-full" />
-              </div>
-              <div
-                aria-hidden="true"
-                className="block absolute -top-3 -right-3 lg:-top-4 lg:-right-5 w-10 h-10 lg:w-16 lg:h-16 z-30 pointer-events-none"
-                style={{
-                  WebkitMaskImage: 'url(/images/vector-decor.svg)',
-                  maskImage: 'url(/images/vector-decor.svg)',
-                  WebkitMaskSize: 'contain',
-                  maskSize: 'contain',
-                  WebkitMaskRepeat: 'no-repeat',
-                  maskRepeat: 'no-repeat',
-                  WebkitMaskPosition: 'center',
-                  maskPosition: 'center',
-                  backgroundColor: 'rgba(244, 208, 63, 0.35)',
-                }}
-              />
-              <div
-                aria-hidden="true"
-                className="block lg:hidden absolute -top-3 right-9 lg:-top-4 lg:right-16 w-6 h-6 lg:w-10 lg:h-10 z-30 pointer-events-none scale-x-[-1]"
-                style={{
-                  WebkitMaskImage: 'url(/images/vector-decor.svg)',
-                  maskImage: 'url(/images/vector-decor.svg)',
-                  WebkitMaskSize: 'contain',
-                  maskSize: 'contain',
-                  WebkitMaskRepeat: 'no-repeat',
-                  maskRepeat: 'no-repeat',
-                  WebkitMaskPosition: 'center',
-                  maskPosition: 'center',
-                  backgroundColor: 'rgba(244, 208, 63, 0.35)',
-                }}
-              />
-              <div
-                aria-hidden="true"
-                className="hidden lg:block absolute top-10 -right-4 w-7 h-7 z-10 pointer-events-none"
-                style={{
-                  WebkitMaskImage: 'url(/images/vector-decor.svg)',
-                  maskImage: 'url(/images/vector-decor.svg)',
-                  WebkitMaskSize: 'contain',
-                  maskSize: 'contain',
-                  WebkitMaskRepeat: 'no-repeat',
-                  maskRepeat: 'no-repeat',
-                  WebkitMaskPosition: 'center',
-                  maskPosition: 'center',
-                  backgroundColor: 'rgba(201, 135, 122, 0.45)',
-                }}
-              />
-              <div
-                aria-hidden="true"
-                className="block absolute -bottom-2 -left-3 lg:-bottom-5 lg:-left-5 w-8 h-8 lg:w-12 lg:h-12 z-10 pointer-events-none"
-                style={{
-                  WebkitMaskImage: 'url(/images/vector-decor.svg)',
-                  maskImage: 'url(/images/vector-decor.svg)',
-                  WebkitMaskSize: 'contain',
-                  maskSize: 'contain',
-                  WebkitMaskRepeat: 'no-repeat',
-                  maskRepeat: 'no-repeat',
-                  WebkitMaskPosition: 'center',
-                  maskPosition: 'center',
-                  backgroundColor: 'rgba(201, 168, 108, 0.55)',
-                }}
-              />
-
               <div className="flex flex-row lg:flex-col items-center lg:items-start gap-2 lg:justify-between w-full h-full relative z-20">
                 <p className="text-[11px] lg:text-xs text-[#7a6552] font-medium shrink-0">综合评分</p>
                 <div className="flex items-baseline">
