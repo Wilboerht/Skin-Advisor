@@ -2,7 +2,7 @@ import resultContent from "./result-content.json";
 
 export interface M1Data {
   typeName: string;
-  scoreRange: string;
+  ipKey: string;
   persona: string;
 }
 
@@ -40,7 +40,7 @@ export interface M7Data {
 
 export interface SkinTypeData {
   typeName: string;
-  scoreRange: string;
+  ipKey: string;
   route: string;
   m1: M1Data;
   m2: M2Data;
@@ -52,16 +52,14 @@ export interface SkinTypeData {
 export const skinTypes = resultContent as unknown as SkinTypeData[];
 
 export const routeOrder = [
-  "jiejinkuangmo",
-  "kangkuadaren",
-  "tangpingwanjia",
-  "rouguangdaren",
-  "wenfuwanjia",
-  "shengtukuangmo",
-  "shirundaren",
-  "donglingwanjia",
-  "tianfukuangmo",
-  "yulingzhuzai",
+  "minminpai",
+  "jijianpai",
+  "shehuapai",
+  "donglingpai",
+  "shamopai",
+  "youtiaopai",
+  "hunhepai",
+  "shouhupai",
 ];
 
 export function getSkinTypeByRoute(route: string): SkinTypeData | undefined {

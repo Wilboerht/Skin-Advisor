@@ -60,8 +60,9 @@ const IP_DEFINITIONS: CharacterIP[] = [
         key: "minimalist",
         name: "极简派",
         priority: 1,
-        match: ({ skinType, budget, skincareFrequency }) =>
+        match: ({ skinType, budget, skincareFrequency, score }) =>
             skinType !== "sensitive" &&
+            score < 95 &&
             budget === "budget" &&
             (skincareFrequency === "occasional" || skincareFrequency === "rarely"),
     },
