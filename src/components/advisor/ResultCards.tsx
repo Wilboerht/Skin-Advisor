@@ -96,7 +96,7 @@ export default function ResultCards({
           background: '#F5F2ED',
         }}
       >
-        <div className="flex items-end justify-between gap-4 lg:gap-8 relative z-10 w-full">
+        <div className="flex items-center justify-between gap-4 lg:gap-8 relative z-10 w-full">
           {/* Left: Text Content */}
           <div className="flex flex-col z-10 flex-1 pt-[2px] min-w-0 pb-2">
             {/* Greeting */}
@@ -131,13 +131,13 @@ export default function ResultCards({
           </div>
 
           {/* Right: Character IP Image */}
-          <div className="shrink-0 flex items-end -mb-6 lg:-mb-8 -mr-2 lg:-mr-4">
+          <div className="shrink-0 flex items-center">
             <Image
               src={characterImage}
               alt={skinTypeName}
               width={240}
               height={240}
-              className="w-[140px] h-[140px] sm:w-[180px] sm:h-[180px] lg:w-[240px] lg:h-[240px] object-contain object-bottom"
+              className="w-[140px] h-[140px] sm:w-[180px] sm:h-[180px] lg:w-[240px] lg:h-[240px] object-contain"
               priority
               onError={(e) => {
                 // 男性图片缺失时降级为女性图片
