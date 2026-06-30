@@ -189,7 +189,7 @@ export function ProductRecommendationSection({
                                 className={cn(
                                     "flex-shrink-0 snap-center",
                                     centered
-                                        ? "w-full max-w-[340px]"
+                                        ? "w-full max-w-[280px]"
                                         : "w-[85vw] sm:w-[45vw] md:w-[32vw] lg:w-[28vw] xl:w-[25vw]"
                                 )}
                             >
