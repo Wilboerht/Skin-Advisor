@@ -101,7 +101,7 @@ export default function ResultCards({
           <div className="flex flex-col justify-center z-10">
             {/* Greeting */}
             <p className="text-[#5c4937] text-xs lg:text-xs leading-none mb-3 lg:mb-4 font-medium tracking-wide">
-              亲爱的 <span>{nickname}</span>
+              亲爱的<span>「{nickname}」</span>
             </p>
 
             <h2 className="text-[24px] font-bold text-[#3d2f25] leading-snug tracking-tight mb-1 lg:mb-2">
@@ -112,7 +112,7 @@ export default function ResultCards({
               素颜评分超越了全国 <span className="text-[24px] px-0.5 text-[#00263e]">{rankPercentile}%</span> 的用户
             </h3>
 
-            <p className="text-[#8c7a6b] text-xs lg:text-sm leading-relaxed mb-5 lg:mb-6 max-w-[95%] lg:max-w-[420px]">
+            <p className="text-[#5c4937] text-xs lg:text-xs leading-relaxed mb-5 lg:mb-6 max-w-[95%] lg:max-w-[420px] font-medium tracking-wide">
               {summary || '整体状态极佳，肌肤屏障健康，水油平衡度完美，仅在眼周区域存在轻微色素沉积。'}
             </p>
 
