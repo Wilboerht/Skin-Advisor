@@ -935,8 +935,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                     </main>
 
-                    {/* 4. Products - 突破 main 容器限制，占页面 80% */}
-                    <div className="w-[80%] mx-auto">
+                    {/* 4. Products - 与上方模态框宽度对齐 */}
+                    <div className="w-full max-w-3xl mx-auto">
                         <ProductRecommendationSection
                             products={(result.products || []).map(p => ({
                                 id: p.id,
