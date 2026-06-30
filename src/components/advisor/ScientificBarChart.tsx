@@ -76,7 +76,7 @@ export function ScientificBarChart({ dimensions, size = 300, activeDimension, on
                     <YAxis
                         type="category"
                         dataKey="dimension"
-                        tick={{ fontSize: 14, fill: '#787774' }}
+                        tick={{ fontSize: 13, fill: '#8c7a6b' }}
                         axisLine={false}
                         tickLine={false}
                         width={70}
@@ -150,9 +150,9 @@ export function ScientificBarChart({ dimensions, size = 300, activeDimension, on
                 />
                 {/* Labels */}
                 <div className="relative mt-1.5 h-4">
-                    <span className="absolute left-[60%] -translate-x-1/2 text-[11px] font-medium text-[#8c7a6b]">严重</span>
-                    <span className="absolute left-[80%] -translate-x-1/2 text-[11px] font-medium text-[#8c7a6b]">中度</span>
-                    <span className="absolute right-0 text-[11px] font-medium text-[#8c7a6b]">良好</span>
+                    <span className="absolute left-[60%] -translate-x-1/2 text-[11px] font-medium text-[#787774]">严重</span>
+                    <span className="absolute left-[80%] -translate-x-1/2 text-[11px] font-medium text-[#787774]">中度</span>
+                    <span className="absolute right-0 text-[11px] font-medium text-[#787774]">良好</span>
                 </div>
             </div>
         </div>

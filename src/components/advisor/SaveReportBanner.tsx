@@ -16,17 +16,17 @@ export function SaveReportBanner({ className = "" }: SaveReportBannerProps) {
     const { openAuthModal } = useAuthModal();
     const [dismissed, setDismissed] = useState(false);
 
-    // Don't show if logged in, loading, or dismissed
-    if (loading || user || dismissed) return null;
+    // Don't show if logged in or loading
+    if (loading || user) return null;
 
     return (
         <AnimatePresence>
             {!dismissed && (
                 <m.div
-                    initial={{ opacity: 0, y: -8 }}
+                    initial={{ opacity: 0, y: -24 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+                    exit={{ opacity: 0, y: -24 }}
+                    transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
                     className={`w-full bg-[#F5F2ED] border-b border-[#3d2f25]/10 ${className}`}
                 >
                     <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-2.5">

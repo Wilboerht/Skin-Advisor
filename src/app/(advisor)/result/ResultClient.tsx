@@ -108,19 +108,19 @@ function renderLabRow(param: string, value: string, ref: string, status: string)
     const isGood = goodKeywords.some(k => status.includes(k));
 
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 py-2.5 border-b border-dashed border-[#3d2f25]/10 last:border-0 items-center hover:bg-[#3d2f25]/5 transition-colors">
-            <div className="sm:col-span-5 text-[12px] text-[#8c7a6b] font-mono tracking-tight uppercase">
+        <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 py-3 border-b border-dashed border-[#3d2f25]/10 last:border-0 items-center hover:bg-[#3d2f25]/[0.03] transition-colors">
+            <div className="sm:col-span-5 text-[12px] text-[#8c7a6b] tracking-tight uppercase">
                 {param}
             </div>
-            <div className="sm:col-span-3 text-left sm:text-right font-mono text-[13px] font-semibold text-[#3d2f25]">
+            <div className="sm:col-span-3 text-left sm:text-right text-[14px] font-semibold text-[#3d2f25]">
                 {value}
             </div>
-            <div className="sm:col-span-2 text-left sm:text-right font-mono text-[11px] text-[#a89582]">
+            <div className="sm:col-span-2 text-left sm:text-right text-[12px] text-[#a89582]">
                 <span className="sm:hidden mr-2 text-[#a89582]">Ref:</span>
                 {ref}
             </div>
-            <div className="sm:col-span-2 text-left sm:text-right font-mono text-[11px] font-bold">
-                <span className={isGood ? 'text-[#8c7a6b]' : 'text-[#c45a4a]'}>
+            <div className="sm:col-span-2 text-left sm:text-right text-[11px] font-bold">
+                <span className={isGood ? 'text-[#787774]' : 'text-[#c45a4a]'}>
                     {status} {isGood ? '' : '▲'}
                 </span>
             </div>
@@ -862,8 +862,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         onClick={() => setShowLabData(false)}
                                     />
                                     <m.div
-                                        className="relative z-10 w-full max-w-3xl max-h-[85vh] rounded-2xl border border-[#3d2f25]/10 shadow-2xl flex flex-col"
-                                        style={{ background: '#F5F2ED' }}
+                                        className="relative z-10 w-full max-w-3xl max-h-[85vh] rounded-2xl border border-[#3d2f25]/10 shadow-2xl flex flex-col bg-[#F5F2ED]"
                                         initial={{ opacity: 0, scale: 0.95, y: 20 }}
                                         animate={{ opacity: 1, scale: 1, y: 0 }}
                                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -871,7 +870,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     >
                                         <button
                                             onClick={() => setShowLabData(false)}
-                                            className="absolute top-4 right-4 z-20 text-[#3d2f25]/40 hover:text-[#3d2f25] transition-colors bg-transparent border-none cursor-pointer"
+                                            className="absolute top-4 right-4 z-20 text-[#8c7a6b]/60 hover:text-[#5c4937] transition-colors bg-transparent border-none cursor-pointer"
                                         >
                                             <X className="w-5 h-5" />
                                         </button>
@@ -881,7 +880,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                 <h3 className="text-lg font-bold text-[#3d2f25]">定制化专业分析数据详情</h3>
                                             </div>
                                         </div>
-                                        <div className="overflow-y-auto custom-scrollbar px-6 sm:px-8 pb-6 sm:pb-8 flex-1 text-sm leading-6">
+                                        <div className="overflow-y-auto custom-scrollbar px-6 sm:px-8 py-5 sm:py-6 flex-1">
                                             <div className="grid grid-cols-1 gap-y-6">
 
                                                 {/* 十维分析条形图 */}
@@ -894,7 +893,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                 )}
 
                                                 {/* Table Header Row (Desktop only) */}
-                                                <div className="hidden md:grid grid-cols-12 text-[11px] text-[#8c7a6b] border-b border-[#3d2f25]/10 pb-2 mb-2 font-mono uppercase tracking-wider">
+                                                <div className="hidden md:grid grid-cols-12 text-[11px] font-medium text-[#8c7a6b] border-b border-[#3d2f25]/10 pb-2 mb-2 uppercase tracking-widest">
                                                     <div className="col-span-5">检测指标 (Parameter)</div>
                                                     <div className="col-span-3 text-right">测定值 (Value)*</div>
                                                     <div className="col-span-2 text-right">参考范围 (Range)</div>
@@ -903,7 +902,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                                                 {computeLabAnalysis(faceAnalysis).map((group) => (
                                                     <div key={group.titleEn}>
-                                                        <h5 className="text-[12px] font-bold font-mono text-[#8c7a6b] tracking-wide uppercase mb-3 px-2 py-1 bg-[#3d2f25]/8 border-l-[3px] border-[#3d2f25]/20">
+                                                        <h5 className="text-[12px] font-bold text-[#5c4937] tracking-wide uppercase mb-3 px-2 py-1.5 bg-[#3d2f25]/[0.05] border-l-[3px] border-[#C9A86C]">
                                                             {group.title} ({group.titleEn})
                                                         </h5>
                                                         <div className="space-y-1">
@@ -918,12 +917,12 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                             </div>
 
                                             <div className="mt-6 pt-4 border-t border-dashed border-[#3d2f25]/15">
-                                                <div className="flex gap-2.5 items-start text-[11px] leading-relaxed text-[#8c7a6b] font-mono">
-                                                    <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-[#a89582]" />
+                                                <div className="flex gap-3 items-start text-[12px] leading-relaxed text-[#5c4937]">
+                                                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-[#C9A86C]" />
                                                     <div className="space-y-2">
                                                         <p className="font-bold text-[#3d2f25] uppercase tracking-wide">数据说明 (Data Disclaimer)</p>
                                                         <p>
-                                                            <span className="font-semibold text-[#5c4937]">* AI ESTIMATE:</span> 上述数值均由 AI 算法基于您的面部图像特征（纹理、色泽、对比度）反演推算得出，<span className="border-b border-[#3d2f25]/20 text-[#5c4937]">并非物理探头实测数据</span>。
+                                                            <span className="font-semibold text-[#3d2f25]">* AI ESTIMATE:</span> 上述数值均由 AI 算法基于您的面部图像特征（纹理、色泽、对比度）反演推算得出，<span className="border-b border-[#3d2f25]/20 text-[#3d2f25]">并非物理探头实测数据</span>。
                                                         </p>
                                                         <p>
                                                             例如：TEWL（经表皮失水率）是根据皮肤屏障受损程度的视觉表现估算而来。本报告仅作护肤参考，不可替代医疗诊断。
