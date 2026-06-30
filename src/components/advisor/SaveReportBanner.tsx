@@ -40,7 +40,7 @@ export function SaveReportBanner({ className = "" }: SaveReportBannerProps) {
                                 unoptimized
                             />
                             <span>
-                                成为旎柏注册会员，保存分析报告，追踪肤质变化
+                                注册成为旎柏会员，保存你的专属分析报告，持续追踪肌肤状态，开启更多私享服务。
                             </span>
                             <button
                                 onClick={() => openAuthModal("register")}
