@@ -100,7 +100,7 @@ export default function ResultCards({
           {/* Left: Text Content */}
           <div className="flex flex-col z-10 flex-1 pt-[2px] min-w-0 pb-2">
             {/* Greeting */}
-            <p className="text-[#a89582] text-xs lg:text-sm leading-none mb-2 lg:mb-3">
+            <p className="text-[#a89582] text-xs lg:text-sm leading-none mb-3 lg:mb-4">
               亲爱的 <span className="text-[#8c7a6b]">{nickname}</span>
             </p>
 
@@ -108,7 +108,7 @@ export default function ResultCards({
               你的肌肤类型是「{skinTypeName}」
             </h2>
 
-            <h3 className="text-xl lg:text-[28px] font-bold text-[#3d2f25] leading-snug tracking-tight mb-4 lg:mb-5">
+            <h3 className="text-xl lg:text-[28px] font-bold text-[#3d2f25] leading-snug tracking-tight mb-3 lg:mb-4">
               素颜评分超越了全国 <span className="text-xl lg:text-[28px] px-0.5 text-[#00263e]">{rankPercentile}%</span> 的用户
             </h3>
 
