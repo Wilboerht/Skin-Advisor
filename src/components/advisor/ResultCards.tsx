@@ -150,7 +150,7 @@ export default function ResultCards({
               全国 <span className="text-2xl lg:text-4xl px-0.5">{rankPercentile}%</span> 的用户
             </h2>
 
-            <p className="text-[#8c7a6b] text-xs lg:text-sm leading-relaxed tracking-tight lg:tracking-normal max-w-[75%] lg:max-w-sm mb-6">
+            <p className="text-[#8c7a6b] text-xs lg:text-sm leading-relaxed tracking-tight lg:tracking-normal mb-6">
               {summary || '整体状态极佳，肌肤屏障健康，水油平衡度完美，仅在眼周区域存在轻微色素沉积。'}
             </p>
 
@@ -173,35 +173,10 @@ export default function ResultCards({
                 </span>
               </motion.button>
 
-              <div className="hidden sm:flex items-center -ml-[10px] z-10">
-                <Image src="/images/share-hint.svg" alt="分享提示" width={58} height={58} className="h-[58px] w-auto object-contain -mt-2" />
-              </div>
             </div>
 
-            <div className="flex sm:hidden items-center ml-0 mt-1 opacity-90">
-              <Image src="/images/mobile-share-hint.svg" alt="分享提示" width={42} height={42} className="h-[42px] w-auto object-contain" />
-            </div>
           </div>
 
-          {/* Decorative Image Area (Right) */}
-          <div className="absolute right-[-27px] lg:-right-33 bottom-[113px] lg:-bottom-6 w-1/2 h-[110%] pointer-events-none flex items-end justify-end z-20">
-            <div className="absolute -bottom-[53%] lg:-bottom-[30%] w-[16rem] sm:w-[28rem] h-[16rem] sm:h-[28rem] z-30 drop-shadow-2xl right-[-55px] lg:right-[-48px]">
-              <Image
-                src="/images/gift.webp"
-                alt="礼盒"
-                fill
-                className="object-contain"
-                sizes="(max-width: 640px) 256px, 448px"
-              />
-            </div>
-            <Image
-              src="/images/ribbon.webp"
-              alt="装饰彩带"
-              fill
-              className="object-contain object-right-bottom opacity-90 scale-[1.8] lg:scale-110"
-              sizes="50vw"
-            />
-          </div>
         </div>
       </motion.div>
 
