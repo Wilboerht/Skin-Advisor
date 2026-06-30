@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { m, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
+import Image from "next/image";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -29,7 +30,15 @@ export function SaveReportBanner({ className = "" }: SaveReportBannerProps) {
                     className={`w-full bg-[#F5F2ED] border-b border-[#3d2f25]/10 ${className}`}
                 >
                     <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-2.5">
-                        <div className="flex items-center justify-center gap-3 text-[12px] sm:text-[13px] text-[#5c4937]">
+                        <div className="flex items-center justify-center gap-2 sm:gap-3 text-[12px] sm:text-[13px] text-[#5c4937]">
+                            <Image
+                                src="/images/watermark.png"
+                                alt=""
+                                width={16}
+                                height={16}
+                                className="w-5 h-5 sm:w-6 sm:h-6 object-contain opacity-90 drop-shadow-[0_1px_1px_rgba(61,68,48,0.4)]"
+                                unoptimized
+                            />
                             <span>
                                 成为旎柏注册会员，保存分析报告，追踪肤质变化
                             </span>
