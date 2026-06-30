@@ -877,7 +877,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                             <X className="w-5 h-5" />
                                         </button>
                                         <div className="px-6 sm:px-8 pt-6 sm:pt-8 pb-2 flex-shrink-0">
-                                            <div className="flex items-center gap-3 mb-2">
+                                            <div className="flex items-center gap-3">
                                                 <Activity className="w-5 h-5 text-[#8c7a6b]" />
                                                 <h3 className="text-lg font-bold text-[#3d2f25]">定制化专业分析数据详情</h3>
                                             </div>
@@ -911,10 +911,10 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                 )}
                                             </div>
 
-                                            <div className="mt-6 pt-4 border-t border-dashed border-[#3d2f25]/15">
-                                                <div className="flex gap-3 items-start text-[12px] leading-relaxed text-[#5c4937]">
-                                                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-[#C9A86C]" />
-                                                    <div className="space-y-2">
+                                            <div className="mt-5 pt-3 border-t border-dashed border-[#3d2f25]/15">
+                                                <div className="flex gap-2.5 items-start text-[11px] leading-relaxed text-[#5c4937]">
+                                                    <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-[#C9A86C]" />
+                                                    <div className="space-y-1.5">
                                                         <p className="font-medium text-[#3d2f25]">数据说明 (Data Disclaimer)</p>
                                                         <p>
                                                             <span className="font-semibold text-[#3d2f25]">* AI ESTIMATE:</span> 上述数值均由 AI 算法基于您的面部图像特征（纹理、色泽、对比度）反演推算得出，<span className="border-b border-[#3d2f25]/20 text-[#3d2f25]">并非物理探头实测数据</span>。
