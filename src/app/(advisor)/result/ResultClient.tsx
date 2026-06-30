@@ -881,7 +881,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                             </div>
                                         </div>
                                         <div className="overflow-y-auto custom-scrollbar px-6 sm:px-8 py-5 sm:py-6 flex-1">
-                                            <div className="grid grid-cols-1 gap-y-6">
+                                            <div className="grid grid-cols-1 gap-y-0">
 
                                                 {/* 十维分析条形图 */}
                                                 {faceAnalysis?.dimensions && (
