@@ -109,7 +109,7 @@ export default function ResultCards({
             </h2>
 
             <h3 className="text-xl lg:text-[28px] font-bold text-[#3d2f25] leading-snug tracking-tight mb-4 lg:mb-5">
-              素颜评分超越了全国 <span className="text-xl lg:text-[28px] px-0.5">{rankPercentile}%</span> 的用户
+              素颜评分超越了全国 <span className="text-xl lg:text-[28px] px-0.5 text-[#00263e]">{rankPercentile}%</span> 的用户
             </h3>
 
             <p className="text-[#8c7a6b] text-xs lg:text-sm leading-relaxed mb-5 lg:mb-6 max-w-[95%] lg:max-w-[420px]">
