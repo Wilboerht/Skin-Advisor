@@ -27,9 +27,12 @@ interface AnalyzingOverlayProps {
 export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitSeconds }: AnalyzingOverlayProps) {
     const [activeIconIndex, setActiveIconIndex] = useState(0);
     const [showCancel, setShowCancel] = useState(false);
-    // "use client" 组件在客户端运行时始终已挂载
-    const isMounted = typeof window !== 'undefined';
+    const [isMounted, setIsMounted] = useState(false);
     const [isExiting, setIsExiting] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
     const [stuckTime, setStuckTime] = useState(0);
     const stuckStartRef = useRef<number | null>(null);
 
