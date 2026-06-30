@@ -108,11 +108,11 @@ function renderLabRow(param: string, value: string, ref: string, status: string)
     const isGood = goodKeywords.some(k => status.includes(k));
 
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 py-4 px-4 border-b border-[#E8E2D9] last:border-0 items-center hover:bg-white/60 transition-colors">
+        <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 py-2 px-4 border-b border-[#E8E2D9] last:border-0 items-center hover:bg-white/60 transition-colors">
             <div className="sm:col-span-5 text-[12px] text-[#4A4A4A] font-light tracking-tight">
                 {param}
             </div>
-            <div className="sm:col-span-3 text-left sm:text-right text-[14px] text-[#1A1A1A] font-normal">
+            <div className="sm:col-span-3 text-left sm:text-right text-[12px] text-[#1A1A1A] font-normal">
                 {value}
             </div>
             <div className="sm:col-span-2 text-left sm:text-right text-[12px] text-[#8A8A8A] font-light">
@@ -893,27 +893,20 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                 )}
 
                                                 {/* Table Header Row (Desktop only) */}
-                                                <div className="hidden md:grid grid-cols-12 text-[11px] font-semibold text-[#1B3A5C] border-b border-[#D9D0C3] py-3 px-4 mb-2 tracking-wider">
+                                                <div className="hidden md:grid grid-cols-12 text-[11px] font-semibold text-[#1B3A5C] border-b border-[#D9D0C3] py-2 px-4 tracking-wider">
                                                     <div className="col-span-5">检测指标 (Parameter)</div>
                                                     <div className="col-span-3 text-right">测定值 (Value)*</div>
                                                     <div className="col-span-2 text-right">参考范围 (Range)</div>
                                                     <div className="col-span-2 text-right">状态 (Status)</div>
                                                 </div>
 
-                                                {computeLabAnalysis(faceAnalysis).map((group) => (
-                                                    <div key={group.titleEn}>
-                                                        <h5 className="text-[12px] font-bold text-[#5c4937] tracking-wide mb-3 px-2 py-1.5 bg-[#3d2f25]/[0.05] border-l-[3px] border-[#C9A86C]">
-                                                            {group.title} ({group.titleEn})
-                                                        </h5>
-                                                        <div>
-                                                            {group.metrics.map((metric) => (
-                                                                <div key={metric.param}>
-                                                                    {renderLabRow(metric.param, metric.value, metric.ref, metric.status)}
-                                                                </div>
-                                                            ))}
+                                                {computeLabAnalysis(faceAnalysis).flatMap((group) =>
+                                                    group.metrics.map((metric) => (
+                                                        <div key={metric.param}>
+                                                            {renderLabRow(metric.param, metric.value, metric.ref, metric.status)}
                                                         </div>
-                                                    </div>
-                                                ))}
+                                                    ))
+                                                )}
                                             </div>
 
                                             <div className="mt-6 pt-4 border-t border-dashed border-[#3d2f25]/15">
