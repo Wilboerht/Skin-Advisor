@@ -966,34 +966,34 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                     {/* Global Footer */}
                     <footer className="w-full bg-transparent mt-0 py-12">
-                        <div className="max-w-[1440px] mx-auto px-6">
-                            {/* Retake Button - Centered */}
-                            <div className="flex justify-center mb-10 gap-4">
+                        <div className="max-w-[900px] mx-auto px-6 lg:px-10">
+                            {/* Primary & secondary actions */}
+                            <div className="flex flex-col sm:flex-row justify-center gap-3 mb-4">
                                 <button
                                     onClick={() => setShowContactAdvisor(true)}
-                                    className="glass-premium-primary group relative inline-flex items-center justify-center gap-2 sm:gap-3 px-5 py-2.5 sm:px-10 sm:py-3.5 rounded-lg text-[12px] sm:text-[15px] tracking-[0.15em] font-medium disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer transition-all duration-300"
+                                    className="inline-flex items-center justify-center gap-2 px-8 py-3 rounded-full bg-[#5c4937] text-white text-[13px] tracking-[0.1em] font-medium hover:bg-[#4a3a2c] transition-colors"
                                 >
-                                    <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
-                                    <span>联系顾问</span>
+                                    <MessageCircle className="w-4 h-4" />
+                                    联系顾问
                                 </button>
                                 <button
                                     onClick={() => router.push('/')}
-                                    className="glass-premium-primary group relative inline-flex items-center justify-center gap-2 sm:gap-3 px-5 py-2.5 sm:px-10 sm:py-3.5 rounded-lg text-[12px] sm:text-[15px] tracking-[0.15em] font-medium disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer transition-all duration-300"
+                                    className="inline-flex items-center justify-center gap-2 px-8 py-3 rounded-full border border-[#5c4937]/30 text-[#5c4937] text-[13px] tracking-[0.1em] font-medium hover:bg-[#5c4937]/5 transition-colors"
                                 >
-                                    <House className="w-4 h-4 sm:w-5 sm:h-5" />
-                                    <span>回到首页</span>
+                                    <House className="w-4 h-4" />
+                                    回到首页
                                 </button>
                             </div>
 
-                            {/* 肌智派送好礼 CTA Banner */}
+                            {/* 肌智派送好礼 CTA */}
                             <div className="flex justify-center mb-10">
                                 <button
                                     onClick={() => router.push('/gift')}
-                                    className="group relative inline-flex items-center gap-3 px-6 py-3 rounded-xl border border-dashed border-[#8B7355]/30 bg-[#8B7355]/[0.03] text-[13px] tracking-[0.15em] text-[#8B7355] hover:text-[#3D4430] hover:border-[#3D4430]/30 hover:bg-[#3D4430]/5 transition-all duration-500"
+                                    className="group inline-flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 rounded-full border border-dashed border-[#8B7355]/40 bg-[#8B7355]/[0.04] text-[13px] tracking-[0.1em] text-[#8B7355] hover:text-[#5c4937] hover:border-[#5c4937]/40 hover:bg-[#5c4937]/5 transition-all duration-300"
                                 >
                                     <Gift className="w-4 h-4" />
-                                    <span>肌智派送好礼 · 参与抽奖</span>
-                                    <ArrowRight className="w-3.5 h-3.5 transition-transform duration-500 group-hover:translate-x-1" />
+                                    肌智派送好礼 · 参与抽奖
+                                    <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
                                 </button>
                             </div>
 
