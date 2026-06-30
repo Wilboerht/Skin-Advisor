@@ -112,7 +112,7 @@ export default function ResultCards({
               素颜评分超越了全国 <span className="text-[24px] px-0.5 text-[#00263e]">{rankPercentile}%</span> 的用户
             </h3>
 
-            <p className="text-[#5c4937] text-xs lg:text-xs leading-relaxed mb-5 lg:mb-6 max-w-[95%] lg:max-w-[420px] font-medium tracking-wide">
+            <p className="text-[14px] leading-relaxed text-[#5c4937] mb-5 lg:mb-6 max-w-[95%] lg:max-w-[420px]">
               {summary || '整体状态极佳，肌肤屏障健康，水油平衡度完美，仅在眼周区域存在轻微色素沉积。'}
             </p>
 
