@@ -97,7 +97,7 @@ export default function ResultIndexPage() {
                 className="group relative rounded-2xl border border-[rgba(61,68,48,0.08)] bg-[#FAF9F6] p-5 md:p-9 transition-all duration-500 hover:shadow-[0_16px_32px_rgba(61,68,48,0.08)] hover:-translate-y-1"
               >
                 <Image
-                  src={`/images/character/${type.scoreRange}/${type.scoreRange}_female.png`}
+                  src={`/images/character/${type.ipKey}/${type.ipKey}_female.png`}
                   alt=""
                   width={160}
                   height={260}

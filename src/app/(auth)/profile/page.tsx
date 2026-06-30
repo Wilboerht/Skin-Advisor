@@ -22,11 +22,11 @@ import {
 import { LazyMotion, domAnimation, m } from "framer-motion";
 import Image from "next/image";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
-import { skinTypes } from "@/lib/result-content";
+import { getCharacterImage, getSkinTypeName } from "@/lib/result-utils";
 
 interface AnalysisResult {
   faceAnalysis?: { overallScore?: number; skinAge?: number };
-  skinProfile?: { typeLabel?: string; concerns?: string[]; skinAge?: number };
+  skinProfile?: { type?: string; typeLabel?: string; concerns?: string[]; skinAge?: number };
   skinType?: { typeLabel?: string };
   concerns?: string[];
 }
@@ -162,7 +162,6 @@ export default function ProfilePage() {
   }
 
   const latestResult = auditHistory[0]?.analysisResult;
-  const latestScore = latestResult?.faceAnalysis?.overallScore;
   const avgScore =
     auditHistory.length > 0
       ? Math.round(
@@ -173,9 +172,14 @@ export default function ProfilePage() {
         )
       : null;
 
-  const latestSkinTypeLabel =
-    latestResult?.skinProfile?.typeLabel || latestResult?.skinType?.typeLabel;
-  const latestSkinTypeData = skinTypes.find((t) => t.typeName === latestSkinTypeLabel);
+  const latestSkinTypeCode = latestResult?.skinProfile?.type;
+  const latestScore = latestResult?.faceAnalysis?.overallScore ?? 0;
+  const latestSkinTypeName = latestScore > 0 && latestSkinTypeCode
+    ? getSkinTypeName({ score: latestScore, skinType: latestSkinTypeCode })
+    : null;
+  const latestCharacterImage = latestScore > 0 && latestSkinTypeCode
+    ? getCharacterImage({ score: latestScore, skinType: latestSkinTypeCode, gender: "female" })
+    : null;
 
   const avatarUrl = user?.avatar;
 
@@ -217,10 +221,10 @@ export default function ProfilePage() {
                 </label>
 
                 <div className="relative w-28 h-36 md:w-36 md:h-44 mb-2">
-                  {latestSkinTypeData ? (
+                  {latestCharacterImage ? (
                     <Image
-                      src={`/images/character/${latestSkinTypeData.scoreRange}/${latestSkinTypeData.scoreRange}_female.png`}
-                      alt={latestSkinTypeData.typeName}
+                      src={latestCharacterImage}
+                      alt={latestSkinTypeName || "肌肤形象"}
                       fill
                       className="object-contain object-bottom"
                       sizes="(max-width: 768px) 112px, 144px"

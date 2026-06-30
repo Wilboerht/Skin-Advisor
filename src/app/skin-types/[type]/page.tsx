@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
   return {
-    title: `${data.typeName} · ${data.scoreRange}分 · NIHPLOD肌肤测试`,
+    title: `${data.typeName} · NIHPLOD肌肤测试`,
     description: data.m1.persona,
     openGraph: {
       title: `${data.typeName} · NIHPLOD肌肤测试`,

@@ -58,7 +58,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
           </div>
           <div className="relative w-full max-w-[180px] mx-auto lg:max-w-xs aspect-[3/4] lg:ml-auto">
             <Image
-              src={`/images/character/${data.scoreRange}/${data.scoreRange}_female.png`}
+              src={`/images/character/${data.ipKey}/${data.ipKey}_female.png`}
               alt={`${data.typeName} 形象`}
               fill
               className="object-contain object-bottom"
