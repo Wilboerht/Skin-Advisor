@@ -109,7 +109,7 @@ function renderLabRow(param: string, value: string, ref: string, status: string)
 
     return (
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 py-3 border-b border-dashed border-[#3d2f25]/10 last:border-0 items-center hover:bg-[#3d2f25]/[0.03] transition-colors">
-            <div className="sm:col-span-5 text-[12px] text-[#8c7a6b] tracking-tight uppercase">
+            <div className="sm:col-span-5 text-[12px] text-[#8c7a6b] tracking-tight">
                 {param}
             </div>
             <div className="sm:col-span-3 text-left sm:text-right text-[14px] font-semibold text-[#3d2f25]">
@@ -893,7 +893,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                 )}
 
                                                 {/* Table Header Row (Desktop only) */}
-                                                <div className="hidden md:grid grid-cols-12 text-[11px] font-medium text-[#8c7a6b] border-b border-[#3d2f25]/10 pb-2 mb-2 uppercase tracking-widest">
+                                                <div className="hidden md:grid grid-cols-12 text-[11px] font-medium text-[#8c7a6b] border-b border-[#3d2f25]/10 pb-2 mb-2 tracking-wide">
                                                     <div className="col-span-5">检测指标 (Parameter)</div>
                                                     <div className="col-span-3 text-right">测定值 (Value)*</div>
                                                     <div className="col-span-2 text-right">参考范围 (Range)</div>
@@ -902,7 +902,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                                                 {computeLabAnalysis(faceAnalysis).map((group) => (
                                                     <div key={group.titleEn}>
-                                                        <h5 className="text-[12px] font-bold text-[#5c4937] tracking-wide uppercase mb-3 px-2 py-1.5 bg-[#3d2f25]/[0.05] border-l-[3px] border-[#C9A86C]">
+                                                        <h5 className="text-[12px] font-bold text-[#5c4937] tracking-wide mb-3 px-2 py-1.5 bg-[#3d2f25]/[0.05] border-l-[3px] border-[#C9A86C]">
                                                             {group.title} ({group.titleEn})
                                                         </h5>
                                                         <div className="space-y-1">
