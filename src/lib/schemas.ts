@@ -29,6 +29,7 @@ export const AnalyzeRequestSchema = z.object({
 
         allergies: z.union([z.string(), z.array(z.string())]).optional(),
         budget: z.string().optional(),
+        skincareFrequency: z.string().optional(),
         pregnancyStatus: z.string().optional(),
         medicationHistory: z.string().optional(),
         sleepQuality: z.string().optional(),

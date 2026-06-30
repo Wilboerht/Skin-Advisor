@@ -203,6 +203,7 @@ export interface QuestionnaireAnswers {
 
     allergies?: string | string[];
     budget?: string;
+    skincareFrequency?: string;
     pregnancyStatus?: string;
     medicationHistory?: string;
     sleepQuality?: string;

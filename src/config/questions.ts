@@ -144,6 +144,18 @@ export const DEFAULT_QUESTIONS: Question[] = [
         ],
     },
     {
+        id: "skincareFrequency",
+        fieldName: "skincareFrequency",
+        question: "您的日常护肤习惯是？",
+        type: "single",
+        options: [
+            { value: "daily", label: "每天精细护肤", description: "早晚全套流程，精华面霜防晒不落" },
+            { value: "regular", label: "经常护肤", description: "大部分时间坚持，偶尔偷懒" },
+            { value: "occasional", label: "偶尔护肤", description: "想起来才护理，步骤简单" },
+            { value: "rarely", label: "几乎不护肤", description: "洗脸即护肤，很少用护肤品" },
+        ],
+    },
+    {
         id: "budget",
         fieldName: "budget",
         question: "您的护肤预算是？",

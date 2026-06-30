@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Share2 } from 'lucide-react';
 import Image from 'next/image';
-import { getRankPercentile, getTZoneLabel, getCharacterImage, getSkinTypeName } from '@/lib/result-utils';
+import { getRankPercentile, getTZoneLabel, getCharacterImage, getSkinTypeName, type IPMatchParams } from '@/lib/result-utils';
 
 
 interface Dimension {
@@ -18,6 +18,9 @@ interface ResultCardsProps {
   dimensions: Record<string, Dimension | undefined>;
   nickname: string;
   gender?: string;
+  skinType?: string;
+  budget?: string;
+  skincareFrequency?: string;
   summary?: string;
   onShare: () => void;
   onUnlockClick?: () => void;
@@ -61,6 +64,9 @@ export default function ResultCards({
   dimensions,
   nickname,
   gender = 'female',
+  skinType = 'combination',
+  budget,
+  skincareFrequency,
   summary,
   onShare,
   onUnlockClick,
@@ -68,8 +74,9 @@ export default function ResultCards({
   professionalStyle,
   comprehensiveReport,
 }: ResultCardsProps) {
-  const characterImage = getCharacterImage(score, gender);
-  const skinTypeName = getSkinTypeName(score);
+  const ipParams: IPMatchParams = { score, skinType, budget, skincareFrequency };
+  const characterImage = getCharacterImage({ ...ipParams, gender });
+  const skinTypeName = getSkinTypeName(ipParams);
 
   // 基于综合评分计算全国排名百分比
   const rankPercentile = useMemo(

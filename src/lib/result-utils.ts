@@ -29,41 +29,121 @@ export function getTZoneLabel(waterOilScore: number): string {
     return 'T区偏油';
 }
 
-/** 10种肌肤类型的分数区间映射 */
-const SCORE_RANGES = [
-    { range: "96-100", min: 96, max: 100, typeName: "御龄主宰" },
-    { range: "92-95", min: 92, max: 95, typeName: "天赋狂魔" },
-    { range: "88-91", min: 88, max: 91, typeName: "冻龄玩家" },
-    { range: "84-87", min: 84, max: 87, typeName: "奢润达人" },
-    { range: "80-83", min: 80, max: 83, typeName: "生图狂魔" },
-    { range: "76-79", min: 76, max: 79, typeName: "稳肤玩家" },
-    { range: "72-75", min: 72, max: 75, typeName: "柔光达人" },
-    { range: "68-71", min: 68, max: 71, typeName: "躺平玩家" },
-    { range: "64-67", min: 64, max: 67, typeName: "抗垮达人" },
-    { range: "60-63", min: 0,  max: 63, typeName: "进阶狂魔" },
+// ============================================================================
+// 新版 IP 角色体系 (8 派)
+// ============================================================================
+
+/** IP 角色定义 */
+export interface CharacterIP {
+    key: string;       // 英文标识，用于图片路径
+    name: string;      // 中文显示名称
+    priority: number;  // 匹配优先级 (越小越高)
+    match: (params: IPMatchParams) => boolean;
+}
+
+export interface IPMatchParams {
+    score: number;            // AI 综合评分 0-100
+    skinType: string;         // 肤质类型: dry | oily | combination_dry | combination_oily | combination | sensitive | normal
+    budget?: string;          // 预算: budget | mid | premium | luxury
+    skincareFrequency?: string; // 护肤频率: daily | regular | occasional | rarely
+}
+
+/** 8 派定义（按优先级排序） */
+const IP_DEFINITIONS: CharacterIP[] = [
+    {
+        key: "sensitive",
+        name: "敏敏派",
+        priority: 0,
+        match: ({ skinType }) => skinType === "sensitive",
+    },
+    {
+        key: "minimalist",
+        name: "极简派",
+        priority: 1,
+        match: ({ skinType, budget, skincareFrequency }) =>
+            skinType !== "sensitive" &&
+            budget === "budget" &&
+            (skincareFrequency === "occasional" || skincareFrequency === "rarely"),
+    },
+    {
+        key: "luxury",
+        name: "奢华派",
+        priority: 2,
+        match: ({ score }) => score >= 95,
+    },
+    {
+        key: "ageless",
+        name: "冻龄派",
+        priority: 3,
+        match: ({ score }) => score >= 90 && score <= 94,
+    },
+    {
+        key: "desert",
+        name: "沙漠派",
+        priority: 4,
+        match: ({ score, skinType }) =>
+            score >= 71 && score <= 89 && skinType === "dry",
+    },
+    {
+        key: "oily",
+        name: "油条派",
+        priority: 4,
+        match: ({ score, skinType }) =>
+            score >= 71 && score <= 89 && skinType === "oily",
+    },
+    {
+        key: "combination",
+        name: "混合派",
+        priority: 4,
+        match: ({ score, skinType }) =>
+            score >= 71 && score <= 89 &&
+            ["combination_dry", "combination_oily", "combination", "normal"].includes(skinType),
+    },
+    {
+        key: "guardian",
+        name: "守护派",
+        priority: 5,
+        match: ({ score }) => score <= 70, // 含 <60 兜底
+    },
 ];
 
-/**
- * 根据综合评分和性别获取角色插图路径
- * @param score 用户综合评分 0-100
- * @param gender 性别 "female" | "male"
- * @returns 角色图片路径，如 "/images/character/80-83/80-83_male.png"
- */
-// 部分分数段仅有 female 图片，male 缺失时回退
-const MALE_MISSING_RANGES = ["64-67", "68-71", "72-75", "76-79", "80-83", "92-95", "96-100"];
+/** 对优先级排序 */
+const SORTED_IPS = [...IP_DEFINITIONS].sort((a, b) => a.priority - b.priority);
 
-export function getCharacterImage(score: number, gender: string): string {
-    const match = SCORE_RANGES.find(r => score >= r.min && score <= r.max);
-    const range = match?.range || "60-63";
-    const actualGender = gender === "male" && MALE_MISSING_RANGES.includes(range) ? "female" : gender;
+/**
+ * 根据综合条件匹配角色 IP
+ * 按优先级依次匹配，返回第一个命中的 IP
+ */
+export function matchCharacterIP(params: IPMatchParams): CharacterIP {
+    for (const ip of SORTED_IPS) {
+        if (ip.match(params)) {
+            return ip;
+        }
+    }
+    // 最终兜底：守护派
+    return IP_DEFINITIONS[IP_DEFINITIONS.length - 1];
+}
+
+/** 部分 IP 仅有 female 图片，male 缺失时回退 */
+const MALE_MISSING_KEYS = ["sensitive", "minimalist", "desert", "oily", "combination", "guardian"];
+
+/**
+ * 根据匹配参数和性别获取角色插图路径
+ * @returns 角色图片路径，如 "/images/character/ageless/ageless_female.png"
+ */
+export function getCharacterImage(params: IPMatchParams & { gender: string }): string {
+    const ip = matchCharacterIP(params);
+    const actualGender = params.gender === "male" && MALE_MISSING_KEYS.includes(ip.key)
+        ? "female"
+        : params.gender;
     const genderSuffix = actualGender === "male" ? "male" : "female";
-    return `/images/character/${range}/${range}_${genderSuffix}.png`;
+    return `/images/character/${ip.key}/${ip.key}_${genderSuffix}.png`;
 }
 
 /**
- * 根据综合评分获取肌肤类型名称
+ * 根据匹配参数获取肌肤类型名称（IP 中文名）
  */
-export function getSkinTypeName(score: number): string {
-    const match = SCORE_RANGES.find(r => score >= r.min && score <= r.max);
-    return match?.typeName || "进阶狂魔";
+export function getSkinTypeName(params: IPMatchParams): string {
+    const ip = matchCharacterIP(params);
+    return ip.name;
 }

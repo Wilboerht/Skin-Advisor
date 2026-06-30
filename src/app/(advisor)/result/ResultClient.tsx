@@ -176,6 +176,10 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const [sessionId, setSessionId] = useState<string | undefined>(id);
     const [socialGender, setSocialGender] = useState<string>(''); // Initialize empty to avoid flash mismatch
 
+    // IP 匹配所需数据
+    const [ipBudget, setIpBudget] = useState<string | undefined>(undefined);
+    const [ipSkincareFrequency, setIpSkincareFrequency] = useState<string | undefined>(undefined);
+
     // UI State
     const [loading, setLoading] = useState(!initialData);
     const hasTrackedView = useRef(false);
@@ -283,6 +287,16 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 // Restore Gender
                 const storedGender = localStorage.getItem(STORAGE_KEYS.ADVISOR_GENDER);
                 if (storedGender) setSocialGender(storedGender);
+
+                // Restore budget & skincare frequency for IP matching
+                const answersStr = localStorage.getItem(STORAGE_KEYS.ADVISOR_ANSWERS);
+                if (answersStr) {
+                    try {
+                        const answers = JSON.parse(answersStr);
+                        if (answers.budget) setIpBudget(answers.budget);
+                        if (answers.skincareFrequency) setIpSkincareFrequency(answers.skincareFrequency);
+                    } catch { /* ignore parse errors */ }
+                }
             } catch (e) {
                 console.error("Storage load error:", e);
             }
@@ -732,6 +746,9 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             dimensions={faceAnalysis?.dimensions || {}}
                             nickname={userNickname}
                             gender={socialGender}
+                            skinType={result?.skinProfile?.type}
+                            budget={ipBudget}
+                            skincareFrequency={ipSkincareFrequency}
                             summary={result?.analysis?.summary}
                             onShare={() => setShowShareModal(true)}
 
@@ -1049,7 +1066,13 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                             skinTone={faceAnalysis?.dimensions?.skinTone?.score || 0}
                                             waterOil={faceAnalysis?.dimensions?.waterOil?.score || 0}
                                             percentile={rankPercentile}
-                                            avatar={getCharacterImage(faceAnalysis?.overallScore || 0, socialGender)}
+                                            avatar={getCharacterImage({
+                                                score: faceAnalysis?.overallScore || 0,
+                                                skinType: result?.skinProfile?.type || 'combination',
+                                                budget: ipBudget,
+                                                skincareFrequency: ipSkincareFrequency,
+                                                gender: socialGender,
+                                            })}
                                             posterTemplate="/images/poster-template.webp"
                                         />
                                     </div>
