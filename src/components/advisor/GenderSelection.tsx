@@ -39,7 +39,7 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.5 }}
-                    className="relative w-40 h-40 sm:w-64 sm:h-64 flex-shrink-0"
+                    className="relative w-40 h-40 sm:w-auto sm:h-auto sm:flex-[4] sm:aspect-square flex-shrink-0"
                 >
                     <Image
                         src="/images/gender-decoration.png"
@@ -54,7 +54,7 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
                     variants={container}
                     initial="hidden"
                     animate="show"
-                    className="grid w-full gap-3 sm:gap-5"
+                    className="grid w-full sm:flex-[6] gap-3 sm:gap-5"
                 >
                 <m.button
                     variants={item}
