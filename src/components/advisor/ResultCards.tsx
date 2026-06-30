@@ -154,17 +154,17 @@ export default function ResultCards({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className={`relative rounded-[32px] p-6 lg:p-10 border border-[#3d2f25]/10 overflow-hidden ${professionalClassName || ''}`}
+        className={`relative rounded-[32px] p-6 lg:p-10 border border-[#3d2f25]/8 overflow-hidden ${professionalClassName || ''}`}
         style={{
-          background: 'linear-gradient(135deg, #EDE4D6 0%, #E2D5C5 100%)',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.5)',
+          background: '#F5F2ED',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.04)',
           ...professionalStyle,
         }}
       >
         <div className="flex flex-row lg:flex-row justify-between items-stretch lg:items-center gap-4 lg:gap-12 h-full">
           <div className="flex flex-col justify-between items-start w-[52%] lg:w-[30%] shrink-0">
             <div>
-              <div className="bg-white/80 text-[#5c4937] w-[72px] lg:w-[72px] h-[24px] lg:h-[24px] rounded-lg text-xs lg:text-xs font-bold flex items-center justify-center mb-6 lg:mb-6 shadow-sm border border-white/50 tracking-widest relative z-10">
+              <div className="bg-white/70 text-[#5c4937] w-[72px] lg:w-[72px] h-[24px] lg:h-[24px] rounded-lg text-xs lg:text-xs font-bold flex items-center justify-center mb-6 lg:mb-6 shadow-sm border border-[#3d2f25]/8 tracking-widest relative z-10">
                 专业版
               </div>
               <h2 className="text-xl lg:text-2xl font-bold text-[#3d2f25] mb-2 relative z-10">
@@ -186,17 +186,73 @@ export default function ResultCards({
               transition={{ delay: 0.3 }}
               className="p-3 lg:p-4 rounded-xl lg:rounded-2xl flex flex-row lg:flex-col items-center lg:items-start justify-between lg:aspect-[2/3] relative min-h-[48px] lg:min-h-0"
               style={{
-                background: 'linear-gradient(180deg, #E8DFD1 0%, #F0E9DD 100%)',
+                background: '#F0EDE8',
                 boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)',
               }}
             >
               <div className="hidden lg:block absolute inset-0 overflow-hidden rounded-[inherit] pointer-events-none">
                 <div className="absolute -top-3 -right-3 w-8 h-8 bg-blue-500/70 blur-[25px] rounded-full" />
               </div>
-              <img src="/images/vector-decor.svg" alt="" className="block absolute -top-3 -right-3 lg:-top-4 lg:-right-5 w-10 h-10 lg:w-16 lg:h-16 z-30 pointer-events-none" />
-              <img src="/images/vector-decor.svg" alt="" className="block lg:hidden absolute -top-3 right-9 lg:-top-4 lg:right-16 w-6 h-6 lg:w-10 lg:h-10 z-30 pointer-events-none scale-x-[-1]" />
-              <img src="/images/vector-decor.svg" alt="" className="hidden lg:block absolute top-10 -right-4 w-7 h-7 z-10 pointer-events-none" />
-              <img src="/images/vector-decor.svg" alt="" className="block absolute -bottom-2 -left-3 lg:-bottom-5 lg:-left-5 w-8 h-8 lg:w-12 lg:h-12 z-10 pointer-events-none opacity-80" />
+              <div
+                aria-hidden="true"
+                className="block absolute -top-3 -right-3 lg:-top-4 lg:-right-5 w-10 h-10 lg:w-16 lg:h-16 z-30 pointer-events-none"
+                style={{
+                  WebkitMaskImage: 'url(/images/vector-decor.svg)',
+                  maskImage: 'url(/images/vector-decor.svg)',
+                  WebkitMaskSize: 'contain',
+                  maskSize: 'contain',
+                  WebkitMaskRepeat: 'no-repeat',
+                  maskRepeat: 'no-repeat',
+                  WebkitMaskPosition: 'center',
+                  maskPosition: 'center',
+                  backgroundColor: '#F4D03F',
+                }}
+              />
+              <div
+                aria-hidden="true"
+                className="block lg:hidden absolute -top-3 right-9 lg:-top-4 lg:right-16 w-6 h-6 lg:w-10 lg:h-10 z-30 pointer-events-none scale-x-[-1]"
+                style={{
+                  WebkitMaskImage: 'url(/images/vector-decor.svg)',
+                  maskImage: 'url(/images/vector-decor.svg)',
+                  WebkitMaskSize: 'contain',
+                  maskSize: 'contain',
+                  WebkitMaskRepeat: 'no-repeat',
+                  maskRepeat: 'no-repeat',
+                  WebkitMaskPosition: 'center',
+                  maskPosition: 'center',
+                  backgroundColor: '#F4D03F',
+                }}
+              />
+              <div
+                aria-hidden="true"
+                className="hidden lg:block absolute top-10 -right-4 w-7 h-7 z-10 pointer-events-none"
+                style={{
+                  WebkitMaskImage: 'url(/images/vector-decor.svg)',
+                  maskImage: 'url(/images/vector-decor.svg)',
+                  WebkitMaskSize: 'contain',
+                  maskSize: 'contain',
+                  WebkitMaskRepeat: 'no-repeat',
+                  maskRepeat: 'no-repeat',
+                  WebkitMaskPosition: 'center',
+                  maskPosition: 'center',
+                  backgroundColor: '#C9877A',
+                }}
+              />
+              <div
+                aria-hidden="true"
+                className="block absolute -bottom-2 -left-3 lg:-bottom-5 lg:-left-5 w-8 h-8 lg:w-12 lg:h-12 z-10 pointer-events-none opacity-80"
+                style={{
+                  WebkitMaskImage: 'url(/images/vector-decor.svg)',
+                  maskImage: 'url(/images/vector-decor.svg)',
+                  WebkitMaskSize: 'contain',
+                  maskSize: 'contain',
+                  WebkitMaskRepeat: 'no-repeat',
+                  maskRepeat: 'no-repeat',
+                  WebkitMaskPosition: 'center',
+                  maskPosition: 'center',
+                  backgroundColor: '#C9A86C',
+                }}
+              />
 
               <div className="flex flex-row lg:flex-col items-center lg:items-start gap-2 lg:justify-between w-full h-full relative z-20">
                 <p className="text-[11px] lg:text-xs text-[#7a6552] font-medium shrink-0">综合评分</p>
@@ -216,8 +272,8 @@ export default function ResultCards({
               transition={{ delay: 0.35 }}
               className="p-3 lg:p-4 rounded-xl lg:rounded-2xl flex flex-row lg:flex-col items-center lg:items-start justify-between lg:aspect-[2/3] min-h-[48px] lg:min-h-0 relative overflow-hidden"
               style={{
-                background: 'linear-gradient(180deg, #F0E4D8 0%, #FFF7EC 100%)',
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.7)',
+                background: '#EBE8E2',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)',
               }}
             >
               <div className="flex flex-row lg:flex-col items-center lg:items-start gap-2 lg:justify-between w-full h-full relative z-20">
@@ -238,8 +294,8 @@ export default function ResultCards({
               transition={{ delay: 0.4 }}
               className="p-3 lg:p-4 rounded-xl lg:rounded-2xl flex flex-row lg:flex-col items-center lg:items-start justify-between lg:aspect-[2/3] min-h-[48px] lg:min-h-0 relative overflow-hidden"
               style={{
-                background: 'linear-gradient(180deg, #E8E2D6 0%, #F5F0E6 100%)',
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5)',
+                background: '#E6E2DA',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)',
               }}
             >
               <div className="flex flex-row lg:flex-col items-center lg:items-start gap-2 lg:justify-between w-full h-full relative z-20">
@@ -254,8 +310,8 @@ export default function ResultCards({
             <div
               className="hidden lg:flex p-3 lg:p-4 rounded-xl lg:rounded-2xl flex-row lg:flex-col items-center lg:items-start justify-between lg:aspect-[2/3] min-h-[48px] lg:min-h-0 relative overflow-hidden"
               style={{
-                background: 'linear-gradient(180deg, #E8E2D6 0%, #F5F0E6 100%)',
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.4)',
+                background: '#DDD8CE',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)',
               }}
             >
               <div className="flex flex-row lg:flex-col items-center lg:items-start gap-2 lg:justify-between w-full h-full relative z-20">
