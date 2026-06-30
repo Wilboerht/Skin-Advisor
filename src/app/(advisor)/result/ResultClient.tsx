@@ -890,14 +890,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                     </div>
                                                 )}
 
-                                                {/* 估算值提示：当无真实实验室仪器数据时，标注为 AI 视觉估算 */}
-                                                {!faceAnalysis?.labAnalysis && (
-                                                    <div className="mb-4 px-4 py-3 rounded-lg bg-amber-50/80 border border-amber-200/60 text-xs text-amber-800 leading-relaxed flex items-start gap-2.5">
-                                                        <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                                                        <span>以下数据为基于 AI 视觉分析的<strong>估算值</strong>，非专业仪器检测结果，仅供参考。</span>
-                                                    </div>
-                                                )}
-
                                                 {/* Table Header Row (Desktop only) */}
                                                 <div className="hidden md:grid grid-cols-12 text-[11px] text-[#8c7a6b] border-b border-[#3d2f25]/10 pb-2 mb-2 font-mono uppercase tracking-wider">
                                                     <div className="col-span-5">检测指标 (Parameter)</div>
