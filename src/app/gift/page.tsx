@@ -235,7 +235,7 @@ export default function GiftPage() {
               {/* 左侧人物 IP */}
               <div className="relative w-full max-w-[260px] md:max-w-[300px] aspect-[3/4] mx-auto">
                 <Image
-                  src="/images/character/84-87/84-87_female.png"
+                  src="/images/character/luxury/luxury_female.png"
                   alt="NIHPLOD 肌肤形象"
                   fill
                   className="object-contain"
@@ -356,7 +356,7 @@ export default function GiftPage() {
               {/* 左侧人物 IP */}
               <div className="relative w-full max-w-[260px] md:max-w-[300px] aspect-[3/4] mx-auto">
                 <Image
-                  src="/images/character/84-87/84-87_female.png"
+                  src="/images/character/luxury/luxury_female.png"
                   alt="NIHPLOD 肌肤形象"
                   fill
                   className="object-contain"

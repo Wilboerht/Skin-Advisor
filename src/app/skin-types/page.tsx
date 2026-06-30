@@ -7,7 +7,7 @@ import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
 
 export const metadata: Metadata = {
   title: "肌肤测试结果类型 | NIHPLOD",
-  description: "探索10种NIHPLOD肌肤测试结果类型，从进阶狂魔到御龄主宰。",
+  description: "探索8种NIHPLOD肌肤形象类型，从敏敏派到奢华派。",
 };
 
 export default function ResultIndexPage() {
@@ -28,7 +28,7 @@ export default function ResultIndexPage() {
             className="text-[11px] tracking-[0.25em] text-[#8B7355] uppercase mb-5 opacity-0 animate-fade-in-up"
             style={{ animationFillMode: "forwards" }}
           >
-            10 Skin Types
+            8 Skin Types
           </p>
           <h1
             className="text-2xl md:text-3xl font-serif text-[#1A1A1A] mb-5 opacity-0 animate-fade-in-up"
