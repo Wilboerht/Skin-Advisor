@@ -51,11 +51,11 @@ export function ScientificBarChart({ dimensions, size = 300, activeDimension, on
     })), [dimensions]);
 
     if (!mounted) {
-        return <div className="w-full relative" style={{ height: "480px" }} />;
+        return <div className="w-full relative mb-6" style={{ height: "480px" }} />;
     }
 
     return (
-        <div className="w-full relative" style={{ height: "480px" }}>
+        <div className="w-full relative mb-6" style={{ height: "480px" }}>
             <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                     data={chartData}
