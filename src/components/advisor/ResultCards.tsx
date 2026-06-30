@@ -91,64 +91,53 @@ export default function ResultCards({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="relative rounded-[32px] p-6 lg:p-10"
+        className="relative rounded-[20px] lg:rounded-[24px] p-6 lg:p-8 border border-[#3d2f25]/8 overflow-visible"
         style={{
-          background: 'linear-gradient(135deg, rgba(255, 248, 235, 0.95) 0%, rgba(245, 230, 205, 0.9) 100%)',
-          boxShadow: '0 10px 40px -10px rgba(0,0,0,0.1), inset 0 2px 0 rgba(255,255,255,0.7)',
+          background: '#F5F2ED',
         }}
       >
-        <div className="flex items-start justify-between gap-4 lg:gap-10 relative z-10 w-full">
+        <div className="flex items-end justify-between gap-4 lg:gap-8 relative z-10 w-full">
           {/* Left: Text Content */}
-          <div className="flex flex-col z-10 flex-1 pt-[2px] min-w-0">
-            {/* Tag */}
-            <div className="flex relative items-center justify-center w-[72px] h-[24px] mb-6">
-              <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-[#e6d0a8] via-[#f5dfb8] to-[#d4b483] shadow-sm" />
-              <div className="absolute inset-[1px] rounded-lg bg-white/20 backdrop-blur-[1px] border border-white/30" />
-              <span className="relative z-10 text-[#3d2f25] text-xs font-bold tracking-widest">报告概览</span>
-            </div>
+          <div className="flex flex-col z-10 flex-1 pt-[2px] min-w-0 pb-2">
+            {/* Greeting */}
+            <p className="text-[#a89582] text-xs lg:text-sm leading-none mb-4 lg:mb-5">
+              亲爱的 <span className="text-[#8c7a6b]">{nickname}</span>
+            </p>
 
-            <div className="hidden lg:flex h-[24px] items-center mb-6">
-              <p className="text-[#a89582] text-sm leading-none">亲爱的「{nickname}」 ：</p>
-            </div>
-
-            <h2 className="text-xl lg:text-3xl font-bold text-[#2d2a26] leading-snug tracking-tight lg:tracking-normal mb-5 lg:mb-4 mt-0">
-              你的素颜评分超越了<br />
-              全国 <span className="text-2xl lg:text-4xl px-0.5">{rankPercentile}%</span> 的用户
+            <h2 className="text-xl lg:text-[28px] font-bold text-[#3d2f25] leading-snug tracking-tight mb-2 lg:mb-3">
+              你的肌肤类型是「{skinTypeName}」
             </h2>
 
-            <p className="text-[#8c7a6b] text-xs lg:text-sm leading-relaxed tracking-tight lg:tracking-normal mb-6">
+            <h3 className="text-xl lg:text-[28px] font-bold text-[#3d2f25] leading-snug tracking-tight mb-4 lg:mb-5">
+              素颜评分超越了全国 <span className="text-xl lg:text-[28px] px-0.5">{rankPercentile}%</span> 的用户
+            </h3>
+
+            <p className="text-[#8c7a6b] text-xs lg:text-sm leading-relaxed mb-5 lg:mb-6 max-w-[95%] lg:max-w-[420px]">
               {summary || '整体状态极佳，肌肤屏障健康，水油平衡度完美，仅在眼周区域存在轻微色素沉积。'}
             </p>
 
             {/* Share Button */}
             <div className="flex items-center gap-4">
               <motion.button
-                whileHover={{ scale: 1.03, y: -1 }}
-                whileTap={{ scale: 0.97 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={onShare}
-                className="relative focus:outline-none flex items-center justify-center h-[34px] sm:h-[42px] px-5 sm:px-8 rounded-full shadow-[0_4px_12px_-3px_rgba(150,110,60,0.18)] border border-[#e6d0a8]/50 group transition-all"
-                style={{
-                  background: 'linear-gradient(135deg, #fdf6e9 0%, #f5dfb8 50%, #e6d0a8 100%)',
-                }}
+                className="inline-flex items-center justify-center gap-2 h-[34px] sm:h-[40px] px-4 sm:px-6 rounded-full border border-[#8c7a6b]/40 bg-transparent text-[#5c4937] text-xs sm:text-[13px] font-medium transition-colors hover:bg-[#3d2f25]/5"
               >
-                <div className="absolute inset-0 rounded-full bg-gradient-to-t from-transparent via-transparent to-white/30 pointer-events-none" />
-                <div className="absolute inset-[1px] rounded-full shadow-[inset_0_1px_1px_rgba(255,255,255,0.7)] pointer-events-none" />
-                <span className="relative z-10 text-[#5e4b3c] text-xs sm:text-[12px] font-bold flex items-center justify-center gap-2 tracking-wide">
-                  <Share2 className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#7a6552] stroke-[2.5]" />
-                  分享我的素颜证书
-                </span>
+                <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#8c7a6b] stroke-[2]" />
+                分享我的素颜证书
               </motion.button>
             </div>
           </div>
 
           {/* Right: Character IP Image */}
-          <div className="shrink-0 flex items-end">
+          <div className="shrink-0 flex items-end -mb-6 lg:-mb-8 -mr-2 lg:-mr-4">
             <Image
               src={characterImage}
               alt={skinTypeName}
-              width={200}
-              height={200}
-              className="w-[120px] h-[120px] lg:w-[180px] lg:h-[180px] object-contain object-top"
+              width={240}
+              height={240}
+              className="w-[140px] h-[140px] sm:w-[180px] sm:h-[180px] lg:w-[240px] lg:h-[240px] object-contain object-bottom"
               priority
               onError={(e) => {
                 // 男性图片缺失时降级为女性图片
