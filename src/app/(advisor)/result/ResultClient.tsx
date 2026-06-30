@@ -120,9 +120,11 @@ function renderLabRow(param: string, value: string, ref: string, status: string)
                 {ref}
             </div>
             <div className="sm:col-span-2 text-left sm:text-right text-[11px] font-light">
-                <span className={isGood ? 'text-[#4A4A4A]' : 'text-[#c45a4a]'}>
-                    {status} {isGood ? '' : '▲'}
-                </span>
+                {status ? (
+                    <span className={isGood ? 'text-[#4A4A4A]' : 'text-[#c45a4a]'}>
+                        {status} {isGood ? '' : '▲'}
+                    </span>
+                ) : null}
             </div>
         </div>
     );
@@ -918,7 +920,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                             <span className="font-semibold text-[#3d2f25]">* AI ESTIMATE:</span> 上述数值均由 AI 算法基于您的面部图像特征（纹理、色泽、对比度）反演推算得出，<span className="border-b border-[#3d2f25]/20 text-[#3d2f25]">并非物理探头实测数据</span>。
                                                         </p>
                                                         <p>
-                                                            例如：TEWL（经表皮失水率）是根据皮肤屏障受损程度的视觉表现估算而来。本报告仅作护肤参考，不可替代医疗诊断。
+                                                            例如：皱纹严重度分级（Wrinkle Severity）是根据面部纹理与阴影的视觉表现估算而来。本报告仅作护肤参考，不可替代医疗诊断。
                                                         </p>
                                                     </div>
                                                 </div>
