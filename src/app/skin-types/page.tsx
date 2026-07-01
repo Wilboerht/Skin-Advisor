@@ -81,8 +81,8 @@ export default function ResultIndexPage() {
                 />
               </div>
               <div className="flex-1 min-w-0 text-center sm:text-left">
-                <p className="text-[15px] font-medium text-[#1A1A1A] mb-1">肌智派送好礼</p>
-                <p className="text-[13px] text-[#5E5E5E]/80 leading-relaxed">
+                <p className="text-base font-medium text-[#1A1A1A] mb-1">肌智派送好礼</p>
+                <p className="text-sm text-[#5E5E5E]/80 leading-relaxed">
                   分享你的肌肤形象类型，参与 NIHPLOD 限定礼遇活动
                 </p>
               </div>
