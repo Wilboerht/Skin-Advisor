@@ -133,8 +133,8 @@ export default function ResultIndexPage() {
                 <h3 className="text-xl md:text-2xl font-serif text-[#1A1A1A] mb-2 tracking-wide">
                   肌智派送好礼
                 </h3>
-                <p className="text-sm text-[#5E5E5E] font-light leading-relaxed mb-4">
-                  测肤完成后参与抽奖，赢取 NIHPLOD 限定护肤礼遇
+                <p className="text-[15px] md:text-base text-[#5E5E5E] font-light leading-relaxed mb-4">
+                  完成您的专属肌肤诊断后，即可参与 NIHPLOD 限定抽奖——甄选护肤好礼，静候与您相遇。
                 </p>
                 <span className="inline-flex items-center gap-2 text-sm font-medium tracking-[0.15em] text-[#A0784C] group-hover:text-[#8B6840] transition-colors duration-300">
                   立即参与
