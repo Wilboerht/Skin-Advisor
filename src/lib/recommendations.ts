@@ -115,7 +115,7 @@ function calculateScore(
         const relatedBenefits = CONCERN_TO_BENEFITS[concern] || [];
         // Support also mapping from old generic names if needed
         relatedBenefits.forEach((benefit) => {
-            if (productBenefits.some((b) => b.includes(benefit))) {
+            if (productBenefits.some((b) => b === benefit)) {
                 score += 30;
                 if (!matchedBenefits.includes(benefit)) {
                     matchedBenefits.push(benefit);
@@ -128,7 +128,7 @@ function calculateScore(
     if (answers.ageRange) {
         const ageBenefits = AGE_TO_BENEFITS[answers.ageRange] || [];
         ageBenefits.forEach((benefit) => {
-            if (productBenefits.some((b) => b.includes(benefit))) {
+            if (productBenefits.some((b) => b === benefit)) {
                 score += 25;
                 if (!matchedBenefits.includes(benefit)) {
                     matchedBenefits.push(benefit);
@@ -141,7 +141,7 @@ function calculateScore(
     if (skinType) {
         const skinBenefits = SKINTYPE_TO_BENEFITS[skinType] || [];
         skinBenefits.forEach((benefit) => {
-            if (productBenefits.some((b) => b.includes(benefit))) {
+            if (productBenefits.some((b) => b === benefit)) {
                 score += 20;
                 if (!matchedBenefits.includes(benefit)) {
                     matchedBenefits.push(benefit);
@@ -237,6 +237,10 @@ function generateSmartReason(
             `主打${benefitText}，适合您的肤质`,
             `富含${benefitText}成分，改善肌肤状态`,
             `为您精选：具备${benefitText}效果`,
+            `${benefitText}双重呵护，精准匹配`,
+            `专研${benefitText}配方，科学护肤`,
+            `${benefitText}协同作用，由内而外`,
+            `核心${benefitText}，回应肌肤诉求`,
         ];
         return templates[index % templates.length];
     }

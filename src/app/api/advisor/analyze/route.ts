@@ -281,13 +281,21 @@ export async function POST(request: NextRequest) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const fallbackFace = fallbackAnalysis(answers as any);
 
-            // 补全产品推荐 (DB)
+            // 补全产品推荐 (DB) — 与正式 AI 路径一致：先走 IP 匹配 + 候选池
             const fallbackSkinType = fallbackFace.skinType.type;
             const enrichedAnswers = { ...answers, skinType: fallbackSkinType };
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const concerns = identifyConcerns(enrichedAnswers as any, fallbackFace);
+            const personaKey = matchCharacterIP({
+                score: fallbackFace.overallScore ?? 0,
+                skinType: fallbackSkinType,
+                budget: answers.budget,
+                skincareFrequency: answers.skincareFrequency,
+            }).key;
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const products = await recommendProducts(enrichedAnswers as any, concerns);
+            const candidateProducts = await getCandidateProducts(enrichedAnswers as any, concerns, 3, personaKey);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const products = await recommendProducts(enrichedAnswers as any, concerns, candidateProducts, 3, personaKey);
 
             // 构造符合 ComprehensiveResult 结构的数据
             const finalResult = {
@@ -308,12 +316,7 @@ export async function POST(request: NextRequest) {
                 faceAnalysis: fallbackFace,
                 products: products,
                 dataSource: "questionnaire" as const,
-                persona: matchCharacterIP({
-                    score: fallbackFace.overallScore ?? 0,
-                    skinType: fallbackSkinType,
-                    budget: answers.budget,
-                    skincareFrequency: answers.skincareFrequency,
-                }).key,
+                persona: personaKey,
                 userLocation: geoLocation,
                 nickname: nickname || "护肤达人"
             };

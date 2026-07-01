@@ -71,8 +71,8 @@ export function ProductRecommendationSection({
         const MAX_HEURISTIC_SCORE = 150;
 
         const processed = products.map(product => {
-            const baseScore = Math.max(0, product.score ?? 50);
-            const matchScore = Math.min(99, Math.round((baseScore / MAX_HEURISTIC_SCORE) * 100));
+            const baseScore = product.score ?? 0;
+            const matchScore = baseScore > 0 ? Math.min(99, Math.round((baseScore / MAX_HEURISTIC_SCORE) * 100)) : 0;
 
             let dimensionLink: ProductCardData['dimensionLink'] = null;
             if (faceAnalysis?.dimensions) {

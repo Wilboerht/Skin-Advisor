@@ -145,12 +145,6 @@ export function ProductCard({
                         <ShoppingCart className="w-12 h-12" />
                     </div>
                 )}
-                {/* 补充推荐标签 */}
-                {product.source === "algorithm" && (
-                    <span className="absolute top-3 left-3 z-10 px-2 py-0.5 text-[10px] bg-[#3D4430]/90 text-white rounded-full font-medium shadow-sm">
-                        基于测肤补充
-                    </span>
-                )}
             </div>
 
             {/* 内容区域 */}
