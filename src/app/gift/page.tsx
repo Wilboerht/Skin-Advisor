@@ -171,9 +171,6 @@ export default function GiftPage() {
         {/* Hero */}
       <section className="relative pt-24 md:pt-40 pb-16 md:pb-32 px-6 md:px-12 lg:px-20">
         <div className="relative z-10 max-w-5xl mx-auto text-center">
-          <p className="text-[11px] tracking-[0.25em] text-[#8B7355] uppercase mb-5 opacity-0 animate-fade-in-up" style={{ animationFillMode: "forwards" }}>
-            NIHPLOD Gift Campaign
-          </p>
           <h1 className="text-2xl md:text-3xl font-serif text-[#1A1A1A] mb-5 opacity-0 animate-fade-in-up" style={{ animationFillMode: "forwards" }}>
             肌智派送好礼
           </h1>
