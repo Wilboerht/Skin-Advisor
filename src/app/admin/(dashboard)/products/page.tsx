@@ -6,6 +6,27 @@ import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
+/** Normalize image path: ensure it starts with "/" (prepend "/uploads/" if just a filename) */
+function normalizeImagePath(img: unknown): string {
+    if (typeof img !== "string" || !img.trim()) return "";
+    // Already absolute URL
+    if (/^https?:\/\//.test(img)) return img;
+    // Already a proper relative path
+    if (img.startsWith("/")) return img;
+    // Just a filename — prepend /uploads/
+    return `/uploads/${img}`;
+}
+
+function normalizeImages(images: unknown): string[] {
+    if (Array.isArray(images)) {
+        return images.map(normalizeImagePath).filter(Boolean);
+    }
+    if (typeof images === "string" && images.trim()) {
+        return [normalizeImagePath(images)];
+    }
+    return [];
+}
+
 export default async function ProductsPage() {
     const admin = await verifyAdminSession();
     if (!admin) {
@@ -19,14 +40,14 @@ export default async function ProductsPage() {
         take: 1000
     });
 
-    // Serialize for client component
+    // Serialize for client component — normalize image paths
     const serializedProducts = products.map(p => ({
         id: p.id,
         name: p.name,
         category: p.category,
         price: p.price,
-        image: p.image,
-        images: Array.isArray(p.images) ? p.images as string[] : (p.images ? [String(p.images)] : []),
+        image: normalizeImagePath(p.image),
+        images: normalizeImages(p.images),
         description: p.description,
         howToUse: p.howToUse,
         keyIngredients: Array.isArray(p.keyIngredients) ? p.keyIngredients as string[] : [],

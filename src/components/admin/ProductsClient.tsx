@@ -75,20 +75,22 @@ const ProductRow = memo(function ProductRow({
             </td>
             <td className="px-4 py-4 whitespace-nowrap align-middle">
                 <div className="relative h-12 w-12 overflow-hidden rounded-lg border border-slate-100 bg-slate-50 mx-auto sm:mx-0">
-                    {product.image ? (
+                    {product.image && (product.image.startsWith("/") || product.image.startsWith("http")) ? (
                         <Image
                             src={product.image}
                             alt={product.name}
                             width={48}
                             height={48}
                             className="h-full w-full object-cover"
+                            unoptimized={product.image.startsWith("/")}
                             onError={(e) => {
                                 (e.target as HTMLImageElement).style.display = 'none';
+                                const fallback = (e.target as HTMLImageElement).parentElement?.querySelector('.img-fallback');
+                                if (fallback) (fallback as HTMLElement).style.display = 'flex';
                             }}
                         />
-                    ) : (
-                        <div className="h-full w-full bg-slate-100 flex items-center justify-center text-slate-300 text-xs">无图</div>
-                    )}
+                    ) : null}
+                    <div className={`img-fallback h-full w-full bg-slate-100 flex items-center justify-center text-slate-300 text-xs ${product.image && (product.image.startsWith("/") || product.image.startsWith("http")) ? 'hidden' : 'flex'}`}>无图</div>
                 </div>
             </td>
             <td className="px-4 py-4 align-middle">

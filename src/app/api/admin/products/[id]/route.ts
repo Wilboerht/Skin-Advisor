@@ -73,13 +73,20 @@ export const PUT = withAdminAuth(async (
             return NextResponse.json({ error: "Invalid image URL (max 500 chars)" }, { status: 400 });
         }
         if (updateData.image !== undefined) {
-            try {
-                const imageUrl = new URL(updateData.image);
-                if (!['http:', 'https:'].includes(imageUrl.protocol)) {
-                    return NextResponse.json({ error: "Invalid image URL scheme (must be http or https)" }, { status: 400 });
+            const isAbsoluteUrl = /^https?:\/\//.test(updateData.image);
+            const isRelativePath = (updateData.image as string).startsWith("/");
+            if (!isAbsoluteUrl && !isRelativePath) {
+                return NextResponse.json({ error: "Invalid image URL format (must be absolute URL or relative path starting with /)" }, { status: 400 });
+            }
+            if (isAbsoluteUrl) {
+                try {
+                    const imageUrl = new URL(updateData.image as string);
+                    if (!['http:', 'https:'].includes(imageUrl.protocol)) {
+                        return NextResponse.json({ error: "Invalid image URL scheme (must be http or https)" }, { status: 400 });
+                    }
+                } catch {
+                    return NextResponse.json({ error: "Invalid image URL format" }, { status: 400 });
                 }
-            } catch {
-                return NextResponse.json({ error: "Invalid image URL format" }, { status: 400 });
             }
         }
         // description 字段在 schema 中为 String（非 null），拒绝 null 值
@@ -102,13 +109,21 @@ export const PUT = withAdminAuth(async (
                 return NextResponse.json({ error: "Each image must be a string URL (max 500 chars)" }, { status: 400 });
             }
             for (const img of updateData.images) {
-                try {
-                    const imgUrl = new URL(img as string);
-                    if (!['http:', 'https:'].includes(imgUrl.protocol)) {
-                        return NextResponse.json({ error: "Invalid image URL scheme (must be http or https)" }, { status: 400 });
+                const imgStr = img as string;
+                const isAbsolute = /^https?:\/\//.test(imgStr);
+                const isRelative = imgStr.startsWith("/");
+                if (!isAbsolute && !isRelative) {
+                    return NextResponse.json({ error: `Invalid image URL format: "${imgStr}" (must be absolute URL or relative path starting with /)` }, { status: 400 });
+                }
+                if (isAbsolute) {
+                    try {
+                        const imgUrl = new URL(imgStr);
+                        if (!['http:', 'https:'].includes(imgUrl.protocol)) {
+                            return NextResponse.json({ error: "Invalid image URL scheme (must be http or https)" }, { status: 400 });
+                        }
+                    } catch {
+                        return NextResponse.json({ error: "Invalid image URL format" }, { status: 400 });
                     }
-                } catch {
-                    return NextResponse.json({ error: "Invalid image URL format" }, { status: 400 });
                 }
             }
         }

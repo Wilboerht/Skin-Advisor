@@ -60,14 +60,21 @@ export const POST = withAdminAuth(async (request, { admin }) => {
         if (!body.image || typeof body.image !== "string" || body.image.length > 500) {
             return NextResponse.json({ error: "Invalid image URL (required, max 500 chars)" }, { status: 400 });
         }
-        // Validate image URL format
-        try {
-            const imageUrl = new URL(body.image);
-            if (!['http:', 'https:'].includes(imageUrl.protocol)) {
-                return NextResponse.json({ error: "Invalid image URL scheme (must be http or https)" }, { status: 400 });
+        // Validate image URL format: allow absolute URLs (http/https) and same-origin relative paths (/uploads/...)
+        const isAbsoluteUrl = /^https?:\/\//.test(body.image);
+        const isRelativePath = body.image.startsWith("/");
+        if (!isAbsoluteUrl && !isRelativePath) {
+            return NextResponse.json({ error: "Invalid image URL format (must be absolute URL or relative path starting with /)" }, { status: 400 });
+        }
+        if (isAbsoluteUrl) {
+            try {
+                const imageUrl = new URL(body.image);
+                if (!['http:', 'https:'].includes(imageUrl.protocol)) {
+                    return NextResponse.json({ error: "Invalid image URL scheme (must be http or https)" }, { status: 400 });
+                }
+            } catch {
+                return NextResponse.json({ error: "Invalid image URL format" }, { status: 400 });
             }
-        } catch {
-            return NextResponse.json({ error: "Invalid image URL format" }, { status: 400 });
         }
         if (body.description && typeof body.description === "string" && body.description.length > 5000) {
             return NextResponse.json({ error: "Description too long (max 5000 chars)" }, { status: 400 });
@@ -84,15 +91,23 @@ export const POST = withAdminAuth(async (request, { admin }) => {
             if (!body.images.every((img: unknown) => typeof img === "string" && (img as string).length <= 500)) {
                 return NextResponse.json({ error: "Each image must be a string URL (max 500 chars)" }, { status: 400 });
             }
-            // Validate each image URL format
+            // Validate each image URL format: allow absolute URLs and same-origin relative paths
             for (const img of body.images) {
-                try {
-                    const imgUrl = new URL(img as string);
-                    if (!['http:', 'https:'].includes(imgUrl.protocol)) {
-                        return NextResponse.json({ error: "Invalid image URL scheme (must be http or https)" }, { status: 400 });
+                const imgStr = img as string;
+                const isAbsolute = /^https?:\/\//.test(imgStr);
+                const isRelative = imgStr.startsWith("/");
+                if (!isAbsolute && !isRelative) {
+                    return NextResponse.json({ error: `Invalid image URL format: "${imgStr}" (must be absolute URL or relative path starting with /)` }, { status: 400 });
+                }
+                if (isAbsolute) {
+                    try {
+                        const imgUrl = new URL(imgStr);
+                        if (!['http:', 'https:'].includes(imgUrl.protocol)) {
+                            return NextResponse.json({ error: "Invalid image URL scheme (must be http or https)" }, { status: 400 });
+                        }
+                    } catch {
+                        return NextResponse.json({ error: "Invalid image URL format" }, { status: 400 });
                     }
-                } catch {
-                    return NextResponse.json({ error: "Invalid image URL format" }, { status: 400 });
                 }
             }
         }
