@@ -4,10 +4,22 @@ import Image from "next/image";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { skinTypes, routeOrder } from "@/lib/result-content";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
+import { BreadcrumbSchema } from "@/components/website/StructuredData";
+
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://nihplod.cn";
 
 export const metadata: Metadata = {
-  title: "肌肤测试结果类型 | NIHPLOD",
-  description: "探索8种NIHPLOD肌肤形象类型，从敏敏派到奢华派。",
+  title: "8 种肌肤形象类型详解 | NIHPLOD 肤质分类",
+  description:
+    "探索 NIHPLOD 8 种肌肤形象类型（IP Types）——从敏敏派到守护派，每种肤质都有完整的护理方案与产品推荐。",
+  keywords: ["肤质类型", "肌肤测试", "NIHPLOD", "敏感肌", "油性皮肤", "干性皮肤", "混合肌"],
+  alternates: { canonical: "/skin-types" },
+  openGraph: {
+    title: "8 种肌肤形象类型详解 | NIHPLOD 肤质分类",
+    description: "探索 NIHPLOD 8 种肌肤形象类型——从敏敏派到守护派。",
+    type: "website",
+    locale: "zh_CN",
+  },
 };
 
 export default function ResultIndexPage() {
@@ -17,6 +29,12 @@ export default function ResultIndexPage() {
 
   return (
     <main className="relative min-h-screen text-[#1A1A1A] bg-[#F8F7F3]">
+      <BreadcrumbSchema
+        items={[
+          { name: "首页", url: BASE_URL },
+          { name: "肌肤类型", url: `${BASE_URL}/skin-types` },
+        ]}
+      />
       {/* 顶部导航 */}
       <WebsiteNavbar />
 

@@ -1,0 +1,41 @@
+# NIHPLOD — AI 护肤顾问
+> 基于 AI 深度学习面部识别技术的专业护肤分析平台，支持 8 种 NIHPLOD 肌肤形象类型（IP Types）的精准检测与个性化护肤方案推荐。
+
+## 核心页面
+- [首页 · AI 护肤分析](https://nihplod.cn): 开始 AI 肤质检测，上传自拍或填写问卷，获得专业护肤报告与产品推荐
+- [8 大肤质类型](https://nihplod.cn/skin-types): NIHPLOD 肌肤形象类型全览，从敏敏派到守护派，每一种肤质都有完整的护理体系
+  - [敏敏派 — 敏感型](https://nihplod.cn/skin-types/minminpai): 敏感型肤质详解，屏障修护与舒缓护理方案
+  - [极简派 — 健康型](https://nihplod.cn/skin-types/jijianpai): 健康型肤质详解，基础维护与防老化策略
+  - [社会派 — 暗沉型](https://nihplod.cn/skin-types/shehuapai): 暗沉型肤质详解，抗氧化与提亮方案
+  - [冻龄派 — 熟龄型](https://nihplod.cn/skin-types/donglingpai): 熟龄型肤质详解，抗皱紧致与深层滋养
+  - [沙漠派 — 缺水型](https://nihplod.cn/skin-types/shamopai): 缺水型肤质详解，深层补水和锁水方案
+  - [油条派 — 油性型](https://nihplod.cn/skin-types/youtiaopai): 油性型肤质详解，控油平衡与毛孔护理
+  - [混合派 — 混合型](https://nihplod.cn/skin-types/hunhepai): 混合型肤质详解，分区护理与平衡调节
+  - [守护派 — 问题型](https://nihplod.cn/skin-types/shouhupai): 问题型肤质详解，痘痘肌与屏障修复方案
+- [顾问服务](https://nihplod.cn/services): 一对一专属护肤顾问服务，微信扫码咨询
+- [常见问题](https://nihplod.cn/faq): AI 测肤准确性、使用方法、数据隐私等 FAQ
+- [肌智派送好礼](https://nihplod.cn/gift): 用户活动与福利
+
+## NIHPLOD 肤质分类体系
+NIHPLOD 将肤质分为 8 种"肌肤形象类型"（IP Types），基于 AI 对 68 个面部特征点的深度学习检测：
+1. **敏敏派** — 敏感脆弱型肌肤，易红、易刺激
+2. **极简派** — 相对健康的肌肤状态，维护为主
+3. **社会派** — 肤色暗沉、光泽不足
+4. **冻龄派** — 已有细纹、松弛迹象的熟龄肌
+5. **沙漠派** — 缺水缺水，干燥起皮
+6. **油条派** — 油脂分泌旺盛，毛孔粗大
+7. **混合派** — T 区油两颊干的混合型
+8. **守护派** — 痘痘、炎症等问题型肌肤
+
+## 核心概念
+- 基于 68 点面部特征点的 AI 深度学习检测
+- 涵盖肤质、肤色、毛孔、皱纹、敏感度等多维度分析
+- 结合环境因素（气候、季节、地区）的个性化推荐
+- 产品推荐基于成分 + 肤质匹配的智能规则引擎
+- 所有用户数据加密存储，到期自动清理
+
+## 技术说明
+- Next.js 16 App Router 全栈架构
+- PostgreSQL + Prisma ORM 数据持久化
+- OpenAI / Azure AI 驱动的智能分析
+- face-api.js 68 点面部特征检测

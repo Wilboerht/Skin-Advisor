@@ -97,6 +97,40 @@ export async function proxy(request: NextRequest) {
     if (!response.headers.has("X-Frame-Options")) {
         response.headers.set("X-Frame-Options", "DENY");
     }
+    if (!response.headers.has("Referrer-Policy")) {
+        response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+    }
+
+    // ==================== 缓存控制 ====================
+    // 静态资源长期缓存
+    if (
+        pathname.match(/\.(jpg|jpeg|png|webp|avif|gif|svg|ico|woff2?|ttf|eot|css)$/) ||
+        pathname.startsWith("/_next/static/") ||
+        pathname.startsWith("/fonts/") ||
+        pathname.startsWith("/images/") ||
+        pathname.startsWith("/models/")
+    ) {
+        response.headers.set("Cache-Control", "public, max-age=31536000, immutable");
+    }
+
+    // API 路由不缓存
+    if (pathname.startsWith("/api/") && !response.headers.has("Cache-Control")) {
+        response.headers.set("Cache-Control", "no-store, private");
+    }
+
+    // 公共内容页允许 CDN 短期缓存（不含 admin 和 api）
+    if (
+        !pathname.startsWith("/api/") &&
+        !pathname.startsWith("/admin/") &&
+        !pathname.startsWith("/_next/") &&
+        !pathname.match(/\.\w+$/) &&
+        !response.headers.has("Cache-Control")
+    ) {
+        response.headers.set(
+            "Cache-Control",
+            "public, max-age=300, s-maxage=600, stale-while-revalidate=86400"
+        );
+    }
 
     return response;
 }

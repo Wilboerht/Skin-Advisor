@@ -56,8 +56,8 @@ export async function generateMetadata(props: {
 }): Promise<Metadata> {
     const params = await props.params;
     const id = params.id;
-    let title = "我的专业护肤报告 | MySkinToday Technology";
-    const description = "基于 AI 的深度肤质分析，为您定制专属护肤方案。";
+    let title = "我的专业护肤报告";
+    let description = "基于 AI 的深度肤质分析，为您定制专属护肤方案。";
     let ogImage = "/images/share-default.jpg";
 
     const user = await getSession();
@@ -76,14 +76,15 @@ export async function generateMetadata(props: {
                 const score = (faceAnalysis?.overallScore as number | undefined) || (skinAnalysis?.score as number | undefined) || 85;
                 const skinType = (skinAnalysis?.typeLabel as string | undefined) || result.skinProfile?.typeLabel || "未知肤质";
 
-                const params = new URLSearchParams();
-                params.set("id", id);
-                params.set("score", score.toString());
-                params.set("skinType", skinType);
-                params.set("date", new Date().toISOString().split('T')[0]);
+                const imgParams = new URLSearchParams();
+                imgParams.set("id", id);
+                imgParams.set("score", score.toString());
+                imgParams.set("skinType", skinType);
+                imgParams.set("date", new Date().toISOString().split('T')[0]);
 
-                ogImage = `/api/advisor/share-image?${params.toString()}`;
+                ogImage = `/api/advisor/share-image?${imgParams.toString()}`;
                 title = `${score}分！我的${skinType}护肤报告已生成`;
+                description = `AI 分析得分 ${score} 分，肤质类型：${skinType}。查看完整护肤方案与产品推荐。`;
             }
         } catch (e) {
             console.error(e);
@@ -93,6 +94,7 @@ export async function generateMetadata(props: {
     return {
         title,
         description,
+        robots: { index: false, follow: false },
         openGraph: {
             title,
             description,
@@ -104,6 +106,12 @@ export async function generateMetadata(props: {
                     alt: "Skin Analysis Report",
                 },
             ],
+        },
+        twitter: {
+            card: "summary_large_image",
+            title,
+            description,
+            images: [ogImage],
         },
     };
 }

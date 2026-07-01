@@ -29,7 +29,8 @@ export default async function ResultPage(props: {
 
 export async function generateMetadata(): Promise<Metadata> {
     return {
-        title: "我的专业护肤报告 | MySkinToday Technology",
-        description: "基于 AI 的深度肤质分析，为您定制专属护肤方案。",
+        title: "我的专业护肤报告",
+        description: "基于 AI 的深度肤质分析，精准检测肤质类型，为您定制专属护肤方案与产品推荐。",
+        robots: { index: false, follow: false },
     };
 }

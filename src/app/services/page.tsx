@@ -3,15 +3,33 @@ import Image from "next/image";
 import Link from "next/link";
 import { HeartHandshake, LineChart, Sparkles } from "lucide-react";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
+import { BreadcrumbSchema } from "@/components/website/StructuredData";
+
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://nihplod.cn";
 
 export const metadata: Metadata = {
-  title: "顾问服务 | NIHPLOD",
-  description: "添加 NIHPLOD 护肤顾问微信，获取一对一护肤建议。",
+  title: "顾问服务 — 一对一专属护肤指导",
+  description:
+    "添加 NIHPLOD 护肤顾问微信，获取一对一专业护肤建议。专属顾问根据你的肤质类型量身定制护肤方案，持续跟踪调整。",
+  keywords: ["护肤顾问", "一对一咨询", "皮肤管理", "NIHPLOD", "微信顾问"],
+  alternates: { canonical: "/services" },
+  openGraph: {
+    title: "顾问服务 — 一对一专属护肤指导 | NIHPLOD",
+    description: "添加 NIHPLOD 护肤顾问微信，获取一对一专业护肤建议。",
+    type: "website",
+    locale: "zh_CN",
+  },
 };
 
 export default function ServicesPage() {
   return (
     <main className="relative flex flex-col h-dvh overflow-hidden text-[#1A1A1A] bg-[#F8F7F3]">
+      <BreadcrumbSchema
+        items={[
+          { name: "首页", url: BASE_URL },
+          { name: "顾问服务", url: `${BASE_URL}/services` },
+        ]}
+      />
       <WebsiteNavbar />
 
       <section className="flex-1 flex items-center px-6 md:px-12 lg:px-20 pt-24 md:pt-28 pb-10 md:pb-20 min-h-0">

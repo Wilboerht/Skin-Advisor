@@ -122,6 +122,10 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  // 启用 ETag 以减少重复传输
+  generateEtags: true,
+  // 压缩
+  compress: true,
 };
 
 export default nextConfig;
