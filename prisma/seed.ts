@@ -50,41 +50,6 @@ async function main() {
         console.log("AI settings already exist.");
     }
 
-    // Seed Products
-    console.log("Seeding Products...");
-
-    for (const p of PRODUCTS_CATALOG) {
-        await prisma.product.upsert({
-            where: { id: p.id },
-            update: {
-                name: p.name,
-                category: p.category,
-                image: p.image,
-                price: p.price,
-                description: p.description,
-                keyIngredients: p.keyIngredients,
-                suitableSkinTypes: p.suitableSkinTypes,
-                benefits: p.benefits,
-                negativeFor: p.negativeFor || [],
-                active: true,
-            },
-            create: {
-                id: p.id,
-                name: p.name,
-                category: p.category,
-                image: p.image,
-                price: p.price,
-                description: p.description,
-                keyIngredients: p.keyIngredients,
-                suitableSkinTypes: p.suitableSkinTypes,
-                benefits: p.benefits,
-                negativeFor: p.negativeFor || [],
-                active: true,
-            }
-        });
-    }
-    console.log("Products seeded.");
-
     // Seed dev test user (development only)
     if (process.env.NODE_ENV !== "production") {
         console.log("Seeding dev test user...");

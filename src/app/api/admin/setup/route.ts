@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import { PRODUCTS_CATALOG } from "@/config/products";
 import { verifyAdminSession } from "@/lib/admin-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
@@ -113,37 +112,15 @@ export async function POST(request: NextRequest) {
             }
 
             const productCount = await tx.product.count();
-            let productMsg = `Found ${productCount} existing products.`;
 
-            if (productCount === 0) {
-                for (const p of PRODUCTS_CATALOG) {
-                    await tx.product.create({
-                        data: {
-                            name: p.name,
-                            category: p.category,
-                            image: p.image,
-                            price: p.price,
-                            description: p.description,
-                            keyIngredients: p.keyIngredients,
-                            suitableSkinTypes: p.suitableSkinTypes,
-                            benefits: p.benefits,
-                            negativeFor: p.negativeFor || [],
-                            active: true,
-                            featured: false
-                        }
-                    });
-                }
-                productMsg = `Seeded ${PRODUCTS_CATALOG.length} products successfully.`;
-            }
-
-            return { adminMsg, productMsg };
+            return { adminMsg, productCount };
         });
 
-        const { adminMsg, productMsg } = seedResult;
+        const { adminMsg, productCount } = seedResult;
 
         return NextResponse.json({
             success: true,
-            messages: [adminMsg, productMsg]
+            messages: [adminMsg, `Found ${productCount} existing products.`]
         });
 
     } catch (error) {
