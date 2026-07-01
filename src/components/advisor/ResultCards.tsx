@@ -113,9 +113,15 @@ export default function ResultCards({
               你的肌肤类型是「{skinTypeName}」
             </h2>
 
-            <h3 className="text-[24px] font-bold text-[#3d2f25] leading-snug tracking-tight mb-3 lg:mb-4">
-              素颜评分超越了全国 <span className="text-[24px] px-0.5 text-[#00263e]">{rankPercentile}%</span> 的用户
-            </h3>
+            {score === undefined ? (
+              <h3 className="text-[24px] font-bold text-[#3d2f25] leading-snug tracking-tight mb-3 lg:mb-4">
+                基于问卷的肤质评估
+              </h3>
+            ) : (
+              <h3 className="text-[24px] font-bold text-[#3d2f25] leading-snug tracking-tight mb-3 lg:mb-4">
+                素颜评分超越了全国 <span className="text-[24px] px-0.5 text-[#00263e]">{rankPercentile}%</span> 的用户
+              </h3>
+            )}
 
             <p className="text-[14px] leading-relaxed text-[#5c4937] mb-5 lg:mb-6 max-w-[95%] lg:max-w-[420px]">
               {summary || '整体状态极佳，肌肤屏障健康，水油平衡度完美，仅在眼周区域存在轻微色素沉积。'}
@@ -199,9 +205,11 @@ export default function ResultCards({
                 <p className="text-[11px] lg:text-xs text-[#7a6552] font-medium shrink-0">综合评分</p>
                 <div className="flex items-baseline">
                   <span className="text-[11px] lg:text-3xl font-bold text-[#5c4937] leading-none">
-                    <AnimatedNumber value={score ?? 0} duration={1.5} />
+                    {score === undefined ? '-' : <AnimatedNumber value={score} duration={1.5} />}
                   </span>
-                  <span className="text-[11px] lg:text-xs text-[#7a6552] ml-0.5 font-medium">分</span>
+                  {score !== undefined && (
+                    <span className="text-[11px] lg:text-xs text-[#7a6552] ml-0.5 font-medium">分</span>
+                  )}
                 </div>
               </div>
             </motion.div>

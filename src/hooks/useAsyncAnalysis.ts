@@ -416,5 +416,10 @@ export function useAsyncAnalysis() {
         return () => clearInterval(interval);
     }, [analysisState.status]);
 
-    return { runAnalysis, analysisState };
+    const reset = useCallback(() => {
+        setAnalysisState({ status: 'idle', progress: 0, error: null, queuePosition: undefined, queueWaitSeconds: undefined });
+        isRunningRef.current = false;
+    }, []);
+
+    return { runAnalysis, analysisState, reset };
 }

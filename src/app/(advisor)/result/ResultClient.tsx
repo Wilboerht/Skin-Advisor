@@ -154,7 +154,9 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const router = useRouter();
 
     // 入口守卫：必须通过首页引导弹窗后才能查看结果
+    // 历史报告页面（/reports/:id）会传入 id 与 initialData，跳过此守卫
     useEffect(() => {
+        if (id || initialData) return;
         try {
             const hasResult = localStorage.getItem("advisor_result");
             const hasAnswers = localStorage.getItem("advisor_answers");
@@ -165,11 +167,11 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         } catch {
             router.replace("/");
         }
-    }, [router]);
+    }, [router, id, initialData]);
     const { trackResultView, trackResultShare, trackProductClick } = useAdvisorAnalytics();
     const { user, loading: authLoading, isInitialized: authInitialized } = useAuth();
     const searchParams = useSearchParams();
-    const { runAnalysis, analysisState } = useAsyncAnalysis();
+    const { runAnalysis, analysisState, reset: resetAnalysis } = useAsyncAnalysis();
 
     // Data State
     const normalizedResult = useMemo(() => normalizeAnalysisResult(initialData?.result || null), [initialData]);
@@ -207,8 +209,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
 
     const rankPercentile = useMemo(
-        () => getRankPercentile(faceAnalysis?.overallScore ?? 0),
-        [faceAnalysis?.overallScore]
+        () => result?.dataSource === "questionnaire" ? undefined : getRankPercentile(faceAnalysis?.overallScore ?? 0),
+        [faceAnalysis?.overallScore, result?.dataSource]
     );
 
     const isGenderMismatch = useMemo(() => {
@@ -273,6 +275,15 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     // Initialize & Restore Data
     useEffect(() => {
         const loadClientData = async () => {
+            // 已有结果且非分析中时直接短路，避免 user 变化导致重复加载/闪烁
+            if (result && searchParams.get('status') !== 'analyzing') {
+                if (!hasTrackedView.current) {
+                    trackResultView();
+                    hasTrackedView.current = true;
+                }
+                return;
+            }
+
             // 1. Recover Images & Location using hybrid storage
             try {
                 // Dynamically import to avoid SSR issues
@@ -386,7 +397,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         };
 
         loadClientData();
-    }, [initialData, router, trackResultView, searchParams]);
+    }, [initialData, router, trackResultView, searchParams, user]);
 
     // --- Environment Data Integration ---
     // REMOVED: Weather component has been disabled per user request
@@ -484,7 +495,11 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 if (res.ok) {
                     localStorage.setItem(claimedKey, 'true');
                     // Claim 成功后跳转到 /reports/:id，登录用户不再停留在游客形态的 /result 页面
-                    router.replace(`/reports/${sessionId}`);
+                    // 若当前已在 /reports/:id 则避免无意义重定向
+                    const reportPath = `/reports/${sessionId}`;
+                    if (typeof window === 'undefined' || window.location.pathname !== reportPath) {
+                        router.replace(reportPath);
+                    }
                 }
             } catch (err) {
                 console.error("Failed to claim session:", err);
@@ -492,7 +507,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         };
 
         claimSession();
-    }, [user, sessionId]);
+    }, [user, sessionId, router]);
 
 
     // --- Async Analysis Integration ---
@@ -595,6 +610,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             <button
                                 onClick={() => {
                                     analysisStartedRef.current = false;
+                                    resetAnalysis();
                                     const params = new URLSearchParams(searchParams.toString());
                                     params.set('status', 'analyzing');
                                     router.replace(`/result?${params.toString()}`);
@@ -874,28 +890,30 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     )}
 
                                     {/* Lab-Grade Analysis Metrics */}
-                                    <div
-                                        className="rounded-xl border border-[#3d2f25]/15 bg-[#3d2f25]/5 shadow-sm overflow-hidden font-sans cursor-pointer hover:bg-[#3d2f25]/[0.07] transition-colors"
-                                        onClick={() => setShowLabData(true)}
-                                    >
-                                        <div className="px-5 py-3 flex justify-between items-center">
-                                            <div className="flex items-center gap-2">
-                                                <Activity className="w-4 h-4 text-[#8c7a6b]" />
-                                                <span className="text-sm font-medium text-[#3d2f25]">定制化专业分析数据详情</span>
+                                    {result?.dataSource !== "questionnaire" && faceAnalysis && (
+                                        <div
+                                            className="rounded-xl border border-[#3d2f25]/15 bg-[#3d2f25]/5 shadow-sm overflow-hidden font-sans cursor-pointer hover:bg-[#3d2f25]/[0.07] transition-colors"
+                                            onClick={() => setShowLabData(true)}
+                                        >
+                                            <div className="px-5 py-3 flex justify-between items-center">
+                                                <div className="flex items-center gap-2">
+                                                    <Activity className="w-4 h-4 text-[#8c7a6b]" />
+                                                    <span className="text-sm font-medium text-[#3d2f25]">定制化专业分析数据详情</span>
+                                                </div>
+                                                <div className="flex items-center gap-3">
+                                                    <span className="text-xs text-[#8c7a6b] font-normal hidden sm:inline-block">
+                                                        MySkin.Today™ Gold Standard
+                                                    </span>
+                                                    <ChevronRight className="w-4 h-4 text-[#8c7a6b]" />
+                                                </div>
                                             </div>
-                                            <div className="flex items-center gap-3">
-                                                <span className="text-xs text-[#8c7a6b] font-normal hidden sm:inline-block">
-                                                    MySkin.Today™ Gold Standard
-                                                </span>
-                                                <ChevronRight className="w-4 h-4 text-[#8c7a6b]" />
+                                            <div className="px-5 pb-3 pt-0">
+                                                <p className="text-[11px] text-[#8c7a6b]/80 leading-relaxed pl-6">
+                                                    联系您的专属护肤顾问，或咨询门店顾问获取专业分析解读
+                                                </p>
                                             </div>
                                         </div>
-                                        <div className="px-5 pb-3 pt-0">
-                                            <p className="text-[11px] text-[#8c7a6b]/80 leading-relaxed pl-6">
-                                                联系您的专属护肤顾问，或咨询门店顾问获取专业分析解读
-                                            </p>
-                                        </div>
-                                    </div>
+                                    )}
                                 </>
                             }
                         />
@@ -1101,9 +1119,9 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         <SharePoster
                                             ref={posterRef}
                                             nickname={userNickname || "用户"}
-                                            score={faceAnalysis?.overallScore || 0}
-                                            skinTone={faceAnalysis?.dimensions?.skinTone?.score || 0}
-                                            waterOil={faceAnalysis?.dimensions?.waterOil?.score || 0}
+                                            score={faceAnalysis?.overallScore ?? (result?.dataSource === "questionnaire" ? undefined : 0)}
+                                            skinTone={faceAnalysis?.dimensions?.skinTone?.score ?? (result?.dataSource === "questionnaire" ? undefined : 0)}
+                                            waterOil={faceAnalysis?.dimensions?.waterOil?.score ?? (result?.dataSource === "questionnaire" ? undefined : 0)}
                                             percentile={rankPercentile}
                                             avatar={getCharacterImage({
                                                 score: faceAnalysis?.overallScore || 0,

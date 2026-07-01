@@ -6,10 +6,10 @@ import { Palette, Droplets } from "lucide-react";
 
 interface SharePosterProps {
   nickname: string;
-  score: number;
-  skinTone: number;
-  waterOil: number;
-  percentile: number;
+  score?: number;
+  skinTone?: number;
+  waterOil?: number;
+  percentile?: number;
   avatar?: string | null;
   posterTemplate?: string;
 }
@@ -93,7 +93,11 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
           {/* 核心数据 */}
           <div className="flex-1 flex flex-col items-center justify-center gap-6">
             <div className="text-center pl-54">
-              <div className="text-5xl font-bold text-[#E53935]" style={{ transform: 'translateY(-88px) rotate(5deg)' }}>{score}<span className="text-sm font-bold">分</span></div>
+              {score !== undefined ? (
+                <div className="text-5xl font-bold text-[#E53935]" style={{ transform: 'translateY(-88px) rotate(5deg)' }}>{score}<span className="text-sm font-bold">分</span></div>
+              ) : (
+                <div className="text-2xl font-bold text-[#E53935]" style={{ transform: 'translateY(-88px) rotate(5deg)' }}>问卷评估</div>
+              )}
             </div>
 
             <div className="text-center" style={{ transform: 'translate(-70px, 190px)' }}>
@@ -104,10 +108,10 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
                 <div className="w-16 h-1.5 rounded-full bg-blue-200/50 overflow-hidden">
                   <div
                     className="h-full rounded-full bg-blue-500"
-                    style={{ width: `${Math.min(skinTone, 100)}%` }}
+                    style={{ width: `${Math.min(skinTone ?? 0, 100)}%` }}
                   />
                 </div>
-                <span className="text-sm font-medium text-[#5c4937]">{skinTone} 分</span>
+                <span className="text-sm font-medium text-[#5c4937]">{skinTone ?? 0} 分</span>
               </div>
             </div>
 
@@ -119,18 +123,20 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
                 <div className="w-16 h-1.5 rounded-full bg-amber-200/50 overflow-hidden">
                   <div
                     className="h-full rounded-full bg-amber-500"
-                    style={{ width: `${Math.min(waterOil, 100)}%` }}
+                    style={{ width: `${Math.min(waterOil ?? 0, 100)}%` }}
                   />
                 </div>
-                <span className="text-sm font-medium text-[#5c4937]">{waterOil} 分</span>
+                <span className="text-sm font-medium text-[#5c4937]">{waterOil ?? 0} 分</span>
               </div>
             </div>
 
-            <div className="text-center px-6">
-              <p className="text-sm text-[#5c4937] leading-relaxed">
-                <span className="font-bold text-4xl mx-1" style={{ transform: 'translate(-97px, -28px)', display: 'inline-block' }}>{percentile}%</span>
-              </p>
-            </div>
+            {percentile !== undefined && (
+              <div className="text-center px-6">
+                <p className="text-sm text-[#5c4937] leading-relaxed">
+                  <span className="font-bold text-4xl mx-1" style={{ transform: 'translate(-97px, -28px)', display: 'inline-block' }}>{percentile}%</span>
+                </p>
+              </div>
+            )}
           </div>
 
           {/* 二维码 */}
