@@ -65,8 +65,9 @@ export interface ComprehensiveResult {
         howToUse?: string | null;
         source?: "persona" | "algorithm";
     }>;
-    dataSource: "comprehensive" | "questionnaire";
+    dataSource: "comprehensive" | "questionnaire" | "hybrid";
     persona?: string; // IP 形象 key，如 "guardian"
+    expiresAt?: string; // ISO date string for report expiry
 }
 
 interface ResultClientProps {
@@ -82,7 +83,7 @@ interface ResultClientProps {
  * - 新格式: { skinProfile, analysis, products, dataSource }
  * - 旧格式: { skinAnalysis, faceAnalysis, products, ... }
  */
-function normalizeAnalysisResult(raw: unknown): ComprehensiveResult | null {
+export function normalizeAnalysisResult(raw: unknown): ComprehensiveResult | null {
     if (!raw || typeof raw !== 'object') return null;
     const record = raw as Record<string, unknown>;
 
@@ -103,6 +104,7 @@ function normalizeAnalysisResult(raw: unknown): ComprehensiveResult | null {
         dataSource: (record.dataSource as ComprehensiveResult["dataSource"] | undefined) || (record.source === "ai" ? "comprehensive" : "questionnaire"),
         products: (record.products as ComprehensiveResult["products"]) || [],
         persona: record.persona as string | undefined,
+        expiresAt: record.expiresAt as string | undefined,
     };
 }
 
@@ -173,12 +175,12 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const normalizedResult = useMemo(() => normalizeAnalysisResult(initialData?.result || null), [initialData]);
     const [result, setResult] = useState<ComprehensiveResult | null>(normalizedResult);
     const [faceAnalysis, setFaceAnalysis] = useState<FaceAnalysisResult | null>(initialData?.faceAnalysis || null);
-    const [userImage, setUserImage] = useState<string | undefined>(undefined);
-    const [sideImages, setSideImages] = useState<Record<string, string>>({});
 
     const [userNickname, setUserNickname] = useState<string>("您");
     // Session ID for sharing - initialized from props or will be set after analysis
     const [sessionId, setSessionId] = useState<string | undefined>(id);
+    const sessionIdRef = useRef(sessionId);
+    sessionIdRef.current = sessionId;
     const [socialGender, setSocialGender] = useState<string>(''); // Initialize empty to avoid flash mismatch
 
     // IP 匹配所需数据
@@ -198,7 +200,9 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const [showContactAdvisor, setShowContactAdvisor] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
     const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
-    const [dismissValidationWarning, setDismissValidationWarning] = useState(false);
+    const [dismissValidationWarning, setDismissValidationWarning] = useState(() => {
+        try { return sessionStorage.getItem('advisor_dismiss_validation') === 'true'; } catch { return false; }
+    });
     const posterRef = useRef<HTMLDivElement>(null);
 
 
@@ -255,6 +259,9 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const handleMismatchContinue = () => {
         setShowGenderMismatchModal(false);
         localStorage.setItem(STORAGE_KEYS.ADVISOR_GENDER_MISMATCH_ACK, 'true');
+        // 用户选择继续（不重试），清除免费重试相关标记，避免后续普通测试复用旧 sessionId
+        localStorage.removeItem(STORAGE_KEYS.ADVISOR_FREE_RETRY);
+        localStorage.removeItem(STORAGE_KEYS.ADVISOR_FREE_RETRY_SESSION_ID);
     };
 
 
@@ -272,18 +279,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 const { advisorStorage } = await import("@/lib/advisor-storage");
                 const images = await advisorStorage.getFaceImages();
 
-                if (images) {
-                    if (images.front) setUserImage(images.front);
-                    setSideImages(images);
-                } else {
-                    // Fallback: try legacy localStorage directly
-                    const imgStr = localStorage.getItem(STORAGE_KEYS.ADVISOR_FACE_IMAGES);
-                    if (imgStr) {
-                        const legacyImages = JSON.parse(imgStr);
-                        if (legacyImages.front) setUserImage(legacyImages.front);
-                        setSideImages(legacyImages);
-                    }
-                }
+                // 人脸图片仅用于 IndexedDB 恢复，不渲染到页面
+                // 保留恢复逻辑但不设置不再使用的 state
 
                 // Restore Nickname
                 const storedNickname = localStorage.getItem(STORAGE_KEYS.ADVISOR_NICKNAME);
@@ -336,7 +333,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 }
 
                                 // Handle session management logic (formerly at lines 313+)
-                                const previousSessionId = sessionId;
+                                const previousSessionId = sessionIdRef.current;
                                 if (advisorResult.sessionId && advisorResult.sessionId !== previousSessionId) {
                                     localStorage.removeItem(STORAGE_KEYS.ADVISOR_GENDER_MISMATCH_ACK);
                                 }
@@ -354,6 +351,11 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     }
                                 }
                                 setLoading(false);
+                                // 在提前返回前也触发埋点
+                                if (!hasTrackedView.current) {
+                                    trackResultView();
+                                    hasTrackedView.current = true;
+                                }
                                 return; // Successfully recovered
                             }
                         } catch (e) {
@@ -376,7 +378,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 setLoading(false);
             }
 
-            // Track View
+            // Track View (for non-early-return paths)
             if (!hasTrackedView.current) {
                 trackResultView();
                 hasTrackedView.current = true;
@@ -384,7 +386,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         };
 
         loadClientData();
-    }, [initialData, router, trackResultView, sessionId, searchParams]);
+    }, [initialData, router, trackResultView, searchParams]);
 
     // --- Environment Data Integration ---
     // REMOVED: Weather component has been disabled per user request
@@ -401,6 +403,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         localStorage.removeItem(STORAGE_KEYS.ADVISOR_STEP);
         localStorage.removeItem(STORAGE_KEYS.ADVISOR_GENDER_MISMATCH_ACK);
         localStorage.removeItem(STORAGE_KEYS.ADVISOR_FREE_RETRY);
+        localStorage.removeItem(STORAGE_KEYS.ADVISOR_FREE_RETRY_SESSION_ID);
 
         // Clear IndexedDB face images & cached results
         try {
@@ -452,6 +455,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             link.href = blobUrl;
             link.click();
             URL.revokeObjectURL(blobUrl);
+            // 保存海报成功后触发分享埋点
+            trackResultShare("image");
         } catch (error) {
             console.error("海报生成失败:", error);
         } finally {
@@ -478,6 +483,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 
                 if (res.ok) {
                     localStorage.setItem(claimedKey, 'true');
+                    // Claim 成功后跳转到 /reports/:id，登录用户不再停留在游客形态的 /result 页面
+                    router.replace(`/reports/${sessionId}`);
                 }
             } catch (err) {
                 console.error("Failed to claim session:", err);
@@ -493,6 +500,17 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
     // Trigger Async Analysis
     const analysisStartedRef = useRef(false);
+    const pendingRedirectSessionIdRef = useRef<string | null>(null);
+
+    // 等 auth 初始化后再执行跳转，避免登录用户在 user 为 null 时被错误留在 /result
+    useEffect(() => {
+        const pendingId = pendingRedirectSessionIdRef.current;
+        if (!pendingId || !authInitialized) return;
+        pendingRedirectSessionIdRef.current = null;
+        const resultUrl = user ? `/reports/${pendingId}` : '/result';
+        router.replace(resultUrl, { scroll: false });
+    }, [authInitialized, user, router]);
+
     useEffect(() => {
         const status = searchParams.get('status');
         // Only trigger if we are in 'analyzing' mode, no result yet, and not already running/error
@@ -523,14 +541,13 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     setResult(newResult);
                     if (newFace) setFaceAnalysis(newFace);
 
-                    // Small delay to ensure state update is processed before potential route change logic
-                    setTimeout(() => {
-                        // 登录用户的结果归档到 /reports/:id；游客只看当前结果 /result
-                        const resultUrl = user
-                            ? `/reports/${newSessionId}`
-                            : '/result';
+                    // 等 auth 初始化后再跳转，避免 user 为 null 时登录用户被错误留在 /result
+                    if (authInitialized) {
+                        const resultUrl = user ? `/reports/${newSessionId}` : '/result';
                         router.replace(resultUrl, { scroll: false });
-                    }, 50);
+                    } else {
+                        pendingRedirectSessionIdRef.current = newSessionId;
+                    }
 
                 } catch (e: unknown) {
                     console.error("Async analysis error caught in component:", e);
@@ -540,7 +557,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             };
             execute();
         }
-    }, [searchParams, result, analysisState.status, runAnalysis, router, user]);
+    }, [searchParams, result, analysisState.status, runAnalysis, router, user, authInitialized]);
 
     // Error State
     if (analysisState.status === 'error') {
@@ -576,8 +593,19 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                         <div className="flex flex-col gap-3 w-full">
                             <button
-                                onClick={() => router.push('/face-scan')}
+                                onClick={() => {
+                                    analysisStartedRef.current = false;
+                                    const params = new URLSearchParams(searchParams.toString());
+                                    params.set('status', 'analyzing');
+                                    router.replace(`/result?${params.toString()}`);
+                                }}
                                 className="flex w-full items-center justify-center gap-2 rounded-full bg-[#5c4937] py-3 text-sm font-medium text-white shadow-lg transition-transform active:scale-95 hover:bg-[#4a3a2c]"
+                            >
+                                重试分析
+                            </button>
+                            <button
+                                onClick={() => router.push('/face-scan')}
+                                className="flex w-full items-center justify-center gap-2 rounded-full border border-[#5c4937]/30 bg-white py-3 text-sm font-medium text-[#5c4937] transition-colors hover:bg-[#5c4937]/5 active:scale-95"
                             >
                                 重新拍摄
                             </button>
@@ -731,7 +759,10 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     </p>
                                 </div>
                                 <button
-                                    onClick={() => setDismissValidationWarning(true)}
+                                    onClick={() => {
+                                        setDismissValidationWarning(true);
+                                        try { sessionStorage.setItem('advisor_dismiss_validation', 'true'); } catch { /* ignore */ }
+                                    }}
                                     className="absolute right-4 top-3 p-1 rounded-full hover:bg-red-100 text-red-500 transition-colors"
                                     aria-label="关闭提示"
                                 >
@@ -746,7 +777,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                         {/* Report Summary Cards */}
                         <ResultCards
-                            score={faceAnalysis?.overallScore || 0}
+                            score={faceAnalysis?.overallScore ?? (result?.dataSource === "questionnaire" ? undefined : 0)}
                             skinAge={result?.skinProfile?.skinAge || 25}
                             dimensions={faceAnalysis?.dimensions || {}}
                             nickname={userNickname}
@@ -974,7 +1005,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 affiliateLinks: p.affiliateLinks || null,
                                 howToUse: p.howToUse || null,
                                 source: p.source,
-                            } as ProductCardData))}
+                            } satisfies ProductCardData))}
                             isLoading={loading}
                             faceAnalysis={faceAnalysis}
                             personaLabel={result?.persona ? skinTypes.find(t => t.ipKey === result.persona)?.typeName : undefined}

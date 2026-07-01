@@ -30,7 +30,7 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
     const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 
     useEffect(() => {
-      toDataURL('https://advisor.nihplod.cn', { width: 80, margin: 1, color: { dark: '#3F2C76', light: '#0000' } })
+      toDataURL(typeof window !== 'undefined' ? window.location.origin : 'https://advisor.nihplod.cn', { width: 80, margin: 1, color: { dark: '#3F2C76', light: '#0000' } })
         .then(url => setQrDataUrl(url))
         .catch(() => setQrDataUrl(null));
     }, []);

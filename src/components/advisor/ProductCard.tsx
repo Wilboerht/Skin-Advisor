@@ -81,13 +81,15 @@ export function ProductCard({
 
     const handleBuyClick = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
+        // 购买按钮也触发产品点击埋点
+        onProductClick?.(product.id);
 
         if (allLinks.length > 1) {
             setShowPlatforms(prev => !prev);
         } else if (primaryLink) {
             openAffiliateLink(primaryLink.url, product.id, primaryLink.platform);
         }
-    }, [allLinks, primaryLink, product.id]);
+    }, [allLinks, primaryLink, product.id, onProductClick]);
 
     const handlePlatformClick = useCallback((platform: typeof allLinks[0]) => {
         openAffiliateLink(platform.url, product.id, platform.platform);

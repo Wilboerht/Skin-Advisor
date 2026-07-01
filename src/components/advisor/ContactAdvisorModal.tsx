@@ -9,8 +9,6 @@ interface ContactAdvisorModalProps {
 }
 
 export function ContactAdvisorModal({ isOpen, onClose }: ContactAdvisorModalProps) {
-    if (!isOpen) return null;
-
     return (
         <AnimatePresence>
             {isOpen && (

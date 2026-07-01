@@ -13,7 +13,7 @@ interface Dimension {
 }
 
 interface ResultCardsProps {
-  score: number;
+  score?: number;
   skinAge: number;
   dimensions: Record<string, Dimension | undefined>;
   nickname: string;
@@ -23,7 +23,6 @@ interface ResultCardsProps {
   skincareFrequency?: string;
   summary?: string;
   onShare: () => void;
-  onUnlockClick?: () => void;
   professionalClassName?: string;
   professionalStyle?: React.CSSProperties;
   comprehensiveReport?: React.ReactNode;
@@ -69,12 +68,11 @@ export default function ResultCards({
   skincareFrequency,
   summary,
   onShare,
-  onUnlockClick,
   professionalClassName,
   professionalStyle,
   comprehensiveReport,
 }: ResultCardsProps) {
-  const ipParams: IPMatchParams = { score, skinType, budget, skincareFrequency };
+  const ipParams: IPMatchParams = { score: score ?? 0, skinType, budget, skincareFrequency };
   const characterImage = getCharacterImage({ ...ipParams, gender });
   const skinTypeName = getSkinTypeName(ipParams);
 
@@ -201,7 +199,7 @@ export default function ResultCards({
                 <p className="text-[11px] lg:text-xs text-[#7a6552] font-medium shrink-0">综合评分</p>
                 <div className="flex items-baseline">
                   <span className="text-[11px] lg:text-3xl font-bold text-[#5c4937] leading-none">
-                    <AnimatedNumber value={score} duration={1.5} />
+                    <AnimatedNumber value={score ?? 0} duration={1.5} />
                   </span>
                   <span className="text-[11px] lg:text-xs text-[#7a6552] ml-0.5 font-medium">分</span>
                 </div>

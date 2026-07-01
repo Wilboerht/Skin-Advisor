@@ -32,8 +32,13 @@ export async function GET(req: NextRequest) {
             try {
                 const session = await prisma.advisorSession.findUnique({
                     where: { sessionId: id },
-                    select: { analysisResult: true, answers: true }
+                    select: { analysisResult: true, answers: true, expiresAt: true }
                 });
+
+                // 检查报告是否过期
+                if (session?.expiresAt && new Date() > new Date(session.expiresAt)) {
+                    return new Response('Report expired', { status: 410 });
+                }
 
                 if (session && session.analysisResult) {
                     const res = session.analysisResult as any;

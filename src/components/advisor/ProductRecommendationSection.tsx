@@ -160,7 +160,7 @@ export function ProductRecommendationSection({
                 className="text-center mb-5"
             >
                 <h2 className="text-2xl font-bold text-[#3d2f25] tracking-wide">
-                    {personaLabel ? `你的「${personaLabel}」甄选三件套` : "甄选产品推荐"}
+                    {personaLabel ? `你的「${personaLabel}」甄选推荐` : "甄选产品推荐"}
                 </h2>
                 <p className="text-sm text-[#8c7a6b] mt-2">
                     {personaLabel

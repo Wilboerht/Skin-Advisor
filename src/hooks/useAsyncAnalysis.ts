@@ -108,11 +108,20 @@ export function useAsyncAnalysis() {
 
             // Pre-generate sessionId and nickname for analysis
             // 性别不一致免费重试场景：复用原 sessionId，让后端识别为同一会话的免费重试
-            let freeRetrySessionId: string | null = null;
+            // 仅在有免费重试标记时才读取，避免残留的旧 sessionId 被普通测试复用
+            let isFreeRetryEarly = false;
             try {
-                freeRetrySessionId = localStorage.getItem(STORAGE_KEYS.ADVISOR_FREE_RETRY_SESSION_ID);
+                isFreeRetryEarly = localStorage.getItem(STORAGE_KEYS.ADVISOR_FREE_RETRY) === "true";
             } catch (e) {
                 console.warn("localStorage access failed", e);
+            }
+            let freeRetrySessionId: string | null = null;
+            if (isFreeRetryEarly) {
+                try {
+                    freeRetrySessionId = localStorage.getItem(STORAGE_KEYS.ADVISOR_FREE_RETRY_SESSION_ID);
+                } catch (e) {
+                    console.warn("localStorage access failed", e);
+                }
             }
             const sessionId = freeRetrySessionId || (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString());
 
@@ -273,13 +282,8 @@ export function useAsyncAnalysis() {
 
             // 2. Comprehensive Analysis (Text)
 
-            // Check if this is a free retry (gender mismatch retry — won't consume quota)
-            let isFreeRetry = false;
-            try {
-                isFreeRetry = localStorage.getItem(STORAGE_KEYS.ADVISOR_FREE_RETRY) === "true";
-            } catch (e) {
-                console.warn("localStorage access failed", e);
-            }
+            // isFreeRetry already determined above (moved before sessionId generation to avoid stale sessionId reuse)
+            const isFreeRetry = isFreeRetryEarly;
             // NOTE: Do NOT clear localStorage here — only clear after server confirms success
 
             const privacyConsent = getPrivacyConsentPayload();
@@ -311,7 +315,18 @@ export function useAsyncAnalysis() {
             // 服务端已响应，快速推进进度让用户感知到进展
             setAnalysisState(prev => ({ ...prev, progress: 90 }));
 
-            if (!analyzeRes.ok) throw new Error("Analysis failed");
+            if (!analyzeRes.ok) {
+                // 解析服务端错误信息，透传给用户
+                let serverError = "分析失败，请重试";
+                try {
+                    const errorData = await analyzeRes.json();
+                    serverError = errorData.error || errorData.message || serverError;
+                } catch {
+                    // 无法解析 JSON，使用状态码信息
+                    serverError = `服务器错误 (${analyzeRes.status})，请稍后重试`;
+                }
+                throw new Error(serverError);
+            }
 
             const result = await analyzeRes.json();
 

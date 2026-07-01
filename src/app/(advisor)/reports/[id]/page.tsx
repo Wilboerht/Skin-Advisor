@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import ResultClient, { type ComprehensiveResult } from "../../result/ResultClient";
+import ResultClient, { type ComprehensiveResult, normalizeAnalysisResult } from "../../result/ResultClient";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
@@ -10,7 +10,8 @@ export default async function ReportDetailPage(props: {
 }) {
     const params = await props.params;
     const id = params.id;
-    let initialData = null;
+    let initialData: { result: ComprehensiveResult; faceAnalysis: FaceAnalysisResult | null } | null = null;
+    let isExpired = false;
 
     const user = await getSession();
 
@@ -33,14 +34,18 @@ export default async function ReportDetailPage(props: {
 
             if (session && session.analysisResult) {
                 if (session.expiresAt && new Date() > new Date(session.expiresAt)) {
-                    initialData = null;
+                    isExpired = true;
                 } else {
                     const rawResult = session.analysisResult as unknown as Record<string, unknown>;
-                    const result = rawResult as unknown as ComprehensiveResult;
-                    initialData = {
-                        result,
-                        faceAnalysis: rawResult.faceAnalysis as FaceAnalysisResult | null || null
-                    };
+                    // 统一走 normalizeAnalysisResult 兼容新旧字段格式
+                    const result = normalizeAnalysisResult(rawResult);
+                    if (result) {
+                        result.expiresAt = session.expiresAt?.toISOString();
+                        initialData = {
+                            result,
+                            faceAnalysis: (rawResult.faceAnalysis as FaceAnalysisResult | null) || null
+                        };
+                    }
                 }
             }
         } catch (e) {
@@ -48,7 +53,33 @@ export default async function ReportDetailPage(props: {
         }
     }
 
+    // 报告过期时直接展示过期提示，不渲染 ResultClient
+    if (isExpired) {
+        return <ReportExpired />;
+    }
+
     return <ResultClient id={id} initialData={initialData} />;
+}
+
+/** 报告过期提示组件 */
+function ReportExpired() {
+    return (
+        <div className="flex min-h-screen items-center justify-center bg-[#FDFBF7] px-4">
+            <div className="text-center max-w-md">
+                <div className="text-5xl mb-4">⏰</div>
+                <h2 className="text-xl font-bold text-[#5c4937] mb-2">报告已过期</h2>
+                <p className="text-sm text-[#8c7a6b] mb-6">
+                    该分析报告已超过保存期限，数据已自动清除。请重新进行肤质测试获取最新报告。
+                </p>
+                <a
+                    href="/questions"
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-[#5c4937] px-6 py-3 text-sm font-medium text-white shadow-lg transition-transform active:scale-95"
+                >
+                    重新测试
+                </a>
+            </div>
+        </div>
+    );
 }
 
 export async function generateMetadata(props: {
