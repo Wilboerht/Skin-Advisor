@@ -100,6 +100,7 @@ function normalizeAnalysisResult(raw: unknown): ComprehensiveResult | null {
         },
         dataSource: (record.dataSource as ComprehensiveResult["dataSource"] | undefined) || (record.source === "ai" ? "comprehensive" : "questionnaire"),
         products: (record.products as ComprehensiveResult["products"]) || [],
+        persona: record.persona as string | undefined,
     };
 }
 
