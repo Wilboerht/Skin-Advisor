@@ -13,11 +13,12 @@ interface NavItem {
   label: string;
   href: string;
   icon?: React.ComponentType<{ className?: string }>;
+  badge?: string;
 }
 
 const navItems: NavItem[] = [
   { label: "素颜测肤", href: "/" },
-  { label: "肌智派", href: "/skin-types" },
+  { label: "肌智派", href: "/skin-types", badge: "送好礼" },
   { label: "顾问服务", href: "/services" },
 ];
 
@@ -96,7 +97,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                 <Link
                   key={item.label}
                   href={item.href}
-                  className={`group relative ${item.icon ? "flex items-center gap-1.5" : ""} text-[15px] font-medium tracking-[0.2em] transition-colors duration-500 ${
+                  className={`group relative ${(item.icon || item.badge) ? "flex items-center gap-1.5" : ""} text-[15px] font-medium tracking-[0.2em] transition-colors duration-500 ${
                     isActive
                       ? isDark ? "text-white" : "text-[#3D4430]"
                       : isDark
@@ -105,6 +106,11 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                   }`}
                 >
                   {item.label}
+                  {item.badge && (
+                    <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-semibold leading-none tracking-wider rounded bg-[#C8A27A]/15 text-[#A0784C] border border-[#C8A27A]/30">
+                      {item.badge}
+                    </span>
+                  )}
                   {item.icon && (
                     <item.icon className="w-3.5 h-3.5 transition-transform duration-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                   )}
