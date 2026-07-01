@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { withDefaultOgImage } from "@/lib/metadata";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
 import { FAQPageSchema, BreadcrumbSchema } from "@/components/website/StructuredData";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://nihplod.cn";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withDefaultOgImage({
   title: "常见问题 — AI 护肤分析 FAQ",
   description:
     "关于 NIHPLOD AI 护肤分析的常见问题解答：AI 测肤准确吗？如何上传照片？数据安全吗？护肤品推荐怎么来的？",
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
     type: "website",
     locale: "zh_CN",
   },
-};
+});
 
 const faqs: { question: string; answer: string }[] = [
   {

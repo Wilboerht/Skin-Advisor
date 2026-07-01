@@ -3,12 +3,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { skinTypes, routeOrder } from "@/lib/result-content";
+import { withDefaultOgImage } from "@/lib/metadata";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
 import { BreadcrumbSchema } from "@/components/website/StructuredData";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://nihplod.cn";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withDefaultOgImage({
   title: "8 种肌肤形象类型详解 | NIHPLOD 肤质分类",
   description:
     "探索 NIHPLOD 8 种肌肤形象类型（IP Types）——从敏敏派到守护派，每种肤质都有完整的护理方案与产品推荐。",
@@ -20,7 +21,7 @@ export const metadata: Metadata = {
     type: "website",
     locale: "zh_CN",
   },
-};
+});
 
 export default function ResultIndexPage() {
   const orderedTypes = routeOrder

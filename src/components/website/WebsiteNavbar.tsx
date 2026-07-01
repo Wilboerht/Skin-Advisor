@@ -4,14 +4,20 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { User, ExternalLink, Menu, Gift } from "lucide-react";
+import { User, ExternalLink, Menu } from "lucide-react";
 import { HomeSvg } from "@/components/icons/HomeSvg";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { useUser } from "@/components/auth/UserProvider";
 
-const navItems = [
+interface NavItem {
+  label: string;
+  href: string;
+  icon?: React.ComponentType<{ className?: string }>;
+}
+
+const navItems: NavItem[] = [
   { label: "素颜测肤", href: "/" },
-  { label: "肌智派", href: "/skin-types", icon: Gift },
+  { label: "肌智派", href: "/skin-types" },
   { label: "顾问服务", href: "/services" },
 ];
 
