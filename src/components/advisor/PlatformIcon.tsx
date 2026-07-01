@@ -4,7 +4,7 @@ import { ShoppingBag } from "lucide-react";
 
 export function PlatformIcon({ platform }: { platform: string }) {
   const p = platform.trim();
-  if (p.includes("天猫") || p.toLowerCase().includes("tmall") || p.includes("淘宝") || p.toLowerCase().includes("taobao")) {
+  if (p.includes("天猫") || p.toLowerCase().includes("tmall") || p.toLowerCase().includes("taobao")) {
     return (
       <svg viewBox="0 0 231 55" className="h-4 w-auto" xmlns="http://www.w3.org/2000/svg">
         <path d="M30.5917 25.0608H53.511V18.9715H29.8952L29.8901 16.6139V6.08937H51.0578V0.00012207H2.61632V6.08937H23.8045V16.6074L23.7995 18.9715H0.228983V25.0608H23.1032C20.925 34.28 13.5729 42.0508 0 49.6931L2.98409 54.9999C11.3595 50.2843 21.7865 43.2738 26.8487 32.5763C28.159 35.3567 29.8838 38.0196 32.0323 40.5479C36.3471 45.6251 42.457 50.3524 50.7109 54.9997L53.695 49.6929C40.122 42.0508 32.7701 34.28 30.5917 25.0608Z" fill="#7A3CE9" />

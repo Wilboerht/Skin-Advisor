@@ -19,7 +19,7 @@ export interface PlatformConfig {
 export const ECOMMERCE_PLATFORMS: Record<EcommercePlatform, PlatformConfig> = {
     taobao: {
         id: 'taobao',
-        name: '淘宝',
+        name: '天猫',
         icon: '🛒',
         color: '#FF5000',
         bgColor: '#FFF5F0'
