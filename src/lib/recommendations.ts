@@ -12,7 +12,6 @@ type ScoredProduct = Product & {
 export interface ProductRecommendation {
     id: string;
     name: string;
-    nameEn: string | null;
     category: string;
     image: string;
     images?: string[] | null;
@@ -514,7 +513,6 @@ export async function recommendProducts(
         return top.map((p, index) => ({
             id: p.id,
             name: p.name,
-            nameEn: p.nameEn,
             category: p.category,
             image: p.image,
             images: (p as any).images || null,

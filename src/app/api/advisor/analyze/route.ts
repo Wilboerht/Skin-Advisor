@@ -471,7 +471,6 @@ export async function POST(request: NextRequest) {
                         ...p,
                         id: catalogProduct.id,
                         name: catalogProduct.name,
-                        nameEn: catalogProduct.nameEn,
                         category: catalogProduct.category,
                         image: catalogProduct.image,
                         images: (catalogProduct as any).images || null,

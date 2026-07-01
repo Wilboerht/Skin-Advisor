@@ -192,9 +192,6 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                             <h2 className="mb-0.5 text-[24px] font-bold leading-snug text-[#3d2f25] lg:text-[28px]">
                                 {product.name}
                             </h2>
-                            {product.nameEn && (
-                                <p className="mb-3 text-[11px] text-[#8c7a6b] tracking-wide">{product.nameEn}</p>
-                            )}
 
                             {/* Price */}
                             <div className="mb-4 text-lg font-bold text-[#3d2f25]">

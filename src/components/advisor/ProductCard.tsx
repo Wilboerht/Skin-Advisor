@@ -4,20 +4,17 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import Image from "next/image";
 import { m } from "framer-motion";
 import { ChevronRight, ExternalLink, ShoppingCart } from "lucide-react";
-import { IngredientTags } from "./IngredientTooltip";
 import {
     AffiliateLinks,
     getProductLinks,
     getPrimaryLink,
     openAffiliateLink,
-    ECOMMERCE_PLATFORMS
 } from "@/lib/affiliate-links";
 import { cn } from "@/lib/utils";
 
 export interface ProductCardData {
     id: string;
     name: string;
-    nameEn?: string | null;
     category: string;
     image: string;
     images?: string[] | null;

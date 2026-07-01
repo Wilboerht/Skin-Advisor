@@ -245,7 +245,6 @@ model GuestUsage {
 model Product {
   id                String   @id @default(cuid())
   name              String
-  nameEn            String?
   category          String   // 精华, 面霜, etc.
   image             String
   images            Json?    // string[] 产品图库（最多5张）

@@ -53,15 +53,17 @@ export interface ComprehensiveResult {
     products?: Array<{
         id: string;
         name: string;
-        nameEn?: string;
         category: string;
         reason: string;
         image: string;
+        images?: string[] | null;
         price?: string;
+        description?: string | null;
         keyIngredients?: string[];
         benefits?: string[];
         affiliateLinks?: Record<string, string> | null;
         howToUse?: string | null;
+        source?: "persona" | "algorithm";
     }>;
     dataSource: "comprehensive" | "questionnaire";
     persona?: string; // IP 形象 key，如 "guardian"
@@ -961,18 +963,17 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             products={(result.products || []).map(p => ({
                                 id: p.id,
                                 name: p.name,
-                                nameEn: p.nameEn,
                                 category: p.category,
                                 image: p.image,
-                                images: (p as any).images || null,
+                                images: p.images || null,
                                 price: p.price || '',
                                 reason: p.reason,
-                                description: (p as any).description || null,
+                                description: p.description || null,
                                 keyIngredients: p.keyIngredients || [],
                                 benefits: p.benefits || [],
                                 affiliateLinks: p.affiliateLinks || null,
                                 howToUse: p.howToUse || null,
-                                source: (p as { source?: "persona" | "algorithm" }).source,
+                                source: p.source,
                             } as ProductCardData))}
                             isLoading={loading}
                             faceAnalysis={faceAnalysis}

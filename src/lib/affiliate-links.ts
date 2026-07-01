@@ -3,7 +3,7 @@
  */
 
 // 支持的电商平台
-export type EcommercePlatform = 'taobao' | 'jd' | 'xiaohongshu' | 'douyin';
+export type EcommercePlatform = 'taobao' | 'xiaohongshu' | 'douyin';
 
 // 平台配置
 export interface PlatformConfig {
@@ -23,13 +23,6 @@ export const ECOMMERCE_PLATFORMS: Record<EcommercePlatform, PlatformConfig> = {
         icon: '🛒',
         color: '#FF5000',
         bgColor: '#FFF5F0'
-    },
-    jd: {
-        id: 'jd',
-        name: '京东',
-        icon: '📦',
-        color: '#E4393C',
-        bgColor: '#FEF2F2'
     },
     xiaohongshu: {
         id: 'xiaohongshu',
@@ -52,12 +45,10 @@ export const PLATFORM_PRIORITY: EcommercePlatform[] = [
     'xiaohongshu',
     'douyin',
     'taobao',
-    'jd'
 ];
 
 export interface AffiliateLinks {
     taobao?: string;
-    jd?: string;
     xiaohongshu?: string;
     douyin?: string;
 }
@@ -172,8 +163,6 @@ export function getDeepLink(platform: EcommercePlatform, productUrl: string): st
     // 这些深链接格式可能需要根据实际情况调整
     const deepLinkSchemes: Partial<Record<EcommercePlatform, string>> = {
         taobao: 'taobao://',
-        jd: 'openapp.jdmobile://',
-        // 小红书和抖音的深链接较复杂，通常需要官方 SDK
     };
 
     const scheme = deepLinkSchemes[platform];
