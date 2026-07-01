@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback, useState, useMemo } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { m, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
+import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ProductCardData } from "./ProductCard";
 import { getProductLinks, openAffiliateLink } from "@/lib/affiliate-links";
@@ -19,7 +19,37 @@ interface ProductDetailModalProps {
 export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailModalProps) {
     const [mounted, setMounted] = useState(false);
     const [openAccordion, setOpenAccordion] = useState<string | null>(null);
-    const [imageError, setImageError] = useState(false);
+    const [activeImageIndex, setActiveImageIndex] = useState(0);
+
+    // 合并主图 + 图库为完整图片列表
+    const galleryImages = useMemo(() => {
+        if (!product) return [];
+        const imgs: string[] = [];
+        if (product.image) imgs.push(product.image);
+        if (product.images && product.images.length > 0) {
+            for (const img of product.images) {
+                if (img && img !== product.image && !imgs.includes(img)) {
+                    imgs.push(img);
+                }
+            }
+        }
+        return imgs;
+    }, [product]);
+
+    // 重置索引
+    useEffect(() => {
+        setActiveImageIndex(0);
+    }, [product?.id]);
+
+    const hasMultipleImages = galleryImages.length > 1;
+
+    const goToPrev = useCallback(() => {
+        setActiveImageIndex(prev => (prev === 0 ? galleryImages.length - 1 : prev - 1));
+    }, [galleryImages.length]);
+
+    const goToNext = useCallback(() => {
+        setActiveImageIndex(prev => (prev === galleryImages.length - 1 ? 0 : prev + 1));
+    }, [galleryImages.length]);
 
     useEffect(() => {
         setMounted(true);
@@ -87,23 +117,64 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                             <X className="w-4 h-4" />
                         </button>
 
-                        {/* Left - Image */}
+                        {/* Left - Image Gallery */}
                         <div className="relative aspect-square w-full flex-shrink-0 bg-[#F5F0E8] lg:h-full lg:w-[45%] lg:aspect-auto">
-                            {product.image && !imageError ? (
-                                <Image
-                                    src={product.image}
-                                    alt={product.name}
-                                    fill
-                                    className="object-cover"
-                                    sizes="(max-width: 1024px) 100vw, 42vw"
-                                    quality={90}
-                                    priority
-                                    unoptimized={product.image?.startsWith('/') || product.image?.startsWith('https://')}
-                                    onError={() => setImageError(true)}
-                                />
+                            {galleryImages.length > 0 ? (
+                                <>
+                                    <Image
+                                        src={galleryImages[activeImageIndex]}
+                                        alt={product.name}
+                                        fill
+                                        className="object-cover"
+                                        sizes="(max-width: 1024px) 100vw, 42vw"
+                                        quality={90}
+                                        priority
+                                        unoptimized={galleryImages[activeImageIndex]?.startsWith('/') || galleryImages[activeImageIndex]?.startsWith('https://')}
+                                    />
+                                    {/* 左右翻页按钮 */}
+                                    {hasMultipleImages && (
+                                        <>
+                                            <button
+                                                type="button"
+                                                onClick={goToPrev}
+                                                className="absolute left-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-white/80 text-[#3d2f25] shadow-sm hover:bg-white hover:scale-105 transition-all"
+                                                aria-label="上一张"
+                                            >
+                                                <ChevronLeft className="w-4 h-4" />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={goToNext}
+                                                className="absolute right-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-white/80 text-[#3d2f25] shadow-sm hover:bg-white hover:scale-105 transition-all"
+                                                aria-label="下一张"
+                                            >
+                                                <ChevronRight className="w-4 h-4" />
+                                            </button>
+                                        </>
+                                    )}
+                                    {/* 缩略图指示器 */}
+                                    {hasMultipleImages && (
+                                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                                            {galleryImages.map((_, idx) => (
+                                                <button
+                                                    key={idx}
+                                                    type="button"
+                                                    onClick={() => setActiveImageIndex(idx)}
+                                                    className={cn(
+                                                        "w-2 h-2 rounded-full transition-all",
+                                                        idx === activeImageIndex
+                                                            ? "bg-white shadow-sm w-5"
+                                                            : "bg-white/50 hover:bg-white/70"
+                                                    )}
+                                                    aria-label={`查看第 ${idx + 1} 张图`}
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
+                                </>
                             ) : (
                                 <div className="flex h-full items-center justify-center text-[#8c7a6b]/50">
-                                    <span className="text-sm">{imageError ? "图片加载失败" : "暂无图片"}</span>
+                                    <span className="text-sm">暂无图片</span>
                                 </div>
                             )}
                         </div>

@@ -964,6 +964,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 nameEn: p.nameEn,
                                 category: p.category,
                                 image: p.image,
+                                images: (p as any).images || null,
                                 price: p.price || '',
                                 reason: p.reason,
                                 keyIngredients: p.keyIngredients || [],

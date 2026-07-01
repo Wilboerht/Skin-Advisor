@@ -255,7 +255,6 @@ model Product {
   suitableSkinTypes Json     // string[] 适用肤质
   benefits          Json     // string[] 主要功效
   active            Boolean  @default(true)
-  stock             Int      @default(100) // Default stock
   featured          Boolean  @default(false)
   sortOrder         Int      @default(0)
   createdAt         DateTime @default(now())

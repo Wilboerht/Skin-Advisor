@@ -20,6 +20,7 @@ export interface ProductCardData {
     nameEn?: string | null;
     category: string;
     image: string;
+    images?: string[] | null;
     price: string;
     reason: string;
     score?: number;

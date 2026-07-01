@@ -471,6 +471,7 @@ export async function POST(request: NextRequest) {
                         nameEn: catalogProduct.nameEn,
                         category: catalogProduct.category,
                         image: catalogProduct.image,
+                        images: (catalogProduct as any).images || null,
                         price: catalogProduct.price,
                         description: catalogProduct.description,
                         keyIngredients: catalogProduct.keyIngredients || [],

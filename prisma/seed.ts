@@ -145,7 +145,6 @@ async function main() {
                 benefits: p.benefits,
                 negativeFor: p.negativeFor || [],
                 active: true,
-                stock: 100 // Default stock
             },
             create: {
                 id: p.id,
@@ -160,7 +159,6 @@ async function main() {
                 benefits: p.benefits,
                 negativeFor: p.negativeFor || [],
                 active: true,
-                stock: 100 // Default stock
             }
         });
     }

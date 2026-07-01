@@ -15,6 +15,7 @@ export interface ProductRecommendation {
     nameEn: string | null;
     category: string;
     image: string;
+    images?: string[] | null;
     price: string;
     reason: string;
     score?: number;
@@ -327,7 +328,7 @@ export async function getCandidateProducts(
     persona?: string
 ): Promise<ScoredProduct[]> {
     try {
-        // 1. Fetch Active & In-Stock Products
+        // 1. Fetch Active Products
         const allProducts = await prisma.product.findMany({
             where: {
                 active: true
@@ -511,6 +512,7 @@ export async function recommendProducts(
             nameEn: p.nameEn,
             category: p.category,
             image: p.image,
+            images: (p as any).images || null,
             price: p.price,
             reason: generateSmartReason(p.matchedBenefits, concerns, skinType, index),
             score: p.rawScore,
