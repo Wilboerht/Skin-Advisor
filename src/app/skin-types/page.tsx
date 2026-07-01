@@ -69,7 +69,7 @@ export default function ResultIndexPage() {
       </section>
 
       {/* 类型卡片 */}
-      <section className="pb-20 md:pb-36 px-6 md:px-12 lg:px-20">
+      <section className="px-6 md:px-12 lg:px-20">
         <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-x-5 md:gap-x-7 gap-y-6 md:gap-y-10">
           {orderedTypes.map((type, i) => {
             if (!type) return null;
@@ -105,7 +105,7 @@ export default function ResultIndexPage() {
       </section>
 
       {/* 底部 CTA - 送好礼 */}
-      <section className="pb-16 md:pb-24 px-6 md:px-12 lg:px-20">
+      <section className="pt-20 pb-16 md:pb-24 px-6 md:px-12 lg:px-20">
         <div className="max-w-5xl mx-auto">
           <Link
             href="/gift"
