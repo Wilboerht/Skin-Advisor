@@ -5,7 +5,7 @@ import type { Metadata } from "next";
  * Safari's Start Page "Suggestions" cards also pick this up via og:image.
  */
 export const defaultOpenGraphImage = {
-  url: "/images/og-default.jpg",
+  url: "/images/og-default.png",
   width: 1200,
   height: 630,
   alt: "NIHPLOD AI 护肤顾问",

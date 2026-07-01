@@ -38,7 +38,7 @@ export const metadata: Metadata = {
       "基于 AI 深度学习的面部识别技术，精准分析 8 种肤质类型，量身定制个性化护肤方案。",
     images: [
       {
-        url: "/images/og-default.jpg",
+        url: "/images/og-default.png",
         width: 1200,
         height: 630,
         alt: "NIHPLOD AI 护肤顾问",
@@ -50,7 +50,7 @@ export const metadata: Metadata = {
     title: "NIHPLOD | AI 护肤顾问",
     description:
       "基于 AI 深度学习的面部识别技术，精准分析 8 种肤质类型，量身定制护肤方案。",
-    images: ["/images/og-default.jpg"],
+    images: ["/images/og-default.png"],
   },
   robots: {
     index: true,
