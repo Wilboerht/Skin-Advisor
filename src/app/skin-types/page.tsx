@@ -109,8 +109,17 @@ export default function ResultIndexPage() {
         <div className="max-w-5xl mx-auto">
           <Link
             href="/gift"
-            className="group relative block p-8 md:p-12"
+            className="group relative block p-8 md:p-12 overflow-hidden [mask-image:radial-gradient(ellipse_at_center,black_50%,transparent_85%)]"
           >
+            {/* 右侧背景水印 */}
+            <Image
+              src="/images/watermark.png"
+              alt=""
+              width={200}
+              height={200}
+              className="absolute right-0 top-1/2 -translate-y-1/2 w-130 h-auto object-contain opacity-15 pointer-events-none select-none"
+              unoptimized
+            />
             <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 md:gap-10">
               <Image
                 src="/images/gift-badge.png"
