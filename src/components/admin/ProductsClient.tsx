@@ -165,6 +165,11 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
         setSelectedIds([]);
     }, [categoryFilter, statusFilter]);
 
+    // Sync products state when initialProducts prop changes (e.g., after router.refresh())
+    useEffect(() => {
+        setProducts(initialProducts);
+    }, [initialProducts]);
+
     // Get unique categories from current products state (not stale initialProducts prop)
     const categories = [...new Set(products.map(p => p.category))];
 
