@@ -104,6 +104,39 @@ export default function ResultIndexPage() {
         </div>
       </section>
 
+      {/* 底部 CTA - 送好礼 */}
+      <section className="pb-16 md:pb-24 px-6 md:px-12 lg:px-20">
+        <div className="max-w-5xl mx-auto">
+          <Link
+            href="/gift"
+            className="group relative block p-8 md:p-12"
+          >
+            <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 md:gap-10">
+              <Image
+                src="/images/gift-badge.png"
+                alt=""
+                width={160}
+                height={120}
+                className="w-48 h-auto object-contain shrink-0"
+                unoptimized
+              />
+              <div className="text-center md:text-left">
+                <h3 className="text-xl md:text-2xl font-serif text-[#1A1A1A] mb-2 tracking-wide">
+                  肌智派送好礼
+                </h3>
+                <p className="text-sm text-[#5E5E5E] font-light leading-relaxed mb-4">
+                  测肤完成后参与抽奖，赢取 NIHPLOD 限定护肤礼遇
+                </p>
+                <span className="inline-flex items-center gap-2 text-sm font-medium tracking-[0.15em] text-[#A0784C] group-hover:text-[#8B6840] transition-colors duration-300">
+                  立即参与
+                  <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
+                </span>
+              </div>
+            </div>
+          </Link>
+        </div>
+      </section>
+
       {/* 页脚 */}
       <footer className="pt-6 md:pt-8 pb-[calc(1.5rem+env(safe-area-inset-bottom,16px))] px-6 text-center">
         <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-4 text-[10px] md:text-xs tracking-widest text-[#5E5E5E]/60">
