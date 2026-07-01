@@ -163,7 +163,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       </section>
 
       {/* Daily Routine */}
-      <section className="py-12 md:py-20 px-6 md:px-12 lg:px-20 bg-white">
+      <section className="py-[112px] px-6 md:px-12 lg:px-20 bg-white">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-2xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-5 md:mb-8">
             {data.m4.title || "我们建议的护肤日常"}
@@ -199,8 +199,26 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       </section>
 
       {/* CTA */}
-      <section className="py-14 md:py-28 px-6 md:px-12 lg:px-20 bg-white">
-        <div className="max-w-3xl mx-auto text-center">
+      <section className="relative py-14 md:py-28 px-6 md:px-12 lg:px-20 bg-white overflow-hidden">
+        {/* 水印背景 */}
+        <div
+          className="absolute inset-0 pointer-events-none z-0 opacity-[0.15]"
+          style={{
+            backgroundImage: `url('/images/watermark.png')`,
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: "center",
+            backgroundSize: "80%",
+          }}
+        />
+        {/* 四周虚化遮罩 */}
+        <div
+          className="absolute inset-0 pointer-events-none z-0"
+          style={{
+            background:
+              "radial-gradient(ellipse 60% 60% at center, transparent 25%, rgba(255,255,255,0.95) 100%)",
+          }}
+        />
+        <div className="relative z-10 max-w-3xl mx-auto text-center">
           <h2 className="text-2xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-3 md:mb-4">
             想知道你的真实肤质类型吗？
           </h2>
