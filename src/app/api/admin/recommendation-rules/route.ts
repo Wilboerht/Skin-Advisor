@@ -18,7 +18,14 @@ const RuleSchema = z.object({
 });
 
 // GET /api/admin/recommendation-rules
-export const GET = withAdminAuth(async () => {
+export const GET = withAdminAuth(async (request: NextRequest) => {
+    // Rate limit
+    const ip = getClientIP(request);
+    const limitResult = await rateLimit(`admin-rules-get-${ip}`, "default", { maxRequests: 60, windowMs: 60 * 1000 });
+    if (!limitResult.success) {
+        return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     const rules = await prisma.recommendationRule.findMany({
         orderBy: { priority: "desc" },
         include: {

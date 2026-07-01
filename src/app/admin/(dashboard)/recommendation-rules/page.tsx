@@ -168,12 +168,17 @@ export default function RecommendationRulesPage() {
             resetForm();
             fetchRules();
         } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : "操作失败";
+            alert(message);
         } finally {
             setSubmitting(false);
         }
     };
 
     const toggleActive = async (id: string, active: boolean) => {
+        const previousRules = rules;
+        // 乐观更新
+        setRules(prev => prev.map(r => r.id === id ? { ...r, active: !active } : r));
         try {
             const res = await fetch(`/api/admin/recommendation-rules/${id}`, {
                 method: "PUT",
@@ -181,8 +186,10 @@ export default function RecommendationRulesPage() {
                 body: JSON.stringify({ active: !active })
             });
             if (!res.ok) throw new Error("Failed to update");
-            setRules(prev => prev.map(r => r.id === id ? { ...r, active: !active } : r));
         } catch {
+            // API 失败时回滚到之前的状态
+            setRules(previousRules);
+            alert("状态更新失败，请重试");
         }
     };
 
@@ -195,6 +202,7 @@ export default function RecommendationRulesPage() {
             if (!res.ok) throw new Error("Failed to delete");
             setRules(prev => prev.filter(r => r.id !== id));
         } catch {
+            alert("删除失败，请重试");
         }
     };
 

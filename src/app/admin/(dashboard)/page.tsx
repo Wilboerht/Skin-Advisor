@@ -27,12 +27,23 @@ function StatCard({ title, value, icon: Icon, delay }: { title: string; value: n
 }
 
 export default function AdminDashboardPage() {
-    const { stats, loading } = useDashboardStats();
+    const { stats, loading, error } = useDashboardStats();
 
     if (loading) {
         return (
             <div className="flex items-center justify-center h-96">
                 <Loader2 className="w-8 h-8 animate-spin text-[#1A1A1A]/30" />
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex flex-col items-center justify-center h-96 gap-4">
+                <p className="text-sm text-red-500">统计数据加载失败</p>
+                <button onClick={() => window.location.reload()} className="text-sm text-[#3D4430] underline">
+                    点击重试
+                </button>
             </div>
         );
     }

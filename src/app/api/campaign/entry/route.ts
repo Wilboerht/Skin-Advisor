@@ -38,29 +38,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "活动不存在或已结束" }, { status: 404 })
     }
 
-    // 检查参与人数上限
-    if (campaign.maxEntries > 0) {
-      const entryCount = await prisma.campaignEntry.count({ where: { campaignId } })
-      if (entryCount >= campaign.maxEntries) {
-        return NextResponse.json({ error: "活动参与人数已满" }, { status: 400 })
-      }
-    }
-
-    // 获取用户身份
+    // 获取用户身份（提前验证，事务内不再调 auth）
     const session = await getSession()
 
     if (!session?.id) {
-      // 游客不允许参与，需要登录
       return NextResponse.json({ error: "请先登录后再参与活动", code: "LOGIN_REQUIRED" }, { status: 401 })
     }
 
     const userId = session.id
 
-    // 检查是否已参与
-    const existing = await prisma.campaignEntry.findUnique({
+    // 检查是否已参与（事务外快速拒绝，事务内再双重确认）
+    const existingQuick = await prisma.campaignEntry.findUnique({
       where: { campaignId_userId: { campaignId, userId } },
     })
-    if (existing) {
+    if (existingQuick) {
       return NextResponse.json({ error: "您已参与本次活动", code: "ALREADY_ENTERED" }, { status: 409 })
     }
 
@@ -74,19 +65,50 @@ export async function POST(req: NextRequest) {
       retries++
     }
 
-    const entry = await prisma.campaignEntry.create({
-      data: {
-        campaignId,
-        userId,
-        proofImage,
-        shareLink,
-        contactName,
-        contactPhone,
-        contactEmail,
-        lotteryCode,
-        status: "pending",
-      },
+    // 事务内原子检查人数上限 + 创建记录，防止并发突破 maxEntries
+    const entry = await prisma.$transaction(async (tx) => {
+      if (campaign.maxEntries > 0) {
+        const entryCount = await tx.campaignEntry.count({ where: { campaignId } })
+        if (entryCount >= campaign.maxEntries) {
+          throw new Error("FULL")
+        }
+      }
+      // 双重确认未参与（事务内再次检查）
+      const duplicate = await tx.campaignEntry.findUnique({
+        where: { campaignId_userId: { campaignId, userId } },
+      })
+      if (duplicate) {
+        throw new Error("DUPLICATE")
+      }
+      return tx.campaignEntry.create({
+        data: {
+          campaignId,
+          userId,
+          proofImage,
+          shareLink,
+          contactName,
+          contactPhone,
+          contactEmail,
+          lotteryCode,
+          status: "pending",
+        },
+      })
+    }).catch((err: Error) => {
+      if (err.message === "FULL") {
+        return "FULL" as const
+      }
+      if (err.message === "DUPLICATE") {
+        return "DUPLICATE" as const
+      }
+      throw err
     })
+
+    if (entry === "FULL") {
+      return NextResponse.json({ error: "活动参与人数已满" }, { status: 400 })
+    }
+    if (entry === "DUPLICATE") {
+      return NextResponse.json({ error: "您已参与本次活动", code: "ALREADY_ENTERED" }, { status: 409 })
+    }
 
     return NextResponse.json({ success: true, entry: { id: entry.id, lotteryCode: entry.lotteryCode, status: entry.status } })
   } catch (error) {

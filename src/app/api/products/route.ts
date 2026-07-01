@@ -31,11 +31,13 @@ export async function GET(request: NextRequest) {
                 name: true,
                 category: true,
                 image: true,
+                images: true,
                 price: true,
                 description: true,
                 keyIngredients: true,
                 suitableSkinTypes: true,
                 benefits: true,
+                howToUse: true,
                 affiliateLinks: true,
             }
         });

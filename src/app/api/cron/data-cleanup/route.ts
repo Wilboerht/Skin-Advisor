@@ -66,14 +66,13 @@ export async function GET(request: NextRequest) {
         };
 
         const now = Date.now();
-        const guestCutoff = new Date(now - GUEST_RETENTION_MS);
-        const userCutoff = new Date(now - USER_RETENTION_MS);
 
-        // ===== 1. 清理游客数据（超过 1 小时）=====
+        // ===== 1. 清理已过期的游客数据（expiresAt 已过）=====
+        // 使用 expiresAt 而非 createdAt，与用户端过期判断同源
         const guestSessions = await prisma.advisorSession.findMany({
             where: {
                 userId: null,
-                createdAt: { lt: guestCutoff },
+                expiresAt: { lt: new Date(now) },
             },
             select: {
                 sessionId: true,
@@ -81,17 +80,20 @@ export async function GET(request: NextRequest) {
         });
         await cleanupSessions(guestSessions, stats);
 
-        // ===== 2. 清理注册用户超期数据（超过 3 个月）=====
+        // ===== 2. 清理已过期的注册用户数据（expiresAt 已过）=====
         const oldUserSessions = await prisma.advisorSession.findMany({
             where: {
                 userId: { not: null },
-                createdAt: { lt: userCutoff },
+                expiresAt: { lt: new Date(now) },
             },
             select: {
                 sessionId: true,
             },
         });
         await cleanupSessions(oldUserSessions, stats);
+
+        // Recalculate for per-user retention
+        const userCutoff = new Date(now - USER_RETENTION_MS);
 
         // ===== 3. 清理注册用户超量数据（3 个月内每个用户最多保留 100 条）=====
         // 使用 window function 一次性获取所有超量记录，避免 N+1 查询

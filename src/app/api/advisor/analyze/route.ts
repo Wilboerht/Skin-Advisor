@@ -223,9 +223,10 @@ export async function POST(request: NextRequest) {
         const user = await getSession();
 
         // 6b. 原子性预占额度（免费重试不扣费）
-        // 在 session 创建前预占，避免"结果已出但额度未扣"的竞态窗口
-        if (!isFreeRetryAllowed && sessionId) {
-            const reserved = await reserveUsage(request, sessionId, body as Record<string, unknown>);
+        // 确保 sessionId 存在：若客户端未传，服务端生成一个，防止绕过 reserveUsage
+        const effectiveSessionId = sessionId || crypto.randomUUID();
+        if (!isFreeRetryAllowed) {
+            const reserved = await reserveUsage(request, effectiveSessionId, body as Record<string, unknown>);
             if (!reserved.success) {
                 return NextResponse.json(
                     { error: reserved.error || "您已达到今日测试上限" },
@@ -236,13 +237,13 @@ export async function POST(request: NextRequest) {
 
         // 保存会话占位记录（标记分析开始，不设置 completedAt——防止超时后状态不一致）
         // 同时保存问卷答案，用于历史审计与复购分析
-        if (sessionId) {
+        {
             const consentFields = privacyConsent ? {
                 privacyConsentAt: new Date(privacyConsent.consentedAt),
                 privacyConsentVersion: privacyConsent.version
             } : {};
             await prisma.advisorSession.upsert({
-                where: { sessionId },
+                where: { sessionId: effectiveSessionId },
                 update: {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     answers: answers as any,
@@ -258,7 +259,7 @@ export async function POST(request: NextRequest) {
                     ...consentFields
                 },
                 create: {
-                    sessionId,
+                    sessionId: effectiveSessionId,
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     answers: answers as any,
                     analysisSource: faceAnalysis ? "hybrid" : "text",
@@ -321,14 +322,16 @@ export async function POST(request: NextRequest) {
                 nickname: nickname || "护肤达人"
             };
 
-            // 持久化降级结果
-            if (sessionId) {
+            // 持久化降级结果（effectiveSessionId 总是存在）
+            // 游客统一 1 小时，与 hybrid 路径一致
+            {
+                const GUEST_RETENTION_HOURS = 1;
                 const expiresAt = user?.id
                     ? new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
-                    : new Date(Date.now() + 3 * 60 * 60 * 1000);
+                    : new Date(Date.now() + GUEST_RETENTION_HOURS * 60 * 60 * 1000);
                 try {
                     await prisma.advisorSession.upsert({
-                        where: { sessionId },
+                        where: { sessionId: effectiveSessionId },
                         update: {
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             analysisResult: finalResult as any,
@@ -338,7 +341,7 @@ export async function POST(request: NextRequest) {
                             // answers 已在前面保存，此处不覆盖
                         },
                         create: {
-                            sessionId,
+                            sessionId: effectiveSessionId,
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             answers: answers as any,
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -563,18 +566,20 @@ export async function POST(request: NextRequest) {
         const sanitizedResult = sanitizeAiOutput(standardizedResult) as typeof standardizedResult;
 
         // 9. Persist Result to DB (all users including guests)
-        if (sessionId) {
-            // 游客报告保留1小时，注册用户报告保留3个月
+        // effectiveSessionId 总是存在，无需条件检查
+        {
+            // 游客报告保留 1 小时，注册用户报告保留 3 个月（与 AI 降级路径统一）
+            const GUEST_RETENTION_HOURS = 1;
             const expiresAt = user?.id
                 ? new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
-                : new Date(Date.now() + 1 * 60 * 60 * 1000);
+                : new Date(Date.now() + GUEST_RETENTION_HOURS * 60 * 60 * 1000);
 
             // Persist result to DB — do NOT swallow errors (ghost analysis bug)
             try {
                 await prisma.$transaction(async (tx) => {
                     // Fetch existing session first to avoid overwriting parallel data
                     const existingSession = await tx.advisorSession.findUnique({
-                        where: { sessionId },
+                        where: { sessionId: effectiveSessionId },
                         select: { analysisResult: true }
                     });
 
@@ -587,7 +592,7 @@ export async function POST(request: NextRequest) {
                     };
 
                     await tx.advisorSession.upsert({
-                        where: { sessionId },
+                        where: { sessionId: effectiveSessionId },
                         update: {
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             analysisResult: mergedResult as any,
@@ -599,7 +604,7 @@ export async function POST(request: NextRequest) {
                             // 保留已有的 answers，不覆盖问卷数据
                         },
                         create: {
-                            sessionId,
+                            sessionId: effectiveSessionId,
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             answers: answers as any,
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -637,7 +642,7 @@ export async function POST(request: NextRequest) {
                 }
 
                 // 报告链接统一为 /reports/:id
-                const reportUrl = `${baseUrl}/reports/${sessionId}`;
+                const reportUrl = `${baseUrl}/reports/${effectiveSessionId}`;
 
                 // 异步触发，绝不阻塞前端响应时间
                 fetch(`${officialApiUrl}/api/internal/wechat/send-template`, {

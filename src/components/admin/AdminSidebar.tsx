@@ -83,6 +83,8 @@ export default function AdminSidebar() {
         setShowExportMenu(false);
     };
 
+    const [logoutError, setLogoutError] = useState(false);
+
     const handleLogout = async () => {
         try {
             const res = await fetch("/api/admin/auth/logout", { method: "POST" });
@@ -91,7 +93,8 @@ export default function AdminSidebar() {
             }
             router.push("/admin/login");
         } catch {
-            alert("退出登录失败，请重试");
+            setLogoutError(true);
+            setTimeout(() => setLogoutError(false), 3000);
         }
     };
 
@@ -240,6 +243,9 @@ export default function AdminSidebar() {
                     <LogOut className={cn("h-4 w-4", collapsed ? "mr-0" : "mr-3")} />
                     {!collapsed && <span>退出登录</span>}
                 </button>
+                {logoutError && !collapsed && (
+                    <p className="text-xs text-red-500 mt-1 px-3">退出失败，请重试</p>
+                )}
             </div>
         </div>
     );

@@ -172,11 +172,12 @@ export async function GET(req: NextRequest) {
             }
         });
 
+        // 使用本地 DB 的 role（管理端可能已禁用/修改），而非官网固定 "user"
         const responseUser = {
             ...data.data.user,
             phone: data.data.user.phone,
             name: data.data.user.nickname || data.data.user.phone,
-            role: "user"
+            role: localUser.role
         };
 
         const responsePayload = { user: responseUser };

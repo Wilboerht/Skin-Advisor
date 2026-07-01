@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma"
-import { verifyAdminSession } from "@/lib/admin-auth"
+import { verifyAdminSession, logAdminAction, getClientInfo } from "@/lib/admin-auth"
 import { NextRequest, NextResponse } from "next/server"
+import { z } from "zod"
 
 // GET /api/admin/campaigns/[id]/entries - 获取活动参与列表
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -29,6 +30,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 }
 
+const entryPatchSchema = z.object({
+  entryId: z.string().min(1),
+  action: z.enum(["verify", "reject", "win", "unwin"]),
+  reviewNote: z.string().max(2000).optional(),
+  prizeName: z.string().max(200).optional(),
+})
+
 // PATCH /api/admin/campaigns/[id]/entries - 批量审核/设置中奖
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const admin = await verifyAdminSession()
@@ -36,11 +44,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { id: campaignId } = await params
   try {
-    const { entryId, action, reviewNote, prizeName } = await req.json()
-
-    if (!entryId || !action) {
-      return NextResponse.json({ error: "参数错误" }, { status: 400 })
+    const body = await req.json()
+    const parsed = entryPatchSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: "参数错误", details: parsed.error.flatten() }, { status: 400 })
     }
+    const { entryId, action, reviewNote, prizeName } = parsed.data
 
     // 校验 entry 属于当前 campaign
     const existingEntry = await prisma.campaignEntry.findUnique({
@@ -82,22 +91,36 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         return NextResponse.json({ error: "无效操作" }, { status: 400 })
     }
 
-    const entry = await prisma.campaignEntry.update({
-      where: { id: entryId },
-      data: updateData,
+    // 事务内原子更新 entry 状态 + 同步 winnerIds，防止部分失败
+    const entry = await prisma.$transaction(async (tx) => {
+      const updated = await tx.campaignEntry.update({
+        where: { id: entryId },
+        data: updateData,
+      })
+
+      if (action === "win" || action === "unwin") {
+        const wonEntries = await tx.campaignEntry.findMany({
+          where: { campaignId, status: "won" },
+          select: { id: true },
+        })
+        await tx.campaign.update({
+          where: { id: campaignId },
+          data: { winnerIds: wonEntries.map((e) => e.id) },
+        })
+      }
+      return updated
     })
 
-    // 同步更新 Campaign.winnerIds
-    if (action === "win" || action === "unwin") {
-      const wonEntries = await prisma.campaignEntry.findMany({
-        where: { campaignId, status: "won" },
-        select: { id: true },
-      })
-      await prisma.campaign.update({
-        where: { id: campaignId },
-        data: { winnerIds: wonEntries.map((e) => e.id) },
-      })
-    }
+    // 审计日志
+    const clientInfo = getClientInfo(req);
+    await logAdminAction({
+      adminId: admin.adminId,
+      action,
+      resource: "CampaignEntry",
+      resourceId: entryId,
+      details: { campaignId, prizeName, reviewNote },
+      ...clientInfo,
+    })
 
     return NextResponse.json({ entry })
   } catch (error) {

@@ -56,6 +56,14 @@ export const GET = requireRole("super_admin", "admin")(async (
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
+        // PII 保护：非 super_admin 脱敏邮箱和手机号
+        if (admin.role !== "super_admin") {
+            return NextResponse.json({
+                ...user,
+                email: user.email ? `${user.email.charAt(0)}***@${user.email.split('@')[1] || '***'}` : null,
+            });
+        }
+
         return NextResponse.json(user);
     } catch (error) {
         console.error("Admin user GET error:", error);

@@ -306,19 +306,17 @@ export async function POST(request: NextRequest) {
             }
 
             case "result_view": {
-                // 使用 upsert 避免通过分享链接直接访问时找不到记录
-                // 注意：create 分支不设置 completedAt，避免污染"完成会话"统计
+                // result_view 不应设置 completedAt：查看报告≠完成分析。
+                // 只有真正完成分析流程才标记 completedAt（由 analyze API 设置）。
                 await prisma.advisorSession.upsert({
                     where: { sessionId },
                     update: {
                         resultViewedAt: now,
-                        completedAt: now,
                     },
                     create: {
                         sessionId,
                         startedAt: now,
                         resultViewedAt: now,
-                        // 不设置 completedAt：通过分享链接直接访问不算作完整的分析流程
                         userAgent: clientInfo.userAgent,
                         ip: clientInfo.ip,
                         referrer: clientInfo.referer,
@@ -348,8 +346,10 @@ export async function POST(request: NextRequest) {
 
     } catch (error) {
         console.error("Analytics track error:", error);
-
-        // 对于分析API，即使出错也返回200，不影响用户体验
-        return NextResponse.json({ success: true });
+        // 返回错误状态码以便监控系统发现异常
+        return NextResponse.json(
+            { success: false, error: "Tracking failed" },
+            { status: 500 }
+        );
     }
 }

@@ -122,42 +122,50 @@ export const POST = requireRole("super_admin")(async (request, { admin }) => {
             );
         }
 
-        // Check uniqueness
-        const existing = await prisma.adminUser.findFirst({
-            where: {
-                OR: [{ username: normalizedUsername }, ...(email ? [{ email }] : [])],
-            },
-        });
-
-        if (existing) {
-            return NextResponse.json(
-                { success: false, error: "用户名或邮箱已存在" },
-                { status: 409 }
-            );
-        }
-
+        // 事务内原子检查唯一性 + 创建，防止并发竞态
         const hashedPassword = await bcrypt.hash(password, 12);
 
-        const newAdmin = await prisma.adminUser.create({
-            data: {
-                username: normalizedUsername,
-                email: email || null,
-                password: hashedPassword,
-                name: name || null,
-                role,
-                active: true,
-            },
-            select: {
-                id: true,
-                username: true,
-                email: true,
-                name: true,
-                role: true,
-                active: true,
-                createdAt: true,
-                updatedAt: true,
-            },
-        });
+        let newAdmin;
+        try {
+            newAdmin = await prisma.$transaction(async (tx) => {
+                const existing = await tx.adminUser.findFirst({
+                    where: {
+                        OR: [{ username: normalizedUsername }, ...(email ? [{ email }] : [])],
+                    },
+                });
+                if (existing) {
+                    throw new Error("DUPLICATE");
+                }
+                return tx.adminUser.create({
+                    data: {
+                        username: normalizedUsername,
+                        email: email || null,
+                        password: hashedPassword,
+                        name: name || null,
+                        role,
+                        active: true,
+                    },
+                    select: {
+                        id: true,
+                        username: true,
+                        email: true,
+                        name: true,
+                        role: true,
+                        active: true,
+                        createdAt: true,
+                        updatedAt: true,
+                    },
+                });
+            });
+        } catch (e: unknown) {
+            if ((e as Error).message === "DUPLICATE") {
+                return NextResponse.json(
+                    { success: false, error: "用户名或邮箱已存在" },
+                    { status: 409 }
+                );
+            }
+            throw e;
+        }
 
         // Log audit
         const clientInfo = getClientInfo(request);

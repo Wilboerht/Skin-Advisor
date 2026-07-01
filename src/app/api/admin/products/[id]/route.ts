@@ -82,6 +82,10 @@ export const PUT = withAdminAuth(async (
                 return NextResponse.json({ error: "Invalid image URL format" }, { status: 400 });
             }
         }
+        // description 字段在 schema 中为 String（非 null），拒绝 null 值
+        if (updateData.description === null) {
+            return NextResponse.json({ error: "Description cannot be null" }, { status: 400 });
+        }
         if (updateData.description !== undefined && updateData.description !== null && (typeof updateData.description !== "string" || updateData.description.length > 5000)) {
             return NextResponse.json({ error: "Description too long (max 5000 chars)" }, { status: 400 });
         }

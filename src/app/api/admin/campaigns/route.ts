@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma"
-import { verifyAdminSession } from "@/lib/admin-auth"
+import { verifyAdminSession, logAdminAction, getClientInfo } from "@/lib/admin-auth"
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 
@@ -57,6 +57,17 @@ export async function POST(req: NextRequest) {
         drawDate: parsed.data.drawDate ? new Date(parsed.data.drawDate) : null,
         prizes: parsed.data.prizes,
       },
+    })
+
+    // 审计日志
+    const clientInfo = getClientInfo(req);
+    await logAdminAction({
+      adminId: admin.adminId,
+      action: "create",
+      resource: "Campaign",
+      resourceId: campaign.id,
+      details: { title: campaign.title, status: campaign.status },
+      ...clientInfo,
     })
 
     return NextResponse.json({ campaign }, { status: 201 })

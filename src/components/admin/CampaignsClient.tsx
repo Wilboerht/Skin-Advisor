@@ -212,14 +212,19 @@ export function CampaignsClient() {
     if (!selectedCampaign) return
     setEntryActionLoading(entryId)
     try {
-      await fetch(`/api/admin/campaigns/${selectedCampaign.id}/entries`, {
+      const res = await fetch(`/api/admin/campaigns/${selectedCampaign.id}/entries`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ entryId, action, prizeName }),
       })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setError(data.error || "操作失败")
+        return
+      }
       fetchEntries(selectedCampaign.id, entriesFilter)
     } catch {
-      // silently fail
+      setError("操作失败，请重试")
     } finally {
       setEntryActionLoading(null)
     }

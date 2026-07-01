@@ -14,11 +14,19 @@ export async function PUT(req: NextRequest) {
 
         const updateData: { name?: string; avatarUrl?: string } = {};
         if (typeof name === "string") {
-            updateData.name = name.trim().slice(0, 20);
+            updateData.name = name.trim().slice(0, 50);
         }
         if (typeof avatar === "string") {
             const trimmed = avatar.trim();
-            const allowedSchemes = ["http:", "https:", "data:"];
+            const MAX_URL_LENGTH = 2000;
+            if (trimmed.length > MAX_URL_LENGTH) {
+                return NextResponse.json({ error: "头像 URL 过长" }, { status: 400 });
+            }
+            // 禁止 data: URL，强制使用 http(s) 避免超大 base64 存入 DB
+            if (trimmed.startsWith("data:")) {
+                return NextResponse.json({ error: "头像不支持 data: URL，请使用图片上传" }, { status: 400 });
+            }
+            const allowedSchemes = ["http:", "https:"];
             const hasAllowedScheme = allowedSchemes.some((scheme) => trimmed.startsWith(scheme));
             if (trimmed && !hasAllowedScheme) {
                 return NextResponse.json({ error: "头像 URL 协议不合法" }, { status: 400 });

@@ -108,8 +108,9 @@ export const FaceAnalyzeRequestSchema = z.object({
     sessionId: z.string().uuid().optional(), // 业务会话 ID，用于复用额度
     images: z.union([
         // 支持新的数组格式 [{ data: "base64", angle: "front" }]
+        // 限制单张图片 base64 最大 10MB（约 13.6M 字符）
         z.array(z.object({
-            data: z.string(),
+            data: z.string().max(15_000_000, "图片数据过大"),
             angle: z.string()
         })),
         // 兼容旧的对象格式 { front: "base64" }

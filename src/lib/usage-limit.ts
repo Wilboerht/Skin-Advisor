@@ -88,37 +88,20 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const whereConditions: Prisma.GuestUsageWhereInput[] = [{ ipAddress }];
-    if (cookieId) whereConditions.push({ cookieId });
-    if (fingerprint) whereConditions.push({ fingerprint });
-
-    // 优先按最可信标识（fingerprint > cookie > ip）匹配，避免共享 IP 误伤同一局域网其他用户
-    const todayRecord = await withDbRetry(async () => {
-        if (fingerprint) {
-            const r = await prisma.guestUsage.findFirst({
-                where: { fingerprint, lastTestAt: { gte: today } },
-                orderBy: { todayCount: 'desc' }
-            });
-            if (r) return r;
-        }
-        if (cookieId) {
-            const r = await prisma.guestUsage.findFirst({
-                where: { cookieId, lastTestAt: { gte: today } },
-                orderBy: { todayCount: 'desc' }
-            });
-            if (r) return r;
-        }
-        return prisma.guestUsage.findFirst({
+    // 安全：始终以服务端可信的 IP 哈希作为主匹配键，fingerprint/cookieId 仅作辅助存储。
+    // 客户端可控的 fingerprint/cookieId 不能作为额度判定的主键，否则攻击者更换即可绕过。
+    const todayRecord = await withDbRetry(() =>
+        prisma.guestUsage.findFirst({
             where: { ipAddress, lastTestAt: { gte: today } },
             orderBy: { todayCount: 'desc' }
-        });
-    });
+        })
+    );
 
     const count = todayRecord?.todayCount || 0;
 
     const blockedRecord = await withDbRetry(() =>
         prisma.guestUsage.findFirst({
-            where: { OR: whereConditions, isBlocked: true }
+            where: { ipAddress, isBlocked: true }
         })
     );
     if (blockedRecord) {
@@ -201,38 +184,19 @@ export async function reserveUsage(
                     return { success: true, role: 'member' };
                 }
 
-                // 2. 访客
-                const whereConditions: Prisma.GuestUsageWhereInput[] = [{ ipAddress }];
-                if (cookieId) whereConditions.push({ cookieId });
-                if (fingerprint) whereConditions.push({ fingerprint });
-
+                // 2. 访客 — 始终以 IP 哈希为主匹配键，fingerprint/cookieId 仅为辅助存储
                 const blockedRecord = await tx.guestUsage.findFirst({
-                    where: { OR: whereConditions, isBlocked: true }
+                    where: { ipAddress, isBlocked: true }
                 });
                 if (blockedRecord) {
                     return { success: false, error: blockedRecord.blockedReason || '您的访问已被限制，请联系客服。', role: 'guest' };
                 }
 
-                // 优先按最可信标识匹配，避免共享 IP 误伤
-                let todayRecord = null;
-                if (fingerprint) {
-                    todayRecord = await tx.guestUsage.findFirst({
-                        where: { fingerprint, lastTestAt: { gte: today } },
-                        orderBy: { todayCount: 'desc' }
-                    });
-                }
-                if (!todayRecord && cookieId) {
-                    todayRecord = await tx.guestUsage.findFirst({
-                        where: { cookieId, lastTestAt: { gte: today } },
-                        orderBy: { todayCount: 'desc' }
-                    });
-                }
-                if (!todayRecord) {
-                    todayRecord = await tx.guestUsage.findFirst({
-                        where: { ipAddress, lastTestAt: { gte: today } },
-                        orderBy: { todayCount: 'desc' }
-                    });
-                }
+                // 仅按 IP 哈希匹配当日记录，fingerprint/cookieId 不参与匹配（客户端可控不可信）
+                const todayRecord = await tx.guestUsage.findFirst({
+                    where: { ipAddress, lastTestAt: { gte: today } },
+                    orderBy: { todayCount: 'desc' }
+                });
 
                 const guestInProgress = await tx.advisorSession.count({
                     where: { ip: ipAddress, analysisStartedAt: { gte: tenMinutesAgo }, completedAt: null }
@@ -250,26 +214,11 @@ export async function reserveUsage(
                     data: { guestId: fingerprint || cookieId || ipAddress, sessionId, testDate: new Date() }
                 });
 
-                // 更新时同样优先选择最可信标识对应的记录
-                let existing = null;
-                if (fingerprint) {
-                    existing = await tx.guestUsage.findFirst({
-                        where: { fingerprint },
-                        orderBy: { lastTestAt: 'desc' }
-                    });
-                }
-                if (!existing && cookieId) {
-                    existing = await tx.guestUsage.findFirst({
-                        where: { cookieId },
-                        orderBy: { lastTestAt: 'desc' }
-                    });
-                }
-                if (!existing) {
-                    existing = await tx.guestUsage.findFirst({
-                        where: { ipAddress },
-                        orderBy: { lastTestAt: 'desc' }
-                    });
-                }
+                // 更新 GuestUsage 时同样以 IP 为主要键，fingerprint/cookieId 作为辅助元数据存储
+                let existing = await tx.guestUsage.findFirst({
+                    where: { ipAddress },
+                    orderBy: { lastTestAt: 'desc' }
+                });
 
                 const now = new Date();
                 if (existing) {

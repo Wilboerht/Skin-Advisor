@@ -24,6 +24,7 @@ interface StatsData {
 export function useDashboardStats() {
     const [stats, setStats] = useState<StatsData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const controller = new AbortController();
@@ -38,16 +39,18 @@ export function useDashboardStats() {
                 if (data.success) {
                     setStats(data.data);
                 } else {
+                    setError(data.error || "未知错误");
                 }
             })
             .catch(err => {
                 if (err.name === 'AbortError') return;
+                setError(err.message || "网络错误");
             })
             .finally(() => setLoading(false));
         return () => controller.abort();
     }, []);
 
-    return { stats, loading };
+    return { stats, loading, error };
 }
 
 export function SkinTypeDistribution({ data }: { data?: StatsData['skinTypeDistribution'] }) {

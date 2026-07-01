@@ -31,6 +31,7 @@ function AdminLoginForm() {
     "/admin/audit-logs",
     "/admin/admins",
     "/admin/recommendation-rules",
+    "/admin/campaigns",
   ];
   const redirectTo = ALLOWED_REDIRECTS.includes(rawRedirect) ? rawRedirect : "/admin/products";
 

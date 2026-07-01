@@ -19,8 +19,13 @@ export async function POST(req: NextRequest) {
 
         const response = NextResponse.json({ success: true, ...responseData });
 
-        // 透传删除 Cookie 的指令
-        if (setCookieHeader) {
+        // 透传官网所有 Set-Cookie 头（可能包含多条 cookie 清除指令）
+        const setCookieHeaders = officialResponse.headers.getSetCookie?.() || [];
+        if (setCookieHeaders.length > 0) {
+            for (const cookie of setCookieHeaders) {
+                response.headers.append("Set-Cookie", cookie);
+            }
+        } else if (setCookieHeader) {
             response.headers.set("Set-Cookie", setCookieHeader);
         }
 
