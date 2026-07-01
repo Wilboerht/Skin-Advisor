@@ -14,7 +14,15 @@ export function GiftFloatCard() {
   if (!mounted) return null;
 
   return (
-    <div className="fixed bottom-3 right-6 md:bottom-4 md:right-8 z-[9999]">
+    <div className="fixed bottom-3 right-6 md:bottom-4 md:right-8 z-[9999] flex flex-col items-center gap-0">
+      <Image
+        src="/images/gift-badge.png"
+        alt="送好礼"
+        width={120}
+        height={120}
+        className="w-[140px] h-[105px] object-contain"
+        unoptimized
+      />
       <Link
         href="/gift"
         className="group flex items-center gap-2 text-sm text-[#8B7355] hover:text-[#5c4937] transition-colors duration-300"
