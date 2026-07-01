@@ -23,6 +23,7 @@ export interface ProductCardData {
     images?: string[] | null;
     price: string;
     reason: string;
+    description?: string | null;
     score?: number;
     matchScore?: number; // 匹配度百分比
     keyIngredients?: string[];

@@ -29,7 +29,7 @@ export const GET = requireRole("super_admin", "admin")(async (request, { admin }
         switch (type) {
             case "products":
                 const products = await prisma.product.findMany({
-                    orderBy: { sortOrder: "asc" },
+                    orderBy: { createdAt: "desc" },
                     take: 5000, // Hard limit to prevent memory exhaustion
                 });
                 headers = ["ID", "Name", "Category", "Price", "Active", "Featured", "Created"];

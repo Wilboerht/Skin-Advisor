@@ -256,11 +256,8 @@ model Product {
   benefits          Json     // string[] 主要功效
   active            Boolean  @default(true)
   featured          Boolean  @default(false)
-  sortOrder         Int      @default(0)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
-  // ===== 性能索引 =====
-  @@index([active, sortOrder])   // 推荐规则查询加速
 
   // ===== 新增字段 =====
   howToUse          String?  // 使用方法说明
@@ -273,8 +270,7 @@ model Product {
   // ===== 常用查询索引 =====
   @@index([category])
   @@index([active, featured])
-  @@index([sortOrder])
-  @@index([active, category, sortOrder]) // 产品列表组合过滤
+  @@index([active, category]) // 产品列表组合过滤
 }
 
 

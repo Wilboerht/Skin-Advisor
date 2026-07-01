@@ -967,6 +967,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 images: (p as any).images || null,
                                 price: p.price || '',
                                 reason: p.reason,
+                                description: (p as any).description || null,
                                 keyIngredients: p.keyIngredients || [],
                                 benefits: p.benefits || [],
                                 affiliateLinks: p.affiliateLinks || null,

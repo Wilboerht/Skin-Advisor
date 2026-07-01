@@ -15,7 +15,7 @@ export const GET = withAdminAuth(async (request) => {
 
         const [products, total] = await Promise.all([
             prisma.product.findMany({
-                orderBy: { sortOrder: 'asc' },
+                orderBy: { createdAt: 'desc' },
                 skip,
                 take: limit,
             }),
@@ -96,11 +96,6 @@ export const POST = withAdminAuth(async (request, { admin }) => {
                 }
             }
         }
-        if (body.sortOrder !== undefined) {
-            if (!Number.isFinite(Number(body.sortOrder))) {
-                return NextResponse.json({ error: "Invalid sortOrder (must be a finite number)" }, { status: 400 });
-            }
-        }
         if (body.keyIngredients !== undefined && !Array.isArray(body.keyIngredients)) {
             return NextResponse.json({ error: "keyIngredients must be an array" }, { status: 400 });
         }
@@ -148,7 +143,6 @@ export const POST = withAdminAuth(async (request, { admin }) => {
                     suitableSkinTypes: body.suitableSkinTypes || [],
                     benefits: body.benefits || [],
                     negativeFor: body.negativeFor || [],
-                    sortOrder: body.sortOrder || 0,
                     active: body.active === true,
                     howToUse: body.howToUse || null,
                     affiliateLinks: body.affiliateLinks || null,

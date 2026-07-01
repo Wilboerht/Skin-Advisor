@@ -18,6 +18,7 @@ export interface ProductRecommendation {
     images?: string[] | null;
     price: string;
     reason: string;
+    description?: string | null;
     score?: number;
     matchedBenefits?: string[];
     affiliateLinks?: Record<string, string> | null;
@@ -515,6 +516,7 @@ export async function recommendProducts(
             images: (p as any).images || null,
             price: p.price,
             reason: generateSmartReason(p.matchedBenefits, concerns, skinType, index),
+            description: p.description || null,
             score: p.rawScore,
             affiliateLinks: (p.affiliateLinks as Record<string, string> | null) || null,
             howToUse: p.howToUse || null,

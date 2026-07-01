@@ -5,24 +5,6 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/Toast";
 import Image from "next/image";
 import {
-    DndContext,
-    closestCenter,
-    KeyboardSensor,
-    PointerSensor,
-    useSensor,
-    useSensors,
-    DragEndEvent,
-} from "@dnd-kit/core";
-import {
-    arrayMove,
-    SortableContext,
-    sortableKeyboardCoordinates,
-    useSortable,
-    verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import {
-    GripVertical,
     Edit,
     Trash2,
     Plus,
@@ -54,66 +36,29 @@ interface Product {
     affiliateLinks?: Record<string, string> | null;
     active: boolean;
     featured: boolean;
-    sortOrder: number;
 }
 
 interface ProductsClientProps {
     initialProducts: Product[];
 }
 
-const SortableProductRow = memo(function SortableProductRow({
+const ProductRow = memo(function ProductRow({
     product,
     isSelected,
     onSelect,
     onDelete,
-    onEdit,
-    sortingDisabled
+    onEdit
 }: {
     product: Product;
     isSelected: boolean;
     onSelect: (id: string) => void;
     onDelete: (id: string) => void;
     onEdit: (product: Product) => void;
-    sortingDisabled?: boolean;
 }) {
-    const {
-        attributes,
-        listeners,
-        setNodeRef,
-        transform,
-        transition,
-        isDragging,
-    } = useSortable({ id: product.id, disabled: sortingDisabled });
-
-    const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-        opacity: isDragging ? 0.5 : 1,
-    };
-
     return (
         <tr
-            ref={setNodeRef}
-            style={style}
             className={`hover:bg-white/20 transition-colors ${isSelected ? 'bg-white/30' : ''}`}
         >
-            <td className="px-2 py-4 w-10 align-middle">
-                <div className="flex items-center justify-center">
-                    {sortingDisabled ? (
-                        <span className="text-slate-200 p-1 cursor-not-allowed" title="筛选状态下不可排序">
-                            <GripVertical className="w-4 h-4" />
-                        </span>
-                    ) : (
-                        <button
-                            {...attributes}
-                            {...listeners}
-                            className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 p-1"
-                        >
-                            <GripVertical className="w-4 h-4" />
-                        </button>
-                    )}
-                </div>
-            </td>
             <td className="px-2 py-4 w-10 align-middle">
                 <div className="flex items-center justify-center">
                     <button
@@ -200,7 +145,6 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
     const toast = useToast();
     const [products, setProducts] = useState(initialProducts);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
-    const [saving, setSaving] = useState(false);
     const [batchLoading, setBatchLoading] = useState<string | null>(null);
     const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean; id: string | null; batch: boolean }>({
         show: false,
@@ -229,52 +173,6 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
         if (statusFilter === "inactive" && p.active) return false;
             return true;
     });
-
-
-
-    const sensors = useSensors(
-        useSensor(PointerSensor),
-        useSensor(KeyboardSensor, {
-            coordinateGetter: sortableKeyboardCoordinates,
-        })
-    );
-
-    const hasActiveFilters = categoryFilter !== "all" || statusFilter !== "all";
-
-    const handleDragEnd = async (event: DragEndEvent) => {
-        if (hasActiveFilters) {
-            return;
-        }
-
-        const { active, over } = event;
-
-        if (over && active.id !== over.id) {
-            const oldIndex = products.findIndex((p) => p.id === active.id);
-            const newIndex = products.findIndex((p) => p.id === over.id);
-            const newProducts = arrayMove(products, oldIndex, newIndex);
-            setProducts(newProducts);
-
-            // Save new order
-            setSaving(true);
-            try {
-                const res = await fetch('/api/admin/products/reorder', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ orderedIds: newProducts.map(p => p.id) }),
-                });
-
-                if (res.ok) {
-                                    } else {
-                                        router.refresh();
-                }
-            } catch (e) {
-                toast.error("排序保存失败");
-                router.refresh();
-            } finally {
-                setSaving(false);
-            }
-        }
-    };
 
     const handleToggleSelect = (id: string) => {
         setSelectedIds(prev =>
@@ -364,7 +262,6 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                     <h1 className="text-2xl font-bold text-slate-900 tracking-tight">产品管理</h1>
                     <p className="text-slate-500 text-sm mt-1">
                         共 {products.length} 个产品
-                        {saving && <span className="ml-2 text-amber-600">保存中...</span>}
                     </p>
                 </div>
                 <button
@@ -471,16 +368,10 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                 </div>
             )}
 
-            <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
-            >
-                <div className="overflow-hidden rounded-[32px] border-[1.5px] border-white/60 bg-white/40 backdrop-blur-3xl shadow-[0_32px_100px_rgba(0,0,0,0.05),inset_0_2px_10px_rgba(255,255,255,0.4)]">
+            <div className="overflow-hidden rounded-[32px] border-[1.5px] border-white/60 bg-white/40 backdrop-blur-3xl shadow-[0_32px_100px_rgba(0,0,0,0.05),inset_0_2px_10px_rgba(255,255,255,0.4)]">
                     <table className="min-w-full divide-y divide-white/20">
                         <thead className="bg-white/30 border-b border-white/20">
                             <tr>
-                                <th className="px-2 py-4 w-10 align-middle"></th>
                                 <th className="px-2 py-4 w-10 align-middle">
                                     <div className="flex items-center justify-center">
                                         <button onClick={handleSelectAll} className="text-slate-400 hover:text-slate-600">
@@ -501,28 +392,22 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-slate-200">
-                            <SortableContext
-                                items={filteredProducts.map(p => p.id)}
-                                strategy={verticalListSortingStrategy}
-                            >
-                                {filteredProducts.map((product) => (
-                                    <SortableProductRow
-                                        key={product.id}
-                                        product={product}
-                                        isSelected={selectedIds.includes(product.id)}
-                                        onSelect={handleToggleSelect}
-                                        onDelete={(id) => setDeleteConfirm({ show: true, id, batch: false })}
-                                        onEdit={(p) => {
-                                            setEditingProduct(p);
-                                            setModalOpen(true);
-                                        }}
-                                        sortingDisabled={categoryFilter !== "all" || statusFilter !== "all"}
-                                    />
-                                ))}
-                            </SortableContext>
+                            {filteredProducts.map((product) => (
+                                <ProductRow
+                                    key={product.id}
+                                    product={product}
+                                    isSelected={selectedIds.includes(product.id)}
+                                    onSelect={handleToggleSelect}
+                                    onDelete={(id) => setDeleteConfirm({ show: true, id, batch: false })}
+                                    onEdit={(p) => {
+                                        setEditingProduct(p);
+                                        setModalOpen(true);
+                                    }}
+                                />
+                            ))}
                             {filteredProducts.length === 0 && (
                                 <tr>
-                                    <td colSpan={8} className="px-6 py-12 text-center text-slate-500">
+                                    <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
                                         暂无产品，点击"添加产品"开始。
                                     </td>
                                 </tr>
@@ -530,7 +415,6 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                         </tbody>
                     </table>
                 </div>
-            </DndContext>
 
             {/* Delete Confirm Modal */}
             <ConfirmModal

@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
         const products = await prisma.product.findMany({
             where: whereClause,
-            orderBy: { sortOrder: 'asc' },
+            orderBy: { createdAt: 'desc' },
             select: {
                 id: true,
                 name: true,

@@ -85,9 +85,7 @@ export function ProductRecommendationSection({
                     '面膜': 'sensitivity',
                     '防晒': 'uvDamage',
                     '磨砂膏': 'waterOil',
-                    '乳液': 'firmness',
-                    '眼霜': 'darkCircles',
-                    '爽肤水': 'skinTone',
+                    // 身体乳、护手霜 非面部护理品，无需关联面部分析维度
                 };
                 const dimKey = categoryToDimension[product.category];
                 if (dimKey && faceAnalysis.dimensions[dimKey]) {

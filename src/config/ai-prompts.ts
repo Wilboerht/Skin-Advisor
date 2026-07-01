@@ -123,7 +123,7 @@ export function buildTextAnalysisPrompt(params: {
     : []; // 如果为空，AI 可能不推荐或者我们应该提供默认值？这里暂设为空
 
   const productsContext = productSource.map(p =>
-    `- ID: ${p.id}, 名称: ${p.name}, 功效: ${Array.isArray(p.benefits) ? p.benefits.join("/") : p.benefits}, 适用: ${Array.isArray(p.suitableSkinTypes) ? p.suitableSkinTypes.join("/") : p.suitableSkinTypes}`
+    `- ID: ${p.id}, 名称: ${p.name}, 功效: ${Array.isArray(p.benefits) ? p.benefits.join("/") : p.benefits}, 适用: ${Array.isArray(p.suitableSkinTypes) ? p.suitableSkinTypes.join("/") : p.suitableSkinTypes}${(p as any).description ? `, 描述: ${(p as any).description}` : ""}`
   ).join("\n");
 
   // 映射医美和睡眠的显示文本

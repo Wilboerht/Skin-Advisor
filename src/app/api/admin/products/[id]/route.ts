@@ -43,7 +43,7 @@ export const PUT = withAdminAuth(async (
         // Build update data — only include fields that are explicitly provided
         const allowedFields = [
             'name', 'category', 'image', 'images', 'price', 'description',
-            'keyIngredients', 'suitableSkinTypes', 'benefits', 'negativeFor', 'sortOrder',
+            'keyIngredients', 'suitableSkinTypes', 'benefits', 'negativeFor',
             'active', 'featured', 'howToUse',
             'affiliateLinks'
         ];
