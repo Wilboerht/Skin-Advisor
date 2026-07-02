@@ -33,10 +33,11 @@ export interface ReserveUsageResult {
 function getUserDailyLimit(user: { dailyTestLimit?: number | null } | null | undefined): number {
     // dailyTestLimit 为 null/undefined 时回退到系统默认 10 次；
     // 显式设置为 0-1 均视为有效自定义值（0 表示禁用测试）。
+    // 注意：登录用户单次分析消耗的 Token 较高（深度分析），默认限额已从 10 降至 5。
     if (user && typeof user.dailyTestLimit === 'number') {
         return Math.max(0, user.dailyTestLimit);
     }
-    return 10;
+    return 5;
 }
 
 /**

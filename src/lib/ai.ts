@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import prisma from "./prisma";
 import { aiLogger } from "./logger";
 import { TEXT_ANALYSIS_SYSTEM_PROMPT } from "@/config/ai-prompts";
+import { circuitBreaker } from "./circuit-breaker";
 import {
     extractJsonFromResponse,
     getDefaultFaceAnalysisResult,
@@ -119,7 +120,7 @@ export async function getAISettings(): Promise<AISettings> {
  * 增加 API Key 可用性校验，避免配置了无效 Key 时误导用户进入分析流程
  */
 let keyValidationCache: { valid: boolean; timestamp: number } | null = null;
-const KEY_VALIDATION_CACHE_MS = 5 * 60 * 1000;
+const KEY_VALIDATION_CACHE_MS = 30 * 60 * 1000; // 30 分钟，减少 models.list() 调用
 
 export async function isAIEnabled(): Promise<boolean> {
     // 1. 环境变量强制开关 (最高优先级)
@@ -304,6 +305,13 @@ async function callProviderInternal(
     settings: AISettings,
     signal?: AbortSignal
 ): Promise<string> {
+    const serviceKey = `text-${provider}`;
+
+    // 熔断器检查
+    if (!circuitBreaker.allowRequest(serviceKey)) {
+        throw new Error(`[CircuitBreaker] Text AI service ${provider} is temporarily unavailable (circuit open)`);
+    }
+
     aiLogger.info(`Calling AI: ${provider} (${model})`, { promptLength: userPrompt.length });
 
     // 合并外部 signal 和内部 timeout 的辅助函数
@@ -333,6 +341,7 @@ async function callProviderInternal(
     const { controller, cleanup } = createMergedAbortController(30000);
     try {
         const client = createOpenAIClient(provider, apiKey);
+        const startedAt = Date.now();
         const completion = await client.chat.completions.create(
             {
                 model: model,
@@ -345,7 +354,27 @@ async function callProviderInternal(
             },
             { signal: controller.signal }
         );
+        // 记录 Token 消耗日志
+        const usage = completion.usage;
+        if (usage) {
+            aiLogger.info(`[TokenUsage] Text AI (${provider}/${model})`, {
+                promptTokens: usage.prompt_tokens,
+                completionTokens: usage.completion_tokens,
+                totalTokens: usage.total_tokens,
+                durationMs: Date.now() - startedAt,
+                promptLength: systemPrompt.length + userPrompt.length,
+            });
+        }
+        // 记录成功到熔断器
+        circuitBreaker.recordSuccess(serviceKey);
         return completion.choices[0]?.message?.content || "";
+    } catch (err) {
+        const e = err as Error & { name?: string };
+        // 客户端主动取消或内部超时不应计入熔断器失败统计
+        if (e.name !== 'AbortError' && !signal?.aborted) {
+            circuitBreaker.recordFailure(serviceKey);
+        }
+        throw err;
     } finally {
         cleanup();
     }

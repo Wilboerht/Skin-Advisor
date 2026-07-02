@@ -3,7 +3,7 @@ import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { hashIP } from "@/lib/privacy";
-import { normalizeAnalysisResult } from "@/app/(advisor)/result/ResultClient";
+import { normalizeAnalysisResult } from "@/lib/analysis-result";
 
 export const maxDuration = 10;
 

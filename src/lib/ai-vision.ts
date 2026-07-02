@@ -6,6 +6,7 @@ import {
     type AISettings
 } from "./ai";
 import { aiLogger } from "./logger";
+import { circuitBreaker } from "./circuit-breaker";
 import {
     VISION_ANALYSIS_SYSTEM_PROMPT,
     QWEN_VISION_PROMPT
@@ -134,6 +135,13 @@ async function callOpenAICompatibleVision(
     userPrompt: string,
     signal?: AbortSignal
 ) {
+    const serviceKey = `vision-${provider}`;
+
+    // 熔断器检查
+    if (!circuitBreaker.allowRequest(serviceKey)) {
+        throw new Error(`[CircuitBreaker] Vision AI service ${provider} is temporarily unavailable (circuit open)`);
+    }
+
     const client = createOpenAIClient(provider, apiKey);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -141,11 +149,16 @@ async function callOpenAICompatibleVision(
         { type: "text", text: userPrompt }
     ];
 
+    // 估算图片 Base64 大小用于日志
+    let totalImageBytes = 0;
     images.forEach(img => {
         // Ensure data URI format
         let url = img.data;
         if (!url.startsWith("http") && !url.startsWith("data:")) {
             url = `data:image/jpeg;base64,${url}`;
+        }
+        if (url.startsWith("data:")) {
+            totalImageBytes += url.length;
         }
 
         content.push({
@@ -156,18 +169,45 @@ async function callOpenAICompatibleVision(
         });
     });
 
-    const response = await client.chat.completions.create(
-        {
-            model: model,
-            messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content },
-            ],
-            max_tokens: 2500,
-            temperature: 0.2
-        },
-        { signal: signal as AbortSignal | undefined }
-    );
+    const startedAt = Date.now();
+    let response;
+    try {
+        response = await client.chat.completions.create(
+            {
+                model: model,
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    { role: "user", content },
+                ],
+                max_tokens: 2500,
+                temperature: 0.2
+            },
+            { signal: signal as AbortSignal | undefined }
+        );
+    } catch (err) {
+        // 记录失败到熔断器（AbortError 除外，那是客户端主动取消）
+        const e = err as Error & { name?: string };
+        if (e.name !== 'AbortError' && !signal?.aborted) {
+            circuitBreaker.recordFailure(serviceKey);
+        }
+        throw err;
+    }
+
+    // 记录 Token 消耗日志
+    const usage = response.usage;
+    if (usage) {
+        aiLogger.info(`[TokenUsage] Vision AI (${provider}/${model})`, {
+            promptTokens: usage.prompt_tokens,
+            completionTokens: usage.completion_tokens,
+            totalTokens: usage.total_tokens,
+            imageCount: images.length,
+            imageDataKB: Math.round(totalImageBytes / 1024),
+            durationMs: Date.now() - startedAt,
+        });
+    }
+
+    // 记录成功到熔断器
+    circuitBreaker.recordSuccess(serviceKey);
 
     return response.choices[0]?.message?.content || "";
 }

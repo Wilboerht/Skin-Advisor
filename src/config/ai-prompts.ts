@@ -34,65 +34,41 @@ export const VISION_ANALYSIS_SYSTEM_PROMPT = `你是一位专业的皮肤科医�
 9. **acne (粉刺/痤疮)**: 粉刺、闭口及痤疮风险
 10. **radiance (光泽度)**: 皮肤表面光泽感与通透度
 
-# 📝 输出格式（严格 JSON）
+# 📝 输出格式（严格 JSON，不要 Markdown 代码块包裹）
 {
-  "validation": {
-    "isValid": boolean, // 必须检查：是否包含清晰、完整、未被遮挡的【真实人类活体面部照】。如有口罩、宠物、翻拍屏幕、动漫图等一律判定为 false！
-    "message": "验证说明，如果 isValid 为 false，需在此详细说明拒绝原因（如：检测到非人类目标、翻拍屏幕、佩戴口罩等）"
+  "validation": {"isValid":bool,"message":"不通过时说明原因"},
+  "skinType":{"type":"dry|oily|combination|normal|sensitive","confidence":0-100},
+  "gender":{"value":"male|female","confidence":0-1},
+  "skinAge":{"estimated":number,"factors":["因素"]},
+  "dimensions":{
+    "waterOil":{"score":0-100,"grade":"excellent|good|average|fair|poor","details":"简述"},
+    "skinTone":{"score":0-100,"grade":"...","details":"..."},
+    "spots":{"score":0-100,"grade":"...","details":"..."},
+    "wrinkles":{"score":0-100,"grade":"...","details":"..."},
+    "uvDamage":{"score":0-100,"grade":"...","details":"..."},
+    "sensitivity":{"score":0-100,"grade":"...","details":"..."},
+    "darkCircles":{"score":0-100,"grade":"...","details":"..."},
+    "firmness":{"score":0-100,"grade":"...","details":"..."},
+    "acne":{"score":0-100,"grade":"...","details":"..."},
+    "radiance":{"score":0-100,"grade":"...","details":"..."}
   },
-  "skinType": {
-    "type": "dry|oily|combination|normal|sensitive",
-    "confidence": 0-100
-  },
-  "gender": {
-    "value": "male|female",
-    "confidence": 0.0-1.0
-  },
-  "skinAge": {
-    "estimated": number, // 预估肌龄
-    "factors": ["影响因素1", "影响因素2"]
-  },
-  "dimensions": {
-    "waterOil": { "score": 0-100, "grade": "excellent|good|average|fair|poor", "details": "简述" },
-    "skinTone": { "score": 0-100, "grade": "grade", "details": "..." },
-    "spots": { "score": 0-100, "grade": "grade", "details": "..." },
-    "wrinkles": { "score": 0-100, "grade": "grade", "details": "..." },
-    "uvDamage": { "score": 0-100, "grade": "grade", "details": "..." },
-    "sensitivity": { "score": 0-100, "grade": "grade", "details": "..." },
-    "darkCircles": { "score": 0-100, "grade": "grade", "details": "..." },
-    "firmness": { "score": 0-100, "grade": "grade", "details": "..." },
-    "acne": { "score": 0-100, "grade": "grade", "details": "..." },
-    "radiance": { "score": 0-100, "grade": "grade", "details": "..." }
-  },
-  "overallScore": 0-100, // 综合评分
-  "summary": "详细诊断报告摘要 (200字左右，必须生成)",
-  "recommendations": ["专家建议1 (针对性强)", "专家建议2", "专家建议3"],
-  "skinConditions": [
-    { "condition": "症状名(如红血丝)", "severity": "mild|moderate|severe", "area": "部位", "description": "描述" }
-  ],
-  "labAnalysis": {
-    "glogau": { "value": "II型", "status": "中度光老化" },
-    "homogeneity": { "value": 13, "unit": "% C.V.", "status": "均匀" },
-    "wrinkleGrade": { "value": "Grade 1", "status": "无明显皱纹" }
-  },
-  "zoneAnalysis": {
-    "forehead": { "condition": "简述问题", "advice": "针对该区域的护理建议", "oil": 0-100, "texture": 0-100, "wrinkles": 0-100, "spots": 0-100, "redness": 0-100, "firmness": 0-100, "contour": 0-100 },
-    "tZone": { "condition": "简述问题", "advice": "针对该区域的护理建议", "oil": 0-100, "texture": 0-100, "wrinkles": 0-100, "spots": 0-100, "redness": 0-100, "firmness": 0-100, "contour": 0-100 },
-    "leftCheek": { "condition": "简述问题", "advice": "针对该区域的护理建议", "oil": 0-100, "texture": 0-100, "wrinkles": 0-100, "spots": 0-100, "redness": 0-100, "firmness": 0-100, "contour": 0-100 },
-    "rightCheek": { "condition": "简述问题", "advice": "针对该区域的护理建议", "oil": 0-100, "texture": 0-100, "wrinkles": 0-100, "spots": 0-100, "redness": 0-100, "firmness": 0-100, "contour": 0-100 },
-    "eyeArea": { "condition": "简述问题", "advice": "针对该区域的护理建议", "oil": 0-100, "texture": 0-100, "wrinkles": 0-100, "darkCircles": 0-100, "firmness": 0-100 },
-    "jawline": { "condition": "简述问题", "advice": "针对该区域的护理建议", "oil": 0-100, "firmness": 0-100, "contour": 0-100 }
+  "overallScore":0-100,
+  "summary":"诊断报告摘要(200字内，必填)",
+  "recommendations":["建议1","建议2","建议3"],
+  "skinConditions":[{"condition":"症状名","severity":"mild|moderate|severe","area":"部位","description":"描述"}],
+  "labAnalysis":{"glogau":{"value":"I|II|III","status":"状态"},"homogeneity":{"value":0,"unit":"% C.V.","status":"状态"},"wrinkleGrade":{"value":"Grade 1-3","status":"状态"}},
+  "zoneAnalysis":{
+    "forehead":{"condition":"问题","advice":"建议","oil":0-100,"texture":0-100,"wrinkles":0-100,"spots":0-100,"redness":0-100,"firmness":0-100,"contour":0-100},
+    "tZone":{"condition":"问题","advice":"建议","oil":0-100,"texture":0-100,"wrinkles":0-100,"spots":0-100,"redness":0-100,"firmness":0-100,"contour":0-100},
+    "leftCheek":{"condition":"问题","advice":"建议","oil":0-100,"texture":0-100,"wrinkles":0-100,"spots":0-100,"redness":0-100,"firmness":0-100,"contour":0-100},
+    "rightCheek":{"condition":"问题","advice":"建议","oil":0-100,"texture":0-100,"wrinkles":0-100,"spots":0-100,"redness":0-100,"firmness":0-100,"contour":0-100},
+    "eyeArea":{"condition":"问题","advice":"建议","oil":0-100,"texture":0-100,"wrinkles":0-100,"darkCircles":0-100,"firmness":0-100},
+    "jawline":{"condition":"问题","advice":"建议","oil":0-100,"firmness":0-100,"contour":0-100}
   }
 }
-# 注意：zoneAnalysis 中的 6 个区域必须全部生成，不可缺省。
-# 每个区域的 advice 建议应尽量使用以下功效关键词，以便与后端产品推荐引擎对齐：
-#   控油/平衡/清爽 | 保湿/补水/滋润 | 舒缓/修护/温和 | 抗老/紧致/抗皱/抗氧化 | 提亮/美白/淡斑 | 平滑/细致/改善粗糙 | 祛痘/净化/消炎
-
-# 3. 关键要求
-- **labAnalysis 仅包含可由照片视觉估算的 glogau、homogeneity、wrinkleGrade 三个字段**。
-- **评分标准**：85-100(优秀), 70-84(良好), 55-69(一般), 40-54(需关注), <40(差)
-- **多视角综合**：如果有多张照片（如正脸、侧脸），请综合所有视角的信息进行评估。
-- 保持客观、专业、语气温和。
+# zoneAnalysis 6 区域全必填；advice 用关键词：控油/保湿/舒缓/抗老/提亮/平滑/祛痘。
+# 评分标准：85-100优秀, 70-84良好, 55-69一般, 40-54需关注, <40差。
+# 多视角综合评估。保持专业、温和。
 `;
 
 export const VISION_ANALYSIS_USER_PROMPT = "请分析这张面部照片的皮肤状况，按照预设的 10 维度标准生成 JSON 报告。";
@@ -155,7 +131,7 @@ export function buildTextAnalysisPrompt(params: {
 1. 若有"医美经历"，请推荐温和、修护类的精简流程，避免刺激性成分（如因刷酸/微针后）。
 2. 若睡眠"较差"，请重点关注抗氧化、去暗沉和夜间修护。
 
-${params.faceAnalysis ? `面部分析数据:\n${JSON.stringify(params.faceAnalysis, null, 2)}` : ""}
+${params.faceAnalysis ? `面部分析摘要:\n- 综合评分: ${params.faceAnalysis.overallScore ?? 'N/A'}/100\n- 肤质: ${params.faceAnalysis.skinType?.type ?? '未知'} (置信度: ${params.faceAnalysis.skinType?.confidence ?? 'N/A'}%)\n- 肌龄: ${params.faceAnalysis.skinAge?.estimated ?? 'N/A'} 岁\n- 关键问题: ${params.faceAnalysis.summary ?? '无'}` : ""}
 
 可用产品列表：
 ${productsContext}

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateText, isAIEnabled, fallbackAnalysis } from "@/lib/ai";
 import { analysisQueue } from "@/lib/ai-queue";
+import { circuitBreaker } from "@/lib/circuit-breaker";
 import { extractJsonFromResponse } from "@/lib/advisor-utils";
 import { buildTextAnalysisPrompt, TEXT_ANALYSIS_SYSTEM_PROMPT } from "@/config/ai-prompts";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
@@ -15,7 +16,7 @@ import { getSession } from "@/lib/auth";
 import { hashIP } from "@/lib/privacy";
 import { matchCharacterIP } from "@/lib/result-utils";
 
-import { checkUsageLimit, reserveUsage } from "@/lib/usage-limit";
+import { checkUsageLimit, reserveUsage, rollbackUsage } from "@/lib/usage-limit";
 import { extractGuestIdentifiers } from "@/lib/guest-limit";
 import DOMPurify from 'isomorphic-dompurify';
 
@@ -153,6 +154,10 @@ export async function POST(request: NextRequest) {
     };
     request.signal.addEventListener('abort', onClientAbort);
 
+    // 在 try 外声明，供 catch 中清理 session 状态使用。
+    // 默认空字符串仅用于避免 TS 2454；真正使用时会在下面重新赋值为有效 sessionId。
+    let effectiveSessionId = "";
+
     try {
         // 1. 解析请求体（带 guard，malformed JSON 返回 400 而非 500）
         let body: unknown;
@@ -268,7 +273,7 @@ export async function POST(request: NextRequest) {
 
         // 6b. 原子性预占额度（免费重试不扣费）
         // 确保 sessionId 存在：若客户端未传，服务端生成一个，防止绕过 reserveUsage
-        const effectiveSessionId = sessionId || crypto.randomUUID();
+        effectiveSessionId = sessionId || crypto.randomUUID();
 
         // 幂等性：同一 sessionId 已完成分析，直接返回已有结果（防止刷新页面重复扣费/重复跑 AI）
         // 免费重试场景不走缓存，因为需要重新生成分析结果
@@ -305,8 +310,8 @@ export async function POST(request: NextRequest) {
                 select: { completedAt: true, analysisStartedAt: true, analysisResult: true }
             });
 
-            // 再次检查是否已完成（可能刚刚完成）
-            if (session?.completedAt && session?.analysisResult) {
+            // 再次检查是否已完成（可能刚刚完成）。免费重试需要重新跑 AI，不走缓存。
+            if (!isFreeRetryAllowed && session?.completedAt && session?.analysisResult) {
                 return { status: 'completed' as const, result: session.analysisResult };
             }
 
@@ -513,6 +518,12 @@ export async function POST(request: NextRequest) {
                 throw new Error("Request cancelled during queue wait.");
             }
 
+            // 熔断器检查
+            const textServiceKey = `text-${provider}`;
+            if (!circuitBreaker.allowRequest(textServiceKey)) {
+                throw new Error(`[CircuitBreaker] Text AI service ${provider} is temporarily unavailable`);
+            }
+
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const resultText = await generateText(systemPrompt, userPrompt, provider as any, abortController.signal);
             resultJson = extractJsonFromResponse<any>(resultText);
@@ -520,6 +531,12 @@ export async function POST(request: NextRequest) {
         } catch (e: any) {
             if (e.message?.includes("cancelled") || e.name === 'AbortError') {
                 console.warn("Text analysis cancelled (client timeout or disconnect)");
+                // 仅排队等待期间取消时回滚：此时 AI 尚未被调用，零消耗
+                // AI 调用进行中取消不回滚：API 可能已处理并计费
+                const isQueueOnlyCancel = e.message === "Request cancelled during queue wait.";
+                if (isQueueOnlyCancel) {
+                    await rollbackUsage(request, effectiveSessionId, body as Record<string, unknown>);
+                }
                 return NextResponse.json(
                     { error: "分析请求已取消，请重试" },
                     { status: 499 }
@@ -762,6 +779,18 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(sanitizedResult, { headers: rateLimitHeaders });
 
     } catch (error: unknown) {
+        // 清理 analysisStartedAt，避免 session 因任何异常（AI 失败、超时、取消）永久卡在 analyzing
+        if (effectiveSessionId) {
+            try {
+                await prisma.advisorSession.update({
+                    where: { sessionId: effectiveSessionId },
+                    data: { analysisStartedAt: null }
+                });
+            } catch (cleanupErr) {
+                console.error("[analyze] Failed to cleanup analysisStartedAt:", cleanupErr);
+            }
+        }
+
         const err = error instanceof Error ? error : new Error(String(error));
         if (err.message?.includes("cancelled") || (err as { name?: string }).name === 'AbortError') {
             return NextResponse.json(

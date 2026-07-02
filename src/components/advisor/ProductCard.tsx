@@ -31,8 +31,8 @@ export interface ProductCardData {
         dimension: string;
         score: number;
     } | null; // 关联的维度评分
-    /** 推荐来源：persona（IP 池内）| algorithm（池外补充） */
-    source?: "persona" | "algorithm";
+    /** 推荐来源：ai（AI 精选）| persona（IP 池内）| algorithm（池外补充） */
+    source?: "ai" | "persona" | "algorithm";
 }
 
 interface ProductCardProps {

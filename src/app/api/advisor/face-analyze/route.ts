@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { analyzeImages, type VisionImage } from "@/lib/ai-vision";
 import type { AIProvider } from "@/lib/ai";
 import { isAIEnabled } from "@/lib/ai";
+import { circuitBreaker } from "@/lib/circuit-breaker";
 import { FaceAnalyzeRequestSchema } from "@/lib/schemas";
 import {
     VISION_ANALYSIS_SYSTEM_PROMPT,
@@ -47,6 +48,15 @@ export async function POST(request: NextRequest) {
             return NextResponse.json(
                 { error: "AI 助手当前已暂停服务" },
                 { status: 503 }
+            );
+        }
+
+        // 0. 熔断器检查
+        const visionServiceKey = `vision-${process.env.AI_VISION_PROVIDER || "qwen"}`;
+        if (!circuitBreaker.allowRequest(visionServiceKey)) {
+            return NextResponse.json(
+                { error: "AI 视觉服务暂时不可用（熔断保护），请稍后重试", code: "CIRCUIT_OPEN" },
+                { status: 503, headers: { "Retry-After": "60" } }
             );
         }
 
@@ -100,7 +110,6 @@ export async function POST(request: NextRequest) {
         // Dynamic imports for file handling
         const fs = await import('fs/promises');
         const path = await import('path');
-        const process = await import('process');
         // Lazy import sharp
         let sharp: any;
         try {
@@ -277,7 +286,24 @@ export async function POST(request: NextRequest) {
                 // Retry if payload error
                 const isPayloadError = err.message?.includes('400') || err.message?.includes('413') || err.message?.includes('base64') || err.message?.includes('too large') || err.message?.includes('content length') || err.message?.includes('payload');
                 if (isPayloadError) {
-                    aiLogger.warn(`[FaceAnalyze] Payload error (${err.message}), retrying with aggressive compression...`);
+                    // 重试前本地验证：计算当前图片总大小，如果在合理范围内则不重试
+                    const totalBase64KB = validImages.reduce((sum, img) => {
+                        return sum + (img.data?.startsWith('data:') ? img.data.length / 1024 : 0);
+                    }, 0);
+                    const perImageAvgKB = totalBase64KB / Math.max(1, validImages.length);
+
+                    // 如果单张图片平均已经 < 100KB base64，说明不是图片大小导致的问题
+                    if (perImageAvgKB < 100) {
+                        aiLogger.warn(`[FaceAnalyze] Payload error but images already small (avg ${perImageAvgKB.toFixed(0)}KB), not retrying`);
+                        // 回滚预占（非用户原因）
+                        await rollbackUsage(request, faceSessionId, body as Record<string, unknown>);
+                        return NextResponse.json(
+                            { error: "AI 视觉服务请求异常，请稍后重试", code: "AI_PAYLOAD_ERROR" },
+                            { status: 503, headers: { "Retry-After": "30" } }
+                        );
+                    }
+
+                    aiLogger.warn(`[FaceAnalyze] Payload error (${err.message}), retrying with aggressive compression (current: ${totalBase64KB.toFixed(0)}KB total)`);
                     // 对现有图片做更强压缩（512px / quality 60），而不是重新加载
                     if (sharp) {
                         validImages = await Promise.all(validImages.map(async (img) => {
@@ -339,9 +365,17 @@ export async function POST(request: NextRequest) {
             const err = aiError instanceof Error ? aiError : new Error(String(aiError));
             aiLogger.error("AI Analysis Failed", { error: err.message });
 
-            // 队列超时特有错误
+            // 客户端取消（AI 调用进行中）：Provider 可能已处理并计费，不回滚
+            const isClientCancel = err.message?.includes("cancelled") || err.message?.includes("client timeout");
+            if (isClientCancel) {
+                return NextResponse.json(
+                    { error: "分析请求已取消" },
+                    { status: 499 }
+                );
+            }
+
+            // 队列超时特有错误（AI 未被调用，零消耗）
             if (err.message?.includes("Queue timeout") || err.message?.includes("Server busy")) {
-                // 服务端繁忙/队列超时，非用户原因，回滚预占
                 await rollbackUsage(request, faceSessionId, body as Record<string, unknown>);
                 return NextResponse.json(
                     { error: "服务器繁忙，请稍后再试", code: "SERVER_BUSY" },
@@ -349,10 +383,9 @@ export async function POST(request: NextRequest) {
                 );
             }
 
-            aiLogger.warn("Using fallback result due to AI error");
-            // AI 服务不可用，非用户原因，回滚预占
+            // AI 服务不可用（API 错误，Provider 未成功处理），回滚预占
+            aiLogger.warn("AI service unavailable, rolling back usage");
             await rollbackUsage(request, faceSessionId, body as Record<string, unknown>);
-            // 返回错误而不是假数据，避免误导用户
             return NextResponse.json(
                 { error: "AI 分析服务暂时不可用，请稍后重试", code: "AI_UNAVAILABLE" },
                 { status: 503, headers: { "Retry-After": "60" } }

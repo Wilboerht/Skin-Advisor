@@ -1,5 +1,6 @@
 import { Metadata } from "next";
-import ResultClient, { type ComprehensiveResult, normalizeAnalysisResult } from "../../result/ResultClient";
+import ResultClient from "../../result/ResultClient";
+import { type ComprehensiveResult, normalizeAnalysisResult } from "@/lib/analysis-result";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
