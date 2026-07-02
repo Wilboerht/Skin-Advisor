@@ -91,28 +91,30 @@ export default function ResultCards({
 
   return (
     <div className="w-full flex flex-col gap-6">
-      {/* Mobile: Character IP Image above Share Card */}
-      <div className="flex lg:hidden justify-center mb-0 pointer-events-none">
-        <Image
-          src={characterImage}
-          alt={skinTypeName}
-          width={240}
-          height={240}
-          className="w-[220px] h-[220px] object-contain"
-          priority
-          onError={(e) => {
-            const fallback = characterImage.replace('_male', '_female');
-            (e.target as HTMLImageElement).src = fallback;
-          }}
-        />
-      </div>
-      {/* Share Version Card */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="relative rounded-[20px] lg:rounded-[24px] p-6 lg:p-10 border border-[#3d2f25]/8 overflow-visible"
-        style={{
+      {/* Mobile: Character IP Image + Share Card (no gap between them) */}
+      <div className="flex flex-col gap-0 lg:contents">
+        {/* Mobile: Character IP Image above Share Card */}
+        <div className="flex lg:hidden justify-center pointer-events-none">
+          <Image
+            src={characterImage}
+            alt={skinTypeName}
+            width={240}
+            height={240}
+            className="w-[220px] h-[220px] object-contain"
+            priority
+            onError={(e) => {
+              const fallback = characterImage.replace('_male', '_female');
+              (e.target as HTMLImageElement).src = fallback;
+            }}
+          />
+        </div>
+        {/* Share Version Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="relative rounded-[20px] lg:rounded-[24px] p-6 lg:p-10 border border-[#3d2f25]/8 overflow-visible"
+          style={{
           background: '#F5F2ED',
         }}
       >
@@ -173,6 +175,7 @@ export default function ResultCards({
           </div>
         </div>
       </motion.div>
+      </div>
 
       {/* Professional Version Card */}
       <motion.div
