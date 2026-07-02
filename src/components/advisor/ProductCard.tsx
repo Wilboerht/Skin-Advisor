@@ -123,16 +123,17 @@ export function ProductCard({
             )}
             onClick={handleCardClick}
         >
+            <div className={cn(isCompact ? "flex flex-row lg:block" : "")}>
             {/* 图片区域 */}
-            <div className={cn("relative overflow-hidden", isCompact ? "aspect-square p-3" : "bg-white/5 aspect-square")}>
+            <div className={cn("relative overflow-hidden", isCompact ? "w-[120px] h-[120px] lg:w-auto lg:h-auto lg:aspect-square shrink-0 p-2 lg:p-3" : "bg-white/5 aspect-square")}>
                 {!imageError ? (
-                    <div className="relative w-full h-full overflow-hidden rounded-[16px]">
+                    <div className="relative w-full h-full overflow-hidden rounded-[12px] lg:rounded-[16px]">
                         <Image
                             src={product.image}
                             alt={product.name}
                             fill
                             className="object-cover"
-                            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                            sizes="(max-width: 1023px) 120px, (max-width: 1200px) 33vw, 25vw"
                             placeholder="blur"
                             blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMCwsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wAARCAAIAAoDASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAAAAUH/8QAIRAAAgIBAwUBAAAAAAAAAAAAAwQBAgAFBhESEyExQVH/xAAVAQEBAAAAAAAAAAAAAAAAAAAFBv/EABoRAAICAwAAAAAAAAAAAAAAAAECAAMEESH/2gAMAwEAAhEDEEAAAAGqpnWZZMmf/9k="
                             unoptimized={useUnoptimized}
@@ -147,44 +148,44 @@ export function ProductCard({
             </div>
 
             {/* 内容区域 */}
-            <div className={cn(isCompact ? "p-4" : "p-4")}>
+            <div className={cn(
+                isCompact ? "flex-1 p-3 lg:p-4 flex flex-col justify-between min-w-0" : "p-4"
+            )}>
                 {/* 产品名称 */}
-                <h4 className={cn("leading-snug line-clamp-2", isCompact ? "text-lg font-bold text-[#1a1a1a] mb-2" : "text-sm font-semibold text-white mb-1 group-hover:text-blue-300")}>
+                <h4 className={cn("leading-snug line-clamp-2", isCompact ? "text-sm lg:text-lg font-bold text-[#1a1a1a] mb-1 lg:mb-2" : "text-sm font-semibold text-white mb-1 group-hover:text-blue-300")}>
                     {product.name}
                 </h4>
 
-                {/* 功效标签 */}
+                {/* 功效标签 - mobile pill badges */}
                 {product.benefits && product.benefits.length > 0 && isCompact && (
-                    <p className="text-[13px] text-[#C8A97E] mb-2 truncate">
+                    <p className="hidden lg:block text-[13px] text-[#C8A97E] mb-2 truncate">
                         {product.benefits.join(" | ")}
                     </p>
                 )}
 
                 {/* 推荐理由 */}
-                <p className={cn("leading-relaxed", isCompact ? "text-[13px] text-[#666] mb-4 line-clamp-2" : "text-xs text-white/70 mb-3 line-clamp-2")}>
+                <p className={cn("leading-snug", isCompact ? "text-xs lg:text-[13px] text-[#8c7a6b] lg:text-[#666] line-clamp-2" : "text-xs text-white/70 mb-3 line-clamp-2")}>
                     {getReasonText()}
                 </p>
 
-                {/* 底部操作栏 */}
-                <div className={cn("flex items-center justify-between", isCompact ? "" : "pt-3 border-t border-white/10")}>
-                    <span className={cn("font-bold", isCompact ? "text-xl text-[#1a1a1a]" : "text-sm text-white")}>
-                        {product.price ? `¥ ${product.price}` : '咨询价格'}
-                    </span>
-
-                    <div className="flex items-center gap-1.5">
-                        {/* 查看详情 / 购买按钮 */}
-                        {isCompact ? (
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onViewDetail?.(product);
-                                }}
-                                className="group/btn inline-flex items-center gap-1.5 px-4 py-2 text-[13px] font-medium rounded-full border border-[#5c4937]/30 text-[#5c4937] bg-transparent hover:bg-[#5c4937]/5 hover:border-[#5c4937]/50 transition-colors"
-                            >
-                                查看详情
-                                <ChevronRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover/btn:translate-x-0.5" />
-                            </button>
-                        ) : (
+                {/* 底部操作栏 - desktop only */}
+                {isCompact ? (
+                    <div className="hidden lg:flex items-center justify-between mt-auto pt-3">
+                        <span className="font-bold text-xl text-[#1a1a1a]">
+                            {product.price ? `¥ ${product.price}` : '咨询价格'}
+                        </span>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onViewDetail?.(product);
+                            }}
+                            className="group/btn inline-flex items-center gap-1.5 px-4 py-2 text-[13px] font-medium rounded-full border border-[#5c4937]/30 text-[#5c4937] bg-transparent hover:bg-[#5c4937]/5 hover:border-[#5c4937]/50 transition-colors"
+                        >
+                            查看详情
+                            <ChevronRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover/btn:translate-x-0.5" />
+                        </button>
+                    </div>
+                ) : (
                             <>
                                 {allLinks.length > 0 && (
                                     <div className="relative" ref={platformRef}>
@@ -237,8 +238,7 @@ export function ProductCard({
                                 )}
                             </>
                         )}
-                    </div>
-                </div>
+            </div>
             </div>
         </m.div>
     );
