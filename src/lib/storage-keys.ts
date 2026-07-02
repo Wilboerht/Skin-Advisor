@@ -21,6 +21,9 @@ export const STORAGE_KEYS = {
     ADVISOR_ANALYZING_SESSION_ID: 'advisor_analyzing_session_id',
     ADVISOR_ANALYZING_STARTED_AT: 'advisor_analyzing_started_at',
 
+    // 全局分析锁（防止组件 unmount/remount 或 StrictMode 双 mount 导致重复分析）
+    ADVISOR_ANALYSIS_LOCK: 'advisor_analysis_lock',
+
     // 地理位置
     USER_REGION: 'userRegion',
 

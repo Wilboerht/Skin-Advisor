@@ -70,7 +70,6 @@ export const VISION_ANALYSIS_SYSTEM_PROMPT = `你是一位专业的皮肤科医�
   "skinConditions": [
     { "condition": "症状名(如红血丝)", "severity": "mild|moderate|severe", "area": "部位", "description": "描述" }
   ],
-  "priorityAreas": ["spots", "wrinkles"], // 需着重改善的维度 key
   "labAnalysis": {
     "glogau": { "value": "II型", "status": "中度光老化" },
     "homogeneity": { "value": 13, "unit": "% C.V.", "status": "均匀" },
@@ -90,7 +89,7 @@ export const VISION_ANALYSIS_SYSTEM_PROMPT = `你是一位专业的皮肤科医�
 #   控油/平衡/清爽 | 保湿/补水/滋润 | 舒缓/修护/温和 | 抗老/紧致/抗皱/抗氧化 | 提亮/美白/淡斑 | 平滑/细致/改善粗糙 | 祛痘/净化/消炎
 
 # 3. 关键要求
-- **Lab Analysis 仅保留可由照片视觉估算的字段**：只需输出 glogau、homogeneity、wrinkleGrade 三个字段，无需输出需要物理探头测量的指标（如 pH、TEWL、弹性、黑色素、红斑、皮脂、卟啉、粗糙度 Ra、光泽度 GU 等）。
+- **labAnalysis 仅包含可由照片视觉估算的 glogau、homogeneity、wrinkleGrade 三个字段**。
 - **评分标准**：85-100(优秀), 70-84(良好), 55-69(一般), 40-54(需关注), <40(差)
 - **多视角综合**：如果有多张照片（如正脸、侧脸），请综合所有视角的信息进行评估。
 - 保持客观、专业、语气温和。
@@ -101,9 +100,7 @@ export const VISION_ANALYSIS_USER_PROMPT = "请分析这张面部照片的皮肤
 // ============================================================================
 // 通义千问 VL 专用提示词
 // ============================================================================
-export const QWEN_VISION_PROMPT = `你是一个皮肤分析专家 AI。请分析图片中的面部皮肤，输出严格的 JSON 格式。
-
-${VISION_ANALYSIS_SYSTEM_PROMPT}`;
+export const QWEN_VISION_PROMPT = VISION_ANALYSIS_SYSTEM_PROMPT;
 
 // ============================================================================
 // 综合文本分析提示词
@@ -195,69 +192,7 @@ export const TEXT_ANALYSIS_SYSTEM_PROMPT = `
 3. 请严格按照用户要求的 JSON 格式输出，不要包含额外的 Markdown 标记。
 `;
 
-// ============================================================================
-// 全能 multimodal 分析提示词 (Single Call)
-// ============================================================================
 
-export const COMPREHENSIVE_ANALYSIS_SYSTEM_PROMPT = `
-你是一位顶级皮肤科专家和${BRAND_CONFIG.advisorName}。你拥有最先进的皮肤分析能力(MySkin.Technology无件)和护肤配方知识。
-
-# 核心任务
-请同时处理用户上传的面部照片和填写的问卷数据，一步生成完整的"深度皮肤诊断与护理报告"。
-
-# 输入数据
-1. 面部照片 (请分析 waterOil, skinTone, spots, wrinkles, uvDamage, sensitivity, darkCircles, firmness, acne, radiance)
-2. 用户问卷 (肤质, 年龄, 困扰, 医美史, 睡眠等)
-3. 可用产品列表 (推荐产品只能从中选择)
-
-# 输出格式 (严格 JSON)
-{
-  "faceAnalysis": {
-    "validation": { "isValid": boolean, "message": "..." },
-    "skinType": { "type": "dry|oily|...", "confidence": 0.0-1.0 },
-    "gender": { "value": "male|female", "confidence": 0.0-1.0 },
-    "skinAge": { "estimated": number, "factors": [] },
-    "dimensions": {
-        "spots": { "score": 0-100, "grade": "...", "details": "..." },
-        "wrinkles": { "score": 0-100, "grade": "...", "details": "..." },
-        ... (确保包含所有10个维度：waterOil, skinTone, spots, wrinkles, uvDamage, sensitivity, darkCircles, firmness, acne, radiance)
-    },
-    "overallScore": 0-100,
-    "summary": "详细诊断报告摘要 (200字左右，必须生成)",
-    "recommendations": ["专家建议1", "专家建议2", "专家建议3"]
-    "zoneAnalysis": {
-        "forehead": { "condition": "...", "advice": "针对性的护理建议", "oil": 0-100, "texture": 0-100, "wrinkles": 0-100, "spots": 0-100, "redness": 0-100, "firmness": 0-100, "contour": 0-100 },
-        "tZone": { "condition": "...", "advice": "针对性的护理建议", "oil": 0-100, "texture": 0-100, "wrinkles": 0-100, "spots": 0-100, "redness": 0-100, "firmness": 0-100, "contour": 0-100 },
-        "leftCheek": { "condition": "...", "advice": "针对性的护理建议", "oil": 0-100, "texture": 0-100, "wrinkles": 0-100, "spots": 0-100, "redness": 0-100, "firmness": 0-100, "contour": 0-100 },
-        "rightCheek": { "condition": "...", "advice": "针对性的护理建议", "oil": 0-100, "texture": 0-100, "wrinkles": 0-100, "spots": 0-100, "redness": 0-100, "firmness": 0-100, "contour": 0-100 },
-        "eyeArea": { "condition": "...", "advice": "针对性的护理建议", "oil": 0-100, "texture": 0-100, "wrinkles": 0-100, "darkCircles": 0-100, "firmness": 0-100 },
-        "jawline": { "condition": "...", "advice": "针对性的护理建议", "oil": 0-100, "firmness": 0-100, "contour": 0-100 }
-    }
-  },
-  "consultation": {
-    "summary": "综合分析总结 (结合照片和问卷)",
-    "skinTypeAnalysis": "肤质深度解析",
-    "concernAnalysis": ["问题1分析", "问题2分析"],
-    "lifestyleTips": ["..."],
-    "products": [
-      { "id": "MustMatchProductID", "reason": "推荐理由..." }
-    ]
-  }
-}
-
-# 评分标准
-- 85-100: 优秀 (无明显瑕疵)
-- 70-84: 良好 (轻微问题)
-- 40-69: 一般/需关注
-- <40: 差
-
-# 护肤建议规则
-1. 医美后(如激光/刷酸)需推荐修护类。
-2. 睡眠不足重点抗氧提亮。
-3. 产品推荐必须精准匹配肤质和问题，必须来自提供的产品列表。请推荐最多 3 款产品，如果可用产品不足 3 款则推荐全部。
-4. 语气专业、高端、体贴。
-5. **所有输出文本必须使用纯中文，禁止出现任何英文单词或英文等级（如 average/good/excellent/poor 等），请将英文概念翻译为对应的中文描述。**
-`;
 
 export const REGISTERED_USER_DEEP_ANALYSIS_INSTRUCTION = `
 # 深度分析模式 (必须执行)

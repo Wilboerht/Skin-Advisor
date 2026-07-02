@@ -22,6 +22,47 @@ export interface SessionStatusResponse {
     error?: string;
 }
 
+const ANALYSIS_LOCK_TTL_MS = 90 * 1000;
+
+function acquireAnalysisLock(sessionId: string): boolean {
+    try {
+        const existing = sessionStorage.getItem(STORAGE_KEYS.ADVISOR_ANALYSIS_LOCK);
+        const existingData = existing ? JSON.parse(existing) as { sessionId: string; startedAt: number } : null;
+        if (existingData && existingData.sessionId !== sessionId && (Date.now() - existingData.startedAt) < ANALYSIS_LOCK_TTL_MS) {
+            return false;
+        }
+        sessionStorage.setItem(STORAGE_KEYS.ADVISOR_ANALYSIS_LOCK, JSON.stringify({ sessionId, startedAt: Date.now() }));
+        return true;
+    } catch (e) {
+        console.warn('sessionStorage access failed', e);
+        return true; // 若无法写入锁，不阻塞分析流程
+    }
+}
+
+function releaseAnalysisLock(): void {
+    try {
+        sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYSIS_LOCK);
+    } catch (e) {
+        console.warn('sessionStorage access failed', e);
+    }
+}
+
+export function getAnalysisLock(): { sessionId: string; startedAt: number } | null {
+    try {
+        const existing = sessionStorage.getItem(STORAGE_KEYS.ADVISOR_ANALYSIS_LOCK);
+        if (!existing) return null;
+        const data = JSON.parse(existing) as { sessionId: string; startedAt: number };
+        if (Date.now() - data.startedAt >= ANALYSIS_LOCK_TTL_MS) {
+            sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYSIS_LOCK);
+            return null;
+        }
+        return data;
+    } catch (e) {
+        console.warn('sessionStorage access failed', e);
+        return null;
+    }
+}
+
 // Helper for auto-retry
 async function fetchWithRetry(url: string, options: RequestInit, retries = 3, backoff = 1000): Promise<Response> {
     try {
@@ -68,6 +109,61 @@ export function useAsyncAnalysis() {
     const { trackAnalysisStart, trackAnalysisComplete } = useAdvisorAnalytics();
 
     const isRunningRef = useRef(false);
+
+    // --- Session recovery helpers ---
+
+    const checkSessionStatus = useCallback(async (sessionId: string): Promise<SessionStatusResponse> => {
+        try {
+            const res = await fetch(`/api/advisor/session/status?sessionId=${encodeURIComponent(sessionId)}`);
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                return {
+                    status: 'not_found',
+                    sessionId,
+                    error: data.error || `HTTP ${res.status}`
+                };
+            }
+            return await res.json();
+        } catch (e: unknown) {
+            const err = e instanceof Error ? e : new Error(String(e));
+            return { status: 'not_found', sessionId, error: err.message };
+        }
+    }, []);
+
+    const pollSessionResult = useCallback(async (
+        sessionId: string,
+        options?: {
+            intervalMs?: number;
+            maxAttempts?: number;
+            onProgress?: (attempt: number) => void;
+            signal?: AbortSignal;
+        }
+    ): Promise<SessionStatusResponse> => {
+        const { intervalMs = 3000, maxAttempts = 30 } = options || {};
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            if (options?.signal?.aborted) {
+                throw new Error('已取消等待');
+            }
+            const status = await checkSessionStatus(sessionId);
+            if (status.status === 'completed') {
+                return status;
+            }
+            if (status.status === 'not_found' || status.status === 'forbidden') {
+                throw new Error(status.error || '会话不存在或无权访问');
+            }
+            if (attempt < maxAttempts - 1) {
+                options?.onProgress?.(attempt + 1);
+                await new Promise(resolve => {
+                    const timeoutId = setTimeout(resolve, intervalMs);
+                    options?.signal?.addEventListener('abort', () => {
+                        clearTimeout(timeoutId);
+                        resolve(undefined);
+                    }, { once: true });
+                });
+            }
+        }
+        throw new Error('等待分析结果超时，请重试');
+    }, [checkSessionStatus]);
 
     const runAnalysis = useCallback(async () => {
         // 并发保护：防止双击或重渲染导致多个分析流程竞争
@@ -145,6 +241,12 @@ export function useAsyncAnalysis() {
             const sessionId = freeRetrySessionId
                 || (isAnalyzingSessionValid ? analyzingSessionId : null)
                 || (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString());
+
+            // 获取全局分析锁，防止组件 unmount/remount 或 StrictMode 双 mount 导致重复分析
+            if (!acquireAnalysisLock(sessionId)) {
+                console.warn(`[useAsyncAnalysis] Analysis lock already held for another session, skipping`);
+                return;
+            }
 
             // 记录本次分析中的 sessionId，供刷新页面时复用
             if (!freeRetrySessionId) {
@@ -346,20 +448,37 @@ export function useAsyncAnalysis() {
             // 服务端已响应，快速推进进度让用户感知到进展
             setAnalysisState(prev => ({ ...prev, progress: 90 }));
 
-            if (!analyzeRes.ok) {
-                // 解析服务端错误信息，透传给用户
-                let serverError = "分析失败，请重试";
-                try {
-                    const errorData = await analyzeRes.json();
-                    serverError = errorData.error || errorData.message || serverError;
-                } catch {
-                    // 无法解析 JSON，使用状态码信息
-                    serverError = `服务器错误 (${analyzeRes.status})，请稍后重试`;
-                }
-                throw new Error(serverError);
-            }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            let result: any;
 
-            const result = await analyzeRes.json();
+            if (analyzeRes.status === 202) {
+                // 服务端提示已有其他请求在分析同一 session，进入轮询等待
+                const pollResult = await pollSessionResult(sessionId, {
+                    onProgress: (attempt) => {
+                        setAnalysisState(prev => ({ ...prev, progress: Math.min(85, 55 + attempt * 1) }));
+                    },
+                    signal: abortController.signal
+                });
+                if (pollResult.status !== 'completed' || !pollResult.rawResult) {
+                    throw new Error('等待分析结果失败，请重试');
+                }
+                result = pollResult.rawResult;
+            } else {
+                if (!analyzeRes.ok) {
+                    // 解析服务端错误信息，透传给用户
+                    let serverError = "分析失败，请重试";
+                    try {
+                        const errorData = await analyzeRes.json();
+                        serverError = errorData.error || errorData.message || serverError;
+                    } catch {
+                        // 无法解析 JSON，使用状态码信息
+                        serverError = `服务器错误 (${analyzeRes.status})，请稍后重试`;
+                    }
+                    throw new Error(serverError);
+                }
+
+                result = await analyzeRes.json();
+            }
 
             if (faceAnalysis && !result.faceAnalysis) {
                 result.faceAnalysis = faceAnalysis;
@@ -372,7 +491,7 @@ export function useAsyncAnalysis() {
             } catch (e) {
                 console.warn("Failed to save result to localStorage", e);
             }
-            trackAnalysisComplete(result.dataSource === "comprehensive" ? "ai" : "fallback");
+            trackAnalysisComplete(result.dataSource === "comprehensive" || result.dataSource === "hybrid" ? "ai" : "fallback");
 
             // Only clear freeRetry flag after successful server response
             if (isFreeRetry) {
@@ -403,6 +522,7 @@ export function useAsyncAnalysis() {
             throw error;
         } finally {
             isRunningRef.current = false;
+            releaseAnalysisLock();
             // 分析流程结束（成功/失败/超时）后清除刷新复用标记
             try {
                 sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_ID);
@@ -411,7 +531,7 @@ export function useAsyncAnalysis() {
                 console.warn("sessionStorage access failed", e);
             }
         }
-    }, [trackAnalysisStart, trackAnalysisComplete]);
+    }, [trackAnalysisStart, trackAnalysisComplete, pollSessionResult]);
 
     // Fake progress animation to fill the gaps between milestones
     useEffect(() => {
@@ -456,61 +576,12 @@ export function useAsyncAnalysis() {
 
     // --- Session recovery helpers ---
 
-    const checkSessionStatus = useCallback(async (sessionId: string): Promise<SessionStatusResponse> => {
-        try {
-            const res = await fetch(`/api/advisor/session/status?sessionId=${encodeURIComponent(sessionId)}`);
-            if (!res.ok) {
-                const data = await res.json().catch(() => ({}));
-                return {
-                    status: 'not_found',
-                    sessionId,
-                    error: data.error || `HTTP ${res.status}`
-                };
-            }
-            return await res.json();
-        } catch (e: unknown) {
-            const err = e instanceof Error ? e : new Error(String(e));
-            return { status: 'not_found', sessionId, error: err.message };
-        }
-    }, []);
-
-    const pollSessionResult = useCallback(async (
-        sessionId: string,
-        options?: {
-            intervalMs?: number;
-            maxAttempts?: number;
-            onProgress?: (attempt: number) => void;
-            signal?: AbortSignal;
-        }
-    ): Promise<SessionStatusResponse> => {
-        const { intervalMs = 3000, maxAttempts = 30 } = options || {};
-        for (let attempt = 0; attempt < maxAttempts; attempt++) {
-            if (options?.signal?.aborted) {
-                throw new Error('已取消等待');
-            }
-            const status = await checkSessionStatus(sessionId);
-            if (status.status === 'completed') {
-                return status;
-            }
-            if (status.status === 'not_found' || status.status === 'forbidden') {
-                throw new Error(status.error || '会话不存在或无权访问');
-            }
-            if (attempt < maxAttempts - 1) {
-                options?.onProgress?.(attempt + 1);
-                await new Promise(resolve => {
-                    const timeoutId = setTimeout(resolve, intervalMs);
-                    options?.signal?.addEventListener('abort', () => {
-                        clearTimeout(timeoutId);
-                        resolve(undefined);
-                    }, { once: true });
-                });
-            }
-        }
-        throw new Error('等待分析结果超时，请重试');
-    }, [checkSessionStatus]);
-
     const recoverSession = useCallback(async (sessionId: string): Promise<{ result: Record<string, unknown>; sessionId: string } | null> => {
         if (isRunningRef.current) return null;
+        if (!acquireAnalysisLock(sessionId)) {
+            console.warn(`[useAsyncAnalysis] Analysis lock already held for another session, skipping recovery`);
+            return null;
+        }
         isRunningRef.current = true;
 
         setAnalysisState({ status: 'analyzing_skin', progress: 55, error: null, queuePosition: undefined, queueWaitSeconds: undefined });
@@ -538,12 +609,14 @@ export function useAsyncAnalysis() {
             return null;
         } finally {
             isRunningRef.current = false;
+            releaseAnalysisLock();
         }
     }, [checkSessionStatus, pollSessionResult]);
 
     const reset = useCallback(() => {
         setAnalysisState({ status: 'idle', progress: 0, error: null, queuePosition: undefined, queueWaitSeconds: undefined });
         isRunningRef.current = false;
+        releaseAnalysisLock();
     }, []);
 
     return { runAnalysis, analysisState, reset, recoverSession };

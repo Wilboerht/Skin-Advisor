@@ -75,6 +75,50 @@ function sanitizeReason(reason: string): string {
     return sanitized;
 }
 
+/** 清理 Lab 分析状态中的英文词汇 */
+function sanitizeLabStatus(status: string): string {
+    if (!status) return status;
+    const replacements: Record<string, string> = {
+        normal: "正常",
+        mild: "轻度",
+        moderate: "中度",
+        severe: "重度",
+        good: "良好",
+        excellent: "优秀",
+        poor: "较差",
+        average: "一般",
+        fair: "一般",
+        low: "低",
+        medium: "中等",
+        high: "高",
+    };
+    let sanitized = status;
+    for (const [en, cn] of Object.entries(replacements)) {
+        const regex = new RegExp(`\\b${en}\\b`, "gi");
+        sanitized = sanitized.replace(regex, cn);
+    }
+    return sanitized;
+}
+
+/** 递归清理 faceAnalysis.labAnalysis 中的英文状态 */
+function sanitizeLabAnalysis(labAnalysis: unknown): unknown {
+    if (!labAnalysis || typeof labAnalysis !== 'object') return labAnalysis;
+    if (Array.isArray(labAnalysis)) {
+        return labAnalysis.map(sanitizeLabAnalysis);
+    }
+    const result: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(labAnalysis)) {
+        if (key === 'status' && typeof value === 'string') {
+            result[key] = sanitizeLabStatus(value);
+        } else if (typeof value === 'object' && value !== null) {
+            result[key] = sanitizeLabAnalysis(value);
+        } else {
+            result[key] = value;
+        }
+    }
+    return result;
+}
+
 /**
  * 递归清理 AI 输出中的潜在危险 HTML/JS 内容
  * 使用 DOMPurify 在存储到数据库前进行标准化 XSS 清理
@@ -250,14 +294,34 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // 保存会话占位记录（标记分析开始，不设置 completedAt——防止超时后状态不一致）
-        // 同时保存问卷答案，用于历史审计与复购分析
-        {
+        // 分布式锁：防止同一 sessionId 并发重复跑 AI
+        // 使用数据库行锁 (SELECT FOR UPDATE) 保证同一时刻只有一个分析流程在执行
+        const lockResult = await prisma.$transaction(async (tx) => {
+            // 锁定 session 行（不存在则跳过）
+            await tx.$executeRaw`SELECT * FROM "AdvisorSession" WHERE "sessionId" = ${effectiveSessionId} FOR UPDATE`;
+
+            const session = await tx.advisorSession.findUnique({
+                where: { sessionId: effectiveSessionId },
+                select: { completedAt: true, analysisStartedAt: true, analysisResult: true }
+            });
+
+            // 再次检查是否已完成（可能刚刚完成）
+            if (session?.completedAt && session?.analysisResult) {
+                return { status: 'completed' as const, result: session.analysisResult };
+            }
+
+            // 若已有其他请求正在分析，返回 analyzing 状态，让客户端轮询
+            if (session?.analysisStartedAt && !session?.completedAt) {
+                return { status: 'analyzing' as const };
+            }
+
+            // 保存会话占位记录（标记分析开始，不设置 completedAt——防止超时后状态不一致）
+            // 同时保存问卷答案，用于历史审计与复购分析
             const consentFields = privacyConsent ? {
                 privacyConsentAt: new Date(privacyConsent.consentedAt),
                 privacyConsentVersion: privacyConsent.version
             } : {};
-            await prisma.advisorSession.upsert({
+            await tx.advisorSession.upsert({
                 where: { sessionId: effectiveSessionId },
                 update: {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -287,6 +351,21 @@ export async function POST(request: NextRequest) {
                     ...consentFields
                 }
             });
+
+            return { status: 'started' as const };
+        });
+
+        if (lockResult.status === 'completed') {
+            const cachedResult = lockResult.result as Record<string, unknown>;
+            console.log(`[analyze] Returning cached result after lock for session ${effectiveSessionId}`);
+            return NextResponse.json(cachedResult, { status: 200, headers: rateLimitHeaders });
+        }
+
+        if (lockResult.status === 'analyzing') {
+            return NextResponse.json(
+                { status: "analyzing", sessionId: effectiveSessionId, message: "分析正在进行中，请稍候" },
+                { status: 202, headers: rateLimitHeaders }
+            );
         }
 
         // 5. 检查 AI 开关
@@ -329,7 +408,6 @@ export async function POST(request: NextRequest) {
                         ...fallbackFace.recommendations
                     ]
                 },
-                faceAnalysis: fallbackFace,
                 products: products,
                 dataSource: "questionnaire" as const,
                 persona: personaKey,
@@ -498,6 +576,7 @@ export async function POST(request: NextRequest) {
                         benefits: catalogProduct.benefits || [],
                         affiliateLinks: catalogProduct.affiliateLinks || null,
                         howToUse: catalogProduct.howToUse || null,
+                        source: "ai" as const,
                         reason: sanitizeReason(p.reason || algorithmRecs.find((r: any) => String(r.id) === String(p.id))?.reason || "为您精选的护肤产品")
                     };
                 }
@@ -528,6 +607,10 @@ export async function POST(request: NextRequest) {
         // Enhance Face Analysis with Text AI Recommendations if missing
         let finalFaceAnalysis = faceAnalysis || resultJson.faceAnalysis || null;
         if (finalFaceAnalysis) {
+            // 清理 labAnalysis 中的英文状态描述
+            if (finalFaceAnalysis.labAnalysis) {
+                finalFaceAnalysis.labAnalysis = sanitizeLabAnalysis(finalFaceAnalysis.labAnalysis);
+            }
             // Ensure recommendations exist
             if (!finalFaceAnalysis.recommendations) {
                 finalFaceAnalysis.recommendations = [];

@@ -82,7 +82,6 @@ export interface FaceAnalysisResult {
     // 新增字段
     skinConditions: SkinCondition[];
     zoneAnalysis?: ZoneAnalysis;
-    priorityAreas?: string[];
 
     // AI 实验室数据 (新增)
     labAnalysis?: LabAnalysisResult;
@@ -173,7 +172,6 @@ export function getDefaultFaceAnalysisResult(): FaceAnalysisResult {
             "最后，鉴于光老化迹象初显，请务必全年坚持使用SPF30+以上的防晒霜，以预防紫外线对胶原蛋白的进一步损伤。"
         ],
         skinConditions: [],
-        priorityAreas: ["waterOil", "radiance"],
         zoneAnalysis: {
             forehead: { condition: "轻微出油", advice: "使用清爽控油产品，定期深层清洁", oil: 60, texture: 80, wrinkles: 10, spots: 15, redness: 10, firmness: 85, contour: 90 },
             tZone: { condition: "出油旺盛", advice: "使用含水杨酸的控油平衡产品", oil: 70, texture: 40, wrinkles: 5, spots: 20, redness: 15, firmness: 80, contour: 85 },

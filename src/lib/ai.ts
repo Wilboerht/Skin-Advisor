@@ -419,7 +419,6 @@ export function fallbackAnalysis(answers: QuestionnaireAnswers): FaceAnalysisRes
 
     // 2. 关注点映射
     const concerns = identifyConcerns(answers);
-    result.priorityAreas = concerns;
 
     // 3. 维度调整
     concerns.forEach(c => {
