@@ -186,7 +186,7 @@ export default function ResultCards({
           ...professionalStyle,
         }}
       >
-        <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 lg:gap-12 h-full">
+        <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-0 lg:gap-12 h-full">
           <div className="flex flex-col justify-between items-start w-full lg:w-[30%] shrink-0">
             <div>
               <div className="bg-white/70 text-[#5c4937] w-[72px] lg:w-[72px] h-[24px] lg:h-[24px] rounded-lg text-xs lg:text-xs font-bold flex items-center justify-center mb-4 lg:mb-6 shadow-sm border border-[#3d2f25]/8 tracking-widest relative z-10">
@@ -216,13 +216,13 @@ export default function ResultCards({
               }}
             >
               <div className="flex flex-row lg:flex-col items-center lg:items-start gap-2 lg:justify-between w-full h-full relative z-20">
-                <p className="text-[11px] lg:text-xs text-[#7a6552] font-medium shrink-0">综合评分</p>
+                <p className="text-xs lg:text-xs text-[#7a6552] font-medium shrink-0">综合评分</p>
                 <div className="flex items-baseline">
-                  <span className="text-[11px] lg:text-3xl font-bold text-[#5c4937] leading-none">
+                  <span className="text-xs lg:text-3xl font-bold text-[#00263e] lg:text-[#5c4937] leading-none">
                     {score === undefined ? '-' : <AnimatedNumber value={score} duration={1.5} />}
                   </span>
                   {score !== undefined && (
-                    <span className="text-[11px] lg:text-xs text-[#7a6552] ml-0.5 font-medium">分</span>
+                    <span className="text-xs lg:text-xs text-[#7a6552] ml-0.5 font-medium">分</span>
                   )}
                 </div>
               </div>
@@ -240,12 +240,12 @@ export default function ResultCards({
               }}
             >
               <div className="flex flex-row lg:flex-col items-center lg:items-start gap-2 lg:justify-between w-full h-full relative z-20">
-                <p className="text-[12px] lg:text-xs text-[#7a6552] font-medium shrink-0">肌肤年龄</p>
+                <p className="text-xs lg:text-xs text-[#7a6552] font-medium shrink-0">肌肤年龄</p>
                 <div className="flex items-baseline">
-                  <span className="text-[13px] lg:text-3xl font-bold text-[#5c4937] leading-none">
+                  <span className="text-xs lg:text-3xl font-bold text-[#00263e] lg:text-[#5c4937] leading-none">
                     <AnimatedNumber value={skinAge} duration={1.5} />
                   </span>
-                  <span className="text-[12px] lg:text-xs text-[#7a6552] ml-0.5 font-medium">岁</span>
+                  <span className="text-xs lg:text-xs text-[#7a6552] ml-0.5 font-medium">岁</span>
                 </div>
               </div>
             </motion.div>
@@ -262,9 +262,9 @@ export default function ResultCards({
               }}
             >
               <div className="flex flex-row lg:flex-col items-center lg:items-start gap-2 lg:justify-between w-full h-full relative z-20">
-                <p className="text-[11px] lg:text-xs text-[#7a6552] font-medium shrink-0">油脂分泌</p>
+                <p className="text-xs lg:text-xs text-[#7a6552] font-medium shrink-0">油脂分泌</p>
                 <div className="flex items-baseline">
-                  <span className="text-[11px] lg:text-xl font-bold text-[#5c4937] leading-tight">{tZoneLabel}</span>
+                  <span className="text-xs lg:text-xl font-bold text-[#00263e] lg:text-[#5c4937] leading-tight">{tZoneLabel}</span>
                 </div>
               </div>
             </motion.div>
@@ -278,13 +278,13 @@ export default function ResultCards({
               }}
             >
               <div className="flex flex-row lg:flex-col items-center lg:items-start gap-2 lg:justify-between w-full h-full relative z-20">
-                <p className="text-[11px] lg:text-xs text-[#7a6552] font-medium shrink-0">综合评分</p>
+                <p className="text-xs lg:text-xs text-[#7a6552] font-medium shrink-0">综合评分</p>
                 <div className="flex items-baseline">
-                  <span className="text-[11px] lg:text-3xl font-bold text-[#5c4937] leading-none">
+                  <span className="text-xs lg:text-3xl font-bold text-[#00263e] lg:text-[#5c4937] leading-none">
                     {score === undefined ? '-' : <AnimatedNumber value={score} duration={1.5} />}
                   </span>
                   {score !== undefined && (
-                    <span className="text-[11px] lg:text-xs text-[#7a6552] ml-0.5 font-medium">分</span>
+                    <span className="text-xs lg:text-xs text-[#7a6552] ml-0.5 font-medium">分</span>
                   )}
                 </div>
               </div>

@@ -814,7 +814,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                                         {/* Show Details if available, else fallback to Summary */}
                                         {result.analysis?.details && result.analysis.details.length > 0 ? (
-                                            <div className="space-y-3 text-[14px] leading-relaxed text-[#5c4937]">
+                                            <div className="space-y-2 lg:space-y-3 text-xs lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
                                                 {result.analysis.details.map((paragraph, idx) => (
                                                     <p key={idx}>{paragraph}</p>
                                                 ))}
