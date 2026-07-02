@@ -1,23 +1,15 @@
 /**
- * 根据综合评分计算全国排名百分比
+ * 根据综合评分计算全国排名百分比（连续幂函数曲线）
+ *
+ * 使用幂函数模拟真实分布：低分段拉开差距，高分段逐渐饱和。
+ * 曲线示例：score=30→49% | 50→69% | 70→85% | 85→93% | 95→99%
+ * 幂指数 1.6 控制曲率：指数越大，高分段越密集。
  */
 export function getRankPercentile(score: number): number {
-    const scoreToPercentile: { min: number; max: number; percentile: number }[] = [
-        { min: 90, max: 99, percentile: 95 },
-        { min: 80, max: 89, percentile: 90 },
-        { min: 75, max: 79, percentile: 85 },
-        { min: 70, max: 74, percentile: 80 },
-        { min: 65, max: 69, percentile: 74 },
-        { min: 60, max: 64, percentile: 68 },
-        { min: 55, max: 59, percentile: 62 },
-        { min: 45, max: 54, percentile: 55 },
-        { min: 35, max: 44, percentile: 45 },
-        { min: 25, max: 34, percentile: 35 },
-        { min: 15, max: 24, percentile: 25 },
-        { min: 0, max: 14, percentile: 15 },
-    ];
-    const match = scoreToPercentile.find((r) => score >= r.min && score <= r.max);
-    return match ? match.percentile : 75;
+    if (score >= 98) return 99;
+    if (score <= 5) return 1;
+    const percentile = Math.round(100 - Math.pow((100 - score) / 100, 1.6) * 98);
+    return Math.max(1, Math.min(99, percentile));
 }
 
 /**
