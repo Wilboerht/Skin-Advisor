@@ -117,19 +117,13 @@ export function matchCharacterIP(params: IPMatchParams): CharacterIP {
     return IP_DEFINITIONS[IP_DEFINITIONS.length - 1];
 }
 
-/** 部分 IP 仅有 female 图片，male 缺失时回退 */
-const MALE_MISSING_KEYS = ["sensitive", "minimalist", "desert", "oily", "combination", "guardian"];
-
 /**
  * 根据匹配参数和性别获取角色插图路径
  * @returns 角色图片路径，如 "/images/character/ageless/ageless_female.png"
  */
 export function getCharacterImage(params: IPMatchParams & { gender: string }): string {
     const ip = matchCharacterIP(params);
-    const actualGender = params.gender === "male" && MALE_MISSING_KEYS.includes(ip.key)
-        ? "female"
-        : params.gender;
-    const genderSuffix = actualGender === "male" ? "male" : "female";
+    const genderSuffix = params.gender === "male" ? "male" : "female";
     return `/images/character/${ip.key}/${ip.key}_${genderSuffix}.png`;
 }
 
