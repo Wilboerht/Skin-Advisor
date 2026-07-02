@@ -135,15 +135,15 @@ function CompactProductCard({
                         <p className="line-clamp-1 text-xs text-[#8c7a6b] lg:text-[#666]">
                             {product.reason}
                         </p>
-
-                        {/* 价格 - mobile only */}
-                        <span className="mt-1 text-xs font-bold text-[#1a1a1a] lg:hidden">
-                            {product.price ? product.price.replace('¥', '¥ ') : '咨询价格'}
-                        </span>
                     </div>
 
+                    {/* 价格 - mobile only (固定在底部) */}
+                    <span className="mt-auto text-base font-bold text-[#1a1a1a] lg:hidden">
+                        {product.price ? product.price.replace('¥', '¥ ') : '咨询价格'}
+                    </span>
+
                     {/* 底部操作栏 - desktop only */}
-                    <div className="mt-auto hidden items-center justify-between pt-3 lg:flex">
+                    <div className="hidden items-center justify-between pt-3 lg:flex">
                         <span className="text-xl font-bold text-[#1a1a1a]">
                             {product.price ? product.price.replace('¥', '¥ ') : '咨询价格'}
                         </span>
