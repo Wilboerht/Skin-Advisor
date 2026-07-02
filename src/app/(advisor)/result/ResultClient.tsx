@@ -1055,17 +1055,17 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     <footer className="w-full bg-transparent mt-0 py-12">
                         <div className="max-w-[900px] mx-auto px-6 lg:px-10">
                             {/* Primary & secondary actions */}
-                            <div className="flex flex-col sm:flex-row justify-center gap-3 mb-4">
+                            <div className="flex flex-row justify-center gap-3 mb-4">
                                 <button
                                     onClick={() => setShowContactAdvisor(true)}
-                                    className="inline-flex items-center justify-center gap-2 px-8 py-3 rounded-full bg-[#5c4937] text-white text-[13px] tracking-[0.1em] font-medium hover:bg-[#4a3a2c] transition-colors"
+                                    className="inline-flex items-center justify-center gap-2 px-5 sm:px-8 py-2.5 sm:py-3 rounded-full bg-[#5c4937] text-white text-[12px] sm:text-[13px] tracking-[0.1em] font-medium hover:bg-[#4a3a2c] transition-colors"
                                 >
                                     <MessageCircle className="w-4 h-4" />
                                     联系顾问
                                 </button>
                                 <button
                                     onClick={() => router.push('/')}
-                                    className="inline-flex items-center justify-center gap-2 px-8 py-3 rounded-full border border-[#5c4937]/30 text-[#5c4937] text-[13px] tracking-[0.1em] font-medium hover:bg-[#5c4937]/5 transition-colors"
+                                    className="inline-flex items-center justify-center gap-2 px-5 sm:px-8 py-2.5 sm:py-3 rounded-full border border-[#5c4937]/30 text-[#5c4937] text-[12px] sm:text-[13px] tracking-[0.1em] font-medium hover:bg-[#5c4937]/5 transition-colors"
                                 >
                                     <House className="w-4 h-4" />
                                     回到首页
