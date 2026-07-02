@@ -1086,7 +1086,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                             {/* Minimal Footer Text */}
                             <div className="text-center">
-                                <div className="flex flex-row justify-center items-center gap-1 text-[10px] sm:text-xs mb-2 sm:mb-3 text-[var(--result-text-primary)]">
+                                <div className="flex flex-row justify-center items-center gap-1 sm:gap-5 text-[10px] sm:text-xs mb-2 sm:mb-3 text-[var(--result-text-primary)]">
                                     <span className="opacity-90">© 2026 NIHPLOD. All Rights Reserved.</span>
                                     <span className="opacity-40">•</span>
                                     <a
