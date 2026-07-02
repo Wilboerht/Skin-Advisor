@@ -156,17 +156,35 @@ export function ProductCard({
                     {product.name}
                 </h4>
 
-                {/* 功效标签 - mobile pill badges */}
+                {/* 功效标签 */}
                 {product.benefits && product.benefits.length > 0 && isCompact && (
-                    <p className="hidden lg:block text-[13px] text-[#C8A97E] mb-2 truncate">
-                        {product.benefits.join(" | ")}
-                    </p>
+                    <>
+                        {/* Mobile: pill badges */}
+                        <div className="flex flex-wrap gap-1 mb-1 lg:hidden">
+                            {product.benefits.slice(0, 4).map((b, i) => (
+                                <span key={i} className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#3d2f25]/8 text-[#8c7a6b] leading-none">
+                                    {b}
+                                </span>
+                            ))}
+                        </div>
+                        {/* Desktop: pipe-separated */}
+                        <p className="hidden lg:block text-[13px] text-[#C8A97E] mb-2 truncate">
+                            {product.benefits.join(" | ")}
+                        </p>
+                    </>
                 )}
 
                 {/* 推荐理由 */}
                 <p className={cn("leading-snug", isCompact ? "text-xs lg:text-[13px] text-[#8c7a6b] lg:text-[#666] line-clamp-2" : "text-xs text-white/70 mb-3 line-clamp-2")}>
                     {getReasonText()}
                 </p>
+
+                {/* 价格 - mobile only */}
+                {isCompact && (
+                    <span className="lg:hidden text-xs font-bold text-[#1a1a1a] mt-1">
+                        {product.price ? `¥${product.price}` : '咨询价格'}
+                    </span>
+                )}
 
                 {/* 底部操作栏 - desktop only */}
                 {isCompact ? (
