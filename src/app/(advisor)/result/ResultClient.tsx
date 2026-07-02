@@ -807,7 +807,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             comprehensiveReport={
                                 <>
                                     {/* Report Header / Summary */}
-                                    <div className="mt-14 mb-6">
+                                    <div className="mt-6 lg:mt-14 mb-6">
                                         <h4 className="text-base font-medium text-[#3d2f25] mb-3 border-b border-[#3d2f25]/20 pb-2">
                                             1、详细诊断报告 (Detailed Diagnosis)
                                         </h4>
@@ -838,12 +838,11 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                 ))}
                                             </ul>
                                         ) : (
-                                            <p className="text-[14px] leading-relaxed text-[#5c4937]">
-                                                根据您的肤质分析，建议您：
-                                                1. 每日早晚温和清洁，避免过度去脂。
-                                                2. 严格做好防晒，减少紫外线损伤。
-                                                3. 根据季节调整保湿产品，保持水油平衡。
-                                            </p>
+                                            <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-xs lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
+                                                <li>每日早晚温和清洁，避免过度去脂。</li>
+                                                <li>严格做好防晒，减少紫外线损伤。</li>
+                                                <li>根据季节调整保湿产品，保持水油平衡。</li>
+                                            </ul>
                                         )}
                                     </div>
 
