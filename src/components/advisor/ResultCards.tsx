@@ -111,7 +111,7 @@ export default function ResultCards({
             alt={skinTypeName}
             width={280}
             height={280}
-            className="relative z-10 h-[270px] w-[270px] object-contain"
+            className="relative z-10 h-[270px] w-[270px] object-contain drop-shadow-[0_3px_8px_rgba(92,73,55,0.12)]"
             priority
             onError={(e) => {
               const fallback = characterImage.replace('_male', '_female');
