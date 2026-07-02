@@ -832,7 +832,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                             2、专家护肤建议 (Expert Recommendations)
                                         </h4>
                                         {(faceAnalysis?.recommendations && faceAnalysis.recommendations.length > 0) ? (
-                                            <ul className="list-disc pl-5 space-y-2 text-[14px] leading-relaxed text-[#5c4937]">
+                                            <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-xs lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
                                                 {(faceAnalysis.recommendations).map((rec, idx) => (
                                                     <li key={idx}>{rec}</li>
                                                 ))}
