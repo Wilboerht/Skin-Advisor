@@ -169,20 +169,22 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         }
     }, [router, id, initialData]);
     const { trackResultView, trackResultShare, trackProductClick } = useAdvisorAnalytics();
-    const { user, loading: authLoading, isInitialized: authInitialized } = useAuth();
+    const { user, isInitialized: authInitialized } = useAuth();
     const searchParams = useSearchParams();
     const { runAnalysis, analysisState, reset: resetAnalysis } = useAsyncAnalysis();
 
     // Data State
     const normalizedResult = useMemo(() => normalizeAnalysisResult(initialData?.result || null), [initialData]);
     const [result, setResult] = useState<ComprehensiveResult | null>(normalizedResult);
+    const resultRef = useRef(result);
+    useEffect(() => {
+        resultRef.current = result;
+    }, [result]);
     const [faceAnalysis, setFaceAnalysis] = useState<FaceAnalysisResult | null>(initialData?.faceAnalysis || null);
 
     const [userNickname, setUserNickname] = useState<string>("您");
     // Session ID for sharing - initialized from props or will be set after analysis
     const [sessionId, setSessionId] = useState<string | undefined>(id);
-    const sessionIdRef = useRef(sessionId);
-    sessionIdRef.current = sessionId;
     const [socialGender, setSocialGender] = useState<string>(''); // Initialize empty to avoid flash mismatch
 
     // IP 匹配所需数据
@@ -193,8 +195,10 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const [loading, setLoading] = useState(!initialData);
     const hasTrackedView = useRef(false);
 
-    // Gender Mismatch State
-    const [showGenderMismatchModal, setShowGenderMismatchModal] = useState(false);
+    // Gender Mismatch State：存储已确认过的 sessionId，换 session 后自动重新提示
+    const [ackedSessionId, setAckedSessionId] = useState<string | null>(() => {
+        try { return localStorage.getItem(STORAGE_KEYS.ADVISOR_GENDER_MISMATCH_ACK); } catch { return null; }
+    });
 
     // New State for interactivity
 
@@ -226,15 +230,10 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         return faGenderVal && normalizedConf > 0.85 && faGenderVal !== socialGender;
     }, [faceAnalysis, socialGender]);
 
-    useEffect(() => {
-        if (!loading && result && faceAnalysis && isGenderMismatch) {
-            // Check if user already acknowledged the mismatch (prevents modal reappearing on refresh)
-            const acked = typeof window !== 'undefined' && localStorage.getItem(STORAGE_KEYS.ADVISOR_GENDER_MISMATCH_ACK) === 'true';
-            if (!acked) {
-                setShowGenderMismatchModal(true);
-            }
-        }
-    }, [loading, result, faceAnalysis, isGenderMismatch, socialGender]);
+    const showGenderMismatchModal = useMemo(
+        () => !loading && !!result && !!faceAnalysis && isGenderMismatch && ackedSessionId !== sessionId,
+        [loading, result, faceAnalysis, isGenderMismatch, ackedSessionId, sessionId]
+    );
 
     const handleMismatchRetry = () => {
         // Clear previous answers to force a fresh start
@@ -252,15 +251,17 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         // Set a flag for "Free Retry" bypass - recognized by the question/analyze flow
         localStorage.setItem(STORAGE_KEYS.ADVISOR_FREE_RETRY, "true");
 
-        // Mark as acknowledged so we don't loop if they come back to this same result (unlikely if cleared)
-        localStorage.setItem(STORAGE_KEYS.ADVISOR_GENDER_MISMATCH_ACK, 'true');
+        // Mark current session as acknowledged so we don't loop if they come back
+        setAckedSessionId(currentSessionId ?? null);
+        try { if (currentSessionId) localStorage.setItem(STORAGE_KEYS.ADVISOR_GENDER_MISMATCH_ACK, currentSessionId); } catch { /* ignore */ }
 
         router.push("/questions");
     };
 
     const handleMismatchContinue = () => {
-        setShowGenderMismatchModal(false);
-        localStorage.setItem(STORAGE_KEYS.ADVISOR_GENDER_MISMATCH_ACK, 'true');
+        const currentSessionId = sessionId ?? null;
+        setAckedSessionId(currentSessionId);
+        try { if (currentSessionId) localStorage.setItem(STORAGE_KEYS.ADVISOR_GENDER_MISMATCH_ACK, currentSessionId); } catch { /* ignore */ }
         // 用户选择继续（不重试），清除免费重试相关标记，避免后续普通测试复用旧 sessionId
         localStorage.removeItem(STORAGE_KEYS.ADVISOR_FREE_RETRY);
         localStorage.removeItem(STORAGE_KEYS.ADVISOR_FREE_RETRY_SESSION_ID);
@@ -276,7 +277,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     useEffect(() => {
         const loadClientData = async () => {
             // 已有结果且非分析中时直接短路，避免 user 变化导致重复加载/闪烁
-            if (result && searchParams.get('status') !== 'analyzing') {
+            if (resultRef.current && searchParams.get('status') !== 'analyzing') {
                 if (!hasTrackedView.current) {
                     trackResultView();
                     hasTrackedView.current = true;
@@ -288,10 +289,9 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             try {
                 // Dynamically import to avoid SSR issues
                 const { advisorStorage } = await import("@/lib/advisor-storage");
-                const images = await advisorStorage.getFaceImages();
-
                 // 人脸图片仅用于 IndexedDB 恢复，不渲染到页面
                 // 保留恢复逻辑但不设置不再使用的 state
+                await advisorStorage.getFaceImages();
 
                 // Restore Nickname
                 const storedNickname = localStorage.getItem(STORAGE_KEYS.ADVISOR_NICKNAME);
@@ -343,11 +343,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     setSessionId(advisorResult.sessionId);
                                 }
 
-                                // Handle session management logic (formerly at lines 313+)
-                                const previousSessionId = sessionIdRef.current;
-                                if (advisorResult.sessionId && advisorResult.sessionId !== previousSessionId) {
-                                    localStorage.removeItem(STORAGE_KEYS.ADVISOR_GENDER_MISMATCH_ACK);
-                                }
 
                                 // If we successfully recovered data, remove 'analyzing' status from URL to stop re-analysis
                                 if (searchParams.get('status') === 'analyzing') {
@@ -404,28 +399,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
     // Actions
     // Save result as image for sharing (image generation in progress)
-
-    const handleRetake = async () => {
-        localStorage.removeItem(STORAGE_KEYS.ADVISOR_ANSWERS);
-        localStorage.removeItem(STORAGE_KEYS.ADVISOR_GENDER);
-        localStorage.removeItem(STORAGE_KEYS.ADVISOR_FACE_IMAGES);
-        localStorage.removeItem(STORAGE_KEYS.ADVISOR_RESULT);
-
-        localStorage.removeItem(STORAGE_KEYS.ADVISOR_STEP);
-        localStorage.removeItem(STORAGE_KEYS.ADVISOR_GENDER_MISMATCH_ACK);
-        localStorage.removeItem(STORAGE_KEYS.ADVISOR_FREE_RETRY);
-        localStorage.removeItem(STORAGE_KEYS.ADVISOR_FREE_RETRY_SESSION_ID);
-
-        // Clear IndexedDB face images & cached results
-        try {
-            const { advisorStorage } = await import("@/lib/advisor-storage");
-            await advisorStorage.clearAll();
-        } catch (e) {
-            console.error("Failed to clear IndexedDB:", e);
-        }
-
-        router.push("/questions");
-    };
 
     const handleSavePoster = async () => {
         if (!posterRef.current || isGeneratingPoster) return;
@@ -549,8 +522,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                         throw new Error("会话 ID 丢失，请重新测试");
                     }
 
-                    // Clear previous ack so mismatch modal can re-appear for new analysis
-                    localStorage.removeItem(STORAGE_KEYS.ADVISOR_GENDER_MISMATCH_ACK);
 
                     // IMPORTANT: Set result state FIRST before updating URL
                     setResult(newResult);
