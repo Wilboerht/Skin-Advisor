@@ -96,7 +96,7 @@ export default function ResultCards({
         {/* Mobile: Character IP Image above Share Card */}
         <div className="relative flex lg:hidden justify-center pointer-events-none mx-auto h-[270px] w-[270px]">
           {/* Mobile-only decorative background behind character */}
-          <div className="absolute inset-0 z-0 translate-y-16">
+          <div className="absolute inset-0 z-0 translate-y-12">
             <Image
               src="/images/character-bg-mobile.png"
               alt=""
