@@ -92,7 +92,7 @@ export default function ResultCards({
   return (
     <div className="w-full flex flex-col gap-6">
       {/* Mobile: Character IP Image above Share Card */}
-      <div className="flex lg:hidden justify-center -mb-2 pointer-events-none">
+      <div className="flex lg:hidden justify-center mb-0 pointer-events-none">
         <Image
           src={characterImage}
           alt={skinTypeName}
