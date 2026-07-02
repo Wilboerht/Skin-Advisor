@@ -809,7 +809,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     {/* Report Header / Summary */}
                                     <div className="mt-6 lg:mt-14 mb-6">
                                         <h4 className="text-base font-medium text-[#3d2f25] mb-3 border-b border-[#3d2f25]/20 pb-2">
-                                            1、详细诊断报告 (Detailed Diagnosis)
+                                            1、详细诊断报告 <span className="text-xs lg:text-base">(Detailed Diagnosis)</span>
                                         </h4>
 
                                         {/* Show Details if available, else fallback to Summary */}
@@ -829,7 +829,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     {/* Expert Advice */}
                                     <div className="mb-8">
                                         <h4 className="text-base font-medium text-[#3d2f25] mb-3 border-b border-[#3d2f25]/20 pb-2">
-                                            2、专家护肤建议 (Expert Recommendations)
+                                            2、专家护肤建议 <span className="text-xs lg:text-base">(Expert Recommendations)</span>
                                         </h4>
                                         {(faceAnalysis?.recommendations && faceAnalysis.recommendations.length > 0) ? (
                                             <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-xs lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
@@ -850,7 +850,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     {faceAnalysis?.zoneAnalysis && (
                                         <div className="mb-8">
                                             <h4 className="text-base font-medium text-[#3d2f25] mb-4 border-b border-[#3d2f25]/20 pb-2">
-                                                3、区域重点关注 (Area Focus)
+                                                3、区域重点关注 <span className="text-xs lg:text-base">(Area Focus)</span>
                                             </h4>
                                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                                 {Object.entries({
