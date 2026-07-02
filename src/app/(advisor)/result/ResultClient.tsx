@@ -1086,29 +1086,27 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                             {/* Minimal Footer Text */}
                             <div className="text-center">
-                                <div className="flex flex-col md:flex-row justify-center items-center gap-2 md:gap-6 text-xs mb-3 text-[var(--result-text-primary)]">
+                                <div className="flex flex-row justify-center items-center gap-1 text-[10px] sm:text-xs mb-2 sm:mb-3 text-[var(--result-text-primary)]">
                                     <span className="opacity-90">© 2026 NIHPLOD. All Rights Reserved.</span>
-                                    <span className="hidden md:inline opacity-40">•</span>
-                                    <div className="flex gap-4 font-medium">
-                                        <a
-                                            href="https://nihplod.cn/terms"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="transition-colors opacity-80 hover:opacity-100"
-                                        >
-                                            服务条款
-                                        </a>
-                                        <a
-                                            href="https://nihplod.cn/privacy"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="transition-colors opacity-80 hover:opacity-100"
-                                        >
-                                            隐私政策
-                                        </a>
-                                    </div>
+                                    <span className="opacity-40">•</span>
+                                    <a
+                                        href="https://nihplod.cn/terms"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="transition-colors opacity-80 hover:opacity-100 font-medium"
+                                    >
+                                        服务条款
+                                    </a>
+                                    <a
+                                        href="https://nihplod.cn/privacy"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="transition-colors opacity-80 hover:opacity-100 font-medium"
+                                    >
+                                        隐私政策
+                                    </a>
                                 </div>
-                                <p className="text-xs opacity-70 text-[var(--result-text-primary)]">
+                                <p className="text-[10px] sm:text-xs opacity-70 text-[var(--result-text-primary)]">
                                     *AI 分析结果受图像质量影响仅供参考，不构成医疗诊断建议
                                 </p>
                             </div>
