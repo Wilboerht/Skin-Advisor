@@ -27,7 +27,7 @@ export function SaveReportBanner({ className = "" }: SaveReportBannerProps) {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -24 }}
                     transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
-                    className={`w-full bg-[#F5F2ED] border-b border-[#3d2f25]/10 ${className}`}
+                    className={`w-full bg-[#F5F2ED] border-b border-[#3d2f25]/10 hidden sm:block ${className}`}
                 >
                     <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-2.5">
                         <div className="flex items-center justify-center gap-2 sm:gap-3 text-[12px] sm:text-[13px] text-[#5c4937]">
