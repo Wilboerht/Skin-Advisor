@@ -94,7 +94,7 @@ export default function ResultCards({
       {/* Mobile: Character IP Image + Share Card (no gap between them) */}
       <div className="flex flex-col gap-0 lg:contents">
         {/* Mobile: Character IP Image above Share Card */}
-        <div className="relative flex lg:hidden justify-center pointer-events-none mx-auto h-[300px] w-[300px]">
+        <div className="relative flex lg:hidden justify-center pointer-events-none mx-auto h-[270px] w-[270px]">
           {/* Mobile-only decorative background behind character */}
           <div className="absolute inset-0 z-0 translate-y-16">
             <Image
