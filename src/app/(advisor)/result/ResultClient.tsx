@@ -1097,7 +1097,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     >
                                         服务条款
                                     </a>
-                                    <span className="opacity-40">•</span>
+                                    <span className="opacity-40 sm:hidden">•</span>
                                     <a
                                         href="https://nihplod.cn/privacy"
                                         target="_blank"
