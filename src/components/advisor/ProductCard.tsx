@@ -117,10 +117,10 @@ function CompactProductCard({
                 </div>
 
                 {/* 内容区域 */}
-                <div className="flex min-w-0 flex-1 flex-col justify-between p-3 lg:p-4">
+                <div className="flex min-w-0 flex-1 flex-col p-3 lg:p-4">
                     <div>
                         {/* 产品名称 */}
-                        <h4 className="mb-1 line-clamp-2 text-sm font-bold leading-snug text-[#1a1a1a] lg:mb-2 lg:text-lg">
+                        <h4 className="mb-1 line-clamp-2 text-base font-bold leading-snug text-[#1a1a1a] lg:mb-2 lg:text-lg">
                             {product.name}
                         </h4>
 
