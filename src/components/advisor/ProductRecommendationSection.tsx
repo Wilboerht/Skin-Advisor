@@ -162,7 +162,7 @@ export function ProductRecommendationSection({
                 <h2 className="text-lg lg:text-2xl font-bold text-[#3d2f25] tracking-wide">
                     {personaLabel ? `你的「${personaLabel}」甄选推荐` : "甄选产品推荐"}
                 </h2>
-                <p className="text-xs text-[#8c7a6b] mt-2">
+                <p className="text-xs lg:text-sm text-[#8c7a6b] mt-2">
                     {personaLabel
                         ? "基于你的肌肤形象，从专属方案中精选最适合入手的 3 件"
                         : "基于您的肤质分析，为您精选以下产品"}
