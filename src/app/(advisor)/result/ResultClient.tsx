@@ -873,9 +873,23 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                                     {zoneData.condition}
                                                                 </span>
                                                             </div>
-                                                            <p className="text-xs text-[#8c7a6b] mb-2 leading-snug min-h-[2.5em] line-clamp-2">
-                                                                {zoneData.condition}
-                                                            </p>
+                                                            {(() => {
+                                                                const metrics: string[] = [];
+                                                                if (zoneData.oil !== undefined) metrics.push(`油脂${zoneData.oil > 60 ? '偏高' : zoneData.oil < 30 ? '偏低' : '适中'}`);
+                                                                if (zoneData.wrinkles !== undefined) metrics.push(`皱纹${zoneData.wrinkles > 60 ? '明显' : zoneData.wrinkles > 30 ? '轻度' : '轻微'}`);
+                                                                if (zoneData.texture !== undefined) metrics.push(`纹理${zoneData.texture > 70 ? '细腻' : zoneData.texture > 40 ? '一般' : '粗糙'}`);
+                                                                if (zoneData.spots !== undefined) metrics.push(`色斑${zoneData.spots > 60 ? '明显' : zoneData.spots > 30 ? '少量' : '无'}`);
+                                                                if (zoneData.redness !== undefined) metrics.push(`泛红${zoneData.redness > 60 ? '明显' : zoneData.redness > 30 ? '轻度' : '无'}`);
+                                                                if (zoneData.darkCircles !== undefined) metrics.push(`黑眼圈${zoneData.darkCircles > 60 ? '明显' : zoneData.darkCircles > 30 ? '轻度' : '无'}`);
+                                                                if (zoneData.firmness !== undefined) metrics.push(`紧致${zoneData.firmness > 70 ? '良好' : zoneData.firmness > 40 ? '一般' : '松弛'}`);
+                                                                if (zoneData.contour !== undefined) metrics.push(`轮廓${zoneData.contour > 70 ? '清晰' : zoneData.contour > 40 ? '一般' : '模糊'}`);
+                                                                if (metrics.length === 0) return null;
+                                                                return (
+                                                                    <p className="text-xs text-[#8c7a6b] mb-2 leading-snug min-h-[2.5em] line-clamp-2">
+                                                                        {metrics.join(' · ')}
+                                                                    </p>
+                                                                );
+                                                            })()}
                                                             <div className="mt-2 pt-2 border-t border-dashed border-[#3d2f25]/10">
                                                                 <p className="text-xs text-emerald-700 leading-snug">
                                                                     <span className="font-medium mr-1">建议:</span>

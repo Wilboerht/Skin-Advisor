@@ -175,12 +175,12 @@ export function getDefaultFaceAnalysisResult(): FaceAnalysisResult {
         skinConditions: [],
         priorityAreas: ["waterOil", "radiance"],
         zoneAnalysis: {
-            forehead: { condition: "轻微出油", advice: "注意控油", wrinkles: 10, oil: 60, texture: 80 },
-            tZone: { condition: "出油旺盛", advice: "使用水杨酸", oil: 70, texture: 40 },
-            leftCheek: { condition: "健康", advice: "保持现状", spots: 10, redness: 20, texture: 90 },
-            rightCheek: { condition: "健康", advice: "保持现状", spots: 10, redness: 20, texture: 90 },
-            eyeArea: { condition: "轻微黑眼圈", advice: "使用眼霜", wrinkles: 20, darkCircles: 40, firmness: 80 },
-            jawline: { condition: "紧致", advice: "无需特殊护理", firmness: 90, contour: 85 }
+            forehead: { condition: "轻微出油", advice: "使用清爽控油产品，定期深层清洁", oil: 60, texture: 80, wrinkles: 10, spots: 15, redness: 10, firmness: 85, contour: 90 },
+            tZone: { condition: "出油旺盛", advice: "使用含水杨酸的控油平衡产品", oil: 70, texture: 40, wrinkles: 5, spots: 20, redness: 15, firmness: 80, contour: 85 },
+            leftCheek: { condition: "状态健康", advice: "保持日常保湿与防晒即可", oil: 30, texture: 90, wrinkles: 8, spots: 10, redness: 20, firmness: 85, contour: 88 },
+            rightCheek: { condition: "状态健康", advice: "保持日常保湿与防晒即可", oil: 30, texture: 90, wrinkles: 8, spots: 10, redness: 20, firmness: 85, contour: 88 },
+            eyeArea: { condition: "轻微黑眼圈", advice: "使用含咖啡因或胜肽的眼霜修护", oil: 20, texture: 75, wrinkles: 20, darkCircles: 40, firmness: 80 },
+            jawline: { condition: "轮廓紧致", advice: "保持现状，可配合提拉按摩", oil: 25, firmness: 90, contour: 85 }
         },
         labAnalysis: {
             glogau: { value: "II 型", status: "轻中度" },
@@ -368,11 +368,34 @@ export function identifyConcerns(
         if (faceAnalysis.dimensions.skinTone?.score < 60) concerns.add("dullness");
     }
 
-    // 4. 检查区域分析中的纹理/粗糙问题
+    // 4. 检查区域分析中的各维度异常指标 (6 大区域 × 8 维指标)
     if (faceAnalysis?.zoneAnalysis) {
-        const zones = [faceAnalysis.zoneAnalysis.forehead, faceAnalysis.zoneAnalysis.tZone, faceAnalysis.zoneAnalysis.leftCheek, faceAnalysis.zoneAnalysis.rightCheek];
-        const hasRoughZone = zones.some(z => z.texture !== undefined && z.texture < 50);
-        if (hasRoughZone) concerns.add("roughness");
+        const zones = [
+            faceAnalysis.zoneAnalysis.forehead,
+            faceAnalysis.zoneAnalysis.tZone,
+            faceAnalysis.zoneAnalysis.leftCheek,
+            faceAnalysis.zoneAnalysis.rightCheek,
+            faceAnalysis.zoneAnalysis.eyeArea,
+            faceAnalysis.zoneAnalysis.jawline,
+        ];
+        // 纹理/粗糙 → roughness (原逻辑)
+        if (zones.some(z => z.texture !== undefined && z.texture < 50)) concerns.add("roughness");
+        // 出油偏高 → oil_control
+        if (zones.some(z => z.oil !== undefined && z.oil > 60)) concerns.add("oil_control");
+        // 皱纹 → wrinkles
+        if (zones.some(z => z.wrinkles !== undefined && z.wrinkles > 50)) concerns.add("wrinkles");
+        // 色斑 → spots
+        if (zones.some(z => z.spots !== undefined && z.spots > 50)) concerns.add("spots");
+        // 泛红 → sensitivity
+        if (zones.some(z => z.redness !== undefined && z.redness > 50)) concerns.add("sensitivity");
+        // 黑眼圈 → dark_circles (眼周区域特有)
+        if (faceAnalysis.zoneAnalysis.eyeArea?.darkCircles !== undefined && faceAnalysis.zoneAnalysis.eyeArea.darkCircles > 50) {
+            concerns.add("dark_circles");
+        }
+        // 松弛 → anti_aging
+        if (zones.some(z => z.firmness !== undefined && z.firmness < 50)) concerns.add("anti_aging");
+        // 轮廓模糊 → anti_aging
+        if (zones.some(z => z.contour !== undefined && z.contour < 50)) concerns.add("anti_aging");
     }
 
     // 保证至少有一个关注点

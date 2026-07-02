@@ -77,15 +77,17 @@ export const VISION_ANALYSIS_SYSTEM_PROMPT = `你是一位专业的皮肤科医�
     "wrinkleGrade": { "value": "Grade 1", "status": "无明显皱纹" }
   },
   "zoneAnalysis": {
-    "forehead": { "condition": "简述问题", "advice": "建议" },
-    "tZone": { "condition": "简述问题", "advice": "建议" },
-    "leftCheek": { "condition": "简述问题", "advice": "建议" },
-    "rightCheek": { "condition": "简述问题", "advice": "建议" },
-    "eyeArea": { "condition": "简述问题", "advice": "建议" },
-    "jawline": { "condition": "简述问题", "advice": "建议" }
+    "forehead": { "condition": "简述问题", "advice": "针对该区域的护理建议", "oil": 0-100, "texture": 0-100, "wrinkles": 0-100, "spots": 0-100, "redness": 0-100, "firmness": 0-100, "contour": 0-100 },
+    "tZone": { "condition": "简述问题", "advice": "针对该区域的护理建议", "oil": 0-100, "texture": 0-100, "wrinkles": 0-100, "spots": 0-100, "redness": 0-100, "firmness": 0-100, "contour": 0-100 },
+    "leftCheek": { "condition": "简述问题", "advice": "针对该区域的护理建议", "oil": 0-100, "texture": 0-100, "wrinkles": 0-100, "spots": 0-100, "redness": 0-100, "firmness": 0-100, "contour": 0-100 },
+    "rightCheek": { "condition": "简述问题", "advice": "针对该区域的护理建议", "oil": 0-100, "texture": 0-100, "wrinkles": 0-100, "spots": 0-100, "redness": 0-100, "firmness": 0-100, "contour": 0-100 },
+    "eyeArea": { "condition": "简述问题", "advice": "针对该区域的护理建议", "oil": 0-100, "texture": 0-100, "wrinkles": 0-100, "darkCircles": 0-100, "firmness": 0-100 },
+    "jawline": { "condition": "简述问题", "advice": "针对该区域的护理建议", "oil": 0-100, "firmness": 0-100, "contour": 0-100 }
   }
 }
 # 注意：zoneAnalysis 中的 6 个区域必须全部生成，不可缺省。
+# 每个区域的 advice 建议应尽量使用以下功效关键词，以便与后端产品推荐引擎对齐：
+#   控油/平衡/清爽 | 保湿/补水/滋润 | 舒缓/修护/温和 | 抗老/紧致/抗皱/抗氧化 | 提亮/美白/淡斑 | 平滑/细致/改善粗糙 | 祛痘/净化/消炎
 
 # 3. 关键要求
 - **Lab Analysis 仅保留可由照片视觉估算的字段**：只需输出 glogau、homogeneity、wrinkleGrade 三个字段，无需输出需要物理探头测量的指标（如 pH、TEWL、弹性、黑色素、红斑、皮脂、卟啉、粗糙度 Ra、光泽度 GU 等）。
@@ -224,12 +226,12 @@ export const COMPREHENSIVE_ANALYSIS_SYSTEM_PROMPT = `
     "summary": "详细诊断报告摘要 (200字左右，必须生成)",
     "recommendations": ["专家建议1", "专家建议2", "专家建议3"]
     "zoneAnalysis": {
-        "forehead": { "condition": "...", "advice": "..." },
-        "tZone": { "condition": "...", "advice": "..." },
-        "leftCheek": { "condition": "...", "advice": "..." },
-        "rightCheek": { "condition": "...", "advice": "..." },
-        "eyeArea": { "condition": "...", "advice": "..." },
-        "jawline": { "condition": "...", "advice": "..." }
+        "forehead": { "condition": "...", "advice": "针对性的护理建议", "oil": 0-100, "texture": 0-100, "wrinkles": 0-100, "spots": 0-100, "redness": 0-100, "firmness": 0-100, "contour": 0-100 },
+        "tZone": { "condition": "...", "advice": "针对性的护理建议", "oil": 0-100, "texture": 0-100, "wrinkles": 0-100, "spots": 0-100, "redness": 0-100, "firmness": 0-100, "contour": 0-100 },
+        "leftCheek": { "condition": "...", "advice": "针对性的护理建议", "oil": 0-100, "texture": 0-100, "wrinkles": 0-100, "spots": 0-100, "redness": 0-100, "firmness": 0-100, "contour": 0-100 },
+        "rightCheek": { "condition": "...", "advice": "针对性的护理建议", "oil": 0-100, "texture": 0-100, "wrinkles": 0-100, "spots": 0-100, "redness": 0-100, "firmness": 0-100, "contour": 0-100 },
+        "eyeArea": { "condition": "...", "advice": "针对性的护理建议", "oil": 0-100, "texture": 0-100, "wrinkles": 0-100, "darkCircles": 0-100, "firmness": 0-100 },
+        "jawline": { "condition": "...", "advice": "针对性的护理建议", "oil": 0-100, "firmness": 0-100, "contour": 0-100 }
     }
   },
   "consultation": {
