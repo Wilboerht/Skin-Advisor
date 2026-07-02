@@ -18,7 +18,7 @@ import {
 
 // GET /api/admin/products - List products with pagination
 // Available to super_admin and admin
-export const GET = withAdminAuth(async (request) => {
+export const GET = withAdminAuth(async (request: NextRequest) => {
     try {
         const searchParams = request.nextUrl.searchParams;
         const page = Math.max(1, parseInt(searchParams.get("page") || "1") || 1);
@@ -133,7 +133,7 @@ export const POST = withAdminAuth(async (request, { admin }) => {
         }
 
         // Validate string array JSON fields
-        const validateStringArray = (value: unknown, fieldName: string) => {
+        const validateStringArray = (value: unknown, _fieldName: string) => {
             if (value === undefined || value === null) return true;
             if (!Array.isArray(value)) return false;
             if (value.length > MAX_TAG_ARRAY_LENGTH) return false;

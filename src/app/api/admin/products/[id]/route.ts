@@ -157,7 +157,7 @@ export const PUT = withAdminAuth(async (
         }
 
         // Validate JSON string array fields
-        const validateStringArray = (value: unknown, fieldName: string) => {
+        const validateStringArray = (value: unknown, _fieldName: string) => {
             if (value === undefined || value === null) return true;
             if (!Array.isArray(value)) return false;
             if (value.length > MAX_TAG_ARRAY_LENGTH) return false;

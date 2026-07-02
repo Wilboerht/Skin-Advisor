@@ -185,7 +185,7 @@ export default function ProductForm({
         initialData?.images || (initialData?.image ? [initialData.image] : [])
     );
 
-    const [affiliateLinks, setAffiliateLinks] = useState({
+    const [affiliateLinks, setAffiliateLinks] = useState<Record<string, string>>({
         taobao: initialData?.affiliateLinks?.taobao || "",
         xiaohongshu: initialData?.affiliateLinks?.xiaohongshu || "",
         douyin: initialData?.affiliateLinks?.douyin || "",
@@ -616,7 +616,7 @@ export default function ProductForm({
                                         </span>
                                         <input
                                             type="url"
-                                            value={affiliateLinks[key as keyof typeof affiliateLinks]}
+                                            value={affiliateLinks[key]}
                                             maxLength={500}
                                             onChange={(e) => setAffiliateLinks((prev) => ({ ...prev, [key]: e.target.value }))}
                                             placeholder="https://..."

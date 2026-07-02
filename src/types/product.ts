@@ -79,6 +79,7 @@ const stringArraySchema = z
 
 export const affiliateLinksSchema = z
     .record(
+        z.string(),
         z.string().max(MAX_AFFILIATE_URL_LENGTH).refine(
             (val) => {
                 if (!val) return true;
@@ -146,7 +147,7 @@ export const productFormDataSchema = z.object({
     benefits: z.array(z.string()).nullable().optional(),
     negativeFor: z.array(z.string()).nullable().optional(),
     suitableSkinTypes: z.array(z.string()).nullable().optional(),
-    affiliateLinks: z.record(z.string()).nullable().optional(),
+    affiliateLinks: z.record(z.string(), z.string()).nullable().optional(),
 });
 
 // ==================== TypeScript Types ====================
