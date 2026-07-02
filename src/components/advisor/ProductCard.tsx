@@ -158,20 +158,9 @@ export function ProductCard({
 
                 {/* 功效标签 */}
                 {product.benefits && product.benefits.length > 0 && isCompact && (
-                    <>
-                        {/* Mobile: pill badges */}
-                        <div className="flex flex-wrap gap-1 mb-1 lg:hidden">
-                            {product.benefits.slice(0, 4).map((b, i) => (
-                                <span key={i} className="text-xs px-1.5 py-0.5 rounded-full bg-[#3d2f25]/8 text-[#8c7a6b] leading-none">
-                                    {b}
-                                </span>
-                            ))}
-                        </div>
-                        {/* Desktop: pipe-separated */}
-                        <p className="hidden lg:block text-[13px] text-[#C8A97E] mb-2 truncate">
-                            {product.benefits.join(" | ")}
-                        </p>
-                    </>
+                    <p className="text-xs lg:text-[13px] text-[#C8A97E] mb-1 truncate">
+                        {product.benefits.join(" | ")}
+                    </p>
                 )}
 
                 {/* 推荐理由 */}
