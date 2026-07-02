@@ -16,8 +16,8 @@ export function SaveReportBanner({ className = "" }: SaveReportBannerProps) {
     const { openAuthModal } = useAuthModal();
     const [dismissed, setDismissed] = useState(false);
 
-    // Don't show if logged in or loading
-    if (loading || user) return null;
+    // 仅当确认已登录时才隐藏；loading 期间保持显示避免闪烁
+    if (!loading && user) return null;
 
     return (
         <AnimatePresence>
