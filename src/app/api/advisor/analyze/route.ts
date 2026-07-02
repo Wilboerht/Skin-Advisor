@@ -225,6 +225,21 @@ export async function POST(request: NextRequest) {
         // 6b. 原子性预占额度（免费重试不扣费）
         // 确保 sessionId 存在：若客户端未传，服务端生成一个，防止绕过 reserveUsage
         const effectiveSessionId = sessionId || crypto.randomUUID();
+
+        // 幂等性：同一 sessionId 已完成分析，直接返回已有结果（防止刷新页面重复扣费/重复跑 AI）
+        // 免费重试场景不走缓存，因为需要重新生成分析结果
+        if (!isFreeRetryAllowed && effectiveSessionId) {
+            const existingSession = await prisma.advisorSession.findUnique({
+                where: { sessionId: effectiveSessionId },
+                select: { completedAt: true, analysisResult: true }
+            });
+            if (existingSession?.completedAt && existingSession?.analysisResult) {
+                const cachedResult = existingSession.analysisResult as Record<string, unknown>;
+                console.log(`[analyze] Returning cached result for completed session ${effectiveSessionId}`);
+                return NextResponse.json(cachedResult, { status: 200, headers: rateLimitHeaders });
+            }
+        }
+
         if (!isFreeRetryAllowed) {
             const reserved = await reserveUsage(request, effectiveSessionId, body as Record<string, unknown>);
             if (!reserved.success) {

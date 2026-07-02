@@ -123,7 +123,33 @@ export function useAsyncAnalysis() {
                     console.warn("localStorage access failed", e);
                 }
             }
-            const sessionId = freeRetrySessionId || (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString());
+
+            // 刷新页面时复用正在分析中的 sessionId，避免重复扣费/重复生成新会话
+            // 仅在当前浏览器会话（sessionStorage）中保留，关闭标签页后不再复用
+            const ANALYZING_TTL_MS = 90 * 1000; // 与分析超时一致
+            let analyzingSessionId: string | null = null;
+            let analyzingStartedAt = 0;
+            try {
+                analyzingSessionId = sessionStorage.getItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_ID);
+                analyzingStartedAt = Number(sessionStorage.getItem(STORAGE_KEYS.ADVISOR_ANALYZING_STARTED_AT) || '0');
+            } catch (e) {
+                console.warn("sessionStorage access failed", e);
+            }
+            const isAnalyzingSessionValid = analyzingSessionId && (Date.now() - analyzingStartedAt) < ANALYZING_TTL_MS;
+
+            const sessionId = freeRetrySessionId
+                || (isAnalyzingSessionValid ? analyzingSessionId : null)
+                || (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString());
+
+            // 记录本次分析中的 sessionId，供刷新页面时复用
+            if (!freeRetrySessionId) {
+                try {
+                    sessionStorage.setItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_ID, sessionId);
+                    sessionStorage.setItem(STORAGE_KEYS.ADVISOR_ANALYZING_STARTED_AT, String(Date.now()));
+                } catch (e) {
+                    console.warn("sessionStorage access failed", e);
+                }
+            }
 
             // 1. Face Analysis
             let faceAnalysis = null;
@@ -372,6 +398,13 @@ export function useAsyncAnalysis() {
             throw error;
         } finally {
             isRunningRef.current = false;
+            // 分析流程结束（成功/失败/超时）后清除刷新复用标记
+            try {
+                sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_ID);
+                sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_STARTED_AT);
+            } catch (e) {
+                console.warn("sessionStorage access failed", e);
+            }
         }
     }, [trackAnalysisStart, trackAnalysisComplete, user]);
 

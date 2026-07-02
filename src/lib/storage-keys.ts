@@ -17,6 +17,10 @@ export const STORAGE_KEYS = {
     ADVISOR_FREE_RETRY: 'advisor_free_retry',
     ADVISOR_FREE_RETRY_SESSION_ID: 'advisor_free_retry_session_id',
 
+    // 分析中会话（防止刷新页面重复生成 sessionId 导致重复扣费）
+    ADVISOR_ANALYZING_SESSION_ID: 'advisor_analyzing_session_id',
+    ADVISOR_ANALYZING_STARTED_AT: 'advisor_analyzing_started_at',
+
     // 地理位置
     USER_REGION: 'userRegion',
 
