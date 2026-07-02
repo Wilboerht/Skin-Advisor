@@ -272,7 +272,7 @@ export default function ResultCards({
               </div>
             </motion.div>
 
-            {/* Last slot: Score (mobile also shows score for symmetry) */}
+            {/* Last slot: 皮肤弹性（取 firmness 维度，问卷模式无数据时显示 -） */}
             <div
               className="flex p-3 lg:p-4 rounded-xl lg:rounded-2xl flex-row lg:flex-col items-center lg:items-start justify-between lg:aspect-[2/3] min-h-[48px] lg:min-h-0 relative overflow-hidden"
               style={{
@@ -281,12 +281,12 @@ export default function ResultCards({
               }}
             >
               <div className="flex flex-row lg:flex-col items-center lg:items-start gap-2 lg:justify-between w-full h-full relative z-20">
-                <p className="text-xs lg:text-xs text-[#7a6552] font-medium shrink-0">综合评分</p>
+                <p className="text-xs lg:text-xs text-[#7a6552] font-medium shrink-0">皮肤弹性</p>
                 <div className="flex items-baseline">
                   <span className="text-xs lg:text-3xl font-bold text-[#00263e] lg:text-[#5c4937] leading-none">
-                    {score === undefined ? '-' : <AnimatedNumber value={score} duration={1.5} />}
+                    {dimensions?.firmness?.score === undefined ? '-' : <AnimatedNumber value={dimensions.firmness.score} duration={1.5} />}
                   </span>
-                  {score !== undefined && (
+                  {dimensions?.firmness?.score !== undefined && (
                     <span className="text-xs lg:text-xs text-[#7a6552] ml-0.5 font-medium">分</span>
                   )}
                 </div>
