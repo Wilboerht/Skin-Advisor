@@ -17,6 +17,7 @@ import {
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
 import type { FaceAnalysisResult } from "@/lib/advisor-utils";
+import { DIMENSION_LABELS, DIMENSION_DESCRIPTIONS } from "@/lib/advisor-utils";
 import { getRankPercentile, getCharacterImage } from "@/lib/result-utils";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { computeLabAnalysis } from "@/lib/analysis-lab";
@@ -106,6 +107,33 @@ export function normalizeAnalysisResult(raw: unknown): ComprehensiveResult | nul
         persona: record.persona as string | undefined,
         expiresAt: record.expiresAt as string | undefined,
     };
+}
+
+// 手机端：十维分析表单（替代 ScientificBarChart）
+function MobileDimensionForm({ dimensions }: { dimensions: Record<string, { score?: number } | undefined> }) {
+    const order = ['radiance', 'acne', 'firmness', 'darkCircles', 'sensitivity', 'uvDamage', 'wrinkles', 'spots', 'skinTone', 'waterOil'];
+
+    return (
+        <div className="sm:hidden mb-5">
+            {order.map((key) => {
+                const item = dimensions[key];
+                const score = item?.score ?? 0;
+                const color = score >= 80 ? 'bg-emerald-500' : score >= 60 ? 'bg-amber-500' : 'bg-red-500';
+                return (
+                    <div key={key} className="py-3 border-b border-[#E8E2D9] last:border-0">
+                        <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-[13px] text-[#4A4A4A]">{DIMENSION_LABELS[key]}</span>
+                            <span className="text-[13px] font-medium text-[#1A1A1A]">{score} 分</span>
+                        </div>
+                        <div className="h-1.5 w-full rounded-full bg-[#E8E2D9] overflow-hidden">
+                            <div className={`h-full rounded-full ${color}`} style={{ width: `${score}%` }} />
+                        </div>
+                        <p className="mt-1.5 text-[11px] text-[#8A8A8A] leading-relaxed">{DIMENSION_DESCRIPTIONS[key]}</p>
+                    </div>
+                );
+            })}
+        </div>
+    );
 }
 
 // Lab Report 行渲染（抽离到组件外部，避免每次渲染重新创建）
@@ -940,13 +968,16 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         <div className="overflow-y-auto custom-scrollbar px-6 sm:px-8 py-5 sm:py-6 flex-1">
                                             <div className="grid grid-cols-1 gap-y-0">
 
-                                                {/* 十维分析条形图 */}
+                                                {/* 十维分析：PC 用条形图，手机端用表单 */}
                                                 {faceAnalysis?.dimensions && (
-                                                    <div className="mb-2">
-                                                        <ScientificBarChart
-                                                            dimensions={faceAnalysis.dimensions}
-                                                        />
-                                                    </div>
+                                                    <>
+                                                        <div className="hidden sm:block mb-2">
+                                                            <ScientificBarChart
+                                                                dimensions={faceAnalysis.dimensions}
+                                                            />
+                                                        </div>
+                                                        <MobileDimensionForm dimensions={faceAnalysis.dimensions} />
+                                                    </>
                                                 )}
 
                                                 {/* Table Header Row (Desktop only) */}
