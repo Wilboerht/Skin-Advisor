@@ -162,7 +162,7 @@ export function ProductCard({
                         {/* Mobile: pill badges */}
                         <div className="flex flex-wrap gap-1 mb-1 lg:hidden">
                             {product.benefits.slice(0, 4).map((b, i) => (
-                                <span key={i} className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#3d2f25]/8 text-[#8c7a6b] leading-none">
+                                <span key={i} className="text-xs px-1.5 py-0.5 rounded-full bg-[#3d2f25]/8 text-[#8c7a6b] leading-none">
                                     {b}
                                 </span>
                             ))}
@@ -182,7 +182,7 @@ export function ProductCard({
                 {/* 价格 - mobile only */}
                 {isCompact && (
                     <span className="lg:hidden text-xs font-bold text-[#1a1a1a] mt-1">
-                        {product.price ? `¥${product.price}` : '咨询价格'}
+                        {product.price ? product.price.replace('¥', '¥ ') : '咨询价格'}
                     </span>
                 )}
 
@@ -190,7 +190,7 @@ export function ProductCard({
                 {isCompact ? (
                     <div className="hidden lg:flex items-center justify-between mt-auto pt-3">
                         <span className="font-bold text-xl text-[#1a1a1a]">
-                            {product.price ? `¥ ${product.price}` : '咨询价格'}
+                            {product.price ? product.price.replace('¥', '¥ ') : '咨询价格'}
                         </span>
                         <button
                             onClick={(e) => {

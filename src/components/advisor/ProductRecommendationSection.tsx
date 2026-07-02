@@ -157,7 +157,7 @@ export function ProductRecommendationSection({
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="text-center mb-5"
+                className="text-center mb-6"
             >
                 <h2 className="text-lg lg:text-2xl font-bold text-[#3d2f25] tracking-wide">
                     {personaLabel ? `你的「${personaLabel}」甄选推荐` : "甄选产品推荐"}
