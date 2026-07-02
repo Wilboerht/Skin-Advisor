@@ -94,13 +94,24 @@ export default function ResultCards({
       {/* Mobile: Character IP Image + Share Card (no gap between them) */}
       <div className="flex flex-col gap-0 lg:contents">
         {/* Mobile: Character IP Image above Share Card */}
-        <div className="flex lg:hidden justify-center pointer-events-none">
+        <div className="relative flex lg:hidden justify-center pointer-events-none mx-auto h-[300px] w-[300px]">
+          {/* Mobile-only decorative background behind character */}
+          <div className="absolute inset-0 z-0 translate-y-16">
+            <Image
+              src="/images/character-bg-mobile.png"
+              alt=""
+              fill
+              className="object-contain brightness-125"
+              priority
+              aria-hidden="true"
+            />
+          </div>
           <Image
             src={characterImage}
             alt={skinTypeName}
-            width={240}
-            height={240}
-            className="w-[220px] h-[220px] object-contain"
+            width={280}
+            height={280}
+            className="relative z-10 h-[270px] w-[270px] object-contain"
             priority
             onError={(e) => {
               const fallback = characterImage.replace('_male', '_female');
