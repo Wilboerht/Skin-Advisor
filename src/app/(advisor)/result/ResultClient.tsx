@@ -1076,7 +1076,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             <div className="flex justify-center mb-10">
                                 <button
                                     onClick={() => router.push('/gift')}
-                                    className="group inline-flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 rounded-full border border-dashed border-[#8B7355]/40 bg-[#8B7355]/[0.04] text-[13px] tracking-[0.1em] text-[#8B7355] hover:text-[#5c4937] hover:border-[#5c4937]/40 hover:bg-[#5c4937]/5 transition-all duration-300"
+                                    className="group inline-flex items-center justify-center gap-2 w-auto sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 rounded-full border border-dashed border-[#8B7355]/40 bg-[#8B7355]/[0.04] text-[12px] sm:text-[13px] tracking-[0.1em] text-[#8B7355] hover:text-[#5c4937] hover:border-[#5c4937]/40 hover:bg-[#5c4937]/5 transition-all duration-300"
                                 >
                                     <Gift className="w-4 h-4" />
                                     肌智派送好礼 · 参与抽奖
