@@ -21,6 +21,8 @@ import { DIMENSION_LABELS, DIMENSION_DESCRIPTIONS } from "@/lib/advisor-utils";
 import { getRankPercentile, getCharacterImage } from "@/lib/result-utils";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { computeLabAnalysis } from "@/lib/analysis-lab";
+import type { LabMetric } from "@/lib/analysis-lab";
+import { cn } from "@/lib/utils";
 
 import { ScientificBarChart } from "@/components/advisor/ScientificBarChart";
 
@@ -132,6 +134,38 @@ function MobileDimensionForm({ dimensions }: { dimensions: Record<string, { scor
                     </div>
                 );
             })}
+        </div>
+    );
+}
+
+// 手机端 Lab 指标卡片
+function MobileLabRow({ metric }: { metric: LabMetric }) {
+    const goodKeywords = ['正常', 'Normal', '紧致', '细腻', '均匀', '透亮', 'Type I', '少', 'Balanced'];
+    const isGood = goodKeywords.some(k => metric.status.includes(k));
+
+    return (
+        <div className="mb-3 rounded-xl border border-[#E8E2D9] bg-white/50 p-3">
+            <div className="flex items-start justify-between gap-2 mb-2">
+                <span className="text-[13px] font-medium text-[#3d2f25] leading-tight">{metric.param}</span>
+                {metric.status && (
+                    <span className={cn(
+                        "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium",
+                        isGood ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
+                    )}>
+                        {metric.status}
+                    </span>
+                )}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+                <div>
+                    <p className="text-[10px] text-[#8A8A8A] mb-0.5">测定值</p>
+                    <p className="text-[12px] text-[#1A1A1A]">{metric.value}</p>
+                </div>
+                <div>
+                    <p className="text-[10px] text-[#8A8A8A] mb-0.5">参考范围</p>
+                    <p className="text-[12px] text-[#1A1A1A]">{metric.ref}</p>
+                </div>
+            </div>
         </div>
     );
 }
@@ -981,20 +1015,29 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                 )}
 
                                                 {/* Table Header Row (Desktop only) */}
-                                                <div className="hidden md:grid grid-cols-12 text-[11px] font-semibold text-[#1B3A5C] border-b border-[#D9D0C3] py-2 px-4 tracking-wider">
+                                                <div className="hidden sm:grid grid-cols-12 text-[11px] font-semibold text-[#1B3A5C] border-b border-[#D9D0C3] py-2 px-4 tracking-wider">
                                                     <div className="col-span-5">检测指标 (Parameter)</div>
                                                     <div className="col-span-3 text-right">测定值 (Value)*</div>
                                                     <div className="col-span-2 text-right">参考范围 (Range)</div>
                                                     <div className="col-span-2 text-right">状态 (Status)</div>
                                                 </div>
 
-                                                {computeLabAnalysis(faceAnalysis).flatMap((group) =>
-                                                    group.metrics.map((metric) => (
-                                                        <div key={metric.param}>
-                                                            {renderLabRow(metric.param, metric.value, metric.ref, metric.status)}
+                                                {computeLabAnalysis(faceAnalysis).flatMap((group) => (
+                                                    <div key={group.title}>
+                                                        <div className="hidden sm:block">
+                                                            {group.metrics.map((metric) => (
+                                                                <div key={metric.param}>
+                                                                    {renderLabRow(metric.param, metric.value, metric.ref, metric.status)}
+                                                                </div>
+                                                            ))}
                                                         </div>
-                                                    ))
-                                                )}
+                                                        <div className="sm:hidden">
+                                                            {group.metrics.map((metric) => (
+                                                                <MobileLabRow key={metric.param} metric={metric} />
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                ))}
                                             </div>
 
                                             <div className="mt-5 pt-3 border-t border-dashed border-[#3d2f25]/15">
