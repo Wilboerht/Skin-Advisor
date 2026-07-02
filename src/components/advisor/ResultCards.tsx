@@ -192,7 +192,7 @@ export default function ResultCards({
         <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-0 lg:gap-12 h-full">
           <div className="flex flex-col justify-between items-start w-full lg:w-[30%] shrink-0">
             <div>
-              <div className="bg-white/70 text-[#5c4937] w-[72px] lg:w-[72px] h-[24px] lg:h-[24px] rounded-lg text-xs lg:text-xs font-bold flex items-center justify-center mb-4 lg:mb-6 shadow-sm border border-[#3d2f25]/8 tracking-widest relative z-10">
+              <div className="relative z-10 mb-4 flex h-[24px] w-[72px] items-center justify-center rounded-full border border-[#3d2f25]/15 bg-transparent text-xs font-bold text-[#5c4937] lg:mb-6 lg:rounded-lg lg:border-[#3d2f25]/8 lg:bg-white/70 lg:shadow-sm">
                 专业版
               </div>
               <h2 className="text-lg lg:text-2xl font-bold text-[#3d2f25] mb-2 relative z-10">
