@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useMounted } from "@/hooks/use-mounted";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { X, AlertTriangle, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -31,6 +32,8 @@ export function ConfirmModal({
 }: ConfirmModalProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const mounted = useMounted();
+    const titleId = useRef(`confirm-modal-title-${Math.random().toString(36).slice(2, 9)}`).current;
+    const containerRef = useFocusTrap<HTMLDivElement>(isOpen);
 
     const handleConfirm = async () => {
         setIsSubmitting(true);
@@ -63,7 +66,14 @@ export function ConfirmModal({
     const modalContent = (
         <AnimatePresence>
             {isOpen && (
-                <div className="fixed inset-0 z-[100000] flex items-center justify-center">
+                <div
+                    ref={containerRef}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby={titleId}
+                    className="fixed inset-0 z-[100000] flex items-center justify-center"
+                    tabIndex={-1}
+                >
                      {/* Backdrop */}
                     <motion.div
                         initial={{ opacity: 0 }}
@@ -83,6 +93,7 @@ export function ConfirmModal({
                     >
                         {/* Close Button */}
                         <button
+                            type="button"
                             onClick={onClose}
                             disabled={isLoading}
                             className="absolute top-5 right-5 p-1.5 rounded-full text-slate-400 hover:text-slate-900 hover:bg-white/50 transition-all disabled:opacity-50"
@@ -97,7 +108,7 @@ export function ConfirmModal({
                             </div>
 
                             {/* Title */}
-                            <h3 className="text-xl font-bold text-slate-900 text-center mb-3 tracking-tight">
+                            <h3 id={titleId} className="text-xl font-bold text-slate-900 text-center mb-3 tracking-tight">
                                 {title}
                             </h3>
 
@@ -109,6 +120,7 @@ export function ConfirmModal({
                             {/* Buttons */}
                             <div className="flex gap-3">
                                 <button
+                                    type="button"
                                     onClick={onClose}
                                     disabled={isLoading}
                                     className="flex-1 px-4 py-3 text-sm font-bold text-slate-600 bg-white/40 hover:bg-white/60 border border-white/60 rounded-2xl transition-all shadow-sm disabled:opacity-50"
@@ -116,6 +128,7 @@ export function ConfirmModal({
                                     {cancelText}
                                 </button>
                                 <button
+                                    type="button"
                                     onClick={handleConfirm}
                                     disabled={isLoading}
                                     className={`flex-1 px-4 py-3 text-sm font-bold text-white rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-70 ${styles.button}`}

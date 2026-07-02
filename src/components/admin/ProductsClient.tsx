@@ -15,32 +15,20 @@ import {
     CheckSquare,
     Square,
     Filter,
-    ChevronDown
+    ChevronDown,
+    ImageOff,
+    ChevronLeft,
+    ChevronRight,
 } from "lucide-react";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { ProductFormModal } from "./ProductFormModal";
-
-interface Product {
-    id: string;
-    name: string;
-    category: string;
-    price: string;
-    image: string;
-    images?: string[] | null;
-    description?: string;
-    howToUse?: string | null;
-    keyIngredients?: string[] | null;
-    suitableSkinTypes?: string[] | null;
-    benefits?: string[] | null;
-    negativeFor?: string[] | null;
-    affiliateLinks?: Record<string, string> | null;
-    active: boolean;
-    featured: boolean;
-}
+import { SerializedProduct } from "@/types/product";
 
 interface ProductsClientProps {
-    initialProducts: Product[];
+    initialProducts: SerializedProduct[];
 }
+
+const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
 const ProductRow = memo(function ProductRow({
     product,
@@ -49,11 +37,11 @@ const ProductRow = memo(function ProductRow({
     onDelete,
     onEdit
 }: {
-    product: Product;
+    product: SerializedProduct;
     isSelected: boolean;
     onSelect: (id: string) => void;
     onDelete: (id: string) => void;
-    onEdit: (product: Product) => void;
+    onEdit: (product: SerializedProduct) => void;
 }) {
     return (
         <tr
@@ -62,8 +50,10 @@ const ProductRow = memo(function ProductRow({
             <td className="px-2 py-4 w-10 align-middle">
                 <div className="flex items-center justify-center">
                     <button
+                        type="button"
                         onClick={() => onSelect(product.id)}
                         className="text-slate-400 hover:text-slate-600"
+                        aria-label={isSelected ? "取消选择" : "选择"}
                     >
                         {isSelected ? (
                             <CheckSquare className="w-5 h-5 text-slate-900" />
@@ -90,7 +80,13 @@ const ProductRow = memo(function ProductRow({
                             }}
                         />
                     ) : null}
-                    <div className={`img-fallback h-full w-full bg-slate-100 flex items-center justify-center text-slate-300 text-xs ${product.image && (product.image.startsWith("/") || product.image.startsWith("http")) ? 'hidden' : 'flex'}`}>无图</div>
+                    <div
+                        className={`img-fallback h-full w-full bg-slate-100 flex flex-col items-center justify-center text-slate-300 ${product.image && (product.image.startsWith("/") || product.image.startsWith("http")) ? 'hidden' : 'flex'}`}
+                        aria-label="无图片"
+                    >
+                        <ImageOff className="w-5 h-5" />
+                        <span className="sr-only">无图片</span>
+                    </div>
                 </div>
             </td>
             <td className="px-4 py-4 align-middle">
@@ -99,7 +95,7 @@ const ProductRow = memo(function ProductRow({
                         <div className="text-sm font-medium text-slate-900">{product.name}</div>
                     </div>
                     {product.featured && (
-                        <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                        <Star className="w-4 h-4 text-amber-500 fill-amber-500" aria-label="精选置顶" />
                     )}
                 </div>
             </td>
@@ -123,6 +119,7 @@ const ProductRow = memo(function ProductRow({
             <td className="px-4 py-4 whitespace-nowrap text-sm font-medium align-middle">
                 <div className="flex items-center gap-1">
                     <button
+                        type="button"
                         onClick={() => onEdit(product)}
                         className="rounded p-2 text-slate-600 hover:bg-slate-100 transition-colors"
                         title="编辑"
@@ -130,6 +127,7 @@ const ProductRow = memo(function ProductRow({
                         <Edit className="h-4 w-4" />
                     </button>
                     <button
+                        type="button"
                         onClick={() => onDelete(product.id)}
                         className="rounded p-2 text-red-600 hover:bg-red-50 transition-colors"
                         title="删除"
@@ -141,6 +139,15 @@ const ProductRow = memo(function ProductRow({
         </tr>
     );
 });
+
+async function parseErrorMessage(res: Response, fallback: string): Promise<string> {
+    try {
+        const data = await res.json();
+        return data.error || fallback;
+    } catch {
+        return fallback;
+    }
+}
 
 export default function ProductsClient({ initialProducts }: ProductsClientProps) {
     const router = useRouter();
@@ -155,15 +162,20 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
     });
 
     const [modalOpen, setModalOpen] = useState(false);
-    const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+    const [editingProduct, setEditingProduct] = useState<SerializedProduct | null>(null);
 
-    // P7.10 Filters
+    // Filters
     const [categoryFilter, setCategoryFilter] = useState<string>("all");
     const [statusFilter, setStatusFilter] = useState<string>("all");
 
+    // Pagination
+    const [pageSize, setPageSize] = useState<number>(10);
+    const [currentPage, setCurrentPage] = useState<number>(1);
+
     useEffect(() => {
         setSelectedIds([]);
-    }, [categoryFilter, statusFilter]);
+        setCurrentPage(1);
+    }, [categoryFilter, statusFilter, pageSize]);
 
     // Sync products state when initialProducts prop changes (e.g., after router.refresh())
     useEffect(() => {
@@ -178,8 +190,13 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
         if (categoryFilter !== "all" && p.category !== categoryFilter) return false;
         if (statusFilter === "active" && !p.active) return false;
         if (statusFilter === "inactive" && p.active) return false;
-            return true;
+        return true;
     });
+
+    // Paginate
+    const totalPages = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
+    const safePage = Math.min(currentPage, totalPages);
+    const paginatedProducts = filteredProducts.slice((safePage - 1) * pageSize, safePage * pageSize);
 
     const handleToggleSelect = (id: string) => {
         setSelectedIds(prev =>
@@ -214,7 +231,8 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                 router.refresh();
                 setSelectedIds([]);
             } else {
-                toast.error("批量操作失败");
+                const message = await parseErrorMessage(res, "批量操作失败");
+                toast.error(message);
             }
         } catch (e) {
             toast.error("网络异常，请稍后重试");
@@ -225,7 +243,6 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
 
     const handleDelete = async () => {
         if (deleteConfirm.batch) {
-            // Batch delete
             if (selectedIds.length === 0) return;
             try {
                 const res = await fetch('/api/admin/products/batch', {
@@ -238,13 +255,13 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                     router.refresh();
                     setSelectedIds([]);
                 } else {
-                    toast.error("批量删除失败");
+                    const message = await parseErrorMessage(res, "批量删除失败");
+                    toast.error(message);
                 }
             } catch (e) {
                 toast.error("网络异常，请稍后重试");
             }
         } else if (deleteConfirm.id) {
-            // Single delete
             try {
                 const res = await fetch(`/api/admin/products/${deleteConfirm.id}`, {
                     method: 'DELETE',
@@ -253,7 +270,8 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                 if (res.ok) {
                     router.refresh();
                 } else {
-                    toast.error("删除失败");
+                    const message = await parseErrorMessage(res, "删除失败");
+                    toast.error(message);
                 }
             } catch (e) {
                 toast.error("网络异常，请稍后重试");
@@ -272,6 +290,7 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                     </p>
                 </div>
                 <button
+                    type="button"
                     onClick={() => {
                         setEditingProduct(null);
                         setModalOpen(true);
@@ -283,7 +302,7 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                 </button>
             </div>
 
-            {/* P7.10 Filter Controls */}
+            {/* Filter Controls */}
             <div className="flex flex-wrap items-center gap-3 p-4 bg-white/40 backdrop-blur-3xl rounded-2xl border-[1.5px] border-white/70 shadow-[0_20px_60px_rgba(0,0,0,0.03),inset_0_1px_5px_rgba(255,255,255,0.4)] transition-all">
                 <Filter className="w-4 h-4 text-slate-400" />
                 {/* Category Filter */}
@@ -317,6 +336,7 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
 
                 {(categoryFilter !== "all" || statusFilter !== "all") && (
                     <button
+                        type="button"
                         onClick={() => { setCategoryFilter("all"); setStatusFilter("all"); }}
                         className="px-3 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-700"
                     >
@@ -330,7 +350,7 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
 
             {/* Batch Actions Bar - Floating Liquid Glass */}
             {selectedIds.length > 0 && (
-                <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 p-3 bg-white/40 backdrop-blur-3xl rounded-[32px] border-[1.5px] border-white/60 shadow-[0_40px_100px_rgba(0,0,0,0.1),inset_0_2px_10px_rgba(255,255,255,0.4)] animate-in fade-in slide-in-from-bottom-10 duration-500 w-full max-w-2xl ring-1 ring-white/20">
+                <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 p-3 bg-white/40 backdrop-blur-3xl rounded-[32px] border-[1.5px] border-white/60 shadow-[0_40px_100px_rgba(0,0,0,0.1),inset_0_2px_10px_rgba(255,255,255,0.4)] animate-in fade-in slide-in-from-bottom-10 duration-500 w-full max-w-3xl ring-1 ring-white/20">
                     <div className="absolute -inset-4 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 blur-3xl -z-10 opacity-70" />
                     <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-900/5 rounded-full border border-slate-900/10">
                         <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
@@ -339,6 +359,7 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                     </div>
                     <div className="flex-1" />
                     <button
+                        type="button"
                         onClick={() => handleBatchAction('activate')}
                         disabled={batchLoading !== null}
                         className="px-4 py-2 text-xs font-bold bg-emerald-500/10 text-emerald-700 border border-emerald-500/20 hover:bg-emerald-500/20 rounded-2xl transition-all shadow-sm active:scale-95"
@@ -346,6 +367,7 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                         {batchLoading === 'activate' ? <Loader2 className="w-4 h-4 animate-spin" /> : '批量上架'}
                     </button>
                     <button
+                        type="button"
                         onClick={() => handleBatchAction('deactivate')}
                         disabled={batchLoading !== null}
                         className="px-4 py-2 text-xs font-bold bg-slate-900/5 text-slate-700 border border-slate-900/10 hover:bg-slate-900/10 rounded-2xl transition-all shadow-sm active:scale-95"
@@ -353,6 +375,7 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                         {batchLoading === 'deactivate' ? <Loader2 className="w-4 h-4 animate-spin" /> : '批量下架'}
                     </button>
                     <button
+                        type="button"
                         onClick={() => handleBatchAction('feature')}
                         disabled={batchLoading !== null}
                         className="px-4 py-2 text-xs font-bold bg-amber-500/10 text-amber-700 border border-amber-500/20 hover:bg-amber-500/20 rounded-2xl transition-all shadow-sm active:scale-95"
@@ -360,6 +383,15 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                         {batchLoading === 'feature' ? <Loader2 className="w-4 h-4 animate-spin" /> : '设为精选置顶'}
                     </button>
                     <button
+                        type="button"
+                        onClick={() => handleBatchAction('unfeature')}
+                        disabled={batchLoading !== null}
+                        className="px-4 py-2 text-xs font-bold bg-amber-500/10 text-amber-700 border border-amber-500/20 hover:bg-amber-500/20 rounded-2xl transition-all shadow-sm active:scale-95"
+                    >
+                        {batchLoading === 'unfeature' ? <Loader2 className="w-4 h-4 animate-spin" /> : '取消精选置顶'}
+                    </button>
+                    <button
+                        type="button"
                         onClick={() => setDeleteConfirm({ show: true, id: null, batch: true })}
                         disabled={batchLoading !== null}
                         className="px-4 py-2 text-xs font-bold bg-rose-500/10 text-rose-700 border border-rose-500/20 hover:bg-rose-500/20 rounded-2xl transition-all shadow-sm active:scale-95"
@@ -367,6 +399,7 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                         批量删除
                     </button>
                     <button
+                        type="button"
                         onClick={() => setSelectedIds([])}
                         className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-slate-900 transition-colors"
                     >
@@ -376,52 +409,100 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
             )}
 
             <div className="overflow-hidden rounded-[32px] border-[1.5px] border-white/60 bg-white/40 backdrop-blur-3xl shadow-[0_32px_100px_rgba(0,0,0,0.05),inset_0_2px_10px_rgba(255,255,255,0.4)]">
-                    <table className="min-w-full divide-y divide-white/20">
-                        <thead className="bg-white/30 border-b border-white/20">
+                <table className="min-w-full divide-y divide-white/20" aria-label="产品列表">
+                    <thead className="bg-white/30 border-b border-white/20">
+                        <tr>
+                            <th scope="col" className="px-2 py-4 w-10 align-middle">
+                                <div className="flex items-center justify-center">
+                                    <button
+                                        type="button"
+                                        onClick={handleSelectAll}
+                                        className="text-slate-400 hover:text-slate-600"
+                                        aria-label={selectedIds.length === filteredProducts.length && filteredProducts.length > 0 ? "取消全选" : "全选"}
+                                    >
+                                        {selectedIds.length === filteredProducts.length && filteredProducts.length > 0 ? (
+                                            <CheckSquare className="w-5 h-5 text-slate-900" />
+                                        ) : (
+                                            <Square className="w-5 h-5" />
+                                        )}
+                                    </button>
+                                </div>
+                            </th>
+                            <th scope="col" className="px-4 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">图片</th>
+                            <th scope="col" className="px-4 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">名称</th>
+                            <th scope="col" className="px-4 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">分类</th>
+                            <th scope="col" className="px-4 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">价格</th>
+                            <th scope="col" className="px-4 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">状态</th>
+                            <th scope="col" className="px-4 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-slate-200">
+                        {paginatedProducts.map((product) => (
+                            <ProductRow
+                                key={product.id}
+                                product={product}
+                                isSelected={selectedIds.includes(product.id)}
+                                onSelect={handleToggleSelect}
+                                onDelete={(id) => setDeleteConfirm({ show: true, id, batch: false })}
+                                onEdit={(p) => {
+                                    setEditingProduct(p);
+                                    setModalOpen(true);
+                                }}
+                            />
+                        ))}
+                        {paginatedProducts.length === 0 && (
                             <tr>
-                                <th className="px-2 py-4 w-10 align-middle">
-                                    <div className="flex items-center justify-center">
-                                        <button onClick={handleSelectAll} className="text-slate-400 hover:text-slate-600">
-                                            {selectedIds.length === filteredProducts.length && filteredProducts.length > 0 ? (
-                                                <CheckSquare className="w-5 h-5 text-slate-900" />
-                                            ) : (
-                                                <Square className="w-5 h-5" />
-                                            )}
-                                        </button>
-                                    </div>
-                                </th>
-                                <th className="px-4 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">图片</th>
-                                <th className="px-4 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">名称</th>
-                                <th className="px-4 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">分类</th>
-                                <th className="px-4 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">价格</th>
-                                <th className="px-4 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">状态</th>
-                                <th className="px-4 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">操作</th>
+                                <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
+                                    暂无产品，点击&quot;添加产品&quot;开始。
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-slate-200">
-                            {filteredProducts.map((product) => (
-                                <ProductRow
-                                    key={product.id}
-                                    product={product}
-                                    isSelected={selectedIds.includes(product.id)}
-                                    onSelect={handleToggleSelect}
-                                    onDelete={(id) => setDeleteConfirm({ show: true, id, batch: false })}
-                                    onEdit={(p) => {
-                                        setEditingProduct(p);
-                                        setModalOpen(true);
-                                    }}
-                                />
+                        )}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Pagination */}
+            {filteredProducts.length > 0 && (
+                <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
+                    <div className="flex items-center gap-2 text-sm text-slate-500">
+                        <span>每页</span>
+                        <select
+                            value={pageSize}
+                            onChange={(e) => setPageSize(Number(e.target.value))}
+                            className="px-2 py-1 text-sm border border-slate-200 rounded-lg bg-white hover:bg-slate-50 focus:outline-none focus:ring-1 focus:ring-slate-300 cursor-pointer"
+                        >
+                            {PAGE_SIZE_OPTIONS.map(size => (
+                                <option key={size} value={size}>{size}</option>
                             ))}
-                            {filteredProducts.length === 0 && (
-                                <tr>
-                                    <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
-                                        暂无产品，点击"添加产品"开始。
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+                        </select>
+                        <span>条</span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={safePage <= 1}
+                            className="p-2 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            aria-label="上一页"
+                        >
+                            <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        <span className="text-sm text-slate-600 px-2">
+                            {safePage} / {totalPages}
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            disabled={safePage >= totalPages}
+                            className="p-2 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            aria-label="下一页"
+                        >
+                            <ChevronRight className="w-4 h-4" />
+                        </button>
+                    </div>
                 </div>
+            )}
 
             {/* Delete Confirm Modal */}
             <ConfirmModal

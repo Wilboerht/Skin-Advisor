@@ -1,8 +1,20 @@
-
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { withAdminAuth, requireRole, logAdminAction, getClientInfo } from "@/lib/admin-auth";
+import { withAdminAuth, requireRole, getClientInfo } from "@/lib/admin-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import {
+    MAX_NAME_LENGTH,
+    MAX_CATEGORY_LENGTH,
+    MAX_PRICE_LENGTH,
+    MAX_DESCRIPTION_LENGTH,
+    MAX_HOW_TO_USE_LENGTH,
+    MAX_IMAGE_URL_LENGTH,
+    MAX_AFFILIATE_URL_LENGTH,
+    MAX_IMAGE_COUNT,
+    MAX_TAG_ITEM_LENGTH,
+    MAX_TAG_ARRAY_LENGTH,
+    AFFILIATE_PLATFORM_KEYS,
+} from "@/types/product";
 
 // GET /api/admin/products/[id] - Get product details
 // Available to super_admin and admin
@@ -18,6 +30,7 @@ export const GET = withAdminAuth(async (
         if (!product) return NextResponse.json({ error: "Not found" }, { status: 404 });
         return NextResponse.json(product);
     } catch (error) {
+        console.error("Failed to fetch product:", error);
         return NextResponse.json({ error: "Internal Error" }, { status: 500 });
     }
 });
@@ -63,17 +76,17 @@ export const PUT = withAdminAuth(async (
         }
 
         // Validate string fields
-        if (updateData.name !== undefined && (typeof updateData.name !== "string" || updateData.name.length > 200)) {
-            return NextResponse.json({ error: "Invalid name (max 200 chars)" }, { status: 400 });
+        if (updateData.name !== undefined && (typeof updateData.name !== "string" || updateData.name.trim().length === 0 || updateData.name.length > MAX_NAME_LENGTH)) {
+            return NextResponse.json({ error: `Invalid name (max ${MAX_NAME_LENGTH} chars)` }, { status: 400 });
         }
-        if (updateData.category !== undefined && (typeof updateData.category !== "string" || updateData.category.length > 100)) {
-            return NextResponse.json({ error: "Invalid category (max 100 chars)" }, { status: 400 });
+        if (updateData.category !== undefined && (typeof updateData.category !== "string" || updateData.category.trim().length === 0 || updateData.category.length > MAX_CATEGORY_LENGTH)) {
+            return NextResponse.json({ error: `Invalid category (max ${MAX_CATEGORY_LENGTH} chars)` }, { status: 400 });
         }
-        if (updateData.image !== undefined && (typeof updateData.image !== "string" || updateData.image.length > 500)) {
-            return NextResponse.json({ error: "Invalid image URL (max 500 chars)" }, { status: 400 });
+        if (updateData.image !== undefined && (typeof updateData.image !== "string" || updateData.image.length > MAX_IMAGE_URL_LENGTH)) {
+            return NextResponse.json({ error: `Invalid image URL (max ${MAX_IMAGE_URL_LENGTH} chars)` }, { status: 400 });
         }
         if (updateData.image !== undefined) {
-            const isAbsoluteUrl = /^https?:\/\//.test(updateData.image);
+            const isAbsoluteUrl = /^https?:\/\//.test(updateData.image as string);
             const isRelativePath = (updateData.image as string).startsWith("/");
             if (!isAbsoluteUrl && !isRelativePath) {
                 return NextResponse.json({ error: "Invalid image URL format (must be absolute URL or relative path starting with /)" }, { status: 400 });
@@ -89,24 +102,39 @@ export const PUT = withAdminAuth(async (
                 }
             }
         }
+
         // description 字段在 schema 中为 String（非 null），拒绝 null 值
         if (updateData.description === null) {
             return NextResponse.json({ error: "Description cannot be null" }, { status: 400 });
         }
-        if (updateData.description !== undefined && updateData.description !== null && (typeof updateData.description !== "string" || updateData.description.length > 5000)) {
-            return NextResponse.json({ error: "Description too long (max 5000 chars)" }, { status: 400 });
+        if (updateData.description !== undefined && updateData.description !== null && (typeof updateData.description !== "string" || updateData.description.trim().length === 0 || updateData.description.length > MAX_DESCRIPTION_LENGTH)) {
+            return NextResponse.json({ error: `Invalid description (required when provided, max ${MAX_DESCRIPTION_LENGTH} chars)` }, { status: 400 });
         }
-        if (updateData.price !== undefined && updateData.price !== null && (typeof updateData.price !== "string" || updateData.price.length > 50)) {
-            return NextResponse.json({ error: "Invalid price (max 50 chars)" }, { status: 400 });
+
+        // price 字段在 schema 中为 String（非 null），拒绝 null 值
+        if (updateData.price === null) {
+            return NextResponse.json({ error: "Price cannot be null" }, { status: 400 });
+        }
+        if (updateData.price !== undefined && (typeof updateData.price !== "string" || updateData.price.trim().length === 0 || updateData.price.length > MAX_PRICE_LENGTH)) {
+            return NextResponse.json({ error: `Invalid price (required when provided, max ${MAX_PRICE_LENGTH} chars)` }, { status: 400 });
+        }
+
+        // howToUse 字段在 schema 中为 String?，校验类型与长度
+        if (updateData.howToUse === null) {
+            updateData.howToUse = null;
+        } else if (updateData.howToUse !== undefined) {
+            if (typeof updateData.howToUse !== "string" || updateData.howToUse.length > MAX_HOW_TO_USE_LENGTH) {
+                return NextResponse.json({ error: `Invalid howToUse (must be a string, max ${MAX_HOW_TO_USE_LENGTH} chars)` }, { status: 400 });
+            }
         }
 
         // Validate array fields
         if (updateData.images !== undefined && updateData.images !== null) {
-            if (!Array.isArray(updateData.images) || updateData.images.length > 5) {
-                return NextResponse.json({ error: "images must be an array with at most 5 items" }, { status: 400 });
+            if (!Array.isArray(updateData.images) || updateData.images.length > MAX_IMAGE_COUNT) {
+                return NextResponse.json({ error: `images must be an array with at most ${MAX_IMAGE_COUNT} items` }, { status: 400 });
             }
-            if (!updateData.images.every((img: unknown) => typeof img === "string" && (img as string).length <= 500)) {
-                return NextResponse.json({ error: "Each image must be a string URL (max 500 chars)" }, { status: 400 });
+            if (!updateData.images.every((img: unknown) => typeof img === "string" && (img as string).length <= MAX_IMAGE_URL_LENGTH)) {
+                return NextResponse.json({ error: `Each image must be a string URL (max ${MAX_IMAGE_URL_LENGTH} chars)` }, { status: 400 });
             }
             for (const img of updateData.images) {
                 const imgStr = img as string;
@@ -128,18 +156,45 @@ export const PUT = withAdminAuth(async (
             }
         }
 
+        // Validate JSON string array fields
+        const validateStringArray = (value: unknown, fieldName: string) => {
+            if (value === undefined || value === null) return true;
+            if (!Array.isArray(value)) return false;
+            if (value.length > MAX_TAG_ARRAY_LENGTH) return false;
+            return value.every((item) => typeof item === "string" && item.length <= MAX_TAG_ITEM_LENGTH);
+        };
+
+        if (!validateStringArray(updateData.keyIngredients, "keyIngredients")) {
+            return NextResponse.json({ error: `keyIngredients must be an array of strings (max ${MAX_TAG_ARRAY_LENGTH} items, each max ${MAX_TAG_ITEM_LENGTH} chars)` }, { status: 400 });
+        }
+        if (!validateStringArray(updateData.suitableSkinTypes, "suitableSkinTypes")) {
+            return NextResponse.json({ error: `suitableSkinTypes must be an array of strings (max ${MAX_TAG_ARRAY_LENGTH} items, each max ${MAX_TAG_ITEM_LENGTH} chars)` }, { status: 400 });
+        }
+        if (!validateStringArray(updateData.benefits, "benefits")) {
+            return NextResponse.json({ error: `benefits must be an array of strings (max ${MAX_TAG_ARRAY_LENGTH} items, each max ${MAX_TAG_ITEM_LENGTH} chars)` }, { status: 400 });
+        }
+        if (!validateStringArray(updateData.negativeFor, "negativeFor")) {
+            return NextResponse.json({ error: `negativeFor must be an array of strings (max ${MAX_TAG_ARRAY_LENGTH} items, each max ${MAX_TAG_ITEM_LENGTH} chars)` }, { status: 400 });
+        }
+
         // Validate affiliateLinks
         if (updateData.affiliateLinks !== undefined && updateData.affiliateLinks !== null) {
             if (typeof updateData.affiliateLinks !== "object" || Array.isArray(updateData.affiliateLinks)) {
                 return NextResponse.json({ error: "affiliateLinks must be an object" }, { status: 400 });
             }
-            for (const [key, value] of Object.entries(updateData.affiliateLinks as Record<string, unknown>)) {
-                if (typeof value !== "string" || (value as string).length > 500) {
-                    return NextResponse.json({ error: `Invalid affiliateLinks.${key} (must be a string URL, max 500 chars)` }, { status: 400 });
+            const links = updateData.affiliateLinks as Record<string, unknown>;
+            for (const key of Object.keys(links)) {
+                if (!AFFILIATE_PLATFORM_KEYS.includes(key as typeof AFFILIATE_PLATFORM_KEYS[number])) {
+                    return NextResponse.json({ error: `affiliateLinks key "${key}" is not allowed` }, { status: 400 });
+                }
+            }
+            for (const [key, value] of Object.entries(links)) {
+                if (typeof value !== "string" || value.length > MAX_AFFILIATE_URL_LENGTH) {
+                    return NextResponse.json({ error: `Invalid affiliateLinks.${key} (must be a string URL, max ${MAX_AFFILIATE_URL_LENGTH} chars)` }, { status: 400 });
                 }
                 if (value) {
                     try {
-                        const url = new URL(value as string);
+                        const url = new URL(value);
                         if (!['http:', 'https:'].includes(url.protocol)) {
                             return NextResponse.json({ error: `Invalid affiliateLinks.${key} scheme (must be http or https)` }, { status: 400 });
                         }
@@ -157,6 +212,13 @@ export const PUT = withAdminAuth(async (
         if (updateData.featured !== undefined) {
             updateData.featured = updateData.featured === true;
         }
+
+        // Trim string fields before persistence
+        if (typeof updateData.name === "string") updateData.name = updateData.name.trim();
+        if (typeof updateData.category === "string") updateData.category = updateData.category.trim();
+        if (typeof updateData.description === "string") updateData.description = updateData.description.trim();
+        if (typeof updateData.price === "string") updateData.price = updateData.price.trim();
+        if (typeof updateData.howToUse === "string") updateData.howToUse = updateData.howToUse.trim();
 
         const txResult = await prisma.$transaction(async (tx) => {
             const oldProduct = await tx.product.findUnique({ where: { id } });
@@ -200,7 +262,7 @@ export const PUT = withAdminAuth(async (
 });
 
 // DELETE /api/admin/products/[id] - Delete product
-// Restricted to super_admin and admin
+// Available to super_admin and admin
 export const DELETE = requireRole("super_admin", "admin")(async (
     request: NextRequest,
     { admin, params }
@@ -243,6 +305,7 @@ export const DELETE = requireRole("super_admin", "admin")(async (
         if (error instanceof Error && error.message === "NOT_FOUND") {
             return NextResponse.json({ error: "Product not found" }, { status: 404 });
         }
+        console.error("Failed to delete product:", error);
         return NextResponse.json({ error: "Failed to delete" }, { status: 500 });
     }
 });

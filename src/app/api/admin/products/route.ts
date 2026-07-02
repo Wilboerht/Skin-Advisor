@@ -1,8 +1,20 @@
-
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { withAdminAuth, logAdminAction, getClientInfo } from "@/lib/admin-auth";
+import { withAdminAuth, getClientInfo } from "@/lib/admin-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import {
+    MAX_NAME_LENGTH,
+    MAX_CATEGORY_LENGTH,
+    MAX_PRICE_LENGTH,
+    MAX_DESCRIPTION_LENGTH,
+    MAX_HOW_TO_USE_LENGTH,
+    MAX_IMAGE_URL_LENGTH,
+    MAX_AFFILIATE_URL_LENGTH,
+    MAX_IMAGE_COUNT,
+    MAX_TAG_ITEM_LENGTH,
+    MAX_TAG_ARRAY_LENGTH,
+    AFFILIATE_PLATFORM_KEYS,
+} from "@/types/product";
 
 // GET /api/admin/products - List products with pagination
 // Available to super_admin and admin
@@ -32,6 +44,7 @@ export const GET = withAdminAuth(async (request) => {
             }
         });
     } catch (error) {
+        console.error("Failed to fetch products:", error);
         return NextResponse.json({ error: "Failed to fetch products" }, { status: 500 });
     }
 });
@@ -50,15 +63,15 @@ export const POST = withAdminAuth(async (request, { admin }) => {
         const body = await request.json();
         const clientInfo = getClientInfo(request);
 
-        // Basic input validation
-        if (!body.name || typeof body.name !== "string" || body.name.length > 200) {
-            return NextResponse.json({ error: "Invalid name (required, max 200 chars)" }, { status: 400 });
+        // Validate required string fields
+        if (!body.name || typeof body.name !== "string" || body.name.trim().length === 0 || body.name.length > MAX_NAME_LENGTH) {
+            return NextResponse.json({ error: `Invalid name (required, max ${MAX_NAME_LENGTH} chars)` }, { status: 400 });
         }
-        if (!body.category || typeof body.category !== "string" || body.category.length > 100) {
-            return NextResponse.json({ error: "Invalid category (required, max 100 chars)" }, { status: 400 });
+        if (!body.category || typeof body.category !== "string" || body.category.trim().length === 0 || body.category.length > MAX_CATEGORY_LENGTH) {
+            return NextResponse.json({ error: `Invalid category (required, max ${MAX_CATEGORY_LENGTH} chars)` }, { status: 400 });
         }
-        if (!body.image || typeof body.image !== "string" || body.image.length > 500) {
-            return NextResponse.json({ error: "Invalid image URL (required, max 500 chars)" }, { status: 400 });
+        if (!body.image || typeof body.image !== "string" || body.image.length > MAX_IMAGE_URL_LENGTH) {
+            return NextResponse.json({ error: `Invalid image URL (required, max ${MAX_IMAGE_URL_LENGTH} chars)` }, { status: 400 });
         }
         // Validate image URL format: allow absolute URLs (http/https) and same-origin relative paths (/uploads/...)
         const isAbsoluteUrl = /^https?:\/\//.test(body.image);
@@ -76,22 +89,29 @@ export const POST = withAdminAuth(async (request, { admin }) => {
                 return NextResponse.json({ error: "Invalid image URL format" }, { status: 400 });
             }
         }
-        if (body.description && typeof body.description === "string" && body.description.length > 5000) {
-            return NextResponse.json({ error: "Description too long (max 5000 chars)" }, { status: 400 });
-        }
-        if (body.price && (typeof body.price !== "string" || body.price.length > 50)) {
-            return NextResponse.json({ error: "Invalid price (max 50 chars)" }, { status: 400 });
+
+        if (body.price === undefined || body.price === null || typeof body.price !== "string" || body.price.trim().length === 0 || body.price.length > MAX_PRICE_LENGTH) {
+            return NextResponse.json({ error: `Invalid price (required, max ${MAX_PRICE_LENGTH} chars)` }, { status: 400 });
         }
 
-        // Enhanced input validation
+        if (!body.description || typeof body.description !== "string" || body.description.trim().length === 0 || body.description.length > MAX_DESCRIPTION_LENGTH) {
+            return NextResponse.json({ error: `Invalid description (required, max ${MAX_DESCRIPTION_LENGTH} chars)` }, { status: 400 });
+        }
+
+        if (body.howToUse !== undefined && body.howToUse !== null) {
+            if (typeof body.howToUse !== "string" || body.howToUse.length > MAX_HOW_TO_USE_LENGTH) {
+                return NextResponse.json({ error: `Invalid howToUse (must be a string, max ${MAX_HOW_TO_USE_LENGTH} chars)` }, { status: 400 });
+            }
+        }
+
+        // Validate images array
         if (body.images !== undefined && body.images !== null) {
-            if (!Array.isArray(body.images) || body.images.length > 5) {
-                return NextResponse.json({ error: "images must be an array with at most 5 items" }, { status: 400 });
+            if (!Array.isArray(body.images) || body.images.length > MAX_IMAGE_COUNT) {
+                return NextResponse.json({ error: `images must be an array with at most ${MAX_IMAGE_COUNT} items` }, { status: 400 });
             }
-            if (!body.images.every((img: unknown) => typeof img === "string" && (img as string).length <= 500)) {
-                return NextResponse.json({ error: "Each image must be a string URL (max 500 chars)" }, { status: 400 });
+            if (!body.images.every((img: unknown) => typeof img === "string" && (img as string).length <= MAX_IMAGE_URL_LENGTH)) {
+                return NextResponse.json({ error: `Each image must be a string URL (max ${MAX_IMAGE_URL_LENGTH} chars)` }, { status: 400 });
             }
-            // Validate each image URL format: allow absolute URLs and same-origin relative paths
             for (const img of body.images) {
                 const imgStr = img as string;
                 const isAbsolute = /^https?:\/\//.test(imgStr);
@@ -111,26 +131,42 @@ export const POST = withAdminAuth(async (request, { admin }) => {
                 }
             }
         }
-        if (body.keyIngredients !== undefined && !Array.isArray(body.keyIngredients)) {
-            return NextResponse.json({ error: "keyIngredients must be an array" }, { status: 400 });
+
+        // Validate string array JSON fields
+        const validateStringArray = (value: unknown, fieldName: string) => {
+            if (value === undefined || value === null) return true;
+            if (!Array.isArray(value)) return false;
+            if (value.length > MAX_TAG_ARRAY_LENGTH) return false;
+            return value.every((item) => typeof item === "string" && item.length <= MAX_TAG_ITEM_LENGTH);
+        };
+
+        if (!validateStringArray(body.keyIngredients, "keyIngredients")) {
+            return NextResponse.json({ error: `keyIngredients must be an array of strings (max ${MAX_TAG_ARRAY_LENGTH} items, each max ${MAX_TAG_ITEM_LENGTH} chars)` }, { status: 400 });
         }
-        if (body.suitableSkinTypes !== undefined && !Array.isArray(body.suitableSkinTypes)) {
-            return NextResponse.json({ error: "suitableSkinTypes must be an array" }, { status: 400 });
+        if (!validateStringArray(body.suitableSkinTypes, "suitableSkinTypes")) {
+            return NextResponse.json({ error: `suitableSkinTypes must be an array of strings (max ${MAX_TAG_ARRAY_LENGTH} items, each max ${MAX_TAG_ITEM_LENGTH} chars)` }, { status: 400 });
         }
-        if (body.benefits !== undefined && !Array.isArray(body.benefits)) {
-            return NextResponse.json({ error: "benefits must be an array" }, { status: 400 });
+        if (!validateStringArray(body.benefits, "benefits")) {
+            return NextResponse.json({ error: `benefits must be an array of strings (max ${MAX_TAG_ARRAY_LENGTH} items, each max ${MAX_TAG_ITEM_LENGTH} chars)` }, { status: 400 });
         }
-        if (body.negativeFor !== undefined && !Array.isArray(body.negativeFor)) {
-            return NextResponse.json({ error: "negativeFor must be an array" }, { status: 400 });
+        if (!validateStringArray(body.negativeFor, "negativeFor")) {
+            return NextResponse.json({ error: `negativeFor must be an array of strings (max ${MAX_TAG_ARRAY_LENGTH} items, each max ${MAX_TAG_ITEM_LENGTH} chars)` }, { status: 400 });
         }
-        // Validate affiliateLinks values are valid URLs
+
+        // Validate affiliateLinks values are valid URLs and only known keys
         if (body.affiliateLinks !== undefined && body.affiliateLinks !== null) {
             if (typeof body.affiliateLinks !== "object" || Array.isArray(body.affiliateLinks)) {
                 return NextResponse.json({ error: "affiliateLinks must be an object" }, { status: 400 });
             }
-            for (const [key, value] of Object.entries(body.affiliateLinks)) {
-                if (typeof value !== "string" || value.length > 500) {
-                    return NextResponse.json({ error: `Invalid affiliateLinks.${key} (must be a string URL, max 500 chars)` }, { status: 400 });
+            const links = body.affiliateLinks as Record<string, unknown>;
+            for (const key of Object.keys(links)) {
+                if (!AFFILIATE_PLATFORM_KEYS.includes(key as typeof AFFILIATE_PLATFORM_KEYS[number])) {
+                    return NextResponse.json({ error: `affiliateLinks key "${key}" is not allowed` }, { status: 400 });
+                }
+            }
+            for (const [key, value] of Object.entries(links)) {
+                if (typeof value !== "string" || value.length > MAX_AFFILIATE_URL_LENGTH) {
+                    return NextResponse.json({ error: `Invalid affiliateLinks.${key} (must be a string URL, max ${MAX_AFFILIATE_URL_LENGTH} chars)` }, { status: 400 });
                 }
                 if (value) {
                     try {
@@ -148,12 +184,12 @@ export const POST = withAdminAuth(async (request, { admin }) => {
         const [product] = await prisma.$transaction(async (tx) => {
             const product = await tx.product.create({
                 data: {
-                    name: body.name,
-                    category: body.category,
-                    image: body.image,
+                    name: body.name.trim(),
+                    category: body.category.trim(),
+                    image: body.image.trim(),
                     images: body.images || null,
-                    price: body.price,
-                    description: body.description,
+                    price: body.price.trim(),
+                    description: body.description.trim(),
                     keyIngredients: body.keyIngredients || [],
                     suitableSkinTypes: body.suitableSkinTypes || [],
                     benefits: body.benefits || [],

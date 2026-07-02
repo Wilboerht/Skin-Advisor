@@ -4,8 +4,9 @@ import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    Loader2, Trash2, Plus, Sparkles, X, Pencil, Check
+    Loader2, Trash2, Plus, Sparkles, X, Pencil
 } from "lucide-react";
+import { SKIN_TYPE_OPTIONS } from "@/types/product";
 
 interface Product {
     id: string;
@@ -24,7 +25,7 @@ interface RecommendationRule {
     createdAt: string;
 }
 
-const SKIN_TYPES = ["dry", "oily", "combination", "sensitive", "normal"];
+// 肤质选项统一从 @/types/product 引入，确保与产品表单一致
 const CONCERNS = ["acne", "wrinkles", "dark spots", "redness", "pores", "dullness", "blackheads", "dryness"];
 const PERSONAS = [
     { value: "sensitive", label: "敏敏派" },
@@ -77,6 +78,9 @@ export default function RecommendationRulesPage() {
     }, []);
 
     useEffect(() => {
+        // Intentional mount-only data fetch: setLoading(false) runs in promise finally,
+        // not synchronously during render. Disabling strict rule for this common pattern.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         Promise.all([fetchRules(), fetchProducts()]).finally(() => setLoading(false));
     }, [fetchRules, fetchProducts]);
 
@@ -396,22 +400,18 @@ export default function RecommendationRulesPage() {
                                                 肤质条件
                                             </label>
                                             <div className="flex flex-wrap gap-2">
-                                                {SKIN_TYPES.map(type => (
+                                                {SKIN_TYPE_OPTIONS.map((opt) => (
                                                     <button
-                                                        key={type}
+                                                        key={opt.value}
                                                         type="button"
-                                                        onClick={() => toggleSelection(type, selectedSkinTypes, setSelectedSkinTypes)}
+                                                        onClick={() => toggleSelection(opt.value, selectedSkinTypes, setSelectedSkinTypes)}
                                                         className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                                                            selectedSkinTypes.includes(type)
+                                                            selectedSkinTypes.includes(opt.value)
                                                                 ? "bg-[#3D4430] text-white"
                                                                 : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                                                         }`}
                                                     >
-                                                        {type === "dry" && "干性"}
-                                                        {type === "oily" && "油性"}
-                                                        {type === "combination" && "混合"}
-                                                        {type === "sensitive" && "敏感"}
-                                                        {type === "normal" && "中性"}
+                                                        {opt.label}
                                                     </button>
                                                 ))}
                                             </div>

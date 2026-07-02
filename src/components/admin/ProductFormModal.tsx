@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Package } from "lucide-react";
 import ProductForm, { ProductFormData } from "./ProductForm";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 
 interface ProductFormModalProps {
     isOpen: boolean;
@@ -20,6 +21,8 @@ export function ProductFormModal({ isOpen, onClose, product, onSuccess }: Produc
     const [isDirty, setIsDirty] = useState(false);
     const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
+    const titleId = "product-form-modal-title";
+    const containerRef = useFocusTrap<HTMLDivElement>(isOpen);
 
     const handleClose = useCallback(() => {
         if (submitting) return;
@@ -65,7 +68,14 @@ export function ProductFormModal({ isOpen, onClose, product, onSuccess }: Produc
     return createPortal(
         <AnimatePresence>
             {isOpen && (
-                <div className="fixed inset-0 z-[99999] flex items-center justify-center">
+                <div
+                    ref={containerRef}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby={titleId}
+                    className="fixed inset-0 z-[99999] flex items-center justify-center"
+                    tabIndex={-1}
+                >
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -87,7 +97,10 @@ export function ProductFormModal({ isOpen, onClose, product, onSuccess }: Produc
                                     <Package className="w-5 h-5 text-[#8B6914]" />
                                 </div>
                                 <div>
-                                    <h3 className="text-lg font-bold text-[#2C2C2C] tracking-tight">
+                                    <h3
+                                        id={titleId}
+                                        className="text-lg font-bold text-[#2C2C2C] tracking-tight"
+                                    >
                                         {product ? "编辑产品" : "新建产品"}
                                     </h3>
                                     <p className="text-xs text-[#8B7355]">
@@ -96,6 +109,7 @@ export function ProductFormModal({ isOpen, onClose, product, onSuccess }: Produc
                                 </div>
                             </div>
                             <button
+                                type="button"
                                 onClick={handleClose}
                                 disabled={submitting}
                                 className="p-2 rounded-full text-[#B0A89A] hover:text-[#C9A86C] hover:bg-white/60 transition-all disabled:opacity-50 disabled:cursor-not-allowed"

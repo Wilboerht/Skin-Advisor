@@ -9,30 +9,17 @@ import {
 } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 import { cn } from "@/lib/utils";
-
-// ==================== 常量配置 ====================
-
-const CATEGORY_OPTIONS = [
-    { value: "精华露", label: "精华露" },
-    { value: "面霜", label: "面霜" },
-    { value: "洁面", label: "洁面" },
-    { value: "护理油", label: "护理油" },
-    { value: "面膜", label: "面膜" },
-    { value: "身体乳", label: "身体乳" },
-    { value: "防晒", label: "防晒" },
-    { value: "磨砂膏", label: "磨砂膏" },
-    { value: "护手霜", label: "护手霜" },
-];
-
-const SKIN_TYPE_OPTIONS = [
-    { value: "dry", label: "干性肌肤", color: "bg-amber-50 text-amber-700 border-amber-200" },
-    { value: "oily", label: "油性肌肤", color: "bg-blue-50 text-blue-700 border-blue-200" },
-    { value: "combination", label: "混合性肌肤", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-    { value: "combination_dry", label: "混干性肌肤", color: "bg-teal-50 text-teal-700 border-teal-200" },
-    { value: "combination_oily", label: "混油性肌肤", color: "bg-cyan-50 text-cyan-700 border-cyan-200" },
-    { value: "sensitive", label: "敏感肌肤", color: "bg-rose-50 text-rose-700 border-rose-200" },
-    { value: "normal", label: "中性肌肤", color: "bg-slate-50 text-slate-700 border-slate-200" },
-];
+import {
+    ProductFormData,
+    CATEGORY_OPTIONS,
+    SKIN_TYPE_OPTIONS,
+    MAX_NAME_LENGTH,
+    MAX_PRICE_LENGTH,
+    MAX_DESCRIPTION_LENGTH,
+    MAX_HOW_TO_USE_LENGTH,
+    MAX_IMAGE_COUNT,
+    MAX_TAG_ITEM_LENGTH,
+} from "@/types/product";
 
 // ==================== 子组件 ====================
 
@@ -44,10 +31,14 @@ function TagInput({ label, values, onChange, required = false, error, placeholde
     const [input, setInput] = useState("");
     const addTag = () => {
         const trimmed = input.trim();
-        if (trimmed && !values.includes(trimmed)) {
-            onChange([...values, trimmed]);
-            setInput("");
+        if (!trimmed) return;
+        if (trimmed.length > MAX_TAG_ITEM_LENGTH) {
+            return;
         }
+        if (!values.includes(trimmed)) {
+            onChange([...values, trimmed]);
+        }
+        setInput("");
     };
     const removeTag = (i: number) => onChange(values.filter((_, idx) => idx !== i));
 
@@ -60,21 +51,38 @@ function TagInput({ label, values, onChange, required = false, error, placeholde
                 {values.map((tag, i) => (
                     <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#FAF8F5] text-sm font-medium text-[#2C2C2C]">
                         {tag}
-                        <button type="button" onClick={() => removeTag(i)} className="text-[#9E9E9E] hover:text-red-500 transition-colors">
+                        <button type="button" onClick={() => removeTag(i)} className="text-[#9E9E9E] hover:text-red-500 transition-colors" aria-label={`删除 ${tag}`}>
                             <X className="h-3 w-3" />
                         </button>
                     </span>
                 ))}
-                <div className="flex items-center flex-1 min-w-[80px]">
+                <div className="flex items-center flex-1 min-w-[80px] gap-1">
                     <input
                         type="text"
                         value={input}
+                        maxLength={MAX_TAG_ITEM_LENGTH}
                         onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
-                        onBlur={addTag}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                e.preventDefault();
+                                addTag();
+                            } else if (e.key === "," || e.key === "，") {
+                                e.preventDefault();
+                                addTag();
+                            }
+                        }}
                         className="w-full text-sm text-[#2C2C2C] placeholder:text-[#B0A89A] outline-none bg-transparent py-1"
                         placeholder={values.length === 0 ? placeholder : ""}
                     />
+                    {input.trim() && (
+                        <button
+                            type="button"
+                            onClick={addTag}
+                            className="text-xs px-2 py-1 rounded-md bg-[#FAF8F5] text-[#8B7355] hover:bg-[#F0EBE3] transition-colors"
+                        >
+                            添加
+                        </button>
+                    )}
                 </div>
             </div>
             {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
@@ -125,23 +133,7 @@ function Toggle({ label, checked, onChange, tooltip }: { label: string; checked:
 
 // ==================== 表单主体 ====================
 
-export interface ProductFormData {
-    id?: string;
-    name?: string;
-    category?: string;
-    price?: string;
-    image?: string;
-    images?: string[] | null;
-    description?: string | null;
-    howToUse?: string | null;
-    active?: boolean;
-    featured?: boolean;
-    keyIngredients?: string[] | null;
-    benefits?: string[] | null;
-    negativeFor?: string[] | null;
-    suitableSkinTypes?: string[] | null;
-    affiliateLinks?: Record<string, string> | null;
-}
+export type { ProductFormData };
 
 type FormErrors = Record<string, string>;
 
@@ -208,6 +200,10 @@ export default function ProductForm({
 
     const handleImageUpload = async (file: File) => {
         if (!file) return;
+        if (images.length >= MAX_IMAGE_COUNT) {
+            toast.error(`最多只能上传 ${MAX_IMAGE_COUNT} 张图片`);
+            return;
+        }
         if (file.size > 10 * 1024 * 1024) {
             toast.error("图片不能超过10MB");
             return;
@@ -235,7 +231,7 @@ export default function ProductForm({
 
     const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
-        const remaining = 5 - images.length;
+        const remaining = MAX_IMAGE_COUNT - images.length;
         const toUpload = files.slice(0, remaining);
         toUpload.forEach((file) => handleImageUpload(file));
         if (fileInputRef.current) {
@@ -254,7 +250,7 @@ export default function ProductForm({
         e.preventDefault();
         setDragOver(false);
         const files = Array.from(e.dataTransfer.files).filter(isValidImageFile);
-        const remaining = 5 - images.length;
+        const remaining = MAX_IMAGE_COUNT - images.length;
         const toUpload = files.slice(0, remaining);
         toUpload.forEach((file) => handleImageUpload(file));
     };
@@ -311,7 +307,16 @@ export default function ProductForm({
                 : `/api/admin/products`;
             const method = initialData?.id ? "PUT" : "POST";
             const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-            if (!res.ok) throw new Error("保存失败");
+            if (!res.ok) {
+                let message = "保存失败";
+                try {
+                    const data = await res.json();
+                    message = data.error || message;
+                } catch {
+                    // ignore parse error
+                }
+                throw new Error(message);
+            }
             toast.success(initialData?.id ? "产品已更新" : "产品已创建");
             if (onSuccess) {
                 onSuccess();
@@ -319,8 +324,8 @@ export default function ProductForm({
                 router.push("/admin/products");
                 router.refresh();
             }
-        } catch {
-            toast.error("保存产品时出错");
+        } catch (e: unknown) {
+            toast.error(e instanceof Error ? e.message : "保存产品时出错");
         } finally {
             setSaving(false);
             onSubmittingChange?.(false);
@@ -334,25 +339,18 @@ export default function ProductForm({
 
     // ===== 未保存更改检测 =====
     const initialSnapshot = useRef({
-        formData: { name: "", category: "", price: "", description: "", howToUse: "", active: true, featured: false },
-        images: [] as string[],
-        affiliateLinks: { taobao: "", xiaohongshu: "", douyin: "" },
-        keyIngredients: [] as string[],
-        benefits: [] as string[],
-        negativeFor: [] as string[],
-        suitableSkinTypes: [] as string[],
+        formData: { ...formData },
+        images: [...images],
+        affiliateLinks: { ...affiliateLinks },
+        keyIngredients: [...keyIngredients],
+        benefits: [...benefits],
+        negativeFor: [...negativeFor],
+        suitableSkinTypes: [...suitableSkinTypes],
     });
 
     useEffect(() => {
-        initialSnapshot.current = {
-            formData: { ...formData },
-            images: [...images],
-            affiliateLinks: { ...affiliateLinks },
-            keyIngredients: [...keyIngredients],
-            benefits: [...benefits],
-            negativeFor: [...negativeFor],
-            suitableSkinTypes: [...suitableSkinTypes],
-        };
+        // Report clean state once after initial mount
+        onDirtyChange?.(false);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -383,6 +381,7 @@ export default function ProductForm({
                             <input
                                 type="text"
                                 value={formData.name}
+                                maxLength={MAX_NAME_LENGTH}
                                 onChange={(e) => updateField("name", e.target.value)}
                                 className={cn(
                                     "block w-full rounded-xl border shadow-sm text-sm p-3 outline-none transition-all bg-white",
@@ -428,6 +427,7 @@ export default function ProductForm({
                                 <input
                                     type="text"
                                     value={formData.price}
+                                    maxLength={MAX_PRICE_LENGTH}
                                     onChange={(e) => updateField("price", e.target.value)}
                                     className={cn(
                                         "block w-full rounded-xl border shadow-sm text-sm p-3 pl-7 outline-none transition-all bg-white",
@@ -464,6 +464,7 @@ export default function ProductForm({
                             <textarea
                                 rows={3}
                                 value={formData.description}
+                                maxLength={MAX_DESCRIPTION_LENGTH}
                                 onChange={(e) => updateField("description", e.target.value)}
                                 placeholder="产品的核心卖点、适合人群..."
                                 className={cn(
@@ -480,6 +481,7 @@ export default function ProductForm({
                             <textarea
                                 rows={3}
                                 value={formData.howToUse}
+                                maxLength={MAX_HOW_TO_USE_LENGTH}
                                 onChange={(e) => updateField("howToUse", e.target.value)}
                                 placeholder="例：取适量于掌心，轻拍于面部..."
                                 className="block w-full rounded-xl border border-[#E8E2D9] shadow-sm text-sm p-3 outline-none resize-none focus:border-[#C9A86C] focus:ring-1 focus:ring-[#C9A86C]/20 transition-all bg-white"
@@ -536,7 +538,7 @@ export default function ProductForm({
                                     errors.image ? "border-red-400 bg-red-50/20" : ""
                                 )}
                             >
-                                <input ref={fileInputRef} type="file" className="sr-only" onChange={onFileChange} accept="image/*" multiple />
+                                <input ref={fileInputRef} type="file" className="sr-only" onChange={onFileChange} accept="image/jpeg,image/png,image/webp,image/gif" multiple />
                                 <div className="text-center">
                                     {uploading ? (
                                         <Loader2 className="mx-auto h-8 w-8 text-[#D9D0C3] animate-spin" />
@@ -547,7 +549,7 @@ export default function ProductForm({
                                         {uploading ? "上传中..." : dragOver ? "松开以上传" : "点击或拖拽上传图片"}
                                     </p>
                                     <p className="mt-1 text-xs text-[#B0A89A]">
-                                        支持 JPG、PNG，最大 10MB · 还可上传 {5 - images.length} 张
+                                        支持 JPG、PNG、WebP、GIF，最大 10MB · 还可上传 {MAX_IMAGE_COUNT - images.length} 张
                                     </p>
                                 </div>
                             </div>
@@ -615,6 +617,7 @@ export default function ProductForm({
                                         <input
                                             type="url"
                                             value={affiliateLinks[key as keyof typeof affiliateLinks]}
+                                            maxLength={500}
                                             onChange={(e) => setAffiliateLinks((prev) => ({ ...prev, [key]: e.target.value }))}
                                             placeholder="https://..."
                                             className={cn(
