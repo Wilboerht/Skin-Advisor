@@ -56,13 +56,13 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
               {data.m1.persona}
             </p>
           </div>
-          <div className="relative w-full max-w-[180px] mx-auto lg:max-w-xs aspect-[3/4] lg:ml-auto">
+<div className="relative w-full max-w-[280px] mx-auto lg:max-w-xs aspect-[3/4] lg:ml-auto">
             <Image
               src={`/images/character/${data.ipKey}/${data.ipKey}_female.png`}
               alt={`${data.typeName} 形象`}
               fill
               className="object-contain object-bottom"
-              sizes="(max-width: 1024px) 180px, 320px"
+              sizes="(max-width: 1024px) 280px, 320px"
               priority
             />
           </div>
