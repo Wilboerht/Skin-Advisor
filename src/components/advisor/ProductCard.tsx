@@ -132,7 +132,7 @@ function CompactProductCard({
                         )}
 
                         {/* 推荐理由 */}
-                        <p className="line-clamp-2 text-xs text-[#8c7a6b] lg:text-[#666]">
+                        <p className="line-clamp-1 text-xs text-[#8c7a6b] lg:text-[#666]">
                             {product.reason}
                         </p>
 
