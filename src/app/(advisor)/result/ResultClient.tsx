@@ -233,7 +233,13 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const { trackResultView, trackResultShare, trackProductClick } = useAdvisorAnalytics();
     const { user, isInitialized: authInitialized } = useAuth();
     const searchParams = useSearchParams();
-    const { runAnalysis, analysisState, reset: resetAnalysis } = useAsyncAnalysis();
+    const { runAnalysis, analysisState, reset: resetAnalysis, recoverSession } = useAsyncAnalysis();
+
+    // Refs for latest auth state to avoid adding them to effect dependency arrays
+    const userRef = useRef(user);
+    const authInitializedRef = useRef(authInitialized);
+    useEffect(() => { userRef.current = user; }, [user]);
+    useEffect(() => { authInitializedRef.current = authInitialized; }, [authInitialized]);
 
     // Data State
     const normalizedResult = useMemo(() => normalizeAnalysisResult(initialData?.result || null), [initialData]);
@@ -409,7 +415,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 // If we successfully recovered data, remove 'analyzing' status from URL to stop re-analysis
                                 if (searchParams.get('status') === 'analyzing') {
                                     // 登录用户直接跳转到 /reports/:id，避免先到 /result?id=xxx 再重定向的多余一次跳转
-                                    if (user && advisorResult.sessionId) {
+                                    if (userRef.current && advisorResult.sessionId) {
                                         router.replace(`/reports/${advisorResult.sessionId}`, { scroll: false });
                                     } else {
                                         const params = new URLSearchParams(searchParams.toString());
@@ -454,7 +460,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         };
 
         loadClientData();
-    }, [initialData, router, trackResultView, searchParams, user]);
+    }, [initialData, router, trackResultView, searchParams]);
 
     // --- Environment Data Integration ---
     // REMOVED: Weather component has been disabled per user request
@@ -555,57 +561,98 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     // 等 auth 初始化后再执行跳转，避免登录用户在 user 为 null 时被错误留在 /result
     useEffect(() => {
         const pendingId = pendingRedirectSessionIdRef.current;
-        if (!pendingId || !authInitialized) return;
+        if (!pendingId || !authInitializedRef.current) return;
         pendingRedirectSessionIdRef.current = null;
-        const resultUrl = user ? `/reports/${pendingId}` : '/result';
+        const resultUrl = userRef.current ? `/reports/${pendingId}` : '/result';
         router.replace(resultUrl, { scroll: false });
-    }, [authInitialized, user, router]);
+    }, [router]);
 
     useEffect(() => {
         const status = searchParams.get('status');
         // Only trigger if we are in 'analyzing' mode, no result yet, and not already running/error
         // Crucial: check 'result' state which might have been populated by loadClientData recovery
-        if (status === 'analyzing' && !result && analysisState.status === 'idle') {
-            if (analysisStartedRef.current) return;
-            analysisStartedRef.current = true;
+        if (status !== 'analyzing' || result || analysisState.status !== 'idle') return;
+        if (analysisStartedRef.current) return;
+        analysisStartedRef.current = true;
 
-            const execute = async () => {
+        const execute = async () => {
+            try {
+                // 1. Try to recover an in-progress session from this browser tab (e.g. page refresh)
+                let existingSessionId: string | null = null;
+                let startedAt = 0;
                 try {
-                    const analysisResult = await runAnalysis();
-                    if (!analysisResult) return; // Already running, skip
-                    const { result: newResult, faceAnalysis: newFace, sessionId: newSessionId } = analysisResult;
-
-                    // Save sessionId for sharing
-                    if (newSessionId) {
-                        setSessionId(newSessionId);
-                    }
-
-                    if (!newSessionId) {
-                        throw new Error("会话 ID 丢失，请重新测试");
-                    }
-
-
-                    // IMPORTANT: Set result state FIRST before updating URL
-                    setResult(newResult);
-                    if (newFace) setFaceAnalysis(newFace);
-
-                    // 等 auth 初始化后再跳转，避免 user 为 null 时登录用户被错误留在 /result
-                    if (authInitialized) {
-                        const resultUrl = user ? `/reports/${newSessionId}` : '/result';
-                        router.replace(resultUrl, { scroll: false });
-                    } else {
-                        pendingRedirectSessionIdRef.current = newSessionId;
-                    }
-
-                } catch (e: unknown) {
-                    console.error("Async analysis error caught in component:", e);
-                    // Reset ref so user can retry if they want (though they'd need to re-trigger the effect)
-                    analysisStartedRef.current = false;
+                    existingSessionId = sessionStorage.getItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_ID);
+                    startedAt = Number(sessionStorage.getItem(STORAGE_KEYS.ADVISOR_ANALYZING_STARTED_AT) || '0');
+                } catch (e) {
+                    console.warn('sessionStorage access failed', e);
                 }
-            };
-            execute();
-        }
-    }, [searchParams, result, analysisState.status, runAnalysis, router, user, authInitialized]);
+                const ANALYZING_TTL_MS = 90 * 1000;
+                const shouldRecover = existingSessionId && (Date.now() - startedAt) < ANALYZING_TTL_MS;
+
+                if (shouldRecover) {
+                    const recovered = await recoverSession(existingSessionId!);
+                    if (recovered) {
+                        const { result: rawResult, sessionId: recoveredSessionId } = recovered;
+
+                        // Save to localStorage for normal recovery
+                        try {
+                            localStorage.setItem(STORAGE_KEYS.ADVISOR_RESULT, JSON.stringify(rawResult));
+                        } catch (e) {
+                            console.warn('localStorage save failed', e);
+                        }
+
+                        const normalized = normalizeAnalysisResult(rawResult);
+                        if (normalized) setResult(normalized);
+                        if (rawResult.faceAnalysis) {
+                            setFaceAnalysis(rawResult.faceAnalysis as FaceAnalysisResult);
+                        }
+                        setSessionId(recoveredSessionId);
+
+                        if (authInitializedRef.current) {
+                            const resultUrl = userRef.current ? `/reports/${recoveredSessionId}` : '/result';
+                            router.replace(resultUrl, { scroll: false });
+                        } else {
+                            pendingRedirectSessionIdRef.current = recoveredSessionId;
+                        }
+                        return;
+                    }
+                    // If recovery returned null (pending/not_found/forbidden), fall through to fresh analysis
+                }
+
+                // 2. Normal fresh analysis flow
+                const analysisResult = await runAnalysis();
+                if (!analysisResult) return; // Already running, skip
+                const { result: newResult, faceAnalysis: newFace, sessionId: newSessionId } = analysisResult;
+
+                // Save sessionId for sharing
+                if (newSessionId) {
+                    setSessionId(newSessionId);
+                }
+
+                if (!newSessionId) {
+                    throw new Error("会话 ID 丢失，请重新测试");
+                }
+
+                // IMPORTANT: Set result state FIRST before updating URL
+                setResult(newResult);
+                if (newFace) setFaceAnalysis(newFace);
+
+                // 等 auth 初始化后再跳转，避免 user 为 null 时登录用户被错误留在 /result
+                if (authInitializedRef.current) {
+                    const resultUrl = userRef.current ? `/reports/${newSessionId}` : '/result';
+                    router.replace(resultUrl, { scroll: false });
+                } else {
+                    pendingRedirectSessionIdRef.current = newSessionId;
+                }
+
+            } catch (e: unknown) {
+                console.error("Async analysis error caught in component:", e);
+                // Reset ref so user can retry if they want
+                analysisStartedRef.current = false;
+            }
+        };
+        execute();
+    }, [searchParams, result, analysisState.status, runAnalysis, recoverSession, router]);
 
     // Error State
     if (analysisState.status === 'error') {

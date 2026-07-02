@@ -102,6 +102,8 @@ export const RATE_LIMIT_PRESETS = {
     "chat-user": { maxRequests: 15, windowMs: 60 * 1000 },
     /** OSS 签名获取限制 - 每分钟 20 次 */
     "oss-sign": { maxRequests: 20, windowMs: 60 * 1000 },
+    /** 会话状态查询限制 - 每分钟 60 次 */
+    "session-status": { maxRequests: 60, windowMs: 60 * 1000 },
 } as const;
 
 /**

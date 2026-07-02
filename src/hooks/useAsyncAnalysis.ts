@@ -1,9 +1,8 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAdvisorAnalytics } from './useAdvisorAnalytics';
-import { useAuth } from './useAuth';
-import { preprocessFaceImage, getBase64Size } from '@/lib/image-processing';
-import { useRouter } from 'next/navigation';
+import { preprocessFaceImage } from '@/lib/image-processing';
+
 import { getPrivacyConsentPayload } from '@/components/advisor/PrivacyConsent';
 import { STORAGE_KEYS } from '@/lib/storage-keys';
 
@@ -13,6 +12,14 @@ export interface AsyncAnalysisState {
     error: string | null;
     queuePosition?: number;
     queueWaitSeconds?: number;
+}
+
+export interface SessionStatusResponse {
+    status: 'pending' | 'analyzing' | 'completed' | 'not_found' | 'forbidden';
+    sessionId: string;
+    result?: Record<string, unknown> | null;
+    rawResult?: Record<string, unknown> | null;
+    error?: string;
 }
 
 // Helper for auto-retry
@@ -59,8 +66,6 @@ export function useAsyncAnalysis() {
         error: null
     });
     const { trackAnalysisStart, trackAnalysisComplete } = useAdvisorAnalytics();
-    const { user } = useAuth();
-    const router = useRouter();
 
     const isRunningRef = useRef(false);
 
@@ -406,7 +411,7 @@ export function useAsyncAnalysis() {
                 console.warn("sessionStorage access failed", e);
             }
         }
-    }, [trackAnalysisStart, trackAnalysisComplete, user]);
+    }, [trackAnalysisStart, trackAnalysisComplete]);
 
     // Fake progress animation to fill the gaps between milestones
     useEffect(() => {
@@ -449,10 +454,97 @@ export function useAsyncAnalysis() {
         return () => clearInterval(interval);
     }, [analysisState.status]);
 
+    // --- Session recovery helpers ---
+
+    const checkSessionStatus = useCallback(async (sessionId: string): Promise<SessionStatusResponse> => {
+        try {
+            const res = await fetch(`/api/advisor/session/status?sessionId=${encodeURIComponent(sessionId)}`);
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                return {
+                    status: 'not_found',
+                    sessionId,
+                    error: data.error || `HTTP ${res.status}`
+                };
+            }
+            return await res.json();
+        } catch (e: unknown) {
+            const err = e instanceof Error ? e : new Error(String(e));
+            return { status: 'not_found', sessionId, error: err.message };
+        }
+    }, []);
+
+    const pollSessionResult = useCallback(async (
+        sessionId: string,
+        options?: {
+            intervalMs?: number;
+            maxAttempts?: number;
+            onProgress?: (attempt: number) => void;
+            signal?: AbortSignal;
+        }
+    ): Promise<SessionStatusResponse> => {
+        const { intervalMs = 3000, maxAttempts = 30 } = options || {};
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            if (options?.signal?.aborted) {
+                throw new Error('已取消等待');
+            }
+            const status = await checkSessionStatus(sessionId);
+            if (status.status === 'completed') {
+                return status;
+            }
+            if (status.status === 'not_found' || status.status === 'forbidden') {
+                throw new Error(status.error || '会话不存在或无权访问');
+            }
+            if (attempt < maxAttempts - 1) {
+                options?.onProgress?.(attempt + 1);
+                await new Promise(resolve => {
+                    const timeoutId = setTimeout(resolve, intervalMs);
+                    options?.signal?.addEventListener('abort', () => {
+                        clearTimeout(timeoutId);
+                        resolve(undefined);
+                    }, { once: true });
+                });
+            }
+        }
+        throw new Error('等待分析结果超时，请重试');
+    }, [checkSessionStatus]);
+
+    const recoverSession = useCallback(async (sessionId: string): Promise<{ result: Record<string, unknown>; sessionId: string } | null> => {
+        if (isRunningRef.current) return null;
+        isRunningRef.current = true;
+
+        setAnalysisState({ status: 'analyzing_skin', progress: 55, error: null, queuePosition: undefined, queueWaitSeconds: undefined });
+
+        try {
+            const statusRes = await checkSessionStatus(sessionId);
+            if (statusRes.status === 'completed' && statusRes.rawResult) {
+                setAnalysisState({ status: 'completed', progress: 100, error: null });
+                return { result: statusRes.rawResult, sessionId };
+            }
+            if (statusRes.status === 'analyzing') {
+                const pollResult = await pollSessionResult(sessionId, {
+                    onProgress: (attempt) => {
+                        setAnalysisState(prev => ({ ...prev, progress: Math.min(85, 55 + attempt * 1) }));
+                    }
+                });
+                if (pollResult.status === 'completed' && pollResult.rawResult) {
+                    setAnalysisState({ status: 'completed', progress: 100, error: null });
+                    return { result: pollResult.rawResult, sessionId };
+                }
+            }
+            return null; // pending / not_found / forbidden -> caller should run fresh analysis
+        } catch (e: unknown) {
+            console.error('Recover session failed:', e);
+            return null;
+        } finally {
+            isRunningRef.current = false;
+        }
+    }, [checkSessionStatus, pollSessionResult]);
+
     const reset = useCallback(() => {
         setAnalysisState({ status: 'idle', progress: 0, error: null, queuePosition: undefined, queueWaitSeconds: undefined });
         isRunningRef.current = false;
     }, []);
 
-    return { runAnalysis, analysisState, reset };
+    return { runAnalysis, analysisState, reset, recoverSession };
 }
