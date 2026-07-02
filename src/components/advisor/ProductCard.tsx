@@ -158,13 +158,13 @@ export function ProductCard({
 
                 {/* 功效标签 */}
                 {product.benefits && product.benefits.length > 0 && isCompact && (
-                    <p className="text-xs lg:text-[13px] text-[#C8A97E] mb-1 truncate">
+                    <p className="text-xs lg:text-xs text-[#C8A97E] mb-1 truncate">
                         {product.benefits.join(" | ")}
                     </p>
                 )}
 
                 {/* 推荐理由 */}
-                <p className={cn("leading-snug", isCompact ? "text-xs lg:text-[13px] text-[#8c7a6b] lg:text-[#666] line-clamp-2" : "text-xs text-white/70 mb-3 line-clamp-2")}>
+                <p className={cn("leading-snug", isCompact ? "text-xs lg:text-xs text-[#8c7a6b] lg:text-[#666] line-clamp-2" : "text-xs text-white/70 mb-3 line-clamp-2")}>
                     {getReasonText()}
                 </p>
 
