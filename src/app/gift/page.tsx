@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { ArrowRight, Gift, Clock, Users, Upload, CheckCircle2, Sparkles, AlertCircle, Loader2, Copy, Ticket } from "lucide-react"
@@ -55,6 +55,14 @@ export default function GiftPage() {
   const [submitSuccess, setSubmitSuccess] = useState(false)
   const [submitError, setSubmitError] = useState("")
   const [copiedShareText, setCopiedShareText] = useState(false)
+
+  const CHARACTER_TYPES = ["ageless", "combination", "desert", "guardian", "luxury", "minimalist", "oily", "sensitive"] as const
+  const CHARACTER_GENDERS = ["female", "male"] as const
+  const randomCharacterImage = useMemo(() => {
+    const type = CHARACTER_TYPES[Math.floor(Math.random() * CHARACTER_TYPES.length)]
+    const gender = CHARACTER_GENDERS[Math.floor(Math.random() * CHARACTER_GENDERS.length)]
+    return `/images/character/${type}/${type}_${gender}.png`
+  }, [])
 
   const fetchCampaign = useCallback(async () => {
     setPageState("loading")
@@ -230,9 +238,9 @@ export default function GiftPage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center max-w-4xl mx-auto mb-8 md:mb-10">
               {/* 左侧人物 IP */}
-              <div className="relative w-full max-w-[260px] md:max-w-[300px] aspect-[3/4] mx-auto">
+              <div className="relative w-full max-w-[220px] md:max-w-[260px] aspect-[3/4] mx-auto">
                 <Image
-                  src="/images/character/luxury/luxury_female.png"
+                  src={randomCharacterImage}
                   alt="NIHPLOD 肌肤形象"
                   fill
                   className="object-contain"
@@ -351,9 +359,9 @@ export default function GiftPage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center max-w-4xl mx-auto mb-8 md:mb-10">
               {/* 左侧人物 IP */}
-              <div className="relative w-full max-w-[260px] md:max-w-[300px] aspect-[3/4] mx-auto">
+              <div className="relative w-full max-w-[220px] md:max-w-[260px] aspect-[3/4] mx-auto">
                 <Image
-                  src="/images/character/luxury/luxury_female.png"
+                  src={randomCharacterImage}
                   alt="NIHPLOD 肌肤形象"
                   fill
                   className="object-contain"
