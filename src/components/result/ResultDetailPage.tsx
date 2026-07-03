@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useMemo } from "react";
 import Image from "next/image";
@@ -151,14 +151,6 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
             </div>
           )}
 
-          {data.m7.onlyOneSet && (
-            <div className="max-w-3xl">
-              <span className="inline-block px-4 py-1.5 mb-5 text-[11px] uppercase tracking-[0.2em] text-[#1B3A5C] bg-[#1B3A5C]/[0.04] rounded-full border border-[#1B3A5C]/10">
-                最小必要集合
-              </span>
-              <p className="text-base text-[#5E5E5E] leading-[1.85]">{data.m7.onlyOneSet}</p>
-            </div>
-          )}
         </div>
       </section>
 
