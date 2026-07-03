@@ -313,9 +313,9 @@ export default function GiftPage() {
         <section className="relative z-10 pb-18 px-6 md:px-12 lg:px-20">
           <div className="max-w-2xl mx-auto">
             <div className="text-center mb-8 md:mb-10">
-              <p className="text-[15px] md:text-base text-[#5E5E5E]/80 font-light leading-relaxed max-w-md mx-auto">
+              <span className="inline-block px-4 py-1.5 text-[11px] uppercase tracking-[0.2em] text-[#1B3A5C] bg-[#1B3A5C]/[0.04] rounded-full border border-[#1B3A5C]/10">
                 本期好礼
-              </p>
+              </span>
             </div>
             <div className="grid grid-cols-3 gap-4 md:gap-6 place-items-start text-center">
               {Array.isArray(campaign.prizes) && campaign.prizes.map((prize, i) => (
