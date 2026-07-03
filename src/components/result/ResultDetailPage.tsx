@@ -127,12 +127,14 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
           </div>
 
           {data.m7.ingredientTable.length > 0 && (
-            <div className="overflow-x-auto mt-8 md:mt-12">
-              <table className="w-full text-xs md:text-sm border-collapse">
+            <>
+              {/* 桌面端：表格 */}
+              <div className="hidden md:block overflow-x-auto mt-8 md:mt-12">
+              <table className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="border-b border-[#D9D0C3]">
                     {ingredientHeaders.map((h) => (
-                      <th key={h} className="text-left py-2 px-2 md:py-3 md:px-4 font-semibold text-[#1B3A5C] uppercase tracking-wider text-[11px] md:text-sm">
+                      <th key={h} className="text-left py-3 px-4 font-semibold text-[#1B3A5C] uppercase tracking-wider text-sm">
                         {h}
                       </th>
                     ))}
@@ -142,7 +144,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
                   {data.m7.ingredientTable.map((row, i) => (
                     <tr key={i} className="border-b border-[#E8E2D9] last:border-0 hover:bg-white/60">
                       {ingredientHeaders.map((h) => (
-                        <td key={h} className="py-2 px-2 md:py-4 md:px-4 text-[#4A4A4A] font-light">
+                        <td key={h} className="py-4 px-4 text-[#4A4A4A] font-light">
                           {h === "推荐产品" ? (
                             <a
                               href="https://nihplod.cn/products"
@@ -162,6 +164,33 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
                 </tbody>
               </table>
             </div>
+
+            {/* 手机端：卡片列表 */}
+            <div className="md:hidden mt-6 space-y-3">
+              {data.m7.ingredientTable.map((row, i) => (
+                <div key={i} className="bg-white rounded-xl p-4 border border-[#E8E2D9]">
+                  <span className="inline-block px-3 py-0.5 mb-2 text-[10px] tracking-[0.1em] text-[#1B3A5C] bg-[#1B3A5C]/[0.06] rounded-full">
+                    {row["护肤层级"]}
+                  </span>
+                  <div className="mb-2">
+                    <a
+                      href="https://nihplod.cn/products"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[13px] font-medium text-[#1B3A5C] hover:text-[#A0784C] transition-colors duration-300"
+                    >
+                      {row["推荐产品"]}
+                    </a>
+                  </div>
+                  <div className="flex items-center gap-3 text-[11px] text-[#8A8A8A]">
+                    <span>{row["适用场景"]}</span>
+                    <span className="text-[#D9D0C3]">·</span>
+                    <span>{row["使用频率"]}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            </>
           )}
 
         </div>
