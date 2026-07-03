@@ -235,6 +235,9 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       {/* CTA */}
       <section className="relative py-14 md:py-18 px-6 md:px-12 lg:px-20 bg-white">
         <div className="relative z-10 max-w-3xl mx-auto text-center">
+          <h2 className="text-2xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-6 md:mb-8">
+            每一种肌肤，都值得被认真对待
+          </h2>
           <Link
             href="/"
             className="inline-flex items-center justify-center gap-3 px-10 py-3.5 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#1B3A5C] hover:text-white"
