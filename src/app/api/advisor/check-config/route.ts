@@ -1,9 +1,20 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getAISettings } from "@/lib/ai";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+    // 增加速率限制，防止被用于环境探测
+    const ip = getClientIP(request);
+    const limit = await rateLimit(`check-config-${ip}`, "default", { maxRequests: 30, windowMs: 60 * 1000 });
+    if (!limit.success) {
+        return NextResponse.json(
+            { error: "请求过于频繁" },
+            { status: 429 }
+        );
+    }
+
     try {
         const settings = await getAISettings();
         const provider = settings.provider;

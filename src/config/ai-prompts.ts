@@ -97,9 +97,21 @@ export function buildTextAnalysisPrompt(params: {
     ? params.products
     : []; // 如果为空，AI 可能不推荐或者我们应该提供默认值？这里暂设为空
 
-  const productsContext = productSource.map(p =>
-    `- ID: ${p.id}, 名称: ${p.name}, 功效: ${Array.isArray(p.benefits) ? p.benefits.join("/") : p.benefits}, 适用: ${Array.isArray(p.suitableSkinTypes) ? p.suitableSkinTypes.join("/") : p.suitableSkinTypes}${(p as any).description ? `, 描述: ${(p as any).description}` : ""}`
-  ).join("\n");
+  // 限制产品描述长度，防止单个产品描述过长导致 prompt 膨胀
+  const MAX_PRODUCT_DESC_CHARS = 120;
+  const productsContext = productSource.slice(0, 6).map((p: {
+    id: string | number;
+    name: string;
+    benefits?: string | string[];
+    suitableSkinTypes?: string | string[];
+    description?: string;
+  }) => {
+    const desc = p.description || "";
+    const truncatedDesc = desc.length > MAX_PRODUCT_DESC_CHARS
+      ? desc.slice(0, MAX_PRODUCT_DESC_CHARS) + "..."
+      : desc;
+    return `- ID: ${p.id}, 名称: ${p.name}, 功效: ${Array.isArray(p.benefits) ? p.benefits.join("/") : p.benefits}, 适用: ${Array.isArray(p.suitableSkinTypes) ? p.suitableSkinTypes.join("/") : p.suitableSkinTypes}${truncatedDesc ? `, 描述: ${truncatedDesc}` : ""}`;
+  }).join("\n");
 
   // 映射医美和睡眠的显示文本
   const medicalBeautyMap: Record<string, string> = {

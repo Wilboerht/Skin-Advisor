@@ -170,12 +170,13 @@ export async function POST(request: NextRequest) {
             }
 
             // Compression
+            // 首次即使用较激进压缩（512px / quality 70），避免大图触发 400/413 后二次跑 vision 模型
             if (compress && buffer && sharp) {
                 try {
-                    aiLogger.info(`Compressing image for retry...`);
+                    aiLogger.info(`Compressing image...`);
                     buffer = await sharp(buffer)
-                        .resize({ width: 1024, fit: 'inside', withoutEnlargement: true })
-                        .jpeg({ quality: 75 })
+                        .resize({ width: 512, fit: 'inside', withoutEnlargement: true })
+                        .jpeg({ quality: 70 })
                         .toBuffer();
                     mimeType = 'image/jpeg';
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -434,7 +435,12 @@ export async function POST(request: NextRequest) {
         if (faceSessionId) {
             await rollbackUsage(request, faceSessionId, body);
         }
-        console.error("Critical error in face analysis:", err);
+        // 使用脱敏 logger，避免 error 对象泄露请求上下文
+        aiLogger.error("Critical error in face analysis", {
+            errorMessage: err.message,
+            errorName: err.name,
+            sessionId: faceSessionId,
+        });
         return NextResponse.json(
             { error: "服务器内部错误" },
             { status: 500 }

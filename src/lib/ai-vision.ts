@@ -9,6 +9,7 @@ import {
 import { aiLogger } from "./logger";
 import { circuitBreaker } from "./circuit-breaker";
 import { checkAIBudget, recordAIUsage } from "./ai-budget";
+import { filterHealthyKeys, recordKeyResult } from "./ai-key-health";
 import {
     VISION_ANALYSIS_SYSTEM_PROMPT,
     QWEN_VISION_PROMPT
@@ -24,6 +25,16 @@ const RETRY_DELAY_MS = 1000;
 
 // 辅助函数：延迟
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * 计算指数退避延迟
+ * @param attempt 当前尝试次数（从 1 开始）
+ * @param baseDelay 基础延迟
+ * @param maxDelay 最大延迟
+ */
+function exponentialBackoff(attempt: number, baseDelay: number, maxDelay: number): number {
+    return Math.min(baseDelay * Math.pow(2, attempt - 1), maxDelay);
+}
 
 /**
  * 视觉分析主函数 (支持多 Key 轮询)
@@ -70,10 +81,16 @@ export async function analyzeImages(
         finalUserPrompt += `\n\n我提供了${images.length}张照片，分别是：${angles}。请综合分析所有照片。`;
     }
 
-    // 3. 多 Key 轮询机制
-    const apiKeys = getApiKeysForProvider(provider, settings);
+    // 3. 多 Key 轮询机制（带指数退避 + key 健康管理）
+    let apiKeys = getApiKeysForProvider(provider, settings);
     if (apiKeys.length === 0) {
         throw new Error(`No API keys found for vision provider: ${provider}`);
+    }
+
+    apiKeys = filterHealthyKeys(provider, apiKeys);
+    if (apiKeys.length === 0) {
+        aiLogger.warn(`All keys for vision ${provider} are in cooldown, trying anyway`);
+        apiKeys = getApiKeysForProvider(provider, settings);
     }
 
     let lastError: Error | null = null;
@@ -111,12 +128,43 @@ export async function analyzeImages(
                 lastError = error;
                 aiLogger.warn(`Vision Error (${provider}): ${error.message}`);
 
-                // 速率限制或认证错误 -> 换 Key
-                const isAuthOrRate = error.status === 401 || error.status === 429 || String(error).includes("429");
-                if (isAuthOrRate) {
-                    break; // 跳出 attempt 循环，进入下一个 Key
+                // 记录 key 健康状态
+                recordKeyResult(provider, apiKey, {
+                    success: false,
+                    isRateLimit: error.status === 429 || String(error).includes("429"),
+                    isAuthError: error.status === 401 || error.status === 403 || String(error).includes("401") || String(error).includes("403"),
+                });
+
+                const status = error.status;
+                const statusStr = String(error);
+                const isAuth = status === 401 || status === 403 || statusStr.includes("401") || statusStr.includes("403");
+                const isRateLimit = status === 429 || statusStr.includes("429");
+                const isServerError = status && status >= 500;
+
+                // 认证错误直接换 Key，无需退避
+                if (isAuth) {
+                    break;
                 }
-                // 其他错误 (如 500) 继续重试当前 Key
+
+                // 限流/服务端错误：当前 Key 重试 2 次后，换 Key 前增加指数退避
+                if (isRateLimit || isServerError) {
+                    if (attempt >= 2) {
+                        const baseDelay = isRateLimit ? 1000 : 500;
+                        const maxDelay = isRateLimit ? 8000 : 4000;
+                        const delayMs = exponentialBackoff(i + 1, baseDelay, maxDelay);
+                        aiLogger.warn(`Vision ${provider} ${isRateLimit ? '429' : '5xx'}, backing off ${delayMs}ms before next key`);
+                        await delay(delayMs);
+                        if (signal?.aborted) {
+                            throw new Error("Vision request cancelled during backoff.");
+                        }
+                        break; // 进入下一个 Key
+                    }
+                    // 当前 Key 内继续重试
+                    continue;
+                }
+
+                // 其他错误 (如 400) 直接换 Key/跳出
+                break;
             }
         }
     }

@@ -808,7 +808,12 @@ export async function POST(request: NextRequest) {
                 { status: 499 }
             );
         }
-        console.error("Advisor analysis failed:", error);
+        // 使用脱敏 logger，避免 error 对象中携带请求上下文/URL 等敏感信息
+        aiLogger.error("Advisor analysis failed", {
+            errorMessage: err.message,
+            errorName: err.name,
+            sessionId: effectiveSessionId || undefined,
+        });
         return NextResponse.json(
             { error: "生成分析报告失败，请重试" },
             { status: 500 }

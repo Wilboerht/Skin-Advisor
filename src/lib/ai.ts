@@ -4,6 +4,7 @@ import { aiLogger } from "./logger";
 import { TEXT_ANALYSIS_SYSTEM_PROMPT } from "@/config/ai-prompts";
 import { circuitBreaker } from "./circuit-breaker";
 import { checkAIBudget, recordAIUsage } from "./ai-budget";
+import { filterHealthyKeys, recordKeyResult } from "./ai-key-health";
 import {
     extractJsonFromResponse,
     getDefaultFaceAnalysisResult,
@@ -313,18 +314,27 @@ async function callProviderWithRetry(
     settings: AISettings,
     signal?: AbortSignal
 ): Promise<string> {
-    const apiKeys = getApiKeysForProvider(provider, settings);
+    let apiKeys = getApiKeysForProvider(provider, settings);
 
     if (apiKeys.length === 0) {
         throw new Error(`No API keys found for provider: ${provider}`);
     }
 
-    // Key 轮询
+    // 优先使用健康 key
+    apiKeys = filterHealthyKeys(provider, apiKeys);
+    if (apiKeys.length === 0) {
+        aiLogger.warn(`All keys for ${provider} are in cooldown, trying anyway`);
+        apiKeys = getApiKeysForProvider(provider, settings);
+    }
+
+    // Key 轮询（带指数退避 + key 健康管理）
     for (let i = 0; i < apiKeys.length; i++) {
         const apiKey = apiKeys[i];
         try {
             if (i > 0) aiLogger.info(`Retrying with key ${i + 1}/${apiKeys.length} for ${provider}`);
-            return await callProviderInternal(provider, apiKey, model, systemPrompt, userPrompt, settings, signal);
+            const result = await callProviderInternal(provider, apiKey, model, systemPrompt, userPrompt, settings, signal);
+            recordKeyResult(provider, apiKey, { success: true });
+            return result;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             if (error.name === 'AbortError' || signal?.aborted) {
@@ -341,11 +351,32 @@ async function callProviderWithRetry(
             if (isAbort) {
                 throw error;
             }
-            // 不重试明确的客户端错误（400），但重试认证/限流/服务器临时错误
-            if (!isBadRequest && (isAuth || isRateLimit || isServerError) && i < apiKeys.length - 1) {
-                continue; // 尝试下一个 Key
+
+            // 记录 key 健康状态
+            recordKeyResult(provider, apiKey, {
+                success: false,
+                isRateLimit,
+                isAuthError: isAuth,
+            });
+
+            const isLastKey = i >= apiKeys.length - 1;
+            // 明确的客户端错误（400）不重试；认证错误直接换 key；限流/服务端错误先退避再换 key
+            if (isBadRequest || isLastKey) {
+                throw error;
             }
-            throw error; // 其他错误直接抛出
+
+            if (isRateLimit || isServerError) {
+                const baseDelay = isRateLimit ? 1000 : 500;
+                const maxDelay = isRateLimit ? 8000 : 4000;
+                const delayMs = Math.min(baseDelay * Math.pow(2, i), maxDelay);
+                aiLogger.warn(`Provider ${provider} returned ${isRateLimit ? '429' : '5xx'}, backing off ${delayMs}ms before next key`);
+                await new Promise(r => setTimeout(r, delayMs));
+                if (signal?.aborted) {
+                    throw new Error("Request cancelled during backoff.");
+                }
+            }
+
+            continue; // 尝试下一个 Key
         }
     }
     throw new Error(`All keys failed for ${provider}`);
@@ -367,7 +398,17 @@ async function callProviderInternal(
         throw new Error(`[CircuitBreaker] Text AI service ${provider} is temporarily unavailable (circuit open)`);
     }
 
-    aiLogger.info(`Calling AI: ${provider} (${model})`, { promptLength: userPrompt.length });
+    // 输入长度保护：防止超长 prompt 导致高额 token 费用或 413
+    const MAX_TOTAL_PROMPT_CHARS = 12000;
+    let safeUserPrompt = userPrompt;
+    const totalPromptLength = systemPrompt.length + userPrompt.length;
+    if (totalPromptLength > MAX_TOTAL_PROMPT_CHARS) {
+        const maxUserChars = Math.max(1000, MAX_TOTAL_PROMPT_CHARS - systemPrompt.length);
+        safeUserPrompt = userPrompt.slice(0, maxUserChars) + "\n\n[提示：输入内容过长，已截断以控制成本]";
+        aiLogger.warn(`Prompt truncated: ${totalPromptLength} -> ${systemPrompt.length + safeUserPrompt.length} chars`);
+    }
+
+    aiLogger.info(`Calling AI: ${provider} (${model})`, { promptLength: safeUserPrompt.length, totalPromptLength });
 
     // 合并外部 signal 和内部 timeout 的辅助函数
     function createMergedAbortController(timeoutMs: number) {
@@ -402,7 +443,7 @@ async function callProviderInternal(
                 model: model,
                 messages: [
                     { role: "system", content: systemPrompt },
-                    { role: "user", content: userPrompt }
+                    { role: "user", content: safeUserPrompt }
                 ],
                 temperature: settings.temperature,
                 max_tokens: settings.maxTokens

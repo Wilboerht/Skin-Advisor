@@ -104,15 +104,20 @@ export const ShareImageRequestSchema = z.object({
 // 面部分析 API 验证规则
 // ============================================================================
 
+// 面部分析输入约束：控制单张大小与总张数，降低 vision 模型 token 费用与 413 风险
+const MAX_IMAGE_BASE64_CHARS = 1_500_000; // 约 1.1MB 原始数据
+const MAX_VISION_IMAGES = 4;
+
 export const FaceAnalyzeRequestSchema = z.object({
     sessionId: z.string().uuid().optional(), // 业务会话 ID，用于复用额度
     images: z.union([
         // 支持新的数组格式 [{ data: "base64", angle: "front" }]
-        // 限制单张图片 base64 最大 10MB（约 13.6M 字符）
-        z.array(z.object({
-            data: z.string().max(15_000_000, "图片数据过大"),
-            angle: z.string()
-        })),
+        z.array(
+            z.object({
+                data: z.string().max(MAX_IMAGE_BASE64_CHARS, "单张图片过大，请压缩后重试"),
+                angle: z.string()
+            })
+        ).max(MAX_VISION_IMAGES, `最多上传 ${MAX_VISION_IMAGES} 张照片`),
         // 兼容旧的对象格式 { front: "base64" }
         z.object({
             front: z.string().optional(),
@@ -121,7 +126,7 @@ export const FaceAnalyzeRequestSchema = z.object({
             chin: z.string().optional(),
         })
     ]).optional(),
-    image: z.string().optional(), // 兼容旧版单图
+    image: z.string().max(MAX_IMAGE_BASE64_CHARS, "单张图片过大，请压缩后重试").optional(), // 兼容旧版单图
 }).refine(data => {
     if (data.image) return true;
     if (Array.isArray(data.images)) return data.images.length > 0;

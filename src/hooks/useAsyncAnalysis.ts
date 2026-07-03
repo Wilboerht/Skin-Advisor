@@ -365,8 +365,16 @@ export function useAsyncAnalysis() {
                     );
 
                     // 3. Assemble vision images
+                    const MAX_VISION_IMAGES = 4;
+                    const MAX_IMAGE_BASE64_CHARS = 2_000_000; // 约 1.5MB 原始数据
                     for (const result of uploadResults) {
+                        // 跳过过大的图片（前端预处理应已将单张控制在 300KB 以内，此处为兜底）
+                        if (result.finalData.length > MAX_IMAGE_BASE64_CHARS) {
+                            console.warn(`[useAsyncAnalysis] Skipping oversized image for ${result.label}`);
+                            continue;
+                        }
                         visionImages.push({ data: result.finalData, angle: result.label });
+                        if (visionImages.length >= MAX_VISION_IMAGES) break;
                     }
 
                     if (visionImages.length > 0) {
