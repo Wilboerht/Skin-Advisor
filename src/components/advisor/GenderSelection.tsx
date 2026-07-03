@@ -1,21 +1,28 @@
 "use client";
 
-import { useMemo } from "react";
+import { useState, useEffect } from "react";
 import { m } from "framer-motion";
 import Image from "next/image";
 import { Venus, Mars } from "lucide-react";
+
+const CHARACTER_TYPES = ["ageless", "combination", "desert", "guardian", "luxury", "minimalist", "oily", "sensitive"] as const;
+const CHARACTER_GENDERS = ["female", "male"] as const;
+
+function getRandomCharacterImage() {
+    const type = CHARACTER_TYPES[Math.floor(Math.random() * CHARACTER_TYPES.length)];
+    const gender = CHARACTER_GENDERS[Math.floor(Math.random() * CHARACTER_GENDERS.length)];
+    return `/images/character/${type}/${type}_${gender}.png`;
+}
 
 interface GenderSelectionProps {
     onSelect: (gender: "female" | "male") => void;
 }
 
 export function GenderSelection({ onSelect }: GenderSelectionProps) {
-    const CHARACTER_TYPES = ["ageless", "combination", "desert", "guardian", "luxury", "minimalist", "oily", "sensitive"] as const;
-    const CHARACTER_GENDERS = ["female", "male"] as const;
-    const randomCharacterImage = useMemo(() => {
-        const type = CHARACTER_TYPES[Math.floor(Math.random() * CHARACTER_TYPES.length)];
-        const gender = CHARACTER_GENDERS[Math.floor(Math.random() * CHARACTER_GENDERS.length)];
-        return `/images/character/${type}/${type}_${gender}.png`;
+    const [characterImage, setCharacterImage] = useState("");
+
+    useEffect(() => {
+        setCharacterImage(getRandomCharacterImage());
     }, []);
     const container = {
         hidden: { opacity: 0 },
@@ -50,7 +57,7 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
                     className="relative w-[150px] h-[150px] sm:w-auto sm:h-auto sm:flex-[4] sm:aspect-square flex-shrink-0"
                 >
                     <Image
-                        src={randomCharacterImage}
+                        src={characterImage || "/images/character/luxury/luxury_female.png"}
                         alt=""
                         fill
                         className="object-contain"
