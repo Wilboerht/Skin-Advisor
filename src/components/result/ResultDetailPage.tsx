@@ -52,11 +52,11 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
             <h1 className="text-3xl md:text-6xl lg:text-7xl font-light tracking-tight leading-[0.95] mb-4 md:mb-5">
               {data.typeName}
             </h1>
-            <p className="text-sm md:text-base opacity-80 font-light leading-[1.85] max-w-xl mb-4 md:mb-6">
+            <p className="text-sm md:text-base opacity-80 font-light leading-[1.85] max-w-xl">
               {data.m1.persona}
             </p>
           </div>
-<div className="relative w-full max-w-[280px] mx-auto lg:max-w-xs aspect-[3/4] lg:ml-auto">
+<div className="relative w-full max-w-[220px] ml-auto lg:max-w-[260px] aspect-[3/4]">
             <Image
               src={`/images/character/${data.ipKey}/${data.ipKey}_female.png`}
               alt={`${data.typeName} 形象`}
@@ -82,7 +82,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
           <h2 className="text-2xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-6 md:mb-10">
             {data.m5.title || "优势高光"}
           </h2>
-          <div className="grid md:grid-cols-2 gap-4 md:gap-6 mb-8 md:mb-12">
+          <div className="grid md:grid-cols-2 gap-4 md:gap-6">
             {data.m5.advantages.map((adv, i) => (
               <div
                 key={i}
@@ -112,7 +112,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
               {data.m7.formulaCore}
             </p>
           )}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             {data.m7.suggestions.map((sug, i) => (
               <div key={i} className="bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-[#E8E2D9] flex flex-col">
                 <span className="flex items-center justify-center w-8 h-8 rounded-full bg-[#1B3A5C] text-white text-sm font-medium mb-4">
@@ -125,7 +125,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
           </div>
 
           {data.m7.ingredientTable.length > 0 && (
-            <div className="overflow-x-auto mb-12">
+            <div className="overflow-x-auto mt-8 md:mt-12">
               <table className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="border-b border-[#D9D0C3]">
@@ -141,7 +141,18 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
                     <tr key={i} className="border-b border-[#E8E2D9] last:border-0 hover:bg-white/60">
                       {ingredientHeaders.map((h) => (
                         <td key={h} className="py-4 px-4 text-[#4A4A4A] font-light">
-                          {row[h]}
+                          {h === "推荐产品" ? (
+                            <a
+                              href="https://nihplod.cn/products"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#1B3A5C] hover:text-[#A0784C] transition-colors duration-300"
+                            >
+                              {row[h]}
+                            </a>
+                          ) : (
+                            row[h]
+                          )}
                         </td>
                       ))}
                     </tr>
