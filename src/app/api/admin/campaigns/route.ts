@@ -1,20 +1,16 @@
 import prisma from "@/lib/prisma"
-import { verifyAdminSession, logAdminAction, getClientInfo } from "@/lib/admin-auth"
+import { withAdminAuth, logAdminAction, getClientInfo } from "@/lib/admin-auth"
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 
 // GET /api/admin/campaigns - 获取所有活动
-export async function GET(_req: NextRequest) {
-  const admin = await verifyAdminSession()
-  if (!admin) return NextResponse.json({ error: "未授权" }, { status: 401 })
-
+export const GET = withAdminAuth(async (_req) => {
   const campaigns = await prisma.campaign.findMany({
     orderBy: { sortOrder: "desc" },
     include: { _count: { select: { entries: true } } },
   })
-
   return NextResponse.json({ campaigns })
-}
+})
 
 const createSchema = z.object({
   title: z.string().min(1, "标题不能为空"),
@@ -38,10 +34,7 @@ const createSchema = z.object({
 })
 
 // POST /api/admin/campaigns - 创建活动
-export async function POST(req: NextRequest) {
-  const admin = await verifyAdminSession()
-  if (!admin) return NextResponse.json({ error: "未授权" }, { status: 401 })
-
+export const POST = withAdminAuth(async (req, { admin }) => {
   try {
     const body = await req.json()
     const parsed = createSchema.safeParse(body)
@@ -75,4 +68,4 @@ export async function POST(req: NextRequest) {
     console.error("[Admin Campaigns] Create failed:", error)
     return NextResponse.json({ error: "创建失败" }, { status: 500 })
   }
-}
+})

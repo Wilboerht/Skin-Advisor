@@ -14,6 +14,7 @@ import {
     MAX_TAG_ITEM_LENGTH,
     MAX_TAG_ARRAY_LENGTH,
     AFFILIATE_PLATFORM_KEYS,
+    validateImageUrl,
 } from "@/types/product";
 
 // GET /api/admin/products/[id] - Get product details
@@ -86,21 +87,8 @@ export const PUT = withAdminAuth(async (
             return NextResponse.json({ error: `Invalid image URL (max ${MAX_IMAGE_URL_LENGTH} chars)` }, { status: 400 });
         }
         if (updateData.image !== undefined) {
-            const isAbsoluteUrl = /^https?:\/\//.test(updateData.image as string);
-            const isRelativePath = (updateData.image as string).startsWith("/");
-            if (!isAbsoluteUrl && !isRelativePath) {
-                return NextResponse.json({ error: "Invalid image URL format (must be absolute URL or relative path starting with /)" }, { status: 400 });
-            }
-            if (isAbsoluteUrl) {
-                try {
-                    const imageUrl = new URL(updateData.image as string);
-                    if (!['http:', 'https:'].includes(imageUrl.protocol)) {
-                        return NextResponse.json({ error: "Invalid image URL scheme (must be http or https)" }, { status: 400 });
-                    }
-                } catch {
-                    return NextResponse.json({ error: "Invalid image URL format" }, { status: 400 });
-                }
-            }
+            const imageError = validateImageUrl(updateData.image as string);
+            if (imageError) return NextResponse.json({ error: imageError }, { status: 400 });
         }
 
         // description 字段在 schema 中为 String（非 null），拒绝 null 值

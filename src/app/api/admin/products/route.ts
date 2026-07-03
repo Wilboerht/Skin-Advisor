@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { withAdminAuth, getClientInfo } from "@/lib/admin-auth";
+import { withAdminAuth } from "@/lib/admin-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import {
     MAX_NAME_LENGTH,
@@ -14,6 +14,7 @@ import {
     MAX_TAG_ITEM_LENGTH,
     MAX_TAG_ARRAY_LENGTH,
     AFFILIATE_PLATFORM_KEYS,
+    validateImageUrl,
 } from "@/types/product";
 
 // GET /api/admin/products - List products with pagination
@@ -61,7 +62,7 @@ export const POST = withAdminAuth(async (request, { admin }) => {
 
     try {
         const body = await request.json();
-        const clientInfo = getClientInfo(request);
+        const clientInfo = { ip: getClientIP(request), userAgent: request.headers.get("user-agent") || "unknown" };
 
         // Validate required string fields
         if (!body.name || typeof body.name !== "string" || body.name.trim().length === 0 || body.name.length > MAX_NAME_LENGTH) {
@@ -73,22 +74,8 @@ export const POST = withAdminAuth(async (request, { admin }) => {
         if (!body.image || typeof body.image !== "string" || body.image.length > MAX_IMAGE_URL_LENGTH) {
             return NextResponse.json({ error: `Invalid image URL (required, max ${MAX_IMAGE_URL_LENGTH} chars)` }, { status: 400 });
         }
-        // Validate image URL format: allow absolute URLs (http/https) and same-origin relative paths (/uploads/...)
-        const isAbsoluteUrl = /^https?:\/\//.test(body.image);
-        const isRelativePath = body.image.startsWith("/");
-        if (!isAbsoluteUrl && !isRelativePath) {
-            return NextResponse.json({ error: "Invalid image URL format (must be absolute URL or relative path starting with /)" }, { status: 400 });
-        }
-        if (isAbsoluteUrl) {
-            try {
-                const imageUrl = new URL(body.image);
-                if (!['http:', 'https:'].includes(imageUrl.protocol)) {
-                    return NextResponse.json({ error: "Invalid image URL scheme (must be http or https)" }, { status: 400 });
-                }
-            } catch {
-                return NextResponse.json({ error: "Invalid image URL format" }, { status: 400 });
-            }
-        }
+        const imageError = validateImageUrl(body.image);
+        if (imageError) return NextResponse.json({ error: imageError }, { status: 400 });
 
         if (body.price === undefined || body.price === null || typeof body.price !== "string" || body.price.trim().length === 0 || body.price.length > MAX_PRICE_LENGTH) {
             return NextResponse.json({ error: `Invalid price (required, max ${MAX_PRICE_LENGTH} chars)` }, { status: 400 });

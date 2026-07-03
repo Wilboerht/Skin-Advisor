@@ -200,3 +200,21 @@ export function parseAffiliateLinks(value: unknown): Record<string, string> | nu
     }
     return null;
 }
+
+/** 验证图片 URL 格式 (支持 http/https 绝对地址或 / 开头的相对路径) */
+export function validateImageUrl(url: string): string | null {
+    if (!url || typeof url !== "string") return "Invalid image URL";
+    if (url.length > MAX_IMAGE_URL_LENGTH) return `Image URL too long (max ${MAX_IMAGE_URL_LENGTH} chars)`;
+    const isAbsolute = /^https?:\/\//.test(url);
+    const isRelative = url.startsWith("/");
+    if (!isAbsolute && !isRelative) return "Invalid image URL format (must be absolute URL or relative path starting with /)";
+    if (isAbsolute) {
+        try {
+            const parsed = new URL(url);
+            if (!['http:', 'https:'].includes(parsed.protocol)) return "Invalid image URL scheme (must be http or https)";
+        } catch {
+            return "Invalid image URL format";
+        }
+    }
+    return null; // null = valid
+}

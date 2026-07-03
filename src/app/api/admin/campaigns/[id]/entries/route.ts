@@ -1,12 +1,10 @@
 import prisma from "@/lib/prisma"
-import { verifyAdminSession, logAdminAction, getClientInfo } from "@/lib/admin-auth"
+import { withAdminAuth, logAdminAction, getClientInfo } from "@/lib/admin-auth"
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 
 // GET /api/admin/campaigns/[id]/entries - 获取活动参与列表
-export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const admin = await verifyAdminSession()
-  if (!admin) return NextResponse.json({ error: "未授权" }, { status: 401 })
+export const GET = withAdminAuth(async (req, { params }) => {
 
   const { id } = await params
   try {
@@ -28,7 +26,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     console.error("[Admin Entries] Failed:", error)
     return NextResponse.json({ error: "获取失败" }, { status: 500 })
   }
-}
+})
 
 const entryPatchSchema = z.object({
   entryId: z.string().min(1),
@@ -38,9 +36,7 @@ const entryPatchSchema = z.object({
 })
 
 // PATCH /api/admin/campaigns/[id]/entries - 批量审核/设置中奖
-export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const admin = await verifyAdminSession()
-  if (!admin) return NextResponse.json({ error: "未授权" }, { status: 401 })
+export const PATCH = withAdminAuth(async (req, { admin, params }) => {
 
   const { id: campaignId } = await params
   try {
@@ -127,4 +123,4 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     console.error("[Admin Entries] Update failed:", error)
     return NextResponse.json({ error: "更新失败" }, { status: 500 })
   }
-}
+})

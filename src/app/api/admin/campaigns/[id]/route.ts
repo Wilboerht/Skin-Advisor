@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma"
-import { verifyAdminSession, logAdminAction, getClientInfo } from "@/lib/admin-auth"
+import { withAdminAuth, logAdminAction, getClientInfo } from "@/lib/admin-auth"
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 
@@ -25,9 +25,7 @@ const updateSchema = z.object({
 })
 
 // PATCH /api/admin/campaigns/[id] - 更新活动
-export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const admin = await verifyAdminSession()
-  if (!admin) return NextResponse.json({ error: "未授权" }, { status: 401 })
+export const PATCH = withAdminAuth(async (req, { admin, params }) => {
 
   const { id } = await params
   try {
@@ -68,12 +66,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     console.error("[Admin Campaigns] Update failed:", error)
     return NextResponse.json({ error: "更新失败" }, { status: 500 })
   }
-}
+})
 
 // DELETE /api/admin/campaigns/[id] - 删除活动
-export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const admin = await verifyAdminSession()
-  if (!admin) return NextResponse.json({ error: "未授权" }, { status: 401 })
+export const DELETE = withAdminAuth(async (req, { admin, params }) => {
 
   const { id } = await params
   try {
@@ -94,4 +90,4 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     console.error("[Admin Campaigns] Delete failed:", error)
     return NextResponse.json({ error: "删除失败" }, { status: 500 })
   }
-}
+})

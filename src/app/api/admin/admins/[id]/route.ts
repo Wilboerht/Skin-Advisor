@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { requireRole, logAdminAction, getClientInfo } from "@/lib/admin-auth";
+import { requireRole, logAdminAction, getClientInfo, VALID_ADMIN_ROLES } from "@/lib/admin-auth";
 import bcrypt from "bcryptjs";
-
-const VALID_ROLES = ["super_admin", "admin"];
 
 // PATCH /api/admin/admins/[id] - Update admin info
 export const PATCH = requireRole("super_admin")(async (request, { admin, params }) => {
@@ -21,7 +19,7 @@ export const PATCH = requireRole("super_admin")(async (request, { admin, params 
         }
 
         // Validate role
-        if (role !== undefined && !VALID_ROLES.includes(role)) {
+        if (role !== undefined && !VALID_ADMIN_ROLES.includes(role)) {
             return NextResponse.json(
                 { success: false, error: "无效的角色" },
                 { status: 400 }

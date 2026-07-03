@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { containsInsensitive } from "@/lib/prisma-search";
-import { requireRole, logAdminAction, getClientInfo } from "@/lib/admin-auth";
+import { requireRole, logAdminAction, getClientInfo, VALID_ADMIN_ROLES } from "@/lib/admin-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import bcrypt from "bcryptjs";
-
-const VALID_ROLES = ["super_admin", "admin"];
 
 // GET /api/admin/admins - List all admins
 export const GET = requireRole("super_admin")(async (request) => {
@@ -98,7 +96,7 @@ export const POST = requireRole("super_admin")(async (request, { admin }) => {
             );
         }
 
-        if (!role || !VALID_ROLES.includes(role)) {
+        if (!role || !VALID_ADMIN_ROLES.includes(role)) {
             return NextResponse.json(
                 { success: false, error: "无效的角色" },
                 { status: 400 }

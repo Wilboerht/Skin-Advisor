@@ -1,6 +1,7 @@
 
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
+import { cache } from "react";
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { getClientIP } from "@/lib/ratelimit";
@@ -13,10 +14,11 @@ interface AdminSession {
 }
 
 /**
- * Verify admin session from cookies
- * Returns admin info if valid, null otherwise
+ * Verify admin session from cookies (per-request cached via React.cache)
+ * Returns admin info if valid, null otherwise.
+ * Layout and pages can both call this without redundant DB queries.
  */
-export async function verifyAdminSession(): Promise<AdminSession | null> {
+export const verifyAdminSession = cache(async (): Promise<AdminSession | null> => {
     try {
         const cookieStore = await cookies();
         const sessionCookie = cookieStore.get(ADMIN_SESSION_COOKIE_NAME);
@@ -58,7 +60,7 @@ export async function verifyAdminSession(): Promise<AdminSession | null> {
         console.error("Session verification error:", error);
         return null;
     }
-}
+});
 
 /**
  * Extract client info from request
@@ -101,25 +103,17 @@ export async function logAdminAction(params: {
     }
 }
 
+export const VALID_ADMIN_ROLES = ["super_admin", "admin"];
+
 /**
- * Higher-order function to wrap API route handlers with admin auth
+ * Higher-order function to wrap API route handlers with admin auth.
+ * Delegates to requireRole() with all valid roles (effectively role-agnostic).
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function withAdminAuth<T = any>(
     handler: (request: NextRequest, context: T & { admin: AdminSession }) => Promise<NextResponse>
 ): (request: NextRequest, context: T) => Promise<NextResponse> {
-    return async (request: NextRequest, context: T) => {
-        const admin = await verifyAdminSession();
-
-        if (!admin) {
-            return NextResponse.json(
-                { success: false, error: "Unauthorized" },
-                { status: 401 }
-            );
-        }
-
-        return handler(request, { ...context, admin });
-    };
+    return requireRole(...VALID_ADMIN_ROLES)(handler);
 }
 
 /**
@@ -152,16 +146,6 @@ export function requireRole(...allowedRoles: string[]) {
             return handler(request, { ...context, admin });
         };
     };
-}
-
-/**
- * Create unauthorized response
- */
-export function unauthorizedResponse() {
-    return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
-    );
 }
 
 // Re-export shared crypto functions for consumers that need them directly
