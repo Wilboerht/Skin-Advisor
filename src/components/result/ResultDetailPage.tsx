@@ -126,11 +126,11 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
 
           {data.m7.ingredientTable.length > 0 && (
             <div className="overflow-x-auto mt-8 md:mt-12">
-              <table className="w-full text-sm border-collapse">
+              <table className="w-full text-xs md:text-sm border-collapse">
                 <thead>
                   <tr className="border-b border-[#D9D0C3]">
                     {ingredientHeaders.map((h) => (
-                      <th key={h} className="text-left py-3 px-4 font-semibold text-[#1B3A5C] uppercase tracking-wider text-sm">
+                      <th key={h} className="text-left py-2 px-2 md:py-3 md:px-4 font-semibold text-[#1B3A5C] uppercase tracking-wider text-[11px] md:text-sm">
                         {h}
                       </th>
                     ))}
@@ -140,7 +140,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
                   {data.m7.ingredientTable.map((row, i) => (
                     <tr key={i} className="border-b border-[#E8E2D9] last:border-0 hover:bg-white/60">
                       {ingredientHeaders.map((h) => (
-                        <td key={h} className="py-4 px-4 text-[#4A4A4A] font-light">
+                        <td key={h} className="py-2 px-2 md:py-4 md:px-4 text-[#4A4A4A] font-light">
                           {h === "推荐产品" ? (
                             <a
                               href="https://nihplod.cn/products"
