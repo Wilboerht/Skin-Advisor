@@ -41,7 +41,7 @@ export default function ResultIndexPage() {
       <WebsiteNavbar />
 
       {/* Hero */}
-      <section className="relative pt-20 md:pt-40 pb-14 md:pb-32 px-6 md:px-12 lg:px-20 overflow-hidden">
+      <section className="relative pt-24 md:pt-40 pb-14 md:pb-32 px-6 md:px-12 lg:px-20 overflow-hidden">
 
         <div className="relative z-10 max-w-5xl mx-auto text-center">
           <h1
@@ -171,7 +171,9 @@ export default function ResultIndexPage() {
         </div>
       </footer>
       {/* 右下角悬浮活动卡片 */}
-      <GiftFloatCard />
+      <div className="hidden md:block">
+        <GiftFloatCard />
+      </div>
     </main>
   );
 }
