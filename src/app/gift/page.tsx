@@ -257,7 +257,7 @@ export default function GiftPage() {
                 ].map((item, i) => (
                   <div
                     key={i}
-                    className="flex items-start gap-4 p-5 rounded-2xl bg-white shadow-sm border border-[#E8E2D9]"
+                    className="flex items-start gap-4"
                   >
                     <span className="shrink-0 w-8 h-8 rounded-full bg-[#1B3A5C] flex items-center justify-center text-sm font-medium text-white">
                       {parseInt(item.step)}
