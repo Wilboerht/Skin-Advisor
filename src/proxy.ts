@@ -11,6 +11,9 @@ import { verifySessionSignature, ADMIN_SESSION_COOKIE_NAME } from "@/lib/session
 // 敏感路径前缀列表（需要额外安全检查）
 const SENSITIVE_PATHS = ["/api/admin", "/api/cron"];
 
+// AI 端点列表（高价值目标，需严格防护）
+const AI_ENDPOINTS = ["/api/advisor/analyze", "/api/advisor/face-analyze"];
+
 // 管理员区域公开路径（无需 session 检查）
 const ADMIN_PUBLIC_PATHS = [
     "/admin/login",
@@ -62,6 +65,42 @@ export async function proxy(request: NextRequest) {
             }
             // Admin page — redirect to login
             return NextResponse.redirect(new URL("/admin/login", request.url));
+        }
+    }
+
+    // ==================== AI 端点额外防护 ====================
+    const isAiEndpoint = AI_ENDPOINTS.some((p) => pathname === p);
+    if (isAiEndpoint) {
+        // 1. 仅允许 POST 方法
+        if (request.method !== "POST") {
+            return NextResponse.json(
+                { error: "Method Not Allowed" },
+                { status: 405 }
+            );
+        }
+
+        // 2. 检查 Origin / Referer（防止跨站请求）
+        const reqOrigin = request.headers.get("origin");
+        const referer = request.headers.get("referer");
+        const isSameOrigin =
+            (reqOrigin && ALLOWED_ORIGINS.some((o) => o && reqOrigin.startsWith(o))) ||
+            (referer && ALLOWED_ORIGINS.some((o) => o && referer.startsWith(o)));
+
+        // 如果配置了 ALLOWED_ORIGINS 但请求不带 Origin/Referer 或不匹配，拒绝
+        if (ALLOWED_ORIGINS.length > 0 && ALLOWED_ORIGINS[0] && !isSameOrigin) {
+            return NextResponse.json(
+                { error: "Forbidden: cross-origin requests not allowed" },
+                { status: 403 }
+            );
+        }
+
+        // 3. 要求 Content-Type 为 application/json
+        const contentType = request.headers.get("content-type") || "";
+        if (!contentType.includes("application/json")) {
+            return NextResponse.json(
+                { error: "Unsupported Media Type" },
+                { status: 415 }
+            );
         }
     }
 
