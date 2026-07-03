@@ -44,7 +44,7 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
             <m.h2
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mb-8 sm:mb-10 text-center font-serif text-2xl md:text-3xl text-[#1A1A1A]"
+                className="mb-6 sm:mb-10 text-center font-serif text-2xl md:text-3xl text-[#1A1A1A]"
             >
                 开始之前，请选择您的性别
             </m.h2>
