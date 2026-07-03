@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState, useEffect, useCallback, useMemo } from "react"
 import Image from "next/image"
@@ -259,7 +259,7 @@ export default function GiftPage() {
                     key={i}
                     className="flex items-start gap-4"
                   >
-                    <span className="shrink-0 w-8 h-8 rounded-full bg-[#1B3A5C] flex items-center justify-center text-sm font-medium text-white">
+                    <span className="shrink-0 w-8 h-8 rounded-full bg-transparent border border-[#1B3A5C] flex items-center justify-center text-sm font-medium text-[#1B3A5C]">
                       {parseInt(item.step)}
                     </span>
                     <div className="min-w-0">
@@ -381,7 +381,7 @@ export default function GiftPage() {
                     key={i}
                     className="flex items-start gap-4 p-5 rounded-2xl bg-white shadow-sm border border-[#E8E2D9]"
                   >
-                    <span className="shrink-0 w-8 h-8 rounded-full bg-[#1B3A5C] flex items-center justify-center text-sm font-medium text-white">
+                    <span className="shrink-0 w-8 h-8 rounded-full bg-transparent border border-[#1B3A5C] flex items-center justify-center text-sm font-medium text-[#1B3A5C]">
                       {parseInt(item.step)}
                     </span>
                     <div className="min-w-0">
