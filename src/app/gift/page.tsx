@@ -312,33 +312,35 @@ export default function GiftPage() {
       {pageState === "show_campaign" && campaign && (
         <section className="relative z-10 pb-18 px-6 md:px-12 lg:px-20">
           <div className="max-w-2xl mx-auto">
-            <div className="text-center mb-8 md:mb-10">
-              <span className="inline-block px-4 py-1.5 text-[11px] uppercase tracking-[0.2em] text-[#1B3A5C] bg-[#1B3A5C]/[0.04] rounded-full border border-[#1B3A5C]/10">
-                本期好礼
-              </span>
-            </div>
-            <div className="grid grid-cols-3 gap-4 md:gap-6 place-items-start text-center">
-              {Array.isArray(campaign.prizes) && campaign.prizes.map((prize, i) => (
-                <div key={i} className="flex flex-col items-center w-full">
-                  <div className="relative w-full aspect-square max-w-[80px] p-3 flex items-center justify-center mb-3">
-                    {prize.image ? (
-                      <Image
-                        src={prize.image}
-                        alt={prize.name}
-                        fill
-                        className="object-contain p-2"
-                      />
-                    ) : (
-                      <Gift className="w-8 h-8 text-[#8B7355]/30" />
+            <div className="rounded-2xl border border-[#E8E2D9] p-6 md:p-8 relative">
+              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
+                <span className="inline-block px-4 py-1.5 text-[11px] uppercase tracking-[0.2em] text-[#1B3A5C] bg-white rounded-full border border-[#E8E2D9] whitespace-nowrap">
+                  本期好礼
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-4 md:gap-6 place-items-start text-center mt-4">
+                {Array.isArray(campaign.prizes) && campaign.prizes.map((prize, i) => (
+                  <div key={i} className="flex flex-col items-center w-full">
+                    <div className="relative w-full aspect-square max-w-[80px] p-3 flex items-center justify-center mb-3">
+                      {prize.image ? (
+                        <Image
+                          src={prize.image}
+                          alt={prize.name}
+                          fill
+                          className="object-contain p-2"
+                        />
+                      ) : (
+                        <Gift className="w-8 h-8 text-[#8B7355]/30" />
+                      )}
+                    </div>
+                    <h3 className="text-sm font-medium text-[#1A1A1A] mb-1 leading-tight">{prize.name}</h3>
+                    {prize.description && (
+                      <p className="text-xs text-[#5E5E5E] leading-relaxed mb-1">{prize.description}</p>
                     )}
+                    <p className="text-xs text-[#8B7355]">共 {prize.quantity} 份</p>
                   </div>
-                  <h3 className="text-sm font-medium text-[#1A1A1A] mb-1 leading-tight">{prize.name}</h3>
-                  {prize.description && (
-                    <p className="text-xs text-[#5E5E5E] leading-relaxed mb-1">{prize.description}</p>
-                  )}
-                  <p className="text-xs text-[#8B7355]">共 {prize.quantity} 份</p>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </section>
