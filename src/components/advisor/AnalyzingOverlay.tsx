@@ -147,9 +147,8 @@ export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitS
                     </m.button>
                 )}
             </AnimatePresence>
-            {/* 1. Background Ambience - Soft, Organic, High-end Spa feel */}
+            {/* 1. Background Ambience */}
             <div className="absolute inset-0 pointer-events-none">
-                {/* Warm light leak from top-left */}
                 <m.div
                     animate={{ opacity: [0.4, 0.6, 0.4], scale: [1, 1.1, 1] }}
                     transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
@@ -162,10 +161,6 @@ export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitS
                     className="absolute -bottom-[10%] -right-[10%] w-[60vw] h-[60vw] bg-[#D4B78F] rounded-full blur-[100px] opacity-30"
                 />
 
-                {/* Grain Texture for premium paper feel */}
-                <div className="absolute inset-0 opacity-[0.4] mix-blend-multiply"
-                    style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E")` }}
-                />
             </div>
 
             {/* 2. Main Visual Content */}
@@ -255,7 +250,7 @@ export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitS
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -10 }}
-                                className="text-[15px] text-[#5A5A5A] font-medium tracking-wider text-center"
+                                className="text-[15px] text-[#5E5E5E] font-medium tracking-wider text-center"
                             >
                                 {statusText}
                             </m.span>
@@ -289,7 +284,7 @@ export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitS
                             <m.span
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
-                                className="text-[10px] text-[#D4B78F] tracking-wider font-medium"
+                                className="text-[10px] text-[#1B3A5C]/60 tracking-wider font-medium"
                             >
                                 当前使用人数较多{queueWaitSeconds ? `，预计等待约 ${queueWaitSeconds} 秒` : ""}
                             </m.span>
@@ -298,7 +293,7 @@ export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitS
                             <m.span
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
-                                className="text-[10px] text-[#9A9A9A]/60 tracking-wider"
+                                className="text-[10px] text-[#5E5E5E]/60 tracking-wider"
                             >
                                 已等待 {stuckTime} 秒，AI 专家正在工作中
                             </m.span>
