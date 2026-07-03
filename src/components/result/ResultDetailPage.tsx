@@ -166,7 +166,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
             </div>
 
             {/* 手机端：卡片列表 */}
-            <div className="md:hidden mt-6 space-y-3">
+            <div className="md:hidden mt-6 space-y-4">
               {data.m7.ingredientTable.map((row, i) => (
                 <div key={i} className="bg-white rounded-xl p-4 border border-[#E8E2D9]">
                   <span className="inline-block px-3 py-0.5 mb-2 text-[10px] tracking-[0.1em] text-[#1B3A5C] bg-[#1B3A5C]/[0.06] rounded-full">
