@@ -166,11 +166,11 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
             </div>
 
             {/* 手机端：卡片列表 */}
-            <div className="md:hidden mt-8 space-y-4">
+            <div className="md:hidden mt-8 space-y-6">
               {data.m7.ingredientTable.map((row, i) => (
                 <div key={i} className="border-l-2 border-[#1B3A5C] pl-3">
                   <div className="flex items-center gap-2 mb-1.5">
-                    <span className="inline-block px-2 py-0.5 text-[10px] tracking-[0.1em] text-[#1B3A5C] bg-[#1B3A5C]/[0.06] rounded-full">
+                    <span className="inline-block px-2 py-0.5 text-[11px] tracking-[0.1em] text-[#1B3A5C] bg-[#1B3A5C]/[0.06] rounded-full">
                       {row["护肤层级"]}
                     </span>
                   </div>
@@ -184,7 +184,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
                       {row["推荐产品"]}
                     </a>
                   </div>
-                  <div className="flex items-center gap-2 text-[11px] text-[#8A8A8A]">
+                  <div className="flex items-center gap-2 text-xs text-[#8A8A8A]">
                     <span>{row["适用场景"]}</span>
                     <span className="text-[#D9D0C3]">·</span>
                     <span>{row["使用频率"]}</span>
