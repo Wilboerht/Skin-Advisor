@@ -49,7 +49,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       >
         <div className="relative z-10 max-w-5xl mx-auto w-full pt-24 md:pt-28 pb-10 md:pb-14 grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 lg:gap-12 items-center">
           <div className="max-w-2xl">
-            <h1 className="text-2xl md:text-6xl lg:text-7xl font-light tracking-tight leading-[0.95] mb-4 md:mb-5">
+            <h1 className="text-2xl md:text-6xl lg:text-7xl font-extralight tracking-tight leading-[0.95] mb-4 md:mb-5">
               {data.typeName}
             </h1>
             <p className="text-sm md:text-base opacity-80 font-light leading-[1.85] max-w-xl">
