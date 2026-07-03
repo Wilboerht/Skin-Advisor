@@ -19,6 +19,7 @@ import { aiLogger } from "./logger";
 interface QueueItem<T> {
     id: string;
     type: string;
+    userId?: string;
     execute: () => Promise<T>;
     resolve: (value: T) => void;
     reject: (error: Error) => void;
@@ -69,6 +70,12 @@ class AIRequestQueue {
     /** 最大并发数 */
     private maxConcurrent: number;
 
+    /** 单用户最大并发数 */
+    private maxConcurrentPerUser: number;
+
+    /** 每个用户正在执行的请求数 */
+    private userRunningCount = new Map<string, number>();
+
     /** 平均执行时间（毫秒），用于估算等待时间 */
     private avgExecutionTimeMs = 8000; // 默认 8 秒
 
@@ -84,12 +91,16 @@ class AIRequestQueue {
     /** 追踪已获取但未释放的槽位数，防止 double release */
     private acquireCount = 0;
 
-    constructor(maxConcurrent = 10) {
+    constructor(maxConcurrent = 10, maxConcurrentPerUser = 1) {
         if (typeof maxConcurrent !== 'number' || isNaN(maxConcurrent) || maxConcurrent < 1) {
             throw new Error(`[AIQueue] Invalid maxConcurrent: ${maxConcurrent}. Must be a positive integer.`);
         }
         this.maxConcurrent = Math.floor(maxConcurrent);
-        aiLogger.info("AI Queue initialized", { maxConcurrent: this.maxConcurrent });
+        this.maxConcurrentPerUser = Math.floor(maxConcurrentPerUser || 1);
+        aiLogger.info("AI Queue initialized", {
+            maxConcurrent: this.maxConcurrent,
+            maxConcurrentPerUser: this.maxConcurrentPerUser,
+        });
     }
 
     /**
@@ -127,7 +138,7 @@ class AIRequestQueue {
     /**
      * 将请求加入队列
      */
-    enqueue<T>(type: string, execute: () => Promise<T>): EnqueueResult<T> {
+    enqueue<T>(type: string, execute: () => Promise<T>, userId?: string): EnqueueResult<T> {
         const id = this.generateId();
 
         // 计算当前位置（始终按排队长度 + 1，避免有空位时返回 0 导致前端显示混乱）
@@ -137,6 +148,7 @@ class AIRequestQueue {
             const item: QueueItem<T> = {
                 id,
                 type,
+                userId,
                 execute,
                 resolve: resolve as (value: unknown) => void,
                 reject,
@@ -148,6 +160,7 @@ class AIRequestQueue {
             aiLogger.info("Request enqueued", {
                 id,
                 type,
+                userId: userId || "anonymous",
                 position: position || "executing",
                 queueLength: this.queue.length,
                 runningCount: this.runningCount,
@@ -251,23 +264,42 @@ class AIRequestQueue {
      * 处理队列
      */
     private async processQueue() {
-        // 如果已达到并发上限或队列为空，不处理
+        // 如果已达到全局并发上限或队列为空，不处理
         if (this.runningCount >= this.maxConcurrent || this.queue.length === 0) {
             return;
         }
 
-        // 取出队列中的第一个请求
-        const item = this.queue.shift();
+        // 查找满足用户并发限制的下一个请求
+        let itemIdx = -1;
+        for (let i = 0; i < this.queue.length; i++) {
+            const item = this.queue[i];
+            const userRunning = item.userId ? (this.userRunningCount.get(item.userId) || 0) : 0;
+            if (userRunning < this.maxConcurrentPerUser) {
+                itemIdx = i;
+                break;
+            }
+        }
+
+        // 所有排队的用户都已达单用户并发上限
+        if (itemIdx === -1) return;
+
+        // 取出该请求
+        const item = this.queue.splice(itemIdx, 1)[0];
         if (!item) return;
 
         this.runningCount++;
+        if (item.userId) {
+            this.userRunningCount.set(item.userId, (this.userRunningCount.get(item.userId) || 0) + 1);
+        }
         item.startedAt = Date.now();
 
         aiLogger.info("Request started", {
             id: item.id,
             type: item.type,
+            userId: item.userId || "anonymous",
             waitedMs: item.startedAt - item.enqueuedAt,
             runningCount: this.runningCount,
+            userRunningCount: item.userId ? this.userRunningCount.get(item.userId) : undefined,
             queueRemaining: this.queue.length,
         });
 
@@ -308,6 +340,14 @@ class AIRequestQueue {
                 item.reject(error instanceof Error ? error : new Error(String(error)));
             } finally {
                 this.runningCount--;
+                if (item.userId) {
+                    const current = this.userRunningCount.get(item.userId) || 1;
+                    if (current <= 1) {
+                        this.userRunningCount.delete(item.userId);
+                    } else {
+                        this.userRunningCount.set(item.userId, current - 1);
+                    }
+                }
                 // 继续处理队列中的下一个请求
                 this.processQueue();
             }
@@ -356,7 +396,8 @@ class AIRequestQueue {
 
 // 全局单例
 export const aiQueue = new AIRequestQueue(
-    parseInt(process.env.AI_QUEUE_MAX_CONCURRENT || "10", 10)
+    parseInt(process.env.AI_QUEUE_MAX_CONCURRENT || "10", 10),
+    parseInt(process.env.AI_MAX_CONCURRENT_PER_USER || "1", 10)
 );
 
 // 为聊天和视觉分析创建专用队列实例（如果需要隔离）

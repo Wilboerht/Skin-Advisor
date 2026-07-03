@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
 
 import { analyzeImages, type VisionImage } from "@/lib/ai-vision";
 import type { AIProvider } from "@/lib/ai";
@@ -19,6 +20,40 @@ import { aiLogger } from "@/lib/logger";
 import { visionQueue } from "@/lib/ai-queue";
 
 export const maxDuration = 60; // 防止超时
+
+// 脸部分析结果缓存（图片 hash -> 分析结果）
+// 同一用户重复上传相同图片时跳过 AI 调用，节省成本
+const faceAnalysisCache = new Map<string, { result: Record<string, unknown>; at: number; sessionId: string }>();
+const FACE_CACHE_TTL_MS = 10 * 60 * 1000; // 10分钟过期
+const FACE_CACHE_MAX_SIZE = 50; // 最多缓存 50 条
+
+function buildCacheKey(sessionId: string, images: VisionImage[]): string {
+    // 对图片数据取 MD5 摘要（只取前 1KB 作为采样，避免大图哈希开销）
+    const samples = images.map(img => {
+        const data = img.data || "";
+        return `${img.angle}:${crypto.createHash("md5").update(data.slice(0, 1024)).digest("hex")}`;
+    }).join("|");
+    return `face:${sessionId}:${crypto.createHash("md5").update(samples).digest("hex")}`;
+}
+
+function getCachedResult(key: string): Record<string, unknown> | null {
+    const entry = faceAnalysisCache.get(key);
+    if (!entry) return null;
+    if (Date.now() - entry.at > FACE_CACHE_TTL_MS) {
+        faceAnalysisCache.delete(key);
+        return null;
+    }
+    // 清理最老的缓存项
+    if (faceAnalysisCache.size >= FACE_CACHE_MAX_SIZE) {
+        const oldest = [...faceAnalysisCache.entries()].sort((a, b) => a[1].at - b[1].at)[0];
+        if (oldest) faceAnalysisCache.delete(oldest[0]);
+    }
+    return entry.result;
+}
+
+function setCachedResult(key: string, sessionId: string, result: Record<string, unknown>): void {
+    faceAnalysisCache.set(key, { result, at: Date.now(), sessionId });
+}
 
 export async function POST(request: NextRequest) {
     // 创建 AbortController 用于服务端超时和客户端断开取消 AI 请求
@@ -269,6 +304,21 @@ export async function POST(request: NextRequest) {
             acquired = true;
             aiLogger.debug(`[Queue] Lock acquired.`);
 
+            // 3.5 缓存检查：相同用户的相同图片跳过 AI 调用
+            const cacheKey = buildCacheKey(faceSessionId || ip, validImages);
+            const cachedResult = getCachedResult(cacheKey);
+            if (cachedResult) {
+                aiLogger.info(`[FaceAnalyze] Cache hit for session ${faceSessionId || ip}, returning cached result`);
+                return NextResponse.json(cachedResult, {
+                    headers: {
+                        ...rateLimitHeaders,
+                        "X-Cache": "HIT",
+                        "X-Queue-Position": "0",
+                        "X-Queue-Wait-Seconds": "0",
+                    }
+                });
+            }
+
             // 4. 调用 AI 分析 (包含重试机制)
             let analysisResult: Record<string, unknown>;
             try {
@@ -353,9 +403,13 @@ export async function POST(request: NextRequest) {
                 );
             }
 
+            // 缓存有效结果（不含 validation 字段的纯结果）
+            setCachedResult(cacheKey, faceSessionId || ip, analysisResult);
+
             return NextResponse.json(analysisResult, {
                 headers: {
                     ...rateLimitHeaders,
+                    "X-Cache": "MISS",
                     "X-Queue-Position": String(visionQueue.getStats().queueLength),
                     "X-Queue-Wait-Seconds": String(visionQueue.getStats().estimatedWaitSeconds)
                 }

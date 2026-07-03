@@ -105,10 +105,10 @@ function parseBudgetEnv(value: string | undefined): number | null {
 
 function getBudgetConfig() {
     return {
-        dailyTokenBudget: parseBudgetEnv(process.env.AI_DAILY_TOKEN_BUDGET),
-        dailyCostBudget: parseBudgetEnv(process.env.AI_DAILY_COST_BUDGET_CNY),
-        monthlyTokenBudget: parseBudgetEnv(process.env.AI_MONTHLY_TOKEN_BUDGET),
-        monthlyCostBudget: parseBudgetEnv(process.env.AI_MONTHLY_COST_BUDGET_CNY),
+        dailyTokenBudget: parseBudgetEnv(process.env.AI_DAILY_TOKEN_BUDGET) ?? 500000,     // 默认 50万 tokens/天
+        dailyCostBudget: parseBudgetEnv(process.env.AI_DAILY_COST_BUDGET_CNY) ?? 50,        // 默认 ¥50/天
+        monthlyTokenBudget: parseBudgetEnv(process.env.AI_MONTHLY_TOKEN_BUDGET) ?? 10000000, // 默认 1000万 tokens/月
+        monthlyCostBudget: parseBudgetEnv(process.env.AI_MONTHLY_COST_BUDGET_CNY) ?? 500,   // 默认 ¥500/月
     };
 }
 

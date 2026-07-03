@@ -62,7 +62,7 @@ const DEFAULT_AI_SETTINGS: AISettings = {
     provider: envProvider as AIProvider,
     visionProvider: envVisionProvider as AIProvider,
     model: process.env.AI_MODEL || (envProvider === "qwen" ? "qwen-plus" : "deepseek-chat"),
-    visionModel: process.env.AI_VISION_MODEL || (envVisionProvider === "qwen" ? "qwen-vl-max" : "deepseek-vl"),
+    visionModel: process.env.AI_VISION_MODEL || (envVisionProvider === "qwen" ? "qwen-vl-plus" : "deepseek-vl"),
     textSystemPrompt: TEXT_ANALYSIS_SYSTEM_PROMPT,
     visionSystemPrompt: "",
     maxTokens: 2000,
@@ -477,8 +477,23 @@ async function callProviderInternal(
         return completion.choices[0]?.message?.content || "";
     } catch (err) {
         const e = err as Error & { name?: string };
+        const isTimeout = e.name === 'AbortError' && !signal?.aborted;
+
+        // 记录失败/超时调用（超时时服务商可能已处理并计费）
+        await recordAIUsage({
+            provider,
+            model,
+            requestType: "text",
+            promptTokens: 0,
+            completionTokens: 0,
+            totalTokens: 0,
+            durationMs: Date.now() - startedAt,
+            success: false,
+            errorMessage: isTimeout ? "timeout" : e.message?.slice(0, 200),
+        });
+
         // 客户端主动取消或内部超时不应计入熔断器失败统计
-        if (e.name !== 'AbortError' && !signal?.aborted) {
+        if (!isTimeout && !signal?.aborted) {
             circuitBreaker.recordFailure(serviceKey);
         }
         throw err;

@@ -250,7 +250,22 @@ async function callOpenAICompatibleVision(
     } catch (err) {
         // 记录失败到熔断器（AbortError 除外，那是客户端主动取消）
         const e = err as Error & { name?: string };
-        if (e.name !== 'AbortError' && !signal?.aborted) {
+        const isTimeout = e.name === 'AbortError' && !signal?.aborted;
+
+        // 记录失败/超时调用
+        await recordAIUsage({
+            provider,
+            model,
+            requestType: "vision",
+            promptTokens: 0,
+            completionTokens: 0,
+            totalTokens: 0,
+            durationMs: Date.now() - startedAt,
+            success: false,
+            errorMessage: isTimeout ? "timeout" : e.message?.slice(0, 200),
+        });
+
+        if (!isTimeout && !signal?.aborted) {
             circuitBreaker.recordFailure(serviceKey);
         }
         throw err;
@@ -289,10 +304,11 @@ async function callOpenAICompatibleVision(
 
 // 辅助：获取默认视觉模型
 function getDefaultVisionModel(provider: AIProvider): string {
+    if (process.env.AI_VISION_MODEL) return process.env.AI_VISION_MODEL;
     switch (provider) {
-        case "qwen": return "qwen-vl-max";
+        case "qwen": return "qwen-vl-plus";
         case "deepseek": return "deepseek-vl";
-        default: return "qwen-vl-max";
+        default: return "qwen-vl-plus";
     }
 }
 
