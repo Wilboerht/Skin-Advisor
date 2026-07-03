@@ -166,7 +166,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
             </div>
 
             {/* 手机端：卡片列表 */}
-            <div className="md:hidden mt-6 space-y-4">
+            <div className="md:hidden mt-8 space-y-4">
               {data.m7.ingredientTable.map((row, i) => (
                 <div key={i} className="border-l-2 border-[#1B3A5C] pl-3">
                   <div className="flex items-center gap-2 mb-1.5">
