@@ -177,7 +177,7 @@ export default function GiftPage() {
 
       <div className="flex-1">
         {/* Hero */}
-      <section className="relative pt-24 md:pt-40 pb-16 md:pb-32 px-6 md:px-12 lg:px-20">
+      <section className="relative pt-24 md:pt-40 pb-18 px-6 md:px-12 lg:px-20">
         <div className="relative z-10 max-w-5xl mx-auto text-center">
           <h1 className="text-2xl md:text-3xl font-serif text-[#1A1A1A] mb-5 opacity-0 animate-fade-in-up" style={{ animationFillMode: "forwards" }}>
             肌智派送好礼
@@ -229,14 +229,19 @@ export default function GiftPage() {
 
       {/* 无活动 - 玩法预告 */}
       {pageState === "no_campaign" && (
-        <section className="relative z-10 pb-20 md:pb-36 px-6 md:px-12 lg:px-20">
+        <section className="relative z-10 pb-18 px-6 md:px-12 lg:px-20">
           <div className="max-w-4xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center max-w-4xl mx-auto mb-8 md:mb-10">
+            <div className="grid grid-cols-1 md:grid-cols-[7fr_3fr] gap-8 md:gap-12 items-center max-w-4xl mx-auto mb-8 md:mb-10">
               {/* 左侧引导文案 */}
-              <div>
-                <p className="text-[15px] md:text-lg text-[#5E5E5E] font-light leading-relaxed">
-                  简单三步，即可参与活动赢取 NIHPLOD 限定礼遇。
-                </p>
+              <div className="flex justify-center md:justify-start">
+                <Image
+                  src="/images/gift-badge.png"
+                  alt="肌智派送好礼"
+                  width={200}
+                  height={150}
+                  className="w-64 h-auto object-contain"
+                  unoptimized
+                />
               </div>
 
               {/* 右侧步骤 */}
