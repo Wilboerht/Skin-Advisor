@@ -114,12 +114,14 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
           )}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             {data.m7.suggestions.map((sug, i) => (
-              <div key={i} className="flex flex-col md:bg-white md:rounded-2xl md:shadow-sm md:border md:border-[#E8E2D9] p-0 md:p-6">
-                <span className="flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-full bg-[#1B3A5C] text-white text-xs md:text-sm font-medium mb-4">
+              <div key={i} className="flex flex-row md:flex-col items-start md:bg-white md:rounded-2xl md:shadow-sm md:border md:border-[#E8E2D9] p-0 md:p-6 gap-3 md:gap-0">
+                <span className="flex items-center justify-center w-5 h-5 md:w-8 md:h-8 rounded-full bg-transparent md:bg-[#1B3A5C] border border-[#1B3A5C] md:border-0 text-[#1B3A5C] md:text-white text-[10px] md:text-sm font-medium shrink-0 md:mb-4">
                   {i + 1}
                 </span>
-                <h3 className="text-base font-medium text-[#1A1A1A] mb-3">{sug.title}</h3>
-                <p className="text-[#5E5E5E] leading-[1.85] text-xs md:text-sm flex-1">{sug.content}</p>
+                <div className="flex-1">
+                  <h3 className="text-base font-medium text-[#1A1A1A] mb-1 md:mb-3">{sug.title}</h3>
+                  <p className="text-[#5E5E5E] leading-[1.85] text-xs md:text-sm">{sug.content}</p>
+                </div>
               </div>
             ))}
           </div>
