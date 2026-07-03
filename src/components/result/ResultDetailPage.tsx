@@ -235,7 +235,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       {/* CTA */}
       <section className="relative py-14 md:py-18 px-6 md:px-12 lg:px-20 bg-white">
         <div className="relative z-10 max-w-3xl mx-auto text-center">
-          <h2 className="text-2xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-6 md:mb-8">
+          <h2 className="text-xl md:text-2xl font-serif text-[#1A1A1A] tracking-wide mb-6">
             每一种肌肤，都值得被认真对待
           </h2>
           <Link
@@ -247,7 +247,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
           </Link>
           <Link
             href="/gift"
-            className="flex items-center justify-center gap-2 mt-5 text-[13px] sm:text-[14px] text-[#A0784C] tracking-[0.1em] font-medium hover:text-[#8B6840] transition-colors duration-300"
+            className="flex items-center justify-center gap-2 mt-4 text-[13px] sm:text-[14px] text-[#A0784C] tracking-[0.1em] font-medium hover:text-[#8B6840] transition-colors duration-300"
           >
             <Image
               src="/images/watermark.png"
