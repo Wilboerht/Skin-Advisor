@@ -69,7 +69,7 @@ export default function GiftPage() {
         {/* Hero */}
       <section className="relative pt-24 md:pt-40 pb-18 px-6 md:px-12 lg:px-20">
         <div className="relative z-10 max-w-5xl mx-auto text-center">
-          <h1 className="text-2xl md:text-3xl font-serif text-[#1A1A1A] mb-5 opacity-0 animate-fade-in-up" style={{ animationFillMode: "forwards" }}>
+          <h1 className="text-xl md:text-3xl font-serif text-[#1A1A1A] mb-5 opacity-0 animate-fade-in-up" style={{ animationFillMode: "forwards" }}>
             肌智派送好礼
           </h1>
           <p className="text-[15px] md:text-base text-[#5E5E5E] font-light max-w-xl mx-auto leading-relaxed mb-5 opacity-0 animate-fade-in-up" style={{ animationDelay: "0.1s", animationFillMode: "forwards" }}>
@@ -159,14 +159,14 @@ export default function GiftPage() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 href="/"
-                className="group relative inline-flex items-center justify-center gap-3 px-10 py-3.5 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#1B3A5C] hover:text-white"
+                className="w-full sm:w-auto group relative inline-flex items-center justify-center gap-3 px-10 py-3.5 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#1B3A5C] hover:text-white"
               >
                 <span>开始测肤</span>
                 <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
               </Link>
               <Link
                 href="/skin-types"
-                className="group relative inline-flex items-center justify-center gap-3 px-10 py-3.5 border border-[#8B7355] text-[#8B7355] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#8B7355] hover:text-white"
+                className="w-full sm:w-auto group relative inline-flex items-center justify-center gap-3 px-10 py-3.5 border border-[#8B7355] text-[#8B7355] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#8B7355] hover:text-white"
               >
                 <span>了解肌肤类型</span>
                 <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
@@ -188,7 +188,7 @@ export default function GiftPage() {
               <p className="text-sm text-[#5E5E5E]/80 mb-6">请检查网络连接后刷新页面，或稍后再试。</p>
               <button
                 onClick={() => fetchCampaign()}
-                className="group relative inline-flex items-center justify-center gap-3 px-10 py-3.5 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#1B3A5C] hover:text-white"
+                className="w-full sm:w-auto group relative inline-flex items-center justify-center gap-3 px-10 py-3.5 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#1B3A5C] hover:text-white"
               >
                 <Loader2 className="w-4 h-4" />
                 <span>重新加载</span>
@@ -208,9 +208,9 @@ export default function GiftPage() {
                   本期好礼
                 </span>
               </div>
-              <div className="grid grid-cols-3 gap-4 md:gap-6 place-items-start text-center mt-4">
+              <div className="flex flex-row md:grid md:grid-cols-3 gap-4 md:gap-6 place-items-start text-center mt-4 overflow-x-auto">
                 {Array.isArray(campaign.prizes) && campaign.prizes.map((prize, i) => (
-                  <div key={i} className="flex flex-col items-center w-full">
+                  <div key={i} className="flex flex-col items-center shrink-0 w-[120px] md:w-full">
                     <div className="relative w-full aspect-square max-w-[80px] p-3 flex items-center justify-center mb-3">
                       {prize.image ? (
                         <Image
@@ -278,14 +278,14 @@ export default function GiftPage() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 href="/"
-                className="group relative inline-flex items-center justify-center gap-3 px-10 py-3.5 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#1B3A5C] hover:text-white"
+                className="w-full sm:w-auto group relative inline-flex items-center justify-center gap-3 px-10 py-3.5 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#1B3A5C] hover:text-white"
               >
                 <span>开始测肤</span>
                 <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
               </Link>
               <Link
                 href="/skin-types"
-                className="group relative inline-flex items-center justify-center gap-3 px-10 py-3.5 border border-[#8B7355] text-[#8B7355] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#8B7355] hover:text-white"
+                className="w-full sm:w-auto group relative inline-flex items-center justify-center gap-3 px-10 py-3.5 border border-[#8B7355] text-[#8B7355] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#8B7355] hover:text-white"
               >
                 <span>了解肌肤类型</span>
                 <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
