@@ -41,24 +41,24 @@ export default function ResultIndexPage() {
       <WebsiteNavbar />
 
       {/* Hero */}
-      <section className="relative pt-24 md:pt-40 pb-16 md:pb-32 px-6 md:px-12 lg:px-20 overflow-hidden">
+      <section className="relative pt-20 md:pt-40 pb-14 md:pb-32 px-6 md:px-12 lg:px-20 overflow-hidden">
 
         <div className="relative z-10 max-w-5xl mx-auto text-center">
           <h1
-            className="text-2xl md:text-3xl font-serif text-[#1A1A1A] mb-5 opacity-0 animate-fade-in-up"
+            className="text-xl md:text-3xl font-serif text-[#1A1A1A] mb-5 opacity-0 animate-fade-in-up"
             style={{ animationFillMode: "forwards" }}
           >
             发现你的肌肤形象类型
           </h1>
           <p
-            className="text-[15px] md:text-base text-[#5E5E5E] font-light max-w-xl mx-auto leading-relaxed mb-[30px] opacity-0 animate-fade-in-up"
+            className="text-[13px] md:text-base text-[#5E5E5E] font-light max-w-xl mx-auto leading-relaxed mb-6 md:mb-[30px] opacity-0 animate-fade-in-up"
             style={{ animationDelay: "0.1s", animationFillMode: "forwards" }}
           >
             每一种肌肤，都有自己的性格。从素颜状态出发，读懂肌肤真正需要什么。
           </p>
           <Link
             href="/"
-            className="group relative inline-flex items-center justify-center gap-3 px-10 py-3.5 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#1B3A5C] hover:text-white opacity-0 animate-fade-in-up"
+            className="w-full sm:w-auto group relative inline-flex items-center justify-center gap-3 px-10 py-3.5 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#1B3A5C] hover:text-white opacity-0 animate-fade-in-up"
             style={{ animationDelay: "0.2s", animationFillMode: "forwards" }}
           >
             <span>前往测肤</span>
@@ -85,23 +85,23 @@ export default function ResultIndexPage() {
               <Link
                 key={type.route}
                 href={`/skin-types/${type.route}`}
-                className="group relative rounded-2xl border border-[rgba(61,68,48,0.08)] bg-[#FAF9F6] p-5 md:p-9 transition-all duration-500 hover:shadow-[0_16px_32px_rgba(61,68,48,0.08)] hover:-translate-y-1"
+                className="group relative rounded-2xl border border-[rgba(61,68,48,0.08)] bg-[#FAF9F6] p-4 md:p-9 transition-all duration-500 hover:shadow-[0_16px_32px_rgba(61,68,48,0.08)] hover:-translate-y-1"
               >
                 <Image
                   src={`/images/character/${type.ipKey}/${type.ipKey}_female.png`}
                   alt=""
                   width={180}
                   height={280}
-                  className="absolute -right-3 -bottom-4 w-[136px] h-[228px] md:w-[152px] md:h-[264px] object-contain opacity-100 group-hover:scale-105 transition-transform duration-500 pointer-events-none select-none"
+                  className="absolute -right-2 -bottom-3 w-[110px] h-[184px] md:w-[152px] md:h-[264px] object-contain opacity-100 group-hover:scale-105 transition-transform duration-500 pointer-events-none select-none"
                 />
-                <div className="relative z-10 pr-20 md:pr-20">
-                  <h2 className="text-xl md:text-2xl font-serif tracking-wide text-[#1A1A1A] mb-2 group-hover:text-[#3D4430] transition-colors duration-500">
+                <div className="relative z-10 pr-16 md:pr-20">
+                  <h2 className="text-lg md:text-2xl font-serif tracking-wide text-[#1A1A1A] mb-1 md:mb-2 group-hover:text-[#3D4430] transition-colors duration-500">
                     {type.typeName}
                   </h2>
-                  <p className="text-sm text-[#5E5E5E]/70 leading-relaxed mb-5 line-clamp-1 font-light">
+                  <p className="text-xs md:text-sm text-[#5E5E5E]/70 leading-relaxed mb-3 md:mb-5 line-clamp-1 font-light">
                     {type.m1.persona}
                   </p>
-                  <div className="inline-flex items-center text-xs font-medium tracking-[0.15em] text-[#3D4430] group-hover:text-[#3D4430]/80 transition-colors duration-300">
+                  <div className="inline-flex items-center text-[11px] md:text-xs font-medium tracking-[0.15em] text-[#3D4430] group-hover:text-[#3D4430]/80 transition-colors duration-300">
                     查看完整解读
                     <ArrowRight className="w-3.5 h-3.5 ml-1.5 transition-transform duration-500 group-hover:translate-x-1.5" />
                   </div>
@@ -113,11 +113,11 @@ export default function ResultIndexPage() {
       </section>
 
       {/* 底部 CTA - 送好礼 */}
-      <section className="py-20 px-6 md:px-12 lg:px-20">
+      <section className="py-14 md:py-20 px-6 md:px-12 lg:px-20">
         <div className="max-w-5xl mx-auto">
           <Link
             href="/gift"
-            className="group relative block p-8 md:p-12 overflow-hidden [mask-image:radial-gradient(ellipse_at_center,black_50%,transparent_85%)]"
+            className="group relative block p-5 md:p-12 overflow-hidden [mask-image:radial-gradient(ellipse_at_center,black_50%,transparent_85%)]"
           >
             {/* 右侧背景水印 */}
             <Image
@@ -134,14 +134,14 @@ export default function ResultIndexPage() {
                 alt=""
                 width={160}
                 height={120}
-                className="w-48 h-auto object-contain shrink-0"
+                className="w-36 md:w-48 h-auto object-contain shrink-0"
                 unoptimized
               />
               <div className="text-center md:text-left">
-                <h3 className="text-xl md:text-2xl font-serif text-[#1A1A1A] mb-2 tracking-wide">
+                <h3 className="text-lg md:text-2xl font-serif text-[#1A1A1A] mb-1 md:mb-2 tracking-wide">
                   肌智派送好礼
                 </h3>
-                <p className="text-[15px] md:text-base text-[#5E5E5E] font-light leading-relaxed mb-4">
+                <p className="text-[13px] md:text-base text-[#5E5E5E] font-light leading-relaxed mb-3 md:mb-4">
                   完成您的专属肌肤诊断后，即可参与 NIHPLOD 限定抽奖——甄选护肤好礼，静候与您相遇。
                 </p>
                 <span className="inline-flex items-center gap-2 text-sm font-medium tracking-[0.15em] text-[#A0784C] group-hover:text-[#8B6840] transition-colors duration-300">
