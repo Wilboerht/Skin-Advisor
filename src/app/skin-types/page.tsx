@@ -58,7 +58,7 @@ export default function ResultIndexPage() {
           </p>
           <Link
             href="/"
-            className="w-full sm:w-auto group relative inline-flex items-center justify-center gap-3 px-10 py-3.5 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#1B3A5C] hover:text-white opacity-0 animate-fade-in-up"
+            className="w-full sm:w-auto group relative inline-flex items-center justify-center gap-3 px-8 py-3 md:px-10 md:py-3.5 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#1B3A5C] hover:text-white opacity-0 animate-fade-in-up"
             style={{ animationDelay: "0.2s", animationFillMode: "forwards" }}
           >
             <span>前往测肤</span>
