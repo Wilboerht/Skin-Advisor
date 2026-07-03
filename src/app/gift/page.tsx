@@ -288,7 +288,7 @@ export default function GiftPage() {
 
       {/* 错误状态 */}
       {pageState === "error" && (
-        <section className="relative z-10 pb-20 md:pb-36 px-6 md:px-12 lg:px-20">
+        <section className="relative z-10 pb-18 px-6 md:px-12 lg:px-20">
           <div className="max-w-md mx-auto text-center">
             <div className="rounded-2xl border border-[rgba(61,68,48,0.08)] bg-[#FAF9F6] p-5 md:p-9">
               <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-5">
@@ -310,7 +310,7 @@ export default function GiftPage() {
 
       {/* 奖品展示 */}
       {pageState === "show_campaign" && campaign && (
-        <section className="relative z-10 pb-20 md:pb-36 px-6 md:px-12 lg:px-20">
+        <section className="relative z-10 pb-18 px-6 md:px-12 lg:px-20">
           <div className="max-w-2xl mx-auto">
             <div className="text-center mb-8 md:mb-10">
               <p className="text-[15px] md:text-base text-[#5E5E5E]/80 font-light leading-relaxed max-w-md mx-auto">
@@ -346,22 +346,18 @@ export default function GiftPage() {
 
       {/* 活动规则 */}
       {pageState === "show_campaign" && campaign && (
-        <section className="relative z-10 pb-20 md:pb-36 px-6 md:px-12 lg:px-20">
+        <section className="relative z-10 pb-18 px-6 md:px-12 lg:px-20">
           <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-8 md:mb-10">
-              <p className="text-[15px] md:text-base text-[#5E5E5E]/80 font-light leading-relaxed max-w-md mx-auto">
-                简单四步，即可参与活动赢取 NIHPLOD 限定礼遇。
-              </p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center max-w-4xl mx-auto mb-8 md:mb-10">
-              {/* 左侧人物 IP */}
-              <div className="relative w-full max-w-[180px] md:max-w-[220px] aspect-[3/4] mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-[6fr_4fr] gap-8 md:gap-12 items-center max-w-4xl mx-auto mb-18">
+              {/* 左侧引导文案 */}
+              <div className="flex justify-center">
                 <Image
-                  src={randomCharacterImage}
-                  alt="NIHPLOD 肌肤形象"
-                  fill
-                  className="object-contain"
-                  priority
+                  src="/images/gift-badge.png"
+                  alt="肌智派送好礼"
+                  width={200}
+                  height={150}
+                  className="w-96 h-auto object-contain"
+                  unoptimized
                 />
               </div>
 
@@ -375,7 +371,7 @@ export default function GiftPage() {
                 ].map((item, i) => (
                   <div
                     key={i}
-                    className="flex items-start gap-4 p-5 rounded-2xl bg-white shadow-sm border border-[#E8E2D9]"
+                    className="flex items-start gap-4"
                   >
                     <span className="shrink-0 w-8 h-8 rounded-full bg-transparent border border-[#1B3A5C] flex items-center justify-center text-sm font-medium text-[#1B3A5C]">
                       {parseInt(item.step)}
@@ -410,7 +406,7 @@ export default function GiftPage() {
 
       {/* CTA 参与区域 */}
       {pageState === "show_campaign" && campaign && (
-        <section className="relative z-10 pb-20 md:pb-36 px-6 md:px-12 lg:px-20">
+        <section className="relative z-10 pb-18 px-6 md:px-12 lg:px-20">
           <div className="max-w-2xl mx-auto">
             <div className="rounded-2xl border border-[rgba(61,68,48,0.08)] bg-[#FAF9F6] p-5 md:p-9">
               {/* 未登录 */}
