@@ -262,20 +262,16 @@ export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitS
                         </AnimatePresence>
                     </div>
 
-                    {/* Progress Bar — pulses when waiting for AI response */}
-                    <div className="w-full max-w-[280px] relative h-[4px] bg-[#E9E9E7] rounded-full overflow-hidden">
+                    {/* Progress Bar */}
+                    <div className="w-full max-w-[280px] relative h-[6px] bg-transparent border border-[#1B3A5C]/40 rounded-full overflow-hidden">
                         <m.div
-                            className="absolute top-0 bottom-0 left-0 bg-[#D4B78F]"
+                            className="absolute top-0 bottom-0 left-0 bg-[#1B3A5C]/85 rounded-full"
                             initial={{ width: 0 }}
-                            animate={isWaitingLLM 
-                                ? { width: ["88%", "92%", "88%"], transition: { duration: 2, repeat: Infinity, ease: "easeInOut" } }
-                                : { width: `${progress}%`, transition: { type: "spring", stiffness: 50, damping: 20 } }
-                            }
+                            animate={{ width: `${progress}%`, transition: { duration: 0.4, ease: "easeInOut" } }}
                         />
-                        {/* Streamer effect: active waiting indicator when LLM is thinking */}
                         {isWaitingLLM && (
                             <m.div
-                                className="absolute top-0 bottom-0 bg-gradient-to-r from-transparent via-white/70 to-transparent"
+                                className="absolute top-0 bottom-0 bg-gradient-to-r from-transparent via-[#1B3A5C]/40 to-transparent rounded-full"
                                 style={{ width: '30%' }}
                                 initial={{ left: '-30%' }}
                                 animate={{ left: '100%' }}
@@ -286,7 +282,7 @@ export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitS
 
                     {/* Percentage + Wait hint */}
                     <div className="flex flex-col items-center gap-2">
-                        <span className="text-xs text-[#9A9A9A] font-mono tracking-widest">
+                        <span className="text-xs text-[#5E5E5E] font-mono tracking-widest">
                             {Math.round(progress)}%
                         </span>
                         {hasQueued && (
