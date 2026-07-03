@@ -217,7 +217,7 @@ export default function GiftPage() {
                           src={prize.image}
                           alt={prize.name}
                           fill
-                          className="object-contain p-2"
+                          className="object-contain"
                         />
                       ) : (
                         <Gift className="w-8 h-8 text-[#8B7355]/30" />
@@ -228,8 +228,8 @@ export default function GiftPage() {
                       {prize.description && (
                         <p className="text-[13px] text-[#5E5E5E] leading-relaxed">{prize.description}</p>
                       )}
-                      <p className="text-[13px] text-[#8B7355]">×{prize.quantity}</p>
                     </div>
+                    <p className="text-[13px] text-[#8B7355] shrink-0">×{prize.quantity}</p>
                   </div>
                 ))}
               </div>
