@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Sun, Home, ShoppingBag, SoapDispenserDroplet, Info, ArrowRight, Gift } from "lucide-react";
+import { Sun, Home, ShoppingBag, SoapDispenserDroplet, Info, ArrowRight } from "lucide-react";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
 import Threads from "@/components/ui/Threads";
 import type { SkinTypeData } from "@/lib/result-content";
@@ -202,20 +202,34 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
           </Link>
           <Link
             href="/gift"
-            className="flex items-center justify-center gap-1.5 mt-5 text-[13px] sm:text-[14px] text-[#A0784C] tracking-[0.1em] font-medium hover:text-[#8B6840] transition-colors duration-300"
+            className="flex items-center justify-center gap-2 mt-5 text-[13px] sm:text-[14px] text-[#A0784C] tracking-[0.1em] font-medium hover:text-[#8B6840] transition-colors duration-300"
           >
+            <Image
+              src="/images/watermark.png"
+              alt=""
+              width={28}
+              height={28}
+              className="w-7 h-7 object-contain drop-shadow-[0_1px_1px_rgba(61,68,48,0.25)] animate-[soft-blink_3s_ease-in-out_infinite]"
+              unoptimized
+            />
             参与「肌智派」活动，抽奖赢好礼
-            <Gift className="w-3.5 h-3.5" />
           </Link>
         </div>
       </section>
+
+      <style>{`
+        @keyframes soft-blink {
+          0%, 100% { opacity: 0.88; }
+          50% { opacity: 1; }
+        }
+      `}</style>
 
       {/* Footer */}
       <footer className="pt-6 md:pt-8 pb-[calc(1.5rem+env(safe-area-inset-bottom,16px))] px-6 text-center border-t border-[rgba(61,68,48,0.08)]">
         <p className="flex items-start justify-center gap-2 text-[10px] sm:text-xs text-[#8A8A8A] leading-[1.8] max-w-2xl mx-auto mb-4 md:mb-6">
           <Info className="w-3.5 h-3.5 text-[#C9A86C] flex-shrink-0 mt-0.5 stroke-[2]" />
           <span>
-            该类型仅表示此综合评分下普遍情况，不代表您的素颜测肤结果。请完成测试，以获取您的专属素颜分析报告。
+            该类型仅表示此综合评分下一般情况，不代表您的素颜测肤结果。请完成测试，以获取您的专属素颜分析报告。
           </span>
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-4 text-[10px] md:text-xs tracking-widest text-[#5E5E5E]/60">
