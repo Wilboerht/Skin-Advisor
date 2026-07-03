@@ -139,7 +139,7 @@ export async function analyzeImages(
                 throw new Error("Vision request cancelled by client.");
             }
             lastError = error;
-            aiLogger.warn(`Vision Error (${provider}/${apiKeys[i].slice(0, 8)}...): ${error.message}`);
+            aiLogger.warn(`Vision Error (${provider}, key ${i + 1}/${apiKeys.length}): ${error.message}`);
 
             // 记录 key 健康状态
             recordKeyResult(provider, apiKey, {

@@ -66,6 +66,15 @@ export async function POST(request: NextRequest) {
     };
     request.signal.addEventListener('abort', onClientAbort);
 
+    // 0.1 拒绝超大请求体（> 10MB），防止恶意大文件耗尽带宽
+    const contentLength = Number(request.headers.get("content-length") || 0);
+    if (contentLength > 10 * 1024 * 1024) {
+        return NextResponse.json(
+            { error: "图片过大，请压缩后上传" },
+            { status: 413 }
+        );
+    }
+
     // 在 try 外部声明，供 catch/finally 回滚额度时使用
     let body: Record<string, unknown> | undefined;
     let faceSessionId: string | undefined;

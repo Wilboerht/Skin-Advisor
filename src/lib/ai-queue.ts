@@ -249,12 +249,10 @@ class AIRequestQueue {
 
         const done = this.releaseResolvers.shift();
         if (done) {
-            // 调用 done()，结束那个挂起的任务
-            // 这会触发 processQueue 中的 finally 块：runningCount-- 并调度下一个任务
             done();
         } else {
-            // 安全网：如果没有等待释放的 resolver，直接修正计数
-            // 这通常发生在平台超时 kill 进程后重启的场景
+            // 安全网：无等待释放的 resolver，直接修正计数
+            // 防止 acquireCount 和实际运行数不一致导致的槽位泄漏
             this.runningCount = Math.max(0, this.runningCount - 1);
             this.processQueue();
         }
@@ -305,8 +303,8 @@ class AIRequestQueue {
 
         // 异步执行，不阻塞 processQueue 继续分发其他任务（如果有空闲槽位）
         (async () => {
-            // 安全网：任务最大执行时间，防止 legacy-acquire 等挂起任务永远占用槽位
-            const taskTimeoutMs = item.type === 'legacy-acquire' ? 120_000 : 300_000;
+            // 安全网：任务最大执行时间 (AI 调用通常 <30s，120s 留有充足余量)
+            const taskTimeoutMs = item.type === 'legacy-acquire' ? 60_000 : 120_000;
             let timeoutId: ReturnType<typeof setTimeout> | undefined;
             const timeoutPromise = new Promise<never>((_, reject) => {
                 timeoutId = setTimeout(() => reject(new Error(`Queue task timeout after ${taskTimeoutMs}ms`)), taskTimeoutMs);

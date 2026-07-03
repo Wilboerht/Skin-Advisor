@@ -25,8 +25,8 @@ const MAX_RATE_LIMITS_BEFORE_COOLDOWN = 2; // 连续 2 次 429 进入冷却
 const keyHealthMap = new Map<string, KeyHealthEntry>();
 
 function getKeyFingerprint(provider: string, apiKey: string): string {
-    // 不存储完整 key，只取前 8 位 + 后 4 位作为指纹
-    const visible = apiKey.length > 12 ? `${apiKey.slice(0, 8)}...${apiKey.slice(-4)}` : apiKey.slice(0, 4);
+    // 仅取前 4 + 后 4 位，减少密钥暴露面
+    const visible = apiKey.length > 10 ? `${apiKey.slice(0, 4)}...${apiKey.slice(-4)}` : "short";
     return `${provider}:${visible}`;
 }
 

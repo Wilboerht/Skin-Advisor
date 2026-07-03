@@ -89,8 +89,23 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    // 跨 IP 指纹检查：同一指纹在其他 IP 上的用量也计入 (防 VPN 切换)
+    let crossIpCount = 0;
+    if (fingerprint) {
+        const crossIpRecord = await withDbRetry(() =>
+            prisma.guestUsage.findFirst({
+                where: {
+                    fingerprint,
+                    ipAddress: { not: ipAddress },
+                    lastTestAt: { gte: today },
+                },
+                orderBy: { todayCount: 'desc' },
+            })
+        );
+        crossIpCount = crossIpRecord?.todayCount || 0;
+    }
+
     // 安全：始终以服务端可信的 IP 哈希作为主匹配键，fingerprint/cookieId 仅作辅助存储。
-    // 客户端可控的 fingerprint/cookieId 不能作为额度判定的主键，否则攻击者更换即可绕过。
     const todayRecord = await withDbRetry(() =>
         prisma.guestUsage.findFirst({
             where: { ipAddress, lastTestAt: { gte: today } },
@@ -98,7 +113,7 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
         })
     );
 
-    const count = todayRecord?.todayCount || 0;
+    const count = (todayRecord?.todayCount || 0) + crossIpCount;
 
     const blockedRecord = await withDbRetry(() =>
         prisma.guestUsage.findFirst({
@@ -185,7 +200,7 @@ export async function reserveUsage(
                     return { success: true, role: 'member' };
                 }
 
-                // 2. 访客 — 始终以 IP 哈希为主匹配键，fingerprint/cookieId 仅为辅助存储
+                // 2. 访客 — IP 为主匹配键，fingerprint/cookieId 为辅助维度防止 VPN 绕过
                 const blockedRecord = await tx.guestUsage.findFirst({
                     where: { ipAddress, isBlocked: true }
                 });
@@ -193,7 +208,21 @@ export async function reserveUsage(
                     return { success: false, error: blockedRecord.blockedReason || '您的访问已被限制，请联系客服。', role: 'guest' };
                 }
 
-                // 仅按 IP 哈希匹配当日记录，fingerprint/cookieId 不参与匹配（客户端可控不可信）
+                // 跨 IP 指纹检查：同一指纹在其他 IP 上的当日用量也计入限制（防 VPN 切换）
+                let crossIpCount = 0;
+                if (fingerprint) {
+                    const crossIpRecord = await tx.guestUsage.findFirst({
+                        where: {
+                            fingerprint,
+                            ipAddress: { not: ipAddress },
+                            lastTestAt: { gte: today },
+                        },
+                        orderBy: { todayCount: 'desc' },
+                    });
+                    crossIpCount = crossIpRecord?.todayCount || 0;
+                }
+
+                // 按 IP 匹配当日记录
                 const todayRecord = await tx.guestUsage.findFirst({
                     where: { ipAddress, lastTestAt: { gte: today } },
                     orderBy: { todayCount: 'desc' }
@@ -203,7 +232,7 @@ export async function reserveUsage(
                     where: { ip: ipAddress, analysisStartedAt: { gte: tenMinutesAgo }, completedAt: null }
                 });
 
-                const currentCount = todayRecord?.todayCount || 0;
+                const currentCount = (todayRecord?.todayCount || 0) + crossIpCount;
                 const totalCount = currentCount + guestInProgress;
                 const limit = 3;
 

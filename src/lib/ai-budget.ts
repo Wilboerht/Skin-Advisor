@@ -189,24 +189,61 @@ async function getUsageStats(
 // ============================================================================
 
 /**
+ * 在途调用预留（防止 TOCTOU 竞态：并发请求同时通过预算检查）
+ * 在 checkAIBudget 时加预留，在 recordAIUsage 时释放。
+ * 注意：进程内有效，多实例部署时精确度有限但不会造成超支漏网。
+ */
+const pendingReservations = new Map<string, number>(); // requestType -> 预留费用
+
+function addPendingReservation(requestType: string, estimatedCost: number): void {
+    const current = pendingReservations.get(requestType) || 0;
+    pendingReservations.set(requestType, current + estimatedCost);
+}
+
+function releasePendingReservation(requestType: string, estimatedCost: number): void {
+    const current = pendingReservations.get(requestType) || 0;
+    const next = Math.max(0, current - estimatedCost);
+    if (next <= 0) {
+        pendingReservations.delete(requestType);
+    } else {
+        pendingReservations.set(requestType, next);
+    }
+}
+
+function getPendingReservationCost(requestType: string): number {
+    return pendingReservations.get(requestType) || 0;
+}
+
+/**
  * 检查全局 AI 预算是否已超限
  * 在发起 AI 调用前调用，若超限则拒绝请求。
+ * 同时考虑已在途（pending）的调用预留，防止并发绕过。
  */
 export async function checkAIBudget(requestType?: AIRequestType): Promise<AIBudgetStatus> {
     const budget = getBudgetConfig();
     const stats = await getUsageStats(requestType);
+    const pendingCost = requestType ? getPendingReservationCost(requestType) : 0;
+
+    // 实际用量 = 已入库用量 + 在途预留
+    const effectiveDailyCost = stats.dailyCost + pendingCost;
+    const effectiveMonthlyCost = stats.monthlyCost + pendingCost;
 
     if (budget.dailyTokenBudget && stats.dailyTokens >= budget.dailyTokenBudget) {
         return { allowed: false, reason: "AI 日 token 预算已耗尽", ...stats };
     }
-    if (budget.dailyCostBudget && stats.dailyCost >= budget.dailyCostBudget) {
-        return { allowed: false, reason: "AI 日费用预算已耗尽", ...stats };
+    if (budget.dailyCostBudget && effectiveDailyCost >= budget.dailyCostBudget) {
+        return { allowed: false, reason: "AI 日费用预算已耗尽（含在途调用）", ...stats };
     }
     if (budget.monthlyTokenBudget && stats.monthlyTokens >= budget.monthlyTokenBudget) {
         return { allowed: false, reason: "AI 月 token 预算已耗尽", ...stats };
     }
-    if (budget.monthlyCostBudget && stats.monthlyCost >= budget.monthlyCostBudget) {
+    if (budget.monthlyCostBudget && effectiveMonthlyCost >= budget.monthlyCostBudget) {
         return { allowed: false, reason: "AI 月费用预算已耗尽", ...stats };
+    }
+
+    // 预留 ¥0.01 作为在途成本，防止并发请求同时通过预算检查
+    if (requestType) {
+        addPendingReservation(requestType, 0.01);
     }
 
     return { allowed: true, ...stats };
@@ -261,6 +298,11 @@ export async function recordAIUsage(record: AIUsageRecord): Promise<void> {
             provider: record.provider,
             model: record.model,
         });
+    } finally {
+        // 释放 checkAIBudget 中预留的在途费用
+        if (record.requestType) {
+            releasePendingReservation(record.requestType, 0.01);
+        }
     }
 }
 
