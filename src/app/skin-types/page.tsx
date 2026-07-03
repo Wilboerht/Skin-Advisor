@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles, Gift } from "lucide-react";
 import { skinTypes, routeOrder } from "@/lib/result-content";
 import { withDefaultOgImage } from "@/lib/metadata";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
@@ -64,6 +64,14 @@ export default function ResultIndexPage() {
             <span>前往测肤</span>
             <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
           </Link>
+          <Link
+            href="/gift"
+            className="flex items-center justify-center gap-1.5 mt-5 text-[13px] sm:text-[14px] text-[#A0784C] tracking-[0.1em] font-medium opacity-0 animate-fade-in-up hover:text-[#8B6840] transition-colors duration-300"
+            style={{ animationDelay: "0.3s", animationFillMode: "forwards" }}
+          >
+            参与「肌智派」活动，抽奖赢好礼
+            <Gift className="w-3.5 h-3.5" />
+          </Link>
 
         </div>
       </section>
@@ -105,7 +113,7 @@ export default function ResultIndexPage() {
       </section>
 
       {/* 底部 CTA - 送好礼 */}
-      <section className="pt-20 pb-16 md:pb-24 px-6 md:px-12 lg:px-20">
+      <section className="py-20 px-6 md:px-12 lg:px-20">
         <div className="max-w-5xl mx-auto">
           <Link
             href="/gift"
