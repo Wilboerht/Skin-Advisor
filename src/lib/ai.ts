@@ -55,13 +55,14 @@ export interface AISettings {
 
 // 默认设置
 // Helper to determine default models based on provider env
-const envProvider = process.env.AI_PROVIDER || "qwen";
+// deepseek 比 qwen 便宜，作为默认提供者；视觉仍用 qwen（deepseek-vl 覆盖不全）
+const envProvider = process.env.AI_PROVIDER || "deepseek";
 const envVisionProvider = process.env.AI_VISION_PROVIDER || "qwen";
 
 const DEFAULT_AI_SETTINGS: AISettings = {
     provider: envProvider as AIProvider,
     visionProvider: envVisionProvider as AIProvider,
-    model: process.env.AI_MODEL || (envProvider === "qwen" ? "qwen-plus" : "deepseek-chat"),
+    model: process.env.AI_MODEL || (envProvider === "qwen" ? "qwen-turbo" : "deepseek-chat"),
     visionModel: process.env.AI_VISION_MODEL || (envVisionProvider === "qwen" ? "qwen-vl-plus" : "deepseek-vl"),
     textSystemPrompt: TEXT_ANALYSIS_SYSTEM_PROMPT,
     visionSystemPrompt: "",
@@ -178,8 +179,13 @@ export async function getAISettings(): Promise<AISettings> {
         cacheTimestamp = now;
         return cachedSettings;
     } catch (error) {
-        aiLogger.warn("Failed to fetch settings from DB, using defaults", { error: String(error) });
-        return { ...DEFAULT_AI_SETTINGS };
+        // DB 不可用时使用更便宜的默认配置，避免切到高价模型
+        aiLogger.warn("Failed to fetch settings from DB, using cost-optimized defaults", { error: String(error) });
+        return {
+            ...DEFAULT_AI_SETTINGS,
+            provider: "deepseek",
+            model: "deepseek-chat",
+        };
     }
 }
 
@@ -507,10 +513,10 @@ async function callProviderInternal(
 // ============================================================================
 
 function getModelForProvider(provider: string): string {
-    // 简单映射默认模型
+    // 降级时使用该 provider 最便宜的模型
     switch (provider) {
         case "deepseek": return "deepseek-chat";
-        case "qwen": return "qwen-plus";
+        case "qwen": return "qwen-turbo"; // qwen-turbo 比 qwen-plus 便宜 8 倍
         default: return "deepseek-chat";
     }
 }

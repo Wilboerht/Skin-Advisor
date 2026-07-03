@@ -18,7 +18,7 @@ interface KeyHealthEntry {
     cooledUntil: number;
 }
 
-const COOLDOWN_MS = 60 * 1000; // 连续失败后冷却 1 分钟
+const COOLDOWN_MS = 5 * 60 * 1000; // 连续失败后冷却 5 分钟，避免 429 风暴每分钟重试
 const MAX_FAILURES_BEFORE_COOLDOWN = 3; // 连续 3 次失败进入冷却
 const MAX_RATE_LIMITS_BEFORE_COOLDOWN = 2; // 连续 2 次 429 进入冷却
 

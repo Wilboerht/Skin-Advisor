@@ -394,9 +394,9 @@ class AIRequestQueue {
     }
 }
 
-// 全局单例
+// 全局单例 (生产环境默认并发降为 5，避免打爆服务商限流)
 export const aiQueue = new AIRequestQueue(
-    parseInt(process.env.AI_QUEUE_MAX_CONCURRENT || "10", 10),
+    parseInt(process.env.AI_QUEUE_MAX_CONCURRENT || "5", 10),
     parseInt(process.env.AI_MAX_CONCURRENT_PER_USER || "1", 10)
 );
 

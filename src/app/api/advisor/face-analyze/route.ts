@@ -27,13 +27,13 @@ const faceAnalysisCache = new Map<string, { result: Record<string, unknown>; at:
 const FACE_CACHE_TTL_MS = 10 * 60 * 1000; // 10分钟过期
 const FACE_CACHE_MAX_SIZE = 50; // 最多缓存 50 条
 
-function buildCacheKey(sessionId: string, images: VisionImage[]): string {
-    // 对图片数据取 MD5 摘要（只取前 1KB 作为采样，避免大图哈希开销）
+function buildCacheKey(_sessionId: string, images: VisionImage[]): string {
+    // 仅基于图片内容哈希（不含 sessionId），这样刷新页面也能命中缓存
     const samples = images.map(img => {
         const data = img.data || "";
         return `${img.angle}:${crypto.createHash("md5").update(data.slice(0, 1024)).digest("hex")}`;
     }).join("|");
-    return `face:${sessionId}:${crypto.createHash("md5").update(samples).digest("hex")}`;
+    return `face:${crypto.createHash("md5").update(samples).digest("hex")}`;
 }
 
 function getCachedResult(key: string): Record<string, unknown> | null {
