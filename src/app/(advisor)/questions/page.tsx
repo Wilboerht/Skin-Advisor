@@ -35,6 +35,23 @@ export default function QuestionsPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+    // AI 配置校验
+    const [aiConfigured, setAiConfigured] = useState<boolean | null>(null);
+    const [configMessage, setConfigMessage] = useState("");
+
+    useEffect(() => {
+        fetch("/api/advisor/check-config")
+            .then((r) => r.json())
+            .then((data) => {
+                setAiConfigured(data.configured);
+                setConfigMessage(data.message || "");
+            })
+            .catch(() => {
+                setAiConfigured(false);
+                setConfigMessage("无法验证 AI 配置，请稍后重试。");
+            });
+    }, []);
+
     // 从 API 获取问题列表（数据库优先，静态降级）
     const [allQuestions, setAllQuestions] = useState<Question[]>(DEFAULT_QUESTIONS);
     const [questionsError, setQuestionsError] = useState<string | null>(null);
@@ -381,7 +398,25 @@ export default function QuestionsPage() {
 
                     <div className="flex-1 overflow-y-auto scrollbar-hide w-full max-w-5xl mx-auto px-4 md:px-8">
                         <div className="min-h-full flex items-center justify-center">
-                            <GenderSelection onSelect={handleGenderSelect} />
+                            {aiConfigured === null ? (
+                                <div className="flex items-center gap-2 text-[#5E5E5E]">
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    正在检查服务状态...
+                                </div>
+                            ) : aiConfigured === false ? (
+                                <div className="w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm text-center">
+                                    <h3 className="text-lg font-serif text-[#1A1A1A] mb-2">服务暂未就绪</h3>
+                                    <p className="text-sm text-[#5E5E5E] mb-6">{configMessage}</p>
+                                    <button
+                                        onClick={() => router.push("/")}
+                                        className="px-6 h-10 rounded-lg border border-[#1B3A5C] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
+                                    >
+                                        返回首页
+                                    </button>
+                                </div>
+                            ) : (
+                                <GenderSelection onSelect={handleGenderSelect} />
+                            )}
                         </div>
                     </div>
 
