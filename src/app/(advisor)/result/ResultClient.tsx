@@ -600,35 +600,17 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     if (analysisState.status === 'error') {
         return (
             <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
-                {/* Backdrop with Blur */}
-                <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md" />
+                <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
 
-                {/* Modal Content */}
-                <div className="relative z-10 w-full max-w-[420px] bg-white rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col">
-                    {/* Header */}
-                    <div className="p-10 pt-14 text-center pb-1">
-                        <div className="mb-7 flex justify-center">
-                            <Image
-                                src="/NIHPLOD-logo.svg"
-                                alt="NIHPLOD"
-                                width={120}
-                                height={30}
-                                className="h-[34px] w-auto object-contain"
-                                priority
-                            />
+                <div className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm">
+                    <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+                        <div className="sm:w-[60%] text-center sm:text-left">
+                            <h3 className="text-lg font-serif text-[#1A1A1A] mb-3 sm:mb-2">分析遇到了一些问题</h3>
+                            <p className="text-sm text-[#5E5E5E] leading-relaxed">
+                                {analysisState.error || "服务器暂时无法响应，请稍后再试。"}
+                            </p>
                         </div>
-                        <h3 className="text-base font-bold" style={{ color: '#5c4937' }}>
-                            分析遇到了一些问题
-                        </h3>
-                    </div>
-
-                    {/* Content */}
-                    <div className="px-10 pb-10 pt-1 flex flex-col items-center gap-6">
-                        <p className="text-sm leading-relaxed text-center" style={{ color: '#5c4937', opacity: 0.8 }}>
-                            {analysisState.error || "服务器暂时无法响应，请稍后再试。"}
-                        </p>
-
-                        <div className="flex flex-col gap-3 w-full">
+                        <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
                             <button
                                 onClick={() => {
                                     analysisStartedRef.current = false;
@@ -637,25 +619,26 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     params.set('status', 'analyzing');
                                     router.replace(`/result?${params.toString()}`);
                                 }}
-                                className="flex w-full items-center justify-center gap-2 rounded-full bg-[#5c4937] py-3 text-sm font-medium text-white shadow-lg transition-transform active:scale-95 hover:bg-[#4a3a2c]"
+                                className="px-6 h-10 rounded-lg border border-[#1B3A5C] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                             >
                                 重试分析
                             </button>
                             <button
                                 onClick={() => router.push('/face-scan')}
-                                className="flex w-full items-center justify-center gap-2 rounded-full border border-[#5c4937]/30 bg-white py-3 text-sm font-medium text-[#5c4937] transition-colors hover:bg-[#5c4937]/5 active:scale-95"
+                                className="px-6 h-10 rounded-lg border border-[#E8E2D9] text-[#5E5E5E] hover:text-[#1A1A1A] hover:border-[#D9D0C3] text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                             >
                                 重新拍摄
                             </button>
                             <button
                                 onClick={() => router.push('/questions?edit=true')}
-                                className="flex w-full items-center justify-center gap-2 rounded-full border border-[#5c4937]/10 bg-white py-3 text-sm font-medium text-[#5c4937] transition-colors hover:bg-[#5c4937]/5 active:scale-95"
+                                className="px-6 h-10 rounded-lg border border-[#E8E2D9] text-[#5E5E5E] hover:text-[#1A1A1A] hover:border-[#D9D0C3] text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                             >
                                 返回重新测试
                             </button>
                         </div>
                     </div>
                 </div>
+                <Image src="/images/watermark.png" alt="" width={200} height={200} className="absolute bottom-4 left-1/2 -translate-x-1/2 w-32 h-auto object-contain opacity-15 pointer-events-none" unoptimized />
             </div>
         );
     }
@@ -667,16 +650,14 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     // Fallback if truly nothing to show (not loading, no result)
     if (!result && !showLoading) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-[#FDFBF7] px-4">
-                <div className="text-center">
-                    <ScanFace className="w-12 h-12 text-[#D4B78F] mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-[#5c4937] mb-2">报告加载失败</h3>
-                    <p className="text-sm text-[#8c7a6b] mb-6">数据可能已过期或不存在</p>
+            <div className="flex min-h-screen items-center justify-center bg-[#F8F7F3] px-4">
+                <div className="w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm text-center">
+                    <h3 className="text-lg font-serif text-[#1A1A1A] mb-2">报告加载失败</h3>
+                    <p className="text-sm text-[#5E5E5E] mb-6">数据可能已过期或不存在</p>
                     <button
                         onClick={() => router.push("/questions?edit=true")}
-                        className="inline-flex items-center justify-center gap-2 rounded-full bg-[#5c4937] px-6 py-3 text-sm font-medium text-white shadow-lg transition-transform active:scale-95"
+                        className="px-6 h-10 rounded-lg border border-[#1B3A5C] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
                     >
-                        <RotateCcw className="w-4 h-4" />
                         重新测试
                     </button>
                 </div>

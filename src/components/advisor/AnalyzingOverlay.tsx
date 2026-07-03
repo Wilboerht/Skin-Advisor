@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { motion as m, AnimatePresence } from "framer-motion";
 import { useEffect, useState, useMemo, useRef, useCallback } from "react";
@@ -121,7 +121,7 @@ export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitS
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, transition: { duration: 0.8 } }}
-            className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-[#FDFBF7] overflow-hidden"
+            className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-[#F8F7F3] overflow-hidden"
         >
             {/* Elegant Cancel Button (appears after 5 seconds) */}
             <AnimatePresence>
@@ -137,7 +137,7 @@ export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitS
                             onCancel();
                         }}
                         disabled={isExiting}
-                        className="absolute top-8 right-8 z-50 flex items-center gap-2 transition-all group text-[#5A5A5A]/60 hover:text-[#1A1A1A] disabled:opacity-30 disabled:cursor-not-allowed"
+                        className="absolute top-8 right-8 z-50 flex items-center gap-2 transition-all group text-[#1B3A5C]/60 hover:text-[#1B3A5C] disabled:opacity-30 disabled:cursor-not-allowed"
                         aria-label="Exit analysis"
                     >
                         <span className="text-[12px] font-medium tracking-[0.2em] transition-colors">
