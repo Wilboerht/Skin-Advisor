@@ -533,9 +533,8 @@ export default function QuestionsPage() {
                             initial={{ opacity: 0, scale: 0.95, y: 10 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                            className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm overflow-hidden"
+                            className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm"
                         >
-                            <Image src="/images/watermark.png" alt="" width={200} height={200} className="absolute right-0 bottom-0 w-40 h-auto object-contain opacity-10 pointer-events-none" unoptimized />
                             <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                                 <div className="sm:w-[60%] text-center sm:text-left">
                                     <h3 className="text-lg font-serif text-[#1A1A1A] mb-3 sm:mb-2">退出测试？</h3>
@@ -559,6 +558,7 @@ export default function QuestionsPage() {
                                 </div>
                             </div>
                         </m.div>
+                        <Image src="/images/watermark.png" alt="" width={200} height={200} className="absolute bottom-4 left-1/2 -translate-x-1/2 w-32 h-auto object-contain opacity-15 pointer-events-none" unoptimized />
                     </div>
                 )}
             </AnimatePresence>
@@ -576,9 +576,8 @@ export default function QuestionsPage() {
                             initial={{ opacity: 0, scale: 0.95, y: 10 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                            className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm overflow-hidden"
+                            className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm"
                         >
-                            <Image src="/images/watermark.png" alt="" width={200} height={200} className="absolute right-0 bottom-0 w-40 h-auto object-contain opacity-10 pointer-events-none" unoptimized />
                             <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                                 <div className="sm:w-[60%] text-center sm:text-left">
                                     <h3 className="text-lg font-serif text-[#1A1A1A] mb-3 sm:mb-2">确认提交？</h3>
@@ -607,6 +606,7 @@ export default function QuestionsPage() {
                                 </div>
                             </div>
                         </m.div>
+                        <Image src="/images/watermark.png" alt="" width={200} height={200} className="absolute bottom-4 left-1/2 -translate-x-1/2 w-32 h-auto object-contain opacity-15 pointer-events-none" unoptimized />
                     </div>
                 )}
             </AnimatePresence>
