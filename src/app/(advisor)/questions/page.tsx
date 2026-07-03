@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -526,33 +526,36 @@ export default function QuestionsPage() {
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                         <m.div
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                            className="absolute inset-0 bg-black/20"
+                            className="absolute inset-0 bg-black/20 backdrop-blur-sm"
                             onClick={() => setShowExitConfirm(false)}
                         />
                         <m.div
                             initial={{ opacity: 0, scale: 0.95, y: 10 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                            className="relative w-full max-w-sm bg-white rounded-lg p-8 text-center border border-[#E9E9E7]"
+                            className="relative w-full max-w-md bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm"
                         >
-                            <h3 className="text-lg font-medium text-[#1A1A1A] mb-2">结束测试？</h3>
-                            <p className="text-sm text-[#5E5E5E] mb-8 leading-relaxed">
-                                您的进度已自动保存，<br />下次返回可直接从此处继续。
-                            </p>
-                            <div className="flex flex-col items-center gap-3">
-                                <button
-                                    onClick={() => setShowExitConfirm(false)}
-                                    className="w-full h-11 rounded-lg border border-[#E9E9E7] text-[#1A1A1A] hover:bg-[#F5F5F5] text-[13px] font-medium tracking-[0.1em] transition-colors flex items-center justify-center gap-2"
-                                >
-                                    <span>继续测试</span>
-                                    <ArrowRight className="w-4 h-4" />
-                                </button>
-                                <button
-                                    onClick={() => router.push("/")}
-                                    className="text-[12px] tracking-[0.1em] text-[#3D4430]/70 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
-                                >
-                                    退出并返回首页
-                                </button>
+                            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+                                <div className="flex-1 text-center sm:text-left">
+                                    <h3 className="text-lg font-serif text-[#1A1A1A] mb-3">退出测试？</h3>
+                                    <p className="text-sm text-[#5E5E5E] leading-relaxed">
+                                        您的进度已自动保存，下次返回可直接从此处继续。
+                                    </p>
+                                </div>
+                                <div className="flex flex-col gap-3 shrink-0 w-full sm:w-auto">
+                                    <button
+                                        onClick={() => setShowExitConfirm(false)}
+                                        className="px-6 h-10 rounded-lg border border-[#1B3A5C] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                                    >
+                                        继续测试
+                                    </button>
+                                    <button
+                                        onClick={() => router.push("/")}
+                                        className="px-6 h-10 rounded-lg border border-[#E8E2D9] text-[#5E5E5E] hover:text-[#1A1A1A] hover:border-[#D9D0C3] text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                                    >
+                                        退出并返回首页
+                                    </button>
+                                </div>
                             </div>
                         </m.div>
                     </div>
@@ -572,9 +575,9 @@ export default function QuestionsPage() {
                             initial={{ opacity: 0, scale: 0.95, y: 10 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                            className="relative w-full max-w-sm bg-[#FDFBF7] rounded-lg p-8 text-center border border-[#E9E9E7]"
+                            className="relative w-full max-w-sm bg-white/95 backdrop-blur-sm rounded-2xl p-8 text-center border border-[#E8E2D9] shadow-sm"
                         >
-                            <h3 className="text-lg font-medium text-[#1A1A1A] mb-2">确认提交？</h3>
+                            <h3 className="text-lg font-serif text-[#1A1A1A] mb-2">确认提交？</h3>
                             <p className="text-sm text-[#5E5E5E] mb-8 leading-relaxed">
                                 我们检测到您的填写速度较快。<br />
                                 建议您再次核对，确保 AI 能为您提供<span className="text-[#1A1A1A] font-medium"> 最精准 </span>的分析结果。
@@ -587,14 +590,13 @@ export default function QuestionsPage() {
                                         startStepIndex.current = currentStepIndex;
                                         if (pendingAnswers) processSubmission(pendingAnswers);
                                     }}
-                                    className="w-full h-11 rounded-lg bg-[#1A1A1A] text-white hover:bg-[#333] text-[13px] font-medium tracking-[0.1em] transition-colors flex items-center justify-center gap-2"
+                                    className="w-full h-11 rounded-lg border border-[#1B3A5C] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
                                 >
-                                    <span>我已确认，去提交</span>
-                                    <ArrowRight className="w-4 h-4" />
+                                    我已确认，去提交
                                 </button>
                                 <button
                                     onClick={() => setShowQualityWarning(false)}
-                                    className="text-[12px] tracking-[0.1em] text-[#3D4430]/70 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
+                                    className="text-[13px] text-[#A0784C] hover:text-[#8B6840] transition-colors"
                                 >
                                     返回检查
                                 </button>
