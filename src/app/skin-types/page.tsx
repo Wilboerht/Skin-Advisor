@@ -94,7 +94,7 @@ export default function ResultIndexPage() {
                   height={280}
                   className="absolute -right-2 -bottom-3 w-[110px] h-[184px] md:w-[152px] md:h-[264px] object-contain opacity-100 group-hover:scale-105 transition-transform duration-500 pointer-events-none select-none"
                 />
-                <div className="relative z-10 pr-16 md:pr-20">
+                <div className="relative z-10 pr-20 md:pr-24">
                   <h2 className="text-lg md:text-2xl font-serif tracking-wide text-[#1A1A1A] mb-1 md:mb-2 group-hover:text-[#3D4430] transition-colors duration-500">
                     {type.typeName}
                   </h2>
