@@ -231,21 +231,12 @@ export default function GiftPage() {
       {pageState === "no_campaign" && (
         <section className="relative z-10 pb-20 md:pb-36 px-6 md:px-12 lg:px-20">
           <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-8 md:mb-10">
-              <p className="text-[15px] md:text-base text-[#5E5E5E]/80 font-light leading-relaxed max-w-md mx-auto">
-                简单三步，即可参与活动赢取 NIHPLOD 限定礼遇。
-              </p>
-            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center max-w-4xl mx-auto mb-8 md:mb-10">
-              {/* 左侧人物 IP */}
-              <div className="relative w-full max-w-[220px] md:max-w-[260px] aspect-[3/4] mx-auto">
-                <Image
-                  src={randomCharacterImage}
-                  alt="NIHPLOD 肌肤形象"
-                  fill
-                  className="object-contain"
-                  priority
-                />
+              {/* 左侧引导文案 */}
+              <div>
+                <p className="text-[15px] md:text-lg text-[#5E5E5E] font-light leading-relaxed">
+                  简单三步，即可参与活动赢取 NIHPLOD 限定礼遇。
+                </p>
               </div>
 
               {/* 右侧步骤 */}
@@ -359,7 +350,7 @@ export default function GiftPage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center max-w-4xl mx-auto mb-8 md:mb-10">
               {/* 左侧人物 IP */}
-              <div className="relative w-full max-w-[220px] md:max-w-[260px] aspect-[3/4] mx-auto">
+              <div className="relative w-full max-w-[180px] md:max-w-[220px] aspect-[3/4] mx-auto">
                 <Image
                   src={randomCharacterImage}
                   alt="NIHPLOD 肌肤形象"
