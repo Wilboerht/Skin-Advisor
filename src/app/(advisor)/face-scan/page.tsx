@@ -297,29 +297,33 @@ export default function FaceScanPage() {
                             initial={{ opacity: 0, scale: 0.95, y: 10 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                            className="relative w-full max-w-sm bg-white rounded-2xl p-8 text-center border border-[#E8E2D9] shadow-sm"
+                            className="relative w-full max-w-md bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm"
                         >
-                            <h3 className="text-lg font-serif text-[#1A1A1A] mb-2">退出测试？</h3>
-                            <p className="text-sm text-[#5E5E5E] mb-8 font-light leading-relaxed">
-                                您的进度已自动保存，<br />下次返回可直接从此处继续。
-                            </p>
-                            <div className="flex flex-col items-center gap-3">
-                                <button
-                                    onClick={() => setShowExitConfirm(false)}
-                                    className="w-full h-11 rounded-lg border border-[#1B3A5C] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
-                                >
-                                    继续测试
-                                </button>
-                                <button
-                                    onClick={async () => {
-                                        const { advisorStorage } = await import("@/lib/advisor-storage");
-                                        await advisorStorage.clearAll();
-                                        router.push("/");
-                                    }}
-                                    className="text-[13px] text-[#A0784C] hover:text-[#8B6840] transition-colors"
-                                >
-                                    退出并返回首页
-                                </button>
+                            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
+                                <div className="flex-1 text-center sm:text-left">
+                                    <h3 className="text-lg font-serif text-[#1A1A1A] mb-3 sm:mb-2">退出测试？</h3>
+                                    <p className="text-sm text-[#5E5E5E] leading-relaxed">
+                                        您的进度已自动保存，下次返回可直接从此处继续。
+                                    </p>
+                                </div>
+                                <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-auto">
+                                    <button
+                                        onClick={() => setShowExitConfirm(false)}
+                                        className="px-6 h-10 rounded-lg border border-[#1B3A5C] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                                    >
+                                        继续测试
+                                    </button>
+                                    <button
+                                        onClick={async () => {
+                                            const { advisorStorage } = await import("@/lib/advisor-storage");
+                                            await advisorStorage.clearAll();
+                                            router.push("/");
+                                        }}
+                                        className="px-6 h-10 rounded-lg border border-[#E8E2D9] text-[#5E5E5E] hover:text-[#1A1A1A] hover:border-[#D9D0C3] text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                                    >
+                                        退出并返回首页
+                                    </button>
+                                </div>
                             </div>
                         </m.div>
                     </div>
@@ -338,21 +342,22 @@ export default function FaceScanPage() {
                             initial={{ opacity: 0, scale: 0.95, y: 10 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                            className="relative w-full max-w-sm bg-white/70 backdrop-blur-xl p-8 shadow-[0_24px_48px_-12px_rgba(0,0,0,0.08)] border border-[#D4CFC5] text-center rounded-xl overflow-hidden"
+                            className="relative w-full max-w-md bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm"
                         >
-                            <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }} />
-                            <div className="relative z-10">
-                                <h3 className="text-xl font-serif text-[#1A1A1A] mb-2">存储空间不足</h3>
-                                <p className="text-sm text-[#5E5E5E] mb-8 font-light leading-relaxed">
-                                    浏览器存储空间已满，无法保存照片。<br />请清理浏览器缓存后重新尝试。
-                                </p>
-                                <div className="flex flex-col items-center gap-3">
+                            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
+                                <div className="flex-1 text-center sm:text-left">
+                                    <h3 className="text-lg font-serif text-[#1A1A1A] mb-3 sm:mb-2">存储空间不足</h3>
+                                    <p className="text-sm text-[#5E5E5E] leading-relaxed">
+                                        浏览器存储空间已满，无法保存照片。请清理浏览器缓存后重新尝试。
+                                    </p>
+                                </div>
+                                <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-auto">
                                     <button
                                         onClick={() => {
                                             setStorageError(false);
                                             setIsSubmitting(false);
                                         }}
-                                        className="w-full h-11 rounded-md bg-[#4A3728] hover:bg-[#3D2E20] text-[#FDFBF7] text-[13px] font-medium tracking-[0.15em] transition-all duration-300 active:scale-[0.98]"
+                                        className="px-6 h-10 rounded-lg border border-[#1B3A5C] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                                     >
                                         重新尝试拍照
                                     </button>
@@ -362,7 +367,7 @@ export default function FaceScanPage() {
                                             await advisorStorage.clearAll();
                                             router.push("/");
                                         }}
-                                        className="text-[12px] tracking-[0.15em] text-[#3D4430]/40 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer mt-2"
+                                        className="px-6 h-10 rounded-lg border border-[#E8E2D9] text-[#5E5E5E] hover:text-[#1A1A1A] hover:border-[#D9D0C3] text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                                     >
                                         退出并返回首页
                                     </button>
