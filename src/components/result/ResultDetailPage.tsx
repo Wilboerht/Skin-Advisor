@@ -221,10 +221,10 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
                   <div className="flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full bg-white border border-[#E8E2D9] mb-2 md:mb-3">
                     <Icon className="w-4 h-4 md:w-5 md:h-5 text-[#C9A86C] stroke-[1.25]" />
                   </div>
-                  <h3 className="text-xs md:text-base font-medium text-[#1A1A1A] mb-0.5 md:mb-1 group-hover:text-[#1B3A5C] transition-colors">
+                  <h3 className="text-sm md:text-base font-medium text-[#1A1A1A] mb-0.5 md:mb-1 group-hover:text-[#1B3A5C] transition-colors">
                     {item.title}
                   </h3>
-                  <p className="text-[10px] md:text-xs text-[#8A8A8A] leading-relaxed">{item.subtitle}</p>
+                  <p className="text-xs text-[#8A8A8A] leading-relaxed">{item.subtitle}</p>
                 </a>
               );
             })}
