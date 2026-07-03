@@ -2,6 +2,9 @@
  * PM2 生产环境配置
  * 注意：当前应用使用内存中限流器，必须使用 fork 模式 + 单实例
  * 不要启用 cluster 模式，否则多个进程会竞争处理同一限流计数
+ * 
+ * 安全警告：切勿在此文件中硬编码 API Key！
+ * 所有敏感配置应通过 env_file 指定的 .env.production 文件加载。
  */
 module.exports = {
     apps: [{
@@ -12,7 +15,8 @@ module.exports = {
         env: {
             NODE_ENV: 'production',
             PORT: 3002,
-            QWEN_API_KEY: 'REDACTED_QWEN_API_KEY',
+            // QWEN_API_KEY 等敏感配置请从 .env.production 读取
+            // 不要在这里写死，以免泄露到 Git 仓库
         },
         // 日志配置
         log_file: './logs/combined.log',
