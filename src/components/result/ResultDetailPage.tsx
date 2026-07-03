@@ -72,7 +72,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       {/* Advantages */}
       <section className="relative overflow-hidden py-14 px-6 md:px-12 lg:px-20 bg-white">
         <Threads
-          className="absolute top-[40%] left-0 right-0 -translate-y-1/2 h-[95%] z-0 pointer-events-none"
+          className="hidden md:block absolute top-[40%] left-0 right-0 -translate-y-1/2 h-[95%] z-0 pointer-events-none"
           color={[0.941, 0.929, 0.882]}
           amplitude={1.5}
           distance={0}
@@ -89,12 +89,12 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
                 className="bg-white rounded-2xl p-5 md:p-8 shadow-sm border border-[#E8E2D9] hover:shadow-md transition-shadow"
               >
                 <div className="flex items-center gap-3 mb-4">
-                  <span className="flex items-center justify-center w-8 h-8 rounded-full bg-[#1B3A5C] text-white text-sm font-medium">
+                  <span className="flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-full bg-[#1B3A5C] text-white text-xs md:text-sm font-medium">
                     {i + 1}
                   </span>
-                  <h3 className="text-lg font-medium text-[#1A1A1A]">{adv.title}</h3>
+                  <h3 className="text-base md:text-lg font-medium text-[#1A1A1A]">{adv.title}</h3>
                 </div>
-                <p className="text-[#5E5E5E] leading-[1.85] text-sm">{adv.content}</p>
+                <p className="text-[#5E5E5E] leading-[1.85] text-xs md:text-sm">{adv.content}</p>
               </div>
             ))}
           </div>
@@ -115,11 +115,11 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             {data.m7.suggestions.map((sug, i) => (
               <div key={i} className="bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-[#E8E2D9] flex flex-col">
-                <span className="flex items-center justify-center w-8 h-8 rounded-full bg-[#1B3A5C] text-white text-sm font-medium mb-4">
+                <span className="flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-full bg-[#1B3A5C] text-white text-xs md:text-sm font-medium mb-4">
                   {i + 1}
                 </span>
                 <h3 className="text-base font-medium text-[#1A1A1A] mb-3">{sug.title}</h3>
-                <p className="text-sm text-[#5E5E5E] leading-[1.85] flex-1">{sug.content}</p>
+                <p className="text-[#5E5E5E] leading-[1.85] text-xs md:text-sm flex-1">{sug.content}</p>
               </div>
             ))}
           </div>
