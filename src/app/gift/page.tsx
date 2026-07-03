@@ -231,15 +231,15 @@ export default function GiftPage() {
       {pageState === "no_campaign" && (
         <section className="relative z-10 pb-18 px-6 md:px-12 lg:px-20">
           <div className="max-w-4xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-[7fr_3fr] gap-8 md:gap-12 items-center max-w-4xl mx-auto mb-8 md:mb-10">
+            <div className="grid grid-cols-1 md:grid-cols-[6fr_4fr] gap-8 md:gap-12 items-center max-w-4xl mx-auto mb-18">
               {/* 左侧引导文案 */}
-              <div className="flex justify-center md:justify-start">
+              <div className="flex justify-center">
                 <Image
                   src="/images/gift-badge.png"
                   alt="肌智派送好礼"
                   width={200}
                   height={150}
-                  className="w-64 h-auto object-contain"
+                  className="w-96 h-auto object-contain"
                   unoptimized
                 />
               </div>
@@ -588,7 +588,7 @@ export default function GiftPage() {
 
       {/* 活动说明 */}
       {(pageState === "show_campaign" || pageState === "no_campaign") && (
-        <section className="relative z-10 pb-12 md:pb-20 px-6 md:px-12 lg:px-20">
+        <section className="relative z-10 pb-18 px-6 md:px-12 lg:px-20">
           <div className="max-w-3xl mx-auto text-center">
             <h3 className="text-sm font-medium text-[#1A1A1A] mb-3">活动说明</h3>
             <div className="space-y-2 text-xs text-[#5E5E5E]/80 leading-relaxed">
