@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { m } from "framer-motion";
 import Image from "next/image";
 import { Venus, Mars } from "lucide-react";
@@ -9,6 +10,13 @@ interface GenderSelectionProps {
 }
 
 export function GenderSelection({ onSelect }: GenderSelectionProps) {
+    const CHARACTER_TYPES = ["ageless", "combination", "desert", "guardian", "luxury", "minimalist", "oily", "sensitive"] as const;
+    const CHARACTER_GENDERS = ["female", "male"] as const;
+    const randomCharacterImage = useMemo(() => {
+        const type = CHARACTER_TYPES[Math.floor(Math.random() * CHARACTER_TYPES.length)];
+        const gender = CHARACTER_GENDERS[Math.floor(Math.random() * CHARACTER_GENDERS.length)];
+        return `/images/character/${type}/${type}_${gender}.png`;
+    }, []);
     const container = {
         hidden: { opacity: 0 },
         show: {
@@ -42,7 +50,7 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
                     className="relative w-40 h-40 sm:w-auto sm:h-auto sm:flex-[4] sm:aspect-square flex-shrink-0"
                 >
                     <Image
-                        src="/images/gender-decoration.png"
+                        src={randomCharacterImage}
                         alt=""
                         fill
                         className="object-contain"
