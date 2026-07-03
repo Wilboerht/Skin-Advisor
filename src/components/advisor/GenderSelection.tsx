@@ -76,23 +76,14 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
                     onClick={() => onSelect("female")}
                     whileHover={{ y: -4 }}
                     whileTap={{ scale: 0.98 }}
-                    style={{ 
-                        transform: "translateZ(0)",
-                        backfaceVisibility: "hidden", 
-                        WebkitBackfaceVisibility: "hidden",
-                        perspective: "1000px"
-                    }}
-                    className="group relative flex flex-row items-center gap-4 rounded-xl border border-[#3D4430]/15 bg-[#F0EDE1]/60 px-5 sm:px-8 py-5 sm:py-6 text-left backdrop-blur-md transition-all duration-300 hover:border-[#B795A7]/40 hover:bg-[#FDF8FA]/80 hover:shadow-[0_16px_40px_-8px_rgba(183,149,167,0.12)]"
+                    className="group flex flex-row items-center gap-4 rounded-xl border border-[#E8E2D9] bg-white px-5 sm:px-8 py-5 sm:py-6 text-left transition-all duration-300 hover:border-[#C9A86C] hover:shadow-sm"
                 >
-                    <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none rounded-xl" />
-                    
-                    <div className="flex h-12 w-12 sm:h-16 sm:w-16 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-white to-[#F6F1EF] shadow-[inset_0_2px_8px_rgba(183,149,167,0.12)] border border-[#3D4430]/10 transition-all duration-500 group-hover:scale-110 group-hover:shadow-[0_8px_24px_-4px_rgba(183,149,167,0.18)]">
-                        <Venus className="w-7 h-7 sm:w-9 sm:h-9 text-[#B795A7]" strokeWidth={1.5} />
+                    <div className="flex h-12 w-12 sm:h-16 sm:w-16 shrink-0 items-center justify-center rounded-full bg-[#A0784C]/[0.08] transition-all duration-300 group-hover:bg-[#A0784C]/[0.12]">
+                        <Venus className="w-7 h-7 sm:w-9 sm:h-9 text-[#A0784C]" strokeWidth={1.5} />
                     </div>
 
-                    <div className="space-y-0.5 sm:space-y-1">
+                    <div>
                         <h3 className="text-lg sm:text-xl font-serif font-medium text-[#1A1A1A]">女性</h3>
-                        <p className="text-[10px] sm:text-[11px] tracking-[0.15em] font-light text-[#5E5E5E]/80 uppercase">Female</p>
                     </div>
                 </m.button>
 
@@ -101,23 +92,14 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
                     onClick={() => onSelect("male")}
                     whileHover={{ y: -4 }}
                     whileTap={{ scale: 0.98 }}
-                    style={{ 
-                        transform: "translateZ(0)",
-                        backfaceVisibility: "hidden", 
-                        WebkitBackfaceVisibility: "hidden",
-                        perspective: "1000px"
-                    }}
-                    className="group relative flex flex-row items-center gap-4 rounded-xl border border-[#3D4430]/15 bg-[#F0EDE1]/60 px-5 sm:px-8 py-5 sm:py-6 text-left backdrop-blur-md transition-all duration-300 hover:border-[#5E6C75]/40 hover:bg-[#F8FAFB]/80 hover:shadow-[0_16px_40px_-8px_rgba(94,108,117,0.12)]"
+                    className="group flex flex-row items-center gap-4 rounded-xl border border-[#E8E2D9] bg-white px-5 sm:px-8 py-5 sm:py-6 text-left transition-all duration-300 hover:border-[#1B3A5C]/40 hover:shadow-sm"
                 >
-                    <div className="texture-overlay absolute inset-0 opacity-[0.03] pointer-events-none rounded-xl" />
-                    
-                    <div className="flex h-12 w-12 sm:h-16 sm:w-16 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-white to-[#F0F2F4] shadow-[inset_0_2px_8px_rgba(94,108,117,0.12)] border border-[#3D4430]/10 transition-all duration-500 group-hover:scale-110 group-hover:shadow-[0_8px_24px_-4px_rgba(94,108,117,0.18)]">
-                        <Mars className="w-7 h-7 sm:w-9 sm:h-9 text-[#5E6C75]" strokeWidth={1.5} />
+                    <div className="flex h-12 w-12 sm:h-16 sm:w-16 shrink-0 items-center justify-center rounded-full bg-[#1B3A5C]/[0.08] transition-all duration-300 group-hover:bg-[#1B3A5C]/[0.12]">
+                        <Mars className="w-7 h-7 sm:w-9 sm:h-9 text-[#1B3A5C]" strokeWidth={1.5} />
                     </div>
 
-                    <div className="space-y-0.5 sm:space-y-1">
+                    <div>
                         <h3 className="text-lg sm:text-xl font-serif font-medium text-[#1A1A1A]">男性</h3>
-                        <p className="text-[10px] sm:text-[11px] tracking-[0.15em] font-light text-[#5E5E5E]/80 uppercase">Male</p>
                     </div>
                 </m.button>
             </m.div>
