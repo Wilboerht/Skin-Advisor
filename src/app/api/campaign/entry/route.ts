@@ -5,7 +5,6 @@ import { z } from "zod"
 
 const entrySchema = z.object({
   campaignId: z.string().min(1),
-  proofImage: z.string().optional(), // OSS URL
   shareLink: z.string().optional(),
   contactName: z.string().optional(),
   contactPhone: z.string().optional(),
@@ -21,7 +20,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "参数错误" }, { status: 400 })
     }
 
-    const { campaignId, proofImage, shareLink, contactName, contactPhone, contactEmail } = parsed.data
+    const { campaignId, shareLink, contactName, contactPhone, contactEmail } = parsed.data
 
     // 验证活动是否存在且活跃
     const now = new Date()
@@ -84,7 +83,6 @@ export async function POST(req: NextRequest) {
         data: {
           campaignId,
           userId,
-          proofImage,
           shareLink,
           contactName,
           contactPhone,
@@ -139,7 +137,6 @@ export async function GET(req: NextRequest) {
         status: true,
         lotteryCode: true,
         prizeName: true,
-        proofImage: true,
         shareLink: true,
         createdAt: true,
         verifiedAt: true,

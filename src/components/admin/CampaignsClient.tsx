@@ -40,7 +40,7 @@ export function CampaignsClient() {
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null)
   const [entries, setEntries] = useState<Array<{
     id: string; status: string; lotteryCode: string | null; prizeName: string | null;
-    shareLink: string | null; proofImage: string | null;
+    shareLink: string | null;
     contactName: string | null; contactPhone: string | null;
     reviewNote: string | null; createdAt: string;
     user: { id: string; name: string | null; email: string | null; phoneNumber: string | null } | null;

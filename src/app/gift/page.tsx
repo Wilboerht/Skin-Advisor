@@ -30,7 +30,6 @@ interface EntryData {
   status: string
   lotteryCode: string | null
   prizeName: string | null
-  proofImage: string | null
   shareLink: string | null
   createdAt: string
   verifiedAt: string | null
@@ -312,9 +311,9 @@ export default function GiftPage() {
       {pageState === "show_campaign" && campaign && (
         <section className="relative z-10 pb-18 px-6 md:px-12 lg:px-20">
           <div className="max-w-2xl mx-auto">
-            <div className="rounded-2xl border border-[#E8E2D9] p-6 md:p-8 relative">
+            <div className="rounded-2xl border border-[#C9B896] p-6 md:p-8 relative">
               <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-                <span className="inline-block px-4 py-1.5 text-[11px] uppercase tracking-[0.2em] text-[#1B3A5C] bg-white rounded-full border border-[#E8E2D9] whitespace-nowrap">
+                <span className="inline-block px-4 py-1.5 text-[11px] uppercase tracking-[0.2em] text-[#1B3A5C] bg-white rounded-full border border-[#C9B896] whitespace-nowrap">
                   本期好礼
                 </span>
               </div>
@@ -366,10 +365,9 @@ export default function GiftPage() {
               {/* 右侧步骤 */}
               <div className="space-y-4">
                 {[
-                  { step: "01", title: "生成专属海报", desc: "点击下方按钮，生成您的专属活动海报与小红书分享文案" },
+                  { step: "01", title: "生成专属海报", desc: "点击下方按钮，生成您的专属活动海报与小红书分享文案。" },
                   { step: "02", title: "分享到小红书", desc: "将海报发布到您的小红书账号，附上活动文案并 @NIHPLOD" },
-                  { step: "03", title: "提交参与信息", desc: "在本页填写您的小红书分享链接，提交后等待审核" },
-                  { step: "04", title: "等待开奖", desc: `审核通过后即可参与抽奖，开奖时间：${campaign.drawDate ? formatDate(campaign.drawDate) : "敬请期待"}` },
+                  { step: "03", title: "等待开奖", desc: `审核通过后即可参与抽奖，开奖时间：${campaign.drawDate ? formatDate(campaign.drawDate) : "敬请期待"}。` },
                 ].map((item, i) => (
                   <div
                     key={i}
@@ -411,25 +409,6 @@ export default function GiftPage() {
         <section className="relative z-10 pb-18 px-6 md:px-12 lg:px-20">
           <div className="max-w-2xl mx-auto">
             <div className="rounded-2xl border border-[rgba(61,68,48,0.08)] bg-[#FAF9F6] p-5 md:p-9">
-              {/* 未登录 */}
-              {!user && (
-                <div className="text-center space-y-5">
-                  <div className="w-14 h-14 rounded-full bg-[#8B7355]/10 flex items-center justify-center mx-auto">
-                    <Gift className="w-6 h-6 text-[#8B7355]" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-serif text-[#1A1A1A] mb-1">登录后参与活动</h3>
-                    <p className="text-sm text-[#5E5E5E]">登录您的 NIHPLOD 账户，即可参与肌智派送好礼活动</p>
-                  </div>
-                  <button
-                    onClick={() => openAuthModal("login")}
-                    className="group relative inline-flex items-center justify-center gap-3 px-10 py-3.5 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#1B3A5C] hover:text-white"
-                  >
-                    立即登录
-                    <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
-                  </button>
-                </div>
-              )}
 
               {/* 已参与 - 显示状态 */}
               {user && entry && (

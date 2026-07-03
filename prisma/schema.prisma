@@ -363,8 +363,7 @@ model CampaignEntry {
   
   status      String   @default("pending") // pending | verified | rejected | won
   
-  // 小红书分享凭证
-  proofImage  String?                 // 用户上传的分享截图 OSS URL
+  // 小红书分享链接
   shareLink   String?                 // 用户提交的小红书分享链接
   
   // 抽奖相关
