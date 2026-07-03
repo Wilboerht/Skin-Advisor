@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma"
 import { withAdminAuth, logAdminAction, getClientInfo } from "@/lib/admin-auth"
+import { logger } from "@/lib/logger"
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 
@@ -63,7 +64,7 @@ export const PATCH = withAdminAuth(async (req, { admin, params }) => {
 
     return NextResponse.json({ campaign })
   } catch (error) {
-    console.error("[Admin Campaigns] Update failed:", error)
+    logger.error("[Admin Campaigns] Update failed", { error: String(error) })
     return NextResponse.json({ error: "更新失败" }, { status: 500 })
   }
 })
@@ -87,7 +88,7 @@ export const DELETE = withAdminAuth(async (req, { admin, params }) => {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("[Admin Campaigns] Delete failed:", error)
+    logger.error("[Admin Campaigns] Delete failed", { error: String(error) })
     return NextResponse.json({ error: "删除失败" }, { status: 500 })
   }
 })

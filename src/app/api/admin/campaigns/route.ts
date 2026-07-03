@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma"
 import { withAdminAuth, logAdminAction, getClientInfo } from "@/lib/admin-auth"
+import { logger } from "@/lib/logger"
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 
@@ -65,7 +66,7 @@ export const POST = withAdminAuth(async (req, { admin }) => {
 
     return NextResponse.json({ campaign }, { status: 201 })
   } catch (error) {
-    console.error("[Admin Campaigns] Create failed:", error)
+    logger.error("[Admin Campaigns] Create failed", { error: String(error) })
     return NextResponse.json({ error: "创建失败" }, { status: 500 })
   }
 })

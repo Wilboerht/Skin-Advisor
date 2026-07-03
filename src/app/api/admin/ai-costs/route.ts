@@ -171,7 +171,11 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
                 cost: (t._sum.estimatedCost || 0).toFixed(4),
             })),
             recentFailures,
-            dailyCosts: dailyCosts,
+            dailyCosts: (dailyCosts as Array<{ date: string; cost: number; count: number }>).map(d => ({
+                date: d.date,
+                cost: Number(d.cost).toFixed(4),
+                calls: d.count,
+            })),
         };
 
         // Write cache

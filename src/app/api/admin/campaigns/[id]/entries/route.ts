@@ -1,32 +1,74 @@
 import prisma from "@/lib/prisma"
 import { withAdminAuth, logAdminAction, getClientInfo } from "@/lib/admin-auth"
+import { rateLimit, getClientIP } from "@/lib/ratelimit"
+import { logger } from "@/lib/logger"
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 
-// GET /api/admin/campaigns/[id]/entries - 获取活动参与列表
-export const GET = withAdminAuth(async (req, { params }) => {
+// GET /api/admin/campaigns/[id]/entries - 获取活动参与列表（分页）
+export const GET = withAdminAuth(async (req, { admin, params }) => {
+  const ip = getClientIP(req);
+  const limitResult = await rateLimit(`admin-entries-${ip}`, "default", { maxRequests: 30, windowMs: 60 * 1000 });
+  if (!limitResult.success) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
 
   const { id } = await params
   try {
     const { searchParams } = new URL(req.url)
     const status = searchParams.get("status")
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1") || 1)
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "50") || 1))
+    const skip = (page - 1) * limit
+
     const where: Record<string, unknown> = { campaignId: id }
     if (status) where.status = status
 
-    const entries = await prisma.campaignEntry.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      include: {
-        user: { select: { id: true, name: true, email: true, phoneNumber: true } },
-      },
-    })
+    const [entries, total] = await Promise.all([
+      prisma.campaignEntry.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+        include: {
+          user: { select: { id: true, name: true, email: true, phoneNumber: true } },
+        },
+      }),
+      prisma.campaignEntry.count({ where }),
+    ])
 
-    return NextResponse.json({ entries })
+    // 对非 super_admin 脱敏用户隐私信息
+    const safeEntries = entries.map(e => ({
+      ...e,
+      user: e.user ? {
+        id: e.user.id,
+        name: e.user.name,
+        email: admin.role === "super_admin" ? e.user.email : maskEmail(e.user.email),
+        phoneNumber: admin.role === "super_admin" ? e.user.phoneNumber : maskPhone(e.user.phoneNumber),
+      } : null,
+    }))
+
+    return NextResponse.json({
+      entries: safeEntries,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    })
   } catch (error) {
-    console.error("[Admin Entries] Failed:", error)
+    logger.error("[Admin Entries] Failed", { error: String(error) })
     return NextResponse.json({ error: "获取失败" }, { status: 500 })
   }
 })
+
+function maskEmail(email: string | null): string | null {
+  if (!email) return null
+  const [name, domain] = email.split("@")
+  if (!domain) return "***"
+  return name.slice(0, 2) + "***@" + domain
+}
+
+function maskPhone(phone: string | null): string | null {
+  if (!phone || phone.length < 7) return phone
+  return phone.slice(0, 3) + "****" + phone.slice(-4)
+}
 
 const entryPatchSchema = z.object({
   entryId: z.string().min(1),
@@ -120,7 +162,7 @@ export const PATCH = withAdminAuth(async (req, { admin, params }) => {
 
     return NextResponse.json({ entry })
   } catch (error) {
-    console.error("[Admin Entries] Update failed:", error)
+    logger.error("[Admin Entries] Update failed", { error: String(error) })
     return NextResponse.json({ error: "更新失败" }, { status: 500 })
   }
 })
