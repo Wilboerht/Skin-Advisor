@@ -114,7 +114,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
           )}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             {data.m7.suggestions.map((sug, i) => (
-              <div key={i} className="bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-[#E8E2D9] flex flex-col">
+              <div key={i} className="flex flex-col md:bg-white md:rounded-2xl md:shadow-sm md:border md:border-[#E8E2D9] p-0 md:p-6">
                 <span className="flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-full bg-[#1B3A5C] text-white text-xs md:text-sm font-medium mb-4">
                   {i + 1}
                 </span>
