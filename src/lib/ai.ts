@@ -55,8 +55,8 @@ export interface AISettings {
 
 // 默认设置
 // Helper to determine default models based on provider env
-// deepseek 比 qwen 便宜，作为默认提供者；视觉仍用 qwen（deepseek-vl 覆盖不全）
-const envProvider = process.env.AI_PROVIDER || "deepseek";
+// qwen-turbo 全天价格最低（含 DeepSeek 峰谷定价后），视觉用 qwen
+const envProvider = process.env.AI_PROVIDER || "qwen";
 const envVisionProvider = process.env.AI_VISION_PROVIDER || "qwen";
 
 const DEFAULT_AI_SETTINGS: AISettings = {
@@ -74,9 +74,9 @@ const DEFAULT_AI_SETTINGS: AISettings = {
     },
 };
 
-// 服务商降级链（按成本从低到高排序，优先使用便宜模型）
+// 服务商降级链（qwen 优先，失败后降级 deepseek）
 const PROVIDER_FALLBACK_CHAIN: Record<string, AIProvider[]> = {
-    deepseek: ["qwen"],
+    qwen: ["deepseek"],
 };
 
 // 缓存配置
@@ -179,12 +179,12 @@ export async function getAISettings(): Promise<AISettings> {
         cacheTimestamp = now;
         return cachedSettings;
     } catch (error) {
-        // DB 不可用时使用更便宜的默认配置，避免切到高价模型
+        // DB 不可用时使用最便宜的默认配置（qwen-turbo 全天最低价）
         aiLogger.warn("Failed to fetch settings from DB, using cost-optimized defaults", { error: String(error) });
         return {
             ...DEFAULT_AI_SETTINGS,
-            provider: "deepseek",
-            model: "deepseek-chat",
+            provider: "qwen",
+            model: "qwen-turbo",
         };
     }
 }

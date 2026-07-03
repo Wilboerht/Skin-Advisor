@@ -59,6 +59,7 @@ const PRICING_TABLE: Record<string, Partial<Record<string, ModelPricing>>> = {
         "qwen-vl-plus": { input: 0.008, output: 0.008 },
     },
     deepseek: {
+        // 2026年7月起峰谷定价：高峰 9-12 和 14-18 (北京时间) 价格为 2 倍
         "deepseek-chat": { input: 0.001, output: 0.002 },
         "deepseek-reasoner": { input: 0.004, output: 0.016 },
         "deepseek-vl": { input: 0.005, output: 0.005 },
@@ -66,7 +67,20 @@ const PRICING_TABLE: Record<string, Partial<Record<string, ModelPricing>>> = {
 };
 
 /**
+ * 判断当前北京时间是否在 DeepSeek 高峰定价时段
+ * 高峰: 每日 9:00-12:00 和 14:00-18:00 (北京时间)
+ */
+function isDeepSeekPeakHours(): boolean {
+    const now = new Date();
+    // UTC → 北京时间 (UTC+8)
+    const beijingHour = now.getUTCHours() + 8;
+    const hour = beijingHour >= 24 ? beijingHour - 24 : beijingHour;
+    return (hour >= 9 && hour < 12) || (hour >= 14 && hour < 18);
+}
+
+/**
  * 估算单次调用的费用（人民币）
+ * DeepSeek 峰谷定价：高峰时段 ×2
  */
 export function estimateAICost(
     provider: string,
@@ -81,7 +95,14 @@ export function estimateAICost(
 
     const inputCost = (promptTokens / 1000) * pricing.input;
     const outputCost = (completionTokens / 1000) * pricing.output;
-    return Math.round((inputCost + outputCost) * 1_000_000) / 1_000_000;
+
+    // DeepSeek 峰谷定价：高峰时段 ×2
+    let multiplier = 1;
+    if (normalizedProvider === "deepseek" && isDeepSeekPeakHours()) {
+        multiplier = 2;
+    }
+
+    return Math.round((inputCost + outputCost) * multiplier * 1_000_000) / 1_000_000;
 }
 
 /**
