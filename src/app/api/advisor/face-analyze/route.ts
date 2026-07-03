@@ -374,6 +374,16 @@ export async function POST(request: NextRequest) {
                 );
             }
 
+            // 预算熔断：直接拒绝请求
+            if (err.message?.includes("[AIBudget]")) {
+                aiLogger.warn("AI vision budget exceeded, rejecting request", { error: err.message });
+                await rollbackUsage(request, faceSessionId, body as Record<string, unknown>);
+                return NextResponse.json(
+                    { error: "AI 视觉服务当前额度已用完，请稍后再试", code: "AI_BUDGET_EXCEEDED" },
+                    { status: 503, headers: { "Retry-After": "3600" } }
+                );
+            }
+
             // 队列超时特有错误（AI 未被调用，零消耗）
             if (err.message?.includes("Queue timeout") || err.message?.includes("Server busy")) {
                 await rollbackUsage(request, faceSessionId, body as Record<string, unknown>);

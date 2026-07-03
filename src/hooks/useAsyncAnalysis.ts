@@ -63,8 +63,19 @@ export function getAnalysisLock(): { sessionId: string; startedAt: number } | nu
     }
 }
 
+interface FetchWithRetryOptions {
+    retries?: number;
+    backoff?: number;
+    /** 是否允许在 5xx 服务端错误时重试；AI 调用应设为 false，避免单次失败放大为多次 AI 扣费 */
+    retryOnServerError?: boolean;
+}
+
 // Helper for auto-retry
-async function fetchWithRetry(url: string, options: RequestInit, retries = 3, backoff = 1000): Promise<Response> {
+async function fetchWithRetry(
+    url: string,
+    options: RequestInit,
+    { retries = 1, backoff = 1000, retryOnServerError = false }: FetchWithRetryOptions = {}
+): Promise<Response> {
     try {
         const res = await fetch(url, options);
         // 429 is a business logic rejection (usage limit), do NOT retry
@@ -72,7 +83,7 @@ async function fetchWithRetry(url: string, options: RequestInit, retries = 3, ba
             const errorData = await res.json().catch(() => ({}));
             throw new Error(errorData.error || '您已达到测试次数上限');
         }
-        // Retry only on Server Errors (5xx)
+        // 默认不在 5xx 时重试；调用方可显式开启（仅用于幂等、非 AI 调用）
         if (!res.ok && res.status >= 500) {
             throw new Error(`Request failed: ${res.status}`);
         }
@@ -87,6 +98,10 @@ async function fetchWithRetry(url: string, options: RequestInit, retries = 3, ba
         if (error.message?.includes('测试次数上限') || error.message?.includes('测试上限')) {
             throw error;
         }
+        // 5xx 错误且未开启 retryOnServerError 时直接抛出
+        if (error.message?.includes('Request failed: 5') && !retryOnServerError) {
+            throw error;
+        }
         if (retries > 0) {
             console.log(`Retrying ${url}... (${retries} attempts left)`);
             await new Promise(r => setTimeout(r, backoff));
@@ -94,7 +109,7 @@ async function fetchWithRetry(url: string, options: RequestInit, retries = 3, ba
             if (options.signal?.aborted) {
                 throw new Error('Request aborted');
             }
-            return fetchWithRetry(url, options, retries - 1, backoff * 1.5);
+            return fetchWithRetry(url, options, { retries: retries - 1, backoff: backoff * 1.5, retryOnServerError });
         }
         throw err;
     }
@@ -356,12 +371,13 @@ export function useAsyncAnalysis() {
 
                     if (visionImages.length > 0) {
                         try {
+                            // AI 视觉调用：不在 5xx 时自动重试，避免单次失败放大为多次扣费
                             const faceRes = await fetchWithRetry("/api/advisor/face-analyze", {
                                 method: "POST",
                                 headers: { "Content-Type": "application/json" },
                                 body: JSON.stringify({ sessionId, images: visionImages }),
                                 signal: abortController.signal
-                            });
+                            }, { retries: 0 });
 
                             if (faceRes.ok) {
                                 faceAnalysis = await faceRes.json();
@@ -420,6 +436,7 @@ export function useAsyncAnalysis() {
             // NOTE: Do NOT clear localStorage here — only clear after server confirms success
 
             const privacyConsent = getPrivacyConsentPayload();
+            // AI 综合分析调用：不在 5xx 时自动重试，避免单次失败放大为多次扣费
             const analyzeRes = await fetchWithRetry("/api/advisor/analyze", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -432,7 +449,7 @@ export function useAsyncAnalysis() {
                     ...(isFreeRetry ? { freeRetry: true } : {})
                 }),
                 signal: abortController.signal
-            });
+            }, { retries: 0 });
 
             // 读取队列状态
             const qp = analyzeRes.headers.get("X-Queue-Position");

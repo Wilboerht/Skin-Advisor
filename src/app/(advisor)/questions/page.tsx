@@ -171,7 +171,9 @@ export default function QuestionsPage() {
                     }, 0);
                 }
             }
-        } catch (e) { console.error(e); }
+        } catch (e) {
+            console.error("Failed to restore saved progress:", e);
+        }
     };
 
     // resumeSavedProgress ref（必须在函数定义之后）
@@ -191,7 +193,9 @@ export default function QuestionsPage() {
             if (urlParams.get('edit') === 'true') {
                 resumeSavedProgressRef.current();
             }
-        } catch (e) { console.error(e); }
+        } catch (e) {
+            console.error("Failed to parse edit URL params:", e);
+        }
     }, []);
 
     // 自动保存答案和步骤

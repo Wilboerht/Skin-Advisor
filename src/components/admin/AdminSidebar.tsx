@@ -55,7 +55,9 @@ export default function AdminSidebar() {
                     setAdminName(data.user.name || data.user.username);
                 }
             })
-            .catch(() => { /* ignore */ });
+            .catch((e) => {
+                console.error("Failed to fetch admin info:", e);
+            });
     }, []);
 
     const menuItems = adminRole === "super_admin"

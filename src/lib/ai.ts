@@ -3,6 +3,7 @@ import prisma from "./prisma";
 import { aiLogger } from "./logger";
 import { TEXT_ANALYSIS_SYSTEM_PROMPT } from "@/config/ai-prompts";
 import { circuitBreaker } from "./circuit-breaker";
+import { checkAIBudget, recordAIUsage } from "./ai-budget";
 import {
     extractJsonFromResponse,
     getDefaultFaceAnalysisResult,
@@ -16,6 +17,23 @@ import {
 // ============================================================================
 
 export type AIProvider = "deepseek" | "qwen";
+
+export const ALLOWED_AI_PROVIDERS: AIProvider[] = ["deepseek", "qwen"];
+
+export const ALLOWED_AI_MODELS: Record<AIProvider, string[]> = {
+    deepseek: ["deepseek-chat", "deepseek-reasoner", "deepseek-vl"],
+    qwen: ["qwen-turbo", "qwen-plus", "qwen-max", "qwen-vl-max", "qwen-vl-plus"],
+};
+
+/**
+ * 校验 provider + model 是否在成本白名单内。
+ * 防止配置被写入 gpt-4o、claude-3-opus 等高价模型导致账单失控。
+ */
+export function isAllowedAIModel(provider: string, model: string): boolean {
+    const p = provider as AIProvider;
+    if (!ALLOWED_AI_PROVIDERS.includes(p)) return false;
+    return ALLOWED_AI_MODELS[p]?.includes(model) ?? false;
+}
 
 export interface ApiKeys {
     deepseek?: string;
@@ -54,7 +72,7 @@ const DEFAULT_AI_SETTINGS: AISettings = {
     },
 };
 
-// 服务商降级链
+// 服务商降级链（按成本从低到高排序，优先使用便宜模型）
 const PROVIDER_FALLBACK_CHAIN: Record<string, AIProvider[]> = {
     deepseek: ["qwen"],
 };
@@ -79,6 +97,62 @@ export function invalidateAISettingsCache(): void {
 // ============================================================================
 
 /**
+ * 安全合并数据库配置，强制校验 provider/model 在白名单内。
+ */
+function sanitizeAISettings(dbSettings: Partial<AISettings>): AISettings {
+    const base = { ...DEFAULT_AI_SETTINGS };
+
+    // 校验 provider
+    const provider = (dbSettings.provider || base.provider) as AIProvider;
+    if (!ALLOWED_AI_PROVIDERS.includes(provider)) {
+        aiLogger.warn(`[AISettings] Rejected illegal provider from DB: ${provider}, fallback to ${base.provider}`);
+    } else {
+        base.provider = provider;
+    }
+
+    const visionProvider = (dbSettings.visionProvider || base.visionProvider) as AIProvider;
+    if (!ALLOWED_AI_PROVIDERS.includes(visionProvider)) {
+        aiLogger.warn(`[AISettings] Rejected illegal visionProvider from DB: ${visionProvider}, fallback to ${base.visionProvider}`);
+    } else {
+        base.visionProvider = visionProvider;
+    }
+
+    // 校验 model：非法模型回退到该 provider 的默认模型
+    const model = dbSettings.model || base.model;
+    if (!isAllowedAIModel(base.provider, model)) {
+        aiLogger.warn(`[AISettings] Rejected illegal/unknown model from DB: ${base.provider}/${model}, fallback to ${base.model}`);
+    } else {
+        base.model = model;
+    }
+
+    const visionModel = dbSettings.visionModel || base.visionModel;
+    if (!isAllowedAIModel(base.visionProvider, visionModel)) {
+        aiLogger.warn(`[AISettings] Rejected illegal/unknown visionModel from DB: ${base.visionProvider}/${visionModel}, fallback to ${base.visionModel}`);
+    } else {
+        base.visionModel = visionModel;
+    }
+
+    // 数值边界保护
+    if (typeof dbSettings.maxTokens === "number" && dbSettings.maxTokens > 0 && dbSettings.maxTokens <= 8000) {
+        base.maxTokens = dbSettings.maxTokens;
+    }
+    if (typeof dbSettings.temperature === "number" && dbSettings.temperature >= 0 && dbSettings.temperature <= 2) {
+        base.temperature = dbSettings.temperature;
+    }
+    if (typeof dbSettings.textSystemPrompt === "string" && dbSettings.textSystemPrompt.length > 0) {
+        base.textSystemPrompt = dbSettings.textSystemPrompt;
+    }
+    if (typeof dbSettings.visionSystemPrompt === "string") {
+        base.visionSystemPrompt = dbSettings.visionSystemPrompt;
+    }
+
+    // apiKeys 永远只从环境变量读取，禁止 DB 覆盖
+    base.apiKeys = DEFAULT_AI_SETTINGS.apiKeys;
+
+    return base;
+}
+
+/**
  * 获取 AI 配置 (带缓存)
  */
 export async function getAISettings(): Promise<AISettings> {
@@ -95,13 +169,7 @@ export async function getAISettings(): Promise<AISettings> {
 
         if (setting?.value) {
             const dbSettings = setting.value as Partial<AISettings>;
-            // 合并默认值
-            // 注意：apiKeys 仅允许来自环境变量，禁止从数据库覆盖，防止密钥泄露或被篡改
-            cachedSettings = {
-                ...DEFAULT_AI_SETTINGS,
-                ...dbSettings,
-                apiKeys: DEFAULT_AI_SETTINGS.apiKeys,
-            };
+            cachedSettings = sanitizeAISettings(dbSettings);
         } else {
             cachedSettings = { ...DEFAULT_AI_SETTINGS };
         }
@@ -193,6 +261,12 @@ export async function generateText(
     // 如果外部 signal 已 abort，直接抛出
     if (signal?.aborted) {
         throw new Error("Request cancelled by client.");
+    }
+
+    // 全局预算熔断检查
+    const budgetStatus = await checkAIBudget("text");
+    if (!budgetStatus.allowed) {
+        throw new Error(`[AIBudget] ${budgetStatus.reason}`);
     }
 
     const settings = await getAISettings();
@@ -344,6 +418,17 @@ async function callProviderInternal(
                 totalTokens: usage.total_tokens,
                 durationMs: Date.now() - startedAt,
                 promptLength: systemPrompt.length + userPrompt.length,
+            });
+            // 持久化到数据库，用于成本审计与预算熔断
+            await recordAIUsage({
+                provider,
+                model,
+                requestType: "text",
+                promptTokens: usage.prompt_tokens || 0,
+                completionTokens: usage.completion_tokens || 0,
+                totalTokens: usage.total_tokens || 0,
+                durationMs: Date.now() - startedAt,
+                success: true,
             });
         }
         // 记录成功到熔断器

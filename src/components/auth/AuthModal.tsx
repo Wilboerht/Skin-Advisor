@@ -156,13 +156,10 @@ export function AuthModal() {
         setLoading(true);
         try {
             if (loginMethod === "code") {
-                console.log("🔐 Starting code login request...");
                 await loginWithCode({ phone: loginPhone, code: loginCode });
             } else {
-                console.log("🔐 Starting password login request...");
                 await login({ phone: loginPhone, password: loginPassword });
             }
-            console.log("✅ Login successful, closing modal...");
             toast.success("欢迎回来！");
             handleAuthSuccess();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

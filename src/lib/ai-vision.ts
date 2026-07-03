@@ -2,11 +2,13 @@ import {
     getAISettings,
     getApiKeysForProvider,
     createOpenAIClient,
+    isAllowedAIModel,
     type AIProvider,
     type AISettings
 } from "./ai";
 import { aiLogger } from "./logger";
 import { circuitBreaker } from "./circuit-breaker";
+import { checkAIBudget, recordAIUsage } from "./ai-budget";
 import {
     VISION_ANALYSIS_SYSTEM_PROMPT,
     QWEN_VISION_PROMPT
@@ -37,11 +39,24 @@ export async function analyzeImages(
     if (signal?.aborted) {
         throw new Error("Vision request cancelled by client.");
     }
+    // 0. 全局预算熔断检查
+    const budgetStatus = await checkAIBudget("vision");
+    if (!budgetStatus.allowed) {
+        throw new Error(`[AIBudget] ${budgetStatus.reason}`);
+    }
+
     // 1. 获取配置
     const settings = await getAISettings();
     // 优先使用数据库配置的 provider，如果没有则回退到传入参数或默认值
     const provider = (settings.visionProvider || _defaultProvider) as AIProvider;
-    const model = settings.visionModel || getDefaultVisionModel(provider);
+    let model = settings.visionModel || getDefaultVisionModel(provider);
+
+    // 模型白名单校验（防止被切到高价视觉模型）
+    if (!isAllowedAIModel(provider, model)) {
+        const fallbackModel = getDefaultVisionModel(provider);
+        aiLogger.warn(`[AISettings] Rejected illegal vision model: ${provider}/${model}, fallback to ${fallbackModel}`);
+        model = fallbackModel;
+    }
 
     // 获取 prompt (优先数据库配置)
     const systemPrompt = getVisionSystemPrompt(provider, settings) || _defaultSystemPrompt;
@@ -195,6 +210,7 @@ async function callOpenAICompatibleVision(
 
     // 记录 Token 消耗日志
     const usage = response.usage;
+    const durationMs = Date.now() - startedAt;
     if (usage) {
         aiLogger.info(`[TokenUsage] Vision AI (${provider}/${model})`, {
             promptTokens: usage.prompt_tokens,
@@ -202,7 +218,18 @@ async function callOpenAICompatibleVision(
             totalTokens: usage.total_tokens,
             imageCount: images.length,
             imageDataKB: Math.round(totalImageBytes / 1024),
-            durationMs: Date.now() - startedAt,
+            durationMs,
+        });
+        // 持久化到数据库，用于成本审计与预算熔断
+        await recordAIUsage({
+            provider,
+            model,
+            requestType: "vision",
+            promptTokens: usage.prompt_tokens || 0,
+            completionTokens: usage.completion_tokens || 0,
+            totalTokens: usage.total_tokens || 0,
+            durationMs,
+            success: true,
         });
     }
 

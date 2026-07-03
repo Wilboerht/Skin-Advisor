@@ -324,6 +324,30 @@ model AppInstance {
   @@index([lastPing])
 }
 
+// AI 调用用量日志 — 用于成本审计、预算熔断与异常告警
+model AIUsageLog {
+  id               String   @id @default(cuid())
+  provider         String // deepseek | qwen
+  model            String // 实际使用的模型名
+  requestType      String // text | vision
+  sessionId        String?
+  userId           String?
+  promptTokens     Int      @default(0)
+  completionTokens Int      @default(0)
+  totalTokens      Int      @default(0)
+  estimatedCost    Float    @default(0) // 估算费用，单位人民币
+  durationMs       Int      @default(0)
+  success          Boolean  @default(true)
+  errorCode        String?
+  createdAt        DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([provider, model])
+  @@index([sessionId])
+  @@index([userId])
+  @@index([requestType, createdAt])
+}
+
 // ===== 肌智派送好礼 · 活动系统 =====
 
 // 活动/抽奖

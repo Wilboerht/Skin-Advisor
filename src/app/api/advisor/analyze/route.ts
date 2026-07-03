@@ -18,6 +18,7 @@ import { matchCharacterIP } from "@/lib/result-utils";
 
 import { checkUsageLimit, reserveUsage, rollbackUsage } from "@/lib/usage-limit";
 import { extractGuestIdentifiers } from "@/lib/guest-limit";
+import { aiLogger } from "@/lib/logger";
 import DOMPurify from 'isomorphic-dompurify';
 
 /** 从服务端 User-Agent 解析设备信息 */
@@ -540,6 +541,15 @@ export async function POST(request: NextRequest) {
                 return NextResponse.json(
                     { error: "分析请求已取消，请重试" },
                     { status: 499 }
+                );
+            }
+            // 预算熔断：直接拒绝请求，不走 fallback（避免隐藏费用问题）
+            if (e.message?.includes("[AIBudget]")) {
+                aiLogger.warn("AI budget exceeded, rejecting request", { error: e.message });
+                await rollbackUsage(request, effectiveSessionId, body as Record<string, unknown>);
+                return NextResponse.json(
+                    { error: "AI 服务当前额度已用完，请稍后再试", code: "AI_BUDGET_EXCEEDED" },
+                    { status: 503, headers: { "Retry-After": "3600" } }
                 );
             }
             console.error("AI Generation failed, falling back to rule engine", e);

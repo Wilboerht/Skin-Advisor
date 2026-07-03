@@ -63,6 +63,56 @@ if (!dbUrl.startsWith('postgresql://')) {
   console.warn('   ⚠️  警告: DATABASE_URL 不是 PostgreSQL 协议，当前值:', dbUrl.substring(0, 50));
 }
 
+// 检查敏感配置未使用占位值（防止直接复制 .env.example 导致密钥泄露或弱口令）
+const PLACEHOLDER_PATTERNS = [
+  /^your-.*-here$/i,
+  /^CHANGE_ME/i,
+  /^123456$/,
+  /^password$/i,
+  /^admin$/i,
+];
+
+function isPlaceholder(value) {
+  if (!value) return false;
+  return PLACEHOLDER_PATTERNS.some(p => p.test(value.trim()));
+}
+
+const secretVars = ['JWT_SECRET', 'ADMIN_SESSION_SECRET', 'CRON_SECRET', 'IP_HASH_SALT', 'ADMIN_SECRET', 'SETUP_SECRET', 'INTERNAL_API_SECRET'];
+for (const key of secretVars) {
+  const value = process.env[key];
+  if (value && isPlaceholder(value)) {
+    console.error(`   ❌ 错误: ${key} 使用了占位值或弱口令，请替换为强随机字符串！`);
+    hasError = true;
+  }
+}
+
+// 检查 AI Key：至少配置一个（无 AI Key 会导致分析功能不可用）
+const hasAIKey = !!(process.env.QWEN_API_KEY || process.env.DEEPSEEK_API_KEY);
+if (!hasAIKey) {
+  console.warn('   ⚠️  警告: 未配置 QWEN_API_KEY 或 DEEPSEEK_API_KEY，AI 分析功能将不可用');
+}
+
+// 检查 Docker Compose 数据库密码（如果使用 compose）
+const postgresPassword = process.env.POSTGRES_PASSWORD || '';
+if (postgresPassword && (postgresPassword === 'postgres' || postgresPassword.length < 12)) {
+  console.error('   ❌ 错误: POSTGRES_PASSWORD 过于简单，请使用至少 12 位的强随机密码！');
+  hasError = true;
+}
+
+// 提示移除一次性初始管理员密码
+if (process.env.ADMIN_INITIAL_PASSWORD) {
+  console.warn('   ⚠️  警告: ADMIN_INITIAL_PASSWORD 已设置。首次 setup 完成后请立即从环境变量中移除该值。');
+  if (process.env.ADMIN_INITIAL_PASSWORD.length < 12) {
+    console.error('   ❌ 错误: ADMIN_INITIAL_PASSWORD 长度过短（至少 12 位）');
+    hasError = true;
+  }
+}
+
+if (hasError) {
+  console.error('\n❌ 环境变量安全检查失败，请配置后重试。');
+  process.exit(1);
+}
+
 console.log();
 
 // ========================================
