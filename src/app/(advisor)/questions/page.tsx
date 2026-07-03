@@ -533,16 +533,16 @@ export default function QuestionsPage() {
                             initial={{ opacity: 0, scale: 0.95, y: 10 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                            className="relative w-full max-w-md bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm"
+                            className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm"
                         >
-                            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
-                                <div className="flex-1 text-center sm:text-left">
+                            <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+                                <div className="sm:w-[60%] text-center sm:text-left">
                                     <h3 className="text-lg font-serif text-[#1A1A1A] mb-3 sm:mb-2">退出测试？</h3>
                                     <p className="text-sm text-[#5E5E5E] leading-relaxed">
                                         您的进度已自动保存，下次返回可直接从此处继续。
                                     </p>
                                 </div>
-                                <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-auto">
+                                <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
                                     <button
                                         onClick={() => setShowExitConfirm(false)}
                                         className="px-6 h-10 rounded-lg border border-[#1B3A5C] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
@@ -575,16 +575,16 @@ export default function QuestionsPage() {
                             initial={{ opacity: 0, scale: 0.95, y: 10 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                            className="relative w-full max-w-md bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm"
+                            className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm"
                         >
-                            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
-                                <div className="flex-1 text-center sm:text-left">
+                            <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+                                <div className="sm:w-[60%] text-center sm:text-left">
                                     <h3 className="text-lg font-serif text-[#1A1A1A] mb-3 sm:mb-2">确认提交？</h3>
                                     <p className="text-sm text-[#5E5E5E] leading-relaxed">
                                         我们检测到您的填写速度较快。建议您再次核对，确保 AI 能为您提供<span className="text-[#1A1A1A] font-medium"> 最精准 </span>的分析结果。
                                     </p>
                                 </div>
-                                <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-auto">
+                                <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
                                     <button
                                         onClick={() => {
                                             setShowQualityWarning(false);
