@@ -208,10 +208,10 @@ export default function GiftPage() {
                   本期好礼
                 </span>
               </div>
-              <div className="flex flex-row md:grid md:grid-cols-3 gap-4 md:gap-6 place-items-start text-center mt-4 overflow-x-auto">
+              <div className="flex flex-col md:grid md:grid-cols-3 gap-4 md:gap-6 place-items-start text-center mt-4">
                 {Array.isArray(campaign.prizes) && campaign.prizes.map((prize, i) => (
-                  <div key={i} className="flex flex-col items-center shrink-0 w-[120px] md:w-full">
-                    <div className="relative w-full aspect-square max-w-[80px] p-3 flex items-center justify-center mb-3">
+                  <div key={i} className="flex flex-row md:flex-col items-center w-full gap-3 md:gap-0">
+                    <div className="relative w-[56px] h-[56px] md:w-full md:aspect-square md:max-w-[80px] p-2 md:p-3 flex items-center justify-center mb-0 md:mb-3 shrink-0">
                       {prize.image ? (
                         <Image
                           src={prize.image}
@@ -223,11 +223,13 @@ export default function GiftPage() {
                         <Gift className="w-8 h-8 text-[#8B7355]/30" />
                       )}
                     </div>
-                    <h3 className="text-sm font-medium text-[#1A1A1A] mb-1 leading-tight">{prize.name}</h3>
-                    {prize.description && (
-                      <p className="text-xs text-[#5E5E5E] leading-relaxed mb-1">{prize.description}</p>
-                    )}
-                    <p className="text-xs text-[#8B7355]">共 {prize.quantity} 份</p>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-[13px] font-medium text-[#1B3A5C] mb-0.5 leading-tight">{prize.name}</h3>
+                      {prize.description && (
+                        <p className="text-[13px] text-[#5E5E5E] leading-relaxed">{prize.description}</p>
+                      )}
+                      <p className="text-[13px] text-[#8B7355]">×{prize.quantity}</p>
+                    </div>
                   </div>
                 ))}
               </div>
