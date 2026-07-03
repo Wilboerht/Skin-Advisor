@@ -30,10 +30,20 @@ module.exports = {
         min_uptime: '10s',
         // 内存限制
         max_memory_restart: '2G',
-        // 优雅关闭
-        kill_timeout: 5000,
+        // 优雅关闭 (15s 充足余量)
+        kill_timeout: 15000,
         listen_timeout: 10000,
         // 环境变量文件
         env_file: './.env.production',
     }]
 };
+
+/**
+ * ====================================
+ * PM2 Logrotate 配置（部署后执行一次）:
+ *   pm2 install pm2-logrotate
+ *   pm2 set pm2-logrotate:max_size 10M
+ *   pm2 set pm2-logrotate:retain 30
+ *   pm2 set pm2-logrotate:compress true
+ * ====================================
+ */

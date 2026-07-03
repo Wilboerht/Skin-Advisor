@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 export const maxDuration = 60;
 
@@ -113,13 +114,70 @@ export async function GET(request: NextRequest) {
         await cleanupSessions(excessSessions, stats);
 
 
+        // ===== 4. 清理过期 AI 用量日志（保留 90 天）=====
+        const aiLogCutoff = new Date(now - 90 * 24 * 60 * 60 * 1000);
+        const deletedAiLogs = await prisma.aIUsageLog.deleteMany({
+            where: { createdAt: { lt: aiLogCutoff } },
+        });
+
+        // ===== 5. 清理过期管理审计日志（保留 180 天）=====
+        const auditLogCutoff = new Date(now - 180 * 24 * 60 * 60 * 1000);
+        const deletedAuditLogs = await prisma.adminAuditLog.deleteMany({
+            where: { createdAt: { lt: auditLogCutoff } },
+        });
+
+        // ===== 6. 清理过期 GuestUsage（保留 30 天）=====
+        const guestCutoff = new Date(now - 30 * 24 * 60 * 60 * 1000);
+        const deletedGuests = await prisma.guestUsage.deleteMany({
+            where: { lastTestAt: { lt: guestCutoff } },
+        });
+
+        // ===== 7. 清理过期 WeatherCache =====
+        const deletedWeather = await prisma.weatherCache.deleteMany({
+            where: { expiresAt: { lt: new Date() } },
+        });
+
+        // ===== 8. 清理僵尸 AppInstance（心跳超过 5 分钟未更新）=====
+        const staleInstanceCutoff = new Date(now - 5 * 60 * 1000);
+        const deletedInstances = await prisma.appInstance.deleteMany({
+            where: { lastPing: { lt: staleInstanceCutoff } },
+        });
+
+        // ===== 9. 清理过期上传文件（保留 30 天）=====
+        let deletedFiles = 0;
+        try {
+            const fs = await import("fs/promises");
+            const path = await import("path");
+            const uploadDir = path.resolve(process.cwd(), "public", "uploads");
+            const files = await fs.readdir(uploadDir).catch(() => [] as string[]);
+            const fileCutoff = now - 30 * 24 * 60 * 60 * 1000;
+            for (const file of files) {
+                try {
+                    const filePath = path.join(uploadDir, file);
+                    const stat = await fs.stat(filePath);
+                    if (stat.mtimeMs < fileCutoff) {
+                        await fs.unlink(filePath);
+                        deletedFiles++;
+                    }
+                } catch { /* skip unreadable files */ }
+            }
+        } catch { /* upload dir may not exist */ }
+
         return NextResponse.json({
             success: true,
             timestamp: new Date().toISOString(),
-            stats,
+            stats: {
+                ...stats,
+                aiLogs: deletedAiLogs.count,
+                auditLogs: deletedAuditLogs.count,
+                guests: deletedGuests.count,
+                weather: deletedWeather.count,
+                instances: deletedInstances.count,
+                files: deletedFiles,
+            },
         });
     } catch (error: unknown) {
-        console.error("[Cleanup] ❌ Cron job failed:", error);
+        logger.error("[Cleanup] Cron job failed", { error: error instanceof Error ? error.message : String(error) });
         return NextResponse.json(
             {
                 success: false,

@@ -53,6 +53,7 @@ const prismaClientSingleton = () => {
         connectionTimeoutMillis: 30000,
         keepAlive: true,
         keepAliveInitialDelayMillis: 10000,
+        statement_timeout: 30000, // 单条查询最长 30s，防止慢查询占连接
     });
 
     // 监听连接池错误

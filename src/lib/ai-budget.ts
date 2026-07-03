@@ -200,7 +200,7 @@ function addPendingReservation(requestType: string, estimatedCost: number): void
     pendingReservations.set(requestType, current + estimatedCost);
 }
 
-function releasePendingReservation(requestType: string, estimatedCost: number): void {
+export function releasePendingReservation(requestType: string, estimatedCost: number): void {
     const current = pendingReservations.get(requestType) || 0;
     const next = Math.max(0, current - estimatedCost);
     if (next <= 0) {

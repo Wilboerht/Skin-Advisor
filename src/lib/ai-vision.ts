@@ -8,7 +8,7 @@ import {
 } from "./ai";
 import { aiLogger } from "./logger";
 import { circuitBreaker } from "./circuit-breaker";
-import { checkAIBudget, recordAIUsage } from "./ai-budget";
+import { checkAIBudget, recordAIUsage, releasePendingReservation } from "./ai-budget";
 import { filterHealthyKeys, recordKeyResult } from "./ai-key-health";
 import {
     VISION_ANALYSIS_SYSTEM_PROMPT,
@@ -70,8 +70,9 @@ export async function analyzeImages(
         throw new Error(`[AIBudget] ${budgetStatus.reason}`);
     }
 
-    // 1. 获取配置
-    const settings = await getAISettings();
+    try {
+        // 1. 获取配置
+        const settings = await getAISettings();
     // 优先使用数据库配置的 provider，如果没有则回退到传入参数或默认值
     const provider = (settings.visionProvider || _defaultProvider) as AIProvider;
     let model = settings.visionModel || getDefaultVisionModel(provider);
@@ -178,6 +179,9 @@ export async function analyzeImages(
     }
 
     throw lastError || new Error("Vision analysis failed after exhausting all keys.");
+    } finally {
+        releasePendingReservation("vision", 0.01);
+    }
 }
 
 // ============================================================================

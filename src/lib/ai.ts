@@ -3,7 +3,7 @@ import prisma from "./prisma";
 import { aiLogger } from "./logger";
 import { TEXT_ANALYSIS_SYSTEM_PROMPT } from "@/config/ai-prompts";
 import { circuitBreaker } from "./circuit-breaker";
-import { checkAIBudget, recordAIUsage } from "./ai-budget";
+import { checkAIBudget, recordAIUsage, releasePendingReservation } from "./ai-budget";
 import { filterHealthyKeys, recordKeyResult } from "./ai-key-health";
 import {
     extractJsonFromResponse,
@@ -276,37 +276,42 @@ export async function generateText(
         throw new Error(`[AIBudget] ${budgetStatus.reason}`);
     }
 
-    const settings = await getAISettings();
-    const primaryProvider = preferredProvider || settings.provider || "qwen";
-    const primaryModel = settings.model;
+    try {
+        const settings = await getAISettings();
+        const primaryProvider = preferredProvider || settings.provider || "qwen";
+        const primaryModel = settings.model;
 
-    // 构建尝试队列
-    const fallbackList = PROVIDER_FALLBACK_CHAIN[primaryProvider] || [];
-    const providerQueue = [primaryProvider, ...fallbackList];
+        // 构建尝试队列
+        const fallbackList = PROVIDER_FALLBACK_CHAIN[primaryProvider] || [];
+        const providerQueue = [primaryProvider, ...fallbackList];
 
-    aiLogger.info(`AI Execution Plan: ${providerQueue.join(" -> ")}`);
+        aiLogger.info(`AI Execution Plan: ${providerQueue.join(" -> ")}`);
 
-    let lastError: Error | null = null;
+        let lastError: Error | null = null;
 
-    for (const provider of providerQueue) {
-        const model = provider === primaryProvider ? primaryModel : getModelForProvider(provider);
+        for (const provider of providerQueue) {
+            const model = provider === primaryProvider ? primaryModel : getModelForProvider(provider);
 
-        try {
-            const result = await callProviderWithRetry(provider as AIProvider, model, systemPrompt, userPrompt, settings, signal);
-            aiLogger.info(`AI Generation Success using provider: ${provider}`);
-            return result;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (error: any) {
-            if (error.name === 'AbortError' || signal?.aborted) {
-                throw new Error("Request cancelled by client.");
+            try {
+                const result = await callProviderWithRetry(provider as AIProvider, model, systemPrompt, userPrompt, settings, signal);
+                aiLogger.info(`AI Generation Success using provider: ${provider}`);
+                return result;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            } catch (error: any) {
+                if (error.name === 'AbortError' || signal?.aborted) {
+                    throw new Error("Request cancelled by client.");
+                }
+                aiLogger.warn(`Provider ${provider} failed: ${error.message}. Switching to next...`);
+                lastError = error;
+                continue;
             }
-            aiLogger.warn(`Provider ${provider} failed: ${error.message}. Switching to next...`);
-            lastError = error;
-            continue;
         }
-    }
 
-    throw lastError || new Error("All AI providers failed.");
+        throw lastError || new Error("All AI providers failed.");
+    } finally {
+        // 安全释放：确保即使异常路径未调 recordAIUsage 也能释放预留
+        releasePendingReservation("text", 0.01);
+    }
 }
 
 /**

@@ -251,10 +251,15 @@ class AIRequestQueue {
         if (done) {
             done();
         } else {
-            // 安全网：无等待释放的 resolver，直接修正计数
-            // 防止 acquireCount 和实际运行数不一致导致的槽位泄漏
             this.runningCount = Math.max(0, this.runningCount - 1);
             this.processQueue();
+        }
+
+        // 防止 releaseResolvers 泄漏：超过 100 个未消费则清理最旧的
+        if (this.releaseResolvers.length > 100) {
+            aiLogger.warn(`[AIQueue] releaseResolvers leak detected (${this.releaseResolvers.length}), trimming`);
+            const overflow = this.releaseResolvers.splice(0, this.releaseResolvers.length - 100);
+            overflow.forEach(d => d()); // 释放所有泄漏的 resolver
         }
     }
 

@@ -6,6 +6,7 @@ import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { getClientIP } from "@/lib/ratelimit";
 import { verifySessionSignature, createSignedSession, ADMIN_SESSION_COOKIE_NAME } from "@/lib/session-verify";
+import { logger } from "@/lib/logger";
 
 interface AdminSession {
     adminId: string;
@@ -57,7 +58,7 @@ export const verifyAdminSession = cache(async (): Promise<AdminSession | null> =
             role: admin.role
         };
     } catch (error) {
-        console.error("Session verification error:", error);
+        logger.error("Session verification error", { error: String(error) });
         return null;
     }
 });
@@ -97,7 +98,7 @@ export async function logAdminAction(params: {
             }
         });
     } catch (error) {
-        console.error("🔴 [SECURITY] Failed to log audit action:", error);
+        logger.error("[SECURITY] Failed to log audit action", { error: String(error) });
         // Don't throw - audit logging should not break main functionality
         // But ops should be alerted: audit trail gaps indicate DB or infra issues
     }
@@ -136,7 +137,7 @@ export function requireRole(...allowedRoles: string[]) {
             }
 
             if (!allowedRoles.includes(admin.role)) {
-                console.warn(`[Security] Role forbidden: ${admin.role} not in [${allowedRoles.join(", ")}]`);
+                logger.warn(`[Security] Role forbidden`, { role: admin.role, allowed: allowedRoles });
                 return NextResponse.json(
                     { success: false, error: "Forbidden" },
                     { status: 403 }

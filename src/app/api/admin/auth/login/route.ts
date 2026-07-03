@@ -30,6 +30,15 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // Rate limit: max 5 login attempts per 15 minutes per username (防止多 IP 爆破同一账号)
+        const usernameLimit = await rateLimit(`admin-login-user-${username.toLowerCase()}`, "login");
+        if (!usernameLimit.success) {
+            return NextResponse.json(
+                { error: "Too many login attempts. Please try again later." },
+                { status: 429 }
+            );
+        }
+
         // Input length limits to prevent DoS
         if (username.length > 255 || password.length > 255) {
             return NextResponse.json(
