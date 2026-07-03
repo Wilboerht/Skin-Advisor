@@ -21,8 +21,6 @@ export interface VisionImage {
     angle?: string;
 }
 
-const RETRY_DELAY_MS = 1000;
-
 // 辅助函数：延迟
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -34,6 +32,22 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
  */
 function exponentialBackoff(attempt: number, baseDelay: number, maxDelay: number): number {
     return Math.min(baseDelay * Math.pow(2, attempt - 1), maxDelay);
+}
+
+/**
+ * 合并多个 AbortSignal，任一 abort 则合并后的 signal abort
+ */
+function mergeAbortSignals(...signals: (AbortSignal | undefined)[]): AbortSignal {
+    const controller = new AbortController();
+    const onAbort = () => {
+        controller.abort();
+        signals.forEach(s => s?.removeEventListener('abort', onAbort));
+    };
+    signals.forEach(s => {
+        if (s?.aborted) { controller.abort(); return; }
+        s?.addEventListener('abort', onAbort, { once: true });
+    });
+    return controller.signal;
 }
 
 /**
@@ -98,74 +112,68 @@ export async function analyzeImages(
     for (let i = 0; i < apiKeys.length; i++) {
         const apiKey = apiKeys[i];
 
-        // 每个 Key 最多重试 2 次 (网络抖动)
-        for (let attempt = 1; attempt <= 2; attempt++) {
-            try {
-                if (attempt > 1) await delay(RETRY_DELAY_MS * attempt);
-                if (i > 0 || attempt > 1) aiLogger.warn(`Vision Retry: Key ${i + 1}, Attempt ${attempt}`);
+        // 每个 Key 只尝试 1 次（载荷错误由外层 face-analyze 重试处理）
+        // 避免双层重试导致单次用户请求产生 3 keys × 2 次 = 6 次以上的 API 调用
+        try {
+            if (i > 0) aiLogger.warn(`Vision Retry: Key ${i + 1}/${apiKeys.length}`);
 
-                const result = await callVisionAPI(provider, apiKey, model, images, systemPrompt, finalUserPrompt, signal);
+            const result = await callVisionAPI(provider, apiKey, model, images, systemPrompt, finalUserPrompt, signal);
 
-                // 解析与验证
-                const jsonData = extractJsonFromResponse<Record<string, unknown>>(result);
-                if (!jsonData) throw new Error("Failed to parse JSON from Vision API");
+            // 解析与验证
+            const jsonData = extractJsonFromResponse<Record<string, unknown>>(result);
+            if (!jsonData) throw new Error("Failed to parse JSON from Vision API");
 
-                // 结构验证：必须包含核心分析字段，且 dimensions 应为对象
-                const hasDimensions = jsonData.dimensions && typeof jsonData.dimensions === 'object';
-                const hasSkinType = jsonData.skinType && typeof jsonData.skinType === 'object';
-                const hasFaceAnalysis = jsonData.faceAnalysis && typeof jsonData.faceAnalysis === 'object';
-                if (!hasDimensions && !hasSkinType && !hasFaceAnalysis) {
-                    throw new Error("AI response structure missing critical fields (dimensions/skinType/faceAnalysis)");
-                }
-
-                return jsonData; // 成功返回
-
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            } catch (error: any) {
-                if (error.name === 'AbortError' || signal?.aborted) {
-                    throw new Error("Vision request cancelled by client.");
-                }
-                lastError = error;
-                aiLogger.warn(`Vision Error (${provider}): ${error.message}`);
-
-                // 记录 key 健康状态
-                recordKeyResult(provider, apiKey, {
-                    success: false,
-                    isRateLimit: error.status === 429 || String(error).includes("429"),
-                    isAuthError: error.status === 401 || error.status === 403 || String(error).includes("401") || String(error).includes("403"),
-                });
-
-                const status = error.status;
-                const statusStr = String(error);
-                const isAuth = status === 401 || status === 403 || statusStr.includes("401") || statusStr.includes("403");
-                const isRateLimit = status === 429 || statusStr.includes("429");
-                const isServerError = status && status >= 500;
-
-                // 认证错误直接换 Key，无需退避
-                if (isAuth) {
-                    break;
-                }
-
-                // 限流/服务端错误：当前 Key 重试 2 次后，换 Key 前增加指数退避
-                if (isRateLimit || isServerError) {
-                    if (attempt >= 2) {
-                        const baseDelay = isRateLimit ? 1000 : 500;
-                        const maxDelay = isRateLimit ? 8000 : 4000;
-                        const delayMs = exponentialBackoff(i + 1, baseDelay, maxDelay);
-                        aiLogger.warn(`Vision ${provider} ${isRateLimit ? '429' : '5xx'}, backing off ${delayMs}ms before next key`);
-                        await delay(delayMs);
-                        if (signal?.aborted) {
-                            throw new Error("Vision request cancelled during backoff.");
-                        }
-                        break; // 进入下一个 Key
-                    }
-                    // 当前 Key 内继续重试
-                    continue;
-                }
-
-                // 其他错误 (如 400) 直接换 Key/跳出
-                break;
+            // 结构验证：必须包含核心分析字段，且 dimensions 应为对象
+            const hasDimensions = jsonData.dimensions && typeof jsonData.dimensions === 'object';
+            const hasSkinType = jsonData.skinType && typeof jsonData.skinType === 'object';
+            const hasFaceAnalysis = jsonData.faceAnalysis && typeof jsonData.faceAnalysis === 'object';
+            if (!hasDimensions && !hasSkinType && !hasFaceAnalysis) {
+                throw new Error("AI response structure missing critical fields (dimensions/skinType/faceAnalysis)");
             }
+
+            return jsonData; // 成功返回
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (error: any) {
+            if (error.name === 'AbortError' || signal?.aborted) {
+                throw new Error("Vision request cancelled by client.");
+            }
+            lastError = error;
+            aiLogger.warn(`Vision Error (${provider}/${apiKeys[i].slice(0, 8)}...): ${error.message}`);
+
+            // 记录 key 健康状态
+            recordKeyResult(provider, apiKey, {
+                success: false,
+                isRateLimit: error.status === 429 || String(error).includes("429"),
+                isAuthError: error.status === 401 || error.status === 403 || String(error).includes("401") || String(error).includes("403"),
+            });
+
+            const status = error.status;
+            const isAuth = status === 401 || status === 403 || String(error).includes("401") || String(error).includes("403");
+            const isRateLimit = status === 429 || String(error).includes("429");
+            const isServerError = status && status >= 500;
+
+            // 认证错误直接换 Key
+            if (isAuth) continue;
+
+            // 限流/服务端错误：换 Key 前指数退避
+            if (isRateLimit || isServerError) {
+                const isLastKey = i >= apiKeys.length - 1;
+                if (!isLastKey) {
+                    const baseDelay = isRateLimit ? 1000 : 500;
+                    const maxDelay = isRateLimit ? 8000 : 4000;
+                    const delayMs = exponentialBackoff(i + 1, baseDelay, maxDelay);
+                    aiLogger.warn(`Vision ${provider} ${isRateLimit ? '429' : '5xx'}, backing off ${delayMs}ms before next key`);
+                    await delay(delayMs);
+                    if (signal?.aborted) {
+                        throw new Error("Vision request cancelled during backoff.");
+                    }
+                }
+                continue;
+            }
+
+            // 其他错误 (如 400) 直接换 Key
+            continue;
         }
     }
 
@@ -207,6 +215,12 @@ async function callOpenAICompatibleVision(
 
     const client = createOpenAIClient(provider, apiKey);
 
+    // 合并外部 signal + 内部 50s 超时，防止 SDK 无限挂起
+    const visionTimeout = new AbortController();
+    const visionTimeoutId = setTimeout(() => visionTimeout.abort(), 50000);
+    const mergedSignal = mergeAbortSignals(signal, visionTimeout.signal);
+    const cleanupTimeout = () => clearTimeout(visionTimeoutId);
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const content: any[] = [
         { type: "text", text: userPrompt }
@@ -245,9 +259,10 @@ async function callOpenAICompatibleVision(
                 max_tokens: 2500,
                 temperature: 0.2
             },
-            { signal: signal as AbortSignal | undefined }
+            { signal: mergedSignal }
         );
     } catch (err) {
+        cleanupTimeout();
         // 记录失败到熔断器（AbortError 除外，那是客户端主动取消）
         const e = err as Error & { name?: string };
         const isTimeout = e.name === 'AbortError' && !signal?.aborted;
@@ -262,7 +277,7 @@ async function callOpenAICompatibleVision(
             totalTokens: 0,
             durationMs: Date.now() - startedAt,
             success: false,
-            errorMessage: isTimeout ? "timeout" : e.message?.slice(0, 200),
+            errorCode: isTimeout ? "timeout" : e.message?.slice(0, 200),
         });
 
         if (!isTimeout && !signal?.aborted) {
@@ -298,6 +313,7 @@ async function callOpenAICompatibleVision(
 
     // 记录成功到熔断器
     circuitBreaker.recordSuccess(serviceKey);
+    cleanupTimeout();
 
     return response.choices[0]?.message?.content || "";
 }

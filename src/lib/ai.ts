@@ -441,9 +441,9 @@ async function callProviderInternal(
     // OpenAI 兼容接口 (DeepSeek, Qwen)
     // 合并外部 abort signal 和内部 30s 超时，防止 SDK 无限挂起
     const { controller, cleanup } = createMergedAbortController(30000);
+    const startedAt = Date.now();
     try {
         const client = createOpenAIClient(provider, apiKey);
-        const startedAt = Date.now();
         const completion = await client.chat.completions.create(
             {
                 model: model,
@@ -495,7 +495,7 @@ async function callProviderInternal(
             totalTokens: 0,
             durationMs: Date.now() - startedAt,
             success: false,
-            errorMessage: isTimeout ? "timeout" : e.message?.slice(0, 200),
+            errorCode: isTimeout ? "timeout" : e.message?.slice(0, 200),
         });
 
         // 客户端主动取消或内部超时不应计入熔断器失败统计
@@ -531,6 +531,7 @@ export function extractJson(content: string) {
 
 /**
  * 纯文本问卷 AI 分析
+ * @deprecated 未被任何路由使用。若重新启用，请确保外层有 checkAIBudget 调用。
  */
 export async function analyzeWithAI(
     answers: QuestionnaireAnswers,

@@ -48,7 +48,7 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
         // ===== 汇总统计 =====
         const [summary, byProvider, byModel, byType, recentFailures, dailyCosts] = await Promise.all([
             // 总体汇总
-            prisma.aiUsageLog.aggregate({
+            prisma.aIUsageLog.aggregate({
                 where: whereClause as any,
                 _sum: {
                     promptTokens: true,
@@ -65,7 +65,7 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
             }),
 
             // 按提供者分组
-            prisma.aiUsageLog.groupBy({
+            prisma.aIUsageLog.groupBy({
                 by: ["provider"],
                 where: whereClause as any,
                 _sum: { totalTokens: true, estimatedCost: true },
@@ -73,7 +73,7 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
             }),
 
             // 按模型分组
-            prisma.aiUsageLog.groupBy({
+            prisma.aIUsageLog.groupBy({
                 by: ["model"],
                 where: whereClause as any,
                 _sum: { totalTokens: true, estimatedCost: true },
@@ -82,7 +82,7 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
             }),
 
             // 按请求类型分组
-            prisma.aiUsageLog.groupBy({
+            prisma.aIUsageLog.groupBy({
                 by: ["requestType"],
                 where: whereClause as any,
                 _sum: { totalTokens: true, estimatedCost: true },
@@ -90,7 +90,7 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
             }),
 
             // 最近失败记录
-            prisma.aiUsageLog.findMany({
+            prisma.aIUsageLog.findMany({
                 where: { ...whereClause as any, success: false },
                 orderBy: { createdAt: "desc" },
                 take: 20,
@@ -120,7 +120,7 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
 
         // 计算成功率
         const totalCalls = summary._count.id;
-        const failedCalls = await prisma.aiUsageLog.count({
+        const failedCalls = await prisma.aIUsageLog.count({
             where: { ...whereClause as any, success: false },
         });
         const successRate = totalCalls > 0

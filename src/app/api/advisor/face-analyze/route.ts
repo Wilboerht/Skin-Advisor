@@ -297,18 +297,11 @@ export async function POST(request: NextRequest) {
 
         let acquired = false;
         try {
-            // P3: 请求队列处理 - 申请令牌
-            // 这是一个异步操作，如果队列已满会等待，直到超时
-            aiLogger.debug(`[Queue] Requesting lock. Stats:`, visionQueue.getStats() as any);
-            await visionQueue.acquire({ signal: abortController.signal });
-            acquired = true;
-            aiLogger.debug(`[Queue] Lock acquired.`);
-
-            // 3.5 缓存检查：相同用户的相同图片跳过 AI 调用
+            // 3.5 缓存检查：相同图片跳过 AI 调用（必须在队列获取之前，避免浪费槽位）
             const cacheKey = buildCacheKey(faceSessionId || ip, validImages);
             const cachedResult = getCachedResult(cacheKey);
             if (cachedResult) {
-                aiLogger.info(`[FaceAnalyze] Cache hit for session ${faceSessionId || ip}, returning cached result`);
+                aiLogger.info(`[FaceAnalyze] Cache hit, returning cached result`);
                 return NextResponse.json(cachedResult, {
                     headers: {
                         ...rateLimitHeaders,
@@ -318,6 +311,13 @@ export async function POST(request: NextRequest) {
                     }
                 });
             }
+
+            // P3: 请求队列处理 - 申请令牌
+            // 这是一个异步操作，如果队列已满会等待，直到超时
+            aiLogger.debug(`[Queue] Requesting lock. Stats:`, visionQueue.getStats() as any);
+            await visionQueue.acquire({ signal: abortController.signal });
+            acquired = true;
+            aiLogger.debug(`[Queue] Lock acquired.`);
 
             // 4. 调用 AI 分析 (包含重试机制)
             let analysisResult: Record<string, unknown>;
