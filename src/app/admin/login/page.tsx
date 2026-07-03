@@ -8,7 +8,6 @@ import {
   AlertCircle,
   Loader2,
   ChevronDown,
-  ExternalLink,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -176,29 +175,7 @@ function AdminLoginForm() {
             <div className="absolute left-0 top-full mt-2 flex flex-col gap-2 whitespace-nowrap text-xs text-slate-400 -translate-x-[13px]">
               <div className="flex items-center gap-2">
                 <span className="text-slate-300 select-none">/</span>
-                <a
-                  href="https://nihplod.cn/admin"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 font-medium text-slate-600 transition-colors hover:text-slate-800"
-                  onClick={() => setBreadcrumbOpen(false)}
-                >
-                  后台登录（官网）
-                  <ExternalLink className="h-3 w-3 text-slate-400" />
-                </a>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-slate-300 select-none">/</span>
-                <a
-                  href="https://ba.nihplod.cn/admin"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 font-medium text-slate-600 transition-colors hover:text-slate-800"
-                  onClick={() => setBreadcrumbOpen(false)}
-                >
-                  后台登录（授权管理）
-                  <ExternalLink className="h-3 w-3 text-slate-400" />
-                </a>
+                <span className="font-medium text-slate-400">管理后台登录</span>
               </div>
             </div>
           )}

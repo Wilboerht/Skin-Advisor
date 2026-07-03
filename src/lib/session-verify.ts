@@ -19,17 +19,11 @@ export const ADMIN_SESSION_COOKIE_NAME =
 function getSessionSecret(): string {
     const secret = process.env.ADMIN_SESSION_SECRET;
     if (!secret) {
-        if (process.env.NODE_ENV !== "development") {
-            throw new Error(
-                "🔴 CRITICAL: ADMIN_SESSION_SECRET is not set! " +
-                "Refusing to use a fallback secret in non-development environment. " +
-                "Set ADMIN_SESSION_SECRET in your environment variables."
-            );
-        }
-        console.warn(
-            "⚠️  ADMIN_SESSION_SECRET not set — using development fallback. Do NOT use in production."
+        throw new Error(
+            "🔴 CRITICAL: ADMIN_SESSION_SECRET is not set! " +
+            "Admin sessions cannot be secured without this secret. " +
+            "Set ADMIN_SESSION_SECRET in your environment variables."
         );
-        return "dev-admin-session-secret-change-me";
     }
     return secret;
 }

@@ -5,6 +5,11 @@ import { withAdminAuth } from "@/lib/admin-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { Prisma } from "@prisma/client";
 
+// 筛选器缓存 (5min TTL，actions/resources 几乎不变)
+let cachedFilters: { actions: string[]; resources: string[] } | null = null;
+let cacheTimestamp = 0;
+const FILTERS_CACHE_TTL = 5 * 60 * 1000;
+
 // GET /api/admin/audit-logs - List audit logs with filtering
 // Available to super_admin and admin
 export const GET = withAdminAuth(async (request) => {
@@ -85,26 +90,25 @@ export const GET = withAdminAuth(async (request) => {
             })
         ]);
 
-        // Get unique actions and resources for filter dropdowns
-        // NOTE: distinct queries can be slow on large tables; consider caching these values
-        const [actionsResult, resourcesResult] = await Promise.all([
-            prisma.adminAuditLog.findMany({
-                distinct: ['action'],
-                select: { action: true }
-            }),
-            prisma.adminAuditLog.findMany({
-                distinct: ['resource'],
-                select: { resource: true }
-            })
-        ]);
+        // Get unique actions and resources for filter dropdowns (cached 5min)
+        if (!cachedFilters || Date.now() - cacheTimestamp > FILTERS_CACHE_TTL) {
+            const [actionsResult, resourcesResult] = await Promise.all([
+                prisma.adminAuditLog.findMany({ distinct: ['action'], select: { action: true } }),
+                prisma.adminAuditLog.findMany({ distinct: ['resource'], select: { resource: true } }),
+            ]);
+            cachedFilters = {
+                actions: actionsResult.map(a => a.action),
+                resources: resourcesResult.map(r => r.resource),
+            };
+            cacheTimestamp = Date.now();
+        }
 
         return NextResponse.json({
             success: true,
             data: logs,
             filters: {
                 admins,
-                actions: actionsResult.map(a => a.action),
-                resources: resourcesResult.map(r => r.resource)
+                ...cachedFilters!,
             },
             pagination: {
                 page,

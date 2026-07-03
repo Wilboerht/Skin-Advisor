@@ -9,6 +9,10 @@ import prisma from "@/lib/prisma";
 import { withAdminAuth } from "@/lib/admin-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
+// 成本数据缓存 (30s TTL，减少 DB 压力)
+const costCache = new Map<string, { data: unknown; at: number }>();
+const COST_CACHE_TTL = 30_000;
+
 export const GET = withAdminAuth(async (request: NextRequest) => {
     const ip = getClientIP(request);
     const limitResult = await rateLimit(`admin-ai-costs-${ip}`, "default", { maxRequests: 30, windowMs: 60 * 1000 });
@@ -17,8 +21,15 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
     }
 
     const { searchParams } = new URL(request.url);
-    const period = searchParams.get("period") || "today"; // today | week | month | all
-    const provider = searchParams.get("provider"); // optional filter
+    const period = searchParams.get("period") || "today";
+    const provider = searchParams.get("provider");
+
+    // 缓存命中检查
+    const cacheKey = `${period}:${provider || "all"}`;
+    const cached = costCache.get(cacheKey);
+    if (cached && Date.now() - cached.at < COST_CACHE_TTL) {
+        return NextResponse.json(cached.data);
+    }
 
     try {
         // 计算时间范围
@@ -127,7 +138,7 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
             ? ((totalCalls - failedCalls) / totalCalls * 100).toFixed(1)
             : "100.0";
 
-        return NextResponse.json({
+        const resultData: Record<string, unknown> = {
             period,
             provider: provider || "all",
             summary: {
@@ -141,31 +152,36 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
                 promptTokens: summary._sum.promptTokens || 0,
                 completionTokens: summary._sum.completionTokens || 0,
             },
-            byProvider: byProvider.map(p => ({
+            byProvider: byProvider.map((p: { provider: string; _count: { id: number }; _sum: { totalTokens: number | null; estimatedCost: number | null } }) => ({
                 provider: p.provider,
                 calls: p._count.id,
                 totalTokens: p._sum.totalTokens || 0,
                 cost: (p._sum.estimatedCost || 0).toFixed(4),
             })),
-            byModel: byModel.map(m => ({
+            byModel: byModel.map((m: { model: string; _count: { id: number }; _sum: { totalTokens: number | null; estimatedCost: number | null } }) => ({
                 model: m.model,
                 calls: m._count.id,
                 totalTokens: m._sum.totalTokens || 0,
                 cost: (m._sum.estimatedCost || 0).toFixed(4),
             })),
-            byType: byType.map(t => ({
+            byType: byType.map((t: { requestType: string; _count: { id: number }; _sum: { totalTokens: number | null; estimatedCost: number | null } }) => ({
                 type: t.requestType,
                 calls: t._count.id,
                 totalTokens: t._sum.totalTokens || 0,
                 cost: (t._sum.estimatedCost || 0).toFixed(4),
             })),
             recentFailures,
-            dailyCosts: (dailyCosts as Array<{ date: string; cost: number; count: number }>).map(d => ({
-                date: d.date,
-                cost: Number(d.cost).toFixed(4),
-                calls: d.count,
-            })),
-        });
+            dailyCosts: dailyCosts,
+        };
+
+        // Write cache
+        costCache.set(cacheKey, { data: resultData, at: Date.now() });
+        if (costCache.size > 20) {
+            const oldest = [...costCache.entries()].sort((a, b) => a[1].at - b[1].at)[0];
+            if (oldest) costCache.delete(oldest[0]);
+        }
+
+        return NextResponse.json(resultData);
     } catch (error) {
         console.error("[Admin AI Costs] Error:", error);
         return NextResponse.json(

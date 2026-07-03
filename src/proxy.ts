@@ -68,6 +68,25 @@ export async function proxy(request: NextRequest) {
         }
     }
 
+    // ==================== Admin API CSRF 防护 ====================
+    if (isAdminApi && !ADMIN_PUBLIC_PATHS.some((p) => pathname === p)) {
+        const unsafeMethods = ["POST", "PUT", "PATCH", "DELETE"];
+        if (unsafeMethods.includes(request.method)) {
+            const reqOrigin = request.headers.get("origin");
+            const referer = request.headers.get("referer");
+            const isSameOrigin =
+                (reqOrigin && ALLOWED_ORIGINS.some((o) => o && reqOrigin.startsWith(o))) ||
+                (referer && ALLOWED_ORIGINS.some((o) => o && referer.startsWith(o)));
+
+            if (ALLOWED_ORIGINS.length > 0 && ALLOWED_ORIGINS[0] && !isSameOrigin) {
+                return NextResponse.json(
+                    { error: "Forbidden: cross-origin mutations not allowed" },
+                    { status: 403 }
+                );
+            }
+        }
+    }
+
     // ==================== AI 端点额外防护 ====================
     const isAiEndpoint = AI_ENDPOINTS.some((p) => pathname === p);
     if (isAiEndpoint) {
@@ -138,6 +157,12 @@ export async function proxy(request: NextRequest) {
     }
     if (!response.headers.has("Referrer-Policy")) {
         response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+    }
+    if (!response.headers.has("Content-Security-Policy")) {
+        response.headers.set(
+            "Content-Security-Policy",
+            "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'"
+        );
     }
 
     // ==================== 缓存控制 ====================

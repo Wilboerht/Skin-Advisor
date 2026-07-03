@@ -41,19 +41,11 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // Validate setup secret from header or body
-        // Super admin can skip setup secret (already authenticated above)
+        // Validate setup secret from header only (not body — prevents CSRF)
         let providedSecret: string | null = null;
         const authHeader = request.headers.get("x-setup-secret");
         if (authHeader) {
             providedSecret = authHeader;
-        } else {
-            try {
-                const body = await request.json();
-                providedSecret = body?.setupSecret || null;
-            } catch {
-                // ignore JSON parse errors
-            }
         }
 
         const isSuperAdmin = adminCount > 0;
@@ -130,9 +122,12 @@ export async function POST(request: NextRequest) {
 }
 
 function safeTimingEqual(a: string, b: string): boolean {
-    if (a.length !== b.length) return false;
+    // 填充到相同长度后再做常量时间比较，避免泄露 secret 长度
+    const maxLen = Math.max(a.length, b.length);
+    const paddedA = a.padEnd(maxLen, '\0');
+    const paddedB = b.padEnd(maxLen, '\0');
     try {
-        return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
+        return crypto.timingSafeEqual(Buffer.from(paddedA), Buffer.from(paddedB));
     } catch {
         return false;
     }
