@@ -70,7 +70,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       </section>
 
       {/* Advantages */}
-      <section className="relative overflow-hidden py-18 px-6 md:px-12 lg:px-20 bg-white">
+      <section className="relative overflow-hidden py-14 md:py-18 px-6 md:px-12 lg:px-20 bg-white">
         <Threads
           className="hidden md:block absolute top-[40%] left-0 right-0 -translate-y-1/2 h-[95%] z-0 pointer-events-none"
           color={[0.941, 0.929, 0.882]}
@@ -233,7 +233,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       </section>
 
       {/* CTA */}
-      <section className="relative py-18 px-6 md:px-12 lg:px-20 bg-white">
+      <section className="relative py-14 md:py-18 px-6 md:px-12 lg:px-20 bg-white">
         <div className="relative z-10 max-w-3xl mx-auto text-center">
           <Link
             href="/"
