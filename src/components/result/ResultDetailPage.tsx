@@ -49,7 +49,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       >
         <div className="relative z-10 max-w-5xl mx-auto w-full pt-24 md:pt-28 pb-10 md:pb-14 grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 lg:gap-12 items-center">
           <div className="max-w-2xl">
-            <h1 className="text-3xl md:text-6xl lg:text-7xl font-light tracking-tight leading-[0.95] mb-4 md:mb-5">
+            <h1 className="text-2xl md:text-6xl lg:text-7xl font-light tracking-tight leading-[0.95] mb-4 md:mb-5">
               {data.typeName}
             </h1>
             <p className="text-sm md:text-base opacity-80 font-light leading-[1.85] max-w-xl">
@@ -79,14 +79,14 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
           enableMouseInteraction={false}
         />
         <div className="relative z-10 max-w-5xl mx-auto">
-          <h2 className="text-2xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-6 md:mb-10">
+          <h2 className="text-xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-6 md:mb-10">
             {data.m5.title || "优势高光"}
           </h2>
           <div className="grid md:grid-cols-2 gap-4 md:gap-6">
             {data.m5.advantages.map((adv, i) => (
               <div
                 key={i}
-                className="bg-white rounded-2xl p-5 md:p-8 shadow-sm border border-[#E8E2D9] hover:shadow-md transition-shadow"
+                className="bg-transparent md:bg-white md:rounded-2xl p-0 md:p-8 md:shadow-sm md:border md:border-[#E8E2D9] md:hover:shadow-md transition-shadow"
               >
                 <div className="flex items-center gap-3 mb-4">
                   <span className="flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-full bg-[#1B3A5C] text-white text-xs md:text-sm font-medium">
@@ -104,7 +104,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       {/* Skincare Formula */}
       <section className="py-18 px-6 md:px-12 lg:px-20 bg-[#F8F7F3]">
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-2xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-3 md:mb-4">
+          <h2 className="text-xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-3 md:mb-4">
             {data.m7.title || `${data.typeName}的精准护肤公式`}
           </h2>
           {data.m7.formulaCore && (
@@ -199,7 +199,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       {/* Daily Routine */}
       <section className="py-18 px-6 md:px-12 lg:px-20 bg-white">
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-2xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-5 md:mb-8">
+          <h2 className="text-xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-5 md:mb-8">
             {data.m4.title || "我们建议的护肤日常"}
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
@@ -216,15 +216,15 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
                   href="https://nihplod.cn/guide"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group flex flex-col items-center text-center bg-[#FAF9F6] rounded-xl p-4 md:p-5 border border-[#E8E2D9] hover:shadow-sm hover:border-[#C9A86C]/50 transition-all"
+                  className="group flex flex-col items-center text-center bg-[#FAF9F6] rounded-xl p-3 md:p-5 border border-[#E8E2D9] hover:shadow-sm hover:border-[#C9A86C]/50 transition-all"
                 >
-                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-white border border-[#E8E2D9] mb-3">
-                    <Icon className="w-5 h-5 text-[#C9A86C] stroke-[1.25]" />
+                  <div className="flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full bg-white border border-[#E8E2D9] mb-2 md:mb-3">
+                    <Icon className="w-4 h-4 md:w-5 md:h-5 text-[#C9A86C] stroke-[1.25]" />
                   </div>
-                  <h3 className="text-sm md:text-base font-medium text-[#1A1A1A] mb-1 group-hover:text-[#1B3A5C] transition-colors">
+                  <h3 className="text-xs md:text-base font-medium text-[#1A1A1A] mb-0.5 md:mb-1 group-hover:text-[#1B3A5C] transition-colors">
                     {item.title}
                   </h3>
-                  <p className="text-xs text-[#8A8A8A] leading-relaxed">{item.subtitle}</p>
+                  <p className="text-[10px] md:text-xs text-[#8A8A8A] leading-relaxed">{item.subtitle}</p>
                 </a>
               );
             })}
@@ -240,7 +240,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
           </h2>
           <Link
             href="/"
-            className="inline-flex items-center justify-center gap-3 px-10 py-3.5 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#1B3A5C] hover:text-white"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-10 py-3.5 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#1B3A5C] hover:text-white"
           >
             <span>前往测肤</span>
             <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
