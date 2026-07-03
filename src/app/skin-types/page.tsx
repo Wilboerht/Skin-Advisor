@@ -82,9 +82,9 @@ export default function ResultIndexPage() {
                 <Image
                   src={`/images/character/${type.ipKey}/${type.ipKey}_female.png`}
                   alt=""
-                  width={160}
-                  height={260}
-                  className="absolute -right-3 -bottom-4 w-32 h-56 md:w-36 md:h-64 object-contain opacity-100 group-hover:scale-105 transition-transform duration-500 pointer-events-none select-none"
+                  width={180}
+                  height={280}
+                  className="absolute -right-3 -bottom-4 w-[136px] h-[228px] md:w-[152px] md:h-[264px] object-contain opacity-100 group-hover:scale-105 transition-transform duration-500 pointer-events-none select-none"
                 />
                 <div className="relative z-10 pr-20 md:pr-20">
                   <h2 className="text-xl md:text-2xl font-serif tracking-wide text-[#1A1A1A] mb-2 group-hover:text-[#3D4430] transition-colors duration-500">
