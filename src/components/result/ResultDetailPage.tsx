@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Sun, Home, ShoppingBag, SoapDispenserDroplet, Info } from "lucide-react";
+import { Sun, Home, ShoppingBag, SoapDispenserDroplet, Info, ArrowRight, Gift } from "lucide-react";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
 import Threads from "@/components/ui/Threads";
 import type { SkinTypeData } from "@/lib/result-content";
@@ -199,37 +199,21 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       </section>
 
       {/* CTA */}
-      <section className="relative py-14 md:py-28 px-6 md:px-12 lg:px-20 bg-white overflow-hidden">
-        {/* 水印背景 */}
-        <div
-          className="absolute inset-0 pointer-events-none z-0 opacity-[0.15]"
-          style={{
-            backgroundImage: `url('/images/watermark.png')`,
-            backgroundRepeat: "no-repeat",
-            backgroundPosition: "center",
-            backgroundSize: "80%",
-          }}
-        />
-        {/* 四周虚化遮罩 */}
-        <div
-          className="absolute inset-0 pointer-events-none z-0"
-          style={{
-            background:
-              "radial-gradient(ellipse 60% 60% at center, transparent 25%, rgba(255,255,255,0.95) 100%)",
-          }}
-        />
+      <section className="relative py-14 md:py-28 px-6 md:px-12 lg:px-20 bg-white">
         <div className="relative z-10 max-w-3xl mx-auto text-center">
-          <h2 className="text-2xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-3 md:mb-4">
-            想知道你的真实肤质类型吗？
-          </h2>
-          <p className="text-sm md:text-base text-[#5E5E5E] font-light leading-[1.85] mb-8 md:mb-10 max-w-xl mx-auto">
-            回答几个简单问题，即可获得专属肌肤诊断与护肤建议。
-          </p>
           <Link
-            href="/questions"
-            className="inline-flex items-center justify-center px-8 py-3.5 bg-[#1B3A5C]/[0.04] text-[#1B3A5C] text-sm uppercase tracking-[0.15em] rounded-[20px] border border-[#1B3A5C]/20 hover:bg-[#1B3A5C]/[0.08] hover:border-[#1B3A5C]/35 transition-colors duration-300"
+            href="/"
+            className="inline-flex items-center justify-center gap-3 px-10 py-3.5 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#1B3A5C] hover:text-white"
           >
-            立即测试
+            <span>前往测肤</span>
+            <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
+          </Link>
+          <Link
+            href="/gift"
+            className="flex items-center justify-center gap-1.5 mt-5 text-[13px] sm:text-[14px] text-[#A0784C] tracking-[0.1em] font-medium hover:text-[#8B6840] transition-colors duration-300"
+          >
+            参与「肌智派」活动，抽奖赢好礼
+            <Gift className="w-3.5 h-3.5" />
           </Link>
         </div>
       </section>
