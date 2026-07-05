@@ -54,7 +54,7 @@ async function parseOfficialJson(officialResponse: Response) {
 export async function POST(req: NextRequest) {
     try {
         const ip = getClientIP(req);
-        const ipLimit = await rateLimit(`login-ip-${ip}`, "login");
+        const ipLimit = await rateLimit(`login-code-ip-${ip}`, "login");
         if (!ipLimit.success) {
             return NextResponse.json(
                 { error: "登录尝试过于频繁，请 15 分钟后再试" },

@@ -127,7 +127,7 @@ function parseBudgetEnv(value: string | undefined): number | null {
 function getBudgetConfig() {
     return {
         dailyTokenBudget: parseBudgetEnv(process.env.AI_DAILY_TOKEN_BUDGET) ?? 500000,     // 默认 50万 tokens/天
-        dailyCostBudget: parseBudgetEnv(process.env.AI_DAILY_COST_BUDGET_CNY) ?? 50,        // 默认 ¥50/天
+        dailyCostBudget: parseBudgetEnv(process.env.AI_DAILY_COST_BUDGET_CNY) ?? 200,       // 默认 ¥200/天
         monthlyTokenBudget: parseBudgetEnv(process.env.AI_MONTHLY_TOKEN_BUDGET) ?? 10000000, // 默认 1000万 tokens/月
         monthlyCostBudget: parseBudgetEnv(process.env.AI_MONTHLY_COST_BUDGET_CNY) ?? 500,   // 默认 ¥500/月
     };
@@ -222,8 +222,8 @@ function getPendingReservationCost(requestType: string): number {
 export function isBudgetSafeForRetry(requestType: string): boolean {
     const budget = getBudgetConfig();
     const pendingCost = getPendingReservationCost(requestType);
-    // 在途预留超过日预算的 70% 时拒绝进一步重试
-    if (budget.dailyCostBudget && pendingCost >= budget.dailyCostBudget * 0.7) {
+    // 在途预留超过日预算的 40% 时拒绝进一步重试（8并发安全余量）
+    if (budget.dailyCostBudget && pendingCost >= budget.dailyCostBudget * 0.4) {
         return false;
     }
     return true;
@@ -277,8 +277,15 @@ export async function checkAIBudget(
     }
 
     // 预留预估成本作为在途开销，防止并发请求同时通过预算检查
-    // 默认: text=¥0.05, vision=¥0.15（基于 qwen-turbo/qwen-vl-plus 单次调用上限估算）
-    const effectiveEstimatedCost = estimatedCost ?? (requestType === "vision" ? 0.15 : 0.05);
+    // 默认: text=¥0.10, vision=¥0.30（基于 qwen-plus/qwen-vl-max 单次调用上限估算）
+    const effectiveEstimatedCost = estimatedCost ?? (requestType === "vision" ? 0.30 : 0.10);
+
+    // TOCTOU 防护：用当前调用成本 + 在途预留 做二次校验，关小并发绕过窗口
+    // 8 个并发槽位 × ¥0.30 = ¥2.40 理论最大超支，二次校验将其压缩到 ~¥0.30
+    if (budget.dailyCostBudget && effectiveDailyCost + effectiveEstimatedCost > budget.dailyCostBudget * 1.05) {
+        return { allowed: false, reason: "AI 日费用预算接近上限（含预估本次消耗）", ...stats };
+    }
+
     if (requestType) {
         addPendingReservation(requestType, effectiveEstimatedCost);
     }

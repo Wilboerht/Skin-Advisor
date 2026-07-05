@@ -94,6 +94,13 @@ async function getLocalSessionUser(): Promise<NextResponse | null> {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function GET(req: NextRequest) {
+    // 速率限制
+    const ip = getClientIP(req);
+    const ipLimit = await rateLimit(`me-get-ip-${ip}`, "default", { maxRequests: 30, windowMs: 60 * 1000 });
+    if (!ipLimit.success) {
+        return NextResponse.json({ error: "请求过于频繁，请稍后再试" }, { status: 429 });
+    }
+
     const cookieStore = await cookies();
     // 官网下发的是 user_token 或者 auth_token，但统一通过 cookie 转发
     // 我们获取当前所有的 cookie
@@ -201,7 +208,7 @@ export async function GET(req: NextRequest) {
             response.cookies.set("auth_token", localToken, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === "production",
-                sameSite: "lax",
+                sameSite: "strict",
                 maxAge: 7 * 24 * 60 * 60, // 7天
                 path: "/"
             });

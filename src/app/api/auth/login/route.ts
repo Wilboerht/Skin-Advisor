@@ -35,7 +35,7 @@ async function tryDevLocalLogin(phone: string, password: string): Promise<NextRe
     response.cookies.set("auth_token", token, {
         httpOnly: true,
         secure: false,
-        sameSite: "lax",
+        sameSite: "strict",
         maxAge: 7 * 24 * 60 * 60,
         path: "/"
     });
@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
     }
 
     const ip = getClientIP(req);
-    const ipLimit = await rateLimit(`login-ip-${ip}`, "login");
+    const ipLimit = await rateLimit(`login-password-ip-${ip}`, "login");
     if (!ipLimit.success) {
         return NextResponse.json(
             { error: "登录尝试过于频繁，请 15 分钟后再试" },

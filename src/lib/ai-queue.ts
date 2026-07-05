@@ -397,17 +397,16 @@ class AIRequestQueue {
     }
 }
 
-// 全局单例 (生产环境默认并发降为 5，避免打爆服务商限流)
+// 全局单例
+// 并发配置: 共计 30 并发槽位 (vision 12 + analysis 18)，匹配 ¥200/天 预算
 export const aiQueue = new AIRequestQueue(
-    parseInt(process.env.AI_QUEUE_MAX_CONCURRENT || "5", 10),
+    parseInt(process.env.AI_QUEUE_MAX_CONCURRENT || "15", 10),
     parseInt(process.env.AI_MAX_CONCURRENT_PER_USER || "1", 10)
 );
 
-// 为聊天和视觉分析创建专用队列实例（如果需要隔离）
-// 注意：原项目可能共享实例，这里我们也提供导出的实例
-export const visionQueue = new AIRequestQueue(3); // 视觉分析并发较低
-export const chatQueue = new AIRequestQueue(10); // 聊天并发较高
-export const analysisQueue = new AIRequestQueue(5); // 综合分析并发限制（LLM 长文本生成，不宜过高）
+export const visionQueue = new AIRequestQueue(12);  // 视觉分析并发
+export const chatQueue = new AIRequestQueue(15);    // 聊天并发
+export const analysisQueue = new AIRequestQueue(18); // 综合分析并发（LLM 长文本）
 
 // 导出类型供测试使用
 export { AIRequestQueue };
