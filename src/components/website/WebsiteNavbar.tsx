@@ -84,8 +84,23 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
               : "bg-transparent border-b border-transparent"
         }`}
       >
-        <div style={{ pointerEvents: "auto" }} className="w-full grid grid-cols-[auto_1fr] md:grid-cols-[1fr_auto_1fr] items-center">
-          <Link href="/" className="cursor-pointer justify-self-start">
+        <div style={{ pointerEvents: "auto" }} className="w-full grid grid-cols-[auto_1fr_auto] md:grid-cols-[1fr_auto_1fr] items-center">
+          {/* 移动端汉堡菜单按钮（左侧） */}
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            aria-label="打开菜单"
+            aria-expanded={mobileMenuOpen}
+            aria-controls={MOBILE_MENU_ID}
+            className={`md:hidden group flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-500 cursor-pointer ${
+              isDark
+                ? "text-white/70 hover:text-white hover:bg-white/10"
+                : "text-[#3D4430]/70 hover:text-[#3D4430] hover:bg-[#3D4430]/5"
+            }`}
+          >
+            <Menu className="w-5 h-5 transition-opacity duration-500" />
+          </button>
+
+          <Link href="/" className="cursor-pointer justify-self-center md:justify-self-start">
             <Image
               src="/NIHPLOD-logo.svg"
               alt="NIHPLOD"
@@ -234,21 +249,6 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                 </span>
               </Link>
             )}
-
-            {/* 移动端汉堡菜单按钮 */}
-            <button
-              onClick={() => setMobileMenuOpen(true)}
-              aria-label="打开菜单"
-              aria-expanded={mobileMenuOpen}
-              aria-controls={MOBILE_MENU_ID}
-              className={`md:hidden group flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-500 cursor-pointer ${
-                isDark
-                  ? "text-white/70 hover:text-white hover:bg-white/10"
-                  : "text-[#3D4430]/70 hover:text-[#3D4430] hover:bg-[#3D4430]/5"
-              }`}
-            >
-              <Menu className="w-5 h-5 transition-opacity duration-500" />
-            </button>
           </div>
         </div>
       </nav>
