@@ -2,12 +2,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
 export async function GET(request: NextRequest) {
     try {
         const user = await getSession();
         if (!user) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        // 速率限制
+        const ip = getClientIP(request);
+        const limit = await rateLimit(`skin-trends-${ip}`, "default", { maxRequests: 20, windowMs: 60 * 1000 });
+        const rateLimitHeaders = {
+            "X-RateLimit-Limit": String(limit.limit),
+            "X-RateLimit-Remaining": String(limit.remaining),
+            "X-RateLimit-Reset": String(limit.reset)
+        };
+        if (!limit.success) {
+            return NextResponse.json(
+                { error: "请求过于频繁，请稍后再试" },
+                { status: 429, headers: rateLimitHeaders }
+            );
         }
 
         // 获取最近 5 次分析结果，用于对比
@@ -29,7 +45,7 @@ export async function GET(request: NextRequest) {
                 success: true,
                 data: null,
                 message: "Not enough data for trend analysis"
-            });
+            }, { headers: rateLimitHeaders });
         }
 
         const trends = {
@@ -46,7 +62,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
             success: true,
             data: trends
-        });
+        }, { headers: rateLimitHeaders });
     } catch (error) {
         console.error("Trend fetch error:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

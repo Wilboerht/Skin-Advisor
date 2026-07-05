@@ -141,16 +141,18 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // 图片数量硬上限：防止恶意上传大量图片消耗视觉 API token
-        const MAX_FACE_IMAGES = 3;
-        const imageCount = Array.isArray(result.data.images)
-            ? result.data.images.length
-            : result.data.image
-                ? 1
-                : 0;
+        // 图片数量硬上限：4 个角度（正脸/左侧/右侧/下巴），匹配产品设计。
+        // 超出即认定为攻击行为，直接拒绝并记录日志。
+        const MAX_FACE_IMAGES = 4;
+        const imageCount = Array.isArray(result.data.images) ? result.data.images.length : 0;
         if (imageCount > MAX_FACE_IMAGES) {
+            aiLogger.warn(`[Security] Face analysis attack detected: ${imageCount} images from IP ${ip}`, {
+                imageCount,
+                ip,
+                sessionId: result.data.sessionId,
+            });
             return NextResponse.json(
-                { error: `单次最多上传 ${MAX_FACE_IMAGES} 张图片` },
+                { error: "请求异常，请重新操作" },
                 { status: 400 }
             );
         }

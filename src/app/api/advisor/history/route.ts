@@ -1,11 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
 export async function GET(req: NextRequest) {
     const user = await getSession();
     if (!user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // 速率限制
+    const ip = getClientIP(req);
+    const limit = await rateLimit(`history-${ip}`, "default", { maxRequests: 30, windowMs: 60 * 1000 });
+    const rateLimitHeaders = {
+        "X-RateLimit-Limit": String(limit.limit),
+        "X-RateLimit-Remaining": String(limit.remaining),
+        "X-RateLimit-Reset": String(limit.reset)
+    };
+    if (!limit.success) {
+        return NextResponse.json(
+            { error: "请求过于频繁，请稍后再试" },
+            { status: 429, headers: rateLimitHeaders }
+        );
     }
 
     try {
@@ -45,9 +61,9 @@ export async function GET(req: NextRequest) {
                 total,
                 totalPages: Math.ceil(total / limit)
             }
-        });
+        }, { headers: rateLimitHeaders });
     } catch (e) {
         console.error("History fetch error:", e);
-        return NextResponse.json({ error: "Failed to fetch history" }, { status: 500 });
+        return NextResponse.json({ error: "Failed to fetch history" }, { status: 500, headers: rateLimitHeaders });
     }
 }

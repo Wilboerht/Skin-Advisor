@@ -72,32 +72,33 @@ export async function GET(request: NextRequest) {
             status = "pending";
         }
 
-        // 5. completed 时返回结果，但先做简单权限校验
-        // sessionId 是 UUID，枚举成本高；这里仅防止明显的跨用户/跨 IP 读取
-        if (status === "completed") {
-            const currentUser = await getSession();
-            const currentIpHash = hashIP(ip);
+        // 5. 所有权校验：对所有状态统一检查，防止 session 枚举攻击
+        const currentUser = await getSession();
+        const currentIpHash = hashIP(ip);
+        let forbidden = false;
 
-            if (session.userId) {
-                // 登录用户：必须本人
-                if (currentUser?.id !== session.userId) {
-                    return NextResponse.json(
-                        { status: "forbidden", sessionId },
-                        { status: 403, headers: rateLimitHeaders }
-                    );
-                }
-            } else {
-                // 游客：放宽校验，仅在能确定 IP 不匹配时拒绝
-                // 实际场景中 CDN/代理可能导致 IP 变化，因此只做宽松校验
-                if (session.ip && session.ip !== currentIpHash) {
-                    // 不直接拒绝，而是只返回状态，不返回结果
-                    return NextResponse.json(
-                        { status: "completed", sessionId, result: null },
-                        { status: 200, headers: rateLimitHeaders }
-                    );
-                }
+        if (session.userId) {
+            // 登录用户会话：必须本人
+            if (currentUser?.id !== session.userId) {
+                forbidden = true;
             }
+        } else {
+            // 游客会话：IP 哈希必须匹配
+            if (session.ip && session.ip !== currentIpHash) {
+                forbidden = true;
+            }
+        }
 
+        if (forbidden) {
+            // 返回 not_found 而非 forbidden，避免泄露 session 存在性
+            return NextResponse.json(
+                { status: "not_found", sessionId },
+                { status: 404, headers: rateLimitHeaders }
+            );
+        }
+
+        // 6. completed 时返回结果
+        if (status === "completed") {
             const rawResult = session.analysisResult as Record<string, unknown> | null;
             const normalized = rawResult ? normalizeAnalysisResult(rawResult) : null;
 
