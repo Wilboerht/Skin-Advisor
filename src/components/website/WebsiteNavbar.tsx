@@ -91,7 +91,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
             aria-label="打开菜单"
             aria-expanded={mobileMenuOpen}
             aria-controls={MOBILE_MENU_ID}
-            className={`md:hidden group flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-500 cursor-pointer ${
+            className={`md:hidden justify-self-start group flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-500 cursor-pointer ${
               isDark
                 ? "text-white/70 hover:text-white hover:bg-white/10"
                 : "text-[#3D4430]/70 hover:text-[#3D4430] hover:bg-[#3D4430]/5"
@@ -272,8 +272,8 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
 
         {/* 菜单面板 */}
         <div
-          className={`absolute top-0 right-0 h-full w-[min(320px,85vw)] bg-[#F8F7F3] shadow-2xl rounded-l-3xl transform transition-transform duration-500 ease-out ${
-            mobileMenuOpen ? "translate-x-0" : "translate-x-full"
+          className={`absolute top-0 left-0 h-full w-[min(320px,85vw)] bg-[#F8F7F3] shadow-2xl rounded-r-3xl transform transition-transform duration-500 ease-out ${
+            mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
           <div className="flex flex-col h-full px-6 pt-[calc(1.25rem+env(safe-area-inset-top,0px))] pb-[calc(1.25rem+env(safe-area-inset-bottom,16px))]">
