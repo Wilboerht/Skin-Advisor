@@ -8,7 +8,7 @@ import {
 } from "./ai";
 import { aiLogger } from "./logger";
 import { circuitBreaker } from "./circuit-breaker";
-import { checkAIBudget, recordAIUsage, releasePendingReservation } from "./ai-budget";
+import { checkAIBudget, recordAIUsage, releasePendingReservation, isBudgetSafeForRetry } from "./ai-budget";
 import { filterHealthyKeys, recordKeyResult } from "./ai-key-health";
 import {
     VISION_ANALYSIS_SYSTEM_PROMPT,
@@ -52,20 +52,22 @@ function mergeAbortSignals(...signals: (AbortSignal | undefined)[]): AbortSignal
 
 /**
  * 视觉分析主函数 (支持多 Key 轮询)
+ * @param userId - 可选登录用户ID，用于单用户每日AI调用硬限流
  */
 export async function analyzeImages(
     images: VisionImage[],
     _defaultSystemPrompt: string, // 保留参数兼容，但内部优先用配置
     userPrompt: string,
     _defaultProvider: AIProvider = "qwen",
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    userId?: string | null
 ) {
     // 如果外部 signal 已 abort，直接抛出
     if (signal?.aborted) {
         throw new Error("Vision request cancelled by client.");
     }
-    // 0. 全局预算熔断检查
-    const budgetStatus = await checkAIBudget("vision");
+    // 0. 全局预算熔断检查（vision 类型预估 ¥0.30 覆盖 qwen-vl-max 多图上限场景）
+    const budgetStatus = await checkAIBudget("vision", 0.30, userId);
     if (!budgetStatus.allowed) {
         throw new Error(`[AIBudget] ${budgetStatus.reason}`);
     }
@@ -174,13 +176,18 @@ export async function analyzeImages(
             }
 
             // 其他错误 (如 400) 直接换 Key
+            // 重试前轻量预算检查：在途预留过高时中止重试
+            if (!isBudgetSafeForRetry("vision")) {
+                aiLogger.warn(`Vision AI retry aborted: pending reservation approaching budget limit`);
+                throw new Error(`[AIBudget] Vision retry budget limit approaching, request rejected`);
+            }
             continue;
         }
     }
 
     throw lastError || new Error("Vision analysis failed after exhausting all keys.");
     } finally {
-        releasePendingReservation("vision", 0.01);
+        releasePendingReservation("vision", 0.30);
     }
 }
 

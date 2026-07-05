@@ -141,6 +141,20 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // 图片数量硬上限：防止恶意上传大量图片消耗视觉 API token
+        const MAX_FACE_IMAGES = 3;
+        const imageCount = Array.isArray(result.data.images)
+            ? result.data.images.length
+            : result.data.image
+                ? 1
+                : 0;
+        if (imageCount > MAX_FACE_IMAGES) {
+            return NextResponse.json(
+                { error: `单次最多上传 ${MAX_FACE_IMAGES} 张图片` },
+                { status: 400 }
+            );
+        }
+
         // 1.5 每日用量上限预占（复用业务 sessionId，避免与 analyze 重复扣费）
         faceSessionId = result.data.sessionId || crypto.randomUUID();
         const usageReserve = await reserveUsage(request, faceSessionId, body);
@@ -336,7 +350,8 @@ export async function POST(request: NextRequest) {
                     systemPrompt,
                     VISION_ANALYSIS_USER_PROMPT,
                     provider as AIProvider,
-                    abortController.signal
+                    abortController.signal,
+                    session?.id
                 ) as Record<string, unknown>;
             } catch (e: unknown) {
                 const err = e as Error;
@@ -388,7 +403,8 @@ export async function POST(request: NextRequest) {
                         systemPrompt,
                         VISION_ANALYSIS_USER_PROMPT,
                         provider as AIProvider,
-                        abortController.signal
+                        abortController.signal,
+                        session?.id
                     ) as Record<string, unknown>;
                     aiLogger.info(`[FaceAnalyze] Retry successful.`);
                 } else {

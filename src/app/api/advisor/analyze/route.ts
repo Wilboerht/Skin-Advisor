@@ -209,33 +209,26 @@ export async function POST(request: NextRequest) {
         }
 
         // 4. 检查使用限制 (Guest/Member)
+        // freeRetry 有效性标记：仅验证 session 存在性与所有权（读操作，无竞态）。
+        // freeRetryUsed 标记的原子性检查移入 DB 行锁事务内，防止并发绕过。
         let isFreeRetryAllowed = false;
         if (freeRetry && sessionId) {
-            // Validate freeRetry eligibility server-side:
-            // Only allowed if the session has a prior completed analysis and hasn't used freeRetry before.
+            // Validate freeRetry eligibility: session must have a prior completed analysis.
             // CRITICAL: Also verify session ownership to prevent sessionId enumeration attacks.
             const existingSession = await prisma.advisorSession.findUnique({
                 where: { sessionId },
                 select: { completedAt: true, analysisResult: true, ip: true, userId: true }
             });
-            const priorResult = existingSession?.analysisResult as Record<string, unknown> | null;
             if (!existingSession?.completedAt || !existingSession?.analysisResult) {
                 return NextResponse.json(
                     { error: "免费重试无效：尚未完成过首次分析" },
                     { status: 400 }
                 );
             }
-            if (priorResult?.freeRetryUsed) {
-                return NextResponse.json(
-                    { error: "免费重试已使用，每个会话仅限一次" },
-                    { status: 429 }
-                );
-            }
             // Ownership verification: current requester must match session creator
             const currentUser = await getSession();
             const currentIpHash = hashIP(ip);
             if (currentUser?.id) {
-                // Logged-in user: must own the session
                 if (existingSession.userId !== currentUser.id) {
                     return NextResponse.json(
                         { error: "免费重试无效：无权访问此会话" },
@@ -243,7 +236,6 @@ export async function POST(request: NextRequest) {
                     );
                 }
             } else {
-                // Guest: IP hash must match
                 if (existingSession.ip && existingSession.ip !== currentIpHash) {
                     return NextResponse.json(
                         { error: "免费重试无效：会话身份验证失败" },
@@ -251,6 +243,7 @@ export async function POST(request: NextRequest) {
                     );
                 }
             }
+            // freeRetryUsed 原子性检查推迟到 DB 行锁事务内（见下方 lockResult）
             isFreeRetryAllowed = true;
         }
 
@@ -316,6 +309,15 @@ export async function POST(request: NextRequest) {
                 return { status: 'completed' as const, result: session.analysisResult };
             }
 
+            // 免费重试原子性防护：在行锁内再次检查 freeRetryUsed 标记，
+            // 防止并发请求同时通过预检查后在 DB 层绕过。
+            if (isFreeRetryAllowed && session?.analysisResult) {
+                const existingResult = session.analysisResult as Record<string, unknown>;
+                if (existingResult?.freeRetryUsed) {
+                    return { status: 'free_retry_used' as const };
+                }
+            }
+
             // 若已有其他请求正在分析，返回 analyzing 状态，让客户端轮询
             if (session?.analysisStartedAt && !session?.completedAt) {
                 return { status: 'analyzing' as const };
@@ -365,6 +367,13 @@ export async function POST(request: NextRequest) {
             const cachedResult = lockResult.result as Record<string, unknown>;
             console.log(`[analyze] Returning cached result after lock for session ${effectiveSessionId}`);
             return NextResponse.json(cachedResult, { status: 200, headers: rateLimitHeaders });
+        }
+
+        if (lockResult.status === 'free_retry_used') {
+            return NextResponse.json(
+                { error: "免费重试已使用，每个会话仅限一次" },
+                { status: 429, headers: rateLimitHeaders }
+            );
         }
 
         if (lockResult.status === 'analyzing') {
@@ -526,7 +535,7 @@ export async function POST(request: NextRequest) {
             }
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const resultText = await generateText(systemPrompt, userPrompt, provider as any, abortController.signal);
+            const resultText = await generateText(systemPrompt, userPrompt, provider as any, abortController.signal, user?.id);
             resultJson = extractJsonFromResponse<any>(resultText);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (e: any) {

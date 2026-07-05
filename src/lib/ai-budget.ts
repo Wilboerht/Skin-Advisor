@@ -215,11 +215,34 @@ function getPendingReservationCost(requestType: string): number {
 }
 
 /**
+ * 轻量预算检查（仅检查内存中的在途预留，不查询 DB）
+ * 用于 Key 重试循环中快速判断是否接近预算上限，避免重试风暴超支。
+ * @returns true 表示安全继续，false 表示应中止重试
+ */
+export function isBudgetSafeForRetry(requestType: string): boolean {
+    const budget = getBudgetConfig();
+    const pendingCost = getPendingReservationCost(requestType);
+    // 在途预留超过日预算的 70% 时拒绝进一步重试
+    if (budget.dailyCostBudget && pendingCost >= budget.dailyCostBudget * 0.7) {
+        return false;
+    }
+    return true;
+}
+
+/**
  * 检查全局 AI 预算是否已超限
  * 在发起 AI 调用前调用，若超限则拒绝请求。
  * 同时考虑已在途（pending）的调用预留，防止并发绕过。
+ * @param requestType - AI 请求类型 (text/vision)
+ * @param estimatedCost - 当前调用的预估成本（默认: text=¥0.05, vision=¥0.15），
+ *                        用于在途预留防止并发请求同时通过预算检查
+ * @param userId - 可选：登录用户ID，用于单用户每日硬限流（默认 30 次/天）
  */
-export async function checkAIBudget(requestType?: AIRequestType): Promise<AIBudgetStatus> {
+export async function checkAIBudget(
+    requestType?: AIRequestType,
+    estimatedCost?: number,
+    userId?: string | null
+): Promise<AIBudgetStatus> {
     const budget = getBudgetConfig();
     const stats = await getUsageStats(requestType);
     const pendingCost = requestType ? getPendingReservationCost(requestType) : 0;
@@ -227,6 +250,18 @@ export async function checkAIBudget(requestType?: AIRequestType): Promise<AIBudg
     // 实际用量 = 已入库用量 + 在途预留
     const effectiveDailyCost = stats.dailyCost + pendingCost;
     const effectiveMonthlyCost = stats.monthlyCost + pendingCost;
+
+    // 单用户每日 AI 调用硬上限（防止单用户无限刷额度）
+    if (userId) {
+        const userLimitCheck = await checkUserAILimit(userId);
+        if (!userLimitCheck.allowed) {
+            return {
+                allowed: false,
+                reason: userLimitCheck.reason,
+                ...stats,
+            };
+        }
+    }
 
     if (budget.dailyTokenBudget && stats.dailyTokens >= budget.dailyTokenBudget) {
         return { allowed: false, reason: "AI 日 token 预算已耗尽", ...stats };
@@ -241,12 +276,38 @@ export async function checkAIBudget(requestType?: AIRequestType): Promise<AIBudg
         return { allowed: false, reason: "AI 月费用预算已耗尽", ...stats };
     }
 
-    // 预留 ¥0.01 作为在途成本，防止并发请求同时通过预算检查
+    // 预留预估成本作为在途开销，防止并发请求同时通过预算检查
+    // 默认: text=¥0.05, vision=¥0.15（基于 qwen-turbo/qwen-vl-plus 单次调用上限估算）
+    const effectiveEstimatedCost = estimatedCost ?? (requestType === "vision" ? 0.15 : 0.05);
     if (requestType) {
-        addPendingReservation(requestType, 0.01);
+        addPendingReservation(requestType, effectiveEstimatedCost);
     }
 
     return { allowed: true, ...stats };
+}
+
+// ============================================================================
+// 单用户每日 AI 调用硬上限
+// ============================================================================
+
+const USER_DAILY_AI_CALL_LIMIT = 30; // 单用户每日 AI 调用次数上限
+
+async function checkUserAILimit(userId: string): Promise<{ allowed: boolean; reason?: string }> {
+    const day = getDayBounds();
+    const userCallCount = await prisma.aIUsageLog.count({
+        where: {
+            userId,
+            createdAt: { gte: day.start, lt: day.end },
+            success: true, // 仅统计成功的调用
+        },
+    });
+    if (userCallCount >= USER_DAILY_AI_CALL_LIMIT) {
+        return {
+            allowed: false,
+            reason: `用户每日 AI 调用次数已达上限（${USER_DAILY_AI_CALL_LIMIT} 次），请明天再试`,
+        };
+    }
+    return { allowed: true };
 }
 
 // ============================================================================
@@ -300,8 +361,15 @@ export async function recordAIUsage(record: AIUsageRecord): Promise<void> {
         });
     } finally {
         // 释放 checkAIBudget 中预留的在途费用
+        // 使用实际估算成本而非固定值，确保预留与释放对等
         if (record.requestType) {
-            releasePendingReservation(record.requestType, 0.01);
+            const actualCost = estimatedCost > 0 ? estimatedCost : estimateAICost(
+                record.provider,
+                record.model,
+                record.promptTokens || 0,
+                record.completionTokens || 0
+            );
+            releasePendingReservation(record.requestType, Math.max(actualCost, 0.001));
         }
     }
 }

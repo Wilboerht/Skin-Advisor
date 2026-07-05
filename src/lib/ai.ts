@@ -3,7 +3,7 @@ import prisma from "./prisma";
 import { aiLogger } from "./logger";
 import { TEXT_ANALYSIS_SYSTEM_PROMPT } from "@/config/ai-prompts";
 import { circuitBreaker } from "./circuit-breaker";
-import { checkAIBudget, recordAIUsage, releasePendingReservation } from "./ai-budget";
+import { checkAIBudget, recordAIUsage, releasePendingReservation, isBudgetSafeForRetry } from "./ai-budget";
 import { filterHealthyKeys, recordKeyResult } from "./ai-key-health";
 import {
     extractJsonFromResponse,
@@ -258,20 +258,22 @@ export function createOpenAIClient(provider: AIProvider, apiKey: string) {
 
 /**
  * 文本生成 (支持服务商降级 & 多 Key 轮询)
+ * @param userId - 可选登录用户ID，用于单用户每日AI调用硬限流
  */
 export async function generateText(
     systemPrompt: string,
     userPrompt: string,
     preferredProvider?: AIProvider,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    userId?: string | null
 ): Promise<string> {
     // 如果外部 signal 已 abort，直接抛出
     if (signal?.aborted) {
         throw new Error("Request cancelled by client.");
     }
 
-    // 全局预算熔断检查
-    const budgetStatus = await checkAIBudget("text");
+    // 全局预算熔断检查（text 类型预估 ¥0.10 覆盖 qwen-plus/deepseek 上限场景）
+    const budgetStatus = await checkAIBudget("text", 0.10, userId);
     if (!budgetStatus.allowed) {
         throw new Error(`[AIBudget] ${budgetStatus.reason}`);
     }
@@ -310,7 +312,7 @@ export async function generateText(
         throw lastError || new Error("All AI providers failed.");
     } finally {
         // 安全释放：确保即使异常路径未调 recordAIUsage 也能释放预留
-        releasePendingReservation("text", 0.01);
+        releasePendingReservation("text", 0.10);
     }
 }
 
@@ -387,6 +389,12 @@ async function callProviderWithRetry(
                 }
             }
 
+            // 重试前轻量预算检查：在途预留过高时中止重试，防止并发风暴超支
+            if (i > 0 && !isBudgetSafeForRetry("text")) {
+                aiLogger.warn(`Text AI retry aborted: pending reservation approaching budget limit`);
+                throw new Error(`[AIBudget] Text retry budget limit approaching, request rejected`);
+            }
+
             continue; // 尝试下一个 Key
         }
     }
@@ -457,7 +465,7 @@ async function callProviderInternal(
                     { role: "user", content: safeUserPrompt }
                 ],
                 temperature: settings.temperature,
-                max_tokens: settings.maxTokens
+                max_tokens: Math.min(settings.maxTokens, 3000)
             },
             { signal: controller.signal }
         );
