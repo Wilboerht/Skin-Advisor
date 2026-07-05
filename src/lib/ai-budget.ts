@@ -326,13 +326,14 @@ async function checkUserAILimit(userId: string): Promise<{ allowed: boolean; rea
  * 应在 AI 调用返回后（无论成功/失败）调用。
  */
 export async function recordAIUsage(record: AIUsageRecord): Promise<void> {
+    const estimatedCost = estimateAICost(
+        record.provider,
+        record.model,
+        record.promptTokens,
+        record.completionTokens
+    );
+
     try {
-        const estimatedCost = estimateAICost(
-            record.provider,
-            record.model,
-            record.promptTokens,
-            record.completionTokens
-        );
 
         await prisma.aIUsageLog.create({
             data: {
