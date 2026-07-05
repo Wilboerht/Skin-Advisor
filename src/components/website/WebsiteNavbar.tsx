@@ -8,6 +8,7 @@ import { User, ExternalLink, Menu } from "lucide-react";
 import { HomeSvg } from "@/components/icons/HomeSvg";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { useUser } from "@/components/auth/UserProvider";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 
 interface NavItem {
   label: string;
@@ -26,6 +27,8 @@ interface WebsiteNavbarProps {
   variant?: "light" | "dark";
 }
 
+const MOBILE_MENU_ID = "mobile-nav-menu";
+
 export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -33,6 +36,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
   const { user } = useUser();
   const pathname = usePathname();
   const isDark = variant === "dark" && !scrolled;
+  const mobileMenuRef = useFocusTrap<HTMLDivElement>(mobileMenuOpen);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -43,16 +47,20 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // 打开移动端菜单时禁止背景滚动
+  // 打开移动端菜单时禁止背景滚动（iOS 兼容：使用 position:fixed 防止页面跳到顶部）
   useEffect(() => {
     if (mobileMenuOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
+      const scrollY = window.scrollY;
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = "100%";
+      return () => {
+        document.body.style.position = "";
+        document.body.style.top = "";
+        document.body.style.width = "";
+        window.scrollTo(0, scrollY);
+      };
     }
-    return () => {
-      document.body.style.overflow = "";
-    };
   }, [mobileMenuOpen]);
 
   const handleNavClick = () => {
@@ -68,7 +76,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
     <>
       <nav
         style={{ pointerEvents: "none" }}
-        className={`fixed top-0 left-0 right-0 z-[100000] px-6 md:px-12 lg:px-20 py-5 md:py-7 transition-all duration-500 ${
+        className={`fixed top-0 left-0 right-0 z-[100000] px-6 md:px-12 lg:px-20 pt-[calc(1.25rem+env(safe-area-inset-top,0px))] pb-5 md:py-7 transition-all duration-500 ${
           scrolled
             ? "bg-[#F8F7F3]/80 backdrop-blur-md border-b border-[rgba(61,68,48,0.06)]"
             : isDark
@@ -232,6 +240,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
               onClick={() => setMobileMenuOpen(true)}
               aria-label="打开菜单"
               aria-expanded={mobileMenuOpen}
+              aria-controls={MOBILE_MENU_ID}
               className={`md:hidden group flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-500 cursor-pointer ${
                 isDark
                   ? "text-white/70 hover:text-white hover:bg-white/10"
@@ -246,6 +255,11 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
 
       {/* 移动端全屏菜单 */}
       <div
+        id={MOBILE_MENU_ID}
+        ref={mobileMenuRef}
+        role="dialog"
+        aria-modal={mobileMenuOpen}
+        aria-label="导航菜单"
         className={`fixed inset-0 z-[100001] md:hidden transition-all duration-500 ${
           mobileMenuOpen ? "visible opacity-100" : "invisible opacity-0"
         }`}
