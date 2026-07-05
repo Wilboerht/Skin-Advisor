@@ -76,7 +76,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
     <>
       <nav
         style={{ pointerEvents: "none" }}
-        className={`fixed top-0 left-0 right-0 z-[100000] px-6 md:px-12 lg:px-20 pt-[calc(1.25rem+env(safe-area-inset-top,0px))] pb-5 md:py-7 transition-all duration-500 ${
+        className={`fixed top-0 left-0 right-0 z-[100000] px-6 md:px-12 lg:px-20 py-8 md:py-7 transition-all duration-500 ${
           scrolled
             ? "bg-[#F8F7F3]/80 backdrop-blur-md border-b border-[rgba(61,68,48,0.06)]"
             : isDark
@@ -84,23 +84,9 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
               : "bg-transparent border-b border-transparent"
         }`}
       >
-        <div style={{ pointerEvents: "auto" }} className="w-full grid grid-cols-[auto_1fr_auto] md:grid-cols-[1fr_auto_1fr] items-center">
-          {/* 移动端汉堡菜单按钮（左侧） */}
-          <button
-            onClick={() => setMobileMenuOpen(true)}
-            aria-label="打开菜单"
-            aria-expanded={mobileMenuOpen}
-            aria-controls={MOBILE_MENU_ID}
-            className={`md:hidden justify-self-start group flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-500 cursor-pointer ${
-              isDark
-                ? "text-white/70 hover:text-white hover:bg-white/10"
-                : "text-[#3D4430]/70 hover:text-[#3D4430] hover:bg-[#3D4430]/5"
-            }`}
-          >
-            <Menu className="w-5 h-5 transition-opacity duration-500" />
-          </button>
-
-          <Link href="/" className="cursor-pointer justify-self-center md:justify-self-start">
+        <div style={{ pointerEvents: "auto" }} className="w-full flex items-center justify-center md:justify-between relative">
+          {/* Logo：移动端居中，桌面端靠左 */}
+          <Link href="/" className="cursor-pointer shrink-0">
             <Image
               src="/NIHPLOD-logo.svg"
               alt="NIHPLOD"
@@ -113,7 +99,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
           </Link>
 
           {/* 中间导航 - 桌面端 */}
-          <div className="hidden md:flex items-center justify-center gap-8 lg:gap-10">
+          <div className="hidden md:flex items-center justify-center gap-8 lg:gap-10 absolute left-1/2 -translate-x-1/2">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
               return (
@@ -159,12 +145,12 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
             </a>
           </div>
 
-          <div className="flex items-center justify-end gap-3 md:gap-7">
-            {/* 桌面端：已登录显示用户入口，未登录显示登录按钮 */}
+          {/* 右侧操作区 - 桌面端 */}
+          <div className="hidden md:flex items-center gap-7 shrink-0">
             {user ? (
               <Link
                 href="/profile"
-                className={`group hidden md:flex items-center gap-2 text-[15px] font-medium tracking-[0.2em] transition-colors duration-500 cursor-pointer ${
+                className={`group flex items-center gap-2 text-[15px] font-medium tracking-[0.2em] transition-colors duration-500 cursor-pointer ${
                   isDark
                     ? "text-white/70 hover:text-white"
                     : "text-[#3D4430]/70 hover:text-[#3D4430]"
@@ -185,7 +171,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
             ) : (
               <button
                 onClick={() => openAuthModal("login")}
-                className={`group hidden md:flex items-center gap-2 text-[15px] font-medium tracking-[0.2em] transition-colors duration-500 cursor-pointer ${
+                className={`group flex items-center gap-2 text-[15px] font-medium tracking-[0.2em] transition-colors duration-500 cursor-pointer ${
                   isDark
                     ? "text-white/70 hover:text-white"
                     : "text-[#3D4430]/70 hover:text-[#3D4430]"
@@ -198,45 +184,10 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                 </span>
               </button>
             )}
-
-            {/* 移动端用户图标：已登录跳转个人中心，未登录打开登录面板 */}
-            {user ? (
-              <Link
-                href="/profile"
-                aria-label="个人中心"
-                className={`md:hidden group flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-500 ${
-                  isDark
-                    ? "text-white/70 hover:text-white hover:bg-white/10"
-                    : "text-[#3D4430]/70 hover:text-[#3D4430] hover:bg-[#3D4430]/5"
-                }`}
-              >
-                <div className="relative w-7 h-7 rounded-full overflow-hidden bg-[#3D4430]/10 flex items-center justify-center text-[#3D4430] text-xs font-serif">
-                  {user.avatar ? (
-                    <Image src={user.avatar} alt="" fill unoptimized className="object-cover" />
-                  ) : (
-                    (user.name || user.email || user.phone || "U").charAt(0).toUpperCase()
-                  )}
-                </div>
-              </Link>
-            ) : (
-              <button
-                onClick={() => openAuthModal("login")}
-                aria-label="登录"
-                className={`md:hidden group flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-500 cursor-pointer ${
-                  isDark
-                    ? "text-white/70 hover:text-white hover:bg-white/10"
-                    : "text-[#3D4430]/70 hover:text-[#3D4430] hover:bg-[#3D4430]/5"
-                }`}
-              >
-                <User className="w-5 h-5 transition-opacity duration-500" />
-              </button>
-            )}
-
-            {/* 首页链接 */}
             {pathname !== "/" && (
               <Link
                 href="/"
-                className={`group hidden md:flex items-center gap-2 text-[15px] font-medium tracking-[0.2em] transition-colors duration-500 ${
+                className={`group flex items-center gap-2 text-[15px] font-medium tracking-[0.2em] transition-colors duration-500 ${
                   isDark
                     ? "text-white/70 hover:text-white"
                     : "text-[#3D4430]/70 hover:text-[#3D4430]"
@@ -250,6 +201,54 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
               </Link>
             )}
           </div>
+
+          {/* 移动端汉堡菜单按钮：绝对定位左侧 */}
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            aria-label="打开菜单"
+            aria-expanded={mobileMenuOpen}
+            aria-controls={MOBILE_MENU_ID}
+            className={`md:hidden absolute left-0 flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-500 cursor-pointer ${
+              isDark
+                ? "text-white/70 hover:text-white hover:bg-white/10"
+                : "text-[#3D4430]/70 hover:text-[#3D4430] hover:bg-[#3D4430]/5"
+            }`}
+          >
+            <Menu className="w-5 h-5 transition-opacity duration-500" />
+          </button>
+
+          {/* 移动端用户图标：绝对定位右侧 */}
+          {user ? (
+            <Link
+              href="/profile"
+              aria-label="个人中心"
+              className={`md:hidden absolute right-0 flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-500 ${
+                isDark
+                  ? "text-white/70 hover:text-white hover:bg-white/10"
+                  : "text-[#3D4430]/70 hover:text-[#3D4430] hover:bg-[#3D4430]/5"
+              }`}
+            >
+              <div className="relative w-7 h-7 rounded-full overflow-hidden bg-[#3D4430]/10 flex items-center justify-center text-[#3D4430] text-xs font-serif">
+                {user.avatar ? (
+                  <Image src={user.avatar} alt="" fill unoptimized className="object-cover" />
+                ) : (
+                  (user.name || user.email || user.phone || "U").charAt(0).toUpperCase()
+                )}
+              </div>
+            </Link>
+          ) : (
+            <button
+              onClick={() => openAuthModal("login")}
+              aria-label="登录"
+              className={`md:hidden absolute right-0 flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-500 cursor-pointer ${
+                isDark
+                  ? "text-white/70 hover:text-white hover:bg-white/10"
+                  : "text-[#3D4430]/70 hover:text-[#3D4430] hover:bg-[#3D4430]/5"
+              }`}
+            >
+              <User className="w-5 h-5 transition-opacity duration-500" />
+            </button>
+          )}
         </div>
       </nav>
 
