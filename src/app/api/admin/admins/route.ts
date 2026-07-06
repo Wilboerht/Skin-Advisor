@@ -89,9 +89,17 @@ export const POST = requireRole("super_admin")(async (request, { admin }) => {
             );
         }
 
-        if (!password || typeof password !== "string" || password.length < 6) {
+        if (!password || typeof password !== "string" || password.length < 8) {
             return NextResponse.json(
-                { success: false, error: "密码至少6个字符" },
+                { success: false, error: "密码至少8个字符" },
+                { status: 400 }
+            );
+        }
+
+        // 密码复杂度校验：至少包含字母和数字（与C端注册一致）
+        if (!/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) {
+            return NextResponse.json(
+                { success: false, error: "密码需包含字母和数字" },
                 { status: 400 }
             );
         }

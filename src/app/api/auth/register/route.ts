@@ -89,6 +89,7 @@ export async function POST(req: NextRequest) {
         // Prevent unique constraint collision if the phone exists on a different ID locally
         const existingByPhone = await prisma.user.findUnique({ where: { phoneNumber: userPayload.phone } });
         if (existingByPhone && existingByPhone.id !== userPayload.id) {
+            console.warn(`[AUDIT] Phone collision detected (register): new user ${userPayload.id} (phone: ${userPayload.phone}) conflicts with existing user ${existingByPhone.id}. Merging old record.`);
             await prisma.user.update({
                 where: { id: existingByPhone.id },
                 data: { phoneNumber: `merged_${existingByPhone.id}_${userPayload.phone}` }
