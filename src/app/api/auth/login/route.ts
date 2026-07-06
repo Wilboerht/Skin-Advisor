@@ -36,7 +36,7 @@ async function tryDevLocalLogin(phone: string, password: string): Promise<NextRe
     });
     response.cookies.set(AUTH_COOKIE_NAME, token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: false, // 仅开发环境本地登录使用
         sameSite: "strict",
         maxAge: 7 * 24 * 60 * 60,
         path: "/"

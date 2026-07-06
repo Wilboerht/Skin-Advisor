@@ -13,7 +13,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"),
   title: {
-    default: "NIHPLOD | AI 护肤顾问 — 专业 AI 面部识别肤质分析",
+    default: "NIHPLOD | 素颜测肤",
     template: "%s | NIHPLOD",
   },
   description:

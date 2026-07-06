@@ -1,10 +1,3 @@
-import type { Metadata } from "next";
-
-export const metadata: Metadata = {
-  title: "数据总览",
-  description: "NIHPLOD 管理后台 — 数据总览与统计。",
-};
-
 "use client";
 
 import { DashboardCharts } from "@/components/admin/charts/DashboardCharts";
