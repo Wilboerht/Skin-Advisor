@@ -538,42 +538,6 @@ export function extractJson(content: string) {
     return extractJsonFromResponse(content);
 }
 
-// ============================================================================
-// AI 分析业务逻辑
-// ============================================================================
-
-/**
- * 纯文本问卷 AI 分析
- * @deprecated 未被任何路由使用。若重新启用，请确保外层有 checkAIBudget 调用。
- */
-export async function analyzeWithAI(
-    answers: QuestionnaireAnswers,
-    userPrompt: string,
-    signal?: AbortSignal
-): Promise<FaceAnalysisResult> {
-    try {
-        aiLogger.info("Starting AI Analysis (Text Only)");
-
-        const resultText = await generateText(
-            TEXT_ANALYSIS_SYSTEM_PROMPT,
-            userPrompt,
-            undefined,
-            signal
-        );
-
-        const result = extractJsonFromResponse<FaceAnalysisResult>(resultText);
-
-        if (!result || !result.skinType) {
-            throw new Error("Invalid AI analysis result structure");
-        }
-
-        return result;
-    } catch (error) {
-        aiLogger.error("AI Analysis Failed", { error: error instanceof Error ? error.message : String(error) });
-        throw error;
-    }
-}
-
 /**
  * 降级分析 (当 AI 服务不可用时)
  * 使用规则引擎生成近似结果
