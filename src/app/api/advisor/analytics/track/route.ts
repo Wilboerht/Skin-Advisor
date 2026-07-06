@@ -11,6 +11,7 @@ import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { getSession } from "@/lib/auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { hashIP } from "@/lib/privacy";
 
 // 事件类型定义
 const EventSchema = z.object({
@@ -34,30 +35,6 @@ const EventSchema = z.object({
 
 type _TrackEvent = z.infer<typeof EventSchema>;
 
-// IP 脱敏处理（隐藏最后一段）
-function anonymizeIP(ip: string): string {
-    if (ip === "unknown") return ip;
-
-    // IPv4: 192.168.1.100 -> 192.168.1.xxx
-    if (ip.includes(".")) {
-        const parts = ip.split(".");
-        if (parts.length === 4) {
-            parts[3] = "xxx";
-            return parts.join(".");
-        }
-    }
-
-    // IPv6: 简化处理，只保留前三段
-    if (ip.includes(":")) {
-        const parts = ip.split(":");
-        if (parts.length > 3) {
-            return parts.slice(0, 3).join(":") + ":xxx";
-        }
-    }
-
-    return ip;
-}
-
 // 获取客户端信息
 function getClientInfo(request: NextRequest) {
     const userAgent = request.headers.get("user-agent") || "";
@@ -65,8 +42,8 @@ function getClientInfo(request: NextRequest) {
     const rawIP = getClientIP(request);
     const referer = request.headers.get("referer") || "";
 
-    // 脱敏处理 IP 地址用于存储
-    const ip = anonymizeIP(rawIP);
+    // 哈希处理 IP 地址用于存储（不可逆，隐私合规）
+    const ip = hashIP(rawIP);
 
     // 解析设备类型
     let deviceType = "desktop";

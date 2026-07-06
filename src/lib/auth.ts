@@ -4,6 +4,13 @@ import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
 import { cookies } from 'next/headers';
 import prisma from '@/lib/prisma';
 
+/**
+ * C端认证 Cookie 名称
+ * 生产环境使用 __Host- 前缀以强化 Cookie 安全（要求 Path=/、Secure、无 Domain）
+ */
+export const AUTH_COOKIE_NAME =
+    process.env.NODE_ENV === "production" ? "__Host-auth_token" : "auth_token";
+
 function getJwtSecret(): Uint8Array {
     const secret = process.env.JWT_SECRET?.trim();
     if (!secret) {
@@ -83,7 +90,7 @@ export interface SessionUser {
 export async function getSession(): Promise<SessionUser | null> {
     const cookieStore = await cookies();
 
-    const tokenValue = cookieStore.get('auth_token')?.value;
+    const tokenValue = cookieStore.get(AUTH_COOKIE_NAME)?.value;
     if (!tokenValue) {
         return null;
     }

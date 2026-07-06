@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { AUTH_COOKIE_NAME } from "@/lib/auth";
 import { mirrorOfficialCookies } from "@/lib/cookie-mirror";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -23,7 +24,8 @@ export async function POST(_req: NextRequest) {
         // 透传官网所有 Set-Cookie 头（可能包含多条 cookie 清除指令）
         mirrorOfficialCookies(officialResponse, response, "logout");
 
-        // 为了平滑过渡，我们也顺手清除遗留的 auth_token / user_token
+        // 清除本地 auth_token（含新旧两种 cookie 名，确保平滑过渡）
+        response.cookies.delete(AUTH_COOKIE_NAME);
         response.cookies.delete("auth_token");
         response.cookies.delete("user_token");
 
@@ -31,6 +33,7 @@ export async function POST(_req: NextRequest) {
     } catch (e) {
         console.error("Logout Proxy Error", e);
         const fallback = NextResponse.json({ success: true });
+        fallback.cookies.delete(AUTH_COOKIE_NAME);
         fallback.cookies.delete("auth_token");
         fallback.cookies.delete("user_token");
         return fallback;

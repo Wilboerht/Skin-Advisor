@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
-import { signToken, getSession } from "@/lib/auth";
+import { signToken, getSession, AUTH_COOKIE_NAME } from "@/lib/auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { mirrorOfficialCookies } from "@/lib/cookie-mirror";
 import { createHash } from "crypto";
@@ -172,7 +172,7 @@ export async function GET(req: NextRequest) {
                 role: responseUser.role,
                 dailyTestLimit: localUser.dailyTestLimit
             }, "7d");
-            response.cookies.set("auth_token", localToken, {
+            response.cookies.set(AUTH_COOKIE_NAME, localToken, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === "production",
                 sameSite: "strict",

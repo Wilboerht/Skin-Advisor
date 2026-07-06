@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
-import { verifyPassword, signToken } from "@/lib/auth";
+import { verifyPassword, signToken, AUTH_COOKIE_NAME } from "@/lib/auth";
 import { mirrorOfficialCookies } from "@/lib/cookie-mirror";
 
 async function tryDevLocalLogin(phone: string, password: string): Promise<NextResponse | null> {
-    if (process.env.NODE_ENV === "production") return null;
+    // 双重开关：仅允许非生产环境 + 显式设置 ALLOW_LOCAL_LOGIN=true
+    if (process.env.NODE_ENV === "production" || process.env.ALLOW_LOCAL_LOGIN !== "true") return null;
 
     const localUser = await prisma.user.findUnique({
         where: { phoneNumber: phone }
@@ -33,9 +34,9 @@ async function tryDevLocalLogin(phone: string, password: string): Promise<NextRe
             role: localUser.role
         }
     });
-    response.cookies.set("auth_token", token, {
+    response.cookies.set(AUTH_COOKIE_NAME, token, {
         httpOnly: true,
-        secure: false,
+        secure: process.env.NODE_ENV === "production",
         sameSite: "strict",
         maxAge: 7 * 24 * 60 * 60,
         path: "/"
