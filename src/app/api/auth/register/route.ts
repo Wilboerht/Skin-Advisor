@@ -1,42 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
-
-function mirrorOfficialSessionCookie(officialResponse: Response, response: NextResponse) {
-    const cookies = officialResponse.headers.getSetCookie();
-    
-    if (cookies.length === 0) {
-        console.warn("⚠️  Official API did NOT return set-cookie header in register response");
-        return;
-    }
-
-    for (const cookieStr of cookies) {
-        // Split by first '=' to get name and value+attributes
-        const eqIdx = cookieStr.indexOf("=");
-        if (eqIdx === -1) continue;
-        
-        const cookieName = cookieStr.substring(0, eqIdx).trim();
-        const rest = cookieStr.substring(eqIdx + 1);
-        
-        // Get value (before first semicolon)
-        const semiIdx = rest.indexOf(";");
-        const cookieValue = (semiIdx === -1 ? rest : rest.substring(0, semiIdx)).trim();
-        
-        if (!cookieName || !cookieValue) {
-            console.warn(`⚠️  Skipped invalid cookie pair: ${cookieName}=${cookieValue}`);
-            continue;
-        }
-
-        // Cookie set successfully (debug log removed for production)
-        response.cookies.set(cookieName, cookieValue, {
-            httpOnly: true,
-            sameSite: "strict",
-            path: "/",
-            secure: process.env.NODE_ENV === "production",
-            maxAge: 60 * 60 * 24 * 30 // 30 days
-        });
-    }
-}
+import { mirrorOfficialCookies } from "@/lib/cookie-mirror";
 
 async function parseOfficialJson(officialResponse: Response) {
     const contentType = officialResponse.headers.get("content-type") || "";
@@ -47,7 +12,7 @@ async function parseOfficialJson(officialResponse: Response) {
     }
     try {
         return await officialResponse.json();
-    } catch (err) {
+    } catch {
         const text = await officialResponse.text();
         console.error("Official API JSON parse failed", text.slice(0, 300));
         return null;
@@ -157,7 +122,7 @@ export async function POST(req: NextRequest) {
             }
         });
 
-        mirrorOfficialSessionCookie(officialResponse, response);
+        mirrorOfficialCookies(officialResponse, response, "register");
 
         return response;
 

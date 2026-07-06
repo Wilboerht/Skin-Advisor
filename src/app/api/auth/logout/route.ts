@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { mirrorOfficialCookies } from "@/lib/cookie-mirror";
 
-export async function POST(req: NextRequest) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function POST(_req: NextRequest) {
     const cookieStore = await cookies();
     const allCookies = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ');
 
@@ -15,19 +17,11 @@ export async function POST(req: NextRequest) {
         });
 
         const responseData = await officialResponse.json();
-        const setCookieHeader = officialResponse.headers.get("Set-Cookie");
 
         const response = NextResponse.json({ success: true, ...responseData });
 
         // 透传官网所有 Set-Cookie 头（可能包含多条 cookie 清除指令）
-        const setCookieHeaders = officialResponse.headers.getSetCookie?.() || [];
-        if (setCookieHeaders.length > 0) {
-            for (const cookie of setCookieHeaders) {
-                response.headers.append("Set-Cookie", cookie);
-            }
-        } else if (setCookieHeader) {
-            response.headers.set("Set-Cookie", setCookieHeader);
-        }
+        mirrorOfficialCookies(officialResponse, response, "logout");
 
         // 为了平滑过渡，我们也顺手清除遗留的 auth_token / user_token
         response.cookies.delete("auth_token");

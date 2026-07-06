@@ -1,4 +1,11 @@
-﻿"use client"
+﻿import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "礼品活动",
+  description: "参与 NIHPLOD 活动赢取护肤好礼。",
+};
+
+"use client"
 
 import { useState, useEffect, useCallback, useMemo } from "react"
 import Image from "next/image"

@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
 import { signToken, getSession } from "@/lib/auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { mirrorOfficialCookies } from "@/lib/cookie-mirror";
 import { createHash } from "crypto";
 
 // 简单的内存缓存，防止外部官方 API 慢导致每个请求都阻塞 10s+
@@ -33,39 +34,6 @@ function setMeCache(key: string, data: unknown) {
     meCache.set(key, { data, timestamp: Date.now() });
 }
 
-function mirrorOfficialSessionCookie(officialResponse: Response, response: NextResponse) {
-    const cookies = officialResponse.headers.getSetCookie();
-    
-    if (cookies.length === 0) {
-        console.warn("⚠️  Official API (me) did NOT return set-cookie header - session cookie may need renewal");
-        // 即使官方 API 没有返回 cookie，也不中断流程
-        // 客户端应该保留现有的 token cookie
-        return;
-    }
-
-    for (const cookieStr of cookies) {
-        const trimmed = cookieStr.trim();
-        const eqIdx = trimmed.indexOf("=");
-        if (eqIdx === -1) continue;
-        
-        const cookieName = trimmed.substring(0, eqIdx).trim();
-        const rest = trimmed.substring(eqIdx + 1);
-        const semiIdx = rest.indexOf(";");
-        const cookieValue = (semiIdx === -1 ? rest : rest.substring(0, semiIdx)).trim();
-        
-        if (!cookieName || !cookieValue) continue;
-
-        response.cookies.set(cookieName, cookieValue, {
-            httpOnly: true,
-            sameSite: "strict",
-            path: "/",
-            secure: process.env.NODE_ENV === "production",
-            maxAge: 60 * 60 * 24 * 30
-        });
-    }
-}
-
-
 async function getLocalSessionUser(): Promise<NextResponse | null> {
     try {
         const localUser = await getSession();
@@ -92,7 +60,6 @@ async function getLocalSessionUser(): Promise<NextResponse | null> {
     }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function GET(req: NextRequest) {
     // 速率限制
     const ip = getClientIP(req);
@@ -217,7 +184,7 @@ export async function GET(req: NextRequest) {
             console.error("[auth/me] Failed to issue local token:", tokenErr);
         }
 
-        mirrorOfficialSessionCookie(officialResponse, response);
+        mirrorOfficialCookies(officialResponse, response, "me");
 
         return response;
 

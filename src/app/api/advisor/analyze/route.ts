@@ -19,7 +19,90 @@ import { matchCharacterIP } from "@/lib/result-utils";
 import { checkUsageLimit, reserveUsage, rollbackUsage } from "@/lib/usage-limit";
 import { extractGuestIdentifiers } from "@/lib/guest-limit";
 import { aiLogger } from "@/lib/logger";
+import { createSignedInternalApiHeaders } from "@/lib/internal-api";
 import DOMPurify from 'isomorphic-dompurify';
+
+const WECHAT_TEMPLATE_CIRCUIT_KEY = "official-wechat-template";
+const WECHAT_TEMPLATE_MAX_RETRIES = 3;
+const WECHAT_TEMPLATE_TIMEOUT_MS = 15000;
+
+/**
+ * 调用官网内部 API v1 发送微信模板消息
+ *
+ * 增强：HMAC-SHA256 签名鉴权 + 熔断 + 指数退避重试 + 超时 + 结构化日志
+ */
+async function sendOfficialWechatTemplate(
+  userId: string,
+  score: number,
+  primaryConcern: string,
+  reportUrl: string
+): Promise<void> {
+  if (!circuitBreaker.allowRequest(WECHAT_TEMPLATE_CIRCUIT_KEY)) {
+    aiLogger.warn("[WechatTemplate] 熔断器开启，跳过官网模板消息推送");
+    return;
+  }
+
+  const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";
+  const path = "/api/v1/internal/wechat/send-template";
+  const bodyText = JSON.stringify({ userId, score, primaryConcern, reportUrl });
+
+  const signed = await createSignedInternalApiHeaders("advisor", "POST", path, bodyText);
+  if (!signed) {
+    aiLogger.error("[WechatTemplate] 未配置内部 API 密钥，无法签名请求");
+    circuitBreaker.recordFailure(WECHAT_TEMPLATE_CIRCUIT_KEY);
+    return;
+  }
+
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt < WECHAT_TEMPLATE_MAX_RETRIES; attempt++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), WECHAT_TEMPLATE_TIMEOUT_MS);
+
+    try {
+      const res = await fetch(`${officialApiUrl}${path}`, {
+        method: "POST",
+        headers: signed.headers,
+        body: bodyText,
+        signal: controller.signal,
+      });
+
+      if (res.ok) {
+        circuitBreaker.recordSuccess(WECHAT_TEMPLATE_CIRCUIT_KEY);
+        aiLogger.info("[WechatTemplate] 官网模板消息推送成功", { userId, score });
+        return;
+      }
+
+      const errText = await res.text().catch(() => "");
+      aiLogger.warn("[WechatTemplate] 官网模板消息推送失败", {
+        userId,
+        attempt: attempt + 1,
+        status: res.status,
+        body: errText.slice(0, 200),
+      });
+      lastError = new Error(`HTTP ${res.status}: ${errText.slice(0, 200)}`);
+    } catch (err) {
+      lastError = err;
+      aiLogger.warn("[WechatTemplate] 官网模板消息调用异常", {
+        userId,
+        attempt: attempt + 1,
+        error: String(err),
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+    if (attempt < WECHAT_TEMPLATE_MAX_RETRIES - 1) {
+      await new Promise((resolve) => setTimeout(resolve, 500 * Math.pow(2, attempt)));
+    }
+  }
+
+  circuitBreaker.recordFailure(WECHAT_TEMPLATE_CIRCUIT_KEY);
+  aiLogger.error("[WechatTemplate] 官网模板消息推送最终失败", {
+    userId,
+    error: String(lastError),
+  });
+}
 
 /** 从服务端 User-Agent 解析设备信息 */
 function parseDeviceInfo(userAgent: string | null) {
@@ -763,35 +846,21 @@ export async function POST(request: NextRequest) {
                 );
             }
 
-            // ====== 微信公众号模板消息推送（通过官网内部 API） ======
+            // ====== 微信公众号模板消息推送（通过官网内部 API v1） ======
             if (user?.id) {
-                const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://advisor.nihplod.cn";
-                const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";
-                const internalSecret = process.env.INTERNAL_API_SECRET;
-
                 const score = faceAnalysis?.overallScore || 85;
                 let primaryConcern = "肤色暗沉或不均";
                 if (concerns && concerns.length > 0) {
                     primaryConcern = concerns.join("、");
                 }
 
-                // 报告链接统一为 /reports/:id
+                const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://advisor.nihplod.cn";
                 const reportUrl = `${baseUrl}/reports/${effectiveSessionId}`;
 
                 // 异步触发，绝不阻塞前端响应时间
-                fetch(`${officialApiUrl}/api/internal/wechat/send-template`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        ...(internalSecret ? { "X-Internal-API-Secret": internalSecret } : {}),
-                    },
-                    body: JSON.stringify({
-                        userId: user.id,
-                        score,
-                        primaryConcern,
-                        reportUrl,
-                    }),
-                }).catch(err => console.error("[WechatTemplate] 官网模板消息调用异常:", err));
+                sendOfficialWechatTemplate(user.id, score, primaryConcern, reportUrl).catch((err) =>
+                    aiLogger.error("[WechatTemplate] 发送函数未捕获异常", { error: String(err) })
+                );
             }
         }
 

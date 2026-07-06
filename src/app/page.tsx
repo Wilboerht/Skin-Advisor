@@ -1,3 +1,11 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: {
+    absolute: "NIHPLOD | 素颜测肤",
+  },
+};
+
 "use client";
 
 import { useEffect, useState, useCallback, useRef, Suspense } from "react";

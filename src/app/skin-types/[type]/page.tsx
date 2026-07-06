@@ -21,7 +21,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return { title: "页面未找到" };
   }
 
-  const title = `${data.typeName}肤质详解 | NIHPLOD肌肤类型`;
+  const title = data.typeName;
+  const ogTitle = `${data.typeName}肤质详解 | NIHPLOD肌肤类型`;
   const description = `${data.typeName}：${data.m1.persona}。了解${data.typeName}的护肤要点、产品推荐与日常护理方案。`;
   const ogImage = `/images/character/${data.ipKey}/${data.ipKey}_female.png`;
 
@@ -31,7 +32,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     keywords: [data.typeName, "肤质类型", "护肤方案", "NIHPLOD", "肌肤测试"],
     alternates: { canonical: `/skin-types/${type}` },
     openGraph: {
-      title,
+      title: ogTitle,
       description,
       type: "article",
       locale: "zh_CN",
@@ -39,7 +40,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     },
     twitter: {
       card: "summary_large_image",
-      title,
+      title: ogTitle,
       description,
       images: [ogImage],
     },
