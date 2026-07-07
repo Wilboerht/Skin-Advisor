@@ -291,8 +291,8 @@ export function useAsyncAnalysis() {
 
             // if (imagesStr) { -> Handled by checking if images is not null
             if (images) {
-                // Slower stage transition: avoid manual jump, just update status
-                setAnalysisState(prev => ({ ...prev, status: 'analyzing_face' }));
+                // 阶段切换时给一个即时跳跃，让用户感知到进展
+                setAnalysisState(prev => ({ ...prev, status: 'analyzing_face', progress: Math.max(prev.progress, 25) }));
                 
                 if (images && images.front) {
                     const visionImages = [];
@@ -441,13 +441,12 @@ export function useAsyncAnalysis() {
                 }
             }
 
-            // 面部分析完成 → 推进进度条
+            // 面部分析完成 → 推进进度条（同时切换到下一阶段，合并更新减少 re-render）
             if (faceAnalysis) {
-                setAnalysisState(prev => ({ ...prev, progress: Math.max(prev.progress, 45) }));
+                setAnalysisState(prev => ({ ...prev, status: 'analyzing_skin', progress: Math.max(prev.progress, 65) }));
+            } else {
+                setAnalysisState(prev => ({ ...prev, status: 'analyzing_skin', progress: Math.max(prev.progress, 55) }));
             }
-
-            // Bump to next major phase smoothly
-            setAnalysisState(prev => ({ ...prev, status: 'analyzing_skin', progress: Math.max(prev.progress, 55) }));
 
             // 2. Comprehensive Analysis (Text)
 
