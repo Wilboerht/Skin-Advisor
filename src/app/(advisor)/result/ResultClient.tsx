@@ -64,7 +64,7 @@ function MobileDimensionForm({ dimensions }: { dimensions: Record<string, { scor
             {order.map((key) => {
                 const item = dimensions[key];
                 const score = item?.score ?? 0;
-                const color = score >= 80 ? 'bg-emerald-500' : score >= 60 ? 'bg-amber-500' : 'bg-red-500';
+                const color = score >= 80 ? 'bg-[#5c4937]' : score >= 60 ? 'bg-amber-500' : 'bg-red-500';
                 return (
                     <div key={key} className="py-3 border-b border-[#E8E2D9] last:border-0">
                         <div className="flex items-center justify-between mb-1.5">
@@ -74,7 +74,7 @@ function MobileDimensionForm({ dimensions }: { dimensions: Record<string, { scor
                         <div className="h-1.5 w-full rounded-full bg-[#E8E2D9] overflow-hidden">
                             <div className={`h-full rounded-full ${color}`} style={{ width: `${score}%` }} />
                         </div>
-                        <p className="mt-1.5 text-xs text-[#8A8A8A] leading-relaxed">{DIMENSION_DESCRIPTIONS[key]}</p>
+                        <p className="mt-1.5 text-sm text-[#8A8A8A] leading-relaxed">{DIMENSION_DESCRIPTIONS[key]}</p>
                     </div>
                 );
             })}
@@ -94,7 +94,7 @@ function MobileLabRow({ metric }: { metric: LabMetric }) {
                 {metric.status && (
                     <span className={cn(
                         "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium",
-                        isGood ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
+                        isGood ? "bg-[#5c4937]/10 text-[#5c4937]" : "bg-red-100 text-red-700"
                     )}>
                         {metric.status}
                     </span>
@@ -836,7 +836,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                             2、专家护肤建议 <span className="text-xs lg:text-base">(Expert Recommendations)</span>
                                         </h4>
 
-                                        <p className="text-xs text-[#8c7a6b] mb-3">根据您的肌肤数据，以下是针对性的护理和生活方式建议：</p>
+                                        <p className="text-sm text-[#8c7a6b] mb-3">根据您的肌肤数据，以下是针对性的护理和生活方式建议：</p>
 
                                         {(faceAnalysis?.recommendations && faceAnalysis.recommendations.length > 0) ? (
                                             <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
@@ -885,7 +885,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                     return (
                                                         <div key={key} className="bg-[#3d2f25]/5 border text-left border-[#3d2f25]/15 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
                                                             <div className="flex items-center justify-between mb-2">
-                                                                <h5 className="font-semibold text-[#3d2f25] text-sm">{label}</h5>
+                                                                <div className="font-semibold text-[#3d2f25] text-sm">{label}</div>
                                                             </div>
                                                             <p className="text-sm text-[#5c4937] mb-2 leading-snug">
                                                                 {zoneData.condition}
@@ -922,7 +922,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                 </div>
                                             </div>
                                             <div className="px-5 pb-3 pt-0">
-                                                <p className="text-[11px] text-[#8c7a6b]/80 leading-relaxed pl-6">
+                                                <p className="text-xs text-[#8c7a6b]/80 leading-relaxed pl-6">
                                                     联系您的专属护肤顾问，或咨询门店顾问获取专业分析解读
                                                 </p>
                                             </div>
@@ -1009,7 +1009,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                             </div>
 
                                             <div className="mt-5 pt-3 border-t border-dashed border-[#3d2f25]/15">
-                                                <div className="flex gap-2.5 items-start text-[11px] leading-relaxed text-[#5c4937]">
+                                                <div className="flex gap-2.5 items-start text-xs leading-relaxed text-[#5c4937]">
                                                     <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-[#C9A86C]" />
                                                     <div className="space-y-1.5">
                                                         <p className="font-medium text-[#3d2f25]">数据说明 (Data Disclaimer)</p>
