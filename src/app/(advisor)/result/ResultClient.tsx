@@ -797,13 +797,12 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                             comprehensiveReport={
                                 <>
-                                    {/* Report Header / Summary */}
+                                    {/* 1、详细诊断报告 */}
                                     <div className="mt-6 lg:mt-14 mb-6">
                                         <h4 className="text-base font-medium text-[#3d2f25] mb-3 border-b border-[#3d2f25]/20 pb-2">
                                             1、详细诊断报告 <span className="text-xs lg:text-base">(Detailed Diagnosis)</span>
                                         </h4>
 
-                                        {/* Show Details if available, else fallback to Summary */}
                                         {result.analysis?.details && result.analysis.details.length > 0 ? (
                                             <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-xs lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
                                                 {result.analysis.details.map((item, idx) => (
@@ -812,12 +811,12 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                             </ul>
                                         ) : (
                                             <p className="text-[14px] leading-relaxed text-[#5c4937]">
-                                                {faceAnalysis?.summary || result.analysis?.summary || "暂无详细分析摘要"}
+                                                {faceAnalysis?.summary || result.analysis?.summary || "暂无详细诊断报告"}
                                             </p>
                                         )}
                                     </div>
 
-                                    {/* Expert Advice */}
+                                    {/* 2、专家护肤建议 */}
                                     <div className="mb-8">
                                         <h4 className="text-base font-medium text-[#3d2f25] mb-3 border-b border-[#3d2f25]/20 pb-2">
                                             2、专家护肤建议 <span className="text-xs lg:text-base">(Expert Recommendations)</span>
@@ -836,10 +835,10 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                             </ul>
                                         )}
 
-                                        {/* 生活习惯建议（来自文本 AI 的 lifestyleTips） */}
+                                        {/* 🌿 生活建议（嵌套在专家护肤建议内） */}
                                         {result.analysis?.lifestyleTips && result.analysis.lifestyleTips.length > 0 && (
                                             <div className="mt-5 pt-4 border-t border-dashed border-[#3d2f25]/10">
-                                                <h5 className="text-sm font-medium text-[#3d2f25] mb-2">🌿 生活习惯建议</h5>
+                                                <h5 className="text-sm font-medium text-[#3d2f25] mb-2">🌿 生活建议</h5>
                                                 <ul className="list-disc pl-5 space-y-1.5 text-xs lg:text-[13px] leading-relaxed text-[#5c4937]">
                                                     {result.analysis.lifestyleTips.map((tip, idx) => (
                                                         <li key={idx}>{tip}</li>
