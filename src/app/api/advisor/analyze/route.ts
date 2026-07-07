@@ -670,7 +670,22 @@ export async function POST(request: NextRequest) {
                     { status: 503, headers: { "Retry-After": "3600" } }
                 );
             }
-            console.error("AI Generation failed, falling back to rule engine", err);
+            // 熔断器触发：直接返回 503，不走 fallback（fallback 会隐藏服务异常）
+            if (err.message?.includes("[CircuitBreaker]")) {
+                aiLogger.warn("Circuit breaker open, rejecting request", { error: err.message });
+                await rollbackUsage(request, effectiveSessionId, body as Record<string, unknown>);
+                return NextResponse.json(
+                    { error: "AI 文本分析服务暂时不可用，请稍后重试", code: "AI_CIRCUIT_OPEN" },
+                    { status: 503, headers: { "Retry-After": "60" } }
+                );
+            }
+            // 区分错误类型进行日志记录
+            const errorCategory = err.message?.includes("Failed to extract valid JSON")
+                ? "AI_JSON_PARSE" : err.message?.includes("401") || err.message?.includes("403")
+                ? "AI_AUTH" : err.message?.includes("429")
+                ? "AI_RATE_LIMIT" : err.message?.includes("timeout") || err.message?.includes("ETIMEDOUT")
+                ? "AI_TIMEOUT" : "AI_UNKNOWN";
+            aiLogger.warn(`AI Generation failed [${errorCategory}], falling back to rule engine`, { error: err.message });
             // 使用规则引擎生成完整降级报告，而非空对象
             try {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -908,6 +923,19 @@ export async function POST(request: NextRequest) {
             return NextResponse.json(
                 { error: "分析请求已取消，请重试" },
                 { status: 499 }
+            );
+        }
+        // 预算熔断 / 熔断器错误（可能从 AI 调用之外的其他路径逃逸）
+        if (err.message?.includes("[AIBudget]")) {
+            return NextResponse.json(
+                { error: "AI 服务当前额度已用完，请稍后再试", code: "AI_BUDGET_EXCEEDED" },
+                { status: 503, headers: { "Retry-After": "3600" } }
+            );
+        }
+        if (err.message?.includes("[CircuitBreaker]")) {
+            return NextResponse.json(
+                { error: "AI 分析服务暂时不可用，请稍后重试", code: "AI_CIRCUIT_OPEN" },
+                { status: 503, headers: { "Retry-After": "60" } }
             );
         }
         // 使用脱敏 logger，避免 error 对象中携带请求上下文/URL 等敏感信息

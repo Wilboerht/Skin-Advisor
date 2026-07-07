@@ -415,15 +415,46 @@ export async function POST(request: NextRequest) {
                         }));
                     }
 
-                    analysisResult = await analyzeImages(
-                        validImages,
-                        systemPrompt,
-                        VISION_ANALYSIS_USER_PROMPT,
-                        provider as AIProvider,
-                        abortController.signal,
-                        session?.id
-                    ) as Record<string, unknown>;
-                    aiLogger.info(`[FaceAnalyze] Retry successful.`);
+                    try {
+                        analysisResult = await analyzeImages(
+                            validImages,
+                            systemPrompt,
+                            VISION_ANALYSIS_USER_PROMPT,
+                            provider as AIProvider,
+                            abortController.signal,
+                            session?.id
+                        ) as Record<string, unknown>;
+                        aiLogger.info(`[FaceAnalyze] Retry successful.`);
+                    } catch (retryErr: unknown) {
+                        const re = retryErr as Error;
+                        if (re.message?.includes("[Validation]")) {
+                            const reason = re.message.replace("[Validation] ", "");
+                            aiLogger.warn(`Face validation failed on retry: ${reason}`);
+                            await rollbackUsage(request, faceSessionId, body as Record<string, unknown>);
+                            return NextResponse.json(
+                                {
+                                    error: "图片验证失败",
+                                    message: reason || "未检测到清晰人脸，请重新拍摄",
+                                    code: "VALIDATION_FAILED"
+                                },
+                                { status: 400 }
+                            );
+                        }
+                        throw retryErr;
+                    }
+                } else if (err.message?.includes("[Validation]")) {
+                    // 非 payload 路径进入的 validation 错误
+                    const reason = err.message.replace("[Validation] ", "");
+                    aiLogger.warn(`Face validation failed: ${reason}`);
+                    await rollbackUsage(request, faceSessionId, body as Record<string, unknown>);
+                    return NextResponse.json(
+                        {
+                            error: "图片验证失败",
+                            message: reason || "未检测到清晰人脸，请重新拍摄",
+                            code: "VALIDATION_FAILED"
+                        },
+                        { status: 400 }
+                    );
                 } else {
                     throw e;
                 }

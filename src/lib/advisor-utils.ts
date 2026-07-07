@@ -270,13 +270,31 @@ export function extractJsonFromResponse<T>(content: string): T {
         }
     }
 
-    // 4. 尝试查找嵌套的 JSON（有时 AI 会返回多个 JSON 对象）
-    const nestedJsonMatch = content.match(/\{[^{}]*(?:"skinType"|"analysis"|"concerns")[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/);
-    if (nestedJsonMatch) {
-        try {
-            return JSON.parse(nestedJsonMatch[0]) as T;
-        } catch {
-            // 继续
+    // 4. 尝试用括号计数方式找到第一个完整 JSON 对象
+    //    比正则更可靠，能正确处理任意深度的嵌套
+    const firstBrace = content.indexOf('{');
+    if (firstBrace >= 0) {
+        let depth = 0;
+        let inString = false;
+        let escape = false;
+        for (let i = firstBrace; i < content.length; i++) {
+            const ch = content[i];
+            if (escape) { escape = false; continue; }
+            if (ch === '\\') { escape = true; continue; }
+            if (ch === '"') { inString = !inString; continue; }
+            if (inString) continue;
+            if (ch === '{') depth++;
+            else if (ch === '}') {
+                depth--;
+                if (depth === 0) {
+                    try {
+                        const fixed = fixJsonString(content.substring(firstBrace, i + 1));
+                        return JSON.parse(fixed) as T;
+                    } catch {
+                        break; // 括号匹配上了但 JSON 仍不合法，放弃
+                    }
+                }
+            }
         }
     }
 
