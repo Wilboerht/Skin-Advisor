@@ -754,7 +754,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             className="h-8 sm:h-10 w-auto object-contain"
                             priority
                         />
-                        <p className="mt-5 mb-5 text-base lg:text-lg text-[#5c4937] font-medium tracking-wide">
+                        <p className="mt-6 mb-6 text-base lg:text-lg text-[#5c4937] font-medium tracking-wide">
                             {userNickname} 的专属肌智派素颜分析报告
                         </p>
                     </div>
@@ -809,11 +809,22 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         </h4>
 
                                         {result.analysis?.details && result.analysis.details.length > 0 ? (
-                                            <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-xs lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
-                                                {result.analysis.details.map((item, idx) => (
-                                                    <li key={idx}>{item}</li>
-                                                ))}
-                                            </ul>
+                                            <>
+                                                {/* 第一段：肤质分析概述 */}
+                                                {result.analysis.details[0] && (
+                                                    <p className="text-sm lg:text-[15px] leading-relaxed text-[#3d2f25] font-medium mb-4">
+                                                        {result.analysis.details[0]}
+                                                    </p>
+                                                )}
+                                                {/* 后续段落：具体问题点列表 */}
+                                                {result.analysis.details.length > 1 && (
+                                                    <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-xs lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
+                                                        {result.analysis.details.slice(1).map((item, idx) => (
+                                                            <li key={idx}>{item}</li>
+                                                        ))}
+                                                    </ul>
+                                                )}
+                                            </>
                                         ) : (
                                             <p className="text-[14px] leading-relaxed text-[#5c4937]">
                                                 {faceAnalysis?.summary || result.analysis?.summary || "暂无详细诊断报告"}
@@ -847,7 +858,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         {result.analysis?.lifestyleTips && result.analysis.lifestyleTips.length > 0 && (
                                             <div className="mt-5 pt-4 border-t border-dashed border-[#3d2f25]/10">
                                                 <h5 className="text-sm font-medium text-[#3d2f25] mb-2 flex items-center gap-1.5"><Sun className="w-4 h-4" /> 生活建议</h5>
-                                                <ul className="list-disc pl-5 space-y-1.5 text-xs lg:text-[13px] leading-relaxed text-[#5c4937]">
+                                                <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-xs lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
                                                     {result.analysis.lifestyleTips.map((tip, idx) => (
                                                         <li key={idx}>{tip}</li>
                                                     ))}
