@@ -805,11 +805,11 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                                         {/* Show Details if available, else fallback to Summary */}
                                         {result.analysis?.details && result.analysis.details.length > 0 ? (
-                                            <div className="space-y-2 lg:space-y-3 text-xs lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
-                                                {result.analysis.details.map((paragraph, idx) => (
-                                                    <p key={idx}>{paragraph}</p>
+                                            <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-xs lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
+                                                {result.analysis.details.map((item, idx) => (
+                                                    <li key={idx}>{item}</li>
                                                 ))}
-                                            </div>
+                                            </ul>
                                         ) : (
                                             <p className="text-[14px] leading-relaxed text-[#5c4937]">
                                                 {faceAnalysis?.summary || result.analysis?.summary || "暂无详细分析摘要"}
