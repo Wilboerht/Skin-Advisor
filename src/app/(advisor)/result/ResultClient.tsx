@@ -841,6 +841,18 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                 <li>根据季节调整保湿产品，保持水油平衡。</li>
                                             </ul>
                                         )}
+
+                                        {/* 生活习惯建议（来自文本 AI 的 lifestyleTips） */}
+                                        {result.analysis?.lifestyleTips && result.analysis.lifestyleTips.length > 0 && (
+                                            <div className="mt-5 pt-4 border-t border-dashed border-[#3d2f25]/10">
+                                                <h5 className="text-sm font-medium text-[#3d2f25] mb-2">🌿 生活习惯建议</h5>
+                                                <ul className="list-disc pl-5 space-y-1.5 text-xs lg:text-[13px] leading-relaxed text-[#5c4937]">
+                                                    {result.analysis.lifestyleTips.map((tip, idx) => (
+                                                        <li key={idx}>{tip}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* 3. Zone Analysis Grid (Explicitly Added) */}
