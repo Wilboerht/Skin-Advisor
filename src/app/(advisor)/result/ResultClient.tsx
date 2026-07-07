@@ -517,6 +517,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         if (analysisStartedRef.current) return;
         analysisStartedRef.current = true;
 
+        const abortController = new AbortController();
+
         const execute = async () => {
             try {
                 // 1. Try to recover an in-progress session from this browser tab (e.g. page refresh)
@@ -532,7 +534,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 const shouldRecover = existingSessionId && (Date.now() - startedAt) < ANALYZING_TTL_MS;
 
                 if (shouldRecover) {
-                    const recovered = await recoverSession(existingSessionId!);
+                    const recovered = await recoverSession(existingSessionId!, abortController.signal);
                     if (recovered) {
                         const { result: rawResult, sessionId: recoveredSessionId } = recovered;
 
@@ -576,7 +578,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 }
 
                 // IMPORTANT: Set result state FIRST before updating URL
-                setResult(newResult);
+                setResult(newResult as unknown as ComprehensiveResult);
                 if (newFace) setFaceAnalysis(newFace);
 
                 // 等 auth 初始化后再跳转，避免 user 为 null 时登录用户被错误留在 /result
@@ -594,6 +596,10 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             }
         };
         execute();
+
+        return () => {
+            abortController.abort();
+        };
     }, [searchParams, result, analysisState.status, runAnalysis, recoverSession, router]);
 
     // Error State

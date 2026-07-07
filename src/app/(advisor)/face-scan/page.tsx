@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FaceCapture, type FaceCaptureImages } from "@/components/advisor/FaceCapture";
 import { m, AnimatePresence } from "framer-motion";
-import { ChevronLeft, Loader2, LogOut, ArrowRight } from "lucide-react";
+import { ChevronLeft, Loader2, LogOut } from "lucide-react";
 import Image from "next/image";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useToast } from "@/components/ui/Toast";
@@ -259,7 +259,7 @@ export default function FaceScanPage() {
                         <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" className="hover:text-brand-gold transition-colors">沪ICP备2026014764号-1</a>
                         <span className="opacity-20">|</span>
                         <a href="#" className="flex items-center gap-1 hover:text-brand-gold transition-colors">
-                            <img src="/images/beian.webp" alt="" className="w-3 h-3 opacity-80" />
+                            <Image src="/images/beian.webp" alt="" width={12} height={12} className="w-3 h-3 opacity-80" unoptimized />
                             <span>沪公网安备 31011502019404号</span>
                         </a>
                     </div>

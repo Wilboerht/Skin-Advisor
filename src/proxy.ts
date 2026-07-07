@@ -161,7 +161,17 @@ export async function proxy(request: NextRequest) {
     if (!response.headers.has("Content-Security-Policy")) {
         response.headers.set(
             "Content-Security-Policy",
-            "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'"
+            [
+                "default-src 'self'",
+                "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://static.cloudflareinsights.com",
+                "style-src 'self' 'unsafe-inline'",
+                "img-src 'self' blob: data: https://images.unsplash.com https://wp-cdn.4ce.cn https://*.alicdn.com https://*.aliyuncs.com https://*.qpic.cn https://*.myqcloud.com https://*.jd.com https://*.tmall.com https://*.taobao.com https://*.xiaohongshu.com https://*.douyincdn.com https://*.bilibili.com https://*.cdninstagram.com https:",
+                "font-src 'self'",
+                "connect-src 'self' data: https://*.aliyuncs.com https://wp-cdn.4ce.cn https://images.unsplash.com https://static.cloudflareinsights.com",
+                "frame-ancestors 'none'",
+                "base-uri 'self'",
+                "form-action 'self'",
+            ].join("; ")
         );
     }
 

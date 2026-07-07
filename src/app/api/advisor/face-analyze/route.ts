@@ -171,10 +171,11 @@ export async function POST(request: NextRequest) {
         const fs = await import('fs/promises');
         const path = await import('path');
         // Lazy import sharp
-        let sharp: any;
+        let sharp: typeof import('sharp') | undefined;
         try {
-            sharp = (await import('sharp')).default;
-        } catch (e) {
+            const sharpModule = await import('sharp');
+            sharp = (sharpModule.default ?? sharpModule) as typeof import('sharp');
+        } catch {
             aiLogger.warn("Sharp module not found, compression disabled");
         }
 
@@ -339,7 +340,7 @@ export async function POST(request: NextRequest) {
 
             // P3: 请求队列处理 - 申请令牌
             // 这是一个异步操作，如果队列已满会等待，直到超时
-            aiLogger.debug(`[Queue] Requesting lock. Stats:`, visionQueue.getStats() as any);
+            aiLogger.debug(`[Queue] Requesting lock. Stats:`, visionQueue.getStats() as unknown as Record<string, unknown>);
             await visionQueue.acquire({ signal: abortController.signal });
             acquired = true;
             aiLogger.debug(`[Queue] Lock acquired.`);
@@ -443,7 +444,6 @@ export async function POST(request: NextRequest) {
             });
 
         } catch (aiError: unknown) {
-            const aiErr = aiError as Error;
             const err = aiError instanceof Error ? aiError : new Error(String(aiError));
             aiLogger.error("AI Analysis Failed", { error: err.message });
 
@@ -486,7 +486,7 @@ export async function POST(request: NextRequest) {
             // P3: 释放令牌
             if (acquired) {
                 visionQueue.release();
-                aiLogger.debug(`[Queue] Lock released. Stats:`, visionQueue.getStats() as any);
+                aiLogger.debug(`[Queue] Lock released. Stats:`, visionQueue.getStats() as unknown as Record<string, unknown>);
             }
 
             // 清理上传的照片

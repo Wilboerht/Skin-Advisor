@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { motion as m, AnimatePresence } from "framer-motion";
-import { useEffect, useState, useMemo, useRef, useCallback } from "react";
+import { useEffect, useState, useMemo, useRef, useCallback, useSyncExternalStore } from "react";
 import { Sparkles, LogOut } from "lucide-react";
 import Image from "next/image";
 
@@ -27,12 +27,14 @@ interface AnalyzingOverlayProps {
 export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitSeconds }: AnalyzingOverlayProps) {
     const [activeIconIndex, setActiveIconIndex] = useState(0);
     const [showCancel, setShowCancel] = useState(false);
-    const [isMounted, setIsMounted] = useState(false);
+    // 避免 SSR 与服务端渲染状态不一致，同时避免 effect 中同步 setState
+    const isMounted = useSyncExternalStore(
+        () => () => {},
+        () => true,
+        () => false
+    );
     const [isExiting, setIsExiting] = useState(false);
 
-    useEffect(() => {
-        setIsMounted(true);
-    }, []);
     const [stuckTime, setStuckTime] = useState(0);
     const stuckStartRef = useRef<number | null>(null);
 

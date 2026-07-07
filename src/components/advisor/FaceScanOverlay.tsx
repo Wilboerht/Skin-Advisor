@@ -1,7 +1,7 @@
 "use client";
 
 import { m, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, ChevronUp, ScanLine, Check } from "lucide-react";
+import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type CaptureStep = "front" | "left" | "right" | "chin";

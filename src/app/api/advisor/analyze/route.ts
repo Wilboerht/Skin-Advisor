@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { generateText, isAIEnabled, fallbackAnalysis } from "@/lib/ai";
+import { generateText, isAIEnabled, fallbackAnalysis, type AIProvider } from "@/lib/ai";
 import { analysisQueue } from "@/lib/ai-queue";
 import { circuitBreaker } from "@/lib/circuit-breaker";
 import { extractJsonFromResponse } from "@/lib/advisor-utils";
@@ -10,7 +10,7 @@ import { getSkinTypeLabel, getConcernLabel } from "@/lib/advisor-utils";
 // import { PRODUCTS_CATALOG } from "@/config/products"; // Deprecated, use DB or matchProducts
 import { determineSkinType, identifyConcerns } from "@/lib/advisor-utils";
 import { AnalyzeRequestSchema } from "@/lib/schemas";
-import { recommendProducts, getCandidateProducts } from "@/lib/recommendations";
+import { recommendProducts, getCandidateProducts, type ProductRecommendation } from "@/lib/recommendations";
 import { resolveIPLocation } from "@/lib/geoip";
 import { getSession } from "@/lib/auth";
 import { hashIP } from "@/lib/privacy";
@@ -594,7 +594,7 @@ export async function POST(request: NextRequest) {
         // 调用 AI
         const provider = process.env.AI_PROVIDER || "qwen";
 
-        let resultJson: any;
+        let resultJson: Record<string, unknown> = {};
         let queueAcquired = false;
         try {
             // P3: 请求队列处理 - 申请令牌（防止并发过高打爆 LLM API）
@@ -617,16 +617,15 @@ export async function POST(request: NextRequest) {
                 throw new Error(`[CircuitBreaker] Text AI service ${provider} is temporarily unavailable`);
             }
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const resultText = await generateText(systemPrompt, userPrompt, provider as any, abortController.signal, user?.id);
-            resultJson = extractJsonFromResponse<any>(resultText);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (e: any) {
-            if (e.message?.includes("cancelled") || e.name === 'AbortError') {
+            const resultText = await generateText(systemPrompt, userPrompt, provider as AIProvider, abortController.signal, user?.id);
+            resultJson = extractJsonFromResponse<Record<string, unknown>>(resultText);
+        } catch (e: unknown) {
+            const err = e instanceof Error ? e : new Error(String(e));
+            if (err.message?.includes("cancelled") || err.name === 'AbortError') {
                 console.warn("Text analysis cancelled (client timeout or disconnect)");
                 // 仅排队等待期间取消时回滚：此时 AI 尚未被调用，零消耗
                 // AI 调用进行中取消不回滚：API 可能已处理并计费
-                const isQueueOnlyCancel = e.message === "Request cancelled during queue wait.";
+                const isQueueOnlyCancel = err.message === "Request cancelled during queue wait.";
                 if (isQueueOnlyCancel) {
                     await rollbackUsage(request, effectiveSessionId, body as Record<string, unknown>);
                 }
@@ -636,15 +635,15 @@ export async function POST(request: NextRequest) {
                 );
             }
             // 预算熔断：直接拒绝请求，不走 fallback（避免隐藏费用问题）
-            if (e.message?.includes("[AIBudget]")) {
-                aiLogger.warn("AI budget exceeded, rejecting request", { error: e.message });
+            if (err.message?.includes("[AIBudget]")) {
+                aiLogger.warn("AI budget exceeded, rejecting request", { error: err.message });
                 await rollbackUsage(request, effectiveSessionId, body as Record<string, unknown>);
                 return NextResponse.json(
                     { error: "AI 服务当前额度已用完，请稍后再试", code: "AI_BUDGET_EXCEEDED" },
                     { status: 503, headers: { "Retry-After": "3600" } }
                 );
             }
-            console.error("AI Generation failed, falling back to rule engine", e);
+            console.error("AI Generation failed, falling back to rule engine", err);
             // 使用规则引擎生成完整降级报告，而非空对象
             try {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -666,29 +665,31 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        if (!resultJson) {
-            resultJson = {}; // Safety
-        }
-
         // 7. 补全产品详情 — 返回最多10个产品，前3个为AI精选推荐
-        let finalProducts: any[] = [];
+        let finalProducts: ProductRecommendation[] = [];
 
         // 预先用算法生成10个带推荐理由的候选（用于兜底和补充）
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const algorithmRecs = await recommendProducts(enrichedAnswers as any, concerns, candidateProducts, 3, personaKey);
 
+        type AiProductItem = {
+            id?: string | number;
+            reason?: string;
+            [key: string]: unknown;
+        };
+
         if (resultJson.products && Array.isArray(resultJson.products)) {
-            const mappedProducts = resultJson.products.map((p: any) => {
+            const mappedProducts = (resultJson.products as AiProductItem[]).map((p) => {
                 // strict match against candidate pool to enforce RAG boundaries
-                const catalogProduct = candidateProducts.find((cp: any) => String(cp.id) === String(p.id));
+                const catalogProduct = candidateProducts.find((cp) => String(cp.id) === String(p.id));
                 if (catalogProduct) {
                     return {
                         ...p,
-                        id: catalogProduct.id,
+                        id: String(catalogProduct.id),
                         name: catalogProduct.name,
                         category: catalogProduct.category,
                         image: catalogProduct.image,
-                        images: (catalogProduct as any).images || null,
+                        images: (catalogProduct as { images?: string[] | null }).images || null,
                         price: catalogProduct.price,
                         description: catalogProduct.description,
                         keyIngredients: catalogProduct.keyIngredients || [],
@@ -696,16 +697,16 @@ export async function POST(request: NextRequest) {
                         affiliateLinks: catalogProduct.affiliateLinks || null,
                         howToUse: catalogProduct.howToUse || null,
                         source: "ai" as const,
-                        reason: sanitizeReason(p.reason || algorithmRecs.find((r: any) => String(r.id) === String(p.id))?.reason || "为您精选的护肤产品")
-                    };
+                        reason: sanitizeReason(p.reason || algorithmRecs.find((r) => String(r.id) === String(p.id))?.reason || "为您精选的护肤产品")
+                    } as unknown as ProductRecommendation;
                 }
                 return null;
-            }).filter(Boolean);
+            }).filter((item): item is ProductRecommendation => item !== null);
 
             if (mappedProducts.length > 0) {
                 // AI 主推，不足 3 个时用算法推荐补足
                 finalProducts = mappedProducts.slice(0, 3);
-                const remaining = algorithmRecs.filter((ar: any) => !finalProducts.some((p: any) => String(p.id) === String(ar.id)));
+                const remaining = algorithmRecs.filter((ar) => !finalProducts.some((p) => String(p.id) === String(ar.id)));
                 finalProducts = [...finalProducts, ...remaining].slice(0, 3);
             }
         }
@@ -716,7 +717,7 @@ export async function POST(request: NextRequest) {
         }
 
         // 统一清理所有推荐理由中的英文词汇（兜底）
-        finalProducts = finalProducts.map((p: any) => ({
+        finalProducts = finalProducts.map((p) => ({
             ...p,
             reason: sanitizeReason(p.reason)
         }));
@@ -724,29 +725,31 @@ export async function POST(request: NextRequest) {
         // 8. Construct Final Standardized Result (Matching ComprehensiveResult Interface)
 
         // Enhance Face Analysis with Text AI Recommendations if missing
-        let finalFaceAnalysis = faceAnalysis || resultJson.faceAnalysis || null;
+        const finalFaceAnalysis = faceAnalysis || (resultJson.faceAnalysis as Record<string, unknown> | undefined) || null;
         if (finalFaceAnalysis) {
+            const fa = finalFaceAnalysis as Record<string, unknown>;
             // 清理 labAnalysis 中的英文状态描述
-            if (finalFaceAnalysis.labAnalysis) {
-                finalFaceAnalysis.labAnalysis = sanitizeLabAnalysis(finalFaceAnalysis.labAnalysis);
+            if (fa.labAnalysis) {
+                fa.labAnalysis = sanitizeLabAnalysis(fa.labAnalysis);
             }
             // Ensure recommendations exist
-            if (!finalFaceAnalysis.recommendations) {
-                finalFaceAnalysis.recommendations = [];
+            if (!fa.recommendations) {
+                fa.recommendations = [];
             }
 
             // Preserve gender if available in original input
-            if (faceAnalysis?.gender && !finalFaceAnalysis.gender) {
-                finalFaceAnalysis.gender = faceAnalysis.gender;
+            if (faceAnalysis?.gender && !fa.gender) {
+                fa.gender = faceAnalysis.gender;
             }
 
             // If recommendations are empty or we have better ones from text analysis
             if (resultJson.lifestyleTips && Array.isArray(resultJson.lifestyleTips)) {
+                const recommendations = fa.recommendations as unknown[];
                 // Clean up duplicates if any
-                const newRecs = resultJson.lifestyleTips.filter((tip: string) =>
-                    !finalFaceAnalysis.recommendations.includes(tip)
+                const newRecs = (resultJson.lifestyleTips as string[]).filter((tip: string) =>
+                    !recommendations.includes(tip)
                 );
-                finalFaceAnalysis.recommendations = [...finalFaceAnalysis.recommendations, ...newRecs];
+                fa.recommendations = [...recommendations, ...newRecs];
             }
 
 

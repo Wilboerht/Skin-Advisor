@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Sparkles, Sun, ScanEye, LogOut, ChevronLeft } from "lucide-react";
 import Image from "next/image";
@@ -23,11 +23,8 @@ interface ScanGuideModalProps {
 }
 
 export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuideModalProps) {
-    const [characterImage, setCharacterImage] = useState("");
+    const [characterImage] = useState(() => getRandomCharacterImage());
 
-    useEffect(() => {
-        setCharacterImage(getRandomCharacterImage());
-    }, []);
     const guideItems = [
         { icon: Sparkles, title: "保持素颜" },
         { icon: Sun, title: "光线充足" },

@@ -378,13 +378,19 @@ export function useAsyncAnalysis() {
                     }
 
                     if (visionImages.length > 0) {
+                        // 面部分析服务端超时 55s，客户端单独设置 60s 超时，避免服务端已放弃后客户端空等 90s
+                        const faceAnalyzeAbort = new AbortController();
+                        const faceAnalyzeTimeout = setTimeout(() => faceAnalyzeAbort.abort(), 60 * 1000);
+                        const onTotalAbort = () => faceAnalyzeAbort.abort();
+                        abortController.signal.addEventListener('abort', onTotalAbort);
+
                         try {
                             // AI 视觉调用：不在 5xx 时自动重试，避免单次失败放大为多次扣费
                             const faceRes = await fetchWithRetry("/api/advisor/face-analyze", {
                                 method: "POST",
                                 headers: { "Content-Type": "application/json" },
                                 body: JSON.stringify({ sessionId, images: visionImages }),
-                                signal: abortController.signal
+                                signal: faceAnalyzeAbort.signal
                             }, { retries: 0 });
 
                             if (faceRes.ok) {
@@ -416,6 +422,9 @@ export function useAsyncAnalysis() {
                         } catch (e: unknown) {
                             const err = e as Error;
                             console.error("Face analysis fetch failed", e);
+                            if (err.name === 'AbortError') {
+                                throw new Error("面部分析超时，请稍后重试");
+                            }
                             // Check if the error is from fetchWithRetry's specific message
                             if (err.message.includes("Request failed: 429")) {
                                 throw new Error("请求过于频繁，请稍后重试");
@@ -424,6 +433,9 @@ export function useAsyncAnalysis() {
                                 throw new Error("AI 服务暂时繁忙，请稍后重试");
                             }
                             throw e; // Rethrow to stop the process and show error state
+                        } finally {
+                            clearTimeout(faceAnalyzeTimeout);
+                            abortController.signal.removeEventListener('abort', onTotalAbort);
                         }
                     }
                 }
@@ -473,8 +485,7 @@ export function useAsyncAnalysis() {
             // 服务端已响应，快速推进进度让用户感知到进展
             setAnalysisState(prev => ({ ...prev, progress: 90 }));
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            let result: any;
+            let result: Record<string, unknown> | undefined;
 
             if (analyzeRes.status === 202) {
                 // 服务端提示已有其他请求在分析同一 session，进入轮询等待
@@ -505,6 +516,10 @@ export function useAsyncAnalysis() {
                 result = await analyzeRes.json();
             }
 
+            if (!result) {
+                throw new Error('分析结果为空，请重试');
+            }
+
             if (faceAnalysis && !result.faceAnalysis) {
                 result.faceAnalysis = faceAnalysis;
             }
@@ -531,7 +546,7 @@ export function useAsyncAnalysis() {
             setAnalysisState({ status: 'completed', progress: 100, error: null, queuePosition: undefined, queueWaitSeconds: undefined });
 
             // Return data to caller
-            return { result, faceAnalysis, sessionId };
+            return { result: result as Record<string, unknown>, faceAnalysis, sessionId };
         };
 
         try {
@@ -562,6 +577,7 @@ export function useAsyncAnalysis() {
     useEffect(() => {
         let interval: ReturnType<typeof setInterval> | undefined;
 
+        // 200ms 更新一次进度足够平滑，同时避免频繁 setState 导致低端机掉帧
         if (['preparing', 'analyzing_face', 'analyzing_skin'].includes(analysisState.status)) {
             interval = setInterval(() => {
                 setAnalysisState(prev => {
@@ -583,7 +599,7 @@ export function useAsyncAnalysis() {
                         if (remaining > 20) increment = 0.18;
                         else if (remaining > 10) increment = 0.10;
                         else if (remaining > 3) increment = 0.04;
-                        else increment = 0.015; // Much faster than before, won't feel stuck
+                        else increment = 0.045; // 200ms 间隔下约 0.225%/s，仍不会感觉卡住
                     }
 
                     if (prev.progress >= target) return prev;
@@ -593,7 +609,7 @@ export function useAsyncAnalysis() {
                         progress: Math.min(prev.progress + increment, target)
                     };
                 });
-            }, 60);
+            }, 200);
         }
 
         return () => clearInterval(interval);
@@ -601,7 +617,7 @@ export function useAsyncAnalysis() {
 
     // --- Session recovery helpers ---
 
-    const recoverSession = useCallback(async (sessionId: string): Promise<{ result: Record<string, unknown>; sessionId: string } | null> => {
+    const recoverSession = useCallback(async (sessionId: string, signal?: AbortSignal): Promise<{ result: Record<string, unknown>; sessionId: string } | null> => {
         if (isRunningRef.current) return null;
         if (!acquireAnalysisLock(sessionId)) {
             console.warn(`[useAsyncAnalysis] Analysis lock already held for another session, skipping recovery`);
@@ -621,7 +637,8 @@ export function useAsyncAnalysis() {
                 const pollResult = await pollSessionResult(sessionId, {
                     onProgress: (attempt) => {
                         setAnalysisState(prev => ({ ...prev, progress: Math.min(85, 55 + attempt * 1) }));
-                    }
+                    },
+                    signal
                 });
                 if (pollResult.status === 'completed' && pollResult.rawResult) {
                     setAnalysisState({ status: 'completed', progress: 100, error: null });
