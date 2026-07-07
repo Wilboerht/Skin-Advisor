@@ -509,119 +509,141 @@ export function CampaignsClient() {
       )}
 
       {/* Entries Modal */}
-      {showEntries && selectedCampaign && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowEntries(false)} />
-          <div className="relative z-10 w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl p-8">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-lg font-bold text-[#1A1A1A]">参与记录 - {selectedCampaign.title}</h2>
-                <div className="flex items-center gap-3 mt-2">
-                  <select
-                    value={entriesFilter}
-                    onChange={(e) => {
-                      setEntriesFilter(e.target.value)
-                      fetchEntries(selectedCampaign.id, e.target.value)
-                    }}
-                    className="px-3 py-1.5 rounded-lg border border-[#E9E9E7] text-sm"
-                  >
-                    <option value="">全部状态</option>
-                    <option value="pending">待审核</option>
-                    <option value="verified">已通过</option>
-                    <option value="rejected">未通过</option>
-                    <option value="won">已中奖</option>
-                  </select>
-                </div>
-              </div>
-              <button onClick={() => setShowEntries(false)} className="p-2 rounded-lg hover:bg-gray-50 transition-colors">
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
-              </button>
-            </div>
-
-            {entriesLoading ? (
-              <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-[#5E5E5E]" /></div>
-            ) : entries.length === 0 ? (
-              <div className="text-center py-12 text-sm text-[#5E5E5E]">暂无参与记录</div>
-            ) : (
-              <div className="space-y-2">
-                {entries.map((e) => (
-                  <div key={e.id} className="flex items-center gap-4 p-4 rounded-xl border border-[#E9E9E7] bg-white">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-medium text-[#1A1A1A]">
-                          {e.user?.name || e.user?.email || e.user?.phoneNumber || "未知用户"}
-                        </span>
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                          { pending: "bg-amber-100 text-amber-700", verified: "bg-green-100 text-green-700", rejected: "bg-red-100 text-red-700", won: "bg-purple-100 text-purple-700" }[e.status] || "bg-gray-100 text-gray-600"
-                        }`}>
-                          {{ pending: "待审核", verified: "已通过", rejected: "未通过", won: "已中奖" }[e.status] || e.status}
-                        </span>
-                        {e.lotteryCode && <span className="text-xs font-mono text-[#5E5E5E]">{e.lotteryCode}</span>}
-                        {e.prizeName && <span className="text-xs text-[#8B7355]">🎁 {e.prizeName}</span>}
-                      </div>
-                      <div className="flex items-center gap-4 text-xs text-[#5E5E5E]">
-                        <span>{new Date(e.createdAt).toLocaleDateString("zh-CN")}</span>
-                        {e.shareLink && (
-                          <a href={e.shareLink} target="_blank" rel="noopener noreferrer" className="text-[#3D4430] underline">查看小红书</a>
-                        )}
-                        {e.contactName && <span>联系人：{e.contactName}</span>}
-                        {e.contactPhone && <span>电话：{e.contactPhone}</span>}
-                        {e.reviewNote && <span className="text-[#8B7355]">备注：{e.reviewNote}</span>}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                      {e.status === "pending" && (
-                        <>
-                          <button
-                            onClick={() => handleEntryAction(e.id, "verify")}
-                            disabled={entryActionLoading === e.id}
-                            className="px-3 py-1.5 rounded-lg bg-green-50 text-green-600 text-xs font-medium hover:bg-green-100 transition-colors"
-                          >
-                            {entryActionLoading === e.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "通过"}
-                          </button>
-                          <button
-                            onClick={() => handleEntryAction(e.id, "reject")}
-                            disabled={entryActionLoading === e.id}
-                            className="px-3 py-1.5 rounded-lg bg-red-50 text-red-500 text-xs font-medium hover:bg-red-100 transition-colors"
-                          >
-                            拒绝
-                          </button>
-                        </>
-                      )}
-                      {e.status === "verified" && (
-                        <button
-                          onClick={() => handleEntryAction(e.id, "win")}
-                          disabled={entryActionLoading === e.id}
-                          className="px-3 py-1.5 rounded-lg bg-purple-50 text-purple-600 text-xs font-medium hover:bg-purple-100 transition-colors"
-                        >
-                          设为中奖
-                        </button>
-                      )}
-                      {e.status === "won" && (
-                        <button
-                          onClick={() => handleEntryAction(e.id, "unwin")}
-                          disabled={entryActionLoading === e.id}
-                          className="px-3 py-1.5 rounded-lg bg-gray-50 text-gray-500 text-xs font-medium hover:bg-gray-100 transition-colors"
-                        >
-                          取消中奖
-                        </button>
-                      )}
-                      {e.status === "rejected" && (
-                        <button
-                          onClick={() => handleEntryAction(e.id, "verify")}
-                          disabled={entryActionLoading === e.id}
-                          className="px-3 py-1.5 rounded-lg bg-green-50 text-green-600 text-xs font-medium hover:bg-green-100 transition-colors"
-                        >
-                          重新通过
-                        </button>
-                      )}
+      {showEntries && selectedCampaign && typeof window !== "undefined" && createPortal(
+        <AnimatePresence>
+          {showEntries && selectedCampaign && (
+            <div className="fixed inset-0 z-[99999] flex items-center justify-center">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowEntries(false)}
+                className="absolute inset-0 bg-slate-900/30 backdrop-blur-md"
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                className="relative z-10 w-full max-w-4xl mx-4 bg-white/70 backdrop-blur-3xl rounded-[28px] border-[1.5px] border-white/80 shadow-[0_40px_100px_rgba(0,0,0,0.08),inset_0_2px_10px_rgba(255,255,255,0.5)] overflow-hidden max-h-[90vh] flex flex-col"
+              >
+                <div className="flex items-center justify-between px-8 pt-8 pb-4 shrink-0">
+                  <div>
+                    <h3 className="text-lg font-bold text-[#2C2C2C] tracking-tight">参与记录 - {selectedCampaign.title}</h3>
+                    <div className="flex items-center gap-3 mt-2">
+                      <select
+                        value={entriesFilter}
+                        onChange={(e) => {
+                          setEntriesFilter(e.target.value)
+                          fetchEntries(selectedCampaign.id, e.target.value)
+                        }}
+                        className="px-3 py-1.5 rounded-lg border border-[#E9E9E7] text-sm bg-white/50"
+                      >
+                        <option value="">全部状态</option>
+                        <option value="pending">待审核</option>
+                        <option value="verified">已通过</option>
+                        <option value="rejected">未通过</option>
+                        <option value="won">已中奖</option>
+                      </select>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+                  <button
+                    onClick={() => setShowEntries(false)}
+                    className="p-2 rounded-full text-[#B0A89A] hover:text-[#C9A86C] hover:bg-white/60 transition-all"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="px-8 pb-8 overflow-y-auto">
+                  {entriesLoading ? (
+                    <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-[#5E5E5E]" /></div>
+                  ) : entries.length === 0 ? (
+                    <div className="text-center py-12 text-sm text-[#5E5E5E]">暂无参与记录</div>
+                  ) : (
+                    <div className="space-y-2">
+                      {entries.map((e) => (
+                        <div key={e.id} className="flex items-center gap-4 p-4 rounded-xl border border-[#E9E9E7] bg-white/60">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-sm font-medium text-[#1A1A1A]">
+                                {e.user?.name || e.user?.email || e.user?.phoneNumber || "未知用户"}
+                              </span>
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                                { pending: "bg-amber-100 text-amber-700", verified: "bg-green-100 text-green-700", rejected: "bg-red-100 text-red-700", won: "bg-purple-100 text-purple-700" }[e.status] || "bg-gray-100 text-gray-600"
+                              }`}>
+                                {{ pending: "待审核", verified: "已通过", rejected: "未通过", won: "已中奖" }[e.status] || e.status}
+                              </span>
+                              {e.lotteryCode && <span className="text-xs font-mono text-[#5E5E5E]">{e.lotteryCode}</span>}
+                              {e.prizeName && <span className="text-xs text-[#8B7355]">🎁 {e.prizeName}</span>}
+                            </div>
+                            <div className="flex items-center gap-4 text-xs text-[#5E5E5E]">
+                              <span>{new Date(e.createdAt).toLocaleDateString("zh-CN")}</span>
+                              {e.shareLink && (
+                                <a href={e.shareLink} target="_blank" rel="noopener noreferrer" className="text-[#3D4430] underline">查看小红书</a>
+                              )}
+                              {e.contactName && <span>联系人：{e.contactName}</span>}
+                              {e.contactPhone && <span>电话：{e.contactPhone}</span>}
+                              {e.reviewNote && <span className="text-[#8B7355]">备注：{e.reviewNote}</span>}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            {e.status === "pending" && (
+                              <>
+                                <button
+                                  onClick={() => handleEntryAction(e.id, "verify")}
+                                  disabled={entryActionLoading === e.id}
+                                  className="px-3 py-1.5 rounded-lg bg-green-50 text-green-600 text-xs font-medium hover:bg-green-100 transition-colors"
+                                >
+                                  {entryActionLoading === e.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "通过"}
+                                </button>
+                                <button
+                                  onClick={() => handleEntryAction(e.id, "reject")}
+                                  disabled={entryActionLoading === e.id}
+                                  className="px-3 py-1.5 rounded-lg bg-red-50 text-red-500 text-xs font-medium hover:bg-red-100 transition-colors"
+                                >
+                                  拒绝
+                                </button>
+                              </>
+                            )}
+                            {e.status === "verified" && (
+                              <button
+                                onClick={() => handleEntryAction(e.id, "win")}
+                                disabled={entryActionLoading === e.id}
+                                className="px-3 py-1.5 rounded-lg bg-purple-50 text-purple-600 text-xs font-medium hover:bg-purple-100 transition-colors"
+                              >
+                                设为中奖
+                              </button>
+                            )}
+                            {e.status === "won" && (
+                              <button
+                                onClick={() => handleEntryAction(e.id, "unwin")}
+                                disabled={entryActionLoading === e.id}
+                                className="px-3 py-1.5 rounded-lg bg-gray-50 text-gray-500 text-xs font-medium hover:bg-gray-100 transition-colors"
+                              >
+                                取消中奖
+                              </button>
+                            )}
+                            {e.status === "rejected" && (
+                              <button
+                                onClick={() => handleEntryAction(e.id, "verify")}
+                                disabled={entryActionLoading === e.id}
+                                className="px-3 py-1.5 rounded-lg bg-green-50 text-green-600 text-xs font-medium hover:bg-green-100 transition-colors"
+                              >
+                                重新通过
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
+        document.body
       )}
     </div>
   )
