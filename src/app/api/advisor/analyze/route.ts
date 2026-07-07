@@ -576,10 +576,31 @@ export async function POST(request: NextRequest) {
             skinTypeLabel,
             ageRange: answers.ageRange,
             concerns: concernLabels,
+            gender: (answers as any).gender,
+            location: geoLocation ? `${geoLocation.region || ''} ${geoLocation.city || ''}`.trim() : undefined,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             medicalBeauty: (answers as any).medicalBeauty,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             sleep: (answers as any).sleepQuality,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            stressLevel: (answers as any).stressLevel,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            waterIntake: (answers as any).waterIntake,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            exerciseFrequency: (answers as any).exerciseFrequency,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            dietaryHabits: (answers as any).dietaryHabits,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            sunExposure: (answers as any).sunExposure,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            skincareFrequency: (answers as any).skincareFrequency,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            allergies: (answers as any).allergies,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            pregnancyStatus: (answers as any).pregnancyStatus,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            medicationHistory: (answers as any).medicationHistory,
+            isLoggedIn: !!user,
             faceAnalysis: faceAnalysis ? {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 skinType: faceAnalysis.skinType as any,

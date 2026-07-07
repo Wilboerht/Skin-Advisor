@@ -88,10 +88,22 @@ export function buildTextAnalysisPrompt(params: {
   skinTypeLabel?: string;
   ageRange?: string;
   concerns?: string[];
+  gender?: string;
+  location?: string;
   medicalBeauty?: string;
   sleep?: string;
+  stressLevel?: string;
+  waterIntake?: string;
+  exerciseFrequency?: string;
+  dietaryHabits?: string;
+  sunExposure?: string;
+  skincareFrequency?: string;
+  allergies?: string | string[];
+  pregnancyStatus?: string;
+  medicationHistory?: string;
   faceAnalysis?: any;
-  products?: any[]; // 新增：支持传入动态产品列表
+  products?: any[];
+  isLoggedIn?: boolean;
 }) {
   // 简化产品列表供 AI 选择
   const productSource = params.products && params.products.length > 0
@@ -131,18 +143,51 @@ export function buildTextAnalysisPrompt(params: {
   const medicalText = medicalBeautyMap[params.medicalBeauty || "none"] || params.medicalBeauty || "无";
   const sleepText = sleepMap[params.sleep || ""] || params.sleep || "未知";
 
+  // 生活状态标签化
+  const stressMap: Record<string, string> = { low: "低（心态平和）", medium: "中等（偶尔有压力）", high: "较高（经常感到压力）" };
+  const waterMap: Record<string, string> = { low: "偏少（<4杯/天）", medium: "适中（4-8杯/天）", high: "充足（>8杯/天）" };
+  const exerciseMap: Record<string, string> = { low: "较少（几乎不运动）", medium: "适中（每周1-3次）", high: "充足（每周>3次）" };
+  const dietMap: Record<string, string> = { balanced: "均衡饮食", highSugar: "偏甜/高糖", highOil: "偏油/高脂", spicy: "偏好辛辣" };
+  const sunMap: Record<string, string> = { low: "较少户外活动", medium: "日常通勤暴露", high: "经常户外暴晒" };
+  const freqMap: Record<string, string> = { basic: "简单护理（洁面+保湿）", moderate: "中等护理（精华+防晒）", advanced: "精细护理（多步骤）" };
+
+  const stressText = stressMap[params.stressLevel || ""] || "未知";
+  const waterText = waterMap[params.waterIntake || ""] || "未知";
+  const exerciseText = exerciseMap[params.exerciseFrequency || ""] || "未知";
+  const dietText = dietMap[params.dietaryHabits || ""] || "未知";
+  const sunText = sunMap[params.sunExposure || ""] || "未知";
+  const freqText = freqMap[params.skincareFrequency || ""] || "未知";
+
   return `作为${BRAND_CONFIG.name}的${BRAND_CONFIG.advisorName}，请根据以下数据生成护肤建议：
 
 用户概况：
+- 性别：${params.gender || "未提供"}
 - 肤质：${params.skinTypeLabel || "未知"}
 - 年龄段：${params.ageRange || "未知"}
+- 所在地：${params.location || "未知"}
 - 关注问题：${params.concerns?.join(", ") || "无"}
+${params.allergies ? `- 过敏史：${Array.isArray(params.allergies) ? params.allergies.join("、") : params.allergies}` : ""}
+${params.pregnancyStatus === "yes" ? "- ⚠️ 孕期：是（必须避免维A酸类、水杨酸等孕期禁忌成分）" : params.pregnancyStatus === "unknown" ? "- 孕期状态：不确定（建议谨慎推荐成分）" : ""}
+
+生活状态：
 - 医美经历(近3月)：${medicalText}
 - 睡眠习惯：${sleepText}
+- 精神压力：${stressText}
+- 饮水习惯：${waterText}
+- 运动频率：${exerciseText}
+- 饮食习惯：${dietText}
+- 日晒程度：${sunText}
+- 当前护肤流程：${freqText}
+${params.medicationHistory && params.medicationHistory !== "none" ? `- 用药史：${params.medicationHistory}（可能影响皮肤状态）` : ""}
 
 逻辑判断规则：
 1. 若有"医美经历"，请推荐温和、修护类的精简流程，避免刺激性成分（如因刷酸/微针后）。
-2. 若睡眠"较差"，请重点关注抗氧化、去暗沉和夜间修护。
+2. 若睡眠"较差"或压力"较高"，请重点关注抗氧化、去暗沉和夜间修护。
+3. 若孕期，所有建议必须排除维A酸、水杨酸、视黄醇等孕期禁忌成分。
+4. 若日晒程度高且防晒不足，请在建议中强调防晒重要性。
+5. 若饮水不足或饮食偏好高糖/高油，应关联到肤色暗沉和痤疮风险。
+6. 根据所在地的气候特征给出针对性建议（如北方干燥需加强保湿，南方湿热需控油清爽）。
+7. 根据当前护肤流程复杂度，给出可升级的下一步建议。${params.isLoggedIn ? '\n8. 当前为已登录会员，提供更深度、更专业的分析。' : ''}
 
 ${params.faceAnalysis ? `面部分析数据 (10维度评分):
 - 综合评分: ${params.faceAnalysis.overallScore ?? 'N/A'}/100\n- 肤质: ${params.faceAnalysis.skinType?.type ?? '未知'} (置信度: ${params.faceAnalysis.skinType?.confidence ?? 'N/A'}%)\n- 肌龄: ${params.faceAnalysis.skinAge?.estimated ?? 'N/A'} 岁\n- 水油平衡: ${params.faceAnalysis.dimensions?.waterOil?.score ?? 'N/A'}分 | 肤色: ${params.faceAnalysis.dimensions?.skinTone?.score ?? 'N/A'}分 | 色斑: ${params.faceAnalysis.dimensions?.spots?.score ?? 'N/A'}分 | 皱纹: ${params.faceAnalysis.dimensions?.wrinkles?.score ?? 'N/A'}分 | 光老化: ${params.faceAnalysis.dimensions?.uvDamage?.score ?? 'N/A'}分 | 敏感度: ${params.faceAnalysis.dimensions?.sensitivity?.score ?? 'N/A'}分 | 黑眼圈: ${params.faceAnalysis.dimensions?.darkCircles?.score ?? 'N/A'}分 | 紧致度: ${params.faceAnalysis.dimensions?.firmness?.score ?? 'N/A'}分 | 痤疮: ${params.faceAnalysis.dimensions?.acne?.score ?? 'N/A'}分 | 光泽度: ${params.faceAnalysis.dimensions?.radiance?.score ?? 'N/A'}分\n- 区域问题: ${params.faceAnalysis.summary ?? '无'}\n- 区域详情: ${JSON.stringify(params.faceAnalysis.zoneAnalysis ?? {}).slice(0, 500)}` : ""}
