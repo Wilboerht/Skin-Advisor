@@ -98,7 +98,7 @@ export default function RootLayout({
 }>) {
   return (
     <ViewTransitions>
-      <html lang="zh-CN">
+      <html lang="zh-CN" data-scroll-behavior="smooth">
         <head>
           <OrganizationSchema />
           <WebsiteSearchSchema />
