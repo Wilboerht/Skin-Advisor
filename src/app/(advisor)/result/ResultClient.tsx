@@ -74,7 +74,7 @@ function MobileDimensionForm({ dimensions }: { dimensions: Record<string, { scor
                         <div className="h-1.5 w-full rounded-full bg-[#E8E2D9] overflow-hidden">
                             <div className={`h-full rounded-full ${color}`} style={{ width: `${score}%` }} />
                         </div>
-                        <p className="mt-1.5 text-[11px] text-[#8A8A8A] leading-relaxed">{DIMENSION_DESCRIPTIONS[key]}</p>
+                        <p className="mt-1.5 text-xs text-[#8A8A8A] leading-relaxed">{DIMENSION_DESCRIPTIONS[key]}</p>
                     </div>
                 );
             })}
@@ -102,11 +102,11 @@ function MobileLabRow({ metric }: { metric: LabMetric }) {
             </div>
             <div className="grid grid-cols-2 gap-2">
                 <div>
-                    <p className="text-[10px] text-[#8A8A8A] mb-0.5">�ⶨֵ</p>
+                    <p className="text-[11px] text-[#8A8A8A] mb-0.5">�ⶨֵ</p>
                     <p className="text-[12px] text-[#1A1A1A]">{metric.value}</p>
                 </div>
                 <div>
-                    <p className="text-[10px] text-[#8A8A8A] mb-0.5">�ο���Χ</p>
+                    <p className="text-[11px] text-[#8A8A8A] mb-0.5">�ο���Χ</p>
                     <p className="text-[12px] text-[#1A1A1A]">{metric.ref}</p>
                 </div>
             </div>
