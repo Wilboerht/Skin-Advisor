@@ -578,6 +578,7 @@ export async function POST(request: NextRequest) {
             concerns: concernLabels,
             gender: (answers as any).gender,
             location: geoLocation ? `${geoLocation.region || ''} ${geoLocation.city || ''}`.trim() : undefined,
+            budget: answers.budget,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             medicalBeauty: (answers as any).medicalBeauty,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any

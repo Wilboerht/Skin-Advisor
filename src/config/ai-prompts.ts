@@ -90,6 +90,7 @@ export function buildTextAnalysisPrompt(params: {
   concerns?: string[];
   gender?: string;
   location?: string;
+  budget?: string;
   medicalBeauty?: string;
   sleep?: string;
   stressLevel?: string;
@@ -150,6 +151,7 @@ export function buildTextAnalysisPrompt(params: {
   const dietMap: Record<string, string> = { balanced: "均衡饮食", highSugar: "偏甜/高糖", highOil: "偏油/高脂", spicy: "偏好辛辣" };
   const sunMap: Record<string, string> = { low: "较少户外活动", medium: "日常通勤暴露", high: "经常户外暴晒" };
   const freqMap: Record<string, string> = { basic: "简单护理（洁面+保湿）", moderate: "中等护理（精华+防晒）", advanced: "精细护理（多步骤）" };
+  const budgetMap: Record<string, string> = { low: "经济实惠（偏好高性价比）", medium: "中等投入（愿意为效果付费）", high: "充足预算（追求高端护理体验）" };
 
   const stressText = stressMap[params.stressLevel || ""] || "未知";
   const waterText = waterMap[params.waterIntake || ""] || "未知";
@@ -157,6 +159,7 @@ export function buildTextAnalysisPrompt(params: {
   const dietText = dietMap[params.dietaryHabits || ""] || "未知";
   const sunText = sunMap[params.sunExposure || ""] || "未知";
   const freqText = freqMap[params.skincareFrequency || ""] || "未知";
+  const budgetText = budgetMap[params.budget || ""] || "未知";
 
   return `作为${BRAND_CONFIG.name}的${BRAND_CONFIG.advisorName}，请根据以下数据生成护肤建议：
 
@@ -178,6 +181,7 @@ ${params.pregnancyStatus === "yes" ? `- ⚠️ 孕期：是（在此基础上额
 - 饮食习惯：${dietText}
 - 日晒程度：${sunText}
 - 当前护肤流程：${freqText}
+- 护肤预算：${budgetText}
 ${params.medicationHistory && params.medicationHistory !== "none" ? `- 用药史：${params.medicationHistory}（可能影响皮肤状态）` : ""}
 
 品牌成分哲学（核心约束，适用于所有用户）：
@@ -190,7 +194,7 @@ ${params.medicationHistory && params.medicationHistory !== "none" ? `- 用药史
 所有推荐必须在此品牌成分体系内选择组合，不可推荐该体系外的成分。
 
 逻辑判断规则：
-1. 若有"医美经历"，请推荐温和、修护类的精简流程，避免刺激性成分（如因刷酸/微针后）。
+1. 若有"医美经历"，推荐温和修护类精简流程，避免刺激性成分。医美用户通常护肤投入意愿更高，可适当推荐品牌中高端产品线。
 2. 若睡眠"较差"或压力"较高"，请重点关注抗氧化、去暗沉和夜间修护。
 3. 若孕期，在品牌成分体系基础上进一步排除以下成分（即使品牌配方中含也必须跳过该产品）：
    🚫 酸类焕肤：乳酸（避免全身吸收风险）
@@ -200,7 +204,8 @@ ${params.medicationHistory && params.medicationHistory !== "none" ? `- 用药史
 4. 若日晒程度高且防晒不足，请在建议中强调防晒重要性。
 5. 若饮水不足或饮食偏好高糖/高油，应关联到肤色暗沉和痤疮风险。
 6. 根据所在地的气候特征给出针对性建议（如北方干燥需加强保湿，南方湿热需控油清爽）。
-7. 根据当前护肤流程复杂度，给出可升级的下一步建议。${params.isLoggedIn ? '\n8. 当前为已登录会员，提供更深度、更专业的分析。' : ''}
+7. 根据当前护肤流程复杂度，给出可升级的下一步建议。
+8. 根据护肤预算推荐匹配价格的产品：经济实惠→基础线、中等投入→功效线、充足预算→高端线。${params.isLoggedIn ? '\n9. 当前为已登录会员，提供更深度、更专业的分析。' : ''}
 
 ${params.faceAnalysis ? `面部分析数据 (10维度评分):
 - 综合评分: ${params.faceAnalysis.overallScore ?? 'N/A'}/100\n- 肤质: ${params.faceAnalysis.skinType?.type ?? '未知'} (置信度: ${params.faceAnalysis.skinType?.confidence ?? 'N/A'}%)\n- 肌龄: ${params.faceAnalysis.skinAge?.estimated ?? 'N/A'} 岁\n- 水油平衡: ${params.faceAnalysis.dimensions?.waterOil?.score ?? 'N/A'}分 | 肤色: ${params.faceAnalysis.dimensions?.skinTone?.score ?? 'N/A'}分 | 色斑: ${params.faceAnalysis.dimensions?.spots?.score ?? 'N/A'}分 | 皱纹: ${params.faceAnalysis.dimensions?.wrinkles?.score ?? 'N/A'}分 | 光老化: ${params.faceAnalysis.dimensions?.uvDamage?.score ?? 'N/A'}分 | 敏感度: ${params.faceAnalysis.dimensions?.sensitivity?.score ?? 'N/A'}分 | 黑眼圈: ${params.faceAnalysis.dimensions?.darkCircles?.score ?? 'N/A'}分 | 紧致度: ${params.faceAnalysis.dimensions?.firmness?.score ?? 'N/A'}分 | 痤疮: ${params.faceAnalysis.dimensions?.acne?.score ?? 'N/A'}分 | 光泽度: ${params.faceAnalysis.dimensions?.radiance?.score ?? 'N/A'}分\n- 区域问题: ${params.faceAnalysis.summary ?? '无'}\n- 区域详情: ${JSON.stringify(params.faceAnalysis.zoneAnalysis ?? {}).slice(0, 500)}` : ""}
