@@ -12,6 +12,8 @@ import {
     ScanFace,
     Activity,
     AlertCircle,
+    Sparkles,
+    Sun,
     X
 } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
@@ -823,7 +825,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         </h4>
 
                                         {/* 💆 护肤建议 */}
-                                        <h5 className="text-sm font-medium text-[#3d2f25] mb-2">💆 护肤建议</h5>
+                                        <h5 className="text-sm font-medium text-[#3d2f25] mb-2 flex items-center gap-1.5"><Sparkles className="w-4 h-4" /> 护肤建议</h5>
                                         {(faceAnalysis?.recommendations && faceAnalysis.recommendations.length > 0) ? (
                                             <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-xs lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
                                                 {(faceAnalysis.recommendations).map((rec, idx) => (
@@ -841,7 +843,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         {/* 🌿 生活建议（嵌套在专家护肤建议内） */}
                                         {result.analysis?.lifestyleTips && result.analysis.lifestyleTips.length > 0 && (
                                             <div className="mt-5 pt-4 border-t border-dashed border-[#3d2f25]/10">
-                                                <h5 className="text-sm font-medium text-[#3d2f25] mb-2">🌿 生活建议</h5>
+                                                <h5 className="text-sm font-medium text-[#3d2f25] mb-2 flex items-center gap-1.5"><Sun className="w-4 h-4" /> 生活建议</h5>
                                                 <ul className="list-disc pl-5 space-y-1.5 text-xs lg:text-[13px] leading-relaxed text-[#5c4937]">
                                                     {result.analysis.lifestyleTips.map((tip, idx) => (
                                                         <li key={idx}>{tip}</li>
