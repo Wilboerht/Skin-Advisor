@@ -3,7 +3,7 @@ import { generateText, isAIEnabled, fallbackAnalysis, type AIProvider } from "@/
 import { analysisQueue } from "@/lib/ai-queue";
 import { circuitBreaker } from "@/lib/circuit-breaker";
 import { extractJsonFromResponse } from "@/lib/advisor-utils";
-import { buildTextAnalysisPrompt, TEXT_ANALYSIS_SYSTEM_PROMPT } from "@/config/ai-prompts";
+import { buildTextAnalysisPrompt, TEXT_ANALYSIS_SYSTEM_PROMPT, REGISTERED_USER_DEEP_ANALYSIS_INSTRUCTION } from "@/config/ai-prompts";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import prisma from "@/lib/prisma";
 import { getSkinTypeLabel, getConcernLabel } from "@/lib/advisor-utils";
