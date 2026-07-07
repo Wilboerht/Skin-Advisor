@@ -811,7 +811,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         {result.analysis?.details && result.analysis.details.length > 0 ? (
                                             <>
                                                 {result.analysis.details[0] && (
-                                                    <p className="text-sm lg:text-[15px] leading-relaxed text-[#3d2f25] font-medium mb-4">
+                                                    <p className="text-sm lg:text-[15px] leading-relaxed text-[#3d2f25] mb-4">
                                                         {result.analysis.details[0]}
                                                     </p>
                                                 )}

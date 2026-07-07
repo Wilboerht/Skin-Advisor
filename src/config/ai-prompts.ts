@@ -55,15 +55,15 @@ export const VISION_ANALYSIS_SYSTEM_PROMPT = `你是一位专业的皮肤科医�
   "overallScore":0-100,
   "summary":"诊断报告摘要(200字内，必填，必须引用具体评分数据和区域问题，不可只写通用描述)",
   "recommendations":["建议1(含具体成分和步骤)","建议2","建议3","建议4","建议5"],
-  "skinConditions":[{"condition":"症状名","severity":"mild|moderate|severe","area":"部位","description":"具体描述(引用评分)"}],
+  "skinConditions":[{"condition":"症状名","severity":"mild|moderate|severe","area":"部位","description":"自然语言描述，不引用评分"}],
   "labAnalysis":{"glogau":{"value":"I|II|III","status":"状态"},"homogeneity":{"value":0,"unit":"% C.V.","status":"状态"},"wrinkleGrade":{"value":"Grade 1-3","status":"状态"}},
   "zoneAnalysis":{
-    "forehead":{"condition":"具体问题描述(含评分)","advice":"具体护理建议(含成分和频率)","oil":0-100,"texture":0-100,"wrinkles":0-100,"spots":0-100,"redness":0-100,"firmness":0-100,"contour":0-100},
-    "tZone":{"condition":"具体问题描述(含评分)","advice":"具体护理建议(含成分和频率)","oil":0-100,"texture":0-100,"wrinkles":0-100,"spots":0-100,"redness":0-100,"firmness":0-100,"contour":0-100},
-    "leftCheek":{"condition":"具体问题描述(含评分)","advice":"具体护理建议(含成分和频率)","oil":0-100,"texture":0-100,"wrinkles":0-100,"spots":0-100,"redness":0-100,"firmness":0-100,"contour":0-100},
-    "rightCheek":{"condition":"具体问题描述(含评分)","advice":"具体护理建议(含成分和频率)","oil":0-100,"texture":0-100,"wrinkles":0-100,"spots":0-100,"redness":0-100,"firmness":0-100,"contour":0-100},
-    "eyeArea":{"condition":"具体问题描述(含评分)","advice":"具体护理建议(含成分和频率)","oil":0-100,"texture":0-100,"wrinkles":0-100,"darkCircles":0-100,"firmness":0-100},
-    "jawline":{"condition":"具体问题描述(含评分)","advice":"具体护理建议(含成分和频率)","oil":0-100,"firmness":0-100,"contour":0-100}
+    "forehead":{"condition":"自然语言描述该区域状态，禁止出现评分数字","advice":"具体护理建议(含成分和频率)","oil":0-100,"texture":0-100,"wrinkles":0-100,"spots":0-100,"redness":0-100,"firmness":0-100,"contour":0-100},
+    "tZone":{"condition":"自然语言描述该区域状态，禁止出现评分数字","advice":"具体护理建议(含成分和频率)","oil":0-100,"texture":0-100,"wrinkles":0-100,"spots":0-100,"redness":0-100,"firmness":0-100,"contour":0-100},
+    "leftCheek":{"condition":"自然语言描述该区域状态，禁止出现评分数字","advice":"具体护理建议(含成分和频率)","oil":0-100,"texture":0-100,"wrinkles":0-100,"spots":0-100,"redness":0-100,"firmness":0-100,"contour":0-100},
+    "rightCheek":{"condition":"自然语言描述该区域状态，禁止出现评分数字","advice":"具体护理建议(含成分和频率)","oil":0-100,"texture":0-100,"wrinkles":0-100,"spots":0-100,"redness":0-100,"firmness":0-100,"contour":0-100},
+    "eyeArea":{"condition":"自然语言描述该区域状态，禁止出现评分数字","advice":"具体护理建议(含成分和频率)","oil":0-100,"texture":0-100,"wrinkles":0-100,"darkCircles":0-100,"firmness":0-100},
+    "jawline":{"condition":"自然语言描述该区域状态，禁止出现评分数字","advice":"具体护理建议(含成分和频率)","oil":0-100,"firmness":0-100,"contour":0-100}
   }
 }
 # zoneAnalysis 6 区域全必填；advice 必须包含具体成分建议和使用频率，如"含水杨酸洁面 + 每周2次泥膜"而非仅"控油"；condition 用自然语言一句话概括该区域的核心状态，如"T区偏油，有轻微毛孔堵塞迹象"而非"油脂评分72偏高"。
