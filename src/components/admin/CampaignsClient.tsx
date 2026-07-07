@@ -1,7 +1,9 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Plus, Edit, Trash2, Play, Pause, CheckCircle2, Loader2, AlertCircle, Gift, Calendar, Users, Eye } from "lucide-react"
+import { createPortal } from "react-dom"
+import { motion, AnimatePresence } from "framer-motion"
+import { Plus, Edit, Trash2, Play, Pause, CheckCircle2, Loader2, AlertCircle, Gift, Calendar, Users, Eye, X } from "lucide-react"
 
 interface Prize {
   name: string
@@ -375,102 +377,135 @@ export function CampaignsClient() {
       )}
 
       {/* Create/Edit Modal */}
-      {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowForm(false)} />
-          <div className="relative z-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl p-8">
-            <h2 className="text-lg font-bold text-[#1A1A1A] mb-6">
-              {editingId ? "编辑活动" : "创建活动"}
-            </h2>
-
-            {saveError && (
-              <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 text-red-600 text-sm mb-4">
-                <AlertCircle className="w-4 h-4" />
-                {saveError}
-              </div>
-            )}
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-[#5E5E5E] mb-1">活动标题 *</label>
-                <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="如：六月肌智派好礼"
-                  className="w-full px-3 py-2.5 rounded-lg border border-[#E9E9E7] text-sm focus:outline-none focus:border-[#3D4430]/40" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-[#5E5E5E] mb-1">副标题</label>
-                <input value={subtitle} onChange={(e) => setSubtitle(e.target.value)} placeholder="可选副标题"
-                  className="w-full px-3 py-2.5 rounded-lg border border-[#E9E9E7] text-sm focus:outline-none focus:border-[#3D4430]/40" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-[#5E5E5E] mb-1">开始时间 *</label>
-                  <input type="datetime-local" value={startDate} onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-lg border border-[#E9E9E7] text-sm focus:outline-none focus:border-[#3D4430]/40" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-[#5E5E5E] mb-1">结束时间 *</label>
-                  <input type="datetime-local" value={endDate} onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-lg border border-[#E9E9E7] text-sm focus:outline-none focus:border-[#3D4430]/40" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-[#5E5E5E] mb-1">开奖时间</label>
-                <input type="datetime-local" value={drawDate} onChange={(e) => setDrawDate(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-lg border border-[#E9E9E7] text-sm focus:outline-none focus:border-[#3D4430]/40" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-[#5E5E5E] mb-1">奖品列表 (JSON) *</label>
-                <textarea value={prizesJson} onChange={(e) => setPrizesJson(e.target.value)} rows={6}
-                  className="w-full px-3 py-2.5 rounded-lg border border-[#E9E9E7] text-sm font-mono focus:outline-none focus:border-[#3D4430]/40"
-                  placeholder='[{"name":"奖品名","image":"https://...","quantity":3,"description":"描述"}]' />
-                <p className="text-[10px] text-[#5E5E5E]/60 mt-1">
-                  JSON 数组格式：name(名称), image(图片URL可选), quantity(数量), description(描述可选)
-                </p>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-[#5E5E5E] mb-1">小红书分享文案</label>
-                <textarea value={shareText} onChange={(e) => setShareText(e.target.value)} rows={3}
-                  className="w-full px-3 py-2.5 rounded-lg border border-[#E9E9E7] text-sm focus:outline-none focus:border-[#3D4430]/40"
-                  placeholder="支持 &#123;&#123;nickname&#125;&#125; 占位符" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-[#5E5E5E] mb-1">活动规则 (Markdown)</label>
-                <textarea value={rules} onChange={(e) => setRules(e.target.value)} rows={4}
-                  className="w-full px-3 py-2.5 rounded-lg border border-[#E9E9E7] text-sm focus:outline-none focus:border-[#3D4430]/40"
-                  placeholder="活动规则说明（可选，支持 Markdown）" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-[#5E5E5E] mb-1">参与上限 (0=不限)</label>
-                  <input type="number" value={maxEntries} onChange={(e) => setMaxEntries(Number(e.target.value))} min={0}
-                    className="w-full px-3 py-2.5 rounded-lg border border-[#E9E9E7] text-sm focus:outline-none focus:border-[#3D4430]/40" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-[#5E5E5E] mb-1">排序权重</label>
-                  <input type="number" value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value))}
-                    className="w-full px-3 py-2.5 rounded-lg border border-[#E9E9E7] text-sm focus:outline-none focus:border-[#3D4430]/40" />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-[#E9E9E7]">
-              <button
+      {showForm && typeof window !== "undefined" && createPortal(
+        <AnimatePresence>
+          {showForm && (
+            <div className="fixed inset-0 z-[99999] flex items-center justify-center">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
                 onClick={() => { setShowForm(false); resetForm() }}
-                className="px-5 py-2.5 rounded-lg text-sm text-[#5E5E5E] hover:bg-gray-50 transition-colors"
+                className="absolute inset-0 bg-slate-900/30 backdrop-blur-md"
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                className="relative z-10 w-full max-w-2xl mx-4 bg-white/70 backdrop-blur-3xl rounded-[28px] border-[1.5px] border-white/80 shadow-[0_40px_100px_rgba(0,0,0,0.08),inset_0_2px_10px_rgba(255,255,255,0.5)] overflow-hidden max-h-[90vh] flex flex-col"
               >
-                取消
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving || !title.trim() || !startDate || !endDate}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#3D4430] text-white rounded-lg text-sm font-medium disabled:opacity-40 hover:bg-[#3D4430]/90 transition-colors"
-              >
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                {editingId ? "保存修改" : "创建活动"}
-              </button>
+                <div className="flex items-center justify-between px-8 pt-8 pb-4 shrink-0">
+                  <div>
+                    <h3 className="text-lg font-bold text-[#2C2C2C] tracking-tight">
+                      {editingId ? "编辑活动" : "创建活动"}
+                    </h3>
+                    <p className="text-xs text-[#8B7355]">
+                      {editingId ? "修改活动信息" : "创建新的营销活动"}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => { setShowForm(false); resetForm() }}
+                    disabled={saving}
+                    className="p-2 rounded-full text-[#B0A89A] hover:text-[#C9A86C] hover:bg-white/60 transition-all"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="px-8 pb-8 overflow-y-auto">
+                  {saveError && (
+                    <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 text-red-600 text-sm mb-4">
+                      <AlertCircle className="w-4 h-4" />
+                      {saveError}
+                    </div>
+                  )}
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-medium text-[#5E5E5E] mb-1">活动标题 *</label>
+                      <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="如：六月肌智派好礼"
+                        className="w-full px-3 py-2.5 rounded-lg border border-[#E9E9E7] text-sm focus:outline-none focus:border-[#3D4430]/40" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-[#5E5E5E] mb-1">副标题</label>
+                      <input value={subtitle} onChange={(e) => setSubtitle(e.target.value)} placeholder="可选副标题"
+                        className="w-full px-3 py-2.5 rounded-lg border border-[#E9E9E7] text-sm focus:outline-none focus:border-[#3D4430]/40" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-medium text-[#5E5E5E] mb-1">开始时间 *</label>
+                        <input type="datetime-local" value={startDate} onChange={(e) => setStartDate(e.target.value)}
+                          className="w-full px-3 py-2.5 rounded-lg border border-[#E9E9E7] text-sm focus:outline-none focus:border-[#3D4430]/40" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-[#5E5E5E] mb-1">结束时间 *</label>
+                        <input type="datetime-local" value={endDate} onChange={(e) => setEndDate(e.target.value)}
+                          className="w-full px-3 py-2.5 rounded-lg border border-[#E9E9E7] text-sm focus:outline-none focus:border-[#3D4430]/40" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-[#5E5E5E] mb-1">开奖时间</label>
+                      <input type="datetime-local" value={drawDate} onChange={(e) => setDrawDate(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-lg border border-[#E9E9E7] text-sm focus:outline-none focus:border-[#3D4430]/40" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-[#5E5E5E] mb-1">奖品列表 (JSON) *</label>
+                      <textarea value={prizesJson} onChange={(e) => setPrizesJson(e.target.value)} rows={6}
+                        className="w-full px-3 py-2.5 rounded-lg border border-[#E9E9E7] text-sm font-mono focus:outline-none focus:border-[#3D4430]/40"
+                        placeholder='[{"name":"奖品名","image":"https://...","quantity":3,"description":"描述"}]' />
+                      <p className="text-[10px] text-[#5E5E5E]/60 mt-1">
+                        JSON 数组格式：name(名称), image(图片URL可选), quantity(数量), description(描述可选)
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-[#5E5E5E] mb-1">小红书分享文案</label>
+                      <textarea value={shareText} onChange={(e) => setShareText(e.target.value)} rows={3}
+                        className="w-full px-3 py-2.5 rounded-lg border border-[#E9E9E7] text-sm focus:outline-none focus:border-[#3D4430]/40"
+                        placeholder="支持 &#123;&#123;nickname&#125;&#125; 占位符" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-[#5E5E5E] mb-1">活动规则 (Markdown)</label>
+                      <textarea value={rules} onChange={(e) => setRules(e.target.value)} rows={4}
+                        className="w-full px-3 py-2.5 rounded-lg border border-[#E9E9E7] text-sm focus:outline-none focus:border-[#3D4430]/40"
+                        placeholder="活动规则说明（可选，支持 Markdown）" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-medium text-[#5E5E5E] mb-1">参与上限 (0=不限)</label>
+                        <input type="number" value={maxEntries} onChange={(e) => setMaxEntries(Number(e.target.value))} min={0}
+                          className="w-full px-3 py-2.5 rounded-lg border border-[#E9E9E7] text-sm focus:outline-none focus:border-[#3D4430]/40" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-[#5E5E5E] mb-1">排序权重</label>
+                        <input type="number" value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value))}
+                          className="w-full px-3 py-2.5 rounded-lg border border-[#E9E9E7] text-sm focus:outline-none focus:border-[#3D4430]/40" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-[#E9E9E7]">
+                    <button
+                      onClick={() => { setShowForm(false); resetForm() }}
+                      className="px-5 py-2.5 rounded-lg text-sm text-[#5E5E5E] hover:bg-gray-50 transition-colors"
+                    >
+                      取消
+                    </button>
+                    <button
+                      onClick={handleSave}
+                      disabled={saving || !title.trim() || !startDate || !endDate}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#3D4430] text-white rounded-lg text-sm font-medium disabled:opacity-40 hover:bg-[#3D4430]/90 transition-colors"
+                    >
+                      {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                      {editingId ? "保存修改" : "创建活动"}
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
             </div>
-          </div>
-        </div>
+          )}
+        </AnimatePresence>,
+        document.body
       )}
 
       {/* Entries Modal */}
