@@ -1317,7 +1317,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
               {faceStatus === "success" && showSuccessForStep
                 ? `${CAPTURE_STEPS.find(s => s.step === showSuccessForStep)?.label}拍摄完成`
                 : isInCooldown
-                  ? "请准备下一张..."
+                  ? "下一个动作..."
                   : currentStepConfig?.instruction}
             </h3>
 
