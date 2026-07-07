@@ -1,4 +1,4 @@
-"use client";
+ï»¿"use client";
 
 import { useEffect, useState, useRef, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -55,7 +55,7 @@ interface ResultClientProps {
     } | null;
 }
 
-// ÊÖ»ú¶Ë£ºÊ®Î¬·ÖÎö±íµ¥£¨Ìæ´ú ScientificBarChart£©
+// ï¿½Ö»ï¿½ï¿½Ë£ï¿½Ê®Î¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ScientificBarChartï¿½ï¿½
 function MobileDimensionForm({ dimensions }: { dimensions: Record<string, { score?: number } | undefined> }) {
     const order = ['radiance', 'acne', 'firmness', 'darkCircles', 'sensitivity', 'uvDamage', 'wrinkles', 'spots', 'skinTone', 'waterOil'];
 
@@ -69,7 +69,7 @@ function MobileDimensionForm({ dimensions }: { dimensions: Record<string, { scor
                     <div key={key} className="py-3 border-b border-[#E8E2D9] last:border-0">
                         <div className="flex items-center justify-between mb-1.5">
                             <span className="text-[13px] text-[#4A4A4A]">{DIMENSION_LABELS[key]}</span>
-                            <span className="text-[13px] font-medium text-[#1A1A1A]">{score} ·Ö</span>
+                            <span className="text-[13px] font-medium text-[#1A1A1A]">{score} ï¿½ï¿½</span>
                         </div>
                         <div className="h-1.5 w-full rounded-full bg-[#E8E2D9] overflow-hidden">
                             <div className={`h-full rounded-full ${color}`} style={{ width: `${score}%` }} />
@@ -82,9 +82,9 @@ function MobileDimensionForm({ dimensions }: { dimensions: Record<string, { scor
     );
 }
 
-// ÊÖ»ú¶Ë Lab Ö¸±ê¿¨Æ¬
+// ï¿½Ö»ï¿½ï¿½ï¿½ Lab Ö¸ï¿½ê¿¨Æ¬
 function MobileLabRow({ metric }: { metric: LabMetric }) {
-    const goodKeywords = ['Õý³£', 'Normal', '½ôÖÂ', 'Ï¸Äå', '¾ùÔÈ', 'Í¸ÁÁ', 'Type I', 'ÉÙ', 'Balanced'];
+    const goodKeywords = ['ï¿½ï¿½ï¿½ï¿½', 'Normal', 'ï¿½ï¿½ï¿½ï¿½', 'Ï¸ï¿½ï¿½', 'ï¿½ï¿½ï¿½ï¿½', 'Í¸ï¿½ï¿½', 'Type I', 'ï¿½ï¿½', 'Balanced'];
     const isGood = goodKeywords.some(k => metric.status.includes(k));
 
     return (
@@ -102,11 +102,11 @@ function MobileLabRow({ metric }: { metric: LabMetric }) {
             </div>
             <div className="grid grid-cols-2 gap-2">
                 <div>
-                    <p className="text-[10px] text-[#8A8A8A] mb-0.5">²â¶¨Öµ</p>
+                    <p className="text-[10px] text-[#8A8A8A] mb-0.5">ï¿½â¶¨Öµ</p>
                     <p className="text-[12px] text-[#1A1A1A]">{metric.value}</p>
                 </div>
                 <div>
-                    <p className="text-[10px] text-[#8A8A8A] mb-0.5">²Î¿¼·¶Î§</p>
+                    <p className="text-[10px] text-[#8A8A8A] mb-0.5">ï¿½Î¿ï¿½ï¿½ï¿½Î§</p>
                     <p className="text-[12px] text-[#1A1A1A]">{metric.ref}</p>
                 </div>
             </div>
@@ -114,10 +114,10 @@ function MobileLabRow({ metric }: { metric: LabMetric }) {
     );
 }
 
-// Lab Report ÐÐäÖÈ¾£¨³éÀëµ½×é¼þÍâ²¿£¬±ÜÃâÃ¿´ÎäÖÈ¾ÖØÐÂ´´½¨£©
+// Lab Report ï¿½ï¿½ï¿½ï¿½È¾ï¿½ï¿½ï¿½ï¿½ï¿½ëµ½ï¿½ï¿½ï¿½ï¿½â²¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã¿ï¿½ï¿½ï¿½ï¿½È¾ï¿½ï¿½ï¿½Â´ï¿½ï¿½ï¿½ï¿½ï¿½
 function renderLabRow(param: string, value: string, ref: string, status: string) {
     // Determine status color based on keywords
-    const goodKeywords = ['Õý³£', 'Normal', '½ôÖÂ', 'Ï¸Äå', '¾ùÔÈ', 'Í¸ÁÁ', 'Type I', 'ÉÙ', 'Balanced'];
+    const goodKeywords = ['ï¿½ï¿½ï¿½ï¿½', 'Normal', 'ï¿½ï¿½ï¿½ï¿½', 'Ï¸ï¿½ï¿½', 'ï¿½ï¿½ï¿½ï¿½', 'Í¸ï¿½ï¿½', 'Type I', 'ï¿½ï¿½', 'Balanced'];
     const isGood = goodKeywords.some(k => status.includes(k));
 
     return (
@@ -135,7 +135,7 @@ function renderLabRow(param: string, value: string, ref: string, status: string)
             <div className="sm:col-span-2 text-left sm:text-right text-[11px] font-light">
                 {status ? (
                     <span className={isGood ? 'text-[#4A4A4A]' : 'text-[#c45a4a]'}>
-                        {status} {isGood ? '' : '¡ø'}
+                        {status} {isGood ? '' : 'ï¿½ï¿½'}
                     </span>
                 ) : null}
             </div>
@@ -159,8 +159,8 @@ export default function ResultClient(props: ResultClientProps) {
 function ResultClientContent({ id, initialData }: ResultClientProps) {
     const router = useRouter();
 
-    // Èë¿ÚÊØÎÀ£º±ØÐëÍ¨¹ýÊ×Ò³Òýµ¼µ¯´°ºó²ÅÄÜ²é¿´½á¹û
-    // ÀúÊ·±¨¸æÒ³Ãæ£¨/reports/:id£©»á´«Èë id Óë initialData£¬Ìø¹ý´ËÊØÎÀ
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¨ï¿½ï¿½ï¿½ï¿½Ò³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ü²é¿´ï¿½ï¿½ï¿½
+    // ï¿½ï¿½Ê·ï¿½ï¿½ï¿½ï¿½Ò³ï¿½æ£¨/reports/:idï¿½ï¿½ï¿½á´«ï¿½ï¿½ id ï¿½ï¿½ initialDataï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     useEffect(() => {
         if (id || initialData) return;
         try {
@@ -194,12 +194,12 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     }, [result]);
     const [faceAnalysis, setFaceAnalysis] = useState<FaceAnalysisResult | null>(initialData?.faceAnalysis || null);
 
-    const [userNickname, setUserNickname] = useState<string>("Äú");
+    const [userNickname, setUserNickname] = useState<string>("ï¿½ï¿½");
     // Session ID for sharing - initialized from props or will be set after analysis
     const [sessionId, setSessionId] = useState<string | undefined>(id);
     const [socialGender, setSocialGender] = useState<string>(''); // Initialize empty to avoid flash mismatch
 
-    // IP Æ¥ÅäËùÐèÊý¾Ý
+    // IP Æ¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     const [ipBudget, setIpBudget] = useState<string | undefined>(undefined);
     const [ipSkincareFrequency, setIpSkincareFrequency] = useState<string | undefined>(undefined);
 
@@ -207,7 +207,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const [loading, setLoading] = useState(!initialData);
     const hasTrackedView = useRef(false);
 
-    // Gender Mismatch State£º´æ´¢ÒÑÈ·ÈÏ¹ýµÄ sessionId£¬»» session ºó×Ô¶¯ÖØÐÂÌáÊ¾
+    // Gender Mismatch Stateï¿½ï¿½ï¿½æ´¢ï¿½ï¿½È·ï¿½Ï¹ï¿½ï¿½ï¿½ sessionIdï¿½ï¿½ï¿½ï¿½ session ï¿½ï¿½ï¿½Ô¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾
     const [ackedSessionId, setAckedSessionId] = useState<string | null>(() => {
         try { return localStorage.getItem(STORAGE_KEYS.ADVISOR_GENDER_MISMATCH_ACK); } catch { return null; }
     });
@@ -254,7 +254,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         localStorage.removeItem(STORAGE_KEYS.ADVISOR_RESULT);
         localStorage.removeItem(STORAGE_KEYS.ADVISOR_STEP);
 
-        // ±£ÁôÔ­ sessionId£¬¹©Ãâ·ÑÖØÊÔÁ÷³Ì¸´ÓÃ£¨ºó¶ËÐèÐ£Ñé¸Ã session ÒÑÍê³É¹ý·ÖÎöÇÒÎ´Ê¹ÓÃ¹ýÖØÊÔ£©
+        // ï¿½ï¿½ï¿½ï¿½Ô­ sessionIdï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì¸ï¿½ï¿½Ã£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð£ï¿½ï¿½ï¿½ session ï¿½ï¿½ï¿½ï¿½É¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î´Ê¹ï¿½Ã¹ï¿½ï¿½ï¿½ï¿½Ô£ï¿½
         const currentSessionId = sessionId;
         if (currentSessionId) {
             localStorage.setItem(STORAGE_KEYS.ADVISOR_FREE_RETRY_SESSION_ID, currentSessionId);
@@ -274,7 +274,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         const currentSessionId = sessionId ?? null;
         setAckedSessionId(currentSessionId);
         try { if (currentSessionId) localStorage.setItem(STORAGE_KEYS.ADVISOR_GENDER_MISMATCH_ACK, currentSessionId); } catch { /* ignore */ }
-        // ÓÃ»§Ñ¡Ôñ¼ÌÐø£¨²»ÖØÊÔ£©£¬Çå³ýÃâ·ÑÖØÊÔÏà¹Ø±ê¼Ç£¬±ÜÃâºóÐøÆÕÍ¨²âÊÔ¸´ÓÃ¾É sessionId
+        // ï¿½Ã»ï¿½Ñ¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ø±ï¿½Ç£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¨ï¿½ï¿½ï¿½Ô¸ï¿½ï¿½Ã¾ï¿½ sessionId
         localStorage.removeItem(STORAGE_KEYS.ADVISOR_FREE_RETRY);
         localStorage.removeItem(STORAGE_KEYS.ADVISOR_FREE_RETRY_SESSION_ID);
     };
@@ -282,13 +282,13 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
 
 
-    // renderLabRow ÒÑ³éÎª×é¼þÍâ²¿º¯Êý£¬±ÜÃâÃ¿´ÎäÖÈ¾ÖØÐÂ´´½¨
+    // renderLabRow ï¿½Ñ³ï¿½Îªï¿½ï¿½ï¿½ï¿½â²¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã¿ï¿½ï¿½ï¿½ï¿½È¾ï¿½ï¿½ï¿½Â´ï¿½ï¿½ï¿½
 
 
     // Initialize & Restore Data
     useEffect(() => {
         const loadClientData = async () => {
-            // ÒÑÓÐ½á¹ûÇÒ·Ç·ÖÎöÖÐÊ±Ö±½Ó¶ÌÂ·£¬±ÜÃâ user ±ä»¯µ¼ÖÂÖØ¸´¼ÓÔØ/ÉÁË¸
+            // ï¿½ï¿½ï¿½Ð½ï¿½ï¿½ï¿½Ò·Ç·ï¿½ï¿½ï¿½ï¿½ï¿½Ê±Ö±ï¿½Ó¶ï¿½Â·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ user ï¿½ä»¯ï¿½ï¿½ï¿½ï¿½ï¿½Ø¸ï¿½ï¿½ï¿½ï¿½ï¿½/ï¿½ï¿½Ë¸
             if (resultRef.current && searchParams.get('status') !== 'analyzing') {
                 if (!hasTrackedView.current) {
                     trackResultView();
@@ -301,8 +301,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             try {
                 // Dynamically import to avoid SSR issues
                 const { advisorStorage } = await import("@/lib/advisor-storage");
-                // ÈËÁ³Í¼Æ¬½öÓÃÓÚ IndexedDB »Ö¸´£¬²»äÖÈ¾µ½Ò³Ãæ
-                // ±£Áô»Ö¸´Âß¼­µ«²»ÉèÖÃ²»ÔÙÊ¹ÓÃµÄ state
+                // ï¿½ï¿½ï¿½ï¿½Í¼Æ¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ IndexedDB ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¾ï¿½ï¿½Ò³ï¿½ï¿½
+                // ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ß¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã²ï¿½ï¿½ï¿½Ê¹ï¿½Ãµï¿½ state
                 await advisorStorage.getFaceImages();
 
                 // Restore Nickname
@@ -358,7 +358,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                                 // If we successfully recovered data, remove 'analyzing' status from URL to stop re-analysis
                                 if (searchParams.get('status') === 'analyzing') {
-                                    // µÇÂ¼ÓÃ»§Ö±½ÓÌø×ªµ½ /reports/:id£¬±ÜÃâÏÈµ½ /result?id=xxx ÔÙÖØ¶¨ÏòµÄ¶àÓàÒ»´ÎÌø×ª
+                                    // ï¿½ï¿½Â¼ï¿½Ã»ï¿½Ö±ï¿½ï¿½ï¿½ï¿½×ªï¿½ï¿½ /reports/:idï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Èµï¿½ /result?id=xxx ï¿½ï¿½ï¿½Ø¶ï¿½ï¿½ï¿½Ä¶ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½×ª
                                     if (userRef.current && advisorResult.sessionId) {
                                         router.replace(`/reports/${advisorResult.sessionId}`, { scroll: false });
                                     } else {
@@ -369,7 +369,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     }
                                 }
                                 setLoading(false);
-                                // ÔÚÌáÇ°·µ»ØÇ°Ò²´¥·¢Âñµã
+                                // ï¿½ï¿½ï¿½ï¿½Ç°ï¿½ï¿½ï¿½ï¿½Ç°Ò²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
                                 if (!hasTrackedView.current) {
                                     trackResultView();
                                     hasTrackedView.current = true;
@@ -416,7 +416,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         if (!posterRef.current || isGeneratingPoster) return;
         try {
             setIsGeneratingPoster(true);
-            // µÈ´ýÍ¼Æ¬¼ÓÔØ
+            // ï¿½È´ï¿½Í¼Æ¬ï¿½ï¿½ï¿½ï¿½
             const images = Array.from(posterRef.current.getElementsByTagName("img"));
             await Promise.all(
                 images.map(
@@ -435,7 +435,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 pixelRatio: 2,
                 cacheBust: true,
             });
-            // data URL ¡ú Blob URL£¨ÈÆ¹ý CSP ÏÞÖÆ£¬²»ÓÃ fetch£©
+            // data URL ï¿½ï¿½ Blob URLï¿½ï¿½ï¿½Æ¹ï¿½ CSP ï¿½ï¿½ï¿½Æ£ï¿½ï¿½ï¿½ï¿½ï¿½ fetchï¿½ï¿½
             const arr = dataUrl.split(',');
             const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/png';
             const bstr = atob(arr[1]);
@@ -447,14 +447,14 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             const blob = new Blob([u8arr], { type: mime });
             const blobUrl = URL.createObjectURL(blob);
             const link = document.createElement("a");
-            link.download = `NIHPLOD-¼¡·ô±¨¸æ-${userNickname || "ÓÃ»§"}-${Date.now()}.png`;
+            link.download = `NIHPLOD-ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½-${userNickname || "ï¿½Ã»ï¿½"}-${Date.now()}.png`;
             link.href = blobUrl;
             link.click();
             URL.revokeObjectURL(blobUrl);
-            // ±£´æº£±¨³É¹¦ºó´¥·¢·ÖÏíÂñµã
+            // ï¿½ï¿½ï¿½æº£ï¿½ï¿½ï¿½É¹ï¿½ï¿½ó´¥·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
             trackResultShare("image");
         } catch (error) {
-            console.error("º£±¨Éú³ÉÊ§°Ü:", error);
+            console.error("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê§ï¿½ï¿½:", error);
         } finally {
             setIsGeneratingPoster(false);
         }
@@ -479,8 +479,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 
                 if (res.ok) {
                     localStorage.setItem(claimedKey, 'true');
-                    // Claim ³É¹¦ºóÌø×ªµ½ /reports/:id£¬µÇÂ¼ÓÃ»§²»ÔÙÍ£ÁôÔÚÓÎ¿ÍÐÎÌ¬µÄ /result Ò³Ãæ
-                    // Èôµ±Ç°ÒÑÔÚ /reports/:id Ôò±ÜÃâÎÞÒâÒåÖØ¶¨Ïò
+                    // Claim ï¿½É¹ï¿½ï¿½ï¿½ï¿½ï¿½×ªï¿½ï¿½ /reports/:idï¿½ï¿½ï¿½ï¿½Â¼ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½Í£ï¿½ï¿½ï¿½ï¿½ï¿½Î¿ï¿½ï¿½ï¿½Ì¬ï¿½ï¿½ /result Ò³ï¿½ï¿½
+                    // ï¿½ï¿½ï¿½Ç°ï¿½ï¿½ï¿½ï¿½ /reports/:id ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ø¶ï¿½ï¿½ï¿½
                     const reportPath = `/reports/${sessionId}`;
                     if (typeof window === 'undefined' || window.location.pathname !== reportPath) {
                         router.replace(reportPath);
@@ -502,7 +502,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const analysisStartedRef = useRef(false);
     const pendingRedirectSessionIdRef = useRef<string | null>(null);
 
-    // µÈ auth ³õÊ¼»¯ºóÔÙÖ´ÐÐÌø×ª£¬±ÜÃâµÇÂ¼ÓÃ»§ÔÚ user Îª null Ê±±»´íÎóÁôÔÚ /result
+    // ï¿½ï¿½ auth ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö´ï¿½ï¿½ï¿½ï¿½×ªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â¼ï¿½Ã»ï¿½ï¿½ï¿½ user Îª null Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ /result
     useEffect(() => {
         const pendingId = pendingRedirectSessionIdRef.current;
         if (!pendingId || !authInitializedRef.current) return;
@@ -576,14 +576,14 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 }
 
                 if (!newSessionId) {
-                    throw new Error("»á»° ID ¶ªÊ§£¬ÇëÖØÐÂ²âÊÔ");
+                    throw new Error("ï¿½á»° ID ï¿½ï¿½Ê§ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â²ï¿½ï¿½ï¿½");
                 }
 
                 // IMPORTANT: Set result state FIRST before updating URL
                 setResult(newResult as unknown as ComprehensiveResult);
                 if (newFace) setFaceAnalysis(newFace);
 
-                // µÈ auth ³õÊ¼»¯ºóÔÙÌø×ª£¬±ÜÃâ user Îª null Ê±µÇÂ¼ÓÃ»§±»´íÎóÁôÔÚ /result
+                // ï¿½ï¿½ auth ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×ªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ user Îª null Ê±ï¿½ï¿½Â¼ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ /result
                 if (authInitializedRef.current) {
                     const resultUrl = userRef.current ? `/reports/${newSessionId}` : '/result';
                     router.replace(resultUrl, { scroll: false });
@@ -613,9 +613,9 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 <div className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm">
                     <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                         <div className="sm:w-[60%] text-center sm:text-left">
-                            <h3 className="text-lg font-serif text-[#1A1A1A] mb-3 sm:mb-2">·ÖÎöÓöµ½ÁËÒ»Ð©ÎÊÌâ</h3>
+                            <h3 className="text-lg font-serif text-[#1A1A1A] mb-3 sm:mb-2">ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»Ð©ï¿½ï¿½ï¿½ï¿½</h3>
                             <p className="text-sm text-[#5E5E5E] leading-relaxed">
-                                {analysisState.error || "·þÎñÆ÷ÔÝÊ±ÎÞ·¨ÏìÓ¦£¬ÇëÉÔºóÔÙÊÔ¡£"}
+                                {analysisState.error || "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½Þ·ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½ï¿½Ôºï¿½ï¿½ï¿½ï¿½Ô¡ï¿½"}
                             </p>
                         </div>
                         <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
@@ -623,7 +623,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 onClick={() => router.push('/questions?edit=true')}
                                 className="px-6 h-10 rounded-lg border border-[#1B3A5C] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                             >
-                                ÍË³ö
+                                ï¿½Ë³ï¿½
                             </button>
                         </div>
                     </div>
@@ -642,13 +642,13 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-[#F8F7F3] px-4">
                 <div className="w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm text-center">
-                    <h3 className="text-lg font-serif text-[#1A1A1A] mb-2">±¨¸æ¼ÓÔØÊ§°Ü</h3>
-                    <p className="text-sm text-[#5E5E5E] mb-6">Êý¾Ý¿ÉÄÜÒÑ¹ýÆÚ»ò²»´æÔÚ</p>
+                    <h3 className="text-lg font-serif text-[#1A1A1A] mb-2">ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê§ï¿½ï¿½</h3>
+                    <p className="text-sm text-[#5E5E5E] mb-6">ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½ï¿½Ñ¹ï¿½ï¿½Ú»ò²»´ï¿½ï¿½ï¿½</p>
                     <button
                         onClick={() => router.push("/questions?edit=true")}
                         className="px-6 h-10 rounded-lg border border-[#1B3A5C] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
                     >
-                        ÖØÐÂ²âÊÔ
+                        ï¿½ï¿½ï¿½Â²ï¿½ï¿½ï¿½
                     </button>
                 </div>
             </div>
@@ -690,27 +690,27 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 <div className="flex flex-col items-center text-center gap-5 mb-6">
                                     <div className="text-[42px] leading-none mb-1">??</div>
                                     <div className="space-y-1.5">
-                                        <h3 className="text-[18px] font-bold text-[#37352F] tracking-tight">²âÇ°ÐÅÏ¢×¼È·ÐÔÌáÊ¾</h3>
+                                        <h3 className="text-[18px] font-bold text-[#37352F] tracking-tight">ï¿½ï¿½Ç°ï¿½ï¿½Ï¢×¼È·ï¿½ï¿½ï¿½ï¿½Ê¾</h3>
                                         <p className="text-[13px] text-[#787774] font-medium">Data Accuracy Verification</p>
                                     </div>
                                 </div>
 
                                 <div className="space-y-6">
                                     <p className="text-[14px] text-[#37352F] leading-[1.8] text-justify px-1">
-                                        AI Ãæ²¿Ê¶±ð½á¹ûÏÔÊ¾ÄúµÄÃæ²¿ÌØÕ÷¸ü½Ó½ü
-                                        <span className="font-semibold bg-[#F1F1EF] px-1.5 py-0.5 rounded text-[#37352F] mx-1 border border-[#E9E9E7]">{faceAnalysis?.gender?.value === 'male' ? 'ÄÐÐÔ' : 'Å®ÐÔ'}</span>
-                                        £¬µ«ÄúÔÚÎÊ¾íÖÐÌîÐ´µÄÊÇ
-                                        <span className="font-semibold bg-[#F1F1EF] px-1.5 py-0.5 rounded text-[#37352F] mx-1 border border-[#E9E9E7]">{socialGender === 'male' ? 'ÄÐ' : 'Å®'}</span>
-                                        £¬¶þÕß²»Ò»ÖÂ¡£
+                                        AI ï¿½æ²¿Ê¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½ï¿½æ²¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó½ï¿½
+                                        <span className="font-semibold bg-[#F1F1EF] px-1.5 py-0.5 rounded text-[#37352F] mx-1 border border-[#E9E9E7]">{faceAnalysis?.gender?.value === 'male' ? 'ï¿½ï¿½ï¿½ï¿½' : 'Å®ï¿½ï¿½'}</span>
+                                        ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½
+                                        <span className="font-semibold bg-[#F1F1EF] px-1.5 py-0.5 rounded text-[#37352F] mx-1 border border-[#E9E9E7]">{socialGender === 'male' ? 'ï¿½ï¿½' : 'Å®'}</span>
+                                        ï¿½ï¿½ï¿½ï¿½ï¿½ß²ï¿½Ò»ï¿½Â¡ï¿½
                                     </p>
 
                                     {/* Notion Callout Block - Yellow */}
                                     <div className="bg-[#FBF3DB] bg-opacity-50 p-4 rounded-lg flex items-start gap-3.5 border border-[#FBF3DB]/60">
                                         <span className="text-[16px] shrink-0 mt-0.5">??</span>
                                         <div className="space-y-2 text-[13px] text-[#37352F] leading-relaxed">
-                                            <p className="opacity-90">Õâ¿ÉÄÜ»áÓ°ÏìÎªÄúÆ¥Åä<span className="font-bold">¡°Õë¶ÔÐÔ»¤·ô·½°¸¡±</span>µÄ¾«×¼¶È£¬µ¼ÖÂ·ÖÎö½áÂÛÓëÄúµÄÊµ¼Ê·ô¸Ð²úÉúÆ«²î¡£</p>
+                                            <p className="opacity-90">ï¿½ï¿½ï¿½ï¿½Ü»ï¿½Ó°ï¿½ï¿½Îªï¿½ï¿½Æ¥ï¿½ï¿½<span className="font-bold">ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½</span>ï¿½Ä¾ï¿½×¼ï¿½È£ï¿½ï¿½ï¿½ï¿½Â·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Êµï¿½Ê·ï¿½Ð²ï¿½ï¿½ï¿½Æ«ï¿½î¡£</p>
                                             <div className="h-px bg-[#37352F]/5 w-full my-1"></div>
-                                            <p className="opacity-90">½¨ÒéºËÊµÐÅÏ¢ÒÔ»ñµÃ¸ü×¼È·µÄ½¨Òé¡£ÈôÊÇÌîÐ´ÓÐÎó£¿<span className="font-semibold text-[#D9730D]">±¾´ÎÖØÐÂÌîÐ´²»ÏûºÄ²âÊÔ´ÎÊý</span>¡£</p>
+                                            <p className="opacity-90">ï¿½ï¿½ï¿½ï¿½ï¿½Êµï¿½ï¿½Ï¢ï¿½Ô»ï¿½Ã¸ï¿½×¼È·ï¿½Ä½ï¿½ï¿½é¡£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½<span className="font-semibold text-[#D9730D]">ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ä²ï¿½ï¿½Ô´ï¿½ï¿½ï¿½</span>ï¿½ï¿½</p>
                                         </div>
                                     </div>
 
@@ -720,7 +720,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                             onClick={handleMismatchContinue}
                                             className="w-full h-11 bg-[#37352F] text-white text-[14px] font-medium rounded-[6px] hover:bg-[#2C2C2C] active:scale-[0.99] transition-all flex items-center justify-center gap-2 shadow-sm"
                                         >
-                                            <span>ÐÅÏ¢ÎÞÎó</span>
+                                            <span>ï¿½ï¿½Ï¢ï¿½ï¿½ï¿½ï¿½</span>
                                         </button>
 
                                         <button
@@ -728,7 +728,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                             className="w-full h-11 bg-transparent text-[#787774] text-[14px] font-medium rounded-[6px] hover:bg-[#F1F1EF] hover:text-[#37352F] active:bg-[#E9E9E7] transition-all flex items-center justify-center gap-2"
                                         >
                                             <RotateCcw size={14} strokeWidth={2.5} />
-                                            <span>ÎÒÌî´íÁË£¬ÖØÐÂÌîÐ´</span>
+                                            <span>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð´</span>
                                         </button>
                                     </div>
                                 </div>
@@ -755,7 +755,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             priority
                         />
                         <p className="mt-6 mb-6 text-base lg:text-lg text-[#5c4937] font-medium tracking-wide">
-                            {userNickname} µÄ×¨Êô¼¡ÖÇÅÉËØÑÕ·ÖÎö±¨¸æ
+                            {userNickname} ï¿½ï¿½×¨ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Õ·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
                         </p>
                     </div>
 
@@ -765,7 +765,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             <div className="max-w-[1440px] mx-auto px-4 py-3 pr-10 flex items-start gap-3">
                                 <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
                                 <div className="flex-1">
-                                    <h4 className="text-sm font-semibold text-red-900 mb-0.5">ÕÕÆ¬ÖÊÁ¿ÌáÊ¾</h4>
+                                    <h4 className="text-sm font-semibold text-red-900 mb-0.5">ï¿½ï¿½Æ¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾</h4>
                                     <p className="text-sm text-red-700 leading-relaxed">
                                         {faceAnalysis.validation.message}
                                     </p>
@@ -776,7 +776,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         try { sessionStorage.setItem('advisor_dismiss_validation', 'true'); } catch { /* ignore */ }
                                     }}
                                     className="absolute right-4 top-3 p-1 rounded-full hover:bg-red-100 text-red-500 transition-colors"
-                                    aria-label="¹Ø±ÕÌáÊ¾"
+                                    aria-label="ï¿½Ø±ï¿½ï¿½ï¿½Ê¾"
                                 >
                                     <X className="w-4 h-4" />
                                 </button>
@@ -802,21 +802,21 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                             comprehensiveReport={
                                 <>
-                                    {/* 1¡¢ÏêÏ¸Õï¶Ï±¨¸æ */}
+                                    {/* 1ï¿½ï¿½ï¿½ï¿½Ï¸ï¿½ï¿½Ï±ï¿½ï¿½ï¿½ */}
                                     <div className="mt-6 lg:mt-14 mb-6">
                                         <h4 className="text-base font-medium text-[#3d2f25] mb-3 border-b border-[#3d2f25]/20 pb-2">
-                                            1¡¢ÏêÏ¸Õï¶Ï±¨¸æ <span className="text-xs lg:text-base">(Detailed Diagnosis)</span>
+                                            1ï¿½ï¿½ï¿½ï¿½Ï¸ï¿½ï¿½Ï±ï¿½ï¿½ï¿½ <span className="text-xs lg:text-base">(Detailed Diagnosis)</span>
                                         </h4>
 
                                         {result.analysis?.details && result.analysis.details.length > 0 ? (
                                             <>
-                                                {/* µÚÒ»¶Î£º·ôÖÊ·ÖÎö¸ÅÊö */}
+                                                {/* ï¿½ï¿½Ò»ï¿½Î£ï¿½ï¿½ï¿½ï¿½Ê·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */}
                                                 {result.analysis.details[0] && (
                                                     <p className="text-sm lg:text-[15px] leading-relaxed text-[#3d2f25] font-medium mb-4">
                                                         {result.analysis.details[0]}
                                                     </p>
                                                 )}
-                                                {/* ºóÐø¶ÎÂä£º¾ßÌåÎÊÌâµãÁÐ±í */}
+                                                {/* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ä£ºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð±ï¿½ */}
                                                 {result.analysis.details.length > 1 && (
                                                     <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
                                                         {result.analysis.details.slice(1).map((item, idx) => (
@@ -827,18 +827,18 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                             </>
                                         ) : (
                                             <p className="text-[14px] leading-relaxed text-[#5c4937]">
-                                                {faceAnalysis?.summary || result.analysis?.summary || "ÔÝÎÞÏêÏ¸Õï¶Ï±¨¸æ"}
+                                                {faceAnalysis?.summary || result.analysis?.summary || "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¸ï¿½ï¿½Ï±ï¿½ï¿½ï¿½"}
                                             </p>
                                         )}
                                     </div>
 
-                                    {/* 2¡¢×¨¼Ò»¤·ô½¨Òé */}
+                                    {/* 2ï¿½ï¿½×¨ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */}
                                     <div className="mb-8">
                                         <h4 className="text-base font-medium text-[#3d2f25] mb-3 border-b border-[#3d2f25]/20 pb-2">
-                                            2¡¢×¨¼Ò»¤·ô½¨Òé <span className="text-xs lg:text-base">(Expert Recommendations)</span>
+                                            2ï¿½ï¿½×¨ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ <span className="text-xs lg:text-base">(Expert Recommendations)</span>
                                         </h4>
 
-                                        <p className="text-xs text-[#8c7a6b] mb-3">¸ù¾ÝÄúµÄ¼¡·ôÊý¾Ý£¬ÒÔÏÂÊÇÕë¶ÔÐÔµÄ»¤ÀíºÍÉú»î·½Ê½½¨Òé£º</p>
+                                        <p className="text-xs text-[#8c7a6b] mb-3">ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÔµÄ»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½î·½Ê½ï¿½ï¿½ï¿½é£º</p>
 
                                         {(faceAnalysis?.recommendations && faceAnalysis.recommendations.length > 0) ? (
                                             <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
@@ -848,9 +848,9 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                             </ul>
                                         ) : (
                                             <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
-                                                <li>Ã¿ÈÕÔçÍíÎÂºÍÇå½à£¬±ÜÃâ¹ý¶ÈÈ¥Ö¬¡£</li>
-                                                <li>ÑÏ¸ñ×öºÃ·ÀÉ¹£¬¼õÉÙ×ÏÍâÏßËðÉË¡£</li>
-                                                <li>¸ù¾Ý¼¾½Úµ÷Õû±£Êª²úÆ·£¬±£³ÖË®ÓÍÆ½ºâ¡£</li>
+                                                <li>Ã¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Âºï¿½ï¿½ï¿½à£¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¥Ö¬ï¿½ï¿½</li>
+                                                <li>ï¿½Ï¸ï¿½ï¿½ï¿½ï¿½Ã·ï¿½É¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¡ï¿½</li>
+                                                <li>ï¿½ï¿½ï¿½Ý¼ï¿½ï¿½Úµï¿½ï¿½ï¿½ï¿½ï¿½Êªï¿½ï¿½Æ·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë®ï¿½ï¿½Æ½ï¿½â¡£</li>
                                             </ul>
                                         )}
 
@@ -869,16 +869,16 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     {faceAnalysis?.zoneAnalysis && (
                                         <div className="mb-8">
                                             <h4 className="text-base font-medium text-[#3d2f25] mb-4 border-b border-[#3d2f25]/20 pb-2">
-                                                3¡¢ÇøÓòÖØµã¹Ø×¢ <span className="text-xs lg:text-base">(Area Focus)</span>
+                                                3ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Øµï¿½ï¿½×¢ <span className="text-xs lg:text-base">(Area Focus)</span>
                                             </h4>
                                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                                 {Object.entries({
-                                                    forehead: "¶îÍ·ÇøÓò",
-                                                    tZone: "T×ÖÇøÓò",
-                                                    leftCheek: "×óÁ³¼Õ",
-                                                    rightCheek: "ÓÒÁ³¼Õ",
-                                                    eyeArea: "ÑÛÖÜ",
-                                                    jawline: "ÏÂò¢Ïß"
+                                                    forehead: "ï¿½ï¿½Í·ï¿½ï¿½ï¿½ï¿½",
+                                                    tZone: "Tï¿½ï¿½ï¿½ï¿½ï¿½ï¿½",
+                                                    leftCheek: "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½",
+                                                    rightCheek: "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½",
+                                                    eyeArea: "ï¿½ï¿½ï¿½ï¿½",
+                                                    jawline: "ï¿½ï¿½ï¿½ï¿½ï¿½"
                                                 }).map(([key, label]) => {
                                                     // @ts-expect-error faceAnalysis zoneAnalysis typing is dynamic
                                                     const zoneData = faceAnalysis.zoneAnalysis[key];
@@ -888,12 +888,12 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                             <div className="flex items-center justify-between mb-2">
                                                                 <h5 className="font-semibold text-[#3d2f25] text-sm">{label}</h5>
                                                             </div>
-                                                            <p className="text-xs text-[#5c4937] mb-2 leading-snug">
+                                                            <p className="text-sm text-[#5c4937] mb-2 leading-snug">
                                                                 {zoneData.condition}
                                                             </p>
                                                             <div className="mt-2 pt-2 border-t border-dashed border-[#3d2f25]/10">
-                                                                <p className="text-xs text-emerald-700 leading-snug">
-                                                                    <span className="font-medium mr-1">½¨Òé:</span>
+                                                                <p className="text-sm text-[#5c4937] leading-snug">
+                                                                    <span className="font-medium mr-1">ï¿½ï¿½ï¿½ï¿½:</span>
                                                                     {zoneData.advice}
                                                                 </p>
                                                             </div>
@@ -913,7 +913,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                             <div className="px-5 py-3 flex justify-between items-center">
                                                 <div className="flex items-center gap-2">
                                                     <Activity className="w-4 h-4 text-[#8c7a6b]" />
-                                                    <span className="text-sm font-medium text-[#3d2f25]">¶¨ÖÆ»¯×¨Òµ·ÖÎöÊý¾ÝÏêÇé</span>
+                                                    <span className="text-sm font-medium text-[#3d2f25]">ï¿½ï¿½ï¿½Æ»ï¿½×¨Òµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½</span>
                                                 </div>
                                                 <div className="flex items-center gap-3">
                                                     <span className="text-xs text-[#8c7a6b] font-normal hidden sm:inline-block">
@@ -924,7 +924,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                             </div>
                                             <div className="px-5 pb-3 pt-0">
                                                 <p className="text-[11px] text-[#8c7a6b]/80 leading-relaxed pl-6">
-                                                    ÁªÏµÄúµÄ×¨Êô»¤·ô¹ËÎÊ£¬»ò×ÉÑ¯ÃÅµê¹ËÎÊ»ñÈ¡×¨Òµ·ÖÎö½â¶Á
+                                                    ï¿½ï¿½Ïµï¿½ï¿½ï¿½ï¿½×¨ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê£ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¯ï¿½Åµï¿½ï¿½ï¿½Ê»ï¿½È¡×¨Òµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
                                                 </p>
                                             </div>
                                         </div>
@@ -933,7 +933,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             }
                         />
 
-                        {/* ¶¨ÖÆ»¯·ÖÎöÊý¾ÝÏêÇé Modal - Page Level */}
+                        {/* ï¿½ï¿½ï¿½Æ»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Modal - Page Level */}
                         <AnimatePresence>
                             {showLabData && (
                                 <m.div
@@ -965,13 +965,13 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         <div className="px-6 sm:px-8 pt-6 sm:pt-8 pb-2 flex-shrink-0">
                                             <div className="flex items-center gap-3">
                                                 <Activity className="w-5 h-5 text-[#8c7a6b]" />
-                                                <h3 className="text-lg font-bold text-[#3d2f25]">¶¨ÖÆ»¯×¨Òµ·ÖÎöÊý¾ÝÏêÇé</h3>
+                                                <h3 className="text-lg font-bold text-[#3d2f25]">ï¿½ï¿½ï¿½Æ»ï¿½×¨Òµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½</h3>
                                             </div>
                                         </div>
                                         <div className="overflow-y-auto custom-scrollbar px-6 sm:px-8 py-5 sm:py-6 flex-1">
                                             <div className="grid grid-cols-1 gap-y-0">
 
-                                                {/* Ê®Î¬·ÖÎö£ºPC ÓÃÌõÐÎÍ¼£¬ÊÖ»ú¶ËÓÃ±íµ¥ */}
+                                                {/* Ê®Î¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½PC ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¼ï¿½ï¿½ï¿½Ö»ï¿½ï¿½ï¿½ï¿½Ã±ï¿½ï¿½ */}
                                                 {faceAnalysis?.dimensions && (
                                                     <>
                                                         <div className="hidden sm:block mb-2">
@@ -985,9 +985,9 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                                                 {/* Table Header Row (Desktop only) */}
                                                 <div className="hidden sm:grid grid-cols-12 text-[11px] font-semibold text-[#1B3A5C] border-b border-[#D9D0C3] py-2 px-4 tracking-wider">
-                                                    <div className="col-span-5">¼ì²âÖ¸±ê (Parameter)</div>
-                                                    <div className="col-span-3 text-right">²â¶¨Öµ (Value)*</div>
-                                                    <div className="col-span-2 text-right">²Î¿¼·¶Î§ (Range)</div>
+                                                    <div className="col-span-5">ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ (Parameter)</div>
+                                                    <div className="col-span-3 text-right">ï¿½â¶¨Öµ (Value)*</div>
+                                                    <div className="col-span-2 text-right">ï¿½Î¿ï¿½ï¿½ï¿½Î§ (Range)</div>
                                                     <div className="col-span-2 text-right">×´Ì¬ (Status)</div>
                                                 </div>
 
@@ -1013,12 +1013,12 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                 <div className="flex gap-2.5 items-start text-[11px] leading-relaxed text-[#5c4937]">
                                                     <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-[#C9A86C]" />
                                                     <div className="space-y-1.5">
-                                                        <p className="font-medium text-[#3d2f25]">Êý¾ÝËµÃ÷ (Data Disclaimer)</p>
+                                                        <p className="font-medium text-[#3d2f25]">ï¿½ï¿½ï¿½ï¿½Ëµï¿½ï¿½ (Data Disclaimer)</p>
                                                         <p>
-                                                            <span className="font-semibold text-[#3d2f25]">* AI ESTIMATE:</span> ÉÏÊöÊýÖµ¾ùÓÉ AI Ëã·¨»ùÓÚÄúµÄÃæ²¿Í¼ÏñÌØÕ÷£¨ÎÆÀí¡¢É«Ôó¡¢¶Ô±È¶È£©·´ÑÝÍÆËãµÃ³ö£¬<span className="border-b border-[#3d2f25]/20 text-[#3d2f25]">²¢·ÇÎïÀíÌ½Í·Êµ²âÊý¾Ý</span>¡£
+                                                            <span className="font-semibold text-[#3d2f25]">* AI ESTIMATE:</span> ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½ AI ï¿½ã·¨ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½æ²¿Í¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É«ï¿½ó¡¢¶Ô±È¶È£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã³ï¿½ï¿½ï¿½<span className="border-b border-[#3d2f25]/20 text-[#3d2f25]">ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì½Í·Êµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½</span>ï¿½ï¿½
                                                         </p>
                                                         <p>
-                                                            ÀýÈç£ºÖåÎÆÑÏÖØ¶È·Ö¼¶£¨Wrinkle Severity£©ÊÇ¸ù¾ÝÃæ²¿ÎÆÀíÓëÒõÓ°µÄÊÓ¾õ±íÏÖ¹ÀËã¶øÀ´¡£±¾±¨¸æ½ö×÷»¤·ô²Î¿¼£¬²»¿ÉÌæ´úÒ½ÁÆÕï¶Ï¡£
+                                                            ï¿½ï¿½ï¿½ç£ºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ø¶È·Ö¼ï¿½ï¿½ï¿½Wrinkle Severityï¿½ï¿½ï¿½Ç¸ï¿½ï¿½ï¿½ï¿½æ²¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó°ï¿½ï¿½ï¿½Ó¾ï¿½ï¿½ï¿½ï¿½Ö¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò½ï¿½ï¿½ï¿½ï¿½Ï¡ï¿½
                                                         </p>
                                                     </div>
                                                 </div>
@@ -1033,7 +1033,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                     </main>
 
-                    {/* 4. Products - ÓëÉÏ·½×¨Òµ°æ±¨¸æ¿¨Æ¬£¨º¬±ß¾à£©¿í¶È¶ÔÆë */}
+                    {/* 4. Products - ï¿½ï¿½ï¿½Ï·ï¿½×¨Òµï¿½æ±¨ï¿½æ¿¨Æ¬ï¿½ï¿½ï¿½ï¿½ï¿½ß¾à£©ï¿½ï¿½È¶ï¿½ï¿½ï¿½ */}
                     <div className="w-full max-w-[900px] mx-auto px-6 lg:px-10">
                         <ProductRecommendationSection
                             products={(result.products || []).map(p => ({
@@ -1075,25 +1075,25 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     className="inline-flex items-center justify-center gap-2 px-5 sm:px-8 py-2.5 sm:py-3 rounded-full bg-[#5c4937] text-white text-[12px] sm:text-[13px] tracking-[0.1em] font-medium hover:bg-[#4a3a2c] transition-colors"
                                 >
                                     <MessageCircle className="w-4 h-4" />
-                                    ÁªÏµ¹ËÎÊ
+                                    ï¿½ï¿½Ïµï¿½ï¿½ï¿½ï¿½
                                 </button>
                                 <button
                                     onClick={() => router.push('/')}
                                     className="inline-flex items-center justify-center gap-2 px-5 sm:px-8 py-2.5 sm:py-3 rounded-full border border-[#5c4937]/30 text-[#5c4937] text-[12px] sm:text-[13px] tracking-[0.1em] font-medium hover:bg-[#5c4937]/5 transition-colors"
                                 >
                                     <House className="w-4 h-4" />
-                                    »Øµ½Ê×Ò³
+                                    ï¿½Øµï¿½ï¿½ï¿½Ò³
                                 </button>
                             </div>
 
-                            {/* ¼¡ÖÇÅÉËÍºÃÀñ CTA */}
+                            {/* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Íºï¿½ï¿½ï¿½ CTA */}
                             <div className="flex justify-center mb-10">
                                 <button
                                     onClick={() => router.push('/gift')}
                                     className="group inline-flex items-center justify-center gap-2 w-auto sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 rounded-full border border-dashed border-[#8B7355]/40 bg-[#8B7355]/[0.04] text-[12px] sm:text-[13px] tracking-[0.1em] text-[#8B7355] hover:text-[#5c4937] hover:border-[#5c4937]/40 hover:bg-[#5c4937]/5 transition-all duration-300"
                                 >
                                     <Gift className="w-4 h-4" />
-                                    ¼¡ÖÇÅÉËÍºÃÀñ ¡¤ ²ÎÓë³é½±
+                                    ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Íºï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½é½±
                                     <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
                                 </button>
                             </div>
@@ -1109,7 +1109,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         rel="noopener noreferrer"
                                         className="transition-colors opacity-80 hover:opacity-100 font-medium"
                                     >
-                                        ·þÎñÌõ¿î
+                                        ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
                                     </a>
                                     <span className="opacity-40 sm:hidden">?</span>
                                     <a
@@ -1118,11 +1118,11 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         rel="noopener noreferrer"
                                         className="transition-colors opacity-80 hover:opacity-100 font-medium"
                                     >
-                                        ÒþË½Õþ²ß
+                                        ï¿½ï¿½Ë½ï¿½ï¿½ï¿½ï¿½
                                     </a>
                                 </div>
                                 <p className="text-[10px] sm:text-xs opacity-70 text-[var(--result-text-primary)]">
-                                    *AI ·ÖÎö½á¹ûÊÜÍ¼ÏñÖÊÁ¿Ó°Ïì½ö¹©²Î¿¼£¬²»¹¹³ÉÒ½ÁÆÕï¶Ï½¨Òé
+                                    *AI ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò½ï¿½ï¿½ï¿½ï¿½Ï½ï¿½ï¿½ï¿½
                                 </p>
                             </div>
                         </div>
@@ -1144,7 +1144,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     <div style={{ width: 360, height: 640, transform: "scale(0.67)", transformOrigin: "0 0" }}>
                                         <SharePoster
                                             ref={posterRef}
-                                            nickname={userNickname || "ÓÃ»§"}
+                                            nickname={userNickname || "ï¿½Ã»ï¿½"}
                                             score={faceAnalysis?.overallScore ?? (result?.dataSource === "questionnaire" ? undefined : 0)}
                                             skinTone={faceAnalysis?.dimensions?.skinTone?.score ?? (result?.dataSource === "questionnaire" ? undefined : 0)}
                                             waterOil={faceAnalysis?.dimensions?.waterOil?.score ?? (result?.dataSource === "questionnaire" ? undefined : 0)}
