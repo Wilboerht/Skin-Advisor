@@ -568,7 +568,7 @@ export async function POST(request: NextRequest) {
             skincareFrequency: answers.skincareFrequency,
         }).key;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const candidateProducts = await getCandidateProducts(enrichedAnswers as any, concerns, 3, personaKey);
+        const candidateProducts = await getCandidateProducts(enrichedAnswers as any, concerns, 6, personaKey);
 
         const concernLabels = concerns.map(c => getConcernLabel(c));
 
