@@ -42,7 +42,7 @@ export function HomepageFooter() {
                             alt="备案图标"
                             width={12}
                             height={12}
-                            className="shrink-0 opacity-80"
+                            className="shrink-0 opacity-80 w-auto h-auto"
                         />
                         <span>沪公网安备31010702010178号</span>
                     </Link>
