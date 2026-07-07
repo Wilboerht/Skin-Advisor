@@ -132,6 +132,11 @@ export default function ResultCards({
         <div className="relative z-10 w-full pr-0 lg:pr-[330px]">
           {/* Text Content */}
           <div className="flex flex-col justify-center z-10">
+            {/* 分享版标签 */}
+            <div className="relative z-10 mb-3 lg:mb-4 flex h-[24px] w-[72px] items-center justify-center rounded-full border border-[#3d2f25]/15 bg-transparent text-xs font-bold text-[#5c4937] lg:rounded-lg lg:border-[#3d2f25]/8 lg:bg-white/70 lg:shadow-sm">
+              分享版
+            </div>
+
             {/* Greeting */}
             <p className="text-[#5c4937] text-xs lg:text-xs leading-none mb-3 lg:mb-4 font-medium tracking-wide">
               亲爱的「<span className="text-sm lg:text-sm text-[#00263e]">{nickname}</span>」

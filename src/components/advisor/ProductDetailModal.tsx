@@ -205,16 +205,6 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                                 </p>
                             </section>
 
-                            {/* Description */}
-                            {product.description && (
-                                <section className="mb-4 rounded-xl bg-white/50 p-4">
-                                    <h3 className="mb-1.5 text-[13px] font-semibold text-[#3d2f25]">产品描述</h3>
-                                    <p className="text-[14px] leading-[1.75] text-[#5c4937]">
-                                        {product.description}
-                                    </p>
-                                </section>
-                            )}
-
                             {/* 小红书链接 */}
                             <section className="mb-5">
                                 {(() => {
