@@ -119,12 +119,13 @@ export function buildTextAnalysisPrompt(params: {
     benefits?: string | string[];
     suitableSkinTypes?: string | string[];
     description?: string;
+    price?: string | number;
   }) => {
     const desc = p.description || "";
     const truncatedDesc = desc.length > MAX_PRODUCT_DESC_CHARS
       ? desc.slice(0, MAX_PRODUCT_DESC_CHARS) + "..."
       : desc;
-    return `- ID: ${p.id}, 名称: ${p.name}, 功效: ${Array.isArray(p.benefits) ? p.benefits.join("/") : p.benefits}, 适用: ${Array.isArray(p.suitableSkinTypes) ? p.suitableSkinTypes.join("/") : p.suitableSkinTypes}${truncatedDesc ? `, 描述: ${truncatedDesc}` : ""}`;
+    return `- ID: ${p.id}, 名称: ${p.name}, 价格: ${p.price || '咨询'}, 功效: ${Array.isArray(p.benefits) ? p.benefits.join("/") : p.benefits}, 适用: ${Array.isArray(p.suitableSkinTypes) ? p.suitableSkinTypes.join("/") : p.suitableSkinTypes}${truncatedDesc ? `, 描述: ${truncatedDesc}` : ""}`;
   }).join("\n");
 
   // 映射医美和睡眠的显示文本
@@ -151,7 +152,7 @@ export function buildTextAnalysisPrompt(params: {
   const dietMap: Record<string, string> = { balanced: "均衡饮食", highSugar: "偏甜/高糖", highOil: "偏油/高脂", spicy: "偏好辛辣" };
   const sunMap: Record<string, string> = { low: "较少户外活动", medium: "日常通勤暴露", high: "经常户外暴晒" };
   const freqMap: Record<string, string> = { basic: "简单护理（洁面+保湿）", moderate: "中等护理（精华+防晒）", advanced: "精细护理（多步骤）" };
-  const budgetMap: Record<string, string> = { low: "经济实惠（偏好高性价比）", medium: "中等投入（愿意为效果付费）", high: "充足预算（追求高端护理体验）" };
+  const budgetMap: Record<string, string> = { budget: "经济实惠（追求性价比，单品500元以内）", mid: "中等预算（兼顾成分与价格，300-1000元）", premium: "品质优先（追求卓越功效，800-2000元）", luxury: "不设上限（顶级奢华体验）" };
 
   const stressText = stressMap[params.stressLevel || ""] || "未知";
   const waterText = waterMap[params.waterIntake || ""] || "未知";
@@ -205,7 +206,7 @@ ${params.medicationHistory && params.medicationHistory !== "none" ? `- 用药史
 5. 若饮水不足或饮食偏好高糖/高油，应关联到肤色暗沉和痤疮风险。
 6. 根据所在地的气候特征给出针对性建议（如北方干燥需加强保湿，南方湿热需控油清爽）。
 7. 根据当前护肤流程复杂度，给出可升级的下一步建议。
-8. 根据护肤预算推荐匹配价格的产品：经济实惠→基础线、中等投入→功效线、充足预算→高端线。${params.isLoggedIn ? '\n9. 当前为已登录会员，提供更深度、更专业的分析。' : ''}
+8. 产品推荐遵循"先合适再择优"原则：首先确保产品功效真正匹配用户肤质和问题，其次在同等合适的产品中根据预算选择价格区间。不是贵就推，而是合适的产品中推匹配预算的。${params.isLoggedIn ? '\n9. 当前为已登录会员，提供更深度、更专业的分析。' : ''}
 
 ${params.faceAnalysis ? `面部分析数据 (10维度评分):
 - 综合评分: ${params.faceAnalysis.overallScore ?? 'N/A'}/100\n- 肤质: ${params.faceAnalysis.skinType?.type ?? '未知'} (置信度: ${params.faceAnalysis.skinType?.confidence ?? 'N/A'}%)\n- 肌龄: ${params.faceAnalysis.skinAge?.estimated ?? 'N/A'} 岁\n- 水油平衡: ${params.faceAnalysis.dimensions?.waterOil?.score ?? 'N/A'}分 | 肤色: ${params.faceAnalysis.dimensions?.skinTone?.score ?? 'N/A'}分 | 色斑: ${params.faceAnalysis.dimensions?.spots?.score ?? 'N/A'}分 | 皱纹: ${params.faceAnalysis.dimensions?.wrinkles?.score ?? 'N/A'}分 | 光老化: ${params.faceAnalysis.dimensions?.uvDamage?.score ?? 'N/A'}分 | 敏感度: ${params.faceAnalysis.dimensions?.sensitivity?.score ?? 'N/A'}分 | 黑眼圈: ${params.faceAnalysis.dimensions?.darkCircles?.score ?? 'N/A'}分 | 紧致度: ${params.faceAnalysis.dimensions?.firmness?.score ?? 'N/A'}分 | 痤疮: ${params.faceAnalysis.dimensions?.acne?.score ?? 'N/A'}分 | 光泽度: ${params.faceAnalysis.dimensions?.radiance?.score ?? 'N/A'}分\n- 区域问题: ${params.faceAnalysis.summary ?? '无'}\n- 区域详情: ${JSON.stringify(params.faceAnalysis.zoneAnalysis ?? {}).slice(0, 500)}` : ""}

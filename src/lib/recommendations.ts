@@ -149,14 +149,16 @@ function calculateScore(
         });
     }
 
-    // 4. 预算匹配（权重中等：匹配 +15 分）
+    // 4. 预算匹配（相关性门槛加权：仅对已证明合适的产品加分）
+    //   预算分 = min(30, 基础相关分 / 3)，产品越合适预算加成越多
     if (answers.budget) {
         const priceRange = BUDGET_TO_PRICE[answers.budget];
-        // Extract first price number (handles ranges like "¥1000-2000" by taking the minimum)
         const priceMatch = String(product.price).match(/[0-9]+(?:\.[0-9]+)?/);
         const productPrice = priceMatch ? Number(priceMatch[0]) : 0;
         if (priceRange && !isNaN(productPrice) && productPrice > 0 && productPrice >= priceRange.min && productPrice <= priceRange.max) {
-            score += 15;
+            // 相关性门槛：基础分越高，预算加成越多。避免不合适的高价产品靠预算分上位
+            const budgetBonus = Math.min(30, Math.floor(score / 3));
+            score += Math.max(5, budgetBonus); // 保底 +5，让同分产品中预算匹配的优先
             reasons.push("符合预算范围");
         }
     }
