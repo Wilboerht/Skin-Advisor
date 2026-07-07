@@ -875,27 +875,10 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                         <div key={key} className="bg-[#3d2f25]/5 border text-left border-[#3d2f25]/15 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
                                                             <div className="flex items-center justify-between mb-2">
                                                                 <h5 className="font-semibold text-[#3d2f25] text-sm">{label}</h5>
-                                                                <span className="text-xs bg-[#3d2f25]/8 text-[#8c7a6b] px-2 py-0.5 rounded-full">
-                                                                    {zoneData.condition}
-                                                                </span>
                                                             </div>
-                                                            {(() => {
-                                                                const metrics: string[] = [];
-                                                                if (zoneData.oil !== undefined) metrics.push(`油脂${zoneData.oil > 60 ? '偏高' : zoneData.oil < 30 ? '偏低' : '适中'}`);
-                                                                if (zoneData.wrinkles !== undefined) metrics.push(`皱纹${zoneData.wrinkles > 60 ? '明显' : zoneData.wrinkles > 30 ? '轻度' : '轻微'}`);
-                                                                if (zoneData.texture !== undefined) metrics.push(`纹理${zoneData.texture > 70 ? '细腻' : zoneData.texture > 40 ? '一般' : '粗糙'}`);
-                                                                if (zoneData.spots !== undefined) metrics.push(`色斑${zoneData.spots > 60 ? '明显' : zoneData.spots > 30 ? '少量' : '无'}`);
-                                                                if (zoneData.redness !== undefined) metrics.push(`泛红${zoneData.redness > 60 ? '明显' : zoneData.redness > 30 ? '轻度' : '无'}`);
-                                                                if (zoneData.darkCircles !== undefined) metrics.push(`黑眼圈${zoneData.darkCircles > 60 ? '明显' : zoneData.darkCircles > 30 ? '轻度' : '无'}`);
-                                                                if (zoneData.firmness !== undefined) metrics.push(`紧致${zoneData.firmness > 70 ? '良好' : zoneData.firmness > 40 ? '一般' : '松弛'}`);
-                                                                if (zoneData.contour !== undefined) metrics.push(`轮廓${zoneData.contour > 70 ? '清晰' : zoneData.contour > 40 ? '一般' : '模糊'}`);
-                                                                if (metrics.length === 0) return null;
-                                                                return (
-                                                                    <p className="text-xs text-[#8c7a6b] mb-2 leading-snug min-h-[2.5em] line-clamp-2">
-                                                                        {metrics.join(' · ')}
-                                                                    </p>
-                                                                );
-                                                            })()}
+                                                            <p className="text-xs text-[#5c4937] mb-2 leading-snug">
+                                                                {zoneData.condition}
+                                                            </p>
                                                             <div className="mt-2 pt-2 border-t border-dashed border-[#3d2f25]/10">
                                                                 <p className="text-xs text-emerald-700 leading-snug">
                                                                     <span className="font-medium mr-1">建议:</span>
