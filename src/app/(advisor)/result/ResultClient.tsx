@@ -887,11 +887,11 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                             <div className="flex items-center justify-between mb-2">
                                                                 <div className="font-semibold text-[#3d2f25] text-sm">{label}</div>
                                                             </div>
-                                                            <p className="text-sm text-[#5c4937] mb-2 leading-snug">
+                                                            <p className="text-sm text-[#5c4937] mb-2 leading-snug lg:line-clamp-2">
                                                                 {zoneData.condition}
                                                             </p>
                                                             <div className="mt-2 pt-2 border-t border-dashed border-[#3d2f25]/10">
-                                                                <p className="text-xs text-[#7a6552] leading-snug">
+                                                                <p className="text-xs text-[#00263e] leading-snug">
                                                                     <span className="font-medium text-[#5c4937] mr-1">建议:</span>
                                                                     {zoneData.advice}
                                                                 </p>
