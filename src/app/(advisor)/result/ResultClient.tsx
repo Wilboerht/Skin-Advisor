@@ -821,6 +821,9 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         <h4 className="text-base font-medium text-[#3d2f25] mb-3 border-b border-[#3d2f25]/20 pb-2">
                                             2、专家护肤建议 <span className="text-xs lg:text-base">(Expert Recommendations)</span>
                                         </h4>
+
+                                        {/* 💆 护肤建议 */}
+                                        <h5 className="text-sm font-medium text-[#3d2f25] mb-2">💆 护肤建议</h5>
                                         {(faceAnalysis?.recommendations && faceAnalysis.recommendations.length > 0) ? (
                                             <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-xs lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
                                                 {(faceAnalysis.recommendations).map((rec, idx) => (
