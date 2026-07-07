@@ -745,7 +745,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     <SaveReportBanner />
 
                     {/* Logo */}
-                    <div className="w-full flex justify-center pt-14 pb-3">
+                    <div className="w-full flex flex-col items-center pt-14">
                         <Image
                             src="/NIHPLOD-logo.svg"
                             alt="NIHPLOD"
@@ -754,6 +754,9 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             className="h-8 sm:h-10 w-auto object-contain"
                             priority
                         />
+                        <p className="mt-3 mb-3 text-base lg:text-lg text-[#5c4937] font-medium tracking-wide">
+                            {userNickname} 的专属肌智派素颜分析报告
+                        </p>
                     </div>
 
                     {/* Validation Warning Banner */}

@@ -48,6 +48,11 @@ function getUserDailyLimit(user: { dailyTestLimit?: number | null } | null | und
  * 2. 登录用户：每日 10 次（管理员可通过 dailyTestLimit 调整）
  */
 export async function checkUsageLimit(request: NextRequest, body?: Record<string, unknown>): Promise<UsageLimitResult> {
+    // 本地开发环境不限制次数
+    if (process.env.NODE_ENV !== "production") {
+        return { canTest: true, remaining: 999, dailyLimit: 999, role: 'member' };
+    }
+
     const user = await getSession();
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
 
@@ -170,6 +175,11 @@ export async function reserveUsage(
     sessionId: string,
     body?: Record<string, unknown>
 ): Promise<ReserveUsageResult> {
+    // 本地开发环境不限制次数
+    if (process.env.NODE_ENV !== "production") {
+        return { success: true, role: 'member' };
+    }
+
     const user = await getSession();
     const identifiers = extractGuestIdentifiers(request, body);
     const { ipAddress, cookieId, fingerprint, userAgent } = identifiers;

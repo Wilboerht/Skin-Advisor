@@ -14,6 +14,11 @@ export default function FaceScanPage() {
     const router = useRouter();
     const toast = useToast();
     const { trackFaceScanStart, trackFaceScanComplete } = useAdvisorAnalytics();
+
+    // 本地开发环境自动启用 mock 模式，跳过 AI 调用
+    const isDev = process.env.NODE_ENV !== "production";
+    const resultUrl = isDev ? "/result?status=analyzing&mock=true" : "/result?status=analyzing";
+
     const hasTrackedStart = useRef(false);
     const [hasStarted, setHasStarted] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(true);
@@ -161,7 +166,7 @@ export default function FaceScanPage() {
             });
 
             trackFaceScanComplete();
-            router.push("/result?status=analyzing");
+            router.push(resultUrl);
             return;
         }
 
@@ -173,7 +178,7 @@ export default function FaceScanPage() {
         const retrySuccess = await advisorStorage.saveFaceImages(images);
         if (retrySuccess) {
             trackFaceScanComplete();
-            router.push("/result?status=analyzing");
+            router.push(resultUrl);
             return;
         }
 
@@ -181,7 +186,7 @@ export default function FaceScanPage() {
         if (frontOnlySuccess) {
             toast.warning("仅保存了正面照片");
             trackFaceScanComplete();
-            router.push("/result?status=analyzing");
+            router.push(resultUrl);
             return;
         }
 

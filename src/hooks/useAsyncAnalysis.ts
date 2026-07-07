@@ -199,8 +199,8 @@ export function useAsyncAnalysis() {
             const promise = new Promise<never>((_, reject) => {
                 timeoutId = setTimeout(() => {
                     abortController.abort();
-                    reject(new Error("分析超时 (90秒)。请检查网络连接后重试。"));
-                }, 90 * 1000); // 90 seconds, aligned with server timeout
+                    reject(new Error("分析超时 (120秒)。请检查网络连接后重试。"));
+                }, 120 * 1000); // 120 seconds, aligned with server timeout
             });
             return { promise, cancel: () => clearTimeout(timeoutId) };
         };
@@ -208,6 +208,15 @@ export function useAsyncAnalysis() {
         const { promise: timeoutPromise, cancel: cancelTimeout } = createTimeoutPromise();
 
         const analysisPromise = async () => {
+            // --- DEV MOCK: 跳过 AI 调用，直接返回假数据查看结果页 ---
+            if (process.env.NODE_ENV !== "production" && typeof window !== "undefined" && new URLSearchParams(window.location.search).get("mock") === "true") {
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                const mockResult = getMockAnalysisResult();
+                setAnalysisState({ status: 'completed', progress: 100, error: null });
+                return { result: mockResult.result, faceAnalysis: mockResult.faceAnalysis, sessionId: "mock-session" };
+            }
+            // --- END DEV MOCK ---
+
             let answersStr: string | null = null;
             let nickname = "您";
             try {
@@ -661,4 +670,78 @@ export function useAsyncAnalysis() {
     }, []);
 
     return { runAnalysis, analysisState, reset, recoverSession };
+}
+
+// ============================================================================
+// DEV MOCK DATA — 访问 /result?mock=true 直接查看结果页，无需调用 AI
+// ============================================================================
+function getMockAnalysisResult() {
+    const faceAnalysis = {
+        validation: { isValid: true, message: "" },
+        skinType: { type: "combination", confidence: 88 },
+        gender: { value: "female", confidence: 0.9 },
+        skinAge: { estimated: 26, factors: ["轻微光老化", "T区油脂偏多"] },
+        overallScore: 78,
+        summary: "混合性肌肤，T区偏油，两颊状态良好，整体肌肤屏障健康，需关注T区控油与防晒。",
+        dimensions: {
+            waterOil: { score: 72, grade: "good", details: "T区偏油，两颊适中" },
+            skinTone: { score: 75, grade: "good", details: "整体均匀，下巴有轻微暗沉" },
+            spots: { score: 82, grade: "good", details: "无明显色斑" },
+            wrinkles: { score: 88, grade: "excellent", details: "无明显皱纹" },
+            uvDamage: { score: 74, grade: "good", details: "额头有轻微光老化痕迹" },
+            sensitivity: { score: 90, grade: "excellent", details: "屏障功能良好" },
+            darkCircles: { score: 68, grade: "fair", details: "眼周轻微暗沉" },
+            firmness: { score: 85, grade: "excellent", details: "紧致度良好" },
+            acne: { score: 92, grade: "excellent", details: "无明显痤疮" },
+            radiance: { score: 70, grade: "good", details: "T区略有暗沉" },
+        },
+        recommendations: [
+            "T区出油较明显，建议每日晨间使用含水杨酸的洁面产品，每周2次泥膜深度清洁，控制油脂分泌预防粉刺形成。",
+            "眼周有轻微暗沉和细纹趋势，建议每日晚间使用含咖啡因或胜肽的眼霜，配合轻柔按摩促进循环。",
+            "额头有光老化迹象，建议每日早晨使用SPF50+ PA++++的广谱防晒霜，避免紫外线进一步损伤。",
+            "面部光泽度需提升，建议每周1-2次使用含烟酰胺的精华液，改善肤色通透感。",
+            "日常护肤以温和为主，避免过度清洁和去角质，维持皮肤屏障健康稳定。",
+        ],
+        zoneAnalysis: {
+            forehead: { condition: "轻微出油，有光老化迹象", advice: "含水杨酸洁面 + 防晒重点涂抹", oil: 65, texture: 80, wrinkles: 15, spots: 10, redness: 10, firmness: 82, contour: 88 },
+            tZone: { condition: "出油较明显，有毛孔堵塞风险", advice: "泥膜每周2次 + 含壬二酸产品", oil: 75, texture: 55, wrinkles: 5, spots: 15, redness: 10, firmness: 80, contour: 85 },
+            leftCheek: { condition: "状态良好，肤色均匀", advice: "日常保湿 + 防晒即可", oil: 30, texture: 90, wrinkles: 5, spots: 5, redness: 15, firmness: 88, contour: 90 },
+            rightCheek: { condition: "状态良好，肤色均匀", advice: "日常保湿 + 防晒即可", oil: 30, texture: 90, wrinkles: 5, spots: 5, redness: 15, firmness: 88, contour: 90 },
+            eyeArea: { condition: "轻微黑眼圈，细纹不明显", advice: "含咖啡因眼霜 + 规律作息", oil: 20, texture: 78, wrinkles: 20, darkCircles: 42, firmness: 82 },
+            jawline: { condition: "轮廓清晰紧致", advice: "保持现状，可配合提拉按摩", oil: 25, firmness: 92, contour: 90 },
+        },
+        skinConditions: [],
+        labAnalysis: { glogau: { value: "II 型", status: "轻中度" }, homogeneity: { value: 12, unit: "% C.V.", status: "均匀" }, wrinkleGrade: { value: "Grade 1", status: "无皱纹" } },
+    };
+
+    const result = {
+        skinProfile: {
+            type: "combination",
+            typeLabel: "混合性肌肤",
+            concerns: ["控油", "防晒", "光泽度"],
+            skinAge: 26,
+        },
+        analysis: {
+            summary: "您的肌肤整体状态良好，T区偏油是主要关注点，伴随轻微光老化和光泽度不足。",
+            details: [
+                "您的肤质属于混合性肌肤，T区油脂分泌较为旺盛，而两颊状态良好。这种肤质的形成通常与遗传、激素水平以及不当的护肤习惯有关。",
+                "T区出油较明显，这也是您最需要关注的区域。过多的油脂容易堵塞毛孔，如果不及时清洁，可能会发展成粉刺或痤疮。建议使用含水杨酸的洁面产品进行温和的角质代谢，每周配合2次泥膜深度清洁。",
+                "您的眼周区域存在轻微的色素沉积和循环不畅，虽然目前细纹不明显，但如果不加以关注，可能会逐渐加深。建议使用含咖啡因或胜肽成分的眼霜，并注意规律作息。",
+                "额头区域检测到轻微的光老化痕迹，这说明防晒工作需要加强。建议选择SPF50+ PA++++的高倍防晒产品，并在出门前20分钟涂抹。",
+            ],
+            lifestyleTips: [
+                "保持每日充足饮水（约1.5-2升），促进皮肤代谢和毒素排出。",
+                "注意睡眠质量，尽量保证每晚7-8小时的充足睡眠，减少黑眼圈和暗沉。",
+                "适当减少高糖、高油食物的摄入，有助于控制T区油脂分泌。",
+            ],
+        },
+        products: [],
+        faceAnalysis: faceAnalysis,
+        dataSource: "hybrid",
+        persona: "combination",
+        userLocation: "上海",
+        nickname: "护肤达人",
+    };
+
+    return { result, faceAnalysis };
 }

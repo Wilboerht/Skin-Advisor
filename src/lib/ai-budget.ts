@@ -243,6 +243,11 @@ export async function checkAIBudget(
     estimatedCost?: number,
     userId?: string | null
 ): Promise<AIBudgetStatus> {
+    // 本地开发环境不限制 AI 预算
+    if (process.env.NODE_ENV !== "production") {
+        return { allowed: true, dailyTokens: 0, dailyCost: 0, monthlyTokens: 0, monthlyCost: 0 };
+    }
+
     const budget = getBudgetConfig();
     const stats = await getUsageStats(requestType);
     const pendingCost = requestType ? getPendingReservationCost(requestType) : 0;
