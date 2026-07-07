@@ -613,7 +613,9 @@ export async function POST(request: NextRequest) {
             products: candidateProducts
         });
 
-        const systemPrompt = TEXT_ANALYSIS_SYSTEM_PROMPT;
+        const systemPrompt = user
+            ? TEXT_ANALYSIS_SYSTEM_PROMPT + '\n\n' + REGISTERED_USER_DEEP_ANALYSIS_INSTRUCTION
+            : TEXT_ANALYSIS_SYSTEM_PROMPT;
 
         // 调用 AI
         const provider = process.env.AI_PROVIDER || "qwen";
