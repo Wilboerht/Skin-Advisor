@@ -55,7 +55,6 @@ export const VISION_ANALYSIS_SYSTEM_PROMPT = `你是一位专业的皮肤科医�
   "overallScore":0-100,
   "summary":"诊断报告摘要(200字内，必填，必须引用具体评分数据和区域问题，不可只写通用描述)",
   "recommendations":["建议1(含具体成分和步骤)","建议2","建议3","建议4","建议5"],
-  "recommendations_note": "recommendations 必须基于上面的 dimensions 实际评分生成，每一条包含：针对的具体问题 + 推荐成分/产品类型 + 使用频率。示例：'T区(油脂评分xx)建议每日晨间使用含水杨酸的洁面，每周2次泥膜深度清洁，控制油脂分泌预防粉刺'",
   "skinConditions":[{"condition":"症状名","severity":"mild|moderate|severe","area":"部位","description":"具体描述(引用评分)"}],
   "labAnalysis":{"glogau":{"value":"I|II|III","status":"状态"},"homogeneity":{"value":0,"unit":"% C.V.","status":"状态"},"wrinkleGrade":{"value":"Grade 1-3","status":"状态"}},
   "zoneAnalysis":{
@@ -69,7 +68,7 @@ export const VISION_ANALYSIS_SYSTEM_PROMPT = `你是一位专业的皮肤科医�
 }
 # zoneAnalysis 6 区域全必填；advice 必须包含具体成分建议和使用频率，如"含水杨酸洁面 + 每周2次泥膜"而非仅"控油"；condition 必须引用评分说明严重程度，如"油脂评分72偏高，已出现毛孔堵塞迹象"而非仅"T区偏油"。
 # 评分标准：85-100优秀, 70-84良好, 55-69一般, 40-54需关注, <40差。
-# recommendations 必须逐条针对具体的 dimension 评分，每条包含：针对的问题+推荐成分+使用频率。至少输出4条，最多输出5条。
+# recommendations 必须逐条针对具体的 dimension 评分，每条包含：针对的问题+推荐成分+使用频率。至少输出4条，最多5条。示例格式："T区(油脂评分72)建议每日晨间使用含水杨酸的洁面产品，每周2次泥膜深度清洁，控制油脂分泌预防粉刺形成"
 # 多视角综合评估。保持专业、温和。
 `;
 
@@ -188,7 +187,6 @@ export const TEXT_ANALYSIS_SYSTEM_PROMPT = `
 4. **拒绝教科书**：不可输出"混合性肌肤通常T区较油"这类没有任何用户数据挂钩的通用知识
 
 输出格式：严格按用户提示中的 JSON 结构输出，不包含额外 Markdown 标记。`;
-`;
 
 
 

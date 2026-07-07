@@ -74,7 +74,26 @@ export const AnalyzeRequestSchema = z.object({
             severity: z.string().optional(),
             area: z.string().optional(),
             description: z.string().optional()
-        })).optional()
+        })).optional(),
+        summary: z.string().optional(),
+        recommendations: z.array(z.string()).optional(),
+        zoneAnalysis: z.record(z.string(), z.object({
+            condition: z.string().optional(),
+            advice: z.string().optional(),
+            oil: z.number().optional(),
+            texture: z.number().optional(),
+            wrinkles: z.number().optional(),
+            spots: z.number().optional(),
+            redness: z.number().optional(),
+            darkCircles: z.number().optional(),
+            firmness: z.number().optional(),
+            contour: z.number().optional(),
+        })).optional(),
+        labAnalysis: z.object({
+            glogau: z.object({ value: z.string(), status: z.string() }).optional(),
+            homogeneity: z.object({ value: z.number(), unit: z.string(), status: z.string() }).optional(),
+            wrinkleGrade: z.object({ value: z.string(), status: z.string() }).optional(),
+        }).optional(),
     }).nullable().optional()
 });
 

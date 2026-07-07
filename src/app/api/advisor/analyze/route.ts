@@ -584,7 +584,10 @@ export async function POST(request: NextRequest) {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 skinType: faceAnalysis.skinType as any,
                 dimensions: faceAnalysis.dimensions,
-                overallScore: faceAnalysis.overallScore
+                overallScore: faceAnalysis.overallScore,
+                summary: faceAnalysis.summary,
+                zoneAnalysis: faceAnalysis.zoneAnalysis,
+                skinAge: faceAnalysis.skinAge,
             } : undefined,
             products: candidateProducts
         });
@@ -742,15 +745,8 @@ export async function POST(request: NextRequest) {
                 fa.gender = faceAnalysis.gender;
             }
 
-            // If recommendations are empty or we have better ones from text analysis
-            if (resultJson.lifestyleTips && Array.isArray(resultJson.lifestyleTips)) {
-                const recommendations = fa.recommendations as unknown[];
-                // Clean up duplicates if any
-                const newRecs = (resultJson.lifestyleTips as string[]).filter((tip: string) =>
-                    !recommendations.includes(tip)
-                );
-                fa.recommendations = [...recommendations, ...newRecs];
-            }
+            // lifestyleTips 不再混入 recommendations，保持两种内容类型的独立性
+            // lifestyleTips 通过 standardizedResult.analysis.lifestyleTips 独立传递
 
 
         }
