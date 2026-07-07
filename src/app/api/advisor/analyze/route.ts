@@ -772,7 +772,8 @@ export async function POST(request: NextRequest) {
                 details: [
                     resultJson.skinTypeAnalysis || "",
                     ...concernAnalysisItems
-                ].filter(Boolean)
+                ].filter(Boolean),
+                lifestyleTips: Array.isArray(resultJson.lifestyleTips) ? resultJson.lifestyleTips as string[] : [],
             },
             products: finalProducts,
             faceAnalysis: finalFaceAnalysis, // Ensure faceAnalysis is propagated

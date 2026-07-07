@@ -13,6 +13,7 @@ export interface ComprehensiveResult {
     analysis: {
         summary: string;
         details: string[];
+        lifestyleTips?: string[];
     };
     products?: Array<{
         id: string;
@@ -56,6 +57,7 @@ export function normalizeAnalysisResult(raw: unknown): ComprehensiveResult | nul
         analysis: {
             summary: (analysis?.summary as string | undefined) || "分析完成。",
             details: (analysis?.details as string[] | undefined) || [],
+            lifestyleTips: (analysis?.lifestyleTips as string[] | undefined) || [],
         },
         dataSource: (record.dataSource as ComprehensiveResult["dataSource"] | undefined) || (record.source === "ai" ? "comprehensive" : "questionnaire"),
         products: (record.products as ComprehensiveResult["products"]) || [],
