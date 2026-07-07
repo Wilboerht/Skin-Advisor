@@ -329,9 +329,13 @@ export default function Home() {
                 <div className="z-10 flex flex-col items-center text-center max-w-3xl mx-auto">
                   <div className="animate-fade-in-up flex flex-col items-center">
                     {/* Eyebrow */}
-                    <p className="text-xs uppercase tracking-[0.3em] text-[#8B7355] mb-10 md:mb-12 opacity-0 animate-fade-in-up" style={{ animationFillMode: 'forwards' }}>
-                      AI Skin Analysis
-                    </p>
+                    <div className="w-full max-w-xl mb-10 md:mb-12 opacity-0 animate-fade-in-up" style={{ animationFillMode: 'forwards' }}>
+                      <span className="inline-flex items-center gap-2.5 text-[12px] font-medium tracking-[0.3em] text-[#8B7355] uppercase">
+                        <span className="block w-5 h-px bg-[#C8A27A]/50" />
+                        肌智派
+                        <span className="block w-5 h-px bg-[#C8A27A]/50" />
+                      </span>
+                    </div>
 
                     {/* Title */}
                     <h1 className="text-[40px] sm:text-[48px] md:text-[58px] font-serif text-[#1A1A1A] font-normal leading-[1.1] tracking-tight mb-10 md:mb-12">
