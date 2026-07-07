@@ -12,8 +12,6 @@ import {
     ScanFace,
     Activity,
     AlertCircle,
-    Sparkles,
-    Sun,
     X
 } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
@@ -55,7 +53,7 @@ interface ResultClientProps {
     } | null;
 }
 
-// �ֻ��ˣ�ʮά������������ ScientificBarChart��
+// 手机端：十维分析表单（替代 ScientificBarChart）
 function MobileDimensionForm({ dimensions }: { dimensions: Record<string, { score?: number } | undefined> }) {
     const order = ['radiance', 'acne', 'firmness', 'darkCircles', 'sensitivity', 'uvDamage', 'wrinkles', 'spots', 'skinTone', 'waterOil'];
 
@@ -69,12 +67,12 @@ function MobileDimensionForm({ dimensions }: { dimensions: Record<string, { scor
                     <div key={key} className="py-3 border-b border-[#E8E2D9] last:border-0">
                         <div className="flex items-center justify-between mb-1.5">
                             <span className="text-[13px] text-[#4A4A4A]">{DIMENSION_LABELS[key]}</span>
-                            <span className="text-[13px] font-medium text-[#1A1A1A]">{score} ��</span>
+                            <span className="text-[13px] font-medium text-[#1A1A1A]">{score} 分</span>
                         </div>
                         <div className="h-1.5 w-full rounded-full bg-[#E8E2D9] overflow-hidden">
                             <div className={`h-full rounded-full ${color}`} style={{ width: `${score}%` }} />
                         </div>
-                        <p className="mt-1.5 text-xs text-[#8A8A8A] leading-relaxed">{DIMENSION_DESCRIPTIONS[key]}</p>
+                        <p className="mt-1.5 text-[11px] text-[#8A8A8A] leading-relaxed">{DIMENSION_DESCRIPTIONS[key]}</p>
                     </div>
                 );
             })}
@@ -82,9 +80,9 @@ function MobileDimensionForm({ dimensions }: { dimensions: Record<string, { scor
     );
 }
 
-// �ֻ��� Lab ָ�꿨Ƭ
+// 手机端 Lab 指标卡片
 function MobileLabRow({ metric }: { metric: LabMetric }) {
-    const goodKeywords = ['����', 'Normal', '����', 'ϸ��', '����', '͸��', 'Type I', '��', 'Balanced'];
+    const goodKeywords = ['正常', 'Normal', '紧致', '细腻', '均匀', '透亮', 'Type I', '少', 'Balanced'];
     const isGood = goodKeywords.some(k => metric.status.includes(k));
 
     return (
@@ -102,11 +100,11 @@ function MobileLabRow({ metric }: { metric: LabMetric }) {
             </div>
             <div className="grid grid-cols-2 gap-2">
                 <div>
-                    <p className="text-[11px] text-[#8A8A8A] mb-0.5">�ⶨֵ</p>
+                    <p className="text-[10px] text-[#8A8A8A] mb-0.5">测定值</p>
                     <p className="text-[12px] text-[#1A1A1A]">{metric.value}</p>
                 </div>
                 <div>
-                    <p className="text-[11px] text-[#8A8A8A] mb-0.5">�ο���Χ</p>
+                    <p className="text-[10px] text-[#8A8A8A] mb-0.5">参考范围</p>
                     <p className="text-[12px] text-[#1A1A1A]">{metric.ref}</p>
                 </div>
             </div>
@@ -114,10 +112,10 @@ function MobileLabRow({ metric }: { metric: LabMetric }) {
     );
 }
 
-// Lab Report ����Ⱦ�����뵽����ⲿ������ÿ����Ⱦ���´�����
+// Lab Report 行渲染（抽离到组件外部，避免每次渲染重新创建）
 function renderLabRow(param: string, value: string, ref: string, status: string) {
     // Determine status color based on keywords
-    const goodKeywords = ['����', 'Normal', '����', 'ϸ��', '����', '͸��', 'Type I', '��', 'Balanced'];
+    const goodKeywords = ['正常', 'Normal', '紧致', '细腻', '均匀', '透亮', 'Type I', '少', 'Balanced'];
     const isGood = goodKeywords.some(k => status.includes(k));
 
     return (
@@ -135,7 +133,7 @@ function renderLabRow(param: string, value: string, ref: string, status: string)
             <div className="sm:col-span-2 text-left sm:text-right text-[11px] font-light">
                 {status ? (
                     <span className={isGood ? 'text-[#4A4A4A]' : 'text-[#c45a4a]'}>
-                        {status} {isGood ? '' : '��'}
+                        {status} {isGood ? '' : '▲'}
                     </span>
                 ) : null}
             </div>
@@ -159,8 +157,8 @@ export default function ResultClient(props: ResultClientProps) {
 function ResultClientContent({ id, initialData }: ResultClientProps) {
     const router = useRouter();
 
-    // �������������ͨ����ҳ������������ܲ鿴���
-    // ��ʷ����ҳ�棨/reports/:id���ᴫ�� id �� initialData������������
+    // 入口守卫：必须通过首页引导弹窗后才能查看结果
+    // 历史报告页面（/reports/:id）会传入 id 与 initialData，跳过此守卫
     useEffect(() => {
         if (id || initialData) return;
         try {
@@ -194,12 +192,12 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     }, [result]);
     const [faceAnalysis, setFaceAnalysis] = useState<FaceAnalysisResult | null>(initialData?.faceAnalysis || null);
 
-    const [userNickname, setUserNickname] = useState<string>("��");
+    const [userNickname, setUserNickname] = useState<string>("您");
     // Session ID for sharing - initialized from props or will be set after analysis
     const [sessionId, setSessionId] = useState<string | undefined>(id);
     const [socialGender, setSocialGender] = useState<string>(''); // Initialize empty to avoid flash mismatch
 
-    // IP ƥ����������
+    // IP 匹配所需数据
     const [ipBudget, setIpBudget] = useState<string | undefined>(undefined);
     const [ipSkincareFrequency, setIpSkincareFrequency] = useState<string | undefined>(undefined);
 
@@ -207,7 +205,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const [loading, setLoading] = useState(!initialData);
     const hasTrackedView = useRef(false);
 
-    // Gender Mismatch State���洢��ȷ�Ϲ��� sessionId���� session ���Զ�������ʾ
+    // Gender Mismatch State：存储已确认过的 sessionId，换 session 后自动重新提示
     const [ackedSessionId, setAckedSessionId] = useState<string | null>(() => {
         try { return localStorage.getItem(STORAGE_KEYS.ADVISOR_GENDER_MISMATCH_ACK); } catch { return null; }
     });
@@ -254,7 +252,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         localStorage.removeItem(STORAGE_KEYS.ADVISOR_RESULT);
         localStorage.removeItem(STORAGE_KEYS.ADVISOR_STEP);
 
-        // ����ԭ sessionId��������������̸��ã������У��� session ����ɹ�������δʹ�ù����ԣ�
+        // 保留原 sessionId，供免费重试流程复用（后端需校验该 session 已完成过分析且未使用过重试）
         const currentSessionId = sessionId;
         if (currentSessionId) {
             localStorage.setItem(STORAGE_KEYS.ADVISOR_FREE_RETRY_SESSION_ID, currentSessionId);
@@ -274,7 +272,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         const currentSessionId = sessionId ?? null;
         setAckedSessionId(currentSessionId);
         try { if (currentSessionId) localStorage.setItem(STORAGE_KEYS.ADVISOR_GENDER_MISMATCH_ACK, currentSessionId); } catch { /* ignore */ }
-        // �û�ѡ������������ԣ���������������ر�ǣ����������ͨ���Ը��þ� sessionId
+        // 用户选择继续（不重试），清除免费重试相关标记，避免后续普通测试复用旧 sessionId
         localStorage.removeItem(STORAGE_KEYS.ADVISOR_FREE_RETRY);
         localStorage.removeItem(STORAGE_KEYS.ADVISOR_FREE_RETRY_SESSION_ID);
     };
@@ -282,13 +280,13 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
 
 
-    // renderLabRow �ѳ�Ϊ����ⲿ����������ÿ����Ⱦ���´���
+    // renderLabRow 已抽为组件外部函数，避免每次渲染重新创建
 
 
     // Initialize & Restore Data
     useEffect(() => {
         const loadClientData = async () => {
-            // ���н���ҷǷ�����ʱֱ�Ӷ�·������ user �仯�����ظ�����/��˸
+            // 已有结果且非分析中时直接短路，避免 user 变化导致重复加载/闪烁
             if (resultRef.current && searchParams.get('status') !== 'analyzing') {
                 if (!hasTrackedView.current) {
                     trackResultView();
@@ -301,8 +299,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             try {
                 // Dynamically import to avoid SSR issues
                 const { advisorStorage } = await import("@/lib/advisor-storage");
-                // ����ͼƬ������ IndexedDB �ָ�������Ⱦ��ҳ��
-                // ����ָ��߼��������ò���ʹ�õ� state
+                // 人脸图片仅用于 IndexedDB 恢复，不渲染到页面
+                // 保留恢复逻辑但不设置不再使用的 state
                 await advisorStorage.getFaceImages();
 
                 // Restore Nickname
@@ -358,7 +356,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                                 // If we successfully recovered data, remove 'analyzing' status from URL to stop re-analysis
                                 if (searchParams.get('status') === 'analyzing') {
-                                    // ��¼�û�ֱ����ת�� /reports/:id�������ȵ� /result?id=xxx ���ض���Ķ���һ����ת
+                                    // 登录用户直接跳转到 /reports/:id，避免先到 /result?id=xxx 再重定向的多余一次跳转
                                     if (userRef.current && advisorResult.sessionId) {
                                         router.replace(`/reports/${advisorResult.sessionId}`, { scroll: false });
                                     } else {
@@ -369,7 +367,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     }
                                 }
                                 setLoading(false);
-                                // ����ǰ����ǰҲ�������
+                                // 在提前返回前也触发埋点
                                 if (!hasTrackedView.current) {
                                     trackResultView();
                                     hasTrackedView.current = true;
@@ -416,7 +414,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         if (!posterRef.current || isGeneratingPoster) return;
         try {
             setIsGeneratingPoster(true);
-            // �ȴ�ͼƬ����
+            // 等待图片加载
             const images = Array.from(posterRef.current.getElementsByTagName("img"));
             await Promise.all(
                 images.map(
@@ -435,7 +433,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 pixelRatio: 2,
                 cacheBust: true,
             });
-            // data URL �� Blob URL���ƹ� CSP ���ƣ����� fetch��
+            // data URL → Blob URL（绕过 CSP 限制，不用 fetch）
             const arr = dataUrl.split(',');
             const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/png';
             const bstr = atob(arr[1]);
@@ -447,14 +445,14 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             const blob = new Blob([u8arr], { type: mime });
             const blobUrl = URL.createObjectURL(blob);
             const link = document.createElement("a");
-            link.download = `NIHPLOD-�������-${userNickname || "�û�"}-${Date.now()}.png`;
+            link.download = `NIHPLOD-肌肤报告-${userNickname || "用户"}-${Date.now()}.png`;
             link.href = blobUrl;
             link.click();
             URL.revokeObjectURL(blobUrl);
-            // ���溣���ɹ��󴥷��������
+            // 保存海报成功后触发分享埋点
             trackResultShare("image");
         } catch (error) {
-            console.error("��������ʧ��:", error);
+            console.error("海报生成失败:", error);
         } finally {
             setIsGeneratingPoster(false);
         }
@@ -479,8 +477,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 
                 if (res.ok) {
                     localStorage.setItem(claimedKey, 'true');
-                    // Claim �ɹ�����ת�� /reports/:id����¼�û�����ͣ�����ο���̬�� /result ҳ��
-                    // ���ǰ���� /reports/:id ������������ض���
+                    // Claim 成功后跳转到 /reports/:id，登录用户不再停留在游客形态的 /result 页面
+                    // 若当前已在 /reports/:id 则避免无意义重定向
                     const reportPath = `/reports/${sessionId}`;
                     if (typeof window === 'undefined' || window.location.pathname !== reportPath) {
                         router.replace(reportPath);
@@ -502,7 +500,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const analysisStartedRef = useRef(false);
     const pendingRedirectSessionIdRef = useRef<string | null>(null);
 
-    // �� auth ��ʼ������ִ����ת�������¼�û��� user Ϊ null ʱ���������� /result
+    // 等 auth 初始化后再执行跳转，避免登录用户在 user 为 null 时被错误留在 /result
     useEffect(() => {
         const pendingId = pendingRedirectSessionIdRef.current;
         if (!pendingId || !authInitializedRef.current) return;
@@ -576,14 +574,14 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 }
 
                 if (!newSessionId) {
-                    throw new Error("�Ự ID ��ʧ�������²���");
+                    throw new Error("会话 ID 丢失，请重新测试");
                 }
 
                 // IMPORTANT: Set result state FIRST before updating URL
                 setResult(newResult as unknown as ComprehensiveResult);
                 if (newFace) setFaceAnalysis(newFace);
 
-                // �� auth ��ʼ��������ת������ user Ϊ null ʱ��¼�û����������� /result
+                // 等 auth 初始化后再跳转，避免 user 为 null 时登录用户被错误留在 /result
                 if (authInitializedRef.current) {
                     const resultUrl = userRef.current ? `/reports/${newSessionId}` : '/result';
                     router.replace(resultUrl, { scroll: false });
@@ -613,9 +611,9 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 <div className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm">
                     <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                         <div className="sm:w-[60%] text-center sm:text-left">
-                            <h3 className="text-lg font-serif text-[#1A1A1A] mb-3 sm:mb-2">����������һЩ����</h3>
+                            <h3 className="text-lg font-serif text-[#1A1A1A] mb-3 sm:mb-2">分析遇到了一些问题</h3>
                             <p className="text-sm text-[#5E5E5E] leading-relaxed">
-                                {analysisState.error || "��������ʱ�޷���Ӧ�����Ժ����ԡ�"}
+                                {analysisState.error || "服务器暂时无法响应，请稍后再试。"}
                             </p>
                         </div>
                         <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
@@ -623,7 +621,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 onClick={() => router.push('/questions?edit=true')}
                                 className="px-6 h-10 rounded-lg border border-[#1B3A5C] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                             >
-                                �˳�
+                                退出
                             </button>
                         </div>
                     </div>
@@ -642,13 +640,13 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-[#F8F7F3] px-4">
                 <div className="w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm text-center">
-                    <h3 className="text-lg font-serif text-[#1A1A1A] mb-2">�������ʧ��</h3>
-                    <p className="text-sm text-[#5E5E5E] mb-6">���ݿ����ѹ��ڻ򲻴���</p>
+                    <h3 className="text-lg font-serif text-[#1A1A1A] mb-2">报告加载失败</h3>
+                    <p className="text-sm text-[#5E5E5E] mb-6">数据可能已过期或不存在</p>
                     <button
                         onClick={() => router.push("/questions?edit=true")}
                         className="px-6 h-10 rounded-lg border border-[#1B3A5C] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
                     >
-                        ���²���
+                        重新测试
                     </button>
                 </div>
             </div>
@@ -688,29 +686,29 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             <div className="p-8">
                                 {/* Header with Emoji */}
                                 <div className="flex flex-col items-center text-center gap-5 mb-6">
-                                    <div className="text-[42px] leading-none mb-1">??</div>
+                                    <div className="text-[42px] leading-none mb-1">⚠️</div>
                                     <div className="space-y-1.5">
-                                        <h3 className="text-[18px] font-bold text-[#37352F] tracking-tight">��ǰ��Ϣ׼ȷ����ʾ</h3>
+                                        <h3 className="text-[18px] font-bold text-[#37352F] tracking-tight">测前信息准确性提示</h3>
                                         <p className="text-[13px] text-[#787774] font-medium">Data Accuracy Verification</p>
                                     </div>
                                 </div>
 
                                 <div className="space-y-6">
                                     <p className="text-[14px] text-[#37352F] leading-[1.8] text-justify px-1">
-                                        AI �沿ʶ������ʾ�����沿�������ӽ�
-                                        <span className="font-semibold bg-[#F1F1EF] px-1.5 py-0.5 rounded text-[#37352F] mx-1 border border-[#E9E9E7]">{faceAnalysis?.gender?.value === 'male' ? '����' : 'Ů��'}</span>
-                                        ���������ʾ�����д����
-                                        <span className="font-semibold bg-[#F1F1EF] px-1.5 py-0.5 rounded text-[#37352F] mx-1 border border-[#E9E9E7]">{socialGender === 'male' ? '��' : 'Ů'}</span>
-                                        �����߲�һ�¡�
+                                        AI 面部识别结果显示您的面部特征更接近
+                                        <span className="font-semibold bg-[#F1F1EF] px-1.5 py-0.5 rounded text-[#37352F] mx-1 border border-[#E9E9E7]">{faceAnalysis?.gender?.value === 'male' ? '男性' : '女性'}</span>
+                                        ，但您在问卷中填写的是
+                                        <span className="font-semibold bg-[#F1F1EF] px-1.5 py-0.5 rounded text-[#37352F] mx-1 border border-[#E9E9E7]">{socialGender === 'male' ? '男' : '女'}</span>
+                                        ，二者不一致。
                                     </p>
 
                                     {/* Notion Callout Block - Yellow */}
                                     <div className="bg-[#FBF3DB] bg-opacity-50 p-4 rounded-lg flex items-start gap-3.5 border border-[#FBF3DB]/60">
-                                        <span className="text-[16px] shrink-0 mt-0.5">??</span>
+                                        <span className="text-[16px] shrink-0 mt-0.5">💡</span>
                                         <div className="space-y-2 text-[13px] text-[#37352F] leading-relaxed">
-                                            <p className="opacity-90">����ܻ�Ӱ��Ϊ��ƥ��<span className="font-bold">������Ի��������</span>�ľ�׼�ȣ����·�������������ʵ�ʷ�в���ƫ�</p>
+                                            <p className="opacity-90">这可能会影响为您匹配<span className="font-bold">“针对性护肤方案”</span>的精准度，导致分析结论与您的实际肤感产生偏差。</p>
                                             <div className="h-px bg-[#37352F]/5 w-full my-1"></div>
-                                            <p className="opacity-90">�����ʵ��Ϣ�Ի�ø�׼ȷ�Ľ��顣������д����<span className="font-semibold text-[#D9730D]">����������д�����Ĳ��Դ���</span>��</p>
+                                            <p className="opacity-90">建议核实信息以获得更准确的建议。若是填写有误？<span className="font-semibold text-[#D9730D]">本次重新填写不消耗测试次数</span>。</p>
                                         </div>
                                     </div>
 
@@ -720,7 +718,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                             onClick={handleMismatchContinue}
                                             className="w-full h-11 bg-[#37352F] text-white text-[14px] font-medium rounded-[6px] hover:bg-[#2C2C2C] active:scale-[0.99] transition-all flex items-center justify-center gap-2 shadow-sm"
                                         >
-                                            <span>��Ϣ����</span>
+                                            <span>信息无误</span>
                                         </button>
 
                                         <button
@@ -728,7 +726,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                             className="w-full h-11 bg-transparent text-[#787774] text-[14px] font-medium rounded-[6px] hover:bg-[#F1F1EF] hover:text-[#37352F] active:bg-[#E9E9E7] transition-all flex items-center justify-center gap-2"
                                         >
                                             <RotateCcw size={14} strokeWidth={2.5} />
-                                            <span>������ˣ�������д</span>
+                                            <span>我填错了，重新填写</span>
                                         </button>
                                     </div>
                                 </div>
@@ -745,7 +743,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     <SaveReportBanner />
 
                     {/* Logo */}
-                    <div className="w-full flex flex-col items-center pt-14">
+                    <div className="w-full flex justify-center pt-14 pb-3">
                         <Image
                             src="/NIHPLOD-logo.svg"
                             alt="NIHPLOD"
@@ -754,9 +752,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             className="h-8 sm:h-10 w-auto object-contain"
                             priority
                         />
-                        <p className="mt-6 mb-6 text-base lg:text-lg text-[#5c4937] font-medium tracking-wide">
-                            {userNickname} ��ר����������շ�������
-                        </p>
                     </div>
 
                     {/* Validation Warning Banner */}
@@ -765,7 +760,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             <div className="max-w-[1440px] mx-auto px-4 py-3 pr-10 flex items-start gap-3">
                                 <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
                                 <div className="flex-1">
-                                    <h4 className="text-sm font-semibold text-red-900 mb-0.5">��Ƭ������ʾ</h4>
+                                    <h4 className="text-sm font-semibold text-red-900 mb-0.5">照片质量提示</h4>
                                     <p className="text-sm text-red-700 leading-relaxed">
                                         {faceAnalysis.validation.message}
                                     </p>
@@ -776,7 +771,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         try { sessionStorage.setItem('advisor_dismiss_validation', 'true'); } catch { /* ignore */ }
                                     }}
                                     className="absolute right-4 top-3 p-1 rounded-full hover:bg-red-100 text-red-500 transition-colors"
-                                    aria-label="�ر���ʾ"
+                                    aria-label="关闭提示"
                                 >
                                     <X className="w-4 h-4" />
                                 </button>
@@ -802,61 +797,52 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                             comprehensiveReport={
                                 <>
-                                    {/* 1����ϸ��ϱ��� */}
+                                    {/* 1、详细诊断报告 */}
                                     <div className="mt-6 lg:mt-14 mb-6">
                                         <h4 className="text-base font-medium text-[#3d2f25] mb-3 border-b border-[#3d2f25]/20 pb-2">
-                                            1����ϸ��ϱ��� <span className="text-xs lg:text-base">(Detailed Diagnosis)</span>
+                                            1、详细诊断报告 <span className="text-xs lg:text-base">(Detailed Diagnosis)</span>
                                         </h4>
 
                                         {result.analysis?.details && result.analysis.details.length > 0 ? (
-                                            <>
-                                                {/* ��һ�Σ����ʷ������� */}
-                                                {result.analysis.details[0] && (
-                                                    <p className="text-sm lg:text-[15px] leading-relaxed text-[#3d2f25] font-medium mb-4">
-                                                        {result.analysis.details[0]}
-                                                    </p>
-                                                )}
-                                                {/* �������䣺����������б� */}
-                                                {result.analysis.details.length > 1 && (
-                                                    <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
-                                                        {result.analysis.details.slice(1).map((item, idx) => (
-                                                            <li key={idx}>{item}</li>
-                                                        ))}
-                                                    </ul>
-                                                )}
-                                            </>
+                                            <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-xs lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
+                                                {result.analysis.details.map((item, idx) => (
+                                                    <li key={idx}>{item}</li>
+                                                ))}
+                                            </ul>
                                         ) : (
                                             <p className="text-[14px] leading-relaxed text-[#5c4937]">
-                                                {faceAnalysis?.summary || result.analysis?.summary || "������ϸ��ϱ���"}
+                                                {faceAnalysis?.summary || result.analysis?.summary || "暂无详细诊断报告"}
                                             </p>
                                         )}
                                     </div>
 
-                                    {/* 2��ר�һ������ */}
+                                    {/* 2、专家护肤建议 */}
                                     <div className="mb-8">
                                         <h4 className="text-base font-medium text-[#3d2f25] mb-3 border-b border-[#3d2f25]/20 pb-2">
-                                            2��ר�һ������ <span className="text-xs lg:text-base">(Expert Recommendations)</span>
+                                            2、专家护肤建议 <span className="text-xs lg:text-base">(Expert Recommendations)</span>
                                         </h4>
 
-                                        <p className="text-xs text-[#8c7a6b] mb-3">�������ļ������ݣ�����������ԵĻ�������ʽ���飺</p>
-
+                                        {/* 💆 护肤建议 */}
+                                        <h5 className="text-sm font-medium text-[#3d2f25] mb-2">💆 护肤建议</h5>
                                         {(faceAnalysis?.recommendations && faceAnalysis.recommendations.length > 0) ? (
-                                            <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
+                                            <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-xs lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
                                                 {(faceAnalysis.recommendations).map((rec, idx) => (
                                                     <li key={idx}>{rec}</li>
                                                 ))}
                                             </ul>
                                         ) : (
-                                            <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
-                                                <li>ÿ�������º���࣬�������ȥ֬��</li>
-                                                <li>�ϸ����÷�ɹ���������������ˡ�</li>
-                                                <li>���ݼ��ڵ�����ʪ��Ʒ������ˮ��ƽ�⡣</li>
+                                            <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-xs lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
+                                                <li>每日早晚温和清洁，避免过度去脂。</li>
+                                                <li>严格做好防晒，减少紫外线损伤。</li>
+                                                <li>根据季节调整保湿产品，保持水油平衡。</li>
                                             </ul>
                                         )}
 
+                                        {/* 🌿 生活建议（嵌套在专家护肤建议内） */}
                                         {result.analysis?.lifestyleTips && result.analysis.lifestyleTips.length > 0 && (
                                             <div className="mt-5 pt-4 border-t border-dashed border-[#3d2f25]/10">
-                                                <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
+                                                <h5 className="text-sm font-medium text-[#3d2f25] mb-2">🌿 生活建议</h5>
+                                                <ul className="list-disc pl-5 space-y-1.5 text-xs lg:text-[13px] leading-relaxed text-[#5c4937]">
                                                     {result.analysis.lifestyleTips.map((tip, idx) => (
                                                         <li key={idx}>{tip}</li>
                                                     ))}
@@ -869,16 +855,16 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     {faceAnalysis?.zoneAnalysis && (
                                         <div className="mb-8">
                                             <h4 className="text-base font-medium text-[#3d2f25] mb-4 border-b border-[#3d2f25]/20 pb-2">
-                                                3�������ص��ע <span className="text-xs lg:text-base">(Area Focus)</span>
+                                                3、区域重点关注 <span className="text-xs lg:text-base">(Area Focus)</span>
                                             </h4>
                                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                                 {Object.entries({
-                                                    forehead: "��ͷ����",
-                                                    tZone: "T������",
-                                                    leftCheek: "������",
-                                                    rightCheek: "������",
-                                                    eyeArea: "����",
-                                                    jawline: "�����"
+                                                    forehead: "额头区域",
+                                                    tZone: "T字区域",
+                                                    leftCheek: "左脸颊",
+                                                    rightCheek: "右脸颊",
+                                                    eyeArea: "眼周",
+                                                    jawline: "下颌线"
                                                 }).map(([key, label]) => {
                                                     // @ts-expect-error faceAnalysis zoneAnalysis typing is dynamic
                                                     const zoneData = faceAnalysis.zoneAnalysis[key];
@@ -887,13 +873,30 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                         <div key={key} className="bg-[#3d2f25]/5 border text-left border-[#3d2f25]/15 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
                                                             <div className="flex items-center justify-between mb-2">
                                                                 <h5 className="font-semibold text-[#3d2f25] text-sm">{label}</h5>
+                                                                <span className="text-xs bg-[#3d2f25]/8 text-[#8c7a6b] px-2 py-0.5 rounded-full">
+                                                                    {zoneData.condition}
+                                                                </span>
                                                             </div>
-                                                            <p className="text-sm text-[#5c4937] mb-2 leading-snug">
-                                                                {zoneData.condition}
-                                                            </p>
+                                                            {(() => {
+                                                                const metrics: string[] = [];
+                                                                if (zoneData.oil !== undefined) metrics.push(`油脂${zoneData.oil > 60 ? '偏高' : zoneData.oil < 30 ? '偏低' : '适中'}`);
+                                                                if (zoneData.wrinkles !== undefined) metrics.push(`皱纹${zoneData.wrinkles > 60 ? '明显' : zoneData.wrinkles > 30 ? '轻度' : '轻微'}`);
+                                                                if (zoneData.texture !== undefined) metrics.push(`纹理${zoneData.texture > 70 ? '细腻' : zoneData.texture > 40 ? '一般' : '粗糙'}`);
+                                                                if (zoneData.spots !== undefined) metrics.push(`色斑${zoneData.spots > 60 ? '明显' : zoneData.spots > 30 ? '少量' : '无'}`);
+                                                                if (zoneData.redness !== undefined) metrics.push(`泛红${zoneData.redness > 60 ? '明显' : zoneData.redness > 30 ? '轻度' : '无'}`);
+                                                                if (zoneData.darkCircles !== undefined) metrics.push(`黑眼圈${zoneData.darkCircles > 60 ? '明显' : zoneData.darkCircles > 30 ? '轻度' : '无'}`);
+                                                                if (zoneData.firmness !== undefined) metrics.push(`紧致${zoneData.firmness > 70 ? '良好' : zoneData.firmness > 40 ? '一般' : '松弛'}`);
+                                                                if (zoneData.contour !== undefined) metrics.push(`轮廓${zoneData.contour > 70 ? '清晰' : zoneData.contour > 40 ? '一般' : '模糊'}`);
+                                                                if (metrics.length === 0) return null;
+                                                                return (
+                                                                    <p className="text-xs text-[#8c7a6b] mb-2 leading-snug min-h-[2.5em] line-clamp-2">
+                                                                        {metrics.join(' · ')}
+                                                                    </p>
+                                                                );
+                                                            })()}
                                                             <div className="mt-2 pt-2 border-t border-dashed border-[#3d2f25]/10">
-                                                                <p className="text-sm text-[#5c4937] leading-snug">
-                                                                    <span className="font-medium mr-1">����:</span>
+                                                                <p className="text-xs text-emerald-700 leading-snug">
+                                                                    <span className="font-medium mr-1">建议:</span>
                                                                     {zoneData.advice}
                                                                 </p>
                                                             </div>
@@ -913,18 +916,18 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                             <div className="px-5 py-3 flex justify-between items-center">
                                                 <div className="flex items-center gap-2">
                                                     <Activity className="w-4 h-4 text-[#8c7a6b]" />
-                                                    <span className="text-sm font-medium text-[#3d2f25]">���ƻ�רҵ������������</span>
+                                                    <span className="text-sm font-medium text-[#3d2f25]">定制化专业分析数据详情</span>
                                                 </div>
                                                 <div className="flex items-center gap-3">
                                                     <span className="text-xs text-[#8c7a6b] font-normal hidden sm:inline-block">
-                                                        MySkin.Today? Gold Standard
+                                                        MySkin.Today™ Gold Standard
                                                     </span>
                                                     <ChevronRight className="w-4 h-4 text-[#8c7a6b]" />
                                                 </div>
                                             </div>
                                             <div className="px-5 pb-3 pt-0">
                                                 <p className="text-[11px] text-[#8c7a6b]/80 leading-relaxed pl-6">
-                                                    ��ϵ����ר�������ʣ�����ѯ�ŵ���ʻ�ȡרҵ�������
+                                                    联系您的专属护肤顾问，或咨询门店顾问获取专业分析解读
                                                 </p>
                                             </div>
                                         </div>
@@ -933,7 +936,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             }
                         />
 
-                        {/* ���ƻ������������� Modal - Page Level */}
+                        {/* 定制化分析数据详情 Modal - Page Level */}
                         <AnimatePresence>
                             {showLabData && (
                                 <m.div
@@ -965,13 +968,13 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         <div className="px-6 sm:px-8 pt-6 sm:pt-8 pb-2 flex-shrink-0">
                                             <div className="flex items-center gap-3">
                                                 <Activity className="w-5 h-5 text-[#8c7a6b]" />
-                                                <h3 className="text-lg font-bold text-[#3d2f25]">���ƻ�רҵ������������</h3>
+                                                <h3 className="text-lg font-bold text-[#3d2f25]">定制化专业分析数据详情</h3>
                                             </div>
                                         </div>
                                         <div className="overflow-y-auto custom-scrollbar px-6 sm:px-8 py-5 sm:py-6 flex-1">
                                             <div className="grid grid-cols-1 gap-y-0">
 
-                                                {/* ʮά������PC ������ͼ���ֻ����ñ�� */}
+                                                {/* 十维分析：PC 用条形图，手机端用表单 */}
                                                 {faceAnalysis?.dimensions && (
                                                     <>
                                                         <div className="hidden sm:block mb-2">
@@ -985,10 +988,10 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                                                 {/* Table Header Row (Desktop only) */}
                                                 <div className="hidden sm:grid grid-cols-12 text-[11px] font-semibold text-[#1B3A5C] border-b border-[#D9D0C3] py-2 px-4 tracking-wider">
-                                                    <div className="col-span-5">���ָ�� (Parameter)</div>
-                                                    <div className="col-span-3 text-right">�ⶨֵ (Value)*</div>
-                                                    <div className="col-span-2 text-right">�ο���Χ (Range)</div>
-                                                    <div className="col-span-2 text-right">״̬ (Status)</div>
+                                                    <div className="col-span-5">检测指标 (Parameter)</div>
+                                                    <div className="col-span-3 text-right">测定值 (Value)*</div>
+                                                    <div className="col-span-2 text-right">参考范围 (Range)</div>
+                                                    <div className="col-span-2 text-right">状态 (Status)</div>
                                                 </div>
 
                                                 {computeLabAnalysis(faceAnalysis).flatMap((group) => (
@@ -1013,12 +1016,12 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                 <div className="flex gap-2.5 items-start text-[11px] leading-relaxed text-[#5c4937]">
                                                     <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-[#C9A86C]" />
                                                     <div className="space-y-1.5">
-                                                        <p className="font-medium text-[#3d2f25]">����˵�� (Data Disclaimer)</p>
+                                                        <p className="font-medium text-[#3d2f25]">数据说明 (Data Disclaimer)</p>
                                                         <p>
-                                                            <span className="font-semibold text-[#3d2f25]">* AI ESTIMATE:</span> ������ֵ���� AI �㷨���������沿ͼ�������������ɫ�󡢶Աȶȣ���������ó���<span className="border-b border-[#3d2f25]/20 text-[#3d2f25]">��������̽ͷʵ������</span>��
+                                                            <span className="font-semibold text-[#3d2f25]">* AI ESTIMATE:</span> 上述数值均由 AI 算法基于您的面部图像特征（纹理、色泽、对比度）反演推算得出，<span className="border-b border-[#3d2f25]/20 text-[#3d2f25]">并非物理探头实测数据</span>。
                                                         </p>
                                                         <p>
-                                                            ���磺�������ضȷּ���Wrinkle Severity���Ǹ����沿��������Ӱ���Ӿ����ֹ���������������������ο����������ҽ����ϡ�
+                                                            例如：皱纹严重度分级（Wrinkle Severity）是根据面部纹理与阴影的视觉表现估算而来。本报告仅作护肤参考，不可替代医疗诊断。
                                                         </p>
                                                     </div>
                                                 </div>
@@ -1033,7 +1036,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                     </main>
 
-                    {/* 4. Products - ���Ϸ�רҵ�汨�濨Ƭ�����߾ࣩ��ȶ��� */}
+                    {/* 4. Products - 与上方专业版报告卡片（含边距）宽度对齐 */}
                     <div className="w-full max-w-[900px] mx-auto px-6 lg:px-10">
                         <ProductRecommendationSection
                             products={(result.products || []).map(p => ({
@@ -1075,25 +1078,25 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     className="inline-flex items-center justify-center gap-2 px-5 sm:px-8 py-2.5 sm:py-3 rounded-full bg-[#5c4937] text-white text-[12px] sm:text-[13px] tracking-[0.1em] font-medium hover:bg-[#4a3a2c] transition-colors"
                                 >
                                     <MessageCircle className="w-4 h-4" />
-                                    ��ϵ����
+                                    联系顾问
                                 </button>
                                 <button
                                     onClick={() => router.push('/')}
                                     className="inline-flex items-center justify-center gap-2 px-5 sm:px-8 py-2.5 sm:py-3 rounded-full border border-[#5c4937]/30 text-[#5c4937] text-[12px] sm:text-[13px] tracking-[0.1em] font-medium hover:bg-[#5c4937]/5 transition-colors"
                                 >
                                     <House className="w-4 h-4" />
-                                    �ص���ҳ
+                                    回到首页
                                 </button>
                             </div>
 
-                            {/* �������ͺ��� CTA */}
+                            {/* 肌智派送好礼 CTA */}
                             <div className="flex justify-center mb-10">
                                 <button
                                     onClick={() => router.push('/gift')}
                                     className="group inline-flex items-center justify-center gap-2 w-auto sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 rounded-full border border-dashed border-[#8B7355]/40 bg-[#8B7355]/[0.04] text-[12px] sm:text-[13px] tracking-[0.1em] text-[#8B7355] hover:text-[#5c4937] hover:border-[#5c4937]/40 hover:bg-[#5c4937]/5 transition-all duration-300"
                                 >
                                     <Gift className="w-4 h-4" />
-                                    �������ͺ��� �� ����齱
+                                    肌智派送好礼 · 参与抽奖
                                     <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
                                 </button>
                             </div>
@@ -1101,28 +1104,28 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             {/* Minimal Footer Text */}
                             <div className="text-center">
                                 <div className="flex flex-row justify-center items-center gap-1 sm:gap-5 text-[10px] sm:text-xs mb-2 sm:mb-3 text-[var(--result-text-primary)]">
-                                    <span className="opacity-90">? 2026 NIHPLOD. All Rights Reserved.</span>
-                                    <span className="opacity-40">?</span>
+                                    <span className="opacity-90">© 2026 NIHPLOD. All Rights Reserved.</span>
+                                    <span className="opacity-40">•</span>
                                     <a
                                         href="https://nihplod.cn/terms"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="transition-colors opacity-80 hover:opacity-100 font-medium"
                                     >
-                                        ��������
+                                        服务条款
                                     </a>
-                                    <span className="opacity-40 sm:hidden">?</span>
+                                    <span className="opacity-40 sm:hidden">•</span>
                                     <a
                                         href="https://nihplod.cn/privacy"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="transition-colors opacity-80 hover:opacity-100 font-medium"
                                     >
-                                        ��˽����
+                                        隐私政策
                                     </a>
                                 </div>
                                 <p className="text-[10px] sm:text-xs opacity-70 text-[var(--result-text-primary)]">
-                                    *AI ���������ͼ������Ӱ������ο���������ҽ����Ͻ���
+                                    *AI 分析结果受图像质量影响仅供参考，不构成医疗诊断建议
                                 </p>
                             </div>
                         </div>
@@ -1144,7 +1147,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     <div style={{ width: 360, height: 640, transform: "scale(0.67)", transformOrigin: "0 0" }}>
                                         <SharePoster
                                             ref={posterRef}
-                                            nickname={userNickname || "�û�"}
+                                            nickname={userNickname || "用户"}
                                             score={faceAnalysis?.overallScore ?? (result?.dataSource === "questionnaire" ? undefined : 0)}
                                             skinTone={faceAnalysis?.dimensions?.skinTone?.score ?? (result?.dataSource === "questionnaire" ? undefined : 0)}
                                             waterOil={faceAnalysis?.dimensions?.waterOil?.score ?? (result?.dataSource === "questionnaire" ? undefined : 0)}
