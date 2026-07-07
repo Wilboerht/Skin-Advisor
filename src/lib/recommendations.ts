@@ -334,11 +334,8 @@ export async function getCandidateProducts(
     persona?: string
 ): Promise<ScoredProduct[]> {
     try {
-        // 1. Fetch Active Products
         const allProducts = await prisma.product.findMany({
-            where: {
-                active: true
-            }
+            where: { active: true }
         });
 
         if (allProducts.length === 0) return [];
