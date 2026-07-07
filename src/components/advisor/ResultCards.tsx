@@ -133,7 +133,7 @@ export default function ResultCards({
           {/* Text Content */}
           <div className="flex flex-col justify-center z-10">
             {/* 分享版标签 */}
-            <div className="relative z-10 mb-3 lg:mb-4 flex h-[24px] w-auto px-3 items-center justify-center rounded-full border border-[#3d2f25]/15 bg-transparent text-xs font-bold text-[#5c4937] lg:rounded-lg lg:border-[#3d2f25]/8 lg:bg-white/70 lg:shadow-sm whitespace-nowrap">
+            <div className="relative z-10 mb-4 lg:mb-6 inline-flex h-[24px] px-2 items-center justify-center rounded-full border border-[#3d2f25]/15 bg-transparent text-xs font-bold text-[#5c4937] lg:rounded-lg lg:border-[#3d2f25]/8 lg:bg-white/70 lg:shadow-sm whitespace-nowrap">
               肌智派证书
             </div>
 
@@ -208,8 +208,8 @@ export default function ResultCards({
         <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-0 lg:gap-12 h-full">
           <div className="flex flex-col justify-between items-start w-full lg:w-[30%] shrink-0">
             <div>
-              <div className="relative z-10 mb-4 flex h-[24px] w-[72px] items-center justify-center rounded-full border border-[#3d2f25]/15 bg-transparent text-xs font-bold text-[#5c4937] lg:mb-6 lg:rounded-lg lg:border-[#3d2f25]/8 lg:bg-white/70 lg:shadow-sm">
-                专业版
+              <div className="relative z-10 mb-4 inline-flex h-[24px] px-2 items-center justify-center rounded-full border border-[#3d2f25]/15 bg-transparent text-xs font-bold text-[#5c4937] lg:mb-6 lg:rounded-lg lg:border-[#3d2f25]/8 lg:bg-white/70 lg:shadow-sm whitespace-nowrap">
+                专业版报告
               </div>
               <h2 className="text-lg lg:text-2xl font-bold text-[#3d2f25] mb-2 relative z-10">
                 深度肌肤检测报告
