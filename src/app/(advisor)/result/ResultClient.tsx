@@ -891,7 +891,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                                 {zoneData.condition}
                                                             </p>
                                                             <div className="mt-2 pt-2 border-t border-dashed border-[#3d2f25]/10">
-                                                                <p className="text-sm text-[#7a6552] leading-snug">
+                                                                <p className="text-xs text-[#7a6552] leading-snug">
                                                                     <span className="font-medium text-[#5c4937] mr-1">建议:</span>
                                                                     {zoneData.advice}
                                                                 </p>
