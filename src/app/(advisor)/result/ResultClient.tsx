@@ -754,7 +754,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             className="h-8 sm:h-10 w-auto object-contain"
                             priority
                         />
-                        <p className="mt-6 mb-5 lg:mt-8 lg:mb-8 text-base lg:text-lg text-[#5c4937] font-medium tracking-wide">
+                        <p className="mt-6 mb-5 lg:mt-8 lg:mb-8 text-base lg:text-lg text-[#5c4937] font-medium tracking-wide flex items-center justify-center gap-2">
+                            <Sparkles className="w-4 h-4 lg:w-5 lg:h-5" />
                             {userNickname} 的专属肌智派素颜分析报告
                         </p>
                     </div>
@@ -785,7 +786,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     )}
 
                     {/* Main Content */}
-                    <main className={styles.main}>
+                    <main className={`${styles.main} lg:gap-8`}>
 
                         {/* Report Summary Cards */}
                         <ResultCards
