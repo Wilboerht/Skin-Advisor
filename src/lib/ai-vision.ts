@@ -126,6 +126,13 @@ export async function analyzeImages(
             const jsonData = extractJsonFromResponse<Record<string, unknown>>(result);
             if (!jsonData) throw new Error("Failed to parse JSON from Vision API");
 
+            // 优先检查 validation 拦截状态（非真人/翻拍/遮挡等）
+            const validation = jsonData.validation as { isValid?: boolean; message?: string } | undefined;
+            if (validation && validation.isValid === false) {
+                const reason = validation.message || "图片未通过验证";
+                throw new Error(`[Validation] ${reason}`);
+            }
+
             // 结构验证：必须包含核心分析字段，且 dimensions 应为对象
             const hasDimensions = jsonData.dimensions && typeof jsonData.dimensions === 'object';
             const hasSkinType = jsonData.skinType && typeof jsonData.skinType === 'object';

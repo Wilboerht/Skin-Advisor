@@ -361,6 +361,20 @@ export async function POST(request: NextRequest) {
                 if (err.message?.includes("cancelled") || err.name === 'AbortError') {
                     throw new Error("Face analysis cancelled (client timeout or disconnect)");
                 }
+                // 图片验证拦截（非真人/翻拍/遮挡等），直接返回友好提示
+                if (err.message?.includes("[Validation]")) {
+                    const reason = err.message.replace("[Validation] ", "");
+                    aiLogger.warn(`Face validation failed: ${reason}`);
+                    await rollbackUsage(request, faceSessionId, body as Record<string, unknown>);
+                    return NextResponse.json(
+                        {
+                            error: "图片验证失败",
+                            message: reason || "未检测到清晰人脸，请重新拍摄",
+                            code: "VALIDATION_FAILED"
+                        },
+                        { status: 400 }
+                    );
+                }
                 // Retry if payload error
                 const isPayloadError = err.message?.includes('400') || err.message?.includes('413') || err.message?.includes('base64') || err.message?.includes('too large') || err.message?.includes('content length') || err.message?.includes('payload');
                 if (isPayloadError) {
