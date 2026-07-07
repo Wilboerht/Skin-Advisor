@@ -803,12 +803,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                             1、详细诊断报告 <span className="text-xs lg:text-base">(Detailed Diagnosis)</span>
                                         </h4>
 
-                                        {/* AI Summary — 突出展示 */}{result.analysis?.summary && (
-                                            <p className="text-sm lg:text-[15px] leading-relaxed text-[#3d2f25] font-medium mb-4 px-4 py-3 bg-[#3d2f25]/5 rounded-lg border-l-2 border-[#3d2f25]/30">
-                                                {result.analysis.summary}
-                                            </p>
-                                        )}
-
                                         {/* Show Details if available, else fallback to Summary */}
                                         {result.analysis?.details && result.analysis.details.length > 0 ? (
                                             <div className="space-y-2 lg:space-y-3 text-xs lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
