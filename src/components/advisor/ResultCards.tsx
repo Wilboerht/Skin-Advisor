@@ -133,8 +133,8 @@ export default function ResultCards({
           {/* Text Content */}
           <div className="flex flex-col justify-center z-10">
             {/* 分享版标签 */}
-            <div className="relative z-10 mb-3 lg:mb-4 flex h-[24px] w-[72px] items-center justify-center rounded-full border border-[#3d2f25]/15 bg-transparent text-xs font-bold text-[#5c4937] lg:rounded-lg lg:border-[#3d2f25]/8 lg:bg-white/70 lg:shadow-sm">
-              分享版
+            <div className="relative z-10 mb-3 lg:mb-4 flex h-[24px] w-auto px-3 items-center justify-center rounded-full border border-[#3d2f25]/15 bg-transparent text-xs font-bold text-[#5c4937] lg:rounded-lg lg:border-[#3d2f25]/8 lg:bg-white/70 lg:shadow-sm whitespace-nowrap">
+              肌智派证书
             </div>
 
             {/* Greeting */}
