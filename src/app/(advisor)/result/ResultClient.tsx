@@ -12,6 +12,8 @@ import {
     ScanFace,
     Activity,
     AlertCircle,
+    Sparkles,
+    Sun,
     X
 } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
@@ -72,7 +74,7 @@ function MobileDimensionForm({ dimensions }: { dimensions: Record<string, { scor
                         <div className="h-1.5 w-full rounded-full bg-[#E8E2D9] overflow-hidden">
                             <div className={`h-full rounded-full ${color}`} style={{ width: `${score}%` }} />
                         </div>
-                        <p className="mt-1.5 text-[11px] text-[#8A8A8A] leading-relaxed">{DIMENSION_DESCRIPTIONS[key]}</p>
+                        <p className="mt-1.5 text-xs text-[#8A8A8A] leading-relaxed">{DIMENSION_DESCRIPTIONS[key]}</p>
                     </div>
                 );
             })}
@@ -100,11 +102,11 @@ function MobileLabRow({ metric }: { metric: LabMetric }) {
             </div>
             <div className="grid grid-cols-2 gap-2">
                 <div>
-                    <p className="text-[10px] text-[#8A8A8A] mb-0.5">测定值</p>
+                    <p className="text-[11px] text-[#8A8A8A] mb-0.5">测定值</p>
                     <p className="text-[12px] text-[#1A1A1A]">{metric.value}</p>
                 </div>
                 <div>
-                    <p className="text-[10px] text-[#8A8A8A] mb-0.5">参考范围</p>
+                    <p className="text-[11px] text-[#8A8A8A] mb-0.5">参考范围</p>
                     <p className="text-[12px] text-[#1A1A1A]">{metric.ref}</p>
                 </div>
             </div>
@@ -743,7 +745,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     <SaveReportBanner />
 
                     {/* Logo */}
-                    <div className="w-full flex justify-center pt-14 pb-3">
+                    <div className="w-full flex flex-col items-center pt-14">
                         <Image
                             src="/NIHPLOD-logo.svg"
                             alt="NIHPLOD"
@@ -752,6 +754,9 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             className="h-8 sm:h-10 w-auto object-contain"
                             priority
                         />
+                        <p className="mt-6 mb-6 text-base lg:text-lg text-[#5c4937] font-medium tracking-wide">
+                            {userNickname} 的专属肌智派素颜分析报告
+                        </p>
                     </div>
 
                     {/* Validation Warning Banner */}
@@ -804,11 +809,20 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         </h4>
 
                                         {result.analysis?.details && result.analysis.details.length > 0 ? (
-                                            <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-xs lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
-                                                {result.analysis.details.map((item, idx) => (
-                                                    <li key={idx}>{item}</li>
-                                                ))}
-                                            </ul>
+                                            <>
+                                                {result.analysis.details[0] && (
+                                                    <p className="text-sm lg:text-[15px] leading-relaxed text-[#3d2f25] font-medium mb-4">
+                                                        {result.analysis.details[0]}
+                                                    </p>
+                                                )}
+                                                {result.analysis.details.length > 1 && (
+                                                    <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
+                                                        {result.analysis.details.slice(1).map((item, idx) => (
+                                                            <li key={idx}>{item}</li>
+                                                        ))}
+                                                    </ul>
+                                                )}
+                                            </>
                                         ) : (
                                             <p className="text-[14px] leading-relaxed text-[#5c4937]">
                                                 {faceAnalysis?.summary || result.analysis?.summary || "暂无详细诊断报告"}
@@ -822,16 +836,16 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                             2、专家护肤建议 <span className="text-xs lg:text-base">(Expert Recommendations)</span>
                                         </h4>
 
-                                        {/* 💆 护肤建议 */}
-                                        <h5 className="text-sm font-medium text-[#3d2f25] mb-2">💆 护肤建议</h5>
+                                        <p className="text-xs text-[#8c7a6b] mb-3">根据您的肌肤数据，以下是针对性的护理和生活方式建议：</p>
+
                                         {(faceAnalysis?.recommendations && faceAnalysis.recommendations.length > 0) ? (
-                                            <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-xs lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
+                                            <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
                                                 {(faceAnalysis.recommendations).map((rec, idx) => (
                                                     <li key={idx}>{rec}</li>
                                                 ))}
                                             </ul>
                                         ) : (
-                                            <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-xs lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
+                                            <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
                                                 <li>每日早晚温和清洁，避免过度去脂。</li>
                                                 <li>严格做好防晒，减少紫外线损伤。</li>
                                                 <li>根据季节调整保湿产品，保持水油平衡。</li>
@@ -841,8 +855,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         {/* 🌿 生活建议（嵌套在专家护肤建议内） */}
                                         {result.analysis?.lifestyleTips && result.analysis.lifestyleTips.length > 0 && (
                                             <div className="mt-5 pt-4 border-t border-dashed border-[#3d2f25]/10">
-                                                <h5 className="text-sm font-medium text-[#3d2f25] mb-2">🌿 生活建议</h5>
-                                                <ul className="list-disc pl-5 space-y-1.5 text-xs lg:text-[13px] leading-relaxed text-[#5c4937]">
+                                                <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
                                                     {result.analysis.lifestyleTips.map((tip, idx) => (
                                                         <li key={idx}>{tip}</li>
                                                     ))}
@@ -873,29 +886,12 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                         <div key={key} className="bg-[#3d2f25]/5 border text-left border-[#3d2f25]/15 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
                                                             <div className="flex items-center justify-between mb-2">
                                                                 <h5 className="font-semibold text-[#3d2f25] text-sm">{label}</h5>
-                                                                <span className="text-xs bg-[#3d2f25]/8 text-[#8c7a6b] px-2 py-0.5 rounded-full">
-                                                                    {zoneData.condition}
-                                                                </span>
                                                             </div>
-                                                            {(() => {
-                                                                const metrics: string[] = [];
-                                                                if (zoneData.oil !== undefined) metrics.push(`油脂${zoneData.oil > 60 ? '偏高' : zoneData.oil < 30 ? '偏低' : '适中'}`);
-                                                                if (zoneData.wrinkles !== undefined) metrics.push(`皱纹${zoneData.wrinkles > 60 ? '明显' : zoneData.wrinkles > 30 ? '轻度' : '轻微'}`);
-                                                                if (zoneData.texture !== undefined) metrics.push(`纹理${zoneData.texture > 70 ? '细腻' : zoneData.texture > 40 ? '一般' : '粗糙'}`);
-                                                                if (zoneData.spots !== undefined) metrics.push(`色斑${zoneData.spots > 60 ? '明显' : zoneData.spots > 30 ? '少量' : '无'}`);
-                                                                if (zoneData.redness !== undefined) metrics.push(`泛红${zoneData.redness > 60 ? '明显' : zoneData.redness > 30 ? '轻度' : '无'}`);
-                                                                if (zoneData.darkCircles !== undefined) metrics.push(`黑眼圈${zoneData.darkCircles > 60 ? '明显' : zoneData.darkCircles > 30 ? '轻度' : '无'}`);
-                                                                if (zoneData.firmness !== undefined) metrics.push(`紧致${zoneData.firmness > 70 ? '良好' : zoneData.firmness > 40 ? '一般' : '松弛'}`);
-                                                                if (zoneData.contour !== undefined) metrics.push(`轮廓${zoneData.contour > 70 ? '清晰' : zoneData.contour > 40 ? '一般' : '模糊'}`);
-                                                                if (metrics.length === 0) return null;
-                                                                return (
-                                                                    <p className="text-xs text-[#8c7a6b] mb-2 leading-snug min-h-[2.5em] line-clamp-2">
-                                                                        {metrics.join(' · ')}
-                                                                    </p>
-                                                                );
-                                                            })()}
+                                                            <p className="text-sm text-[#5c4937] mb-2 leading-snug">
+                                                                {zoneData.condition}
+                                                            </p>
                                                             <div className="mt-2 pt-2 border-t border-dashed border-[#3d2f25]/10">
-                                                                <p className="text-xs text-emerald-700 leading-snug">
+                                                                <p className="text-sm text-[#5c4937] leading-snug">
                                                                     <span className="font-medium mr-1">建议:</span>
                                                                     {zoneData.advice}
                                                                 </p>
