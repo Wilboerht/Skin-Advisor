@@ -19,6 +19,42 @@ function validateImageFile(file: Blob): void {
 }
 
 /**
+ * 客户端压缩图片（Canvas API，无需 sharp）
+ * 限制最大宽度 1200px，输出 JPEG quality 0.85
+ */
+async function compressImage(file: Blob): Promise<Blob> {
+    // 小于 200KB 的图不压缩
+    if (file.size < 200 * 1024) return file;
+
+    try {
+        const bitmap = await createImageBitmap(file);
+        const MAX_WIDTH = 1200;
+        let { width, height } = bitmap;
+        if (width > MAX_WIDTH) {
+            height = Math.round(height * (MAX_WIDTH / width));
+            width = MAX_WIDTH;
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return file;
+
+        ctx.drawImage(bitmap, 0, 0, width, height);
+        bitmap.close();
+
+        const compressed = await new Promise<Blob>((resolve) => {
+            canvas.toBlob((b) => resolve(b || file), "image/jpeg", 0.85);
+        });
+        canvas.remove();
+        return compressed;
+    } catch {
+        return file; // 压缩失败则原图上传
+    }
+}
+
+/**
  * 上传图片到云存储
  * @param file 文件对象或 Blob
  * @param filename 可选的文件名
@@ -30,11 +66,14 @@ export async function uploadImage(
 ): Promise<string> {
     validateImageFile(file);
 
+    // 上传前压缩
+    const compressed = await compressImage(file);
+
     // 优先使用阿里云 OSS
     if (isOSSConfigured()) {
         try {
             console.log("[Storage] 使用阿里云 OSS 上传");
-            return await uploadImageToOSS(file, filename);
+            return await uploadImageToOSS(compressed, filename);
         } catch (error) {
             console.warn("[Storage] OSS 上传失败，尝试备选方案:", error);
         }
@@ -47,7 +86,7 @@ export async function uploadImage(
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
             filename: filename,
-            type: file.type || "image/jpeg"
+            type: compressed.type || "image/jpeg"
         }),
     });
 
@@ -61,9 +100,9 @@ export async function uploadImage(
     const uploadRes = await fetch(uploadUrl, {
         method: "PUT",
         headers: {
-            "Content-Type": file.type || "image/jpeg"
+            "Content-Type": compressed.type || "image/jpeg"
         },
-        body: file
+        body: compressed
     });
 
     if (!uploadRes.ok) {
