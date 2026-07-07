@@ -22,10 +22,12 @@ const ADMIN_PUBLIC_PATHS = [
     "/api/admin/cleanup-guests", // 支持 ADMIN_SECRET Bearer token（定时任务）
 ];
 
-// 允许的源（生产环境应限制为实际域名）
+// 允许的源（生产环境限制为实际域名，开发环境放行 localhost）
 const ALLOWED_ORIGINS = [
     process.env.NEXT_PUBLIC_SITE_URL || "",
     process.env.NEXT_PUBLIC_BASE_URL || "",
+    // 本地开发自动放行
+    ...(process.env.NODE_ENV !== "production" ? ["http://localhost:3000", "http://127.0.0.1:3000"] : []),
 ].filter(Boolean);
 
 export async function proxy(request: NextRequest) {
