@@ -297,10 +297,6 @@ function ProductImage({
     onImageError: () => void;
     compact?: boolean;
 }) {
-    const isLocalImage = product.image?.startsWith('/') && !product.image?.startsWith('//');
-    // 外部 HTTPS 图片用 unoptimized 绕过 Next.js Image 代理，避免广告拦截器误杀
-    const useUnoptimized = isLocalImage || product.image?.startsWith('https://');
-
     if (imageError) {
         return (
             <div className={cn(
@@ -322,7 +318,7 @@ function ProductImage({
                 sizes="(max-width: 1023px) 120px, (max-width: 1200px) 33vw, 25vw"
                 placeholder="blur"
                 blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMCwsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wAARCAAIAAoDASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAAAAUH/8QAIRAAAgIBAwUBAAAAAAAAAAAAAwQBAgAFBhESEyExQVH/xAAVAQEBAAAAAAAAAAAAAAAAAAAFBv/EABoRAAICAwAAAAAAAAAAAAAAAAECAAMEESH/2gAMAwEAAhEDEEAAAAGqpnWZZMmf/9k="
-                unoptimized={useUnoptimized}
+
                 onError={onImageError}
             />
         </div>
