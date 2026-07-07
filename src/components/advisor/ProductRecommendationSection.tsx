@@ -185,7 +185,7 @@ export function ProductRecommendationSection({
                         ref={scrollRef}
                         className={cn(
                             "flex gap-3 overflow-x-auto snap-x snap-mandatory pb-3 pt-3",
-                            centered ? "flex-col lg:flex-row lg:justify-center pb-0 pt-0 lg:pb-3 lg:pt-3" : "px-[2%] sm:px-[4%] md:px-[6%]"
+                            centered ? "flex-col lg:flex-row lg:justify-center pb-0 pt-0 lg:pb-2 lg:pt-2" : "px-[2%] sm:px-[4%] md:px-[6%]"
                         )}
                         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', overscrollBehaviorX: 'contain' }}
                     >
