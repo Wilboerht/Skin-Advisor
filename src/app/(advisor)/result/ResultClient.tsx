@@ -686,7 +686,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[300] bg-[#1A1A1A]/30 backdrop-blur-[2px] flex items-center justify-center p-4"
+                        className="fixed inset-0 z-[300] bg-[#1A1A1A]/70 backdrop-blur-[2px] flex items-center justify-center p-4"
                     >
                         <m.div
                             initial={{ scale: 0.95, opacity: 0, y: 8 }}
@@ -745,7 +745,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         <button
                                             ref={retryButtonRef}
                                             onClick={handleMismatchRetry}
-                                            className="w-full h-11 bg-[#1B3A5C] text-white text-[14px] font-medium rounded-lg hover:bg-[#15324D] active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+                                            className="w-full h-11 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent text-[14px] font-medium rounded-lg hover:bg-[#1B3A5C] hover:text-white active:scale-[0.99] transition-all flex items-center justify-center gap-2"
                                         >
                                             <RotateCcw size={14} strokeWidth={2} />
                                             <span>重新填写问卷</span>
