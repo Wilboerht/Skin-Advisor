@@ -51,7 +51,7 @@ export default function ResultIndexPage() {
             发现你的肌肤形象类型
           </h1>
           <p
-            className="text-[13px] md:text-base text-[#5E5E5E] font-light max-w-xl mx-auto leading-relaxed mb-6 md:mb-[30px] opacity-0 animate-fade-in-up"
+            className="text-[13px] md:text-base text-[#5E5E5E] font-light max-w-xl mx-auto leading-relaxed mb-5 opacity-0 animate-fade-in-up"
             style={{ animationDelay: "0.1s", animationFillMode: "forwards" }}
           >
             每一种肌肤，都有自己的性格。从素颜状态出发，读懂肌肤真正需要什么。
