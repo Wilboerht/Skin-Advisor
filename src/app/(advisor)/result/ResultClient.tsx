@@ -650,17 +650,25 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     // Fallback if truly nothing to show (not loading, no result)
     if (!result && !showLoading) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-[#F8F7F3] px-4">
-                <div className="w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm text-center">
-                    <h3 className="text-lg font-serif text-[#1A1A1A] mb-2">报告加载失败</h3>
-                    <p className="text-sm text-[#5E5E5E] mb-6">数据可能已过期或不存在</p>
-                    <button
-                        onClick={() => router.push("/questions?edit=true")}
-                        className="px-6 h-10 rounded-lg border border-[#1B3A5C] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
-                    >
-                        重新测试
-                    </button>
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div className="absolute inset-0 bg-[#F5F2E9]/80 backdrop-blur-sm" />
+                <div className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm">
+                    <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+                        <div className="sm:w-[60%] text-center sm:text-left">
+                            <h3 className="text-lg font-serif text-[#1A1A1A] mb-3 sm:mb-2">报告加载失败</h3>
+                            <p className="text-sm text-[#5E5E5E] leading-relaxed">数据可能已过期或不存在</p>
+                        </div>
+                        <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
+                            <button
+                                onClick={() => router.push("/questions?edit=true")}
+                                className="px-6 h-10 rounded-lg border border-[#1B3A5C] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                            >
+                                重新测试
+                            </button>
+                        </div>
+                    </div>
                 </div>
+                <Image src="/images/watermark.png" alt="" width={200} height={200} className="absolute bottom-4 left-1/2 -translate-x-1/2 w-32 h-auto object-contain opacity-15 pointer-events-none" unoptimized />
             </div>
         );
     }
