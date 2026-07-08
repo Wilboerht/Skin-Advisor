@@ -3,6 +3,7 @@
  * 自动选择存储后端: 阿里云 OSS > 本地存储
  */
 import { uploadImageToOSS, isOSSConfigured } from "./oss-upload-client";
+import { fetchWithCsrf } from "./fetch-client";
 
 export type StorageProvider = "oss" | "local";
 
@@ -81,7 +82,7 @@ export async function uploadImage(
 
     // 降级到本地存储
     console.log("[Storage] 使用本地存储上传");
-    const signRes = await fetch("/api/oss/sign", {
+    const signRes = await fetchWithCsrf("/api/oss/sign", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -97,13 +98,20 @@ export async function uploadImage(
 
     const { uploadUrl, publicUrl } = signData.data;
 
-    const uploadRes = await fetch(uploadUrl, {
+    const isLocalUpload = typeof uploadUrl === "string" && uploadUrl.startsWith("/api/local-upload");
+    const uploadRes = await (isLocalUpload ? fetchWithCsrf(uploadUrl, {
         method: "PUT",
         headers: {
             "Content-Type": compressed.type || "image/jpeg"
         },
         body: compressed
-    });
+    }) : fetch(uploadUrl, {
+        method: "PUT",
+        headers: {
+            "Content-Type": compressed.type || "image/jpeg"
+        },
+        body: compressed
+    }));
 
     if (!uploadRes.ok) {
         throw new Error("上传图片到本地存储失败");

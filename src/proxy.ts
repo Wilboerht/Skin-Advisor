@@ -91,7 +91,8 @@ export async function proxy(request: NextRequest) {
     }
 
     // ==================== C 端 API CSRF 防护 ====================
-    const csrfPublicAuthPaths = [
+    const csrfExemptPaths = [
+        // 公开认证接口
         "/api/auth/login",
         "/api/auth/login-code",
         "/api/auth/register",
@@ -100,8 +101,13 @@ export async function proxy(request: NextRequest) {
         "/api/auth/reset-password",
         "/api/auth/wechat",
         "/api/auth/wechat/bind",
+        // AI 端点已有独立的 Origin/Referer + Content-Type 校验，且支持匿名使用
+        "/api/advisor/analyze",
+        "/api/advisor/face-analyze",
+        // 匿名/埋点接口：sendBeacon 无法携带自定义 header
+        "/api/advisor/analytics/track",
     ];
-    const isCApi = pathname.startsWith("/api/") && !isAdminApi && !csrfPublicAuthPaths.some((p) => pathname === p);
+    const isCApi = pathname.startsWith("/api/") && !isAdminApi && !csrfExemptPaths.some((p) => pathname === p);
     if (isCApi) {
         const csrfValid = await verifyCsrfToken(request);
         if (!csrfValid) {

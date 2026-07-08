@@ -1,3 +1,5 @@
+import { fetchWithCsrf } from "./fetch-client";
+
 const MAX_UPLOAD_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_UPLOAD_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
@@ -29,7 +31,7 @@ export async function uploadImageToOSS(file: Blob, filename: string = "image.jpg
     validateImageFile(file);
 
     // 1. 获取上传签名
-    const signRes = await fetch("/api/oss/sign", {
+    const signRes = await fetchWithCsrf("/api/oss/sign", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -45,14 +47,21 @@ export async function uploadImageToOSS(file: Blob, filename: string = "image.jpg
 
     const { uploadUrl, publicUrl } = signData.data;
 
-    // 2. 直传 OSS
-    const uploadRes = await fetch(uploadUrl, {
+    // 2. 直传 OSS（本地降级接口需要 CSRF）
+    const isLocalUpload = typeof uploadUrl === "string" && uploadUrl.startsWith("/api/local-upload");
+    const uploadRes = await (isLocalUpload ? fetchWithCsrf(uploadUrl, {
         method: "PUT",
         headers: {
             "Content-Type": file.type || "image/jpeg"
         },
         body: file
-    });
+    }) : fetch(uploadUrl, {
+        method: "PUT",
+        headers: {
+            "Content-Type": file.type || "image/jpeg"
+        },
+        body: file
+    }));
 
     if (!uploadRes.ok) {
         throw new Error("上传图片到 OSS 失败");

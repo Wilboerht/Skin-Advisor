@@ -1,6 +1,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAdvisorAnalytics } from './useAdvisorAnalytics';
+import { fetchWithCsrf } from '@/lib/fetch-client';
 import { preprocessFaceImage } from '@/lib/image-processing';
 
 import { getPrivacyConsentPayload } from '@/components/advisor/PrivacyConsent';
@@ -77,7 +78,7 @@ async function fetchWithRetry(
     { retries = 1, backoff = 1000, retryOnServerError = false }: FetchWithRetryOptions = {}
 ): Promise<Response> {
     try {
-        const res = await fetch(url, options);
+        const res = await fetchWithCsrf(url, options);
         // 429 is a business logic rejection (usage limit), do NOT retry
         if (!res.ok && res.status === 429) {
             const errorData = await res.json().catch(() => ({}));

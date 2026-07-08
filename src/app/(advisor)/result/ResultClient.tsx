@@ -27,6 +27,7 @@ import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { computeLabAnalysis } from "@/lib/analysis-lab";
 import type { LabMetric } from "@/lib/analysis-lab";
 import { cn } from "@/lib/utils";
+import { fetchWithCsrf } from "@/lib/fetch-client";
 
 import { ScientificBarChart } from "@/components/advisor/ScientificBarChart";
 
@@ -482,7 +483,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 const claimedKey = STORAGE_KEYS.claimedSession(sessionId);
                 if (localStorage.getItem(claimedKey)) return;
 
-                const res = await fetch("/api/advisor/session/claim", {
+                const res = await fetchWithCsrf("/api/advisor/session/claim", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ sessionId })
