@@ -138,6 +138,13 @@ export default function QuestionsPage() {
         }
     }, [questions.length, currentStepIndex]);
 
+    // 每次切题时重置滚动位置到顶部
+    useEffect(() => {
+        if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTop = 0;
+        }
+    }, [currentStepIndex]);
+
     // 恢复之前的状态（从扫脸页点击“返回修改”时调用）
     const resumeSavedProgress = () => {
         try {
@@ -519,15 +526,16 @@ export default function QuestionsPage() {
 
             {/* Main Content Area */}
             <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scrollbar-hide relative w-full max-w-5xl mx-auto z-10 px-4 md:px-8 mb-4">
-                <div className="min-h-full flex items-center justify-center">
+                <div className="min-h-full flex flex-col justify-center">
                     <AnimatePresence mode="wait" custom={direction}>
                         <m.div
                             key={currentStepIndex}
                             custom={direction}
-                            initial={{ opacity: 0, x: direction > 0 ? 30 : -30 }} // Reduced movement for cleaner feel
+                            layout
+                            initial={{ opacity: 0, x: direction > 0 ? 20 : -20 }}
                             animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: direction > 0 ? -30 : 30 }}
-                            transition={{ duration: 0.4, ease: [0.2, 0.8, 0.2, 1] }}
+                            exit={{ opacity: 0, x: direction > 0 ? -20 : 20 }}
+                            transition={{ duration: 0.25, ease: "easeOut" }}
                             className="w-full"
                         >
                             <QuestionStep

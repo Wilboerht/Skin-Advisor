@@ -11,16 +11,11 @@ export default async function ResultPage(props: {
     const status = searchParams.status;
     const user = await getSession();
 
-    // /result 只表示「当前结果」，不带 id。
-    // 如果 URL 带了 id，按身份分流到正确的地方。
-    if (id && status !== 'analyzing') {
-        if (user) {
-            // 登录用户的历史报告去 /reports/:id
-            redirect(`/reports/${id}`);
-        } else {
-            // 游客只能从当前设备的 localStorage 看当前结果
-            redirect('/result');
-        }
+    // /result 只表示「当前结果」。
+    // 登录用户且 URL 带了已完成报告的 id 时，直接跳转到历史报告页 /reports/:id，
+    // 避免客户端先渲染 /result 再跳转的闪烁。
+    if (id && status !== 'analyzing' && user) {
+        redirect(`/reports/${id}`);
     }
 
     // 当前结果由客户端从 localStorage 或分析流程恢复
