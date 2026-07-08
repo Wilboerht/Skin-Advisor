@@ -59,20 +59,7 @@ export default function Home() {
   const { initSession } = useAdvisorAnalytics();
   const { user, refresh: refreshUser } = useAuth();
 
-  const spotlightRef = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = useReducedMotion();
-
-  // 柔光聚光灯跟随效果
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (spotlightRef.current) {
-        spotlightRef.current.style.background = `radial-gradient(600px circle at ${e.clientX}px ${e.clientY}px, rgba(200, 185, 160, 0.08), transparent 40%)`;
-      }
-    };
-
-    document.addEventListener("mousemove", handleMouseMove);
-    return () => document.removeEventListener("mousemove", handleMouseMove);
-  }, []);
 
   // Initialize session
   useEffect(() => {
@@ -316,12 +303,6 @@ export default function Home() {
         <div className="h-full">
           <div className="relative z-20 w-full h-full bg-[#F8F7F3]">
             <div className="home-container relative h-full w-full">
-              {/* Spotlight Follow */}
-              <div
-                ref={spotlightRef}
-                className="absolute inset-0 z-[1] pointer-events-none"
-              />
-
               {/* Main Content Area */}
               <main className="main-content relative z-10 w-full min-h-screen flex flex-col items-center justify-center text-center px-6 pt-24 md:pt-28 pb-24">
                 {/* Center AI Actions */}
