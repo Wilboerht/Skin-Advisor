@@ -5,6 +5,7 @@ import { verifyPassword, signToken, AUTH_COOKIE_NAME } from "@/lib/auth";
 import { mirrorOfficialCookies } from "@/lib/cookie-mirror";
 import { UserRole } from "@/lib/permissions";
 import { generateCsrfToken, CSRF_COOKIE_NAME } from "@/lib/csrf";
+import { parseOfficialResponse, type OfficialApiResponse } from "@/lib/official-api";
 
 async function tryDevLocalLogin(phone: string, password: string): Promise<NextResponse | null> {
     // 双重开关：仅允许非生产环境 + 显式设置 ALLOW_LOCAL_LOGIN=true
@@ -25,6 +26,7 @@ async function tryDevLocalLogin(phone: string, password: string): Promise<NextRe
         phone: localUser.phoneNumber,
         name: localUser.name,
         role: localUser.role,
+        tokenVersion: localUser.tokenVersion,
         dailyTestLimit: localUser.dailyTestLimit,
         csrf: csrfToken,
     }, "7d");
@@ -55,21 +57,6 @@ async function tryDevLocalLogin(phone: string, password: string): Promise<NextRe
     return response;
 }
 
-async function parseOfficialJson(officialResponse: Response) {
-    const contentType = officialResponse.headers.get("content-type") || "";
-    if (!contentType.includes("application/json")) {
-        const text = await officialResponse.text();
-        console.error("Official API returned non-JSON response", text.slice(0, 300));
-        return null;
-    }
-    try {
-        return await officialResponse.json();
-    } catch {
-        const text = await officialResponse.text();
-        console.error("Official API JSON parse failed", text.slice(0, 300));
-        return null;
-    }
-}
 
 export async function POST(req: NextRequest) {
     let body: { phone?: string; password?: string } = {};
@@ -112,14 +99,16 @@ export async function POST(req: NextRequest) {
             signal: controller.signal
         }).finally(() => clearTimeout(timeoutId));
 
-        const responseData = await parseOfficialJson(officialResponse);
+        const parsed = await parseOfficialResponse<OfficialApiResponse<{ user: { id: string; phone: string; nickname?: string; avatar?: string; email?: string } }>>(officialResponse);
 
-        if (!responseData) {
+        if (!parsed) {
             return NextResponse.json(
-                { error: "登录失败：上游服务响应异常" },
+                { error: "登录失败：上游服务响应异常或签名无效" },
                 { status: 502 }
             );
         }
+
+        const responseData = parsed.data;
 
         if (!officialResponse.ok || !responseData.success) {
             const devResponse = await tryDevLocalLogin(body.phone, body.password);
@@ -128,6 +117,13 @@ export async function POST(req: NextRequest) {
             return NextResponse.json(
                 { error: responseData.error?.message || "登录失败" },
                 { status: officialResponse.status || 401 }
+            );
+        }
+
+        if (!responseData.data?.user) {
+            return NextResponse.json(
+                { error: "登录失败：上游响应格式异常" },
+                { status: 502 }
             );
         }
 
@@ -164,10 +160,10 @@ export async function POST(req: NextRequest) {
 
         const response = NextResponse.json({
             user: {
-                ...responseData.data.user,
+                ...userPayload,
                 // 确保我们返回的字段名和原先系统要求的对齐
-                phone: responseData.data.user.phone,
-                name: responseData.data.user.nickname || responseData.data.user.phone,
+                phone: userPayload.phone,
+                name: userPayload.nickname || userPayload.phone,
                 role: UserRole.USER
             }
         });

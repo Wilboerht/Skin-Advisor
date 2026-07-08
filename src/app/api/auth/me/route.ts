@@ -7,6 +7,7 @@ import { mirrorOfficialCookies } from "@/lib/cookie-mirror";
 import { createHash } from "crypto";
 import { UserRole } from "@/lib/permissions";
 import { generateCsrfToken, CSRF_COOKIE_NAME } from "@/lib/csrf";
+import { parseOfficialResponse, type OfficialApiResponse } from "@/lib/official-api";
 
 // 简单的内存缓存，防止外部官方 API 慢导致每个请求都阻塞 10s+
 // 注意：Next.js Serverless 环境中内存缓存不共享，仅做单请求级减负
@@ -104,17 +105,22 @@ export async function GET(req: NextRequest) {
         });
         clearTimeout(timeoutId);
 
-        const contentType = officialResponse.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-            console.error("Official API returned non-JSON response", await officialResponse.text());
+        const parsed = await parseOfficialResponse<OfficialApiResponse<{ user: { id: string; phone: string; nickname?: string; avatar?: string; email?: string } }>>(officialResponse);
+        if (!parsed) {
+            // 官网响应不可信（签名无效或非 JSON）时，回退到本地 token
             const localResponse = await getLocalSessionUser();
             return localResponse || NextResponse.json({ user: null });
         }
 
-        const data = await officialResponse.json();
+        const data = parsed.data;
 
         if (!officialResponse.ok || !data.success) {
             // 官网未识别时，回退到本地 token（开发环境本地登录场景）
+            const localResponse = await getLocalSessionUser();
+            return localResponse || NextResponse.json({ user: null });
+        }
+
+        if (!data.data?.user) {
             const localResponse = await getLocalSessionUser();
             return localResponse || NextResponse.json({ user: null });
         }
@@ -145,15 +151,16 @@ export async function GET(req: NextRequest) {
                 password: "", // Local password isn't used
                 name: userPayload.nickname || userPayload.phone,
                 avatarUrl: userPayload.avatar || null,
-                role: UserRole.USER
+                role: UserRole.USER,
+                tokenVersion: 0
             }
         });
 
         // 使用本地 DB 的 role（管理端可能已禁用/修改），而非官网固定 UserRole.USER
         const responseUser = {
-            ...data.data.user,
-            phone: data.data.user.phone,
-            name: data.data.user.nickname || data.data.user.phone,
+            ...userPayload,
+            phone: userPayload.phone,
+            name: userPayload.nickname || userPayload.phone,
             role: localUser.role
         };
 
@@ -174,6 +181,7 @@ export async function GET(req: NextRequest) {
                 phone: responseUser.phone || null,
                 name: responseUser.name,
                 role: responseUser.role,
+                tokenVersion: localUser.tokenVersion,
                 dailyTestLimit: localUser.dailyTestLimit,
                 csrf: csrfToken,
             }, "7d");

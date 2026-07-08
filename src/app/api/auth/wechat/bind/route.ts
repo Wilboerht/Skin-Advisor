@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { UserRole } from "@/lib/permissions";
+import { parseOfficialResponse, type OfficialApiResponse } from "@/lib/official-api";
 
 export async function POST(req: NextRequest) {
     try {
@@ -27,12 +28,26 @@ export async function POST(req: NextRequest) {
             body: JSON.stringify(body)
         });
 
-        const responseData = await officialResponse.json();
+        const parsed = await parseOfficialResponse<OfficialApiResponse<{ user: { id: string; phone: string; nickname?: string; avatar?: string; email?: string } }>>(officialResponse);
+        if (!parsed) {
+            return NextResponse.json(
+                { error: "绑定失败：上游服务响应异常或签名无效" },
+                { status: 502 }
+            );
+        }
+        const responseData = parsed.data;
 
         if (!officialResponse.ok || !responseData.success) {
             return NextResponse.json(
                 { error: responseData.error?.message || "绑定失败" },
                 { status: officialResponse.status || 400 }
+            );
+        }
+
+        if (!responseData.data?.user) {
+            return NextResponse.json(
+                { error: "绑定失败：上游响应格式异常" },
+                { status: 502 }
             );
         }
 
@@ -63,7 +78,8 @@ export async function POST(req: NextRequest) {
                 password: "",
                 name: userPayload.nickname || userPayload.phone,
                 avatarUrl: userPayload.avatar || null,
-                role: UserRole.USER
+                role: UserRole.USER,
+                tokenVersion: 0
             }
         });
 

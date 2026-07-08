@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireRole, getClientInfo, logAdminAction } from "@/lib/admin-auth";
 import { canViewFullPII, UserRole, isValidUserRole, AdminRole } from "@/lib/permissions";
+import { incrementTokenVersion } from "@/lib/auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { Prisma } from "@prisma/client";
 
@@ -167,6 +168,11 @@ const RUNTIME_USER_ROLES: string[] = [UserRole.USER, UserRole.DISABLED];
             where: { id },
             data: updateData,
         });
+
+        // 禁用/启用/角色变更时撤销该用户现有 JWT
+        if (actualNewRole !== undefined) {
+            await incrementTokenVersion(id);
+        }
 
         // Log admin action
         const clientInfo = getClientInfo(request);

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { incrementTokenVersion } from "@/lib/auth";
 
 const PHONE_REGEX = /^1[3-9]\d{9}$/;
 
@@ -48,6 +50,12 @@ export async function POST(req: NextRequest) {
 
         if (!officialResponse.ok || !data.success) {
             return NextResponse.json({ error: data.error?.message || "重置失败" }, { status: officialResponse.status || 400 });
+        }
+
+        // 密码重置后撤销该用户所有现有 JWT，强制重新登录
+        const localUser = await prisma.user.findUnique({ where: { phoneNumber: body.phone }, select: { id: true } });
+        if (localUser) {
+            await incrementTokenVersion(localUser.id);
         }
 
         return NextResponse.json({ success: true, message: data.data?.message || "密码已重置" });

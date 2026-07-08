@@ -3,22 +3,8 @@ import prisma from "@/lib/prisma";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { mirrorOfficialCookies } from "@/lib/cookie-mirror";
 import { UserRole } from "@/lib/permissions";
+import { parseOfficialResponse, type OfficialApiResponse } from "@/lib/official-api";
 
-async function parseOfficialJson(officialResponse: Response) {
-    const contentType = officialResponse.headers.get("content-type") || "";
-    if (!contentType.includes("application/json")) {
-        const text = await officialResponse.text();
-        console.error("Official API returned non-JSON response", text.slice(0, 300));
-        return null;
-    }
-    try {
-        return await officialResponse.json();
-    } catch {
-        const text = await officialResponse.text();
-        console.error("Official API JSON parse failed", text.slice(0, 300));
-        return null;
-    }
-}
 
 export async function POST(req: NextRequest) {
     try {
@@ -67,20 +53,29 @@ export async function POST(req: NextRequest) {
             signal: controller.signal
         }).finally(() => clearTimeout(timeoutId));
 
-        const responseData = await parseOfficialJson(officialResponse);
+        const parsed = await parseOfficialResponse<OfficialApiResponse<{ user: { id: string; phone: string; nickname?: string; avatar?: string; email?: string } }>>(officialResponse);
 
-        if (!responseData) {
+        if (!parsed) {
             return NextResponse.json(
-                { error: "注册失败：上游服务响应异常" },
+                { error: "注册失败：上游服务响应异常或签名无效" },
                 { status: 502 }
             );
         }
+
+        const responseData = parsed.data;
 
         // 无论何种错误，透传给前端
         if (!officialResponse.ok || !responseData.success) {
             return NextResponse.json(
                 { error: responseData.error?.message || "注册失败" },
                 { status: officialResponse.status || 400 }
+            );
+        }
+
+        if (!responseData.data?.user) {
+            return NextResponse.json(
+                { error: "注册失败：上游响应格式异常" },
+                { status: 502 }
             );
         }
 
@@ -111,15 +106,16 @@ export async function POST(req: NextRequest) {
                 password: "", // Local password isn't used
                 name: userPayload.nickname || userPayload.phone,
                 avatarUrl: userPayload.avatar || null,
-                role: UserRole.USER
+                role: UserRole.USER,
+                tokenVersion: 0
             }
         });
 
         const response = NextResponse.json({
             user: {
-                ...responseData.data.user,
-                phone: responseData.data.user.phone,
-                name: responseData.data.user.nickname || responseData.data.user.phone,
+                ...userPayload,
+                phone: userPayload.phone,
+                name: userPayload.nickname || userPayload.phone,
                 role: UserRole.USER
             }
         });

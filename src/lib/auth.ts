@@ -36,6 +36,7 @@ export interface SessionUser {
     phone?: string | null;
     name?: string;
     role: string;
+    tokenVersion: number; // 当前 token 版本，用于撤销
     dailyTestLimit?: number | null; // 每日测试次数限制，管理员可调整
 }
 
@@ -54,7 +55,7 @@ export async function getSession(): Promise<SessionUser | null> {
             typeof payload.userId === 'string' ? payload.userId :
             null;
         if (userId) {
-            // 查询数据库确认用户当前状态（禁用/删除检测）
+            // 查询数据库确认用户当前状态（禁用/删除/token 撤销检测）
             const dbUser = await prisma.user.findUnique({
                 where: { id: userId },
                 select: {
@@ -63,10 +64,16 @@ export async function getSession(): Promise<SessionUser | null> {
                     phoneNumber: true,
                     name: true,
                     role: true,
+                    tokenVersion: true,
                     dailyTestLimit: true
                 }
             });
             if (!dbUser || isDisabledUser(dbUser.role)) {
+                return null;
+            }
+            // JWT 撤销校验：token 版本必须匹配当前数据库版本
+            const tokenVersion = payload.tokenVersion;
+            if (typeof tokenVersion !== "number" || tokenVersion !== dbUser.tokenVersion) {
                 return null;
             }
             return {
@@ -75,6 +82,7 @@ export async function getSession(): Promise<SessionUser | null> {
                 phone: dbUser.phoneNumber || undefined,
                 name: dbUser.name || undefined,
                 role: dbUser.role,
+                tokenVersion: dbUser.tokenVersion,
                 dailyTestLimit: dbUser.dailyTestLimit
             };
         }
@@ -82,4 +90,22 @@ export async function getSession(): Promise<SessionUser | null> {
     }
 
     return null;
+}
+
+/**
+ * 递增指定用户的 tokenVersion，使该用户已签发的所有 JWT 立即失效。
+ * 用于：修改密码、管理员禁用/启用用户、安全事件、显式登出等场景。
+ */
+export async function incrementTokenVersion(userId: string): Promise<number | null> {
+    try {
+        const updated = await prisma.user.update({
+            where: { id: userId },
+            data: { tokenVersion: { increment: 1 } },
+            select: { tokenVersion: true }
+        });
+        return updated.tokenVersion;
+    } catch (error) {
+        console.error(`[auth] Failed to increment tokenVersion for user ${userId}:`, error);
+        return null;
+    }
 }
