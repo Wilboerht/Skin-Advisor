@@ -70,7 +70,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       </section>
 
       {/* Advantages */}
-      <section className="relative overflow-hidden py-14 md:py-18 px-6 md:px-12 lg:px-20 bg-white">
+      <section className="relative overflow-hidden py-14 md:py-16 px-6 md:px-12 lg:px-20 bg-white">
         <Threads
           className="hidden md:block absolute top-[40%] left-0 right-0 -translate-y-1/2 h-[95%] z-0 pointer-events-none"
           color={[0.941, 0.929, 0.882]}
@@ -79,7 +79,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
           enableMouseInteraction={false}
         />
         <div className="relative z-10 max-w-5xl mx-auto">
-          <h2 className="text-xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-6 md:mb-10">
+          <h2 className="text-xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-6 md:mb-8">
             {data.m5.title || "优势高光"}
           </h2>
           <div className="grid md:grid-cols-2 gap-4 md:gap-6">
@@ -94,7 +94,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
                   </span>
                   <h3 className="text-base md:text-lg font-medium text-[#1A1A1A]">{adv.title}</h3>
                 </div>
-                <p className="text-[#5E5E5E] leading-[1.85] text-xs md:text-sm">{adv.content}</p>
+                <p className="text-[#5E5E5E] leading-[1.85] text-[13px] md:text-sm">{adv.content}</p>
               </div>
             ))}
           </div>
@@ -102,7 +102,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       </section>
 
       {/* Skincare Formula */}
-      <section className="py-18 px-6 md:px-12 lg:px-20 bg-[#F8F7F3]">
+      <section className="py-16 px-6 md:px-12 lg:px-20 bg-[#F8F7F3]">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-3 md:mb-4">
             {data.m7.title || `${data.typeName}的精准护肤公式`}
@@ -120,7 +120,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
                 </span>
                 <div className="flex-1">
                   <h3 className="text-base font-medium text-[#1A1A1A] mb-1 md:mb-3">{sug.title}</h3>
-                  <p className="text-[#5E5E5E] leading-[1.85] text-xs md:text-sm">{sug.content}</p>
+                  <p className="text-[#5E5E5E] leading-[1.85] text-[13px] md:text-sm">{sug.content}</p>
                 </div>
               </div>
             ))}
@@ -199,9 +199,9 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       </section>
 
       {/* Daily Routine */}
-      <section className="py-18 px-6 md:px-12 lg:px-20 bg-white">
+      <section className="py-16 px-6 md:px-12 lg:px-20 bg-white">
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-5 md:mb-8">
+          <h2 className="text-xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-6 md:mb-8">
             {data.m4.title || "我们建议的护肤日常"}
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
@@ -235,7 +235,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       </section>
 
       {/* CTA */}
-      <section className="relative py-14 md:py-18 px-6 md:px-12 lg:px-20 bg-white">
+      <section className="relative py-14 md:py-16 px-6 md:px-12 lg:px-20 bg-white">
         <div className="relative z-10 max-w-3xl mx-auto text-center">
           <h2 className="text-xl md:text-2xl font-serif text-[#1A1A1A] tracking-wide mb-6">
             每一种肌肤，都值得被认真对待
