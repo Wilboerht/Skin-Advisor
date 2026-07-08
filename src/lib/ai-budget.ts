@@ -372,19 +372,9 @@ export async function recordAIUsage(record: AIUsageRecord): Promise<void> {
             provider: record.provider,
             model: record.model,
         });
-    } finally {
-        // 释放 checkAIBudget 中预留的在途费用
-        // 使用实际估算成本而非固定值，确保预留与释放对等
-        if (record.requestType) {
-            const actualCost = estimatedCost > 0 ? estimatedCost : estimateAICost(
-                record.provider,
-                record.model,
-                record.promptTokens || 0,
-                record.completionTokens || 0
-            );
-            releasePendingReservation(record.requestType, Math.max(actualCost, 0.001));
-        }
     }
+    // 注意：预留释放由调用方（generateText / analyzeFace）在自己的 finally 中负责，
+    // 此处不释放，避免与调用方的安全释放产生双重释放。
 }
 
 // ============================================================================
