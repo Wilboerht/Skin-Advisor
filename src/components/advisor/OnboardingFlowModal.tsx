@@ -248,7 +248,7 @@ export function OnboardingFlowModal({
                                         onChange={(e) => setNickname(e.target.value)}
                                         placeholder="输入您的昵称"
                                         maxLength={10}
-                                        className="w-full bg-transparent border-0 border-b border-[#3D4430]/20 rounded-none py-4 px-0 mb-9 text-center text-[#1A1A1A] focus:outline-none focus:border-[#3D4430]/40 transition-colors placeholder:text-[#3D4430]/25 text-[15px] tracking-wide"
+                                        className="w-full bg-transparent border-0 border-b border-[#3D4430]/20 rounded-none py-4 px-0 mb-9 text-center text-[#1A1A1A] focus:outline-none focus:border-[#3D4430]/40 transition-colors placeholder:text-[#3D4430]/25 text-[16px] tracking-wide"
                                         onKeyDown={(e) => {
                                             if (e.key === "Enter") handleNicknameNext();
                                         }}
@@ -355,7 +355,7 @@ export function OnboardingFlowModal({
                                                     value={regionSearch}
                                                     onChange={(e) => setRegionSearch(e.target.value)}
                                                     placeholder="搜索省份 / 城市"
-                                                    className="w-full bg-white/60 border border-[#3D4430]/10 rounded-full py-2.5 pl-4 pr-10 text-sm text-[#1A1A1A] placeholder:text-[#3D4430]/30 focus:outline-none focus:border-[#8B7355]/40 transition-colors"
+                                                    className="w-full bg-white/60 border border-[#3D4430]/10 rounded-full py-2.5 pl-4 pr-10 text-[16px] text-[#1A1A1A] placeholder:text-[#3D4430]/30 focus:outline-none focus:border-[#8B7355]/40 transition-colors"
                                                 />
                                                 {/* Decorative watermark placeholder */}
                                                 {!regionSearch && (
