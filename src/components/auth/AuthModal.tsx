@@ -609,9 +609,9 @@ export function AuthModal() {
                                                     </div>
                                                     <span className="text-xs text-brand-charcoal/50 tracking-wide">
                                                         我已阅读并同意
-                                                        <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《用户协议》</a>
+                                                        <a href="https://nihplod.cn/terms" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《用户协议》</a>
                                                         和
-                                                        <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《隐私政策》</a>
+                                                        <a href="https://nihplod.cn/privacy" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《隐私政策》</a>
                                                     </span>
                                                 </label>
                                             </motion.div>
@@ -762,9 +762,9 @@ export function AuthModal() {
                                                     </div>
                                                     <span className="text-xs text-brand-charcoal/50 tracking-wide">
                                                         我已阅读并同意
-                                                        <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《用户协议》</a>
+                                                        <a href="https://nihplod.cn/terms" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《用户协议》</a>
                                                         和
-                                                        <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《隐私政策》</a>
+                                                        <a href="https://nihplod.cn/privacy" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《隐私政策》</a>
                                                     </span>
                                                 </label>
                                             </motion.div>
@@ -1133,9 +1133,9 @@ export function AuthModal() {
                                             </div>
                                             <span className="text-xs text-brand-charcoal/50 tracking-wide">
                                                 我已阅读并同意
-                                                <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《用户协议》</a>
+                                                <a href="https://nihplod.cn/terms" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《用户协议》</a>
                                                 和
-                                                <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《隐私政策》</a>
+                                                <a href="https://nihplod.cn/privacy" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《隐私政策》</a>
                                             </span>
                                         </label>
                                     </motion.div>
@@ -1278,9 +1278,9 @@ export function AuthModal() {
                                         </div>
                                         <span className="text-xs text-brand-charcoal/50 tracking-wide">
                                             我已阅读并同意
-                                            <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《用户协议》</a>
+                                            <a href="https://nihplod.cn/terms" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《用户协议》</a>
                                             和
-                                            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《隐私政策》</a>
+                                            <a href="https://nihplod.cn/privacy" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《隐私政策》</a>
                                         </span>
                                     </label>
 

@@ -134,9 +134,9 @@ export function PrivacyConsent({ onConsent }: PrivacyConsentProps) {
                         </div>
                         <span className="text-xs text-[#5E5E5E] leading-relaxed">
                             我已阅读并同意
-                            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-[#3D4430] underline underline-offset-2 mx-0.5">《隐私政策》</a>
+                            <a href="https://nihplod.cn/privacy" target="_blank" rel="noopener noreferrer" className="text-[#3D4430] underline underline-offset-2 mx-0.5">《隐私政策》</a>
                             和
-                            <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-[#3D4430] underline underline-offset-2 mx-0.5">《服务条款》</a>
+                            <a href="https://nihplod.cn/terms" target="_blank" rel="noopener noreferrer" className="text-[#3D4430] underline underline-offset-2 mx-0.5">《服务条款》</a>
                             ，了解并同意上述数据收集与使用方式。
                         </span>
                     </label>
