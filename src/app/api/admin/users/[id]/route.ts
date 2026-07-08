@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireRole, getClientInfo, logAdminAction } from "@/lib/admin-auth";
+import { canViewFullPII, UserRole, isValidUserRole, AdminRole } from "@/lib/permissions";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { Prisma } from "@prisma/client";
 
 // GET /api/admin/users/[id] - Get user details
 // Available to super_admin and admin
-export const GET = requireRole("super_admin", "admin")(async (
+export const GET = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (
     request: NextRequest,
     { admin, params }
 ) => {
@@ -57,7 +58,7 @@ export const GET = requireRole("super_admin", "admin")(async (
         }
 
         // PII 保护：非 super_admin 脱敏邮箱和手机号
-        if (admin.role !== "super_admin") {
+        if (!canViewFullPII(admin.role)) {
             return NextResponse.json({
                 ...user,
                 email: user.email ? `${user.email.charAt(0)}***@${user.email.split('@')[1] || '***'}` : null,
@@ -72,7 +73,7 @@ export const GET = requireRole("super_admin", "admin")(async (
 });
 
 // PATCH /api/admin/users/[id] - Update user (disable/enable, update role, dailyTestLimit)
-export const PATCH = requireRole("super_admin", "admin")(async (
+export const PATCH = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (
     request: NextRequest,
     { admin, params }
 ) => {
@@ -98,7 +99,9 @@ export const PATCH = requireRole("super_admin", "admin")(async (
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
-        const VALID_ROLES = ["user", "disabled"];
+        const VALID_ROLES = [UserRole.USER, UserRole.DISABLED] as const;
+// 保持运行时数组以便 include 检查（显式声明为 string[] 避免 TypeScript 字面量元组限制）
+const RUNTIME_USER_ROLES: string[] = [UserRole.USER, UserRole.DISABLED];
         if (role !== undefined) {
             if (!VALID_ROLES.includes(role)) {
                 return NextResponse.json({ error: "Invalid role" }, { status: 400 });
@@ -128,22 +131,22 @@ export const PATCH = requireRole("super_admin", "admin")(async (
         let actualNewRole: string | undefined;
 
         if (role !== undefined) {
-            if (role === "disabled" && user.role !== "disabled") {
+            if (role === UserRole.DISABLED && user.role !== UserRole.DISABLED) {
                 // Disabling user: save current role to previousRole
-                updateData.role = "disabled";
+                updateData.role = UserRole.DISABLED;
                 updateData.previousRole = user.role;
-                actualNewRole = "disabled";
-            } else if (role !== "disabled" && user.role === "disabled") {
+                actualNewRole = UserRole.DISABLED;
+            } else if (role !== UserRole.DISABLED && user.role === UserRole.DISABLED) {
                 // Enabling user: restore previousRole if available
                 // Security: do NOT silently fallback to "user" if previousRole is missing.
                 // This prevents accidental role demotion.
                 const restoredRole = user.previousRole;
-                if (restoredRole && VALID_ROLES.includes(restoredRole)) {
+                if (restoredRole && RUNTIME_USER_ROLES.includes(restoredRole)) {
                     updateData.role = restoredRole;
                     actualNewRole = restoredRole;
                 } else {
                     // previousRole missing or invalid — accept explicit role from client
-                    if (!role || !VALID_ROLES.includes(role)) {
+                    if (!role || !RUNTIME_USER_ROLES.includes(role)) {
                         return NextResponse.json(
                             { error: "previousRole missing or invalid. Please explicitly specify a valid role." },
                             { status: 400 }
@@ -190,7 +193,7 @@ export const PATCH = requireRole("super_admin", "admin")(async (
 });
 
 // DELETE /api/admin/users/[id] - Delete user
-export const DELETE = requireRole("super_admin", "admin")(async (
+export const DELETE = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (
     request: NextRequest,
     { admin, params }
 ) => {

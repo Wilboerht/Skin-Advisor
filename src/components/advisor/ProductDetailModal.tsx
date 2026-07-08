@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useState, useMemo } from "react";
+import { useEffect, useCallback, useState, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { m, AnimatePresence } from "framer-motion";
@@ -20,6 +20,8 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
     const [mounted, setMounted] = useState(false);
     const [openAccordion, setOpenAccordion] = useState<string | null>(null);
     const [activeImageIndex, setActiveImageIndex] = useState(0);
+    const touchStartX = useRef(0);
+    const touchStartY = useRef(0);
 
     // 合并主图 + 图库为完整图片列表
     const galleryImages = useMemo(() => {
@@ -50,6 +52,22 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
     const goToNext = useCallback(() => {
         setActiveImageIndex(prev => (prev === galleryImages.length - 1 ? 0 : prev + 1));
     }, [galleryImages.length]);
+
+    // 触摸滑动手势
+    const handleTouchStart = useCallback((e: React.TouchEvent) => {
+        touchStartX.current = e.touches[0].clientX;
+        touchStartY.current = e.touches[0].clientY;
+    }, []);
+
+    const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+        const deltaX = e.changedTouches[0].clientX - touchStartX.current;
+        const deltaY = e.changedTouches[0].clientY - touchStartY.current;
+        // 仅水平滑动超过 50px 且大于垂直滑动时触发翻页
+        if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY)) {
+            if (deltaX > 0) goToPrev();
+            else goToNext();
+        }
+    }, [goToPrev, goToNext]);
 
     useEffect(() => {
         setMounted(true);
@@ -118,7 +136,11 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                         </button>
 
                         {/* Left - Image Gallery */}
-                        <div className="relative aspect-square w-full flex-shrink-0 bg-[#F5F0E8] lg:h-full lg:w-[45%] lg:aspect-auto">
+                        <div
+                            className="relative aspect-square w-full flex-shrink-0 bg-[#F5F0E8] lg:h-full lg:w-[45%] lg:aspect-auto"
+                            onTouchStart={handleTouchStart}
+                            onTouchEnd={handleTouchEnd}
+                        >
                             {galleryImages.length > 0 ? (
                                 <>
                                     <Image

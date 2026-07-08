@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import { House, MessageCircle, Gift, ArrowRight, AlertTriangle, Lightbulb } from "lucide-react";
 import { useAsyncAnalysis } from "@/hooks/useAsyncAnalysis";
 import { motion as m, AnimatePresence } from "framer-motion";
@@ -826,7 +827,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                         {/* Report Summary Cards */}
                         <ResultCards
                             score={faceAnalysis?.overallScore ?? (result?.dataSource === "questionnaire" ? undefined : 0)}
-                            skinAge={result?.skinProfile?.skinAge || 25}
+                            skinAge={result?.skinProfile?.skinAge ?? 25}
                             dimensions={faceAnalysis?.dimensions || {}}
                             nickname={userNickname}
                             gender={socialGender}
@@ -1077,7 +1078,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 category: p.category,
                                 image: p.image,
                                 images: p.images || null,
-                                price: p.price || '',
+                                price: p.price ?? '',
                                 reason: p.reason,
                                 description: p.description || null,
                                 keyIngredients: p.keyIngredients || [],
@@ -1138,23 +1139,19 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 <div className="flex flex-row justify-center items-center gap-1 sm:gap-5 text-[10px] sm:text-xs mb-2 sm:mb-3 text-[var(--result-text-primary)]">
                                     <span className="opacity-90" suppressHydrationWarning>© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</span>
                                     <span className="opacity-40">•</span>
-                                    <a
-                                        href="https://nihplod.cn/terms"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
+                                    <Link
+                                        href="/terms"
                                         className="transition-colors opacity-80 hover:opacity-100 font-medium"
                                     >
                                         服务条款
-                                    </a>
+                                    </Link>
                                     <span className="opacity-40 sm:hidden">•</span>
-                                    <a
-                                        href="https://nihplod.cn/privacy"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
+                                    <Link
+                                        href="/privacy"
                                         className="transition-colors opacity-80 hover:opacity-100 font-medium"
                                     >
                                         隐私政策
-                                    </a>
+                                    </Link>
                                 </div>
                                 <p className="text-[10px] sm:text-xs opacity-70 text-[var(--result-text-primary)]">
                                     *AI 分析结果受图像质量影响仅供参考，不构成医疗诊断建议
@@ -1185,7 +1182,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                             waterOil={faceAnalysis?.dimensions?.waterOil?.score ?? (result?.dataSource === "questionnaire" ? undefined : 0)}
                                             percentile={rankPercentile}
                                             avatar={getCharacterImage({
-                                                score: faceAnalysis?.overallScore || 0,
+                                                score: faceAnalysis?.overallScore ?? 0,
                                                 skinType: result?.skinProfile?.type || 'combination',
                                                 budget: ipBudget,
                                                 skincareFrequency: ipSkincareFrequency,

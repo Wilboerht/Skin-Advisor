@@ -6,6 +6,7 @@ import { Search, MoreHorizontal, User as UserIcon, Shield, ShieldOff, Trash2, Ey
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { UserDetailModal } from "./UserDetailModal";
 import { useToast } from "@/components/ui/Toast";
+import { isDisabledUser, UserRole } from "@/lib/permissions";
 
 interface User {
     id: string;
@@ -275,11 +276,11 @@ export function UsersClient() {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 align-middle">
-                                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${user.role === "disabled"
+                                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${isDisabledUser(user.role)
                                                 ? "bg-red-50 text-red-600"
                                                 : "bg-emerald-50 text-emerald-700"
                                                 }`}>
-                                                {user.role === "disabled" ? "已禁用" : "处于活跃状态"}
+                                                {isDisabledUser(user.role) ? "已禁用" : "处于活跃状态"}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-slate-600 align-middle">
@@ -384,7 +385,7 @@ export function UsersClient() {
                                 }}
                                 className="w-full px-3 py-2 text-left text-sm hover:bg-[#1A1A1A]/5 flex items-center gap-2"
                             >
-                                {users.find(u => u.id === showDropdown)?.role === "disabled" ? (
+                                {users.find(u => u.id === showDropdown)?.role === UserRole.DISABLED ? (
                                     <>
                                         <Shield className="w-4 h-4 text-green-600" />
                                         <span>启用用户</span>

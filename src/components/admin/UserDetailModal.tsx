@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 import { createPortal } from "react-dom";
+import { isDisabledUser, UserRole } from "@/lib/permissions";
 
 interface UserDetailModalProps {
     isOpen: boolean;
@@ -132,8 +133,8 @@ export function UserDetailModal({ isOpen, onClose, userId, onUpdate }: UserDetai
                             <h2 className="text-2xl font-serif text-slate-900">{user.name || "Anonymous User"}</h2>
                             <p className="text-slate-500 font-mono text-sm mt-1">{user.email || user.phoneNumber}</p>
                             <div className="flex items-center gap-3 mt-4">
-                                <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${user.role === 'disabled' ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
-                                    {user.role}
+                                <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${isDisabledUser(user.role) ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+                                    {isDisabledUser(user.role) ? UserRole.DISABLED : user.role}
                                 </span>
                                 <span className="text-xs text-slate-400 flex items-center gap-1">
                                     <Clock className="w-3 h-3" />

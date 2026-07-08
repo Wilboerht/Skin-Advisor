@@ -5,6 +5,8 @@ import { signToken, getSession, AUTH_COOKIE_NAME } from "@/lib/auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { mirrorOfficialCookies } from "@/lib/cookie-mirror";
 import { createHash } from "crypto";
+import { UserRole } from "@/lib/permissions";
+import { generateCsrfToken, CSRF_COOKIE_NAME } from "@/lib/csrf";
 
 // 简单的内存缓存，防止外部官方 API 慢导致每个请求都阻塞 10s+
 // 注意：Next.js Serverless 环境中内存缓存不共享，仅做单请求级减负
@@ -143,11 +145,11 @@ export async function GET(req: NextRequest) {
                 password: "", // Local password isn't used
                 name: userPayload.nickname || userPayload.phone,
                 avatarUrl: userPayload.avatar || null,
-                role: "user"
+                role: UserRole.USER
             }
         });
 
-        // 使用本地 DB 的 role（管理端可能已禁用/修改），而非官网固定 "user"
+        // 使用本地 DB 的 role（管理端可能已禁用/修改），而非官网固定 UserRole.USER
         const responseUser = {
             ...data.data.user,
             phone: data.data.user.phone,
@@ -165,19 +167,28 @@ export async function GET(req: NextRequest) {
         // 签发本地 JWT token，让后续本地 API (analyze, test-limit 等) 能正确识别用户
         // 官网的 user_token 是用官网 secret 签发的，本地无法验证，所以必须重新签发
         try {
+            const csrfToken = generateCsrfToken();
             const localToken = await signToken({
                 sub: responseUser.id,
                 email: responseUser.email || null,
                 phone: responseUser.phone || null,
                 name: responseUser.name,
                 role: responseUser.role,
-                dailyTestLimit: localUser.dailyTestLimit
+                dailyTestLimit: localUser.dailyTestLimit,
+                csrf: csrfToken,
             }, "7d");
             response.cookies.set(AUTH_COOKIE_NAME, localToken, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === "production",
                 sameSite: "strict",
                 maxAge: 7 * 24 * 60 * 60, // 7天
+                path: "/"
+            });
+            response.cookies.set(CSRF_COOKIE_NAME, csrfToken, {
+                httpOnly: false, // 前端需要读取以放入 header
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "strict",
+                maxAge: 7 * 24 * 60 * 60,
                 path: "/"
             });
             // Local auth_token issued successfully
@@ -243,7 +254,7 @@ export async function PUT(req: NextRequest) {
                 ...data.data.user,
                 phone: data.data.user.phone,
                 name: data.data.user.nickname || data.data.user.phone,
-                role: "user"
+                role: UserRole.USER
             }
         });
     } catch (e) {

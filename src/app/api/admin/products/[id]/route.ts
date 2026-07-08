@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { withAdminAuth, requireRole, getClientInfo } from "@/lib/admin-auth";
+import { AdminRole } from "@/lib/permissions";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import {
     MAX_NAME_LENGTH,
@@ -251,7 +252,7 @@ export const PUT = withAdminAuth(async (
 
 // DELETE /api/admin/products/[id] - Delete product
 // Available to super_admin and admin
-export const DELETE = requireRole("super_admin", "admin")(async (
+export const DELETE = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (
     request: NextRequest,
     { admin, params }
 ) => {

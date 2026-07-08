@@ -4,6 +4,7 @@ import crypto from "crypto";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { verifyAdminSession } from "@/lib/admin-auth";
+import { canPerformSystemSetup } from "@/lib/permissions";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
 export async function POST(request: NextRequest) {
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
                     { status: 401 }
                 );
             }
-            if (admin.role !== "super_admin") {
+            if (!canPerformSystemSetup(admin.role)) {
                 return NextResponse.json(
                     { success: false, error: "Forbidden - super_admin required" },
                     { status: 403 }

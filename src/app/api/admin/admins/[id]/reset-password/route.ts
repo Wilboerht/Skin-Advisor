@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireRole, logAdminAction, getClientInfo } from "@/lib/admin-auth";
+import { AdminRole } from "@/lib/permissions";
 import bcrypt from "bcryptjs";
 
 // POST /api/admin/admins/[id]/reset-password
-export const POST = requireRole("super_admin")(async (request, { admin, params }) => {
+export const POST = requireRole(AdminRole.SUPER_ADMIN)(async (request, { admin, params }) => {
     try {
         const { id } = await params;
         const body = await request.json();

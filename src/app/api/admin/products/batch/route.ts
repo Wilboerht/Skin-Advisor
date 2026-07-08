@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireRole, getClientInfo } from "@/lib/admin-auth";
+import { AdminRole } from "@/lib/permissions";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
 // POST - Batch operations on products
 // Available to super_admin and admin
-export const POST = requireRole("super_admin", "admin")(async (request: NextRequest, { admin }) => {
+export const POST = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (request: NextRequest, { admin }) => {
     // Rate limit
     const ip = getClientIP(request);
     const limitResult = await rateLimit(`admin-product-batch-${ip}`, "default", { maxRequests: 20, windowMs: 60 * 1000 });

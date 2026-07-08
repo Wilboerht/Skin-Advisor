@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { LogDetailModal } from "./LogDetailModal";
 import { useToast } from "@/components/ui/Toast";
+import { isSuperAdmin } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
 interface AuditLog {
@@ -279,7 +280,7 @@ export default function AuditLogsClient({ role }: AuditLogsClientProps) {
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    {role === "super_admin" && (
+                    {isSuperAdmin(role) && (
                         <button
                             onClick={handleExport}
                             disabled={exporting || logs.length === 0}

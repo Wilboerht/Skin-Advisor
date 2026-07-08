@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { containsInsensitive } from "@/lib/prisma-search";
-import { requireRole, logAdminAction, getClientInfo, VALID_ADMIN_ROLES } from "@/lib/admin-auth";
+import { requireRole, logAdminAction, getClientInfo } from "@/lib/admin-auth";
+import { AdminRole, VALID_ADMIN_ROLES } from "@/lib/permissions";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import bcrypt from "bcryptjs";
 
 // GET /api/admin/admins - List all admins
-export const GET = requireRole("super_admin")(async (request) => {
+export const GET = requireRole(AdminRole.SUPER_ADMIN)(async (request) => {
     // Rate limit
     const ip = getClientIP(request);
     const limitResult = await rateLimit(`admin-admins-get-${ip}`, "default", { maxRequests: 60, windowMs: 60 * 1000 });
@@ -66,7 +67,7 @@ export const GET = requireRole("super_admin")(async (request) => {
 });
 
 // POST /api/admin/admins - Create a new admin
-export const POST = requireRole("super_admin")(async (request, { admin }) => {
+export const POST = requireRole(AdminRole.SUPER_ADMIN)(async (request, { admin }) => {
     // Rate limit
     const ip = getClientIP(request);
     const limitResult = await rateLimit(`admin-admins-create-${ip}`, "default", { maxRequests: 20, windowMs: 60 * 1000 });

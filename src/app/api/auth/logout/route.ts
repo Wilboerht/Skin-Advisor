@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { AUTH_COOKIE_NAME } from "@/lib/auth";
 import { mirrorOfficialCookies } from "@/lib/cookie-mirror";
+import { CSRF_COOKIE_NAME } from "@/lib/csrf";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function POST(_req: NextRequest) {
@@ -28,6 +29,7 @@ export async function POST(_req: NextRequest) {
         response.cookies.delete(AUTH_COOKIE_NAME);
         response.cookies.delete("auth_token");
         response.cookies.delete("user_token");
+        response.cookies.delete(CSRF_COOKIE_NAME);
 
         return response;
     } catch (e) {
@@ -36,6 +38,7 @@ export async function POST(_req: NextRequest) {
         fallback.cookies.delete(AUTH_COOKIE_NAME);
         fallback.cookies.delete("auth_token");
         fallback.cookies.delete("user_token");
+        fallback.cookies.delete(CSRF_COOKIE_NAME);
         return fallback;
     }
 }

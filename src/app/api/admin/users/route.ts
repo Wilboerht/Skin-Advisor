@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { containsInsensitive } from "@/lib/prisma-search";
 import { requireRole } from "@/lib/admin-auth";
+import { isSuperAdmin, UserRole, AdminRole } from "@/lib/permissions";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { Prisma } from "@prisma/client";
 
@@ -18,7 +19,7 @@ function maskPhone(phone: string): string {
 
 // GET /api/admin/users - List users with pagination and search
 // Available to super_admin and admin
-export const GET = requireRole("super_admin", "admin")(async (request, { admin }) => {
+export const GET = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (request, { admin }) => {
     // Rate limit
     const ip = getClientIP(request);
     const limitResult = await rateLimit(`admin-users-get-${ip}`, "default", { maxRequests: 60, windowMs: 60 * 1000 });
@@ -26,7 +27,7 @@ export const GET = requireRole("super_admin", "admin")(async (request, { admin }
         return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
 
-    const isSuperAdmin = admin.role === "super_admin";
+    const isSuperAdminUser = isSuperAdmin(admin.role);
 
     try {
         const searchParams = request.nextUrl.searchParams;
@@ -48,9 +49,9 @@ export const GET = requireRole("super_admin", "admin")(async (request, { admin }
 
         if (status !== "all") {
             if (status === "active") {
-                where.role = { not: "disabled" };
+                where.role = { not: UserRole.DISABLED };
             } else if (status === "inactive") {
-                where.role = "disabled";
+                where.role = UserRole.DISABLED;
             } else {
                 return NextResponse.json({ error: "Invalid status" }, { status: 400 });
             }
@@ -77,7 +78,7 @@ export const GET = requireRole("super_admin", "admin")(async (request, { admin }
         ]);
 
         return NextResponse.json({
-            users: isSuperAdmin ? users : users.map(u => ({
+            users: isSuperAdminUser ? users : users.map(u => ({
                 ...u,
                 email: u.email ? maskEmail(u.email) : null,
                 phoneNumber: u.phoneNumber ? maskPhone(u.phoneNumber) : null,

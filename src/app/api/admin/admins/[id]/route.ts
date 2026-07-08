@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { requireRole, logAdminAction, getClientInfo, VALID_ADMIN_ROLES } from "@/lib/admin-auth";
+import { requireRole, logAdminAction, getClientInfo } from "@/lib/admin-auth";
+import { AdminRole, VALID_ADMIN_ROLES, isSuperAdmin } from "@/lib/permissions";
 import bcrypt from "bcryptjs";
 
 // PATCH /api/admin/admins/[id] - Update admin info
-export const PATCH = requireRole("super_admin")(async (request, { admin, params }) => {
+export const PATCH = requireRole(AdminRole.SUPER_ADMIN)(async (request, { admin, params }) => {
     try {
         const { id } = await params;
         const body = await request.json();
@@ -70,14 +71,15 @@ export const PATCH = requireRole("super_admin")(async (request, { admin, params 
             }
 
             // Prevent demotion/disabling of the last active super_admin
+            const targetIsSuperAdmin = isSuperAdmin(targetAdmin.role);
             const needsGuard =
-                (role !== undefined && targetAdmin.role === "super_admin" && role !== "super_admin") ||
-                (active !== undefined && targetAdmin.role === "super_admin" && active === false);
+                (role !== undefined && targetIsSuperAdmin && !isSuperAdmin(role)) ||
+                (active !== undefined && targetIsSuperAdmin && active === false);
 
             if (needsGuard) {
                 // Lock all active super_admins to serialize concurrent modifications
                 const activeSuperAdmins = await tx.$queryRaw<{ id: string }[]>`
-                    SELECT id FROM "AdminUser" WHERE role = 'super_admin' AND active = true FOR UPDATE
+                    SELECT id FROM "AdminUser" WHERE role = ${AdminRole.SUPER_ADMIN} AND active = true FOR UPDATE
                 `;
                 if (activeSuperAdmins.length <= 1) {
                     return { error: "不能降级或禁用最后一个活跃的超级管理员", status: 400 };
@@ -149,7 +151,7 @@ export const PATCH = requireRole("super_admin")(async (request, { admin, params 
 });
 
 // DELETE /api/admin/admins/[id] - Delete admin
-export const DELETE = requireRole("super_admin")(async (request, { admin, params }) => {
+export const DELETE = requireRole(AdminRole.SUPER_ADMIN)(async (request, { admin, params }) => {
     try {
         const { id } = await params;
 
@@ -170,9 +172,9 @@ export const DELETE = requireRole("super_admin")(async (request, { admin, params
         }
 
         // Cannot delete the last active super_admin
-        if (targetAdmin.role === "super_admin") {
+        if (isSuperAdmin(targetAdmin.role)) {
             const activeSuperAdminCount = await prisma.adminUser.count({
-                where: { role: "super_admin", active: true },
+                where: { role: AdminRole.SUPER_ADMIN, active: true },
             });
             if (activeSuperAdminCount <= 1) {
                 return NextResponse.json(

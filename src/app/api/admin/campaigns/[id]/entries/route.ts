@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma"
 import { withAdminAuth, logAdminAction, getClientInfo } from "@/lib/admin-auth"
 import { rateLimit, getClientIP } from "@/lib/ratelimit"
 import { logger } from "@/lib/logger"
+import { canViewFullPII } from "@/lib/permissions"
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 
@@ -43,8 +44,8 @@ export const GET = withAdminAuth(async (req, { admin, params }) => {
       user: e.user ? {
         id: e.user.id,
         name: e.user.name,
-        email: admin.role === "super_admin" ? e.user.email : maskEmail(e.user.email),
-        phoneNumber: admin.role === "super_admin" ? e.user.phoneNumber : maskPhone(e.user.phoneNumber),
+        email: canViewFullPII(admin.role) ? e.user.email : maskEmail(e.user.email),
+        phoneNumber: canViewFullPII(admin.role) ? e.user.phoneNumber : maskPhone(e.user.phoneNumber),
       } : null,
     }))
 

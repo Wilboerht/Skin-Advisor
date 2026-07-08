@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { withAdminAuth, requireRole, logAdminAction, getClientInfo } from "@/lib/admin-auth";
+import { AdminRole } from "@/lib/permissions";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { z } from "zod";
 
@@ -42,7 +43,7 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
 });
 
 // POST /api/admin/recommendation-rules
-export const POST = requireRole("super_admin", "admin")(async (req: NextRequest, { admin }) => {
+export const POST = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (req: NextRequest, { admin }) => {
     // Rate limit
     const ip = getClientIP(req);
     const limitResult = await rateLimit(`admin-rule-create-${ip}`, "default", { maxRequests: 30, windowMs: 60 * 1000 });

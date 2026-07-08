@@ -95,7 +95,8 @@ function CompactProductCard({
 
     const handleCardClick = useCallback(() => {
         onProductClick?.(product.id);
-    }, [product.id, onProductClick]);
+        onViewDetail?.(product);
+    }, [product.id, product, onProductClick, onViewDetail]);
 
     return (
         <m.div

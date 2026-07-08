@@ -3,6 +3,8 @@ import prisma from "@/lib/prisma";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { verifyPassword, signToken, AUTH_COOKIE_NAME } from "@/lib/auth";
 import { mirrorOfficialCookies } from "@/lib/cookie-mirror";
+import { UserRole } from "@/lib/permissions";
+import { generateCsrfToken, CSRF_COOKIE_NAME } from "@/lib/csrf";
 
 async function tryDevLocalLogin(phone: string, password: string): Promise<NextResponse | null> {
     // 双重开关：仅允许非生产环境 + 显式设置 ALLOW_LOCAL_LOGIN=true
@@ -16,13 +18,15 @@ async function tryDevLocalLogin(phone: string, password: string): Promise<NextRe
     const passwordValid = await verifyPassword(password, localUser.password);
     if (!passwordValid) return null;
 
+    const csrfToken = generateCsrfToken();
     const token = await signToken({
         sub: localUser.id,
         email: localUser.email,
         phone: localUser.phoneNumber,
         name: localUser.name,
         role: localUser.role,
-        dailyTestLimit: localUser.dailyTestLimit
+        dailyTestLimit: localUser.dailyTestLimit,
+        csrf: csrfToken,
     }, "7d");
 
     const response = NextResponse.json({
@@ -37,6 +41,13 @@ async function tryDevLocalLogin(phone: string, password: string): Promise<NextRe
     response.cookies.set(AUTH_COOKIE_NAME, token, {
         httpOnly: true,
         secure: false, // 仅开发环境本地登录使用
+        sameSite: "strict",
+        maxAge: 7 * 24 * 60 * 60,
+        path: "/"
+    });
+    response.cookies.set(CSRF_COOKIE_NAME, csrfToken, {
+        httpOnly: false,
+        secure: false,
         sameSite: "strict",
         maxAge: 7 * 24 * 60 * 60,
         path: "/"
@@ -147,7 +158,7 @@ export async function POST(req: NextRequest) {
                 password: "", // Local password isn't used
                 name: userPayload.nickname || userPayload.phone,
                 avatarUrl: userPayload.avatar || null,
-                role: "user"
+                role: UserRole.USER
             }
         });
 
@@ -157,7 +168,7 @@ export async function POST(req: NextRequest) {
                 // 确保我们返回的字段名和原先系统要求的对齐
                 phone: responseData.data.user.phone,
                 name: responseData.data.user.nickname || responseData.data.user.phone,
-                role: "user"
+                role: UserRole.USER
             }
         });
 

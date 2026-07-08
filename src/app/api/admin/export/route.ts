@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireRole, getClientInfo, logAdminAction } from "@/lib/admin-auth";
+import { canExportPII, AdminRole } from "@/lib/permissions";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
 // GET /api/admin/export?type=products|users|sessions|audit-logs
 // Restricted to super_admin and admin
 // PII exports (users, sessions, audit-logs) restricted to super_admin only
-export const GET = requireRole("super_admin", "admin")(async (request, { admin }) => {
+export const GET = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (request, { admin }) => {
     // Rate limit
     const ip = getClientIP(request);
     const limitResult = await rateLimit(`admin-export-${ip}`, "default", { maxRequests: 10, windowMs: 60 * 1000 });
@@ -17,7 +18,7 @@ export const GET = requireRole("super_admin", "admin")(async (request, { admin }
     const type = request.nextUrl.searchParams.get("type") || "products";
 
     // Sensitive exports (PII) require super_admin
-    if ((type === "users" || type === "sessions" || type === "audit-logs") && admin.role !== "super_admin") {
+    if ((type === "users" || type === "sessions" || type === "audit-logs") && !canExportPII(admin.role)) {
         return NextResponse.json({ error: "Forbidden - super_admin required for this export" }, { status: 403 });
     }
 

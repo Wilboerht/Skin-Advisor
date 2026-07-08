@@ -7,6 +7,7 @@ import { Prisma } from "@prisma/client";
 import { getClientIP } from "@/lib/ratelimit";
 import { verifySessionSignature, createSignedSession, ADMIN_SESSION_COOKIE_NAME } from "@/lib/session-verify";
 import { logger } from "@/lib/logger";
+import { AdminRole, VALID_ADMIN_ROLES, canAccessAdminDashboard } from "@/lib/permissions";
 
 interface AdminSession {
     adminId: string;
@@ -104,7 +105,10 @@ export async function logAdminAction(params: {
     }
 }
 
-export const VALID_ADMIN_ROLES = ["super_admin", "admin"];
+export { VALID_ADMIN_ROLES };
+
+// Backward-compatible alias for code that imports the array directly
+export const ADMIN_ROLES = [AdminRole.SUPER_ADMIN, AdminRole.ADMIN];
 
 /**
  * Higher-order function to wrap API route handlers with admin auth.
@@ -114,7 +118,7 @@ export const VALID_ADMIN_ROLES = ["super_admin", "admin"];
 export function withAdminAuth<T = any>(
     handler: (request: NextRequest, context: T & { admin: AdminSession }) => Promise<NextResponse>
 ): (request: NextRequest, context: T) => Promise<NextResponse> {
-    return requireRole(...VALID_ADMIN_ROLES)(handler);
+    return requireRole(...ADMIN_ROLES)(handler);
 }
 
 /**

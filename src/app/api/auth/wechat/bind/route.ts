@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { UserRole } from "@/lib/permissions";
 
 export async function POST(req: NextRequest) {
     try {
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
                 password: "",
                 name: userPayload.nickname || userPayload.phone,
                 avatarUrl: userPayload.avatar || null,
-                role: "user"
+                role: UserRole.USER
             }
         });
 
@@ -70,7 +71,7 @@ export async function POST(req: NextRequest) {
             user: {
                 ...userPayload,
                 name: userPayload.nickname || userPayload.phone,
-                role: "user"
+                role: UserRole.USER
             }
         });
 

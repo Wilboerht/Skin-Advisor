@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { verifySessionSignature, ADMIN_SESSION_COOKIE_NAME } from "@/lib/session-verify";
+import { verifyCsrfToken } from "@/lib/csrf";
 
 /**
- * Next.js 全局 Proxy（原 middleware）
+ * Next.js 全局 Middleware
  * 部署环境：云服务器（PM2 单实例常驻进程）
- * 注意：此 proxy 在 Edge Runtime 中运行，不使用 Node.js 原生 API
+ * 注意：此 middleware 在 Edge Runtime 中运行，不使用 Node.js 原生 API
  */
 
 // 敏感路径前缀列表（需要额外安全检查）
@@ -40,7 +41,7 @@ export async function proxy(request: NextRequest) {
         response.headers.set("Access-Control-Allow-Origin", origin);
         response.headers.set("Access-Control-Allow-Credentials", "true");
         response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
-        response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Setup-Secret");
+        response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Setup-Secret, X-CSRF-Token");
     }
 
     // 预检请求直接返回
@@ -86,6 +87,28 @@ export async function proxy(request: NextRequest) {
                     { status: 403 }
                 );
             }
+        }
+    }
+
+    // ==================== C 端 API CSRF 防护 ====================
+    const csrfPublicAuthPaths = [
+        "/api/auth/login",
+        "/api/auth/login-code",
+        "/api/auth/register",
+        "/api/auth/send-code",
+        "/api/auth/forgot-password",
+        "/api/auth/reset-password",
+        "/api/auth/wechat",
+        "/api/auth/wechat/bind",
+    ];
+    const isCApi = pathname.startsWith("/api/") && !isAdminApi && !csrfPublicAuthPaths.some((p) => pathname === p);
+    if (isCApi) {
+        const csrfValid = await verifyCsrfToken(request);
+        if (!csrfValid) {
+            return NextResponse.json(
+                { error: "Forbidden: CSRF token missing or invalid" },
+                { status: 403 }
+            );
         }
     }
 

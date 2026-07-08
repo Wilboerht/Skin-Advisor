@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireRole, logAdminAction, getClientInfo } from "@/lib/admin-auth";
+import { AdminRole } from "@/lib/permissions";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { z } from "zod";
 
@@ -18,7 +19,7 @@ const RuleUpdateSchema = z.object({
 });
 
 // PUT /api/admin/recommendation-rules/[id]
-export const PUT = requireRole("super_admin", "admin")(async (req: NextRequest, { admin, params }) => {
+export const PUT = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (req: NextRequest, { admin, params }) => {
     // Rate limit
     const ip = getClientIP(req);
     const limitResult = await rateLimit(`admin-rule-update-${ip}`, "default", { maxRequests: 30, windowMs: 60 * 1000 });
@@ -125,7 +126,7 @@ export const PUT = requireRole("super_admin", "admin")(async (req: NextRequest, 
 });
 
 // DELETE /api/admin/recommendation-rules/[id]
-export const DELETE = requireRole("super_admin", "admin")(async (req: NextRequest, { admin, params }) => {
+export const DELETE = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (req: NextRequest, { admin, params }) => {
     // Rate limit
     const ip = getClientIP(req);
     const limitResult = await rateLimit(`admin-rule-delete-${ip}`, "default", { maxRequests: 30, windowMs: 60 * 1000 });

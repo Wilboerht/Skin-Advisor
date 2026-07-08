@@ -19,6 +19,7 @@ import {
     BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { isSuperAdmin } from "@/lib/permissions";
 import { motion, AnimatePresence } from "framer-motion";
 
 const BASE_MENU_ITEMS = [
@@ -61,7 +62,7 @@ export default function AdminSidebar() {
             });
     }, []);
 
-    const menuItems = adminRole === "super_admin"
+    const menuItems = isSuperAdmin(adminRole)
         ? [...BASE_MENU_ITEMS, { href: "/admin/admins", label: "管理员", icon: UserCog }]
         : BASE_MENU_ITEMS;
 
@@ -199,7 +200,7 @@ export default function AdminSidebar() {
                                 >
                                     {[
                                         { id: 'products', label: '产品数据报表', icon: Package },
-                                        ...(adminRole === 'super_admin' ? [
+                                        ...(isSuperAdmin(adminRole) ? [
                                             { id: 'users', label: '用户增长数据', icon: Users },
                                             { id: 'sessions', label: '诊断请求记录', icon: Activity },
                                         ] : []),

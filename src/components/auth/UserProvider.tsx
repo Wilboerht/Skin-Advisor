@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react';
+import { fetchWithCsrf } from "@/lib/fetch-client";
 
 // --- Types ---
 
@@ -105,7 +106,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
     const checkSession = useCallback(async () => {
         try {
-            const res = await fetch("/api/auth/me");
+            const res = await fetchWithCsrf("/api/auth/me");
             if (!isMountedRef.current) return;
             if (res.ok) {
                 const data = await res.json();
@@ -128,18 +129,17 @@ export function UserProvider({ children }: { children: ReactNode }) {
     // Initial Load
     useEffect(() => {
         const { user: cachedUser, needsRefresh } = getCachedUser();
-        if (cachedUser) {
+        // 仅当缓存包含完整信息（含 role）时才用于提前渲染；否则避免展示无 role 的残缺状态
+        if (cachedUser && !needsRefresh) {
             setUser(cachedUser);
-            if (!needsRefresh) {
-                setLoading(false);
-            }
+            setLoading(false);
         }
         checkSession();
     }, [checkSession]);
 
     const login = useCallback(async (credentials: LoginCredentials) => {
         try {
-            const res = await fetch("/api/auth/login", {
+            const res = await fetchWithCsrf("/api/auth/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(credentials),
@@ -165,7 +165,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
     const loginWithCode = useCallback(async (credentials: { phone: string; code: string }) => {
         try {
-            const res = await fetch("/api/auth/login-code", {
+            const res = await fetchWithCsrf("/api/auth/login-code", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(credentials),
@@ -189,7 +189,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }, [checkSession]);
 
     const register = useCallback(async (userData: RegisterData) => {
-        const res = await fetch("/api/auth/register", {
+        const res = await fetchWithCsrf("/api/auth/register", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(userData)
@@ -203,7 +203,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
     const logout = useCallback(async () => {
         try {
-            await fetch("/api/auth/logout", { method: "POST" });
+            await fetchWithCsrf("/api/auth/logout", { method: "POST" });
         } catch (e) {
             console.error("Logout request failed", e);
         } finally {

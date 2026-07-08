@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { mirrorOfficialCookies } from "@/lib/cookie-mirror";
+import { UserRole } from "@/lib/permissions";
 
 async function parseOfficialJson(officialResponse: Response) {
     const contentType = officialResponse.headers.get("content-type") || "";
@@ -92,7 +93,7 @@ export async function POST(req: NextRequest) {
                 password: "",
                 name: userPayload.nickname || userPayload.phone,
                 avatarUrl: userPayload.avatar || null,
-                role: "user"
+                role: UserRole.USER
             }
         });
 
@@ -101,7 +102,7 @@ export async function POST(req: NextRequest) {
                 ...responseData.data.user,
                 phone: responseData.data.user.phone,
                 name: responseData.data.user.nickname || responseData.data.user.phone,
-                role: "user"
+                role: UserRole.USER
             }
         });
 
