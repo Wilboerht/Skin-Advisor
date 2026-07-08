@@ -435,9 +435,9 @@ export default function QuestionsPage() {
                             <p>&copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
                             <span className="hidden sm:inline text-[#1A1A1A]/30">·</span>
                             <div className="hidden sm:flex items-center gap-4">
-                                <Link href="https://nihplod.cn/privacy" className="hover:text-[#3D4430] transition-colors duration-300">隐私政策</Link>
+                                <Link href="/privacy" className="hover:text-[#3D4430] transition-colors duration-300">隐私政策</Link>
                                 <span className="text-[#1A1A1A]/30">·</span>
-                                <Link href="https://nihplod.cn/terms" className="hover:text-[#3D4430] transition-colors duration-300">服务条款</Link>
+                                <Link href="/terms" className="hover:text-[#3D4430] transition-colors duration-300">服务条款</Link>
                             </div>
                         </div>
                     </m.div>
@@ -551,9 +551,9 @@ export default function QuestionsPage() {
                     <p>&copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
                     <span className="hidden sm:inline text-[#1A1A1A]/30">·</span>
                     <div className="hidden sm:flex items-center gap-4">
-                        <Link href="https://nihplod.cn/privacy" className="hover:text-[#3D4430] transition-colors duration-300">隐私政策</Link>
+                        <Link href="/privacy" className="hover:text-[#3D4430] transition-colors duration-300">隐私政策</Link>
                         <span className="text-[#1A1A1A]/30">·</span>
-                        <Link href="https://nihplod.cn/terms" className="hover:text-[#3D4430] transition-colors duration-300">服务条款</Link>
+                        <Link href="/terms" className="hover:text-[#3D4430] transition-colors duration-300">服务条款</Link>
                     </div>
                 </div>
             </div>
