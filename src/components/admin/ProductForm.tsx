@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
     X, Loader2, Check, ChevronLeft,
-    ImageIcon,
+    ImageIcon, GripVertical,
 } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 import { cn } from "@/lib/utils";
@@ -184,6 +184,18 @@ export default function ProductForm({
     const [images, setImages] = useState<string[]>(
         initialData?.images || (initialData?.image ? [initialData.image] : [])
     );
+    const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
+    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+    const moveImage = (fromIndex: number, toIndex: number) => {
+        if (fromIndex === toIndex) return;
+        setImages((prev) => {
+            const next = [...prev];
+            const [moved] = next.splice(fromIndex, 1);
+            next.splice(toIndex, 0, moved);
+            return next;
+        });
+    };
 
     const [affiliateLinks, setAffiliateLinks] = useState<Record<string, string>>({
         taobao: initialData?.affiliateLinks?.taobao || "",
@@ -495,7 +507,7 @@ export default function ProductForm({
                     <div>
                         <label className="block text-sm font-medium text-[#5E5E5E] mb-2">
                             上传图片 <span className="text-red-500">*</span>
-                            <span className="text-xs text-[#B0A89A] font-normal ml-2">最多5张，第1张为封面</span>
+                            <span className="text-xs text-[#B0A89A] font-normal ml-2">最多5张，第1张为封面，拖拽可调整顺序</span>
                         </label>
 
                         {/* 已上传图片缩略图 */}
@@ -503,13 +515,35 @@ export default function ProductForm({
                             <div className="grid grid-cols-5 gap-2 mb-3">
                                 {images.map((url, index) => (
                                     <div
-                                        key={index}
+                                        key={url}
+                                        draggable
+                                        onDragStart={() => setDraggingIndex(index)}
+                                        onDragEnter={() => setDragOverIndex(index)}
+                                        onDragOver={(e) => { e.preventDefault(); }}
+                                        onDragLeave={() => setDragOverIndex(null)}
+                                        onDrop={(e) => {
+                                            e.preventDefault();
+                                            if (draggingIndex !== null) {
+                                                moveImage(draggingIndex, index);
+                                            }
+                                            setDraggingIndex(null);
+                                            setDragOverIndex(null);
+                                        }}
+                                        onDragEnd={() => {
+                                            setDraggingIndex(null);
+                                            setDragOverIndex(null);
+                                        }}
                                         className={cn(
-                                            "relative aspect-square rounded-xl overflow-hidden border-2",
-                                            index === 0 ? "border-[#C9A86C]" : "border-[#E8E2D9]"
+                                            "relative aspect-square rounded-xl overflow-hidden border-2 cursor-grab active:cursor-grabbing transition-all",
+                                            index === 0 ? "border-[#C9A86C]" : "border-[#E8E2D9]",
+                                            draggingIndex === index ? "opacity-40" : "",
+                                            dragOverIndex === index && draggingIndex !== index ? "ring-2 ring-[#C9A86C] scale-105" : ""
                                         )}
                                     >
-                                        <img src={url} className="w-full h-full object-cover" alt="" />
+                                        <img src={url} className="w-full h-full object-cover pointer-events-none" alt="" />
+                                        <div className="absolute top-1 left-1 w-5 h-5 rounded-full bg-[#2C2C2C]/40 text-white flex items-center justify-center">
+                                            <GripVertical className="w-3 h-3" />
+                                        </div>
                                         <button
                                             type="button"
                                             onClick={(e) => { e.stopPropagation(); removeImage(index); }}

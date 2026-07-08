@@ -21,6 +21,12 @@ export const metadata: Metadata = {
   keywords: [
     "AI护肤", "肤质测试", "面部识别", "护肤顾问", "肤质分析",
     "护肤品推荐", "AI测肤", "敏感肌", "油性皮肤", "干性皮肤",
+    "NIHPLOD", "nihplod", "Nihplod", "nihplod.cn",
+    "NIHPLOD护肤", "NIHPLOD测肤", "NIHPLOD官网", "NIHPLOD皮肤测试",
+    "nihplod ai", "NIHPLOD AI", "nihplod 护肤", "NIHPLOD 人工智能",
+    "nihplod skincare", "nihplod skin test", "nihplod beauty",
+    "旎柏", "旎柏护肤", "NIHPLOD 怎么样", "NIHPLOD 评价",
+    "肌智派", "肌智派AI", "肌智派活动", "肌智派送好礼",
   ],
   authors: [{ name: "NIHPLOD", url: process.env.NEXT_PUBLIC_BASE_URL }],
   creator: "NIHPLOD",

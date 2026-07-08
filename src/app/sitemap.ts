@@ -1,6 +1,5 @@
 import type { MetadataRoute } from "next";
 import { routeOrder } from "@/lib/result-content";
-import prisma from "@/lib/prisma";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://nihplod.cn";
 
@@ -59,23 +58,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
-  // 动态产品页面（如果有产品数据）
-  let productPages: MetadataRoute.Sitemap = [];
-  try {
-    const products = await prisma.product.findMany({
-      where: { active: true },
-      select: { id: true, updatedAt: true, name: true },
-      take: 500,
-    });
-    productPages = products.map((p) => ({
-      url: `${baseUrl}/skin-types/${encodeURIComponent(p.name)}`,
-      lastModified: p.updatedAt,
-      changeFrequency: "monthly" as const,
-      priority: 0.5,
-    }));
-  } catch {
-    // 数据库不可用时跳过
-  }
+  // 产品无独立详情页，不生成无效 sitemap 链接
 
-  return [...staticPages, ...skinTypePages, ...productPages];
+  return [...staticPages, ...skinTypePages];
 }
