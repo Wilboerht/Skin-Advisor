@@ -329,13 +329,43 @@ export default function Home() {
                 <div className="z-10 flex flex-col items-center text-center max-w-3xl mx-auto">
                   <div className="animate-fade-in-up flex flex-col items-center">
                     {/* Eyebrow */}
-                    <div className="w-full max-w-xl mb-10 md:mb-12 opacity-0 animate-fade-in-up" style={{ animationFillMode: 'forwards' }}>
-                      <span className="inline-flex items-center gap-2.5 text-[12px] font-medium tracking-[0.3em] text-[#8B7355] uppercase
-                        before:content-[''] before:block before:w-5 before:h-px before:bg-gradient-to-r before:from-transparent before:to-[#C8A27A]/50
-                        after:content-[''] after:block after:w-5 after:h-px after:bg-gradient-to-r after:from-[#C8A27A]/50 after:to-transparent">
-                        肌智派
+                    <m.div
+                      className="w-full max-w-xl mb-10 md:mb-12"
+                      initial="hidden"
+                      whileInView="visible"
+                      viewport={{ once: true }}
+                      variants={{
+                        hidden: {},
+                        visible: { transition: { staggerChildren: 0.12 } },
+                      }}
+                    >
+                      <span className="inline-flex items-center gap-2.5 text-[13px] font-medium tracking-[0.3em] text-[#8B7355] uppercase">
+                        <m.span
+                          className="block w-5 h-px bg-gradient-to-r from-transparent to-[#C8A27A]/50"
+                          variants={{
+                            hidden: { scaleX: 0, opacity: 0 },
+                            visible: { scaleX: 1, opacity: 1, transition: { duration: 0.6, ease: [0.65, 0, 0.35, 1] } },
+                          }}
+                          style={{ transformOrigin: "right center" }}
+                        />
+                        <m.span
+                          variants={{
+                            hidden: { opacity: 0 },
+                            visible: { opacity: 1, transition: { duration: 0.3 } },
+                          }}
+                        >
+                          肌智派
+                        </m.span>
+                        <m.span
+                          className="block w-5 h-px bg-gradient-to-r from-[#C8A27A]/50 to-transparent"
+                          variants={{
+                            hidden: { scaleX: 0, opacity: 0 },
+                            visible: { scaleX: 1, opacity: 1, transition: { duration: 0.6, ease: [0.65, 0, 0.35, 1] } },
+                          }}
+                          style={{ transformOrigin: "left center" }}
+                        />
                       </span>
-                    </div>
+                    </m.div>
 
                     {/* Title */}
                     <h1 className="text-[40px] sm:text-[48px] md:text-[58px] font-serif text-[#1A1A1A] font-normal leading-[1.1] tracking-tight mb-10 md:mb-12">
