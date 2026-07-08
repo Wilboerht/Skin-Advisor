@@ -480,6 +480,7 @@ export function OnboardingFlowModal({
                                             <label
                                                 htmlFor="legal-agree"
                                                 className="mt-0.5 relative flex items-center cursor-pointer group"
+                                                onClick={(e) => e.stopPropagation()}
                                             >
                                                 <input
                                                     id="legal-agree"
