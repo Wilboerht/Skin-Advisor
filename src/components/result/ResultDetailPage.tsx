@@ -154,15 +154,12 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
                       {tableColumns.map((h) => (
                         <td key={h} className="py-4 px-4 text-[#4A4A4A] font-light">
                           {h === "推荐产品" ? (
-                            <Link
+                            <a
                               href={`${BASE_URL}/products`}
-                              target="_blank"
-                              rel="noopener noreferrer"
                               className="text-[#1B3A5C] hover:text-[#A0784C] transition-colors duration-300"
-                              aria-label={`查看产品 ${row[h]}（新窗口打开）`}
                             >
                               {row[h]}
-                            </Link>
+                            </a>
                           ) : (
                             row[h]
                           )}
@@ -184,15 +181,12 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
                     </span>
                   </div>
                   <div className="mb-1">
-                    <Link
+                    <a
                       href={`${BASE_URL}/products`}
-                      target="_blank"
-                      rel="noopener noreferrer"
                       className="text-[13px] font-medium text-[#1B3A5C] hover:text-[#A0784C] transition-colors duration-300"
-                      aria-label={`查看产品 ${row["推荐产品"]}（新窗口打开）`}
                     >
                       {row["推荐产品"]}
-                    </Link>
+                    </a>
                   </div>
                   <div className="flex items-center gap-2 text-xs text-[#8A8A8A]">
                     <span>{row["适用场景"]}</span>
@@ -223,12 +217,9 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
             ].map((item, i) => {
               const Icon = item.icon;
               return (
-                <Link
+                <a
                   key={i}
                   href={`${BASE_URL}/guide`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={`${item.title}（新窗口打开）`}
                   className="group flex flex-col items-center text-center bg-[#FAF9F6] rounded-xl p-3 md:p-5 border border-[#E8E2D9] hover:shadow-sm hover:border-[#C9A86C]/50 transition-all"
                 >
                   <div className="flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full bg-white border border-[#E8E2D9] mb-2 md:mb-3">
@@ -238,7 +229,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
                     {item.title}
                   </h3>
                   <p className="text-xs text-[#8A8A8A] leading-relaxed">{item.subtitle}</p>
-                </Link>
+                </a>
               );
             })}
           </div>
