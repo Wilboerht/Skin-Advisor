@@ -330,10 +330,10 @@ export default function Home() {
                   <div className="animate-fade-in-up flex flex-col items-center">
                     {/* Eyebrow */}
                     <div className="w-full max-w-xl mb-10 md:mb-12 opacity-0 animate-fade-in-up" style={{ animationFillMode: 'forwards' }}>
-                      <span className="inline-flex items-center gap-2.5 text-[12px] font-medium tracking-[0.3em] text-[#8B7355] uppercase">
-                        <span className="block w-5 h-px bg-[#C8A27A]/50" />
+                      <span className="inline-flex items-center gap-2.5 text-[12px] font-medium tracking-[0.3em] text-[#8B7355] uppercase
+                        before:content-[''] before:block before:w-5 before:h-px before:bg-gradient-to-r before:from-transparent before:to-[#C8A27A]/50
+                        after:content-[''] after:block after:w-5 after:h-px after:bg-gradient-to-r after:from-[#C8A27A]/50 after:to-transparent">
                         肌智派
-                        <span className="block w-5 h-px bg-[#C8A27A]/50" />
                       </span>
                     </div>
 
