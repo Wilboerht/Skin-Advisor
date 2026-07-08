@@ -212,7 +212,7 @@ export default function ProductForm({
         try {
             const formData = new FormData();
             formData.append("file", file);
-            const res = await fetch("/api/upload", {
+            const res = await fetch("/api/admin/upload", {
                 method: "POST",
                 body: formData,
             });
