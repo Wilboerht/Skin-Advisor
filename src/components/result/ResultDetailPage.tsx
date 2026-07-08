@@ -1,12 +1,11 @@
 ﻿"use client";
 
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import { Sun, Home, ShoppingBag, SoapDispenserDroplet, ArrowRight } from "lucide-react";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
-import { useMediaQuery } from "@/hooks/useMediaQuery";
 import type { SkinTypeData } from "@/lib/result-content";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://nihplod.cn";
@@ -41,19 +40,17 @@ function formatParagraphs(text: string): React.ReactElement {
 }
 
 export default function ResultDetailPage({ data }: ResultDetailPageProps) {
-  const isDesktop = useMediaQuery("(min-width: 768px)");
-
   const tableColumns = useMemo(() => {
     if (!data.m7?.ingredientTable?.length) return [];
     return Object.keys(data.m7.ingredientTable[0]);
   }, [data.m7?.ingredientTable]);
 
   return (
-    <article className="min-h-screen bg-[#FAF8F5] text-[#1A1A1A]">
+    <main className="min-h-screen bg-[#FAF8F5] text-[#1A1A1A]">
       {/* 顶部导航 */}
       <WebsiteNavbar />
 
-      <main>
+      <article>
       {/* Hero */}
       <section
         className="relative min-h-[380px] md:min-h-[560px] px-6 md:px-12 lg:px-20 overflow-hidden bg-[#F8F7F3] text-[#1A1A1A]"
@@ -67,7 +64,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
               {data.m1.persona}
             </p>
           </div>
-<div className="relative w-full max-w-[180px] mx-auto lg:max-w-[260px] lg:ml-auto aspect-[3/4]">
+          <div className="relative w-full max-w-[180px] mx-auto lg:max-w-[260px] lg:ml-auto aspect-[3/4]">
             <Image
               src={`/images/character/${data.ipKey}/${data.ipKey}_female.png`}
               alt={`${data.typeName} 形象`}
@@ -138,9 +135,9 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
           </div>
 
           {data.m7?.ingredientTable?.length > 0 && (
-            isDesktop ? (
-              /* 桌面端：表格 */
-              <div className="overflow-x-auto mt-8 md:mt-12">
+            <>
+              {/* 桌面端：表格 — CSS hidden/md:block 避免 CLS */}
+              <div className="hidden md:block overflow-x-auto mt-8 md:mt-12">
               <table className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="border-b border-[#D9D0C3]">
@@ -162,6 +159,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-[#1B3A5C] hover:text-[#A0784C] transition-colors duration-300"
+                              aria-label={`查看产品 ${row[h]}（新窗口打开）`}
                             >
                               {row[h]}
                             </Link>
@@ -175,9 +173,9 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
                 </tbody>
               </table>
             </div>
-            ) : (
-            /* 手机端：卡片列表 */
-            <div className="mt-8 space-y-6">
+
+            {/* 手机端：卡片列表 */}
+            <div className="md:hidden mt-8 space-y-6">
               {data.m7.ingredientTable.map((row, i) => (
                 <div key={i} className="border-l-2 border-[#1B3A5C] pl-3">
                   <div className="flex items-center gap-2 mb-1.5">
@@ -191,6 +189,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-[13px] font-medium text-[#1B3A5C] hover:text-[#A0784C] transition-colors duration-300"
+                      aria-label={`查看产品 ${row["推荐产品"]}（新窗口打开）`}
                     >
                       {row["推荐产品"]}
                     </Link>
@@ -203,7 +202,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
                 </div>
               ))}
             </div>
-            )
+            </>
           )}
 
         </div>
@@ -229,6 +228,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
                   href={`${BASE_URL}/guide`}
                   target="_blank"
                   rel="noopener noreferrer"
+                  aria-label={`${item.title}（新窗口打开）`}
                   className="group flex flex-col items-center text-center bg-[#FAF9F6] rounded-xl p-3 md:p-5 border border-[#E8E2D9] hover:shadow-sm hover:border-[#C9A86C]/50 transition-all"
                 >
                   <div className="flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full bg-white border border-[#E8E2D9] mb-2 md:mb-3">
@@ -291,7 +291,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
           </div>
         </div>
       </footer>
-      </main>
-    </article>
+      </article>
+    </main>
   );
 }

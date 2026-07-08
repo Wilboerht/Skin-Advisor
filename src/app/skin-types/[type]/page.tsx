@@ -61,7 +61,7 @@ export default async function TypeResultPage({ params }: PageProps) {
     },
     {
       question: `${data.typeName}应该如何护肤？`,
-      answer: data.m4.title || `针对${data.typeName}的护肤方案`,
+      answer: data.m4?.title || `针对${data.typeName}的护肤方案`,
     },
     {
       question: `${data.typeName}适合什么护肤品？`,
