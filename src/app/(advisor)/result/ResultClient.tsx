@@ -355,30 +355,34 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             } else {
                                 // Reconstruct ComprehensiveResult via normalized helper
                                 const normalized = normalizeAnalysisResult(advisorResult);
-                                if (normalized) {
-                                    setResult(normalized);
-                                }
-
-                                if (advisorResult.faceAnalysis) {
-                                    setFaceAnalysis(advisorResult.faceAnalysis);
-                                }
-
-                                if (advisorResult.sessionId) {
-                                    setSessionId(advisorResult.sessionId);
-                                }
-
+                                const recoveredSessionId = advisorResult.sessionId as string | undefined;
 
                                 // If we successfully recovered data, remove 'analyzing' status from URL to stop re-analysis
                                 if (searchParams.get('status') === 'analyzing') {
-                                    // 登录用户直接跳转到 /reports/:id，避免先到 /result?id=xxx 再重定向的多余一次跳转
-                                    if (userRef.current && advisorResult.sessionId) {
-                                        router.replace(`/reports/${advisorResult.sessionId}`, { scroll: false });
-                                    } else {
-                                        const params = new URLSearchParams(searchParams.toString());
-                                        params.delete('status');
-                                        if (advisorResult.sessionId) params.set('id', advisorResult.sessionId);
-                                        router.replace(`/result?${params.toString()}`, { scroll: false });
+                                    if (authInitializedRef.current) {
+                                        if (userRef.current && recoveredSessionId) {
+                                            // 登录用户直接跳转到 /reports/:id，避免先渲染 /result 再跳转的闪烁
+                                            router.replace(`/reports/${recoveredSessionId}`, { scroll: false });
+                                        } else {
+                                            // 游客留在 /result，清掉 analyzing 参数并渲染结果
+                                            if (normalized) setResult(normalized);
+                                            if (advisorResult.faceAnalysis) setFaceAnalysis(advisorResult.faceAnalysis);
+                                            if (recoveredSessionId) setSessionId(recoveredSessionId);
+                                            router.replace('/result', { scroll: false });
+                                        }
+                                    } else if (normalized && recoveredSessionId) {
+                                        // auth 尚未初始化，暂存结果，等 auth 初始化后再决定去向
+                                        pendingResultRef.current = {
+                                            result: normalized,
+                                            faceAnalysis: advisorResult.faceAnalysis || null,
+                                            sessionId: recoveredSessionId,
+                                        };
                                     }
+                                } else {
+                                    // 非分析中状态，直接渲染缓存结果
+                                    if (normalized) setResult(normalized);
+                                    if (advisorResult.faceAnalysis) setFaceAnalysis(advisorResult.faceAnalysis);
+                                    if (recoveredSessionId) setSessionId(recoveredSessionId);
                                 }
                                 setLoading(false);
                                 // 在提前返回前也触发埋点
@@ -512,15 +516,25 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
     // Trigger Async Analysis
     const analysisStartedRef = useRef(false);
-    const pendingRedirectSessionIdRef = useRef<string | null>(null);
+    const pendingResultRef = useRef<{
+        result: ComprehensiveResult;
+        faceAnalysis: FaceAnalysisResult | null;
+        sessionId: string;
+    } | null>(null);
 
-    // 等 auth 初始化后再执行跳转，避免登录用户在 user 为 null 时被错误留在 /result
+    // 等 auth 初始化后再决定渲染还是跳转，避免登录用户先看到 /result 再闪到 /reports/:id
     useEffect(() => {
-        const pendingId = pendingRedirectSessionIdRef.current;
-        if (!pendingId || !authInitializedRef.current) return;
-        pendingRedirectSessionIdRef.current = null;
-        const resultUrl = userRef.current ? `/reports/${pendingId}` : '/result';
-        router.replace(resultUrl, { scroll: false });
+        const pending = pendingResultRef.current;
+        if (!pending || !authInitializedRef.current) return;
+        pendingResultRef.current = null;
+        if (userRef.current) {
+            router.replace(`/reports/${pending.sessionId}`, { scroll: false });
+        } else {
+            setResult(pending.result);
+            if (pending.faceAnalysis) setFaceAnalysis(pending.faceAnalysis);
+            setSessionId(pending.sessionId);
+            router.replace('/result', { scroll: false });
+        }
     }, [authInitialized, user, router]);
 
     useEffect(() => {
@@ -560,17 +574,24 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                         }
 
                         const normalized = normalizeAnalysisResult(rawResult);
-                        if (normalized) setResult(normalized);
-                        if (rawResult.faceAnalysis) {
-                            setFaceAnalysis(rawResult.faceAnalysis as FaceAnalysisResult);
-                        }
-                        setSessionId(recoveredSessionId);
 
                         if (authInitializedRef.current) {
-                            const resultUrl = userRef.current ? `/reports/${recoveredSessionId}` : '/result';
-                            router.replace(resultUrl, { scroll: false });
-                        } else {
-                            pendingRedirectSessionIdRef.current = recoveredSessionId;
+                            if (userRef.current) {
+                                router.replace(`/reports/${recoveredSessionId}`, { scroll: false });
+                            } else {
+                                if (normalized) setResult(normalized);
+                                if (rawResult.faceAnalysis) {
+                                    setFaceAnalysis(rawResult.faceAnalysis as FaceAnalysisResult);
+                                }
+                                setSessionId(recoveredSessionId);
+                                router.replace('/result', { scroll: false });
+                            }
+                        } else if (normalized) {
+                            pendingResultRef.current = {
+                                result: normalized,
+                                faceAnalysis: (rawResult.faceAnalysis as FaceAnalysisResult) || null,
+                                sessionId: recoveredSessionId,
+                            };
                         }
                         return;
                     }
@@ -591,16 +612,22 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     throw new Error("会话 ID 丢失，请重新测试");
                 }
 
-                // IMPORTANT: Set result state FIRST before updating URL
-                setResult(newResult as unknown as ComprehensiveResult);
-                if (newFace) setFaceAnalysis(newFace);
-
-                // 等 auth 初始化后再跳转，避免 user 为 null 时登录用户被错误留在 /result
+                // 先跳转/暂存，登录用户不在 /result 渲染结果，避免闪烁
                 if (authInitializedRef.current) {
-                    const resultUrl = userRef.current ? `/reports/${newSessionId}` : '/result';
-                    router.replace(resultUrl, { scroll: false });
+                    if (userRef.current) {
+                        router.replace(`/reports/${newSessionId}`, { scroll: false });
+                    } else {
+                        setResult(newResult as unknown as ComprehensiveResult);
+                        if (newFace) setFaceAnalysis(newFace);
+                        setSessionId(newSessionId);
+                        router.replace('/result', { scroll: false });
+                    }
                 } else {
-                    pendingRedirectSessionIdRef.current = newSessionId;
+                    pendingResultRef.current = {
+                        result: newResult as unknown as ComprehensiveResult,
+                        faceAnalysis: newFace || null,
+                        sessionId: newSessionId,
+                    };
                 }
 
             } catch (e: unknown) {
