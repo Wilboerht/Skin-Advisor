@@ -219,7 +219,7 @@ export function OnboardingFlowModal({
                                     }}
                                 />
                                 <m.div
-                                    className="relative z-10 w-full max-w-sm text-center"
+                                    className="relative z-10 w-full max-w-sm md:max-w-md text-center"
                                     variants={contentVariants}
                                     initial="hidden"
                                     animate={currentScreen === "nickname" ? "visible" : "hidden"}
@@ -349,7 +349,7 @@ export function OnboardingFlowModal({
 
                                         {/* Search with blur overlay */}
                                         <div className="shrink-0">
-                                            <div className="relative max-w-sm mx-auto">
+                                            <div className="relative max-w-sm md:max-w-md mx-auto">
                                                 <input
                                                     type="text"
                                                     value={regionSearch}
@@ -408,7 +408,7 @@ export function OnboardingFlowModal({
                                                             </span>
                                                             <div className="h-[1px] flex-1 bg-[#8B7355]/10" />
                                                         </div>
-                                                        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2 md:gap-3">
+                                                        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-10 gap-2 md:gap-3 lg:gap-4">
                                                             {group.regions.map((region) => (
                                                                 <button
                                                                     key={region}
