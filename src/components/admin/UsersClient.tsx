@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
-import { Search, MoreHorizontal, User as UserIcon, Shield, ShieldOff, Trash2, Eye, Loader2, ChevronLeft, ChevronRight, Download, ChevronDown } from "lucide-react";
+import { Search, MoreHorizontal, User as UserIcon, Shield, ShieldOff, Trash2, Eye, Loader2, ChevronLeft, ChevronRight, Download, ChevronDown, Info } from "lucide-react";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { UserDetailModal } from "./UserDetailModal";
 import { useToast } from "@/components/ui/Toast";
@@ -122,7 +122,17 @@ export function UsersClient() {
     const handleToggleStatus = async (user: User) => {
         const isDisabling = user.role !== "disabled";
 
-        if (!isDisabling && user.previousRole) {
+        if (isDisabling) {
+            // Disabling user: explain the scope before confirming
+            const confirmed = window.confirm(
+                `确定要禁用用户 "${user.name || user.email}" 吗？\n\n` +
+                `禁用后该用户将无法在子站（advisor.nihplod.cn）使用测肤、查看历史等功能，但 nihplod.cn 官网账户不受影响。`
+            );
+            if (!confirmed) {
+                setShowDropdown(null);
+                return;
+            }
+        } else if (user.previousRole) {
             // Enabling user: confirm the role that will be restored
             const confirmed = window.confirm(
                 `确定要启用用户 "${user.name || user.email}" 吗？\n\n` +
@@ -199,6 +209,15 @@ export function UsersClient() {
                         导出用户
                     </button>
                 </div>
+            </div>
+
+            {/* 说明：子站权限控制范围 */}
+            <div className="flex items-start gap-3 rounded-xl border border-amber-100 bg-amber-50/60 p-3 text-sm text-amber-800">
+                <Info className="w-4 h-4 mt-0.5 shrink-0" />
+                <p>
+                    此处的「禁用」和「删除」<strong>仅作用于子站（advisor.nihplod.cn）</strong>，不会同步到 nihplod.cn 官网。
+                    被禁用的用户仍可登录官网，但无法在子站使用测肤、查看历史记录等功能；删除仅清除子站本地数据，用户下次登录子站时会重新同步官网账户信息。
+                </p>
             </div>
 
             {/* Filter Bar */}
@@ -424,7 +443,7 @@ export function UsersClient() {
                 onClose={() => { setShowDeleteModal(false); setSelectedUser(null); }}
                 onConfirm={handleDelete}
                 title="删除用户"
-                message={`确定要删除用户 "${selectedUser?.email}" 吗？这将同时删除该用户的所有测试历史记录，且操作不可撤销。`}
+                message={`确定要删除用户 "${selectedUser?.email}" 吗？这将同时删除该用户在子站的所有测试历史记录，且操作不可撤销。注意：该操作仅清除子站本地数据，不会删除 nihplod.cn 官网账户；用户下次登录子站时会重新同步官网账户信息。`}
                 confirmText="删除"
                 variant="danger"
                 loading={actionLoading}
