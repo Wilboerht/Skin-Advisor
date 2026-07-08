@@ -464,7 +464,18 @@ export function OnboardingFlowModal({
                                         服务确认与授权
                                     </h3>
 
-                                    <div className="p-5 md:p-6 mb-7 text-left max-w-md mx-auto bg-white/40 border border-[#3D4430]/8 rounded-xl">
+                                    <div
+                                        className={`p-5 md:p-6 mb-7 text-left max-w-md mx-auto rounded-xl border cursor-pointer transition-all duration-300 ${
+                                            isAgreed
+                                                ? "bg-white/60 border-[#8B7355]/25 shadow-[0_2px_12px_rgba(139,115,85,0.06)]"
+                                                : "bg-white/40 border-[#3D4430]/8 hover:border-[#8B7355]/15 hover:bg-white/50"
+                                        }`}
+                                        onClick={(e) => {
+                                            if ((e.target as HTMLElement).tagName !== "A") {
+                                                setIsAgreed((prev) => !prev);
+                                            }
+                                        }}
+                                    >
                                         <div className="flex items-start gap-3.5 md:gap-4">
                                             <label
                                                 htmlFor="legal-agree"
@@ -478,7 +489,11 @@ export function OnboardingFlowModal({
                                                     className="sr-only"
                                                 />
                                                 <m.div
-                                                    className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors duration-300 ${isAgreed ? "bg-[#8B7355] border-[#8B7355]" : "bg-transparent border-[#3D4430]/15 group-hover:border-[#8B7355]/60"}`}
+                                                    className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors duration-300 ${
+                                                        isAgreed
+                                                            ? "bg-[#8B7355] border-[#8B7355]"
+                                                            : "bg-transparent border-[#3D4430]/15 group-hover:border-[#8B7355]/60 group-focus-visible:ring-2 group-focus-visible:ring-[#8B7355]/30 group-focus-visible:ring-offset-2"
+                                                    }`}
                                                     animate={isAgreed ? { scale: [1, 0.92, 1.04, 1] } : { scale: 1 }}
                                                     transition={{ duration: 0.4, ease: "easeOut" }}
                                                 >
@@ -503,9 +518,10 @@ export function OnboardingFlowModal({
                                                 </m.div>
                                             </label>
                                             <span
-                                                className="text-sm text-[#5E5E5E] leading-relaxed font-normal select-none cursor-pointer"
+                                                className="text-sm text-[#5E5E5E] leading-relaxed font-normal select-none"
                                                 onClick={(e) => {
                                                     if ((e.target as HTMLElement).tagName !== "A") {
+                                                        e.stopPropagation();
                                                         setIsAgreed((prev) => !prev);
                                                     }
                                                 }}
