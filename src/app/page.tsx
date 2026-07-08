@@ -97,7 +97,6 @@ export default function Home() {
 
   // Location/Region states
   const [isLocating, setIsLocating] = useState(false);
-  const [showBrandModal, setShowBrandModal] = useState(false);
 
   // Region options moved outside component
 
@@ -596,103 +595,6 @@ export default function Home() {
               </div>
             </m.div>
           </div>
-        )}
-      </AnimatePresence>
-
-      {/* Brand Modal */}
-      <AnimatePresence>
-        {showBrandModal && (
-          <m.div
-            className="fixed inset-0 z-[300] bg-[#FDFBF7] flex flex-col overflow-hidden"
-            initial={{ y: "-100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "-100%" }}
-            transition={{ duration: 0.7, ease: [0.65, 0, 0.35, 1] }}
-          >
-            {/* Texture overlay */}
-            <div
-              className="absolute inset-0 opacity-[0.03] pointer-events-none"
-              style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`
-              }}
-            />
-
-            {/* Close Button */}
-            <button
-              onClick={() => setShowBrandModal(false)}
-              className="fixed top-6 right-6 z-[100001] w-10 h-10 flex items-center justify-center text-[#1A1A1A]/30 hover:text-[#1A1A1A] hover:bg-black/5 transition-all duration-300 bg-transparent border-none cursor-pointer"
-              aria-label="关闭"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            {/* Content */}
-            <div className="flex-1 flex flex-col items-center justify-center px-10 md:px-20 py-14">
-              <div className="max-w-6xl xl:max-w-7xl w-full">
-
-                {/* Header */}
-                <div className="text-center mb-10 md:mb-14">
-                  <Image
-                    src="/NIHPLOD-logo.svg"
-                    alt="NIHPLOD"
-                    width={200}
-                    height={60}
-                    className="h-9 md:h-11 object-contain mx-auto"
-                  />
-                </div>
-
-                {/* Main: 图片左 + 文字右 */}
-                <div className="grid grid-cols-1 md:grid-cols-[5fr_5fr] gap-10 md:gap-12 items-stretch">
-                  {/* Image */}
-                  <div className="relative min-h-[340px] md:min-h-[520px] -ml-6 md:-ml-12">
-                    {/* 上方图片 - 海豚灵感 */}
-                    <div className="absolute top-0 left-0 w-[80%] h-[62%] overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.12)] z-10 border-4 border-white/90">
-                      <img
-                        src="/images/story/dolphin-ocean.webp"
-                        alt="海豚灵感"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    {/* 下方图片 - 研发团队 */}
-                    <div className="absolute bottom-0 right-0 w-[72%] h-[52%] overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.12)] z-20 border-4 border-white/90">
-                      <img
-                        src="/images/story/lab-research.webp"
-                        alt="研发团队"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Text */}
-                  <div className="flex flex-col justify-center text-left py-2">
-                    <p className="text-[13px] text-[#8B7355] tracking-[0.25em] uppercase font-medium mb-5">
-                      化繁为简 · 逆转时光
-                    </p>
-                    <h3 className="text-[26px] md:text-[32px] font-serif text-[#1A1A1A] mb-6 leading-tight tracking-tight">
-                      将逆转时光的不可能，慢慢变得「有可能」
-                    </h3>
-                    <p className="text-base md:text-lg text-[#5E5E5E] leading-[1.9] font-light">
-                      旎柏始终坚持正确且积极的科学理念。通过化繁为简的居家修护及高效舒适的院线调理，尽可能的帮助人们解决并预防各类肌肤问题。NIHPLOD 源于「DOLPHIN」的逆转——灵感来自海豚肌肤每两小时自我更新的神奇修复力。创始人 Dr. Stefan 博士将前沿技术与天然活性成分结合，为每一款产品注入前沿科技，使护肤调理变得简单、高效且美好。
-                    </p>
-                  </div>
-                </div>
-
-                {/* CTA */}
-                <div className="text-center mt-12 md:mt-16">
-                  <a
-                    href="https://nihplod.cn/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => setShowBrandModal(false)}
-                    className="inline-flex items-center gap-2 py-2 text-[14px] tracking-[0.2em] font-medium text-[#8B7355] cursor-pointer transition-all duration-300 bg-transparent border-none outline-none group"
-                  >
-                    <span className="border-b border-[#8B7355]/30 pb-0.5 group-hover:border-[#8B7355] transition-colors">前往官网</span>
-                    <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
-                  </a>
-                </div>
-              </div>
-            </div>
-          </m.div>
         )}
       </AnimatePresence>
 
