@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef, Suspense } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { Link } from "next-view-transitions";
 import { LazyMotion, domAnimation, AnimatePresence, m, useReducedMotion } from "framer-motion";
@@ -78,7 +78,6 @@ export default function Home() {
 
   // Nickname state
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
-  const [showGuideModal, setShowGuideModal] = useState(false);
   const [nickname, setNickname] = useState("");
   const [isHomeExiting, setIsHomeExiting] = useState(false);
 
@@ -408,94 +407,6 @@ export default function Home() {
         regionOptions={regionOptions}
         isLoggedIn={!!user}
       />
-
-      {/* 测试准备指南模态框 */}
-      <AnimatePresence>
-        {showGuideModal && (
-          <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
-            <m.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowGuideModal(false)}
-              className="absolute inset-0 bg-[#2d2a26]/40 backdrop-blur-md"
-            />
-
-            <m.div
-              initial={{ opacity: 0, scale: 0.96, y: 16 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, y: 16 }}
-              transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
-              className="relative z-10 w-full max-w-[420px] overflow-hidden flex flex-col max-h-[85vh]"
-              style={{
-                background: 'linear-gradient(180deg, #F8F6F1 0%, #F3F0E9 100%)',
-                borderRadius: 24,
-                boxShadow: '0 32px 64px -16px rgba(45, 42, 38, 0.25), inset 0 1px 1px rgba(255,255,255,0.6)',
-                border: '1px solid rgba(139, 115, 85, 0.15)',
-              }}
-              onClick={(e: React.MouseEvent) => e.stopPropagation()}
-            >
-              {/* Close Button */}
-              <button
-                onClick={() => setShowGuideModal(false)}
-                className="absolute top-5 right-5 z-20 w-8 h-8 flex items-center justify-center rounded-full transition-colors"
-                style={{ background: 'rgba(139, 115, 85, 0.08)', color: '#8B7355' }}
-              >
-                <X size={15} strokeWidth={2.5} />
-              </button>
-
-              {/* Header */}
-              <div className="px-8 pt-10 pb-6 text-center shrink-0">
-                <div className="flex justify-center">
-                  <Image
-                    src="/NIHPLOD-logo.svg"
-                    alt="NIHPLOD"
-                    width={120}
-                    height={30}
-                    className="h-[30px] object-contain opacity-80"
-                  />
-                </div>
-              </div>
-
-              {/* Content */}
-              <div className="flex-1 overflow-y-auto px-6 pb-8 custom-scrollbar">
-                <div className="flex flex-col gap-3">
-                  {[
-                    { title: "素颜状态", desc: "彻底卸除底妆、防晒及彩妆产品，确保面部处于完全素颜状态。" },
-                    { title: "光线充足", desc: "在自然光或柔和灯光下进行，避免强光直射、背光或昏暗环境。" },
-                  ].map((item, i) => (
-                    <m.div
-                      key={i}
-                      initial={{ opacity: 0, x: -8 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.1 + i * 0.06 }}
-                      className="flex items-start gap-3 px-4 py-3.5 rounded-xl transition-colors"
-                      style={{ background: 'rgba(139, 115, 85, 0.04)' }}
-                      onMouseEnter={(e) => {
-                        (e.currentTarget as HTMLElement).style.background = 'rgba(139, 115, 85, 0.08)';
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.currentTarget as HTMLElement).style.background = 'rgba(139, 115, 85, 0.04)';
-                      }}
-                    >
-                      <span
-                        className="mt-1 w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-[10px] font-bold"
-                        style={{ background: 'rgba(61, 68, 48, 0.1)', color: '#3D4430' }}
-                      >
-                        {i + 1}
-                      </span>
-                      <div>
-                        <p className="text-[13px] font-semibold mb-0.5" style={{ color: '#2d2a26' }}>{item.title}</p>
-                        <p className="text-[12px] leading-relaxed" style={{ color: '#8c7a6b' }}>{item.desc}</p>
-                      </div>
-                    </m.div>
-                  ))}
-                </div>
-              </div>
-            </m.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       <AnimatePresence>
         {showLimitModal && (
