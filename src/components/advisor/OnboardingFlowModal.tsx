@@ -344,7 +344,7 @@ export function OnboardingFlowModal({
                                         {/* Region Select Header */}
                                         <div className="shrink-0 pt-24 md:pt-28 pb-4 md:pb-6 text-center">
                                             <h3 className="text-xl md:text-2xl font-serif text-[#1A1A1A] tracking-wider">选择所在地区</h3>
-                                            <p className="text-[13px] text-[#5E5E5E] mt-2 font-light opacity-80">根据当地气候为您提供更精准的分析建议</p>
+                                            <p className="text-[13px] text-[#5E5E5E] mt-3 font-light opacity-80">根据当地气候为您提供更精准的分析建议</p>
                                         </div>
 
                                         {/* Search with blur overlay */}
@@ -402,7 +402,7 @@ export function OnboardingFlowModal({
 
                                                 return filtered.map((group) => (
                                                     <div key={group.group} className="mb-5 md:mb-6 last:mb-2">
-                                                        <div className="flex items-center gap-3 mb-2.5 md:mb-3">
+                                                        <div className="flex items-center gap-3 mb-3 md:mb-4">
                                                             <span className="text-[11px] font-bold text-[#8B7355]/70 uppercase tracking-[0.2em]">
                                                                 {group.group}
                                                             </span>
@@ -496,7 +496,7 @@ export function OnboardingFlowModal({
                                                                 initial={{ pathLength: 0 }}
                                                                 animate={{ pathLength: 1 }}
                                                                 transition={{ duration: 0.25, ease: "easeOut", delay: 0.05 }}
-                                                                points="20 6 9 17 4 12"
+                                                                points="4 12 9 17 20 6"
                                                             />
                                                         </m.svg>
                                                     )}
