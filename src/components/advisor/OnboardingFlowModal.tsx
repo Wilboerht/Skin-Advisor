@@ -325,7 +325,7 @@ export function OnboardingFlowModal({
                                             <div>
                                                 <button
                                                     onClick={handleDecline}
-                                                    className="py-2 text-[12px] tracking-widest text-[#3D4430]/45 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
+                                                    className="py-2 text-[13px] tracking-widest text-[#3D4430]/45 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
                                                 >
                                                     不提供我的位置信息
                                                 </button>
@@ -428,7 +428,7 @@ export function OnboardingFlowModal({
                                         <div className="absolute bottom-0 left-0 right-0 pt-8 pb-5 md:pb-6 text-center pointer-events-none bg-gradient-to-t from-[#FDFBF7] via-[#FDFBF7]/95 to-transparent">
                                             <button
                                                 onClick={handleSkipRegion}
-                                                className="pointer-events-auto text-[12px] tracking-[0.15em] text-[#3D4430]/70 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
+                                                className="pointer-events-auto text-[13px] tracking-[0.15em] text-[#3D4430]/70 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
                                             >
                                                 暂不提供
                                             </button>
@@ -562,7 +562,7 @@ export function OnboardingFlowModal({
 
                                         <button
                                             onClick={onClose}
-                                            className="py-2 text-[12px] tracking-widest text-[#3D4430]/70 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
+                                            className="py-2 text-[13px] tracking-widest text-[#3D4430]/70 hover:text-[#3D4430] transition-colors bg-transparent border-none cursor-pointer"
                                         >
                                             暂不测试
                                         </button>
