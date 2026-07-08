@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { House, MessageCircle, Gift, ArrowRight } from "lucide-react";
+import { House, MessageCircle, Gift, ArrowRight, AlertTriangle, Lightbulb } from "lucide-react";
 import { useAsyncAnalysis } from "@/hooks/useAsyncAnalysis";
 import { motion as m, AnimatePresence } from "framer-motion";
 import {
