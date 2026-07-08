@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const title = data.typeName;
   const ogTitle = `${data.typeName}肤质详解 | NIHPLOD肌肤类型`;
   const description = `${data.typeName}：${data.m1.persona}。了解${data.typeName}的护肤要点、产品推荐与日常护理方案。`;
-  const ogImage = `/images/character/${data.ipKey}/${data.ipKey}_female.png`;
+  const ogImage = `${BASE_URL}/images/character/${data.ipKey}/${data.ipKey}_female.png`;
 
   return {
     title,

@@ -1,12 +1,20 @@
 ﻿"use client";
 
 import React, { useMemo } from "react";
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import { Sun, Home, ShoppingBag, SoapDispenserDroplet, ArrowRight } from "lucide-react";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
-import Threads from "@/components/ui/Threads";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import type { SkinTypeData } from "@/lib/result-content";
+
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://nihplod.cn";
+const CURRENT_YEAR = new Date().getFullYear();
+
+// WebGL 背景懒加载，避免 SSR 开销 & 手机端不必要初始化
+const Threads = dynamic(() => import("@/components/ui/Threads"), { ssr: false });
+
 interface ResultDetailPageProps {
   data: SkinTypeData;
 }
@@ -33,16 +41,19 @@ function formatParagraphs(text: string): React.ReactElement {
 }
 
 export default function ResultDetailPage({ data }: ResultDetailPageProps) {
-  const ingredientHeaders = useMemo(() => {
-    if (!data.m7.ingredientTable.length) return [];
+  const isDesktop = useMediaQuery("(min-width: 768px)");
+
+  const tableColumns = useMemo(() => {
+    if (!data.m7?.ingredientTable?.length) return [];
     return Object.keys(data.m7.ingredientTable[0]);
-  }, [data.m7.ingredientTable]);
+  }, [data.m7?.ingredientTable]);
 
   return (
     <article className="min-h-screen bg-[#FAF8F5] text-[#1A1A1A]">
       {/* 顶部导航 */}
       <WebsiteNavbar />
 
+      <main>
       {/* Hero */}
       <section
         className="relative min-h-[380px] md:min-h-[560px] px-6 md:px-12 lg:px-20 overflow-hidden bg-[#F8F7F3] text-[#1A1A1A]"
@@ -80,10 +91,10 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
         />
         <div className="relative z-10 max-w-5xl mx-auto">
           <h2 className="text-xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-6 md:mb-8">
-            {data.m5.title || "优势高光"}
+            {data.m5?.title || "优势高光"}
           </h2>
           <div className="grid md:grid-cols-2 gap-4 md:gap-6">
-            {data.m5.advantages.map((adv, i) => (
+            {(data.m5?.advantages ?? []).map((adv, i) => (
               <div
                 key={i}
                 className="bg-transparent md:bg-white md:rounded-2xl p-0 md:p-8 md:shadow-sm md:border md:border-[#E8E2D9] md:hover:shadow-md transition-shadow"
@@ -105,15 +116,15 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       <section className="py-16 px-6 md:px-12 lg:px-20 bg-[#F8F7F3]">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-3 md:mb-4">
-            {data.m7.title || `${data.typeName}的精准护肤公式`}
+            {data.m7?.title || `${data.typeName}的精准护肤公式`}
           </h2>
-          {data.m7.formulaCore && (
+          {data.m7?.formulaCore && (
             <p className="text-sm md:text-lg text-[#8A8A8A] font-light mb-6 md:mb-10 leading-[1.85]">
               {data.m7.formulaCore}
             </p>
           )}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            {data.m7.suggestions.map((sug, i) => (
+            {(data.m7?.suggestions ?? []).map((sug, i) => (
               <div key={i} className="flex flex-row md:flex-col items-start md:bg-white md:rounded-2xl md:shadow-sm md:border md:border-[#E8E2D9] p-0 md:p-6 gap-3 md:gap-0">
                 <span className="flex items-center justify-center w-5 h-5 md:w-8 md:h-8 rounded-full bg-transparent md:bg-[#1B3A5C] border border-[#1B3A5C] md:border-0 text-[#1B3A5C] md:text-white text-[10px] md:text-sm font-medium shrink-0 md:mb-4">
                   {i + 1}
@@ -126,14 +137,14 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
             ))}
           </div>
 
-          {data.m7.ingredientTable.length > 0 && (
-            <>
-              {/* 桌面端：表格 */}
-              <div className="hidden md:block overflow-x-auto mt-8 md:mt-12">
+          {data.m7?.ingredientTable?.length > 0 && (
+            isDesktop ? (
+              /* 桌面端：表格 */
+              <div className="overflow-x-auto mt-8 md:mt-12">
               <table className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="border-b border-[#D9D0C3]">
-                    {ingredientHeaders.map((h) => (
+                    {tableColumns.map((h) => (
                       <th key={h} className="text-left py-3 px-4 font-semibold text-[#1B3A5C] uppercase tracking-wider text-sm">
                         {h}
                       </th>
@@ -143,17 +154,17 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
                 <tbody>
                   {data.m7.ingredientTable.map((row, i) => (
                     <tr key={i} className="border-b border-[#E8E2D9] last:border-0 hover:bg-white/60">
-                      {ingredientHeaders.map((h) => (
+                      {tableColumns.map((h) => (
                         <td key={h} className="py-4 px-4 text-[#4A4A4A] font-light">
                           {h === "推荐产品" ? (
-                            <a
-                              href="https://nihplod.cn/products"
+                            <Link
+                              href={`${BASE_URL}/products`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-[#1B3A5C] hover:text-[#A0784C] transition-colors duration-300"
                             >
                               {row[h]}
-                            </a>
+                            </Link>
                           ) : (
                             row[h]
                           )}
@@ -164,9 +175,9 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
                 </tbody>
               </table>
             </div>
-
-            {/* 手机端：卡片列表 */}
-            <div className="md:hidden mt-8 space-y-6">
+            ) : (
+            /* 手机端：卡片列表 */
+            <div className="mt-8 space-y-6">
               {data.m7.ingredientTable.map((row, i) => (
                 <div key={i} className="border-l-2 border-[#1B3A5C] pl-3">
                   <div className="flex items-center gap-2 mb-1.5">
@@ -175,14 +186,14 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
                     </span>
                   </div>
                   <div className="mb-1">
-                    <a
-                      href="https://nihplod.cn/products"
+                    <Link
+                      href={`${BASE_URL}/products`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-[13px] font-medium text-[#1B3A5C] hover:text-[#A0784C] transition-colors duration-300"
                     >
                       {row["推荐产品"]}
-                    </a>
+                    </Link>
                   </div>
                   <div className="flex items-center gap-2 text-xs text-[#8A8A8A]">
                     <span>{row["适用场景"]}</span>
@@ -192,7 +203,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
                 </div>
               ))}
             </div>
-            </>
+            )
           )}
 
         </div>
@@ -202,7 +213,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       <section className="py-16 px-6 md:px-12 lg:px-20 bg-white">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-xl md:text-4xl font-light text-[#1A1A1A] tracking-tight mb-6 md:mb-8">
-            {data.m4.title || "我们建议的护肤日常"}
+            {data.m4?.title || "我们建议的护肤日常"}
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
             {[
@@ -213,9 +224,9 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
             ].map((item, i) => {
               const Icon = item.icon;
               return (
-                <a
+                <Link
                   key={i}
-                  href="https://nihplod.cn/guide"
+                  href={`${BASE_URL}/guide`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="group flex flex-col items-center text-center bg-[#FAF9F6] rounded-xl p-3 md:p-5 border border-[#E8E2D9] hover:shadow-sm hover:border-[#C9A86C]/50 transition-all"
@@ -227,7 +238,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
                     {item.title}
                   </h3>
                   <p className="text-xs text-[#8A8A8A] leading-relaxed">{item.subtitle}</p>
-                </a>
+                </Link>
               );
             })}
           </div>
@@ -242,7 +253,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
           </h2>
           <Link
             href="/"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-10 py-3.5 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#1B3A5C] hover:text-white"
+            className="group w-full sm:w-auto inline-flex items-center justify-center gap-3 px-10 py-3.5 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#1B3A5C] hover:text-white"
           >
             <span>前往测肤</span>
             <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
@@ -256,7 +267,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
               alt=""
               width={28}
               height={28}
-              className="w-7 h-7 object-contain drop-shadow-[0_1px_1px_rgba(61,68,48,0.25)] animate-[soft-blink_3s_ease-in-out_infinite]"
+              className="w-7 h-7 object-contain drop-shadow-[0_1px_1px_rgba(61,68,48,0.25)] animate-soft-blink"
               unoptimized
             />
             参与「肌智派」活动，抽奖赢好礼
@@ -264,17 +275,10 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
         </div>
       </section>
 
-      <style>{`
-        @keyframes soft-blink {
-          0%, 100% { opacity: 0.88; }
-          50% { opacity: 1; }
-        }
-      `}</style>
-
       {/* Footer */}
       <footer className="pt-6 md:pt-8 pb-[calc(1.5rem+env(safe-area-inset-bottom,16px))] px-6 text-center">
         <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-4 text-[10px] md:text-xs tracking-widest text-[#5E5E5E]/60">
-          <p>© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
+          <p suppressHydrationWarning>© {CURRENT_YEAR} NIHPLOD. All Rights Reserved.</p>
           <span className="hidden sm:inline text-[#5E5E5E]/30">·</span>
           <div className="hidden sm:flex items-center gap-4">
             <Link href="/privacy" className="hover:text-[#3D4430] transition-colors duration-300">
@@ -287,6 +291,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
           </div>
         </div>
       </footer>
+      </main>
     </article>
   );
 }

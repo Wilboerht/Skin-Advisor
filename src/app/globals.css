@@ -13,6 +13,11 @@
   }
 }
 
+@keyframes soft-blink {
+  0%, 100% { opacity: 0.88; }
+  50% { opacity: 1; }
+}
+
 @theme {
   /* 禁用 oklch，使用 srgb 兼容 html2canvas 1.4.1 */
   --default-color-space: srgb;
@@ -29,6 +34,7 @@
 
   --animate-fade-in-up: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-fade-in-right: fadeInRight 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-soft-blink: soft-blink 3s ease-in-out infinite;
   --animate-scroll: scroll 30s linear infinite;
 
   @keyframes fadeInUp {
