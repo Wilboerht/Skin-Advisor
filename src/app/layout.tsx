@@ -9,7 +9,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover',
-  themeColor: '#F5F2E9',
+  themeColor: '#F8F7F3',
 };
 
 export const metadata: Metadata = {
@@ -112,7 +112,7 @@ export default function RootLayout({
           <WebsiteSearchSchema />
         </head>
         <body
-          className={`antialiased bg-[#F5F2E9]`}
+          className={`antialiased bg-[#F8F7F3]`}
           suppressHydrationWarning
         >
           <ToastProvider>
