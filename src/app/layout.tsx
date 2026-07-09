@@ -6,6 +6,8 @@ import { OrganizationSchema, WebsiteSearchSchema } from "@/components/website/St
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
   viewportFit: 'cover',
   themeColor: '#F5F2E9',
 };
