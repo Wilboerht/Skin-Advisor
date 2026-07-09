@@ -149,9 +149,14 @@ export default function QuestionsPage() {
     // 进入性别选择页时重置内部滚动容器到顶部（修复移动端从首页弹窗进入后未置顶的问题）
     useEffect(() => {
         if (gender === null && genderScrollRef.current) {
-            genderScrollRef.current.scrollTop = 0;
+            // 用 requestAnimationFrame 确保在内容渲染完成后再重置
+            requestAnimationFrame(() => {
+                if (genderScrollRef.current) {
+                    genderScrollRef.current.scrollTop = 0;
+                }
+            });
         }
-    }, [gender]);
+    }, [gender, aiConfigured]);
 
     // 恢复之前的状态（从扫脸页点击“返回修改”时调用）
     const resumeSavedProgress = () => {
@@ -419,7 +424,7 @@ export default function QuestionsPage() {
                         ref={genderScrollRef}
                         className="flex-1 overflow-y-auto scrollbar-hide w-full max-w-5xl mx-auto px-4 md:px-8"
                     >
-                        <div className="min-h-full flex items-center justify-center">
+                        <div className="min-h-full flex items-start sm:items-center justify-center pt-6 sm:pt-0">
                             {aiConfigured === null ? (
                                 <div className="flex items-center gap-2 text-[#5E5E5E]">
                                     <Loader2 className="w-4 h-4 animate-spin" />
