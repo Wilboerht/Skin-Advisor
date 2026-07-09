@@ -179,7 +179,7 @@ export function OnboardingFlowModal({
                     transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.7, ease: [0.65, 0, 0.35, 1] }}
                 >
                     {/* ---- App Bar / Header ---- */}
-                    <header className="fixed top-0 left-0 right-0 z-[100003] flex items-center justify-between px-6 md:px-12 lg:px-20 py-5 md:py-6 bg-[#FDFBF7]/95 backdrop-blur-sm border-b border-[#1A1A1A]/5">
+                    <header className="fixed top-0 left-0 right-0 z-[100003] flex items-center justify-between px-6 md:px-12 lg:px-20 py-8 md:py-7 bg-[#FDFBF7]/95 backdrop-blur-sm border-b border-[#1A1A1A]/5">
                         <button
                             onClick={onClose}
                             className="group flex items-center gap-2 text-[#1A1A1A]/80 hover:text-[#1A1A1A] transition-colors cursor-pointer bg-transparent border-none"

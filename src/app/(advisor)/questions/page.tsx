@@ -393,7 +393,7 @@ export default function QuestionsPage() {
                     className="h-dvh overflow-hidden flex flex-col bg-[#F5F2E9]"
                 >
                     {/* Top Bar */}
-                    <div className="relative flex items-center justify-center py-5 md:py-7 px-4 md:px-12 lg:px-20 border-b border-[#3D4430]/5">
+                    <div className="relative flex items-center justify-center py-8 md:py-7 px-4 md:px-12 lg:px-20 border-b border-[#3D4430]/5">
                         <button
                             onClick={() => router.push("/")}
                             className="absolute left-4 md:left-12 lg:left-20 px-3 py-2 flex items-center gap-1.5 text-[#3D4430]/70 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5"
