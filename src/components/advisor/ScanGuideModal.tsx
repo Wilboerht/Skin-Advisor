@@ -1,19 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Sparkles, Sun, ScanEye, LogOut, ChevronLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-
-const CHARACTER_TYPES = ["ageless", "combination", "desert", "guardian", "luxury", "minimalist", "oily", "sensitive"] as const;
-const CHARACTER_GENDERS = ["female", "male"] as const;
-
-function getRandomCharacterImage() {
-    const type = CHARACTER_TYPES[Math.floor(Math.random() * CHARACTER_TYPES.length)];
-    const gender = CHARACTER_GENDERS[Math.floor(Math.random() * CHARACTER_GENDERS.length)];
-    return `/images/character/${type}/${type}_${gender}.png`;
-}
 
 interface ScanGuideModalProps {
     isOpen: boolean;
@@ -23,7 +13,6 @@ interface ScanGuideModalProps {
 }
 
 export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuideModalProps) {
-    const [characterImage] = useState(() => getRandomCharacterImage());
 
     const guideItems = [
         { icon: Sparkles, title: "保持素颜" },
@@ -89,10 +78,10 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuid
                                     开始面部扫描
                                 </h3>
                                 <Image
-                                    src={characterImage || "/images/character/luxury/luxury_female.png"}
-                                    alt=""
-                                    width={176}
-                                    height={264}
+                                    src="/images/scan-guide-character.png"
+                                    alt="扫脸引导示意"
+                                    width={448}
+                                    height={600}
                                     className="w-36 h-54 sm:w-44 sm:h-66 mx-auto mb-8 md:mb-10 object-contain"
                                     priority
                                 />
