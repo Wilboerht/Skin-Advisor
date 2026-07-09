@@ -212,7 +212,7 @@ export default function FaceScanPage() {
                     src="/NIHPLOD-logo.svg"
                     alt="NIHPLOD"
                     width={120}
-                    height={30}
+                    height={36}
                     className="h-7 md:h-9 w-auto object-contain"
                     priority
                 />
