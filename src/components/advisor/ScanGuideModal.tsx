@@ -36,7 +36,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuid
                     className="fixed inset-0 z-[320] bg-[#FAF8F5] flex flex-col items-center overflow-y-auto overscroll-contain"
                 >
                     {/* ---- App Bar / Header ---- */}
-                    <header className="fixed top-0 left-0 right-0 z-[330] flex items-center justify-center px-6 md:px-12 lg:px-20 py-7 md:py-7 bg-[#FAF8F5]/95 backdrop-blur-sm border-b border-[#1A1A1A]/5">
+                    <header className="fixed top-0 left-0 right-0 z-[330] flex items-center justify-center px-6 md:px-12 lg:px-20 py-6 md:py-7 bg-[#FAF8F5]/95 backdrop-blur-sm border-b border-[#1A1A1A]/5">
                         <button
                             onClick={handleClose}
                             className="absolute left-4 md:left-12 lg:left-20 px-3 py-2 flex items-center gap-1.5 text-[#3D4430]/70 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5 cursor-pointer bg-transparent border-none"
