@@ -4,12 +4,14 @@ import { useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuthModal } from "./AuthModalContext";
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/components/ui/Toast";
 
 export function AuthUrlDetector() {
     const searchParams = useSearchParams();
     const { openAuthModal } = useAuthModal();
     const { user } = useAuth();
     const router = useRouter();
+    const toast = useToast();
     const openAuthModalRef = useRef(openAuthModal);
     openAuthModalRef.current = openAuthModal;
 
@@ -57,6 +59,29 @@ export function AuthUrlDetector() {
             }
         }
     }, [user, router]);
+
+    // 展示微信授权错误信息并清理 URL
+    useEffect(() => {
+        const wechatAuth = searchParams.get("wechat_auth");
+        if (wechatAuth === "error") {
+            const message = searchParams.get("message");
+            const code = searchParams.get("code");
+            const displayMessage = message
+                ? decodeURIComponent(message)
+                : code === "WECHAT_DENIED"
+                ? "您取消了微信授权"
+                : "微信授权失败，请稍后重试";
+            toast.error(displayMessage);
+
+            if (typeof window !== "undefined") {
+                const url = new URL(window.location.href);
+                url.searchParams.delete("wechat_auth");
+                url.searchParams.delete("code");
+                url.searchParams.delete("message");
+                window.history.replaceState({}, "", url.toString());
+            }
+        }
+    }, [searchParams, toast]);
 
     return null;
 }

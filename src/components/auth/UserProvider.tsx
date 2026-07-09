@@ -134,7 +134,21 @@ export function UserProvider({ children }: { children: ReactNode }) {
             setUser(cachedUser);
             setLoading(false);
         }
-        checkSession();
+
+        const params = new URLSearchParams(window.location.search);
+        const wechatAuth = params.get("wechat_auth");
+        if (wechatAuth === "success") {
+            // 微信授权成功回调后刷新 session，确保 Cookie 生效
+            checkSession().then(() => {
+                if (typeof window !== "undefined") {
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete("wechat_auth");
+                    window.history.replaceState({}, "", url.toString());
+                }
+            });
+        } else {
+            checkSession();
+        }
     }, [checkSession]);
 
     const login = useCallback(async (credentials: LoginCredentials) => {
@@ -199,7 +213,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
         setUser(data.user);
         setCachedUser(data.user);
-    }, []);
+
+        // 立即刷新 session 以确保 Cookie / 本地 token 已正确设置
+        await checkSession();
+    }, [checkSession]);
 
     const logout = useCallback(async () => {
         try {

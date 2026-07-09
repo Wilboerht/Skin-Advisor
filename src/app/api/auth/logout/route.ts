@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { AUTH_COOKIE_NAME, getSession, incrementTokenVersion } from "@/lib/auth";
+import { AUTH_COOKIE_NAME, getSession, incrementTokenVersion, clearLocalSession } from "@/lib/auth";
 import { mirrorOfficialCookies } from "@/lib/cookie-mirror";
 import { CSRF_COOKIE_NAME } from "@/lib/csrf";
+import { callOfficialApi, type OfficialApiResponse } from "@/lib/official-api";
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
     const cookieStore = await cookies();
     const allCookies = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ');
 
@@ -19,36 +19,43 @@ export async function POST(_req: NextRequest) {
         // ignore session lookup errors during logout
     }
 
+    let body: { allDevices?: boolean } = {};
     try {
-        const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";
-        const officialResponse = await fetch(`${officialApiUrl}/api/auth/logout`, {
+        body = await req.json();
+    } catch {
+        body = {};
+    }
+
+    try {
+        const result = await callOfficialApi<OfficialApiResponse<{ message: string }>>({
             method: "POST",
-            headers: {
-                "Cookie": allCookies
-            }
+            path: "/api/auth/logout",
+            body,
+            cookies: allCookies,
+            requireSignature: false,
+            timeoutMs: 30000,
         });
 
-        const responseData = await officialResponse.json();
+        if (result) {
+            const responseData = result.data;
+            const response = NextResponse.json({ ...responseData });
 
-        const response = NextResponse.json({ success: true, ...responseData });
+            // 透传官网所有 Set-Cookie 头（可能包含多条 cookie 清除指令）
+            mirrorOfficialCookies(result.officialResponse, response, "logout");
 
-        // 透传官网所有 Set-Cookie 头（可能包含多条 cookie 清除指令）
-        mirrorOfficialCookies(officialResponse, response, "logout");
+            // 清除本地 session（含新旧兼容 cookie 名）
+            clearLocalSession(response);
 
-        // 清除本地 auth_token（含新旧两种 cookie 名，确保平滑过渡）
-        response.cookies.delete(AUTH_COOKIE_NAME);
-        response.cookies.delete("auth_token");
-        response.cookies.delete("user_token");
-        response.cookies.delete(CSRF_COOKIE_NAME);
-
-        return response;
+            return response;
+        }
     } catch (e) {
         console.error("Logout Proxy Error", e);
-        const fallback = NextResponse.json({ success: true });
-        fallback.cookies.delete(AUTH_COOKIE_NAME);
-        fallback.cookies.delete("auth_token");
-        fallback.cookies.delete("user_token");
-        fallback.cookies.delete(CSRF_COOKIE_NAME);
-        return fallback;
     }
+
+    // 上游不可达或失败时的兜底：至少清理本地状态与官网 Cookie
+    const fallback = NextResponse.json({ success: true });
+    clearLocalSession(fallback);
+    fallback.cookies.delete("__Host-user_token");
+    fallback.cookies.delete("__Host-user_refresh_token");
+    return fallback;
 }

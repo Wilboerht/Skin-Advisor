@@ -1,5 +1,6 @@
 import { compare, hash } from 'bcryptjs';
 import { cookies } from 'next/headers';
+import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { isDisabledUser } from '@/lib/permissions';
 import {
@@ -11,6 +12,7 @@ import {
     type VerifyTokenResult,
     type TokenVerificationError,
 } from '@/lib/auth-config';
+import { generateCsrfToken, CSRF_COOKIE_NAME } from '@/lib/csrf';
 
 export {
     AUTH_COOKIE_NAME,
@@ -108,4 +110,69 @@ export async function incrementTokenVersion(userId: string): Promise<number | nu
         console.error(`[auth] Failed to increment tokenVersion for user ${userId}:`, error);
         return null;
     }
+}
+
+/**
+ * 签发子站本地 session（auth_token + csrf_token）。
+ * 登录、注册、微信回调、微信绑定等成功后应立即调用，
+ * 确保子站本地 API 能立即识别用户。
+ */
+export async function signLocalSession(
+    response: NextResponse,
+    user: {
+        id: string;
+        email?: string | null;
+        phone?: string | null;
+        name?: string | null;
+        role: string;
+        tokenVersion: number;
+        dailyTestLimit?: number | null;
+    },
+    options?: { secure?: boolean }
+): Promise<void> {
+    const secure = options?.secure ?? true;
+    const localCookieOptions = {
+        httpOnly: true,
+        secure,
+        sameSite: "strict" as const,
+        path: "/",
+        maxAge: 7 * 24 * 60 * 60,
+    };
+    const csrfCookieOptions = {
+        httpOnly: false,
+        secure,
+        sameSite: "strict" as const,
+        path: "/",
+        maxAge: 7 * 24 * 60 * 60,
+    };
+
+
+    try {
+        const csrfToken = generateCsrfToken();
+        const localToken = await signToken({
+            sub: user.id,
+            email: user.email ?? null,
+            phone: user.phone ?? null,
+            name: user.name,
+            role: user.role,
+            tokenVersion: user.tokenVersion,
+            dailyTestLimit: user.dailyTestLimit ?? null,
+            csrf: csrfToken,
+        }, "7d");
+        response.cookies.set(AUTH_COOKIE_NAME, localToken, localCookieOptions);
+        response.cookies.set(CSRF_COOKIE_NAME, csrfToken, csrfCookieOptions);
+    } catch (err) {
+        console.error("[auth] Failed to sign local session:", err);
+    }
+}
+
+/**
+ * 清除子站本地 session Cookie。
+ * 用于：登出、重置密码、安全事件等场景。
+ */
+export function clearLocalSession(response: NextResponse): void {
+    response.cookies.delete(AUTH_COOKIE_NAME);
+    response.cookies.delete(CSRF_COOKIE_NAME);
+    response.cookies.delete("auth_token");
+    response.cookies.delete("user_token");
 }

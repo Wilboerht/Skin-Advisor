@@ -3,7 +3,9 @@ import prisma from "@/lib/prisma";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { mirrorOfficialCookies } from "@/lib/cookie-mirror";
 import { UserRole } from "@/lib/permissions";
-import { parseOfficialResponse, type OfficialApiResponse } from "@/lib/official-api";
+import { callOfficialApi, type OfficialApiResponse } from "@/lib/official-api";
+import { signLocalSession } from "@/lib/auth";
+import { cookies } from "next/headers";
 
 
 export async function POST(req: NextRequest) {
@@ -25,35 +27,31 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";
-        
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
+        const cookieStore = await cookies();
+        const allCookies = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ');
 
-        const officialResponse = await fetch(`${officialApiUrl}/api/auth/login`, {
+        const result = await callOfficialApi<OfficialApiResponse<{ user: { id: string; phone: string; nickname?: string; avatar?: string; email?: string } }>>({
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ phone: body.phone, code: body.code }),
-            signal: controller.signal
-        }).finally(() => clearTimeout(timeoutId));
+            path: "/api/auth/login",
+            body: { phone: body.phone, code: body.code },
+            cookies: allCookies,
+            requireSignature: false,
+            timeoutMs: 30000,
+        });
 
-        const parsed = await parseOfficialResponse<OfficialApiResponse<{ user: { id: string; phone: string; nickname?: string; avatar?: string; email?: string } }>>(officialResponse);
-
-        if (!parsed) {
+        if (!result) {
             return NextResponse.json(
                 { error: "登录失败：上游服务响应异常或签名无效" },
                 { status: 502 }
             );
         }
 
-        const responseData = parsed.data;
+        const responseData = result.data;
 
-        if (!officialResponse.ok || !responseData.success) {
+        if (!result.ok || !responseData.success) {
             return NextResponse.json(
                 { error: responseData.error?.message || "登录失败" },
-                { status: officialResponse.status || 401 }
+                { status: result.status || 401 }
             );
         }
 
@@ -75,7 +73,7 @@ export async function POST(req: NextRequest) {
             });
         }
 
-        await prisma.user.upsert({
+        const localUser = await prisma.user.upsert({
             where: { id: userPayload.id },
             update: {
                 phoneNumber: userPayload.phone,
@@ -102,7 +100,17 @@ export async function POST(req: NextRequest) {
             }
         });
 
-        mirrorOfficialCookies(officialResponse, response, "login-code");
+        mirrorOfficialCookies(result.officialResponse, response, "login-code");
+
+        await signLocalSession(response, {
+            id: localUser.id,
+            email: userPayload.email || null,
+            phone: localUser.phoneNumber,
+            name: localUser.name,
+            role: localUser.role,
+            tokenVersion: localUser.tokenVersion,
+            dailyTestLimit: localUser.dailyTestLimit,
+        });
 
         return response;
 

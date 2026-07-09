@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { callOfficialApi, type OfficialApiResponse } from "@/lib/official-api";
+import { cookies } from "next/headers";
 
 const PHONE_REGEX = /^1[3-9]\d{9}$/;
 
@@ -18,22 +20,32 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "请输入有效的手机号" }, { status: 400 });
         }
 
+        const cookieStore = await cookies();
+        const allCookies = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ');
+
         // 调用官网验证码发送接口（同注册/登录的验证码入口）
-        const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";
-        const officialResponse = await fetch(`${officialApiUrl}/api/auth/send-code`, {
+        const result = await callOfficialApi<OfficialApiResponse<{ expiresIn: number }>>({
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ phone, type: "reset" })
+            path: "/api/auth/send-code",
+            body: { phone, type: "reset" },
+            cookies: allCookies,
+            requireSignature: false,
+            timeoutMs: 30000,
         });
 
-        const responseData = await officialResponse.json();
+        if (!result) {
+            return NextResponse.json(
+                { error: "发送验证码失败：上游服务响应异常" },
+                { status: 502 }
+            );
+        }
 
-        if (!officialResponse.ok || !responseData.success) {
+        const responseData = result.data;
+
+        if (!result.ok || !responseData.success) {
             return NextResponse.json(
                 { error: responseData.error?.message || "发送验证码失败" },
-                { status: officialResponse.status || 400 }
+                { status: result.status || 400 }
             );
         }
 

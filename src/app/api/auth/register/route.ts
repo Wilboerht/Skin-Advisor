@@ -3,7 +3,10 @@ import prisma from "@/lib/prisma";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { mirrorOfficialCookies } from "@/lib/cookie-mirror";
 import { UserRole } from "@/lib/permissions";
-import { parseOfficialResponse, type OfficialApiResponse } from "@/lib/official-api";
+import { callOfficialApi, type OfficialApiResponse } from "@/lib/official-api";
+import { validatePasswordStrength } from "@/lib/password";
+import { signLocalSession } from "@/lib/auth";
+import { cookies } from "next/headers";
 
 
 export async function POST(req: NextRequest) {
@@ -22,53 +25,43 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "缺少必填项" }, { status: 400 });
         }
 
-        // 密码复杂度校验：至少8位，包含字母和数字
-        if (body.password.length < 8) {
-            return NextResponse.json({ error: "密码长度至少为 8 位" }, { status: 400 });
-        }
-        if (!/[a-zA-Z]/.test(body.password) || !/[0-9]/.test(body.password)) {
-            return NextResponse.json({ error: "密码需包含字母和数字" }, { status: 400 });
+        // 密码复杂度校验：与官网对齐（8-32位，必须同时含大写/小写/数字）
+        const passwordCheck = validatePasswordStrength(body.password);
+        if (!passwordCheck.valid) {
+            return NextResponse.json({ error: passwordCheck.message }, { status: 400 });
         }
 
         // 官网注册接口需要: phone, code, password, confirmPassword
-        // 我们在这个 proxy 里包装一层
         const registerPayload = {
             ...body,
-            // 后端帮它补齐两次密码验证
-            confirmPassword: body.password || "",
+            confirmPassword: body.password,
         };
 
-        const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";
-        
-        // 增加超时间：防止官方服务器（demo子域）响应过慢导致注册挂起
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒超时
+        const cookieStore = await cookies();
+        const allCookies = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ');
 
-        const officialResponse = await fetch(`${officialApiUrl}/api/auth/register`, {
+        const result = await callOfficialApi<OfficialApiResponse<{ user: { id: string; phone: string; nickname?: string; avatar?: string; email?: string } }>>({
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(registerPayload),
-            signal: controller.signal
-        }).finally(() => clearTimeout(timeoutId));
+            path: "/api/auth/register",
+            body: registerPayload,
+            cookies: allCookies,
+            requireSignature: false,
+            timeoutMs: 30000,
+        });
 
-        const parsed = await parseOfficialResponse<OfficialApiResponse<{ user: { id: string; phone: string; nickname?: string; avatar?: string; email?: string } }>>(officialResponse);
-
-        if (!parsed) {
+        if (!result) {
             return NextResponse.json(
                 { error: "注册失败：上游服务响应异常或签名无效" },
                 { status: 502 }
             );
         }
 
-        const responseData = parsed.data;
+        const responseData = result.data;
 
-        // 无论何种错误，透传给前端
-        if (!officialResponse.ok || !responseData.success) {
+        if (!result.ok || !responseData.success) {
             return NextResponse.json(
                 { error: responseData.error?.message || "注册失败" },
-                { status: officialResponse.status || 400 }
+                { status: result.status || 400 }
             );
         }
 
@@ -79,7 +72,6 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // 获取并透传官网的 Cookie (含 Domain信息)
         const userPayload = responseData.data.user;
 
         // Prevent unique constraint collision if the phone exists on a different ID locally
@@ -93,7 +85,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Upsert user into local database
-        await prisma.user.upsert({
+        const localUser = await prisma.user.upsert({
             where: { id: userPayload.id },
             update: {
                 phoneNumber: userPayload.phone,
@@ -120,7 +112,17 @@ export async function POST(req: NextRequest) {
             }
         });
 
-        mirrorOfficialCookies(officialResponse, response, "register");
+        mirrorOfficialCookies(result.officialResponse, response, "register");
+
+        await signLocalSession(response, {
+            id: localUser.id,
+            email: userPayload.email || null,
+            phone: localUser.phoneNumber,
+            name: localUser.name,
+            role: localUser.role,
+            tokenVersion: localUser.tokenVersion,
+            dailyTestLimit: localUser.dailyTestLimit,
+        });
 
         return response;
 

@@ -1,8 +1,47 @@
+/**
+ * 微信绑定手机号（子站）
+ * POST /api/auth/wechat/bind
+ *
+ * 不再直接代理官网 /api/auth/wechat/bind（该接口依赖官网 host-only Cookie），
+ * 改为调用官网内部 API /api/v1/internal/wechat/exchange，使用 URL 传递的
+ * wechat_exchange_token 完成绑定与登录。
+ */
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { UserRole } from "@/lib/permissions";
-import { parseOfficialResponse, type OfficialApiResponse } from "@/lib/official-api";
+import { createSignedInternalApiHeaders } from "@/lib/internal-api";
+import { parseOfficialResponse } from "@/lib/official-api";
+import { signLocalSession } from "@/lib/auth";
+import { logger } from "@/lib/logger";
+
+// 与官网 src/types/auth.ts 保持一致
+const USER_COOKIE_NAME = "__Host-user_token";
+const USER_REFRESH_COOKIE_NAME = "__Host-user_refresh_token";
+
+const USER_ACCESS_COOKIE_OPTIONS = {
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict" as const,
+    path: "/",
+    maxAge: 15 * 60,
+};
+
+const USER_REFRESH_COOKIE_OPTIONS = {
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict" as const,
+    path: "/",
+    maxAge: 30 * 24 * 60 * 60,
+};
+
+interface OfficialBindUser {
+    id: string;
+    phone: string;
+    nickname?: string;
+    avatar?: string;
+    email?: string;
+}
 
 export async function POST(req: NextRequest) {
     try {
@@ -13,28 +52,55 @@ export async function POST(req: NextRequest) {
         }
 
         const body = await req.json();
+        if (!body.wechatExchangeToken) {
+            return NextResponse.json({ error: "缺少微信授权凭证" }, { status: 400 });
+        }
+        if (!body.phone || !body.code) {
+            return NextResponse.json({ error: "缺少手机号或验证码" }, { status: 400 });
+        }
 
         const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";
+        const path = "/api/v1/internal/wechat/exchange";
+        const payload = {
+            wechatExchangeToken: body.wechatExchangeToken,
+            phone: body.phone,
+            code: body.code,
+            password: body.password,
+            allowAutoPassword: body.allowAutoPassword ?? true,
+        };
+        const bodyText = JSON.stringify(payload);
 
-        // Pass the request holding the wechat_bind_token cookie
-        const cookieHeader = req.headers.get("cookie") || "";
-
-        const officialResponse = await fetch(`${officialApiUrl}/api/auth/wechat/bind`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Cookie": cookieHeader
-            },
-            body: JSON.stringify(body)
-        });
-
-        const parsed = await parseOfficialResponse<OfficialApiResponse<{ user: { id: string; phone: string; nickname?: string; avatar?: string; email?: string } }>>(officialResponse);
-        if (!parsed) {
-            return NextResponse.json(
-                { error: "绑定失败：上游服务响应异常或签名无效" },
-                { status: 502 }
-            );
+        const signed = await createSignedInternalApiHeaders("advisor", "POST", path, bodyText);
+        if (!signed) {
+            return NextResponse.json({ error: "未配置内部 API 密钥" }, { status: 500 });
         }
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+        const officialResponse = await fetch(`${officialApiUrl}${path}`, {
+            method: "POST",
+            headers: signed.headers,
+            body: bodyText,
+            signal: controller.signal,
+        }).finally(() => clearTimeout(timeoutId));
+
+        const parsed = await parseOfficialResponse<{
+            success: boolean;
+            error?: { code: string; message: string };
+            data?: {
+                user?: OfficialBindUser;
+                accessToken?: string;
+                refreshToken?: string;
+                message?: string;
+                passwordGenerated?: boolean;
+            };
+        }>(officialResponse, { requireSignature: false });
+
+        if (!parsed) {
+            return NextResponse.json({ error: "官网响应签名校验失败或响应无效" }, { status: 502 });
+        }
+
         const responseData = parsed.data;
 
         if (!officialResponse.ok || !responseData.success) {
@@ -44,20 +110,20 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        if (!responseData.data?.user) {
+        const result = responseData.data;
+        if (!result?.user || !result.accessToken || !result.refreshToken) {
             return NextResponse.json(
                 { error: "绑定失败：上游响应格式异常" },
                 { status: 502 }
             );
         }
 
-        const setCookieHeader = officialResponse.headers.get("Set-Cookie");
-        const userPayload = responseData.data.user;
+        const userPayload = result.user;
 
         // Prevent unique constraint collision if the phone exists on a different ID locally
         const existingByPhone = await prisma.user.findUnique({ where: { phoneNumber: userPayload.phone } });
         if (existingByPhone && existingByPhone.id !== userPayload.id) {
-            console.warn(`[AUDIT] Phone collision detected (wechat-bind): new user ${userPayload.id} (phone: ${userPayload.phone}) conflicts with existing user ${existingByPhone.id}. Merging old record.`);
+            logger.warn(`[AUDIT] Phone collision detected (wechat-bind): new user ${userPayload.id} conflicts with existing user ${existingByPhone.id}. Merging old record.`);
             await prisma.user.update({
                 where: { id: existingByPhone.id },
                 data: { phoneNumber: `merged_${existingByPhone.id}_${userPayload.phone}` }
@@ -65,7 +131,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Upsert user into local database
-        await prisma.user.upsert({
+        const localUser = await prisma.user.upsert({
             where: { id: userPayload.id },
             update: {
                 phoneNumber: userPayload.phone,
@@ -88,23 +154,29 @@ export async function POST(req: NextRequest) {
                 ...userPayload,
                 name: userPayload.nickname || userPayload.phone,
                 role: UserRole.USER
-            }
+            },
+            message: result.message,
+            passwordGenerated: result.passwordGenerated,
         });
 
-        if (setCookieHeader) {
-            // Need to handle multiple Set-Cookie headers properly. fetch().headers returns multiple joined by comma, which is buggy for set-cookie.
-            // But we typically only set USER_COOKIE_NAME and clear wechat_bind_token. 
-            // In Next.js App router, we can iterate over the headers.
-            const rawSetCookies = officialResponse.headers.getSetCookie();
-            rawSetCookies.forEach(cookie => {
-                response.headers.append('Set-Cookie', cookie);
-            });
-        }
+        // 设置官网同款登录 Cookie
+        response.cookies.set(USER_COOKIE_NAME, result.accessToken, USER_ACCESS_COOKIE_OPTIONS);
+        response.cookies.set(USER_REFRESH_COOKIE_NAME, result.refreshToken, USER_REFRESH_COOKIE_OPTIONS);
+
+        await signLocalSession(response, {
+            id: localUser.id,
+            email: userPayload.email || null,
+            phone: localUser.phoneNumber,
+            name: localUser.name,
+            role: localUser.role,
+            tokenVersion: localUser.tokenVersion,
+            dailyTestLimit: localUser.dailyTestLimit,
+        });
 
         return response;
 
     } catch (e) {
-        console.error("Bind Proxy Error", e);
+        logger.error("Bind Proxy Error", { error: String(e) });
         return NextResponse.json({ error: "应用系统异常，请稍后重试" }, { status: 500 });
     }
 }

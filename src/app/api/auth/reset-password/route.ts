@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
-import { incrementTokenVersion } from "@/lib/auth";
+import { incrementTokenVersion, clearLocalSession } from "@/lib/auth";
+import { callOfficialApi, type OfficialApiResponse } from "@/lib/official-api";
+import { validatePasswordStrength } from "@/lib/password";
+import { cookies } from "next/headers";
 
 const PHONE_REGEX = /^1[3-9]\d{9}$/;
 
@@ -22,34 +25,41 @@ export async function POST(req: NextRequest) {
         if (!body.code || !body.password) {
             return NextResponse.json({ error: "缺少必填项" }, { status: 400 });
         }
-        if (body.password.length < 8) {
-            return NextResponse.json({ error: "密码长度至少为 8 位" }, { status: 400 });
-        }
-        if (!/[a-zA-Z]/.test(body.password) || !/[0-9]/.test(body.password)) {
-            return NextResponse.json({ error: "密码需包含字母和数字" }, { status: 400 });
+
+        // 与官网对齐的密码强度校验
+        const passwordCheck = validatePasswordStrength(body.password);
+        if (!passwordCheck.valid) {
+            return NextResponse.json({ error: passwordCheck.message }, { status: 400 });
         }
 
-        const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";
+        const cookieStore = await cookies();
+        const allCookies = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ');
 
-        // 我们代理到官网重置密码 API
-        const officialResponse = await fetch(`${officialApiUrl}/api/auth/reset-password`, {
+        const result = await callOfficialApi<OfficialApiResponse<{ message: string }>>({
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            // The official site schema expects phone, code, password, confirmPassword
-            body: JSON.stringify({
+            path: "/api/auth/reset-password",
+            body: {
                 phone: body.phone,
                 code: body.code,
                 password: body.password,
                 confirmPassword: body.password
-            })
+            },
+            cookies: allCookies,
+            requireSignature: false,
+            timeoutMs: 30000,
         });
 
-        const data = await officialResponse.json();
+        if (!result) {
+            return NextResponse.json(
+                { error: "重置失败：上游服务响应异常" },
+                { status: 502 }
+            );
+        }
 
-        if (!officialResponse.ok || !data.success) {
-            return NextResponse.json({ error: data.error?.message || "重置失败" }, { status: officialResponse.status || 400 });
+        const data = result.data;
+
+        if (!result.ok || !data.success) {
+            return NextResponse.json({ error: data.error?.message || "重置失败" }, { status: result.status || 400 });
         }
 
         // 密码重置后撤销该用户所有现有 JWT，强制重新登录
@@ -58,7 +68,14 @@ export async function POST(req: NextRequest) {
             await incrementTokenVersion(localUser.id);
         }
 
-        return NextResponse.json({ success: true, message: data.data?.message || "密码已重置" });
+        const response = NextResponse.json({ success: true, message: data.data?.message || "密码已重置" });
+
+        // 清除本地 session 与官网 Cookie，确保重置后必须重新登录
+        clearLocalSession(response);
+        response.cookies.delete("__Host-user_token");
+        response.cookies.delete("__Host-user_refresh_token");
+
+        return response;
 
     } catch (error) {
         console.error("Reset Password Proxy Error", error);

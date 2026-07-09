@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { callOfficialApi, type OfficialApiResponse } from "@/lib/official-api";
+import { cookies } from "next/headers";
 
 const PHONE_REGEX = /^1[3-9]\d{9}$/;
 
@@ -21,27 +23,31 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "请输入有效的手机号" }, { status: 400 });
         }
 
-        const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";
-        
-        // 增加超时间：防止官方服务器（demo子域）发送验证码脚本响应过慢
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒超时
+        const cookieStore = await cookies();
+        const allCookies = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ');
 
-        const officialResponse = await fetch(`${officialApiUrl}/api/auth/send-code`, {
+        const result = await callOfficialApi<OfficialApiResponse<{ expiresIn: number }>>({
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(body),
-            signal: controller.signal
-        }).finally(() => clearTimeout(timeoutId));
+            path: "/api/auth/send-code",
+            body,
+            cookies: allCookies,
+            requireSignature: false,
+            timeoutMs: 30000,
+        });
 
-        const responseData = await officialResponse.json();
+        if (!result) {
+            return NextResponse.json(
+                { error: "发送验证码失败：上游服务响应异常" },
+                { status: 502 }
+            );
+        }
 
-        if (!officialResponse.ok || !responseData.success) {
+        const responseData = result.data;
+
+        if (!result.ok || !responseData.success) {
             return NextResponse.json(
                 { error: responseData.error?.message || "发送验证码失败" },
-                { status: officialResponse.status || 400 }
+                { status: result.status || 400 }
             );
         }
 

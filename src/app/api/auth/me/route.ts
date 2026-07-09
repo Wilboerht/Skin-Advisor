@@ -1,18 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
-import { signToken, getSession, AUTH_COOKIE_NAME } from "@/lib/auth";
+import { getSession, signLocalSession } from "@/lib/auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { mirrorOfficialCookies } from "@/lib/cookie-mirror";
 import { createHash } from "crypto";
 import { UserRole } from "@/lib/permissions";
-import { generateCsrfToken, CSRF_COOKIE_NAME } from "@/lib/csrf";
-import { parseOfficialResponse, type OfficialApiResponse } from "@/lib/official-api";
+import { callOfficialApi, type OfficialApiResponse } from "@/lib/official-api";
+
+// 官网 /api/user/profile 返回的用户结构
+interface OfficialProfileUser {
+    id: string;
+    phone: string;
+    nickname: string | null;
+    avatar: string | null;
+    createdAt?: string;
+    stats?: {
+        orderCount: number;
+        addressCount: number;
+    };
+}
 
 // 简单的内存缓存，防止外部官方 API 慢导致每个请求都阻塞 10s+
-// 注意：Next.js Serverless 环境中内存缓存不共享，仅做单请求级减负
 const meCache = new Map<string, { data: unknown; timestamp: number }>();
-const ME_CACHE_TTL_MS = 5000; // 5 秒缓存
+const ME_CACHE_TTL_MS = 1000; // 1 秒缓存：在降低官方 API 压力与会话状态及时性之间取平衡
 const MAX_CACHE_SIZE = 100;
 
 function getCacheKey(cookieStr: string): string {
@@ -64,7 +75,6 @@ async function getLocalSessionUser(): Promise<NextResponse | null> {
 }
 
 export async function GET(req: NextRequest) {
-    // 速率限制
     const ip = getClientIP(req);
     const ipLimit = await rateLimit(`me-get-ip-${ip}`, "default", { maxRequests: 30, windowMs: 60 * 1000 });
     if (!ipLimit.success) {
@@ -72,11 +82,8 @@ export async function GET(req: NextRequest) {
     }
 
     const cookieStore = await cookies();
-    // 官网下发的是 user_token 或者 auth_token，但统一通过 cookie 转发
-    // 我们获取当前所有的 cookie
     const allCookies = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ');
 
-    // 没有官网 cookie 时，直接尝试本地 token（开发环境本地登录只签发 auth_token）
     if (!allCookies) {
         const localResponse = await getLocalSessionUser();
         return localResponse || NextResponse.json({ user: null });
@@ -86,46 +93,30 @@ export async function GET(req: NextRequest) {
         const cacheKey = getCacheKey(allCookies);
         const cached = getMeCache(cacheKey);
         if (cached) {
-            // Cache hit — skip external API call
             return NextResponse.json(cached);
         }
 
-        const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";
-
-        // Add a timeout to prevent long hangs if the official API is unreachable
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒超时：针对 demo 服务器不稳定的环境
-
-        const officialResponse = await fetch(`${officialApiUrl}/api/auth/me`, {
+        const result = await callOfficialApi<OfficialApiResponse<OfficialProfileUser>>({
             method: "GET",
-            headers: {
-                "Cookie": allCookies
-            },
-            signal: controller.signal
+            path: "/api/user/profile",
+            cookies: allCookies,
+            requireSignature: false,
+            timeoutMs: 30000,
         });
-        clearTimeout(timeoutId);
 
-        const parsed = await parseOfficialResponse<OfficialApiResponse<{ user: { id: string; phone: string; nickname?: string; avatar?: string; email?: string } }>>(officialResponse);
-        if (!parsed) {
-            // 官网响应不可信（签名无效或非 JSON）时，回退到本地 token
+        if (!result) {
             const localResponse = await getLocalSessionUser();
             return localResponse || NextResponse.json({ user: null });
         }
 
-        const data = parsed.data;
+        const data = result.data;
 
-        if (!officialResponse.ok || !data.success) {
-            // 官网未识别时，回退到本地 token（开发环境本地登录场景）
+        if (!result.ok || !data.success || !data.data) {
             const localResponse = await getLocalSessionUser();
             return localResponse || NextResponse.json({ user: null });
         }
 
-        if (!data.data?.user) {
-            const localResponse = await getLocalSessionUser();
-            return localResponse || NextResponse.json({ user: null });
-        }
-
-        const userPayload = data.data.user;
+        const userPayload = data.data;
 
         // Prevent unique constraint collision if the phone exists on a different ID locally
         const existingByPhone = await prisma.user.findUnique({ where: { phoneNumber: userPayload.phone } });
@@ -137,7 +128,6 @@ export async function GET(req: NextRequest) {
             });
         }
 
-        // Upsert user into local database so foreign keys (like History) don't break
         const localUser = await prisma.user.upsert({
             where: { id: userPayload.id },
             update: {
@@ -148,7 +138,7 @@ export async function GET(req: NextRequest) {
             create: {
                 id: userPayload.id,
                 phoneNumber: userPayload.phone,
-                password: "", // Local password isn't used
+                password: "",
                 name: userPayload.nickname || userPayload.phone,
                 avatarUrl: userPayload.avatar || null,
                 role: UserRole.USER,
@@ -156,69 +146,44 @@ export async function GET(req: NextRequest) {
             }
         });
 
-        // 使用本地 DB 的 role（管理端可能已禁用/修改），而非官网固定 UserRole.USER
         const responseUser = {
-            ...userPayload,
+            id: userPayload.id,
             phone: userPayload.phone,
             name: userPayload.nickname || userPayload.phone,
-            role: localUser.role
+            avatar: userPayload.avatar,
+            role: localUser.role,
+            createdAt: userPayload.createdAt,
+            stats: userPayload.stats,
         };
 
         const responsePayload = { user: responseUser };
-
-        // 写入缓存，5s 内相同 cookie 的请求不再访问外部 API
         setMeCache(cacheKey, responsePayload);
 
         const response = NextResponse.json(responsePayload);
 
-        // 签发本地 JWT token，让后续本地 API (analyze, test-limit 等) 能正确识别用户
-        // 官网的 user_token 是用官网 secret 签发的，本地无法验证，所以必须重新签发
-        try {
-            const csrfToken = generateCsrfToken();
-            const localToken = await signToken({
-                sub: responseUser.id,
-                email: responseUser.email || null,
-                phone: responseUser.phone || null,
-                name: responseUser.name,
-                role: responseUser.role,
-                tokenVersion: localUser.tokenVersion,
-                dailyTestLimit: localUser.dailyTestLimit,
-                csrf: csrfToken,
-            }, "7d");
-            response.cookies.set(AUTH_COOKIE_NAME, localToken, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
-                sameSite: "strict",
-                maxAge: 7 * 24 * 60 * 60, // 7天
-                path: "/"
-            });
-            response.cookies.set(CSRF_COOKIE_NAME, csrfToken, {
-                httpOnly: false, // 前端需要读取以放入 header
-                secure: process.env.NODE_ENV === "production",
-                sameSite: "strict",
-                maxAge: 7 * 24 * 60 * 60,
-                path: "/"
-            });
-            // Local auth_token issued successfully
-        } catch (tokenErr) {
-            console.error("[auth/me] Failed to issue local token:", tokenErr);
-        }
+        // 签发/刷新子站本地 session，让后续本地 API 能正确识别用户
+        await signLocalSession(response, {
+            id: responseUser.id,
+            email: null,
+            phone: responseUser.phone || null,
+            name: responseUser.name,
+            role: responseUser.role,
+            tokenVersion: localUser.tokenVersion,
+            dailyTestLimit: localUser.dailyTestLimit,
+        });
 
-        mirrorOfficialCookies(officialResponse, response, "me");
+        mirrorOfficialCookies(result.officialResponse, response, "me");
 
         return response;
 
     } catch (e) {
         console.error("Me GET Proxy Error", e);
-
-        // 官网 API 不可用时的降级方案：尝试用本地 token 直接识别用户
         const localResponse = await getLocalSessionUser();
         return localResponse || NextResponse.json({ user: null });
     }
 }
 
 export async function PUT(req: NextRequest) {
-    // 1. 速率限制
     const ip = getClientIP(req);
     const ipLimit = await rateLimit(`me-put-ip-${ip}`, "default", { maxRequests: 10, windowMs: 60 * 1000 });
     if (!ipLimit.success) {
@@ -235,33 +200,46 @@ export async function PUT(req: NextRequest) {
     try {
         const body = await req.json();
 
-        // 2. 代理到官网的 PUT /api/auth/me 去修改资料（带超时）
-        const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
-
-        const officialResponse = await fetch(`${officialApiUrl}/api/auth/me`, {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json",
-                "Cookie": allCookies
-            },
-            body: JSON.stringify(body),
-            signal: controller.signal
-        }).finally(() => clearTimeout(timeoutId));
-
-        const data = await officialResponse.json();
-
-        if (!officialResponse.ok || !data.success) {
-            return NextResponse.json({ error: data.error?.message || "更新失败" }, { status: officialResponse.status || 400 });
+        // 官网 PUT /api/user/profile 只接受 nickname / avatar
+        // 子站前端可能使用 name，这里做字段映射
+        const officialBody: { nickname?: string; avatar?: string } = {};
+        if (body.nickname !== undefined) {
+            officialBody.nickname = body.nickname;
+        } else if (body.name !== undefined) {
+            officialBody.nickname = body.name;
         }
+        if (body.avatar !== undefined) {
+            officialBody.avatar = body.avatar;
+        }
+
+        const result = await callOfficialApi<OfficialApiResponse<{ user: OfficialProfileUser }>>({
+            method: "PUT",
+            path: "/api/user/profile",
+            body: officialBody,
+            cookies: allCookies,
+            requireSignature: false,
+            timeoutMs: 30000,
+        });
+
+        if (!result) {
+            return NextResponse.json({ error: "更新失败：上游服务响应异常" }, { status: 502 });
+        }
+
+        const data = result.data;
+
+        if (!result.ok || !data.success || !data.data?.user) {
+            return NextResponse.json({ error: data.error?.message || "更新失败" }, { status: result.status || 400 });
+        }
+
+        const user = data.data.user;
 
         return NextResponse.json({
             success: true,
             user: {
-                ...data.data.user,
-                phone: data.data.user.phone,
-                name: data.data.user.nickname || data.data.user.phone,
+                id: user.id,
+                phone: user.phone,
+                name: user.nickname || user.phone,
+                avatar: user.avatar,
                 role: UserRole.USER
             }
         });

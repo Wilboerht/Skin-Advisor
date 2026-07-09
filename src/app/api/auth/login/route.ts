@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
-import { verifyPassword, signToken, AUTH_COOKIE_NAME } from "@/lib/auth";
+import { verifyPassword, signLocalSession } from "@/lib/auth";
 import { mirrorOfficialCookies } from "@/lib/cookie-mirror";
 import { UserRole } from "@/lib/permissions";
-import { generateCsrfToken, CSRF_COOKIE_NAME } from "@/lib/csrf";
-import { parseOfficialResponse, type OfficialApiResponse } from "@/lib/official-api";
+
+import { callOfficialApi, type OfficialApiResponse } from "@/lib/official-api";
+import { cookies } from "next/headers";
 
 async function tryDevLocalLogin(phone: string, password: string): Promise<NextResponse | null> {
     // 双重开关：仅允许非生产环境 + 显式设置 ALLOW_LOCAL_LOGIN=true
@@ -19,18 +20,6 @@ async function tryDevLocalLogin(phone: string, password: string): Promise<NextRe
     const passwordValid = await verifyPassword(password, localUser.password);
     if (!passwordValid) return null;
 
-    const csrfToken = generateCsrfToken();
-    const token = await signToken({
-        sub: localUser.id,
-        email: localUser.email,
-        phone: localUser.phoneNumber,
-        name: localUser.name,
-        role: localUser.role,
-        tokenVersion: localUser.tokenVersion,
-        dailyTestLimit: localUser.dailyTestLimit,
-        csrf: csrfToken,
-    }, "7d");
-
     const response = NextResponse.json({
         user: {
             id: localUser.id,
@@ -40,20 +29,18 @@ async function tryDevLocalLogin(phone: string, password: string): Promise<NextRe
             role: localUser.role
         }
     });
-    response.cookies.set(AUTH_COOKIE_NAME, token, {
-        httpOnly: true,
-        secure: false, // 仅开发环境本地登录使用
-        sameSite: "strict",
-        maxAge: 7 * 24 * 60 * 60,
-        path: "/"
-    });
-    response.cookies.set(CSRF_COOKIE_NAME, csrfToken, {
-        httpOnly: false,
-        secure: false,
-        sameSite: "strict",
-        maxAge: 7 * 24 * 60 * 60,
-        path: "/"
-    });
+
+    // 开发环境本地回退：使用非 Secure Cookie
+    await signLocalSession(response, {
+        id: localUser.id,
+        email: localUser.email,
+        phone: localUser.phoneNumber,
+        name: localUser.name,
+        role: localUser.role,
+        tokenVersion: localUser.tokenVersion,
+        dailyTestLimit: localUser.dailyTestLimit,
+    }, { secure: false });
+
     return response;
 }
 
@@ -83,40 +70,38 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-        // 代理到官网密码登录接口
-        const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";
-        
-        // 增加超时间：防止官方服务器（demo子域）响应过慢导致系统崩溃
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒超时
+        const cookieStore = await cookies();
+        const allCookies = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ');
 
-        const officialResponse = await fetch(`${officialApiUrl}/api/auth/login-password`, {
+        // 子站暴露 /api/auth/login，映射到官网的 /api/auth/login-password
+        const result = await callOfficialApi<OfficialApiResponse<{ user: { id: string; phone: string; nickname?: string; avatar?: string; email?: string } }>>({
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(body),
-            signal: controller.signal
-        }).finally(() => clearTimeout(timeoutId));
+            path: "/api/auth/login-password",
+            body,
+            cookies: allCookies,
+            requireSignature: false,
+            timeoutMs: 30000,
+        });
 
-        const parsed = await parseOfficialResponse<OfficialApiResponse<{ user: { id: string; phone: string; nickname?: string; avatar?: string; email?: string } }>>(officialResponse);
+        if (!result) {
+            const devResponse = await tryDevLocalLogin(body.phone, body.password);
+            if (devResponse) return devResponse;
 
-        if (!parsed) {
             return NextResponse.json(
                 { error: "登录失败：上游服务响应异常或签名无效" },
                 { status: 502 }
             );
         }
 
-        const responseData = parsed.data;
+        const responseData = result.data;
 
-        if (!officialResponse.ok || !responseData.success) {
+        if (!result.ok || !responseData.success) {
             const devResponse = await tryDevLocalLogin(body.phone, body.password);
             if (devResponse) return devResponse;
 
             return NextResponse.json(
                 { error: responseData.error?.message || "登录失败" },
-                { status: officialResponse.status || 401 }
+                { status: result.status || 401 }
             );
         }
 
@@ -127,7 +112,6 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // 获取并透传官网的 Cookie
         const userPayload = responseData.data.user;
 
         // Prevent unique constraint collision if the phone exists on a different ID locally
@@ -141,7 +125,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Upsert user into local database
-        await prisma.user.upsert({
+        const localUser = await prisma.user.upsert({
             where: { id: userPayload.id },
             update: {
                 phoneNumber: userPayload.phone,
@@ -161,14 +145,24 @@ export async function POST(req: NextRequest) {
         const response = NextResponse.json({
             user: {
                 ...userPayload,
-                // 确保我们返回的字段名和原先系统要求的对齐
                 phone: userPayload.phone,
                 name: userPayload.nickname || userPayload.phone,
                 role: UserRole.USER
             }
         });
 
-        mirrorOfficialCookies(officialResponse, response, "login");
+        mirrorOfficialCookies(result.officialResponse, response, "login");
+
+        // 立即签发子站本地 session，避免首次访问 /api/auth/me 前本地 API 认为未登录
+        await signLocalSession(response, {
+            id: localUser.id,
+            email: userPayload.email || null,
+            phone: localUser.phoneNumber,
+            name: localUser.name,
+            role: localUser.role,
+            tokenVersion: localUser.tokenVersion,
+            dailyTestLimit: localUser.dailyTestLimit,
+        });
 
         return response;
 

@@ -8,6 +8,7 @@ import { useToast } from "@/components/ui/Toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Loader2, Eye, EyeOff, ArrowRight, ArrowLeft, Phone, CheckCircle, Check, KeyRound, CheckCircle2, ChevronLeft, ArrowLeftRight } from "lucide-react";
 import { useIsMobile } from "@/hooks/useMediaQuery";
+import { validatePasswordStrength, PASSWORD_MIN_LENGTH } from "@/lib/password";
 
 export function AuthModal() {
     const { isOpen, view, openAuthModal, closeAuthModal, setAuthView } = useAuthModal();
@@ -18,9 +19,22 @@ export function AuthModal() {
 
     useEffect(() => {
         if (searchParams.get("login") === "wechat_bind") {
+            const token = searchParams.get("wechat_exchange_token");
+            if (token) {
+                setWechatExchangeToken(token);
+            }
+            // 保留最终重定向目标，供绑定成功后使用
+            const redirect = searchParams.get("redirect");
+            if (redirect) {
+                sessionStorage.setItem("auth_redirect", redirect);
+            }
             openAuthModal("wechat_bind");
-            // Remove the param so it doesn't trigger again on reload
-            router.replace(window.location.pathname, { scroll: false });
+            // Remove sensitive param from URL so it doesn't linger or trigger again
+            const cleanUrl = new URL(window.location.href);
+            cleanUrl.searchParams.delete("login");
+            cleanUrl.searchParams.delete("wechat_exchange_token");
+            cleanUrl.searchParams.delete("redirect");
+            router.replace(cleanUrl.pathname + cleanUrl.search, { scroll: false });
         }
     }, [searchParams, openAuthModal, router]);
 
@@ -50,6 +64,7 @@ export function AuthModal() {
 
     const [showPassword, setShowPassword] = useState(false);
     const [mobileAgreed, setMobileAgreed] = useState(false);
+    const [wechatExchangeToken, setWechatExchangeToken] = useState<string | null>(null);
     const [agreementShake, setAgreementShake] = useState(0);
     const [mobileForgotStep, setMobileForgotStep] = useState<"phone" | "code" | "password" | "success">("phone");
 
@@ -177,6 +192,11 @@ export function AuthModal() {
             toast.error("两次密码输入不一致，请重新输入");
             return;
         }
+        const passwordCheck = validatePasswordStrength(regPassword);
+        if (!passwordCheck.valid) {
+            toast.error(passwordCheck.message || "密码不符合要求");
+            return;
+        }
         if (!mobileAgreed) {
             setAgreementShake(n => n + 1);
             return;
@@ -196,20 +216,39 @@ export function AuthModal() {
     };
 
     const handleCancelWechatBind = () => {
-        // 清除临时 wechat_bind_token cookie
-        document.cookie = "wechat_bind_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        // 清除微信授权凭证状态（当前使用 URL 参数 wechat_exchange_token，无对应 Cookie）
+        setWechatExchangeToken(null);
         toast.error("微信登录已取消，请使用手机号登录");
         closeAuthModal();
     };
 
     const handleWechatBind = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!wechatExchangeToken) {
+            toast.error("微信授权凭证缺失，请重新扫码");
+            return;
+        }
+        if (!regPassword || regPassword.length === 0) {
+            toast.error("请设置登录密码");
+            return;
+        }
+        const passwordCheck = validatePasswordStrength(regPassword);
+        if (!passwordCheck.valid) {
+            toast.error(passwordCheck.message || "密码不符合要求");
+            return;
+        }
         setLoading(true);
         try {
             const res = await fetch("/api/auth/wechat/bind", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ phone: regPhone, code: regCode, password: regPassword })
+                body: JSON.stringify({
+                    wechatExchangeToken,
+                    phone: regPhone,
+                    code: regCode,
+                    password: regPassword,
+                    allowAutoPassword: false,
+                })
             });
 
             const data = await res.json();
@@ -224,7 +263,7 @@ export function AuthModal() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             console.error("🔴 Wechat bind failed:", err.message);
-            toast.error("绑定失败，请稍后重试");
+            toast.error(err.message || "绑定失败，请稍后重试");
             setLoading(false);
         }
     };
@@ -236,27 +275,16 @@ export function AuthModal() {
         }
         setLoading(true);
         try {
-            // 构建 OAuth 回调 URL：保留 redirect 以便登录后自动跳转
+            // 直接通过浏览器跳转到子站微信入口，子站会再 302 到官网设置 nonce Cookie。
+            // 这样可确保 wechat_oauth_nonce 写在官网域名下，回调时能正确校验 state。
             const redirectTarget = sessionStorage.getItem("auth_redirect");
-            const baseUrl = window.location.origin + window.location.pathname;
+            const callbackUrl = `${window.location.origin}/api/auth/wechat/callback`;
             const returnUrl = redirectTarget
-                ? `${baseUrl}?auth=login&redirect=${encodeURIComponent(redirectTarget)}`
-                : window.location.origin + window.location.pathname + window.location.search;
-            const res = await fetch(`/api/auth/wechat?redirect=${encodeURIComponent(returnUrl)}`);
-            const data = await res.json();
-            if (data.success) {
-                window.location.href = data.data.authUrl;
-            } else {
-                const msg = data.error?.message || "获取微信授权失败";
-                if (/appid.*未配置/i.test(msg)) {
-                    console.warn("[WechatLogin]", msg);
-                } else {
-                    toast.error(msg);
-                }
-            }
+                ? `${callbackUrl}?redirect=${encodeURIComponent(redirectTarget)}`
+                : callbackUrl;
+            window.location.href = `/api/auth/wechat?redirect=${encodeURIComponent(returnUrl)}`;
         } catch {
             toast.error("网络错误，请重试");
-        } finally {
             setLoading(false);
         }
     };
@@ -380,8 +408,9 @@ export function AuthModal() {
             toast.error("两次密码输入不一致，请重新输入");
             return;
         }
-        if (resetNewPassword.length < 6) {
-            toast.error("密码至少6位");
+        const passwordCheck = validatePasswordStrength(resetNewPassword);
+        if (!passwordCheck.valid) {
+            toast.error(passwordCheck.message || "密码不符合要求");
             return;
         }
         setLoading(true);
@@ -411,6 +440,11 @@ export function AuthModal() {
         e.preventDefault();
         if (resetNewPassword !== resetConfirmPassword) {
             toast.error("两次密码输入不一致，请重新输入");
+            return;
+        }
+        const passwordCheck = validatePasswordStrength(resetNewPassword);
+        if (!passwordCheck.valid) {
+            toast.error(passwordCheck.message || "密码不符合要求");
             return;
         }
         setLoading(true);
@@ -710,11 +744,11 @@ export function AuthModal() {
                                                 <input
                                                     type={showPassword ? "text" : "password"}
                                                     required
-                                                    minLength={6}
+                                                    minLength={PASSWORD_MIN_LENGTH}
                                                     value={regPassword}
                                                     onChange={(e) => setRegPassword(e.target.value)}
                                                     className={`${pcInputClass} pr-10`}
-                                                    placeholder="密码"
+                                                    placeholder="密码（8位且含大写/小写/数字）"
                                                 />
                                                 <button
                                                     type="button"
@@ -728,7 +762,7 @@ export function AuthModal() {
                                                 <input
                                                     type={showPassword ? "text" : "password"}
                                                     required
-                                                    minLength={6}
+                                                    minLength={PASSWORD_MIN_LENGTH}
                                                     value={regConfirmPassword}
                                                     onChange={(e) => setRegConfirmPassword(e.target.value)}
                                                     className={`${pcInputClass} pr-10`}
@@ -821,11 +855,11 @@ export function AuthModal() {
                                                     <input
                                                         type={showPassword ? "text" : "password"}
                                                         required
-                                                        minLength={6}
+                                                        minLength={PASSWORD_MIN_LENGTH}
                                                         value={resetNewPassword}
                                                         onChange={(e) => setResetNewPassword(e.target.value)}
                                                         className={`${pcInputClass} pr-10`}
-                                                        placeholder="新密码"
+                                                        placeholder="新密码（8位且含大写/小写/数字）"
                                                     />
                                                     <button
                                                         type="button"
@@ -839,7 +873,7 @@ export function AuthModal() {
                                                     <input
                                                         type={showPassword ? "text" : "password"}
                                                         required
-                                                        minLength={6}
+                                                        minLength={PASSWORD_MIN_LENGTH}
                                                         value={resetConfirmPassword}
                                                         onChange={(e) => setResetConfirmPassword(e.target.value)}
                                                         className={`${pcInputClass} pr-10`}
@@ -953,11 +987,11 @@ export function AuthModal() {
                                                 <input
                                                     type={showPassword ? "text" : "password"}
                                                     required
-                                                    minLength={6}
+                                                    minLength={PASSWORD_MIN_LENGTH}
                                                     value={regPassword}
                                                     onChange={(e) => setRegPassword(e.target.value)}
                                                     className={`${pcInputClass} pr-10`}
-                                                    placeholder="密码"
+                                                    placeholder="密码（8位且含大写/小写/数字）"
                                                 />
                                                 <button
                                                     type="button"
@@ -1244,10 +1278,10 @@ export function AuthModal() {
                                         <input
                                             type="password"
                                             required
-                                            minLength={6}
+                                            minLength={PASSWORD_MIN_LENGTH}
                                             value={regPassword}
                                             onChange={(e) => setRegPassword(e.target.value)}
-                                            placeholder="密码（至少6位）"
+                                            placeholder="密码（8位且含大写/小写/数字）"
                                             maxLength={32}
                                             className="w-full bg-transparent border-0 border-b border-brand-charcoal/25 rounded-none py-3 px-0 text-base tracking-wide text-brand-charcoal placeholder:text-brand-charcoal/40 placeholder:text-sm placeholder:tracking-wider focus:outline-none focus:border-brand-gold/60 transition-colors"
                                         />
@@ -1256,7 +1290,7 @@ export function AuthModal() {
                                         <input
                                             type="password"
                                             required
-                                            minLength={6}
+                                            minLength={PASSWORD_MIN_LENGTH}
                                             value={regConfirmPassword}
                                             onChange={(e) => setRegConfirmPassword(e.target.value)}
                                             placeholder="确认密码"
@@ -1407,10 +1441,10 @@ export function AuthModal() {
                                             <input
                                                 type="password"
                                                 required
-                                                minLength={6}
+                                                minLength={PASSWORD_MIN_LENGTH}
                                                 value={resetNewPassword}
                                                 onChange={(e) => setResetNewPassword(e.target.value)}
-                                                placeholder="新密码（至少6位）"
+                                                placeholder="新密码（8位且含大写/小写/数字）"
                                                 maxLength={32}
                                                 className="w-full bg-transparent border-0 border-b border-brand-charcoal/25 rounded-none py-3 px-0 text-base tracking-wide text-brand-charcoal placeholder:text-brand-charcoal/40 placeholder:text-sm placeholder:tracking-wider focus:outline-none focus:border-brand-gold/60 transition-colors"
                                             />
@@ -1419,7 +1453,7 @@ export function AuthModal() {
                                             <input
                                                 type="password"
                                                 required
-                                                minLength={6}
+                                                minLength={PASSWORD_MIN_LENGTH}
                                                 value={resetConfirmPassword}
                                                 onChange={(e) => setResetConfirmPassword(e.target.value)}
                                                 placeholder="确认新密码"
@@ -1429,7 +1463,7 @@ export function AuthModal() {
                                         </div>
                                         <button
                                             type="submit"
-                                            disabled={loading || resetNewPassword.length < 6}
+                                            disabled={loading || !validatePasswordStrength(resetNewPassword).valid}
                                             className="w-full py-3.5 text-sm font-medium tracking-[0.2em] text-brand-charcoal border border-brand-charcoal/25 hover:bg-brand-charcoal/[0.03] active:scale-[0.98] transition-all disabled:opacity-40"
                                         >
                                             <span className="relative z-10 flex items-center justify-center gap-2">
@@ -1520,10 +1554,10 @@ export function AuthModal() {
                                     <input
                                         type="password"
                                         required
-                                        minLength={6}
+                                        minLength={PASSWORD_MIN_LENGTH}
                                         value={regPassword}
                                         onChange={(e) => setRegPassword(e.target.value)}
-                                        placeholder="密码（至少6位）"
+                                        placeholder="密码（8位且含大写/小写/数字）"
                                         maxLength={32}
                                         className="w-full bg-transparent border-0 border-b border-brand-charcoal/25 rounded-none py-3 px-0 text-base tracking-wide text-brand-charcoal placeholder:text-brand-charcoal/40 placeholder:text-sm placeholder:tracking-wider focus:outline-none focus:border-brand-gold/60 transition-colors"
                                     />
