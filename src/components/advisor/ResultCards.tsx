@@ -133,7 +133,7 @@ export default function ResultCards({
           {/* Text Content */}
           <div className="flex flex-col justify-center z-10">
             {/* 分享版标签 */}
-            <div className="relative z-10 mb-4 lg:mb-6 inline-flex h-[24px] px-2 items-center justify-center rounded-full border border-[#3d2f25]/15 bg-transparent text-xs font-bold text-[#5c4937] lg:h-[26px] lg:px-2.5 lg:text-xs lg:tracking-wide lg:rounded-lg lg:border lg:border-[#3d2f25]/30 whitespace-nowrap self-start">
+            <div className="relative z-10 mb-4 lg:mb-6 inline-flex h-[24px] px-2 items-center justify-center rounded-full border border-[#00263e]/15 bg-transparent text-xs font-bold text-[#00263e] lg:h-[26px] lg:px-2.5 lg:text-xs lg:tracking-wide lg:rounded-lg lg:border lg:border-[#00263e]/30 whitespace-nowrap self-start">
               肌智派证书
             </div>
 
@@ -203,7 +203,7 @@ export default function ResultCards({
         <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-0 lg:gap-12 h-full">
           <div className="flex flex-col justify-between items-start w-full lg:w-[30%] shrink-0">
             <div>
-              <div className="relative z-10 mb-4 inline-flex h-[24px] px-2 items-center justify-center rounded-full border border-[#3d2f25]/15 bg-transparent text-xs font-bold text-[#5c4937] lg:mb-6 lg:h-[26px] lg:px-2.5 lg:text-xs lg:tracking-wide lg:rounded-lg lg:border lg:border-[#3d2f25]/30 whitespace-nowrap">
+              <div className="relative z-10 mb-4 inline-flex h-[24px] px-2 items-center justify-center rounded-full border border-[#00263e]/15 bg-transparent text-xs font-bold text-[#00263e] lg:mb-6 lg:h-[26px] lg:px-2.5 lg:text-xs lg:tracking-wide lg:rounded-lg lg:border lg:border-[#00263e]/30 whitespace-nowrap">
                 专业版报告
               </div>
               <h2 className="text-lg lg:text-2xl font-bold text-[#3d2f25] mb-2 relative z-10">
