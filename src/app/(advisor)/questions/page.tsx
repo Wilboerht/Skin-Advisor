@@ -148,13 +148,28 @@ export default function QuestionsPage() {
 
     // 进入性别选择页时重置内部滚动容器到顶部（修复移动端从首页弹窗进入后未置顶的问题）
     useEffect(() => {
-        if (gender === null && genderScrollRef.current) {
-            // 用 requestAnimationFrame 确保在内容渲染完成后再重置
-            requestAnimationFrame(() => {
+        if (gender === null) {
+            const resetScroll = () => {
+                // 重置内部滚动容器
                 if (genderScrollRef.current) {
                     genderScrollRef.current.scrollTop = 0;
                 }
-            });
+                // 同时重置 window / document 滚动，防止 iOS 把上一页的滚动状态带过来
+                if (typeof window !== "undefined") {
+                    window.scrollTo(0, 0);
+                    if (document.documentElement) {
+                        document.documentElement.scrollTop = 0;
+                    }
+                    if (document.body) {
+                        document.body.scrollTop = 0;
+                    }
+                }
+            };
+
+            resetScroll();
+            requestAnimationFrame(resetScroll);
+            const timers = [50, 150, 300, 600].map((ms) => setTimeout(resetScroll, ms));
+            return () => timers.forEach(clearTimeout);
         }
     }, [gender, aiConfigured]);
 
@@ -407,7 +422,7 @@ export default function QuestionsPage() {
                             alt="NIHPLOD"
                             width={120}
                             height={30}
-                            className="h-8 md:h-9 w-auto object-contain"
+                            className="h-7 md:h-9 w-auto object-contain"
                             priority
                         />
                         <button
@@ -422,9 +437,10 @@ export default function QuestionsPage() {
 
                     <div
                         ref={genderScrollRef}
-                        className="flex-1 overflow-y-auto scrollbar-hide w-full max-w-5xl mx-auto px-4 md:px-8"
+                        className="flex-1 overflow-y-auto scrollbar-hide scroll-auto w-full max-w-5xl mx-auto px-4 md:px-8"
+                        style={{ scrollBehavior: "auto", overflowAnchor: "none" }}
                     >
-                        <div className="min-h-full flex items-start sm:items-center justify-center pt-6 sm:pt-0">
+                        <div className="min-h-0 sm:min-h-full py-6 sm:py-0 sm:flex sm:items-center sm:justify-center">
                             {aiConfigured === null ? (
                                 <div className="flex items-center gap-2 text-[#5E5E5E]">
                                     <Loader2 className="w-4 h-4 animate-spin" />

@@ -98,6 +98,17 @@ export default function Home() {
     safeStorage.remove("advisor_free_retry");
     safeStorage.remove("advisor_step");
 
+    // 修复 iOS 从首页 modal 进入 questions 页面时滚动位置异常：
+    // 跳转前恢复 body overflow 并把页面滚动重置到顶部
+    if (typeof document !== "undefined") {
+      document.body.style.overflow = "";
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
+    if (typeof window !== "undefined") {
+      window.scrollTo(0, 0);
+    }
+
     setIsLoading(true);
     router.push("/questions");
   }, [router]);
