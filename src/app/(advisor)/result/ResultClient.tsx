@@ -809,7 +809,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     <SaveReportBanner />
 
                     {/* Logo */}
-                    <div className="w-full flex flex-col items-center pt-14">
+                    <div className="w-full flex flex-col items-center pt-12">
                         <Image
                             src="/NIHPLOD-logo.svg"
                             alt="NIHPLOD"
