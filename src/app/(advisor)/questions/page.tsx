@@ -468,7 +468,7 @@ export default function QuestionsPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ duration: 1.2, delay: 1 }}
-                        className="pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,16px))] opacity-40 px-4"
+                        className="hidden sm:flex pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,16px))] opacity-40 px-4"
                     >
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-center text-[10px] sm:text-[11px] font-light tracking-widest text-[#1A1A1A] leading-tight">
                             <p>&copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
