@@ -76,7 +76,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
     <>
       <nav
         style={{ pointerEvents: "none" }}
-        className={`fixed top-0 left-0 right-0 z-[100000] px-6 md:px-12 lg:px-20 py-8 md:py-7 transition-all duration-500 ${
+        className={`fixed top-0 left-0 right-0 z-[100000] px-6 md:px-12 lg:px-20 py-7 md:py-7 transition-all duration-500 ${
           scrolled
             ? "bg-[#F8F7F3]/80 backdrop-blur-md border-b border-[rgba(61,68,48,0.06)]"
             : isDark
