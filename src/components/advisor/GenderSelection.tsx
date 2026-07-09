@@ -44,17 +44,17 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
             <m.h2
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mb-6 sm:mb-10 text-center font-serif text-2xl md:text-3xl text-[#1A1A1A]"
+                className="mb-4 sm:mb-10 text-center font-serif text-2xl md:text-3xl text-[#1A1A1A]"
             >
                 开始之前，请选择您的性别
             </m.h2>
 
-            <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-8 w-full">
+            <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8 w-full">
                 <m.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.5 }}
-                    className="relative w-[150px] h-[150px] sm:w-auto sm:h-auto sm:flex-[4] sm:aspect-square flex-shrink-0"
+                    className="relative w-[120px] h-[120px] sm:w-auto sm:h-auto sm:flex-[4] sm:aspect-square flex-shrink-0"
                 >
                     <Image
                         src={characterImage || "/images/character/luxury/luxury_female.png"}
@@ -69,17 +69,17 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
                     variants={container}
                     initial="hidden"
                     animate="show"
-                    className="grid w-full sm:flex-[6] gap-3 sm:gap-5"
+                    className="grid w-full sm:flex-[6] gap-2 sm:gap-5"
                 >
                 <m.button
                     variants={item}
                     onClick={() => onSelect("female")}
                     whileHover={{ y: -4 }}
                     whileTap={{ scale: 0.98 }}
-                    className="group flex flex-row items-center gap-4 rounded-xl border border-[#E8E2D9] bg-white px-5 sm:px-8 py-5 sm:py-6 text-left transition-all duration-300 hover:border-[#C9A86C] hover:shadow-sm"
+                    className="group flex flex-row items-center gap-4 rounded-xl border border-[#E8E2D9] bg-white px-5 sm:px-8 py-4 sm:py-6 text-left transition-all duration-300 hover:border-[#C9A86C] hover:shadow-sm"
                 >
-                    <div className="flex h-12 w-12 sm:h-16 sm:w-16 shrink-0 items-center justify-center rounded-full bg-[#A0784C]/[0.08] transition-all duration-300 group-hover:bg-[#A0784C]/[0.12]">
-                        <Venus className="w-7 h-7 sm:w-9 sm:h-9 text-[#A0784C]" strokeWidth={1.5} />
+                    <div className="flex h-10 w-10 sm:h-16 sm:w-16 shrink-0 items-center justify-center rounded-full bg-[#A0784C]/[0.08] transition-all duration-300 group-hover:bg-[#A0784C]/[0.12]">
+                        <Venus className="w-6 h-6 sm:w-9 sm:h-9 text-[#A0784C]" strokeWidth={1.5} />
                     </div>
 
                     <div>
@@ -92,10 +92,10 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
                     onClick={() => onSelect("male")}
                     whileHover={{ y: -4 }}
                     whileTap={{ scale: 0.98 }}
-                    className="group flex flex-row items-center gap-4 rounded-xl border border-[#E8E2D9] bg-white px-5 sm:px-8 py-5 sm:py-6 text-left transition-all duration-300 hover:border-[#1B3A5C]/40 hover:shadow-sm"
+                    className="group flex flex-row items-center gap-4 rounded-xl border border-[#E8E2D9] bg-white px-5 sm:px-8 py-4 sm:py-6 text-left transition-all duration-300 hover:border-[#1B3A5C]/40 hover:shadow-sm"
                 >
-                    <div className="flex h-12 w-12 sm:h-16 sm:w-16 shrink-0 items-center justify-center rounded-full bg-[#1B3A5C]/[0.08] transition-all duration-300 group-hover:bg-[#1B3A5C]/[0.12]">
-                        <Mars className="w-7 h-7 sm:w-9 sm:h-9 text-[#1B3A5C]" strokeWidth={1.5} />
+                    <div className="flex h-10 w-10 sm:h-16 sm:w-16 shrink-0 items-center justify-center rounded-full bg-[#1B3A5C]/[0.08] transition-all duration-300 group-hover:bg-[#1B3A5C]/[0.12]">
+                        <Mars className="w-6 h-6 sm:w-9 sm:h-9 text-[#1B3A5C]" strokeWidth={1.5} />
                     </div>
 
                     <div>

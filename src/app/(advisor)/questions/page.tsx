@@ -437,10 +437,9 @@ export default function QuestionsPage() {
 
                     <div
                         ref={genderScrollRef}
-                        className="flex-1 overflow-y-auto scrollbar-hide scroll-auto w-full max-w-5xl mx-auto px-4 md:px-8"
-                        style={{ scrollBehavior: "auto", overflowAnchor: "none" }}
+                        className="flex-1 overflow-hidden scrollbar-hide w-full max-w-5xl mx-auto px-4 md:px-8"
                     >
-                        <div className="min-h-0 sm:min-h-full py-6 sm:py-0 sm:flex sm:items-center sm:justify-center">
+                        <div className="h-full min-h-0 py-4 sm:py-0 flex flex-col sm:flex-row items-center justify-center">
                             {aiConfigured === null ? (
                                 <div className="flex items-center gap-2 text-[#5E5E5E]">
                                     <Loader2 className="w-4 h-4 animate-spin" />
