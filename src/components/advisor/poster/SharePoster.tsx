@@ -1,7 +1,6 @@
 "use client";
 
-import { forwardRef, useState, useEffect } from "react";
-import { toDataURL } from "qrcode";
+import { forwardRef, useState } from "react";
 import { Palette, Droplets } from "lucide-react";
 
 interface SharePosterProps {
@@ -12,28 +11,17 @@ interface SharePosterProps {
   percentile?: number;
   avatar?: string | null;
   posterTemplate?: string;
-}
-
-/** 获取完整的图片 URL（用于 html2canvas） */
-function getAbsoluteUrl(path: string): string {
-  if (typeof window === "undefined") return path;
-  if (path.startsWith("http") || path.startsWith("data:")) return path;
-  return `${window.location.origin}${path}`;
+  qrDataUrl?: string | null;
 }
 
 export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
   function SharePoster(
-    { nickname, score, skinTone, waterOil, percentile, avatar, posterTemplate },
+    { nickname, score, skinTone, waterOil, percentile, avatar, posterTemplate, qrDataUrl },
     ref
   ) {
-    const templateUrl = posterTemplate ? getAbsoluteUrl(posterTemplate) : null;
-    const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+    const [templateFailed, setTemplateFailed] = useState(false);
 
-    useEffect(() => {
-      toDataURL(typeof window !== 'undefined' ? window.location.origin : 'https://advisor.nihplod.cn', { width: 80, margin: 1, color: { dark: '#3F2C76', light: '#0000' } })
-        .then(url => setQrDataUrl(url))
-        .catch(() => setQrDataUrl(null));
-    }, []);
+    const showTemplate = posterTemplate && !templateFailed;
 
     return (
       <div
@@ -42,12 +30,13 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
         style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
       >
         {/* 背景模板图片 */}
-        {templateUrl ? (
+        {showTemplate ? (
           <img
-            src={templateUrl}
+            src={posterTemplate}
             alt="海报模板"
             className="absolute inset-0 w-full h-full object-cover"
             crossOrigin="anonymous"
+            onError={() => setTemplateFailed(true)}
           />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-b from-[#FAF8F5] to-[#F0E6D8]">
@@ -77,6 +66,9 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
               alt={nickname}
               className="w-full h-full object-cover object-center"
               crossOrigin="anonymous"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = "none";
+              }}
             />
           </div>
         )}

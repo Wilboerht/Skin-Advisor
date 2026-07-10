@@ -34,6 +34,7 @@ import { ScientificBarChart } from "@/components/advisor/ScientificBarChart";
 
 import { SharePoster } from "@/components/advisor/poster/SharePoster";
 import { toPng } from "html-to-image";
+import { toDataURL } from "qrcode";
 import { ContactAdvisorModal } from "@/components/advisor/ContactAdvisorModal";
 import ResultCards from "@/components/advisor/ResultCards";
 
@@ -175,6 +176,16 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             router.replace("/");
         }
     }, [router, id, initialData]);
+    // Pre-generate QR code for poster (avoids race condition on save click)
+    useEffect(() => {
+        toDataURL(
+            typeof window !== "undefined" ? window.location.origin : "https://advisor.nihplod.cn",
+            { width: 80, margin: 1, color: { dark: "#3F2C76", light: "#0000" } }
+        )
+            .then((url) => setQrDataUrl(url))
+            .catch(() => setQrDataUrl(null));
+    }, []);
+
     const { trackResultView, trackResultShare, trackProductClick } = useAdvisorAnalytics();
     const { user, isInitialized: authInitialized } = useAuth();
     const searchParams = useSearchParams();
@@ -218,6 +229,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const [showLabData, setShowLabData] = useState(false);
     const [showContactAdvisor, setShowContactAdvisor] = useState(false);
     const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
+    const [posterError, setPosterError] = useState<string | null>(null);
+    const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
     const [dismissValidationWarning, setDismissValidationWarning] = useState(() => {
         try { return sessionStorage.getItem('advisor_dismiss_validation') === 'true'; } catch { return false; }
     });
@@ -226,7 +239,12 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
 
     const rankPercentile = useMemo(
-        () => result?.dataSource === "questionnaire" ? undefined : getRankPercentile(faceAnalysis?.overallScore ?? 0),
+        () => {
+            if (result?.dataSource === "questionnaire") return undefined;
+            const rawScore = faceAnalysis?.overallScore;
+            if (rawScore === undefined || rawScore === null) return undefined;
+            return getRankPercentile(rawScore);
+        },
         [faceAnalysis?.overallScore, result?.dataSource]
     );
 
@@ -430,7 +448,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         if (!posterRef.current || isGeneratingPoster) return;
         try {
             setIsGeneratingPoster(true);
-            // �ȴ�ͼƬ����
+            setPosterError(null);
             const images = Array.from(posterRef.current.getElementsByTagName("img"));
             await Promise.all(
                 images.map(
@@ -464,11 +482,11 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             link.download = `${userNickname || "用户"}的肌智派证书.png`;
             link.href = blobUrl;
             link.click();
-            URL.revokeObjectURL(blobUrl);
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
             // ���溣���ɹ��󴥷��������
             trackResultShare("image");
         } catch (error) {
-            console.error("��������ʧ��:", error);
+            setPosterError("证书生成失败，请稍后重试");
         } finally {
             setIsGeneratingPoster(false);
         }
@@ -861,6 +879,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             budget={ipBudget}
                             skincareFrequency={ipSkincareFrequency}
                             summary={result?.analysis?.summary}
+                            rankPercentile={rankPercentile}
                             onDownloadPoster={handleSavePoster}
 
                             comprehensiveReport={
@@ -1203,6 +1222,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 gender: socialGender,
                             })}
                             posterTemplate="/images/poster-template.webp"
+                            qrDataUrl={qrDataUrl}
                         />
                     </div>
 

@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Share2 } from 'lucide-react';
 import Image from 'next/image';
-import { getRankPercentile, getTZoneLabel, getCharacterImage, getSkinTypeName, type IPMatchParams } from '@/lib/result-utils';
+import { getTZoneLabel, getCharacterImage, getSkinTypeName, type IPMatchParams } from '@/lib/result-utils';
 
 
 interface Dimension {
@@ -22,6 +22,7 @@ interface ResultCardsProps {
   budget?: string;
   skincareFrequency?: string;
   summary?: string;
+  rankPercentile?: number;
   onDownloadPoster: () => void;
   professionalClassName?: string;
   professionalStyle?: React.CSSProperties;
@@ -67,6 +68,7 @@ export default function ResultCards({
   budget,
   skincareFrequency,
   summary,
+  rankPercentile,
   onDownloadPoster,
   professionalClassName,
   professionalStyle,
@@ -75,12 +77,6 @@ export default function ResultCards({
   const ipParams: IPMatchParams = { score: score ?? 0, skinType, budget, skincareFrequency };
   const characterImage = getCharacterImage({ ...ipParams, gender });
   const skinTypeName = getSkinTypeName(ipParams);
-
-  // 基于综合评分计算全国排名百分比
-  const rankPercentile = useMemo(
-    () => getRankPercentile(typeof score === 'number' ? score : 75),
-    [score]
-  );
 
   const tZoneLabel = useMemo(
     () => getTZoneLabel(dimensions?.waterOil?.score ?? 0),
@@ -145,9 +141,13 @@ export default function ResultCards({
               <h3 className="text-lg lg:text-[24px] font-bold text-[#3d2f25] leading-snug tracking-tight mb-3 lg:mb-4">
                 基于问卷的肤质评估
               </h3>
-            ) : (
+            ) : rankPercentile !== undefined ? (
               <h3 className="text-lg lg:text-[24px] font-bold text-[#3d2f25] leading-snug tracking-tight mb-3 lg:mb-4">
                 素颜评分超越了全国 <span className="text-lg lg:text-[24px] px-0.5 text-[#00263e]">{rankPercentile}%</span> 的用户
+              </h3>
+            ) : (
+              <h3 className="text-lg lg:text-[24px] font-bold text-[#3d2f25] leading-snug tracking-tight mb-3 lg:mb-4">
+                素颜评估已完成
               </h3>
             )}
 
