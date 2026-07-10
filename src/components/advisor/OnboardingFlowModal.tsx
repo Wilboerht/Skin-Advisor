@@ -119,7 +119,11 @@ export function OnboardingFlowModal({
 
     const handleDecline = () => {
         onLocationDecline();
-        setLocationView("region");
+        if (isLoggedIn) {
+            finish();
+        } else {
+            goNext();
+        }
     };
 
     /* ---- Region select handlers ---- */

@@ -153,7 +153,13 @@ export default function QuestionsPage() {
             history.scrollRestoration = "manual";
         }
 
+        const html = document.documentElement;
+        const originalScrollBehavior = html?.style?.scrollBehavior ?? "";
+
         const resetScroll = () => {
+            // 临时禁用平滑滚动，确保重置立即生效
+            if (html) html.style.scrollBehavior = "auto";
+
             if (scrollContainerRef.current) {
                 scrollContainerRef.current.scrollTop = 0;
             }
@@ -169,6 +175,9 @@ export default function QuestionsPage() {
                     document.body.scrollTop = 0;
                 }
             }
+
+            // 恢复原始 scroll-behavior，让后续用户滚动保持平滑
+            if (html) html.style.scrollBehavior = originalScrollBehavior;
         };
 
         resetScroll();
@@ -180,13 +189,20 @@ export default function QuestionsPage() {
             if ("scrollRestoration" in history) {
                 history.scrollRestoration = "auto";
             }
+            // 确保恢复
+            if (html) html.style.scrollBehavior = originalScrollBehavior;
         };
     }, []);
 
     // 进入性别选择页时重置内部滚动容器到顶部（修复移动端从首页弹窗进入后未置顶的问题）
     useEffect(() => {
         if (gender === null) {
+            const html = document.documentElement;
+            const originalScrollBehavior = html?.style?.scrollBehavior ?? "";
+
             const resetScroll = () => {
+                if (html) html.style.scrollBehavior = "auto";
+
                 // 重置内部滚动容器
                 if (genderScrollRef.current) {
                     genderScrollRef.current.scrollTop = 0;
@@ -201,12 +217,17 @@ export default function QuestionsPage() {
                         document.body.scrollTop = 0;
                     }
                 }
+
+                if (html) html.style.scrollBehavior = originalScrollBehavior;
             };
 
             resetScroll();
             requestAnimationFrame(resetScroll);
             const timers = [50, 150, 300, 600].map((ms) => setTimeout(resetScroll, ms));
-            return () => timers.forEach(clearTimeout);
+            return () => {
+                timers.forEach(clearTimeout);
+                if (html) html.style.scrollBehavior = originalScrollBehavior;
+            };
         }
     }, [gender, aiConfigured]);
 
