@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, Suspense } from "react";
-import { useRouter } from "next/navigation";
-import { Link } from "next-view-transitions";
+import { Link, useTransitionRouter } from "next-view-transitions";
 import { LazyMotion, domAnimation, AnimatePresence, m, useReducedMotion } from "framer-motion";
 import Image from "next/image";
 import { ArrowRight, Loader2, MapPin, ClipboardList, X, CircleAlert } from "lucide-react";
@@ -53,7 +52,7 @@ const regionOptions = [
 ];
 
 export default function Home() {
-  const router = useRouter();
+  const router = useTransitionRouter();
   const { openAuthModal } = useAuthModal();
   const [isLoading, setIsLoading] = useState(false);
   const { initSession } = useAdvisorAnalytics();
@@ -102,8 +101,14 @@ export default function Home() {
     // 跳转前恢复 body overflow 并把页面滚动重置到顶部
     if (typeof document !== "undefined") {
       document.body.style.overflow = "";
+
+      // 临时禁用平滑滚动，确保 scrollTo(0,0) 立即生效，不会被动画中断
+      const html = document.documentElement;
+      const originalScrollBehavior = html.style.scrollBehavior;
+      html.style.scrollBehavior = "auto";
       document.documentElement.scrollTop = 0;
       document.body.scrollTop = 0;
+      html.style.scrollBehavior = originalScrollBehavior;
     }
     if (typeof window !== "undefined") {
       window.scrollTo(0, 0);

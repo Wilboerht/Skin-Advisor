@@ -146,6 +146,43 @@ export default function QuestionsPage() {
         }
     }, [currentStepIndex]);
 
+    // 进入页面时强制重置所有滚动位置，并禁用浏览器自动滚动恢复
+    // 避免 next-view-transitions / 浏览器历史 / iOS 把上一页滚动状态带到问卷页
+    useEffect(() => {
+        if ("scrollRestoration" in history) {
+            history.scrollRestoration = "manual";
+        }
+
+        const resetScroll = () => {
+            if (scrollContainerRef.current) {
+                scrollContainerRef.current.scrollTop = 0;
+            }
+            if (genderScrollRef.current) {
+                genderScrollRef.current.scrollTop = 0;
+            }
+            if (typeof window !== "undefined") {
+                window.scrollTo(0, 0);
+                if (document.documentElement) {
+                    document.documentElement.scrollTop = 0;
+                }
+                if (document.body) {
+                    document.body.scrollTop = 0;
+                }
+            }
+        };
+
+        resetScroll();
+        requestAnimationFrame(resetScroll);
+        const timers = [50, 150, 300, 600].map((ms) => setTimeout(resetScroll, ms));
+
+        return () => {
+            timers.forEach(clearTimeout);
+            if ("scrollRestoration" in history) {
+                history.scrollRestoration = "auto";
+            }
+        };
+    }, []);
+
     // 进入性别选择页时重置内部滚动容器到顶部（修复移动端从首页弹窗进入后未置顶的问题）
     useEffect(() => {
         if (gender === null) {
