@@ -102,19 +102,11 @@ export async function generateMetadata(props: {
 
             if (session && session.analysisResult) {
                 const rawResult = session.analysisResult as unknown as Record<string, unknown>;
-                const result = rawResult as unknown as ComprehensiveResult;
                 const faceAnalysis = rawResult.faceAnalysis as Record<string, unknown> | undefined;
                 const skinAnalysis = rawResult.skinAnalysis as Record<string, unknown> | undefined;
                 const score = (faceAnalysis?.overallScore as number | undefined) || (skinAnalysis?.score as number | undefined) || 85;
-                const skinType = (skinAnalysis?.typeLabel as string | undefined) || result.skinProfile?.typeLabel || "未知肤质";
+                const skinType = (skinAnalysis?.typeLabel as string | undefined) || "未知肤质";
 
-                const imgParams = new URLSearchParams();
-                imgParams.set("id", id);
-                imgParams.set("score", score.toString());
-                imgParams.set("skinType", skinType);
-                imgParams.set("date", new Date().toISOString().split('T')[0]);
-
-                ogImage = `/api/advisor/share-image?${imgParams.toString()}`;
                 title = `${score}分！我的${skinType}护肤报告已生成`;
                 description = `AI 分析得分 ${score} 分，肤质类型：${skinType}。查看完整护肤方案与产品推荐。`;
             }

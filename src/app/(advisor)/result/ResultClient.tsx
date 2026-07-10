@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState, useRef, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -33,7 +33,6 @@ import { ScientificBarChart } from "@/components/advisor/ScientificBarChart";
 
 
 import { SharePoster } from "@/components/advisor/poster/SharePoster";
-import { ShareModal } from "@/components/advisor/ShareModal";
 import { toPng } from "html-to-image";
 import { ContactAdvisorModal } from "@/components/advisor/ContactAdvisorModal";
 import ResultCards from "@/components/advisor/ResultCards";
@@ -57,7 +56,7 @@ interface ResultClientProps {
     } | null;
 }
 
-// 手机端：十维分析表单（替代 ScientificBarChart）
+// �ֻ��ˣ�ʮά������������� ScientificBarChart��
 function MobileDimensionForm({ dimensions }: { dimensions: Record<string, { score?: number } | undefined> }) {
     const order = ['radiance', 'acne', 'firmness', 'darkCircles', 'sensitivity', 'uvDamage', 'wrinkles', 'spots', 'skinTone', 'waterOil'];
 
@@ -71,7 +70,7 @@ function MobileDimensionForm({ dimensions }: { dimensions: Record<string, { scor
                     <div key={key} className="py-3 border-b border-[#E8E2D9] last:border-0">
                         <div className="flex items-center justify-between mb-1.5">
                             <span className="text-[13px] text-[#4A4A4A]">{DIMENSION_LABELS[key]}</span>
-                            <span className="text-[13px] font-medium text-[#1A1A1A]">{score} 分</span>
+                            <span className="text-[13px] font-medium text-[#1A1A1A]">{score} ��</span>
                         </div>
                         <div className="h-1.5 w-full rounded-full bg-[#E8E2D9] overflow-hidden">
                             <div className={`h-full rounded-full ${color}`} style={{ width: `${score}%` }} />
@@ -84,9 +83,9 @@ function MobileDimensionForm({ dimensions }: { dimensions: Record<string, { scor
     );
 }
 
-// 手机端 Lab 指标卡片
+// �ֻ��� Lab ָ�꿨Ƭ
 function MobileLabRow({ metric }: { metric: LabMetric }) {
-    const goodKeywords = ['正常', 'Normal', '紧致', '细腻', '均匀', '透亮', 'Type I', '少', 'Balanced'];
+    const goodKeywords = ['����', 'Normal', '����', 'ϸ��', '����', '͸��', 'Type I', '��', 'Balanced'];
     const isGood = goodKeywords.some(k => metric.status.includes(k));
 
     return (
@@ -104,11 +103,11 @@ function MobileLabRow({ metric }: { metric: LabMetric }) {
             </div>
             <div className="grid grid-cols-2 gap-2">
                 <div>
-                    <p className="text-[11px] text-[#8A8A8A] mb-0.5">测定值</p>
+                    <p className="text-[11px] text-[#8A8A8A] mb-0.5">�ⶨֵ</p>
                     <p className="text-[12px] text-[#1A1A1A]">{metric.value}</p>
                 </div>
                 <div>
-                    <p className="text-[11px] text-[#8A8A8A] mb-0.5">参考范围</p>
+                    <p className="text-[11px] text-[#8A8A8A] mb-0.5">�ο���Χ</p>
                     <p className="text-[12px] text-[#1A1A1A]">{metric.ref}</p>
                 </div>
             </div>
@@ -116,10 +115,10 @@ function MobileLabRow({ metric }: { metric: LabMetric }) {
     );
 }
 
-// Lab Report 行渲染（抽离到组件外部，避免每次渲染重新创建）
+// Lab Report ����Ⱦ�����뵽����ⲿ������ÿ����Ⱦ���´�����
 function renderLabRow(param: string, value: string, ref: string, status: string) {
     // Determine status color based on keywords
-    const goodKeywords = ['正常', 'Normal', '紧致', '细腻', '均匀', '透亮', 'Type I', '少', 'Balanced'];
+    const goodKeywords = ['����', 'Normal', '����', 'ϸ��', '����', '͸��', 'Type I', '��', 'Balanced'];
     const isGood = goodKeywords.some(k => status.includes(k));
 
     return (
@@ -137,7 +136,7 @@ function renderLabRow(param: string, value: string, ref: string, status: string)
             <div className="sm:col-span-2 text-left sm:text-right text-[11px] font-light">
                 {status ? (
                     <span className={isGood ? 'text-[#4A4A4A]' : 'text-[#c45a4a]'}>
-                        {status} {isGood ? '' : '▲'}
+                        {status} {isGood ? '' : '��'}
                     </span>
                 ) : null}
             </div>
@@ -161,8 +160,8 @@ export default function ResultClient(props: ResultClientProps) {
 function ResultClientContent({ id, initialData }: ResultClientProps) {
     const router = useRouter();
 
-    // 入口守卫：必须通过首页引导弹窗后才能查看结果
-    // 历史报告页面（/reports/:id）会传入 id 与 initialData，跳过此守卫
+    // �������������ͨ����ҳ������������ܲ鿴���
+    // ��ʷ����ҳ�棨/reports/:id���ᴫ�� id �� initialData������������
     useEffect(() => {
         if (id || initialData) return;
         try {
@@ -196,12 +195,12 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     }, [result]);
     const [faceAnalysis, setFaceAnalysis] = useState<FaceAnalysisResult | null>(initialData?.faceAnalysis || null);
 
-    const [userNickname, setUserNickname] = useState<string>("您");
+    const [userNickname, setUserNickname] = useState<string>("��");
     // Session ID for sharing - initialized from props or will be set after analysis
     const [sessionId, setSessionId] = useState<string | undefined>(id);
     const [socialGender, setSocialGender] = useState<string>(''); // Initialize empty to avoid flash mismatch
 
-    // IP 匹配所需数据
+    // IP ƥ����������
     const [ipBudget, setIpBudget] = useState<string | undefined>(undefined);
     const [ipSkincareFrequency, setIpSkincareFrequency] = useState<string | undefined>(undefined);
 
@@ -209,7 +208,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const [loading, setLoading] = useState(!initialData);
     const hasTrackedView = useRef(false);
 
-    // Gender Mismatch State：存储已确认过的 sessionId，换 session 后自动重新提示
+    // Gender Mismatch State���洢��ȷ�Ϲ��� sessionId���� session ���Զ�������ʾ
     const [ackedSessionId, setAckedSessionId] = useState<string | null>(() => {
         try { return localStorage.getItem(STORAGE_KEYS.ADVISOR_GENDER_MISMATCH_ACK); } catch { return null; }
     });
@@ -218,7 +217,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
     const [showLabData, setShowLabData] = useState(false);
     const [showContactAdvisor, setShowContactAdvisor] = useState(false);
-    const [showShareModal, setShowShareModal] = useState(false);
     const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
     const [dismissValidationWarning, setDismissValidationWarning] = useState(() => {
         try { return sessionStorage.getItem('advisor_dismiss_validation') === 'true'; } catch { return false; }
@@ -266,7 +264,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         localStorage.removeItem(STORAGE_KEYS.ADVISOR_RESULT);
         localStorage.removeItem(STORAGE_KEYS.ADVISOR_STEP);
 
-        // 保留原 sessionId，供免费重试流程复用（后端需校验该 session 已完成过分析且未使用过重试）
+        // ����ԭ sessionId��������������̸��ã������У��� session ����ɹ�������δʹ�ù����ԣ�
         const currentSessionId = sessionId;
         if (currentSessionId) {
             localStorage.setItem(STORAGE_KEYS.ADVISOR_FREE_RETRY_SESSION_ID, currentSessionId);
@@ -286,7 +284,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         const currentSessionId = sessionId ?? null;
         setAckedSessionId(currentSessionId);
         try { if (currentSessionId) localStorage.setItem(STORAGE_KEYS.ADVISOR_GENDER_MISMATCH_ACK, currentSessionId); } catch { /* ignore */ }
-        // 用户选择继续（不重试），清除免费重试相关标记，避免后续普通测试复用旧 sessionId
+        // �û�ѡ������������ԣ���������������ر�ǣ����������ͨ���Ը��þ� sessionId
         localStorage.removeItem(STORAGE_KEYS.ADVISOR_FREE_RETRY);
         localStorage.removeItem(STORAGE_KEYS.ADVISOR_FREE_RETRY_SESSION_ID);
     };
@@ -294,13 +292,13 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
 
 
-    // renderLabRow 已抽为组件外部函数，避免每次渲染重新创建
+    // renderLabRow �ѳ�Ϊ����ⲿ����������ÿ����Ⱦ���´���
 
 
     // Initialize & Restore Data
     useEffect(() => {
         const loadClientData = async () => {
-            // 已有结果且非分析中时直接短路，避免 user 变化导致重复加载/闪烁
+            // ���н���ҷǷ�����ʱֱ�Ӷ�·������ user �仯�����ظ�����/��˸
             if (resultRef.current && searchParams.get('status') !== 'analyzing') {
                 if (!hasTrackedView.current) {
                     trackResultView();
@@ -313,8 +311,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             try {
                 // Dynamically import to avoid SSR issues
                 const { advisorStorage } = await import("@/lib/advisor-storage");
-                // 人脸图片仅用于 IndexedDB 恢复，不渲染到页面
-                // 保留恢复逻辑但不设置不再使用的 state
+                // ����ͼƬ������ IndexedDB �ָ�������Ⱦ��ҳ��
+                // �����ָ��߼��������ò���ʹ�õ� state
                 await advisorStorage.getFaceImages();
 
                 // Restore Nickname
@@ -361,17 +359,17 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 if (searchParams.get('status') === 'analyzing') {
                                     if (authInitializedRef.current) {
                                         if (userRef.current && recoveredSessionId) {
-                                            // 登录用户直接跳转到 /reports/:id，避免先渲染 /result 再跳转的闪烁
+                                            // ��¼�û�ֱ����ת�� /reports/:id����������Ⱦ /result ����ת����˸
                                             router.replace(`/reports/${recoveredSessionId}`, { scroll: false });
                                         } else {
-                                            // 游客留在 /result，清掉 analyzing 参数并渲染结果
+                                            // �ο����� /result����� analyzing ��������Ⱦ���
                                             if (normalized) setResult(normalized);
                                             if (advisorResult.faceAnalysis) setFaceAnalysis(advisorResult.faceAnalysis);
                                             if (recoveredSessionId) setSessionId(recoveredSessionId);
                                             router.replace('/result', { scroll: false });
                                         }
                                     } else if (normalized && recoveredSessionId) {
-                                        // auth 尚未初始化，暂存结果，等 auth 初始化后再决定去向
+                                        // auth ��δ��ʼ�����ݴ������� auth ��ʼ�����پ���ȥ��
                                         pendingResultRef.current = {
                                             result: normalized,
                                             faceAnalysis: advisorResult.faceAnalysis || null,
@@ -379,13 +377,13 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         };
                                     }
                                 } else {
-                                    // 非分析中状态，直接渲染缓存结果
+                                    // �Ƿ�����״̬��ֱ����Ⱦ������
                                     if (normalized) setResult(normalized);
                                     if (advisorResult.faceAnalysis) setFaceAnalysis(advisorResult.faceAnalysis);
                                     if (recoveredSessionId) setSessionId(recoveredSessionId);
                                 }
                                 setLoading(false);
-                                // 在提前返回前也触发埋点
+                                // ����ǰ����ǰҲ�������
                                 if (!hasTrackedView.current) {
                                     trackResultView();
                                     hasTrackedView.current = true;
@@ -432,7 +430,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         if (!posterRef.current || isGeneratingPoster) return;
         try {
             setIsGeneratingPoster(true);
-            // 等待图片加载
+            // �ȴ�ͼƬ����
             const images = Array.from(posterRef.current.getElementsByTagName("img"));
             await Promise.all(
                 images.map(
@@ -451,7 +449,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 pixelRatio: 2,
                 cacheBust: true,
             });
-            // data URL → Blob URL（绕过 CSP 限制，不用 fetch）
+            // data URL �� Blob URL���ƹ� CSP ���ƣ����� fetch��
             const arr = dataUrl.split(',');
             const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/png';
             const bstr = atob(arr[1]);
@@ -463,14 +461,14 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             const blob = new Blob([u8arr], { type: mime });
             const blobUrl = URL.createObjectURL(blob);
             const link = document.createElement("a");
-            link.download = `NIHPLOD-肌肤报告-${userNickname || "用户"}-${Date.now()}.png`;
+            link.download = `NIHPLOD-��������-${userNickname || "�û�"}-${Date.now()}.png`;
             link.href = blobUrl;
             link.click();
             URL.revokeObjectURL(blobUrl);
-            // 保存海报成功后触发分享埋点
+            // ���溣���ɹ��󴥷��������
             trackResultShare("image");
         } catch (error) {
-            console.error("海报生成失败:", error);
+            console.error("��������ʧ��:", error);
         } finally {
             setIsGeneratingPoster(false);
         }
@@ -495,8 +493,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 
                 if (res.ok) {
                     localStorage.setItem(claimedKey, 'true');
-                    // Claim 成功后跳转到 /reports/:id，登录用户不再停留在游客形态的 /result 页面
-                    // 若当前已在 /reports/:id 则避免无意义重定向
+                    // Claim �ɹ�����ת�� /reports/:id����¼�û�����ͣ�����ο���̬�� /result ҳ��
+                    // ����ǰ���� /reports/:id ������������ض���
                     const reportPath = `/reports/${sessionId}`;
                     if (typeof window === 'undefined' || window.location.pathname !== reportPath) {
                         router.replace(reportPath);
@@ -522,7 +520,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         sessionId: string;
     } | null>(null);
 
-    // 等 auth 初始化后再决定渲染还是跳转，避免登录用户先看到 /result 再闪到 /reports/:id
+    // �� auth ��ʼ�����پ�����Ⱦ������ת�������¼�û��ȿ��� /result ������ /reports/:id
     useEffect(() => {
         const pending = pendingResultRef.current;
         if (!pending || !authInitializedRef.current) return;
@@ -609,10 +607,10 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 }
 
                 if (!newSessionId) {
-                    throw new Error("会话 ID 丢失，请重新测试");
+                    throw new Error("�Ự ID ��ʧ�������²���");
                 }
 
-                // 先跳转/暂存，登录用户不在 /result 渲染结果，避免闪烁
+                // ����ת/�ݴ棬��¼�û����� /result ��Ⱦ�����������˸
                 if (authInitializedRef.current) {
                     if (userRef.current) {
                         router.replace(`/reports/${newSessionId}`, { scroll: false });
@@ -652,9 +650,9 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 <div className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm">
                     <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                         <div className="sm:w-[60%] text-center sm:text-left">
-                            <h3 className="text-lg font-serif text-[#1A1A1A] mb-3 sm:mb-2">分析遇到了一些问题</h3>
+                            <h3 className="text-lg font-serif text-[#1A1A1A] mb-3 sm:mb-2">����������һЩ����</h3>
                             <p className="text-sm text-[#5E5E5E] leading-relaxed">
-                                {analysisState.error || "服务器暂时无法响应，请稍后再试。"}
+                                {analysisState.error || "��������ʱ�޷���Ӧ�����Ժ����ԡ�"}
                             </p>
                         </div>
                         <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
@@ -662,7 +660,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 onClick={() => router.push('/questions?edit=true')}
                                 className="px-6 h-10 rounded-lg border border-[#1B3A5C] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                             >
-                                退出
+                                �˳�
                             </button>
                         </div>
                     </div>
@@ -684,15 +682,15 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 <div className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm">
                     <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                         <div className="sm:w-[60%] text-center sm:text-left">
-                            <h3 className="text-lg font-serif text-[#1A1A1A] mb-3 sm:mb-2">报告加载失败</h3>
-                            <p className="text-sm text-[#5E5E5E] leading-relaxed">数据可能已过期或不存在</p>
+                            <h3 className="text-lg font-serif text-[#1A1A1A] mb-3 sm:mb-2">�������ʧ��</h3>
+                            <p className="text-sm text-[#5E5E5E] leading-relaxed">���ݿ����ѹ��ڻ򲻴���</p>
                         </div>
                         <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
                             <button
                                 onClick={() => router.push("/questions?edit=true")}
                                 className="px-6 h-10 rounded-lg border border-[#1B3A5C] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                             >
-                                重新测试
+                                ���²���
                             </button>
                         </div>
                     </div>
@@ -751,29 +749,29 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         id="gender-mismatch-title"
                                         className="text-[17px] font-semibold text-[#1A1A1A] tracking-wide"
                                     >
-                                        测前信息准确性提示
+                                        ��ǰ��Ϣ׼ȷ����ʾ
                                     </h3>
                                     </div>
 
                                 <div className="space-y-5">
                                     <p className="text-[14px] text-[#5E5E5E] leading-[1.8] text-left px-1">
-                                        AI 面部识别结果显示您的面部特征更接近
+                                        AI �沿ʶ������ʾ�����沿�������ӽ�
                                         <span className="font-medium bg-[#1B3A5C]/8 px-1.5 py-0.5 rounded text-[#1B3A5C] mx-1">
-                                            {faceAnalysis?.gender?.value === 'male' ? '男性' : '女性'}
+                                            {faceAnalysis?.gender?.value === 'male' ? '����' : 'Ů��'}
                                         </span>
-                                        ，但您在问卷中选择的是
+                                        ���������ʾ���ѡ�����
                                         <span className="font-medium bg-[#1B3A5C]/8 px-1.5 py-0.5 rounded text-[#1B3A5C] mx-1">
-                                            {socialGender === 'male' ? '男性' : '女性'}
+                                            {socialGender === 'male' ? '����' : 'Ů��'}
                                         </span>
-                                        ，二者不一致。
+                                        �����߲�һ�¡�
                                     </p>
 
                                     {/* Callout Block */}
                                     <div className="bg-[#1B3A5C]/4 p-4 rounded-lg flex items-start gap-3">
                                         <Lightbulb className="w-4 h-4 shrink-0 mt-0.5 text-[#1B3A5C]/70" strokeWidth={1.5} />
                                         <div className="space-y-2 text-[13px] text-[#5E5E5E] leading-relaxed">
-                                            <p>这可能会影响为您匹配<span className="font-semibold text-[#1A1A1A]">“针对性护肤方案”</span>的精准度，导致分析结论与您的实际肤感产生偏差。</p>
-                                            <p>建议核实信息以获得更准确的建议。若是填写有误？<span className="font-semibold text-[#1B3A5C]">本次重新填写不消耗测试次数</span>。</p>
+                                            <p>����ܻ�Ӱ��Ϊ��ƥ��<span className="font-semibold text-[#1A1A1A]">������Ի���������</span>�ľ�׼�ȣ����·�������������ʵ�ʷ��в���ƫ�</p>
+                                            <p>�����ʵ��Ϣ�Ի�ø�׼ȷ�Ľ��顣������д����<span className="font-semibold text-[#1B3A5C]">����������д�����Ĳ��Դ���</span>��</p>
                                         </div>
                                     </div>
 
@@ -785,14 +783,14 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                             className="w-full h-11 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent text-[14px] font-medium rounded-lg hover:bg-[#1B3A5C] hover:text-white active:scale-[0.99] transition-all flex items-center justify-center gap-2"
                                         >
                                             <RotateCcw size={14} strokeWidth={2} />
-                                            <span>重新填写问卷</span>
+                                            <span>������д�ʾ�</span>
                                         </button>
 
                                         <button
                                             onClick={handleMismatchContinue}
                                             className="w-full h-11 bg-transparent text-[#5E5E5E] text-[14px] font-medium rounded-lg hover:bg-[#1B3A5C]/6 hover:text-[#1B3A5C] transition-all flex items-center justify-center gap-2"
                                         >
-                                            <span>信息无误，继续查看</span>
+                                            <span>��Ϣ���󣬼����鿴</span>
                                         </button>
                                     </div>
                                 </div>
@@ -820,7 +818,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                         />
                         <p className="mt-6 mb-5 lg:mt-8 lg:mb-8 text-base lg:text-lg text-[#5c4937] font-medium tracking-wide flex items-center justify-center gap-2">
                             <Sparkles className="w-4 h-4 lg:w-5 lg:h-5" />
-                            {userNickname} 的专属肌智派素颜分析报告
+                            {userNickname} ��ר�����������շ�������
                         </p>
                     </div>
 
@@ -830,7 +828,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             <div className="max-w-[1440px] mx-auto px-4 py-3 pr-10 flex items-start gap-3">
                                 <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
                                 <div className="flex-1">
-                                    <h4 className="text-sm font-semibold text-red-900 mb-0.5">照片质量提示</h4>
+                                    <h4 className="text-sm font-semibold text-red-900 mb-0.5">��Ƭ������ʾ</h4>
                                     <p className="text-sm text-red-700 leading-relaxed">
                                         {faceAnalysis.validation.message}
                                     </p>
@@ -841,7 +839,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         try { sessionStorage.setItem('advisor_dismiss_validation', 'true'); } catch { /* ignore */ }
                                     }}
                                     className="absolute right-4 top-3 p-1 rounded-full hover:bg-red-100 text-red-500 transition-colors"
-                                    aria-label="关闭提示"
+                                    aria-label="�ر���ʾ"
                                 >
                                     <X className="w-4 h-4" />
                                 </button>
@@ -863,14 +861,14 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             budget={ipBudget}
                             skincareFrequency={ipSkincareFrequency}
                             summary={result?.analysis?.summary}
-                            onShare={() => setShowShareModal(true)}
+                            onDownloadPoster={handleSavePoster}
 
                             comprehensiveReport={
                                 <>
-                                    {/* 1、详细诊断报告 */}
+                                    {/* 1����ϸ��ϱ��� */}
                                     <div className="mt-6 lg:mt-14 mb-6">
                                         <h4 className="text-base font-medium text-[#3d2f25] mb-3 border-b border-[#3d2f25]/20 pb-2">
-                                            1、详细诊断报告 <span className="text-xs lg:text-base">(Detailed Diagnosis)</span>
+                                            1����ϸ��ϱ��� <span className="text-xs lg:text-base">(Detailed Diagnosis)</span>
                                         </h4>
 
                                         {result.analysis?.details && result.analysis.details.length > 0 ? (
@@ -890,18 +888,18 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                             </>
                                         ) : (
                                             <p className="text-[14px] leading-relaxed text-[#5c4937]">
-                                                {faceAnalysis?.summary || result.analysis?.summary || "暂无详细诊断报告"}
+                                                {faceAnalysis?.summary || result.analysis?.summary || "������ϸ��ϱ���"}
                                             </p>
                                         )}
                                     </div>
 
-                                    {/* 2、专家护肤建议 */}
+                                    {/* 2��ר�һ������� */}
                                     <div className="mb-8">
                                         <h4 className="text-base font-medium text-[#3d2f25] mb-3 border-b border-[#3d2f25]/20 pb-2">
-                                            2、专家护肤建议 <span className="text-xs lg:text-base">(Expert Recommendations)</span>
+                                            2��ר�һ������� <span className="text-xs lg:text-base">(Expert Recommendations)</span>
                                         </h4>
 
-                                        <p className="text-sm text-[#8c7a6b] mb-3">根据您的肌肤数据，以下是针对性的护理和生活方式建议：</p>
+                                        <p className="text-sm text-[#8c7a6b] mb-3">�������ļ������ݣ�����������ԵĻ��������ʽ���飺</p>
 
                                         {(faceAnalysis?.recommendations && faceAnalysis.recommendations.length > 0) ? (
                                             <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
@@ -911,13 +909,13 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                             </ul>
                                         ) : (
                                             <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
-                                                <li>每日早晚温和清洁，避免过度去脂。</li>
-                                                <li>严格做好防晒，减少紫外线损伤。</li>
-                                                <li>根据季节调整保湿产品，保持水油平衡。</li>
+                                                <li>ÿ�������º���࣬�������ȥ֬��</li>
+                                                <li>�ϸ����÷�ɹ���������������ˡ�</li>
+                                                <li>���ݼ��ڵ�����ʪ��Ʒ������ˮ��ƽ�⡣</li>
                                             </ul>
                                         )}
 
-                                        {/* 🌿 生活建议（嵌套在专家护肤建议内） */}
+                                        {/* ?? ����飨Ƕ����ר�һ��������ڣ� */}
                                         {result.analysis?.lifestyleTips && result.analysis.lifestyleTips.length > 0 && (
                                             <div className="mt-5 pt-4 border-t border-dashed border-[#3d2f25]/10">
                                                 <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
@@ -933,16 +931,16 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     {faceAnalysis?.zoneAnalysis && (
                                         <div className="mb-8">
                                             <h4 className="text-base font-medium text-[#3d2f25] mb-4 border-b border-[#3d2f25]/20 pb-2">
-                                                3、区域重点关注 <span className="text-xs lg:text-base">(Area Focus)</span>
+                                                3�������ص��ע <span className="text-xs lg:text-base">(Area Focus)</span>
                                             </h4>
                                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                                 {Object.entries({
-                                                    forehead: "额头区域",
-                                                    tZone: "T字区域",
-                                                    leftCheek: "左脸颊",
-                                                    rightCheek: "右脸颊",
-                                                    eyeArea: "眼周",
-                                                    jawline: "下颌线"
+                                                    forehead: "��ͷ����",
+                                                    tZone: "T������",
+                                                    leftCheek: "������",
+                                                    rightCheek: "������",
+                                                    eyeArea: "����",
+                                                    jawline: "�����"
                                                 }).map(([key, label]) => {
                                                     // @ts-expect-error faceAnalysis zoneAnalysis typing is dynamic
                                                     const zoneData = faceAnalysis.zoneAnalysis[key];
@@ -957,7 +955,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                             </p>
                                                             <div className="mt-2 pt-2 border-t border-dashed border-[#3d2f25]/10">
                                                                 <p className="text-xs text-[#00263e] leading-snug">
-                                                                    <span className="font-medium text-[#5c4937] mr-1">建议:</span>
+                                                                    <span className="font-medium text-[#5c4937] mr-1">����:</span>
                                                                     {zoneData.advice}
                                                                 </p>
                                                             </div>
@@ -977,18 +975,18 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                             <div className="px-5 py-3 flex justify-between items-center">
                                                 <div className="flex items-center gap-2">
                                                     <Activity className="w-4 h-4 text-[#8c7a6b]" />
-                                                    <span className="text-sm font-medium text-[#3d2f25]">定制化专业分析数据详情</span>
+                                                    <span className="text-sm font-medium text-[#3d2f25]">���ƻ�רҵ������������</span>
                                                 </div>
                                                 <div className="flex items-center gap-3">
                                                     <span className="text-xs text-[#8c7a6b] font-normal hidden sm:inline-block">
-                                                        MySkin.Today™ Gold Standard
+                                                        MySkin.Today? Gold Standard
                                                     </span>
                                                     <ChevronRight className="w-4 h-4 text-[#8c7a6b]" />
                                                 </div>
                                             </div>
                                             <div className="px-5 pb-3 pt-0">
                                                 <p className="text-xs text-[#8c7a6b]/80 leading-relaxed pl-6">
-                                                    联系您的专属护肤顾问，或咨询门店顾问获取专业分析解读
+                                                    ��ϵ����ר���������ʣ�����ѯ�ŵ���ʻ�ȡרҵ�������
                                                 </p>
                                             </div>
                                         </div>
@@ -997,7 +995,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             }
                         />
 
-                        {/* 定制化分析数据详情 Modal - Page Level */}
+                        {/* ���ƻ������������� Modal - Page Level */}
                         <AnimatePresence>
                             {showLabData && (
                                 <m.div
@@ -1029,13 +1027,13 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         <div className="px-6 sm:px-8 pt-6 sm:pt-8 pb-2 flex-shrink-0">
                                             <div className="flex items-center gap-3">
                                                 <Activity className="w-5 h-5 text-[#8c7a6b]" />
-                                                <h3 className="text-lg font-bold text-[#3d2f25]">定制化专业分析数据详情</h3>
+                                                <h3 className="text-lg font-bold text-[#3d2f25]">���ƻ�רҵ������������</h3>
                                             </div>
                                         </div>
                                         <div className="overflow-y-auto custom-scrollbar px-6 sm:px-8 py-5 sm:py-6 flex-1">
                                             <div className="grid grid-cols-1 gap-y-0">
 
-                                                {/* 十维分析：PC 用条形图，手机端用表单 */}
+                                                {/* ʮά������PC ������ͼ���ֻ����ñ��� */}
                                                 {faceAnalysis?.dimensions && (
                                                     <>
                                                         <div className="hidden sm:block mb-2">
@@ -1049,10 +1047,10 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                                                 {/* Table Header Row (Desktop only) */}
                                                 <div className="hidden sm:grid grid-cols-12 text-[11px] font-semibold text-[#1B3A5C] border-b border-[#D9D0C3] py-2 px-4 tracking-wider">
-                                                    <div className="col-span-5">检测指标 (Parameter)</div>
-                                                    <div className="col-span-3 text-right">测定值 (Value)*</div>
-                                                    <div className="col-span-2 text-right">参考范围 (Range)</div>
-                                                    <div className="col-span-2 text-right">状态 (Status)</div>
+                                                    <div className="col-span-5">���ָ�� (Parameter)</div>
+                                                    <div className="col-span-3 text-right">�ⶨֵ (Value)*</div>
+                                                    <div className="col-span-2 text-right">�ο���Χ (Range)</div>
+                                                    <div className="col-span-2 text-right">״̬ (Status)</div>
                                                 </div>
 
                                                 {computeLabAnalysis(faceAnalysis).flatMap((group) => (
@@ -1077,12 +1075,12 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                                 <div className="flex gap-2.5 items-start text-xs leading-relaxed text-[#5c4937]">
                                                     <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-[#C9A86C]" />
                                                     <div className="space-y-1.5">
-                                                        <p className="font-medium text-[#3d2f25]">数据说明 (Data Disclaimer)</p>
+                                                        <p className="font-medium text-[#3d2f25]">����˵�� (Data Disclaimer)</p>
                                                         <p>
-                                                            <span className="font-semibold text-[#3d2f25]">* AI ESTIMATE:</span> 上述数值均由 AI 算法基于您的面部图像特征（纹理、色泽、对比度）反演推算得出，<span className="border-b border-[#3d2f25]/20 text-[#3d2f25]">并非物理探头实测数据</span>。
+                                                            <span className="font-semibold text-[#3d2f25]">* AI ESTIMATE:</span> ������ֵ���� AI �㷨���������沿ͼ��������������ɫ�󡢶Աȶȣ���������ó���<span className="border-b border-[#3d2f25]/20 text-[#3d2f25]">��������̽ͷʵ������</span>��
                                                         </p>
                                                         <p>
-                                                            例如：皱纹严重度分级（Wrinkle Severity）是根据面部纹理与阴影的视觉表现估算而来。本报告仅作护肤参考，不可替代医疗诊断。
+                                                            ���磺�������ضȷּ���Wrinkle Severity���Ǹ����沿��������Ӱ���Ӿ����ֹ����������������������ο����������ҽ����ϡ�
                                                         </p>
                                                     </div>
                                                 </div>
@@ -1097,7 +1095,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                     </main>
 
-                    {/* 4. Products - 与上方专业版报告卡片（含边距）宽度对齐 */}
+                    {/* 4. Products - ���Ϸ�רҵ�汨�濨Ƭ�����߾ࣩ���ȶ��� */}
                     <div className="w-full max-w-[900px] mx-auto px-6 lg:px-10">
                         <ProductRecommendationSection
                             products={(result.products || []).map(p => ({
@@ -1139,25 +1137,25 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     className="inline-flex items-center justify-center gap-2 px-5 sm:px-8 py-2.5 sm:py-3 rounded-full bg-[#5c4937] text-white text-[12px] sm:text-[13px] tracking-[0.1em] font-medium hover:bg-[#4a3a2c] transition-colors"
                                 >
                                     <MessageCircle className="w-4 h-4" />
-                                    联系顾问
+                                    ��ϵ����
                                 </button>
                                 <button
                                     onClick={() => router.push('/')}
                                     className="inline-flex items-center justify-center gap-2 px-5 sm:px-8 py-2.5 sm:py-3 rounded-full border border-[#5c4937]/30 text-[#5c4937] text-[12px] sm:text-[13px] tracking-[0.1em] font-medium hover:bg-[#5c4937]/5 transition-colors"
                                 >
                                     <House className="w-4 h-4" />
-                                    回到首页
+                                    �ص���ҳ
                                 </button>
                             </div>
 
-                            {/* 肌智派送好礼 CTA */}
+                            {/* �������ͺ��� CTA */}
                             <div className="flex justify-center mb-10">
                                 <button
                                     onClick={() => router.push('/gift')}
                                     className="group inline-flex items-center justify-center gap-2 w-auto sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 rounded-full border border-dashed border-[#8B7355]/40 bg-[#8B7355]/[0.04] text-[12px] sm:text-[13px] tracking-[0.1em] text-[#8B7355] hover:text-[#5c4937] hover:border-[#5c4937]/40 hover:bg-[#5c4937]/5 transition-all duration-300"
                                 >
                                     <Gift className="w-4 h-4" />
-                                    肌智派送好礼 · 参与抽奖
+                                    �������ͺ��� �� ����齱
                                     <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
                                 </button>
                             </div>
@@ -1165,66 +1163,48 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             {/* Minimal Footer Text */}
                             <div className="text-center">
                                 <div className="flex flex-row justify-center items-center gap-1 sm:gap-5 text-[10px] sm:text-xs mb-2 sm:mb-3 text-[var(--result-text-primary)]">
-                                    <span className="opacity-90" suppressHydrationWarning>© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</span>
-                                    <span className="opacity-40">•</span>
+                                    <span className="opacity-90" suppressHydrationWarning>? {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</span>
+                                    <span className="opacity-40">?</span>
                                     <Link
                                         href="/terms"
                                         className="transition-colors opacity-80 hover:opacity-100 font-medium"
                                     >
-                                        服务条款
+                                        ��������
                                     </Link>
-                                    <span className="opacity-40 sm:hidden">•</span>
+                                    <span className="opacity-40 sm:hidden">?</span>
                                     <Link
                                         href="/privacy"
                                         className="transition-colors opacity-80 hover:opacity-100 font-medium"
                                     >
-                                        隐私政策
+                                        ��˽����
                                     </Link>
                                 </div>
                                 <p className="text-[10px] sm:text-xs opacity-70 text-[var(--result-text-primary)]">
-                                    *AI 分析结果受图像质量影响仅供参考，不构成医疗诊断建议
+                                    *AI ���������ͼ������Ӱ������ο���������ҽ����Ͻ���
                                 </p>
                             </div>
                         </div>
                     </footer>
 
-                    <ShareModal
-                        isOpen={showShareModal}
-                        onClose={() => setShowShareModal(false)}
-                        preview={
-                            <div
-                                className="shrink-0 rounded-xl p-[2px] overflow-hidden shadow-sm"
-                                style={{
-                                    width: 241,
-                                    height: 429,
-                                    background: "linear-gradient(135deg, #e6d0a8 0%, #f5dfb8 50%, #d4b483 100%)",
-                                }}
-                            >
-                                <div className="w-full h-full rounded-[10px] overflow-hidden bg-white">
-                                    <div style={{ width: 360, height: 640, transform: "scale(0.67)", transformOrigin: "0 0" }}>
-                                        <SharePoster
-                                            ref={posterRef}
-                                            nickname={userNickname || "用户"}
-                                            score={faceAnalysis?.overallScore ?? (result?.dataSource === "questionnaire" ? undefined : 0)}
-                                            skinTone={faceAnalysis?.dimensions?.skinTone?.score ?? (result?.dataSource === "questionnaire" ? undefined : 0)}
-                                            waterOil={faceAnalysis?.dimensions?.waterOil?.score ?? (result?.dataSource === "questionnaire" ? undefined : 0)}
-                                            percentile={rankPercentile}
-                                            avatar={getCharacterImage({
-                                                score: faceAnalysis?.overallScore ?? 0,
-                                                skinType: result?.skinProfile?.type || 'combination',
-                                                budget: ipBudget,
-                                                skincareFrequency: ipSkincareFrequency,
-                                                gender: socialGender,
-                                            })}
-                                            posterTemplate="/images/poster-template.webp"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        }
-                        onSavePoster={handleSavePoster}
-                        isGeneratingPoster={isGeneratingPoster}
-                    />
+                    {/* Hidden SharePoster for toPng capture */}
+                    <div style={{ position: "fixed", left: "-9999px", top: 0, width: 360, height: 640 }}>
+                        <SharePoster
+                            ref={posterRef}
+                            nickname={userNickname || "用户"}
+                            score={faceAnalysis?.overallScore ?? (result?.dataSource === "questionnaire" ? undefined : 0)}
+                            skinTone={faceAnalysis?.dimensions?.skinTone?.score ?? (result?.dataSource === "questionnaire" ? undefined : 0)}
+                            waterOil={faceAnalysis?.dimensions?.waterOil?.score ?? (result?.dataSource === "questionnaire" ? undefined : 0)}
+                            percentile={rankPercentile}
+                            avatar={getCharacterImage({
+                                score: faceAnalysis?.overallScore ?? 0,
+                                skinType: result?.skinProfile?.type || 'combination',
+                                budget: ipBudget,
+                                skincareFrequency: ipSkincareFrequency,
+                                gender: socialGender,
+                            })}
+                            posterTemplate="/images/poster-template.webp"
+                        />
+                    </div>
 
                     {/* Contact Advisor Modal */}
                     <ContactAdvisorModal
