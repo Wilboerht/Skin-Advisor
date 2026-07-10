@@ -461,7 +461,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             const blob = new Blob([u8arr], { type: mime });
             const blobUrl = URL.createObjectURL(blob);
             const link = document.createElement("a");
-            link.download = `NIHPLOD-��������-${userNickname || "�û�"}-${Date.now()}.png`;
+            link.download = `${userNickname || "用户"}的肌智派证书.png`;
             link.href = blobUrl;
             link.click();
             URL.revokeObjectURL(blobUrl);
