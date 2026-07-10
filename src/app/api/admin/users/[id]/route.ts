@@ -1,4 +1,5 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { apiError, apiSuccess } from "@/lib/api-response";
 import { ErrorCode } from "@/lib/error-codes";
 import prisma from "@/lib/prisma";
@@ -188,6 +189,7 @@ const RUNTIME_USER_ROLES: string[] = [UserRole.USER, UserRole.DISABLED];
             ...clientInfo,
         });
 
+        revalidateTag("admin-stats", "max");
         return NextResponse.json(updatedUser);
     } catch (error) {
         logger.error("Admin user PATCH error:", error);
@@ -228,6 +230,7 @@ export const DELETE = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async 
             ...clientInfo,
         });
 
+        revalidateTag("admin-stats", "max");
         return apiSuccess();
     } catch (error) {
         logger.error("Admin user DELETE error:", error);

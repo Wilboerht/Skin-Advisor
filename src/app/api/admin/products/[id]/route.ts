@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { apiError, apiSuccess } from "@/lib/api-response";
 import { ErrorCode } from "@/lib/error-codes";
 import prisma from "@/lib/prisma";
@@ -243,6 +244,7 @@ export const PUT = withAdminAuth(async (
             return apiError(ErrorCode.NOT_FOUND, "Product not found", 404);
         }
 
+        revalidateTag("admin-stats", "max");
         return NextResponse.json(txResult.product);
     } catch (error) {
         logger.error("Failed to update product", error);
@@ -289,6 +291,7 @@ export const DELETE = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async 
             });
         });
 
+        revalidateTag("admin-stats", "max");
         return apiSuccess();
     } catch (error: unknown) {
         if (error instanceof Error && error.message === "NOT_FOUND") {

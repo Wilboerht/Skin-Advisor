@@ -1,4 +1,5 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { apiError, apiSuccess } from "@/lib/api-response";
 import { ErrorCode } from "@/lib/error-codes";
 import prisma from "@/lib/prisma";
@@ -128,6 +129,7 @@ export const PATCH = requireRole(AdminRole.SUPER_ADMIN)(async (request, { admin,
             ...clientInfo,
         });
 
+        revalidateTag("admin-stats", "max");
         return NextResponse.json({ success: true, admin: updated });
     } catch (error) {
         logger.error("Admin update error:", error);
@@ -173,6 +175,7 @@ export const DELETE = requireRole(AdminRole.SUPER_ADMIN)(async (request, { admin
             ...clientInfo,
         });
 
+        revalidateTag("admin-stats", "max");
         return apiSuccess();
     } catch (error) {
         logger.error("Admin delete error:", error);
