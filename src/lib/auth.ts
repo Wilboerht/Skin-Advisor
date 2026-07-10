@@ -2,7 +2,7 @@ import { compare, hash } from 'bcryptjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { isDisabledUser } from '@/lib/permissions';
+import { isDisabledUser, UserRole } from '@/lib/permissions';
 import {
     AUTH_COOKIE_NAME,
     getJwtSecret,
@@ -13,6 +13,7 @@ import {
     type TokenVerificationError,
 } from '@/lib/auth-config';
 import { generateCsrfToken, CSRF_COOKIE_NAME } from '@/lib/csrf';
+import { verifyUserStatus } from '@/lib/user-sync';
 
 export {
     AUTH_COOKIE_NAME,
@@ -76,6 +77,25 @@ export async function getSession(): Promise<SessionUser | null> {
             // JWT 撤销校验：token 版本必须匹配当前数据库版本
             const tokenVersion = payload.tokenVersion;
             if (typeof tokenVersion !== "number" || tokenVersion !== dbUser.tokenVersion) {
+                return null;
+            }
+
+            // 官网用户状态同步校验：检查官网侧用户是否仍为有效状态
+            // 使用内置内存缓存（TTL 2 分钟），大部分请求不会产生额外网络调用
+            const statusCheck = await verifyUserStatus(dbUser.id);
+            if (!statusCheck.valid && statusCheck.officialStatus !== null) {
+                // 官网确认用户已禁用/封禁/不存在，同步禁用本地记录
+                try {
+                    await prisma.user.update({
+                        where: { id: dbUser.id },
+                        data: {
+                            role: UserRole.DISABLED,
+                            tokenVersion: { increment: 1 },
+                        },
+                    });
+                } catch (err) {
+                    console.warn(`[auth] Failed to sync disabled status for user ${dbUser.id}:`, err);
+                }
                 return null;
             }
             return {

@@ -225,7 +225,7 @@ export async function callOfficialApi<T = unknown>(
         body,
         cookies,
         userAgent,
-        requireSignature = false,
+        requireSignature = true,  // 默认要求签名，安全优先
         timeoutMs = 30000,
     } = options;
 

@@ -1,8 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-    extractGuestIdentifiers,
-    checkGuestLimit
-} from "@/lib/guest-limit";
 import { checkUsageLimit } from "@/lib/usage-limit";
 
 // GET: 检查是否可以测试（复用 checkUsageLimit 保证与 analyze API 逻辑一致）
@@ -22,19 +18,6 @@ export async function GET(request: NextRequest) {
         const dailyLimit = limit.dailyLimit;
         const usedCount = Math.max(0, dailyLimit - limit.remaining);
 
-        // 访客额外获取详细元数据（置信度、匹配方式等）
-        let guestMeta: Record<string, unknown> = {};
-        if (limit.role === 'guest') {
-            const identifiers = extractGuestIdentifiers(request, body);
-            const guestLimit = await checkGuestLimit(identifiers);
-            guestMeta = {
-                isBlocked: guestLimit.isBlocked,
-                blockReason: guestLimit.blockReason,
-                matchedBy: guestLimit.matchedBy,
-                confidenceScore: guestLimit.confidenceScore
-            };
-        }
-
         return NextResponse.json({
             canTest: limit.canTest,
             usedCount,
@@ -42,11 +25,9 @@ export async function GET(request: NextRequest) {
             remaining: limit.remaining,
             isGuest: limit.role === 'guest',
             error: limit.error,
-            ...guestMeta
         });
     } catch (error) {
         console.error("Failed to check test limit:", error);
-        const errorMessage = error instanceof Error ? error.message : String(error);
         return NextResponse.json({
             error: "Failed to check test limit"
         }, { status: 500 });

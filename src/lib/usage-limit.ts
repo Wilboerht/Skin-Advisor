@@ -1,7 +1,6 @@
 
 import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
 import { getSession } from '@/lib/auth';
 import { extractGuestIdentifiers } from './guest-limit';
 import { withDbRetry } from './utils';
@@ -89,12 +88,13 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
 
     // 2. 如果是访客 — 每日 3 次
     const identifiers = extractGuestIdentifiers(request, body);
-    const { ipAddress, cookieId, fingerprint } = identifiers;
+    const { ipAddress, fingerprint } = identifiers;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     // 跨 IP 指纹检查：同一指纹在其他 IP 上的用量也计入 (防 VPN 切换)
+    // 但上限为限制的 50%，避免 CGNAT/IP 频繁切换的合法用户被过度惩罚
     let crossIpCount = 0;
     if (fingerprint) {
         const crossIpRecord = await withDbRetry(() =>
@@ -107,7 +107,7 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
                 orderBy: { todayCount: 'desc' },
             })
         );
-        crossIpCount = crossIpRecord?.todayCount || 0;
+        crossIpCount = Math.min(crossIpRecord?.todayCount || 0, Math.ceil(3 * 0.5));
     }
 
     // 安全：始终以服务端可信的 IP 哈希作为主匹配键，fingerprint/cookieId 仅作辅助存储。
@@ -255,7 +255,7 @@ export async function reserveUsage(
                 });
 
                 // 更新 GuestUsage 时同样以 IP 为主要键，fingerprint/cookieId 作为辅助元数据存储
-                let existing = await tx.guestUsage.findFirst({
+                const existing = await tx.guestUsage.findFirst({
                     where: { ipAddress },
                     orderBy: { lastTestAt: 'desc' }
                 });

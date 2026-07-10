@@ -105,13 +105,20 @@ export async function GET(req: NextRequest) {
         });
 
         if (!result) {
+            // 网络错误或签名校验失败：回退到本地 session
             const localResponse = await getLocalSessionUser();
             return localResponse || NextResponse.json({ user: null });
         }
 
         const data = result.data;
 
+        // 官网明确返回 401/403：用户未认证或已禁用，不 fallback 到本地 session
+        if (!result.ok && (result.status === 401 || result.status === 403)) {
+            return NextResponse.json({ user: null });
+        }
+
         if (!result.ok || !data.success || !data.data) {
+            // 其他错误（如 500、参数错误等）：可能为临时故障，回退到本地 session
             const localResponse = await getLocalSessionUser();
             return localResponse || NextResponse.json({ user: null });
         }

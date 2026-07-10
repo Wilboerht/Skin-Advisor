@@ -10,6 +10,24 @@
 const SESSION_MAX_AGE_MS = 8 * 60 * 60 * 1000;
 
 /**
+ * 服务端会话撤销集合
+ * 管理员登出或密码修改时，将当前会话 ID 加入此集合。
+ * verifySessionSignature 查询此集合来判定会话是否已被撤销。
+ * 使用 LRU 缓存限制内存占用，TTL 与会话最大有效期一致。
+ */
+const revokedSessions = new Map<string, number>(); // sessionId -> revokedAt timestamp
+const MAX_REVOKED = 10000;
+
+function cleanExpiredRevocations(): void {
+    const now = Date.now();
+    for (const [key, timestamp] of revokedSessions) {
+        if (now - timestamp > SESSION_MAX_AGE_MS) {
+            revokedSessions.delete(key);
+        }
+    }
+}
+
+/**
  * Admin session cookie 名称
  * 生产环境使用 __Host- 前缀以强化 Cookie 安全（要求 Path=/、Secure、无 Domain）
  */
@@ -107,6 +125,12 @@ export async function verifySessionSignature(
             return null;
         }
 
+        // 检查会话是否已被服务端撤销
+        const sessionId = parsed.adminId as string + ":" + String(parsed.iat || "");
+        if (revokedSessions.has(sessionId)) {
+            return null;
+        }
+
         return parsed;
     } catch {
         return null;
@@ -132,4 +156,36 @@ export async function createSignedSession(
     const data = JSON.stringify(payload);
     const signature = await signSessionData(data);
     return `${data}.${signature}`;
+}
+
+/**
+ * 撤销管理员的所有会话（登出/密码修改时调用）
+ * @param adminId - 管理员 ID
+ */
+export function revokeAdminSessions(adminId: string): void {
+    if (revokedSessions.size >= MAX_REVOKED) {
+        cleanExpiredRevocations();
+    }
+    // 使用当前时间戳覆盖所有该管理员的会话
+    const prefix = adminId + ":";
+    for (const key of revokedSessions.keys()) {
+        if (key.startsWith(prefix)) {
+            revokedSessions.set(key, Date.now());
+        }
+    }
+    // 添加一个通配符条目，覆盖未来未知的 iat 值
+    revokedSessions.set(adminId + ":*", Date.now());
+}
+
+/**
+ * 恢复管理员的会话（仅用于撤销操作的撤销，如误操作恢复）
+ * @param adminId - 管理员 ID
+ */
+export function unrevokeAdminSessions(adminId: string): void {
+    const prefix = adminId + ":";
+    for (const key of revokedSessions.keys()) {
+        if (key.startsWith(prefix)) {
+            revokedSessions.delete(key);
+        }
+    }
 }

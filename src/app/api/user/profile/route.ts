@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { callOfficialApi, type OfficialApiResponse } from "@/lib/official-api";
+import { cookies } from "next/headers";
 
 export async function PUT(req: NextRequest) {
     try {
@@ -22,7 +24,6 @@ export async function PUT(req: NextRequest) {
             if (trimmed.length > MAX_URL_LENGTH) {
                 return NextResponse.json({ error: "头像 URL 过长" }, { status: 400 });
             }
-            // 禁止 data: URL，强制使用 http(s) 避免超大 base64 存入 DB
             if (trimmed.startsWith("data:")) {
                 return NextResponse.json({ error: "头像不支持 data: URL，请使用图片上传" }, { status: 400 });
             }
@@ -38,6 +39,7 @@ export async function PUT(req: NextRequest) {
             return NextResponse.json({ error: "没有要更新的内容" }, { status: 400 });
         }
 
+        // 1. 更新本地 DB
         const updatedUser = await prisma.user.update({
             where: { id: session.id },
             data: updateData,
@@ -48,6 +50,25 @@ export async function PUT(req: NextRequest) {
                 avatarUrl: true,
                 role: true,
             },
+        });
+
+        // 2. 同步更新到官网
+        const officialBody: { nickname?: string; avatar?: string } = {};
+        if (updateData.name) officialBody.nickname = updateData.name;
+        if (updateData.avatarUrl) officialBody.avatar = updateData.avatarUrl;
+
+        const cookieStore = await cookies();
+        const allCookies = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ');
+
+        callOfficialApi<OfficialApiResponse<{ user: unknown }>>({
+            method: "PUT",
+            path: "/api/user/profile",
+            body: officialBody,
+            cookies: allCookies,
+            requireSignature: false,
+            timeoutMs: 10000,
+        }).catch((err) => {
+            console.warn("[user/profile] Failed to sync profile to official site:", err);
         });
 
         return NextResponse.json({

@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { verifyAdminSession, logAdminAction, getClientInfo } from "@/lib/admin-auth";
-import { ADMIN_SESSION_COOKIE_NAME } from "@/lib/session-verify";
+import { ADMIN_SESSION_COOKIE_NAME, revokeAdminSessions } from "@/lib/session-verify";
 
 export async function POST(request: NextRequest) {
     try {
@@ -10,6 +10,9 @@ export async function POST(request: NextRequest) {
         if (!admin) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
+
+        // 服务端撤销当前会话，防止 Cookie 被窃取后继续使用
+        revokeAdminSessions(admin.adminId);
 
         const cookieStore = await cookies();
         cookieStore.delete({
