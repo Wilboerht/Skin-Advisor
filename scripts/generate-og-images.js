@@ -83,10 +83,10 @@ async function main() {
   // Generate Open Graph image
   const ogSvg = ogImageSvg();
   const ogBuffer = await sharp(Buffer.from(ogSvg))
-    .jpeg({ quality: 90, mozjpeg: true })
+    .png()
     .toBuffer();
-  fs.writeFileSync(path.join(IMAGES_DIR, "og-default.jpg"), ogBuffer);
-  console.log("✓ Generated public/images/og-default.jpg (1200x630)");
+  fs.writeFileSync(path.join(IMAGES_DIR, "og-default.png"), ogBuffer);
+  console.log("✓ Generated public/images/og-default.png (1200x630)");
 
   // Generate Apple touch icon
   const touchSvg = touchIconSvg();

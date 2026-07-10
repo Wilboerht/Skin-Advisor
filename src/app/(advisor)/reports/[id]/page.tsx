@@ -90,7 +90,7 @@ export async function generateMetadata(props: {
     const id = params.id;
     let title = "我的专业护肤报告";
     let description = "基于 AI 的深度肤质分析，为您定制专属护肤方案。";
-    let ogImage = "/images/share-default.png";
+    let ogImage = "/images/og-default.png";
 
     const user = await getSession();
     if (id && user) {

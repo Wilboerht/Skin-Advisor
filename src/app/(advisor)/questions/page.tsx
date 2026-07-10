@@ -615,7 +615,7 @@ export default function QuestionsPage() {
 
             {/* Main Content Area */}
             <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overscroll-y-contain scrollbar-hide relative w-full max-w-5xl mx-auto z-10 px-4 md:px-8 mb-4">
-                <div className="min-h-full flex flex-col justify-start">
+                <div className="min-h-full flex flex-col justify-start md:justify-center">
                     <AnimatePresence mode="wait" custom={direction}>
                         <m.div
                             key={currentStepIndex}
@@ -643,7 +643,7 @@ export default function QuestionsPage() {
             </div>
 
             {/* Footer */}
-            <div className="hidden sm:flex pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,16px))] opacity-40 shrink-0 text-center px-4">
+            <div className="hidden sm:flex sm:justify-center pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,16px))] opacity-40 shrink-0 text-center px-4">
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-[10px] sm:text-[11px] font-light tracking-widest text-[#1A1A1A] leading-tight">
                     <p>&copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
                     <span className="hidden sm:inline text-[#1A1A1A]/30">·</span>

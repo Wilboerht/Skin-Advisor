@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import ResultDetailPage from "@/components/result/ResultDetailPage";
 import { skinTypes, routeOrder, getSkinTypeByRoute } from "@/lib/result-content";
 import { ArticleSchema, FAQPageSchema, BreadcrumbSchema } from "@/components/website/StructuredData";
+import { withDefaultOgImage } from "@/lib/metadata";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://nihplod.cn";
 
@@ -24,9 +25,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const title = data.typeName;
   const ogTitle = `${data.typeName}肤质详解 | NIHPLOD肌肤类型`;
   const description = `${data.typeName}：${data.m1.persona}。了解${data.typeName}的护肤要点、产品推荐与日常护理方案。`;
-  const ogImage = `${BASE_URL}/images/character/${data.ipKey}/${data.ipKey}_female.png`;
 
-  return {
+  return withDefaultOgImage({
     title,
     description,
     keywords: [data.typeName, "肤质类型", "护肤方案", "NIHPLOD", "肌肤测试"],
@@ -36,15 +36,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description,
       type: "article",
       locale: "zh_CN",
-      images: [{ url: ogImage, width: 800, height: 600, alt: data.typeName }],
     },
     twitter: {
       card: "summary_large_image",
       title: ogTitle,
       description,
-      images: [ogImage],
     },
-  };
+  });
 }
 
 export const revalidate = 86400;
