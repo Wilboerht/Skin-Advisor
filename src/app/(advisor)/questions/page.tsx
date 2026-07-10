@@ -472,7 +472,7 @@ export default function QuestionsPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-0 flex flex-col bg-[#F5F2E9]"
+                    className="fixed inset-0 z-0 flex flex-col bg-[#F5F2E9] overflow-hidden"
                 >
                     {/* Top Bar */}
                     <div className="relative flex items-center justify-center pt-[calc(1.75rem+env(safe-area-inset-top,0px))] pb-7 px-4 md:px-12 lg:px-20 border-b border-[#3D4430]/5">
@@ -504,9 +504,9 @@ export default function QuestionsPage() {
 
                     <div
                         ref={genderScrollRef}
-                        className="flex-1 overflow-hidden w-full max-w-5xl mx-auto px-4 md:px-8"
+                        className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain w-full max-w-5xl mx-auto px-4 md:px-8"
                     >
-                        <div className="h-full min-h-0 py-4 sm:py-0 flex flex-col sm:flex-row items-center justify-center overflow-y-auto overscroll-y-contain">
+                        <div className="h-full min-h-0 py-4 sm:py-0 flex flex-col sm:flex-row items-center justify-center">
                             {aiConfigured === null ? (
                                 <div className="flex items-center gap-2 text-[#5E5E5E]">
                                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -554,7 +554,7 @@ export default function QuestionsPage() {
     if (!currentQuestion) return null;
 
     return (
-        <div className="fixed inset-0 z-0 flex flex-col bg-[#F5F2E9] text-[#1A1A1A]">
+        <div className="fixed inset-0 z-0 flex flex-col bg-[#F5F2E9] text-[#1A1A1A] overflow-hidden">
 
             {/* 提交中加载遮罩 */}
             <AnimatePresence>
@@ -623,7 +623,7 @@ export default function QuestionsPage() {
             )}
 
             {/* Main Content Area */}
-            <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overscroll-y-contain scrollbar-hide relative w-full max-w-5xl mx-auto z-10 px-4 md:px-8 mb-4">
+            <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain scrollbar-hide relative w-full max-w-5xl mx-auto z-10 px-4 md:px-8 mb-4">
                 <div className="min-h-full flex flex-col justify-start md:justify-center">
                     <AnimatePresence mode="wait" custom={direction}>
                         <m.div
