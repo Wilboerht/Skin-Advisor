@@ -19,7 +19,7 @@
 }
 
 @theme {
-  /* 禁用 oklch，使用 srgb 兼容 html2canvas 1.4.1 */
+  /* 使用 srgb 色彩空间确保海报截图颜色一致 */
   --default-color-space: srgb;
 
   --color-cream: #F0EDE1;

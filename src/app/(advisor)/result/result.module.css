@@ -4,6 +4,7 @@
    inline style color duplication
    ======================================== */
 .container {
+    position: relative;
     --result-text-primary: #5c4937;
     --result-text-secondary: #8c7a6b;
     --result-text-heading: #3d2f25;

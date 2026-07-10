@@ -1205,9 +1205,9 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                         </div>
                     </footer>
 
-                    {/* Hidden SharePoster for toPng capture */}
+                    {/* Poster generation error toast */}
                     {posterError && (
-                        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-full bg-red-50 border border-red-200 text-red-700 text-sm shadow-lg animate-pulse">
+                        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-full bg-red-50 border border-red-200 text-red-700 text-sm shadow-lg">
                             {posterError}
                         </div>
                     )}
