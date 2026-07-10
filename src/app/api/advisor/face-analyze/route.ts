@@ -483,15 +483,32 @@ export async function POST(request: NextRequest) {
                 aiLogger.debug(`[Queue] Lock released. Stats:`, visionQueue.getStats() as unknown as Record<string, unknown>);
             }
 
-            // 清理上传的照片
+            // 清理上传的照片（内联实现，避免单独模块中的 fs 静态导入触发 NFT tracer 警告）
             if (uploadedFaceUrls.length > 0) {
                 Promise.resolve().then(async () => {
-                    const { deleteSourcePhoto } = await import("@/lib/file-cleanup");
-                    for (const url of uploadedFaceUrls) {
+                    for (const photoUrl of uploadedFaceUrls) {
                         try {
-                            await deleteSourcePhoto(url);
-                        } catch (e) {
-                            console.warn(`[FaceAnalyze] Failed to delete uploaded photo ${url}:`, e);
+                            if (!photoUrl || photoUrl.startsWith("data:")) continue;
+                            if (photoUrl.startsWith("/")) {
+                                const relativePath = photoUrl.slice(1);
+                                const normalized = path.normalize(relativePath);
+                                if (path.isAbsolute(normalized) || normalized.startsWith("..")) continue;
+                                const uploadRoot = path.resolve(process.cwd(), "public", "uploads");
+                                const filePath = path.resolve(uploadRoot, normalized);
+                                if (filePath.startsWith(uploadRoot + path.sep) || filePath === uploadRoot) {
+                                    const { realpath } = await import("fs/promises");
+                                    const realUploadRoot = await realpath(uploadRoot);
+                                    const realFilePath = await realpath(filePath);
+                                    if (realFilePath.startsWith(realUploadRoot + path.sep) || realFilePath === realUploadRoot) {
+                                        await fs.unlink(realFilePath);
+                                    }
+                                }
+                            } else if (photoUrl.startsWith("http")) {
+                                const { deleteOSSFiles } = await import("@/lib/ali-oss");
+                                await deleteOSSFiles([photoUrl]);
+                            }
+                        } catch {
+                            // 忽略清理失败
                         }
                     }
                 });
