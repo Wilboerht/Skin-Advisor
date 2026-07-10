@@ -414,12 +414,8 @@ export async function POST(request: NextRequest) {
                         }
                         throw retryErr;
                     }
-                } else if (err.message?.includes("[Validation]")) {
-                    // 非 payload 路径进入的 validation 错误
-                    const reason = err.message.replace("[Validation] ", "");
-                    aiLogger.warn(`Face validation failed: ${reason}`);
-                    await rollbackUsage(request, faceSessionId, body as Record<string, unknown>);
-                    return apiError("VALIDATION_FAILED", "图片验证失败", 400, reason || "未检测到清晰人脸，请重新拍摄");
+                } else {
+                    throw err;
                 }
             }
 
@@ -448,15 +444,22 @@ export async function POST(request: NextRequest) {
             const err = aiError instanceof Error ? aiError : new Error(String(aiError));
             aiLogger.error("AI Analysis Failed", { error: err.message });
 
+            // AI 视觉预算超限（Provider 返回配额耗尽），回滚预占
+            const isBudgetExceeded = err.message?.includes("budget") || err.message?.includes("quota");
+            if (isBudgetExceeded) {
+                aiLogger.warn("AI vision budget exceeded, rejecting request", { error: err.message });
+                if (faceSessionId) {
+                    await rollbackUsage(request, faceSessionId, body as Record<string, unknown>);
+                }
+                const response = apiError("AI_BUDGET_EXCEEDED", "AI 视觉服务当前额度已用完，请稍后再试", 503);
+                response.headers.set("Retry-After", "3600");
+                return response;
+            }
+
             // 客户端取消（AI 调用进行中）：Provider 可能已处理并计费，不回滚
             const isClientCancel = err.message?.includes("cancelled") || err.message?.includes("client timeout");
             if (isClientCancel) {
                 return apiError(ErrorCode.INTERNAL_ERROR, "分析请求已取消", 499);
-                aiLogger.warn("AI vision budget exceeded, rejecting request", { error: err.message });
-                await rollbackUsage(request, faceSessionId, body as Record<string, unknown>);
-                const response = apiError("AI_BUDGET_EXCEEDED", "AI 视觉服务当前额度已用完，请稍后再试", 503);
-                response.headers.set("Retry-After", "3600");
-                return response;
             }
 
             // 队列超时特有错误（AI 未被调用，零消耗）
