@@ -73,6 +73,8 @@ const faqs: { question: string; answer: string }[] = [
   },
 ];
 
+export const revalidate = 86400;
+
 export default function FAQPage() {
   return (
     <main className="relative min-h-screen text-[#1A1A1A] bg-[#F8F7F3]">

@@ -1,14 +1,20 @@
 import { compare, hash } from 'bcryptjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { createHash } from 'crypto';
 import prisma from '@/lib/prisma';
 import { isDisabledUser, UserRole } from '@/lib/permissions';
 import {
     AUTH_COOKIE_NAME,
+    AUTH_REFRESH_COOKIE_NAME,
     getJwtSecret,
     signToken,
+    signRefreshToken,
     verifyToken,
     verifyTokenDetailed,
+    verifyRefreshToken,
+    accessCookieOptions,
+    refreshCookieOptions,
     type VerifyTokenResult,
     type TokenVerificationError,
 } from '@/lib/auth-config';
@@ -17,10 +23,15 @@ import { verifyUserStatus } from '@/lib/user-sync';
 
 export {
     AUTH_COOKIE_NAME,
+    AUTH_REFRESH_COOKIE_NAME,
     getJwtSecret,
     signToken,
+    signRefreshToken,
     verifyToken,
     verifyTokenDetailed,
+    verifyRefreshToken,
+    accessCookieOptions,
+    refreshCookieOptions,
     type VerifyTokenResult,
     type TokenVerificationError,
 };
@@ -39,8 +50,8 @@ export interface SessionUser {
     phone?: string | null;
     name?: string;
     role: string;
-    tokenVersion: number; // 当前 token 版本，用于撤销
-    dailyTestLimit?: number | null; // 每日测试次数限制，管理员可调整
+    tokenVersion: number;
+    dailyTestLimit?: number | null;
 }
 
 export async function getSession(): Promise<SessionUser | null> {
@@ -58,7 +69,6 @@ export async function getSession(): Promise<SessionUser | null> {
             typeof payload.userId === 'string' ? payload.userId :
             null;
         if (userId) {
-            // 查询数据库确认用户当前状态（禁用/删除/token 撤销检测）
             const dbUser = await prisma.user.findUnique({
                 where: { id: userId },
                 select: {
@@ -74,17 +84,13 @@ export async function getSession(): Promise<SessionUser | null> {
             if (!dbUser || isDisabledUser(dbUser.role)) {
                 return null;
             }
-            // JWT 撤销校验：token 版本必须匹配当前数据库版本
             const tokenVersion = payload.tokenVersion;
             if (typeof tokenVersion !== "number" || tokenVersion !== dbUser.tokenVersion) {
                 return null;
             }
 
-            // 官网用户状态同步校验：检查官网侧用户是否仍为有效状态
-            // 使用内置内存缓存（TTL 2 分钟），大部分请求不会产生额外网络调用
             const statusCheck = await verifyUserStatus(dbUser.id);
             if (!statusCheck.valid && statusCheck.officialStatus !== null) {
-                // 官网确认用户已禁用/封禁/不存在，同步禁用本地记录
                 try {
                     await prisma.user.update({
                         where: { id: dbUser.id },
@@ -97,6 +103,22 @@ export async function getSession(): Promise<SessionUser | null> {
                     console.warn(`[auth] Failed to sync disabled status for user ${dbUser.id}:`, err);
                 }
                 return null;
+            }
+
+            if (statusCheck.officialUpdatedAt) {
+                const officialTime = new Date(statusCheck.officialUpdatedAt).getTime();
+                const jwtIat = (payload.iat as number) * 1000;
+                if (!isNaN(officialTime) && officialTime > jwtIat) {
+                    try {
+                        await prisma.user.update({
+                            where: { id: dbUser.id },
+                            data: { tokenVersion: { increment: 1 } },
+                        });
+                    } catch (err) {
+                        console.warn(`[auth] Failed to increment tokenVersion for user ${dbUser.id}:`, err);
+                    }
+                    return null;
+                }
             }
             return {
                 id: dbUser.id,
@@ -114,10 +136,6 @@ export async function getSession(): Promise<SessionUser | null> {
     return null;
 }
 
-/**
- * 递增指定用户的 tokenVersion，使该用户已签发的所有 JWT 立即失效。
- * 用于：修改密码、管理员禁用/启用用户、安全事件、显式登出等场景。
- */
 export async function incrementTokenVersion(userId: string): Promise<number | null> {
     try {
         const updated = await prisma.user.update({
@@ -132,10 +150,36 @@ export async function incrementTokenVersion(userId: string): Promise<number | nu
     }
 }
 
+function hashToken(token: string): string {
+    return createHash("sha256").update(token).digest("hex");
+}
+
+async function saveRefreshTokenToDb(userId: string, token: string): Promise<void> {
+    const tokenHash = hashToken(token);
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    await prisma.refreshToken.create({
+        data: { userId, token: tokenHash, expiresAt },
+    });
+}
+
+async function revokeAllRefreshTokens(userId: string): Promise<void> {
+    await prisma.refreshToken.updateMany({
+        where: { userId, revokedAt: null },
+        data: { revokedAt: new Date() },
+    });
+}
+
+async function revokeSpecificRefreshToken(userId: string, token: string): Promise<number> {
+    const tokenHash = hashToken(token);
+    const result = await prisma.refreshToken.updateMany({
+        where: { userId, token: tokenHash, revokedAt: null },
+        data: { revokedAt: new Date() },
+    });
+    return result.count;
+}
+
 /**
- * 签发子站本地 session（auth_token + csrf_token）。
- * 登录、注册、微信回调、微信绑定等成功后应立即调用，
- * 确保子站本地 API 能立即识别用户。
+ * 签发子站本地双 Token session（access + refresh + csrf）。
  */
 export async function signLocalSession(
     response: NextResponse,
@@ -151,25 +195,11 @@ export async function signLocalSession(
     options?: { secure?: boolean }
 ): Promise<void> {
     const secure = options?.secure ?? true;
-    const localCookieOptions = {
-        httpOnly: true,
-        secure,
-        sameSite: "strict" as const,
-        path: "/",
-        maxAge: 7 * 24 * 60 * 60,
-    };
-    const csrfCookieOptions = {
-        httpOnly: false,
-        secure,
-        sameSite: "strict" as const,
-        path: "/",
-        maxAge: 7 * 24 * 60 * 60,
-    };
-
 
     try {
         const csrfToken = generateCsrfToken();
-        const localToken = await signToken({
+
+        const accessToken = await signToken({
             sub: user.id,
             email: user.email ?? null,
             phone: user.phone ?? null,
@@ -178,20 +208,104 @@ export async function signLocalSession(
             tokenVersion: user.tokenVersion,
             dailyTestLimit: user.dailyTestLimit ?? null,
             csrf: csrfToken,
-        }, "7d");
-        response.cookies.set(AUTH_COOKIE_NAME, localToken, localCookieOptions);
-        response.cookies.set(CSRF_COOKIE_NAME, csrfToken, csrfCookieOptions);
+        }, "15m");
+
+        const refreshToken = await signRefreshToken({
+            sub: user.id,
+            tokenVersion: user.tokenVersion,
+        });
+
+        // 持久化 refresh token 哈希到数据库
+        await saveRefreshTokenToDb(user.id, refreshToken);
+
+        response.cookies.set(AUTH_COOKIE_NAME, accessToken, accessCookieOptions(secure));
+        response.cookies.set(AUTH_REFRESH_COOKIE_NAME, refreshToken, refreshCookieOptions(secure));
+        response.cookies.set(CSRF_COOKIE_NAME, csrfToken, {
+            httpOnly: false,
+            secure,
+            sameSite: "strict" as const,
+            path: "/",
+            maxAge: 30 * 24 * 60 * 60,
+        });
     } catch (err) {
         console.error("[auth] Failed to sign local session:", err);
     }
 }
 
 /**
- * 清除子站本地 session Cookie。
- * 用于：登出、重置密码、安全事件等场景。
+ * 刷新双 Token：验证 refresh token → 撤销旧 token → 签发新双 token
+ */
+export async function refreshSession(
+    response: NextResponse,
+    refreshTokenValue: string,
+    options?: { secure?: boolean }
+): Promise<SessionUser | null> {
+    const secure = options?.secure ?? true;
+
+    try {
+        // 1. 验证 refresh token JWT 签名
+        const payload = await verifyRefreshToken(refreshTokenValue);
+        if (!payload) return null;
+
+        const userId = typeof payload.sub === 'string' ? payload.sub : null;
+        if (!userId) return null;
+
+        // 2. 检查 DB 中是否存在且未被撤销
+        const tokenHash = hashToken(refreshTokenValue);
+        const dbToken = await prisma.refreshToken.findFirst({
+            where: { userId, token: tokenHash, revokedAt: null, expiresAt: { gt: new Date() } },
+        });
+        if (!dbToken) {
+            // refresh token 重用检测：JWT 有效但 DB 中不存在 → 可能被盗用，撤销所有 token
+            await revokeAllRefreshTokens(userId);
+            return null;
+        }
+
+        // 3. 检查用户状态
+        const dbUser = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { id: true, email: true, phoneNumber: true, name: true, role: true, tokenVersion: true, dailyTestLimit: true },
+        });
+        if (!dbUser || isDisabledUser(dbUser.role)) return null;
+
+        const tokenVersion = payload.tokenVersion;
+        if (typeof tokenVersion !== "number" || tokenVersion !== dbUser.tokenVersion) return null;
+
+        // 4. 撤销旧的 refresh token
+        await revokeSpecificRefreshToken(userId, refreshTokenValue);
+
+        // 5. 签发新的双 token
+        await signLocalSession(response, {
+            id: dbUser.id,
+            email: dbUser.email,
+            phone: dbUser.phoneNumber,
+            name: dbUser.name,
+            role: dbUser.role,
+            tokenVersion: dbUser.tokenVersion,
+            dailyTestLimit: dbUser.dailyTestLimit,
+        }, { secure });
+
+        return {
+            id: dbUser.id,
+            email: dbUser.email,
+            phone: dbUser.phoneNumber || undefined,
+            name: dbUser.name || undefined,
+            role: dbUser.role,
+            tokenVersion: dbUser.tokenVersion,
+            dailyTestLimit: dbUser.dailyTestLimit,
+        };
+    } catch (err) {
+        console.error("[auth] Failed to refresh session:", err);
+        return null;
+    }
+}
+
+/**
+ * 清除子站本地 session Cookie（双 token + CSRF）。
  */
 export function clearLocalSession(response: NextResponse): void {
     response.cookies.delete(AUTH_COOKIE_NAME);
+    response.cookies.delete(AUTH_REFRESH_COOKIE_NAME);
     response.cookies.delete(CSRF_COOKIE_NAME);
     response.cookies.delete("auth_token");
     response.cookies.delete("user_token");

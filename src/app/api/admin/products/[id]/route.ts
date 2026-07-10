@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { apiError, apiSuccess } from "@/lib/api-response";
+import { ErrorCode } from "@/lib/error-codes";
 import prisma from "@/lib/prisma";
 import { withAdminAuth, requireRole, getClientInfo } from "@/lib/admin-auth";
 import { AdminRole } from "@/lib/permissions";
@@ -17,6 +19,7 @@ import {
     AFFILIATE_PLATFORM_KEYS,
     validateImageUrl,
 } from "@/types/product";
+import { logger } from "@/lib/logger";
 
 // GET /api/admin/products/[id] - Get product details
 // Available to super_admin and admin
@@ -29,11 +32,11 @@ export const GET = withAdminAuth(async (
         const product = await prisma.product.findUnique({
             where: { id }
         });
-        if (!product) return NextResponse.json({ error: "Not found" }, { status: 404 });
+        if (!product) return apiError(ErrorCode.NOT_FOUND, "Not found", 404);
         return NextResponse.json(product);
     } catch (error) {
-        console.error("Failed to fetch product:", error);
-        return NextResponse.json({ error: "Internal Error" }, { status: 500 });
+        logger.error("Failed to fetch product:", error);
+        return apiError(ErrorCode.INTERNAL_ERROR, "Internal Error", 500);
     }
 });
 
@@ -47,7 +50,7 @@ export const PUT = withAdminAuth(async (
     const ip = getClientIP(request);
     const limitResult = await rateLimit(`admin-product-update-${ip}`, "default", { maxRequests: 30, windowMs: 60 * 1000 });
     if (!limitResult.success) {
-        return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+        return apiError(ErrorCode.RATE_LIMITED, "Too many requests", 429);
     }
 
     try {
@@ -71,41 +74,38 @@ export const PUT = withAdminAuth(async (
         }
 
         if (Object.keys(updateData).length === 0) {
-            return NextResponse.json(
-                { error: "No valid fields to update" },
-                { status: 400 }
-            );
+            return apiError(ErrorCode.VALIDATION_ERROR, "No valid fields to update", 400);
         }
 
         // Validate string fields
         if (updateData.name !== undefined && (typeof updateData.name !== "string" || updateData.name.trim().length === 0 || updateData.name.length > MAX_NAME_LENGTH)) {
-            return NextResponse.json({ error: `Invalid name (max ${MAX_NAME_LENGTH} chars)` }, { status: 400 });
+            return apiError(ErrorCode.VALIDATION_ERROR, `Invalid name (max ${MAX_NAME_LENGTH} chars)`, 400);
         }
         if (updateData.category !== undefined && (typeof updateData.category !== "string" || updateData.category.trim().length === 0 || updateData.category.length > MAX_CATEGORY_LENGTH)) {
-            return NextResponse.json({ error: `Invalid category (max ${MAX_CATEGORY_LENGTH} chars)` }, { status: 400 });
+            return apiError(ErrorCode.VALIDATION_ERROR, `Invalid category (max ${MAX_CATEGORY_LENGTH} chars)`, 400);
         }
         if (updateData.image !== undefined && (typeof updateData.image !== "string" || updateData.image.length > MAX_IMAGE_URL_LENGTH)) {
-            return NextResponse.json({ error: `Invalid image URL (max ${MAX_IMAGE_URL_LENGTH} chars)` }, { status: 400 });
+            return apiError(ErrorCode.VALIDATION_ERROR, `Invalid image URL (max ${MAX_IMAGE_URL_LENGTH} chars)`, 400);
         }
         if (updateData.image !== undefined) {
             const imageError = validateImageUrl(updateData.image as string);
-            if (imageError) return NextResponse.json({ error: imageError }, { status: 400 });
+            if (imageError) return apiError(ErrorCode.VALIDATION_ERROR, imageError, 400);
         }
 
         // description 字段在 schema 中为 String（非 null），拒绝 null 值
         if (updateData.description === null) {
-            return NextResponse.json({ error: "Description cannot be null" }, { status: 400 });
+            return apiError(ErrorCode.VALIDATION_ERROR, "Description cannot be null", 400);
         }
         if (updateData.description !== undefined && updateData.description !== null && (typeof updateData.description !== "string" || updateData.description.trim().length === 0 || updateData.description.length > MAX_DESCRIPTION_LENGTH)) {
-            return NextResponse.json({ error: `Invalid description (required when provided, max ${MAX_DESCRIPTION_LENGTH} chars)` }, { status: 400 });
+            return apiError(ErrorCode.VALIDATION_ERROR, `Invalid description (required when provided, max ${MAX_DESCRIPTION_LENGTH} chars)`, 400);
         }
 
         // price 字段在 schema 中为 String（非 null），拒绝 null 值
         if (updateData.price === null) {
-            return NextResponse.json({ error: "Price cannot be null" }, { status: 400 });
+            return apiError(ErrorCode.VALIDATION_ERROR, "Price cannot be null", 400);
         }
         if (updateData.price !== undefined && (typeof updateData.price !== "string" || updateData.price.trim().length === 0 || updateData.price.length > MAX_PRICE_LENGTH)) {
-            return NextResponse.json({ error: `Invalid price (required when provided, max ${MAX_PRICE_LENGTH} chars)` }, { status: 400 });
+            return apiError(ErrorCode.VALIDATION_ERROR, `Invalid price (required when provided, max ${MAX_PRICE_LENGTH} chars)`, 400);
         }
 
         // howToUse 字段在 schema 中为 String?，校验类型与长度
@@ -113,33 +113,33 @@ export const PUT = withAdminAuth(async (
             updateData.howToUse = null;
         } else if (updateData.howToUse !== undefined) {
             if (typeof updateData.howToUse !== "string" || updateData.howToUse.length > MAX_HOW_TO_USE_LENGTH) {
-                return NextResponse.json({ error: `Invalid howToUse (must be a string, max ${MAX_HOW_TO_USE_LENGTH} chars)` }, { status: 400 });
+                return apiError(ErrorCode.VALIDATION_ERROR, `Invalid howToUse (must be a string, max ${MAX_HOW_TO_USE_LENGTH} chars)`, 400);
             }
         }
 
         // Validate array fields
         if (updateData.images !== undefined && updateData.images !== null) {
             if (!Array.isArray(updateData.images) || updateData.images.length > MAX_IMAGE_COUNT) {
-                return NextResponse.json({ error: `images must be an array with at most ${MAX_IMAGE_COUNT} items` }, { status: 400 });
+                return apiError(ErrorCode.VALIDATION_ERROR, `images must be an array with at most ${MAX_IMAGE_COUNT} items`, 400);
             }
             if (!updateData.images.every((img: unknown) => typeof img === "string" && (img as string).length <= MAX_IMAGE_URL_LENGTH)) {
-                return NextResponse.json({ error: `Each image must be a string URL (max ${MAX_IMAGE_URL_LENGTH} chars)` }, { status: 400 });
+                return apiError(ErrorCode.VALIDATION_ERROR, `Each image must be a string URL (max ${MAX_IMAGE_URL_LENGTH} chars)`, 400);
             }
             for (const img of updateData.images) {
                 const imgStr = img as string;
                 const isAbsolute = /^https?:\/\//.test(imgStr);
                 const isRelative = imgStr.startsWith("/");
                 if (!isAbsolute && !isRelative) {
-                    return NextResponse.json({ error: `Invalid image URL format: "${imgStr}" (must be absolute URL or relative path starting with /)` }, { status: 400 });
+                    return apiError(ErrorCode.VALIDATION_ERROR, `Invalid image URL format: "${imgStr}" (must be absolute URL or relative path starting with /)`, 400);
                 }
                 if (isAbsolute) {
                     try {
                         const imgUrl = new URL(imgStr);
                         if (!['http:', 'https:'].includes(imgUrl.protocol)) {
-                            return NextResponse.json({ error: "Invalid image URL scheme (must be http or https)" }, { status: 400 });
+                            return apiError(ErrorCode.VALIDATION_ERROR, "Invalid image URL scheme (must be http or https)", 400);
                         }
                     } catch {
-                        return NextResponse.json({ error: "Invalid image URL format" }, { status: 400 });
+                        return apiError(ErrorCode.VALIDATION_ERROR, "Invalid image URL format", 400);
                     }
                 }
             }
@@ -154,41 +154,41 @@ export const PUT = withAdminAuth(async (
         };
 
         if (!validateStringArray(updateData.keyIngredients, "keyIngredients")) {
-            return NextResponse.json({ error: `keyIngredients must be an array of strings (max ${MAX_TAG_ARRAY_LENGTH} items, each max ${MAX_TAG_ITEM_LENGTH} chars)` }, { status: 400 });
+            return apiError(ErrorCode.VALIDATION_ERROR, `keyIngredients must be an array of strings (max ${MAX_TAG_ARRAY_LENGTH} items, each max ${MAX_TAG_ITEM_LENGTH} chars)`, 400);
         }
         if (!validateStringArray(updateData.suitableSkinTypes, "suitableSkinTypes")) {
-            return NextResponse.json({ error: `suitableSkinTypes must be an array of strings (max ${MAX_TAG_ARRAY_LENGTH} items, each max ${MAX_TAG_ITEM_LENGTH} chars)` }, { status: 400 });
+            return apiError(ErrorCode.VALIDATION_ERROR, `suitableSkinTypes must be an array of strings (max ${MAX_TAG_ARRAY_LENGTH} items, each max ${MAX_TAG_ITEM_LENGTH} chars)`, 400);
         }
         if (!validateStringArray(updateData.benefits, "benefits")) {
-            return NextResponse.json({ error: `benefits must be an array of strings (max ${MAX_TAG_ARRAY_LENGTH} items, each max ${MAX_TAG_ITEM_LENGTH} chars)` }, { status: 400 });
+            return apiError(ErrorCode.VALIDATION_ERROR, `benefits must be an array of strings (max ${MAX_TAG_ARRAY_LENGTH} items, each max ${MAX_TAG_ITEM_LENGTH} chars)`, 400);
         }
         if (!validateStringArray(updateData.negativeFor, "negativeFor")) {
-            return NextResponse.json({ error: `negativeFor must be an array of strings (max ${MAX_TAG_ARRAY_LENGTH} items, each max ${MAX_TAG_ITEM_LENGTH} chars)` }, { status: 400 });
+            return apiError(ErrorCode.VALIDATION_ERROR, `negativeFor must be an array of strings (max ${MAX_TAG_ARRAY_LENGTH} items, each max ${MAX_TAG_ITEM_LENGTH} chars)`, 400);
         }
 
         // Validate affiliateLinks
         if (updateData.affiliateLinks !== undefined && updateData.affiliateLinks !== null) {
             if (typeof updateData.affiliateLinks !== "object" || Array.isArray(updateData.affiliateLinks)) {
-                return NextResponse.json({ error: "affiliateLinks must be an object" }, { status: 400 });
+                return apiError(ErrorCode.VALIDATION_ERROR, "affiliateLinks must be an object", 400);
             }
             const links = updateData.affiliateLinks as Record<string, unknown>;
             for (const key of Object.keys(links)) {
                 if (!AFFILIATE_PLATFORM_KEYS.includes(key as typeof AFFILIATE_PLATFORM_KEYS[number])) {
-                    return NextResponse.json({ error: `affiliateLinks key "${key}" is not allowed` }, { status: 400 });
+                    return apiError(ErrorCode.VALIDATION_ERROR, `affiliateLinks key "${key}" is not allowed`, 400);
                 }
             }
             for (const [key, value] of Object.entries(links)) {
                 if (typeof value !== "string" || value.length > MAX_AFFILIATE_URL_LENGTH) {
-                    return NextResponse.json({ error: `Invalid affiliateLinks.${key} (must be a string URL, max ${MAX_AFFILIATE_URL_LENGTH} chars)` }, { status: 400 });
+                    return apiError(ErrorCode.VALIDATION_ERROR, `Invalid affiliateLinks.${key} (must be a string URL, max ${MAX_AFFILIATE_URL_LENGTH} chars)`, 400);
                 }
                 if (value) {
                     try {
                         const url = new URL(value);
                         if (!['http:', 'https:'].includes(url.protocol)) {
-                            return NextResponse.json({ error: `Invalid affiliateLinks.${key} scheme (must be http or https)` }, { status: 400 });
+                            return apiError(ErrorCode.VALIDATION_ERROR, `Invalid affiliateLinks.${key} scheme (must be http or https)`, 400);
                         }
                     } catch {
-                        return NextResponse.json({ error: `Invalid affiliateLinks.${key} format` }, { status: 400 });
+                        return apiError(ErrorCode.VALIDATION_ERROR, `Invalid affiliateLinks.${key} format`, 400);
                     }
                 }
             }
@@ -240,13 +240,13 @@ export const PUT = withAdminAuth(async (
         });
 
         if (txResult.type === "not_found") {
-            return NextResponse.json({ error: "Product not found" }, { status: 404 });
+            return apiError(ErrorCode.NOT_FOUND, "Product not found", 404);
         }
 
         return NextResponse.json(txResult.product);
     } catch (error) {
-        console.error(error);
-        return NextResponse.json({ error: "Failed to update" }, { status: 500 });
+        logger.error("Failed to update product", error);
+        return apiError(ErrorCode.INTERNAL_ERROR, "Failed to update", 500);
     }
 });
 
@@ -260,7 +260,7 @@ export const DELETE = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async 
     const ip = getClientIP(request);
     const limitResult = await rateLimit(`admin-product-delete-${ip}`, "default", { maxRequests: 30, windowMs: 60 * 1000 });
     if (!limitResult.success) {
-        return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+        return apiError(ErrorCode.RATE_LIMITED, "Too many requests", 429);
     }
 
     try {
@@ -289,12 +289,12 @@ export const DELETE = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async 
             });
         });
 
-        return NextResponse.json({ success: true });
+        return apiSuccess();
     } catch (error: unknown) {
         if (error instanceof Error && error.message === "NOT_FOUND") {
-            return NextResponse.json({ error: "Product not found" }, { status: 404 });
+            return apiError(ErrorCode.NOT_FOUND, "Product not found", 404);
         }
-        console.error("Failed to delete product:", error);
-        return NextResponse.json({ error: "Failed to delete" }, { status: 500 });
+        logger.error("Failed to delete product:", error);
+        return apiError(ErrorCode.INTERNAL_ERROR, "Failed to delete", 500);
     }
 });

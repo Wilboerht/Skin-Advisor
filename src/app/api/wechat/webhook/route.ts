@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
+import { logger } from "@/lib/logger";
 
 // 防重放：5 分钟时间窗 + nonce 去重
 const WEBHOOK_TIME_WINDOW_MS = 5 * 60 * 1000;
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest) {
     // 这个 TOKEN 必须和微信公众平台后台配置的一致
     const token = process.env.WECHAT_TOKEN;
     if (!token) {
-        console.error("WECHAT_TOKEN is not configured");
+        logger.error("WECHAT_TOKEN is not configured");
         return new NextResponse("Server Configuration Error", { status: 500 });
     }
 
@@ -61,7 +62,7 @@ export async function GET(request: NextRequest) {
         return new NextResponse("success");
     } else {
         // 验证失败
-        console.error("微信服务器验证失败: signature 不匹配");
+        logger.error("微信服务器验证失败: signature 不匹配");
         return new NextResponse("Invalid signature", { status: 403 });
     }
 }
@@ -75,7 +76,7 @@ export async function POST(request: NextRequest) {
 
     const token = process.env.WECHAT_TOKEN;
     if (!token) {
-        console.error("WECHAT_TOKEN is not configured");
+        logger.error("WECHAT_TOKEN is not configured");
         return new NextResponse("Server Configuration Error", { status: 500 });
     }
 
@@ -93,7 +94,7 @@ export async function POST(request: NextRequest) {
     const sha1 = crypto.createHash("sha1").update(str).digest("hex");
 
     if (sha1 !== signature) {
-        console.error("微信 Webhook POST 验证失败: signature 不匹配");
+        logger.error("微信 Webhook POST 验证失败: signature 不匹配");
         return new NextResponse("Invalid signature", { status: 403 });
     }
 

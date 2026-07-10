@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { logger } from "@/lib/logger";
 
 /**
  * POST /api/advisor/session/claim
@@ -50,22 +51,22 @@ export async function POST(request: NextRequest) {
                     select: { userId: true }
                 });
                 if (session?.userId && session.userId !== user.id) {
-                    console.warn(`Attempted takeover of session ${sessionId}: current owner ${session.userId}, requester ${user.id}`);
+                    logger.warn(`Attempted takeover of session ${sessionId}: current owner ${session.userId}, requester ${user.id}`);
                     return NextResponse.json({ error: "Session already claimed" }, { status: 403, headers: rateLimitHeaders });
                 }
             } else {
             }
         } catch (e) {
-            console.error("Failed to claim session:", e);
+            logger.error("Failed to claim session:", e);
             return NextResponse.json({ error: "Failed to claim session" }, { status: 500, headers: rateLimitHeaders });
         }
 
         return NextResponse.json({ success: true }, { headers: rateLimitHeaders });
     } catch (error) {
-        console.error("Failed to claim session:", error);
+        logger.error("Failed to claim session:", error);
         const errorMessage = error instanceof Error ? error.message : String(error);
         const errorStack = error instanceof Error ? error.stack : '';
-        console.error("Error details:", { message: errorMessage, stack: errorStack });
+        logger.error("Error details:", { message: errorMessage, stack: errorStack });
         return NextResponse.json({ 
             error: "Internal server error"
         }, { status: 500, headers: rateLimitHeaders });

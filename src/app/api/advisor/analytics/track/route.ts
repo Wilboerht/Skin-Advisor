@@ -12,6 +12,7 @@ import { z } from "zod";
 import { getSession } from "@/lib/auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { hashIP } from "@/lib/privacy";
+import { logger } from "@/lib/logger";
 
 // 事件类型定义
 const EventSchema = z.object({
@@ -322,7 +323,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true });
 
     } catch (error) {
-        console.error("Analytics track error:", error);
+        logger.error("Analytics track error:", error);
         // 返回错误状态码以便监控系统发现异常
         return NextResponse.json(
             { success: false, error: "Tracking failed" },

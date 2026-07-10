@@ -22,6 +22,8 @@ export const metadata: Metadata = withDefaultOgImage({
   },
 });
 
+export const revalidate = 86400;
+
 export default function ServicesPage() {
   return (
     <main className="relative flex flex-col h-dvh overflow-hidden text-[#1A1A1A] bg-[#F8F7F3]">

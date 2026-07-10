@@ -1,9 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
+import { apiError, apiSuccess } from "@/lib/api-response";
+import { ErrorCode } from "@/lib/error-codes";
 import { writeFile, mkdir, realpath } from "fs/promises";
 import path from "path";
 import { enforceStorageLimits } from "@/lib/shared-upload-utils";
 import { getSession } from "@/lib/auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { logger } from "@/lib/logger";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
@@ -16,7 +19,7 @@ export async function PUT(request: NextRequest) {
     // Authentication required
     const session = await getSession();
     if (!session) {
-        return NextResponse.json({ error: "请先登录后再上传文件" }, { status: 401 });
+        return apiError(ErrorCode.UNAUTHORIZED, "请先登录后再上传文件", 401);
     }
 
     // Rate limiting per IP
@@ -26,17 +29,14 @@ export async function PUT(request: NextRequest) {
         windowMs: 60 * 1000,
     });
     if (!limit.success) {
-        return NextResponse.json(
-            { error: "上传过于频繁，请稍后再试" },
-            { status: 429 }
-        );
+        return apiError(ErrorCode.RATE_LIMITED, "上传过于频繁，请稍后再试", 429);
     }
 
     const searchParams = request.nextUrl.searchParams;
     const filePath = searchParams.get("path");
 
     if (!filePath) {
-        return NextResponse.json({ error: "Missing path" }, { status: 400 });
+        return apiError(ErrorCode.VALIDATION_ERROR, "Missing path", 400);
     }
 
     // Security: normalize and whitelist the resolved path
@@ -45,18 +45,18 @@ export async function PUT(request: NextRequest) {
 
     // Reject any path that tries to escape the upload directory
     if (path.isAbsolute(requestedPath) || requestedPath.startsWith("..") || requestedPath.includes(".." + path.sep)) {
-        return NextResponse.json({ error: "Invalid path" }, { status: 400 });
+        return apiError(ErrorCode.VALIDATION_ERROR, "Invalid path", 400);
     }
 
     const fullPath = path.resolve(uploadRoot, requestedPath);
     if (!fullPath.startsWith(uploadRoot + path.sep) && fullPath !== uploadRoot) {
-        return NextResponse.json({ error: "Path traversal detected" }, { status: 403 });
+        return apiError(ErrorCode.FORBIDDEN, "Path traversal detected", 403);
     }
 
     // Validate extension
     const ext = path.extname(requestedPath).toLowerCase();
     if (!ALLOWED_EXTENSIONS.includes(ext)) {
-        return NextResponse.json({ error: "File type not allowed" }, { status: 400 });
+        return apiError(ErrorCode.VALIDATION_ERROR, "File type not allowed", 400);
     }
 
     try {
@@ -65,10 +65,7 @@ export async function PUT(request: NextRequest) {
 
         // Validate file size
         if (buffer.length > MAX_FILE_SIZE) {
-            return NextResponse.json(
-                { error: `File too large. Max size: ${MAX_FILE_SIZE / 1024 / 1024}MB` },
-                { status: 413 }
-            );
+            return apiError(ErrorCode.VALIDATION_ERROR, `File too large. Max size: ${MAX_FILE_SIZE / 1024 / 1024}MB`, 413);
         }
 
         // Validate MIME type via file magic numbers (simple check)
@@ -79,7 +76,7 @@ export async function PUT(request: NextRequest) {
         const isWebp = buffer.slice(0, 12).toString("hex").includes("57454250"); // WEBP
 
         if (!isJpeg && !isPng && !isGif && !isWebp) {
-            return NextResponse.json({ error: "Invalid file content" }, { status: 400 });
+            return apiError(ErrorCode.VALIDATION_ERROR, "Invalid file content", 400);
         }
 
         const dir = path.dirname(fullPath);
@@ -95,10 +92,7 @@ export async function PUT(request: NextRequest) {
             !realFullPath.startsWith(realUploadRoot + path.sep) &&
             realFullPath !== realUploadRoot
         ) {
-            return NextResponse.json(
-                { error: "Path traversal detected" },
-                { status: 403 }
-            );
+            return apiError(ErrorCode.FORBIDDEN, "Path traversal detected", 403);
         }
 
         // Enforce storage limits before writing
@@ -107,9 +101,9 @@ export async function PUT(request: NextRequest) {
         // Write file
         await writeFile(realFullPath, buffer);
 
-        return NextResponse.json({ success: true });
+        return apiSuccess();
     } catch (error) {
-        console.error("Local upload failed:", error);
-        return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+        logger.error("Local upload failed:", error);
+        return apiError(ErrorCode.INTERNAL_ERROR, "Upload failed", 500);
     }
 }

@@ -229,7 +229,7 @@ export async function reserveUsage(
                         },
                         orderBy: { todayCount: 'desc' },
                     });
-                    crossIpCount = crossIpRecord?.todayCount || 0;
+                    crossIpCount = Math.min(crossIpRecord?.todayCount || 0, Math.ceil(3 * 0.5));
                 }
 
                 // 按 IP 匹配当日记录

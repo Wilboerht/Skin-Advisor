@@ -25,29 +25,31 @@ interface CampaignData {
 
 type PageState = "loading" | "no_campaign" | "show_campaign" | "error";
 
-export default function GiftClient() {
-  const [pageState, setPageState] = useState<PageState>("loading");
-  const [campaign, setCampaign] = useState<CampaignData | null>(null);
+export default function GiftClient({ serverCampaign }: { serverCampaign: CampaignData | null }) {
+  const [pageState, setPageState] = useState<PageState>(
+    serverCampaign ? "show_campaign" : "no_campaign"
+  );
+  const [campaign] = useState<CampaignData | null>(serverCampaign);
 
-  const fetchCampaign = useCallback(async () => {
-    setPageState("loading");
+  // 后台静默刷新最新数据（客户端保底：若有更新的活动数据则更新 UI）
+  const refreshCampaign = useCallback(async () => {
     try {
       const res = await fetch("/api/campaign");
       const data = await res.json();
-      if (!data.campaign) {
-        setPageState("no_campaign");
-        return;
+      if (data.campaign) {
+        window.location.reload(); // 简化处理：有更新时刷新页面触发 SSR 重建
       }
-      setCampaign(data.campaign);
-      setPageState("show_campaign");
     } catch {
-      setPageState("error");
+      // 静默失败
     }
   }, []);
 
   useEffect(() => {
-    fetchCampaign();
-  }, [fetchCampaign]);
+    if (!serverCampaign) {
+      // SSR 没有拿到数据时，客户端回退请求
+      refreshCampaign();
+    }
+  }, [serverCampaign, refreshCampaign]);
 
   const formatDate = (iso: string) => {
     return new Date(iso).toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" });
@@ -179,7 +181,7 @@ export default function GiftClient() {
                 <h2 className="text-lg font-serif text-[#1A1A1A] mb-2">活动信息加载失败</h2>
                 <p className="text-sm text-[#5E5E5E]/80 mb-6">请检查网络连接后刷新页面，或稍后再试。</p>
                 <button
-                  onClick={() => fetchCampaign()}
+                  onClick={() => window.location.reload()}
                   className="w-full sm:w-auto group relative inline-flex items-center justify-center gap-3 px-10 py-3.5 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#1B3A5C] hover:text-white"
                 >
                   <Loader2 className="w-4 h-4" />

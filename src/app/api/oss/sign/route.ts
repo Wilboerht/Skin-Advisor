@@ -7,6 +7,7 @@ import { generateUploadSignature } from "@/lib/ali-oss";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { getSession } from "@/lib/auth";
 import { verifyAdminSession } from "@/lib/admin-auth";
+import { logger } from "@/lib/logger";
 
 export async function POST(request: NextRequest) {
     try {
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
         });
 
     } catch (error) {
-        console.error("OSS Sign Error:", error);
+        logger.error("OSS Sign Error:", error);
         // 如果是配置错误，返回 500 但不暴露细节，前端会降级到 Base64
         return NextResponse.json(
             { error: "云存储服务暂时不可用" },

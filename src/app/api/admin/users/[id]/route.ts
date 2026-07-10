@@ -1,10 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
+import { apiError, apiSuccess } from "@/lib/api-response";
+import { ErrorCode } from "@/lib/error-codes";
 import prisma from "@/lib/prisma";
 import { requireRole, getClientInfo, logAdminAction } from "@/lib/admin-auth";
 import { canViewFullPII, UserRole, isValidUserRole, AdminRole } from "@/lib/permissions";
 import { incrementTokenVersion } from "@/lib/auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { Prisma } from "@prisma/client";
+import { logger } from "@/lib/logger";
 
 // GET /api/admin/users/[id] - Get user details
 // Available to super_admin and admin
@@ -16,7 +19,7 @@ export const GET = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (
     const ip = getClientIP(request);
     const limitResult = await rateLimit(`admin-user-get-${ip}`, "default", { maxRequests: 60, windowMs: 60 * 1000 });
     if (!limitResult.success) {
-        return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+        return apiError(ErrorCode.RATE_LIMITED, "Too many requests", 429);
     }
 
     try {
@@ -55,7 +58,7 @@ export const GET = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (
         });
 
         if (!user) {
-            return NextResponse.json({ error: "User not found" }, { status: 404 });
+            return apiError(ErrorCode.NOT_FOUND, "User not found", 404);
         }
 
         // PII 保护：非 super_admin 脱敏邮箱和手机号
@@ -68,8 +71,8 @@ export const GET = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (
 
         return NextResponse.json(user);
     } catch (error) {
-        console.error("Admin user GET error:", error);
-        return NextResponse.json({ error: "Failed to fetch user" }, { status: 500 });
+        logger.error("Admin user GET error:", error);
+        return apiError(ErrorCode.INTERNAL_ERROR, "Failed to fetch user", 500);
     }
 });
 
@@ -82,7 +85,7 @@ export const PATCH = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (
     const ip = getClientIP(request);
     const limitResult = await rateLimit(`admin-user-patch-${ip}`, "default", { maxRequests: 30, windowMs: 60 * 1000 });
     if (!limitResult.success) {
-        return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+        return apiError(ErrorCode.RATE_LIMITED, "Too many requests", 429);
     }
 
     try {
@@ -92,12 +95,12 @@ export const PATCH = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (
 
         // Validate name length
         if (name !== undefined && (typeof name !== "string" || name.length > 200)) {
-            return NextResponse.json({ error: "Invalid name (max 200 chars)" }, { status: 400 });
+            return apiError(ErrorCode.VALIDATION_ERROR, "Invalid name (max 200 chars)", 400);
         }
 
         const user = await prisma.user.findUnique({ where: { id } });
         if (!user) {
-            return NextResponse.json({ error: "User not found" }, { status: 404 });
+            return apiError(ErrorCode.NOT_FOUND, "User not found", 404);
         }
 
         const VALID_ROLES = [UserRole.USER, UserRole.DISABLED] as const;
@@ -105,7 +108,7 @@ export const PATCH = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (
 const RUNTIME_USER_ROLES: string[] = [UserRole.USER, UserRole.DISABLED];
         if (role !== undefined) {
             if (!VALID_ROLES.includes(role)) {
-                return NextResponse.json({ error: "Invalid role" }, { status: 400 });
+                return apiError(ErrorCode.VALIDATION_ERROR, "Invalid role", 400);
             }
         }
 
@@ -117,10 +120,7 @@ const RUNTIME_USER_ROLES: string[] = [UserRole.USER, UserRole.DISABLED];
                 limitNum < 0 ||
                 limitNum > 9999
             ) {
-                return NextResponse.json(
-                    { error: "Invalid dailyTestLimit (must be an integer 0-9999)" },
-                    { status: 400 }
-                );
+                return apiError(ErrorCode.VALIDATION_ERROR, "Invalid dailyTestLimit (must be an integer 0-9999)", 400);
             }
         }
 
@@ -148,10 +148,7 @@ const RUNTIME_USER_ROLES: string[] = [UserRole.USER, UserRole.DISABLED];
                 } else {
                     // previousRole missing or invalid — accept explicit role from client
                     if (!role || !RUNTIME_USER_ROLES.includes(role)) {
-                        return NextResponse.json(
-                            { error: "previousRole missing or invalid. Please explicitly specify a valid role." },
-                            { status: 400 }
-                        );
+                        return apiError(ErrorCode.VALIDATION_ERROR, "previousRole missing or invalid. Please explicitly specify a valid role.", 400);
                     }
                     updateData.role = role;
                     actualNewRole = role;
@@ -193,8 +190,8 @@ const RUNTIME_USER_ROLES: string[] = [UserRole.USER, UserRole.DISABLED];
 
         return NextResponse.json(updatedUser);
     } catch (error) {
-        console.error("Admin user PATCH error:", error);
-        return NextResponse.json({ error: "Failed to update user" }, { status: 500 });
+        logger.error("Admin user PATCH error:", error);
+        return apiError(ErrorCode.INTERNAL_ERROR, "Failed to update user", 500);
     }
 });
 
@@ -207,7 +204,7 @@ export const DELETE = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async 
     const ip = getClientIP(request);
     const limitResult = await rateLimit(`admin-user-delete-${ip}`, "default", { maxRequests: 20, windowMs: 60 * 1000 });
     if (!limitResult.success) {
-        return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+        return apiError(ErrorCode.RATE_LIMITED, "Too many requests", 429);
     }
 
     try {
@@ -215,7 +212,7 @@ export const DELETE = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async 
 
         const user = await prisma.user.findUnique({ where: { id } });
         if (!user) {
-            return NextResponse.json({ error: "User not found" }, { status: 404 });
+            return apiError(ErrorCode.NOT_FOUND, "User not found", 404);
         }
 
         await prisma.user.delete({ where: { id } });
@@ -231,9 +228,9 @@ export const DELETE = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async 
             ...clientInfo,
         });
 
-        return NextResponse.json({ success: true });
+        return apiSuccess();
     } catch (error) {
-        console.error("Admin user DELETE error:", error);
-        return NextResponse.json({ error: "Failed to delete user" }, { status: 500 });
+        logger.error("Admin user DELETE error:", error);
+        return apiError(ErrorCode.INTERNAL_ERROR, "Failed to delete user", 500);
     }
 });

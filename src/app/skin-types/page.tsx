@@ -24,6 +24,8 @@ export const metadata: Metadata = withDefaultOgImage({
   },
 });
 
+export const revalidate = 86400;
+
 export default function ResultIndexPage() {
   const orderedTypes = routeOrder
     .map((route) => skinTypes.find((t) => t.route === route))

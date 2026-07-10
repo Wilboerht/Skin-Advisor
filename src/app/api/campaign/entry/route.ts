@@ -1,7 +1,10 @@
 import prisma from "@/lib/prisma"
 import { getSession } from "@/lib/auth"
 import { NextRequest, NextResponse } from "next/server"
+import { apiError, apiSuccess } from "@/lib/api-response";
+import { ErrorCode } from "@/lib/error-codes";
 import { z } from "zod"
+import { logger } from "@/lib/logger";
 
 const entrySchema = z.object({
   campaignId: z.string().min(1),
@@ -17,7 +20,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const parsed = entrySchema.safeParse(body)
     if (!parsed.success) {
-      return NextResponse.json({ error: "参数错误" }, { status: 400 })
+      return apiError(ErrorCode.VALIDATION_ERROR, "参数错误", 400)
     }
 
     const { campaignId, shareLink, contactName, contactPhone, contactEmail } = parsed.data
@@ -34,14 +37,14 @@ export async function POST(req: NextRequest) {
     })
 
     if (!campaign) {
-      return NextResponse.json({ error: "活动不存在或已结束" }, { status: 404 })
+      return apiError(ErrorCode.NOT_FOUND, "活动不存在或已结束", 404)
     }
 
     // 获取用户身份（提前验证，事务内不再调 auth）
     const session = await getSession()
 
     if (!session?.id) {
-      return NextResponse.json({ error: "请先登录后再参与活动", code: "LOGIN_REQUIRED" }, { status: 401 })
+      return apiError("LOGIN_REQUIRED", "请先登录后再参与活动", 401)
     }
 
     const userId = session.id
@@ -51,7 +54,7 @@ export async function POST(req: NextRequest) {
       where: { campaignId_userId: { campaignId, userId } },
     })
     if (existingQuick) {
-      return NextResponse.json({ error: "您已参与本次活动", code: "ALREADY_ENTERED" }, { status: 409 })
+      return apiError("ALREADY_ENTERED", "您已参与本次活动", 409)
     }
 
     // 生成抽奖码 NPL-XXXXXX（带冲突重试）
@@ -102,16 +105,16 @@ export async function POST(req: NextRequest) {
     })
 
     if (entry === "FULL") {
-      return NextResponse.json({ error: "活动参与人数已满" }, { status: 400 })
+      return apiError(ErrorCode.VALIDATION_ERROR, "活动参与人数已满", 400)
     }
     if (entry === "DUPLICATE") {
-      return NextResponse.json({ error: "您已参与本次活动", code: "ALREADY_ENTERED" }, { status: 409 })
+      return apiError("ALREADY_ENTERED", "您已参与本次活动", 409)
     }
 
     return NextResponse.json({ success: true, entry: { id: entry.id, lotteryCode: entry.lotteryCode, status: entry.status } })
   } catch (error) {
-    console.error("[Campaign Entry] Failed:", error)
-    return NextResponse.json({ error: "提交失败，请重试" }, { status: 500 })
+    logger.error("[Campaign Entry] Failed:", error)
+    return apiError(ErrorCode.INTERNAL_ERROR, "提交失败，请重试", 500)
   }
 }
 
@@ -122,7 +125,7 @@ export async function GET(req: NextRequest) {
     const campaignId = searchParams.get("campaignId")
 
     if (!campaignId) {
-      return NextResponse.json({ error: "缺少活动ID" }, { status: 400 })
+      return apiError(ErrorCode.VALIDATION_ERROR, "缺少活动ID", 400)
     }
 
     const session = await getSession()
@@ -146,7 +149,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ hasEntry: !!entry, entry })
   } catch (error) {
-    console.error("[Campaign Entry] Failed to fetch:", error)
+    logger.error("[Campaign Entry] Failed to fetch:", error)
     return NextResponse.json({ hasEntry: false, entry: null, error: "查询失败" }, { status: 500 })
   }
 }

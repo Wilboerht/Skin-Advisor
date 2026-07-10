@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { withAdminAuth } from "@/lib/admin-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { logger } from "@/lib/logger";
 
 // 成本数据缓存 (30s TTL，减少 DB 压力)
 const costCache = new Map<string, { data: unknown; at: number }>();
@@ -187,7 +188,7 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
 
         return NextResponse.json(resultData);
     } catch (error) {
-        console.error("[Admin AI Costs] Error:", error);
+        logger.error("[Admin AI Costs] Error:", error);
         return NextResponse.json(
             { error: "Failed to fetch AI cost data" },
             { status: 500 }

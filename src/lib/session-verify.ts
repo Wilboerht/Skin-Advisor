@@ -11,17 +11,19 @@ const SESSION_MAX_AGE_MS = 8 * 60 * 60 * 1000;
 
 /**
  * 服务端会话撤销集合
- * 管理员登出或密码修改时，将当前会话 ID 加入此集合。
- * verifySessionSignature 查询此集合来判定会话是否已被撤销。
- * 使用 LRU 缓存限制内存占用，TTL 与会话最大有效期一致。
+ * 管理员登出或密码修改时，记录撤销时间戳。
+ * 所有在该时间戳之前创建的会话均被判定为无效。
+ *
+ * 设计：用 adminId → revocationTimestamp 映射替代复杂的 sessionId 匹配，
+ * 天然支持"撤销该管理员所有会话"的语义。
  */
-const revokedSessions = new Map<string, number>(); // sessionId -> revokedAt timestamp
+const revokedSessions = new Map<string, number>(); // adminId -> revokedAt timestamp
 const MAX_REVOKED = 10000;
 
 function cleanExpiredRevocations(): void {
-    const now = Date.now();
+    const cutoff = Date.now() - SESSION_MAX_AGE_MS;
     for (const [key, timestamp] of revokedSessions) {
-        if (now - timestamp > SESSION_MAX_AGE_MS) {
+        if (timestamp < cutoff) {
             revokedSessions.delete(key);
         }
     }
@@ -126,8 +128,10 @@ export async function verifySessionSignature(
         }
 
         // 检查会话是否已被服务端撤销
-        const sessionId = parsed.adminId as string + ":" + String(parsed.iat || "");
-        if (revokedSessions.has(sessionId)) {
+        // 若会话创建时间早于撤销时间，则该会话已失效
+        const sessionIat = typeof parsed.iat === "number" ? parsed.iat : 0;
+        const revokedAt = revokedSessions.get(parsed.adminId as string);
+        if (revokedAt && sessionIat < revokedAt) {
             return null;
         }
 
@@ -160,32 +164,18 @@ export async function createSignedSession(
 
 /**
  * 撤销管理员的所有会话（登出/密码修改时调用）
- * @param adminId - 管理员 ID
+ * 所有在此时间戳之前创建的会话均失效
  */
 export function revokeAdminSessions(adminId: string): void {
     if (revokedSessions.size >= MAX_REVOKED) {
         cleanExpiredRevocations();
     }
-    // 使用当前时间戳覆盖所有该管理员的会话
-    const prefix = adminId + ":";
-    for (const key of revokedSessions.keys()) {
-        if (key.startsWith(prefix)) {
-            revokedSessions.set(key, Date.now());
-        }
-    }
-    // 添加一个通配符条目，覆盖未来未知的 iat 值
-    revokedSessions.set(adminId + ":*", Date.now());
+    revokedSessions.set(adminId, Date.now());
 }
 
 /**
- * 恢复管理员的会话（仅用于撤销操作的撤销，如误操作恢复）
- * @param adminId - 管理员 ID
+ * 恢复管理员的会话（解除撤销）
  */
 export function unrevokeAdminSessions(adminId: string): void {
-    const prefix = adminId + ":";
-    for (const key of revokedSessions.keys()) {
-        if (key.startsWith(prefix)) {
-            revokedSessions.delete(key);
-        }
-    }
+    revokedSessions.delete(adminId);
 }

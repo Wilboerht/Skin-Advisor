@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
+import prisma from "@/lib/prisma";
 import GiftClient from "./GiftClient";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "肌智派送好礼 — 参与活动赢取护肤礼包",
@@ -12,6 +16,31 @@ export const metadata: Metadata = {
   },
 };
 
-export default function GiftPage() {
-  return <GiftClient />;
+export default async function GiftPage() {
+  const campaign = await prisma.campaign.findFirst({
+    where: { status: "active", startDate: { lte: new Date() }, endDate: { gte: new Date() } },
+    orderBy: { sortOrder: "asc" },
+    include: { _count: { select: { entries: true } } },
+  });
+
+  const campaignData = campaign
+    ? {
+        id: campaign.id,
+        title: campaign.title,
+        subtitle: campaign.subtitle,
+        description: campaign.description,
+        coverImage: campaign.coverImage,
+        startDate: campaign.startDate.toISOString(),
+        endDate: campaign.endDate.toISOString(),
+        drawDate: campaign.drawDate?.toISOString() ?? null,
+        prizes: campaign.prizes as Array<{ name: string; image: string; quantity: number; description?: string }>,
+        shareText: campaign.shareText,
+        rules: campaign.rules,
+        maxEntries: campaign.maxEntries,
+        entryCount: campaign._count.entries,
+        winnerIds: campaign.winnerIds as string[] | null,
+      }
+    : null;
+
+  return <GiftClient serverCampaign={campaignData} />;
 }

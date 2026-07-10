@@ -1,6 +1,7 @@
 import { deleteOSSFiles } from "./ali-oss";
 import fs, { realpath } from "fs/promises";
 import path from "path";
+import { logger } from "@/lib/logger";
 
 /**
  * 删除上传的源照片（本地文件/云端对象）
@@ -19,7 +20,7 @@ export async function deleteSourcePhoto(photoUrl: string | null | undefined): Pr
 
       // 路径穿越防护
       if (path.isAbsolute(normalized) || normalized.startsWith("..") || normalized.includes(".." + path.sep)) {
-        console.warn(`[Privacy] Blocked path traversal attempt: ${photoUrl}`);
+        logger.warn(`[Privacy] Blocked path traversal attempt: ${photoUrl}`);
         return;
       }
 
@@ -32,7 +33,7 @@ export async function deleteSourcePhoto(photoUrl: string | null | undefined): Pr
       }
 
       if (!filePath.startsWith(uploadRoot + path.sep) && filePath !== uploadRoot) {
-        console.warn(`[Privacy] Blocked out-of-bounds file access: ${photoUrl}`);
+        logger.warn(`[Privacy] Blocked out-of-bounds file access: ${photoUrl}`);
         return;
       }
 
@@ -43,12 +44,12 @@ export async function deleteSourcePhoto(photoUrl: string | null | undefined): Pr
         !realFilePath.startsWith(realUploadRoot + path.sep) &&
         realFilePath !== realUploadRoot
       ) {
-        console.warn(`[Privacy] Blocked symlink escape: ${photoUrl}`);
+        logger.warn(`[Privacy] Blocked symlink escape: ${photoUrl}`);
         return;
       }
 
       await fs.unlink(realFilePath);
-      console.log(`[Privacy] Deleted local source photo: ${photoUrl}`);
+      logger.info(`[Privacy] Deleted local source photo`);
     } catch {
       // 忽略删除失败（文件可能已被清理）
     }
@@ -59,9 +60,9 @@ export async function deleteSourcePhoto(photoUrl: string | null | undefined): Pr
   if (photoUrl.startsWith("http")) {
     try {
       await deleteOSSFiles([photoUrl]);
-      console.log(`[Privacy] Deleted OSS source photo`);
+      logger.info(`[Privacy] Deleted OSS source photo`);
     } catch (e) {
-      console.error(`[Privacy] Failed to delete cloud source photo:`, e);
+      logger.error(`[Privacy] Failed to delete cloud source photo:`, e);
     }
   }
 }

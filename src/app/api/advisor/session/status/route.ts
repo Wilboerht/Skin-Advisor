@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { hashIP } from "@/lib/privacy";
 import { normalizeAnalysisResult } from "@/lib/analysis-result";
+import { logger } from "@/lib/logger";
 
 export const maxDuration = 10;
 
@@ -119,7 +120,7 @@ export async function GET(request: NextRequest) {
         );
     } catch (error: unknown) {
         const err = error instanceof Error ? error : new Error(String(error));
-        console.error("[SessionStatus] Failed to get session status:", err);
+        logger.error("[SessionStatus] Failed to get session status:", err);
         return NextResponse.json(
             { error: "查询会话状态失败" },
             { status: 500 }

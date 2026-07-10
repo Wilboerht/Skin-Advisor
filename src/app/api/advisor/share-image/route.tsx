@@ -4,6 +4,7 @@ import { NextRequest } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
 import prisma from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 // Switch to Node.js runtime to support fs and prisma
 export const runtime = 'nodejs';
@@ -53,7 +54,7 @@ export async function GET(req: NextRequest) {
                     // User info if available (e.g. name from answers? usually anonymous)
                 }
             } catch (err) {
-                console.error("Error fetching session for image:", err);
+                logger.error("Error fetching session for image:", err);
             }
         }
 
@@ -66,7 +67,7 @@ export async function GET(req: NextRequest) {
             await fs.access(fontPath);
             fontData = await fs.readFile(fontPath);
         } catch (e) {
-            console.error("Font load failed:", e);
+            logger.error("Font load failed:", e);
         }
 
         // Colors
@@ -192,7 +193,7 @@ export async function GET(req: NextRequest) {
         );
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
-        console.error("OG image generation failed:", e?.message || e);
+        logger.error("OG image generation failed:", e?.message || e);
         // Fallback: return a simple SVG so social media crawlers still get a valid image
         // instead of a 500 error. Satori/Yoga may fail due to missing native bindings.
         const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630">

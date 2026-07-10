@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma"
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server"
 
 // GET /api/campaign - 获取当前活跃活动
@@ -40,7 +41,7 @@ export async function GET(_req: NextRequest) {
       },
     })
   } catch (error) {
-    console.error("[Campaign API] Failed to fetch campaign:", error)
+    logger.error("[Campaign API] Failed to fetch campaign:", error)
     return NextResponse.json({ campaign: null, error: "获取活动失败" }, { status: 500 })
   }
 }

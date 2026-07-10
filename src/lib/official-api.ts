@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from "crypto";
+import { logger } from "@/lib/logger";
 
 function getSignatureHeader(): string {
     return process.env.OFFICIAL_API_SIGNATURE_HEADER || "x-official-signature";
@@ -35,12 +36,12 @@ export function verifyOfficialResponseSignature(
             // 开发/测试环境未配置 secret 时允许通过，避免阻塞本地调试
             return true;
         }
-        console.error("[OfficialAPI] OFFICIAL_API_SECRET not configured in production, rejecting official response");
+        logger.error("[OfficialAPI] OFFICIAL_API_SECRET not configured in production, rejecting official response");
         return false;
     }
 
     if (!signature) {
-        console.error("[OfficialAPI] Missing signature header from official API");
+        logger.error("[OfficialAPI] Missing signature header from official API");
         return false;
     }
 
@@ -97,7 +98,7 @@ export async function parseOfficialResponse<T = unknown>(
     const contentType = officialResponse.headers.get("content-type") || "";
     if (!contentType.includes("application/json")) {
         const text = await officialResponse.text();
-        console.error("[OfficialAPI] Official API returned non-JSON response", text.slice(0, 300));
+        logger.error("[OfficialAPI] Official API returned non-JSON response", text.slice(0, 300));
         return null;
     }
 
@@ -106,13 +107,13 @@ export async function parseOfficialResponse<T = unknown>(
     try {
         data = JSON.parse(rawBody) as T;
     } catch {
-        console.error("[OfficialAPI] Official API JSON parse failed", rawBody.slice(0, 300));
+        logger.error("[OfficialAPI] Official API JSON parse failed", rawBody.slice(0, 300));
         return null;
     }
 
     const signature = officialResponse.headers.get(getSignatureHeader());
     if (requireSignature && !verifyOfficialResponseSignature(rawBody, signature)) {
-        console.error("[OfficialAPI] Signature verification failed for official response");
+        logger.error("[OfficialAPI] Signature verification failed for official response");
         return null;
     }
 
@@ -149,33 +150,33 @@ export async function getOfficialCsrfToken(): Promise<OfficialCsrfToken | null> 
         }).finally(() => clearTimeout(timeoutId));
 
         if (!res.ok) {
-            console.error("[OfficialAPI] Failed to fetch CSRF token from official API", res.status);
+            logger.error("[OfficialAPI] Failed to fetch CSRF token from official API", res.status);
             return null;
         }
 
         const setCookies = res.headers.getSetCookie ? res.headers.getSetCookie() : [];
         const csrfSetCookie = setCookies.find((c) => c.trim().startsWith(`${OFFICIAL_CSRF_COOKIE_NAME}=`));
         if (!csrfSetCookie) {
-            console.error("[OfficialAPI] Official CSRF response missing __Host-csrf_token Set-Cookie");
+            logger.error("[OfficialAPI] Official CSRF response missing __Host-csrf_token Set-Cookie");
             return null;
         }
 
         const match = csrfSetCookie.match(new RegExp(`${OFFICIAL_CSRF_COOKIE_NAME}=([^;]+)`));
         if (!match) {
-            console.error("[OfficialAPI] Unable to parse __Host-csrf_token value");
+            logger.error("[OfficialAPI] Unable to parse __Host-csrf_token value");
             return null;
         }
 
         const raw = await res.json() as OfficialApiResponse<{ token: string }>;
         const token = raw.data?.token;
         if (!token) {
-            console.error("[OfficialAPI] Official CSRF response missing token field");
+            logger.error("[OfficialAPI] Official CSRF response missing token field");
             return null;
         }
 
         return { token, cookieValue: match[1] };
     } catch (error) {
-        console.error("[OfficialAPI] Error fetching CSRF token:", error);
+        logger.error("[OfficialAPI] Error fetching CSRF token:", error);
         return null;
     }
 }
@@ -240,7 +241,7 @@ export async function callOfficialApi<T = unknown>(
     if (isUnsafeMethod) {
         const csrf = await getOfficialCsrfToken();
         if (!csrf) {
-            console.error("[OfficialAPI] Cannot call unsafe official API without CSRF token", path);
+            logger.error("[OfficialAPI] Cannot call unsafe official API without CSRF token", path);
             return null;
         }
         csrfToken = csrf.token;
@@ -293,7 +294,7 @@ export async function callOfficialApi<T = unknown>(
             officialResponse,
         };
     } catch (error) {
-        console.error("[OfficialAPI] callOfficialApi error:", error);
+        logger.error("[OfficialAPI] callOfficialApi error:", error);
         return null;
     }
 }

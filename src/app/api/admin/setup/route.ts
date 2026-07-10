@@ -1,26 +1,26 @@
-
+﻿
 import { NextRequest, NextResponse } from "next/server";
+import { apiError, apiSuccess } from "@/lib/api-response";
+import { ErrorCode } from "@/lib/error-codes";
 import crypto from "crypto";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { verifyAdminSession } from "@/lib/admin-auth";
 import { canPerformSystemSetup } from "@/lib/permissions";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { logger } from "@/lib/logger";
 
 export async function POST(request: NextRequest) {
     try {
         const ip = getClientIP(request);
         const limitResult = await rateLimit(`admin-setup-${ip}`, "default", { maxRequests: 5, windowMs: 15 * 60 * 1000 });
         if (!limitResult.success) {
-            return NextResponse.json({ success: false, error: "Rate limit exceeded" }, { status: 429 });
+            return apiError(ErrorCode.RATE_LIMITED, "Rate limit exceeded", 429);
         }
 
         const setupSecret = process.env.SETUP_SECRET;
         if (!setupSecret) {
-            return NextResponse.json(
-                { success: false, error: "SETUP_SECRET not configured" },
-                { status: 500 }
-            );
+            return apiError(ErrorCode.INTERNAL_ERROR, "SETUP_SECRET not configured", 500);
         }
 
         const adminCount = await prisma.adminUser.count();
@@ -29,16 +29,10 @@ export async function POST(request: NextRequest) {
             // Existing admins: require super_admin authentication
             const admin = await verifyAdminSession();
             if (!admin) {
-                return NextResponse.json(
-                    { success: false, error: "Unauthorized" },
-                    { status: 401 }
-                );
+                return apiError(ErrorCode.UNAUTHORIZED, "Unauthorized", 401);
             }
             if (!canPerformSystemSetup(admin.role)) {
-                return NextResponse.json(
-                    { success: false, error: "Forbidden - super_admin required" },
-                    { status: 403 }
-                );
+                return apiError(ErrorCode.FORBIDDEN, "Forbidden - super_admin required", 403);
             }
         }
 
@@ -52,16 +46,10 @@ export async function POST(request: NextRequest) {
         const isSuperAdmin = adminCount > 0;
         const secretValid = typeof providedSecret === "string" && safeTimingEqual(providedSecret, setupSecret);
         if (!isSuperAdmin && !secretValid) {
-            return NextResponse.json(
-                { success: false, error: "Invalid setup secret" },
-                { status: 403 }
-            );
+            return apiError(ErrorCode.FORBIDDEN, "Invalid setup secret", 403);
         }
         if (isSuperAdmin && providedSecret && !secretValid) {
-            return NextResponse.json(
-                { success: false, error: "Invalid setup secret" },
-                { status: 403 }
-            );
+            return apiError(ErrorCode.FORBIDDEN, "Invalid setup secret", 403);
         }
 
         // 2. Admin - Only create if not exists, NEVER reset existing password
@@ -73,10 +61,7 @@ export async function POST(request: NextRequest) {
         });
         if (!existingAdminOutside) {
             if (!adminPassword) {
-                return NextResponse.json(
-                    { success: false, error: "ADMIN_INITIAL_PASSWORD not configured" },
-                    { status: 500 }
-                );
+                return apiError(ErrorCode.INTERNAL_ERROR, "ADMIN_INITIAL_PASSWORD not configured", 500);
             }
             hashedPassword = await bcrypt.hash(adminPassword, 12);
         }
@@ -117,8 +102,8 @@ export async function POST(request: NextRequest) {
         });
 
     } catch (error) {
-        console.error("Setup failed:", error);
-        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+        logger.error("Setup failed:", error);
+        return apiError(ErrorCode.INTERNAL_ERROR, "Internal server error", 500);
     }
 }
 

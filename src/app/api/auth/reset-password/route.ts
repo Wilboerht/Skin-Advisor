@@ -5,6 +5,7 @@ import { incrementTokenVersion, clearLocalSession } from "@/lib/auth";
 import { callOfficialApi, type OfficialApiResponse } from "@/lib/official-api";
 import { validatePasswordStrength } from "@/lib/password";
 import { cookies } from "next/headers";
+import { logger } from "@/lib/logger";
 
 const PHONE_REGEX = /^1[3-9]\d{9}$/;
 
@@ -62,10 +63,14 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: data.error?.message || "重置失败" }, { status: result.status || 400 });
         }
 
-        // 密码重置后撤销该用户所有现有 JWT，强制重新登录
+        // 密码重置后撤销该用户所有现有 JWT + refresh token，强制重新登录
         const localUser = await prisma.user.findUnique({ where: { phoneNumber: body.phone }, select: { id: true } });
         if (localUser) {
             await incrementTokenVersion(localUser.id);
+            await prisma.refreshToken.updateMany({
+                where: { userId: localUser.id, revokedAt: null },
+                data: { revokedAt: new Date() },
+            });
         }
 
         const response = NextResponse.json({ success: true, message: data.data?.message || "密码已重置" });
@@ -78,7 +83,7 @@ export async function POST(req: NextRequest) {
         return response;
 
     } catch (error) {
-        console.error("Reset Password Proxy Error", error);
+        logger.error("Reset Password Proxy Error", error);
         return NextResponse.json({ error: "应用系统异常，请稍后重试" }, { status: 500 });
     }
 }

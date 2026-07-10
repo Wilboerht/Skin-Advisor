@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { apiError, apiSuccess } from "@/lib/api-response";
+import { ErrorCode } from "@/lib/error-codes";
 import { generateText, isAIEnabled, fallbackAnalysis, type AIProvider } from "@/lib/ai";
 import { analysisQueue } from "@/lib/ai-queue";
 import { circuitBreaker } from "@/lib/circuit-breaker";
@@ -18,7 +20,7 @@ import { matchCharacterIP } from "@/lib/result-utils";
 
 import { checkUsageLimit, reserveUsage, rollbackUsage } from "@/lib/usage-limit";
 import { extractGuestIdentifiers } from "@/lib/guest-limit";
-import { aiLogger } from "@/lib/logger";
+import { aiLogger, logger } from "@/lib/logger";
 import { createSignedInternalApiHeaders } from "@/lib/internal-api";
 import DOMPurify from 'isomorphic-dompurify';
 
@@ -248,23 +250,14 @@ export async function POST(request: NextRequest) {
         try {
             body = await request.json();
         } catch {
-            return NextResponse.json(
-                { error: "无效的请求体，请检查 JSON 格式" },
-                { status: 400 }
-            );
+            return apiError(ErrorCode.VALIDATION_ERROR, "无效的请求体，请检查 JSON 格式", 400);
         }
 
         // 2. 使用 Zod 验证（先验证再扣额度，避免无效请求浪费配额）
         const result = AnalyzeRequestSchema.safeParse(body);
         if (!result.success) {
-            console.error("Analyze validation error:", JSON.stringify(result.error.flatten(), null, 2));
-            return NextResponse.json(
-                {
-                    error: "请求参数错误",
-                    details: result.error.flatten().fieldErrors
-                },
-                { status: 400 }
-            );
+            logger.error("Analyze validation error:", JSON.stringify(result.error.flatten(), null, 2));
+            return apiError(ErrorCode.VALIDATION_ERROR, "请求参数错误", 400, result.error.flatten().fieldErrors);
         }
 
         const { answers, faceAnalysis, sessionId, nickname, freeRetry, privacyConsent } = result.data;
@@ -285,10 +278,9 @@ export async function POST(request: NextRequest) {
         };
 
         if (!limit.success) {
-            return NextResponse.json(
-                { error: "请求过于频繁，请稍后再试" },
-                { status: 429, headers: rateLimitHeaders }
-            );
+            const response = apiError(ErrorCode.RATE_LIMITED, "请求过于频繁，请稍后再试", 429);
+            Object.entries(rateLimitHeaders).forEach(([k, v]) => response.headers.set(k, v));
+            return response;
         }
 
         // 4. 检查使用限制 (Guest/Member)
@@ -303,27 +295,18 @@ export async function POST(request: NextRequest) {
                 select: { completedAt: true, analysisResult: true, ip: true, userId: true }
             });
             if (!existingSession?.completedAt || !existingSession?.analysisResult) {
-                return NextResponse.json(
-                    { error: "免费重试无效：尚未完成过首次分析" },
-                    { status: 400 }
-                );
+                return apiError(ErrorCode.VALIDATION_ERROR, "免费重试无效：尚未完成过首次分析", 400);
             }
             // Ownership verification: current requester must match session creator
             const currentUser = await getSession();
             const currentIpHash = hashIP(ip);
             if (currentUser?.id) {
                 if (existingSession.userId !== currentUser.id) {
-                    return NextResponse.json(
-                        { error: "免费重试无效：无权访问此会话" },
-                        { status: 403 }
-                    );
+                    return apiError(ErrorCode.FORBIDDEN, "免费重试无效：无权访问此会话", 403);
                 }
             } else {
                 if (existingSession.ip && existingSession.ip !== currentIpHash) {
-                    return NextResponse.json(
-                        { error: "免费重试无效：会话身份验证失败" },
-                        { status: 403 }
-                    );
+                    return apiError(ErrorCode.FORBIDDEN, "免费重试无效：会话身份验证失败", 403);
                 }
             }
             // freeRetryUsed 原子性检查推迟到 DB 行锁事务内（见下方 lockResult）
@@ -333,10 +316,7 @@ export async function POST(request: NextRequest) {
         if (!isFreeRetryAllowed) {
             const usageLimit = await checkUsageLimit(request, body as Record<string, unknown>);
             if (!usageLimit.canTest) {
-                return NextResponse.json(
-                    { error: usageLimit.error || "您已达到今日测试上限" },
-                    { status: 429 }
-                );
+                return apiError(ErrorCode.RATE_LIMITED, usageLimit.error || "您已达到今日测试上限", 429);
             }
         }
 
@@ -369,10 +349,9 @@ export async function POST(request: NextRequest) {
         if (!isFreeRetryAllowed) {
             const reserved = await reserveUsage(request, effectiveSessionId, body as Record<string, unknown>);
             if (!reserved.success) {
-                return NextResponse.json(
-                    { error: reserved.error || "您已达到今日测试上限" },
-                    { status: 429, headers: rateLimitHeaders }
-                );
+                const response = apiError(ErrorCode.RATE_LIMITED, reserved.error || "您已达到今日测试上限", 429);
+                Object.entries(rateLimitHeaders).forEach(([k, v]) => response.headers.set(k, v));
+                return response;
             }
         }
 
@@ -453,10 +432,9 @@ export async function POST(request: NextRequest) {
         }
 
         if (lockResult.status === 'free_retry_used') {
-            return NextResponse.json(
-                { error: "免费重试已使用，每个会话仅限一次" },
-                { status: 429, headers: rateLimitHeaders }
-            );
+            const response = apiError(ErrorCode.RATE_LIMITED, "免费重试已使用，每个会话仅限一次", 429);
+            Object.entries(rateLimitHeaders).forEach(([k, v]) => response.headers.set(k, v));
+            return response;
         }
 
         if (lockResult.status === 'analyzing') {
@@ -543,7 +521,7 @@ export async function POST(request: NextRequest) {
                         }
                     });
                 } catch (persistErr) {
-                    console.error("[AI-Disabled] Failed to persist fallback result:", persistErr);
+                    logger.error("[AI-Disabled] Failed to persist fallback result:", persistErr);
                 }
             }
 
@@ -649,35 +627,29 @@ export async function POST(request: NextRequest) {
         } catch (e: unknown) {
             const err = e instanceof Error ? e : new Error(String(e));
             if (err.message?.includes("cancelled") || err.name === 'AbortError') {
-                console.warn("Text analysis cancelled (client timeout or disconnect)");
+                logger.warn("Text analysis cancelled (client timeout or disconnect)");
                 // 仅排队等待期间取消时回滚：此时 AI 尚未被调用，零消耗
                 // AI 调用进行中取消不回滚：API 可能已处理并计费
                 const isQueueOnlyCancel = err.message === "Request cancelled during queue wait.";
                 if (isQueueOnlyCancel) {
                     await rollbackUsage(request, effectiveSessionId, body as Record<string, unknown>);
                 }
-                return NextResponse.json(
-                    { error: "分析请求已取消，请重试" },
-                    { status: 499 }
-                );
+                return apiError(ErrorCode.INTERNAL_ERROR, "分析请求已取消，请重试", 499);
             }
-            // 预算熔断：直接拒绝请求，不走 fallback（避免隐藏费用问题）
             if (err.message?.includes("[AIBudget]")) {
                 aiLogger.warn("AI budget exceeded, rejecting request", { error: err.message });
                 await rollbackUsage(request, effectiveSessionId, body as Record<string, unknown>);
-                return NextResponse.json(
-                    { error: "AI 服务当前额度已用完，请稍后再试", code: "AI_BUDGET_EXCEEDED" },
-                    { status: 503, headers: { "Retry-After": "3600" } }
-                );
+                const response = apiError("AI_BUDGET_EXCEEDED", "AI 服务当前额度已用完，请稍后再试", 503);
+                response.headers.set("Retry-After", "3600");
+                return response;
             }
             // 熔断器触发：直接返回 503，不走 fallback（fallback 会隐藏服务异常）
             if (err.message?.includes("[CircuitBreaker]")) {
                 aiLogger.warn("Circuit breaker open, rejecting request", { error: err.message });
                 await rollbackUsage(request, effectiveSessionId, body as Record<string, unknown>);
-                return NextResponse.json(
-                    { error: "AI 文本分析服务暂时不可用，请稍后重试", code: "AI_CIRCUIT_OPEN" },
-                    { status: 503, headers: { "Retry-After": "60" } }
-                );
+                const response = apiError("AI_CIRCUIT_OPEN", "AI 文本分析服务暂时不可用，请稍后重试", 503);
+                response.headers.set("Retry-After", "60");
+                return response;
             }
             // 区分错误类型进行日志记录
             const errorCategory = err.message?.includes("Failed to extract valid JSON")
@@ -698,7 +670,7 @@ export async function POST(request: NextRequest) {
                     faceAnalysis: fallbackFace,
                 };
             } catch (fallbackErr) {
-                console.error("Fallback analysis also failed", fallbackErr);
+                logger.error("Fallback analysis also failed", fallbackErr);
                 resultJson = {};
             }
         } finally {
@@ -878,11 +850,10 @@ export async function POST(request: NextRequest) {
                     });
                 });
             } catch (txErr) {
-                console.error("Failed to persist final analysis:", txErr);
-                return NextResponse.json(
-                    { error: "分析结果保存失败，请重试", details: "DATABASE_PERSISTENCE_ERROR" },
-                    { status: 503, headers: rateLimitHeaders }
-                );
+                logger.error("Failed to persist final analysis:", txErr);
+                const response = apiError(ErrorCode.SERVICE_UNAVAILABLE, "分析结果保存失败，请重试", 503, "DATABASE_PERSISTENCE_ERROR");
+            Object.entries(rateLimitHeaders).forEach(([k, v]) => response.headers.set(k, v));
+            return response;
             }
 
             // ====== 微信公众号模板消息推送（通过官网内部 API v1） ======
@@ -914,29 +885,24 @@ export async function POST(request: NextRequest) {
                     data: { analysisStartedAt: null }
                 });
             } catch (cleanupErr) {
-                console.error("[analyze] Failed to cleanup analysisStartedAt:", cleanupErr);
+                logger.error("[analyze] Failed to cleanup analysisStartedAt:", cleanupErr);
             }
         }
 
         const err = error instanceof Error ? error : new Error(String(error));
         if (err.message?.includes("cancelled") || (err as { name?: string }).name === 'AbortError') {
-            return NextResponse.json(
-                { error: "分析请求已取消，请重试" },
-                { status: 499 }
-            );
+            return apiError(ErrorCode.INTERNAL_ERROR, "分析请求已取消，请重试", 499);
         }
         // 预算熔断 / 熔断器错误（可能从 AI 调用之外的其他路径逃逸）
         if (err.message?.includes("[AIBudget]")) {
-            return NextResponse.json(
-                { error: "AI 服务当前额度已用完，请稍后再试", code: "AI_BUDGET_EXCEEDED" },
-                { status: 503, headers: { "Retry-After": "3600" } }
-            );
+            const response = apiError("AI_BUDGET_EXCEEDED", "AI 服务当前额度已用完，请稍后再试", 503);
+            response.headers.set("Retry-After", "3600");
+            return response;
         }
         if (err.message?.includes("[CircuitBreaker]")) {
-            return NextResponse.json(
-                { error: "AI 分析服务暂时不可用，请稍后重试", code: "AI_CIRCUIT_OPEN" },
-                { status: 503, headers: { "Retry-After": "60" } }
-            );
+            const response = apiError("AI_CIRCUIT_OPEN", "AI 分析服务暂时不可用，请稍后重试", 503);
+            response.headers.set("Retry-After", "60");
+            return response;
         }
         // 使用脱敏 logger，避免 error 对象中携带请求上下文/URL 等敏感信息
         aiLogger.error("Advisor analysis failed", {
@@ -944,10 +910,7 @@ export async function POST(request: NextRequest) {
             errorName: err.name,
             sessionId: effectiveSessionId || undefined,
         });
-        return NextResponse.json(
-            { error: "生成分析报告失败，请重试" },
-            { status: 500 }
-        );
+        return apiError(ErrorCode.INTERNAL_ERROR, "生成分析报告失败，请重试", 500);
     } finally {
         clearTimeout(serverTimeout);
         request.signal.removeEventListener('abort', onClientAbort);

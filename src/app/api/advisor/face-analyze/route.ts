@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { apiError, apiSuccess } from "@/lib/api-response";
+import { ErrorCode } from "@/lib/error-codes";
 import crypto from "crypto";
 
 import { analyzeImages, type VisionImage } from "@/lib/ai-vision";
@@ -89,19 +91,15 @@ export async function POST(request: NextRequest) {
             //     return NextResponse.json(getDefaultFaceAnalysisResult());
             // }
 
-            return NextResponse.json(
-                { error: "AI 助手当前已暂停服务" },
-                { status: 503 }
-            );
+            return apiError(ErrorCode.SERVICE_UNAVAILABLE, "AI 助手当前已暂停服务", 503);
         }
 
         // 0. 熔断器检查
         const visionServiceKey = `vision-${process.env.AI_VISION_PROVIDER || "qwen"}`;
         if (!circuitBreaker.allowRequest(visionServiceKey)) {
-            return NextResponse.json(
-                { error: "AI 视觉服务暂时不可用（熔断保护），请稍后重试", code: "CIRCUIT_OPEN" },
-                { status: 503, headers: { "Retry-After": "60" } }
-            );
+            const response = apiError("CIRCUIT_OPEN", "AI 视觉服务暂时不可用（熔断保护），请稍后重试", 503);
+            response.headers.set("Retry-After", "60");
+            return response;
         }
 
         // 1. 速率限制
@@ -115,10 +113,9 @@ export async function POST(request: NextRequest) {
         };
 
         if (!limit.success) {
-            return NextResponse.json(
-                { error: "请求过于频繁，请稍后再试" },
-                { status: 429, headers: rateLimitHeaders }
-            );
+            const response = apiError(ErrorCode.RATE_LIMITED, "请求过于频繁，请稍后再试", 429);
+            Object.entries(rateLimitHeaders).forEach(([k, v]) => response.headers.set(k, v));
+            return response;
         }
 
         // 2. 解析与验证（带 guard，malformed JSON 返回 400 而非 500）
@@ -126,19 +123,13 @@ export async function POST(request: NextRequest) {
         try {
             rawBody = await request.json();
         } catch {
-            return NextResponse.json(
-                { error: "无效的请求体，请检查 JSON 格式" },
-                { status: 400 }
-            );
+            return apiError(ErrorCode.VALIDATION_ERROR, "无效的请求体，请检查 JSON 格式", 400);
         }
         body = rawBody as Record<string, unknown>;
         const result = FaceAnalyzeRequestSchema.safeParse(body);
 
         if (!result.success) {
-            return NextResponse.json(
-                { error: "无效的请求数据", details: result.error.flatten() },
-                { status: 400 }
-            );
+            return apiError(ErrorCode.VALIDATION_ERROR, "无效的请求数据", 400, result.error.flatten());
         }
 
         // 图片数量硬上限：4 个角度（正脸/左侧/右侧/下巴），匹配产品设计。
@@ -151,20 +142,16 @@ export async function POST(request: NextRequest) {
                 ip,
                 sessionId: result.data.sessionId,
             });
-            return NextResponse.json(
-                { error: "请求异常，请重新操作" },
-                { status: 400 }
-            );
+            return apiError(ErrorCode.VALIDATION_ERROR, "请求异常，请重新操作", 400);
         }
 
         // 1.5 每日用量上限预占（复用业务 sessionId，避免与 analyze 重复扣费）
         faceSessionId = result.data.sessionId || crypto.randomUUID();
         const usageReserve = await reserveUsage(request, faceSessionId, body);
         if (!usageReserve.success) {
-            return NextResponse.json(
-                { error: usageReserve.error || "今日测试次数已用完，请明天再试" },
-                { status: 429, headers: rateLimitHeaders }
-            );
+            const response = apiError(ErrorCode.RATE_LIMITED, usageReserve.error || "今日测试次数已用完，请明天再试", 429);
+            Object.entries(rateLimitHeaders).forEach(([k, v]) => response.headers.set(k, v));
+            return response;
         }
 
         // Dynamic imports for file handling
@@ -298,7 +285,7 @@ export async function POST(request: NextRequest) {
             .map(img => img.data);
 
         if (validImages.length === 0) {
-            return NextResponse.json({ error: "无有效图片数据" }, { status: 400 });
+            return apiError(ErrorCode.VALIDATION_ERROR, "无有效图片数据", 400);
         }
 
         aiLogger.info(`Starting face analysis for IP ${ip} with ${validImages.length} images`);
@@ -366,14 +353,7 @@ export async function POST(request: NextRequest) {
                     const reason = err.message.replace("[Validation] ", "");
                     aiLogger.warn(`Face validation failed: ${reason}`);
                     await rollbackUsage(request, faceSessionId, body as Record<string, unknown>);
-                    return NextResponse.json(
-                        {
-                            error: "图片验证失败",
-                            message: reason || "未检测到清晰人脸，请重新拍摄",
-                            code: "VALIDATION_FAILED"
-                        },
-                        { status: 400 }
-                    );
+                    return apiError("VALIDATION_FAILED", "图片验证失败", 400, reason || "未检测到清晰人脸，请重新拍摄");
                 }
                 // Retry if payload error
                 const isPayloadError = err.message?.includes('400') || err.message?.includes('413') || err.message?.includes('base64') || err.message?.includes('too large') || err.message?.includes('content length') || err.message?.includes('payload');
@@ -389,10 +369,9 @@ export async function POST(request: NextRequest) {
                         aiLogger.warn(`[FaceAnalyze] Payload error but images already small (avg ${perImageAvgKB.toFixed(0)}KB), not retrying`);
                         // 回滚预占（非用户原因）
                         await rollbackUsage(request, faceSessionId, body as Record<string, unknown>);
-                        return NextResponse.json(
-                            { error: "AI 视觉服务请求异常，请稍后重试", code: "AI_PAYLOAD_ERROR" },
-                            { status: 503, headers: { "Retry-After": "30" } }
-                        );
+                        const response = apiError("AI_PAYLOAD_ERROR", "AI 视觉服务请求异常，请稍后重试", 503);
+                        response.headers.set("Retry-After", "30");
+                        return response;
                     }
 
                     aiLogger.warn(`[FaceAnalyze] Payload error (${err.message}), retrying with aggressive compression (current: ${totalBase64KB.toFixed(0)}KB total)`);
@@ -431,14 +410,7 @@ export async function POST(request: NextRequest) {
                             const reason = re.message.replace("[Validation] ", "");
                             aiLogger.warn(`Face validation failed on retry: ${reason}`);
                             await rollbackUsage(request, faceSessionId, body as Record<string, unknown>);
-                            return NextResponse.json(
-                                {
-                                    error: "图片验证失败",
-                                    message: reason || "未检测到清晰人脸，请重新拍摄",
-                                    code: "VALIDATION_FAILED"
-                                },
-                                { status: 400 }
-                            );
+                            return apiError("VALIDATION_FAILED", "图片验证失败", 400, reason || "未检测到清晰人脸，请重新拍摄");
                         }
                         throw retryErr;
                     }
@@ -447,16 +419,7 @@ export async function POST(request: NextRequest) {
                     const reason = err.message.replace("[Validation] ", "");
                     aiLogger.warn(`Face validation failed: ${reason}`);
                     await rollbackUsage(request, faceSessionId, body as Record<string, unknown>);
-                    return NextResponse.json(
-                        {
-                            error: "图片验证失败",
-                            message: reason || "未检测到清晰人脸，请重新拍摄",
-                            code: "VALIDATION_FAILED"
-                        },
-                        { status: 400 }
-                    );
-                } else {
-                    throw e;
+                    return apiError("VALIDATION_FAILED", "图片验证失败", 400, reason || "未检测到清晰人脸，请重新拍摄");
                 }
             }
 
@@ -466,14 +429,7 @@ export async function POST(request: NextRequest) {
                 aiLogger.warn(`Face validation failed: ${validation.message}`);
                 // 图片验证失败属于非用户主动消耗额度场景，回滚预占
                 await rollbackUsage(request, faceSessionId, body as Record<string, unknown>);
-                return NextResponse.json(
-                    {
-                        error: "图片验证失败",
-                        message: validation.message || "未检测到清晰人脸，请重新拍摄",
-                        code: "VALIDATION_FAILED"
-                    },
-                    { status: 400 }
-                );
+                return apiError("VALIDATION_FAILED", "图片验证失败", 400, validation.message || "未检测到清晰人脸，请重新拍摄");
             }
 
             // 缓存有效结果（不含 validation 字段的纯结果）
@@ -495,38 +451,28 @@ export async function POST(request: NextRequest) {
             // 客户端取消（AI 调用进行中）：Provider 可能已处理并计费，不回滚
             const isClientCancel = err.message?.includes("cancelled") || err.message?.includes("client timeout");
             if (isClientCancel) {
-                return NextResponse.json(
-                    { error: "分析请求已取消" },
-                    { status: 499 }
-                );
-            }
-
-            // 预算熔断：直接拒绝请求
-            if (err.message?.includes("[AIBudget]")) {
+                return apiError(ErrorCode.INTERNAL_ERROR, "分析请求已取消", 499);
                 aiLogger.warn("AI vision budget exceeded, rejecting request", { error: err.message });
                 await rollbackUsage(request, faceSessionId, body as Record<string, unknown>);
-                return NextResponse.json(
-                    { error: "AI 视觉服务当前额度已用完，请稍后再试", code: "AI_BUDGET_EXCEEDED" },
-                    { status: 503, headers: { "Retry-After": "3600" } }
-                );
+                const response = apiError("AI_BUDGET_EXCEEDED", "AI 视觉服务当前额度已用完，请稍后再试", 503);
+                response.headers.set("Retry-After", "3600");
+                return response;
             }
 
             // 队列超时特有错误（AI 未被调用，零消耗）
             if (err.message?.includes("Queue timeout") || err.message?.includes("Server busy")) {
                 await rollbackUsage(request, faceSessionId, body as Record<string, unknown>);
-                return NextResponse.json(
-                    { error: "服务器繁忙，请稍后再试", code: "SERVER_BUSY" },
-                    { status: 503, headers: { "Retry-After": "30" } }
-                );
+                const response = apiError("SERVER_BUSY", "服务器繁忙，请稍后再试", 503);
+                response.headers.set("Retry-After", "30");
+                return response;
             }
 
             // AI 服务不可用（API 错误，Provider 未成功处理），回滚预占
             aiLogger.warn("AI service unavailable, rolling back usage");
             await rollbackUsage(request, faceSessionId, body as Record<string, unknown>);
-            return NextResponse.json(
-                { error: "AI 分析服务暂时不可用，请稍后重试", code: "AI_UNAVAILABLE" },
-                { status: 503, headers: { "Retry-After": "60" } }
-            );
+            const response = apiError("AI_UNAVAILABLE", "AI 分析服务暂时不可用，请稍后重试", 503);
+            response.headers.set("Retry-After", "60");
+            return response;
         } finally {
             // P3: 释放令牌
             if (acquired) {
@@ -552,10 +498,7 @@ export async function POST(request: NextRequest) {
     } catch (error: unknown) {
         const err = error instanceof Error ? error : new Error(String(error));
         if (err.message?.includes("cancelled") || (err as { name?: string }).name === 'AbortError') {
-            return NextResponse.json(
-                { error: "分析请求已取消，请重试" },
-                { status: 499 }
-            );
+            return apiError(ErrorCode.INTERNAL_ERROR, "分析请求已取消，请重试", 499);
         }
         // 服务器内部错误，非用户原因，回滚预占
         if (faceSessionId) {
@@ -567,11 +510,7 @@ export async function POST(request: NextRequest) {
             errorName: err.name,
             sessionId: faceSessionId,
         });
-        return NextResponse.json(
-            { error: "服务器内部错误" },
-            { status: 500 }
-        );
-    } finally {
+        return apiError(ErrorCode.INTERNAL_ERROR, "服务器内部错误", 500);
         clearTimeout(serverTimeout);
         request.signal.removeEventListener('abort', onClientAbort);
     }

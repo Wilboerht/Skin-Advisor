@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { verifyAdminSession } from "@/lib/admin-auth";
 import prisma from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 export async function GET() {
     try {
@@ -26,7 +27,7 @@ export async function GET() {
             }
         });
     } catch (error) {
-        console.error("Admin me error:", error);
+        logger.error("Admin me error:", error);
         return NextResponse.json({ error: "Internal error" }, { status: 500 });
     }
 }

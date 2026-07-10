@@ -1,11 +1,14 @@
-
+﻿
 import { NextRequest, NextResponse } from "next/server";
+import { apiError, apiSuccess } from "@/lib/api-response";
+import { ErrorCode } from "@/lib/error-codes";
 import prisma from "@/lib/prisma";
 import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import { logAdminAction, getClientInfo } from "@/lib/admin-auth";
 import { rateLimit, getClientIP, resetRateLimit } from "@/lib/ratelimit";
 import { ADMIN_SESSION_COOKIE_NAME } from "@/lib/session-verify";
+import { logger } from "@/lib/logger";
 
 export async function POST(request: NextRequest) {
     const clientInfo = getClientInfo(request);
@@ -14,45 +17,30 @@ export async function POST(request: NextRequest) {
     // Rate limit: max 5 login attempts per 15 minutes per IP
     const ipLimit = await rateLimit(`admin-login-ip-${ip}`, "login");
     if (!ipLimit.success) {
-        return NextResponse.json(
-            { error: "Too many login attempts. Please try again later." },
-            { status: 429 }
-        );
+        return apiError(ErrorCode.RATE_LIMITED, "Too many login attempts. Please try again later.", 429);
     }
 
     try {
         const { username, password } = await request.json();
 
         if (!username || !password || typeof username !== "string" || typeof password !== "string") {
-            return NextResponse.json(
-                { error: "Invalid request" },
-                { status: 400 }
-            );
+            return apiError(ErrorCode.VALIDATION_ERROR, "Invalid request", 400);
         }
 
         // Rate limit: max 5 login attempts per 15 minutes per username (防止多 IP 爆破同一账号)
         const usernameLimit = await rateLimit(`admin-login-user-${username.toLowerCase()}`, "login");
         if (!usernameLimit.success) {
-            return NextResponse.json(
-                { error: "Too many login attempts. Please try again later." },
-                { status: 429 }
-            );
+            return apiError(ErrorCode.RATE_LIMITED, "Too many login attempts. Please try again later.", 429);
         }
 
         // Input length limits to prevent DoS
         if (username.length > 255 || password.length > 255) {
-            return NextResponse.json(
-                { error: "Input too long" },
-                { status: 400 }
-            );
+            return apiError(ErrorCode.VALIDATION_ERROR, "Input too long", 400);
         }
 
         const normalizedUsername = username.toLowerCase().trim();
 
-        const INVALID_CREDENTIALS_RESPONSE = NextResponse.json(
-            { error: "Invalid credentials" },
-            { status: 401 }
-        );
+        const INVALID_CREDENTIALS_RESPONSE = apiError(ErrorCode.UNAUTHORIZED, "Invalid credentials", 401);
 
         const admin = await prisma.adminUser.findUnique({
             where: { username: normalizedUsername },
@@ -82,10 +70,7 @@ export async function POST(request: NextRequest) {
         // Account-level rate limit: max 5 attempts per 15 minutes per account
         const accountLimit = await rateLimit(`admin-login-account-${admin.id}`, "login");
         if (!accountLimit.success) {
-            return NextResponse.json(
-                { error: "Too many login attempts for this account. Please try again later." },
-                { status: 429 }
-            );
+            return apiError(ErrorCode.RATE_LIMITED, "Too many login attempts for this account. Please try again later.", 429);
         }
 
         // SECURITY: Reject non-bcrypt passwords entirely. All admin passwords MUST be bcrypt hashed.
@@ -95,17 +80,14 @@ export async function POST(request: NextRequest) {
             !admin.password.startsWith("$2y$") &&
             !admin.password.startsWith("$2x$")
         ) {
-            console.error(`[Security] Admin ${admin.username} has a non-bcrypt password. Login rejected.`);
+            logger.error(`[Security] Admin ${admin.username} has a non-bcrypt password. Login rejected.`);
             await logAdminAction({
                 action: "login_failed",
                 resource: "AdminUser",
                 details: { username: normalizedUsername, reason: "plaintext_password_rejected" },
                 ...clientInfo
             });
-            return NextResponse.json(
-                { error: "Invalid credentials" },
-                { status: 401 }
-            );
+            return apiError(ErrorCode.UNAUTHORIZED, "Invalid credentials", 401);
         }
 
         if (!admin.active) {
@@ -174,10 +156,7 @@ export async function POST(request: NextRequest) {
         return response;
 
     } catch (error) {
-        console.error("Login error:", error);
-        return NextResponse.json(
-            { error: "Internal server error" },
-            { status: 500 }
-        );
+        logger.error("Login error:", error);
+        return apiError(ErrorCode.INTERNAL_ERROR, "Internal server error", 500);
     }
 }

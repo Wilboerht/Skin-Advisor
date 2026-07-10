@@ -5,6 +5,7 @@ import { requireRole } from "@/lib/admin-auth";
 import { isSuperAdmin, UserRole, AdminRole } from "@/lib/permissions";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { Prisma } from "@prisma/client";
+import { logger } from "@/lib/logger";
 
 // PII 脱敏工具
 function maskEmail(email: string): string {
@@ -91,7 +92,7 @@ export const GET = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (re
             },
         });
     } catch (error) {
-        console.error("Admin users error:", error);
+        logger.error("Admin users error:", error);
         return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
     }
 });

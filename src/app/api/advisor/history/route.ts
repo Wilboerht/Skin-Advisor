@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { logger } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
     const user = await getSession();
@@ -63,7 +64,7 @@ export async function GET(req: NextRequest) {
             }
         }, { headers: rateLimitHeaders });
     } catch (e) {
-        console.error("History fetch error:", e);
+        logger.error("History fetch error:", e);
         return NextResponse.json({ error: "Failed to fetch history" }, { status: 500, headers: rateLimitHeaders });
     }
 }

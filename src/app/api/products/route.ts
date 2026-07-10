@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { logger } from "@/lib/logger";
 
 // GET /api/products - 公开产品列表（无需登录）
 export async function GET(request: NextRequest) {
@@ -44,7 +45,7 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json(products);
     } catch (error) {
-        console.error("Failed to fetch products:", error);
+        logger.error("Failed to fetch products:", error);
         return NextResponse.json({ error: "Failed to fetch products" }, { status: 500 });
     }
 }

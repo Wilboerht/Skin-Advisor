@@ -242,7 +242,7 @@ class AIRequestQueue {
 
     release() {
         if (this.acquireCount <= 0) {
-            console.warn("[AIQueue] release() called without matching acquire() — ignored");
+            aiLogger.warn("[AIQueue] release() called without matching acquire() — ignored");
             return;
         }
         this.acquireCount--;
@@ -387,7 +387,7 @@ class AIRequestQueue {
      */
     setMaxConcurrent(value: number) {
         if (typeof value !== 'number' || isNaN(value) || value < 1) {
-            console.warn(`[AIQueue] Invalid maxConcurrent: ${value}, ignoring update.`);
+            aiLogger.warn(`[AIQueue] Invalid maxConcurrent: ${value}, ignoring update.`);
             return;
         }
         this.maxConcurrent = Math.floor(value);

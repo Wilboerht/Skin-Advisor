@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 微信绑定手机号（子站）
  * POST /api/auth/wechat/bind
  *
@@ -7,6 +7,8 @@
  * wechat_exchange_token 完成绑定与登录。
  */
 import { NextRequest, NextResponse } from "next/server";
+import { apiError, apiSuccess } from "@/lib/api-response";
+import { ErrorCode } from "@/lib/error-codes";
 import prisma from "@/lib/prisma";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { UserRole } from "@/lib/permissions";
@@ -48,15 +50,15 @@ export async function POST(req: NextRequest) {
         const ip = getClientIP(req);
         const ipLimit = await rateLimit(`wechat-bind-ip-${ip}`, "login", { maxRequests: 5, windowMs: 15 * 60 * 1000 });
         if (!ipLimit.success) {
-            return NextResponse.json({ error: "请求过于频繁，请稍后再试" }, { status: 429 });
+            return apiError(ErrorCode.RATE_LIMITED, "请求过于频繁，请稍后再试", 429);
         }
 
         const body = await req.json();
         if (!body.wechatExchangeToken) {
-            return NextResponse.json({ error: "缺少微信授权凭证" }, { status: 400 });
+            return apiError(ErrorCode.VALIDATION_ERROR, "缺少微信授权凭证", 400);
         }
         if (!body.phone || !body.code) {
-            return NextResponse.json({ error: "缺少手机号或验证码" }, { status: 400 });
+            return apiError(ErrorCode.VALIDATION_ERROR, "缺少手机号或验证码", 400);
         }
 
         const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";
@@ -72,7 +74,7 @@ export async function POST(req: NextRequest) {
 
         const signed = await createSignedInternalApiHeaders("advisor", "POST", path, bodyText);
         if (!signed) {
-            return NextResponse.json({ error: "未配置内部 API 密钥" }, { status: 500 });
+            return apiError(ErrorCode.INTERNAL_ERROR, "未配置内部 API 密钥", 500);
         }
 
         const controller = new AbortController();
@@ -98,24 +100,18 @@ export async function POST(req: NextRequest) {
         }>(officialResponse, { requireSignature: false });
 
         if (!parsed) {
-            return NextResponse.json({ error: "官网响应签名校验失败或响应无效" }, { status: 502 });
+            return apiError(ErrorCode.UPSTREAM_ERROR, "官网响应签名校验失败或响应无效", 502);
         }
 
         const responseData = parsed.data;
 
         if (!officialResponse.ok || !responseData.success) {
-            return NextResponse.json(
-                { error: responseData.error?.message || "绑定失败" },
-                { status: officialResponse.status || 400 }
-            );
+            return apiError(ErrorCode.VALIDATION_ERROR, responseData.error?.message || "绑定失败", officialResponse.status || 400);
         }
 
         const result = responseData.data;
         if (!result?.user || !result.accessToken || !result.refreshToken) {
-            return NextResponse.json(
-                { error: "绑定失败：上游响应格式异常" },
-                { status: 502 }
-            );
+            return apiError(ErrorCode.UPSTREAM_ERROR, "绑定失败：上游响应格式异常", 502);
         }
 
         const userPayload = result.user;
@@ -177,6 +173,6 @@ export async function POST(req: NextRequest) {
 
     } catch (e) {
         logger.error("Bind Proxy Error", { error: String(e) });
-        return NextResponse.json({ error: "应用系统异常，请稍后重试" }, { status: 500 });
+        return apiError(ErrorCode.INTERNAL_ERROR, "应用系统异常，请稍后重试", 500);
     }
 }

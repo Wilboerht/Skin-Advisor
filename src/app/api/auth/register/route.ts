@@ -7,6 +7,7 @@ import { callOfficialApi, type OfficialApiResponse } from "@/lib/official-api";
 import { validatePasswordStrength } from "@/lib/password";
 import { signLocalSession } from "@/lib/auth";
 import { cookies } from "next/headers";
+import { logger } from "@/lib/logger";
 
 
 export async function POST(req: NextRequest) {
@@ -77,7 +78,7 @@ export async function POST(req: NextRequest) {
         // Prevent unique constraint collision if the phone exists on a different ID locally
         const existingByPhone = await prisma.user.findUnique({ where: { phoneNumber: userPayload.phone } });
         if (existingByPhone && existingByPhone.id !== userPayload.id) {
-            console.warn(`[AUDIT] Phone collision detected (register): new user ${userPayload.id} (phone: ${userPayload.phone}) conflicts with existing user ${existingByPhone.id}. Merging old record.`);
+            logger.warn(`[AUDIT] Phone collision detected (register): new user ${userPayload.id} conflicts with existing user ${existingByPhone.id}.`);
             await prisma.user.update({
                 where: { id: existingByPhone.id },
                 data: { phoneNumber: `merged_${existingByPhone.id}_${userPayload.phone}` }
@@ -127,7 +128,7 @@ export async function POST(req: NextRequest) {
         return response;
 
     } catch (e) {
-        console.error("Register Proxy Error", e);
+        logger.error("Register Proxy Error", e);
         return NextResponse.json({ error: "应用系统异常，请稍后重试" }, { status: 500 });
     }
 }

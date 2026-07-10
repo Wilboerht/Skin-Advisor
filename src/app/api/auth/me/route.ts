@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { apiError, apiSuccess } from "@/lib/api-response";
+import { ErrorCode } from "@/lib/error-codes";
 import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
 import { getSession, signLocalSession } from "@/lib/auth";
@@ -7,6 +9,7 @@ import { mirrorOfficialCookies } from "@/lib/cookie-mirror";
 import { createHash } from "crypto";
 import { UserRole } from "@/lib/permissions";
 import { callOfficialApi, type OfficialApiResponse } from "@/lib/official-api";
+import { logger } from "@/lib/logger";
 
 // 官网 /api/user/profile 返回的用户结构
 interface OfficialProfileUser {
@@ -69,7 +72,7 @@ async function getLocalSessionUser(): Promise<NextResponse | null> {
             }
         });
     } catch (err) {
-        console.error("[auth/me] Local session lookup failed:", err);
+        logger.error("[auth/me] Local session lookup failed:", err);
         return null;
     }
 }
@@ -78,7 +81,7 @@ export async function GET(req: NextRequest) {
     const ip = getClientIP(req);
     const ipLimit = await rateLimit(`me-get-ip-${ip}`, "default", { maxRequests: 30, windowMs: 60 * 1000 });
     if (!ipLimit.success) {
-        return NextResponse.json({ error: "请求过于频繁，请稍后再试" }, { status: 429 });
+        return apiError(ErrorCode.RATE_LIMITED, "请求过于频繁，请稍后再试", 429);
     }
 
     const cookieStore = await cookies();
@@ -128,7 +131,7 @@ export async function GET(req: NextRequest) {
         // Prevent unique constraint collision if the phone exists on a different ID locally
         const existingByPhone = await prisma.user.findUnique({ where: { phoneNumber: userPayload.phone } });
         if (existingByPhone && existingByPhone.id !== userPayload.id) {
-            console.warn(`[AUDIT] Phone collision detected (me): new user ${userPayload.id} (phone: ${userPayload.phone}) conflicts with existing user ${existingByPhone.id}. Merging old record.`);
+            logger.warn(`[AUDIT] Phone collision detected (me): new user ${userPayload.id} conflicts with existing user ${existingByPhone.id}.`);
             await prisma.user.update({
                 where: { id: existingByPhone.id },
                 data: { phoneNumber: `merged_${existingByPhone.id}_${userPayload.phone}` }
@@ -184,7 +187,7 @@ export async function GET(req: NextRequest) {
         return response;
 
     } catch (e) {
-        console.error("Me GET Proxy Error", e);
+        logger.error("Me GET Proxy Error", e);
         const localResponse = await getLocalSessionUser();
         return localResponse || NextResponse.json({ user: null });
     }
@@ -194,14 +197,14 @@ export async function PUT(req: NextRequest) {
     const ip = getClientIP(req);
     const ipLimit = await rateLimit(`me-put-ip-${ip}`, "default", { maxRequests: 10, windowMs: 60 * 1000 });
     if (!ipLimit.success) {
-        return NextResponse.json({ error: "请求过于频繁，请稍后再试" }, { status: 429 });
+        return apiError(ErrorCode.RATE_LIMITED, "请求过于频繁，请稍后再试", 429);
     }
 
     const cookieStore = await cookies();
     const allCookies = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ');
 
     if (!allCookies) {
-        return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+        return apiError(ErrorCode.UNAUTHORIZED, "Not authenticated", 401);
     }
 
     try {
@@ -229,13 +232,13 @@ export async function PUT(req: NextRequest) {
         });
 
         if (!result) {
-            return NextResponse.json({ error: "更新失败：上游服务响应异常" }, { status: 502 });
+            return apiError(ErrorCode.UPSTREAM_ERROR, "更新失败：上游服务响应异常", 502);
         }
 
         const data = result.data;
 
         if (!result.ok || !data.success || !data.data?.user) {
-            return NextResponse.json({ error: data.error?.message || "更新失败" }, { status: result.status || 400 });
+            return apiError(ErrorCode.VALIDATION_ERROR, data.error?.message || "更新失败", result.status || 400);
         }
 
         const user = data.data.user;
@@ -251,7 +254,7 @@ export async function PUT(req: NextRequest) {
             }
         });
     } catch (e) {
-        console.error("Me PUT Proxy Error", e);
-        return NextResponse.json({ error: "应用系统异常，请稍后重试" }, { status: 500 });
+        logger.error("Me PUT Proxy Error", e);
+        return apiError(ErrorCode.INTERNAL_ERROR, "应用系统异常，请稍后重试", 500);
     }
 }

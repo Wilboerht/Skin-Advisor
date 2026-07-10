@@ -17,7 +17,8 @@ const CACHE_TTL_MS = 2 * 60 * 1000; // 2 分钟
 
 interface UserStatusResult {
     valid: boolean;
-    officialStatus: string | null; // 官网返回的实际状态，null 表示请求失败
+    officialStatus: string | null;
+    officialUpdatedAt: string | null; // 官网用户记录更新时间，用于检测 tokenVersion 变更
 }
 
 interface CacheEntry {
@@ -71,7 +72,7 @@ export async function verifyUserStatus(userId: string): Promise<UserStatusResult
     if (!officialApiUrl) {
         // 未配置官网地址（开发环境可能没有），跳过校验
         logger.warn("[UserSync] OFFICIAL_API_URL 未配置，跳过用户状态校验");
-        return { valid: true, officialStatus: null };
+        return { valid: true, officialStatus: null, officialUpdatedAt: null };
     }
 
     try {
@@ -82,7 +83,7 @@ export async function verifyUserStatus(userId: string): Promise<UserStatusResult
         if (!signed) {
             // 未配置内部 API 密钥，跳过校验
             logger.warn("[UserSync] 内部 API 密钥未配置，跳过用户状态校验");
-            return { valid: true, officialStatus: null };
+            return { valid: true, officialStatus: null, officialUpdatedAt: null };
         }
 
         const controller = new AbortController();
@@ -97,19 +98,19 @@ export async function verifyUserStatus(userId: string): Promise<UserStatusResult
 
         if (!response.ok) {
             logger.warn(`[UserSync] 官网 user/status 返回非 200: ${response.status}`, { userId });
-            const optimistic: UserStatusResult = { valid: true, officialStatus: null };
+            const optimistic: UserStatusResult = { valid: true, officialStatus: null, officialUpdatedAt: null };
             setCached(userId, optimistic);
             return optimistic;
         }
 
         const data = await response.json() as {
             success: boolean;
-            data?: { userId: string; status: string; phone?: string };
+            data?: { userId: string; status: string; phone?: string; updatedAt?: string };
         };
 
         if (!data.success || !data.data) {
             logger.warn("[UserSync] 官网 user/status 返回异常数据", { userId });
-            const optimistic: UserStatusResult = { valid: true, officialStatus: null };
+            const optimistic: UserStatusResult = { valid: true, officialStatus: null, officialUpdatedAt: null };
             setCached(userId, optimistic);
             return optimistic;
         }
@@ -119,6 +120,7 @@ export async function verifyUserStatus(userId: string): Promise<UserStatusResult
         const result: UserStatusResult = {
             valid: isActive,
             officialStatus: userData.status,
+            officialUpdatedAt: userData.updatedAt || null,
         };
 
         // 对不可用状态使用更短的 TTL（30 秒），以更快地对恢复做出反应
@@ -135,7 +137,7 @@ export async function verifyUserStatus(userId: string): Promise<UserStatusResult
     } catch (error) {
         logger.warn("[UserSync] 官网 user/status 请求失败（网络/超时）:", { userId, error: String(error) });
         // 网络不可达时采用乐观策略：不因官网暂时宕机而踢掉所有用户
-        const optimistic: UserStatusResult = { valid: true, officialStatus: null };
+        const optimistic: UserStatusResult = { valid: true, officialStatus: null, officialUpdatedAt: null };
         setCached(userId, optimistic);
         return optimistic;
     }

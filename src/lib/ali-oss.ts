@@ -4,6 +4,7 @@
  */
 // @ts-expect-error ali-oss lacks official ESM type declarations
 import OSS from "ali-oss";
+import { logger } from "@/lib/logger";
 
 // OSS 配置检查
 const ossConfig = {
@@ -38,7 +39,7 @@ if (isOSSConfigured()) {
             secure: ossConfig.secure,
         });
     } catch (e) {
-        console.error("Failed to initialize OSS client:", e);
+        logger.error("Failed to initialize OSS client:", e);
     }
 }
 
@@ -56,7 +57,7 @@ export async function generateUploadSignature(filename: string, type: string) {
     const objectName = `advisor/${date}/${randomId}.${ext}`;
 
     if (!ossClient) {
-        console.warn("阿里云 OSS 未配置，使用本地存储降级方案");
+        logger.warn("阿里云 OSS 未配置，使用本地存储降级方案");
         return {
             uploadUrl: `/api/local-upload?path=${encodeURIComponent(objectName)}`,
             publicUrl: `/uploads/${objectName}`,
@@ -117,7 +118,7 @@ export async function deleteOSSFiles(urls: string[]) {
             try {
                 const urlObj = new URL(url);
                 if (!allowedHosts.includes(urlObj.hostname.toLowerCase())) {
-                    console.warn(`[OSS] Skipping delete of non-OSS URL: ${url}`);
+                    logger.warn(`[OSS] Skipping delete of non-OSS URL: ${url}`);
                     return null;
                 }
                 // 移除开头的 /
@@ -125,7 +126,7 @@ export async function deleteOSSFiles(urls: string[]) {
             } catch {
                 // Treat raw object names with basic safety checks
                 if (url.startsWith("/") || url.includes("..") || url.includes("\\")) {
-                    console.warn(`[OSS] Skipping unsafe object name: ${url}`);
+                    logger.warn(`[OSS] Skipping unsafe object name: ${url}`);
                     return null;
                 }
                 return url;
@@ -141,7 +142,7 @@ export async function deleteOSSFiles(urls: string[]) {
             await ossClient.deleteMulti(batch);
         }
     } catch (e) {
-        console.error("Failed to delete OSS files:", e);
+        logger.error("Failed to delete OSS files:", e);
         throw e;
     }
 }

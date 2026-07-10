@@ -179,10 +179,26 @@ model User {
   reminderSettings  ReminderSettings?
   testRecords       TestRecord[]
   campaignEntries   CampaignEntry[]
+  refreshTokens     RefreshToken[]
 
   // 隐私同意
   privacyConsentAt     DateTime?
   privacyConsentVersion String?
+}
+
+// Refresh Token 存储 — 支持双 Token 轮转与设备管理
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   // SHA-256 哈希后的 refresh token JWT
+  expiresAt DateTime
+  revokedAt DateTime?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, revokedAt, expiresAt])
+  @@index([token])
 }
 
 // 测试次数记录
@@ -271,6 +287,8 @@ model Product {
   @@index([category])
   @@index([active, featured])
   @@index([active, category]) // 产品列表组合过滤
+  @@index([suitableSkinTypes], type: Gin)
+  @@index([benefits], type: Gin)
 }
 
 

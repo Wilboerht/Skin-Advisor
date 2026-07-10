@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { verifyAdminSession, logAdminAction, getClientInfo } from "@/lib/admin-auth";
 import { ADMIN_SESSION_COOKIE_NAME, revokeAdminSessions } from "@/lib/session-verify";
+import { logger } from "@/lib/logger";
 
 export async function POST(request: NextRequest) {
     try {
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({ success: true });
     } catch (error) {
-        console.error("Admin logout error:", error);
+        logger.error("Admin logout error:", error);
         return NextResponse.json({ error: "Logout failed" }, { status: 500 });
     }
 }

@@ -1,4 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
+import { apiError, apiSuccess } from "@/lib/api-response";
+import { ErrorCode } from "@/lib/error-codes";
 import prisma from "@/lib/prisma";
 import { requireRole, logAdminAction, getClientInfo } from "@/lib/admin-auth";
 import { AdminRole } from "@/lib/permissions";
@@ -24,7 +26,7 @@ export const PUT = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (re
     const ip = getClientIP(req);
     const limitResult = await rateLimit(`admin-rule-update-${ip}`, "default", { maxRequests: 30, windowMs: 60 * 1000 });
     if (!limitResult.success) {
-        return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+        return apiError(ErrorCode.RATE_LIMITED, "Too many requests", 429);
     }
 
     try {
@@ -32,10 +34,7 @@ export const PUT = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (re
         const body = await req.json();
         const parsed = RuleUpdateSchema.safeParse(body);
         if (!parsed.success) {
-            return NextResponse.json(
-                { error: "Invalid data", details: parsed.error.flatten() },
-                { status: 400 }
-            );
+            return apiError(ErrorCode.VALIDATION_ERROR, "Invalid data", 400, parsed.error.flatten());
         }
 
         const { productIds, ...ruleData } = parsed.data;
@@ -45,7 +44,7 @@ export const PUT = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (re
             include: { products: { select: { productId: true } } }
         });
         if (!oldRule) {
-            return NextResponse.json({ error: "Rule not found" }, { status: 404 });
+            return apiError(ErrorCode.NOT_FOUND, "Rule not found", 404);
         }
 
         // Validate all productIds exist before transaction
@@ -54,10 +53,7 @@ export const PUT = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (re
                 where: { id: { in: productIds } }
             });
             if (existingProducts !== productIds.length) {
-                return NextResponse.json(
-                    { error: "Some product IDs do not exist" },
-                    { status: 400 }
-                );
+                return apiError(ErrorCode.VALIDATION_ERROR, "Some product IDs do not exist", 400);
             }
         }
 
@@ -118,10 +114,7 @@ export const PUT = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (re
             productIds: updated?.products.map(p => p.productId) || []
         });
     } catch {
-        return NextResponse.json(
-            { error: "Failed to update rule" },
-            { status: 500 }
-        );
+        return apiError(ErrorCode.INTERNAL_ERROR, "Failed to update rule", 500);
     }
 });
 
@@ -131,7 +124,7 @@ export const DELETE = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async 
     const ip = getClientIP(req);
     const limitResult = await rateLimit(`admin-rule-delete-${ip}`, "default", { maxRequests: 30, windowMs: 60 * 1000 });
     if (!limitResult.success) {
-        return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+        return apiError(ErrorCode.RATE_LIMITED, "Too many requests", 429);
     }
 
     try {
@@ -142,7 +135,7 @@ export const DELETE = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async 
             select: { name: true }
         });
         if (!rule) {
-            return NextResponse.json({ error: "Rule not found" }, { status: 404 });
+            return apiError(ErrorCode.NOT_FOUND, "Rule not found", 404);
         }
 
         await prisma.recommendationRule.delete({ where: { id } });
@@ -158,11 +151,8 @@ export const DELETE = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async 
             ...clientInfo,
         });
 
-        return NextResponse.json({ success: true });
+        return apiSuccess();
     } catch {
-        return NextResponse.json(
-            { error: "Failed to delete rule" },
-            { status: 500 }
-        );
+        return apiError(ErrorCode.INTERNAL_ERROR, "Failed to delete rule", 500);
     }
 });

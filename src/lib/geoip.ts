@@ -2,10 +2,12 @@
 
 export interface GeoLocation {
     country?: string;
-    region?: string; // Province code usually, e.g. "SH"
+    region?: string;
     city?: string;
-    ll?: [number, number]; // Latitude, Longitude
+    ll?: [number, number];
 }
+
+import { logger } from "@/lib/logger";
 
 // Complete mapping for Province Codes to Names
 const PROVINCE_MAP: Record<string, string> = {
@@ -83,7 +85,7 @@ export function resolveIPLocation(ip: string): GeoLocation | null {
         }
     } catch (e) {
         // GeoIP 数据文件缺失或查询失败，使用备选方案
-        console.warn("GeoIP lookup failed:", e instanceof Error ? e.message : e);
+        logger.warn("GeoIP lookup failed:", e instanceof Error ? e.message : e);
         // 返回默认地理位置，避免服务中断
         return {
             country: "CN",

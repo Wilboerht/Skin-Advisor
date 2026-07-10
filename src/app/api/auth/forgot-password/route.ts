@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { callOfficialApi, type OfficialApiResponse } from "@/lib/official-api";
 import { cookies } from "next/headers";
+import { logger } from "@/lib/logger";
 
 const PHONE_REGEX = /^1[3-9]\d{9}$/;
 
@@ -52,7 +53,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true, message: "验证码已发送" });
 
     } catch (error) {
-        console.error("Forgot password error:", error);
+        logger.error("Forgot password error:", error);
         return NextResponse.json({ error: "服务器内部错误" }, { status: 500 });
     }
 }

@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { hashIP } from '@/lib/privacy';
 import { getClientIP } from '@/lib/ratelimit';
+import { logger } from '@/lib/logger';
 
 // 默认游客每日测试次数限制
 export const DEFAULT_GUEST_LIMIT = 3;
@@ -249,7 +250,7 @@ export async function blockGuest(
 
         return true;
     } catch (error) {
-        console.error('Failed to block guest:', error);
+        logger.error('Failed to block guest:', error);
         return false;
     }
 }
@@ -286,7 +287,7 @@ export async function unblockGuest(
 
         return true;
     } catch (error) {
-        console.error('Failed to unblock guest:', error);
+        logger.error('Failed to unblock guest:', error);
         return false;
     }
 }

@@ -47,6 +47,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
+export const revalidate = 86400;
+
 export default async function TypeResultPage({ params }: PageProps) {
   const { type } = await params;
   const data = getSkinTypeByRoute(type);

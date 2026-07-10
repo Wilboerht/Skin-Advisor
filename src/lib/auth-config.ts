@@ -14,30 +14,51 @@ import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
 export const AUTH_COOKIE_NAME =
     process.env.NODE_ENV === "production" ? "__Host-auth_token" : "auth_token";
 
+export const AUTH_REFRESH_COOKIE_NAME =
+    process.env.NODE_ENV === "production" ? "__Host-auth_refresh_token" : "auth_refresh_token";
+
 export function getJwtSecret(): Uint8Array {
     const secret = process.env.JWT_SECRET?.trim();
     if (!secret) {
-        if (process.env.NODE_ENV !== 'development') {
-            throw new Error(
-                '🔴 CRITICAL: JWT_SECRET environment variable is not set. ' +
-                'Refusing to start without a proper secret in non-development environment. ' +
-                'Set JWT_SECRET in your environment variables.'
-            );
-        }
-        console.warn('⚠️  JWT_SECRET not set — using development fallback. Do NOT use in production.');
+        throw new Error(
+            '🔴 CRITICAL: JWT_SECRET environment variable is not set. ' +
+            'Set JWT_SECRET in your environment variables.'
+        );
     }
-    return new TextEncoder().encode(secret!);
+    return new TextEncoder().encode(secret);
 }
 
-export async function signToken(payload: Record<string, unknown>, expiresIn: string | number = '7d'): Promise<string> {
-    return new SignJWT(payload)
+function getJwtIssuer(): string {
+    return process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || "https://advisor.nihplod.cn";
+}
+
+/**
+ * 签发 Access Token（短期，15 分钟）
+ */
+export async function signToken(payload: Record<string, unknown>, expiresIn: string | number = "15m"): Promise<string> {
+    const token = new SignJWT({ ...payload, type: "access" })
         .setProtectedHeader({ alg: 'HS256' })
+        .setIssuer(getJwtIssuer())
+        .setAudience("advisor-api")
         .setIssuedAt()
-        .setExpirationTime(expiresIn)
-        .sign(getJwtSecret());
+        .setExpirationTime(expiresIn);
+    return token.sign(getJwtSecret());
 }
 
-export type TokenVerificationError = 'expired' | 'invalid_signature' | 'malformed' | 'unknown';
+/**
+ * 签发 Refresh Token（长期，30 天）
+ */
+export async function signRefreshToken(payload: Record<string, unknown>): Promise<string> {
+    const token = new SignJWT({ ...payload, type: "refresh" })
+        .setProtectedHeader({ alg: 'HS256' })
+        .setIssuer(getJwtIssuer())
+        .setAudience("advisor-api")
+        .setIssuedAt()
+        .setExpirationTime("30d");
+    return token.sign(getJwtSecret());
+}
+
+export type TokenVerificationError = 'expired' | 'invalid_signature' | 'malformed' | 'unknown' | 'wrong_type';
 
 export interface VerifyTokenResult {
     payload: JWTPayload | null;
@@ -51,7 +72,10 @@ export async function verifyToken(token: string): Promise<JWTPayload | null> {
 
 export async function verifyTokenDetailed(token: string): Promise<VerifyTokenResult> {
     try {
-        const { payload } = await jwtVerify(token, getJwtSecret());
+        const { payload } = await jwtVerify(token, getJwtSecret(), {
+            issuer: getJwtIssuer(),
+            audience: "advisor-api",
+        });
         return { payload };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
@@ -63,10 +87,45 @@ export async function verifyTokenDetailed(token: string): Promise<VerifyTokenRes
         } else if (err?.code === 'ERR_JWT_MALFORMED' || err?.code === 'ERR_JWS_INVALID') {
             error = 'malformed';
         }
-        // 安全日志：记录签名错误以便审计（不记录完整 token）
         if (error === 'invalid_signature' || error === 'malformed') {
             console.warn(`[Security] JWT ${error}: ${token.substring(0, 10)}...`);
         }
         return { payload: null, error };
     }
+}
+
+/**
+ * 验证 Refresh Token（仅接受 type="refresh" 的 token）
+ */
+export async function verifyRefreshToken(token: string): Promise<JWTPayload | null> {
+    const result = await verifyTokenDetailed(token);
+    if (!result.payload) return null;
+    if (result.payload.type !== "refresh") return null;
+    return result.payload;
+}
+
+/**
+ * Access Token Cookie 配置（15 分钟）
+ */
+export function accessCookieOptions(secure: boolean = true) {
+    return {
+        httpOnly: true,
+        secure,
+        sameSite: "strict" as const,
+        path: "/",
+        maxAge: 15 * 60,
+    };
+}
+
+/**
+ * Refresh Token Cookie 配置（30 天）
+ */
+export function refreshCookieOptions(secure: boolean = true) {
+    return {
+        httpOnly: true,
+        secure,
+        sameSite: "strict" as const,
+        path: "/",
+        maxAge: 30 * 24 * 60 * 60,
+    };
 }

@@ -3,6 +3,7 @@ import crypto from "crypto";
 import prisma from "@/lib/prisma";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { verifyAdminSession, logAdminAction } from "@/lib/admin-auth";
+import { logger } from "@/lib/logger";
 
 /**
  * POST /api/admin/cleanup-guests
@@ -43,7 +44,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
     } else {
-        console.warn("[Cleanup] 鉴权失败：既无有效 admin session，也无正确的 ADMIN_SECRET");
+        logger.warn("[Cleanup] 鉴权失败：既无有效 admin session，也无正确的 ADMIN_SECRET");
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -143,7 +144,7 @@ export async function POST(req: NextRequest) {
         });
 
     } catch (error: unknown) {
-        console.error("[Cleanup Global Error]:", error);
+        logger.error("[Cleanup Global Error]:", error);
         return NextResponse.json({
             success: false,
             error: "清理失败"

@@ -16,6 +16,7 @@ import {
     AFFILIATE_PLATFORM_KEYS,
     validateImageUrl,
 } from "@/types/product";
+import { logger } from "@/lib/logger";
 
 // GET /api/admin/products - List products with pagination
 // Available to super_admin and admin
@@ -45,7 +46,7 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
             }
         });
     } catch (error) {
-        console.error("Failed to fetch products:", error);
+        logger.error("Failed to fetch products:", error);
         return NextResponse.json({ error: "Failed to fetch products" }, { status: 500 });
     }
 });
@@ -205,7 +206,7 @@ export const POST = withAdminAuth(async (request, { admin }) => {
 
         return NextResponse.json(product);
     } catch (error) {
-        console.error(error);
+        logger.error("Failed to create product", error);
         return NextResponse.json({ error: "Failed to create product" }, { status: 500 });
     }
 });

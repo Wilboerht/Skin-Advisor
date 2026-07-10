@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { withAdminAuth } from "@/lib/admin-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { logger } from "@/lib/logger";
 
 // GET /api/admin/stats - Dashboard statistics
 // Available to super_admin and admin
@@ -142,7 +143,7 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
         });
 
     } catch (error) {
-        console.error("Failed to fetch stats:", error);
+        logger.error("Failed to fetch stats:", error);
         return NextResponse.json(
             { success: false, error: "Internal server error" },
             { status: 500 }

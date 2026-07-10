@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
     try {
@@ -64,7 +65,7 @@ export async function GET(request: NextRequest) {
             data: trends
         }, { headers: rateLimitHeaders });
     } catch (error) {
-        console.error("Trend fetch error:", error);
+        logger.error("Trend fetch error:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }

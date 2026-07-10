@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireRole, logAdminAction, getClientInfo } from "@/lib/admin-auth";
 import { AdminRole } from "@/lib/permissions";
+import { revokeAdminSessions } from "@/lib/session-verify";
 import bcrypt from "bcryptjs";
+import { logger } from "@/lib/logger";
 
 // POST /api/admin/admins/[id]/reset-password
 export const POST = requireRole(AdminRole.SUPER_ADMIN)(async (request, { admin, params }) => {
@@ -11,9 +13,9 @@ export const POST = requireRole(AdminRole.SUPER_ADMIN)(async (request, { admin, 
         const body = await request.json();
         const { password } = body;
 
-        if (!password || typeof password !== "string" || password.length < 6) {
+        if (!password || typeof password !== "string" || password.length < 8) {
             return NextResponse.json(
-                { success: false, error: "密码至少6个字符" },
+                { success: false, error: "密码至少8个字符，需包含字母和数字" },
                 { status: 400 }
             );
         }
@@ -44,6 +46,9 @@ export const POST = requireRole(AdminRole.SUPER_ADMIN)(async (request, { admin, 
             },
         });
 
+        // 密码修改后撤销该管理员所有现有会话，强制重新登录
+        revokeAdminSessions(id);
+
         // Log audit
         const clientInfo = getClientInfo(request);
         await logAdminAction({
@@ -57,7 +62,7 @@ export const POST = requireRole(AdminRole.SUPER_ADMIN)(async (request, { admin, 
 
         return NextResponse.json({ success: true });
     } catch (error) {
-        console.error("Admin reset password error:", error);
+        logger.error("Admin reset password error:", error);
         return NextResponse.json(
             { success: false, error: "Failed to reset password" },
             { status: 500 }

@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { withAdminAuth } from "@/lib/admin-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { Prisma } from "@prisma/client";
+import { logger } from "@/lib/logger";
 
 // 筛选器缓存 (5min TTL，actions/resources 几乎不变)
 let cachedFilters: { actions: string[]; resources: string[] } | null = null;
@@ -119,7 +120,7 @@ export const GET = withAdminAuth(async (request) => {
         });
 
     } catch (error) {
-        console.error("Failed to fetch audit logs:", error);
+        logger.error("Failed to fetch audit logs:", error);
         return NextResponse.json(
             { success: false, error: "Internal server error" },
             { status: 500 }

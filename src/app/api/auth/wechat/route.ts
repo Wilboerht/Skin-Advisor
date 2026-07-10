@@ -7,6 +7,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { logger } from "@/lib/logger";
 
 function getSafeRedirect(req: NextRequest, redirect: string | null): string {
     if (!redirect || redirect === "/") return "/";
@@ -50,7 +51,7 @@ export async function GET(req: NextRequest) {
 
         return NextResponse.redirect(officialUrl.toString(), 302);
     } catch (e) {
-        console.error("Wechat Login Proxy Error", e);
+        logger.error("Wechat Login Proxy Error", e);
         return NextResponse.json({ success: false, error: { message: "应用系统异常，请稍后重试" } }, { status: 500 });
     }
 }

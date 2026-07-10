@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { requireRole, getClientInfo } from "@/lib/admin-auth";
 import { AdminRole } from "@/lib/permissions";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { logger } from "@/lib/logger";
 
 // POST - Batch operations on products
 // Available to super_admin and admin
@@ -113,7 +114,7 @@ export const POST = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (r
         });
 
     } catch (error) {
-        console.error("Batch operation failed:", error);
+        logger.error("Batch operation failed:", error);
         return NextResponse.json(
             { success: false, error: "Internal server error" },
             { status: 500 }

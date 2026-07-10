@@ -1,4 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
+import { apiError, apiSuccess } from "@/lib/api-response";
+import { ErrorCode } from "@/lib/error-codes";
 import prisma from "@/lib/prisma";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { verifyPassword, signLocalSession } from "@/lib/auth";
@@ -7,6 +9,7 @@ import { UserRole } from "@/lib/permissions";
 
 import { callOfficialApi, type OfficialApiResponse } from "@/lib/official-api";
 import { cookies } from "next/headers";
+import { logger } from "@/lib/logger";
 
 async function tryDevLocalLogin(phone: string, password: string): Promise<NextResponse | null> {
     // 双重开关：仅允许非生产环境 + 显式设置 ALLOW_LOCAL_LOGIN=true
@@ -50,23 +53,17 @@ export async function POST(req: NextRequest) {
     try {
         body = await req.json();
     } catch {
-        return NextResponse.json({ error: "请求格式错误" }, { status: 400 });
+        return apiError(ErrorCode.VALIDATION_ERROR, "请求格式错误", 400);
     }
 
     if (!body.phone || !body.password) {
-        return NextResponse.json(
-            { error: "缺少手机号或密码" },
-            { status: 400 }
-        );
+        return apiError(ErrorCode.VALIDATION_ERROR, "缺少手机号或密码", 400);
     }
 
     const ip = getClientIP(req);
     const ipLimit = await rateLimit(`login-password-ip-${ip}`, "login");
     if (!ipLimit.success) {
-        return NextResponse.json(
-            { error: "登录尝试过于频繁，请 15 分钟后再试" },
-            { status: 429 }
-        );
+        return apiError(ErrorCode.RATE_LIMITED, "登录尝试过于频繁，请 15 分钟后再试", 429);
     }
 
     try {
@@ -87,10 +84,7 @@ export async function POST(req: NextRequest) {
             const devResponse = await tryDevLocalLogin(body.phone, body.password);
             if (devResponse) return devResponse;
 
-            return NextResponse.json(
-                { error: "登录失败：上游服务响应异常或签名无效" },
-                { status: 502 }
-            );
+            return apiError(ErrorCode.UPSTREAM_ERROR, "登录失败：上游服务响应异常或签名无效", 502);
         }
 
         const responseData = result.data;
@@ -99,17 +93,11 @@ export async function POST(req: NextRequest) {
             const devResponse = await tryDevLocalLogin(body.phone, body.password);
             if (devResponse) return devResponse;
 
-            return NextResponse.json(
-                { error: responseData.error?.message || "登录失败" },
-                { status: result.status || 401 }
-            );
+            return apiError(ErrorCode.UNAUTHORIZED, responseData.error?.message || "登录失败", result.status || 401);
         }
 
         if (!responseData.data?.user) {
-            return NextResponse.json(
-                { error: "登录失败：上游响应格式异常" },
-                { status: 502 }
-            );
+            return apiError(ErrorCode.UPSTREAM_ERROR, "登录失败：上游响应格式异常", 502);
         }
 
         const userPayload = responseData.data.user;
@@ -117,7 +105,7 @@ export async function POST(req: NextRequest) {
         // Prevent unique constraint collision if the phone exists on a different ID locally
         const existingByPhone = await prisma.user.findUnique({ where: { phoneNumber: userPayload.phone } });
         if (existingByPhone && existingByPhone.id !== userPayload.id) {
-            console.warn(`[AUDIT] Phone collision detected: new user ${userPayload.id} (phone: ${userPayload.phone}) conflicts with existing user ${existingByPhone.id}. Merging old record.`);
+            logger.warn(`[AUDIT] Phone collision detected: new user ${userPayload.id} conflicts with existing user ${existingByPhone.id}.`);
             await prisma.user.update({
                 where: { id: existingByPhone.id },
                 data: { phoneNumber: `merged_${existingByPhone.id}_${userPayload.phone}` }
@@ -167,12 +155,12 @@ export async function POST(req: NextRequest) {
         return response;
 
     } catch (e) {
-        console.error("Login Proxy Error", e);
+        logger.error("Login Proxy Error", e);
 
         // 开发环境：官方接口不可达时，尝试本地账号密码验证
         const devResponse = await tryDevLocalLogin(body.phone, body.password);
         if (devResponse) return devResponse;
 
-        return NextResponse.json({ error: "应用系统异常，请稍后重试" }, { status: 500 });
+        return apiError(ErrorCode.INTERNAL_ERROR, "应用系统异常，请稍后重试", 500);
     }
 }

@@ -7,6 +7,7 @@
  */
 
 import prisma from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 import { hostname as getHostname } from "os";
 
 const HEARTBEAT_INTERVAL_MS = 60_000; // 1 分钟更新一次心跳
@@ -56,9 +57,9 @@ export async function registerInstance(): Promise<void> {
         // 清理过期的实例记录（其他进程可能已崩溃未注销）
         await cleanupStaleInstances();
 
-        console.log(`[InstanceCheck] Registered instance: ${instanceId}`);
+        logger.info(`[InstanceCheck] Registered instance: ${instanceId}`);
     } catch (error) {
-        console.error("[InstanceCheck] Failed to register instance:", error);
+        logger.error("[InstanceCheck] Failed to register instance:", error);
     }
 }
 
@@ -79,7 +80,7 @@ export async function unregisterInstance(): Promise<void> {
 
     try {
         await prisma.appInstance.delete({ where: { id: instanceId } });
-        console.log(`[InstanceCheck] Unregistered instance: ${instanceId}`);
+        logger.info(`[InstanceCheck] Unregistered instance: ${instanceId}`);
     } catch {
         // 忽略删除失败（可能已被清理任务删除）
     }
@@ -124,7 +125,7 @@ export async function detectMultiInstance(): Promise<void> {
     if (count > 1 && !hasWarned) {
         hasWarned = true;
         lastAlertTime = now;
-        console.error(
+        logger.error(
             `\n` +
             `🔴🔴🔴 SECURITY WARNING 🔴🔴🔴\n` +
             `[InstanceCheck] 检测到 ${count} 个活跃的应用实例同时运行！\n` +
@@ -171,7 +172,7 @@ async function cleanupStaleInstances(): Promise<void> {
             where: { lastPing: { lt: cutoff } },
         });
         if (count > 0) {
-            console.log(`[InstanceCheck] Cleaned up ${count} stale instance(s)`);
+            logger.info(`[InstanceCheck] Cleaned up ${count} stale instance(s)`);
         }
     } catch {
         // 忽略清理失败

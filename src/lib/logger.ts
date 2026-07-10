@@ -46,7 +46,12 @@ function formatLogEntry(entry: LogEntry): string {
  * 脱敏处理敏感信息
  */
 function sanitizeContext(context: LogContext): LogContext {
-    const sensitiveKeys = ["apiKey", "password", "token", "secret", "authorization"];
+    const sensitiveKeys = [
+        "apiKey", "apikey", "secret", "password", "token", "authorization",
+        "phone", "phonenumber", "cookie", "session", "jwt", "signature",
+        "refreshtoken", "refreshtoken", "creditcard", "ssn", "passport",
+        "privatekey", "private_key",
+    ];
     const sanitized: LogContext = {};
 
     for (const [key, value] of Object.entries(context)) {
@@ -64,16 +69,36 @@ function sanitizeContext(context: LogContext): LogContext {
 }
 
 /**
+ * 将任意类型的 context 规范化为 LogContext
+ */
+function normalizeContext(context?: unknown): LogContext | undefined {
+    if (context === undefined || context === null) return undefined;
+    if (context instanceof Error) {
+        return { error: context.message, stack: context.stack?.split("\n").slice(0, 3).join("\n") };
+    }
+    if (typeof context === "string") {
+        return { message: context.slice(0, 500) };
+    }
+    if (typeof context === "number" || typeof context === "boolean") {
+        return { value: context };
+    }
+    if (typeof context === "object") {
+        return sanitizeContext(context as LogContext);
+    }
+    return { value: String(context).slice(0, 500) };
+}
+
+/**
  * 创建模块化日志器
  */
 function createLogger(module: string) {
-    const log = (level: LogLevel, message: string, context?: LogContext) => {
+    const log = (level: LogLevel, message: string, context?: unknown) => {
         const entry: LogEntry = {
             timestamp: new Date().toISOString(),
             level,
             module,
             message,
-            context,
+            context: normalizeContext(context),
         };
 
         const formattedLog = formatLogEntry(entry);
@@ -97,10 +122,10 @@ function createLogger(module: string) {
     };
 
     return {
-        debug: (message: string, context?: LogContext) => log("debug", message, context),
-        info: (message: string, context?: LogContext) => log("info", message, context),
-        warn: (message: string, context?: LogContext) => log("warn", message, context),
-        error: (message: string, context?: LogContext) => log("error", message, context),
+        debug: (message: string, context?: unknown) => log("debug", message, context),
+        info: (message: string, context?: unknown) => log("info", message, context),
+        warn: (message: string, context?: unknown) => log("warn", message, context),
+        error: (message: string, context?: unknown) => log("error", message, context),
     };
 }
 
@@ -130,7 +155,7 @@ export const logger = createLogger("App");
 export function logRequest(
     method: string,
     path: string,
-    context?: LogContext
+    context?: unknown
 ) {
     apiLogger.info(`${method} ${path}`, context);
 }

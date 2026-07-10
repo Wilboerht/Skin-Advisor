@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
+import { apiError, apiSuccess } from "@/lib/api-response";
+import { ErrorCode } from "@/lib/error-codes";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { callOfficialApi, type OfficialApiResponse } from "@/lib/official-api";
 import { cookies } from "next/headers";
+import { logger } from "@/lib/logger";
 
 export async function PUT(req: NextRequest) {
     try {
         const session = await getSession();
         if (!session) {
-            return NextResponse.json({ error: "请先登录" }, { status: 401 });
+            return apiError(ErrorCode.UNAUTHORIZED, "请先登录", 401);
         }
 
         const body = await req.json();
@@ -22,21 +25,21 @@ export async function PUT(req: NextRequest) {
             const trimmed = avatar.trim();
             const MAX_URL_LENGTH = 2000;
             if (trimmed.length > MAX_URL_LENGTH) {
-                return NextResponse.json({ error: "头像 URL 过长" }, { status: 400 });
+                return apiError(ErrorCode.VALIDATION_ERROR, "头像 URL 过长", 400);
             }
             if (trimmed.startsWith("data:")) {
-                return NextResponse.json({ error: "头像不支持 data: URL，请使用图片上传" }, { status: 400 });
+                return apiError(ErrorCode.VALIDATION_ERROR, "头像不支持 data: URL，请使用图片上传", 400);
             }
             const allowedSchemes = ["http:", "https:"];
             const hasAllowedScheme = allowedSchemes.some((scheme) => trimmed.startsWith(scheme));
             if (trimmed && !hasAllowedScheme) {
-                return NextResponse.json({ error: "头像 URL 协议不合法" }, { status: 400 });
+                return apiError(ErrorCode.VALIDATION_ERROR, "头像 URL 协议不合法", 400);
             }
             updateData.avatarUrl = trimmed;
         }
 
         if (Object.keys(updateData).length === 0) {
-            return NextResponse.json({ error: "没有要更新的内容" }, { status: 400 });
+            return apiError(ErrorCode.VALIDATION_ERROR, "没有要更新的内容", 400);
         }
 
         // 1. 更新本地 DB
@@ -57,8 +60,12 @@ export async function PUT(req: NextRequest) {
         if (updateData.name) officialBody.nickname = updateData.name;
         if (updateData.avatarUrl) officialBody.avatar = updateData.avatarUrl;
 
+        // 仅透传官网相关 Cookie（user_token, user_refresh_token），不发送子站本地 auth_token
         const cookieStore = await cookies();
-        const allCookies = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ');
+        const officialCookieNames = ["__Host-user_token", "__Host-user_refresh_token", "user_token", "user_refresh_token"];
+        const allCookies = cookieStore.getAll()
+            .filter(c => officialCookieNames.includes(c.name))
+            .map(c => `${c.name}=${c.value}`).join('; ');
 
         callOfficialApi<OfficialApiResponse<{ user: unknown }>>({
             method: "PUT",
@@ -68,7 +75,7 @@ export async function PUT(req: NextRequest) {
             requireSignature: false,
             timeoutMs: 10000,
         }).catch((err) => {
-            console.warn("[user/profile] Failed to sync profile to official site:", err);
+            logger.warn("[user/profile] Failed to sync profile to official site:", err);
         });
 
         return NextResponse.json({
@@ -81,7 +88,7 @@ export async function PUT(req: NextRequest) {
             },
         });
     } catch (error) {
-        console.error("[user/profile] Update failed:", error);
-        return NextResponse.json({ error: "更新失败" }, { status: 500 });
+        logger.error("[user/profile] Update failed:", error);
+        return apiError(ErrorCode.INTERNAL_ERROR, "更新失败", 500);
     }
 }

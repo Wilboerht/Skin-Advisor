@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { requireRole, getClientInfo, logAdminAction } from "@/lib/admin-auth";
 import { canExportPII, AdminRole } from "@/lib/permissions";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { logger } from "@/lib/logger";
 
 // GET /api/admin/export?type=products|users|sessions|audit-logs
 // Restricted to super_admin and admin
@@ -163,7 +164,7 @@ export const GET = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (re
             },
         });
     } catch (error) {
-        console.error("Admin export error:", error);
+        logger.error("Admin export error:", error);
         return NextResponse.json({ error: "Export failed" }, { status: 500 });
     }
 });

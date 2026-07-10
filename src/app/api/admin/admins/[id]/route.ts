@@ -1,8 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
+import { apiError, apiSuccess } from "@/lib/api-response";
+import { ErrorCode } from "@/lib/error-codes";
 import prisma from "@/lib/prisma";
 import { requireRole, logAdminAction, getClientInfo } from "@/lib/admin-auth";
 import { AdminRole, VALID_ADMIN_ROLES, isSuperAdmin } from "@/lib/permissions";
 import bcrypt from "bcryptjs";
+import { logger } from "@/lib/logger";
 
 // PATCH /api/admin/admins/[id] - Update admin info
 export const PATCH = requireRole(AdminRole.SUPER_ADMIN)(async (request, { admin, params }) => {
@@ -13,37 +16,25 @@ export const PATCH = requireRole(AdminRole.SUPER_ADMIN)(async (request, { admin,
 
         // Validate active type to prevent string/boolean confusion
         if (active !== undefined && typeof active !== "boolean") {
-            return NextResponse.json(
-                { success: false, error: "active 必须是布尔值" },
-                { status: 400 }
-            );
+            return apiError(ErrorCode.VALIDATION_ERROR, "active 必须是布尔值", 400);
         }
 
         // Validate role
         if (role !== undefined && !VALID_ADMIN_ROLES.includes(role)) {
-            return NextResponse.json(
-                { success: false, error: "无效的角色" },
-                { status: 400 }
-            );
+            return apiError(ErrorCode.VALIDATION_ERROR, "无效的角色", 400);
         }
 
         // Validate email
         const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (email !== undefined && email !== null && (typeof email !== "string" || !EMAIL_REGEX.test(email))) {
-            return NextResponse.json(
-                { success: false, error: "无效的邮箱格式" },
-                { status: 400 }
-            );
+            return apiError(ErrorCode.VALIDATION_ERROR, "无效的邮箱格式", 400);
         }
 
         // Validate and hash password if provided (outside transaction to avoid holding locks)
         let hashedPassword: string | undefined;
         if (password !== undefined && password !== null && password !== "") {
             if (typeof password !== "string" || password.length < 6) {
-                return NextResponse.json(
-                    { success: false, error: "密码至少6个字符" },
-                    { status: 400 }
-                );
+                return apiError(ErrorCode.VALIDATION_ERROR, "密码至少6个字符", 400);
             }
             hashedPassword = await bcrypt.hash(password, 12);
         }
@@ -111,10 +102,7 @@ export const PATCH = requireRole(AdminRole.SUPER_ADMIN)(async (request, { admin,
         });
 
         if ("error" in txResult) {
-            return NextResponse.json(
-                { success: false, error: txResult.error },
-                { status: txResult.status }
-            );
+            return apiError("ERROR", txResult.error as string, txResult.status as number);
         }
 
         const { updated, targetAdmin } = txResult;
@@ -142,11 +130,8 @@ export const PATCH = requireRole(AdminRole.SUPER_ADMIN)(async (request, { admin,
 
         return NextResponse.json({ success: true, admin: updated });
     } catch (error) {
-        console.error("Admin update error:", error);
-        return NextResponse.json(
-            { success: false, error: "Failed to update admin" },
-            { status: 500 }
-        );
+        logger.error("Admin update error:", error);
+        return apiError(ErrorCode.INTERNAL_ERROR, "Failed to update admin", 500);
     }
 });
 
@@ -157,18 +142,12 @@ export const DELETE = requireRole(AdminRole.SUPER_ADMIN)(async (request, { admin
 
         // Cannot delete self
         if (id === admin.adminId) {
-            return NextResponse.json(
-                { success: false, error: "不能删除自己的账号" },
-                { status: 400 }
-            );
+            return apiError(ErrorCode.VALIDATION_ERROR, "不能删除自己的账号", 400);
         }
 
         const targetAdmin = await prisma.adminUser.findUnique({ where: { id } });
         if (!targetAdmin) {
-            return NextResponse.json(
-                { success: false, error: "管理员不存在" },
-                { status: 404 }
-            );
+            return apiError(ErrorCode.NOT_FOUND, "管理员不存在", 404);
         }
 
         // Cannot delete the last active super_admin
@@ -177,10 +156,7 @@ export const DELETE = requireRole(AdminRole.SUPER_ADMIN)(async (request, { admin
                 where: { role: AdminRole.SUPER_ADMIN, active: true },
             });
             if (activeSuperAdminCount <= 1) {
-                return NextResponse.json(
-                    { success: false, error: "不能删除最后一个活跃的超级管理员" },
-                    { status: 400 }
-                );
+                return apiError(ErrorCode.VALIDATION_ERROR, "不能删除最后一个活跃的超级管理员", 400);
             }
         }
 
@@ -197,12 +173,9 @@ export const DELETE = requireRole(AdminRole.SUPER_ADMIN)(async (request, { admin
             ...clientInfo,
         });
 
-        return NextResponse.json({ success: true });
+        return apiSuccess();
     } catch (error) {
-        console.error("Admin delete error:", error);
-        return NextResponse.json(
-            { success: false, error: "Failed to delete admin" },
-            { status: 500 }
-        );
+        logger.error("Admin delete error:", error);
+        return apiError(ErrorCode.INTERNAL_ERROR, "Failed to delete admin", 500);
     }
 });

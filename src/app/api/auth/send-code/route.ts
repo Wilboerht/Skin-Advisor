@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { callOfficialApi, type OfficialApiResponse } from "@/lib/official-api";
 import { cookies } from "next/headers";
+import { logger } from "@/lib/logger";
 
 const PHONE_REGEX = /^1[3-9]\d{9}$/;
 
@@ -54,7 +55,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(responseData);
 
     } catch (e) {
-        console.error("SendCode Proxy Error", e);
+        logger.error("SendCode Proxy Error", e);
         return NextResponse.json({ error: "应用系统异常，请稍后重试" }, { status: 500 });
     }
 }
