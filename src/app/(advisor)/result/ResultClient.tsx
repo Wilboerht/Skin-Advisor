@@ -1206,6 +1206,12 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     </footer>
 
                     {/* Hidden SharePoster for toPng capture */}
+                    {posterError && (
+                        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-full bg-red-50 border border-red-200 text-red-700 text-sm shadow-lg animate-pulse">
+                            {posterError}
+                        </div>
+                    )}
+                    {/* Hidden SharePoster for toPng capture */}
                     <div style={{ position: "absolute", top: 0, left: 0, width: 360, height: 640, opacity: 0, pointerEvents: "none", zIndex: -1 }}>
                         <SharePoster
                             ref={posterRef}
