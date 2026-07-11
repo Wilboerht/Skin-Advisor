@@ -81,21 +81,21 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
         {/* 第四层：所有文字字段 */}
         <div className="absolute inset-0 z-30 pointer-events-none">
           {/* 昵称 */}
-          <div className="absolute top-[43%] left-[40%] -translate-x-1/2">
-            <p className="text-sm font-light text-[#00263E] whitespace-nowrap">{nickname}</p>
+          <div className="absolute top-[43.2%] left-[40%] -translate-x-1/2">
+            <p className={`text-xs font-light text-[#00263E] whitespace-nowrap ${inriaSerif.className}`}>{nickname}</p>
           </div>
 
           {/* 肌肤年龄 */}
           {skinAge !== undefined && (
-            <div className="absolute top-[49.3%] left-[40%] -translate-x-1/2">
-              <p className="text-sm font-light text-[#00263E] whitespace-nowrap">{skinAge}岁</p>
+            <div className="absolute top-[49.5%] left-[40%] -translate-x-1/2">
+              <p className={`text-xs font-light text-[#00263E] whitespace-nowrap ${inriaSerif.className}`}>{skinAge}岁</p>
             </div>
           )}
 
           {/* 水油平衡 */}
           {waterOil !== undefined && (
-            <div className="absolute top-[55.6%] left-[40%] -translate-x-1/2">
-              <p className="text-sm font-light text-[#00263E] whitespace-nowrap">{waterOil}分</p>
+            <div className="absolute top-[55.8%] left-[40%] -translate-x-1/2">
+              <p className={`text-xs font-light text-[#00263E] whitespace-nowrap ${inriaSerif.className}`}>{waterOil}分</p>
             </div>
           )}
 
@@ -107,7 +107,7 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
           )}
 
           {/* 综合评分 */}
-          <div className="absolute top-[46%] left-[61.5%] -translate-x-1/2">
+          <div className="absolute top-[46%] left-[61%] -translate-x-1/2">
             {score !== undefined ? (
               <p className={`text-[66px] font-bold text-[#00263E] whitespace-nowrap ${inriaSerif.className}`}>{score}<span className="text-sm font-bold">分</span></p>
             ) : (
