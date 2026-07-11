@@ -485,6 +485,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             // 保存海报成功后触发分享埋点
             trackResultShare("image");
         } catch (error) {
+            console.error("海报生成失败:", error);
             setPosterError("证书生成失败，请稍后重试");
         } finally {
             setIsGeneratingPoster(false);
@@ -1226,6 +1227,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             })}
                             posterTemplate="/images/poster-template.webp"
                             qrDataUrl={qrDataUrl}
+                            persona={result?.persona ? skinTypes.find(t => t.ipKey === result.persona)?.m1?.persona : undefined}
                         />
                     </div>
 

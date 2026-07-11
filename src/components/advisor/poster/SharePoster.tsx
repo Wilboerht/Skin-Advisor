@@ -6,6 +6,7 @@ interface SharePosterProps {
   nickname: string;
   score?: number;
   percentile?: number;
+  persona?: string;
   avatar?: string | null;
   posterTemplate?: string;
   qrDataUrl?: string | null;
@@ -13,7 +14,7 @@ interface SharePosterProps {
 
 export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
   function SharePoster(
-    { nickname, score, percentile, avatar, posterTemplate, qrDataUrl },
+    { nickname, score, percentile, persona, avatar, posterTemplate, qrDataUrl },
     ref
   ) {
     const [templateFailed, setTemplateFailed] = useState(false);
@@ -86,6 +87,14 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
                 <div className="text-2xl font-bold text-[#E53935]" style={{ transform: 'translateY(-88px) rotate(5deg)' }}>问卷评估</div>
               )}
             </div>
+
+            {persona && (
+              <div className="text-center px-8">
+                <p className="text-sm text-[#5c4937] leading-relaxed" style={{ fontStyle: "italic" }}>
+                  {persona}
+                </p>
+              </div>
+            )}
 
             {percentile !== undefined && (
               <div className="text-center px-6">
