@@ -284,7 +284,7 @@ export default function FaceScanPage() {
                     >
                         <Loader2 className="w-10 h-10 text-[#8B7355] animate-spin mb-8" />
                         <p className="text-[#1A1A1A] text-xl md:text-2xl font-serif tracking-wide">正在准备 AI 面部扫描</p>
-                        <p className="text-[#5E5E5E] text-sm md:text-[15px] mt-3 font-light max-w-xs text-center leading-relaxed">首次加载模型需要几秒钟，请保持耐心</p>
+                        <p className="text-[#5E5E5E] text-sm md:text-[15px] mt-3 font-light max-w-xs text-center leading-relaxed">首次加载模型需要几秒钟，请稍等</p>
                     </m.div>
                 )}
             </AnimatePresence>
