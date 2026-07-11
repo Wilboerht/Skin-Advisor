@@ -8,6 +8,7 @@ interface SharePosterProps {
   score?: number;
   percentile?: number;
   skinTypeName?: string;
+  skinAge?: number;
   waterOil?: number;
   persona?: string;
   avatar?: string | null;
@@ -18,7 +19,7 @@ interface SharePosterProps {
 
 export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
   function SharePoster(
-    { nickname, score, percentile, skinTypeName, waterOil, persona, avatar, posterTemplate, posterOverlay, qrDataUrl },
+    { nickname, score, percentile, skinTypeName, skinAge, waterOil, persona, avatar, posterTemplate, posterOverlay, qrDataUrl },
     ref
   ) {
     const [templateFailed, setTemplateFailed] = useState(false);
@@ -78,7 +79,7 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
         <div className="absolute inset-0 z-30 pointer-events-none">
           {/* 昵称 */}
           <div className="absolute top-[37%] left-1/2 -translate-x-1/2">
-            <p className="text-lg font-medium text-[#2d2a26] whitespace-nowrap">{nickname}</p>
+            <p className="text-sm font-light text-[#00263E] whitespace-nowrap">{nickname}</p>
           </div>
 
           {/* IP 名称 */}
