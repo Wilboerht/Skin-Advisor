@@ -14,7 +14,6 @@ import {
     Activity,
     AlertCircle,
     Sparkles,
-    Sun,
     X
 } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
