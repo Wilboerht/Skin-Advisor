@@ -42,21 +42,19 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
           <div className="absolute inset-0 bg-gradient-to-b from-[#FAF8F5] to-[#F0E6D8]" />
         )}
 
-        {/* 第二层：IP 形象头像 */}
+        {/* 第二层：IP 形象 */}
         {avatar && (
           <div
-            className="absolute z-10 rounded-full overflow-hidden"
+            className="absolute z-10"
             style={{
               top: "40.3%",
               left: "66.7%",
-              width: 32,
-              height: 32,
             }}
           >
             <img
               src={avatar}
               alt=""
-              className="w-full h-full object-cover object-center"
+              className="object-contain"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = "none";
               }}
