@@ -70,7 +70,7 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
             <img
               src={posterOverlay}
               alt=""
-              className="w-[85%] h-auto object-contain"
+              className="w-[85.5%] h-auto object-contain"
               onError={() => setOverlayFailed(true)}
             />
           </div>
