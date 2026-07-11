@@ -465,7 +465,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             );
             const dataUrl = await toPng(posterRef.current, {
                 pixelRatio: 2,
-                cacheBust: true,
             });
             // data URL → Blob URL（绕过 CSP 限制，不用 fetch）
             const arr = dataUrl.split(',');
