@@ -183,7 +183,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     // Pre-generate QR code for poster (avoids race condition on save click)
     useEffect(() => {
         toDataURL(
-            typeof window !== "undefined" ? window.location.origin : "https://advisor.nihplod.cn",
+            "https://advisor.nihplod.cn/gift",
             { width: 80, margin: 1, color: { dark: "#00263E", light: "#0000" } }
         )
             .then((url) => setQrDataUrl(url))
