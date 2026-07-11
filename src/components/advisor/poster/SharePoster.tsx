@@ -44,7 +44,7 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
 
         {/* 第二层：IP 形象 */}
         {avatar && (
-          <div className="absolute z-10" style={{ top: "10%", left: 0 }}>
+          <div className="absolute z-10" style={{ top: "10%", left: "4%" }}>
             <img
               src={avatar}
               alt=""
@@ -91,17 +91,17 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
 
           {/* IP 名称 */}
           {skinTypeName && (
-            <div className="absolute top-[58.6%] left-1/2 -translate-x-1/2">
-              <p className="text-xs tracking-widest text-[#8c7a6b] whitespace-nowrap">「{skinTypeName}」</p>
+            <div className="absolute top-[25%] left-[77%] -translate-x-1/2">
+              <p className="text-[34px] text-[#00263E] whitespace-nowrap">「{skinTypeName}」</p>
             </div>
           )}
 
           {/* 综合评分 */}
           <div className="absolute top-[61.6%] left-1/2 -translate-x-1/2">
             {score !== undefined ? (
-              <p className="text-5xl font-bold text-[#E53935] whitespace-nowrap">{score}<span className="text-sm font-bold">分</span></p>
+              <p className="text-5xl font-bold text-[#00263E] whitespace-nowrap">{score}<span className="text-sm font-bold">分</span></p>
             ) : (
-              <p className="text-2xl font-bold text-[#E53935] whitespace-nowrap">问卷评估</p>
+              <p className="text-2xl font-bold text-[#00263E] whitespace-nowrap">问卷评估</p>
             )}
           </div>
 
