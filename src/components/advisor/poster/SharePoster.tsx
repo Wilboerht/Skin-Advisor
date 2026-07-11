@@ -66,12 +66,14 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
 
         {/* 第三层：装饰叠加图 */}
         {posterOverlay && !overlayFailed && (
-          <img
-            src={posterOverlay}
-            alt=""
-            className="absolute inset-0 w-full h-full object-contain z-20 pointer-events-none"
-            onError={() => setOverlayFailed(true)}
-          />
+          <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-center">
+            <img
+              src={posterOverlay}
+              alt=""
+              className="w-[80%] h-auto object-contain"
+              onError={() => setOverlayFailed(true)}
+            />
+          </div>
         )}
 
         {/* 第四层：所有文字字段 */}

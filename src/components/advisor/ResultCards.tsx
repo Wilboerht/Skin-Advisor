@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Share2 } from 'lucide-react';
+import { Share2, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { getTZoneLabel, getCharacterImage, getSkinTypeName, type IPMatchParams } from '@/lib/result-utils';
 
@@ -24,6 +24,7 @@ interface ResultCardsProps {
   summary?: string;
   rankPercentile?: number;
   onDownloadPoster: () => void;
+  isPosterLoading?: boolean;
   professionalClassName?: string;
   professionalStyle?: React.CSSProperties;
   comprehensiveReport?: React.ReactNode;
@@ -70,6 +71,7 @@ export default function ResultCards({
   summary,
   rankPercentile,
   onDownloadPoster,
+  isPosterLoading = false,
   professionalClassName,
   professionalStyle,
   comprehensiveReport,
@@ -158,13 +160,18 @@ export default function ResultCards({
             {/* Download Poster Button */}
             <div className="flex items-center gap-4">
               <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                whileHover={isPosterLoading ? {} : { scale: 1.02 }}
+                whileTap={isPosterLoading ? {} : { scale: 0.98 }}
                 onClick={onDownloadPoster}
-                className="inline-flex items-center justify-center gap-2 h-[34px] sm:h-[40px] px-4 sm:px-6 rounded-full border border-[#8c7a6b]/40 bg-transparent text-[#5c4937] text-xs sm:text-[13px] font-medium transition-colors hover:bg-[#3d2f25]/5"
+                disabled={isPosterLoading}
+                className="inline-flex items-center justify-center gap-2 h-[34px] sm:h-[40px] px-4 sm:px-6 rounded-full border border-[#8c7a6b]/40 bg-transparent text-[#5c4937] text-xs sm:text-[13px] font-medium transition-colors hover:bg-[#3d2f25]/5 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#8c7a6b] stroke-[2]" />
-                保存素颜证书
+                {isPosterLoading ? (
+                  <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#8c7a6b] stroke-[2] animate-spin" />
+                ) : (
+                  <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#8c7a6b] stroke-[2]" />
+                )}
+                {isPosterLoading ? '生成中...' : '保存素颜证书'}
               </motion.button>
             </div>
           </div>

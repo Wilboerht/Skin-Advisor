@@ -881,6 +881,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             summary={result?.analysis?.summary}
                             rankPercentile={rankPercentile}
                             onDownloadPoster={handleSavePoster}
+                            isPosterLoading={isGeneratingPoster}
 
                             comprehensiveReport={
                                 <>
