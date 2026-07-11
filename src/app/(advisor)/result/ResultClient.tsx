@@ -1211,6 +1211,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             percentile={rankPercentile}
                             waterOil={faceAnalysis?.dimensions?.waterOil?.score}
                             skinTypeName={result?.persona ? skinTypes.find(t => t.ipKey === result.persona)?.typeName : undefined}
+                            skinAge={result?.skinProfile?.skinAge}
                             avatar={getCharacterImage({
                                 score: faceAnalysis?.overallScore ?? 0,
                                 skinType: result?.skinProfile?.type || 'combination',

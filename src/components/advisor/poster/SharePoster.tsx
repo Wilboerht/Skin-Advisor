@@ -1,7 +1,6 @@
 "use client";
 
 import { forwardRef, useState } from "react";
-import { getTZoneLabel } from "@/lib/result-utils";
 
 interface SharePosterProps {
   nickname: string;
@@ -78,19 +77,26 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
         {/* 第四层：所有文字字段 */}
         <div className="absolute inset-0 z-30 pointer-events-none">
           {/* 昵称 */}
-          <div className="absolute top-[37%] left-1/2 -translate-x-1/2">
+          <div className="absolute top-[37%] left-[40%] -translate-x-1/2">
             <p className="text-sm font-light text-[#00263E] whitespace-nowrap">{nickname}</p>
           </div>
 
           {/* IP 名称 */}
           {skinTypeName && (
-            <div className="absolute top-[43%] left-1/2 -translate-x-1/2">
-              <p className="text-xs tracking-widest text-[#00263e] whitespace-nowrap">「{skinTypeName}」</p>
+            <div className="absolute top-[52%] left-1/2 -translate-x-1/2">
+              <p className="text-xs tracking-widest text-[#8c7a6b] whitespace-nowrap">「{skinTypeName}」</p>
+            </div>
+          )}
+
+          {/* 肌肤年龄 */}
+          {skinAge !== undefined && (
+            <div className="absolute top-[42%] left-[40%] -translate-x-1/2">
+              <p className="text-sm font-light text-[#00263E] whitespace-nowrap">{skinAge}岁</p>
             </div>
           )}
 
           {/* 综合评分 */}
-          <div className="absolute top-[48%] left-1/2 -translate-x-1/2">
+          <div className="absolute top-[56%] left-1/2 -translate-x-1/2">
             {score !== undefined ? (
                <p className="text-5xl font-bold text-[#00263e] whitespace-nowrap">{score}<span className="text-sm font-bold">分</span></p>
             ) : (
@@ -100,22 +106,22 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
 
           {/* IP 专属标语 */}
           {persona && (
-            <div className="absolute top-[58%] left-1/2 -translate-x-1/2 max-w-[420px]">
+            <div className="absolute top-[64%] left-1/2 -translate-x-1/2 max-w-[420px]">
               <p className="text-sm text-[#5c4937] italic leading-relaxed text-center">{persona}</p>
             </div>
           )}
 
           {/* 全国超越百分比 */}
           {percentile !== undefined && (
-            <div className="absolute top-[68%] left-1/2 -translate-x-1/2">
+            <div className="absolute top-[73%] left-1/2 -translate-x-1/2">
               <p className="text-4xl font-bold text-[#00263e] whitespace-nowrap">{percentile}%</p>
             </div>
           )}
 
-          {/* 水油状态 */}
+          {/* 水油平衡 */}
           {waterOil !== undefined && (
-            <div className="absolute top-[76%] left-1/2 -translate-x-1/2">
-              <p className="text-sm font-medium text-[#5c4937] whitespace-nowrap">水油状态：{getTZoneLabel(waterOil)}</p>
+            <div className="absolute top-[47%] left-[40%] -translate-x-1/2">
+              <p className="text-sm font-light text-[#00263E] whitespace-nowrap">{waterOil}分</p>
             </div>
           )}
 
