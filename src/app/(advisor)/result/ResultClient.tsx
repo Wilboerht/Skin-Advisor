@@ -1219,7 +1219,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 skincareFrequency: ipSkincareFrequency,
                                 gender: socialGender,
                             })}
-                            posterTemplate="/images/poster-template.webp?v=2"
+                            posterTemplate="/images/poster-template.webp?v=3"
                             posterOverlay="/images/poster-overlay.webp"
                             qrDataUrl={qrDataUrl}
                             persona={result?.persona ? skinTypes.find(t => t.ipKey === result.persona)?.m1?.persona : undefined}
