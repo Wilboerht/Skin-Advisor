@@ -1203,7 +1203,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                         </div>
                     )}
                     {/* Hidden SharePoster for toPng capture */}
-                    <div style={{ position: "absolute", top: 0, left: 0, width: 480, height: 640, opacity: 0, pointerEvents: "none", zIndex: -1 }}>
+                    <div style={{ position: "absolute", top: 0, left: 0, width: 480, height: 640, opacity: 0.01, pointerEvents: "none", zIndex: -1 }}>
                         <SharePoster
                             ref={posterRef}
                             nickname={userNickname || "用户"}
