@@ -66,7 +66,7 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
 
         {/* 第三层：装饰叠加图 */}
         {posterOverlay && !overlayFailed && (
-          <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-center">
+          <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-center translate-x-[2%]">
             <img
               src={posterOverlay}
               alt=""
