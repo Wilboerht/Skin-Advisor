@@ -1216,8 +1216,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             ref={posterRef}
                             nickname={userNickname || "用户"}
                             score={faceAnalysis?.overallScore ?? (result?.dataSource === "questionnaire" ? undefined : 0)}
-                            skinTone={faceAnalysis?.dimensions?.skinTone?.score ?? (result?.dataSource === "questionnaire" ? undefined : 0)}
-                            waterOil={faceAnalysis?.dimensions?.waterOil?.score ?? (result?.dataSource === "questionnaire" ? undefined : 0)}
                             percentile={rankPercentile}
                             avatar={getCharacterImage({
                                 score: faceAnalysis?.overallScore ?? 0,

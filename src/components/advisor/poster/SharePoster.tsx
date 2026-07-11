@@ -1,13 +1,10 @@
 "use client";
 
 import { forwardRef, useState } from "react";
-import { Palette, Droplets } from "lucide-react";
 
 interface SharePosterProps {
   nickname: string;
   score?: number;
-  skinTone?: number;
-  waterOil?: number;
   percentile?: number;
   avatar?: string | null;
   posterTemplate?: string;
@@ -16,7 +13,7 @@ interface SharePosterProps {
 
 export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
   function SharePoster(
-    { nickname, score, skinTone, waterOil, percentile, avatar, posterTemplate, qrDataUrl },
+    { nickname, score, percentile, avatar, posterTemplate, qrDataUrl },
     ref
   ) {
     const [templateFailed, setTemplateFailed] = useState(false);
@@ -88,36 +85,6 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
               ) : (
                 <div className="text-2xl font-bold text-[#E53935]" style={{ transform: 'translateY(-88px) rotate(5deg)' }}>问卷评估</div>
               )}
-            </div>
-
-            <div className="text-center" style={{ transform: 'translate(-70px, 190px)' }}>
-              <div className="flex items-center gap-1.5">
-                <div className="w-4 h-4 rounded-sm bg-blue-500/15 flex items-center justify-center shrink-0">
-                  <Palette className="w-2.5 h-2.5 text-blue-500" />
-                </div>
-                <div className="w-16 h-1.5 rounded-full bg-blue-200/50 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-blue-500"
-                    style={{ width: `${Math.min(skinTone ?? 0, 100)}%` }}
-                  />
-                </div>
-                <span className="text-sm font-medium text-[#5c4937]">{skinTone ?? 0} 分</span>
-              </div>
-            </div>
-
-            <div className="text-center" style={{ transform: 'translate(-70px, 190px)' }}>
-              <div className="flex items-center gap-1.5">
-                <div className="w-4 h-4 rounded-sm bg-amber-500/15 flex items-center justify-center shrink-0">
-                  <Droplets className="w-2.5 h-2.5 text-amber-500" />
-                </div>
-                <div className="w-16 h-1.5 rounded-full bg-amber-200/50 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-amber-500"
-                    style={{ width: `${Math.min(waterOil ?? 0, 100)}%` }}
-                  />
-                </div>
-                <span className="text-sm font-medium text-[#5c4937]">{waterOil ?? 0} 分</span>
-              </div>
             </div>
 
             {percentile !== undefined && (
