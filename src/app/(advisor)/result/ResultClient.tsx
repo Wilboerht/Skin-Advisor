@@ -1212,7 +1212,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                         </div>
                     )}
                     {/* Hidden SharePoster for toPng capture */}
-                    <div style={{ position: "absolute", top: 0, left: 0, width: 360, height: 640, opacity: 0, pointerEvents: "none", zIndex: -1 }}>
+                    <div style={{ position: "absolute", top: 0, left: 0, width: 480, height: 640, opacity: 0, pointerEvents: "none", zIndex: -1 }}>
                         <SharePoster
                             ref={posterRef}
                             nickname={userNickname || "用户"}
@@ -1228,6 +1228,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 gender: socialGender,
                             })}
                             posterTemplate="/images/poster-template.webp"
+                            posterOverlay="/images/poster-overlay.webp"
                             qrDataUrl={qrDataUrl}
                             persona={result?.persona ? skinTypes.find(t => t.ipKey === result.persona)?.m1?.persona : undefined}
                         />
