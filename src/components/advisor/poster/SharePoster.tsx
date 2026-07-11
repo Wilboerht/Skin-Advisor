@@ -1,11 +1,14 @@
 "use client";
 
 import { forwardRef, useState } from "react";
+import { getTZoneLabel } from "@/lib/result-utils";
 
 interface SharePosterProps {
   nickname: string;
   score?: number;
   percentile?: number;
+  skinTypeName?: string;
+  waterOil?: number;
   persona?: string;
   avatar?: string | null;
   posterTemplate?: string;
@@ -14,7 +17,7 @@ interface SharePosterProps {
 
 export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
   function SharePoster(
-    { nickname, score, percentile, persona, avatar, posterTemplate, qrDataUrl },
+    { nickname, score, percentile, skinTypeName, waterOil, persona, avatar, posterTemplate, qrDataUrl },
     ref
   ) {
     const [templateFailed, setTemplateFailed] = useState(false);
@@ -80,6 +83,14 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
 
           {/* 核心数据 */}
           <div className="flex-1 flex flex-col items-center justify-center gap-6">
+            {skinTypeName && (
+              <div className="text-center px-6">
+                <p className="text-xs tracking-widest text-[#8c7a6b]">
+                  「{skinTypeName}」
+                </p>
+              </div>
+            )}
+
             <div className="text-center pl-54">
               {score !== undefined ? (
                 <div className="text-5xl font-bold text-[#E53935]" style={{ transform: 'translateY(-88px) rotate(5deg)' }}>{score}<span className="text-sm font-bold">分</span></div>
@@ -100,6 +111,14 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
               <div className="text-center px-6">
                 <p className="text-sm text-[#5c4937] leading-relaxed">
                   <span className="font-bold text-4xl mx-1" style={{ transform: 'translate(-97px, -28px)', display: 'inline-block' }}>{percentile}%</span>
+                </p>
+              </div>
+            )}
+
+            {waterOil !== undefined && (
+              <div className="text-center px-6">
+                <p className="text-sm text-[#5c4937] font-medium">
+                  水油状态：{getTZoneLabel(waterOil)}
                 </p>
               </div>
             )}

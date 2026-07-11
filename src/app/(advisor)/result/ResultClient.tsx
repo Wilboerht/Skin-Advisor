@@ -1218,6 +1218,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             nickname={userNickname || "用户"}
                             score={faceAnalysis?.overallScore ?? (result?.dataSource === "questionnaire" ? undefined : 0)}
                             percentile={rankPercentile}
+                            waterOil={faceAnalysis?.dimensions?.waterOil?.score}
+                            skinTypeName={result?.persona ? skinTypes.find(t => t.ipKey === result.persona)?.typeName : undefined}
                             avatar={getCharacterImage({
                                 score: faceAnalysis?.overallScore ?? 0,
                                 skinType: result?.skinProfile?.type || 'combination',
