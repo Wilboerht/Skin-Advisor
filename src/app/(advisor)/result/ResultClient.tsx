@@ -14,7 +14,6 @@ import {
     Activity,
     AlertCircle,
     Sparkles,
-    Sun,
     X
 } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
@@ -33,8 +32,8 @@ import { ScientificBarChart } from "@/components/advisor/ScientificBarChart";
 
 
 import { SharePoster } from "@/components/advisor/poster/SharePoster";
-import { ShareModal } from "@/components/advisor/ShareModal";
 import { toPng } from "html-to-image";
+import { toDataURL } from "qrcode";
 import { ContactAdvisorModal } from "@/components/advisor/ContactAdvisorModal";
 import ResultCards from "@/components/advisor/ResultCards";
 
@@ -181,6 +180,16 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const searchParams = useSearchParams();
     const { runAnalysis, analysisState, reset: resetAnalysis, recoverSession } = useAsyncAnalysis();
 
+    // Pre-generate QR code for poster (avoids race condition on save click)
+    useEffect(() => {
+        toDataURL(
+            typeof window !== "undefined" ? window.location.origin : "https://advisor.nihplod.cn",
+            { width: 80, margin: 1, color: { dark: "#3F2C76", light: "#0000" } }
+        )
+            .then((url) => setQrDataUrl(url))
+            .catch(() => setQrDataUrl(null));
+    }, []);
+
     // Refs for latest auth state to avoid adding them to effect dependency arrays
     const userRef = useRef(user);
     const authInitializedRef = useRef(authInitialized);
@@ -218,8 +227,9 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
     const [showLabData, setShowLabData] = useState(false);
     const [showContactAdvisor, setShowContactAdvisor] = useState(false);
-    const [showShareModal, setShowShareModal] = useState(false);
     const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
+    const [posterError, setPosterError] = useState<string | null>(null);
+    const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
     const [dismissValidationWarning, setDismissValidationWarning] = useState(() => {
         try { return sessionStorage.getItem('advisor_dismiss_validation') === 'true'; } catch { return false; }
     });
@@ -228,7 +238,12 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
 
     const rankPercentile = useMemo(
-        () => result?.dataSource === "questionnaire" ? undefined : getRankPercentile(faceAnalysis?.overallScore ?? 0),
+        () => {
+            if (result?.dataSource === "questionnaire") return undefined;
+            const rawScore = faceAnalysis?.overallScore;
+            if (rawScore === undefined || rawScore === null) return undefined;
+            return getRankPercentile(rawScore);
+        },
         [faceAnalysis?.overallScore, result?.dataSource]
     );
 
@@ -432,6 +447,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         if (!posterRef.current || isGeneratingPoster) return;
         try {
             setIsGeneratingPoster(true);
+            setPosterError(null);
             // 等待图片加载
             const images = Array.from(posterRef.current.getElementsByTagName("img"));
             await Promise.all(
@@ -463,14 +479,14 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             const blob = new Blob([u8arr], { type: mime });
             const blobUrl = URL.createObjectURL(blob);
             const link = document.createElement("a");
-            link.download = `NIHPLOD-肌肤报告-${userNickname || "用户"}-${Date.now()}.png`;
+            link.download = `${userNickname || "用户"}的肌智派证书.png`;
             link.href = blobUrl;
             link.click();
-            URL.revokeObjectURL(blobUrl);
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
             // 保存海报成功后触发分享埋点
             trackResultShare("image");
         } catch (error) {
-            console.error("海报生成失败:", error);
+            setPosterError("证书生成失败，请稍后重试");
         } finally {
             setIsGeneratingPoster(false);
         }
@@ -863,7 +879,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             budget={ipBudget}
                             skincareFrequency={ipSkincareFrequency}
                             summary={result?.analysis?.summary}
-                            onShare={() => setShowShareModal(true)}
+                            rankPercentile={rankPercentile}
+                            onDownloadPoster={handleSavePoster}
 
                             comprehensiveReport={
                                 <>
@@ -1188,43 +1205,32 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                         </div>
                     </footer>
 
-                    <ShareModal
-                        isOpen={showShareModal}
-                        onClose={() => setShowShareModal(false)}
-                        preview={
-                            <div
-                                className="shrink-0 rounded-xl p-[2px] overflow-hidden shadow-sm"
-                                style={{
-                                    width: 241,
-                                    height: 429,
-                                    background: "linear-gradient(135deg, #e6d0a8 0%, #f5dfb8 50%, #d4b483 100%)",
-                                }}
-                            >
-                                <div className="w-full h-full rounded-[10px] overflow-hidden bg-white">
-                                    <div style={{ width: 360, height: 640, transform: "scale(0.67)", transformOrigin: "0 0" }}>
-                                        <SharePoster
-                                            ref={posterRef}
-                                            nickname={userNickname || "用户"}
-                                            score={faceAnalysis?.overallScore ?? (result?.dataSource === "questionnaire" ? undefined : 0)}
-                                            skinTone={faceAnalysis?.dimensions?.skinTone?.score ?? (result?.dataSource === "questionnaire" ? undefined : 0)}
-                                            waterOil={faceAnalysis?.dimensions?.waterOil?.score ?? (result?.dataSource === "questionnaire" ? undefined : 0)}
-                                            percentile={rankPercentile}
-                                            avatar={getCharacterImage({
-                                                score: faceAnalysis?.overallScore ?? 0,
-                                                skinType: result?.skinProfile?.type || 'combination',
-                                                budget: ipBudget,
-                                                skincareFrequency: ipSkincareFrequency,
-                                                gender: socialGender,
-                                            })}
-                                            posterTemplate="/images/poster-template.webp"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        }
-                        onSavePoster={handleSavePoster}
-                        isGeneratingPoster={isGeneratingPoster}
-                    />
+                    {/* Poster generation error toast */}
+                    {posterError && (
+                        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-full bg-red-50 border border-red-200 text-red-700 text-sm shadow-lg">
+                            {posterError}
+                        </div>
+                    )}
+                    {/* Hidden SharePoster for toPng capture */}
+                    <div style={{ position: "absolute", top: 0, left: 0, width: 360, height: 640, opacity: 0, pointerEvents: "none", zIndex: -1 }}>
+                        <SharePoster
+                            ref={posterRef}
+                            nickname={userNickname || "用户"}
+                            score={faceAnalysis?.overallScore ?? (result?.dataSource === "questionnaire" ? undefined : 0)}
+                            skinTone={faceAnalysis?.dimensions?.skinTone?.score ?? (result?.dataSource === "questionnaire" ? undefined : 0)}
+                            waterOil={faceAnalysis?.dimensions?.waterOil?.score ?? (result?.dataSource === "questionnaire" ? undefined : 0)}
+                            percentile={rankPercentile}
+                            avatar={getCharacterImage({
+                                score: faceAnalysis?.overallScore ?? 0,
+                                skinType: result?.skinProfile?.type || 'combination',
+                                budget: ipBudget,
+                                skincareFrequency: ipSkincareFrequency,
+                                gender: socialGender,
+                            })}
+                            posterTemplate="/images/poster-template.webp"
+                            qrDataUrl={qrDataUrl}
+                        />
+                    </div>
 
                     {/* Contact Advisor Modal */}
                     <ContactAdvisorModal
