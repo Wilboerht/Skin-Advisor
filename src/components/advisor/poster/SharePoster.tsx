@@ -35,7 +35,6 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
             src={posterTemplate}
             alt="海报模板"
             className="absolute inset-0 w-full h-full object-cover"
-            crossOrigin="anonymous"
             onError={() => setTemplateFailed(true)}
           />
         ) : (
@@ -65,7 +64,6 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
               src={avatar}
               alt={nickname}
               className="w-full h-full object-cover object-center"
-              crossOrigin="anonymous"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = "none";
               }}
