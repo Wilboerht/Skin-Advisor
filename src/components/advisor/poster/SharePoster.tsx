@@ -86,16 +86,16 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
           {/* IP 名称 */}
           {skinTypeName && (
             <div className="absolute top-[43%] left-1/2 -translate-x-1/2">
-              <p className="text-xs tracking-widest text-[#8c7a6b] whitespace-nowrap">「{skinTypeName}」</p>
+              <p className="text-xs tracking-widest text-[#00263e] whitespace-nowrap">「{skinTypeName}」</p>
             </div>
           )}
 
           {/* 综合评分 */}
           <div className="absolute top-[48%] left-1/2 -translate-x-1/2">
             {score !== undefined ? (
-              <p className="text-5xl font-bold text-[#E53935] whitespace-nowrap">{score}<span className="text-sm font-bold">分</span></p>
+               <p className="text-5xl font-bold text-[#00263e] whitespace-nowrap">{score}<span className="text-sm font-bold">分</span></p>
             ) : (
-              <p className="text-2xl font-bold text-[#E53935] whitespace-nowrap">问卷评估</p>
+              <p className="text-2xl font-bold text-[#00263e] whitespace-nowrap">问卷评估</p>
             )}
           </div>
 
@@ -109,7 +109,7 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
           {/* 全国超越百分比 */}
           {percentile !== undefined && (
             <div className="absolute top-[68%] left-1/2 -translate-x-1/2">
-              <p className="text-4xl font-bold text-[#5c4937] whitespace-nowrap">{percentile}%</p>
+              <p className="text-4xl font-bold text-[#00263e] whitespace-nowrap">{percentile}%</p>
             </div>
           )}
 

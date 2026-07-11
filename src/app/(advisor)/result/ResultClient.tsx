@@ -32,7 +32,7 @@ import { ScientificBarChart } from "@/components/advisor/ScientificBarChart";
 
 
 import { SharePoster } from "@/components/advisor/poster/SharePoster";
-import { toPng } from "html-to-image";
+import { toBlob } from "html-to-image";
 import { toDataURL } from "qrcode";
 import { ContactAdvisorModal } from "@/components/advisor/ContactAdvisorModal";
 import ResultCards from "@/components/advisor/ResultCards";
@@ -448,7 +448,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         try {
             setIsGeneratingPoster(true);
             setPosterError(null);
-            // 等待图片加载
             const images = Array.from(posterRef.current.getElementsByTagName("img"));
             await Promise.all(
                 images.map(
@@ -463,26 +462,17 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                         })
                 )
             );
-            const dataUrl = await toPng(posterRef.current, {
+            const blob = await toBlob(posterRef.current, {
                 pixelRatio: 2,
+                cacheBust: false,
             });
-            // data URL → Blob URL（绕过 CSP 限制，不用 fetch）
-            const arr = dataUrl.split(',');
-            const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/png';
-            const bstr = atob(arr[1]);
-            let n = bstr.length;
-            const u8arr = new Uint8Array(n);
-            while (n--) {
-                u8arr[n] = bstr.charCodeAt(n);
-            }
-            const blob = new Blob([u8arr], { type: mime });
+            if (!blob) throw new Error("toBlob 返回空");
             const blobUrl = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.download = `${userNickname || "用户"}的肌智派证书.png`;
             link.href = blobUrl;
             link.click();
             setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
-            // 保存海报成功后触发分享埋点
             trackResultShare("image");
         } catch (error) {
             console.error("海报生成失败:", error);
@@ -1228,7 +1218,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 skincareFrequency: ipSkincareFrequency,
                                 gender: socialGender,
                             })}
-                            posterTemplate="/images/poster-template.webp"
+                            posterTemplate="/images/poster-template.webp?v=2"
                             posterOverlay="/images/poster-overlay.webp"
                             qrDataUrl={qrDataUrl}
                             persona={result?.persona ? skinTypes.find(t => t.ipKey === result.persona)?.m1?.persona : undefined}

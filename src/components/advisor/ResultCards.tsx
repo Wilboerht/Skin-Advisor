@@ -135,7 +135,7 @@ export default function ResultCards({
               肌智派证书
             </div>
 
-            <h2 className="text-lg lg:text-[24px] font-bold text-[#00263e] leading-snug tracking-tight mb-1 lg:mb-2">
+            <h2 className="text-lg lg:text-[24px] font-bold text-[#3d2f25] leading-snug tracking-tight mb-1 lg:mb-2">
               你的肌肤类型是「{skinTypeName}」
             </h2>
 
@@ -144,8 +144,8 @@ export default function ResultCards({
                 基于问卷的肤质评估
               </h3>
             ) : rankPercentile !== undefined ? (
-              <h3 className="text-lg lg:text-[24px] font-bold text-[#00263e] leading-snug tracking-tight mb-3 lg:mb-4">
-                素颜评分超越了全国 <span className="text-lg lg:text-[24px] px-0.5">{rankPercentile}%</span> 的用户
+              <h3 className="text-lg lg:text-[24px] font-bold text-[#3d2f25] leading-snug tracking-tight mb-3 lg:mb-4">
+                素颜评分超越了全国 <span className="text-lg lg:text-[24px] px-0.5 text-[#00263e]">{rankPercentile}%</span> 的用户
               </h3>
             ) : (
               <h3 className="text-lg lg:text-[24px] font-bold text-[#3d2f25] leading-snug tracking-tight mb-3 lg:mb-4">
@@ -237,13 +237,13 @@ export default function ResultCards({
               }}
             >
               <div className="flex flex-row lg:flex-col items-center lg:items-start gap-2 lg:justify-between w-full h-full relative z-20">
-                <p className="text-xs lg:text-xs text-[#00263e] font-medium shrink-0">综合评分</p>
+                <p className="text-xs lg:text-xs text-[#7a6552] font-medium shrink-0">综合评分</p>
                 <div className="flex items-baseline">
-                  <span className="text-xs lg:text-3xl font-bold text-[#00263e] leading-none">
+                  <span className="text-xs lg:text-3xl font-bold text-[#00263e] lg:text-[#5c4937] leading-none">
                     {score === undefined ? '-' : <AnimatedNumber value={score} duration={1.5} />}
                   </span>
                   {score !== undefined && (
-                    <span className="text-xs lg:text-xs text-[#00263e] ml-0.5 font-medium">分</span>
+                    <span className="text-xs lg:text-xs text-[#7a6552] ml-0.5 font-medium">分</span>
                   )}
                 </div>
               </div>
