@@ -154,7 +154,7 @@ export default function ResultCards({
             )}
 
             <p className="text-[14px] leading-relaxed text-[#5c4937] mb-5 lg:mb-6 max-w-full lg:max-w-[420px]">
-              {summary || '整体状态极佳，肌肤屏障健康，水油平衡度完美，仅在眼周区域存在轻微色素沉积。'}
+              {summary || '整体状态极佳，肌肤屏障健康，水油平衡度完美。'}
             </p>
 
             {/* Download Poster Button */}

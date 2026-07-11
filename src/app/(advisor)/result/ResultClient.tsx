@@ -1223,6 +1223,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             posterOverlay="/images/poster-overlay.webp"
                             qrDataUrl={qrDataUrl}
                             persona={result?.persona ? skinTypes.find(t => t.ipKey === result.persona)?.m1?.persona : undefined}
+                            summary={result?.analysis?.summary}
                         />
                     </div>
 

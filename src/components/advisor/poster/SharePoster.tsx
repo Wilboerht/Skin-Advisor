@@ -1,6 +1,15 @@
 "use client";
 
 import { forwardRef, useState } from "react";
+import { Inria_Serif } from "next/font/google";
+
+const inriaSerif = Inria_Serif({ weight: ["400", "700"], subsets: ["latin"] });
+
+function addCJKSpace(text: string): string {
+  return text
+    .replace(/([\u4e00-\u9fff\u3400-\u4dbf])([a-zA-Z0-9])/g, "$1 $2")
+    .replace(/([a-zA-Z0-9])([\u4e00-\u9fff\u3400-\u4dbf])/g, "$1 $2");
+}
 
 interface SharePosterProps {
   nickname: string;
@@ -10,6 +19,7 @@ interface SharePosterProps {
   skinAge?: number;
   waterOil?: number;
   persona?: string;
+  summary?: string;
   avatar?: string | null;
   posterTemplate?: string;
   posterOverlay?: string;
@@ -18,7 +28,7 @@ interface SharePosterProps {
 
 export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
   function SharePoster(
-    { nickname, score, percentile, skinTypeName, skinAge, waterOil, persona, avatar, posterTemplate, posterOverlay, qrDataUrl },
+    { nickname, score, percentile, skinTypeName, skinAge, waterOil, persona, summary, avatar, posterTemplate, posterOverlay, qrDataUrl },
     ref
   ) {
     const [templateFailed, setTemplateFailed] = useState(false);
@@ -91,38 +101,45 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
 
           {/* IP 名称 */}
           {skinTypeName && (
-            <div className="absolute top-[25%] left-[77%] -translate-x-1/2">
+            <div className="absolute top-[24.5%] right-[5%] text-right">
               <p className="text-[34px] text-[#00263E] whitespace-nowrap">「{skinTypeName}」</p>
             </div>
           )}
 
           {/* 综合评分 */}
-          <div className="absolute top-[61.6%] left-1/2 -translate-x-1/2">
+          <div className="absolute top-[46%] left-[61.5%] -translate-x-1/2">
             {score !== undefined ? (
-              <p className="text-5xl font-bold text-[#00263E] whitespace-nowrap">{score}<span className="text-sm font-bold">分</span></p>
+              <p className={`text-[66px] font-bold text-[#00263E] whitespace-nowrap ${inriaSerif.className}`}>{score}<span className="text-sm font-bold">分</span></p>
             ) : (
-              <p className="text-2xl font-bold text-[#00263E] whitespace-nowrap">问卷评估</p>
+              <p className={`text-2xl font-bold text-[#00263E] whitespace-nowrap ${inriaSerif.className}`}>问卷评估</p>
             )}
           </div>
 
           {/* IP 专属标语 */}
           {persona && (
-            <div className="absolute top-[69.6%] left-1/2 -translate-x-1/2 max-w-[420px]">
-              <p className="text-sm text-[#5c4937] italic leading-relaxed text-center">{persona}</p>
+            <div className="absolute top-[34%] right-[10%] text-right max-w-[280px]">
+              <p className="text-[10px] font-light text-[#00263E] whitespace-nowrap leading-relaxed">{addCJKSpace(persona)}</p>
+            </div>
+          )}
+
+          {/* 概述 */}
+          {summary && (
+            <div className="absolute bottom-[25%] left-[13%] max-w-[160px]">
+              <p className={`text-[8px] font-light text-[#00263E] leading-relaxed ${inriaSerif.className}`}>{addCJKSpace(summary)}</p>
             </div>
           )}
 
           {/* 全国超越百分比 */}
           {percentile !== undefined && (
-            <div className="absolute top-[78.6%] left-1/2 -translate-x-1/2">
-              <p className="text-4xl font-bold text-[#5c4937] whitespace-nowrap">{percentile}%</p>
+            <div className="absolute top-[47%] left-[78%] -translate-x-1/2">
+              <p className={`text-2xl font-bold text-[#00263E] whitespace-nowrap ${inriaSerif.className}`}>{percentile}%</p>
             </div>
           )}
 
           {/* 二维码 */}
           {qrDataUrl && (
-            <div className="absolute top-[84%] left-1/2 -translate-x-1/2">
-              <img src={qrDataUrl} alt="二维码" className="w-16 h-16 rounded-lg" />
+            <div className="absolute top-[71.9%] left-[72.7%] -translate-x-1/2">
+              <img src={qrDataUrl} alt="二维码" className="w-20 h-20 rounded-lg" />
             </div>
           )}
         </div>

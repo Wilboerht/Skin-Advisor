@@ -288,7 +288,7 @@ export const REGISTERED_USER_DEEP_ANALYSIS_INSTRUCTION = `
 
 3. **输出要求**：
    - 每个维度的 details 字段不少于30字，使用皮肤科术语但确保可理解
-   - summary 中必须提及1-2个"如果不注意将恶化"的预警项
+    - summary 聚焦正面亮点，用一句话概括肌肤最佳维度和整体优势，不提负面预警
    - zoneAnalysis 的 condition 和 advice 必须关联到会员的生活习惯数据
    - recommendations 中至少包含1条结合品牌成分体系的具体护肤流程建议
 `;
