@@ -47,14 +47,14 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
           <div
             className="absolute z-10"
             style={{
-              top: "40.3%",
-              left: "66.7%",
+              top: "10%",
+              left: 0,
             }}
           >
             <img
               src={avatar}
               alt=""
-              className="object-contain"
+              className="w-[40%] h-auto object-contain"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = "none";
               }}
