@@ -443,6 +443,10 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     // Actions
     // Save result as image for sharing (image generation in progress)
 
+    function sanitizeFilename(name: string): string {
+        return name.replace(/[/\\:*?"<>|]/g, "_").trim() || "用户";
+    }
+
     async function convertWebpToPngDataUrl(url: string): Promise<string> {
         const img = document.createElement("img");
         img.crossOrigin = "anonymous";
@@ -460,11 +464,43 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         return canvas.toDataURL("image/png");
     }
 
+    async function triggerDownload(blob: Blob, filename: string) {
+        const blobUrl = URL.createObjectURL(blob);
+
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+            (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+        const canShare = typeof navigator.share === "function" && navigator.canShare &&
+            navigator.canShare({ files: [new File([blob], filename, { type: "image/png" })] });
+
+        if (isIOS && canShare) {
+            try {
+                await navigator.share({
+                    files: [new File([blob], filename, { type: "image/png" })],
+                });
+                URL.revokeObjectURL(blobUrl);
+                return;
+            } catch {
+                // user cancelled or share failed, fall through to download
+            }
+        }
+
+        const link = document.createElement("a");
+        link.download = filename;
+        link.href = blobUrl;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+    }
+
     const handleSavePoster = async () => {
         if (!posterRef.current || isGeneratingPoster) return;
         try {
             setIsGeneratingPoster(true);
             setPosterError(null);
+
+            await document.fonts.ready;
+
             const images = Array.from(posterRef.current.getElementsByTagName("img"));
             await Promise.all(
                 images.map(
@@ -492,8 +528,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                         img.onload = () => resolve();
                         img.onerror = () => resolve();
                     });
-                } catch {
-                    // keep original src on conversion failure
+                } catch (err) {
+                    console.warn("WebP→PNG 转换失败，保留原始图片:", err);
                 }
             }
 
@@ -507,12 +543,9 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             }
 
             if (!blob) throw new Error("toBlob 返回空");
-            const blobUrl = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.download = `${userNickname || "用户"}的肌智派证书.png`;
-            link.href = blobUrl;
-            link.click();
-            setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+
+            const safeName = sanitizeFilename(userNickname || "用户");
+            await triggerDownload(blob, `${safeName}的肌智派证书.png`);
             trackResultShare("image");
         } catch (error) {
             console.error("海报生成失败:", error);
@@ -850,6 +883,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
 
             {result && (
+                <>
                 <div className={styles.container}>
                     {/* Save Report Banner for unauthenticated users */}
                     <SaveReportBanner />
@@ -1235,44 +1269,42 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             </div>
                         </div>
                     </footer>
+                </div>
 
-                    {/* Poster generation error toast */}
-                    {posterError && (
-                        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-full bg-red-50 border border-red-200 text-red-700 text-sm shadow-lg">
-                            {posterError}
-                        </div>
-                    )}
-                    {/* Hidden SharePoster for toPng capture */}
-                    <div style={{ position: "absolute", top: 0, left: 0, width: 480, height: 640, opacity: 0.01, pointerEvents: "none", zIndex: -1 }}>
-                        <SharePoster
-                            ref={posterRef}
-                            nickname={userNickname || "用户"}
-                            score={faceAnalysis?.overallScore ?? (result?.dataSource === "questionnaire" ? undefined : 0)}
-                            percentile={rankPercentile}
-                            waterOil={faceAnalysis?.dimensions?.waterOil?.score}
-                            skinTypeName={result?.persona ? skinTypes.find(t => t.ipKey === result.persona)?.typeName : undefined}
-                            skinAge={result?.skinProfile?.skinAge}
-                            avatar={getCharacterImage({
-                                score: faceAnalysis?.overallScore ?? 0,
-                                skinType: result?.skinProfile?.type || 'combination',
-                                budget: ipBudget,
-                                skincareFrequency: ipSkincareFrequency,
-                                gender: socialGender,
-                            })}
-                            posterTemplate="/images/poster-template.webp?v=4"
-                            posterOverlay="/images/poster-overlay.webp"
-                            qrDataUrl={qrDataUrl}
-                            persona={result?.persona ? skinTypes.find(t => t.ipKey === result.persona)?.m1?.persona : undefined}
-                            summary={result?.analysis?.summary}
-                        />
+                {/* Outside container: avoid overflow-x:hidden clipping */}
+                {posterError && (
+                    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-full bg-red-50 border border-red-200 text-red-700 text-sm shadow-lg">
+                        {posterError}
                     </div>
-
-                    {/* Contact Advisor Modal */}
-                    <ContactAdvisorModal
-                        isOpen={showContactAdvisor}
-                        onClose={() => setShowContactAdvisor(false)}
+                )}
+                <div style={{ position: "fixed", left: "-9999px", top: 0, width: 480, height: 640 }}>
+                    <SharePoster
+                        ref={posterRef}
+                        nickname={userNickname || "用户"}
+                        score={faceAnalysis?.overallScore ?? (result?.dataSource === "questionnaire" ? undefined : 0)}
+                        percentile={rankPercentile}
+                        waterOil={faceAnalysis?.dimensions?.waterOil?.score}
+                        skinTypeName={result?.persona ? skinTypes.find(t => t.ipKey === result.persona)?.typeName : undefined}
+                        skinAge={result?.skinProfile?.skinAge}
+                        avatar={getCharacterImage({
+                            score: faceAnalysis?.overallScore ?? 0,
+                            skinType: result?.skinProfile?.type || 'combination',
+                            budget: ipBudget,
+                            skincareFrequency: ipSkincareFrequency,
+                            gender: socialGender,
+                        })}
+                        posterTemplate="/images/poster-template.webp?v=4"
+                        posterOverlay="/images/poster-overlay.webp"
+                        qrDataUrl={qrDataUrl}
+                        persona={result?.persona ? skinTypes.find(t => t.ipKey === result.persona)?.m1?.persona : undefined}
+                        summary={result?.analysis?.summary}
                     />
-                </div>)}
+                </div>
+                <ContactAdvisorModal
+                    isOpen={showContactAdvisor}
+                    onClose={() => setShowContactAdvisor(false)}
+                />
+            </>)}
         </>
     );
 }
