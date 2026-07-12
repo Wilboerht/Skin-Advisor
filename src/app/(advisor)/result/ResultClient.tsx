@@ -443,6 +443,23 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     // Actions
     // Save result as image for sharing (image generation in progress)
 
+    async function convertWebpToPngDataUrl(url: string): Promise<string> {
+        const img = document.createElement("img");
+        img.crossOrigin = "anonymous";
+        await new Promise<void>((resolve, reject) => {
+            img.onload = () => resolve();
+            img.onerror = () => reject(new Error("Failed to load image"));
+            img.src = url;
+        });
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) throw new Error("Failed to get canvas context");
+        ctx.drawImage(img, 0, 0);
+        return canvas.toDataURL("image/png");
+    }
+
     const handleSavePoster = async () => {
         if (!posterRef.current || isGeneratingPoster) return;
         try {
@@ -462,10 +479,33 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                         })
                 )
             );
+
+            const webpImages = images.filter(img => /\.webp(?:\?|$)/.test(img.src));
+            const originalSrcs = new Map<HTMLImageElement, string>();
+            for (const img of webpImages) {
+                try {
+                    originalSrcs.set(img, img.src);
+                    const dataUrl = await convertWebpToPngDataUrl(img.src);
+                    img.src = dataUrl;
+                    await new Promise<void>((resolve) => {
+                        if (img.complete) { resolve(); return; }
+                        img.onload = () => resolve();
+                        img.onerror = () => resolve();
+                    });
+                } catch {
+                    // keep original src on conversion failure
+                }
+            }
+
             const blob = await toBlob(posterRef.current, {
                 pixelRatio: 2,
                 cacheBust: false,
             });
+
+            for (const [img, src] of originalSrcs) {
+                img.src = src;
+            }
+
             if (!blob) throw new Error("toBlob 返回空");
             const blobUrl = URL.createObjectURL(blob);
             const link = document.createElement("a");
