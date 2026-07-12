@@ -1,9 +1,12 @@
 "use client";
 
 import { forwardRef, useState, useEffect } from "react";
-import { Inria_Serif } from "next/font/google";
+import { Inria_Serif, Noto_Sans_SC } from "next/font/google";
 
 const inriaSerif = Inria_Serif({ weight: ["400", "700"], subsets: ["latin"] });
+const notoSansSC = Noto_Sans_SC({ weight: ["300", "400", "700"] });
+
+const posterFontFamily = `${inriaSerif.style.fontFamily}, ${notoSansSC.style.fontFamily}`;
 
 function addCJKSpace(text: string): string {
   return text
@@ -43,7 +46,7 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
       <div
         ref={ref}
         className="relative w-[480px] h-[640px] overflow-hidden"
-        style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
+        style={{ fontFamily: posterFontFamily }}
       >
         {/* 第一层：背景模板图 */}
         {posterTemplate && !templateFailed ? (
@@ -100,20 +103,20 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
         <div className="absolute inset-0 z-30 pointer-events-none">
           {/* 昵称 */}
           <div className="absolute top-[43.2%] left-[40%] -translate-x-1/2">
-            <p className={`text-xs font-light text-[#00263E] whitespace-nowrap ${inriaSerif.className}`}>{nickname}</p>
+            <p className="text-xs font-light text-[#00263E] whitespace-nowrap">{nickname}</p>
           </div>
 
           {/* 肌肤年龄 */}
           {skinAge !== undefined && (
             <div className="absolute top-[49.5%] left-[40%] -translate-x-1/2">
-              <p className={`text-xs font-light text-[#00263E] whitespace-nowrap ${inriaSerif.className}`}>{skinAge}岁</p>
+              <p className="text-xs font-light text-[#00263E] whitespace-nowrap">{skinAge}岁</p>
             </div>
           )}
 
           {/* 水油平衡 */}
           {waterOil !== undefined && (
             <div className="absolute top-[55.8%] left-[40%] -translate-x-1/2">
-              <p className={`text-xs font-light text-[#00263E] whitespace-nowrap ${inriaSerif.className}`}>{waterOil}分</p>
+              <p className="text-xs font-light text-[#00263E] whitespace-nowrap">{waterOil}分</p>
             </div>
           )}
 
@@ -127,9 +130,9 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
           {/* 综合评分 */}
           <div className="absolute top-[46%] left-[61%] -translate-x-1/2">
             {score !== undefined ? (
-              <p className={`text-[66px] font-bold text-[#00263E] whitespace-nowrap ${inriaSerif.className}`}>{score}<span className="text-sm font-bold">分</span></p>
+              <p className="text-[66px] font-bold text-[#00263E] whitespace-nowrap">{score}<span className="text-sm font-bold">分</span></p>
             ) : (
-              <p className={`text-2xl font-bold text-[#00263E] whitespace-nowrap ${inriaSerif.className}`}>问卷评估</p>
+              <p className="text-2xl font-bold text-[#00263E] whitespace-nowrap">问卷评估</p>
             )}
           </div>
 
@@ -143,14 +146,14 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
           {/* 概述 */}
           {summary && (
             <div className="absolute bottom-[25%] left-[13%] max-w-[160px]">
-              <p className={`text-[8px] font-light text-[#00263E] leading-relaxed ${inriaSerif.className}`}>{addCJKSpace(summary)}</p>
+              <p className="text-[8px] font-light text-[#00263E] leading-relaxed">{addCJKSpace(summary)}</p>
             </div>
           )}
 
           {/* 全国超越百分比 */}
           {percentile !== undefined && (
             <div className="absolute top-[47%] left-[78%] -translate-x-1/2">
-              <p className={`text-2xl font-bold text-[#00263E] whitespace-nowrap ${inriaSerif.className}`}>{percentile}%</p>
+              <p className="text-2xl font-bold text-[#00263E] whitespace-nowrap">{percentile}%</p>
             </div>
           )}
 
