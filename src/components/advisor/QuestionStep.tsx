@@ -60,7 +60,6 @@ export function QuestionStep({
   })();
 
   return (
-    <AnimatePresence mode="wait" custom={direction}>
       <m.div
         key={question.id}
         custom={direction}
@@ -145,6 +144,5 @@ export function QuestionStep({
           )}
         </AnimatePresence>
       </m.div>
-    </AnimatePresence>
   );
 }

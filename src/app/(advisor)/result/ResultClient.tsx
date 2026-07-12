@@ -190,6 +190,39 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             .catch(() => setQrDataUrl(null));
     }, []);
 
+    useEffect(() => {
+        async function preConvert() {
+            async function toPngDataUrl(url: string): Promise<string> {
+                const img = document.createElement("img");
+                await new Promise<void>((resolve, reject) => {
+                    img.onload = () => resolve();
+                    img.onerror = () => reject(new Error(`Failed to load ${url}`));
+                    img.src = url;
+                });
+                const canvas = document.createElement("canvas");
+                canvas.width = img.naturalWidth;
+                canvas.height = img.naturalHeight;
+                const ctx = canvas.getContext("2d");
+                if (!ctx) throw new Error("No canvas context");
+                ctx.drawImage(img, 0, 0);
+                return canvas.toDataURL("image/png");
+            }
+            try {
+                const templateUrl = await toPngDataUrl("/images/poster-template.webp?v=4");
+                setPosterTemplateSrc(templateUrl);
+            } catch (e) {
+                console.warn("预转换 poster-template 失败:", e);
+            }
+            try {
+                const overlayUrl = await toPngDataUrl("/images/poster-overlay.webp");
+                setPosterOverlaySrc(overlayUrl);
+            } catch (e) {
+                console.warn("预转换 poster-overlay 失败:", e);
+            }
+        }
+        preConvert();
+    }, []);
+
     // Refs for latest auth state to avoid adding them to effect dependency arrays
     const userRef = useRef(user);
     const authInitializedRef = useRef(authInitialized);
@@ -230,6 +263,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
     const [posterError, setPosterError] = useState<string | null>(null);
     const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+    const [posterTemplateSrc, setPosterTemplateSrc] = useState<string>("/images/poster-template.webp?v=4");
+    const [posterOverlaySrc, setPosterOverlaySrc] = useState<string>("/images/poster-overlay.webp");
     const [dismissValidationWarning, setDismissValidationWarning] = useState(() => {
         try { return sessionStorage.getItem('advisor_dismiss_validation') === 'true'; } catch { return false; }
     });
@@ -447,23 +482,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         return name.replace(/[/\\:*?"<>|]/g, "_").trim() || "用户";
     }
 
-    async function convertWebpToPngDataUrl(url: string): Promise<string> {
-        const img = document.createElement("img");
-        img.crossOrigin = "anonymous";
-        await new Promise<void>((resolve, reject) => {
-            img.onload = () => resolve();
-            img.onerror = () => reject(new Error("Failed to load image"));
-            img.src = url;
-        });
-        const canvas = document.createElement("canvas");
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) throw new Error("Failed to get canvas context");
-        ctx.drawImage(img, 0, 0);
-        return canvas.toDataURL("image/png");
-    }
-
     async function triggerDownload(blob: Blob, filename: string) {
         const blobUrl = URL.createObjectURL(blob);
 
@@ -516,31 +534,10 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 )
             );
 
-            const webpImages = images.filter(img => /\.webp(?:\?|$)/.test(img.src));
-            const originalSrcs = new Map<HTMLImageElement, string>();
-            for (const img of webpImages) {
-                try {
-                    originalSrcs.set(img, img.src);
-                    const dataUrl = await convertWebpToPngDataUrl(img.src);
-                    img.src = dataUrl;
-                    await new Promise<void>((resolve) => {
-                        if (img.complete) { resolve(); return; }
-                        img.onload = () => resolve();
-                        img.onerror = () => resolve();
-                    });
-                } catch (err) {
-                    console.warn("WebP→PNG 转换失败，保留原始图片:", err);
-                }
-            }
-
             const blob = await toBlob(posterRef.current, {
                 pixelRatio: 2,
                 cacheBust: false,
             });
-
-            for (const [img, src] of originalSrcs) {
-                img.src = src;
-            }
 
             if (!blob) throw new Error("toBlob 返回空");
 
@@ -883,7 +880,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
 
             {result && (
-                <>
                 <div className={styles.container}>
                     {/* Save Report Banner for unauthenticated users */}
                     <SaveReportBanner />
@@ -1269,42 +1265,40 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             </div>
                         </div>
                     </footer>
-                </div>
 
-                {/* Outside container: avoid overflow-x:hidden clipping */}
-                {posterError && (
-                    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-full bg-red-50 border border-red-200 text-red-700 text-sm shadow-lg">
-                        {posterError}
+                    {posterError && (
+                        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-full bg-red-50 border border-red-200 text-red-700 text-sm shadow-lg">
+                            {posterError}
+                        </div>
+                    )}
+                    <div style={{ position: "absolute", top: 0, left: 0, width: 480, height: 640, opacity: 0.01, pointerEvents: "none", zIndex: -1 }}>
+                        <SharePoster
+                            ref={posterRef}
+                            nickname={userNickname || "用户"}
+                            score={faceAnalysis?.overallScore ?? (result?.dataSource === "questionnaire" ? undefined : 0)}
+                            percentile={rankPercentile}
+                            waterOil={faceAnalysis?.dimensions?.waterOil?.score}
+                            skinTypeName={result?.persona ? skinTypes.find(t => t.ipKey === result.persona)?.typeName : undefined}
+                            skinAge={result?.skinProfile?.skinAge}
+                            avatar={getCharacterImage({
+                                score: faceAnalysis?.overallScore ?? 0,
+                                skinType: result?.skinProfile?.type || 'combination',
+                                budget: ipBudget,
+                                skincareFrequency: ipSkincareFrequency,
+                                gender: socialGender,
+                            })}
+                            posterTemplate={posterTemplateSrc}
+                            posterOverlay={posterOverlaySrc}
+                            qrDataUrl={qrDataUrl}
+                            persona={result?.persona ? skinTypes.find(t => t.ipKey === result.persona)?.m1?.persona : undefined}
+                            summary={result?.analysis?.summary}
+                        />
                     </div>
-                )}
-                <div style={{ position: "fixed", left: "-9999px", top: 0, width: 480, height: 640 }}>
-                    <SharePoster
-                        ref={posterRef}
-                        nickname={userNickname || "用户"}
-                        score={faceAnalysis?.overallScore ?? (result?.dataSource === "questionnaire" ? undefined : 0)}
-                        percentile={rankPercentile}
-                        waterOil={faceAnalysis?.dimensions?.waterOil?.score}
-                        skinTypeName={result?.persona ? skinTypes.find(t => t.ipKey === result.persona)?.typeName : undefined}
-                        skinAge={result?.skinProfile?.skinAge}
-                        avatar={getCharacterImage({
-                            score: faceAnalysis?.overallScore ?? 0,
-                            skinType: result?.skinProfile?.type || 'combination',
-                            budget: ipBudget,
-                            skincareFrequency: ipSkincareFrequency,
-                            gender: socialGender,
-                        })}
-                        posterTemplate="/images/poster-template.webp?v=4"
-                        posterOverlay="/images/poster-overlay.webp"
-                        qrDataUrl={qrDataUrl}
-                        persona={result?.persona ? skinTypes.find(t => t.ipKey === result.persona)?.m1?.persona : undefined}
-                        summary={result?.analysis?.summary}
+                    <ContactAdvisorModal
+                        isOpen={showContactAdvisor}
+                        onClose={() => setShowContactAdvisor(false)}
                     />
-                </div>
-                <ContactAdvisorModal
-                    isOpen={showContactAdvisor}
-                    onClose={() => setShowContactAdvisor(false)}
-                />
-            </>)}
+                </div>)}
         </>
     );
 }

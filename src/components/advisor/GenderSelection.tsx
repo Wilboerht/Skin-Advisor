@@ -76,9 +76,9 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
                     onClick={() => onSelect("female")}
                     whileHover={{ y: -4 }}
                     whileTap={{ scale: 0.98 }}
-                    className="group flex flex-row items-center gap-4 rounded-xl border border-[#E8E2D9] bg-white px-5 sm:px-8 py-4 sm:py-6 text-left transition-all duration-300 hover:border-[#C9A86C] hover:shadow-sm"
+                    className="group flex flex-row items-center gap-4 rounded-xl border border-[#E8E2D9] bg-white px-5 sm:px-8 py-4 sm:py-6 text-left transition-[border-color,background-color,box-shadow] duration-300 hover:border-[#C9A86C] hover:shadow-sm touch-manipulation"
                 >
-                    <div className="flex h-10 w-10 sm:h-16 sm:w-16 shrink-0 items-center justify-center rounded-full bg-[#A0784C]/[0.08] transition-all duration-300 group-hover:bg-[#A0784C]/[0.12]">
+                    <div className="flex h-10 w-10 sm:h-16 sm:w-16 shrink-0 items-center justify-center rounded-full bg-[#A0784C]/[0.08] transition-colors duration-300 group-hover:bg-[#A0784C]/[0.12]">
                         <Venus className="w-6 h-6 sm:w-9 sm:h-9 text-[#A0784C]" strokeWidth={1.5} />
                     </div>
 
@@ -92,9 +92,9 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
                     onClick={() => onSelect("male")}
                     whileHover={{ y: -4 }}
                     whileTap={{ scale: 0.98 }}
-                    className="group flex flex-row items-center gap-4 rounded-xl border border-[#E8E2D9] bg-white px-5 sm:px-8 py-4 sm:py-6 text-left transition-all duration-300 hover:border-[#1B3A5C]/40 hover:shadow-sm"
+                    className="group flex flex-row items-center gap-4 rounded-xl border border-[#E8E2D9] bg-white px-5 sm:px-8 py-4 sm:py-6 text-left transition-[border-color,background-color,box-shadow] duration-300 hover:border-[#1B3A5C]/40 hover:shadow-sm touch-manipulation"
                 >
-                    <div className="flex h-10 w-10 sm:h-16 sm:w-16 shrink-0 items-center justify-center rounded-full bg-[#1B3A5C]/[0.08] transition-all duration-300 group-hover:bg-[#1B3A5C]/[0.12]">
+                    <div className="flex h-10 w-10 sm:h-16 sm:w-16 shrink-0 items-center justify-center rounded-full bg-[#1B3A5C]/[0.08] transition-colors duration-300 group-hover:bg-[#1B3A5C]/[0.12]">
                         <Mars className="w-6 h-6 sm:w-9 sm:h-9 text-[#1B3A5C]" strokeWidth={1.5} />
                     </div>
 

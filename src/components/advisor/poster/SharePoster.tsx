@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useState } from "react";
+import { forwardRef, useState, useEffect } from "react";
 import { Inria_Serif } from "next/font/google";
 
 const inriaSerif = Inria_Serif({ weight: ["400", "700"], subsets: ["latin"] });
@@ -33,6 +33,9 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
   ) {
     const [templateFailed, setTemplateFailed] = useState(false);
     const [overlayFailed, setOverlayFailed] = useState(false);
+
+    useEffect(() => { setTemplateFailed(false); }, [posterTemplate]);
+    useEffect(() => { setOverlayFailed(false); }, [posterOverlay]);
 
     return (
       <div

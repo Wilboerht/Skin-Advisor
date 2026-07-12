@@ -629,7 +629,6 @@ export default function QuestionsPage() {
                         <m.div
                             key={currentStepIndex}
                             custom={direction}
-                            layout
                             initial={{ opacity: 0, x: direction > 0 ? 20 : -20 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: direction > 0 ? -20 : 20 }}

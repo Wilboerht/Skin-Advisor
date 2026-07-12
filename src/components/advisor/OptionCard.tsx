@@ -43,14 +43,11 @@ export function OptionCard({
             }}
             whileTap={{ scale: 0.98 }}
             style={{ 
-                // CRITICAL: Forces the element into its own compositor layer from the start
                 transform: "translateZ(0)",
-                backfaceVisibility: "hidden", 
-                WebkitBackfaceVisibility: "hidden",
-                perspective: "1000px"
+                willChange: "transform"
             }}
             className={cn(
-                "group relative w-full rounded-lg md:rounded-xl text-left border px-4 sm:px-5 md:px-6 py-3 sm:py-4 md:py-5 flex items-center gap-3 sm:gap-4 backdrop-blur-md transition-all duration-300 overflow-hidden",
+                "group relative w-full rounded-lg md:rounded-xl text-left border px-4 sm:px-5 md:px-6 py-3 sm:py-4 md:py-5 flex items-center gap-3 sm:gap-4 backdrop-blur-md transition-[border-color,background-color,box-shadow] duration-300 overflow-hidden touch-manipulation",
                 isSelected
                     ? "bg-[#F8F5EE] border-[#8B7355] shadow-[0_8px_30px_-8px_rgba(139,115,85,0.18)] ring-1 ring-[#8B7355]/10"
                     : "bg-transparent border-[#D4CFC5]/50 hover:border-[#8B7355]/30 hover:bg-[#F8F5EE]/30"
