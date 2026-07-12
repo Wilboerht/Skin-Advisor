@@ -33,9 +33,11 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
   ) {
     const [templateFailed, setTemplateFailed] = useState(false);
     const [overlayFailed, setOverlayFailed] = useState(false);
+    const [avatarFailed, setAvatarFailed] = useState(false);
 
     useEffect(() => { setTemplateFailed(false); }, [posterTemplate]);
     useEffect(() => { setOverlayFailed(false); }, [posterOverlay]);
+    useEffect(() => { setAvatarFailed(false); }, [avatar]);
 
     return (
       <div
@@ -45,10 +47,14 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
       >
         {/* 第一层：背景模板图 */}
         {posterTemplate && !templateFailed ? (
-          <img
-            src={posterTemplate}
-            alt=""
-            className="absolute inset-0 w-full h-full object-contain"
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `url(${posterTemplate})`,
+              backgroundSize: "100% 100%",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+            }}
             onError={() => setTemplateFailed(true)}
           />
         ) : (
@@ -56,29 +62,38 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
         )}
 
         {/* 第二层：IP 形象 */}
-        {avatar && (
-          <div className="absolute z-10" style={{ top: "10%", left: "4%" }}>
-            <img
-              src={avatar}
-              alt=""
-              className="w-[40%] h-auto object-contain"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = "none";
-              }}
-            />
-          </div>
+        {avatar && !avatarFailed && (
+          <div
+            className="absolute z-10"
+            style={{
+              top: "10%",
+              left: "4%",
+              width: "40%",
+              height: "auto",
+              aspectRatio: "1",
+              backgroundImage: `url(${avatar})`,
+              backgroundSize: "contain",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+            }}
+            onErrorCapture={() => setAvatarFailed(true)}
+          />
         )}
 
         {/* 第三层：装饰叠加图 */}
         {posterOverlay && !overlayFailed && (
-          <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-center translate-x-[1%] translate-y-[1.5%]">
-            <img
-              src={posterOverlay}
-              alt=""
-              className="w-[85.5%] h-auto object-contain"
-              onError={() => setOverlayFailed(true)}
-            />
-          </div>
+          <div
+            className="absolute inset-0 z-20 pointer-events-none"
+            style={{
+              marginLeft: "1%",
+              marginTop: "1.5%",
+              backgroundImage: `url(${posterOverlay})`,
+              backgroundSize: "85.5% auto",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+            }}
+            onError={() => setOverlayFailed(true)}
+          />
         )}
 
         {/* 第四层：所有文字字段 */}

@@ -131,7 +131,7 @@ export function QuestionStep({
                 disabled={isNextDisabled}
                 className={cn(
                   "text-[13px] font-medium tracking-[0.15em] transition-colors duration-300 flex items-center justify-center gap-2",
-                  "py-3 px-8 bg-transparent",
+                  "py-4 px-8 md:py-3 bg-transparent touch-manipulation",
                   isNextDisabled
                     ? "text-[#8B7355]/30 cursor-not-allowed"
                     : "text-[#8B7355] hover:text-[#5C4A35]"

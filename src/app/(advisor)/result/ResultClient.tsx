@@ -476,6 +476,15 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
     }
 
+    async function preloadImage(url: string): Promise<void> {
+        return new Promise((resolve) => {
+            const img = document.createElement("img");
+            img.onload = () => resolve();
+            img.onerror = () => resolve();
+            img.src = url;
+        });
+    }
+
     const handleSavePoster = async () => {
         if (!posterRef.current || isGeneratingPoster) return;
         try {
@@ -484,20 +493,17 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
             await document.fonts.ready;
 
-            const images = Array.from(posterRef.current.getElementsByTagName("img"));
-            await Promise.all(
-                images.map(
-                    (img) =>
-                        new Promise<void>((resolve) => {
-                            if (img.complete && img.naturalWidth > 0) {
-                                resolve();
-                                return;
-                            }
-                            img.onload = () => resolve();
-                            img.onerror = () => resolve();
-                        })
-                )
-            );
+            await Promise.all([
+                preloadImage("/images/poster-template.png?v=4"),
+                preloadImage("/images/poster-overlay.png"),
+                preloadImage(getCharacterImage({
+                    score: faceAnalysis?.overallScore ?? 0,
+                    skinType: result?.skinProfile?.type || 'combination',
+                    budget: ipBudget,
+                    skincareFrequency: ipSkincareFrequency,
+                    gender: socialGender,
+                })),
+            ]);
 
             const blob = await toBlob(posterRef.current, {
                 pixelRatio: 2,
