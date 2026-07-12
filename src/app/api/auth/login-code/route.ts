@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { apiError } from "@/lib/api-response";
+import { ErrorCode } from "@/lib/error-codes";
 import prisma from "@/lib/prisma";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { mirrorOfficialCookies } from "@/lib/cookie-mirror";
@@ -14,18 +16,12 @@ export async function POST(req: NextRequest) {
         const ip = getClientIP(req);
         const ipLimit = await rateLimit(`login-code-ip-${ip}`, "login");
         if (!ipLimit.success) {
-            return NextResponse.json(
-                { error: "登录尝试过于频繁，请 15 分钟后再试" },
-                { status: 429 }
-            );
+            return apiError(ErrorCode.RATE_LIMITED, "登录尝试过于频繁，请 15 分钟后再试", 429);
         }
 
         const body = await req.json();
         if (!body.phone || !body.code) {
-            return NextResponse.json(
-                { error: "缺少手机号或验证码" },
-                { status: 400 }
-            );
+            return apiError(ErrorCode.VALIDATION_ERROR, "缺少手机号或验证码", 400);
         }
 
         const cookieStore = await cookies();
@@ -41,26 +37,20 @@ export async function POST(req: NextRequest) {
         });
 
         if (!result) {
-            return NextResponse.json(
-                { error: "登录失败：上游服务响应异常或签名无效" },
-                { status: 502 }
-            );
+            return apiError(ErrorCode.UPSTREAM_ERROR, "登录失败：上游服务响应异常或签名无效", 502);
         }
 
         const responseData = result.data;
 
         if (!result.ok || !responseData.success) {
             return NextResponse.json(
-                { error: responseData.error?.message || "登录失败" },
+                { success: false, error: responseData.error || { code: ErrorCode.UNAUTHORIZED, message: "登录失败" } },
                 { status: result.status || 401 }
             );
         }
 
         if (!responseData.data?.user) {
-            return NextResponse.json(
-                { error: "登录失败：上游响应格式异常" },
-                { status: 502 }
-            );
+            return apiError(ErrorCode.UPSTREAM_ERROR, "登录失败：上游响应格式异常", 502);
         }
 
         const userPayload = responseData.data.user;
@@ -93,11 +83,14 @@ export async function POST(req: NextRequest) {
         });
 
         const response = NextResponse.json({
-            user: {
-                ...userPayload,
-                phone: userPayload.phone,
-                name: userPayload.nickname || userPayload.phone,
-                role: UserRole.USER
+            success: true,
+            data: {
+                user: {
+                    ...userPayload,
+                    phone: userPayload.phone,
+                    name: userPayload.nickname || userPayload.phone,
+                    role: UserRole.USER
+                }
             }
         });
 
@@ -117,6 +110,6 @@ export async function POST(req: NextRequest) {
 
     } catch (e) {
         logger.error("LoginCode Proxy Error", e);
-        return NextResponse.json({ error: "应用系统异常，请稍后重试" }, { status: 500 });
+        return apiError(ErrorCode.INTERNAL_ERROR, "应用系统异常，请稍后重试", 500);
     }
 }

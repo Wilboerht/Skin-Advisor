@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { apiError, apiSuccess } from "@/lib/api-response";
+import { ErrorCode } from "@/lib/error-codes";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { callOfficialApi, type OfficialApiResponse } from "@/lib/official-api";
 import { cookies } from "next/headers";
@@ -9,19 +11,16 @@ const PHONE_REGEX = /^1[3-9]\d{9}$/;
 export async function POST(req: NextRequest) {
     try {
         const ip = getClientIP(req);
-        // Stricter limit for SMS: 3 requests per 5 minutes per IP
-        const ipLimit = await rateLimit(`sendcode-ip-${ip}`, "login", { maxRequests: 3, windowMs: 5 * 60 * 1000 });
+        // Shared rate limit key with forgot-password: 3 req/5min per IP
+        const ipLimit = await rateLimit(`sms-send-ip-${ip}`, "login", { maxRequests: 3, windowMs: 5 * 60 * 1000 });
         if (!ipLimit.success) {
-            return NextResponse.json(
-                { error: "验证码发送过于频繁，请稍后再试" },
-                { status: 429 }
-            );
+            return apiError(ErrorCode.RATE_LIMITED, "验证码发送过于频繁，请稍后再试", 429);
         }
 
         const body = await req.json();
 
         if (!body.phone || !PHONE_REGEX.test(body.phone)) {
-            return NextResponse.json({ error: "请输入有效的手机号" }, { status: 400 });
+            return apiError(ErrorCode.VALIDATION_ERROR, "请输入有效的手机号", 400);
         }
 
         const cookieStore = await cookies();
@@ -37,17 +36,14 @@ export async function POST(req: NextRequest) {
         });
 
         if (!result) {
-            return NextResponse.json(
-                { error: "发送验证码失败：上游服务响应异常" },
-                { status: 502 }
-            );
+            return apiError(ErrorCode.UPSTREAM_ERROR, "发送验证码失败：上游服务响应异常", 502);
         }
 
         const responseData = result.data;
 
         if (!result.ok || !responseData.success) {
             return NextResponse.json(
-                { error: responseData.error?.message || "发送验证码失败" },
+                { success: false, error: responseData.error || { code: ErrorCode.UPSTREAM_ERROR, message: "发送验证码失败" } },
                 { status: result.status || 400 }
             );
         }
@@ -56,6 +52,6 @@ export async function POST(req: NextRequest) {
 
     } catch (e) {
         logger.error("SendCode Proxy Error", e);
-        return NextResponse.json({ error: "应用系统异常，请稍后重试" }, { status: 500 });
+        return apiError(ErrorCode.INTERNAL_ERROR, "应用系统异常，请稍后重试", 500);
     }
 }

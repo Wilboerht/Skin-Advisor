@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { apiError } from "@/lib/api-response";
+import { ErrorCode } from "@/lib/error-codes";
 import prisma from "@/lib/prisma";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { incrementTokenVersion, clearLocalSession } from "@/lib/auth";
@@ -11,26 +13,24 @@ const PHONE_REGEX = /^1[3-9]\d{9}$/;
 
 export async function POST(req: NextRequest) {
     try {
-        // 1. 速率限制
         const ip = getClientIP(req);
         const ipLimit = await rateLimit(`reset-password-ip-${ip}`, "login", { maxRequests: 5, windowMs: 15 * 60 * 1000 });
         if (!ipLimit.success) {
-            return NextResponse.json({ error: "请求过于频繁，请稍后再试" }, { status: 429 });
+            return apiError(ErrorCode.RATE_LIMITED, "请求过于频繁，请稍后再试", 429);
         }
 
         const body = await req.json();
 
         if (!body.phone || !PHONE_REGEX.test(body.phone)) {
-            return NextResponse.json({ error: "请输入有效的手机号" }, { status: 400 });
+            return apiError(ErrorCode.VALIDATION_ERROR, "请输入有效的手机号", 400);
         }
         if (!body.code || !body.password) {
-            return NextResponse.json({ error: "缺少必填项" }, { status: 400 });
+            return apiError(ErrorCode.VALIDATION_ERROR, "缺少必填项", 400);
         }
 
-        // 与官网对齐的密码强度校验
         const passwordCheck = validatePasswordStrength(body.password);
         if (!passwordCheck.valid) {
-            return NextResponse.json({ error: passwordCheck.message }, { status: 400 });
+            return apiError(ErrorCode.VALIDATION_ERROR, passwordCheck.message || "密码不符合要求", 400);
         }
 
         const cookieStore = await cookies();
@@ -51,19 +51,18 @@ export async function POST(req: NextRequest) {
         });
 
         if (!result) {
+            return apiError(ErrorCode.UPSTREAM_ERROR, "重置失败：上游服务响应异常", 502);
+        }
+
+        const responseData = result.data;
+
+        if (!result.ok || !responseData.success) {
             return NextResponse.json(
-                { error: "重置失败：上游服务响应异常" },
-                { status: 502 }
+                { success: false, error: responseData.error || { code: ErrorCode.VALIDATION_ERROR, message: "重置失败" } },
+                { status: result.status || 400 }
             );
         }
 
-        const data = result.data;
-
-        if (!result.ok || !data.success) {
-            return NextResponse.json({ error: data.error?.message || "重置失败" }, { status: result.status || 400 });
-        }
-
-        // 密码重置后撤销该用户所有现有 JWT + refresh token，强制重新登录
         const localUser = await prisma.user.findUnique({ where: { phoneNumber: body.phone }, select: { id: true } });
         if (localUser) {
             await incrementTokenVersion(localUser.id);
@@ -73,9 +72,8 @@ export async function POST(req: NextRequest) {
             });
         }
 
-        const response = NextResponse.json({ success: true, message: data.data?.message || "密码已重置" });
+        const response = NextResponse.json({ success: true, data: { message: responseData.data?.message || "密码已重置" } });
 
-        // 清除本地 session 与官网 Cookie，确保重置后必须重新登录
         clearLocalSession(response);
         response.cookies.delete("__Host-user_token");
         response.cookies.delete("__Host-user_refresh_token");
@@ -84,6 +82,6 @@ export async function POST(req: NextRequest) {
 
     } catch (error) {
         logger.error("Reset Password Proxy Error", error);
-        return NextResponse.json({ error: "应用系统异常，请稍后重试" }, { status: 500 });
+        return apiError(ErrorCode.INTERNAL_ERROR, "应用系统异常，请稍后重试", 500);
     }
 }
