@@ -190,39 +190,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             .catch(() => setQrDataUrl(null));
     }, []);
 
-    useEffect(() => {
-        async function preConvert() {
-            async function toPngDataUrl(url: string): Promise<string> {
-                const img = document.createElement("img");
-                await new Promise<void>((resolve, reject) => {
-                    img.onload = () => resolve();
-                    img.onerror = () => reject(new Error(`Failed to load ${url}`));
-                    img.src = url;
-                });
-                const canvas = document.createElement("canvas");
-                canvas.width = img.naturalWidth;
-                canvas.height = img.naturalHeight;
-                const ctx = canvas.getContext("2d");
-                if (!ctx) throw new Error("No canvas context");
-                ctx.drawImage(img, 0, 0);
-                return canvas.toDataURL("image/png");
-            }
-            try {
-                const templateUrl = await toPngDataUrl("/images/poster-template.webp?v=4");
-                setPosterTemplateSrc(templateUrl);
-            } catch (e) {
-                console.warn("预转换 poster-template 失败:", e);
-            }
-            try {
-                const overlayUrl = await toPngDataUrl("/images/poster-overlay.webp");
-                setPosterOverlaySrc(overlayUrl);
-            } catch (e) {
-                console.warn("预转换 poster-overlay 失败:", e);
-            }
-        }
-        preConvert();
-    }, []);
-
     // Refs for latest auth state to avoid adding them to effect dependency arrays
     const userRef = useRef(user);
     const authInitializedRef = useRef(authInitialized);
@@ -263,8 +230,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
     const [posterError, setPosterError] = useState<string | null>(null);
     const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
-    const [posterTemplateSrc, setPosterTemplateSrc] = useState<string>("/images/poster-template.webp?v=4");
-    const [posterOverlaySrc, setPosterOverlaySrc] = useState<string>("/images/poster-overlay.webp");
     const [dismissValidationWarning, setDismissValidationWarning] = useState(() => {
         try { return sessionStorage.getItem('advisor_dismiss_validation') === 'true'; } catch { return false; }
     });
@@ -1287,8 +1252,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 skincareFrequency: ipSkincareFrequency,
                                 gender: socialGender,
                             })}
-                            posterTemplate={posterTemplateSrc}
-                            posterOverlay={posterOverlaySrc}
+                            posterTemplate="/images/poster-template.png?v=4"
+                            posterOverlay="/images/poster-overlay.png"
                             qrDataUrl={qrDataUrl}
                             persona={result?.persona ? skinTypes.find(t => t.ipKey === result.persona)?.m1?.persona : undefined}
                             summary={result?.analysis?.summary}
