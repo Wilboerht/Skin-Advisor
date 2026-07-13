@@ -56,56 +56,26 @@ interface ResultClientProps {
     } | null;
 }
 
-// --- Poster image helpers (module-level to avoid render-cycle lint issues) ---
+// --- Poster image helpers ---
 
-function preloadImageSilent(url: string | undefined): void {
+function preloadImage(url: string | undefined): void {
     if (!url) return;
     const img = new globalThis.Image();
     img.src = url;
 }
 
-function waitForImage(url: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-        const img = new globalThis.Image();
-        img.onload = () => resolve();
-        img.onerror = () => reject(new Error(`图片加载失败: ${url}`));
-        img.src = url;
-    });
-}
-
-async function fetchImageAsDataUrl(url: string): Promise<string> {
-    const res = await fetch(url, { cache: "force-cache" });
-    if (!res.ok) throw new Error(`fetch image failed: ${url}`);
-    const blob = await res.blob();
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.onerror = () => reject(new Error(`read image failed: ${url}`));
-        reader.readAsDataURL(blob);
-    });
-}
-
 async function waitForImages(container: HTMLElement): Promise<void> {
     const images = Array.from(container.querySelectorAll("img"));
     await Promise.all(
-        images.map(async (img) => {
-            if (!img.complete) {
-                await new Promise<void>((resolve, reject) => {
-                    img.onload = () => resolve();
-                    img.onerror = () => reject(new Error("海报图片加载失败"));
-                });
+        images.map((img) => {
+            if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+            if (img.complete && img.naturalWidth === 0) {
+                return Promise.reject(new Error("海报图片加载失败"));
             }
-            if (img.naturalWidth === 0) {
-                throw new Error("海报图片加载失败");
-            }
-            // 确保图片已解码，可被 canvas/html-to-image 绘制
-            if (typeof img.decode === "function") {
-                try {
-                    await img.decode();
-                } catch {
-                    // decode 失败但 complete/naturalWidth 正常时，仍继续尝试生成
-                }
-            }
+            return new Promise<void>((resolve, reject) => {
+                img.onload = () => resolve();
+                img.onerror = () => reject(new Error("海报图片加载失败"));
+            });
         })
     );
 }
@@ -284,7 +254,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
     const [posterError, setPosterError] = useState<string | null>(null);
     const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
-    const [posterAssets, setPosterAssets] = useState<{ template?: string; overlay?: string; avatar?: string }>({});
     const [dismissValidationWarning, setDismissValidationWarning] = useState(() => {
         try { return sessionStorage.getItem('advisor_dismiss_validation') === 'true'; } catch { return false; }
     });
@@ -329,7 +298,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         }
     }, [showGenderMismatchModal]);
 
-    // 页面进入后后台预加载海报素材并转成 data URL，提升成功率且不影响点击速度
+    // 页面进入后后台预加载海报素材
     useEffect(() => {
         if (!result) return;
 
@@ -341,26 +310,9 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             gender: socialGender,
         });
 
-        preloadImageSilent("/images/poster-template.webp?v=4");
-        preloadImageSilent("/images/poster-overlay.webp");
-        preloadImageSilent(avatarUrl);
-
-        // 后台静默转 data URL：成功则让 SharePoster 用 data URL 渲染，彻底规避 html-to-image 读不到图
-        let cancelled = false;
-        Promise.all([
-            fetchImageAsDataUrl("/images/poster-template.webp?v=4"),
-            fetchImageAsDataUrl("/images/poster-overlay.webp"),
-            fetchImageAsDataUrl(avatarUrl),
-        ])
-            .then(([template, overlay, avatar]) => {
-                if (cancelled) return;
-                setPosterAssets({ template, overlay, avatar });
-            })
-            .catch(() => {
-                // 转失败也不阻塞，保存时会用原 URL 兜底
-            });
-
-        return () => { cancelled = true; };
+        preloadImage("/images/poster-template.webp?v=4");
+        preloadImage("/images/poster-overlay.webp");
+        preloadImage(avatarUrl);
     }, [result, faceAnalysis?.overallScore, result?.skinProfile?.type, ipBudget, ipSkincareFrequency, socialGender]);
 
     const handleMismatchRetry = () => {
@@ -570,23 +522,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             setPosterError(null);
 
             await document.fonts.ready;
-
-            const avatarUrl = getCharacterImage({
-                score: faceAnalysis?.overallScore ?? 0,
-                skinType: result?.skinProfile?.type || 'combination',
-                budget: ipBudget,
-                skincareFrequency: ipSkincareFrequency,
-                gender: socialGender,
-            });
-
-            // 后台已预加载过素材，这里再强制等待它们真正解码完成
-            await Promise.all([
-                waitForImage("/images/poster-template.webp?v=4"),
-                waitForImage("/images/poster-overlay.webp"),
-                waitForImage(avatarUrl),
-            ]);
-
-            // 确保离屏 poster DOM 里的 <img> 也真正渲染完成
             await waitForImages(posterRef.current);
 
             const blob = await toBlob(posterRef.current, {
@@ -1335,15 +1270,15 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             waterOil={faceAnalysis?.dimensions?.waterOil?.score}
                             skinTypeName={result?.persona ? skinTypes.find(t => t.ipKey === result.persona)?.typeName : undefined}
                             skinAge={result?.skinProfile?.skinAge}
-                            avatar={posterAssets.avatar || getCharacterImage({
+                            avatar={getCharacterImage({
                                 score: faceAnalysis?.overallScore ?? 0,
                                 skinType: result?.skinProfile?.type || 'combination',
                                 budget: ipBudget,
                                 skincareFrequency: ipSkincareFrequency,
                                 gender: socialGender,
                             })}
-                            posterTemplate={posterAssets.template || "/images/poster-template.webp?v=4"}
-                            posterOverlay={posterAssets.overlay || "/images/poster-overlay.webp"}
+                            posterTemplate="/images/poster-template.webp?v=4"
+                            posterOverlay="/images/poster-overlay.webp"
                             qrDataUrl={qrDataUrl}
                             persona={result?.persona ? skinTypes.find(t => t.ipKey === result.persona)?.m1?.persona : undefined}
                             summary={result?.analysis?.summary}
