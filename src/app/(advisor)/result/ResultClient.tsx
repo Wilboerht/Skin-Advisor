@@ -56,6 +56,40 @@ interface ResultClientProps {
     } | null;
 }
 
+// --- Poster image helpers (module-level to avoid render-cycle lint issues) ---
+
+function preloadImageSilent(url: string | undefined): void {
+    if (!url) return;
+    const img = new Image();
+    img.src = url;
+}
+
+function loadImage(url: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+        const img = document.createElement("img");
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error(`图片加载失败: ${url}`));
+        img.src = url;
+    });
+}
+
+async function waitForImages(container: HTMLElement): Promise<void> {
+    const images = Array.from(container.querySelectorAll("img"));
+    await Promise.all(
+        images.map((img) => {
+            if (img.complete) {
+                return img.naturalWidth > 0
+                    ? Promise.resolve()
+                    : Promise.reject(new Error("海报图片加载失败"));
+            }
+            return new Promise<void>((resolve, reject) => {
+                img.onload = () => resolve();
+                img.onerror = () => reject(new Error("海报图片加载失败"));
+            });
+        })
+    );
+}
+
 // 手机端：十维分析表单（替代 ScientificBarChart）
 function MobileDimensionForm({ dimensions }: { dimensions: Record<string, { score?: number } | undefined> }) {
     const order = ['radiance', 'acne', 'firmness', 'darkCircles', 'sensitivity', 'uvDamage', 'wrinkles', 'spots', 'skinTone', 'waterOil'];
@@ -274,6 +308,23 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         }
     }, [showGenderMismatchModal]);
 
+    // 页面进入后后台预加载海报素材，提升点击保存时的成功率和速度
+    useEffect(() => {
+        if (!result) return;
+
+        const avatarUrl = getCharacterImage({
+            score: faceAnalysis?.overallScore ?? 0,
+            skinType: result?.skinProfile?.type || 'combination',
+            budget: ipBudget,
+            skincareFrequency: ipSkincareFrequency,
+            gender: socialGender,
+        });
+
+        preloadImageSilent("/images/poster-template.png?v=4");
+        preloadImageSilent("/images/poster-overlay.png");
+        preloadImageSilent(avatarUrl);
+    }, [result, faceAnalysis?.overallScore, result?.skinProfile?.type, ipBudget, ipSkincareFrequency, socialGender]);
+
     const handleMismatchRetry = () => {
         // Clear previous answers to force a fresh start
         localStorage.removeItem(STORAGE_KEYS.ADVISOR_ANSWERS);
@@ -450,12 +501,10 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     async function triggerDownload(blob: Blob, filename: string) {
         const blobUrl = URL.createObjectURL(blob);
 
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-            (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
         const canShare = typeof navigator.share === "function" && navigator.canShare &&
             navigator.canShare({ files: [new File([blob], filename, { type: "image/png" })] });
 
-        if (isIOS && canShare) {
+        if (canShare) {
             try {
                 await navigator.share({
                     files: [new File([blob], filename, { type: "image/png" })],
@@ -476,15 +525,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
     }
 
-    async function preloadImage(url: string): Promise<void> {
-        return new Promise((resolve) => {
-            const img = document.createElement("img");
-            img.onload = () => resolve();
-            img.onerror = () => resolve();
-            img.src = url;
-        });
-    }
-
     const handleSavePoster = async () => {
         if (!posterRef.current || isGeneratingPoster) return;
         try {
@@ -493,17 +533,23 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
             await document.fonts.ready;
 
+            const avatarUrl = getCharacterImage({
+                score: faceAnalysis?.overallScore ?? 0,
+                skinType: result?.skinProfile?.type || 'combination',
+                budget: ipBudget,
+                skincareFrequency: ipSkincareFrequency,
+                gender: socialGender,
+            });
+
+            // 预先加载所有海报素材，失败直接报错
             await Promise.all([
-                preloadImage("/images/poster-template.png?v=4"),
-                preloadImage("/images/poster-overlay.png"),
-                preloadImage(getCharacterImage({
-                    score: faceAnalysis?.overallScore ?? 0,
-                    skinType: result?.skinProfile?.type || 'combination',
-                    budget: ipBudget,
-                    skincareFrequency: ipSkincareFrequency,
-                    gender: socialGender,
-                })),
+                loadImage("/images/poster-template.png?v=4"),
+                loadImage("/images/poster-overlay.png"),
+                loadImage(avatarUrl),
             ]);
+
+            // 确保离屏 poster DOM 里的 <img> 也真正渲染完成
+            await waitForImages(posterRef.current);
 
             const blob = await toBlob(posterRef.current, {
                 pixelRatio: 2,
