@@ -525,7 +525,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             await waitForImages(posterRef.current);
 
             const blob = await toBlob(posterRef.current, {
-                pixelRatio: 2,
+                pixelRatio: 1.5,
                 cacheBust: false,
             });
 
