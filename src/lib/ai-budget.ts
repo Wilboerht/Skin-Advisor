@@ -424,3 +424,77 @@ export async function checkUserUsageAnomaly(
 
     return { anomaly: false, userDailyTokens: tokens, userDailyCost: cost };
 }
+
+// ============================================================================
+// 预算健康状态（供管理端 AI 成本页使用）
+// ============================================================================
+
+export interface AIBudgetHealth {
+    budget: {
+        dailyTokens: number;
+        dailyCost: number;
+        monthlyTokens: number;
+        monthlyCost: number;
+    };
+    usage: {
+        dailyTokens: number;
+        dailyCost: number;
+        monthlyTokens: number;
+        monthlyCost: number;
+    };
+    /** 日预算使用百分比 (用 cost 维度) */
+    dailyUsagePercent: number;
+    /** 月预算使用百分比 (用 cost 维度) */
+    monthlyUsagePercent: number;
+    /** 预算是否已耗尽 */
+    exhausted: boolean;
+    exhaustedReason: string | null;
+}
+
+export async function getAIBudgetHealth(): Promise<AIBudgetHealth> {
+    const budgetConfig = getBudgetConfig();
+    const stats = await getUsageStats();
+
+    const dailyUsagePercent = budgetConfig.dailyCostBudget
+        ? Math.round((stats.dailyCost / budgetConfig.dailyCostBudget) * 10000) / 100
+        : 0;
+    const monthlyUsagePercent = budgetConfig.monthlyCostBudget
+        ? Math.round((stats.monthlyCost / budgetConfig.monthlyCostBudget) * 10000) / 100
+        : 0;
+
+    const exhausted =
+        (budgetConfig.dailyTokenBudget ? stats.dailyTokens >= budgetConfig.dailyTokenBudget : false) ||
+        (budgetConfig.dailyCostBudget ? stats.dailyCost >= budgetConfig.dailyCostBudget : false) ||
+        (budgetConfig.monthlyTokenBudget ? stats.monthlyTokens >= budgetConfig.monthlyTokenBudget : false) ||
+        (budgetConfig.monthlyCostBudget ? stats.monthlyCost >= budgetConfig.monthlyCostBudget : false);
+
+    let exhaustedReason: string | null = null;
+    if (budgetConfig.dailyCostBudget && stats.dailyCost >= budgetConfig.dailyCostBudget) {
+        exhaustedReason = "日费用预算已耗尽";
+    } else if (budgetConfig.dailyTokenBudget && stats.dailyTokens >= budgetConfig.dailyTokenBudget) {
+        exhaustedReason = "日 Token 预算已耗尽";
+    } else if (budgetConfig.monthlyCostBudget && stats.monthlyCost >= budgetConfig.monthlyCostBudget) {
+        exhaustedReason = "月费用预算已耗尽";
+    } else if (budgetConfig.monthlyTokenBudget && stats.monthlyTokens >= budgetConfig.monthlyTokenBudget) {
+        exhaustedReason = "月 Token 预算已耗尽";
+    }
+
+    return {
+        budget: {
+            dailyTokens: budgetConfig.dailyTokenBudget ?? 0,
+            dailyCost: budgetConfig.dailyCostBudget ?? 0,
+            monthlyTokens: budgetConfig.monthlyTokenBudget ?? 0,
+            monthlyCost: budgetConfig.monthlyCostBudget ?? 0,
+        },
+        usage: {
+            dailyTokens: stats.dailyTokens,
+            dailyCost: stats.dailyCost,
+            monthlyTokens: stats.monthlyTokens,
+            monthlyCost: stats.monthlyCost,
+        },
+        dailyUsagePercent,
+        monthlyUsagePercent,
+        exhausted,
+        exhaustedReason,
+    };
+}

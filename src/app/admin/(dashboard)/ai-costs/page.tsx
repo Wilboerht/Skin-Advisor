@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Loader2, TrendingDown, Zap, AlertTriangle, BarChart3, DollarSign } from "lucide-react";
+import { Loader2, TrendingDown, Zap, AlertTriangle, BarChart3, DollarSign, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface AICostData {
@@ -30,6 +30,32 @@ interface AICostData {
         createdAt: string;
     }>;
     dailyCosts: Array<{ date: string; cost: string; calls: number }>;
+}
+
+interface AIHealthData {
+    budget: {
+        dailyTokens: number;
+        dailyCost: number;
+        monthlyTokens: number;
+        monthlyCost: number;
+    };
+    usage: {
+        dailyTokens: number;
+        dailyCost: number;
+        monthlyTokens: number;
+        monthlyCost: number;
+    };
+    dailyUsagePercent: number;
+    monthlyUsagePercent: number;
+    exhausted: boolean;
+    exhaustedReason: string | null;
+    circuits: Array<{
+        service: string;
+        state: string;
+        failureCount: number;
+        isBlocked: boolean;
+    }>;
+    status: "healthy" | "warning" | "critical";
 }
 
 const PERIODS = [
@@ -67,6 +93,7 @@ function StatCard({ title, value, sub, icon: Icon, color }: {
 export default function AdminAICostsPage() {
     const [period, setPeriod] = useState("week");
     const [data, setData] = useState<AICostData | null>(null);
+    const [health, setHealth] = useState<AIHealthData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -88,6 +115,13 @@ export default function AdminAICostsPage() {
     useEffect(() => {
         fetchData();
     }, [fetchData]);
+
+    useEffect(() => {
+        fetch("/api/admin/ai-health")
+            .then((res) => res.json())
+            .then((json) => setHealth(json))
+            .catch(() => {});
+    }, []);
 
     if (loading) {
         return (
@@ -135,6 +169,104 @@ export default function AdminAICostsPage() {
                     ))}
                 </div>
             </div>
+
+            {/* AI 服务健康状态横幅 */}
+            {health && (
+                <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`rounded-xl p-4 border ${
+                        health.status === "healthy"
+                            ? "bg-emerald-50/60 border-emerald-200"
+                            : health.status === "warning"
+                            ? "bg-amber-50/60 border-amber-200"
+                            : "bg-red-50/60 border-red-200"
+                    }`}
+                >
+                    <div className="flex items-center gap-3 mb-3">
+                        {health.status === "healthy" ? (
+                            <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                        ) : health.status === "warning" ? (
+                            <AlertCircle className="w-5 h-5 text-amber-600" />
+                        ) : (
+                            <XCircle className="w-5 h-5 text-red-600" />
+                        )}
+                        <span className={`text-sm font-semibold ${
+                            health.status === "healthy" ? "text-emerald-700" :
+                            health.status === "warning" ? "text-amber-700" : "text-red-700"
+                        }`}>
+                            {health.status === "healthy" ? "服务正常" :
+                             health.status === "warning" ? "需关注" : "服务异常"}
+                        </span>
+                        {health.exhausted && health.exhaustedReason && (
+                            <span className="text-xs text-red-600 bg-red-100 px-2 py-0.5 rounded-full font-medium">
+                                {health.exhaustedReason}
+                            </span>
+                        )}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* 预算使用率 */}
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between text-xs">
+                                <span className="text-[#1B3A5C]/60">日预算</span>
+                                <span className={`font-medium ${health.dailyUsagePercent >= 100 ? "text-red-600" : health.dailyUsagePercent >= 80 ? "text-amber-600" : "text-[#1B3A5C]"}`}>
+                                    ¥{health.usage.dailyCost.toFixed(2)} / ¥{health.budget.dailyCost}
+                                    <span className="ml-1">({health.dailyUsagePercent}%)</span>
+                                </span>
+                            </div>
+                            <div className="h-1.5 bg-white rounded-full overflow-hidden">
+                                <div
+                                    className={`h-full rounded-full transition-all duration-500 ${
+                                        health.dailyUsagePercent >= 100 ? "bg-red-500" :
+                                        health.dailyUsagePercent >= 80 ? "bg-amber-500" : "bg-emerald-500"
+                                    }`}
+                                    style={{ width: `${Math.min(health.dailyUsagePercent, 100)}%` }}
+                                />
+                            </div>
+                            <div className="flex items-center justify-between text-xs">
+                                <span className="text-[#1B3A5C]/60">月预算</span>
+                                <span className={`font-medium ${health.monthlyUsagePercent >= 100 ? "text-red-600" : health.monthlyUsagePercent >= 80 ? "text-amber-600" : "text-[#1B3A5C]"}`}>
+                                    ¥{health.usage.monthlyCost.toFixed(2)} / ¥{health.budget.monthlyCost}
+                                    <span className="ml-1">({health.monthlyUsagePercent}%)</span>
+                                </span>
+                            </div>
+                            <div className="h-1.5 bg-white rounded-full overflow-hidden">
+                                <div
+                                    className={`h-full rounded-full transition-all duration-500 ${
+                                        health.monthlyUsagePercent >= 100 ? "bg-red-500" :
+                                        health.monthlyUsagePercent >= 80 ? "bg-amber-500" : "bg-emerald-500"
+                                    }`}
+                                    style={{ width: `${Math.min(health.monthlyUsagePercent, 100)}%` }}
+                                />
+                            </div>
+                        </div>
+
+                        {/* 熔断器状态 */}
+                        <div className="space-y-1.5">
+                            <span className="text-xs text-[#1B3A5C]/60">服务熔断状态</span>
+                            {health.circuits.filter(c => c.failureCount > 0 || c.state !== "closed").length === 0 ? (
+                                <p className="text-xs text-[#1B3A5C]/40">所有服务正常</p>
+                            ) : (
+                                health.circuits
+                                    .filter(c => c.failureCount > 0 || c.state !== "closed")
+                                    .map((c) => (
+                                        <div key={c.service} className="flex items-center justify-between text-xs">
+                                            <span className="text-[#1B3A5C] font-mono">{c.service}</span>
+                                            <span className={`font-medium ${
+                                                c.isBlocked ? "text-red-600" : c.state === "half-open" ? "text-amber-600" : "text-[#1B3A5C]/60"
+                                            }`}>
+                                                {c.state === "open" ? "已熔断" :
+                                                 c.state === "half-open" ? `半开 (探测中)` :
+                                                 c.failureCount > 0 ? `失败 ${c.failureCount} 次` : "正常"}
+                                            </span>
+                                        </div>
+                                    ))
+                            )}
+                        </div>
+                    </div>
+                </motion.div>
+            )}
 
             {/* Summary Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

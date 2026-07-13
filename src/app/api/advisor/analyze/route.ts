@@ -639,7 +639,7 @@ export async function POST(request: NextRequest) {
             if (err.message?.includes("[AIBudget]")) {
                 aiLogger.warn("AI budget exceeded, rejecting request", { error: err.message });
                 await rollbackUsage(request, effectiveSessionId, body as Record<string, unknown>);
-                const response = apiError("AI_BUDGET_EXCEEDED", "AI 服务当前额度已用完，请稍后再试", 503);
+            const response = apiError("AI_BUDGET_EXCEEDED", "服务暂不可用，请稍后重试", 503);
                 response.headers.set("Retry-After", "3600");
                 return response;
             }
@@ -647,7 +647,7 @@ export async function POST(request: NextRequest) {
             if (err.message?.includes("[CircuitBreaker]")) {
                 aiLogger.warn("Circuit breaker open, rejecting request", { error: err.message });
                 await rollbackUsage(request, effectiveSessionId, body as Record<string, unknown>);
-                const response = apiError("AI_CIRCUIT_OPEN", "AI 文本分析服务暂时不可用，请稍后重试", 503);
+                const response = apiError("AI_CIRCUIT_OPEN", "服务暂不可用，请稍后重试", 503);
                 response.headers.set("Retry-After", "60");
                 return response;
             }

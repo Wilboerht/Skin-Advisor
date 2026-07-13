@@ -228,7 +228,7 @@ export function useAsyncAnalysis() {
             }
 
             if (!answersStr) {
-                throw new Error("Missing answer data");
+                throw new Error("答题数据缺失，请重新填写问卷");
             }
             const answers = JSON.parse(answersStr);
 
@@ -439,8 +439,11 @@ export function useAsyncAnalysis() {
                             if (err.message.includes("Request failed: 429")) {
                                 throw new Error("请求过于频繁，请稍后重试");
                             }
-                            if (err.message.includes("Request failed: 5") || err.message.includes("Failed to fetch")) {
+                            if (err.message.includes("Request failed: 5")) {
                                 throw new Error("AI 服务暂时繁忙，请稍后重试");
+                            }
+                            if (err.message.includes("Failed to fetch")) {
+                                throw new Error("网络连接异常，请检查网络后重试");
                             }
                             throw e; // Rethrow to stop the process and show error state
                         } finally {
@@ -516,8 +519,7 @@ export function useAsyncAnalysis() {
                         const errorData = await analyzeRes.json();
                         serverError = errorData.error || errorData.message || serverError;
                     } catch {
-                        // 无法解析 JSON，使用状态码信息
-                        serverError = `服务器错误 (${analyzeRes.status})，请稍后重试`;
+                        serverError = "服务器繁忙，请稍后重试";
                     }
                     throw new Error(serverError);
                 }

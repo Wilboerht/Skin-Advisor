@@ -451,7 +451,7 @@ export async function POST(request: NextRequest) {
                 if (faceSessionId) {
                     await rollbackUsage(request, faceSessionId, body as Record<string, unknown>);
                 }
-                const response = apiError("AI_BUDGET_EXCEEDED", "AI 视觉服务当前额度已用完，请稍后再试", 503);
+                const response = apiError("AI_BUDGET_EXCEEDED", "服务暂不可用，请稍后重试", 503);
                 response.headers.set("Retry-After", "3600");
                 return response;
             }
