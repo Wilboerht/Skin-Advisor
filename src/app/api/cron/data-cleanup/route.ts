@@ -114,8 +114,8 @@ export async function GET(request: NextRequest) {
         await cleanupSessions(excessSessions, stats);
 
 
-        // ===== 4. 清理过期 AI 用量日志（保留 90 天）=====
-        const aiLogCutoff = new Date(now - 90 * 24 * 60 * 60 * 1000);
+        // ===== 4. 清理过期 AI 用量日志（保留 30 天）=====
+        const aiLogCutoff = new Date(now - 30 * 24 * 60 * 60 * 1000);
         const deletedAiLogs = await prisma.aIUsageLog.deleteMany({
             where: { createdAt: { lt: aiLogCutoff } },
         });

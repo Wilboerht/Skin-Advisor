@@ -11,15 +11,15 @@ interface AICostData {
         failedCalls: number;
         successRate: string;
         totalTokens: number;
-        totalCost: string;
+        totalCost: number;
         avgDurationMs: number;
         avgTokensPerCall: number;
         promptTokens: number;
         completionTokens: number;
     };
-    byProvider: Array<{ provider: string; calls: number; totalTokens: number; cost: string }>;
-    byModel: Array<{ model: string; calls: number; totalTokens: number; cost: string }>;
-    byType: Array<{ type: string; calls: number; totalTokens: number; cost: string }>;
+    byProvider: Array<{ provider: string; calls: number; totalTokens: number; cost: number }>;
+    byModel: Array<{ model: string; calls: number; totalTokens: number; cost: number }>;
+    byType: Array<{ type: string; calls: number; totalTokens: number; cost: number }>;
     recentFailures: Array<{
         id: string;
         provider: string;
@@ -29,7 +29,7 @@ interface AICostData {
         estimatedCost: number;
         createdAt: string;
     }>;
-    dailyCosts: Array<{ date: string; cost: string; calls: number }>;
+    dailyCosts: Array<{ date: string; cost: number; calls: number }>;
 }
 
 interface AIHealthData {
@@ -106,7 +106,7 @@ export default function AdminAICostsPage() {
             const json = await res.json();
             setData(json);
         } catch (e) {
-            setError(e instanceof Error ? e.message : "Unknown error");
+            setError(e instanceof Error ? e.message : "未知错误");
         } finally {
             setLoading(false);
         }
@@ -118,8 +118,16 @@ export default function AdminAICostsPage() {
 
     useEffect(() => {
         fetch("/api/admin/ai-health")
-            .then((res) => res.json())
-            .then((json) => setHealth(json))
+            .then((res) => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.json();
+            })
+            .then((json) => {
+                // 类型安全保护：确保响应包含必要字段
+                if (json && json.status && json.circuits && Array.isArray(json.circuits)) {
+                    setHealth(json as AIHealthData);
+                }
+            })
             .catch(() => {});
     }, []);
 
@@ -171,7 +179,7 @@ export default function AdminAICostsPage() {
             </div>
 
             {/* AI 服务健康状态横幅 */}
-            {health && (
+            {health && health.status && health.circuits && (
                 <motion.div
                     initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -211,7 +219,8 @@ export default function AdminAICostsPage() {
                             <div className="flex items-center justify-between text-xs">
                                 <span className="text-[#1B3A5C]/60">日预算</span>
                                 <span className={`font-medium ${health.dailyUsagePercent >= 100 ? "text-red-600" : health.dailyUsagePercent >= 80 ? "text-amber-600" : "text-[#1B3A5C]"}`}>
-                                    ¥{health.usage.dailyCost.toFixed(2)} / ¥{health.budget.dailyCost}
+                                    ¥{health.usage.dailyCost.toFixed(2)}
+                                    {health.budget.dailyCost > 0 ? ` / ¥${health.budget.dailyCost}` : ""}
                                     <span className="ml-1">({health.dailyUsagePercent}%)</span>
                                 </span>
                             </div>
@@ -221,13 +230,14 @@ export default function AdminAICostsPage() {
                                         health.dailyUsagePercent >= 100 ? "bg-red-500" :
                                         health.dailyUsagePercent >= 80 ? "bg-amber-500" : "bg-emerald-500"
                                     }`}
-                                    style={{ width: `${Math.min(health.dailyUsagePercent, 100)}%` }}
+                                    style={{ width: `${health.budget.dailyCost > 0 ? Math.min(health.dailyUsagePercent, 100) : 0}%` }}
                                 />
                             </div>
                             <div className="flex items-center justify-between text-xs">
                                 <span className="text-[#1B3A5C]/60">月预算</span>
                                 <span className={`font-medium ${health.monthlyUsagePercent >= 100 ? "text-red-600" : health.monthlyUsagePercent >= 80 ? "text-amber-600" : "text-[#1B3A5C]"}`}>
-                                    ¥{health.usage.monthlyCost.toFixed(2)} / ¥{health.budget.monthlyCost}
+                                    ¥{health.usage.monthlyCost.toFixed(2)}
+                                    {health.budget.monthlyCost > 0 ? ` / ¥${health.budget.monthlyCost}` : ""}
                                     <span className="ml-1">({health.monthlyUsagePercent}%)</span>
                                 </span>
                             </div>
@@ -237,7 +247,7 @@ export default function AdminAICostsPage() {
                                         health.monthlyUsagePercent >= 100 ? "bg-red-500" :
                                         health.monthlyUsagePercent >= 80 ? "bg-amber-500" : "bg-emerald-500"
                                     }`}
-                                    style={{ width: `${Math.min(health.monthlyUsagePercent, 100)}%` }}
+                                    style={{ width: `${health.budget.monthlyCost > 0 ? Math.min(health.monthlyUsagePercent, 100) : 0}%` }}
                                 />
                             </div>
                         </div>
@@ -273,21 +283,21 @@ export default function AdminAICostsPage() {
                 <StatCard
                     title="总调用次数"
                     value={s.totalCalls.toLocaleString()}
-                    sub={`成功率 ${s.successRate}`}
+                    sub={s.totalCalls > 0 ? `成功率 ${s.successRate}` : "暂无调用记录"}
                     icon={Zap}
                     color="bg-blue-50 text-blue-600"
                 />
                 <StatCard
                     title="累计费用"
-                    value={`¥${Number(s.totalCost).toFixed(2)}`}
+                    value={`¥${s.totalCost.toFixed(3)}`}
                     sub={`${s.totalTokens.toLocaleString()} tokens`}
                     icon={DollarSign}
                     color="bg-amber-50 text-amber-600"
                 />
                 <StatCard
                     title="平均延迟"
-                    value={`${(s.avgDurationMs / 1000).toFixed(1)}s`}
-                    sub={`${s.avgTokensPerCall.toLocaleString()} tokens/次`}
+                    value={s.totalCalls > 0 ? `${(s.avgDurationMs / 1000).toFixed(1)}s` : "-"}
+                    sub={s.totalCalls > 0 ? `${s.avgTokensPerCall.toLocaleString()} tokens/次` : ""}
                     icon={TrendingDown}
                     color="bg-green-50 text-green-600"
                 />
@@ -315,7 +325,7 @@ export default function AdminAICostsPage() {
                                     <span className="text-xs text-[#1B3A5C]/40 ml-2">{p.calls} 次</span>
                                 </div>
                                 <div className="text-right">
-                                    <span className="text-sm font-medium text-[#1B3A5C]">¥{Number(p.cost).toFixed(3)}</span>
+                                    <span className="text-sm font-medium text-[#1B3A5C]">¥{p.cost.toFixed(3)}</span>
                                     <span className="text-xs text-[#1B3A5C]/40 ml-2">{p.totalTokens.toLocaleString()} tokens</span>
                                 </div>
                             </div>
@@ -341,7 +351,7 @@ export default function AdminAICostsPage() {
                                     </span>
                                     <span className="text-xs text-[#1B3A5C]/40 ml-2">{t.calls} 次</span>
                                 </div>
-                                <span className="text-sm font-medium text-[#1B3A5C]">¥{Number(t.cost).toFixed(3)}</span>
+                                <span className="text-sm font-medium text-[#1B3A5C]">¥{t.cost.toFixed(3)}</span>
                             </div>
                         ))}
                         {data.byType.length === 0 && (
@@ -364,7 +374,7 @@ export default function AdminAICostsPage() {
                                     <span className="text-xs text-[#1B3A5C]/40 ml-2">{m.calls} 次</span>
                                 </div>
                                 <div className="text-right">
-                                    <span className="text-sm font-medium text-[#1B3A5C]">¥{Number(m.cost).toFixed(3)}</span>
+                                    <span className="text-sm font-medium text-[#1B3A5C]">¥{m.cost.toFixed(3)}</span>
                                     <span className="text-xs text-[#1B3A5C]/40 ml-2">{m.totalTokens.toLocaleString()} tokens</span>
                                 </div>
                             </div>
@@ -379,13 +389,13 @@ export default function AdminAICostsPage() {
                 <div className="rounded-2xl bg-white border border-[#E8E2D9] p-5">
                     <h3 className="text-sm font-semibold text-[#1B3A5C] mb-4 flex items-center gap-2">
                         <TrendingDown className="w-4 h-4 text-[#A0784C]" />
-                        每日费用趋势 (近30天)
+                         每日费用趋势 (近30天){data.dailyCosts.length === 0 && <span className="text-[#1B3A5C]/30 font-normal ml-2">暂无数据</span>}
                     </h3>
                     <div className="space-y-1.5 max-h-[240px] overflow-y-auto">
                         {data.dailyCosts.map(d => (
                             <div key={d.date} className="flex items-center justify-between text-xs">
                                 <span className="text-[#1B3A5C]/60">{d.date}</span>
-                                <span className="font-medium text-[#1B3A5C]">¥{Number(d.cost).toFixed(2)}</span>
+                                <span className="font-medium text-[#1B3A5C]">¥{d.cost.toFixed(3)}</span>
                                 <span className="text-[#1B3A5C]/30">{d.calls}次</span>
                             </div>
                         ))}
@@ -422,7 +432,7 @@ export default function AdminAICostsPage() {
                                         <td className="py-2 text-[#1B3A5C] font-mono">{f.model}</td>
                                         <td className="py-2 text-[#1B3A5C]/60">{f.requestType}</td>
                                         <td className="py-2 text-red-500 font-mono text-[10px] max-w-[200px] truncate">
-                                            {f.errorCode || "Unknown"}
+                                            {f.errorCode || "-"}
                                         </td>
                                         <td className="py-2 text-right text-[#1B3A5C]/60">
                                             ¥{f.estimatedCost.toFixed(4)}

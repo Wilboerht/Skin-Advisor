@@ -117,15 +117,15 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
                 },
             }),
 
-            // 每日成本趋势（最近30天）
+            // 每日成本趋势（最近30天，按北京时间日期分组）
             prisma.$queryRaw<Array<{ date: string; cost: number; count: number }>>`
                 SELECT 
-                    DATE("createdAt") as date,
+                    DATE("createdAt" AT TIME ZONE 'Asia/Shanghai') as date,
                     SUM("estimatedCost")::float as cost,
                     COUNT(*)::int as count
                 FROM "AIUsageLog"
                 WHERE "createdAt" >= ${new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)}
-                GROUP BY DATE("createdAt")
+                GROUP BY DATE("createdAt" AT TIME ZONE 'Asia/Shanghai')
                 ORDER BY date DESC
             `,
         ]);
@@ -147,7 +147,7 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
                 failedCalls,
                 successRate: `${successRate}%`,
                 totalTokens: summary._sum.totalTokens || 0,
-                totalCost: (summary._sum.estimatedCost || 0).toFixed(4),
+                totalCost: summary._sum.estimatedCost || 0,
                 avgDurationMs: Math.round(summary._avg.durationMs || 0),
                 avgTokensPerCall: Math.round(summary._avg.totalTokens || 0),
                 promptTokens: summary._sum.promptTokens || 0,
@@ -157,24 +157,24 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
                 provider: p.provider,
                 calls: p._count.id,
                 totalTokens: p._sum.totalTokens || 0,
-                cost: (p._sum.estimatedCost || 0).toFixed(4),
+                cost: p._sum.estimatedCost || 0,
             })),
             byModel: byModel.map((m: { model: string; _count: { id: number }; _sum: { totalTokens: number | null; estimatedCost: number | null } }) => ({
                 model: m.model,
                 calls: m._count.id,
                 totalTokens: m._sum.totalTokens || 0,
-                cost: (m._sum.estimatedCost || 0).toFixed(4),
+                cost: m._sum.estimatedCost || 0,
             })),
             byType: byType.map((t: { requestType: string; _count: { id: number }; _sum: { totalTokens: number | null; estimatedCost: number | null } }) => ({
                 type: t.requestType,
                 calls: t._count.id,
                 totalTokens: t._sum.totalTokens || 0,
-                cost: (t._sum.estimatedCost || 0).toFixed(4),
+                cost: t._sum.estimatedCost || 0,
             })),
             recentFailures,
             dailyCosts: (dailyCosts as Array<{ date: string; cost: number; count: number }>).map(d => ({
                 date: d.date,
-                cost: Number(d.cost).toFixed(4),
+                cost: d.cost,
                 calls: d.count,
             })),
         };

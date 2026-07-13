@@ -47,7 +47,32 @@ class AICircuitBreaker {
     }
 
     /**
-     * 检查是否允许通过请求
+     * 纯查询：检查当前熔断状态是否允许请求通过（无副作用）
+     */
+    private checkRequestAllowed(service: string): boolean {
+        const entry = this.getOrCreate(service);
+        const now = Date.now();
+
+        const activeFailures = entry.failures.filter(
+            f => now - f.timestamp < this.config.failureWindowMs
+        );
+
+        switch (entry.state) {
+            case "closed":
+                return true;
+            case "open": {
+                const cooldownElapsed = now - entry.openedAt >= this.config.cooldownMs;
+                return cooldownElapsed;
+            }
+            case "half-open":
+                return entry.halfOpenCount < this.config.halfOpenMaxRequests;
+            default:
+                return true;
+        }
+    }
+
+    /**
+     * 检查是否允许通过请求（有副作用：可能触发 OPEN→HALF-OPEN 转换，递增探测计数）
      * @param service 服务标识（如 "vision-qwen", "text-deepseek"）
      * @returns true = 允许通过
      */
@@ -141,7 +166,7 @@ class AICircuitBreaker {
     }
 
     /**
-     * 获取熔断器状态（用于监控/调试）
+     * 获取熔断器状态（纯查询，无副作用，用于监控/调试）
      */
     getStatus(service: string): {
         state: CircuitState;
@@ -151,14 +176,14 @@ class AICircuitBreaker {
         const entry = this.getOrCreate(service);
         const now = Date.now();
 
-        entry.failures = entry.failures.filter(
+        const activeFailures = entry.failures.filter(
             f => now - f.timestamp < this.config.failureWindowMs
         );
 
         return {
             state: entry.state,
-            failureCount: entry.failures.length,
-            isBlocked: !this.allowRequest(service),
+            failureCount: activeFailures.length,
+            isBlocked: !this.checkRequestAllowed(service),
         };
     }
 
