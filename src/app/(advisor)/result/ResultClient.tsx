@@ -254,6 +254,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
     const [posterError, setPosterError] = useState<string | null>(null);
     const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+    const [preloadedPosterBlob, setPreloadedPosterBlob] = useState<Blob | null>(null);
     const [dismissValidationWarning, setDismissValidationWarning] = useState(() => {
         try { return sessionStorage.getItem('advisor_dismiss_validation') === 'true'; } catch { return false; }
     });
@@ -314,6 +315,26 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         preloadImage("/images/poster-overlay.webp");
         preloadImage(avatarUrl);
     }, [result, faceAnalysis?.overallScore, result?.skinProfile?.type, ipBudget, ipSkincareFrequency, socialGender]);
+
+    // 后台预生成海报 blob：素材和二维码就绪后延迟执行，点击保存时直接使用
+    useEffect(() => {
+        if (!result || !qrDataUrl || preloadedPosterBlob) return;
+
+        let cancelled = false;
+        const timer = setTimeout(async () => {
+            try {
+                const blob = await generatePosterBlob();
+                if (!cancelled) setPreloadedPosterBlob(blob);
+            } catch (error) {
+                console.error("预生成海报失败:", error);
+            }
+        }, 1200);
+
+        return () => {
+            cancelled = true;
+            clearTimeout(timer);
+        };
+    }, [result, qrDataUrl, preloadedPosterBlob]);
 
     const handleMismatchRetry = () => {
         // Clear previous answers to force a fresh start
@@ -515,21 +536,29 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
     }
 
+    async function generatePosterBlob(): Promise<Blob> {
+        if (!posterRef.current) throw new Error("posterRef 未就绪");
+
+        await document.fonts.ready;
+        await waitForImages(posterRef.current);
+
+        const blob = await toBlob(posterRef.current, {
+            pixelRatio: 2,
+            cacheBust: false,
+        });
+
+        if (!blob) throw new Error("toBlob 返回空");
+        return blob;
+    }
+
     const handleSavePoster = async () => {
-        if (!posterRef.current || isGeneratingPoster) return;
+        if (isGeneratingPoster) return;
         try {
             setIsGeneratingPoster(true);
             setPosterError(null);
 
-            await document.fonts.ready;
-            await waitForImages(posterRef.current);
-
-            const blob = await toBlob(posterRef.current, {
-                pixelRatio: 1.5,
-                cacheBust: false,
-            });
-
-            if (!blob) throw new Error("toBlob 返回空");
+            // 优先使用后台预生成的 blob，没有则现场生成
+            const blob = preloadedPosterBlob ?? await generatePosterBlob();
 
             const safeName = sanitizeFilename(userNickname || "用户");
             await triggerDownload(blob, `${safeName}的肌智派证书.png`);
