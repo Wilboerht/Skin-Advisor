@@ -60,7 +60,7 @@ interface ResultClientProps {
 
 function preloadImageSilent(url: string | undefined): void {
     if (!url) return;
-    const img = new Image();
+    const img = new globalThis.Image();
     img.src = url;
 }
 
