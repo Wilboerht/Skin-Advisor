@@ -9,31 +9,29 @@ export default function robots(): MetadataRoute.Robots {
         allow: "/",
         disallow: ["/admin/", "/api/", "/test-background/", "/result", "/reports/", "/face-scan/", "/questions/"],
       },
-      // AI 爬虫白名单：允许抓取内容页
       {
         userAgent: "GPTBot",
-        allow: ["/", "/skin-types/", "/services/", "/faq/", "/gift/"],
+        allow: ["/", "/skin-types/", "/services/", "/faq/", "/gift/", "/llms.txt", "/llms-full.txt"],
         disallow: ["/admin/", "/api/", "/result", "/reports/"],
       },
       {
         userAgent: "CCBot",
-        allow: ["/", "/skin-types/", "/services/", "/faq/"],
+        allow: ["/", "/skin-types/", "/services/", "/faq/", "/gift/", "/llms.txt", "/llms-full.txt"],
         disallow: ["/admin/", "/api/"],
       },
       {
         userAgent: "anthropic-ai",
-        allow: ["/", "/skin-types/", "/services/", "/faq/"],
+        allow: ["/", "/skin-types/", "/services/", "/faq/", "/gift/", "/llms.txt", "/llms-full.txt"],
         disallow: ["/admin/", "/api/"],
       },
       {
         userAgent: "Google-Extended",
-        allow: ["/", "/skin-types/", "/services/", "/faq/"],
+        allow: ["/", "/skin-types/", "/services/", "/faq/", "/gift/", "/llms.txt", "/llms-full.txt"],
         disallow: ["/admin/", "/api/"],
       },
-      // 百度爬虫
       {
         userAgent: "Baiduspider",
-        allow: ["/", "/skin-types/", "/services/", "/faq/", "/gift/"],
+        allow: ["/", "/skin-types/", "/services/", "/faq/", "/gift/", "/privacy/", "/terms/"],
         disallow: ["/admin/", "/api/", "/result", "/reports/"],
       },
     ],

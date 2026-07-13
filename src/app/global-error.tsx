@@ -14,7 +14,14 @@ export default function GlobalError({
     }, [error]);
 
     return (
-        <html>
+        <html lang="zh-CN">
+            <head>
+                <meta charSet="utf-8" />
+                <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+                <meta name="robots" content="noindex, nofollow" />
+                <title>出错了 — NIHPLOD</title>
+                <link rel="icon" href="/favicon.ico" sizes="any" />
+            </head>
             <body className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4">
                 <h2 className="text-xl font-semibold text-gray-800 mb-4">出错了</h2>
                 <p className="text-gray-600 mb-6">应用遇到意外错误，请刷新页面重试。</p>

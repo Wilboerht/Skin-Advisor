@@ -23,7 +23,10 @@ export function OrganizationSchema() {
       contactType: "customer service",
       availableLanguage: ["Chinese"],
     },
-    sameAs: [],
+    sameAs: [
+      "https://www.xiaohongshu.com/user/profile/nihplod",
+      "https://weixin.qq.com/",
+    ],
   };
 
   return (

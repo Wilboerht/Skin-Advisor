@@ -1,6 +1,12 @@
 {
-    "name": "NIHPLOD Skin Advisor",
-    "short_name": "Skin Advisor",
+    "name": "NIHPLOD AI 护肤顾问",
+    "short_name": "NIHPLOD",
+    "description": "基于 AI 面部识别技术的专业护肤分析平台，支持 8 种肤质类型检测",
+    "start_url": "/",
+    "scope": "/",
+    "id": "nihplod-skin-advisor-v1",
+    "lang": "zh-CN",
+    "categories": ["lifestyle", "health", "beauty"],
     "icons": [
         {
             "src": "/android-chrome-192x192.png",
@@ -11,9 +17,23 @@
             "src": "/android-chrome-512x512.png",
             "sizes": "512x512",
             "type": "image/png"
+        },
+        {
+            "src": "/android-chrome-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "/android-chrome-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
         }
     ],
-    "theme_color": "#ffffff",
-    "background_color": "#ffffff",
-    "display": "standalone"
+    "theme_color": "#F8F7F3",
+    "background_color": "#F8F7F3",
+    "display": "standalone",
+    "display_override": ["window-controls-overlay"],
+    "orientation": "portrait"
 }

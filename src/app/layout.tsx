@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import "./globals.css";
-import { OrganizationSchema, WebsiteSearchSchema } from "@/components/website/StructuredData";
+import { OrganizationSchema, WebApplicationSchema, WebsiteSearchSchema } from "@/components/website/StructuredData";
+
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://nihplod.cn";
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -13,7 +15,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"),
+  metadataBase: new URL(BASE_URL),
   title: {
     default: "NIHPLOD | 素颜测肤",
     template: "%s | NIHPLOD",
@@ -23,14 +25,13 @@ export const metadata: Metadata = {
   keywords: [
     "AI护肤", "肤质测试", "面部识别", "护肤顾问", "肤质分析",
     "护肤品推荐", "AI测肤", "敏感肌", "油性皮肤", "干性皮肤",
-    "NIHPLOD", "nihplod", "Nihplod", "nihplod.cn",
-    "NIHPLOD护肤", "NIHPLOD测肤", "NIHPLOD官网", "NIHPLOD皮肤测试",
-    "nihplod ai", "NIHPLOD AI", "nihplod 护肤", "NIHPLOD 人工智能",
+    "NIHPLOD", "NIHPLOD护肤", "NIHPLOD测肤", "NIHPLOD官网",
+    "NIHPLOD皮肤测试", "NIHPLOD AI", "NIHPLOD 人工智能",
     "nihplod skincare", "nihplod skin test", "nihplod beauty",
     "旎柏", "旎柏护肤", "NIHPLOD 怎么样", "NIHPLOD 评价",
     "肌智派", "肌智派AI", "肌智派活动", "肌智派送好礼",
   ],
-  authors: [{ name: "NIHPLOD", url: process.env.NEXT_PUBLIC_BASE_URL }],
+  authors: [{ name: "NIHPLOD", url: BASE_URL }],
   creator: "NIHPLOD",
   publisher: "NIHPLOD",
   formatDetection: { telephone: false },
@@ -71,9 +72,9 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
-  // 百度站长验证（部署时替换为真实 code）
   other: {
-    "baidu-site-verification": "",
+    "baidu-site-verification": process.env.BAIDU_SITE_VERIFICATION || "",
+    "google-site-verification": process.env.GOOGLE_SITE_VERIFICATION || "",
   },
   icons: {
     icon: [
@@ -109,7 +110,25 @@ export default function RootLayout({
       <html lang="zh-CN" data-scroll-behavior="smooth">
         <head>
           <OrganizationSchema />
+          <WebApplicationSchema />
           <WebsiteSearchSchema />
+          {process.env.BAIDU_TONGJI_ID && (
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `var _hmt=_hmt||[];(function(){var hm=document.createElement("script");hm.src="https://hm.baidu.com/hm.js?${process.env.BAIDU_TONGJI_ID}";var s=document.getElementsByTagName("script")[0];s.parentNode.insertBefore(hm,s);})();`,
+              }}
+            />
+          )}
+          {process.env.NEXT_PUBLIC_GA_ID && (
+            <>
+              <script async src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`} />
+              <script
+                dangerouslySetInnerHTML={{
+                  __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${process.env.NEXT_PUBLIC_GA_ID}');`,
+                }}
+              />
+            </>
+          )}
         </head>
         <body
           className={`antialiased bg-[#F8F7F3]`}

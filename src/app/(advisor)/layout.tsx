@@ -1,20 +1,21 @@
-"use client";
+import type { Metadata } from "next";
+import { AdvisorLayoutClient } from "./AdvisorLayoutClient";
 
-import { LazyMotion, domAnimation } from "framer-motion";
-import { ToastProvider } from "@/components/ui/Toast";
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+    googleBot: {
+      index: false,
+      follow: false,
+    },
+  },
+};
 
 export default function AdvisorLayout({
-    children,
+  children,
 }: {
-    children: React.ReactNode;
+  children: React.ReactNode;
 }) {
-    return (
-        <LazyMotion features={domAnimation}>
-            <ToastProvider>
-                <div className="w-full min-h-screen">
-                    {children}
-                </div>
-            </ToastProvider>
-        </LazyMotion>
-    );
+  return <AdvisorLayoutClient>{children}</AdvisorLayoutClient>;
 }

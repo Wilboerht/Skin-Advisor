@@ -18,6 +18,11 @@ export const metadata: Metadata = withDefaultOgImage({
     type: "website",
     locale: "zh_CN",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "常见问题 — AI 护肤分析 FAQ | NIHPLOD",
+    description: "关于 NIHPLOD AI 护肤分析的常见问题解答。",
+  },
 });
 
 const faqs: { question: string; answer: string }[] = [

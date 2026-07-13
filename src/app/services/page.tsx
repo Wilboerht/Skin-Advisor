@@ -20,6 +20,11 @@ export const metadata: Metadata = withDefaultOgImage({
     type: "website",
     locale: "zh_CN",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "顾问服务 — 一对一专属护肤指导 | NIHPLOD",
+    description: "添加 NIHPLOD 护肤顾问微信，获取一对一专业护肤建议。",
+  },
 });
 
 export const revalidate = 86400;

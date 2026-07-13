@@ -6,7 +6,7 @@ import Image from "next/image";
 
 export function HomepageFooter() {
     return (
-        <m.div
+        <m.footer
             className="absolute bottom-6 left-0 right-0 flex flex-col items-center gap-4 pointer-events-none"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -48,6 +48,6 @@ export function HomepageFooter() {
                     </Link>
                 </div>
             </div>
-        </m.div>
+        </m.footer>
     );
 }
