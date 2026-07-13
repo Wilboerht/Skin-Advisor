@@ -42,10 +42,6 @@ export function OptionCard({
                 transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] } 
             }}
             whileTap={{ scale: 0.98 }}
-            style={{ 
-                transform: "translateZ(0)",
-                willChange: "transform"
-            }}
             className={cn(
                 "group relative w-full rounded-lg md:rounded-xl text-left border px-4 sm:px-5 md:px-6 py-3 sm:py-4 md:py-5 flex items-center gap-3 sm:gap-4 backdrop-blur-md transition-[border-color,background-color,box-shadow] duration-300 overflow-hidden touch-manipulation",
                 isSelected

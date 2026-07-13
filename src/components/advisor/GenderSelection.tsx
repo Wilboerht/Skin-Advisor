@@ -74,7 +74,6 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
                 <m.button
                     variants={item}
                     onClick={() => onSelect("female")}
-                    whileHover={{ y: -4 }}
                     whileTap={{ scale: 0.98 }}
                     className="group flex flex-row items-center gap-4 rounded-xl border border-[#E8E2D9] bg-white px-5 sm:px-8 py-4 sm:py-6 text-left transition-[border-color,background-color,box-shadow] duration-300 hover:border-[#C9A86C] hover:shadow-sm touch-manipulation"
                 >
@@ -90,7 +89,6 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
                 <m.button
                     variants={item}
                     onClick={() => onSelect("male")}
-                    whileHover={{ y: -4 }}
                     whileTap={{ scale: 0.98 }}
                     className="group flex flex-row items-center gap-4 rounded-xl border border-[#E8E2D9] bg-white px-5 sm:px-8 py-4 sm:py-6 text-left transition-[border-color,background-color,box-shadow] duration-300 hover:border-[#1B3A5C]/40 hover:shadow-sm touch-manipulation"
                 >

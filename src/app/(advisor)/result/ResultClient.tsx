@@ -64,6 +64,15 @@ function preloadImageSilent(url: string | undefined): void {
     img.src = url;
 }
 
+function waitForImage(url: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+        const img = new globalThis.Image();
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error(`图片加载失败: ${url}`));
+        img.src = url;
+    });
+}
+
 async function waitForImages(container: HTMLElement): Promise<void> {
     const images = Array.from(container.querySelectorAll("img"));
     await Promise.all(
@@ -87,18 +96,6 @@ async function waitForImages(container: HTMLElement): Promise<void> {
             }
         })
     );
-}
-
-async function fetchImageAsDataUrl(url: string): Promise<string> {
-    const res = await fetch(url, { cache: "force-cache" });
-    if (!res.ok) throw new Error(`fetch image failed: ${url}`);
-    const blob = await res.blob();
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.onerror = () => reject(new Error(`read image failed: ${url}`));
-        reader.readAsDataURL(blob);
-    });
 }
 
 // 手机端：十维分析表单（替代 ScientificBarChart）
@@ -275,7 +272,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
     const [posterError, setPosterError] = useState<string | null>(null);
     const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
-    const [posterAssets, setPosterAssets] = useState<{ template?: string; overlay?: string; avatar?: string }>({});
     const [dismissValidationWarning, setDismissValidationWarning] = useState(() => {
         try { return sessionStorage.getItem('advisor_dismiss_validation') === 'true'; } catch { return false; }
     });
@@ -335,23 +331,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         preloadImageSilent("/images/poster-template.png?v=4");
         preloadImageSilent("/images/poster-overlay.png");
         preloadImageSilent(avatarUrl);
-
-        // 同时把素材转成 data URL，避免 html-to-image 在移动端因 CORS/缓存问题读不到图
-        let cancelled = false;
-        Promise.all([
-            fetchImageAsDataUrl("/images/poster-template.png?v=4"),
-            fetchImageAsDataUrl("/images/poster-overlay.png"),
-            fetchImageAsDataUrl(avatarUrl),
-        ])
-            .then(([template, overlay, avatar]) => {
-                if (cancelled) return;
-                setPosterAssets({ template, overlay, avatar });
-            })
-            .catch(() => {
-                // 转 data URL 失败时回退到原始 URL，让 html-to-image 自己尝试
-            });
-
-        return () => { cancelled = true; };
     }, [result, faceAnalysis?.overallScore, result?.skinProfile?.type, ipBudget, ipSkincareFrequency, socialGender]);
 
     const handleMismatchRetry = () => {
@@ -530,18 +509,18 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     async function triggerDownload(blob: Blob, filename: string) {
         const blobUrl = URL.createObjectURL(blob);
 
-        const canShare = typeof navigator.share === "function" && navigator.canShare &&
-            navigator.canShare({ files: [new File([blob], filename, { type: "image/png" })] });
-
-        if (canShare) {
+        // 优先尝试系统原生分享；部分浏览器 canShare 返回 false 但实际支持 share 文件
+        if (typeof navigator.share === "function") {
             try {
                 await navigator.share({
+                    title: "我的肌智派证书",
                     files: [new File([blob], filename, { type: "image/png" })],
                 });
                 URL.revokeObjectURL(blobUrl);
                 return;
-            } catch {
-                // user cancelled or share failed, fall through to download
+            } catch (err) {
+                // 用户取消分享或浏览器不支持文件分享，继续走下载兜底
+                console.log("navigator.share failed or cancelled", err);
             }
         }
 
@@ -556,7 +535,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
     const handleSavePoster = async () => {
         if (!posterRef.current || isGeneratingPoster) return;
-        let clone: HTMLElement | null = null;
         try {
             setIsGeneratingPoster(true);
             setPosterError(null);
@@ -571,44 +549,17 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 gender: socialGender,
             });
 
-            // 尽量使用后台已转好的 data URL；若未准备好则现场转换
-            let assets = posterAssets;
-            const hasAllAssets = assets.template && assets.overlay && assets.avatar;
-            if (!hasAllAssets) {
-                const [template, overlay, avatar] = await Promise.all([
-                    fetchImageAsDataUrl("/images/poster-template.png?v=4"),
-                    fetchImageAsDataUrl("/images/poster-overlay.png"),
-                    fetchImageAsDataUrl(avatarUrl),
-                ]);
-                assets = { template, overlay, avatar };
-                setPosterAssets(assets);
-            }
+            // 后台已预加载过素材，这里再强制等待它们真正解码完成
+            await Promise.all([
+                waitForImage("/images/poster-template.png?v=4"),
+                waitForImage("/images/poster-overlay.png"),
+                waitForImage(avatarUrl),
+            ]);
 
-            // 克隆 poster DOM，并把素材 src 替换为 data URL，彻底规避 html-to-image 的 CORS/缓存问题
-            clone = posterRef.current.cloneNode(true) as HTMLElement;
-            const originalUrls = {
-                template: "/images/poster-template.png?v=4",
-                overlay: "/images/poster-overlay.png",
-                avatar: avatarUrl,
-            };
-            clone.querySelectorAll("img").forEach((img) => {
-                const src = img.getAttribute("src");
-                if (src === originalUrls.template) img.setAttribute("src", assets.template!);
-                else if (src === originalUrls.overlay) img.setAttribute("src", assets.overlay!);
-                else if (src === originalUrls.avatar) img.setAttribute("src", assets.avatar!);
-            });
+            // 确保离屏 poster DOM 里的 <img> 也真正渲染完成
+            await waitForImages(posterRef.current);
 
-            clone.style.position = "fixed";
-            clone.style.top = "-10000px";
-            clone.style.left = "-10000px";
-            clone.style.opacity = "1";
-            clone.style.pointerEvents = "none";
-            document.body.appendChild(clone);
-
-            // 确保克隆体里的图片（包括刚替换的 data URL）都已加载/解码
-            await waitForImages(clone);
-
-            const blob = await toBlob(clone, {
+            const blob = await toBlob(posterRef.current, {
                 pixelRatio: 2,
                 cacheBust: false,
             });
@@ -622,9 +573,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             console.error("海报生成失败:", error);
             setPosterError("证书生成失败，请稍后重试");
         } finally {
-            if (clone && clone.parentNode) {
-                document.body.removeChild(clone);
-            }
             setIsGeneratingPoster(false);
         }
     };
@@ -1357,15 +1305,15 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             waterOil={faceAnalysis?.dimensions?.waterOil?.score}
                             skinTypeName={result?.persona ? skinTypes.find(t => t.ipKey === result.persona)?.typeName : undefined}
                             skinAge={result?.skinProfile?.skinAge}
-                            avatar={posterAssets.avatar || getCharacterImage({
+                            avatar={getCharacterImage({
                                 score: faceAnalysis?.overallScore ?? 0,
                                 skinType: result?.skinProfile?.type || 'combination',
                                 budget: ipBudget,
                                 skincareFrequency: ipSkincareFrequency,
                                 gender: socialGender,
                             })}
-                            posterTemplate={posterAssets.template || "/images/poster-template.png?v=4"}
-                            posterOverlay={posterAssets.overlay || "/images/poster-overlay.png"}
+                            posterTemplate="/images/poster-template.png?v=4"
+                            posterOverlay="/images/poster-overlay.png"
                             qrDataUrl={qrDataUrl}
                             persona={result?.persona ? skinTypes.find(t => t.ipKey === result.persona)?.m1?.persona : undefined}
                             summary={result?.analysis?.summary}

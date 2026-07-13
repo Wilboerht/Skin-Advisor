@@ -472,7 +472,7 @@ export default function QuestionsPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-0 flex flex-col bg-[#F5F2E9] overflow-hidden"
+                    className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col bg-[#F5F2E9] overflow-hidden pointer-events-auto"
                 >
                     {/* Top Bar */}
                     <div className="relative flex items-center justify-center pt-[calc(1.75rem+env(safe-area-inset-top,0px))] pb-7 px-4 md:px-12 lg:px-20 border-b border-[#3D4430]/5">
@@ -554,7 +554,7 @@ export default function QuestionsPage() {
     if (!currentQuestion) return null;
 
     return (
-        <div className="fixed inset-0 z-0 flex flex-col bg-[#F5F2E9] text-[#1A1A1A] overflow-hidden">
+        <div className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col bg-[#F5F2E9] text-[#1A1A1A] overflow-hidden pointer-events-auto">
 
             {/* 提交中加载遮罩 */}
             <AnimatePresence>
