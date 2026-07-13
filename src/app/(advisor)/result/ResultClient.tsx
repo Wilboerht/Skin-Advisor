@@ -73,6 +73,18 @@ function waitForImage(url: string): Promise<void> {
     });
 }
 
+async function fetchImageAsDataUrl(url: string): Promise<string> {
+    const res = await fetch(url, { cache: "force-cache" });
+    if (!res.ok) throw new Error(`fetch image failed: ${url}`);
+    const blob = await res.blob();
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error(`read image failed: ${url}`));
+        reader.readAsDataURL(blob);
+    });
+}
+
 async function waitForImages(container: HTMLElement): Promise<void> {
     const images = Array.from(container.querySelectorAll("img"));
     await Promise.all(
@@ -272,6 +284,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
     const [posterError, setPosterError] = useState<string | null>(null);
     const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+    const [posterAssets, setPosterAssets] = useState<{ template?: string; overlay?: string; avatar?: string }>({});
     const [dismissValidationWarning, setDismissValidationWarning] = useState(() => {
         try { return sessionStorage.getItem('advisor_dismiss_validation') === 'true'; } catch { return false; }
     });
@@ -316,7 +329,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         }
     }, [showGenderMismatchModal]);
 
-    // 页面进入后后台预加载海报素材，提升点击保存时的成功率和速度
+    // 页面进入后后台预加载海报素材并转成 data URL，提升成功率且不影响点击速度
     useEffect(() => {
         if (!result) return;
 
@@ -328,9 +341,26 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             gender: socialGender,
         });
 
-        preloadImageSilent("/images/poster-template.png?v=4");
-        preloadImageSilent("/images/poster-overlay.png");
+        preloadImageSilent("/images/poster-template.webp?v=4");
+        preloadImageSilent("/images/poster-overlay.webp");
         preloadImageSilent(avatarUrl);
+
+        // 后台静默转 data URL：成功则让 SharePoster 用 data URL 渲染，彻底规避 html-to-image 读不到图
+        let cancelled = false;
+        Promise.all([
+            fetchImageAsDataUrl("/images/poster-template.webp?v=4"),
+            fetchImageAsDataUrl("/images/poster-overlay.webp"),
+            fetchImageAsDataUrl(avatarUrl),
+        ])
+            .then(([template, overlay, avatar]) => {
+                if (cancelled) return;
+                setPosterAssets({ template, overlay, avatar });
+            })
+            .catch(() => {
+                // 转失败也不阻塞，保存时会用原 URL 兜底
+            });
+
+        return () => { cancelled = true; };
     }, [result, faceAnalysis?.overallScore, result?.skinProfile?.type, ipBudget, ipSkincareFrequency, socialGender]);
 
     const handleMismatchRetry = () => {
@@ -551,8 +581,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
             // 后台已预加载过素材，这里再强制等待它们真正解码完成
             await Promise.all([
-                waitForImage("/images/poster-template.png?v=4"),
-                waitForImage("/images/poster-overlay.png"),
+                waitForImage("/images/poster-template.webp?v=4"),
+                waitForImage("/images/poster-overlay.webp"),
                 waitForImage(avatarUrl),
             ]);
 
@@ -1305,15 +1335,15 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             waterOil={faceAnalysis?.dimensions?.waterOil?.score}
                             skinTypeName={result?.persona ? skinTypes.find(t => t.ipKey === result.persona)?.typeName : undefined}
                             skinAge={result?.skinProfile?.skinAge}
-                            avatar={getCharacterImage({
+                            avatar={posterAssets.avatar || getCharacterImage({
                                 score: faceAnalysis?.overallScore ?? 0,
                                 skinType: result?.skinProfile?.type || 'combination',
                                 budget: ipBudget,
                                 skincareFrequency: ipSkincareFrequency,
                                 gender: socialGender,
                             })}
-                            posterTemplate="/images/poster-template.png?v=4"
-                            posterOverlay="/images/poster-overlay.png"
+                            posterTemplate={posterAssets.template || "/images/poster-template.webp?v=4"}
+                            posterOverlay={posterAssets.overlay || "/images/poster-overlay.webp"}
                             qrDataUrl={qrDataUrl}
                             persona={result?.persona ? skinTypes.find(t => t.ipKey === result.persona)?.m1?.persona : undefined}
                             summary={result?.analysis?.summary}
