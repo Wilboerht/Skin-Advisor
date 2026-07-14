@@ -506,7 +506,7 @@ export default function QuestionsPage() {
                         ref={genderScrollRef}
                         className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain w-full max-w-5xl mx-auto px-4 md:px-8"
                     >
-                        <div className="h-full min-h-0 py-4 sm:py-0 flex flex-col sm:flex-row items-center justify-center">
+                        <div className="h-full min-h-0 py-4 sm:py-0 flex flex-col justify-start sm:justify-center items-center">
                             {aiConfigured === null ? (
                                 <div className="flex items-center gap-2 text-[#5E5E5E]">
                                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -534,7 +534,7 @@ export default function QuestionsPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ duration: 1.2, delay: 1 }}
-                        className="hidden sm:flex pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,16px))] opacity-40 px-4"
+                        className="hidden sm:flex justify-center pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,16px))] opacity-40 px-4"
                     >
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-center text-[10px] sm:text-[11px] font-light tracking-widest text-[#1A1A1A] leading-tight">
                             <p>&copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
