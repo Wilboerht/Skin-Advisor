@@ -9,20 +9,20 @@ import { BreadcrumbSchema } from "@/components/website/StructuredData";
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://nihplod.cn";
 
 export const metadata: Metadata = withDefaultOgImage({
-  title: "顾问服务 — 一对一专属护肤指导",
+  title: "顾问服务",
   description:
     "添加 NIHPLOD 护肤顾问微信，获取一对一专业护肤建议。专属顾问根据你的肤质类型量身定制护肤方案，持续跟踪调整。",
   keywords: ["护肤顾问", "一对一咨询", "皮肤管理", "NIHPLOD", "微信顾问"],
   alternates: { canonical: "/services" },
   openGraph: {
-    title: "顾问服务 — 一对一专属护肤指导 | NIHPLOD",
+    title: "顾问服务 | NIHPLOD",
     description: "添加 NIHPLOD 护肤顾问微信，获取一对一专业护肤建议。",
     type: "website",
     locale: "zh_CN",
   },
   twitter: {
     card: "summary_large_image",
-    title: "顾问服务 — 一对一专属护肤指导 | NIHPLOD",
+    title: "顾问服务 | NIHPLOD",
     description: "添加 NIHPLOD 护肤顾问微信，获取一对一专业护肤建议。",
   },
 });

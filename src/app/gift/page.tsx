@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 300;
 
 export const metadata: Metadata = withDefaultOgImage({
-  title: "肌智派送好礼 — 参与活动赢取护肤礼包",
+  title: "肌智派送好礼",
   description: "完成 NIHPLOD AI 测肤并分享至小红书，即可参与「肌智派」抽奖活动，赢取精选护肤好礼。",
   keywords: ["NIHPLOD", "肌智派", "护肤抽奖", "AI测肤活动", "小红书分享", "护肤礼包"],
   alternates: { canonical: "/gift" },
