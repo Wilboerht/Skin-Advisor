@@ -89,7 +89,7 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
               height: "auto",
               left: "50%",
               top: "50%",
-              transform: "translate(-49%, -48.5%)",
+              transform: "translate(-49%, -47.5%)",
             }}
             onError={() => setOverlayFailed(true)}
           />
