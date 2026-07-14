@@ -696,7 +696,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
 
   // 监听步骤变化并播报语音指令
   useEffect(() => {
-    if (isAllCaptured || isLoading) return;
+    if (isAllCaptured || isLoading || !modelsLoaded) return;
 
     const instruction = CAPTURE_STEPS.find(s => s.step === currentStep)?.instruction;
     if (instruction) {
@@ -730,7 +730,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
 
       return () => clearTimeout(timer);
     }
-  }, [currentStep, isAllCaptured, isLoading, speak]);
+  }, [currentStep, isAllCaptured, isLoading, modelsLoaded, speak]);
 
   /**
    * 获取下一步骤
