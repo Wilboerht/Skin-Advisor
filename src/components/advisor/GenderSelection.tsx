@@ -30,8 +30,8 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
                     whileTap={{ scale: 0.98 }}
                     className="group flex flex-row items-center gap-4 sm:flex-col sm:items-center sm:gap-5 rounded-xl border border-[#E8E2D9] bg-white px-5 sm:px-12 py-5 sm:py-12 text-left sm:text-center transition-[border-color,background-color,box-shadow] duration-300 hover:border-[#C9A86C] hover:shadow-sm touch-manipulation"
                 >
-                    <div className="flex h-12 w-12 sm:h-28 sm:w-28 shrink-0 items-center justify-center rounded-full bg-[#A0784C]/[0.08] transition-colors duration-300 group-hover:bg-[#A0784C]/[0.12]">
-                        <Venus className="h-6 w-6 sm:h-14 sm:w-14 text-[#A0784C]" strokeWidth={1.5} />
+                    <div className="flex h-12 w-12 sm:h-28 sm:w-28 shrink-0 items-center justify-center rounded-full bg-[#A0784C] transition-colors duration-300 group-hover:bg-[#8B5E2A]">
+                        <Venus className="h-6 w-6 sm:h-14 sm:w-14 text-white" strokeWidth={2} />
                     </div>
 
                     <div>
@@ -45,8 +45,8 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
                     whileTap={{ scale: 0.98 }}
                     className="group flex flex-row items-center gap-4 sm:flex-col sm:items-center sm:gap-5 rounded-xl border border-[#E8E2D9] bg-white px-5 sm:px-12 py-5 sm:py-12 text-left sm:text-center transition-[border-color,background-color,box-shadow] duration-300 hover:border-[#1B3A5C]/40 hover:shadow-sm touch-manipulation"
                 >
-                    <div className="flex h-12 w-12 sm:h-28 sm:w-28 shrink-0 items-center justify-center rounded-full bg-[#1B3A5C]/[0.08] transition-colors duration-300 group-hover:bg-[#1B3A5C]/[0.12]">
-                        <Mars className="h-6 w-6 sm:h-14 sm:w-14 text-[#1B3A5C]" strokeWidth={1.5} />
+                    <div className="flex h-12 w-12 sm:h-28 sm:w-28 shrink-0 items-center justify-center rounded-full bg-[#1B3A5C] transition-colors duration-300 group-hover:bg-[#142945]">
+                        <Mars className="h-6 w-6 sm:h-14 sm:w-14 text-white" strokeWidth={2} />
                     </div>
 
                     <div>
