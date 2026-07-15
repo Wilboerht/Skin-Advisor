@@ -66,12 +66,10 @@ export function ContactAdvisorModal({ isOpen, onClose }: ContactAdvisorModalProp
 
                             <div className="text-center space-y-2">
                                 <h3 className="text-base font-bold" style={{ color: '#5c4937' }}>
-                                    扫码添加专属护肤顾问
+                                    扫码关注 NIHPLOD 官方服务号
                                 </h3>
                                 <p className="text-sm leading-relaxed" style={{ color: '#5c4937', opacity: 0.8 }}>
-                                    获得一对一专业护肤指导
-                                    <br />
-                                    定制您的个人护肤方案
+                                    享受更多定制化服务
                                 </p>
                             </div>
                         </div>

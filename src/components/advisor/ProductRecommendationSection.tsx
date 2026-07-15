@@ -164,7 +164,7 @@ export function ProductRecommendationSection({
                 </h2>
                 <p className="text-xs lg:text-sm text-[#8c7a6b] mt-2">
                     {personaLabel
-                        ? "基于你的肌肤形象，从专属方案中精选最适合入手的 3 件"
+                        ? "基于您的肌肤检测结果，从专属方案中精选最适合入手的 3 件"
                         : "基于您的肤质分析，为您精选以下产品"}
                 </p>
             </m.div>
