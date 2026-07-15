@@ -130,15 +130,15 @@ export function QuestionStep({
                 onClick={onNext}
                 disabled={isNextDisabled}
                 className={cn(
-                  "text-[13px] font-medium tracking-[0.15em] transition-colors duration-300 flex items-center justify-center gap-2",
-                  "py-4 px-8 md:py-3 bg-transparent touch-manipulation",
+                  "text-[13px] font-medium tracking-[0.15em] transition-all duration-300 flex items-center justify-center gap-2",
+                  "min-h-[48px] min-w-[140px] py-3 px-6 sm:py-4 sm:px-8 rounded-full touch-manipulation active:scale-95",
                   isNextDisabled
-                    ? "text-[#8B7355]/30 cursor-not-allowed"
-                    : "text-[#8B7355] hover:text-[#5C4A35]"
+                    ? "text-[#8B7355]/30 cursor-not-allowed bg-transparent"
+                    : "text-[#8B7355] hover:text-[#5C4A35] bg-[#8B7355]/5 hover:bg-[#8B7355]/10 border border-[#8B7355]/10"
                 )}
               >
-                <span className="relative z-10">{nextLabel}</span>
-                {!isNextDisabled && <ChevronRight className="relative z-10 h-4 w-4" />}
+                <span>{nextLabel}</span>
+                {!isNextDisabled && <ChevronRight className="h-4 w-4" />}
               </button>
             </m.div>
           )}

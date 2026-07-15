@@ -475,13 +475,13 @@ export default function QuestionsPage() {
                     className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col bg-[#F5F2E9] overflow-hidden pointer-events-auto"
                 >
                     {/* Top Bar */}
-                    <div className="relative flex items-center justify-center pt-[calc(1.75rem+env(safe-area-inset-top,0px))] pb-7 px-4 md:px-12 lg:px-20 border-b border-[#3D4430]/5">
+                    <div className="relative flex items-center justify-center pt-[calc(1.75rem+env(safe-area-inset-top,0px))] pb-7 px-4 md:px-12 lg:px-20 border-b border-[#3D4430]/5 z-20">
                         <button
                             onClick={() => router.push("/")}
-                            className="absolute left-4 md:left-12 lg:left-20 px-3 py-2 flex items-center gap-1.5 text-[#3D4430]/70 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5"
+                            className="absolute left-2 sm:left-4 md:left-12 lg:left-20 min-w-[44px] min-h-[44px] p-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-[#3D4430]/70 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5 touch-manipulation active:scale-95"
                             aria-label="回首页"
                         >
-                            <ChevronLeft className="w-5 h-5" strokeWidth={1.5} />
+                            <ChevronLeft className="w-6 h-6 sm:w-5 sm:h-5" strokeWidth={1.5} />
                             <span className="hidden sm:inline text-[14px] font-medium tracking-wide">回首页</span>
                         </button>
                         <Image
@@ -494,10 +494,10 @@ export default function QuestionsPage() {
                         />
                         <button
                             onClick={() => router.push("/")}
-                            className="absolute right-4 md:right-12 lg:right-20 px-3 py-2 flex items-center gap-1.5 text-[#3D4430]/70 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5"
+                            className="absolute right-2 sm:right-4 md:right-12 lg:right-20 min-w-[44px] min-h-[44px] p-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-[#3D4430]/70 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5 touch-manipulation active:scale-95"
                             aria-label="回到首页"
                         >
-                            <LogOut className="w-5 h-5" strokeWidth={1.5} />
+                            <LogOut className="w-6 h-6 sm:w-5 sm:h-5" strokeWidth={1.5} />
                             <span className="hidden sm:inline text-[14px] font-medium tracking-wide">退出</span>
                         </button>
                     </div>
@@ -576,12 +576,12 @@ export default function QuestionsPage() {
                 <button
                     onClick={handleBack}
                     className={cn(
-                        "absolute left-4 md:left-12 lg:left-20 px-3 py-2 flex items-center gap-1.5 text-[#3D4430]/70 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5",
+                        "absolute left-2 sm:left-4 md:left-12 lg:left-20 min-w-[44px] min-h-[44px] p-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-[#3D4430]/70 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5 touch-manipulation active:scale-95",
                         (currentStepIndex === 0 && !gender) ? "opacity-0 pointer-events-none" : "opacity-100"
                     )}
                     aria-label={!gender ? "回首页" : "上一题"}
                 >
-                    <ChevronLeft className="w-5 h-5" strokeWidth={1.5} />
+                    <ChevronLeft className="w-6 h-6 sm:w-5 sm:h-5" strokeWidth={1.5} />
                     <span className="hidden sm:inline text-[14px] font-medium tracking-wide">
                         {!gender ? "回首页" : "上一题"}
                     </span>
@@ -599,9 +599,9 @@ export default function QuestionsPage() {
                 <button
                     onClick={() => setShowExitConfirm(true)}
                     aria-label="退出测评"
-                    className="absolute right-4 md:right-12 lg:right-20 px-3 py-2 flex items-center gap-1.5 text-[#3D4430]/70 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5"
+                    className="absolute right-2 sm:right-4 md:right-12 lg:right-20 min-w-[44px] min-h-[44px] p-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-[#3D4430]/70 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5 touch-manipulation active:scale-95"
                 >
-                    <LogOut className="w-5 h-5" strokeWidth={1.5} />
+                    <LogOut className="w-6 h-6 sm:w-5 sm:h-5" strokeWidth={1.5} />
                     <span className="hidden sm:inline text-[14px] font-medium tracking-wide">退出</span>
                 </button>
             </div>
