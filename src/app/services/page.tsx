@@ -80,7 +80,7 @@ export default function ServicesPage() {
                   />
                 </div>
                 <p className="text-[10px] md:text-[12px] text-[#5E5E5E] font-light tracking-[0.1em]">
-                  微信扫码 · 添加顾问
+                  关注我们 · 获取服务
                 </p>
               </div>
             </div>
