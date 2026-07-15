@@ -523,13 +523,19 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
     async function triggerDownload(blob: Blob, filename: string) {
         const blobUrl = URL.createObjectURL(blob);
+        const file = new File([blob], filename, { type: "image/png" });
 
-        // 优先尝试系统原生分享；部分浏览器 canShare 返回 false 但实际支持 share 文件
-        if (typeof navigator.share === "function") {
+        // 仅在移动设备上尝试系统原生分享；PC 端 navigator.share 打开面板后通常无法真正保存文件
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || navigator.maxTouchPoints > 1;
+        const canShareFiles = typeof navigator.share === "function" &&
+            typeof navigator.canShare === "function" &&
+            navigator.canShare({ files: [file] });
+
+        if (isMobile && canShareFiles) {
             try {
                 await navigator.share({
                     title: "我的肌智派证书",
-                    files: [new File([blob], filename, { type: "image/png" })],
+                    files: [file],
                 });
                 URL.revokeObjectURL(blobUrl);
                 return;
