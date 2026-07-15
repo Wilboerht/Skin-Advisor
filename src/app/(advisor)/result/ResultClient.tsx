@@ -311,8 +311,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             gender: socialGender,
         });
 
-        preloadImage("/images/poster-template.webp?v=4");
-        preloadImage("/images/poster-overlay.webp");
+        preloadImage("/images/poster-template.png?v=4");
+        preloadImage("/images/poster-overlay.png");
         preloadImage(avatarUrl);
     }, [result, faceAnalysis?.overallScore, result?.skinProfile?.type, ipBudget, ipSkincareFrequency, socialGender]);
 
@@ -323,8 +323,20 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         let cancelled = false;
         const timer = setTimeout(async () => {
             try {
+                // 先等海报内图片加载完成，避免生成空白 blob
+                if (posterRef.current) {
+                    await waitForImages(posterRef.current);
+                }
                 const blob = await generatePosterBlob();
-                if (!cancelled) setPreloadedPosterBlob(blob);
+                if (cancelled) return;
+
+                // 不缓存异常小或空白的 blob
+                if (!blob || blob.size < 10 * 1024 || (await isBlobBlank(blob))) {
+                    console.warn("预生成海报异常（可能为空白），不缓存");
+                    return;
+                }
+
+                setPreloadedPosterBlob(blob);
             } catch (error) {
                 console.error("预生成海报失败:", error);
             }
@@ -539,16 +551,72 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     async function generatePosterBlob(): Promise<Blob> {
         if (!posterRef.current) throw new Error("posterRef 未就绪");
 
+        const rect = posterRef.current.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) {
+            throw new Error("海报元素尺寸为 0，无法生成图片");
+        }
+
         await document.fonts.ready;
         await waitForImages(posterRef.current);
 
         const blob = await toBlob(posterRef.current, {
             pixelRatio: 2,
             cacheBust: false,
+            // 覆盖可能被继承的定位/透明/变换，避免离屏容器导致截图异常
+            style: {
+                position: "relative",
+                top: "0",
+                left: "0",
+                transform: "none",
+                opacity: "1",
+                visibility: "visible",
+                margin: "0",
+            },
+            backgroundColor: "#ffffff",
         });
 
         if (!blob) throw new Error("toBlob 返回空");
         return blob;
+    }
+
+    async function isBlobBlank(blob: Blob): Promise<boolean> {
+        return new Promise((resolve) => {
+            const url = URL.createObjectURL(blob);
+            const img = new globalThis.Image();
+            img.onload = () => {
+                URL.revokeObjectURL(url);
+                if (img.width === 0 || img.height === 0) {
+                    resolve(true);
+                    return;
+                }
+                const canvas = document.createElement("canvas");
+                canvas.width = Math.min(img.width, 480);
+                canvas.height = Math.min(img.height, 640);
+                const ctx = canvas.getContext("2d");
+                if (!ctx) {
+                    resolve(true);
+                    return;
+                }
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                try {
+                    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+                    for (let i = 3; i < data.length; i += 4) {
+                        if (data[i] > 0) {
+                            resolve(false);
+                            return;
+                        }
+                    }
+                    resolve(true);
+                } catch {
+                    resolve(true);
+                }
+            };
+            img.onerror = () => {
+                URL.revokeObjectURL(url);
+                resolve(true);
+            };
+            img.src = url;
+        });
     }
 
     const handleSavePoster = async () => {
@@ -558,7 +626,21 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             setPosterError(null);
 
             // 优先使用后台预生成的 blob，没有则现场生成
-            const blob = preloadedPosterBlob ?? await generatePosterBlob();
+            let blob = preloadedPosterBlob;
+            if (!blob) {
+                blob = await generatePosterBlob();
+            }
+
+            // 校验是否空白，若是则丢弃缓存并现场重试一次
+            if (!blob || (await isBlobBlank(blob))) {
+                if (blob) console.warn("预生成海报为空白，尝试现场重新生成");
+                setPreloadedPosterBlob(null);
+                blob = await generatePosterBlob();
+            }
+
+            if (!blob || (await isBlobBlank(blob))) {
+                throw new Error("海报生成结果为空");
+            }
 
             const safeName = sanitizeFilename(userNickname || "用户");
             await triggerDownload(blob, `${safeName}的肌智派证书.png`);
@@ -1290,7 +1372,18 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             {posterError}
                         </div>
                     )}
-                    <div style={{ position: "fixed", top: "-10000px", left: "-10000px", width: 480, height: 640, opacity: 1, pointerEvents: "none" }}>
+                    <div
+                        aria-hidden="true"
+                        style={{
+                            position: "fixed",
+                            top: "-9999px",
+                            left: "-9999px",
+                            width: 480,
+                            height: 640,
+                            pointerEvents: "none",
+                            zIndex: -1,
+                        }}
+                    >
                         <SharePoster
                             ref={posterRef}
                             nickname={userNickname || "用户"}
@@ -1306,8 +1399,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 skincareFrequency: ipSkincareFrequency,
                                 gender: socialGender,
                             })}
-                            posterTemplate="/images/poster-template.webp?v=4"
-                            posterOverlay="/images/poster-overlay.webp"
+                            posterTemplate="/images/poster-template.png?v=4"
+                            posterOverlay="/images/poster-overlay.png"
                             qrDataUrl={qrDataUrl}
                             persona={result?.persona ? skinTypes.find(t => t.ipKey === result.persona)?.m1?.persona : undefined}
                             summary={result?.analysis?.summary}
