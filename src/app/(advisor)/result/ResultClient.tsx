@@ -1115,7 +1115,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     </div>
 
                                     {/* 3. Zone Analysis Grid (Explicitly Added) */}
-                                    {faceAnalysis?.zoneAnalysis && (
+                                    {user && faceAnalysis?.zoneAnalysis && (
                                         <div className="mb-8">
                                             <h4 className="text-base font-medium text-[#3d2f25] mb-4 border-b border-[#3d2f25]/20 pb-2">
                                                 3、区域重点关注 <span className="text-xs lg:text-base">(Area Focus)</span>
