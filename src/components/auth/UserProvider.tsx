@@ -72,11 +72,11 @@ function setCachedUser(user: User | null) {
     if (typeof window === 'undefined') return;
     try {
         if (user) {
-            // 不缓存敏感字段（role），缩短缓存时间
             const cacheable = {
                 id: user.id,
                 name: user.name,
                 avatar: user.avatar,
+                role: user.role,
             };
             localStorage.setItem(AUTH_CACHE_KEY, JSON.stringify(cacheable));
             localStorage.setItem(AUTH_CACHE_EXPIRY_KEY, String(Date.now() + CACHE_DURATION_MS));

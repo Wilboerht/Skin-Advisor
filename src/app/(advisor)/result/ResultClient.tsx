@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { House, MessageCircle, Gift, ArrowRight, AlertTriangle, Lightbulb } from "lucide-react";
+import { House, MessageCircle, Gift, ArrowRight, AlertTriangle, Lightbulb, Lock } from "lucide-react";
 import { useAsyncAnalysis } from "@/hooks/useAsyncAnalysis";
 import { motion as m, AnimatePresence } from "framer-motion";
 import {
@@ -44,6 +44,7 @@ import type { ProductCardData } from "@/components/advisor/ProductCard";
 import { SaveReportBanner } from "@/components/advisor/SaveReportBanner";
 import { AnalyzingOverlay } from "@/components/advisor/AnalyzingOverlay";
 import { skinTypes } from "@/lib/result-content";
+import { useAuthModal } from "@/components/auth/AuthModalContext";
 
 // Re-export for backward compatibility with existing imports
 export { normalizeAnalysisResult, type ComprehensiveResult } from "@/lib/analysis-result";
@@ -201,6 +202,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     }, [router, id, initialData]);
     const { trackResultView, trackResultShare, trackProductClick } = useAdvisorAnalytics();
     const { user, isInitialized: authInitialized } = useAuth();
+    const { openAuthModal } = useAuthModal();
     const searchParams = useSearchParams();
     const { runAnalysis, analysisState, reset: resetAnalysis, recoverSession } = useAsyncAnalysis();
 
@@ -252,6 +254,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const [showLabData, setShowLabData] = useState(false);
     const [showContactAdvisor, setShowContactAdvisor] = useState(false);
     const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
+    const [isClaiming, setIsClaiming] = useState(false);
     const [posterError, setPosterError] = useState<string | null>(null);
     const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
     const [preloadedPosterBlob, setPreloadedPosterBlob] = useState<Blob | null>(null);
@@ -663,23 +666,22 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     // Automatically link guest-initiated session to user account once logged in
     useEffect(() => {
         if (!user || !sessionId) return;
-        
+
         const claimSession = async () => {
             try {
-                // Check if already claimed this session (to avoid redundant calls)
                 const claimedKey = STORAGE_KEYS.claimedSession(sessionId);
                 if (localStorage.getItem(claimedKey)) return;
+
+                setIsClaiming(true);
 
                 const res = await fetchWithCsrf("/api/advisor/session/claim", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ sessionId })
                 });
-                
+
                 if (res.ok) {
                     localStorage.setItem(claimedKey, 'true');
-                    // Claim 成功后跳转到 /reports/:id，登录用户不再停留在游客形态的 /result 页面
-                    // 若当前已在 /reports/:id 则避免无意义重定向
                     const reportPath = `/reports/${sessionId}`;
                     if (typeof window === 'undefined' || window.location.pathname !== reportPath) {
                         router.replace(reportPath);
@@ -687,6 +689,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 }
             } catch (err) {
                 console.error("Failed to claim session:", err);
+            } finally {
+                setIsClaiming(false);
             }
         };
 
@@ -1115,42 +1119,63 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     </div>
 
                                     {/* 3. Zone Analysis Grid (Explicitly Added) */}
-                                    {user && faceAnalysis?.zoneAnalysis && (
-                                        <div className="mb-8">
-                                            <h4 className="text-base font-medium text-[#3d2f25] mb-4 border-b border-[#3d2f25]/20 pb-2">
-                                                3、区域重点关注 <span className="text-xs lg:text-base">(Area Focus)</span>
-                                            </h4>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                                {Object.entries({
-                                                    forehead: "额头区域",
-                                                    tZone: "T字区域",
-                                                    leftCheek: "左脸颊",
-                                                    rightCheek: "右脸颊",
-                                                    eyeArea: "眼周",
-                                                    jawline: "下颌线"
-                                                }).map(([key, label]) => {
-                                                    // @ts-expect-error faceAnalysis zoneAnalysis typing is dynamic
-                                                    const zoneData = faceAnalysis.zoneAnalysis[key];
-                                                    if (!zoneData) return null;
-                                                    return (
-                                                        <div key={key} className="bg-[#3d2f25]/5 border text-left border-[#3d2f25]/15 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
-                                                            <div className="flex items-center justify-between mb-2">
-                                                                <div className="font-semibold text-[#3d2f25] text-sm">{label}</div>
-                                                            </div>
-                                                            <p className="text-sm text-[#5c4937] mb-2 leading-snug lg:line-clamp-2">
-                                                                {zoneData.condition}
-                                                            </p>
-                                                            <div className="mt-2 pt-2 border-t border-dashed border-[#3d2f25]/10">
-                                                                <p className="text-xs text-[#00263e] leading-snug">
-                                                                    <span className="font-medium text-[#5c4937] mr-1">建议:</span>
-                                                                    {zoneData.advice}
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
+                                    {authInitialized && faceAnalysis?.zoneAnalysis && (
+                                        <>
+                                            {user && !isClaiming ? (
+                                                <div className="mb-8">
+                                                    <h4 className="text-base font-medium text-[#3d2f25] mb-4 border-b border-[#3d2f25]/20 pb-2">
+                                                        3、区域重点关注 <span className="text-xs lg:text-base">(Area Focus)</span>
+                                                    </h4>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                        {Object.entries({
+                                                            forehead: "额头区域",
+                                                            tZone: "T字区域",
+                                                            leftCheek: "左脸颊",
+                                                            rightCheek: "右脸颊",
+                                                            eyeArea: "眼周",
+                                                            jawline: "下颌线"
+                                                        } as Record<string, string>).map(([key, label]) => {
+                                                            const zoneData = faceAnalysis.zoneAnalysis![key as keyof typeof faceAnalysis.zoneAnalysis];
+                                                            if (!zoneData) return null;
+                                                            return (
+                                                                <div key={key} className="bg-[#3d2f25]/5 border text-left border-[#3d2f25]/15 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+                                                                    <div className="flex items-center justify-between mb-2">
+                                                                        <div className="font-semibold text-[#3d2f25] text-sm">{label}</div>
+                                                                    </div>
+                                                                    <p className="text-sm text-[#5c4937] mb-2 leading-snug lg:line-clamp-2">
+                                                                        {zoneData.condition}
+                                                                    </p>
+                                                                    <div className="mt-2 pt-2 border-t border-dashed border-[#3d2f25]/10">
+                                                                        <p className="text-xs text-[#00263e] leading-snug">
+                                                                            <span className="font-medium text-[#5c4937] mr-1">建议:</span>
+                                                                            {zoneData.advice}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="mb-8">
+                                                    <h4 className="text-base font-medium text-[#3d2f25] mb-4 border-b border-[#3d2f25]/20 pb-2">
+                                                        3、区域重点关注 <span className="text-xs lg:text-base">(Area Focus)</span>
+                                                    </h4>
+                                                    <div className="rounded-xl border border-dashed border-[#C9A86C]/40 bg-gradient-to-br from-[#FBF8F3] to-[#F5F2ED] p-6 text-center">
+                                                        <Lock className="w-8 h-8 text-[#C9A86C] mx-auto mb-3" />
+                                                        <p className="text-sm text-[#5c4937] mb-3 leading-relaxed">
+                                                            登录后可解锁区域重点分析，查看额头、T区、脸颊等六大区域的详细诊断与专属建议
+                                                        </p>
+                                                        <button
+                                                            onClick={() => openAuthModal("login")}
+                                                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#5c4937] text-white text-xs font-medium hover:bg-[#4a3a2c] transition-colors"
+                                                        >
+                                                            立即登录解锁
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </>
                                     )}
 
                                     {/* Lab-Grade Analysis Metrics */}
