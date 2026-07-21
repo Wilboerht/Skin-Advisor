@@ -23,7 +23,7 @@ const USER_REFRESH_COOKIE_NAME = "__Host-user_refresh_token";
 const USER_ACCESS_COOKIE_OPTIONS = {
     httpOnly: true,
     secure: true,
-    sameSite: "strict" as const,
+    sameSite: "lax" as const,
     path: "/",
     maxAge: 15 * 60, // 15 分钟
 };
@@ -31,7 +31,7 @@ const USER_ACCESS_COOKIE_OPTIONS = {
 const USER_REFRESH_COOKIE_OPTIONS = {
     httpOnly: true,
     secure: true,
-    sameSite: "strict" as const,
+    sameSite: "lax" as const,
     path: "/",
     maxAge: 30 * 24 * 60 * 60, // 30 天
 };

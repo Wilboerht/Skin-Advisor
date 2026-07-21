@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { apiError, apiSuccess } from "@/lib/api-response";
+import { apiError } from "@/lib/api-response";
 import { ErrorCode } from "@/lib/error-codes";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { callOfficialApi, type OfficialApiResponse } from "@/lib/official-api";

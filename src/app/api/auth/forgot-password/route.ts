@@ -42,6 +42,10 @@ export async function POST(req: NextRequest) {
         const responseData = result.data;
 
         if (!result.ok || !responseData.success) {
+            // 官网对未注册手机号返回 SMS_SENT_MASKED，转换为通用成功响应避免泄露号码是否注册
+            if (responseData.error?.code === "SMS_SENT_MASKED") {
+                return NextResponse.json({ success: true, data: { expiresIn: 300 } });
+            }
             return NextResponse.json(
                 { success: false, error: responseData.error || { code: ErrorCode.UPSTREAM_ERROR, message: "发送验证码失败" } },
                 { status: result.status || 400 }

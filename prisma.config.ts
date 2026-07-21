@@ -8,9 +8,11 @@
 import { config } from "dotenv";
 import { defineConfig } from "prisma/config";
 
-// 优先加载 .env（生产环境配置），再用 .env.local 覆盖（开发环境）
+// 优先加载 .env（生产环境配置），开发环境下再用 .env.local 覆盖
 config({ path: ".env" });
-config({ path: ".env.local" });
+if (process.env.NODE_ENV !== "production") {
+    config({ path: ".env.local" });
+}
 
 // 获取数据库 URL
 const getDatabaseUrl = () => {

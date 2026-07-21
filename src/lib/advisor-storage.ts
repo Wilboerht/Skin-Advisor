@@ -245,7 +245,7 @@ export async function clearExpiredData(maxAgeHours: number = 24): Promise<void> 
         faceRequest.onsuccess = () => {
             if (faceRequest.result && now - faceRequest.result.timestamp > maxAgeMs) {
                 faceStore.delete("current");
-                console.log("Cleared expired face images");
+                if (process.env.NODE_ENV !== "production") console.log("Cleared expired face images");
             }
         };
 
@@ -255,7 +255,7 @@ export async function clearExpiredData(maxAgeHours: number = 24): Promise<void> 
         resultRequest.onsuccess = () => {
             if (resultRequest.result && now - resultRequest.result.timestamp > maxAgeMs) {
                 resultStore.delete("current");
-                console.log("Cleared expired result");
+                if (process.env.NODE_ENV !== "production") console.log("Cleared expired result");
             }
         };
     } catch (error) {

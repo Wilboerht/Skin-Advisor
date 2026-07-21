@@ -7,7 +7,7 @@
  * wechat_exchange_token 完成绑定与登录。
  */
 import { NextRequest, NextResponse } from "next/server";
-import { apiError, apiSuccess } from "@/lib/api-response";
+import { apiError } from "@/lib/api-response";
 import { ErrorCode } from "@/lib/error-codes";
 import prisma from "@/lib/prisma";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
@@ -24,7 +24,7 @@ const USER_REFRESH_COOKIE_NAME = "__Host-user_refresh_token";
 const USER_ACCESS_COOKIE_OPTIONS = {
     httpOnly: true,
     secure: true,
-    sameSite: "strict" as const,
+    sameSite: "lax" as const,
     path: "/",
     maxAge: 15 * 60,
 };
@@ -32,7 +32,7 @@ const USER_ACCESS_COOKIE_OPTIONS = {
 const USER_REFRESH_COOKIE_OPTIONS = {
     httpOnly: true,
     secure: true,
-    sameSite: "strict" as const,
+    sameSite: "lax" as const,
     path: "/",
     maxAge: 30 * 24 * 60 * 60,
 };

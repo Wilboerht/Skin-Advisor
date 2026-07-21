@@ -54,7 +54,6 @@ export async function POST(request: NextRequest) {
                     logger.warn(`Attempted takeover of session ${sessionId}: current owner ${session.userId}, requester ${user.id}`);
                     return NextResponse.json({ error: "Session already claimed" }, { status: 403, headers: rateLimitHeaders });
                 }
-            } else {
             }
         } catch (e) {
             logger.error("Failed to claim session:", e);

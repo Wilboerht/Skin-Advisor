@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { apiError, apiSuccess } from "@/lib/api-response";
+import { apiError } from "@/lib/api-response";
 import { ErrorCode } from "@/lib/error-codes";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
@@ -67,16 +67,18 @@ export async function PUT(req: NextRequest) {
             .filter(c => officialCookieNames.includes(c.name))
             .map(c => `${c.name}=${c.value}`).join('; ');
 
-        callOfficialApi<OfficialApiResponse<{ user: unknown }>>({
-            method: "PUT",
-            path: "/api/user/profile",
-            body: officialBody,
-            cookies: allCookies,
-            requireSignature: false,
-            timeoutMs: 10000,
-        }).catch((err) => {
+        try {
+            await callOfficialApi<OfficialApiResponse<{ user: unknown }>>({
+                method: "PUT",
+                path: "/api/user/profile",
+                body: officialBody,
+                cookies: allCookies,
+                requireSignature: false,
+                timeoutMs: 10000,
+            });
+        } catch (err) {
             logger.warn("[user/profile] Failed to sync profile to official site:", err);
-        });
+        }
 
         return NextResponse.json({
             user: {

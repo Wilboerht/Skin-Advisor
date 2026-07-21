@@ -69,6 +69,7 @@ export interface OfficialResponse<T = unknown> {
 }
 
 export interface OfficialApiError {
+    code?: string;
     message?: string;
 }
 
@@ -230,7 +231,12 @@ export async function callOfficialApi<T = unknown>(
         timeoutMs = 30000,
     } = options;
 
-    const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";
+    const officialApiUrl = process.env.OFFICIAL_API_URL || (() => {
+        if (process.env.NODE_ENV === "production") {
+            console.warn("[official-api] OFFICIAL_API_URL not set, using fallback https://nihplod.cn");
+        }
+        return "https://nihplod.cn";
+    })();
     const url = `${officialApiUrl}${path}`;
 
     const isUnsafeMethod = ["POST", "PUT", "PATCH", "DELETE"].includes(method.toUpperCase());

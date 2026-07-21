@@ -3,9 +3,12 @@
  *
  * 自动从 document.cookie 读取 csrf_token 并加入 X-CSRF-Token header。
  * 用于所有会触发 C 端状态变更的请求（POST/PUT/PATCH/DELETE）。
+ * 默认 30 秒超时，防止网络挂起导致 UI 永久等待。
  */
 
 import { CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from "@/lib/csrf-client";
+
+const DEFAULT_TIMEOUT_MS = 30_000;
 
 function getCookie(name: string): string | null {
     if (typeof document === "undefined") return null;
@@ -33,8 +36,18 @@ export async function fetchWithCsrf(
         }
     }
 
-    return fetch(input, {
-        ...init,
-        headers,
-    });
+    const hasExternalSignal = !!init.signal;
+    const controller = hasExternalSignal ? null : new AbortController();
+    const timeoutId = hasExternalSignal ? null : setTimeout(() => controller!.abort(), DEFAULT_TIMEOUT_MS);
+
+    try {
+        const response = await fetch(input, {
+            ...init,
+            headers,
+            signal: init.signal || controller?.signal,
+        });
+        return response;
+    } finally {
+        if (timeoutId) clearTimeout(timeoutId);
+    }
 }

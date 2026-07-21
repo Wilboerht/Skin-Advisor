@@ -1,6 +1,6 @@
 ﻿
 import { NextRequest, NextResponse } from "next/server";
-import { apiError, apiSuccess } from "@/lib/api-response";
+import { apiError } from "@/lib/api-response";
 import { ErrorCode } from "@/lib/error-codes";
 import prisma from "@/lib/prisma";
 import { cookies } from "next/headers";

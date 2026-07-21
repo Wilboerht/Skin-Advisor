@@ -325,11 +325,8 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
   const calculateHeadPose = useCallback((landmarks: { positions: { x: number; y: number }[] }, targetStep: CaptureStep): HeadPose => {
     const positions = landmarks.positions;
 
-    // 68点面部关键点索引
-    // 左眼外角: 36, 右眼外角: 45
-    // 鼻尖: 30
-    // 面部左右边缘: 0, 16
-    // 下巴: 8, 眉心: 27
+    // 68点面部关键点索引：位置16/30/36/45必须存在，面部宽度不能为0
+    if (!positions || positions.length < 46) return "unknown";
 
     const leftEyeOuter = positions[36];
     const rightEyeOuter = positions[45];
@@ -338,14 +335,12 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     const faceRight = positions[16];
     const chin = positions[8];
 
-    // 计算眼睛中心
+    const faceWidth = faceRight.x - faceLeft.x;
+    if (faceWidth <= 0) return "unknown";
+
     const eyesCenterX = (leftEyeOuter.x + rightEyeOuter.x) / 2;
     const eyesCenterY = (leftEyeOuter.y + rightEyeOuter.y) / 2;
 
-    // 计算面部宽度
-    const faceWidth = faceRight.x - faceLeft.x;
-
-    // 计算鼻尖水平偏移比例 (Mirror mode: Left turn -> nose right -> ratio > 0)
     const noseOffsetRatio = (noseTip.x - eyesCenterX) / faceWidth;
 
     // 计算仰头指标：鼻尖到眼连线垂距 / 眼到下巴垂距
