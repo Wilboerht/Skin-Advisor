@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
 import { apiError, apiSuccess } from "@/lib/api-response";
 import { ErrorCode } from "@/lib/error-codes";
 import { generateText, isAIEnabled, fallbackAnalysis, type AIProvider } from "@/lib/ai";
@@ -23,6 +24,7 @@ import { extractGuestIdentifiers } from "@/lib/guest-limit";
 import { aiLogger, logger } from "@/lib/logger";
 import { createSignedInternalApiHeaders } from "@/lib/internal-api";
 import DOMPurify from 'isomorphic-dompurify';
+import { parseUserAgent } from "@/lib/user-agent-parser";
 
 const WECHAT_TEMPLATE_CIRCUIT_KEY = "official-wechat-template";
 const WECHAT_TEMPLATE_MAX_RETRIES = 3;
@@ -72,6 +74,7 @@ async function sendOfficialWechatTemplate(
       if (res.ok) {
         circuitBreaker.recordSuccess(WECHAT_TEMPLATE_CIRCUIT_KEY);
         aiLogger.info("[WechatTemplate] 官网模板消息推送成功", { userId, score });
+        controller.abort();
         return;
       }
 
@@ -104,33 +107,6 @@ async function sendOfficialWechatTemplate(
     userId,
     error: String(lastError),
   });
-}
-
-/** 从服务端 User-Agent 解析设备信息 */
-function parseDeviceInfo(userAgent: string | null) {
-    if (!userAgent) return { deviceType: null as string | null, browser: null as string | null, os: null as string | null };
-    const ua = userAgent.toLowerCase();
-    let deviceType: string | null = 'desktop';
-    if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) {
-        deviceType = 'tablet';
-    } else if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/i.test(userAgent)) {
-        deviceType = 'mobile';
-    }
-
-    let browser: string | null = 'unknown';
-    if (userAgent.includes('Firefox')) browser = 'firefox';
-    else if (userAgent.includes('Edg')) browser = 'edge';
-    else if (userAgent.includes('Chrome')) browser = 'chrome';
-    else if (userAgent.includes('Safari')) browser = 'safari';
-
-    let os: string | null = 'unknown';
-    if (userAgent.includes('Win')) os = 'windows';
-    else if (userAgent.includes('Mac')) os = 'macos';
-    else if (userAgent.includes('Linux')) os = 'linux';
-    else if (userAgent.includes('Android')) os = 'android';
-    else if (userAgent.includes('iPhone') || userAgent.includes('iPad')) os = 'ios';
-
-    return { deviceType, browser, os };
 }
 
 /** 清理推荐理由中的英文词汇，确保对用户友好 */
@@ -295,18 +271,18 @@ export async function POST(request: NextRequest) {
                 select: { completedAt: true, analysisResult: true, ip: true, userId: true }
             });
             if (!existingSession?.completedAt || !existingSession?.analysisResult) {
-                return apiError(ErrorCode.VALIDATION_ERROR, "免费重试无效：尚未完成过首次分析", 400);
+                return apiError(ErrorCode.FORBIDDEN, "免费重试无效：请重新进行测试", 403);
             }
             // Ownership verification: current requester must match session creator
             const currentUser = await getSession();
             const currentIpHash = hashIP(ip);
             if (currentUser?.id) {
                 if (existingSession.userId !== currentUser.id) {
-                    return apiError(ErrorCode.FORBIDDEN, "免费重试无效：无权访问此会话", 403);
+                    return apiError(ErrorCode.FORBIDDEN, "免费重试无效：请重新进行测试", 403);
                 }
             } else {
                 if (existingSession.ip && existingSession.ip !== currentIpHash) {
-                    return apiError(ErrorCode.FORBIDDEN, "免费重试无效：会话身份验证失败", 403);
+                    return apiError(ErrorCode.FORBIDDEN, "免费重试无效：请重新进行测试", 403);
                 }
             }
             // freeRetryUsed 原子性检查推迟到 DB 行锁事务内（见下方 lockResult）
@@ -639,7 +615,7 @@ export async function POST(request: NextRequest) {
             if (err.message?.includes("[AIBudget]")) {
                 aiLogger.warn("AI budget exceeded, rejecting request", { error: err.message });
                 await rollbackUsage(request, effectiveSessionId, body as Record<string, unknown>);
-            const response = apiError("AI_BUDGET_EXCEEDED", "服务暂不可用，请稍后重试", 503);
+                const response = apiError("AI_BUDGET_EXCEEDED", "服务暂不可用，请稍后重试", 503);
                 response.headers.set("Retry-After", "3600");
                 return response;
             }
@@ -845,7 +821,7 @@ export async function POST(request: NextRequest) {
                             ip: ipHash,
                             userId: user?.id || null,
                             userAgent: identifiers.userAgent,
-                            ...parseDeviceInfo(identifiers.userAgent)
+                            ...parseUserAgent(identifiers.userAgent)
                         }
                     });
                 });

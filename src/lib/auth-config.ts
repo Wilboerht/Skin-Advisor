@@ -29,7 +29,12 @@ export function getJwtSecret(): Uint8Array {
 }
 
 function getJwtIssuer(): string {
-    return process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || "https://advisor.nihplod.cn";
+    const configured = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL;
+    if (configured) return configured;
+    if (process.env.NODE_ENV === "production") {
+        throw new Error("JWT issuer not configured: set NEXT_PUBLIC_SITE_URL or NEXT_PUBLIC_BASE_URL");
+    }
+    return "http://localhost:3000";
 }
 
 /**
@@ -88,7 +93,7 @@ export async function verifyTokenDetailed(token: string): Promise<VerifyTokenRes
             error = 'malformed';
         }
         if (error === 'invalid_signature' || error === 'malformed') {
-            console.warn(`[Security] JWT ${error}: ${token.substring(0, 10)}...`);
+            console.warn(`[Security] JWT ${error}: token length=${token.length}`);
         }
         return { payload: null, error };
     }

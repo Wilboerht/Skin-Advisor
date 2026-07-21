@@ -102,9 +102,6 @@ export async function proxy(request: NextRequest) {
         "/api/auth/wechat",
         "/api/auth/wechat/bind",
         "/api/auth/refresh",
-        // AI 端点已有独立的 Origin/Referer + Content-Type 校验，且支持匿名使用
-        "/api/advisor/analyze",
-        "/api/advisor/face-analyze",
         // 匿名/埋点接口：sendBeacon 无法携带自定义 header
         "/api/advisor/analytics/track",
     ];

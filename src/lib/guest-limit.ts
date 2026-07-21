@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { hashIP } from '@/lib/privacy';
 import { getClientIP } from '@/lib/ratelimit';
 import { logger } from '@/lib/logger';
+import { parseUserAgent } from '@/lib/user-agent-parser';
 
 // 默认游客每日测试次数限制
 export const DEFAULT_GUEST_LIMIT = 3;
@@ -174,47 +175,6 @@ export async function checkGuestLimit(
         matchedBy,
         confidenceScore
     };
-}
-
-/**
- * 解析 User-Agent (已废弃，保留供 checkGuestLimit 内部使用)
- */
-function parseUserAgent(userAgent: string | null): {
-    deviceType: string | null;
-    browser: string | null;
-    os: string | null;
-} {
-    if (!userAgent) {
-        return { deviceType: null, browser: null, os: null };
-    }
-
-    const ua = userAgent.toLowerCase();
-
-    // 检测设备类型
-    let deviceType = 'desktop';
-    if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) {
-        deviceType = 'tablet';
-    } else if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/i.test(userAgent)) {
-        deviceType = 'mobile';
-    }
-
-    // 检测浏览器
-    let browser = 'unknown';
-    if (ua.includes('firefox')) browser = 'firefox';
-    else if (ua.includes('edg')) browser = 'edge';
-    else if (ua.includes('chrome')) browser = 'chrome';
-    else if (ua.includes('safari')) browser = 'safari';
-    else if (ua.includes('opera') || ua.includes('opr')) browser = 'opera';
-
-    // 检测操作系统
-    let os = 'unknown';
-    if (ua.includes('win')) os = 'windows';
-    else if (ua.includes('mac')) os = 'macos';
-    else if (ua.includes('linux')) os = 'linux';
-    else if (ua.includes('android')) os = 'android';
-    else if (ua.includes('iphone') || ua.includes('ipad')) os = 'ios';
-
-    return { deviceType, browser, os };
 }
 
 /**

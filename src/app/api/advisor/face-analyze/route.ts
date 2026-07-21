@@ -21,7 +21,7 @@ import { aiLogger } from "@/lib/logger";
 
 import { visionQueue } from "@/lib/ai-queue";
 
-export const maxDuration = 60; // 防止超时
+export const maxDuration = 65; // 保留 10s 缓冲给 55s serverTimeout，防止平台先杀掉
 
 // 脸部分析结果缓存（图片 hash -> 分析结果）
 // 同一用户重复上传相同图片时跳过 AI 调用，节省成本
@@ -33,9 +33,9 @@ function buildCacheKey(_sessionId: string, images: VisionImage[]): string {
     // 仅基于图片内容哈希（不含 sessionId），这样刷新页面也能命中缓存
     const samples = images.map(img => {
         const data = img.data || "";
-        return `${img.angle}:${crypto.createHash("md5").update(data.slice(0, 1024)).digest("hex")}`;
+        return `${img.angle}:${crypto.createHash("sha256").update(data.slice(0, 1024)).digest("hex")}`;
     }).join("|");
-    return `face:${crypto.createHash("md5").update(samples).digest("hex")}`;
+    return `face:${crypto.createHash("sha256").update(samples).digest("hex")}`;
 }
 
 function getCachedResult(key: string): Record<string, unknown> | null {
@@ -530,8 +530,8 @@ export async function POST(request: NextRequest) {
             errorName: err.name,
             sessionId: faceSessionId,
         });
-        return apiError(ErrorCode.INTERNAL_ERROR, "服务器内部错误", 500);
         clearTimeout(serverTimeout);
         request.signal.removeEventListener('abort', onClientAbort);
+        return apiError(ErrorCode.INTERNAL_ERROR, "服务器内部错误", 500);
     }
 }

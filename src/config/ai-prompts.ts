@@ -4,8 +4,8 @@
  */
 
 export const BRAND_CONFIG = {
-  name: "AI Skincare",
-  advisorName: "智能护肤顾问",
+  name: "NIHPLOD",
+  advisorName: "旎柏护肤顾问",
   tone: "professional", // professional | friendly | luxury
 };
 

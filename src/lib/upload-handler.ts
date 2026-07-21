@@ -95,6 +95,9 @@ export async function handleUpload(request: NextRequest): Promise<NextResponse> 
     return NextResponse.json({ url });
 }
 
+// Note: 孤立文件通过 data-cleanup cron 定时清理
+
+
 export function createUploadErrorResponse(error: unknown): NextResponse {
     console.error("Upload failed:", error);
     return NextResponse.json(

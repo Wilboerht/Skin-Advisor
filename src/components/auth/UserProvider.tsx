@@ -113,8 +113,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
             if (!isMountedRef.current) return;
             if (res.ok) {
                 const data = await res.json();
-                setUser(data.user);
-                setCachedUser(data.user);
+            setUser(data.user || data.data?.user);
+            setCachedUser(data.user || data.data?.user);
             } else {
                 setUser(null);
                 setCachedUser(null);
@@ -196,8 +196,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
                 throw new Error(data.error || "Login failed");
             }
 
-            setUser(data.user);
-            setCachedUser(data.user);
+            setUser(data.user || data.data?.user);
+            setCachedUser(data.user || data.data?.user);
 
             await checkSession();
         } catch (err: unknown) {
@@ -218,8 +218,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
             throw new Error(data.error || "Registration failed");
         }
 
-        setUser(data.user);
-        setCachedUser(data.user);
+        setUser(data.user || data.data?.user);
+        setCachedUser(data.user || data.data?.user);
 
         // 立即刷新 session 以确保 Cookie / 本地 token 已正确设置
         await checkSession();

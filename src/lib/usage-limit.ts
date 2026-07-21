@@ -321,7 +321,7 @@ export async function rollbackUsage(
     request: NextRequest,
     sessionId: string,
     body?: Record<string, unknown>
-): Promise<void> {
+): Promise<boolean> {
     const user = await getSession();
     const identifiers = extractGuestIdentifiers(request, body);
     const { ipAddress, cookieId, fingerprint } = identifiers;
@@ -359,8 +359,9 @@ export async function rollbackUsage(
                 }
             });
         });
+        return true;
     } catch (e: unknown) {
         console.error(`[rollbackUsage] Failed to rollback usage for session ${sessionId}:`, e);
-        // 回滚失败不应影响主流程，仅记录日志
+        return false;
     }
 }

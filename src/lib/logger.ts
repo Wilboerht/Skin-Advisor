@@ -49,7 +49,7 @@ function sanitizeContext(context: LogContext): LogContext {
     const sensitiveKeys = [
         "apiKey", "apikey", "secret", "password", "token", "authorization",
         "phone", "phonenumber", "cookie", "session", "jwt", "signature",
-        "refreshtoken", "refreshtoken", "creditcard", "ssn", "passport",
+        "refreshtoken", "creditcard", "ssn", "passport",
         "privatekey", "private_key",
     ];
     const sanitized: LogContext = {};

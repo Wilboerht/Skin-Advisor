@@ -307,6 +307,4 @@ export function clearLocalSession(response: NextResponse): void {
     response.cookies.delete(AUTH_COOKIE_NAME);
     response.cookies.delete(AUTH_REFRESH_COOKIE_NAME);
     response.cookies.delete(CSRF_COOKIE_NAME);
-    response.cookies.delete("auth_token");
-    response.cookies.delete("user_token");
 }
