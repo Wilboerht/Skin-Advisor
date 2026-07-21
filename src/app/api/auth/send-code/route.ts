@@ -23,6 +23,11 @@ export async function POST(req: NextRequest) {
             return apiError(ErrorCode.VALIDATION_ERROR, "请输入有效的手机号", 400);
         }
 
+        const validTypes = ["register", "login", "reset"];
+        if (!body.type || !validTypes.includes(body.type)) {
+            return apiError(ErrorCode.VALIDATION_ERROR, "无效的验证码类型", 400);
+        }
+
         const cookieStore = await cookies();
         const allCookies = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ');
 

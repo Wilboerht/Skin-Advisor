@@ -78,16 +78,30 @@ export function AuthModal() {
     useEffect(() => {
         if (!isOpen) {
             setLoading(false);
+            setLoginPhone("");
+            setLoginPassword("");
+            setLoginCode("");
+            setRegName("");
+            setRegPhone("");
+            setRegCode("");
+            setRegPassword("");
+            setRegConfirmPassword("");
+            setForgotPhone("");
             setForgotSubmitted(false);
+            setResetCode("");
+            setResetNewPassword("");
+            setResetConfirmPassword("");
             setRegCodeSending(false);
             setRegCountdown(0);
             setResetCountdown(0);
+            setLoginCodeCountdown(0);
+            setLoginCodeSending(false);
+            setShowPassword(false);
             setMobileAgreed(false);
             setMobileForgotStep("phone");
             setLoginMethod("password");
-            setLoginCode("");
-            setLoginCodeCountdown(0);
-            setLoginCodeSending(false);
+            setWechatExchangeToken(null);
+            setAgreementShake(0);
         }
     }, [isOpen]);
 
@@ -179,8 +193,8 @@ export function AuthModal() {
             handleAuthSuccess();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
-            console.error("🔴 Login failed:", err.message);
-            toast.error("登录失败，请检查账号密码");
+            console.error("[Login]", err.message);
+            toast.error(err.message || "登录失败，请检查账号密码");
         } finally {
             setLoading(false);
         }
@@ -208,8 +222,8 @@ export function AuthModal() {
             handleAuthSuccess();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
-            console.error("🔴 Register failed:", err.message);
-            toast.error("注册失败，请稍后重试");
+            console.error("[Register]", err.message);
+            toast.error(err.message || "注册失败，请稍后重试");
         } finally {
             setLoading(false);
         }
@@ -224,6 +238,10 @@ export function AuthModal() {
 
     const handleWechatBind = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!mobileAgreed) {
+            setAgreementShake(n => n + 1);
+            return;
+        }
         if (!wechatExchangeToken) {
             toast.error("微信授权凭证缺失，请重新扫码");
             return;
@@ -262,8 +280,9 @@ export function AuthModal() {
             window.location.href = redirectUrl || "/";
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
-            console.error("🔴 Wechat bind failed:", err.message);
+            console.error("[WechatBind]", err.message);
             toast.error(err.message || "绑定失败，请稍后重试");
+        } finally {
             setLoading(false);
         }
     };
@@ -332,8 +351,8 @@ export function AuthModal() {
             toast.success("重置验证码已发送");
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
-            console.error("[SendRegCode]", error.message);
-            toast.error("发送失败，请稍后重试");
+            console.error("[ForgotPassword]", error.message);
+            toast.error(error.message || "发送失败，请稍后重试");
         } finally {
             setLoading(false);
         }
@@ -367,8 +386,8 @@ export function AuthModal() {
             toast.success("验证码已发送");
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
-            console.error("[SendRegCode]", error.message);
-            toast.error("发送失败，请稍后重试");
+            console.error("[SendLoginCode]", error.message);
+            toast.error(error.message || "发送失败，请稍后重试");
         } finally {
             setLoginCodeSending(false);
         }
@@ -394,8 +413,8 @@ export function AuthModal() {
             toast.success("重置验证码已发送");
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
-            console.error("[SendRegCode]", error.message);
-            toast.error("发送失败，请稍后重试");
+            console.error("[MobileResetCode]", error.message);
+            toast.error(error.message || "发送失败，请稍后重试");
         } finally {
             setLoading(false);
         }
@@ -429,8 +448,8 @@ export function AuthModal() {
             setMobileForgotStep("success");
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
-            console.error("[SendRegCode]", error.message);
-            toast.error("发送失败，请稍后重试");
+            console.error("[MobileResetPassword]", error.message);
+            toast.error(error.message || "重置密码失败，请稍后重试");
         } finally {
             setLoading(false);
         }
@@ -467,8 +486,8 @@ export function AuthModal() {
             setForgotSubmitted(false);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
-            console.error("[SendRegCode]", error.message);
-            toast.error("发送失败，请稍后重试");
+            console.error("[ResetPassword]", error.message);
+            toast.error(error.message || "重置密码失败，请稍后重试");
         } finally {
             setLoading(false);
         }
@@ -550,9 +569,10 @@ export function AuthModal() {
                                             <div>
                                                 <input
                                                     type="tel"
+                                                    inputMode="numeric"
                                                     required
                                                     value={loginPhone}
-                                                    onChange={(e) => setLoginPhone(e.target.value)}
+                                                    onChange={(e) => setLoginPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
                                                     className={pcInputClass}
                                                     placeholder="手机号"
                                                 />
@@ -565,7 +585,7 @@ export function AuthModal() {
                                                         required
                                                         maxLength={6}
                                                         value={loginCode}
-                                                        onChange={(e) => setLoginCode(e.target.value)}
+                                                        onChange={(e) => setLoginCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                                                         className={`${pcInputClass} flex-1`}
                                                         placeholder="验证码"
                                                     />
@@ -656,8 +676,8 @@ export function AuthModal() {
                                             <button
                                                 type="submit"
                                                 form="pc-login-form"
-                                                disabled={loading}
-                                                className={`${pcBtnClass} ${!mobileAgreed && !loading ? 'opacity-40 cursor-not-allowed' : ''}`}
+                                                disabled={loading || !mobileAgreed}
+                                                className={pcBtnClass}
                                             >
                                                 {loading ? (
                                                     <div className="h-5 w-5 border-2 border-brand-charcoal/20 border-t-brand-charcoal rounded-full animate-spin" />
@@ -676,8 +696,8 @@ export function AuthModal() {
                                             <button
                                                 type="button"
                                                 onClick={handleWechatLogin}
-                                                disabled={loading}
-                                                className={`w-full py-4 text-sm font-medium tracking-[0.2em] text-brand-charcoal border border-brand-charcoal/25 hover:bg-brand-charcoal/[0.03] active:scale-[0.98] transition-all disabled:opacity-40 flex items-center justify-center gap-2 ${!mobileAgreed && !loading ? 'opacity-40 cursor-not-allowed' : ''}`}
+                                                disabled={loading || !mobileAgreed}
+                                                className={`w-full py-4 text-sm font-medium tracking-[0.2em] text-brand-charcoal border border-brand-charcoal/25 hover:bg-brand-charcoal/[0.03] active:scale-[0.98] transition-all disabled:opacity-40 flex items-center justify-center gap-2`}
                                             >
                                                 <svg className="w-5 h-5 text-[#07C160]" viewBox="0 0 24 24" fill="currentColor">
                                                     <path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 0 1 .213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 0 0 .167-.054l1.903-1.114a.864.864 0 0 1 .717-.098 10.16 10.16 0 0 0 2.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178A1.17 1.17 0 0 1 4.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178 1.17 1.17 0 0 1-1.162-1.178c0-.651.52-1.18 1.162-1.18zm5.34 2.867c-1.797-.052-3.746.512-5.28 1.786-1.72 1.428-2.687 3.72-1.78 6.22.942 2.453 3.666 4.229 6.884 4.229.826 0 1.622-.12 2.361-.336a.722.722 0 0 1 .598.082l1.584.926a.272.272 0 0 0 .14.045c.134 0 .24-.11.24-.245 0-.06-.024-.12-.04-.178l-.327-1.233a.582.582 0 0 1-.023-.156.49.49 0 0 1 .201-.398C23.024 18.48 24 16.82 24 14.98c0-3.21-2.931-5.837-6.656-6.088-.182-.013-.373-.027-.545-.035h-.06zm-2.89 3.217c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.97-.982zm4.844 0c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.969-.982z" />
@@ -914,14 +934,15 @@ export function AuthModal() {
                                                 </p>
                                                 <div className="relative">
                                                     <Phone className="absolute left-0 top-1/2 -translate-y-1/2 text-brand-charcoal/40 w-5 h-5" />
-                                                    <input
-                                                        type="tel"
-                                                        required
-                                                        value={forgotPhone}
-                                                        onChange={(e) => setForgotPhone(e.target.value)}
-                                                        className={`${pcInputClass} pl-8`}
-                                                        placeholder="手机号"
-                                                    />
+                                            <input
+                                                type="tel"
+                                                inputMode="numeric"
+                                                required
+                                                value={regPhone}
+                                                onChange={(e) => setRegPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
+                                                className={pcInputClass}
+                                                placeholder="手机号"
+                                            />
                                                 </div>
                                                 <button
                                                     type="submit"
@@ -1001,9 +1022,34 @@ export function AuthModal() {
                                                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                                                 </button>
                                             </div>
+                                            <motion.div
+                                                key={agreementShake}
+                                                initial={{ x: 0 }}
+                                                animate={{ x: [-5, 5, -5, 5, -3, 3, 0] }}
+                                                transition={{ duration: 0.4 }}
+                                            >
+                                                <label className="flex cursor-pointer items-center gap-2.5 group/agreement">
+                                                    <div className="relative flex-shrink-0">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={mobileAgreed}
+                                                            onChange={(e) => setMobileAgreed(e.target.checked)}
+                                                            className="peer sr-only"
+                                                        />
+                                                        <div className="h-4 w-4 rounded border border-brand-charcoal/25 bg-transparent transition-all peer-checked:bg-brand-charcoal/50 peer-checked:border-brand-charcoal/50" />
+                                                        <Check className="absolute inset-0 m-auto h-3 w-3 scale-0 text-white transition-transform peer-checked:scale-100" strokeWidth={3} />
+                                                    </div>
+                                                    <span className="text-xs text-brand-charcoal/50 tracking-wide">
+                                                        我已阅读并同意
+                                                        <a href="https://nihplod.cn/terms" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《用户协议》</a>
+                                                        和
+                                                        <a href="https://nihplod.cn/privacy" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《隐私政策》</a>
+                                                    </span>
+                                                </label>
+                                            </motion.div>
                                             <button
                                                 type="submit"
-                                                disabled={loading}
+                                                disabled={loading || !mobileAgreed}
                                                 className={pcBtnClass}
                                             >
                                                 {loading ? (
@@ -1107,16 +1153,23 @@ export function AuthModal() {
 
                                     {/* 密码输入 - 仅密码登录时显示 */}
                                     {loginMethod === "password" && (
-                                        <div className="animate-fade-scale-in">
+                                        <div className="animate-fade-scale-in relative">
                                             <input
-                                                type="password"
+                                                type={showPassword ? "text" : "password"}
                                                 required
                                                 value={loginPassword}
                                                 onChange={(e) => setLoginPassword(e.target.value)}
                                                 placeholder="密码"
                                                 maxLength={32}
-                                                className="w-full bg-transparent border-0 border-b border-brand-charcoal/25 rounded-none py-3 px-0 text-base tracking-wide text-brand-charcoal placeholder:text-brand-charcoal/40 placeholder:text-sm placeholder:tracking-wider focus:outline-none focus:border-brand-gold/60 transition-colors"
+                                                className="w-full bg-transparent border-0 border-b border-brand-charcoal/25 rounded-none py-3 px-0 pr-10 text-base tracking-wide text-brand-charcoal placeholder:text-brand-charcoal/40 placeholder:text-sm placeholder:tracking-wider focus:outline-none focus:border-brand-gold/60 transition-colors"
                                             />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                className="absolute right-0 top-1/2 -translate-y-1/2 text-brand-charcoal/40 hover:text-brand-charcoal/70 transition-colors"
+                                            >
+                                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                            </button>
                                         </div>
                                     )}
 
@@ -1179,8 +1232,8 @@ export function AuthModal() {
                                     <div className="pt-2">
                                         <button
                                             type="submit"
-                                            disabled={loading}
-                                            className={`w-full py-3.5 min-h-12 text-sm font-medium tracking-[0.2em] text-brand-charcoal border border-brand-charcoal/25 hover:bg-brand-charcoal/[0.03] active:scale-[0.98] transition-all disabled:opacity-40 ${!mobileAgreed && !loading ? 'opacity-40 cursor-not-allowed' : ''}`}
+                                            disabled={loading || !mobileAgreed}
+                                            className="w-full py-3.5 min-h-12 text-sm font-medium tracking-[0.2em] text-brand-charcoal border border-brand-charcoal/25 hover:bg-brand-charcoal/[0.03] active:scale-[0.98] transition-all disabled:opacity-40"
                                         >
                                             <span className="relative z-10 flex items-center justify-center gap-2">
                                                 {loading ? (
@@ -1202,8 +1255,8 @@ export function AuthModal() {
                                     <button
                                         type="button"
                                         onClick={handleWechatLogin}
-                                        disabled={loading}
-                                        className={`w-full py-3.5 text-sm font-medium tracking-[0.2em] text-brand-charcoal border border-brand-charcoal/25 hover:bg-brand-charcoal/[0.03] active:scale-[0.98] transition-all disabled:opacity-40 flex items-center justify-center gap-2 ${!mobileAgreed && !loading ? 'opacity-40 cursor-not-allowed' : ''}`}
+                                        disabled={loading || !mobileAgreed}
+                                        className="w-full py-3.5 text-sm font-medium tracking-[0.2em] text-brand-charcoal border border-brand-charcoal/25 hover:bg-brand-charcoal/[0.03] active:scale-[0.98] transition-all disabled:opacity-40 flex items-center justify-center gap-2"
                                     >
                                         <svg className="w-5 h-5 text-[#07C160]" viewBox="0 0 24 24" fill="currentColor">
                                             <path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 0 1 .213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 0 0 .167-.054l1.903-1.114a.864.864 0 0 1 .717-.098 10.16 10.16 0 0 0 2.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178A1.17 1.17 0 0 1 4.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178 1.17 1.17 0 0 1-1.162-1.178c0-.651.52-1.18 1.162-1.18zm5.34 2.867c-1.797-.052-3.746.512-5.28 1.786-1.72 1.428-2.687 3.72-1.78 6.22.942 2.453 3.666 4.229 6.884 4.229.826 0 1.622-.12 2.361-.336a.722.722 0 0 1 .598.082l1.584.926a.272.272 0 0 0 .14.045c.134 0 .24-.11.24-.245 0-.06-.024-.12-.04-.178l-.327-1.233a.582.582 0 0 1-.023-.156.49.49 0 0 1 .201-.398C23.024 18.48 24 16.82 24 14.98c0-3.21-2.931-5.837-6.656-6.088-.182-.013-.373-.027-.545-.035h-.06zm-2.89 3.217c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.97-.982zm4.844 0c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.969-.982z" />
@@ -1299,6 +1352,12 @@ export function AuthModal() {
                                         />
                                     </div>
 
+                                    <motion.div
+                                        key={agreementShake}
+                                        initial={{ x: 0 }}
+                                        animate={{ x: [-5, 5, -5, 5, -3, 3, 0] }}
+                                        transition={{ duration: 0.4 }}
+                                    >
                                     <label className="flex cursor-pointer items-center gap-2.5 pt-2 group/agreement">
                                         <div className="relative flex-shrink-0">
                                             <input
@@ -1317,6 +1376,7 @@ export function AuthModal() {
                                             <a href="https://nihplod.cn/privacy" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《隐私政策》</a>
                                         </span>
                                     </label>
+                                    </motion.div>
 
                                     <div className="pt-2">
                                         <button
@@ -1403,10 +1463,10 @@ export function AuthModal() {
                                         <div className="flex gap-3">
                                             <button
                                                 type="button"
-                                                onClick={() => setAuthView("login")}
+                                                onClick={() => setMobileForgotStep("phone")}
                                                 className="flex-1 py-3 text-xs font-medium tracking-[0.2em] text-brand-charcoal/60 border border-brand-charcoal/25 hover:bg-brand-charcoal/[0.03] active:scale-[0.98] transition-all"
                                             >
-                                                返回登录
+                                                上一步
                                             </button>
                                             <button
                                                 type="button"
@@ -1562,10 +1622,28 @@ export function AuthModal() {
                                         className="w-full bg-transparent border-0 border-b border-brand-charcoal/25 rounded-none py-3 px-0 text-base tracking-wide text-brand-charcoal placeholder:text-brand-charcoal/40 placeholder:text-sm placeholder:tracking-wider focus:outline-none focus:border-brand-gold/60 transition-colors"
                                     />
                                 </div>
+                                <label className="flex cursor-pointer items-center gap-2.5 pt-2 group/agreement">
+                                    <div className="relative flex-shrink-0">
+                                        <input
+                                            type="checkbox"
+                                            checked={mobileAgreed}
+                                            onChange={(e) => setMobileAgreed(e.target.checked)}
+                                            className="peer sr-only"
+                                        />
+                                        <div className="h-4 w-4 rounded border border-brand-charcoal/25 bg-transparent transition-all peer-checked:bg-brand-gold peer-checked:border-brand-gold" />
+                                        <Check className="absolute inset-0 m-auto h-3 w-3 scale-0 text-white transition-transform peer-checked:scale-100" strokeWidth={3} />
+                                    </div>
+                                    <span className="text-xs text-brand-charcoal/50 tracking-wide">
+                                        我已阅读并同意
+                                        <a href="https://nihplod.cn/terms" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《用户协议》</a>
+                                        和
+                                        <a href="https://nihplod.cn/privacy" target="_blank" rel="noopener noreferrer" className="underline decoration-brand-charcoal/20 underline-offset-2 hover:text-brand-charcoal transition-colors">《隐私政策》</a>
+                                    </span>
+                                </label>
                                 <div className="pt-2">
                                     <button
                                         type="submit"
-                                        disabled={loading}
+                                        disabled={loading || !mobileAgreed}
                                         className="w-full py-3.5 text-sm font-medium tracking-[0.2em] text-brand-charcoal border border-brand-charcoal/25 hover:bg-brand-charcoal/[0.03] active:scale-[0.98] transition-all disabled:opacity-40"
                                     >
                                         <span className="relative z-10 flex items-center justify-center gap-2">

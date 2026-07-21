@@ -23,7 +23,10 @@ export function AuthModalProvider({ children }: { children: React.ReactNode }) {
         setIsOpen(true);
     };
 
-    const closeAuthModal = () => setIsOpen(false);
+    const closeAuthModal = () => {
+        setIsOpen(false);
+        setView("login");
+    };
 
     return (
         <AuthModalContext.Provider value={{ isOpen, view, openAuthModal, closeAuthModal, setAuthView: setView }}>

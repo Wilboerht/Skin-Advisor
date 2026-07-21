@@ -271,10 +271,7 @@ export async function refreshSession(
         const tokenVersion = payload.tokenVersion;
         if (typeof tokenVersion !== "number" || tokenVersion !== dbUser.tokenVersion) return null;
 
-        // 4. 撤销旧的 refresh token
-        await revokeSpecificRefreshToken(userId, refreshTokenValue);
-
-        // 5. 签发新的双 token
+        // 4. 签发新的双 token（先签发成功，再撤销旧 token，避免签发失败时用户被强制登出）
         await signLocalSession(response, {
             id: dbUser.id,
             email: dbUser.email,
@@ -284,6 +281,9 @@ export async function refreshSession(
             tokenVersion: dbUser.tokenVersion,
             dailyTestLimit: dbUser.dailyTestLimit,
         }, { secure });
+
+        // 5. 新 token 签发成功后，撤销旧的 refresh token
+        await revokeSpecificRefreshToken(userId, refreshTokenValue);
 
         return {
             id: dbUser.id,
