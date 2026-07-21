@@ -6,19 +6,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ProductCard, ProductCardData } from "./ProductCard";
 import { ProductDetailModal } from "./ProductDetailModal";
 import { cn } from "@/lib/utils";
-
-const DIMENSION_LABELS: Record<string, string> = {
-    spots: "色斑",
-    wrinkles: "皱纹",
-    uvDamage: "光老化",
-    sensitivity: "敏感度",
-    acne: "痘痘",
-    waterOil: "水油平衡",
-    skinTone: "肤色均匀",
-    firmness: "紧致度",
-    radiance: "光泽度",
-    darkCircles: "黑眼圈"
-};
+import { DIMENSION_LABELS } from "@/lib/advisor-utils";
 
 interface ProductRecommendationSectionProps {
     products: ProductCardData[];

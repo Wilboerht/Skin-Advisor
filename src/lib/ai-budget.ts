@@ -106,7 +106,7 @@ export function estimateAICost(
 }
 
 /**
- * 获取模型价格信息（用于日志/告警）
+ * 获取模型价格信息（供管理后台 AI 成本页使用）
  */
 export function getModelPricing(provider: string, model: string): ModelPricing {
     const providerTable = PRICING_TABLE[provider.toLowerCase()] || {};
@@ -389,7 +389,7 @@ export interface AnomalyCheckResult {
 }
 
 /**
- * 检查单个用户/会话在当日的用量是否异常突增
+ * 检查单个用户/会话在当日的 AI 用量是否异常突增（供 analyze 路由防滥用接入）
  */
 export async function checkUserUsageAnomaly(
     userId: string | null | undefined,

@@ -125,10 +125,6 @@ export const DIMENSION_DESCRIPTIONS: Record<string, string> = {
     radiance: "皮肤表面光泽感与通透度"
 };
 
-export function getDimensionLabel(key: string): string {
-    return DIMENSION_LABELS[key] || key;
-}
-
 export function getSkinTypeLabel(type: string): string {
     const map: Record<string, string> = {
         dry: "干性肌肤",

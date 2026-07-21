@@ -98,7 +98,7 @@ export function filterHealthyKeys(provider: string, apiKeys: string[]): string[]
 }
 
 /**
- * 获取 key 健康状态（用于监控/调试）
+ * 获取所有 API key 健康状态（供管理后台 AI 成本/监控页使用）
  */
 export function getKeyHealthStatus(): Record<string, Omit<KeyHealthEntry, "cooledUntil"> & { cooledUntil?: number; isCoolingDown: boolean }> {
     const now = Date.now();
