@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import {
     Loader2, Trash2, Plus, Sparkles, X, Pencil
 } from "lucide-react";
 import { SKIN_TYPE_OPTIONS } from "@/types/product";
 import { useToast } from "@/components/ui/Toast";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { AdminModal } from "@/components/ui/AdminModal";
+import { useMounted } from "@/hooks/use-mounted";
 
 interface Product {
     id: string;
@@ -347,224 +347,184 @@ export default function RecommendationRulesPage() {
             />
 
             {/* Create/Edit Modal */}
-            {showModal && typeof window !== "undefined" && createPortal(
-                <AnimatePresence>
-                    {showModal && (
-                        <div className="fixed inset-0 z-[99999] flex items-center justify-center">
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                onClick={() => { setShowModal(false); resetForm(); }}
-                                className="absolute inset-0 bg-slate-900/30 backdrop-blur-md"
+            <AdminModal
+                isOpen={showModal}
+                onClose={() => { setShowModal(false); resetForm(); }}
+                title={editingRule ? "编辑规则" : "新建推荐规则"}
+                titleId="recommendation-rule-modal-title"
+                subtitle={editingRule ? "修改推荐规则信息" : "创建肤质与产品的关联规则"}
+                maxWidth="lg"
+                disabled={submitting}
+            >
+                <form onSubmit={handleSubmit}>
+                    <div className="space-y-5">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                                规则名称 <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                value={formName}
+                                onChange={(e) => setFormName(e.target.value)}
+                                placeholder="例如：油性肌肤痘痘护理"
+                                required
+                                className="block w-full rounded-xl border-slate-200 bg-white/50 py-2.5 px-4 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-400 focus:ring-0 transition-all"
                             />
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                                transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                                className="relative z-10 w-full max-w-2xl mx-4 bg-white/70 backdrop-blur-3xl rounded-[28px] border-[1.5px] border-white/80 shadow-[0_40px_100px_rgba(0,0,0,0.08),inset_0_2px_10px_rgba(255,255,255,0.5)] overflow-hidden max-h-[90vh] flex flex-col"
-                            >
-                                <div className="flex items-center justify-between px-8 pt-8 pb-4 shrink-0">
-                                    <div>
-                                        <h3 className="text-lg font-bold text-[#2C2C2C] tracking-tight">
-                                            {editingRule ? "编辑规则" : "新建推荐规则"}
-                                        </h3>
-                                        <p className="text-xs text-[#8B7355]">
-                                            {editingRule ? "修改推荐规则信息" : "创建肤质与产品的关联规则"}
-                                        </p>
-                                    </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                                优先级
+                            </label>
+                            <input
+                                type="number"
+                                value={formPriority}
+                                onChange={(e) => setFormPriority(Number(e.target.value))}
+                                className="block w-full rounded-xl border-slate-200 bg-white/50 py-2.5 px-4 text-sm text-slate-900 focus:bg-white focus:border-slate-400 focus:ring-0 transition-all"
+                            />
+                            <p className="text-xs text-slate-400 mt-1">数字越大优先级越高</p>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                                肤质条件
+                            </label>
+                            <div className="flex flex-wrap gap-2">
+                                {SKIN_TYPE_OPTIONS.map((opt) => (
                                     <button
-                                        onClick={() => { setShowModal(false); resetForm(); }}
-                                        disabled={submitting}
-                                        className="p-2 rounded-full text-[#B0A89A] hover:text-[#C9A86C] hover:bg-white/60 transition-all"
+                                        key={opt.value}
+                                        type="button"
+                                        onClick={() => toggleSelection(opt.value, selectedSkinTypes, setSelectedSkinTypes)}
+                                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                                            selectedSkinTypes.includes(opt.value)
+                                                ? "bg-[#3D4430] text-white"
+                                                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                        }`}
                                     >
-                                        <X className="w-5 h-5" />
+                                        {opt.label}
                                     </button>
-                                </div>
+                                ))}
+                            </div>
+                        </div>
 
-                                <form onSubmit={handleSubmit} className="px-8 pb-8 overflow-y-auto">
-                                    <div className="space-y-5">
-                                        {/* Name */}
-                                        <div>
-                                            <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                                                规则名称 <span className="text-red-500">*</span>
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={formName}
-                                                onChange={(e) => setFormName(e.target.value)}
-                                                placeholder="例如：油性肌肤痘痘护理"
-                                                required
-                                                className="block w-full rounded-xl border-slate-200 bg-white/50 py-2.5 px-4 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-400 focus:ring-0 transition-all"
-                                            />
-                                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                                肌肤问题
+                            </label>
+                            <div className="flex flex-wrap gap-2">
+                                {CONCERNS.map(concern => (
+                                    <button
+                                        key={concern}
+                                        type="button"
+                                        onClick={() => toggleSelection(concern, selectedConcerns, setSelectedConcerns)}
+                                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                                            selectedConcerns.includes(concern)
+                                                ? "bg-[#3D4430] text-white"
+                                                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                        }`}
+                                    >
+                                        {concern}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
 
-                                        {/* Priority */}
-                                        <div>
-                                            <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                                                优先级
-                                            </label>
-                                            <input
-                                                type="number"
-                                                value={formPriority}
-                                                onChange={(e) => setFormPriority(Number(e.target.value))}
-                                                className="block w-full rounded-xl border-slate-200 bg-white/50 py-2.5 px-4 text-sm text-slate-900 focus:bg-white focus:border-slate-400 focus:ring-0 transition-all"
-                                            />
-                                            <p className="text-xs text-slate-400 mt-1">数字越大优先级越高</p>
-                                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                                IP 形象（8 派）
+                            </label>
+                            <div className="flex flex-wrap gap-2">
+                                {PERSONAS.map(p => (
+                                    <button
+                                        key={p.value}
+                                        type="button"
+                                        onClick={() => toggleSelection(p.value, selectedPersonas, setSelectedPersonas)}
+                                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                                            selectedPersonas.includes(p.value)
+                                                ? "bg-[#3D4430] text-white"
+                                                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                        }`}
+                                    >
+                                        {p.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
 
-                                        {/* Conditions - Skin Type */}
-                                        <div>
-                                            <label className="block text-sm font-medium text-slate-700 mb-2">
-                                                肤质条件
-                                            </label>
-                                            <div className="flex flex-wrap gap-2">
-                                                {SKIN_TYPE_OPTIONS.map((opt) => (
-                                                    <button
-                                                        key={opt.value}
-                                                        type="button"
-                                                        onClick={() => toggleSelection(opt.value, selectedSkinTypes, setSelectedSkinTypes)}
-                                                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                                                            selectedSkinTypes.includes(opt.value)
-                                                                ? "bg-[#3D4430] text-white"
-                                                                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                                                        }`}
-                                                    >
-                                                        {opt.label}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                                推荐语
+                            </label>
+                            <textarea
+                                value={formMessage}
+                                onChange={(e) => setFormMessage(e.target.value)}
+                                placeholder="输入推荐说明文字"
+                                rows={3}
+                                className="block w-full rounded-xl border-slate-200 bg-white/50 py-2.5 px-4 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-400 focus:ring-0 transition-all resize-none"
+                            />
+                        </div>
 
-                                        {/* Conditions - Concerns */}
-                                        <div>
-                                            <label className="block text-sm font-medium text-slate-700 mb-2">
-                                                肌肤问题
-                                            </label>
-                                            <div className="flex flex-wrap gap-2">
-                                                {CONCERNS.map(concern => (
-                                                    <button
-                                                        key={concern}
-                                                        type="button"
-                                                        onClick={() => toggleSelection(concern, selectedConcerns, setSelectedConcerns)}
-                                                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                                                            selectedConcerns.includes(concern)
-                                                                ? "bg-[#3D4430] text-white"
-                                                                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                                                        }`}
-                                                    >
-                                                        {concern}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        {/* Conditions - Personas */}
-                                        <div>
-                                            <label className="block text-sm font-medium text-slate-700 mb-2">
-                                                IP 形象（8 派）
-                                            </label>
-                                            <div className="flex flex-wrap gap-2">
-                                                {PERSONAS.map(p => (
-                                                    <button
-                                                        key={p.value}
-                                                        type="button"
-                                                        onClick={() => toggleSelection(p.value, selectedPersonas, setSelectedPersonas)}
-                                                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                                                            selectedPersonas.includes(p.value)
-                                                                ? "bg-[#3D4430] text-white"
-                                                                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                                                        }`}
-                                                    >
-                                                        {p.label}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        {/* Message */}
-                                        <div>
-                                            <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                                                推荐语
-                                            </label>
-                                            <textarea
-                                                value={formMessage}
-                                                onChange={(e) => setFormMessage(e.target.value)}
-                                                placeholder="输入推荐说明文字"
-                                                rows={3}
-                                                className="block w-full rounded-xl border-slate-200 bg-white/50 py-2.5 px-4 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-400 focus:ring-0 transition-all resize-none"
-                                            />
-                                        </div>
-
-                                        {/* Product Selection */}
-                                        <div>
-                                            <label className="block text-sm font-medium text-slate-700 mb-2">
-                                                关联产品
-                                            </label>
-                                            <div className="max-h-48 overflow-y-auto rounded-xl border border-slate-200 bg-white/50 p-2 space-y-1">
-                                                {products.length === 0 ? (
-                                                    <p className="text-xs text-slate-400 px-2 py-1">暂无产品</p>
-                                                ) : (
-                                                    products.map(product => (
-                                                        <label
-                                                            key={product.id}
-                                                            className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors"
-                                                        >
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={selectedProductIds.includes(product.id)}
-                                                                onChange={() => toggleSelection(product.id, selectedProductIds, setSelectedProductIds)}
-                                                                className="rounded border-slate-300 text-[#3D4430] focus:ring-[#3D4430]"
-                                                            />
-                                                            <span className="text-sm text-slate-700">{product.name}</span>
-                                                            <span className="text-xs text-slate-400 ml-auto">{product.category}</span>
-                                                        </label>
-                                                    ))
-                                                )}
-                                            </div>
-                                            <p className="text-xs text-slate-400 mt-1">
-                                                已选择 {selectedProductIds.length} 个产品
-                                            </p>
-                                        </div>
-
-                                        {/* Active */}
-                                        <label className="flex items-center gap-2 cursor-pointer">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                                关联产品
+                            </label>
+                            <div className="max-h-48 overflow-y-auto rounded-xl border border-slate-200 bg-white/50 p-2 space-y-1">
+                                {products.length === 0 ? (
+                                    <p className="text-xs text-slate-400 px-2 py-1">暂无产品</p>
+                                ) : (
+                                    products.map(product => (
+                                        <label
+                                            key={product.id}
+                                            className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors"
+                                        >
                                             <input
                                                 type="checkbox"
-                                                checked={formActive}
-                                                onChange={(e) => setFormActive(e.target.checked)}
+                                                checked={selectedProductIds.includes(product.id)}
+                                                onChange={() => toggleSelection(product.id, selectedProductIds, setSelectedProductIds)}
                                                 className="rounded border-slate-300 text-[#3D4430] focus:ring-[#3D4430]"
                                             />
-                                            <span className="text-sm text-slate-700">启用此规则</span>
+                                            <span className="text-sm text-slate-700">{product.name}</span>
+                                            <span className="text-xs text-slate-400 ml-auto">{product.category}</span>
                                         </label>
-                                    </div>
-
-                                    <div className="flex gap-3 mt-8">
-                                        <button
-                                            type="button"
-                                            onClick={() => { setShowModal(false); resetForm(); }}
-                                            disabled={submitting}
-                                            className="flex-1 px-4 py-3 text-sm font-bold text-slate-600 bg-white/40 hover:bg-white/60 border border-white/60 rounded-2xl transition-all shadow-sm disabled:opacity-50"
-                                        >
-                                            取消
-                                        </button>
-                                        <button
-                                            type="submit"
-                                            disabled={submitting}
-                                            className="flex-1 px-4 py-3 text-sm font-bold text-white bg-[#1A1A1A] hover:bg-[#3D4430] rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg disabled:opacity-70"
-                                        >
-                                            {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                                            {editingRule ? "保存修改" : "创建规则"}
-                                        </button>
-                                    </div>
-                                </form>
-                            </motion.div>
+                                    ))
+                                )}
+                            </div>
+                            <p className="text-xs text-slate-400 mt-1">
+                                已选择 {selectedProductIds.length} 个产品
+                            </p>
                         </div>
-                    )}
-                </AnimatePresence>,
-                document.body
-            )}
+
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={formActive}
+                                onChange={(e) => setFormActive(e.target.checked)}
+                                className="rounded border-slate-300 text-[#3D4430] focus:ring-[#3D4430]"
+                            />
+                            <span className="text-sm text-slate-700">启用此规则</span>
+                        </label>
+                    </div>
+
+                    <div className="flex gap-3 mt-8">
+                        <button
+                            type="button"
+                            onClick={() => { setShowModal(false); resetForm(); }}
+                            disabled={submitting}
+                            className="flex-1 px-4 py-3 text-sm font-bold text-slate-600 bg-white/40 hover:bg-white/60 border border-white/60 rounded-2xl transition-all shadow-sm disabled:opacity-50"
+                        >
+                            取消
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={submitting}
+                            className="flex-1 px-4 py-3 text-sm font-bold text-white bg-[#1A1A1A] hover:bg-[#3D4430] rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg disabled:opacity-70"
+                        >
+                            {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                            {editingRule ? "保存修改" : "创建规则"}
+                        </button>
+                    </div>
+                </form>
+            </AdminModal>
         </div>
     );
 }

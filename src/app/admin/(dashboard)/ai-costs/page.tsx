@@ -76,16 +76,16 @@ function StatCard({ title, value, sub, icon: Icon, color }: {
         <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            className="rounded-2xl bg-white p-5 border border-[#E8E2D9]"
+            className="rounded-2xl bg-white p-5 border border-[#1A1A1A]/5"
         >
             <div className="flex items-center justify-between mb-3">
-                <span className="text-xs text-[#1B3A5C]/50 font-medium uppercase tracking-wider">{title}</span>
+                <span className="text-xs text-[#1A1A1A]/40 font-medium uppercase tracking-wider">{title}</span>
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${color}`}>
                     <Icon className="w-4 h-4" />
                 </div>
             </div>
-            <p className="text-2xl font-bold text-[#1B3A5C]">{value}</p>
-            {sub && <p className="text-xs text-[#1B3A5C]/40 mt-1">{sub}</p>}
+            <p className="text-2xl font-bold text-[#1A1A1A]">{value}</p>
+            {sub && <p className="text-xs text-[#1A1A1A]/40 mt-1">{sub}</p>}
         </motion.div>
     );
 }
@@ -139,7 +139,6 @@ export default function AdminAICostsPage() {
                 return res.json();
             })
             .then((json) => {
-                // 类型安全保护：确保响应包含必要字段
                 if (json && json.status && json.circuits && Array.isArray(json.circuits)) {
                     setHealth(json as AIHealthData);
                 }
@@ -147,10 +146,10 @@ export default function AdminAICostsPage() {
             .catch(() => {});
     }, []);
 
-    if (loading) {
+    if (loading && !isRefreshing) {
         return (
             <div className="flex items-center justify-center h-96">
-                <Loader2 className="w-8 h-8 animate-spin text-[#1B3A5C]/30" />
+                <Loader2 className="w-8 h-8 animate-spin text-[#1A1A1A]/30" />
             </div>
         );
     }
@@ -158,9 +157,9 @@ export default function AdminAICostsPage() {
     if (error || !data) {
         return (
             <div className="flex flex-col items-center justify-center h-96 gap-4">
-                <AlertTriangle className="w-10 h-10 text-[#A0784C]/40" />
-                <p className="text-[#1B3A5C]/50">加载失败: {error}</p>
-                <button onClick={fetchData} className="px-4 py-2 text-sm rounded-lg border border-[#E8E2D9] text-[#1B3A5C] hover:bg-[#F8F7F3]">
+                <AlertTriangle className="w-10 h-10 text-slate-300" />
+                <p className="text-slate-500">加载失败: {error}</p>
+                <button onClick={fetchData} className="px-4 py-2 text-sm rounded-lg border border-[#1A1A1A]/10 text-[#1A1A1A] hover:bg-[#F8F7F4] transition-colors">
                     重试
                 </button>
             </div>
@@ -171,22 +170,27 @@ export default function AdminAICostsPage() {
 
     return (
         <div className="space-y-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
+            {isRefreshing && (
+                <div className="absolute inset-0 z-50 bg-white/40 backdrop-blur-[1px] flex items-center justify-center rounded-2xl pointer-events-none">
+                    <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+                </div>
+            )}
+
+            <div className="flex items-center justify-between relative">
                 <div>
-                    <h1 className="text-2xl font-bold text-[#1B3A5C]">AI 成本分析</h1>
-                    <p className="text-sm text-[#1B3A5C]/50 mt-1">Token 消耗 · 费用追踪 · 成功率监控</p>
+                    <h1 className="text-2xl font-bold text-slate-900 tracking-tight">AI 成本分析</h1>
+                    <p className="text-sm text-slate-500 mt-1">Token 消耗 &middot; 费用追踪 &middot; 成功率监控</p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <div className="flex gap-1 bg-[#F8F7F3] rounded-lg p-1 border border-[#E8E2D9]">
+                    <div className="flex gap-1 bg-slate-100 rounded-lg p-1 border border-[#1A1A1A]/5">
                         {PERIODS.map(p => (
                             <button
                                 key={p.value}
                                 onClick={() => setPeriod(p.value)}
                                 className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
                                     period === p.value
-                                        ? "bg-white text-[#1B3A5C] font-medium shadow-sm"
-                                        : "text-[#1B3A5C]/50 hover:text-[#1B3A5C]"
+                                        ? "bg-white text-slate-900 font-medium shadow-sm"
+                                        : "text-slate-500 hover:text-slate-900"
                                 }`}
                             >
                                 {p.label}
@@ -196,7 +200,7 @@ export default function AdminAICostsPage() {
                     <button
                         onClick={handleRefresh}
                         disabled={isRefreshing}
-                        className="p-2 rounded-lg border border-[#E8E2D9] text-[#1B3A5C]/60 hover:text-[#1B3A5C] hover:bg-[#F8F7F3] transition-colors"
+                        className="p-2 rounded-lg border border-[#1A1A1A]/10 text-[#1A1A1A]/40 hover:text-[#1A1A1A] hover:bg-[#F8F7F4] transition-colors"
                         title="刷新数据"
                     >
                         <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -204,7 +208,6 @@ export default function AdminAICostsPage() {
                 </div>
             </div>
 
-            {/* AI 服务健康状态横幅 */}
             {health && health.status && health.circuits && (
                 <motion.div
                     initial={{ opacity: 0, y: -8 }}
@@ -240,12 +243,11 @@ export default function AdminAICostsPage() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* 预算使用率 */}
                         <div className="space-y-2">
                             <div className="flex items-center justify-between text-xs">
-                                <span className="text-[#1B3A5C]/60">日预算</span>
-                                <span className={`font-medium ${health.dailyUsagePercent >= 100 ? "text-red-600" : health.dailyUsagePercent >= 80 ? "text-amber-600" : "text-[#1B3A5C]"}`}>
-                                    ¥{health.usage.dailyCost.toFixed(2)}
+                                <span className="text-slate-500">日预算</span>
+                                <span className={`font-medium ${health.dailyUsagePercent >= 100 ? "text-red-600" : health.dailyUsagePercent >= 80 ? "text-amber-600" : "text-slate-900"}`}>
+                                    &yen;{health.usage.dailyCost.toFixed(2)}
                                     {health.budget.dailyCost > 0 ? ` / ¥${health.budget.dailyCost}` : ""}
                                     <span className="ml-1">({health.dailyUsagePercent}%)</span>
                                 </span>
@@ -260,9 +262,9 @@ export default function AdminAICostsPage() {
                                 />
                             </div>
                             <div className="flex items-center justify-between text-xs">
-                                <span className="text-[#1B3A5C]/60">月预算</span>
-                                <span className={`font-medium ${health.monthlyUsagePercent >= 100 ? "text-red-600" : health.monthlyUsagePercent >= 80 ? "text-amber-600" : "text-[#1B3A5C]"}`}>
-                                    ¥{health.usage.monthlyCost.toFixed(2)}
+                                <span className="text-slate-500">月预算</span>
+                                <span className={`font-medium ${health.monthlyUsagePercent >= 100 ? "text-red-600" : health.monthlyUsagePercent >= 80 ? "text-amber-600" : "text-slate-900"}`}>
+                                    &yen;{health.usage.monthlyCost.toFixed(2)}
                                     {health.budget.monthlyCost > 0 ? ` / ¥${health.budget.monthlyCost}` : ""}
                                     <span className="ml-1">({health.monthlyUsagePercent}%)</span>
                                 </span>
@@ -278,19 +280,18 @@ export default function AdminAICostsPage() {
                             </div>
                         </div>
 
-                        {/* 熔断器状态 */}
                         <div className="space-y-1.5">
-                            <span className="text-xs text-[#1B3A5C]/60">服务熔断状态</span>
+                            <span className="text-xs text-slate-500">服务熔断状态</span>
                             {health.circuits.filter(c => c.failureCount > 0 || c.state !== "closed").length === 0 ? (
-                                <p className="text-xs text-[#1B3A5C]/40">所有服务正常</p>
+                                <p className="text-xs text-slate-400">所有服务正常</p>
                             ) : (
                                 health.circuits
                                     .filter(c => c.failureCount > 0 || c.state !== "closed")
                                     .map((c) => (
                                         <div key={c.service} className="flex items-center justify-between text-xs">
-                                            <span className="text-[#1B3A5C] font-mono">{c.service}</span>
+                                            <span className="text-slate-900 font-mono">{c.service}</span>
                                             <span className={`font-medium ${
-                                                c.isBlocked ? "text-red-600" : c.state === "half-open" ? "text-amber-600" : "text-[#1B3A5C]/60"
+                                                c.isBlocked ? "text-red-600" : c.state === "half-open" ? "text-amber-600" : "text-slate-500"
                                             }`}>
                                                 {c.state === "open" ? "已熔断" :
                                                  c.state === "half-open" ? `半开 (探测中)` :
@@ -304,7 +305,6 @@ export default function AdminAICostsPage() {
                 </motion.div>
             )}
 
-            {/* Summary Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <StatCard
                     title="总调用次数"
@@ -337,109 +337,104 @@ export default function AdminAICostsPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* By Provider */}
-                <div className="rounded-2xl bg-white border border-[#E8E2D9] p-5">
-                    <h3 className="text-sm font-semibold text-[#1B3A5C] mb-4 flex items-center gap-2">
-                        <BarChart3 className="w-4 h-4 text-[#A0784C]" />
+                <div className="rounded-2xl bg-white p-5 border border-[#1A1A1A]/5">
+                    <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                        <BarChart3 className="w-4 h-4 text-slate-400" />
                         按提供者
                     </h3>
                     <div className="space-y-3">
                         {data.byProvider.map(p => (
                             <div key={p.provider} className="flex items-center justify-between">
                                 <div>
-                                    <span className="text-sm font-medium text-[#1B3A5C]">{p.provider}</span>
-                                    <span className="text-xs text-[#1B3A5C]/40 ml-2">{p.calls} 次</span>
+                                    <span className="text-sm font-medium text-slate-900">{p.provider}</span>
+                                    <span className="text-xs text-slate-400 ml-2">{p.calls} 次</span>
                                 </div>
                                 <div className="text-right">
-                                    <span className="text-sm font-medium text-[#1B3A5C]">¥{p.cost.toFixed(3)}</span>
-                                    <span className="text-xs text-[#1B3A5C]/40 ml-2">{p.totalTokens.toLocaleString()} tokens</span>
+                                    <span className="text-sm font-medium text-slate-900">&yen;{p.cost.toFixed(3)}</span>
+                                    <span className="text-xs text-slate-400 ml-2">{p.totalTokens.toLocaleString()} tokens</span>
                                 </div>
                             </div>
                         ))}
                         {data.byProvider.length === 0 && (
-                            <p className="text-sm text-[#1B3A5C]/30">暂无数据</p>
+                            <p className="text-sm text-slate-300">暂无数据</p>
                         )}
                     </div>
                 </div>
 
-                {/* By Type */}
-                <div className="rounded-2xl bg-white border border-[#E8E2D9] p-5">
-                    <h3 className="text-sm font-semibold text-[#1B3A5C] mb-4 flex items-center gap-2">
-                        <BarChart3 className="w-4 h-4 text-[#A0784C]" />
+                <div className="rounded-2xl bg-white p-5 border border-[#1A1A1A]/5">
+                    <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                        <BarChart3 className="w-4 h-4 text-slate-400" />
                         按请求类型
                     </h3>
                     <div className="space-y-3">
                         {data.byType.map(t => (
                             <div key={t.type} className="flex items-center justify-between">
                                 <div>
-                                    <span className="text-sm font-medium text-[#1B3A5C]">
+                                    <span className="text-sm font-medium text-slate-900">
                                         {t.type === "vision" ? "视觉分析" : t.type === "text" ? "文本生成" : t.type}
                                     </span>
-                                    <span className="text-xs text-[#1B3A5C]/40 ml-2">{t.calls} 次</span>
+                                    <span className="text-xs text-slate-400 ml-2">{t.calls} 次</span>
                                 </div>
-                                <span className="text-sm font-medium text-[#1B3A5C]">¥{t.cost.toFixed(3)}</span>
+                                <span className="text-sm font-medium text-slate-900">&yen;{t.cost.toFixed(3)}</span>
                             </div>
                         ))}
                         {data.byType.length === 0 && (
-                            <p className="text-sm text-[#1B3A5C]/30">暂无数据</p>
+                            <p className="text-sm text-slate-300">暂无数据</p>
                         )}
                     </div>
                 </div>
 
-                {/* By Model */}
-                <div className="rounded-2xl bg-white border border-[#E8E2D9] p-5">
-                    <h3 className="text-sm font-semibold text-[#1B3A5C] mb-4 flex items-center gap-2">
-                        <BarChart3 className="w-4 h-4 text-[#A0784C]" />
+                <div className="rounded-2xl bg-white p-5 border border-[#1A1A1A]/5">
+                    <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                        <BarChart3 className="w-4 h-4 text-slate-400" />
                         按模型
                     </h3>
                     <div className="space-y-3">
                         {data.byModel.map(m => (
                             <div key={m.model} className="flex items-center justify-between">
                                 <div>
-                                    <span className="text-sm font-medium text-[#1B3A5C]">{m.model}</span>
-                                    <span className="text-xs text-[#1B3A5C]/40 ml-2">{m.calls} 次</span>
+                                    <span className="text-sm font-medium text-slate-900">{m.model}</span>
+                                    <span className="text-xs text-slate-400 ml-2">{m.calls} 次</span>
                                 </div>
                                 <div className="text-right">
-                                    <span className="text-sm font-medium text-[#1B3A5C]">¥{m.cost.toFixed(3)}</span>
-                                    <span className="text-xs text-[#1B3A5C]/40 ml-2">{m.totalTokens.toLocaleString()} tokens</span>
+                                    <span className="text-sm font-medium text-slate-900">&yen;{m.cost.toFixed(3)}</span>
+                                    <span className="text-xs text-slate-400 ml-2">{m.totalTokens.toLocaleString()} tokens</span>
                                 </div>
                             </div>
                         ))}
                         {data.byModel.length === 0 && (
-                            <p className="text-sm text-[#1B3A5C]/30">暂无数据</p>
+                            <p className="text-sm text-slate-300">暂无数据</p>
                         )}
                     </div>
                 </div>
 
-                {/* Daily Cost Trend */}
-                <div className="rounded-2xl bg-white border border-[#E8E2D9] p-5">
-                    <h3 className="text-sm font-semibold text-[#1B3A5C] mb-4 flex items-center gap-2">
-                        <TrendingDown className="w-4 h-4 text-[#A0784C]" />
-                         每日费用趋势 (近30天){data.dailyCosts.length === 0 && <span className="text-[#1B3A5C]/30 font-normal ml-2">暂无数据</span>}
+                <div className="rounded-2xl bg-white p-5 border border-[#1A1A1A]/5">
+                    <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                        <TrendingDown className="w-4 h-4 text-slate-400" />
+                        每日费用趋势 (近30天){data.dailyCosts.length === 0 && <span className="text-slate-300 font-normal ml-2">暂无数据</span>}
                     </h3>
                     <div className="space-y-1.5 max-h-[240px] overflow-y-auto">
                         {data.dailyCosts.map(d => (
                             <div key={d.date} className="flex items-center justify-between text-xs">
-                                <span className="text-[#1B3A5C]/60">{d.date}</span>
-                                <span className="font-medium text-[#1B3A5C]">¥{d.cost.toFixed(3)}</span>
-                                <span className="text-[#1B3A5C]/30">{d.calls}次</span>
+                                <span className="text-slate-500">{d.date}</span>
+                                <span className="font-medium text-slate-900">&yen;{d.cost.toFixed(3)}</span>
+                                <span className="text-slate-300">{d.calls}次</span>
                             </div>
                         ))}
                     </div>
                 </div>
             </div>
 
-            {/* Recent Failures */}
             {data.recentFailures.length > 0 && (
-                <div className="rounded-2xl bg-white border border-[#E8E2D9] p-5">
-                    <h3 className="text-sm font-semibold text-[#1B3A5C] mb-4 flex items-center gap-2">
+                <div className="rounded-2xl bg-white p-5 border border-[#1A1A1A]/5">
+                    <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
                         <AlertTriangle className="w-4 h-4 text-red-500" />
                         最近失败记录 ({data.recentFailures.length})
                     </h3>
                     <div className="overflow-x-auto">
                         <table className="w-full text-xs">
                             <thead>
-                                <tr className="text-[#1B3A5C]/40 border-b border-[#E8E2D9]">
+                                <tr className="text-slate-400 border-b border-[#1A1A1A]/5">
                                     <th className="text-left pb-2 font-medium">时间</th>
                                     <th className="text-left pb-2 font-medium">提供者</th>
                                     <th className="text-left pb-2 font-medium">模型</th>
@@ -450,18 +445,18 @@ export default function AdminAICostsPage() {
                             </thead>
                             <tbody>
                                 {data.recentFailures.map(f => (
-                                    <tr key={f.id} className="border-b border-[#E8E2D9]/50">
-                                        <td className="py-2 text-[#1B3A5C]/60">
+                                    <tr key={f.id} className="border-b border-[#1A1A1A]/5">
+                                        <td className="py-2 text-slate-500">
                                             {new Date(f.createdAt).toLocaleString("zh-CN")}
                                         </td>
-                                        <td className="py-2 text-[#1B3A5C]">{f.provider}</td>
-                                        <td className="py-2 text-[#1B3A5C] font-mono">{f.model}</td>
-                                        <td className="py-2 text-[#1B3A5C]/60">{f.requestType}</td>
+                                        <td className="py-2 text-slate-900">{f.provider}</td>
+                                        <td className="py-2 text-slate-900 font-mono">{f.model}</td>
+                                        <td className="py-2 text-slate-500">{f.requestType}</td>
                                         <td className="py-2 text-red-500 font-mono text-[10px] max-w-[200px] truncate">
                                             {f.errorCode || "-"}
                                         </td>
-                                        <td className="py-2 text-right text-[#1B3A5C]/60">
-                                            ¥{f.estimatedCost.toFixed(4)}
+                                        <td className="py-2 text-right text-slate-500">
+                                            &yen;{f.estimatedCost.toFixed(4)}
                                         </td>
                                     </tr>
                                 ))}

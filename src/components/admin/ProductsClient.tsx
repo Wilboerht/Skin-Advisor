@@ -17,12 +17,11 @@ import {
     Filter,
     ChevronDown,
     ImageOff,
-    ChevronLeft,
-    ChevronRight,
     Search,
 } from "lucide-react";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { ProductFormModal } from "./ProductFormModal";
+import { PaginationBar } from "@/components/ui/PaginationBar";
 import { SerializedProduct } from "@/types/product";
 
 interface ProductsClientProps {
@@ -46,7 +45,7 @@ const ProductRow = memo(function ProductRow({
 }) {
     return (
         <tr
-            className={`hover:bg-white/20 transition-colors ${isSelected ? 'bg-white/30' : ''}`}
+            className={`hover:bg-white/50 transition-colors ${isSelected ? 'bg-white/30' : ''}`}
         >
             <td className="px-2 py-4 w-10 align-middle">
                 <div className="flex items-center justify-center">
@@ -123,7 +122,7 @@ const ProductRow = memo(function ProductRow({
                         type="button"
                         onClick={() => onEdit(product)}
                         className="rounded p-2 text-slate-600 hover:bg-slate-100 transition-colors"
-                        title="编辑"
+                        aria-label={`编辑 ${product.name}`}
                     >
                         <Edit className="h-4 w-4" />
                     </button>
@@ -131,7 +130,7 @@ const ProductRow = memo(function ProductRow({
                         type="button"
                         onClick={() => onDelete(product.id)}
                         className="rounded p-2 text-red-600 hover:bg-red-50 transition-colors"
-                        title="删除"
+                        aria-label={`删除 ${product.name}`}
                     >
                         <Trash2 className="h-4 w-4" />
                     </button>
@@ -487,48 +486,17 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                 </table>
             </div>
 
-            {/* Pagination */}
-            {filteredProducts.length > 0 && (
-                <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
-                    <div className="flex items-center gap-2 text-sm text-slate-500">
-                        <span>每页</span>
-                        <select
-                            value={pageSize}
-                            onChange={(e) => setPageSize(Number(e.target.value))}
-                            className="px-2 py-1 text-sm border border-slate-200 rounded-lg bg-white hover:bg-slate-50 focus:outline-none focus:ring-1 focus:ring-slate-300 cursor-pointer"
-                        >
-                            {PAGE_SIZE_OPTIONS.map(size => (
-                                <option key={size} value={size}>{size}</option>
-                            ))}
-                        </select>
-                        <span>条</span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                        <button
-                            type="button"
-                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                            disabled={safePage <= 1}
-                            className="p-2 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                            aria-label="上一页"
-                        >
-                            <ChevronLeft className="w-4 h-4" />
-                        </button>
-                        <span className="text-sm text-slate-600 px-2">
-                            {safePage} / {totalPages}
-                        </span>
-                        <button
-                            type="button"
-                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                            disabled={safePage >= totalPages}
-                            className="p-2 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                            aria-label="下一页"
-                        >
-                            <ChevronRight className="w-4 h-4" />
-                        </button>
-                    </div>
-                </div>
-            )}
+            <PaginationBar
+                page={safePage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                total={filteredProducts.length}
+                limit={pageSize}
+                pageSizeOptions={PAGE_SIZE_OPTIONS}
+                pageSize={pageSize}
+                onPageSizeChange={setPageSize}
+                disabled={isRefreshing}
+            />
 
             {/* Delete Confirm Modal */}
             <ConfirmModal

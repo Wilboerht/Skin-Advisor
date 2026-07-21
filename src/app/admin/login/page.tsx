@@ -231,10 +231,10 @@ function AdminLoginForm() {
                       aria-invalid={!!fieldErrors.username}
                       aria-describedby={fieldErrors.username ? "username-error" : undefined}
                       className={cn(
-                        "block w-full rounded-xl border bg-slate-50 py-3.5 px-5 text-[13px] text-slate-900 outline-none transition-all duration-300 placeholder:text-slate-300 disabled:opacity-50",
+                        "block w-full rounded-xl border bg-white py-3.5 px-5 text-[13px] text-slate-900 outline-none transition-all duration-300 placeholder:text-slate-400 disabled:opacity-50",
                         fieldErrors.username
                           ? "border-red-300 focus:border-red-400 focus:bg-white focus:ring-4 focus:ring-red-100"
-                          : "border-slate-100 focus:border-[#C6A87C]/40 focus:bg-white focus:ring-4 focus:ring-[#C6A87C]/15"
+                          : "border-[#E8E2D9] focus:border-[#C9A86C]/60 focus:bg-white focus:ring-4 focus:ring-[#C9A86C]/15"
                       )}
                     />
                     <p
@@ -264,10 +264,10 @@ function AdminLoginForm() {
                       aria-invalid={!!fieldErrors.password}
                       aria-describedby={fieldErrors.password ? "password-error" : undefined}
                       className={cn(
-                        "block w-full rounded-xl border bg-slate-50 py-3.5 px-5 pr-10 text-[13px] text-slate-900 outline-none transition-all duration-300 placeholder:text-slate-300 disabled:opacity-50",
+                        "block w-full rounded-xl border bg-white py-3.5 px-5 pr-10 text-[13px] text-slate-900 outline-none transition-all duration-300 placeholder:text-slate-400 disabled:opacity-50",
                         fieldErrors.password
                           ? "border-red-300 focus:border-red-400 focus:bg-white focus:ring-4 focus:ring-red-100"
-                          : "border-slate-100 focus:border-[#C6A87C]/40 focus:bg-white focus:ring-4 focus:ring-[#C6A87C]/15"
+                          : "border-[#E8E2D9] focus:border-[#C9A86C]/60 focus:bg-white focus:ring-4 focus:ring-[#C9A86C]/15"
                       )}
                     />
                     <button
@@ -299,7 +299,7 @@ function AdminLoginForm() {
                     <div
                       role="alert"
                       aria-live="polite"
-                      className="flex items-center gap-2 rounded-full border border-slate-100 bg-white px-5 py-3 text-xs font-bold tracking-widest text-slate-800 shadow-[0_8px_30px_rgb(0,0,0,0.08)]"
+                      className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-5 py-3 text-xs font-medium text-red-700"
                     >
                       <AlertCircle className="h-3.5 w-3.5 flex-shrink-0 text-red-500" />
                       <span>{error}</span>
@@ -310,7 +310,7 @@ function AdminLoginForm() {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#8B7355]/40 bg-[#8B7355]/10 py-3.5 text-[13px] font-bold tracking-widest text-[#8B7355] transition-all duration-300 hover:border-[#8B7355]/70 hover:bg-[#8B7355]/20 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#8B7355]/30 bg-[#8B7355] py-3.5 text-[13px] font-bold tracking-wider text-white shadow-sm transition-all duration-300 hover:bg-[#6D5A3F] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {isLoading ? (
                       <>
