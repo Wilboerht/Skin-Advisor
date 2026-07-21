@@ -1,37 +1,15 @@
 import prisma from "@/lib/prisma"
 import { withAdminAuth, logAdminAction, getClientInfo } from "@/lib/admin-auth"
 import { logger } from "@/lib/logger"
-import { NextRequest, NextResponse } from "next/server"
-import { z } from "zod"
-
-const updateSchema = z.object({
-  title: z.string().min(1).optional(),
-  subtitle: z.string().optional(),
-  description: z.string().optional(),
-  coverImage: z.string().optional(),
-  startDate: z.string().optional(),
-  endDate: z.string().optional(),
-  drawDate: z.string().nullable().optional(),
-  prizes: z.array(z.object({
-    name: z.string(),
-    image: z.string().optional(),
-    quantity: z.number().min(1),
-    description: z.string().optional(),
-  })).optional(),
-  shareText: z.string().optional(),
-  rules: z.string().optional(),
-  maxEntries: z.number().min(0).optional(),
-  sortOrder: z.number().optional(),
-  status: z.enum(["draft", "active", "ended"]).optional(),
-})
+import { campaignUpdateSchema } from "@/lib/campaigns"
+import { NextResponse } from "next/server"
 
 // PATCH /api/admin/campaigns/[id] - 更新活动
 export const PATCH = withAdminAuth(async (req, { admin, params }) => {
-
   const { id } = await params
   try {
     const body = await req.json()
-    const parsed = updateSchema.safeParse(body)
+    const parsed = campaignUpdateSchema.safeParse(body)
     if (!parsed.success) {
       return NextResponse.json({ error: "参数错误", details: parsed.error.flatten() }, { status: 400 })
     }

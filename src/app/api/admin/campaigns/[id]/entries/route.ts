@@ -3,8 +3,8 @@ import { withAdminAuth, logAdminAction, getClientInfo } from "@/lib/admin-auth"
 import { rateLimit, getClientIP } from "@/lib/ratelimit"
 import { logger } from "@/lib/logger"
 import { canViewFullPII } from "@/lib/permissions"
-import { NextRequest, NextResponse } from "next/server"
-import { z } from "zod"
+import { NextResponse } from "next/server"
+import { entryPatchSchema, entryQuerySchema } from "@/lib/campaigns"
 
 // GET /api/admin/campaigns/[id]/entries - 获取活动参与列表（分页）
 export const GET = withAdminAuth(async (req, { admin, params }) => {
@@ -17,9 +17,12 @@ export const GET = withAdminAuth(async (req, { admin, params }) => {
   const { id } = await params
   try {
     const { searchParams } = new URL(req.url)
-    const status = searchParams.get("status")
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1") || 1)
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "50") || 1))
+    const parsed = entryQuerySchema.parse({
+      status: searchParams.get("status") || undefined,
+      page: searchParams.get("page") || undefined,
+      limit: searchParams.get("limit") || undefined,
+    })
+    const { status, page, limit } = parsed
     const skip = (page - 1) * limit
 
     const where: Record<string, unknown> = { campaignId: id }
@@ -71,14 +74,7 @@ function maskPhone(phone: string | null): string | null {
   return phone.slice(0, 3) + "****" + phone.slice(-4)
 }
 
-const entryPatchSchema = z.object({
-  entryId: z.string().min(1),
-  action: z.enum(["verify", "reject", "win", "unwin"]),
-  reviewNote: z.string().max(2000).optional(),
-  prizeName: z.string().max(200).optional(),
-})
-
-// PATCH /api/admin/campaigns/[id]/entries - 批量审核/设置中奖
+// PATCH /api/admin/campaigns/[id]/entries - 审核/设置中奖
 export const PATCH = withAdminAuth(async (req, { admin, params }) => {
 
   const { id: campaignId } = await params

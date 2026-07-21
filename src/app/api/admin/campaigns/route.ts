@@ -1,44 +1,63 @@
 import prisma from "@/lib/prisma"
 import { withAdminAuth, logAdminAction, getClientInfo } from "@/lib/admin-auth"
 import { logger } from "@/lib/logger"
-import { NextRequest, NextResponse } from "next/server"
-import { z } from "zod"
+import { NextResponse } from "next/server"
+import {
+  campaignCreateSchema,
+  campaignQuerySchema,
+  type Campaign,
+} from "@/lib/campaigns"
 
-// GET /api/admin/campaigns - 获取所有活动
-export const GET = withAdminAuth(async (_req) => {
-  const campaigns = await prisma.campaign.findMany({
-    orderBy: { sortOrder: "desc" },
-    include: { _count: { select: { entries: true } } },
-  })
-  return NextResponse.json({ campaigns })
-})
+// GET /api/admin/campaigns - 获取活动列表（分页）
+export const GET = withAdminAuth(async (req) => {
+  try {
+    const { searchParams } = new URL(req.url)
+    const parsed = campaignQuerySchema.parse({
+      status: searchParams.get("status") || undefined,
+      page: searchParams.get("page") || undefined,
+      limit: searchParams.get("limit") || undefined,
+    })
+    const { status, page, limit } = parsed
+    const skip = (page - 1) * limit
 
-const createSchema = z.object({
-  title: z.string().min(1, "标题不能为空"),
-  subtitle: z.string().optional(),
-  description: z.string().optional(),
-  coverImage: z.string().optional(),
-  startDate: z.string(),
-  endDate: z.string(),
-  drawDate: z.string().optional(),
-  prizes: z.array(z.object({
-    name: z.string(),
-    image: z.string().optional(),
-    quantity: z.number().min(1),
-    description: z.string().optional(),
-  })),
-  shareText: z.string().optional(),
-  rules: z.string().optional(),
-  maxEntries: z.number().min(0).default(0),
-  sortOrder: z.number().default(0),
-  status: z.enum(["draft", "active", "ended"]).default("draft"),
+    const where: Record<string, unknown> = {}
+    if (status) where.status = status
+
+    const [campaigns, total] = await Promise.all([
+      prisma.campaign.findMany({
+        where,
+        orderBy: { sortOrder: "desc" },
+        skip,
+        take: limit,
+        include: { _count: { select: { entries: true } } },
+      }),
+      prisma.campaign.count({ where }),
+    ])
+
+    const serialized = campaigns.map((c) => ({
+      ...c,
+      startDate: c.startDate.toISOString(),
+      endDate: c.endDate.toISOString(),
+      drawDate: c.drawDate?.toISOString() ?? null,
+      createdAt: c.createdAt.toISOString(),
+      updatedAt: c.updatedAt.toISOString(),
+    }))
+
+    return NextResponse.json({
+      items: serialized as unknown as Campaign[],
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    })
+  } catch (error) {
+    logger.error("[Admin Campaigns] List failed", { error: String(error) })
+    return NextResponse.json({ error: "获取失败" }, { status: 500 })
+  }
 })
 
 // POST /api/admin/campaigns - 创建活动
 export const POST = withAdminAuth(async (req, { admin }) => {
   try {
     const body = await req.json()
-    const parsed = createSchema.safeParse(body)
+    const parsed = campaignCreateSchema.safeParse(body)
     if (!parsed.success) {
       return NextResponse.json({ error: "参数错误", details: parsed.error.flatten() }, { status: 400 })
     }
