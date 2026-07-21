@@ -1,11 +1,12 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { DashboardCharts } from "@/components/admin/charts/DashboardCharts";
 import { useDashboardStats } from "@/components/admin/charts/DashboardCharts";
-import { Loader2, Users, Package, Activity, CheckCircle } from "lucide-react";
+import { Loader2, Users, Package, Activity, CheckCircle, RefreshCw } from "lucide-react";
 import { motion } from "framer-motion";
 
-function StatCard({ title, value, icon: Icon, delay }: { title: string; value: number; icon: React.ElementType; delay: number }) {
+function StatCard({ title, value, icon: Icon, delay, suffix }: { title: string; value: number; icon: React.ElementType; delay: number; suffix?: string }) {
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -16,7 +17,7 @@ function StatCard({ title, value, icon: Icon, delay }: { title: string; value: n
             <div className="flex items-center justify-between">
                 <div>
                     <p className="text-xs text-[#1A1A1A]/40 uppercase tracking-wider">{title}</p>
-                    <p className="text-3xl font-bold text-[#1A1A1A] mt-2">{value.toLocaleString()}</p>
+                    <p className="text-3xl font-bold text-[#1A1A1A] mt-2">{value.toLocaleString()}{suffix}</p>
                 </div>
                 <div className="w-10 h-10 rounded-xl bg-[#1A1A1A]/5 flex items-center justify-center">
                     <Icon className="w-5 h-5 text-[#1A1A1A]/60" />
@@ -27,7 +28,17 @@ function StatCard({ title, value, icon: Icon, delay }: { title: string; value: n
 }
 
 export default function AdminDashboardPage() {
-    const { stats, loading, error } = useDashboardStats();
+    const { stats, loading, error, refresh } = useDashboardStats();
+    const [isRefreshing, setIsRefreshing] = useState(false);
+
+    const handleRefresh = () => {
+        setIsRefreshing(true);
+        refresh();
+    };
+
+    useEffect(() => {
+        if (!loading && isRefreshing) setIsRefreshing(false);
+    }, [loading, isRefreshing]);
 
     if (loading) {
         return (
@@ -52,13 +63,23 @@ export default function AdminDashboardPage() {
 
     return (
         <div className="space-y-8">
-            <div>
-                <h1 className="text-2xl font-bold text-[#1A1A1A] tracking-tight">仪表板</h1>
-                <p className="text-sm text-[#5E5E5E] mt-1">护肤顾问系统数据概览</p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-2xl font-bold text-[#1A1A1A] tracking-tight">仪表板</h1>
+                    <p className="text-sm text-[#5E5E5E] mt-1">护肤顾问系统数据概览</p>
+                </div>
+                <button
+                    onClick={handleRefresh}
+                    disabled={isRefreshing}
+                    className="p-2 rounded-lg border border-[#1A1A1A]/10 text-[#1A1A1A]/40 hover:text-[#1A1A1A] hover:bg-[#F8F7F4] transition-colors"
+                    title="刷新数据"
+                >
+                    <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                </button>
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" aria-label="数据统计">
                 <StatCard
                     title="注册用户"
                     value={overview?.totalUsers || 0}
@@ -82,6 +103,7 @@ export default function AdminDashboardPage() {
                     value={overview?.completionRate || 0}
                     icon={CheckCircle}
                     delay={0.15}
+                    suffix="%"
                 />
             </div>
 

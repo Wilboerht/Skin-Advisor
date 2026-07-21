@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchWithCsrf } from "@/lib/fetch-client";
+import { useToast } from "@/components/ui/Toast";
 import { Link } from "next-view-transitions";
 import {
   Clock,
@@ -40,6 +41,7 @@ interface HistorySession {
 
 export default function ProfileClient() {
   const { user, loading, logout, refresh } = useAuth();
+  const toast = useToast();
   const router = useRouter();
   const [auditHistory, setAuditHistory] = useState<HistorySession[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
@@ -77,7 +79,7 @@ export default function ProfileClient() {
       await refresh();
     } catch (err) {
       console.error("Avatar update error:", err);
-      alert(err instanceof Error ? err.message : "头像更新失败");
+      toast.error(err instanceof Error ? err.message : "头像更新失败");
     } finally {
       setUpdatingAvatar(false);
     }
@@ -98,7 +100,7 @@ export default function ProfileClient() {
       setIsEditingName(false);
     } catch (err) {
       console.error("Name update error:", err);
-      alert("昵称更新失败");
+      toast.error("昵称更新失败");
     }
   };
 

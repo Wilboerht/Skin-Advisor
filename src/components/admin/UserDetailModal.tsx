@@ -1,7 +1,7 @@
 "use client";
 
 import { X, Clock, ShoppingBag, Calendar, Smartphone, MapPin, Settings, Save } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 import { createPortal } from "react-dom";
@@ -31,6 +31,7 @@ interface UserDetail {
 export function UserDetailModal({ isOpen, onClose, userId, onUpdate }: UserDetailModalProps) {
     const [user, setUser] = useState<UserDetail | null>(null);
     const [loading, setLoading] = useState(false);
+    const [fetchError, setFetchError] = useState(false);
     const [editingLimit, setEditingLimit] = useState(false);
     const [newLimit, setNewLimit] = useState(1);
     const [saving, setSaving] = useState(false);
@@ -45,26 +46,35 @@ export function UserDetailModal({ isOpen, onClose, userId, onUpdate }: UserDetai
         }
     }, [isOpen]);
 
+    const fetchUserDetails = useCallback(() => {
+        if (!userId) return;
+        setLoading(true);
+        setFetchError(false);
+        fetch(`/api/admin/users/${userId}`)
+            .then(res => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.json();
+            })
+            .then(data => {
+                setUser(data);
+                setNewLimit(data.dailyTestLimit || 1);
+            })
+            .catch(() => {
+                setUser(null);
+                setFetchError(true);
+            })
+            .finally(() => setLoading(false));
+    }, [userId]);
+
     useEffect(() => {
         if (isOpen && userId) {
-            setLoading(true);
-            fetch(`/api/admin/users/${userId}`)
-                .then(res => res.json())
-                .then(data => {
-                    setUser(data);
-                    setNewLimit(data.dailyTestLimit || 1);
-                })
-                .catch((err) => {
-                    // Silent fail: toast already shown
-                    setUser(null);
-                    toast.error("加载用户详情失败");
-                })
-                .finally(() => setLoading(false));
+            fetchUserDetails();
         } else {
             setUser(null);
+            setFetchError(false);
             setEditingLimit(false);
         }
-    }, [isOpen, userId]);
+    }, [isOpen, userId, fetchUserDetails]);
 
     const handleSaveLimit = async () => {
         if (!user) return;
@@ -121,10 +131,20 @@ export function UserDetailModal({ isOpen, onClose, userId, onUpdate }: UserDetai
                     <X className="w-5 h-5" />
                 </button>
 
-                {loading || !user ? (
+                {loading ? (
                     <div className="flex-1 flex flex-col items-center justify-center min-h-[400px]">
                         <Loader2 className="w-8 h-8 animate-spin text-slate-300" />
                         <p className="mt-4 text-sm text-slate-400">Loading user details...</p>
+                    </div>
+                ) : fetchError || !user ? (
+                    <div className="flex-1 flex flex-col items-center justify-center min-h-[400px] gap-4">
+                        <p className="text-sm text-slate-500">加载用户详情失败</p>
+                        <button
+                            onClick={fetchUserDetails}
+                            className="px-4 py-2 text-sm rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
+                        >
+                            重试
+                        </button>
                     </div>
                 ) : (
                     <div className="p-6 sm:p-8 space-y-8">

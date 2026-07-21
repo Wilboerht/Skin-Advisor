@@ -19,6 +19,7 @@ import {
     ImageOff,
     ChevronLeft,
     ChevronRight,
+    Search,
 } from "lucide-react";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { ProductFormModal } from "./ProductFormModal";
@@ -171,15 +172,18 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
     // Pagination
     const [pageSize, setPageSize] = useState<number>(10);
     const [currentPage, setCurrentPage] = useState<number>(1);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
     useEffect(() => {
         setSelectedIds([]);
         setCurrentPage(1);
-    }, [categoryFilter, statusFilter, pageSize]);
+    }, [categoryFilter, statusFilter, pageSize, searchQuery]);
 
     // Sync products state when initialProducts prop changes (e.g., after router.refresh())
     useEffect(() => {
         setProducts(initialProducts);
+        setIsRefreshing(false);
     }, [initialProducts]);
 
     // Get unique categories from current products state (not stale initialProducts prop)
@@ -190,6 +194,7 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
         if (categoryFilter !== "all" && p.category !== categoryFilter) return false;
         if (statusFilter === "active" && !p.active) return false;
         if (statusFilter === "inactive" && p.active) return false;
+        if (searchQuery && !p.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
         return true;
     });
 
@@ -228,6 +233,7 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
             });
 
             if (res.ok) {
+                setIsRefreshing(true);
                 router.refresh();
                 setSelectedIds([]);
             } else {
@@ -252,6 +258,7 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                 });
 
                 if (res.ok) {
+                    setIsRefreshing(true);
                     router.refresh();
                     setSelectedIds([]);
                 } else {
@@ -268,6 +275,7 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                 });
 
                 if (res.ok) {
+                    setIsRefreshing(true);
                     router.refresh();
                 } else {
                     const message = await parseErrorMessage(res, "删除失败");
@@ -281,7 +289,13 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
     };
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500">
+        <div className="relative space-y-6 animate-in fade-in duration-500">
+            {/* Loading Overlay */}
+            {isRefreshing && (
+                <div className="absolute inset-0 z-50 bg-white/40 backdrop-blur-[1px] flex items-center justify-center rounded-2xl">
+                    <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+                </div>
+            )}
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900 tracking-tight">产品管理</h1>
@@ -332,6 +346,18 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                         <option value="inactive">已下架</option>
                     </select>
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                </div>
+
+                {/* Search Input */}
+                <div className="relative flex-1 min-w-[180px] max-w-xs">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input
+                        type="text"
+                        placeholder="搜索产品名称..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-10 pr-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white hover:border-slate-300 focus:outline-none focus:ring-1 focus:ring-slate-300 transition-all"
+                    />
                 </div>
 
                 {(categoryFilter !== "all" || statusFilter !== "all") && (
@@ -525,6 +551,7 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                 onClose={() => setModalOpen(false)}
                 product={editingProduct}
                 onSuccess={() => {
+                    setIsRefreshing(true);
                     router.refresh();
                     setSelectedIds([]);
                 }}

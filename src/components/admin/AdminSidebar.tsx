@@ -5,6 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
+    Menu,
+    X,
     Package,
     LogOut,
     ChevronLeft,
@@ -42,6 +44,7 @@ export default function AdminSidebar() {
     const pathname = usePathname();
     const router = useRouter();
     const [collapsed, setCollapsed] = useState(false);
+    const [mobileOpen, setMobileOpen] = useState(false);
     const [showExportMenu, setShowExportMenu] = useState(false);
     const [adminRole, setAdminRole] = useState<string | null>(null);
     const [adminName, setAdminName] = useState<string>("");
@@ -60,7 +63,8 @@ export default function AdminSidebar() {
             .catch((e) => {
                 console.error("Failed to fetch admin info:", e);
             });
-    }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [pathname]);
 
     const menuItems = isSuperAdmin(adminRole)
         ? [...BASE_MENU_ITEMS, { href: "/admin/admins", label: "管理员", icon: UserCog }]
@@ -89,6 +93,10 @@ export default function AdminSidebar() {
 
     const [logoutError, setLogoutError] = useState(false);
 
+    const handleMobileNavClick = () => {
+        setMobileOpen(false);
+    };
+
     const handleLogout = async () => {
         try {
             const res = await fetch("/api/admin/auth/logout", { method: "POST" });
@@ -103,12 +111,30 @@ export default function AdminSidebar() {
     };
 
     return (
-        <div
-            className={cn(
-                "flex h-full flex-col bg-[#FDFBF7] text-[#1A1A1A] z-20 transition-all duration-300 ease-in-out border-r border-[#1A1A1A]/5",
-                collapsed ? "w-20" : "w-64"
+        <>
+            <button
+                className="md:hidden fixed top-4 left-4 z-[60] p-2 rounded-lg bg-white shadow-md border border-[#1A1A1A]/10"
+                onClick={() => setMobileOpen(!mobileOpen)}
+                aria-label={mobileOpen ? "关闭菜单" : "打开菜单"}
+            >
+                {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+
+            {mobileOpen && (
+                <div
+                    className="md:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+                    onClick={() => setMobileOpen(false)}
+                />
             )}
-        >
+
+            <div
+                className={cn(
+                    "flex h-full flex-col bg-[#FDFBF7] text-[#1A1A1A] z-20 transition-all duration-300 ease-in-out border-r border-[#1A1A1A]/5",
+                    collapsed ? "w-20" : "w-64",
+                    "max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-50 max-md:w-64",
+                    mobileOpen ? "max-md:translate-x-0" : "max-md:-translate-x-full"
+                )}
+            >
             <div className={cn("flex h-20 items-center justify-center border-b border-[#1A1A1A]/5 px-2")}>
                 <div className="flex items-center gap-2.5 overflow-hidden">
                     <div className="flex items-center justify-center shrink-0 relative">
@@ -135,7 +161,7 @@ export default function AdminSidebar() {
                 </div>
             </div>
 
-            <nav className="flex-1 space-y-1 px-3 py-6">
+            <nav className="flex-1 space-y-1 px-3 py-6" aria-label="管理导航">
                 {!collapsed && (
                     <div className="px-3 mb-3 text-[10px] font-bold uppercase tracking-wider text-[#1A1A1A]/40 animate-in fade-in duration-300">
                         功能导航
@@ -154,6 +180,7 @@ export default function AdminSidebar() {
                                     : "text-[#1A1A1A]/60 hover:bg-[#1A1A1A]/5 hover:text-[#1A1A1A]",
                                 collapsed ? "justify-center" : ""
                             )}
+                            onClick={handleMobileNavClick}
                             title={collapsed ? item.label : undefined}
                         >
                             <item.icon className={cn("h-4 w-4 flex-shrink-0 transition-colors", isActive ? "text-[#1A1A1A]" : "text-[#1A1A1A]/60 group-hover:text-[#1A1A1A]", collapsed ? "mr-0" : "mr-3")} />
@@ -174,6 +201,8 @@ export default function AdminSidebar() {
                     <div className="relative px-3" ref={exportMenuRef}>
                         <button
                             onClick={() => setShowExportMenu(!showExportMenu)}
+                            aria-expanded={showExportMenu}
+                            aria-haspopup="true"
                             className={cn(
                                 "group flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 w-full",
                                 showExportMenu 
@@ -252,5 +281,6 @@ export default function AdminSidebar() {
                 )}
             </div>
         </div>
+        </>
     );
 }

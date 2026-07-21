@@ -25,9 +25,13 @@ export function useDashboardStats() {
     const [stats, setStats] = useState<StatsData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [refreshKey, setRefreshKey] = useState(0);
+
+    const refresh = () => setRefreshKey(k => k + 1);
 
     useEffect(() => {
         const controller = new AbortController();
+        setLoading(true);
         fetch('/api/admin/stats', { signal: controller.signal })
             .then(res => {
                 if (!res.ok) {
@@ -48,9 +52,9 @@ export function useDashboardStats() {
             })
             .finally(() => setLoading(false));
         return () => controller.abort();
-    }, []);
+    }, [refreshKey]);
 
-    return { stats, loading, error };
+    return { stats, loading, error, refresh };
 }
 
 export function SkinTypeDistribution({ data }: { data?: StatsData['skinTypeDistribution'] }) {

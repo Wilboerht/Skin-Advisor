@@ -219,19 +219,6 @@ export default function RecommendationRulesPage() {
         }
     };
 
-    const deleteRule = async (id: string) => {
-        if (!confirm("确定要删除这条推荐规则吗？此操作不可撤销。")) return;
-        try {
-            const res = await fetch(`/api/admin/recommendation-rules/${id}`, {
-                method: "DELETE"
-            });
-            if (!res.ok) throw new Error("Failed to delete");
-            setRules(prev => prev.filter(r => r.id !== id));
-        } catch {
-            alert("删除失败，请重试");
-        }
-    };
-
     if (loading) {
         return (
             <div className="flex items-center justify-center h-96">

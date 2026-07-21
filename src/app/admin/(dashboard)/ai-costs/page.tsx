@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Loader2, TrendingDown, Zap, AlertTriangle, BarChart3, DollarSign, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { Loader2, TrendingDown, Zap, AlertTriangle, BarChart3, DollarSign, CheckCircle2, XCircle, AlertCircle, RefreshCw } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface AICostData {
@@ -96,6 +96,7 @@ export default function AdminAICostsPage() {
     const [health, setHealth] = useState<AIHealthData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
     const fetchData = useCallback(async () => {
         setLoading(true);
@@ -109,6 +110,21 @@ export default function AdminAICostsPage() {
             setError(e instanceof Error ? e.message : "未知错误");
         } finally {
             setLoading(false);
+        }
+    }, [period]);
+
+    const handleRefresh = useCallback(async () => {
+        setIsRefreshing(true);
+        setError(null);
+        try {
+            const res = await fetch(`/api/admin/ai-costs?period=${period}`);
+            if (!res.ok) throw new Error("Failed to fetch");
+            const json = await res.json();
+            setData(json);
+        } catch (e) {
+            setError(e instanceof Error ? e.message : "未知错误");
+        } finally {
+            setIsRefreshing(false);
         }
     }, [period]);
 
@@ -161,20 +177,30 @@ export default function AdminAICostsPage() {
                     <h1 className="text-2xl font-bold text-[#1B3A5C]">AI 成本分析</h1>
                     <p className="text-sm text-[#1B3A5C]/50 mt-1">Token 消耗 · 费用追踪 · 成功率监控</p>
                 </div>
-                <div className="flex gap-1 bg-[#F8F7F3] rounded-lg p-1 border border-[#E8E2D9]">
-                    {PERIODS.map(p => (
-                        <button
-                            key={p.value}
-                            onClick={() => setPeriod(p.value)}
-                            className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
-                                period === p.value
-                                    ? "bg-white text-[#1B3A5C] font-medium shadow-sm"
-                                    : "text-[#1B3A5C]/50 hover:text-[#1B3A5C]"
-                            }`}
-                        >
-                            {p.label}
-                        </button>
-                    ))}
+                <div className="flex items-center gap-2">
+                    <div className="flex gap-1 bg-[#F8F7F3] rounded-lg p-1 border border-[#E8E2D9]">
+                        {PERIODS.map(p => (
+                            <button
+                                key={p.value}
+                                onClick={() => setPeriod(p.value)}
+                                className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                                    period === p.value
+                                        ? "bg-white text-[#1B3A5C] font-medium shadow-sm"
+                                        : "text-[#1B3A5C]/50 hover:text-[#1B3A5C]"
+                                }`}
+                            >
+                                {p.label}
+                            </button>
+                        ))}
+                    </div>
+                    <button
+                        onClick={handleRefresh}
+                        disabled={isRefreshing}
+                        className="p-2 rounded-lg border border-[#E8E2D9] text-[#1B3A5C]/60 hover:text-[#1B3A5C] hover:bg-[#F8F7F3] transition-colors"
+                        title="刷新数据"
+                    >
+                        <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                    </button>
                 </div>
             </div>
 
