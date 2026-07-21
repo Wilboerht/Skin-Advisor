@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from "react"
 import { createPortal } from "react-dom"
 import { motion, AnimatePresence } from "framer-motion"
 import { Plus, Edit, Trash2, Play, Pause, CheckCircle2, Loader2, AlertCircle, Gift, Calendar, Users, Eye, X } from "lucide-react"
+import { useToast } from "@/components/ui/Toast"
+import { ConfirmModal } from "@/components/ui/ConfirmModal"
 
 interface Prize {
   name: string
@@ -29,13 +31,17 @@ interface Campaign {
 }
 
 export function CampaignsClient() {
+  const toast = useToast()
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState("")
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState("")
+
+  // Confirm modals
+  const [deleteConfirm, setDeleteConfirm] = useState<Campaign | null>(null)
+  const [statusConfirm, setStatusConfirm] = useState<{ id: string; newStatus: string; title: string; message: string } | null>(null)
 
   // Entries view
   const [showEntries, setShowEntries] = useState(false)
@@ -83,11 +89,11 @@ export function CampaignsClient() {
       const data = await res.json()
       if (data.campaigns) setCampaigns(data.campaigns)
     } catch {
-      setError("加载失败")
+      toast.error("加载活动列表失败")
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [toast])
 
   useEffect(() => { fetchCampaigns() }, [fetchCampaigns])
 
@@ -179,34 +185,59 @@ export function CampaignsClient() {
 
       setShowForm(false)
       resetForm()
+      toast.success(editingId ? "活动已更新" : "活动已创建")
       fetchCampaigns()
     } catch {
-      setSaveError("网络错误")
+      toast.error("网络错误")
     } finally {
       setSaving(false)
     }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("确定要删除此活动？相关参与记录也将被删除。")) return
+  const handleDelete = (campaign: Campaign) => {
+    setDeleteConfirm(campaign)
+  }
+
+  const performDelete = async () => {
+    if (!deleteConfirm) return
+    const id = deleteConfirm.id
     try {
       await fetch(`/api/admin/campaigns/${id}`, { method: "DELETE" })
+      toast.success("活动已删除")
       fetchCampaigns()
     } catch {
-      setError("删除失败")
+      toast.error("删除失败")
+    } finally {
+      setDeleteConfirm(null)
     }
   }
 
-  const handleStatusChange = async (id: string, newStatus: string) => {
+  const handleStatusChange = (id: string, campaign: Campaign, newStatus: string) => {
+    if (campaign.status === "draft" && newStatus === "active") {
+      // Require confirmation for publishing
+      setStatusConfirm({
+        id,
+        newStatus,
+        title: "发布活动",
+        message: `确定要发布活动 "${campaign.title}" 吗？发布后活动将对外可见，参与者可开始提交。`,
+      })
+      return
+    }
+    performStatusChange(id, newStatus)
+  }
+
+  const performStatusChange = async (id: string, newStatus: string) => {
     try {
-      await fetch(`/api/admin/campaigns/${id}`, {
+      const res = await fetch(`/api/admin/campaigns/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
       })
+      if (!res.ok) throw new Error("Failed")
+      toast.success(newStatus === "ended" ? "活动已结束" : newStatus === "active" ? "活动已发布" : "状态已更新")
       fetchCampaigns()
     } catch {
-      setError("状态更新失败")
+      toast.error("状态更新失败")
     }
   }
 
@@ -221,12 +252,17 @@ export function CampaignsClient() {
       })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
-        setError(data.error || "操作失败")
+        toast.error(data.error || "操作失败")
         return
       }
+      toast.success(
+        action === "verify" ? "已通过" :
+        action === "reject" ? "已拒绝" :
+        action === "win" ? "已设为中奖" : "已取消中奖"
+      )
       fetchEntries(selectedCampaign.id, entriesFilter)
     } catch {
-      setError("操作失败，请重试")
+      toast.error("操作失败，请重试")
     } finally {
       setEntryActionLoading(null)
     }
@@ -268,13 +304,6 @@ export function CampaignsClient() {
           创建活动
         </button>
       </div>
-
-      {error && (
-        <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 text-red-600 text-sm mb-4">
-          <AlertCircle className="w-4 h-4" />
-          {error}
-        </div>
-      )}
 
       {/* Campaign List */}
       {loading ? (
@@ -337,7 +366,7 @@ export function CampaignsClient() {
                   )}
                   {c.status === "draft" && (
                     <button
-                      onClick={() => handleStatusChange(c.id, "active")}
+                      onClick={() => handleStatusChange(c.id, c, "active")}
                       title="发布活动"
                       className="p-2 rounded-lg text-green-600 hover:bg-green-50 transition-colors"
                     >
@@ -346,7 +375,7 @@ export function CampaignsClient() {
                   )}
                   {c.status === "active" && (
                     <button
-                      onClick={() => handleStatusChange(c.id, "ended")}
+                      onClick={() => handleStatusChange(c.id, c, "ended")}
                       title="结束活动"
                       className="p-2 rounded-lg text-amber-600 hover:bg-amber-50 transition-colors"
                     >
@@ -363,7 +392,7 @@ export function CampaignsClient() {
                     </button>
                   )}
                   <button
-                    onClick={() => handleDelete(c.id)}
+                    onClick={() => handleDelete(c)}
                     title="删除"
                     className="p-2 rounded-lg text-red-400 hover:bg-red-50 transition-colors"
                   >
@@ -645,6 +674,33 @@ export function CampaignsClient() {
         </AnimatePresence>,
         document.body
       )}
+
+      {/* Delete Confirmation */}
+      <ConfirmModal
+        isOpen={!!deleteConfirm}
+        title="删除活动"
+        message={`确定要删除活动 "${deleteConfirm?.title}" 吗？相关参与记录也将被删除。`}
+        confirmText="删除"
+        variant="danger"
+        onConfirm={performDelete}
+        onClose={() => setDeleteConfirm(null)}
+      />
+
+      {/* Status Change Confirmation */}
+      <ConfirmModal
+        isOpen={!!statusConfirm}
+        title={statusConfirm?.title || "确认操作"}
+        message={statusConfirm?.message || ""}
+        confirmText="发布"
+        variant="default"
+        onConfirm={() => {
+          if (statusConfirm) {
+            performStatusChange(statusConfirm.id, statusConfirm.newStatus)
+            setStatusConfirm(null)
+          }
+        }}
+        onClose={() => setStatusConfirm(null)}
+      />
     </div>
   )
 }

@@ -7,6 +7,8 @@ import {
     Loader2, Trash2, Plus, Sparkles, X, Pencil
 } from "lucide-react";
 import { SKIN_TYPE_OPTIONS } from "@/types/product";
+import { useToast } from "@/components/ui/Toast";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 interface Product {
     id: string;
@@ -39,12 +41,14 @@ const PERSONAS = [
 ];
 
 export default function RecommendationRulesPage() {
+    const toast = useToast();
     const [rules, setRules] = useState<RecommendationRule[]>([]);
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [editingRule, setEditingRule] = useState<RecommendationRule | null>(null);
     const [submitting, setSubmitting] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState<RecommendationRule | null>(null);
 
     // Form state
     const [formName, setFormName] = useState("");
@@ -170,10 +174,11 @@ export default function RecommendationRulesPage() {
             }
             setShowModal(false);
             resetForm();
+            toast.success(editingRule ? "规则已更新" : "规则已创建");
             fetchRules();
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "操作失败";
-            alert(message);
+            toast.error(message);
         } finally {
             setSubmitting(false);
         }
@@ -193,7 +198,24 @@ export default function RecommendationRulesPage() {
         } catch {
             // API 失败时回滚到之前的状态
             setRules(previousRules);
-            alert("状态更新失败，请重试");
+            toast.error("状态更新失败，请重试");
+        }
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (!deleteTarget) return;
+        const id = deleteTarget.id;
+        try {
+            const res = await fetch(`/api/admin/recommendation-rules/${id}`, {
+                method: "DELETE"
+            });
+            if (!res.ok) throw new Error("Failed to delete");
+            setRules(prev => prev.filter(r => r.id !== id));
+            toast.success("规则已删除");
+        } catch {
+            toast.error("删除失败，请重试");
+        } finally {
+            setDeleteTarget(null);
         }
     };
 
@@ -312,7 +334,7 @@ export default function RecommendationRulesPage() {
                                             编辑
                                         </button>
                                         <button
-                                            onClick={() => deleteRule(rule.id)}
+                                            onClick={() => setDeleteTarget(rule)}
                                             className="inline-flex items-center gap-1.5 text-xs text-red-600 hover:text-red-700 transition-colors"
                                         >
                                             <Trash2 className="w-3.5 h-3.5" />
@@ -325,6 +347,17 @@ export default function RecommendationRulesPage() {
                     </tbody>
                 </table>
             </div>
+
+            {/* Delete Confirmation */}
+            <ConfirmModal
+                isOpen={!!deleteTarget}
+                title="确认删除"
+                message={`确定要删除推荐规则 "${deleteTarget?.name}" 吗？此操作不可撤销。`}
+                confirmText="删除"
+                variant="danger"
+                onConfirm={handleDeleteConfirm}
+                onClose={() => setDeleteTarget(null)}
+            />
 
             {/* Create/Edit Modal */}
             {showModal && typeof window !== "undefined" && createPortal(

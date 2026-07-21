@@ -46,6 +46,7 @@ export function UsersClient() {
     const [actionLoading, setActionLoading] = useState(false);
     const [showDropdown, setShowDropdown] = useState<string | null>(null);
     const [dropdownPos, setDropdownPos] = useState<{ top: number; right: number } | null>(null);
+    const [confirmToggle, setConfirmToggle] = useState<{ user: User; isDisabling: boolean } | null>(null);
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -119,31 +120,28 @@ export function UsersClient() {
         return () => clearTimeout(timer);
     }, [search]);
 
-    const handleToggleStatus = async (user: User) => {
+    const handleToggleStatus = (user: User) => {
         const isDisabling = user.role !== "disabled";
+        setShowDropdown(null);
 
         if (isDisabling) {
-            // Disabling user: explain the scope before confirming
-            const confirmed = window.confirm(
-                `确定要禁用用户 "${user.name || user.email}" 吗？\n\n` +
-                `禁用后该用户将无法在子站（advisor.nihplod.cn）使用测肤、查看历史等功能，但 nihplod.cn 官网账户不受影响。`
-            );
-            if (!confirmed) {
-                setShowDropdown(null);
-                return;
-            }
+            setConfirmToggle({
+                user,
+                isDisabling: true,
+            });
+            return;
         } else if (user.previousRole) {
-            // Enabling user: confirm the role that will be restored
-            const confirmed = window.confirm(
-                `确定要启用用户 "${user.name || user.email}" 吗？\n\n` +
-                `该用户将被恢复为之前的角色：${user.previousRole.toUpperCase()}`
-            );
-            if (!confirmed) {
-                setShowDropdown(null);
-                return;
-            }
+            setConfirmToggle({
+                user,
+                isDisabling: false,
+            });
+            return;
         }
+        // Fallback: no previous role, proceed directly
+        performToggleStatus(user, false);
+    };
 
+    const performToggleStatus = async (user: User, isDisabling: boolean) => {
         setActionLoading(true);
         try {
             const body = isDisabling
@@ -155,13 +153,12 @@ export function UsersClient() {
                 body: JSON.stringify(body),
             });
             if (res.ok) {
-                const data = await res.json();
                 fetchUsers();
             } else {
                 const errData = await res.json().catch(() => null);
                 toast.error((errData as { message?: string })?.message || "操作失败");
             }
-        } catch (error) {
+        } catch {
             toast.error("网络异常，请稍后重试");
         } finally {
             setActionLoading(false);
@@ -447,6 +444,27 @@ export function UsersClient() {
                 confirmText="删除"
                 variant="danger"
                 loading={actionLoading}
+            />
+
+            {/* Toggle Status Confirmation */}
+            <ConfirmModal
+                isOpen={!!confirmToggle}
+                title={confirmToggle?.isDisabling ? "禁用用户" : "启用用户"}
+                message={
+                    confirmToggle?.isDisabling
+                        ? `确定要禁用用户 "${confirmToggle?.user.name || confirmToggle?.user.email}" 吗？\n\n禁用后该用户将无法在子站（advisor.nihplod.cn）使用测肤、查看历史等功能，但 nihplod.cn 官网账户不受影响。`
+                        : `确定要启用用户 "${confirmToggle?.user.name || confirmToggle?.user.email}" 吗？\n\n该用户将被恢复为之前的角色：${confirmToggle?.user.previousRole?.toUpperCase()}`
+                }
+                confirmText={confirmToggle?.isDisabling ? "禁用" : "启用"}
+                variant={confirmToggle?.isDisabling ? "danger" : "default"}
+                loading={actionLoading}
+                onConfirm={() => {
+                    if (confirmToggle) {
+                        performToggleStatus(confirmToggle.user, confirmToggle.isDisabling);
+                        setConfirmToggle(null);
+                    }
+                }}
+                onClose={() => setConfirmToggle(null)}
             />
 
             <UserDetailModal

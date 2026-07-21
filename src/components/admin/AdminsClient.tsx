@@ -51,6 +51,8 @@ export function AdminsClient() {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState<Admin | null>(null);
 
+    const [confirmToggle, setConfirmToggle] = useState<{ id: string; active: boolean; name: string } | null>(null);
+
     const [showResetModal, setShowResetModal] = useState(false);
     const [resetTarget, setResetTarget] = useState<Admin | null>(null);
     const [newPassword, setNewPassword] = useState("");
@@ -244,7 +246,15 @@ export function AdminsClient() {
         setDropdownId(null);
     };
 
-    const toggleActive = async (id: string, current: boolean) => {
+    const toggleActive = (id: string, current: boolean, name: string) => {
+        setDropdownId(null);
+        setDropdownPos(null);
+        setConfirmToggle({ id, active: current, name });
+    };
+
+    const performToggleActive = async () => {
+        if (!confirmToggle) return;
+        const { id, active: current } = confirmToggle;
         setActionLoading(true);
         try {
             const res = await fetch(`/api/admin/admins/${id}`, {
@@ -263,6 +273,7 @@ export function AdminsClient() {
             toast.error("网络错误");
         } finally {
             setActionLoading(false);
+            setConfirmToggle(null);
         }
     };
 
@@ -362,7 +373,7 @@ export function AdminsClient() {
                                             </td>
                                             <td className="px-6 py-4 align-middle">
                                                 <button
-                                                    onClick={() => toggleActive(admin.id, admin.active)}
+                                                    onClick={() => toggleActive(admin.id, admin.active, admin.name || admin.username)}
                                                     className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
                                                         admin.active
                                                             ? "bg-emerald-50 text-emerald-700"
@@ -433,7 +444,7 @@ export function AdminsClient() {
                                     if (admin) {
                                         setDropdownId(null);
                                         setDropdownPos(null);
-                                        toggleActive(admin.id, admin.active);
+                                        toggleActive(admin.id, admin.active, admin.name || admin.username);
                                     }
                                 }}
                                 className={`w-full px-3 py-2 text-left text-sm hover:bg-[#1A1A1A]/5 flex items-center gap-2 ${
@@ -548,6 +559,22 @@ export function AdminsClient() {
                 </AnimatePresence>,
                 document.body
             )}
+
+            {/* Toggle Active Confirmation */}
+            <ConfirmModal
+                isOpen={!!confirmToggle}
+                title="确认操作"
+                message={
+                    confirmToggle?.active
+                        ? `确定要禁用管理员 "${confirmToggle?.name}" 吗？禁用后该管理员将无法登录后台。`
+                        : `确定要启用管理员 "${confirmToggle?.name}" 吗？`
+                }
+                confirmText={confirmToggle?.active ? "禁用" : "启用"}
+                variant={confirmToggle?.active ? "danger" : "default"}
+                loading={actionLoading}
+                onConfirm={() => performToggleActive()}
+                onClose={() => setConfirmToggle(null)}
+            />
         </div>
     );
 }
