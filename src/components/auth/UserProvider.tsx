@@ -43,6 +43,9 @@ interface AuthContextType {
 
 const AUTH_CACHE_KEY = 'auth_user_cache';
 const AUTH_CACHE_EXPIRY_KEY = 'auth_user_cache_expiry';
+// Cache duration: 5 minutes. Tradeoff: faster initial render after refresh,
+// but role changes server-side may take up to 5 min to propagate client-side.
+// Server-side API authorization is unaffected; only client-side role-based UI may be stale.
 const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
 
 function getCachedUser(): { user: User | null; needsRefresh: boolean } {
@@ -133,6 +136,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         if (cachedUser && !needsRefresh) {
             setUser(cachedUser);
             setLoading(false);
+            setIsInitialized(true);
         }
 
         const params = new URLSearchParams(window.location.search);
@@ -209,7 +213,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
             body: JSON.stringify(userData)
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Registration failed");
+        if (!res.ok) {
+            console.error("Register API returned error:", data.error);
+            throw new Error(data.error || "Registration failed");
+        }
 
         setUser(data.user);
         setCachedUser(data.user);

@@ -9,6 +9,7 @@ import Image from "next/image";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useToast } from "@/components/ui/Toast";
 import { ScanGuideModal } from "@/components/advisor/ScanGuideModal";
+import { STORAGE_KEYS } from "@/lib/storage-keys";
 
 export default function FaceScanPage() {
     const router = useRouter();
@@ -55,7 +56,7 @@ export default function FaceScanPage() {
 
         if (!answers) {
             // 额外检查：是否有隐私授权（防止直接输入URL绕过）
-            const hasConsent = localStorage.getItem("advisor_privacy_consent");
+            const hasConsent = localStorage.getItem(STORAGE_KEYS.ADVISOR_PRIVACY_CONSENT);
             if (!hasConsent) {
                 router.replace("/");
                 return;

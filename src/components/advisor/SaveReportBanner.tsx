@@ -12,11 +12,10 @@ interface SaveReportBannerProps {
 }
 
 export function SaveReportBanner({ className = "" }: SaveReportBannerProps) {
-    const { user, isInitialized } = useAuth();
+    const { user } = useAuth();
     const { openAuthModal } = useAuthModal();
     const [dismissed, setDismissed] = useState(false);
 
-    if (!isInitialized) return null;
     if (user) return null;
 
     return (

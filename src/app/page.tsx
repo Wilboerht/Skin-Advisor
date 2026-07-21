@@ -14,6 +14,7 @@ import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { AuthUrlDetector } from "@/components/auth/AuthUrlDetector";
 import { getGuestIdentity, type GuestIdentity } from "@/lib/guest-identity";
 import { CONSENT_VERSION } from "@/components/advisor/PrivacyConsent";
+import { STORAGE_KEYS } from "@/lib/storage-keys";
 import dynamic from "next/dynamic";
 
 const BaseModal = dynamic(() => import("@/components/ui/BaseModal").then((mod) => mod.BaseModal), { ssr: false });
@@ -164,7 +165,7 @@ export default function Home() {
     }
 
     // Record privacy consent from the legal step
-    safeStorage.set("advisor_privacy_consent", JSON.stringify({
+    safeStorage.set(STORAGE_KEYS.ADVISOR_PRIVACY_CONSENT, JSON.stringify({
         version: CONSENT_VERSION,
         consentedAt: new Date().toISOString()
     }));

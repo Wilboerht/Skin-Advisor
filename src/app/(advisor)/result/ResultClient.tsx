@@ -45,6 +45,7 @@ import { SaveReportBanner } from "@/components/advisor/SaveReportBanner";
 import { AnalyzingOverlay } from "@/components/advisor/AnalyzingOverlay";
 import { skinTypes } from "@/lib/result-content";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
+import { ResultErrorBoundary } from "@/components/advisor/ResultErrorBoundary";
 
 // Re-export for backward compatibility with existing imports
 export { normalizeAnalysisResult, type ComprehensiveResult } from "@/lib/analysis-result";
@@ -192,7 +193,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
         try {
             const hasResult = localStorage.getItem("advisor_result");
             const hasAnswers = localStorage.getItem("advisor_answers");
-            const hasConsent = localStorage.getItem("advisor_privacy_consent");
+            const hasConsent = localStorage.getItem(STORAGE_KEYS.ADVISOR_PRIVACY_CONSENT);
             if (!hasResult && !hasAnswers && !hasConsent) {
                 router.replace("/");
             }
@@ -213,7 +214,10 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             { width: 80, margin: 1, color: { dark: "#00263E", light: "#0000" } }
         )
             .then((url) => setQrDataUrl(url))
-            .catch(() => setQrDataUrl(null));
+            .catch(() => {
+                console.warn("QR code generation failed, poster will not include QR code");
+                setQrDataUrl(null);
+            });
     }, []);
 
     // Refs for latest auth state to avoid adding them to effect dependency arrays
@@ -254,7 +258,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const [showLabData, setShowLabData] = useState(false);
     const [showContactAdvisor, setShowContactAdvisor] = useState(false);
     const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
-    const [isClaiming, setIsClaiming] = useState(false);
     const [posterError, setPosterError] = useState<string | null>(null);
     const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
     const [preloadedPosterBlob, setPreloadedPosterBlob] = useState<Blob | null>(null);
@@ -277,9 +280,9 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
     const isGenderMismatch = useMemo(() => {
         if (!faceAnalysis || !socialGender) return false;
-        const faGender = (faceAnalysis as unknown as Record<string, unknown>)?.gender as Record<string, unknown> | undefined;
-        const faGenderVal = faGender?.value as string | undefined;
-        const faGenderConf = (faGender?.confidence as number | undefined) || 0;
+        const faGender = faceAnalysis.gender;
+        const faGenderVal = faGender?.value;
+        const faGenderConf = faGender?.confidence || 0;
 
         // Normalize confidence (handle both 0-1 and 0-100)
         const normalizedConf = faGenderConf > 1 ? faGenderConf / 100 : faGenderConf;
@@ -463,7 +466,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                             router.replace('/result', { scroll: false });
                                         }
                                     } else if (normalized && recoveredSessionId) {
-                                        // auth 尚未初始化，暂存结果，等 auth 初始化后再决定去向
                                         pendingResultRef.current = {
                                             result: normalized,
                                             faceAnalysis: advisorResult.faceAnalysis || null,
@@ -667,34 +669,38 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     useEffect(() => {
         if (!user || !sessionId) return;
 
+        const abortController = new AbortController();
+
         const claimSession = async () => {
             try {
                 const claimedKey = STORAGE_KEYS.claimedSession(sessionId);
                 if (localStorage.getItem(claimedKey)) return;
 
-                setIsClaiming(true);
-
                 const res = await fetchWithCsrf("/api/advisor/session/claim", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ sessionId })
+                    body: JSON.stringify({ sessionId }),
+                    signal: abortController.signal,
                 });
 
-                if (res.ok) {
+                if (!abortController.signal.aborted && res.ok) {
                     localStorage.setItem(claimedKey, 'true');
                     const reportPath = `/reports/${sessionId}`;
                     if (typeof window === 'undefined' || window.location.pathname !== reportPath) {
                         router.replace(reportPath);
                     }
                 }
-            } catch (err) {
+            } catch (err: unknown) {
+                if (err instanceof DOMException && err.name === 'AbortError') return;
                 console.error("Failed to claim session:", err);
-            } finally {
-                setIsClaiming(false);
             }
         };
 
         claimSession();
+
+        return () => {
+            abortController.abort();
+        };
     }, [user, sessionId, router]);
 
 
@@ -890,7 +896,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     }
 
     return (
-        <>
+        <ResultErrorBoundary>
+            <>
             <AnimatePresence mode="wait">
                 {showLoading && (
                     <AnalyzingOverlay
@@ -1118,10 +1125,12 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         )}
                                     </div>
 
-                                    {/* 3. Zone Analysis Grid (Explicitly Added) */}
-                                    {authInitialized && faceAnalysis?.zoneAnalysis && (
+                                    {/* 3. Zone Analysis Grid - always present when data exists, avoids CLS */}
+                                    {faceAnalysis?.zoneAnalysis && (
                                         <>
-                                            {user && !isClaiming ? (
+                                            {!authInitialized ? (
+                                                <div className="mb-8 min-h-[200px]" />
+                                            ) : user ? (
                                                 <div className="mb-8">
                                                     <h4 className="text-base font-medium text-[#3d2f25] mb-4 border-b border-[#3d2f25]/20 pb-2">
                                                         3、区域重点关注 <span className="text-xs lg:text-base">(Area Focus)</span>
@@ -1443,5 +1452,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     />
                 </div>)}
         </>
+        </ResultErrorBoundary>
     );
 }

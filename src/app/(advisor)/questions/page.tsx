@@ -14,6 +14,7 @@ import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useToast } from "@/components/ui/Toast";
 import { cn } from "@/lib/utils";
 import { preloadAllFaceModels } from "@/lib/preload-models";
+import { STORAGE_KEYS } from "@/lib/storage-keys";
 
 export default function QuestionsPage() {
     const router = useRouter();
@@ -69,7 +70,7 @@ export default function QuestionsPage() {
     // 入口守卫：必须通过首页引导弹窗后才能进入问卷
     useEffect(() => {
         try {
-            const hasConsent = localStorage.getItem("advisor_privacy_consent");
+            const hasConsent = localStorage.getItem(STORAGE_KEYS.ADVISOR_PRIVACY_CONSENT);
             const hasAnswers = localStorage.getItem("advisor_answers");
             if (!hasConsent && !hasAnswers) {
                 router.replace("/");

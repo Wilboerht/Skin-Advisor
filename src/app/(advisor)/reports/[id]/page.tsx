@@ -1,10 +1,24 @@
 import { Metadata } from "next";
+import { cache } from "react";
 import ResultClient from "../../result/ResultClient";
 import { type ComprehensiveResult, normalizeAnalysisResult } from "@/lib/analysis-result";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import type { FaceAnalysisResult } from "@/lib/advisor-utils";
+
+const getSessionCached = cache(getSession);
+const getReportCached = cache((id: string, userId: string) =>
+    prisma.advisorSession.findUnique({
+        where: { sessionId: id, userId },
+        select: {
+            answers: true,
+            analysisResult: true,
+            faceScanUsed: true,
+            expiresAt: true,
+        },
+    })
+);
 
 export default async function ReportDetailPage(props: {
     params: Promise<{ id: string }>;
@@ -14,37 +28,27 @@ export default async function ReportDetailPage(props: {
     let initialData: { result: ComprehensiveResult; faceAnalysis: FaceAnalysisResult | null } | null = null;
     let isExpired = false;
 
-    const user = await getSession();
+    const user = await getSessionCached();
 
-    // 历史报告必须登录查看
     if (!user) {
         redirect(`/?auth=login&redirect=${encodeURIComponent(`/reports/${id}`)}`);
     }
 
     if (id) {
         try {
-            const session = await prisma.advisorSession.findUnique({
-                where: { sessionId: id, userId: user.id },
-                select: {
-                    answers: true,
-                    analysisResult: true,
-                    faceScanUsed: true,
-                    expiresAt: true
-                }
-            });
+            const session = await getReportCached(id, user.id);
 
             if (session && session.analysisResult) {
                 if (session.expiresAt && new Date() > new Date(session.expiresAt)) {
                     isExpired = true;
                 } else {
                     const rawResult = session.analysisResult as unknown as Record<string, unknown>;
-                    // 统一走 normalizeAnalysisResult 兼容新旧字段格式
                     const result = normalizeAnalysisResult(rawResult);
                     if (result) {
                         result.expiresAt = session.expiresAt?.toISOString();
                         initialData = {
                             result,
-                            faceAnalysis: (rawResult.faceAnalysis as FaceAnalysisResult | null) || null
+                            faceAnalysis: (rawResult.faceAnalysis as FaceAnalysisResult | null) || null,
                         };
                     }
                 }
@@ -54,7 +58,6 @@ export default async function ReportDetailPage(props: {
         }
     }
 
-    // 报告过期时直接展示过期提示，不渲染 ResultClient
     if (isExpired) {
         return <ReportExpired />;
     }
@@ -62,7 +65,6 @@ export default async function ReportDetailPage(props: {
     return <ResultClient id={id} initialData={initialData} />;
 }
 
-/** 报告过期提示组件 */
 function ReportExpired() {
     return (
         <div className="flex min-h-screen items-center justify-center bg-[#FDFBF7] px-4">
@@ -92,23 +94,25 @@ export async function generateMetadata(props: {
     let description = "基于 AI 的深度肤质分析，为您定制专属护肤方案。";
     let ogImage = "/images/og-default.png";
 
-    const user = await getSession();
+    const user = await getSessionCached();
     if (id && user) {
         try {
-            const session = await prisma.advisorSession.findUnique({
-                where: { sessionId: id, userId: user.id },
-                select: { analysisResult: true }
-            });
+            const session = await getReportCached(id, user.id);
 
             if (session && session.analysisResult) {
-                const rawResult = session.analysisResult as unknown as Record<string, unknown>;
-                const faceAnalysis = rawResult.faceAnalysis as Record<string, unknown> | undefined;
-                const skinAnalysis = rawResult.skinAnalysis as Record<string, unknown> | undefined;
-                const score = (faceAnalysis?.overallScore as number | undefined) || (skinAnalysis?.score as number | undefined) || 85;
-                const skinType = (skinAnalysis?.typeLabel as string | undefined) || "未知肤质";
+                if (session.expiresAt && new Date() > new Date(session.expiresAt)) {
+                    title = "报告已过期";
+                    description = "该分析报告已超过保存期限，请重新测试。";
+                } else {
+                    const rawResult = session.analysisResult as unknown as Record<string, unknown>;
+                    const faceAnalysis = rawResult.faceAnalysis as Record<string, unknown> | undefined;
+                    const skinAnalysis = rawResult.skinAnalysis as Record<string, unknown> | undefined;
+                    const score = (faceAnalysis?.overallScore as number | undefined) || (skinAnalysis?.score as number | undefined) || 85;
+                    const skinType = (skinAnalysis?.typeLabel as string | undefined) || "未知肤质";
 
-                title = `${score}分！我的${skinType}护肤报告已生成`;
-                description = `AI 分析得分 ${score} 分，肤质类型：${skinType}。查看完整护肤方案与产品推荐。`;
+                    title = `${score}分！我的${skinType}护肤报告已生成`;
+                    description = `AI 分析得分 ${score} 分，肤质类型：${skinType}。查看完整护肤方案与产品推荐。`;
+                }
             }
         } catch (e) {
             console.error(e);

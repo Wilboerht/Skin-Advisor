@@ -7,6 +7,7 @@ export const STORAGE_KEYS = {
     // 结果流程
     ADVISOR_RESULT: 'advisor_result',
     ADVISOR_ANSWERS: 'advisor_answers',
+    ADVISOR_PRIVACY_CONSENT: 'advisor_privacy_consent',
     ADVISOR_FACE_IMAGES: 'advisor_face_images',
     ADVISOR_NICKNAME: 'advisor_nickname',
     ADVISOR_GENDER: 'advisor_gender',

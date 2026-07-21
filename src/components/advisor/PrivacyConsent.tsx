@@ -4,6 +4,7 @@ import { useState } from "react";
 import { m } from "framer-motion";
 import { Shield, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { STORAGE_KEYS } from "@/lib/storage-keys";
 
 interface PrivacyConsentProps {
     onConsent: () => void;
@@ -145,7 +146,7 @@ export function PrivacyConsent({ onConsent }: PrivacyConsentProps) {
                         onClick={() => {
                             if (!agreed) return;
                             try {
-                                localStorage.setItem("advisor_privacy_consent", JSON.stringify({
+                                localStorage.setItem(STORAGE_KEYS.ADVISOR_PRIVACY_CONSENT, JSON.stringify({
                                     version: CONSENT_VERSION,
                                     consentedAt: new Date().toISOString()
                                 }));
@@ -173,7 +174,7 @@ export function PrivacyConsent({ onConsent }: PrivacyConsentProps) {
 export function hasPrivacyConsent(): boolean {
     if (typeof window === "undefined") return false;
     try {
-        const raw = localStorage.getItem("advisor_privacy_consent");
+        const raw = localStorage.getItem(STORAGE_KEYS.ADVISOR_PRIVACY_CONSENT);
         if (!raw) return false;
         const data = JSON.parse(raw);
         return data.version === CONSENT_VERSION && !!data.consentedAt;
@@ -185,7 +186,7 @@ export function hasPrivacyConsent(): boolean {
 export function getPrivacyConsentPayload() {
     if (typeof window === "undefined") return null;
     try {
-        const raw = localStorage.getItem("advisor_privacy_consent");
+        const raw = localStorage.getItem(STORAGE_KEYS.ADVISOR_PRIVACY_CONSENT);
         if (!raw) return null;
         return JSON.parse(raw);
     } catch {

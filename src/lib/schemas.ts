@@ -11,6 +11,19 @@ export const SessionIdSchema = z.string().min(1, "Session ID 不能为空");
 // 分析 API 验证规则
 // ============================================================================
 
+const zoneDataSchema = z.object({
+    condition: z.string().optional(),
+    advice: z.string().optional(),
+    oil: z.number().optional(),
+    texture: z.number().optional(),
+    wrinkles: z.number().optional(),
+    spots: z.number().optional(),
+    redness: z.number().optional(),
+    darkCircles: z.number().optional(),
+    firmness: z.number().optional(),
+    contour: z.number().optional(),
+}).passthrough();
+
 export const AnalyzeRequestSchema = z.object({
     sessionId: SessionIdSchema.optional(), // 可选，如果客户端已生成
     nickname: z.string().max(10).optional(), // 用户昵称
@@ -77,18 +90,14 @@ export const AnalyzeRequestSchema = z.object({
         })).optional(),
         summary: z.string().optional(),
         recommendations: z.array(z.string()).optional(),
-        zoneAnalysis: z.record(z.string(), z.object({
-            condition: z.string().optional(),
-            advice: z.string().optional(),
-            oil: z.number().optional(),
-            texture: z.number().optional(),
-            wrinkles: z.number().optional(),
-            spots: z.number().optional(),
-            redness: z.number().optional(),
-            darkCircles: z.number().optional(),
-            firmness: z.number().optional(),
-            contour: z.number().optional(),
-        })).optional(),
+        zoneAnalysis: z.object({
+            forehead: zoneDataSchema,
+            tZone: zoneDataSchema,
+            leftCheek: zoneDataSchema,
+            rightCheek: zoneDataSchema,
+            eyeArea: zoneDataSchema,
+            jawline: zoneDataSchema,
+        }).optional(),
         labAnalysis: z.object({
             glogau: z.object({ value: z.string(), status: z.string() }).optional(),
             homogeneity: z.object({ value: z.number(), unit: z.string(), status: z.string() }).optional(),
