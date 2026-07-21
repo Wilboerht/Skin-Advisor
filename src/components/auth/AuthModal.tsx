@@ -105,6 +105,16 @@ export function AuthModal() {
         }
     }, [isOpen]);
 
+    // Reset shared fields when entering WeChat Bind to avoid state leakage from register form
+    useEffect(() => {
+        if (view === "wechat_bind") {
+            setRegPhone("");
+            setRegCode("");
+            setRegPassword("");
+            setMobileAgreed(false);
+        }
+    }, [view]);
+
     // Cleanup interval for countdown
     useEffect(() => {
         let timer: NodeJS.Timeout;
@@ -327,7 +337,7 @@ export function AuthModal() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error("[SendRegCode]", error.message);
-            toast.error("发送失败，请稍后重试");
+            toast.error(error.message || "发送失败，请稍后重试");
         } finally {
             setRegCodeSending(false);
         }
