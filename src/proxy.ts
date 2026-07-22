@@ -111,12 +111,21 @@ export async function proxy(request: NextRequest) {
     ];
     const isCApi = pathname.startsWith("/api/") && !isAdminApi && !csrfExemptPaths.some((p) => pathname === p);
     if (isCApi) {
-        const csrfValid = await verifyCsrfToken(request);
-        if (!csrfValid) {
-            return NextResponse.json(
-                { error: "Forbidden: CSRF token missing or invalid" },
-                { status: 403 }
-            );
+        const csrfResult = await verifyCsrfToken(request);
+        if (!csrfResult.valid) {
+            // 区分“未登录”与“CSRF 不匹配”，帮助前端与用户定位问题
+            const errorMessages: Record<typeof csrfResult.reason, { status: number; message: string }> = {
+                ok: { status: 200, message: "" },
+                missing_auth: { status: 401, message: "Unauthorized: session expired or not logged in" },
+                missing_csrf_cookie: { status: 403, message: "Forbidden: CSRF cookie missing" },
+                missing_csrf_header: { status: 403, message: "Forbidden: CSRF header missing" },
+                jwt_invalid: { status: 401, message: "Unauthorized: session invalid" },
+                jwt_missing_csrf: { status: 403, message: "Forbidden: CSRF token missing in session" },
+                cookie_mismatch: { status: 403, message: "Forbidden: CSRF cookie mismatch" },
+                jwt_mismatch: { status: 403, message: "Forbidden: CSRF token invalid" },
+            };
+            const { status, message } = errorMessages[csrfResult.reason];
+            return NextResponse.json({ error: message }, { status });
         }
     }
     }

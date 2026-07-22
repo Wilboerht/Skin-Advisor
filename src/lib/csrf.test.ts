@@ -27,7 +27,7 @@ describe("csrf", () => {
             },
         });
 
-        expect(await verifyCsrfToken(request)).toBe(true);
+        expect(await verifyCsrfToken(request)).toEqual({ valid: true, reason: "ok" });
     });
 
     it("fails when header does not match cookie", async () => {
@@ -42,7 +42,7 @@ describe("csrf", () => {
             },
         });
 
-        expect(await verifyCsrfToken(request)).toBe(false);
+        expect(await verifyCsrfToken(request)).toEqual({ valid: false, reason: "cookie_mismatch" });
     });
 
     it("allows GET requests without token", async () => {
@@ -50,6 +50,6 @@ describe("csrf", () => {
             method: "GET",
         });
 
-        expect(await verifyCsrfToken(request)).toBe(true);
+        expect(await verifyCsrfToken(request)).toEqual({ valid: true, reason: "ok" });
     });
 });

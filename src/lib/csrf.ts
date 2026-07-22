@@ -13,6 +13,7 @@ import { jwtVerify } from "jose";
 import type { NextRequest } from "next/server";
 import { AUTH_COOKIE_NAME, getJwtSecret } from "@/lib/auth-config";
 import { CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from "@/lib/csrf-client";
+import { logger } from "@/lib/logger";
 
 export { CSRF_COOKIE_NAME, CSRF_HEADER_NAME };
 
@@ -41,11 +42,16 @@ function getCookieFromHeader(headerValue: string | null, name: string): string |
     return match ? decodeURIComponent(match[1]) : null;
 }
 
-export async function verifyCsrfToken(request: NextRequest): Promise<boolean> {
+export interface CsrfVerificationResult {
+    valid: boolean;
+    reason: "ok" | "missing_auth" | "missing_csrf_cookie" | "missing_csrf_header" | "jwt_invalid" | "jwt_missing_csrf" | "cookie_mismatch" | "jwt_mismatch";
+}
+
+export async function verifyCsrfToken(request: NextRequest): Promise<CsrfVerificationResult> {
     // 只校验非安全方法
     const unsafeMethods = ["POST", "PUT", "PATCH", "DELETE"];
     if (!unsafeMethods.includes(request.method)) {
-        return true;
+        return { valid: true, reason: "ok" };
     }
 
     const cookieHeader = request.headers.get("cookie");
@@ -53,24 +59,63 @@ export async function verifyCsrfToken(request: NextRequest): Promise<boolean> {
     const csrfCookie = request.cookies.get(CSRF_COOKIE_NAME)?.value ?? getCookieFromHeader(cookieHeader, CSRF_COOKIE_NAME);
     const csrfHeader = request.headers.get(CSRF_HEADER_NAME);
 
-    if (!authCookie || !csrfCookie || !csrfHeader) {
-        return false;
+    if (!authCookie) {
+        logger.warn("[CSRF] Auth cookie missing", {
+            path: request.nextUrl.pathname,
+            authCookieName: AUTH_COOKIE_NAME,
+            csrfCookieName: CSRF_COOKIE_NAME,
+        });
+        return { valid: false, reason: "missing_auth" };
+    }
+    if (!csrfCookie) {
+        logger.warn("[CSRF] CSRF cookie missing", {
+            path: request.nextUrl.pathname,
+            csrfCookieName: CSRF_COOKIE_NAME,
+        });
+        return { valid: false, reason: "missing_csrf_cookie" };
+    }
+    if (!csrfHeader) {
+        logger.warn("[CSRF] CSRF header missing", {
+            path: request.nextUrl.pathname,
+            csrfHeaderName: CSRF_HEADER_NAME,
+        });
+        return { valid: false, reason: "missing_csrf_header" };
     }
 
     try {
         const { payload } = await jwtVerify(authCookie, getJwtSecret());
         const tokenFromJwt = payload.csrf;
         if (typeof tokenFromJwt !== "string") {
-            return false;
+            logger.warn("[CSRF] JWT payload missing csrf field", { path: request.nextUrl.pathname });
+            return { valid: false, reason: "jwt_missing_csrf" };
         }
 
         // 三重校验：cookie == header == jwt payload（常量时间比较）
-        return (
-            timingSafeEqual(csrfCookie, csrfHeader) &&
-            timingSafeEqual(tokenFromJwt, csrfHeader)
-        );
-    } catch {
-        return false;
+        const cookieMatchesHeader = timingSafeEqual(csrfCookie, csrfHeader);
+        const jwtMatchesHeader = timingSafeEqual(tokenFromJwt, csrfHeader);
+        if (!cookieMatchesHeader) {
+            logger.warn("[CSRF] CSRF cookie does not match header", {
+                path: request.nextUrl.pathname,
+                csrfCookieLength: csrfCookie.length,
+                csrfHeaderLength: csrfHeader.length,
+            });
+            return { valid: false, reason: "cookie_mismatch" };
+        }
+        if (!jwtMatchesHeader) {
+            logger.warn("[CSRF] JWT csrf claim does not match header", {
+                path: request.nextUrl.pathname,
+                jwtCsrfLength: tokenFromJwt.length,
+                csrfHeaderLength: csrfHeader.length,
+            });
+            return { valid: false, reason: "jwt_mismatch" };
+        }
+        return { valid: true, reason: "ok" };
+    } catch (error) {
+        logger.warn("[CSRF] JWT verification failed", {
+            path: request.nextUrl.pathname,
+            error: error instanceof Error ? error.message : String(error),
+        });
+        return { valid: false, reason: "jwt_invalid" };
     }
 
     function timingSafeEqual(a: string, b: string): boolean {
