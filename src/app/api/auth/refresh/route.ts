@@ -36,17 +36,35 @@ export async function POST(req: NextRequest) {
         const cookieStore = await cookies();
         const refreshToken = cookieStore.get(AUTH_REFRESH_COOKIE_NAME)?.value;
 
+        logger.info("[auth/refresh] Refresh request received", {
+            path: req.nextUrl.pathname,
+            refreshCookieName: AUTH_REFRESH_COOKIE_NAME,
+            accessCookieName: process.env.NODE_ENV === "production" ? "__Host-auth_token" : "auth_token",
+            hasRefreshCookie: !!refreshToken,
+            origin: req.headers.get("origin"),
+            referer: req.headers.get("referer"),
+        });
+
         if (!refreshToken) {
+            logger.warn("[auth/refresh] Refresh token cookie missing", {
+                refreshCookieName: AUTH_REFRESH_COOKIE_NAME,
+                origin: req.headers.get("origin"),
+                referer: req.headers.get("referer"),
+            });
             return NextResponse.json(
                 { error: "未找到 Refresh Token，请重新登录" },
                 { status: 401 }
             );
         }
 
+        const refreshTokenPrefix = refreshToken.slice(0, 8);
         const response = NextResponse.json({ success: true });
         const user = await refreshSession(response, refreshToken);
 
         if (!user) {
+            logger.warn("[auth/refresh] Session refresh failed", {
+                refreshTokenPrefix,
+            });
             // 刷新失败，清除所有认证 Cookie
             response.cookies.delete(AUTH_REFRESH_COOKIE_NAME);
             response.cookies.delete(process.env.NODE_ENV === "production" ? "__Host-auth_token" : "auth_token");
@@ -55,6 +73,11 @@ export async function POST(req: NextRequest) {
                 { status: 401 }
             );
         }
+
+        logger.info("[auth/refresh] Session refreshed successfully", {
+            userId: user.id,
+            refreshTokenPrefix,
+        });
 
         // 代理官网 Token 刷新，防止官网 Cookie 过期导致 Profile 同步失败
         try {

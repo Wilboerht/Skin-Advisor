@@ -250,14 +250,32 @@ export async function refreshSession(
     options?: { secure?: boolean }
 ): Promise<SessionUser | null> {
     const secure = options?.secure ?? true;
+    const tokenPrefix = refreshTokenValue.slice(0, 8);
 
     try {
         // 1. 验证 refresh token JWT 签名
-        const payload = await verifyRefreshToken(refreshTokenValue);
-        if (!payload) return null;
+        const jwtResult = await verifyTokenDetailed(refreshTokenValue);
+        if (!jwtResult.payload) {
+            logger.warn("[auth] Refresh token JWT verification failed", {
+                tokenPrefix,
+                error: jwtResult.error,
+            });
+            return null;
+        }
 
-        const userId = typeof payload.sub === 'string' ? payload.sub : null;
-        if (!userId) return null;
+        if (jwtResult.payload.type !== "refresh") {
+            logger.warn("[auth] Refresh token type mismatch", {
+                tokenPrefix,
+                type: jwtResult.payload.type,
+            });
+            return null;
+        }
+
+        const userId = typeof jwtResult.payload.sub === 'string' ? jwtResult.payload.sub : null;
+        if (!userId) {
+            logger.warn("[auth] Refresh token missing subject", { tokenPrefix });
+            return null;
+        }
 
         // 2. 检查 DB 中是否存在且未被撤销
         const tokenHash = hashToken(refreshTokenValue);
@@ -266,6 +284,10 @@ export async function refreshSession(
         });
         if (!dbToken) {
             // refresh token 重用检测：JWT 有效但 DB 中不存在 → 可能被盗用，撤销所有 token
+            logger.warn("[auth] Refresh token not found or revoked in DB", {
+                userId,
+                tokenHashPrefix: tokenHash.slice(0, 8),
+            });
             await revokeAllRefreshTokens(userId);
             return null;
         }
@@ -275,10 +297,23 @@ export async function refreshSession(
             where: { id: userId },
             select: { id: true, email: true, phoneNumber: true, name: true, role: true, tokenVersion: true, dailyTestLimit: true },
         });
-        if (!dbUser || isDisabledUser(dbUser.role)) return null;
+        if (!dbUser || isDisabledUser(dbUser.role)) {
+            logger.warn("[auth] User not found or disabled during refresh", {
+                userId,
+                role: dbUser?.role,
+            });
+            return null;
+        }
 
-        const tokenVersion = payload.tokenVersion;
-        if (typeof tokenVersion !== "number" || tokenVersion !== dbUser.tokenVersion) return null;
+        const tokenVersion = jwtResult.payload.tokenVersion;
+        if (typeof tokenVersion !== "number" || tokenVersion !== dbUser.tokenVersion) {
+            logger.warn("[auth] Refresh token version mismatch", {
+                userId,
+                jwtTokenVersion: tokenVersion,
+                dbTokenVersion: dbUser.tokenVersion,
+            });
+            return null;
+        }
 
         // 4. 签发新的双 token（先签发成功，再撤销旧 token，避免签发失败时用户被强制登出）
         await signLocalSession(response, {
@@ -294,6 +329,8 @@ export async function refreshSession(
         // 5. 新 token 签发成功后，撤销旧的 refresh token
         await revokeSpecificRefreshToken(userId, refreshTokenValue);
 
+        logger.info("[auth] Session refreshed successfully", { userId, tokenPrefix });
+
         return {
             id: dbUser.id,
             email: dbUser.email,
@@ -304,7 +341,7 @@ export async function refreshSession(
             dailyTestLimit: dbUser.dailyTestLimit,
         };
     } catch (err) {
-        console.error("[auth] Failed to refresh session:", err);
+        logger.error("[auth] Failed to refresh session", { tokenPrefix, error: err });
         return null;
     }
 }

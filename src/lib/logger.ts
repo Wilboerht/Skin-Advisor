@@ -55,7 +55,12 @@ function sanitizeContext(context: LogContext): LogContext {
     const sanitized: LogContext = {};
 
     for (const [key, value] of Object.entries(context)) {
-        if (sensitiveKeys.some((k) => key.toLowerCase().includes(k))) {
+        // 存在性/配置类字段（布尔值、Cookie 名称等）直接保留，便于诊断
+        if (typeof value === "boolean" || typeof value === "number") {
+            sanitized[key] = value;
+        } else if (key.endsWith("Name") || key.endsWith("Names")) {
+            sanitized[key] = value;
+        } else if (sensitiveKeys.some((k) => key.toLowerCase().includes(k))) {
             sanitized[key] = "[REDACTED]";
         } else if (typeof value === "string" && value.length > 500) {
             // 截断过长的字符串
