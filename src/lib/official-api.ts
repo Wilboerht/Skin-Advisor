@@ -342,7 +342,27 @@ export async function callOfficialApi<T = unknown>(
             officialResponse,
         };
     } catch (error) {
-        logger.error("[OfficialAPI] callOfficialApi error:", error);
+        const errMsg = error instanceof Error ? error.message : String(error);
+        const errName = error instanceof Error ? error.name : "Unknown";
+        const cause = error instanceof Error && (error as Error & { cause?: unknown }).cause
+            ? String((error as Error & { cause?: unknown }).cause)
+            : "";
+
+        logger.error("[OfficialAPI] callOfficialApi error:", {
+            path,
+            method,
+            errorName: errName,
+            errorMessage: errMsg,
+            cause: cause || undefined,
+            url: `${process.env.OFFICIAL_API_URL || "https://nihplod.cn"}${path}`,
+        });
+
+        if (errMsg.includes("ENOTFOUND") || errMsg.includes("EAI_AGAIN")) {
+            logger.error("[OfficialAPI] DNS resolution failed for official API — check server DNS / network");
+        } else if (errMsg.includes("ECONNREFUSED")) {
+            logger.error("[OfficialAPI] Official API refused connection — target may be down");
+        }
+
         return null;
     }
 }
