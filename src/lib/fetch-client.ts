@@ -11,7 +11,6 @@
  */
 
 import { CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from "@/lib/csrf-client";
-import { AUTH_COOKIE_NAME } from "@/lib/auth-config";
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 
@@ -109,8 +108,9 @@ export async function fetchWithCsrf(
                 errorData.error?.includes("CSRF token missing");
 
             if (isSessionError) {
-                // 没有 access token 时刷新不可能成功（游客/已登出），直接返回原响应避免无意义刷新
-                if (!getCookie(AUTH_COOKIE_NAME)) {
+                // 没有 CSRF cookie 说明从未登录或已登出，刷新不可能成功，
+                // 直接返回原响应避免游客触发无意义的 /api/auth/refresh 401。
+                if (!getCsrfToken()) {
                     return response;
                 }
                 const refreshResponse = await refreshAccessToken();
