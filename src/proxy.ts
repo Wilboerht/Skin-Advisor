@@ -31,6 +31,9 @@ const ALLOWED_ORIGINS = [
     ...(process.env.NODE_ENV !== "production" ? ["http://localhost:3000", "http://127.0.0.1:3000"] : []),
 ].filter(Boolean);
 
+// 演示模式：DISABLE_CSRF=true 时跳过所有 CSRF 检查（Origin + Token）
+const DISABLE_CSRF = process.env.DISABLE_CSRF === "true";
+
 export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
     const response = NextResponse.next();
@@ -72,7 +75,7 @@ export async function proxy(request: NextRequest) {
     }
 
     // ==================== Admin API CSRF 防护 ====================
-    if (isAdminApi && !ADMIN_PUBLIC_PATHS.some((p) => pathname === p)) {
+    if (!DISABLE_CSRF && isAdminApi && !ADMIN_PUBLIC_PATHS.some((p) => pathname === p)) {
         const unsafeMethods = ["POST", "PUT", "PATCH", "DELETE"];
         if (unsafeMethods.includes(request.method)) {
             const reqOrigin = request.headers.get("origin");
@@ -91,6 +94,7 @@ export async function proxy(request: NextRequest) {
     }
 
     // ==================== C 端 API CSRF 防护 ====================
+    if (!DISABLE_CSRF) {
     const csrfExemptPaths = [
         // 公开认证接口
         "/api/auth/login",
@@ -114,6 +118,7 @@ export async function proxy(request: NextRequest) {
                 { status: 403 }
             );
         }
+    }
     }
 
     // ==================== AI 端点额外防护 ====================
