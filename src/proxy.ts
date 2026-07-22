@@ -245,11 +245,3 @@ export async function proxy(request: NextRequest) {
 
     return response;
 }
-
-// 匹配所有路径（排除静态资源）
-export const config = {
-    matcher: [
-        "/api/:path*",
-        "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|woff|woff2)$).*)",
-    ],
-};
