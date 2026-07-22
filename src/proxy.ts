@@ -108,6 +108,9 @@ export async function proxy(request: NextRequest) {
         "/api/auth/refresh",
         // 匿名/埋点接口：sendBeacon 无法携带自定义 header
         "/api/advisor/analytics/track",
+        // 允许游客使用的 AI 分析接口（仍受 AI_ENDPOINTS 的 Origin/Referer/Content-Type 保护）
+        "/api/advisor/face-analyze",
+        "/api/advisor/analyze",
     ];
     const isCApi = pathname.startsWith("/api/") && !isAdminApi && !csrfExemptPaths.some((p) => pathname === p);
     if (isCApi) {
