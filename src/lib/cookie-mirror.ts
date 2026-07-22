@@ -124,6 +124,15 @@ export function mirrorOfficialCookies(
 
     const { name, value, options } = parsed;
 
+    // 本地应用自己管理 CSRF token（必须与本地 JWT payload 中的 csrf 字段一致）。
+    // 官网 CSRF 由 callOfficialApi 在服务端调用时通过 getOfficialCsrfToken() 临时获取，
+    // 不需要也不应该覆盖浏览器端的本地 CSRF cookie，否则会导致本地 JWT 与 cookie 不一致，
+    // 进而使所有需要 CSRF 校验的本地 POST API（如 /api/oss/sign、/api/advisor/face-analyze）返回 403。
+    if (name === "__Host-csrf_token" || name === "csrf_token") {
+      logger.warn(`[CookieMirror] Skipping official ${name} to preserve local CSRF token`);
+      continue;
+    }
+
     // __Host- 前缀强制要求：Secure=true, Path=/, 不能有 Domain
     if (name.startsWith("__Host-")) {
       if (!options.secure) {
