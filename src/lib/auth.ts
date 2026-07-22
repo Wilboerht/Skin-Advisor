@@ -20,6 +20,7 @@ import {
 } from '@/lib/auth-config';
 import { generateCsrfToken, CSRF_COOKIE_NAME } from '@/lib/csrf';
 import { verifyUserStatus } from '@/lib/user-sync';
+import { logger } from '@/lib/logger';
 
 export {
     AUTH_COOKIE_NAME,
@@ -227,8 +228,16 @@ export async function signLocalSession(
             path: "/",
             maxAge: 30 * 24 * 60 * 60,
         });
+
+        logger.info("[auth] Local session signed", {
+            userId: user.id,
+            authCookieName: AUTH_COOKIE_NAME,
+            refreshCookieName: AUTH_REFRESH_COOKIE_NAME,
+            csrfCookieName: CSRF_COOKIE_NAME,
+            secure,
+        });
     } catch (err) {
-        console.error("[auth] Failed to sign local session:", err);
+        logger.error("[auth] Failed to sign local session", { userId: user.id, error: err });
     }
 }
 

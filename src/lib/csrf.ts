@@ -64,6 +64,9 @@ export async function verifyCsrfToken(request: NextRequest): Promise<CsrfVerific
             path: request.nextUrl.pathname,
             authCookieName: AUTH_COOKIE_NAME,
             csrfCookieName: CSRF_COOKIE_NAME,
+            hasAnyCookies: !!cookieHeader,
+            origin: request.headers.get("origin"),
+            referer: request.headers.get("referer"),
         });
         return { valid: false, reason: "missing_auth" };
     }
