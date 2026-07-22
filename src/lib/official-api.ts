@@ -10,6 +10,54 @@ function getSecret(): string | undefined {
 }
 
 /**
+ * Node.js undici fetch 在容器化 / 生产环境中偶发 DNS 解析失败。
+ * 使用指数退避重试 + 细化错误分类以提升可观测性。
+ */
+async function fetchWithRetry(
+    url: string,
+    init: RequestInit,
+    retries = 2,
+    backoffMs = 300
+): Promise<Response> {
+    let lastError: unknown;
+
+    for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+            const controller = new AbortController();
+            const signal = init.signal
+                ? AbortSignal.any([init.signal as AbortSignal, controller.signal])
+                : controller.signal;
+
+            const timeoutMs = (init as { _timeoutMs?: number })._timeoutMs ?? 30000;
+            const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+            try {
+                const response = await fetch(url, { ...init, signal });
+                return response;
+            } finally {
+                clearTimeout(timeoutId);
+            }
+        } catch (error) {
+            lastError = error;
+            const errMsg = error instanceof Error ? error.message : String(error);
+
+            if (errMsg.includes("abort") || errMsg.includes("AbortError") || errMsg.includes("timeout")) {
+                logger.error(`[OfficialAPI] Request timed out after ${(init as { _timeoutMs?: number })._timeoutMs ?? 30000}ms`, url);
+                throw error; // 超时不重试
+            }
+
+            if (attempt < retries) {
+                const delay = backoffMs * Math.pow(2, attempt);
+                logger.warn(`[OfficialAPI] fetch failed (attempt ${attempt + 1}/${retries + 1}), retrying in ${delay}ms: ${errMsg}`);
+                await new Promise((resolve) => setTimeout(resolve, delay));
+            }
+        }
+    }
+
+    throw lastError;
+}
+
+/**
  * 使用共享密钥对响应体进行 HMAC-SHA256 签名（十六进制）。
  * 此函数主要用于测试，实际签名由 nihplod.cn 服务端完成。
  */
@@ -142,13 +190,10 @@ export async function getOfficialCsrfToken(): Promise<OfficialCsrfToken | null> 
     const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";
 
     try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-        const res = await fetch(`${officialApiUrl}/api/auth/csrf`, {
+        const res = await fetchWithRetry(`${officialApiUrl}/api/auth/csrf`, {
             method: "GET",
-            signal: controller.signal,
-        }).finally(() => clearTimeout(timeoutId));
+            _timeoutMs: 15000,
+        } as RequestInit & { _timeoutMs?: number });
 
         if (!res.ok) {
             logger.error("[OfficialAPI] Failed to fetch CSRF token from official API", res.status);
@@ -277,15 +322,12 @@ export async function callOfficialApi<T = unknown>(
     }
 
     try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-        const officialResponse = await fetch(url, {
+        const officialResponse = await fetchWithRetry(url, {
             method,
             headers,
             body: body !== undefined ? JSON.stringify(body) : undefined,
-            signal: controller.signal,
-        }).finally(() => clearTimeout(timeoutId));
+            _timeoutMs: timeoutMs,
+        } as RequestInit & { _timeoutMs?: number });
 
         const parsed = await parseOfficialResponse<T>(officialResponse, { requireSignature });
         if (!parsed) {
