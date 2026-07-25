@@ -2,11 +2,14 @@
 import prisma from "@/lib/prisma";
 import { QuestionnaireAnswers } from "@/lib/advisor-utils";
 import type { Product } from "@prisma/client";
-
+import type { EnvContext } from "@/lib/weather-context";
+import { getSeasonLabel } from "@/lib/weather-context";
 /** 带算法评分的商品（由 getCandidateProducts 生成） */
 type ScoredProduct = Product & {
     _score: number;
     matchedBenefits: string[];
+    _envTags?: string[];
+    _budgetLabel?: ProductRecommendation["budgetLabel"];
 };
 
 export interface ProductRecommendation {
@@ -24,6 +27,10 @@ export interface ProductRecommendation {
     howToUse?: string | null;
     /** 推荐来源：persona（IP 池内）| algorithm（池外补充） */
     source?: "persona" | "algorithm";
+    /** 预算匹配标签：within_budget | near_budget | over_budget | unknown */
+    budgetLabel?: "within_budget" | "near_budget" | "over_budget" | "unknown";
+    /** 环境相关匹配标签 */
+    envTags?: string[];
 }
 
 /** 关注点到功效标签的映射 */
@@ -57,13 +64,36 @@ const SKINTYPE_TO_BENEFITS: Record<string, string[]> = {
     unknown: ["保湿", "温和", "平衡", "基础"],
 };
 
-/** 预算到价格范围的映射 */
-const BUDGET_TO_PRICE: Record<string, { min: number; max: number }> = {
-    budget: { min: 0, max: 500 },
-    mid: { min: 300, max: 1000 },
-    premium: { min: 800, max: 2000 },
-    luxury: { min: 1500, max: Infinity },
+/** 预算到价格范围的映射（用于按用户预算名查找区间） */
+const BUDGET_TO_PRICE: Record<string, { min: number; max: number; tier: number }> = {
+    budget: { min: 0, max: 500, tier: 0 },
+    mid: { min: 300, max: 1000, tier: 1 },
+    premium: { min: 800, max: 2000, tier: 2 },
+    luxury: { min: 1500, max: Infinity, tier: 3 },
 };
+
+/**
+ * 价格档位有序列表（从低到高排列）
+ *
+ * 用于将产品价格归类到对应的预算档位。按价格从低到高显式排序，
+ * 确保区间重叠时（如 budget 0-500 与 mid 300-1000 同时匹配 400 元）
+ * 始终返回最低匹配档位——即产品自身所处的价格区间。
+ *
+ * 与 BUDGET_TO_PRICE 解耦：后者用于按用户预算名 O(1) 查找，
+ * 本数组用于按价格顺序遍历分类，二者职责不同。
+ */
+const PRICE_TIERS = [
+    { min: 0, max: 500, tier: 0 },       // 性价比
+    { min: 300, max: 1000, tier: 1 },     // 中等预算
+    { min: 800, max: 2000, tier: 2 },     // 品质优先
+    { min: 1500, max: Infinity, tier: 3 }, // 不设上限
+] as const;
+
+/** 预算超支惩罚：超出 tier 数越多，惩罚越重 */
+const BUDGET_OVERAGE_PENALTY = [0, 40, 120, 250]; // tier 差 0/1/2/3+ 的扣分
+
+/** 环境功效匹配权重（每标签 +15 分，低于肤质但高于精选产品 */
+const ENV_BENEFIT_SCORE = 15;
 
 /** 年龄段到推荐功效的映射 */
 const AGE_TO_BENEFITS: Record<string, string[]> = {
@@ -97,11 +127,14 @@ function calculateScore(
     product: ProductBase,
     skinType: string,
     concerns: string[],
-    answers: QuestionnaireAnswers
-): { score: number; reasons: string[]; matchedBenefits: string[] } {
+    answers: QuestionnaireAnswers,
+    envContext?: EnvContext
+): { score: number; reasons: string[]; matchedBenefits: string[]; envTags: string[]; budgetLabel: ProductRecommendation["budgetLabel"] } {
     let score = 0;
     const reasons: string[] = [];
     const matchedBenefits: string[] = [];
+    const envTags: string[] = [];
+    let budgetLabel: ProductRecommendation["budgetLabel"] = "unknown";
 
     // Parse JSON fields safely if stringified or use directly if object
     // Assuming Prisma returns Json value which is already parsed object/array
@@ -151,15 +184,39 @@ function calculateScore(
 
     // 4. 预算匹配（相关性门槛加权：仅对已证明合适的产品加分）
     //   预算分 = min(30, 基础相关分 / 3)，产品越合适预算加成越多
+    //   同时增加超预算惩罚机制
     if (answers.budget) {
-        const priceRange = BUDGET_TO_PRICE[answers.budget];
+        const userBudget = BUDGET_TO_PRICE[answers.budget];
         const priceMatch = String(product.price).match(/[0-9]+(?:\.[0-9]+)?/);
         const productPrice = priceMatch ? Number(priceMatch[0]) : 0;
-        if (priceRange && !isNaN(productPrice) && productPrice > 0 && productPrice >= priceRange.min && productPrice <= priceRange.max) {
-            // 相关性门槛：基础分越高，预算加成越多。避免不合适的高价产品靠预算分上位
-            const budgetBonus = Math.min(30, Math.floor(score / 3));
-            score += Math.max(5, budgetBonus); // 保底 +5，让同分产品中预算匹配的优先
-            reasons.push("符合预算范围");
+        if (userBudget && !isNaN(productPrice) && productPrice > 0) {
+            // 判断产品价格在哪个预算区间
+            const productTier = findPriceTier(productPrice);
+            const userTier = userBudget.tier;
+
+            if (productPrice >= userBudget.min && productPrice <= userBudget.max) {
+                // 完全在预算范围内：加分
+                const budgetBonus = Math.min(30, Math.floor(score / 3));
+                score += Math.max(5, budgetBonus);
+                reasons.push("符合预算范围");
+                budgetLabel = "within_budget";
+            } else if (productPrice <= userBudget.max * 1.3) {
+                // 轻微超预算（如在 500 预算下价格 600）：标为 near_budget，不做惩罚
+                budgetLabel = "near_budget";
+            } else if (productTier > userTier) {
+                // 严重超预算：按 tier 差距惩罚
+                const tierDiff = productTier - userTier;
+                const penaltyIdx = Math.min(tierDiff, BUDGET_OVERAGE_PENALTY.length - 1);
+                const penalty = BUDGET_OVERAGE_PENALTY[penaltyIdx];
+                score -= penalty;
+                budgetLabel = "over_budget";
+                if (penalty > 0) {
+                    reasons.push(`超出预算范围（${getBudgetLabel(answers.budget)}）`);
+                }
+            } else {
+                // 低于预算范围（如 高端用户 看到 平价产品）：不做惩罚
+                budgetLabel = "within_budget";
+            }
         }
     }
 
@@ -174,6 +231,22 @@ function calculateScore(
         if (suitableTypes.includes(skinType) || suitableTypes.includes('all')) {
             score += 25;
             reasons.push("适用于您的肤质");
+        }
+    }
+
+    // 5c. 环境/季节感知匹配（新增：每匹配 +ENV_BENEFIT_SCORE 分）
+    if (envContext && envContext.benefitTags.length > 0) {
+        envContext.benefitTags.forEach((envTag) => {
+            // 用环境标签匹配产品的 benefits 数组
+            if (productBenefits.some((b) => b === envTag || b.includes(envTag))) {
+                score += ENV_BENEFIT_SCORE;
+                if (!envTags.includes(envTag)) {
+                    envTags.push(envTag);
+                }
+            }
+        });
+        if (envTags.length > 0) {
+            reasons.push(`适合${envContext.description}`);
         }
     }
 
@@ -218,79 +291,149 @@ function calculateScore(
     if (score < 0) score = 0;
     if (score === 0 && !hasNegativeReason) score = 10;
 
-    return { score, reasons, matchedBenefits };
+    return { score, reasons, matchedBenefits, envTags, budgetLabel };
+}
+
+// ==================== 辅助函数 ====================
+
+/** 根据产品价格确定其所属预算 tier（按价格从低到高匹配，重叠区间返回首个匹配档位） */
+function findPriceTier(price: number): number {
+    for (const tier of PRICE_TIERS) {
+        if (price >= tier.min && price <= tier.max) return tier.tier;
+    }
+    return Number.MAX_SAFE_INTEGER;
+}
+
+/** 获取预算档次中文名 */
+function getBudgetLabel(budget: string): string {
+    const labels: Record<string, string> = {
+        budget: "性价比",
+        mid: "中等预算",
+        premium: "品质优先",
+        luxury: "不设上限",
+    };
+    return labels[budget] || budget;
 }
 
 /**
- * Generate intelligent recommendation reason
+ * Generate intelligent recommendation reason (Enhanced)
+ * 个性化推荐理由：结合产品信息、用户肤质、派系身份和季节环境
  */
 function generateSmartReason(
     matchedBenefits: string[],
     concerns: string[],
     skinType: string,
-    index: number = 0
+    index: number = 0,
+    productName?: string,
+    productCategory?: string,
+    persona?: string,
+    season?: string,
+    envContext?: EnvContext
 ): string {
-    // 1. 如果有匹配的功效
+    // Persona 风格前缀（每派有独特的语气）
+    const personaFlavors: Record<string, string> = {
+        sensitive: "温柔守护",
+        minimalist: "精简高效",
+        luxury: "奢华甄选",
+        ageless: "时光逆转",
+        desert: "深层润泽",
+        oily: "清爽平衡",
+        combination: "分区调理",
+        guardian: "坚实守护",
+    };
+
+    // 1. 优先：匹配的功效 + 产品类别 + persona 风格
     if (matchedBenefits.length > 0) {
         const benefitText = matchedBenefits.slice(0, 2).join("、");
+        const catText = productCategory || "";
+        const personaHint = persona ? (personaFlavors[persona] || "") : "";
+
         const templates = [
-            `针对您的需求，含${benefitText}功效`,
-            `主打${benefitText}，适合您的肤质`,
-            `富含${benefitText}成分，改善肌肤状态`,
-            `为您精选：具备${benefitText}效果`,
-            `${benefitText}双重呵护，精准匹配`,
-            `专研${benefitText}配方，科学护肤`,
-            `${benefitText}协同作用，由内而外`,
-            `核心${benefitText}，回应肌肤诉求`,
+            `${benefitText}${catText ? ` · ${catText}` : ""}，${personaHint || "精准匹配"}`,
+            `主打${benefitText}，${catText ? `${catText}级` : ""}呵护你的${getSkinTypeLabelShort(skinType)}`,
+            `富含${benefitText}成分，${personaHint ? `${personaHint}之选` : "改善肌肤状态"}`,
+            `针对${getConcernLabelShort(concerns[index]) || "肌肤需求"}，${benefitText}${catText ? ` · ${catText}` : ""}`,
+            `${benefitText}配方${catText ? `，${catText}品类优选` : "，科学护肤"}`,
+            `专研${benefitText}，${season ? `适合${season}使用` : "回应肌肤诉求"}`,
+            `${personaHint ? `${personaHint}·` : ""}${benefitText}${catText ? ` ${catText}` : ""}`,
+            `${benefitText}协同呵护，${catText || "精准配方"}${season ? ` · ${season}推荐` : ""}`,
         ];
         return templates[index % templates.length];
     }
 
-    // 2. 降级到基于关注点的理由
+    // 2. 降级：基于关注点的理由（增加类别+季节信息）
     const concernReasons: Record<string, string[]> = {
-        anti_aging: ["淡化细纹，紧致肌肤", "抗氧化修护"],
-        aging: ["延衰抗老，紧致肌肤", "抗氧化修护"],
-        fine_lines: ["淡化细纹", "平滑肌肤"],
-        wrinkles: ["淡化细纹，平滑肌肤", "抗皱紧致"],
-        dullness: ["提亮肤色，焕发光彩", "改善暗沉"],
-        dull: ["提亮肤色，焕发光彩", "改善暗沉"],
-        pigmentation: ["淡化色斑", "均匀肤色"],
-        spots: ["淡化色斑，均匀肤色", "改善色素沉着"],
-        hydration: ["深层补水，持久保湿", "修护肌肤屏障"],
-        dryness: ["深层补水，滋润肌肤", "改善干燥缺水"],
-        sensitivity: ["舒缓镇静，温和修护", "增强肌肤屏障"],
-        acne: ["控油平衡，预防痘痘", "消炎调理"],
-        oil_control: ["清爽控油，平衡水油", "调节油脂分泌"],
-        dark_circles: ["修护眼周，淡化黑眼圈", "改善眼部循环"],
-        roughness: ["改善粗糙，细致毛孔", "平滑肌肤纹理"],
-        waterOil: ["平衡水油，调理肌肤", "改善T区出油U区干燥"],
+        anti_aging: ["淡化细纹，紧致肌肤", "抗氧化修护，延缓老化"],
+        aging: ["延衰抗老，紧致提升", "深层修护，逆转肌龄"],
+        fine_lines: ["淡化表情纹与干纹", "平滑肌肤纹理"],
+        wrinkles: ["减少皱纹深度，紧致轮廓", "抗皱提拉，重塑弹力"],
+        dullness: ["提亮肤色，焕发光彩", "改善暗沉，恢复通透感"],
+        dull: ["焕亮肤色，祛黄提气", "击退暗沉，光泽透亮"],
+        pigmentation: ["淡化色斑，均匀肤色", "阻断黑色素，焕白透亮"],
+        spots: ["淡化痘印色斑，均匀提亮", "改善色素沉着，净白肌肤"],
+        hydration: ["深层补水，持久保湿", "修护皮脂膜，锁水屏障"],
+        dryness: ["密集补水，改善干燥脱皮", "滋润修护，缓解紧绷感"],
+        sensitivity: ["舒缓褪红，温和修护", "增强屏障，降低敏感度"],
+        acne: ["控油祛痘，净化毛孔", "平衡微生态，预防闭口"],
+        oil_control: ["清爽控油，平衡水油", "调节皮脂，维持清爽"],
+        dark_circles: ["修护眼周，淡化黑眼圈", "改善微循环，提亮眼周"],
+        roughness: ["改善粗糙肤质，细致平滑", "温和焕肤，细腻毛孔"],
+        waterOil: ["平衡水油，分区调理", "T区控油U区保湿"],
     };
 
-    // 优先使用关注点相关理由
     if (concerns.length > 0) {
         const concern = concerns[index % concerns.length];
         const reasons = concernReasons[concern];
         if (reasons) {
-            return reasons[index % reasons.length];
+            const reason = reasons[index % reasons.length];
+            const catHint = productCategory ? ` · ${productCategory}` : "";
+            const seasonHint = season ? ` (${season}适用)` : "";
+            return `${reason}${catHint}${seasonHint}`;
         }
     }
 
-    // 3. 再次降级到肤质理由
+    // 3. 再次降级：肤质 + 环境理由
     const skinReasons: Record<string, string> = {
-        dry: "滋润保湿，改善干燥",
-        oily: "清爽控油，平衡水油",
-        combination: "分区护理，平衡肤质",
-        combination_dry: "针对混干肤质，分区滋润",
-        combination_oily: "针对混油肤质，平衡水油",
-        sensitive: "温和配方，适合敏感肌",
-        normal: "日常保养，维持状态",
+        dry: "滋润保湿，改善干燥紧绷",
+        oily: "清爽控油，平衡水油分泌",
+        combination: "分区护理，平衡T区与U区",
+        combination_dry: "针对混干肤质，T区清爽U区滋润",
+        combination_oily: "针对混油肤质，平衡多余油脂",
+        sensitive: "温和低敏配方，呵护脆弱肌肤",
+        normal: "维稳保养，维持水油平衡",
     };
 
     if (skinType && skinReasons[skinType]) {
-        return skinReasons[skinType];
+        const skReason = skinReasons[skinType];
+        const envHint = envContext ? `，${envContext.description}` : "";
+        return `${skReason}${envHint}`;
     }
 
-    return "适合日常护肤使用，维持肌肤健康";
+    return "适合日常护肤使用，维持肌肤健康状态";
+}
+
+/** 获取肤质短标签（用于推荐理由） */
+function getSkinTypeLabelShort(skinType: string): string {
+    const labels: Record<string, string> = {
+        dry: "干性肌", oily: "油性肌", combination: "混合肌",
+        combination_dry: "混干肌", combination_oily: "混油肌",
+        sensitive: "敏感肌", normal: "中性肌",
+    };
+    return labels[skinType] || "肌肤";
+}
+
+/** 获取关注点短标签 */
+function getConcernLabelShort(concern?: string): string {
+    if (!concern) return "";
+    const labels: Record<string, string> = {
+        anti_aging: "抗老需求", aging: "抗老需求", fine_lines: "细纹困扰",
+        wrinkles: "皱纹困扰", dullness: "暗沉问题", dull: "暗沉问题",
+        pigmentation: "色斑困扰", spots: "色斑困扰", hydration: "补水需求",
+        dryness: "干燥问题", sensitivity: "敏感困扰", acne: "痘痘困扰",
+        oil_control: "控油需求", dark_circles: "黑眼圈", roughness: "粗糙肤质",
+        waterOil: "水油失衡",
+    };
+    return labels[concern] || concern;
 }
 
 /** 规则匹配条件（扩展 persona） */
@@ -331,7 +474,8 @@ export async function getCandidateProducts(
     answers: QuestionnaireAnswers,
     concerns: string[],
     limit: number = 10,
-    persona?: string
+    persona?: string,
+    envContext?: EnvContext
 ): Promise<ScoredProduct[]> {
     try {
         const allProducts = await prisma.product.findMany({
@@ -342,10 +486,10 @@ export async function getCandidateProducts(
 
         const skinType = answers.skinType || "combination";
 
-        // 2. Score using our heuristic engine
+        // 2. Score using our heuristic engine (now with envContext)
         let scored = allProducts.map(p => {
-            const { score, matchedBenefits } = calculateScore(p, skinType, concerns, answers);
-            return { ...p, _score: score, matchedBenefits };
+            const { score, matchedBenefits, envTags, budgetLabel } = calculateScore(p, skinType, concerns, answers, envContext);
+            return { ...p, _score: score, matchedBenefits, _envTags: envTags, _budgetLabel: budgetLabel };
         });
 
         // 3. Inject Forced Rules (Hard Rules)
@@ -414,9 +558,10 @@ export async function getCandidateProducts(
 export async function recommendProducts(
     answers: QuestionnaireAnswers,
     concerns: string[],
-    preloadedProducts?: (Product & { _score?: number; matchedBenefits?: string[] })[], // Optional: reuse already-fetched products to avoid duplicate DB query
+    preloadedProducts?: (Product & { _score?: number; matchedBenefits?: string[]; _envTags?: string[]; _budgetLabel?: ProductRecommendation["budgetLabel"] })[], // Optional: reuse already-fetched products to avoid duplicate DB query
     limit: number = 3,
-    persona?: string
+    persona?: string,
+    envContext?: EnvContext
 ): Promise<ProductRecommendation[]> {
     try {
         // 1. Use preloaded products if available, otherwise fetch from DB
@@ -435,6 +580,7 @@ export async function recommendProducts(
 
         const skinType = answers.skinType || "combination";
         const isPreScored = preloadedProducts && preloadedProducts.length > 0 && preloadedProducts[0]._score !== undefined;
+        const season = envContext ? getSeasonLabel(envContext.season) : undefined;
 
         // 2. Score each product (skip if preloaded from getCandidateProducts which already scored)
         let scored;
@@ -443,15 +589,19 @@ export async function recommendProducts(
                 ...p,
                 rawScore: p._score!,
                 matchedBenefits: p.matchedBenefits || [],
+                envTags: p._envTags || [],
+                budgetLabel: p._budgetLabel || "unknown",
                 price: p.price
             }));
         } else {
             scored = allProducts.map(p => {
-                const { score, matchedBenefits } = calculateScore(p, skinType, concerns, answers);
+                const { score, matchedBenefits, envTags, budgetLabel } = calculateScore(p, skinType, concerns, answers, envContext);
                 return {
                     ...p,
                     rawScore: score,
                     matchedBenefits,
+                    envTags,
+                    budgetLabel,
                     price: p.price
                 };
             });
@@ -516,14 +666,27 @@ export async function recommendProducts(
             image: p.image,
             images: (p as any).images || null,
             price: p.price,
-            reason: generateSmartReason(p.matchedBenefits, concerns, skinType, index),
+            reason: generateSmartReason(
+                p.matchedBenefits || [],
+                concerns,
+                skinType,
+                index,
+                p.name,
+                p.category,
+                persona,
+                season,
+                envContext
+            ),
             description: p.description || null,
             score: p.rawScore,
+            matchedBenefits: p.matchedBenefits,
             affiliateLinks: (p.affiliateLinks as Record<string, string> | null) || null,
             howToUse: p.howToUse || null,
             benefits: Array.isArray(p.benefits) ? p.benefits : [],
             keyIngredients: Array.isArray(p.keyIngredients) ? p.keyIngredients : [],
             source: personaPoolIds.has(p.id) ? "persona" as const : "algorithm" as const,
+            budgetLabel: (p as any).budgetLabel || "unknown",
+            envTags: (p as any).envTags || [],
         }));
 
     } catch (e) {

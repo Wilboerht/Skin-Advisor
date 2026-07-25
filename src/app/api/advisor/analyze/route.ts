@@ -18,6 +18,7 @@ import { resolveIPLocation } from "@/lib/geoip";
 import { getSession } from "@/lib/auth";
 import { hashIP } from "@/lib/privacy";
 import { matchCharacterIP } from "@/lib/result-utils";
+import { getEnvContextFromLocation } from "@/lib/weather-context";
 
 import { checkUsageLimit, reserveUsage, rollbackUsage } from "@/lib/usage-limit";
 import { extractGuestIdentifiers } from "@/lib/guest-limit";
@@ -246,6 +247,7 @@ export async function POST(request: NextRequest) {
         const limit = await rateLimit(`advisor-analyze-${ip}`, "comprehensive-analyze", { maxRequests: 20 });
 
         const geoLocation = resolveIPLocation(ip);
+        const envContext = getEnvContextFromLocation(geoLocation?.region, geoLocation?.city);
         const rateLimitHeaders: Record<string, string> = {
             "X-RateLimit-Limit": String(limit.limit),
             "X-RateLimit-Remaining": String(limit.remaining),
@@ -452,9 +454,9 @@ export async function POST(request: NextRequest) {
                 skincareFrequency: answers.skincareFrequency,
             }).key;
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const candidateProducts = await getCandidateProducts(enrichedAnswers as any, concerns, 3, personaKey);
+            const candidateProducts = await getCandidateProducts(enrichedAnswers as any, concerns, 3, personaKey, envContext);
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const products = await recommendProducts(enrichedAnswers as any, concerns, candidateProducts, 3, personaKey);
+            const products = await recommendProducts(enrichedAnswers as any, concerns, candidateProducts, 3, personaKey, envContext);
 
             // 构造符合 ComprehensiveResult 结构的数据
             const finalResult = {
@@ -534,7 +536,7 @@ export async function POST(request: NextRequest) {
             skincareFrequency: answers.skincareFrequency,
         }).key;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const candidateProducts = await getCandidateProducts(enrichedAnswers as any, concerns, 6, personaKey);
+        const candidateProducts = await getCandidateProducts(enrichedAnswers as any, concerns, 6, personaKey, envContext);
 
         const concernLabels = concerns.map(c => getConcernLabel(c));
 
@@ -543,7 +545,7 @@ export async function POST(request: NextRequest) {
             ageRange: answers.ageRange,
             concerns: concernLabels,
             gender: (answers as any).gender,
-            location: geoLocation ? `${geoLocation.region || ''} ${geoLocation.city || ''}`.trim() : undefined,
+            location: geoLocation ? `${geoLocation.region || ''} ${geoLocation.city || ''}（${envContext.description}）`.trim() : undefined,
             budget: answers.budget,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             medicalBeauty: (answers as any).medicalBeauty,
@@ -672,7 +674,7 @@ export async function POST(request: NextRequest) {
 
         // 预先用算法生成3个带推荐理由的候选（用于兜底和补充）
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const algorithmRecs = await recommendProducts(enrichedAnswers as any, concerns, candidateProducts, 3, personaKey);
+        const algorithmRecs = await recommendProducts(enrichedAnswers as any, concerns, candidateProducts, 3, personaKey, envContext);
 
         type AiProductItem = {
             id?: string | number;
