@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAISettings } from "@/lib/ai";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { aiQueue, visionQueue, analysisQueue, type QueueStats } from "@/lib/ai-queue";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +29,26 @@ export async function GET(request: NextRequest) {
             });
         }
 
-        return NextResponse.json({ configured: true });
+        // 收集排队状态（纯内存读取，零 DB 开销）
+        const generalStats = aiQueue.getStats();
+        const visionStats = visionQueue.getStats();
+        const analysisStats = analysisQueue.getStats();
+
+        const isBusy = generalStats.isBusy || visionStats.isBusy || analysisStats.isBusy;
+        const totalQueued = generalStats.queueLength + visionStats.queueLength + analysisStats.queueLength;
+        const maxWaitSeconds = Math.max(
+            generalStats.estimatedWaitSeconds,
+            visionStats.estimatedWaitSeconds,
+            analysisStats.estimatedWaitSeconds
+        );
+
+        return NextResponse.json({
+            configured: true,
+            queues: { general: generalStats, vision: visionStats, analysis: analysisStats },
+            isBusy,
+            totalQueued,
+            estimatedWaitSeconds: maxWaitSeconds,
+        });
     } catch {
         return NextResponse.json({
             configured: false,

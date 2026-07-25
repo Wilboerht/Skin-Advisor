@@ -7,8 +7,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/Toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Loader2, Eye, EyeOff, ArrowRight, ArrowLeft, Phone, CheckCircle, Check, KeyRound, CheckCircle2, ChevronLeft, ArrowLeftRight } from "lucide-react";
-import { useIsMobile } from "@/hooks/useMediaQuery";
 import { validatePasswordStrength, PASSWORD_MIN_LENGTH } from "@/lib/password";
+import { fetchWithCsrf } from "@/lib/fetch-client";
+import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 
 export function AuthModal() {
     const { isOpen, view, openAuthModal, closeAuthModal, setAuthView } = useAuthModal();
@@ -19,17 +20,14 @@ export function AuthModal() {
 
     useEffect(() => {
         if (searchParams.get("login") === "wechat_bind") {
-            const token = searchParams.get("wechat_exchange_token");
-            if (token) {
-                setWechatExchangeToken(token);
-            }
+            // exchange token 已通过 httpOnly Cookie 传递，无需从 URL 读取
             // 保留最终重定向目标，供绑定成功后使用
             const redirect = searchParams.get("redirect");
             if (redirect) {
                 sessionStorage.setItem("auth_redirect", redirect);
             }
             openAuthModal("wechat_bind");
-            // Remove sensitive param from URL so it doesn't linger or trigger again
+            // Remove params from URL so it doesn't trigger again
             const cleanUrl = new URL(window.location.href);
             cleanUrl.searchParams.delete("login");
             cleanUrl.searchParams.delete("wechat_exchange_token");
@@ -140,39 +138,8 @@ export function AuthModal() {
         return () => clearTimeout(timer);
     }, [loginCodeCountdown]);
 
-    const isMobile = useIsMobile();
-
     // 禁止背景滚动（移动端使用 fixed 定位防止 iOS 弹性滚动）
-    useEffect(() => {
-        if (isOpen) {
-            document.body.style.overflow = "hidden";
-            if (isMobile) {
-                const scrollY = window.scrollY;
-                document.body.style.position = "fixed";
-                document.body.style.width = "100%";
-                document.body.style.top = `-${scrollY}px`;
-            }
-        } else {
-            document.body.style.overflow = "unset";
-            if (isMobile) {
-                const scrollY = document.body.style.top;
-                document.body.style.position = "";
-                document.body.style.width = "";
-                document.body.style.top = "";
-                if (scrollY) {
-                    window.scrollTo(0, parseInt(scrollY) * -1);
-                }
-            }
-        }
-        return () => {
-            document.body.style.overflow = "unset";
-            if (isMobile) {
-                document.body.style.position = "";
-                document.body.style.width = "";
-                document.body.style.top = "";
-            }
-        };
-    }, [isOpen, isMobile]);
+    useBodyScrollLock({ enabled: isOpen, iosSafe: true });
 
     // 登录/注册成功后处理 redirect
     const handleAuthSuccess = () => {
@@ -252,10 +219,6 @@ export function AuthModal() {
             setAgreementShake(n => n + 1);
             return;
         }
-        if (!wechatExchangeToken) {
-            toast.error("微信授权凭证缺失，请重新扫码");
-            return;
-        }
         if (!regPassword || regPassword.length === 0) {
             toast.error("请设置登录密码");
             return;
@@ -267,11 +230,10 @@ export function AuthModal() {
         }
         setLoading(true);
         try {
-            const res = await fetch("/api/auth/wechat/bind", {
+            const res = await fetchWithCsrf("/api/auth/wechat/bind", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    wechatExchangeToken,
                     phone: regPhone,
                     code: regCode,
                     password: regPassword,

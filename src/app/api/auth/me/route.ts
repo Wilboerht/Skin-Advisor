@@ -10,6 +10,7 @@ import { createHash } from "crypto";
 import { UserRole } from "@/lib/permissions";
 import { callOfficialApi, type OfficialApiResponse } from "@/lib/official-api";
 import { logger } from "@/lib/logger";
+import { verifyCsrfToken } from "@/lib/csrf";
 
 // 官网 /api/user/profile 返回的用户结构
 interface OfficialProfileUser {
@@ -198,6 +199,13 @@ export async function PUT(req: NextRequest) {
     const ipLimit = await rateLimit(`me-put-ip-${ip}`, "default", { maxRequests: 10, windowMs: 60 * 1000 });
     if (!ipLimit.success) {
         return apiError(ErrorCode.RATE_LIMITED, "请求过于频繁，请稍后再试", 429);
+    }
+
+    // CSRF 防护：验证 Double-Submit Cookie 令牌
+    const csrfResult = await verifyCsrfToken(req);
+    if (!csrfResult.valid) {
+        logger.warn("[Me PUT] CSRF validation failed", { reason: csrfResult.reason, path: req.nextUrl.pathname });
+        return apiError(ErrorCode.FORBIDDEN, "安全验证失败，请刷新页面后重试", 403);
     }
 
     const cookieStore = await cookies();

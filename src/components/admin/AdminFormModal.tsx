@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Loader2, Shield, UserCog, Eye, EyeOff } from "lucide-react";
 import { AdminModal } from "@/components/ui/AdminModal";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 interface Admin {
   id: string;
@@ -42,6 +43,8 @@ export function AdminFormModal({ isOpen, onClose, onSubmit, admin, loading }: Ad
   const [name, setName] = useState("");
   const [role, setRole] = useState("admin");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isDirty, setIsDirty] = useState(false);
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -61,9 +64,21 @@ export function AdminFormModal({ isOpen, onClose, onSubmit, admin, loading }: Ad
       }
       setErrors({});
       setShowPassword(false);
+      setIsDirty(false);
     });
     return () => cancelAnimationFrame(raf);
   }, [isOpen, admin]);
+
+  const handleClose = useCallback(() => {
+    if (loading) return;
+    if (isDirty) {
+      setShowDiscardConfirm(true);
+    } else {
+      onClose();
+    }
+  }, [loading, isDirty, onClose]);
+
+  const markDirty = () => setIsDirty(true);
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -84,6 +99,7 @@ export function AdminFormModal({ isOpen, onClose, onSubmit, admin, loading }: Ad
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return; // 防重复提交守卫
     if (!validate()) return;
 
     const data: Record<string, unknown> = { role };
@@ -99,9 +115,10 @@ export function AdminFormModal({ isOpen, onClose, onSubmit, admin, loading }: Ad
   };
 
   return (
+    <>
     <AdminModal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleClose}
       title={isEditing ? "编辑管理员" : "新建管理员"}
       titleId="admin-form-modal-title"
       subtitle={isEditing ? `修改 ${admin?.username} 的信息` : "创建一个新的管理员账号"}
@@ -116,58 +133,65 @@ export function AdminFormModal({ isOpen, onClose, onSubmit, admin, loading }: Ad
       <form onSubmit={handleSubmit}>
         <div className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label htmlFor="admin-username" className="block text-sm font-medium text-slate-700 mb-1.5">
               用户名 {!isEditing && <span className="text-red-500">*</span>}
             </label>
             <input
+              id="admin-username"
               type="text"
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={(e) => { setUsername(e.target.value); markDirty(); }}
               disabled={isEditing || loading}
               placeholder="输入用户名"
-              className="block w-full rounded-xl border-slate-200 bg-white/50 py-2.5 px-4 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-400 focus:ring-0 transition-all disabled:opacity-60"
+              onBlur={() => { if (username.trim() && username.length < 3) setErrors(prev => ({ ...prev, username: "用户名至少3个字符" })); else if (errors.username) setErrors(prev => { const n = { ...prev }; delete n.username; return n; }); }}
+              className="block w-full rounded-xl border-slate-200 bg-white/50 py-2.5 px-4 text-sm text-slate-900 placeholder:text-slate-500 focus:bg-white focus:border-slate-400 focus:ring-1 focus:ring-slate-400/30 transition-all disabled:opacity-60"
             />
-            {errors.username && <p className="mt-1 text-xs text-red-500">{errors.username}</p>}
+            {errors.username && <p className="mt-1 text-xs text-red-600" role="alert">{errors.username}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">邮箱</label>
+            <label htmlFor="admin-email" className="block text-sm font-medium text-slate-700 mb-1.5">邮箱</label>
             <input
+              id="admin-email"
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => { setEmail(e.target.value); markDirty(); }}
               disabled={loading}
               placeholder="输入邮箱地址"
-              className="block w-full rounded-xl border-slate-200 bg-white/50 py-2.5 px-4 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-400 focus:ring-0 transition-all disabled:opacity-60"
+              onBlur={() => { if (email && !email.includes("@")) setErrors(prev => ({ ...prev, email: "请输入有效的邮箱地址" })); else if (errors.email) setErrors(prev => { const n = { ...prev }; delete n.email; return n; }); }}
+              className="block w-full rounded-xl border-slate-200 bg-white/50 py-2.5 px-4 text-sm text-slate-900 placeholder:text-slate-500 focus:bg-white focus:border-slate-400 focus:ring-1 focus:ring-slate-400/30 transition-all disabled:opacity-60"
             />
-            {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
+            {errors.email && <p className="mt-1 text-xs text-red-600" role="alert">{errors.email}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">姓名</label>
+            <label htmlFor="admin-name" className="block text-sm font-medium text-slate-700 mb-1.5">姓名</label>
             <input
+              id="admin-name"
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => { setName(e.target.value); markDirty(); }}
               disabled={loading}
               placeholder="输入显示姓名"
-              className="block w-full rounded-xl border-slate-200 bg-white/50 py-2.5 px-4 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-400 focus:ring-0 transition-all disabled:opacity-60"
+              className="block w-full rounded-xl border-slate-200 bg-white/50 py-2.5 px-4 text-sm text-slate-900 placeholder:text-slate-500 focus:bg-white focus:border-slate-400 focus:ring-1 focus:ring-slate-400/30 transition-all disabled:opacity-60"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label htmlFor="admin-password" className="block text-sm font-medium text-slate-700 mb-1.5">
               密码 {!isEditing && <span className="text-red-500">*</span>}
               {isEditing && <span className="text-slate-400 font-normal">（留空则不修改）</span>}
             </label>
             <div className="relative">
               <input
+                id="admin-password"
                 type={showPassword ? "text" : "password"}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => { setPassword(e.target.value); markDirty(); }}
                 disabled={loading}
                 placeholder={isEditing ? "输入新密码以重置" : "输入密码"}
-                className="block w-full rounded-xl border-slate-200 bg-white/50 py-2.5 px-4 pr-10 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-400 focus:ring-0 transition-all disabled:opacity-60"
+                onBlur={() => { if (!isEditing && password && password.length < 6) setErrors(prev => ({ ...prev, password: "密码至少6个字符" })); else if (errors.password) setErrors(prev => { const n = { ...prev }; delete n.password; return n; }); }}
+                className="block w-full rounded-xl border-slate-200 bg-white/50 py-2.5 px-4 pr-10 text-sm text-slate-900 placeholder:text-slate-500 focus:bg-white focus:border-slate-400 focus:ring-1 focus:ring-slate-400/30 transition-all disabled:opacity-60"
               />
               <button
                 type="button"
@@ -177,11 +201,12 @@ export function AdminFormModal({ isOpen, onClose, onSubmit, admin, loading }: Ad
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
-            {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password}</p>}
+            {errors.password && <p className="mt-1 text-xs text-red-600" role="alert">{errors.password}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">角色</label>
+            <fieldset>
+              <legend className="block text-sm font-medium text-slate-700 mb-2">角色</legend>
             <div className="space-y-2">
               {ROLE_OPTIONS.map((option) => (
                 <label
@@ -197,7 +222,7 @@ export function AdminFormModal({ isOpen, onClose, onSubmit, admin, loading }: Ad
                     name="role"
                     value={option.value}
                     checked={role === option.value}
-                    onChange={(e) => setRole(e.target.value)}
+                    onChange={(e) => { setRole(e.target.value); markDirty(); }}
                     disabled={loading}
                     className="mt-0.5"
                   />
@@ -219,13 +244,14 @@ export function AdminFormModal({ isOpen, onClose, onSubmit, admin, loading }: Ad
                 </label>
               ))}
             </div>
+            </fieldset>
           </div>
         </div>
 
         <div className="flex gap-3 mt-8">
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             disabled={loading}
             className="flex-1 px-4 py-3 text-sm font-bold text-slate-600 bg-white/40 hover:bg-white/60 border border-white/60 rounded-2xl transition-all shadow-sm disabled:opacity-50"
           >
@@ -242,5 +268,16 @@ export function AdminFormModal({ isOpen, onClose, onSubmit, admin, loading }: Ad
         </div>
       </form>
     </AdminModal>
+
+    <ConfirmModal
+      isOpen={showDiscardConfirm}
+      onClose={() => setShowDiscardConfirm(false)}
+      onConfirm={() => { setShowDiscardConfirm(false); onClose(); }}
+      title="放弃更改？"
+      message="您有未保存的更改，确定要关闭吗？"
+      confirmText="放弃更改"
+      variant="warning"
+    />
+    </>
   );
 }

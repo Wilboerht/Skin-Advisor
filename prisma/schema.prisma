@@ -126,6 +126,7 @@ model AdminUser {
   role             String    @default("admin")
   active           Boolean   @default(true)
   passwordChangedAt DateTime?
+  sessionRevokedAt  DateTime?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 

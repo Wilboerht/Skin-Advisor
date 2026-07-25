@@ -31,9 +31,12 @@ const FACE_CACHE_MAX_SIZE = 50; // 最多缓存 50 条
 
 function buildCacheKey(_sessionId: string, images: VisionImage[]): string {
     // 仅基于图片内容哈希（不含 sessionId），这样刷新页面也能命中缓存
+    // 使用完整数据哈希（头部+尾部+长度）避免前缀碰撞
     const samples = images.map(img => {
         const data = img.data || "";
-        return `${img.angle}:${crypto.createHash("sha256").update(data.slice(0, 1024)).digest("hex")}`;
+        const head = data.slice(0, 1024);
+        const tail = data.length > 2048 ? data.slice(-1024) : "";
+        return `${img.angle}:${crypto.createHash("sha256").update(`${data.length}:${head}:${tail}`).digest("hex")}`;
     }).join("|");
     return `face:${crypto.createHash("sha256").update(samples).digest("hex")}`;
 }
@@ -530,8 +533,10 @@ export async function POST(request: NextRequest) {
             errorName: err.name,
             sessionId: faceSessionId,
         });
+        return apiError(ErrorCode.INTERNAL_ERROR, "服务器内部错误", 500);
+    } finally {
+        // 顶层清理：确保所有路径（成功/失败/异常）都释放定时器和事件监听器
         clearTimeout(serverTimeout);
         request.signal.removeEventListener('abort', onClientAbort);
-        return apiError(ErrorCode.INTERNAL_ERROR, "服务器内部错误", 500);
     }
 }

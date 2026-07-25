@@ -110,18 +110,28 @@ export const RATE_LIMIT_PRESETS = {
  * @param options - 自定义配置（覆盖预设）
  * @returns 限制检查结果
  */
+// 多实例检测缓存：首次检测后 5 分钟内不再重复调用（避免每次 rateLimit 都 await）
+let multiInstanceChecked = false;
+let multiInstanceCheckAt = 0;
+const MULTI_INSTANCE_RECHECK_MS = 5 * 60_000;
+
 export async function rateLimit(
     identifier: string,
     type: keyof typeof RATE_LIMIT_PRESETS = "default",
     options?: Partial<RateLimitOptions>
 ): Promise<RateLimitResult> {
     // 安全检测：多实例部署下内存限流将失效
-    // 使用动态导入避免循环依赖（instance-check 依赖 prisma）
-    try {
-        const { detectMultiInstance } = await import("@/lib/instance-check");
-        await detectMultiInstance();
-    } catch {
-        // 检测失败不阻塞主流程
+    // 缓存检测结果，避免每次调用都执行动态导入 + DB 查询
+    const now = Date.now();
+    if (!multiInstanceChecked || now - multiInstanceCheckAt > MULTI_INSTANCE_RECHECK_MS) {
+        try {
+            const { detectMultiInstance } = await import("@/lib/instance-check");
+            await detectMultiInstance();
+        } catch {
+            // 检测失败不阻塞主流程
+        }
+        multiInstanceChecked = true;
+        multiInstanceCheckAt = now;
     }
 
     // 启动清理定时器
@@ -131,7 +141,6 @@ export async function rateLimit(
     const preset = RATE_LIMIT_PRESETS[type] || DEFAULT_OPTIONS;
     const opts: RateLimitOptions = { ...preset, ...options };
 
-    const now = Date.now();
     const cacheKey = `${type}:${identifier}`;
 
     // 获取或创建请求记录

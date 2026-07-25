@@ -1,9 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { X, Package } from "lucide-react";
+import { useState, useCallback } from "react";
+import { Package } from "lucide-react";
 import ProductForm, { ProductFormData } from "./ProductForm";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { AdminModal } from "@/components/ui/AdminModal";
@@ -19,7 +17,6 @@ export function ProductFormModal({ isOpen, onClose, product, onSuccess }: Produc
   const [submitting, setSubmitting] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
 
   const handleClose = useCallback(() => {
     if (submitting) return;
@@ -29,12 +26,6 @@ export function ProductFormModal({ isOpen, onClose, product, onSuccess }: Produc
       onClose();
     }
   }, [submitting, isDirty, onClose]);
-
-  useEffect(() => {
-    if (isOpen && scrollRef.current) {
-      scrollRef.current.scrollTop = 0;
-    }
-  }, [isOpen]);
 
   const handleSuccess = () => {
     onSuccess?.();
@@ -62,16 +53,14 @@ export function ProductFormModal({ isOpen, onClose, product, onSuccess }: Produc
           </div>
         }
       >
-        <div ref={scrollRef} className="overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          <ProductForm
-            key={product?.id || "new"}
-            initialData={product}
-            onSuccess={handleSuccess}
-            onCancel={handleClose}
-            onSubmittingChange={setSubmitting}
-            onDirtyChange={setIsDirty}
-          />
-        </div>
+        <ProductForm
+          key={product?.id || "new"}
+          initialData={product}
+          onSuccess={handleSuccess}
+          onCancel={handleClose}
+          onSubmittingChange={setSubmitting}
+          onDirtyChange={setIsDirty}
+        />
       </AdminModal>
 
       <ConfirmModal

@@ -7,7 +7,7 @@ import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import type { FaceAnalysisResult } from "@/lib/advisor-utils";
 
-const getSessionCached = cache(getSession);
+// getSession 已在 auth.ts 中通过 React cache() 包装，请求内自动去重
 const getReportCached = cache((id: string, userId: string) =>
     prisma.advisorSession.findUnique({
         where: { sessionId: id, userId },
@@ -28,7 +28,7 @@ export default async function ReportDetailPage(props: {
     let initialData: { result: ComprehensiveResult; faceAnalysis: FaceAnalysisResult | null } | null = null;
     let isExpired = false;
 
-    const user = await getSessionCached();
+    const user = await getSession();
 
     if (!user) {
         redirect(`/?auth=login&redirect=${encodeURIComponent(`/reports/${id}`)}`);
@@ -94,7 +94,7 @@ export async function generateMetadata(props: {
     let description = "基于 AI 的深度肤质分析，为您定制专属护肤方案。";
     let ogImage = "/images/og-default.png";
 
-    const user = await getSessionCached();
+    const user = await getSession();
     if (id && user) {
         try {
             const session = await getReportCached(id, user.id);

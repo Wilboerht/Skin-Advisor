@@ -6,7 +6,6 @@ import { BreadcrumbSchema } from "@/components/website/StructuredData";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://nihplod.cn";
 
-export const dynamic = "force-dynamic";
 export const revalidate = 300;
 
 export const metadata: Metadata = withDefaultOgImage({
@@ -28,11 +27,17 @@ export const metadata: Metadata = withDefaultOgImage({
 });
 
 export default async function GiftPage() {
-  const campaign = await prisma.campaign.findFirst({
-    where: { status: "active", startDate: { lte: new Date() }, endDate: { gte: new Date() } },
-    orderBy: { sortOrder: "asc" },
-    include: { _count: { select: { entries: true } } },
-  });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let campaign: any = null;
+  try {
+    campaign = await prisma.campaign.findFirst({
+      where: { status: "active", startDate: { lte: new Date() }, endDate: { gte: new Date() } },
+      orderBy: { sortOrder: "asc" },
+      include: { _count: { select: { entries: true } } },
+    });
+  } catch {
+    // 构建时数据库不可用则降级为空活动（运行时 ISR 会重新获取）
+  }
 
   const campaignData = campaign
     ? {

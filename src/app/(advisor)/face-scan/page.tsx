@@ -10,6 +10,7 @@ import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useToast } from "@/components/ui/Toast";
 import { ScanGuideModal } from "@/components/advisor/ScanGuideModal";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
+import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 
 export default function FaceScanPage() {
     const router = useRouter();
@@ -31,16 +32,7 @@ export default function FaceScanPage() {
     const [preloadedFaceApi, setPreloadedFaceApi] = useState<any>(null);
 
     // 模态框打开时锁定 body 滚动，防止 iOS 上顶部栏跟随滑动
-    useEffect(() => {
-        if (isModalOpen || showExitConfirm) {
-            document.body.style.overflow = "hidden";
-        } else {
-            document.body.style.overflow = "";
-        }
-        return () => {
-            document.body.style.overflow = "";
-        };
-    }, [isModalOpen, showExitConfirm]);
+    useBodyScrollLock({ enabled: isModalOpen || showExitConfirm });
 
     useEffect(() => {
         // 校验是否有问卷数据 (增加对无痕模式及禁用Storage时的异常处理)

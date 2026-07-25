@@ -2,6 +2,7 @@ import { compare, hash } from 'bcryptjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { createHash } from 'crypto';
+import { cache } from 'react';
 import prisma from '@/lib/prisma';
 import { isDisabledUser, UserRole } from '@/lib/permissions';
 import {
@@ -55,7 +56,7 @@ export interface SessionUser {
     dailyTestLimit?: number | null;
 }
 
-export async function getSession(): Promise<SessionUser | null> {
+export const getSession = cache(async (): Promise<SessionUser | null> => {
     const cookieStore = await cookies();
 
     const tokenValue = cookieStore.get(AUTH_COOKIE_NAME)?.value;
@@ -135,7 +136,7 @@ export async function getSession(): Promise<SessionUser | null> {
     }
 
     return null;
-}
+});
 
 export async function incrementTokenVersion(userId: string): Promise<number | null> {
     try {
@@ -283,6 +284,43 @@ export async function refreshSession(
             where: { userId, token: tokenHash, revokedAt: null, expiresAt: { gt: new Date() } },
         });
         if (!dbToken) {
+            // Grace Period：检查是否是刚刚被撤销的 token（30 秒内）
+            // 多标签页并发 refresh 时，第一个请求成功后撤销旧 token，
+            // 后续请求在 grace period 内不应触发重用检测，而是正常返回用户信息。
+            const GRACE_PERIOD_MS = 30_000;
+            const graceCutoff = new Date(Date.now() - GRACE_PERIOD_MS);
+            const recentlyRevoked = await prisma.refreshToken.findFirst({
+                where: { userId, token: tokenHash, revokedAt: { gte: graceCutoff } },
+            });
+            if (recentlyRevoked) {
+                // 在 grace period 内：为并发标签页签发新 token（第一个请求已完成轮转，此处为后续请求补发）
+                logger.info("[auth] Refresh token within grace period, issuing tokens for concurrent tab", { userId, tokenPrefix });
+                const dbUser = await prisma.user.findUnique({
+                    where: { id: userId },
+                    select: { id: true, email: true, phoneNumber: true, name: true, role: true, tokenVersion: true, dailyTestLimit: true },
+                });
+                if (!dbUser || isDisabledUser(dbUser.role)) return null;
+                // 签发新 token 对，确保此标签页也获得有效 Cookie
+                await signLocalSession(response, {
+                    id: dbUser.id,
+                    email: dbUser.email,
+                    phone: dbUser.phoneNumber,
+                    name: dbUser.name,
+                    role: dbUser.role,
+                    tokenVersion: dbUser.tokenVersion,
+                    dailyTestLimit: dbUser.dailyTestLimit,
+                }, { secure });
+                return {
+                    id: dbUser.id,
+                    email: dbUser.email,
+                    phone: dbUser.phoneNumber || undefined,
+                    name: dbUser.name || undefined,
+                    role: dbUser.role,
+                    tokenVersion: dbUser.tokenVersion,
+                    dailyTestLimit: dbUser.dailyTestLimit,
+                };
+            }
+
             // refresh token 重用检测：JWT 有效但 DB 中不存在 → 可能被盗用，撤销所有 token
             logger.warn("[auth] Refresh token not found or revoked in DB", {
                 userId,

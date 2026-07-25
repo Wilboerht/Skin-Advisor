@@ -1,6 +1,6 @@
 "use client";
 
-import { X, Clock, ShoppingBag, Calendar, Smartphone, MapPin, Settings, Save, User as UserIcon, Loader2 } from "lucide-react";
+import { Clock, Smartphone, Settings, Save, User as UserIcon, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { AdminModal } from "@/components/ui/AdminModal";
@@ -35,14 +35,20 @@ export function UserDetailModal({ isOpen, onClose, userId, onUpdate }: UserDetai
   const [editingLimit, setEditingLimit] = useState(false);
   const [newLimit, setNewLimit] = useState(1);
   const [saving, setSaving] = useState(false);
+  const [limitDirty, setLimitDirty] = useState(false);
   const toast = useToast();
   const mounted = useMounted();
+  const abortRef = useRef<AbortController | null>(null);
 
   const fetchUserDetails = useCallback(() => {
     if (!userId) return;
+    // 取消之前的请求
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
     setLoading(true);
     setFetchError(false);
-    fetch(`/api/admin/users/${userId}`)
+    fetch(`/api/admin/users/${userId}`, { signal: controller.signal })
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
@@ -51,21 +57,34 @@ export function UserDetailModal({ isOpen, onClose, userId, onUpdate }: UserDetai
         setUser(data);
         setNewLimit(data.dailyTestLimit || 1);
       })
-      .catch(() => {
+      .catch((err) => {
+        if (err.name === "AbortError") return;
         setUser(null);
         setFetchError(true);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (abortRef.current === controller) {
+          abortRef.current = null;
+        }
+        setLoading(false);
+      });
   }, [userId]);
 
   useEffect(() => {
     if (isOpen && userId) {
       fetchUserDetails();
     } else {
+      // 关闭时取消所有进行中的请求
+      abortRef.current?.abort();
+      abortRef.current = null;
       setUser(null);
       setFetchError(false);
       setEditingLimit(false);
+      setLimitDirty(false);
     }
+    return () => {
+      abortRef.current?.abort();
+    };
   }, [isOpen, userId, fetchUserDetails]);
 
   const handleSaveLimit = async () => {
@@ -81,6 +100,7 @@ export function UserDetailModal({ isOpen, onClose, userId, onUpdate }: UserDetai
         const updated = await res.json();
         setUser({ ...user, dailyTestLimit: updated.dailyTestLimit });
         setEditingLimit(false);
+        setLimitDirty(false);
         toast.success("测试次数限制已更新");
         onUpdate?.();
       } else {
@@ -93,12 +113,20 @@ export function UserDetailModal({ isOpen, onClose, userId, onUpdate }: UserDetai
     }
   };
 
+  const handleClose = useCallback(() => {
+    if (limitDirty) {
+      if (!window.confirm("您有未保存的测试次数更改，确定要关闭吗？")) return;
+      setLimitDirty(false);
+    }
+    onClose();
+  }, [limitDirty, onClose]);
+
   if (!mounted) return null;
 
   return (
     <AdminModal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleClose}
       titleId="user-detail-modal-title"
       maxWidth="lg"
       headerIcon={
@@ -110,7 +138,7 @@ export function UserDetailModal({ isOpen, onClose, userId, onUpdate }: UserDetai
       {loading ? (
         <div className="flex flex-col items-center justify-center py-12">
           <Loader2 className="w-8 h-8 animate-spin text-slate-300" />
-          <p className="mt-4 text-sm text-slate-400">Loading user details...</p>
+          <p className="mt-4 text-sm text-slate-400">加载用户详情中...</p>
         </div>
       ) : fetchError || !user ? (
         <div className="flex flex-col items-center justify-center py-12 gap-4">
@@ -125,7 +153,7 @@ export function UserDetailModal({ isOpen, onClose, userId, onUpdate }: UserDetai
       ) : (
         <div className="space-y-6">
           <div>
-            <h2 className="text-2xl font-bold text-slate-900">{user.name || "Anonymous User"}</h2>
+            <h2 className="text-2xl font-bold text-slate-900">{user.name || "匿名用户"}</h2>
             <p className="text-slate-500 font-mono text-sm mt-1">{user.email || user.phoneNumber}</p>
             <div className="flex items-center gap-3 mt-4">
               <span
@@ -137,7 +165,7 @@ export function UserDetailModal({ isOpen, onClose, userId, onUpdate }: UserDetai
               </span>
               <span className="text-xs text-slate-400 flex items-center gap-1">
                 <Clock className="w-3 h-3" />
-                Joined {new Date(user.createdAt).toLocaleDateString()}
+                注册于 {new Date(user.createdAt).toLocaleDateString()}
               </span>
             </div>
           </div>
@@ -158,7 +186,7 @@ export function UserDetailModal({ isOpen, onClose, userId, onUpdate }: UserDetai
                     min="1"
                     max="100"
                     value={newLimit}
-                    onChange={(e) => setNewLimit(Math.max(1, parseInt(e.target.value) || 1))}
+                    onChange={(e) => { setNewLimit(Math.max(1, parseInt(e.target.value) || 1)); setLimitDirty(true); }}
                     className="w-20 px-3 py-1.5 border border-slate-200 rounded-lg text-center text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
                   />
                   <button
@@ -181,11 +209,11 @@ export function UserDetailModal({ isOpen, onClose, userId, onUpdate }: UserDetai
                 </div>
               ) : (
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl font-bold text-amber-600">{user.dailyTestLimit || 1}</span>
+                  <span className="text-2xl font-bold text-amber-700">{user.dailyTestLimit || 1}</span>
                   <span className="text-sm text-slate-500">次/天</span>
                   <button
                     onClick={() => setEditingLimit(true)}
-                    className="px-3 py-1.5 text-amber-600 text-sm border border-amber-200 rounded-lg hover:bg-amber-100"
+                    className="px-3 py-1.5 text-amber-700 text-sm border border-amber-200 rounded-lg hover:bg-amber-100"
                   >
                     修改
                   </button>
@@ -197,7 +225,7 @@ export function UserDetailModal({ isOpen, onClose, userId, onUpdate }: UserDetai
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div className="bg-slate-50 rounded-xl p-5 border border-slate-100">
               <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 flex items-center gap-2">
-                <Clock className="w-4 h-4" /> Recent Analysis
+                <Clock className="w-4 h-4" /> 最近分析记录
               </h3>
               {user.advisorSessions && user.advisorSessions.length > 0 ? (
                 <div className="space-y-3">
@@ -211,10 +239,10 @@ export function UserDetailModal({ isOpen, onClose, userId, onUpdate }: UserDetai
                           {session.deviceType === "mobile" ? (
                             <Smartphone className="w-3 h-3" />
                           ) : (
-                            "Desktop"
+                            "桌面端"
                           )}
                           <span>&bull;</span>
-                          {session.province || "Unknown Loc"}
+                          {session.province || "未知位置"}
                         </div>
                       </div>
                       <span
@@ -224,13 +252,13 @@ export function UserDetailModal({ isOpen, onClose, userId, onUpdate }: UserDetai
                             : "bg-amber-100 text-amber-700"
                         }`}
                       >
-                        {session.completedAt ? "Completed" : "Dropped"}
+                        {session.completedAt ? "已完成" : "已中断"}
                       </span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-slate-400 italic">No analysis history</p>
+                <p className="text-sm text-slate-400 italic">暂无分析记录</p>
               )}
             </div>
           </div>

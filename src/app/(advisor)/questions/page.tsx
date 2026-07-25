@@ -15,6 +15,7 @@ import { useToast } from "@/components/ui/Toast";
 import { cn } from "@/lib/utils";
 import { preloadAllFaceModels } from "@/lib/preload-models";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
+import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 
 export default function QuestionsPage() {
     const router = useRouter();
@@ -38,17 +39,20 @@ export default function QuestionsPage() {
     const genderScrollRef = useRef<HTMLDivElement>(null);
 
     // 锁定 body 滚动，防止 iPhone 上出现滚动条 / overscroll（与首页一致）
-    useEffect(() => {
-        const originalOverflow = document.body.style.overflow;
-        document.body.style.overflow = "hidden";
-        return () => {
-            document.body.style.overflow = originalOverflow;
-        };
-    }, []);
+    useBodyScrollLock({ enabled: true });
 
     // AI 配置校验
     const [aiConfigured, setAiConfigured] = useState<boolean | null>(null);
     const [configMessage, setConfigMessage] = useState("");
+
+    // 排队状态（防止高峰期用户无感知地长时间等待）
+    const [queueBusy, setQueueBusy] = useState(false);
+    const [queueWaitSeconds, setQueueWaitSeconds] = useState(0);
+    const [queueDismissed, setQueueDismissed] = useState(false);
+
+    // 测试次数预检（避免用户完成全流程后才被拒绝）
+    const [limitExceeded, setLimitExceeded] = useState(false);
+    const [limitMessage, setLimitMessage] = useState("");
 
     useEffect(() => {
         fetch("/api/advisor/check-config")
@@ -56,11 +60,41 @@ export default function QuestionsPage() {
             .then((data) => {
                 setAiConfigured(data.configured);
                 setConfigMessage(data.message || "");
+                // 读取排队状态
+                if (data.isBusy) {
+                    setQueueBusy(true);
+                    setQueueWaitSeconds(data.estimatedWaitSeconds || 0);
+                }
             })
             .catch(() => {
                 setAiConfigured(false);
                 setConfigMessage("无法验证 AI 配置，请稍后重试。");
             });
+    }, []);
+
+    // 预检测试次数：在用户开始问卷前确认是否还有剩余次数
+    useEffect(() => {
+        const checkLimit = async () => {
+            try {
+                const { getGuestIdentity } = await import("@/lib/guest-identity");
+                const identity = await getGuestIdentity();
+                const params = new URLSearchParams();
+                if (identity.cookieId) params.set("cookieId", identity.cookieId);
+                if (identity.fingerprint) params.set("fingerprint", identity.fingerprint);
+
+                const res = await fetch(`/api/advisor/test-limit?${params.toString()}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (!data.canTest) {
+                        setLimitExceeded(true);
+                        setLimitMessage(data.error || "今日测试次数已用完，请明天再试。");
+                    }
+                }
+            } catch {
+                // 预检失败不阻塞主流程，analyze 阶段会再次检查
+            }
+        };
+        checkLimit();
     }, []);
 
     // 从 API 获取问题列表（数据库优先，静态降级）
@@ -523,6 +557,45 @@ export default function QuestionsPage() {
                                     >
                                         返回首页
                                     </button>
+                                </div>
+                            ) : limitExceeded ? (
+                                <div className="w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm text-center">
+                                    <div className="text-4xl mb-4">⏳</div>
+                                    <h3 className="text-lg font-serif text-[#1A1A1A] mb-2">今日次数已用完</h3>
+                                    <p className="text-sm text-[#5E5E5E] mb-6">{limitMessage}</p>
+                                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                                        <button
+                                            onClick={() => router.push("/")}
+                                            className="px-6 h-10 rounded-lg border border-[#1B3A5C] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
+                                        >
+                                            返回首页
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : queueBusy && !queueDismissed ? (
+                                <div className="w-full max-w-lg bg-amber-50/95 backdrop-blur-sm rounded-2xl p-6 border border-amber-200 shadow-sm text-center">
+                                    <div className="text-3xl mb-3">⏳</div>
+                                    <h3 className="text-base font-serif text-[#1A1A1A] mb-2">当前访问人数较多</h3>
+                                    <p className="text-sm text-[#5E5E5E] mb-4">
+                                        预计分析等待{queueWaitSeconds >= 60
+                                            ? `约 ${Math.ceil(queueWaitSeconds / 60)} 分钟`
+                                            : `约 ${queueWaitSeconds} 秒`}，
+                                        您仍可继续，但结果可能需要稍等。
+                                    </p>
+                                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                                        <button
+                                            onClick={() => setQueueDismissed(true)}
+                                            className="px-6 h-10 rounded-lg bg-[#8B7355] text-white hover:bg-[#7A6347] text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
+                                        >
+                                            继续测试
+                                        </button>
+                                        <button
+                                            onClick={() => router.push("/")}
+                                            className="px-6 h-10 rounded-lg border border-[#8B7355] text-[#8B7355] hover:bg-[#8B7355]/5 text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
+                                        >
+                                            稍后再来
+                                        </button>
+                                    </div>
                                 </div>
                             ) : (
                                 <GenderSelection onSelect={handleGenderSelect} />

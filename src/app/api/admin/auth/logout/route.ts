@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { verifyAdminSession, logAdminAction, getClientInfo } from "@/lib/admin-auth";
 import { ADMIN_SESSION_COOKIE_NAME, revokeAdminSessions } from "@/lib/session-verify";
 import { logger } from "@/lib/logger";
+import prisma from "@/lib/prisma";
 
 export async function POST(request: NextRequest) {
     try {
@@ -14,6 +15,14 @@ export async function POST(request: NextRequest) {
 
         // 服务端撤销当前会话，防止 Cookie 被窃取后继续使用
         revokeAdminSessions(admin.adminId);
+
+        // 持久化撤销时间戳到 DB（服务器重启/多实例场景下仍生效）
+        await prisma.adminUser.update({
+            where: { id: admin.adminId },
+            data: { sessionRevokedAt: new Date() },
+        }).catch(err => {
+            logger.warn("[Admin Logout] Failed to persist session revocation:", err);
+        });
 
         const cookieStore = await cookies();
         cookieStore.delete({

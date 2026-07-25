@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, type ReactNode } from "react"
+import { type ReactNode } from "react"
 import { AdminModal, type AdminModalMaxWidth } from "@/components/ui/AdminModal"
 
 interface CampaignModalProps {

@@ -9,9 +9,16 @@ import { getSession } from "@/lib/auth";
 import { callOfficialApi, type OfficialApiResponse } from "@/lib/official-api";
 import { cookies } from "next/headers";
 import { logger } from "@/lib/logger";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
 export async function PUT(req: NextRequest) {
     try {
+        const ip = getClientIP(req);
+        const ipLimit = await rateLimit(`password-change-${ip}`, "login", { maxRequests: 5, windowMs: 15 * 60 * 1000 });
+        if (!ipLimit.success) {
+            return apiError(ErrorCode.RATE_LIMITED, "请求过于频繁，请稍后再试", 429);
+        }
+
         const session = await getSession();
         if (!session) {
             return apiError(ErrorCode.UNAUTHORIZED, "请先登录", 401);

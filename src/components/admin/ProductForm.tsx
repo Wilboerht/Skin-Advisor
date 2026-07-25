@@ -51,7 +51,7 @@ function TagInput({ label, values, onChange, required = false, error, placeholde
                 {values.map((tag, i) => (
                     <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#FAF8F5] text-sm font-medium text-[#2C2C2C]">
                         {tag}
-                        <button type="button" onClick={() => removeTag(i)} className="text-[#9E9E9E] hover:text-red-500 transition-colors" aria-label={`删除 ${tag}`}>
+                        <button type="button" onClick={() => removeTag(i)} className="min-w-[28px] min-h-[28px] flex items-center justify-center text-[#9E9E9E] hover:text-red-500 transition-colors" aria-label={`删除 ${tag}`}>
                             <X className="h-3 w-3" />
                         </button>
                     </span>
@@ -71,7 +71,7 @@ function TagInput({ label, values, onChange, required = false, error, placeholde
                                 addTag();
                             }
                         }}
-                        className="w-full text-sm text-[#2C2C2C] placeholder:text-[#B0A89A] outline-none bg-transparent py-1"
+                        className="w-full text-sm text-[#2C2C2C] placeholder:text-[#8B8B8B] outline-none bg-transparent py-1"
                         placeholder={values.length === 0 ? placeholder : ""}
                     />
                     {input.trim() && (
@@ -273,6 +273,7 @@ export default function ProductForm({
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (saving) return; // 防重复提交守卫
         const newErrors = validate(formData, keyIngredients, benefits, images);
         setErrors(newErrors);
         if (Object.keys(newErrors).length > 0) {
@@ -403,7 +404,7 @@ export default function ProductForm({
                                 placeholder="如：NIHPLOD 玻色因面霜"
                                 aria-invalid={!!errors.name}
                             />
-                            {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
+                            {errors.name && <p className="text-xs text-red-500 mt-1" role="alert">{errors.name}</p>}
                         </div>
 
                         {/* 分类 */}
@@ -426,7 +427,7 @@ export default function ProductForm({
                                     <option key={opt.value} value={opt.value}>{opt.label}</option>
                                 ))}
                             </select>
-                            {errors.category && <p className="text-xs text-red-500 mt-1">{errors.category}</p>}
+                            {errors.category && <p className="text-xs text-red-500 mt-1" role="alert">{errors.category}</p>}
                         </div>
 
                         {/* 价格 */}
@@ -450,7 +451,7 @@ export default function ProductForm({
                                     aria-invalid={!!errors.price}
                                 />
                             </div>
-                            {errors.price && <p className="text-xs text-red-500 mt-1">{errors.price}</p>}
+                            {errors.price && <p className="text-xs text-red-500 mt-1" role="alert">{errors.price}</p>}
                         </div>
 
                         {/* 开关组 */}
@@ -486,7 +487,7 @@ export default function ProductForm({
                                 )}
                                 aria-invalid={!!errors.description}
                             />
-                            {errors.description && <p className="text-xs text-red-500 mt-1">{errors.description}</p>}
+                            {errors.description && <p className="text-xs text-red-500 mt-1" role="alert">{errors.description}</p>}
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-[#5E5E5E] mb-1.5">使用方法</label>
@@ -588,7 +589,7 @@ export default function ProductForm({
                                 </div>
                             </div>
                         )}
-                        {errors.image && <p className="text-xs text-red-500 mt-1">{errors.image}</p>}
+                        {errors.image && <p className="text-xs text-red-500 mt-1" role="alert">{errors.image}</p>}
                     </div>
                 </section>
 

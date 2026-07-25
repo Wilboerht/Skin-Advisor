@@ -117,12 +117,13 @@ export async function POST(request: NextRequest) {
         // 根据事件类型更新会话记录
         switch (event) {
             case "session_start": {
-                // 创建或更新会话
+                // 创建或更新会话，登录用户的 session 写入 userId
                 await prisma.advisorSession.upsert({
                     where: { sessionId },
                     create: {
                         sessionId,
                         startedAt: now,
+                        userId: user.id,
                         userAgent: clientInfo.userAgent,
                         ip: clientInfo.ip,
                         referrer: clientInfo.referer,
@@ -135,7 +136,8 @@ export async function POST(request: NextRequest) {
                         utmCampaign: (data?.utm_campaign as string) || null,
                     },
                     update: {
-                        // 会话已存在时不更新
+                        // 会话已存在时关联当前登录用户（session_start 仅对已登录用户触发，安全写入）
+                        userId: user.id,
                     },
                 });
                 break;

@@ -98,6 +98,15 @@ function ToastContainer({
 }) {
     // pause-on-hover: mouse/touch suspends auto-dismiss
     const [pausedIds, setPausedIds] = React.useState<Set<string>>(new Set());
+    const [reducedMotion, setReducedMotion] = React.useState(false);
+
+    React.useEffect(() => {
+        const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+        setReducedMotion(mq.matches);
+        const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+        mq.addEventListener("change", handler);
+        return () => mq.removeEventListener("change", handler);
+    }, []);
 
     const iconColor = {
         success: "text-emerald-500",
@@ -122,9 +131,9 @@ function ToastContainer({
                     return (
                     <motion.div
                         key={t.id}
-                        initial={{ opacity: 0, y: 8, x: 0 }}
-                        animate={{ opacity: 1, y: 0, x: 0 }}
-                        exit={{ opacity: 0, y: 8, transition: { duration: 0.15 } }}
+                        initial={reducedMotion ? false : { opacity: 0, y: 8, x: 0 }}
+                        animate={reducedMotion ? {} : { opacity: 1, y: 0, x: 0 }}
+                        exit={reducedMotion ? {} : { opacity: 0, y: 8, transition: { duration: 0.15 } }}
                         layout
                         onMouseEnter={() => setPausedIds((prev) => new Set(prev).add(t.id))}
                         onMouseLeave={() => setPausedIds((prev) => { const next = new Set(prev); next.delete(t.id); return next; })}

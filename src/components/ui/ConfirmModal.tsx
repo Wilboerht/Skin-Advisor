@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef } from "react";
 import { AdminModal } from "./AdminModal";
-import { X, AlertTriangle, Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -28,15 +28,26 @@ export function ConfirmModal({
   loading = false,
 }: ConfirmModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const titleId = useRef(`confirm-modal-title-${Math.random().toString(36).slice(2, 9)}`).current;
+  const descId = `${titleId}-desc`;
 
   const handleConfirm = async () => {
     setIsSubmitting(true);
+    setError(null);
     try {
-      await onConfirm();
+      // 30 秒超时保护，防止 Promise 永不 resolve
+      const result = onConfirm();
+      if (result instanceof Promise) {
+        const timeout = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("操作超时，请重试")), 30000)
+        );
+        await Promise.race([result, timeout]);
+      }
       setIsSubmitting(false);
-    } catch {
+    } catch (err) {
       setIsSubmitting(false);
+      setError(err instanceof Error ? err.message : "操作失败，请重试");
     }
   };
 
@@ -68,6 +79,7 @@ export function ConfirmModal({
       maxWidth="sm"
       disabled={isLoading}
       showCloseButton={!isLoading}
+      aria-describedby={descId}
     >
       <div className="text-center">
         <div
@@ -75,9 +87,14 @@ export function ConfirmModal({
         >
           <AlertTriangle className="w-8 h-8" />
         </div>
-        <p className="text-sm font-medium text-slate-500 text-center mb-8 leading-relaxed px-2">
+        <p id={descId} className="text-sm font-medium text-slate-500 text-center mb-8 leading-relaxed px-2">
           {message}
         </p>
+        {error && (
+          <p className="text-sm text-red-700 bg-red-50 border border-red-100 rounded-xl px-4 py-2.5 mb-4">
+            {error}
+          </p>
+        )}
         <div className="flex gap-3">
           <button
             type="button"

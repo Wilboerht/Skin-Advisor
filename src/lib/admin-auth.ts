@@ -39,7 +39,7 @@ export const verifyAdminSession = cache(async (): Promise<AdminSession | null> =
         // Verify admin exists and is active in database
         const admin = await prisma.adminUser.findUnique({
             where: { id: sessionData.adminId as string },
-            select: { id: true, username: true, role: true, active: true, passwordChangedAt: true }
+            select: { id: true, username: true, role: true, active: true, passwordChangedAt: true, sessionRevokedAt: true }
         });
 
         if (!admin || !admin.active) {
@@ -50,6 +50,13 @@ export const verifyAdminSession = cache(async (): Promise<AdminSession | null> =
         const sessionPasswordChangedAt = sessionData.passwordChangedAt as string | null | undefined;
         const currentPasswordChangedAt = admin.passwordChangedAt?.toISOString() || null;
         if (sessionPasswordChangedAt !== currentPasswordChangedAt) {
+            return null;
+        }
+
+        // DB 持久化撤销检查：若会话创建时间早于撤销时间戳，则无效
+        // 补充内存 Map 的不足（服务器重启/多实例场景）
+        const sessionIat = typeof sessionData.iat === "number" ? sessionData.iat : 0;
+        if (admin.sessionRevokedAt && sessionIat < admin.sessionRevokedAt.getTime()) {
             return null;
         }
 

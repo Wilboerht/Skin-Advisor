@@ -5,6 +5,7 @@ import { apiError } from "@/lib/api-response";
 import { ErrorCode } from "@/lib/error-codes";
 import { z } from "zod"
 import { logger } from "@/lib/logger";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
 const entrySchema = z.object({
   campaignId: z.string().min(1),
@@ -17,6 +18,12 @@ const entrySchema = z.object({
 // POST /api/campaign/entry - 参与活动
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIP(req);
+    const ipLimit = await rateLimit(`campaign-entry-${ip}`, "default", { maxRequests: 10, windowMs: 60 * 1000 });
+    if (!ipLimit.success) {
+      return apiError(ErrorCode.RATE_LIMITED, "请求过于频繁，请稍后再试", 429);
+    }
+
     const body = await req.json()
     const parsed = entrySchema.safeParse(body)
     if (!parsed.success) {
@@ -121,6 +128,12 @@ export async function POST(req: NextRequest) {
 // GET /api/campaign/entry - 查询用户参与状态
 export async function GET(req: NextRequest) {
   try {
+    const ip = getClientIP(req);
+    const ipLimit = await rateLimit(`campaign-query-${ip}`, "default", { maxRequests: 30, windowMs: 60 * 1000 });
+    if (!ipLimit.success) {
+      return apiError(ErrorCode.RATE_LIMITED, "请求过于频繁，请稍后再试", 429);
+    }
+
     const { searchParams } = new URL(req.url)
     const campaignId = searchParams.get("campaignId")
 

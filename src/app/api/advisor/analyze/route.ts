@@ -74,7 +74,6 @@ async function sendOfficialWechatTemplate(
       if (res.ok) {
         circuitBreaker.recordSuccess(WECHAT_TEMPLATE_CIRCUIT_KEY);
         aiLogger.info("[WechatTemplate] 官网模板消息推送成功", { userId, score });
-        controller.abort();
         return;
       }
 
@@ -260,32 +259,29 @@ export async function POST(request: NextRequest) {
         }
 
         // 4. 检查使用限制 (Guest/Member)
-        // freeRetry 有效性标记：仅验证 session 存在性与所有权（读操作，无竞态）。
-        // freeRetryUsed 标记的原子性检查移入 DB 行锁事务内，防止并发绕过。
+        // 提前获取用户会话，避免 freeRetry 路径中重复调用 getSession()
+        const user = await getSession();
+
+        // freeRetry 有效性标记：外部仅做快速预筛（session 存在 + 已完成），
+        // ownership 验证与 freeRetryUsed 原子性检查一并移入 DB 行锁事务内，消除 TOCTOU 窗口。
         let isFreeRetryAllowed = false;
+        let freeRetryExistingResult: Record<string, unknown> | null = null;
         if (freeRetry && sessionId) {
-            // Validate freeRetry eligibility: session must have a prior completed analysis.
-            // CRITICAL: Also verify session ownership to prevent sessionId enumeration attacks.
+            // Quick filter: reject obviously invalid requests before acquiring row lock.
+            // Ownership verification is deferred to the DB transaction (lockResult) for atomicity.
             const existingSession = await prisma.advisorSession.findUnique({
                 where: { sessionId },
-                select: { completedAt: true, analysisResult: true, ip: true, userId: true }
+                select: { completedAt: true, analysisResult: true }
             });
             if (!existingSession?.completedAt || !existingSession?.analysisResult) {
                 return apiError(ErrorCode.FORBIDDEN, "免费重试无效：请重新进行测试", 403);
             }
-            // Ownership verification: current requester must match session creator
-            const currentUser = await getSession();
-            const currentIpHash = hashIP(ip);
-            if (currentUser?.id) {
-                if (existingSession.userId !== currentUser.id) {
-                    return apiError(ErrorCode.FORBIDDEN, "免费重试无效：请重新进行测试", 403);
-                }
-            } else {
-                if (existingSession.ip && existingSession.ip !== currentIpHash) {
-                    return apiError(ErrorCode.FORBIDDEN, "免费重试无效：请重新进行测试", 403);
-                }
+            // 缓存已有的 analysisResult，避免事务内重复查询
+            freeRetryExistingResult = existingSession.analysisResult as Record<string, unknown>;
+            if (freeRetryExistingResult?.freeRetryUsed) {
+                // 快速路径：已使用过免费重试，无需进入事务
+                return apiError(ErrorCode.RATE_LIMITED, "免费重试已使用，每个会话仅限一次", 429);
             }
-            // freeRetryUsed 原子性检查推迟到 DB 行锁事务内（见下方 lockResult）
             isFreeRetryAllowed = true;
         }
 
@@ -300,9 +296,6 @@ export async function POST(request: NextRequest) {
         if (!answers.location && geoLocation) {
             answers.location = `${geoLocation.region || ''} ${geoLocation.city || ''}`.trim();
         }
-
-        // 6. 检查用户登录状态
-        const user = await getSession();
 
         // 6b. 原子性预占额度（免费重试不扣费）
         // 确保 sessionId 存在：若客户端未传，服务端生成一个，防止绕过 reserveUsage
@@ -339,7 +332,7 @@ export async function POST(request: NextRequest) {
 
             const session = await tx.advisorSession.findUnique({
                 where: { sessionId: effectiveSessionId },
-                select: { completedAt: true, analysisStartedAt: true, analysisResult: true }
+                select: { completedAt: true, analysisStartedAt: true, analysisResult: true, ip: true, userId: true }
             });
 
             // 再次检查是否已完成（可能刚刚完成）。免费重试需要重新跑 AI，不走缓存。
@@ -347,9 +340,24 @@ export async function POST(request: NextRequest) {
                 return { status: 'completed' as const, result: session.analysisResult };
             }
 
-            // 免费重试原子性防护：在行锁内再次检查 freeRetryUsed 标记，
-            // 防止并发请求同时通过预检查后在 DB 层绕过。
-            if (isFreeRetryAllowed && session?.analysisResult) {
+            // 免费重试原子性防护（ownership + freeRetryUsed 均在行锁内校验，消除 TOCTOU 窗口）：
+            if (isFreeRetryAllowed) {
+                // 1) 行锁内重新验证 session 有效性（防止外部预筛与事务之间的竞态）
+                if (!session?.completedAt || !session?.analysisResult) {
+                    return { status: 'free_retry_invalid' as const };
+                }
+                // 2) Ownership verification under row lock
+                const currentIpHash = hashIP(ip);
+                if (user?.id) {
+                    if (session.userId !== user.id) {
+                        return { status: 'free_retry_invalid' as const };
+                    }
+                } else {
+                    if (session.ip && session.ip !== currentIpHash) {
+                        return { status: 'free_retry_invalid' as const };
+                    }
+                }
+                // 3) 行锁内再次检查 freeRetryUsed 标记（双重检查，防御并发）
                 const existingResult = session.analysisResult as Record<string, unknown>;
                 if (existingResult?.freeRetryUsed) {
                     return { status: 'free_retry_used' as const };
@@ -411,6 +419,10 @@ export async function POST(request: NextRequest) {
             const response = apiError(ErrorCode.RATE_LIMITED, "免费重试已使用，每个会话仅限一次", 429);
             Object.entries(rateLimitHeaders).forEach(([k, v]) => response.headers.set(k, v));
             return response;
+        }
+
+        if (lockResult.status === 'free_retry_invalid') {
+            return apiError(ErrorCode.FORBIDDEN, "免费重试无效：请重新进行测试", 403);
         }
 
         if (lockResult.status === 'analyzing') {
@@ -655,10 +667,10 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // 7. 补全产品详情 — 返回最多10个产品，前3个为AI精选推荐
+        // 7. 补全产品详情 — 返回最多3个产品（AI精选 + 算法补足）
         let finalProducts: ProductRecommendation[] = [];
 
-        // 预先用算法生成10个带推荐理由的候选（用于兜底和补充）
+        // 预先用算法生成3个带推荐理由的候选（用于兜底和补充）
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const algorithmRecs = await recommendProducts(enrichedAnswers as any, concerns, candidateProducts, 3, personaKey);
 

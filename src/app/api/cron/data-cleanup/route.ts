@@ -99,9 +99,9 @@ export async function GET(request: NextRequest) {
         // ===== 3. 清理注册用户超量数据（3 个月内每个用户最多保留 100 条）=====
         // 使用 window function 一次性获取所有超量记录，避免 N+1 查询
         const excessSessions = await prisma.$queryRaw<Array<{ sessionId: string }>>`
-            SELECT "sessionId", "analysisResult"
+            SELECT "sessionId"
             FROM (
-                SELECT "sessionId", "analysisResult", "createdAt",
+                SELECT "sessionId", "createdAt",
                        ROW_NUMBER() OVER (PARTITION BY "userId" ORDER BY "createdAt" DESC) as rn
                 FROM "AdvisorSession"
                 WHERE "userId" IS NOT NULL

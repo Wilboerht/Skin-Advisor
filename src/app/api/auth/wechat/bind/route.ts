@@ -54,7 +54,10 @@ export async function POST(req: NextRequest) {
         }
 
         const body = await req.json();
-        if (!body.wechatExchangeToken) {
+
+        // 优先从 httpOnly Cookie 读取 exchange token（安全），回退到 body 参数（向后兼容）
+        const wechatExchangeToken = req.cookies.get("__Host-wechat_bind_token")?.value || body.wechatExchangeToken;
+        if (!wechatExchangeToken) {
             return apiError(ErrorCode.VALIDATION_ERROR, "缺少微信授权凭证", 400);
         }
         if (!body.phone || !body.code) {
@@ -64,7 +67,7 @@ export async function POST(req: NextRequest) {
         const officialApiUrl = process.env.OFFICIAL_API_URL || "https://nihplod.cn";
         const path = "/api/v1/internal/wechat/exchange";
         const payload = {
-            wechatExchangeToken: body.wechatExchangeToken,
+            wechatExchangeToken,
             phone: body.phone,
             code: body.code,
             password: body.password,
@@ -158,6 +161,8 @@ export async function POST(req: NextRequest) {
         // 设置官网同款登录 Cookie
         response.cookies.set(USER_COOKIE_NAME, result.accessToken, USER_ACCESS_COOKIE_OPTIONS);
         response.cookies.set(USER_REFRESH_COOKIE_NAME, result.refreshToken, USER_REFRESH_COOKIE_OPTIONS);
+        // 清除临时绑定 token Cookie
+        response.cookies.delete("__Host-wechat_bind_token");
 
         await signLocalSession(response, {
             id: localUser.id,

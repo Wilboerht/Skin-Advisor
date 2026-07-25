@@ -15,6 +15,7 @@ import { AuthUrlDetector } from "@/components/auth/AuthUrlDetector";
 import { getGuestIdentity, type GuestIdentity } from "@/lib/guest-identity";
 import { CONSENT_VERSION } from "@/components/advisor/PrivacyConsent";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
+import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import dynamic from "next/dynamic";
 
 const BaseModal = dynamic(() => import("@/components/ui/BaseModal").then((mod) => mod.BaseModal), { ssr: false });
@@ -68,13 +69,7 @@ export default function Home() {
   }, [initSession, router]);
 
   // 首页锁定 body 滚动，防止 iPhone 上出现滚动条 / overscroll
-  useEffect(() => {
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = originalOverflow;
-    };
-  }, []);
+  useBodyScrollLock({ enabled: true });
 
   // Nickname state
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);

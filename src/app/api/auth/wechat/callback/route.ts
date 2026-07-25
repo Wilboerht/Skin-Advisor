@@ -140,12 +140,19 @@ export async function GET(req: NextRequest) {
 
         const result = data.data;
 
-        // 需要绑定手机号：重定向到绑定页，保留 exchange token
+        // 需要绑定手机号：将 exchange token 存入 httpOnly 临时 Cookie（避免 URL 泄露），重定向到绑定页
         if (result?.bindingRequired) {
             const bindUrl = new URL("/auth/wechat-bind", req.url);
-            bindUrl.searchParams.set("wechat_exchange_token", exchangeToken);
             bindUrl.searchParams.set("redirect", redirect);
-            return NextResponse.redirect(bindUrl, 302);
+            const bindResponse = NextResponse.redirect(bindUrl, 302);
+            bindResponse.cookies.set("__Host-wechat_bind_token", exchangeToken, {
+                httpOnly: true,
+                secure: true,
+                sameSite: "lax" as const,
+                path: "/",
+                maxAge: 5 * 60, // 5 分钟有效
+            });
+            return bindResponse;
         }
 
         if (!result?.user || !result.accessToken || !result.refreshToken) {

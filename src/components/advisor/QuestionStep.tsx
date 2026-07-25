@@ -94,7 +94,12 @@ export function QuestionStep({
         </div>
 
         {/* Options - Grid Layout on Desktop */}
-        <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+        <div
+          className="w-full grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4"
+          role={question.type === "multiple" ? "group" : "radiogroup"}
+          aria-label={question.question}
+          aria-multiselectable={question.type === "multiple" ? true : undefined}
+        >
           {question.options.map((option, index) => {
             const isSelected = Array.isArray(selectedValue)
               ? selectedValue.includes(option.value)

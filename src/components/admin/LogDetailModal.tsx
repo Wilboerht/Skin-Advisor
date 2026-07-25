@@ -31,9 +31,10 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
     };
   }, [isOpen]);
 
-  if (!mounted || !isOpen || !log) return null;
+  if (!mounted) return null;
 
   const handleCopy = () => {
+    if (!log) return;
     navigator.clipboard.writeText(JSON.stringify(log.details, null, 2));
     setCopied(true);
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -42,6 +43,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
   };
 
   const renderDiff = () => {
+    if (!log) return null;
     const details = log.details;
     if (!details) return null;
 
@@ -101,7 +103,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
           </button>
         </div>
         <div className="bg-slate-900 rounded-xl p-4 overflow-x-auto border border-slate-800 shadow-inner max-h-[400px]">
-          <pre className="text-xs font-mono text-slate-300 leading-relaxed">
+          <pre className="text-xs font-mono text-slate-300 leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]">
             {JSON.stringify(details, null, 2)}
           </pre>
         </div>
@@ -115,7 +117,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
       onClose={onClose}
       title="日志详情"
       titleId="log-detail-modal-title"
-      subtitle="Log Record Payload"
+      subtitle="操作日志记录详情"
       maxWidth="lg"
       headerIcon={
         <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center shadow-lg shadow-slate-200">
@@ -124,27 +126,33 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
       }
     >
       <div className="space-y-6">
+        {!log ? (
+          <p className="text-sm text-slate-400 text-center py-8">无日志数据</p>
+        ) : (
+          <>
         <div className="grid grid-cols-2 gap-4">
           <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-            <span className="block text-[10px] font-bold text-slate-400 uppercase mb-1">操作行为</span>
+            <span className="block text-[10px] font-bold text-slate-500 uppercase mb-1">操作行为</span>
             <span className="text-sm font-semibold text-slate-700">{log.action}</span>
           </div>
           <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-            <span className="block text-[10px] font-bold text-slate-400 uppercase mb-1">资源标识</span>
+            <span className="block text-[10px] font-bold text-slate-500 uppercase mb-1">资源标识</span>
             <span className="text-sm font-mono text-slate-600 truncate">{log.resourceId || "N/A"}</span>
           </div>
           <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-            <span className="block text-[10px] font-bold text-slate-400 uppercase mb-1">IP 地址</span>
+            <span className="block text-[10px] font-bold text-slate-500 uppercase mb-1">IP 地址</span>
             <span className="text-sm font-mono text-slate-600">{log.ip || "Unknown"}</span>
           </div>
           <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-            <span className="block text-[10px] font-bold text-slate-400 uppercase mb-1">执行时间</span>
+            <span className="block text-[10px] font-bold text-slate-500 uppercase mb-1">执行时间</span>
             <span className="text-sm font-semibold text-slate-700">
               {new Date(log.createdAt).toLocaleString()}
             </span>
           </div>
         </div>
         {renderDiff()}
+          </>
+        )}
       </div>
     </AdminModal>
   );

@@ -23,11 +23,16 @@ export function useFocusTrap<T extends HTMLElement>(isOpen: boolean) {
         const container = containerRef.current;
         if (!container) return;
 
-        const focusableElements = Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS));
-        const firstElement = focusableElements[0];
-        const lastElement = focusableElements[focusableElements.length - 1];
+        // 动态获取可聚焦元素（支持模态框内容动态变化，如 loading → 内容）
+        const getFocusableElements = () =>
+            Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS)).filter(
+                (el) => el.offsetParent !== null // 排除不可见元素
+            );
 
-        // Focus the first focusable element, or the container itself if none
+        const focusableElements = getFocusableElements();
+        const firstElement = focusableElements[0];
+
+        // 聚焦第一个可聚焦元素，或容器本身
         if (firstElement) {
             firstElement.focus();
         } else {
@@ -37,20 +42,25 @@ export function useFocusTrap<T extends HTMLElement>(isOpen: boolean) {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key !== "Tab") return;
 
-            if (focusableElements.length === 0) {
+            // 每次 Tab 时实时查询，确保动态内容变化后焦点循环仍正确
+            const currentFocusable = getFocusableElements();
+            if (currentFocusable.length === 0) {
                 e.preventDefault();
                 return;
             }
 
+            const first = currentFocusable[0];
+            const last = currentFocusable[currentFocusable.length - 1];
+
             if (e.shiftKey) {
-                if (document.activeElement === firstElement) {
+                if (document.activeElement === first || !container.contains(document.activeElement)) {
                     e.preventDefault();
-                    lastElement?.focus();
+                    last.focus();
                 }
             } else {
-                if (document.activeElement === lastElement) {
+                if (document.activeElement === last || !container.contains(document.activeElement)) {
                     e.preventDefault();
-                    firstElement?.focus();
+                    first.focus();
                 }
             }
         };

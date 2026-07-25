@@ -30,6 +30,8 @@ export function OptionCard({
         <m.button
             type="button"
             onClick={onClick}
+            role="radio"
+            aria-checked={isSelected}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{
@@ -43,7 +45,7 @@ export function OptionCard({
             }}
             whileTap={{ scale: 0.98 }}
             className={cn(
-                "group relative w-full rounded-lg md:rounded-xl text-left border px-4 sm:px-5 md:px-6 py-3 sm:py-4 md:py-5 flex items-center gap-3 sm:gap-4 backdrop-blur-md transition-[border-color,background-color,box-shadow] duration-300 overflow-hidden touch-manipulation",
+                "group relative w-full rounded-lg md:rounded-xl text-left border px-4 sm:px-5 md:px-6 py-3 sm:py-4 md:py-5 flex items-center gap-3 sm:gap-4 backdrop-blur-md transition-[border-color,background-color,box-shadow] duration-300 overflow-hidden touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B7355]/50 focus-visible:ring-offset-1",
                 isSelected
                     ? "bg-[#F8F5EE] border-[#8B7355] shadow-[0_8px_30px_-8px_rgba(139,115,85,0.18)] ring-1 ring-[#8B7355]/10"
                     : "bg-transparent border-[#D4CFC5]/50 hover:border-[#8B7355]/30 hover:bg-[#F8F5EE]/30"

@@ -12,13 +12,13 @@ export async function GET(req: NextRequest) {
 
     // 速率限制
     const ip = getClientIP(req);
-    const limit = await rateLimit(`history-${ip}`, "default", { maxRequests: 30, windowMs: 60 * 1000 });
+    const rateLimitResult = await rateLimit(`history-${ip}`, "default", { maxRequests: 30, windowMs: 60 * 1000 });
     const rateLimitHeaders = {
-        "X-RateLimit-Limit": String(limit.limit),
-        "X-RateLimit-Remaining": String(limit.remaining),
-        "X-RateLimit-Reset": String(limit.reset)
+        "X-RateLimit-Limit": String(rateLimitResult.limit),
+        "X-RateLimit-Remaining": String(rateLimitResult.remaining),
+        "X-RateLimit-Reset": String(rateLimitResult.reset)
     };
-    if (!limit.success) {
+    if (!rateLimitResult.success) {
         return NextResponse.json(
             { error: "请求过于频繁，请稍后再试" },
             { status: 429, headers: rateLimitHeaders }
@@ -28,8 +28,8 @@ export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
         const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
-        const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "10", 10) || 10));
-        const skip = (page - 1) * limit;
+        const pageSize = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "10", 10) || 10));
+        const skip = (page - 1) * pageSize;
 
         const [history, total] = await Promise.all([
             prisma.advisorSession.findMany({
@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
                     analysisResult: true
                 },
                 skip,
-                take: limit
+                take: pageSize
             }),
             prisma.advisorSession.count({
                 where: {
@@ -58,9 +58,9 @@ export async function GET(req: NextRequest) {
             history,
             pagination: {
                 page,
-                limit,
+                limit: pageSize,
                 total,
-                totalPages: Math.ceil(total / limit)
+                totalPages: Math.ceil(total / pageSize)
             }
         }, { headers: rateLimitHeaders });
     } catch (e) {

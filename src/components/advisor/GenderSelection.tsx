@@ -23,11 +23,14 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
                 开始之前，请选择您的性别
             </m.h2>
 
-            <div className="grid w-full max-w-md sm:max-w-lg sm:grid-cols-2 gap-2 sm:gap-5">
+            <div className="grid w-full max-w-md sm:max-w-lg sm:grid-cols-2 gap-2 sm:gap-5" role="radiogroup" aria-label="选择性别">
                 <m.button
                     variants={item}
                     onClick={() => onSelect("female")}
                     whileTap={{ scale: 0.98 }}
+                    role="radio"
+                    aria-checked={false}
+                    aria-label="女性"
                     className="group flex flex-row items-center gap-4 sm:flex-col sm:items-center sm:gap-5 rounded-xl border border-[#E8E2D9] bg-white px-5 sm:px-12 py-5 sm:py-12 text-left sm:text-center transition-[border-color,background-color,box-shadow] duration-300 hover:border-[#C9A86C] hover:shadow-sm touch-manipulation"
                 >
                     <div className="flex h-12 w-12 sm:h-28 sm:w-28 shrink-0 items-center justify-center rounded-full bg-[#A0784C]/[0.08] transition-colors duration-300 group-hover:bg-[#A0784C]/[0.12]">
@@ -43,6 +46,9 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
                     variants={item}
                     onClick={() => onSelect("male")}
                     whileTap={{ scale: 0.98 }}
+                    role="radio"
+                    aria-checked={false}
+                    aria-label="男性"
                     className="group flex flex-row items-center gap-4 sm:flex-col sm:items-center sm:gap-5 rounded-xl border border-[#E8E2D9] bg-white px-5 sm:px-12 py-5 sm:py-12 text-left sm:text-center transition-[border-color,background-color,box-shadow] duration-300 hover:border-[#1B3A5C]/40 hover:shadow-sm touch-manipulation"
                 >
                     <div className="flex h-12 w-12 sm:h-28 sm:w-28 shrink-0 items-center justify-center rounded-full bg-[#1B3A5C]/[0.08] transition-colors duration-300 group-hover:bg-[#1B3A5C]/[0.12]">
