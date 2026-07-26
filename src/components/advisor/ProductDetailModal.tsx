@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import type { ProductCardData } from "./ProductCard";
 import { getProductLinks, openAffiliateLink } from "@/lib/affiliate-links";
 import { PlatformIcon } from "./PlatformIcon";
+import { lookupIngredient } from "@/lib/ingredient-glossary";
 
 interface ProductDetailModalProps {
     isOpen: boolean;
@@ -284,9 +285,32 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                                                     transition={{ duration: 0.2 }}
                                                     className="overflow-hidden"
                                                 >
-                                                    <p className="pb-4 text-[15px] text-[#5c4937]">
-                                                        {product.keyIngredients.join("、")}
-                                                    </p>
+                                                    <div className="pb-4 space-y-3">
+                                                        {product.keyIngredients.map((ingredient, i) => {
+                                                            const info = lookupIngredient(ingredient);
+                                                            if (info) {
+                                                                return (
+                                                                    <div key={i} className="flex items-start gap-2.5">
+                                                                        <span className="shrink-0 mt-0.5 w-1.5 h-1.5 rounded-full bg-[#8B7355]" />
+                                                                        <div className="min-w-0">
+                                                                            <span className="text-[14px] font-medium text-[#3d2f25]">
+                                                                                {info.title}
+                                                                            </span>
+                                                                            <p className="text-[12px] text-[#8c7a6b] leading-relaxed mt-0.5">
+                                                                                {info.description}
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            }
+                                                            return (
+                                                                <div key={i} className="flex items-center gap-2">
+                                                                    <span className="w-1.5 h-1.5 rounded-full bg-[#8B7355]/40" />
+                                                                    <span className="text-[15px] text-[#5c4937]">{ingredient}</span>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
                                                 </m.div>
                                             )}
                                         </AnimatePresence>

@@ -33,6 +33,12 @@ export interface ProductCardData {
     } | null; // 关联的维度评分
     /** 推荐来源：ai（AI 精选）| persona（IP 池内）| algorithm（池外补充） */
     source?: "ai" | "persona" | "algorithm";
+    /** 社交证明：协同过滤标签 */
+    socialProof?: {
+        label: string;
+        affinity: number;
+        detail: string;
+    };
 }
 
 interface ProductCardProps {
@@ -92,11 +98,44 @@ function CompactProductCard({
     onViewDetail?: (product: ProductCardData) => void;
 }) {
     const [imageError, setImageError] = useState(false);
+    const [showPlatforms, setShowPlatforms] = useState(false);
+    const platformRef = useRef<HTMLDivElement>(null);
+
+    const allLinks = getProductLinks(product.affiliateLinks);
+    const primaryLink = getPrimaryLink(product.affiliateLinks);
+
+    // 点击外部关闭平台下拉
+    useEffect(() => {
+        if (!showPlatforms) return;
+        const handleClick = (e: MouseEvent) => {
+            if (platformRef.current && !platformRef.current.contains(e.target as Node)) {
+                setShowPlatforms(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClick);
+        return () => document.removeEventListener('mousedown', handleClick);
+    }, [showPlatforms]);
 
     const handleCardClick = useCallback(() => {
         onProductClick?.(product.id);
         onViewDetail?.(product);
     }, [product.id, product, onProductClick, onViewDetail]);
+
+    const handleBuyClick = useCallback((e: React.MouseEvent) => {
+        e.stopPropagation();
+        onProductClick?.(product.id);
+
+        if (allLinks.length > 1) {
+            setShowPlatforms(prev => !prev);
+        } else if (primaryLink) {
+            openAffiliateLink(primaryLink.url, product.id, primaryLink.platform);
+        }
+    }, [allLinks, primaryLink, product.id, onProductClick]);
+
+    const handlePlatformClick = useCallback((platform: typeof allLinks[0]) => {
+        openAffiliateLink(platform.url, product.id, platform.platform);
+        setShowPlatforms(false);
+    }, [product.id]);
 
     return (
         <m.div
@@ -136,28 +175,90 @@ function CompactProductCard({
                         <p className="line-clamp-1 text-xs text-[#8c7a6b] lg:text-[#666]">
                             {product.reason}
                         </p>
+
+                        {/* 社交证明标签 */}
+                        {product.socialProof && product.socialProof.affinity >= 10 && (
+                            <div className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-[#F0EDE1]/70 px-2 py-0.5 text-[10px] text-[#8B7355] font-medium">
+                                <svg className="w-3 h-3" viewBox="0 0 16 16" fill="none">
+                                    <path d="M8 1L10 5l4 0.5-3 3 1 4.5L8 11l-4 2 1-4.5-3-3L6 5 8 1z" fill="#C8A97E" opacity="0.7"/>
+                                </svg>
+                                <span>{product.socialProof.label} · {product.socialProof.affinity}%</span>
+                            </div>
+                        )}
                     </div>
 
-                    {/* 价格 - mobile only (固定在底部) */}
-                    <span className="mt-auto text-base font-bold text-[#1a1a1a] lg:hidden">
-                        {product.price ? `¥ ${product.price.replace('¥', '')}` : '咨询价格'}
-                    </span>
+                    {/* 价格 + 购买按钮 - mobile only */}
+                    <div className="mt-auto flex items-center justify-between lg:hidden">
+                        <span className="text-base font-bold text-[#1a1a1a]">
+                            {product.price ? `¥ ${product.price.replace('¥', '')}` : '咨询价格'}
+                        </span>
+                        {allLinks.length > 0 && (
+                            <button
+                                onClick={handleBuyClick}
+                                className="flex items-center gap-1 rounded-full bg-[#5c4937] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#4a3a2c] active:scale-95"
+                            >
+                                {primaryLink ? `${primaryLink.config.name}购买` : '去购买'}
+                                {allLinks.length > 1 && <ChevronRight className="w-3 h-3" />}
+                            </button>
+                        )}
+                    </div>
 
                     {/* 底部操作栏 - desktop only */}
                     <div className="hidden items-center justify-between pt-3 lg:flex">
                         <span className="text-xl font-bold text-[#1a1a1a]">
                             {product.price ? `¥ ${product.price.replace('¥', '')}` : '咨询价格'}
                         </span>
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onViewDetail?.(product);
-                            }}
-                            className="group/btn inline-flex items-center gap-1.5 rounded-full border border-[#5c4937]/30 bg-transparent px-4 py-2 text-[13px] font-medium text-[#5c4937] transition-colors hover:border-[#5c4937]/50 hover:bg-[#5c4937]/5"
-                        >
-                            查看详情
-                            <ChevronRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover/btn:translate-x-0.5" />
-                        </button>
+                        <div className="flex items-center gap-2">
+                            {/* 购买按钮 */}
+                            {allLinks.length > 0 && (
+                                <div className="relative" ref={platformRef}>
+                                    <button
+                                        onClick={handleBuyClick}
+                                        className="group/btn inline-flex items-center gap-1.5 rounded-full bg-[#5c4937] px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-[#4a3a2c]"
+                                    >
+                                        {primaryLink ? `${primaryLink.config.name}购买` : '去购买'}
+                                        {allLinks.length > 1 ? (
+                                            <ChevronRight className={cn(
+                                                "w-3.5 h-3.5 transition-transform",
+                                                showPlatforms && "rotate-90"
+                                            )} />
+                                        ) : (
+                                            <ExternalLink className="w-3 h-3" />
+                                        )}
+                                    </button>
+
+                                    {/* 多平台选择下拉 */}
+                                    {showPlatforms && allLinks.length > 1 && (
+                                        <div className="absolute bottom-full right-0 z-20 mb-1 min-w-[130px] rounded-xl border border-[#E8E2D9] bg-white py-1 shadow-lg">
+                                            {allLinks.map(link => (
+                                                <button
+                                                    key={link.platform}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handlePlatformClick(link);
+                                                    }}
+                                                    className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-medium transition-colors hover:bg-[#F5F2E9]"
+                                                    style={{ color: link.config.color }}
+                                                >
+                                                    <span>{link.config.icon}</span>
+                                                    {link.config.name}购买
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onViewDetail?.(product);
+                                }}
+                                className="group/btn inline-flex items-center gap-1.5 rounded-full border border-[#5c4937]/30 bg-transparent px-4 py-2 text-[13px] font-medium text-[#5c4937] transition-colors hover:border-[#5c4937]/50 hover:bg-[#5c4937]/5"
+                            >
+                                查看详情
+                                <ChevronRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover/btn:translate-x-0.5" />
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -30,21 +30,21 @@ export interface ReserveUsageResult {
  * 获取登录用户的每日测试限制
  */
 function getUserDailyLimit(user: { dailyTestLimit?: number | null } | null | undefined): number {
-    // dailyTestLimit 为 null/undefined 时回退到系统默认 10 次；
+    // dailyTestLimit 为 null/undefined 时回退到系统默认 3 次；
     // 显式设置为 0-1 均视为有效自定义值（0 表示禁用测试）。
-    // 注意：登录用户单次分析消耗的 Token 较高（深度分析），默认限额已从 10 降至 5。
+    // 登录用户享有比游客（1次/天）更多的测试权益。
     if (user && typeof user.dailyTestLimit === 'number') {
         return Math.max(0, user.dailyTestLimit);
     }
-    return 5;
+    return 3;
 }
 
 /**
  * 检查用户或访客的测试频率限制（快速前置检查，不扣费）
  *
  * 规则：
- * 1. 访客：每日 3 次
- * 2. 登录用户：每日 10 次（管理员可通过 dailyTestLimit 调整）
+ * 1. 访客：每日 1 次
+ * 2. 登录用户：每日 3 次（管理员可通过 dailyTestLimit 调整）
  */
 export async function checkUsageLimit(request: NextRequest, body?: Record<string, unknown>): Promise<UsageLimitResult> {
     // 本地开发环境不限制次数
@@ -86,7 +86,7 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
         };
     }
 
-    // 2. 如果是访客 — 每日 3 次
+    // 2. 如果是访客 — 每日 1 次
     const identifiers = extractGuestIdentifiers(request, body);
     const { ipAddress, fingerprint } = identifiers;
 
@@ -107,7 +107,7 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
                 orderBy: { todayCount: 'desc' },
             })
         );
-        crossIpCount = Math.min(crossIpRecord?.todayCount || 0, Math.ceil(3 * 0.5));
+        crossIpCount = Math.min(crossIpRecord?.todayCount || 0, Math.ceil(1 * 0.5));
     }
 
     // 安全：始终以服务端可信的 IP 哈希作为主匹配键，fingerprint/cookieId 仅作辅助存储。
@@ -129,7 +129,7 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
         return {
             canTest: false,
             remaining: 0,
-            dailyLimit: 3,
+            dailyLimit: 1,
             role: 'guest',
             error: blockedRecord.blockedReason || '您的访问已被限制，请联系客服。'
         };
@@ -142,7 +142,7 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
     );
 
     const totalCount = count + inProgressCount;
-    const limit = 3;
+    const limit = 1;
 
     if (totalCount >= limit) {
         return {
@@ -150,7 +150,7 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
             remaining: 0,
             dailyLimit: limit,
             role: 'guest',
-            error: '今日测试次数已用完，请明天再试。'
+            error: '今日测试次数已用完，登录后可获更多次数。'
         };
     }
 
@@ -229,7 +229,7 @@ export async function reserveUsage(
                         },
                         orderBy: { todayCount: 'desc' },
                     });
-                    crossIpCount = Math.min(crossIpRecord?.todayCount || 0, Math.ceil(3 * 0.5));
+                    crossIpCount = Math.min(crossIpRecord?.todayCount || 0, Math.ceil(1 * 0.5));
                 }
 
                 // 按 IP 匹配当日记录
@@ -244,10 +244,10 @@ export async function reserveUsage(
 
                 const currentCount = (todayRecord?.todayCount || 0) + crossIpCount;
                 const totalCount = currentCount + guestInProgress;
-                const limit = 3;
+                const limit = 1;
 
                 if (totalCount >= limit) {
-                    return { success: false, error: '今日测试次数已用完，请明天再试。', role: 'guest' };
+                    return { success: false, error: '今日测试次数已用完，登录后可获更多次数。', role: 'guest' };
                 }
 
                 await tx.testRecord.create({

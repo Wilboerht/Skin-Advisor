@@ -64,7 +64,7 @@ export const PUT = withAdminAuth(async (
             'name', 'category', 'image', 'images', 'price', 'description',
             'keyIngredients', 'suitableSkinTypes', 'benefits', 'negativeFor',
             'active', 'featured', 'howToUse',
-            'affiliateLinks'
+            'affiliateLinks', 'recommendReasons'
         ];
 
         const updateData: Record<string, unknown> = {};

@@ -42,6 +42,8 @@ import styles from "./result.module.css";
 import { ProductRecommendationSection } from "@/components/advisor/ProductRecommendationSection";
 import type { ProductCardData } from "@/components/advisor/ProductCard";
 import { SaveReportBanner } from "@/components/advisor/SaveReportBanner";
+import { RegisterConversionModal } from "@/components/advisor/RegisterConversionModal";
+import { CountdownTimer } from "@/components/advisor/CountdownTimer";
 import { AnalyzingOverlay } from "@/components/advisor/AnalyzingOverlay";
 import { skinTypes } from "@/lib/result-content";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
@@ -207,10 +209,16 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const searchParams = useSearchParams();
     const { runAnalysis, analysisState, reset: resetAnalysis, recoverSession } = useAsyncAnalysis();
 
+    // Session ID state - needed early for QR code generation
+    const [sessionId, setSessionId] = useState<string | undefined>(id);
+
     // Pre-generate QR code for poster (avoids race condition on save click)
     useEffect(() => {
+        const qrUrl = sessionId
+            ? `https://advisor.nihplod.cn/?ref=poster_${sessionId}`
+            : "https://advisor.nihplod.cn/gift";
         toDataURL(
-            "https://advisor.nihplod.cn/gift",
+            qrUrl,
             { width: 80, margin: 1, color: { dark: "#00263E", light: "#0000" } }
         )
             .then((url) => setQrDataUrl(url))
@@ -218,7 +226,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 console.warn("QR code generation failed, poster will not include QR code");
                 setQrDataUrl(null);
             });
-    }, []);
+    }, [sessionId]);
 
     // Refs for latest auth state to avoid adding them to effect dependency arrays
     const userRef = useRef(user);
@@ -236,8 +244,6 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const [faceAnalysis, setFaceAnalysis] = useState<FaceAnalysisResult | null>(initialData?.faceAnalysis || null);
 
     const [userNickname, setUserNickname] = useState<string>("您");
-    // Session ID for sharing - initialized from props or will be set after analysis
-    const [sessionId, setSessionId] = useState<string | undefined>(id);
     const [socialGender, setSocialGender] = useState<string>(''); // Initialize empty to avoid flash mismatch
 
     // IP 匹配所需数据
@@ -261,11 +267,44 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     const [posterError, setPosterError] = useState<string | null>(null);
     const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
     const [preloadedPosterBlob, setPreloadedPosterBlob] = useState<Blob | null>(null);
+    // Active campaign for countdown
+    const [activeCampaign, setActiveCampaign] = useState<{ title: string; endDate: string } | null>(null);
     const [dismissValidationWarning, setDismissValidationWarning] = useState(() => {
         try { return sessionStorage.getItem('advisor_dismiss_validation') === 'true'; } catch { return false; }
     });
     const posterRef = useRef<HTMLDivElement>(null);
     const retryButtonRef = useRef<HTMLButtonElement>(null);
+    const scrollContainerRef = useRef<HTMLElement | null>(null);
+
+    // Social proof: total completed skin tests
+    const [totalCompleted, setTotalCompleted] = useState<number | null>(null);
+
+    useEffect(() => {
+        fetch("/api/advisor/stats")
+            .then((res) => res.json())
+            .then((data) => {
+                if (typeof data.totalCompleted === "number") {
+                    setTotalCompleted(data.totalCompleted);
+                }
+            })
+            .catch(() => {
+                // 静默失败
+            });
+    }, []);
+
+    // Fetch active campaign for countdown
+    useEffect(() => {
+        fetch("/api/campaign/active")
+            .then((res) => res.json())
+            .then((data) => {
+                if (data.active && data.endDate) {
+                    setActiveCampaign({ title: data.title, endDate: data.endDate });
+                }
+            })
+            .catch(() => {
+                // 静默失败
+            });
+    }, []);
 
 
     const rankPercentile = useMemo(
@@ -1002,6 +1041,9 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                     {/* Save Report Banner for unauthenticated users */}
                     <SaveReportBanner />
 
+                    {/* Register Conversion Modal: 游客深度浏览后弹出注册引导 */}
+                    <RegisterConversionModal scrollContainerRef={scrollContainerRef} />
+
                     {/* Logo */}
                     <div className="w-full flex flex-col items-center pt-12">
                         <Image
@@ -1016,6 +1058,12 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             <Sparkles className="w-4 h-4 lg:w-5 lg:h-5" />
                             {userNickname} 的专属肌智派素颜分析报告
                         </p>
+                        {/* Social proof */}
+                        {totalCompleted !== null && totalCompleted > 0 && (
+                            <p className="text-center text-[11px] sm:text-[12px] text-[#8B7355]/60 -mt-4 mb-6 lg:-mt-6 lg:mb-8 tracking-wide">
+                                已有 {totalCompleted.toLocaleString("zh-CN")} 位肌智派用户完成测肤
+                            </p>
+                        )}
                     </div>
 
                     {/* Validation Warning Banner */}
@@ -1370,7 +1418,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                             </div>
 
                             {/* 肌智派送好礼 CTA */}
-                            <div className="flex justify-center mb-10">
+                            <div className="flex flex-col items-center justify-center mb-10 gap-2">
                                 <button
                                     onClick={() => router.push('/gift')}
                                     className="group inline-flex items-center justify-center gap-2 w-auto sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 rounded-full border border-dashed border-[#8B7355]/40 bg-[#8B7355]/[0.04] text-[12px] sm:text-[13px] tracking-[0.1em] text-[#8B7355] hover:text-[#5c4937] hover:border-[#5c4937]/40 hover:bg-[#5c4937]/5 transition-all duration-300"
@@ -1379,6 +1427,12 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     肌智派送好礼 · 参与抽奖
                                     <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
                                 </button>
+                                {activeCampaign && (
+                                    <CountdownTimer
+                                        endDate={activeCampaign.endDate}
+                                        label="距离活动结束"
+                                    />
+                                )}
                             </div>
 
                             {/* Minimal Footer Text */}

@@ -19,6 +19,7 @@ import {
     Wand2,
     Gift,
     BarChart3,
+    MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { isSuperAdmin } from "@/lib/permissions";
@@ -31,6 +32,7 @@ const BASE_MENU_ITEMS = [
     { href: "/admin/ai-costs", label: "AI成本", icon: BarChart3 },
     { href: "/admin/users", label: "用户管理", icon: Users },
     { href: "/admin/audit-logs", label: "安全审计", icon: Shield },
+    { href: "/admin/community", label: "社区审核", icon: MessageSquare },
 ];
 
 interface AdminMe {

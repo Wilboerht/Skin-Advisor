@@ -20,6 +20,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: "素颜测肤", href: "/" },
   { label: "肌智派", href: "/skin-types", badge: "送好礼" },
+  { label: "真实反馈", href: "/community" },
   { label: "顾问服务", href: "/services" },
 ];
 

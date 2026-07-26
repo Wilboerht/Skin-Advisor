@@ -208,6 +208,10 @@ export default function ProductForm({
     const [negativeFor, setNegativeFor] = useState<string[]>(initialData?.negativeFor || []);
     const [suitableSkinTypes, setSuitableSkinTypes] = useState<string[]>(initialData?.suitableSkinTypes || []);
 
+    const [recommendReasons, setRecommendReasons] = useState<Record<string, string | Record<string, string>>>(
+        (initialData?.recommendReasons as Record<string, string | Record<string, string>>) || {}
+    );
+
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleImageUpload = async (file: File) => {
@@ -312,6 +316,9 @@ export default function ProductForm({
             negativeFor,
             suitableSkinTypes,
             affiliateLinks: Object.keys(filteredLinks).length > 0 ? filteredLinks : null,
+            recommendReasons: Object.keys(recommendReasons).length > 0
+                ? recommendReasons
+                : null,
         };
 
         try {
@@ -359,6 +366,7 @@ export default function ProductForm({
         benefits: [...benefits],
         negativeFor: [...negativeFor],
         suitableSkinTypes: [...suitableSkinTypes],
+        recommendReasons: { ...recommendReasons },
     });
 
     useEffect(() => {
@@ -375,9 +383,10 @@ export default function ProductForm({
             JSON.stringify(keyIngredients) !== JSON.stringify(initialSnapshot.current.keyIngredients) ||
             JSON.stringify(benefits) !== JSON.stringify(initialSnapshot.current.benefits) ||
             JSON.stringify(negativeFor) !== JSON.stringify(initialSnapshot.current.negativeFor) ||
-            JSON.stringify(suitableSkinTypes) !== JSON.stringify(initialSnapshot.current.suitableSkinTypes);
+            JSON.stringify(suitableSkinTypes) !== JSON.stringify(initialSnapshot.current.suitableSkinTypes) ||
+            JSON.stringify(recommendReasons) !== JSON.stringify(initialSnapshot.current.recommendReasons);
         onDirtyChange?.(dirty);
-    }, [formData, images, affiliateLinks, keyIngredients, benefits, negativeFor, suitableSkinTypes, onDirtyChange]);
+    }, [formData, images, affiliateLinks, keyIngredients, benefits, negativeFor, suitableSkinTypes, recommendReasons, onDirtyChange]);
 
     return (
         <form onSubmit={handleSubmit} className={cn("space-y-10", !onCancel && "max-w-4xl mx-auto")}>
@@ -665,6 +674,125 @@ export default function ProductForm({
                                 ))}
                             </div>
                         </div>
+                    </div>
+                </section>
+
+                {/* ===== 肤质推荐理由 ===== */}
+                <section>
+                    <label className="block text-sm font-medium text-[#5E5E5E] mb-3">
+                        肤质推荐理由
+                        <span className="text-xs text-[#B0A89A] font-normal ml-2">
+                            为不同肤质配置推荐文案，支持按季节精细化配置
+                        </span>
+                    </label>
+                    <div className="space-y-3">
+                        {SKIN_TYPE_OPTIONS.map((opt) => {
+                            const entry = recommendReasons[opt.value];
+                            const isExpanded = typeof entry === "object" && entry !== null;
+                            const defaultText = typeof entry === "string" ? entry : (entry as Record<string, string>)?.default || "";
+                            const seasonObj = (typeof entry === "object" && entry !== null) ? entry as Record<string, string> : {};
+
+                            const updateEntry = (newVal: string | Record<string, string>) => {
+                                setRecommendReasons((prev) => {
+                                    const next = { ...prev };
+                                    if (typeof newVal === "string" && !newVal.trim()) {
+                                        delete next[opt.value];
+                                    } else {
+                                        next[opt.value] = newVal;
+                                    }
+                                    return next;
+                                });
+                            };
+
+                            const expandToSeasons = () => {
+                                updateEntry({ default: defaultText, spring: "", early_summer: "", midsummer: "", autumn: "", winter: "" });
+                            };
+
+                            const collapseToString = () => {
+                                updateEntry(defaultText || "");
+                            };
+
+                            return (
+                                <div key={opt.value} className="rounded-xl border border-[#E8E2D9] bg-white p-3">
+                                    <div className="flex items-start gap-3">
+                                        <span className={cn(
+                                            "shrink-0 mt-1 px-2 py-0.5 rounded-md text-xs font-medium border",
+                                            opt.color
+                                        )}>
+                                            {opt.label}
+                                        </span>
+                                        <div className="flex-1 space-y-2">
+                                            <textarea
+                                                rows={2}
+                                                value={defaultText}
+                                                maxLength={500}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    if (isExpanded) {
+                                                        updateEntry({ ...seasonObj, default: val });
+                                                    } else {
+                                                        updateEntry(val);
+                                                    }
+                                                }}
+                                                placeholder={`为${opt.label}撰写推荐理由...`}
+                                                className="w-full rounded-lg border border-[#E8E2D9] text-sm p-2 outline-none resize-none focus:border-[#C9A86C] focus:ring-1 focus:ring-[#C9A86C]/20 transition-all bg-white placeholder:text-[#B0A89A]"
+                                            />
+
+                                            {/* 季节展开/收起切换 */}
+                                            <div className="flex items-center gap-2">
+                                                {!isExpanded ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={expandToSeasons}
+                                                        className="text-xs text-[#C9A86C] hover:text-[#B8975B] underline underline-offset-2"
+                                                    >
+                                                        + 按季节精细化配置
+                                                    </button>
+                                                ) : (
+                                                    <>
+                                                        <button
+                                                            type="button"
+                                                            onClick={collapseToString}
+                                                            className="text-xs text-[#8B7355]/60 hover:text-[#8B7355] underline underline-offset-2"
+                                                        >
+                                                            - 收起季节配置
+                                                        </button>
+                                                        <span className="text-[10px] text-[#B0A89A]">留空则使用默认文案</span>
+                                                    </>
+                                                )}
+                                            </div>
+
+                                            {/* 季节子字段 */}
+                                            {isExpanded && (
+                                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 pt-1">
+                                                    {[
+                                                        { key: "spring", label: "春季" },
+                                                        { key: "early_summer", label: "初夏" },
+                                                        { key: "midsummer", label: "盛夏" },
+                                                        { key: "autumn", label: "秋季" },
+                                                        { key: "winter", label: "冬季" },
+                                                    ].map(({ key, label }) => (
+                                                        <div key={key} className="flex flex-col gap-1">
+                                                            <span className="text-[10px] text-[#B0A89A]">{label}</span>
+                                                            <input
+                                                                type="text"
+                                                                value={seasonObj[key] || ""}
+                                                                maxLength={500}
+                                                                onChange={(e) => {
+                                                                    updateEntry({ ...seasonObj, [key]: e.target.value });
+                                                                }}
+                                                                placeholder="可选"
+                                                                className="w-full rounded-md border border-[#E8E2D9] text-xs p-1.5 outline-none focus:border-[#C9A86C] focus:ring-1 focus:ring-[#C9A86C]/20 transition-all bg-white placeholder:text-[#B0A89A]"
+                                                            />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 </section>
 

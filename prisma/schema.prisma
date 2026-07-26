@@ -181,6 +181,8 @@ model User {
   testRecords       TestRecord[]
   campaignEntries   CampaignEntry[]
   refreshTokens     RefreshToken[]
+  productFeedbacks  ProductFeedback[]
+  communityPosts    CommunityPost[]
 
   // 隐私同意
   privacyConsentAt     DateTime?
@@ -280,6 +282,7 @@ model Product {
   howToUse          String?  // 使用方法说明
   affiliateLinks    Json?    // 电商链接 { taobao: "", jd: "", xiaohongshu: "", douyin: "" }
   negativeFor       Json     // string[] 不适合人群/负面标签，如 ["敏感肌", "痘痘肌", "孕妇"]
+  recommendReasons  Json?    // 按肤质的推荐理由 { "oily": "专为油性肌调配...", "dry": "..." }
 
   // Relations
   recommendationRules RecommendationRuleProduct[]
@@ -438,5 +441,53 @@ model CampaignEntry {
   @@index([campaignId, status])
   @@index([userId])
   @@index([lotteryCode])
+}
+
+// ===== 产品反馈系统 =====
+
+model ProductFeedback {
+  id          String   @id @default(cuid())
+  userId      String
+  productId   String
+  sessionId   String?  // 关联的测肤 session
+  rating      Int      // 1-5 评分
+  skinFeel    String?  // 肤感评价
+  effect      String?  // 效果评价
+  repurchase  Boolean? // 回购意愿
+  note        String?  // 自由备注
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId, sessionId])
+  @@index([productId])
+  @@index([createdAt])
+}
+
+// ===== UGC 社区内容 =====
+
+model CommunityPost {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // 内容
+  beforeImage String?  // 使用前照片 URL
+  afterImage  String?  // 使用后照片 URL
+  note        String?  // 用户心得/反馈
+  personaLabel String? // 用户所属派系（如 "沙漠派"）
+
+  // 状态
+  status      String   @default("pending") // pending | approved | rejected
+  reviewerId  String?  // 审核人 AdminUser id
+  reviewNote  String?  // 审核备注
+  reviewedAt  DateTime?
+
+  // 激励
+  testBonusAwarded Boolean @default(false) // 是否已发放额外测试次数
+
+  createdAt   DateTime @default(now())
+
+  @@index([status, createdAt])
+  @@index([userId])
 }
 

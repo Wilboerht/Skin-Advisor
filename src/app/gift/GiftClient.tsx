@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Gift, Users, Sparkles, AlertCircle, Loader2 } from "lucide-react";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
+import { CountdownTimer } from "@/components/advisor/CountdownTimer";
 
 interface CampaignData {
   id: string;
@@ -105,6 +106,12 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
                       <span>开奖时间：{formatDate(campaign.drawDate)}</span>
                     </div>
                   )}
+
+                  {/* 活动倒计时 */}
+                  <CountdownTimer
+                    endDate={campaign.endDate}
+                    label="距离活动结束"
+                  />
                 </div>
               )}
             </div>

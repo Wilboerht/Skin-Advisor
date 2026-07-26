@@ -31,6 +31,15 @@ export interface ProductRecommendation {
     budgetLabel?: "within_budget" | "near_budget" | "over_budget" | "unknown";
     /** 环境相关匹配标签 */
     envTags?: string[];
+    /** 社交证明：协同过滤标签 */
+    socialProof?: {
+        /** 如 "沙漠派用户的选择" */
+        label: string;
+        /** 如 87（代表87%的回购率或选择率） */
+        affinity: number;
+        /** 如 "87% 的同派系用户选择了这款产品" */
+        detail: string;
+    };
 }
 
 /** 关注点到功效标签的映射 */
@@ -492,6 +501,35 @@ export async function getCandidateProducts(
             return { ...p, _score: score, matchedBenefits, _envTags: envTags, _budgetLabel: budgetLabel };
         });
 
+        // 2b. User feedback boost: batch query product average ratings (last 30 days)
+        try {
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            const feedbackAggs = await prisma.productFeedback.groupBy({
+                by: ["productId"],
+                where: { createdAt: { gte: thirtyDaysAgo } },
+                _avg: { rating: true },
+                _count: { rating: true },
+            });
+            const feedbackMap = new Map<string, number>();
+            for (const agg of feedbackAggs) {
+                if (agg._avg.rating && agg._count.rating >= 3 && agg._avg.rating >= 4) {
+                    feedbackMap.set(agg.productId, agg._avg.rating);
+                }
+            }
+            if (feedbackMap.size > 0) {
+                scored = scored.map(p => {
+                    const avgRating = feedbackMap.get(p.id);
+                    if (avgRating) {
+                        return { ...p, _score: p._score + 15 };
+                    }
+                    return p;
+                });
+            }
+        } catch (feedbackErr) {
+            console.warn("Feedback boost query failed (non-fatal):", feedbackErr);
+        }
+
         // 3. Inject Forced Rules (Hard Rules)
         const activeRules = await prisma.recommendationRule.findMany({
             where: { active: true },
@@ -549,6 +587,142 @@ export async function getCandidateProducts(
         console.error("Candidate selection error:", e);
         return [];
     }
+}
+
+/**
+ * 协同过滤：基于用户聚类（skinType + persona + budget）计算产品社交热度
+ *
+ * 查询同 skinType 用户的历史推荐产品，统计每款产品被推荐的频次。
+ * 返回 Map<productId, { affinity, repurchaseRate }>，供前端展示社交标签。
+ */
+export async function getClusterSocialProof(
+    skinType: string,
+    persona?: string,
+    budget?: string
+): Promise<Map<string, { affinity: number; repurchaseRate: number; label: string }>> {
+    const result = new Map<string, { affinity: number; repurchaseRate: number; label: string }>();
+    try {
+        // 1. 查同 skinType 的已完成 session（最近 90 天，最多 200 条）
+        const ninetyDaysAgo = new Date();
+        ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+        const clusterSessions = await prisma.advisorSession.findMany({
+            where: {
+                completedAt: { gte: ninetyDaysAgo },
+            },
+            orderBy: { completedAt: "desc" },
+            take: 300,
+            select: {
+                analysisResult: true,
+            },
+        });
+
+        if (clusterSessions.length === 0) return result;
+
+        // 2. 过滤出同 skinType 的 session 并提取推荐产品
+        const productCounts = new Map<string, number>();
+        let matchingSessionCount = 0;
+
+        for (const session of clusterSessions) {
+            const resultData = session.analysisResult as Record<string, unknown> | null;
+            const skinProfile = (resultData?.skinProfile as Record<string, unknown>) || {};
+            const sessionSkinType = (skinProfile.type as string) || "";
+
+            // 检查 skinType 匹配
+            if (sessionSkinType.toLowerCase() !== skinType.toLowerCase()) continue;
+            matchingSessionCount++;
+
+            // 提取推荐产品 ID
+            const products = Array.isArray(resultData?.products)
+                ? (resultData!.products as Array<Record<string, unknown>>)
+                : [];
+            for (const p of products) {
+                const pid = p.id as string;
+                if (pid) {
+                    productCounts.set(pid, (productCounts.get(pid) || 0) + 1);
+                }
+            }
+        }
+
+        if (matchingSessionCount === 0 || productCounts.size === 0) return result;
+
+        // 3. 批量查询产品回购率（从 ProductFeedback）
+        const productIds = Array.from(productCounts.keys());
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        let repurchaseMap = new Map<string, number>();
+        try {
+            const feedbackAggs = await prisma.productFeedback.groupBy({
+                by: ["productId"],
+                where: {
+                    productId: { in: productIds },
+                    createdAt: { gte: thirtyDaysAgo },
+                },
+                _avg: { rating: true },
+                _count: { id: true },
+            });
+            for (const agg of feedbackAggs) {
+                const avgRating = agg._avg.rating || 0;
+                repurchaseMap.set(agg.productId, Math.round(avgRating * 20)); // 1-5 → 20-100%
+            }
+
+            // 回购意愿
+            const repurchaseAggs = await prisma.productFeedback.groupBy({
+                by: ["productId"],
+                where: {
+                    productId: { in: productIds },
+                    repurchase: true,
+                },
+                _count: { id: true },
+            });
+
+            const totalCounts = new Map<string, number>();
+            for (const agg of feedbackAggs) {
+                totalCounts.set(agg.productId, agg._count.id);
+            }
+            for (const agg of repurchaseAggs) {
+                const total = totalCounts.get(agg.productId) || 1;
+                repurchaseMap.set(agg.productId, Math.round((agg._count.id / total) * 100));
+            }
+        } catch {
+            // 反馈查询失败不阻断主流程
+        }
+
+        // 4. 计算 affinity（该产品被同 skinType 用户推荐的占比）
+        const personaLabel = persona ? getPersonaLabelFromKey(persona) : "用户";
+        for (const [productId, count] of productCounts) {
+            const affinity = Math.round((count / matchingSessionCount) * 100);
+            if (affinity >= 10) {
+                // 仅返回 affinity >= 10% 的产品
+                result.set(productId, {
+                    affinity,
+                    repurchaseRate: repurchaseMap.get(productId) || 0,
+                    label: `${getSkinTypeLabelShort(skinType)}${personaLabel}的选择`,
+                });
+            }
+        }
+
+        return result;
+    } catch (e) {
+        console.warn("Cluster social proof query failed (non-fatal):", e);
+        return result;
+    }
+}
+
+/** persona key → 中文名 */
+function getPersonaLabelFromKey(persona?: string): string {
+    const map: Record<string, string> = {
+        sensitive: "敏敏派",
+        minimalist: "极简派",
+        luxury: "奢华派",
+        ageless: "冻龄派",
+        desert: "沙漠派",
+        oily: "油条派",
+        combination: "混合派",
+        guardian: "守护派",
+    };
+    return persona ? (map[persona] || persona) : "用户";
 }
 
 /**
@@ -659,24 +833,78 @@ export async function recommendProducts(
         // 5. Select Top N
         const top = scored.slice(0, limit);
 
-        return top.map((p, index) => ({
+        // 5b. 协同过滤社交证明（异步、非阻断）
+        let socialProofMap = new Map<string, { affinity: number; repurchaseRate: number; label: string }>();
+        try {
+            socialProofMap = await getClusterSocialProof(skinType, persona, answers.budget);
+        } catch {
+            // 非阻断，降级为空
+        }
+
+        return top.map((p, index) => {
+            // 推荐理由优先级：
+            // 1. AI 生成（由 analyze/route.ts 在 resultJson.products[].reason 中覆盖）
+            // 2. 产品级运营配置 recommendReasons[skinType][season]（季节精确匹配）
+            // 3. 产品级运营配置 recommendReasons[skinType].default（季节回退）
+            // 4. 产品级运营配置 recommendReasons[skinType]（旧格式兼容：字符串直接使用）
+            // 5. 算法模板 generateSmartReason（兜底）
+            let reason: string;
+            const rawRecommendReasons = (p as any).recommendReasons as Record<string, string | Record<string, string>> | undefined;
+            if (rawRecommendReasons && typeof rawRecommendReasons === "object" && skinType) {
+                const skinTypeEntry = rawRecommendReasons[skinType];
+                if (typeof skinTypeEntry === "string" && skinTypeEntry.trim()) {
+                    // 旧格式：{ "oily": "文案" } → 直接使用
+                    reason = skinTypeEntry;
+                } else if (typeof skinTypeEntry === "object" && skinTypeEntry !== null) {
+                    // 新格式：{ "oily": { "default": "...", "summer": "..." } }
+                    const seasonKey = envContext?.season;
+                    if (seasonKey && typeof skinTypeEntry[seasonKey] === "string" && skinTypeEntry[seasonKey].trim()) {
+                        reason = skinTypeEntry[seasonKey];
+                    } else if (typeof skinTypeEntry["default"] === "string" && skinTypeEntry["default"].trim()) {
+                        reason = skinTypeEntry["default"];
+                    } else {
+                        reason = "";
+                    }
+                } else {
+                    reason = "";
+                }
+            } else {
+                reason = "";
+            }
+
+            // 如果运营配置未命中，使用算法模板兜底
+            if (!reason) {
+                reason = generateSmartReason(
+                    p.matchedBenefits || [],
+                    concerns,
+                    skinType,
+                    index,
+                    p.name,
+                    p.category,
+                    persona,
+                    season,
+                    envContext
+                );
+            }
+
+            // 协同过滤社交证明
+            const clusterProof = socialProofMap.get(p.id);
+            const socialProof = clusterProof ? {
+                label: clusterProof.label,
+                affinity: clusterProof.affinity,
+                detail: clusterProof.repurchaseRate > 0
+                    ? `${clusterProof.affinity}% 的同肤质用户选择了这款产品，${clusterProof.repurchaseRate}% 愿意回购`
+                    : `${clusterProof.affinity}% 的同肤质用户选择了这款产品`,
+            } : undefined;
+
+            return {
             id: p.id,
             name: p.name,
             category: p.category,
             image: p.image,
             images: (p as any).images || null,
             price: p.price,
-            reason: generateSmartReason(
-                p.matchedBenefits || [],
-                concerns,
-                skinType,
-                index,
-                p.name,
-                p.category,
-                persona,
-                season,
-                envContext
-            ),
+            reason,
             description: p.description || null,
             score: p.rawScore,
             matchedBenefits: p.matchedBenefits,
@@ -687,7 +915,9 @@ export async function recommendProducts(
             source: personaPoolIds.has(p.id) ? "persona" as const : "algorithm" as const,
             budgetLabel: (p as any).budgetLabel || "unknown",
             envTags: (p as any).envTags || [],
-        }));
+            socialProof,
+            };
+        });
 
     } catch (e) {
         console.error("Product recommendation error:", e);

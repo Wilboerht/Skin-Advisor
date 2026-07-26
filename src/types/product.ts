@@ -107,6 +107,29 @@ export const productJsonFieldsSchema = z.object({
     negativeFor: stringArraySchema,
 });
 
+export const seasonReasonsSchema = z.object({
+    default: z.string().max(500).optional(),
+    spring: z.string().max(500).optional(),
+    early_summer: z.string().max(500).optional(),
+    midsummer: z.string().max(500).optional(),
+    autumn: z.string().max(500).optional(),
+    winter: z.string().max(500).optional(),
+}).refine(
+    (obj) => Object.values(obj).some(v => v !== undefined && v.trim() !== ''),
+    { message: '至少填写一个季节/default的推荐理由' }
+).optional();
+
+/** 单肤质推荐理由：兼容旧格式（字符串）和新格式（季节对象） */
+const skinTypeReasonSchema = z.union([
+    z.string().max(500),
+    seasonReasonsSchema,
+]);
+
+export const recommendReasonsSchema = z
+    .record(z.string(), skinTypeReasonSchema)
+    .nullable()
+    .default(null);
+
 export const productSchema = z.object({
     id: z.string().cuid(),
     name: nonEmptyString(MAX_NAME_LENGTH),
@@ -123,6 +146,7 @@ export const productSchema = z.object({
     active: z.boolean().default(true),
     featured: z.boolean().default(false),
     affiliateLinks: affiliateLinksSchema,
+    recommendReasons: recommendReasonsSchema,
     createdAt: z.union([z.string().datetime(), z.date()]).optional(),
     updatedAt: z.union([z.string().datetime(), z.date()]).optional(),
 });
@@ -148,6 +172,7 @@ export const productFormDataSchema = z.object({
     negativeFor: z.array(z.string()).nullable().optional(),
     suitableSkinTypes: z.array(z.string()).nullable().optional(),
     affiliateLinks: z.record(z.string(), z.string()).nullable().optional(),
+    recommendReasons: z.record(z.string(), z.union([z.string().max(500), seasonReasonsSchema])).nullable().optional(),
 });
 
 // ==================== TypeScript Types ====================

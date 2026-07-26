@@ -40,6 +40,7 @@ export default async function ProductsPage() {
         benefits: parseStringArray(p.benefits),
         negativeFor: parseStringArray(p.negativeFor),
         affiliateLinks: parseAffiliateLinks(p.affiliateLinks),
+        recommendReasons: (p.recommendReasons as Record<string, string> | null) ?? null,
         active: p.active,
         featured: p.featured,
         createdAt: p.createdAt.toISOString(),

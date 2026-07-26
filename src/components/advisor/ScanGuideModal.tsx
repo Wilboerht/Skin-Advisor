@@ -138,6 +138,19 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuid
                                     <span>我已准备好</span>
                                     <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-2" />
                                 </button>
+
+                                {/* 差异化引导文案 */}
+                                <p className="mt-4 text-xs text-[#8B7355]/70 text-center max-w-xs leading-relaxed">
+                                    完成面部扫描可解锁 <span className="font-semibold text-[#5c4937]">10 维深度分析</span>（肤龄、水油平衡、毛孔、纹理、泛红区域等）
+                                </p>
+
+                                {/* 跳过按钮 */}
+                                <button
+                                    onClick={handleClose}
+                                    className="mt-6 text-xs text-[#5E5E5E]/50 hover:text-[#5E5E5E]/80 transition-colors underline underline-offset-2 cursor-pointer bg-transparent border-none"
+                                >
+                                    跳过扫描，仅获取基础 5 维问卷分析
+                                </button>
                             </motion.div>
                         </div>
                     </div>

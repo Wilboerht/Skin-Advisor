@@ -68,6 +68,16 @@ export default function Home() {
     router.prefetch("/questions");
   }, [initSession, router]);
 
+  // Capture ref parameter from URL (e.g. ?ref=poster_xxx) for attribution tracking
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get("ref");
+    if (ref) {
+      safeStorage.setSession("advisor_ref_source", ref);
+    }
+  }, []);
+
   // 首页锁定 body 滚动，防止 iPhone 上出现滚动条 / overscroll
   useBodyScrollLock({ enabled: true });
 
@@ -172,6 +182,70 @@ export default function Home() {
     // Declining loc will naturally open Region Select, but handled by OnboardingFlowModal now implicitly via callback
     safeStorage.setSession("locationConsent", "declined");
   };
+
+  // Social proof: stats data
+  const [totalCompleted, setTotalCompleted] = useState<number | null>(null);
+  const [personaDistribution, setPersonaDistribution] = useState<Array<{ persona: string; count: number }>>([]);
+  const [recentSessions, setRecentSessions] = useState<Array<{ skinType: string | null; completedAt: string }>>([]);
+  const [displayedCount, setDisplayedCount] = useState(0);
+  const [currentRecentIdx, setCurrentRecentIdx] = useState(0);
+
+  useEffect(() => {
+    fetch("/api/advisor/stats")
+      .then((res) => res.json())
+      .then((data) => {
+        if (typeof data.totalCompleted === "number") {
+          setTotalCompleted(data.totalCompleted);
+        }
+        if (Array.isArray(data.personaDistribution)) {
+          setPersonaDistribution(data.personaDistribution);
+        }
+        if (Array.isArray(data.recentSessions)) {
+          setRecentSessions(data.recentSessions);
+        }
+      })
+      .catch(() => {
+        // 静默失败，不影响用户体验
+      });
+  }, []);
+
+  // Animated number counter
+  useEffect(() => {
+    if (totalCompleted === null || totalCompleted <= 0) return;
+    const target = totalCompleted;
+    const duration = 1500; // ms
+    const steps = 30;
+    const increment = Math.ceil(target / steps);
+    let current = 0;
+    const timer = setInterval(() => {
+      current = Math.min(current + increment, target);
+      setDisplayedCount(current);
+      if (current >= target) clearInterval(timer);
+    }, duration / steps);
+    return () => clearInterval(timer);
+  }, [totalCompleted]);
+
+  // Cycle through recent persona joins
+  useEffect(() => {
+    if (recentSessions.length === 0) return;
+    const timer = setInterval(() => {
+      setCurrentRecentIdx((prev) => (prev + 1) % recentSessions.length);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [recentSessions.length]);
+
+  // Result preview: randomly select a persona to preview
+  const PERSONA_PREVIEWS = [
+    { key: "sensitive", name: "敏敏派", desc: "温柔守护，舒缓修护敏感肌", img: "/images/character/sensitive/sensitive-main.png", color: "#E8D5D0" },
+    { key: "minimalist", name: "极简派", desc: "精简高效，回归护肤本质", img: "/images/character/minimalist/minimalist-main.png", color: "#E8E5DF" },
+    { key: "luxury", name: "奢华派", desc: "奢华甄选，尊享精致护肤体验", img: "/images/character/luxury/luxury-main.png", color: "#DFD5C8" },
+    { key: "ageless", name: "冻龄派", desc: "时光逆转，抗老紧致驻颜", img: "/images/character/ageless/ageless-main.png", color: "#E2D8CC" },
+    { key: "desert", name: "沙漠派", desc: "深层润泽，告别干燥紧绷", img: "/images/character/desert/desert-main.png", color: "#EDE4D6" },
+    { key: "oily", name: "油条派", desc: "清爽平衡，控油净透不泛光", img: "/images/character/oily/oily-main.png", color: "#D8E8E8" },
+    { key: "combination", name: "混合派", desc: "分区调理，精准平衡T区U区", img: "/images/character/combination/combination-main.png", color: "#E0E8DA" },
+    { key: "guardian", name: "守护派", desc: "坚实守护，维稳强韧肌肤屏障", img: "/images/character/guardian/guardian-main.png", color: "#E6E2DD" },
+  ];
+  const [selectedPersona] = useState(() => PERSONA_PREVIEWS[Math.floor(Math.random() * PERSONA_PREVIEWS.length)]);
 
   // Test limit state
   const [testLimitInfo, setTestLimitInfo] = useState<{
@@ -388,7 +462,68 @@ export default function Home() {
                         )}
                       </button>
 
+                      {/* 社交证明：动态滚动数字 */}
+                      {totalCompleted !== null && totalCompleted > 0 && (
+                        <div className="mt-2 flex flex-col items-center gap-1">
+                          <p className="text-[12px] text-[#8B7355]/70 font-light tracking-wide">
+                            已有{" "}
+                            <span className="font-mono text-[13px] font-semibold text-[#8B7355] tabular-nums">
+                              {displayedCount > 0 ? displayedCount.toLocaleString("zh-CN") : totalCompleted.toLocaleString("zh-CN")}
+                            </span>{" "}
+                            人发现自己的肌肤形象
+                          </p>
+                          {/* 最新加入动态 */}
+                          {recentSessions.length > 0 && (() => {
+                            const skinTypeToPersona: Record<string, string> = {
+                              sensitive: "敏敏派", dry: "沙漠派", oily: "油条派",
+                              combination: "混合派", combination_dry: "混合派", combination_oily: "混合派",
+                              normal: "极简派", unknown: "守护派",
+                            };
+                            const session = recentSessions[currentRecentIdx];
+                            const persona = session?.skinType ? (skinTypeToPersona[session.skinType] || "守护派") : null;
+                            return persona ? (
+                              <p className="text-[11px] text-[#C8A97E]/80 font-light tracking-wide animate-fade-in-up">
+                                最新加入：<span className="font-medium text-[#8B7355]">{persona}</span>
+                              </p>
+                            ) : null;
+                          })()}
+                          {/* 派系分布标签 */}
+                          {personaDistribution.length > 0 && (
+                            <div className="flex flex-wrap items-center justify-center gap-1.5 mt-1">
+                              {personaDistribution.slice(0, 5).map((p) => (
+                                <span
+                                  key={p.persona}
+                                  className="inline-flex items-center px-2 py-0.5 rounded-full bg-[#F0EDE1]/60 text-[10px] text-[#8B7355]/80 font-medium"
+                                >
+                                  {p.persona} · {p.count}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
 
+                      {/* Result Preview Card */}
+                      <div className="mt-8 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.6s', animationFillMode: 'forwards' }}>
+                        <div className="flex items-center gap-4 px-5 py-3 rounded-2xl border border-[#E8E2D9] bg-white/60 backdrop-blur-sm">
+                          <div className="w-12 h-12 rounded-full overflow-hidden shrink-0" style={{ backgroundColor: selectedPersona.color }}>
+                            <Image
+                              src={selectedPersona.img}
+                              alt={selectedPersona.name}
+                              width={48}
+                              height={48}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="text-left">
+                            <p className="text-xs font-medium text-[#8B7355] tracking-wider">AI 测肤结果预览</p>
+                            <p className="text-sm text-[#1A1A1A]">
+                              <span className="font-semibold">{selectedPersona.name}</span>
+                              <span className="text-[#5C5855]/70"> · {selectedPersona.desc}</span>
+                            </p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -470,9 +605,9 @@ export default function Home() {
                   </h3>
                   <p className="text-sm leading-relaxed" style={{ color: '#5c4937', opacity: 0.8 }}>
                     {user ? (
-                      <>您今日的 {testLimitInfo?.dailyLimit || 1} 次测试机会已全部使用，请明天再来</>
+                      <>您今日的 3 次测试机会已全部使用，请明天再来</>
                     ) : (
-                      <>游客每天仅有 {testLimitInfo?.dailyLimit || 3} 次测试机会<br />登录后可获得更多测试次数</>
+                      <>游客每天仅有 1 次测试机会<br />登录会员每天可测 3 次，立即注册解锁完整权益</>
                     )}
                   </p>
                 </div>

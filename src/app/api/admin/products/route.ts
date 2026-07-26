@@ -186,6 +186,7 @@ export const POST = withAdminAuth(async (request, { admin }) => {
                     howToUse: body.howToUse || null,
                     affiliateLinks: body.affiliateLinks || null,
                     featured: body.featured === true,
+                    recommendReasons: body.recommendReasons || null,
                 }
             });
 

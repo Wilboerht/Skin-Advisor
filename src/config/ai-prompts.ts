@@ -126,12 +126,16 @@ export function buildTextAnalysisPrompt(params: {
     suitableSkinTypes?: string | string[];
     description?: string;
     price?: string | number;
+    recommendReasons?: Record<string, string> | null;
   }) => {
     const desc = p.description || "";
     const truncatedDesc = desc.length > MAX_PRODUCT_DESC_CHARS
       ? desc.slice(0, MAX_PRODUCT_DESC_CHARS) + "..."
       : desc;
-    return `- ID: ${p.id}, 名称: ${p.name}, 价格: ${p.price || '咨询'}, 功效: ${Array.isArray(p.benefits) ? p.benefits.join("/") : p.benefits}, 适用: ${Array.isArray(p.suitableSkinTypes) ? p.suitableSkinTypes.join("/") : p.suitableSkinTypes}${truncatedDesc ? `, 描述: ${truncatedDesc}` : ""}`;
+    const reasonsHint = p.recommendReasons && Object.keys(p.recommendReasons).length > 0
+      ? `, 推荐理由参考: ${JSON.stringify(p.recommendReasons)}`
+      : "";
+    return `- ID: ${p.id}, 名称: ${p.name}, 价格: ${p.price || '咨询'}, 功效: ${Array.isArray(p.benefits) ? p.benefits.join("/") : p.benefits}, 适用: ${Array.isArray(p.suitableSkinTypes) ? p.suitableSkinTypes.join("/") : p.suitableSkinTypes}${truncatedDesc ? `, 描述: ${truncatedDesc}` : ""}${reasonsHint}`;
   }).join("\n");
 
   // 映射医美和睡眠的显示文本
@@ -215,7 +219,12 @@ ${params.medicationHistory && params.medicationHistory !== "none" ? `- 用药史
 8. 产品推荐遵循"先合适再择优"原则：首先确保产品功效真正匹配用户肤质和问题，其次在同等合适的产品中根据预算选择价格区间。不是贵就推，而是合适的产品中推匹配预算的。${params.isLoggedIn ? '\n9. 当前为已登录会员，提供更深度、更专业的分析。' : ''}
 
 ${params.faceAnalysis ? `面部分析数据 (10维度评分):
-- 综合评分: ${params.faceAnalysis.overallScore ?? 'N/A'}/100\n- 肤质: ${params.faceAnalysis.skinType?.type ?? '未知'} (置信度: ${params.faceAnalysis.skinType?.confidence ?? 'N/A'}%)\n- 肌龄: ${params.faceAnalysis.skinAge?.estimated ?? 'N/A'} 岁\n- 水油平衡: ${params.faceAnalysis.dimensions?.waterOil?.score ?? 'N/A'}分 | 肤色: ${params.faceAnalysis.dimensions?.skinTone?.score ?? 'N/A'}分 | 色斑: ${params.faceAnalysis.dimensions?.spots?.score ?? 'N/A'}分 | 皱纹: ${params.faceAnalysis.dimensions?.wrinkles?.score ?? 'N/A'}分 | 光老化: ${params.faceAnalysis.dimensions?.uvDamage?.score ?? 'N/A'}分 | 敏感度: ${params.faceAnalysis.dimensions?.sensitivity?.score ?? 'N/A'}分 | 黑眼圈: ${params.faceAnalysis.dimensions?.darkCircles?.score ?? 'N/A'}分 | 紧致度: ${params.faceAnalysis.dimensions?.firmness?.score ?? 'N/A'}分 | 痤疮: ${params.faceAnalysis.dimensions?.acne?.score ?? 'N/A'}分 | 光泽度: ${params.faceAnalysis.dimensions?.radiance?.score ?? 'N/A'}分\n- 区域问题: ${params.faceAnalysis.summary ?? '无'}\n- 区域详情: ${JSON.stringify(params.faceAnalysis.zoneAnalysis ?? {}).slice(0, 500)}` : ""}
+- 综合评分: ${params.faceAnalysis.overallScore ?? 'N/A'}/100
+- 肤质: ${params.faceAnalysis.skinType?.type ?? '未知'} (置信度: ${params.faceAnalysis.skinType?.confidence ?? 'N/A'}%)
+- 肌龄: ${params.faceAnalysis.skinAge?.estimated ?? 'N/A'} 岁
+- 水油平衡: ${params.faceAnalysis.dimensions?.waterOil?.score ?? 'N/A'}分 | 肤色: ${params.faceAnalysis.dimensions?.skinTone?.score ?? 'N/A'}分 | 色斑: ${params.faceAnalysis.dimensions?.spots?.score ?? 'N/A'}分 | 皱纹: ${params.faceAnalysis.dimensions?.wrinkles?.score ?? 'N/A'}分 | 光老化: ${params.faceAnalysis.dimensions?.uvDamage?.score ?? 'N/A'}分 | 敏感度: ${params.faceAnalysis.dimensions?.sensitivity?.score ?? 'N/A'}分 | 黑眼圈: ${params.faceAnalysis.dimensions?.darkCircles?.score ?? 'N/A'}分 | 紧致度: ${params.faceAnalysis.dimensions?.firmness?.score ?? 'N/A'}分 | 痤疮: ${params.faceAnalysis.dimensions?.acne?.score ?? 'N/A'}分 | 光泽度: ${params.faceAnalysis.dimensions?.radiance?.score ?? 'N/A'}分
+- 区域问题: ${params.faceAnalysis.summary ?? '无'}
+- 区域详情: ${JSON.stringify(params.faceAnalysis.zoneAnalysis ?? {}).slice(0, 500)}` : ""}
 
 可用产品列表：
 ${productsContext}
