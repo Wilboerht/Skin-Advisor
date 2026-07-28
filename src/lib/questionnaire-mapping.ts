@@ -119,7 +119,26 @@ export function computeQuestionnaireScore(answers: Record<string, unknown>): num
     const selfMod: Record<string, number> = { great: 10, good: 5, average: -3, poor: -10 };
     score += selfMod[selfRating] ?? 0;
 
-    // skincareAttitude 不直接修改 score，它反映偏好而非皮肤实际状态
+    // --- 护肤哲学（额外问题）---
+    // 反映护肤投入度而非皮肤状态，用小权重避免过度影响
+    const attitude = asString(answers.q_skincareAttitude).toLowerCase();
+    const attitudeMod: Record<string, number> = {
+        ritual: 3,    // 仪式感 → 规律护理，小幅加分
+        explorer: 2,  // 成分党 → 主动学习研究
+        minimal: -2,  // 精简高效 → 自然状态
+        lazy: -4,     // 疏于护理 → 小幅扣分
+    };
+    score += attitudeMod[attitude] ?? 0;
+
+    // --- 护肤动力（额外问题）---
+    const motivation = asString(answers.q_skincareMotivation).toLowerCase();
+    const motivationMod: Record<string, number> = {
+        antiAging: 2,   // 延缓衰老 → 目标明确，积极护理
+        selfCare: 2,    // 自我宠爱 → 持续投入
+        confidence: 1,  // 增强自信 → 正面心态
+        social: 0,      // 社交形象 → 中性
+    };
+    score += motivationMod[motivation] ?? 0;
 
     return Math.max(5, Math.min(98, Math.round(score)));
 }

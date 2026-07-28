@@ -191,7 +191,7 @@ export default function Home() {
         consentedAt: new Date().toISOString()
     }));
     
-    recordAndStartTest();
+    startNewTest();
   };
 
   const handleLocationDecline = () => {
@@ -325,10 +325,6 @@ export default function Home() {
     }
   }, [guestIdentity, user, refreshUser]);
 
-  // Start test directly — usage will be recorded by analyze API
-  const recordAndStartTest = useCallback(async () => {
-    startNewTest();
-  }, [startNewTest]);
 
   const handleStart = useCallback(async (mode: "scan" | "questionnaire" = "scan") => {
     // Save scan mode for downstream routing (questions page checks this to decide next step)
@@ -347,8 +343,13 @@ export default function Home() {
     }
 
     // 问卷模式 + 已登录：直通问卷，跳过昵称/定位/合规引导
+    // 但仍需存储隐私同意标记，否则 questions 页入口守卫会拦截
     if (mode === "questionnaire" && user) {
-      recordAndStartTest();
+      safeStorage.set(STORAGE_KEYS.ADVISOR_PRIVACY_CONSENT, JSON.stringify({
+        version: CONSENT_VERSION,
+        consentedAt: new Date().toISOString()
+      }));
+      startNewTest();
       return;
     }
 
@@ -359,7 +360,7 @@ export default function Home() {
     }
     setIsHomeExiting(true);
     setShowOnboardingModal(true);
-  }, [checkTestLimit, user, recordAndStartTest]);
+  }, [checkTestLimit, user, startNewTest]);
 
   const handleNicknameSubmit = () => {
     if (!nickname.trim()) {
@@ -388,7 +389,7 @@ export default function Home() {
             className="fixed inset-0 z-[9999] bg-[#FDFBF7] flex flex-col items-center justify-center pointer-events-none"
           >
             <Loader2 className="w-10 h-10 text-[#3D4430] animate-spin mb-6" />
-            <p className="text-[#5E5E5E] text-[15px] font-medium tracking-wide">即将进入 AI 问卷...</p>
+            <p className="text-[#5E5E5E] text-[15px] font-medium tracking-wide">{scanMode === "questionnaire" ? "正在进入肌肤测评..." : "即将进入 AI 问卷..."}</p>
           </m.div>
         )}
       </AnimatePresence>

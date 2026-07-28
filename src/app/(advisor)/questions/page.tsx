@@ -142,11 +142,14 @@ export default function QuestionsPage() {
                     const data: Question[] = await res.json();
                     if (Array.isArray(data) && data.length > 0) {
                         // 纯问卷模式追加剧外问题（使用缓存的 scanModeRef）
-                        setAllQuestions(
-                            scanModeRef.current === "questionnaire"
-                                ? [...data, ...QUESTIONNAIRE_ONLY_QUESTIONS]
-                                : data
-                        );
+                        // 使用函数式更新 + hasExtra 防重复追加，避免与 Effect A 产生二次冗余更新
+                        setAllQuestions(prev => {
+                            if (scanModeRef.current === "questionnaire") {
+                                const hasExtra = prev.some(q => q.fieldName.startsWith("q_"));
+                                return hasExtra ? prev : [...data, ...QUESTIONNAIRE_ONLY_QUESTIONS];
+                            }
+                            return data;
+                        });
                     }
                 } else {
                     console.error("Failed to fetch questions from API, using defaults:", res.status);
@@ -161,9 +164,11 @@ export default function QuestionsPage() {
     }, []);
 
     // 预加载面部识别模型，在用户填问卷时后台加载
-    // 这样当完成问卷进入拍照步骤时，模型就已经就绪，避免用户等待
+    // 纯问卷模式跳过（不需要面部扫描）
     useEffect(() => {
-        preloadAllFaceModels();
+        if (scanModeRef.current !== "questionnaire") {
+            preloadAllFaceModels();
+        }
     }, []);
 
     const getFilteredQuestions = (currentAnswers: Record<string, unknown>, currentGender: typeof gender) => {
@@ -459,8 +464,10 @@ export default function QuestionsPage() {
         // 检查测肤模式：纯问卷模式通过完整匹配链映射到全部 8 种派系
         const scanMode = localStorage.getItem("advisor_scan_mode");
         if (scanMode === "questionnaire") {
-            const { route } = matchQuestionnairePersona(finalAnswers);
-            router.push(route ? `/skin-types/${route}` : "/skin-types");
+            const result = matchQuestionnairePersona(finalAnswers);
+            // 持久化评分与派系结果，供下游页面（结果页/分享等）使用
+            localStorage.setItem("advisor_result", JSON.stringify(result));
+            router.push(result.route ? `/skin-types/${result.route}` : "/skin-types");
         } else {
             router.push("/face-scan");
         }
@@ -586,7 +593,7 @@ export default function QuestionsPage() {
                                     <Loader2 className="w-4 h-4 animate-spin" />
                                     正在检查服务状态...
                                 </div>
-                            ) : aiConfigured === false ? (
+                            ) : aiConfigured === false && scanModeRef.current !== "questionnaire" ? (
                                 <div className="w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm text-center">
                                     <h3 className="text-lg font-serif text-[#1A1A1A] mb-2">服务暂未就绪</h3>
                                     <p className="text-sm text-[#5E5E5E] mb-6">{configMessage}</p>
@@ -707,15 +714,9 @@ export default function QuestionsPage() {
                     >
                         <Loader2 className="w-8 h-8 text-[#3D4430] animate-spin" />
                         <p className="text-sm text-[#5E5E5E] tracking-wide">
-                            {(() => {
-                                try {
-                                    return localStorage.getItem("advisor_scan_mode") === "questionnaire"
-                                        ? "正在分析你的肌肤派系..."
-                                        : "正在准备面部扫描...";
-                                } catch {
-                                    return "正在准备面部扫描...";
-                                }
-                            })()}
+                            {scanModeRef.current === "questionnaire"
+                                ? "正在分析你的肌肤派系..."
+                                : "正在准备面部扫描..."}
                         </p>
                     </m.div>
                 )}
