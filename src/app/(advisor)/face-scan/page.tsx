@@ -19,9 +19,7 @@ export default function FaceScanPage() {
 
     // 本地开发环境自动启用 mock 模式，跳过 AI 调用
     const isDev = process.env.NODE_ENV !== "production";
-    const resultUrl = isDev ? "/result?status=analyzing&mock=true" : "/result?status=analyzing";
-    // 跳过扫脸时复用相同基准 URL，仅追加 source 标记
-    const skipUrl = `${resultUrl}&source=questionnaire`;
+    const resultUrl = isDev ? "/result?status=analyzing\u0026mock=true" : "/result?status=analyzing";
 
     const hasTrackedStart = useRef(false);
     const [hasStarted, setHasStarted] = useState(false);
@@ -396,7 +394,7 @@ export default function FaceScanPage() {
                     setIsPreparing(true);
                     setIsModalOpen(false);
                 }}
-                onExit={() => router.push(skipUrl)}
+                onExit={() => router.push("/questions?edit=true")}
             />
         </div>
     );
