@@ -19,6 +19,7 @@ interface OnboardingFlowProps {
     onRegionSelect: (region: string) => void;
     regionOptions: { group: string; regions: string[] }[];
     isLoggedIn: boolean;
+    mode?: "scan" | "questionnaire";
 }
 
 type LocationSubView = "main" | "region";
@@ -35,7 +36,8 @@ export function OnboardingFlowModal({
     onSkipLocation,
     onRegionSelect,
     regionOptions,
-    isLoggedIn
+    isLoggedIn,
+    mode = "scan",
 }: OnboardingFlowProps) {
     const toast = useToast();
     // Determine which screens to show
@@ -44,11 +46,12 @@ export function OnboardingFlowModal({
 
     const getScreens = useCallback(() => {
         const s: string[] = [];
-        if (hasNicknameScreen) s.push("nickname");
-        s.push("location");
+        // 问卷模式：跳过昵称和定位，仅保留法律合规
+        if (mode !== "questionnaire" && hasNicknameScreen) s.push("nickname");
+        if (mode !== "questionnaire") s.push("location");
         if (hasLegalScreen) s.push("legal");
         return s;
-    }, [hasNicknameScreen, hasLegalScreen]);
+    }, [hasNicknameScreen, hasLegalScreen, mode]);
 
     const [activeIndex, setActiveIndex] = useState(0);
     const [locationView, setLocationView] = useState<LocationSubView>("main");
@@ -210,7 +213,7 @@ export function OnboardingFlowModal({
                     {/* ---- Slides Wrapper ---- */}
                     <div className="h-full flex relative z-10" style={slideContainerStyle}>
                         {/* Slide: Nickname */}
-                        {hasNicknameScreen && (
+                        {screens.includes("nickname") && (
                             <div
                                 className="h-full flex flex-col items-center justify-center px-6 relative"
                                 style={{ backgroundColor: getBgColor(), flex: "0 0 100vw", backfaceVisibility: "hidden", willChange: "transform" }}
@@ -272,6 +275,7 @@ export function OnboardingFlowModal({
                         )}
 
                         {/* Slide: Location */}
+                        {screens.includes("location") && (
                         <div
                             className="h-full flex flex-col items-center justify-center px-6 relative"
                             style={{ backgroundColor: getBgColor(), flex: "0 0 100vw", backfaceVisibility: "hidden", willChange: "transform" }}
@@ -441,6 +445,7 @@ export function OnboardingFlowModal({
                                 )}
                             </AnimatePresence>
                         </div>
+                        )}
 
                         {/* Slide: Legal */}
                         {hasLegalScreen && (

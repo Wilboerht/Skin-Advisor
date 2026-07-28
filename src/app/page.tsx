@@ -73,6 +73,7 @@ export default function Home() {
   const { openAuthModal } = useAuthModal();
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMode, setLoadingMode] = useState<"scan" | "questionnaire" | null>(null);
+  const [scanMode, setScanMode] = useState<"scan" | "questionnaire" | null>(null);
   const { initSession } = useAdvisorAnalytics();
   const { user, refresh: refreshUser } = useAuth();
 
@@ -93,6 +94,13 @@ export default function Home() {
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
   const [nickname, setNickname] = useState("");
   const [isHomeExiting, setIsHomeExiting] = useState(false);
+
+  // 安全网：只要引导弹窗关闭（无论通过何种路径），重置按钮加载状态
+  useEffect(() => {
+    if (!showOnboardingModal) {
+      setLoadingMode(null);
+    }
+  }, [showOnboardingModal]);
 
   // Location/Region states
   const [isLocating, setIsLocating] = useState(false);
@@ -328,12 +336,19 @@ export default function Home() {
 
     // 精准标记被点击的按钮，避免两个按钮同时转圈
     setLoadingMode(mode);
+    setScanMode(mode);
 
     // Check test limit first
     const canTest = await checkTestLimit();
     if (!canTest) {
       setLoadingMode(null);
       setShowLimitModal(true);
+      return;
+    }
+
+    // 问卷模式 + 已登录：直通问卷，跳过昵称/定位/合规引导
+    if (mode === "questionnaire" && user) {
+      recordAndStartTest();
       return;
     }
 
@@ -344,7 +359,7 @@ export default function Home() {
     }
     setIsHomeExiting(true);
     setShowOnboardingModal(true);
-  }, [checkTestLimit, user]);
+  }, [checkTestLimit, user, recordAndStartTest]);
 
   const handleNicknameSubmit = () => {
     if (!nickname.trim()) {
@@ -548,6 +563,7 @@ export default function Home() {
         onClose={() => {
           setShowOnboardingModal(false);
           setIsHomeExiting(false);
+          setLoadingMode(null);
         }}
         nickname={nickname}
         setNickname={setNickname}
@@ -559,6 +575,7 @@ export default function Home() {
         onRegionSelect={handleRegionSelect}
         regionOptions={regionOptions}
         isLoggedIn={!!user}
+        mode={scanMode ?? "scan"}
       />
 
       <AnimatePresence>
