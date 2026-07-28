@@ -869,13 +869,23 @@ export async function POST(request: NextRequest) {
     } catch (error: unknown) {
         // 清理 analysisStartedAt，避免 session 因任何异常（AI 失败、超时、取消）永久卡在 analyzing
         if (effectiveSessionId) {
-            try {
-                await prisma.advisorSession.update({
-                    where: { sessionId: effectiveSessionId },
-                    data: { analysisStartedAt: null }
-                });
-            } catch (cleanupErr) {
-                logger.error("[analyze] Failed to cleanup analysisStartedAt:", cleanupErr);
+            let cleanedUp = false;
+            for (let attempt = 0; attempt < 3 && !cleanedUp; attempt++) {
+                try {
+                    await prisma.advisorSession.update({
+                        where: { sessionId: effectiveSessionId },
+                        data: { analysisStartedAt: null }
+                    });
+                    cleanedUp = true;
+                } catch (cleanupErr) {
+                    logger.error(`[analyze] DB cleanup attempt ${attempt + 1}/3 failed:`, cleanupErr);
+                    if (attempt < 2) {
+                        await new Promise(r => setTimeout(r, 100 * Math.pow(2, attempt)));
+                    }
+                }
+            }
+            if (!cleanedUp) {
+                logger.error(`[analyze] CRITICAL: Failed to cleanup after 3 attempts, session ${effectiveSessionId} may be stuck`);
             }
         }
 

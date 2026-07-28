@@ -94,6 +94,9 @@ export default function FaceScanPage() {
         const success = await advisorStorage.saveFaceImages(images);
 
         if (success) {
+            // 标记预处理进行中，结果页检测到此标记时可显示等待提示
+            try { sessionStorage.setItem("advisor_preprocessing", "true"); } catch { /* ignore */ }
+
             // ★ 后台立即预处理+上传（不阻塞跳转）
             Promise.resolve().then(async () => {
                 try {
@@ -155,6 +158,9 @@ export default function FaceScanPage() {
                     }
                 } catch (e) {
                     console.warn("[Background] Preprocess+upload task failed", e);
+                } finally {
+                    // 清除预处理标记，结果页可以开始分析
+                    try { sessionStorage.removeItem("advisor_preprocessing"); } catch { /* ignore */ }
                 }
             });
 
@@ -313,8 +319,9 @@ export default function FaceScanPage() {
                                     </button>
                                     <button
                                         onClick={async () => {
+                                            // 仅清除人脸照片缓存，保留问卷答案和进度供用户返回修改
                                             const { advisorStorage } = await import("@/lib/advisor-storage");
-                                            await advisorStorage.clearAll();
+                                            await advisorStorage.clearFaceImages();
                                             router.push("/");
                                         }}
                                         className="px-6 h-10 rounded-lg border border-[#E8E2D9] text-[#5E5E5E] hover:text-[#1A1A1A] hover:border-[#D9D0C3] text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
@@ -362,6 +369,7 @@ export default function FaceScanPage() {
                                     </button>
                                     <button
                                         onClick={async () => {
+                                            // 清理人脸照片缓存释放空间，但保留问卷进度
                                             const { advisorStorage } = await import("@/lib/advisor-storage");
                                             await advisorStorage.clearAll();
                                             router.push("/");

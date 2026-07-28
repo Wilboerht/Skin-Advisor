@@ -408,4 +408,25 @@ export const advisorStorage = {
         localStorage.removeItem("advisor_processed_images");
         localStorage.removeItem("advisor_step");
     },
+
+    /** 仅清除人脸照片缓存（保留问卷答案和进度） */
+    async clearFaceImages(): Promise<void> {
+        if (isIndexedDBAvailable()) {
+            try {
+                const db = await getDB();
+                await new Promise<void>((resolve, reject) => {
+                    const transaction = db.transaction(STORES.faceImages, "readwrite");
+                    transaction.objectStore(STORES.faceImages).clear();
+                    transaction.oncomplete = () => resolve();
+                    transaction.onerror = () => reject(transaction.error);
+                });
+            } catch (e) {
+                console.warn("clearFaceImages IndexedDB failed:", e);
+            }
+        }
+        localStorage.removeItem("advisor_face_images");
+        localStorage.removeItem("advisor_face_images_idb");
+        localStorage.removeItem("advisor_processed_images");
+        // 不清除 result / step / answers，保留问卷进度
+    },
 };

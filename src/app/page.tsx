@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, Suspense } from "react";
 import { Link, useTransitionRouter } from "next-view-transitions";
+import { useSearchParams } from "next/navigation";
 import { LazyMotion, domAnimation, AnimatePresence, m, useReducedMotion } from "framer-motion";
 import Image from "next/image";
 import { ArrowRight, Loader2, MapPin, ClipboardList, X, CircleAlert } from "lucide-react";
@@ -42,6 +43,20 @@ const safeStorage = {
   }
 };
 
+/** Ref 归因捕获组件：监听 URL ?ref=xxx，写入 sessionStorage 供 analytics 上报。
+ *  独立组件是因 useSearchParams 需要 Suspense 边界（Next.js SSR 要求）。 */
+function RefCapture() {
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const ref = searchParams.get("ref");
+    if (ref) {
+      safeStorage.setSession("advisor_ref_source", ref);
+    }
+  }, [searchParams]);
+  return null;
+}
+
 // Region options
 const regionOptions = [
   { group: "华北/东北", regions: ["北京", "天津", "河北", "山西", "内蒙古", "黑龙江", "吉林", "辽宁"] },
@@ -68,15 +83,7 @@ export default function Home() {
     router.prefetch("/questions");
   }, [initSession, router]);
 
-  // Capture ref parameter from URL (e.g. ?ref=poster_xxx) for attribution tracking
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    const ref = params.get("ref");
-    if (ref) {
-      safeStorage.setSession("advisor_ref_source", ref);
-    }
-  }, []);
+  // Capture ref parameter: moved to <RefCapture /> rendered in JSX (useSearchParams needs Suspense boundary)
 
   // 首页锁定 body 滚动，防止 iPhone 上出现滚动条 / overscroll
   useBodyScrollLock({ enabled: true });
@@ -234,19 +241,6 @@ export default function Home() {
     return () => clearInterval(timer);
   }, [recentSessions.length]);
 
-  // Result preview: randomly select a persona to preview
-  const PERSONA_PREVIEWS = [
-    { key: "sensitive", name: "敏敏派", desc: "温柔守护，舒缓修护敏感肌", img: "/images/character/sensitive/sensitive-main.png", color: "#E8D5D0" },
-    { key: "minimalist", name: "极简派", desc: "精简高效，回归护肤本质", img: "/images/character/minimalist/minimalist-main.png", color: "#E8E5DF" },
-    { key: "luxury", name: "奢华派", desc: "奢华甄选，尊享精致护肤体验", img: "/images/character/luxury/luxury-main.png", color: "#DFD5C8" },
-    { key: "ageless", name: "冻龄派", desc: "时光逆转，抗老紧致驻颜", img: "/images/character/ageless/ageless-main.png", color: "#E2D8CC" },
-    { key: "desert", name: "沙漠派", desc: "深层润泽，告别干燥紧绷", img: "/images/character/desert/desert-main.png", color: "#EDE4D6" },
-    { key: "oily", name: "油条派", desc: "清爽平衡，控油净透不泛光", img: "/images/character/oily/oily-main.png", color: "#D8E8E8" },
-    { key: "combination", name: "混合派", desc: "分区调理，精准平衡T区U区", img: "/images/character/combination/combination-main.png", color: "#E0E8DA" },
-    { key: "guardian", name: "守护派", desc: "坚实守护，维稳强韧肌肤屏障", img: "/images/character/guardian/guardian-main.png", color: "#E6E2DD" },
-  ];
-  const [selectedPersona] = useState(() => PERSONA_PREVIEWS[Math.floor(Math.random() * PERSONA_PREVIEWS.length)]);
-
   // Test limit state
   const [testLimitInfo, setTestLimitInfo] = useState<{
     canTest: boolean;
@@ -358,6 +352,7 @@ export default function Home() {
     <LazyMotion features={domAnimation}>
       <Suspense fallback={null}>
         <AuthUrlDetector />
+        <RefCapture />
       </Suspense>
 
       {/* Full Screen Loading Overlay */}
@@ -503,27 +498,6 @@ export default function Home() {
                         </div>
                       )}
 
-                      {/* Result Preview Card */}
-                      <div className="mt-8 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.6s', animationFillMode: 'forwards' }}>
-                        <div className="flex items-center gap-4 px-5 py-3 rounded-2xl border border-[#E8E2D9] bg-white/60 backdrop-blur-sm">
-                          <div className="w-12 h-12 rounded-full overflow-hidden shrink-0" style={{ backgroundColor: selectedPersona.color }}>
-                            <Image
-                              src={selectedPersona.img}
-                              alt={selectedPersona.name}
-                              width={48}
-                              height={48}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                          <div className="text-left">
-                            <p className="text-xs font-medium text-[#8B7355] tracking-wider">AI 测肤结果预览</p>
-                            <p className="text-sm text-[#1A1A1A]">
-                              <span className="font-semibold">{selectedPersona.name}</span>
-                              <span className="text-[#5C5855]/70"> · {selectedPersona.desc}</span>
-                            </p>
-                          </div>
-                        </div>
-                      </div>
                     </div>
                   </div>
                 </div>

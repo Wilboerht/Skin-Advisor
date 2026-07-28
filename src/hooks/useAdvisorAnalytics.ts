@@ -127,9 +127,16 @@ export function useAdvisorAnalytics() {
     const clientEnv = getClientEnv();
     const utmParams = getUtmParams();
 
+    // 读取 ref 来源归因（由首页 page.tsx 从 ?ref=xxx 写入 sessionStorage）
+    let refSource = "";
+    if (typeof window !== "undefined") {
+      try { refSource = sessionStorage.getItem("advisor_ref_source") || ""; } catch { /* sessionStorage unavailable */ }
+    }
+
     sendTrackEvent("session_start", {
       ...clientEnv,
       ...utmParams,
+      ref_source: refSource,
     });
   }, []);
 

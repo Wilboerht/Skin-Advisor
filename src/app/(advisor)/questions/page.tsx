@@ -102,15 +102,16 @@ export default function QuestionsPage() {
     const [questionsError, setQuestionsError] = useState<string | null>(null);
 
     // 入口守卫：必须通过首页引导弹窗后才能进入问卷
+    const [accessDenied, setAccessDenied] = useState(false);
     useEffect(() => {
         try {
             const hasConsent = localStorage.getItem(STORAGE_KEYS.ADVISOR_PRIVACY_CONSENT);
             const hasAnswers = localStorage.getItem("advisor_answers");
             if (!hasConsent && !hasAnswers) {
-                router.replace("/");
+                setAccessDenied(true);
             }
         } catch {
-            router.replace("/");
+            setAccessDenied(true);
         }
     }, [router]);
     const hasFetchedQuestions = useRef(false);
@@ -335,14 +336,21 @@ export default function QuestionsPage() {
         }
     }, []);
 
-    // 自动保存答案和步骤
+    // 自动保存答案和步骤（带防抖，避免快速连续选择时频繁写入 localStorage）
+    const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     useEffect(() => {
-        if (Object.keys(answers).length > 0) {
-            localStorage.setItem("advisor_answers", JSON.stringify(answers));
-        }
-        if (gender) {
-            localStorage.setItem("advisor_step", String(currentStepIndex));
-        }
+        if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = setTimeout(() => {
+            if (Object.keys(answers).length > 0) {
+                localStorage.setItem("advisor_answers", JSON.stringify(answers));
+            }
+            if (gender) {
+                localStorage.setItem("advisor_step", String(currentStepIndex));
+            }
+        }, 300);
+        return () => {
+            if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+        };
     }, [answers, currentStepIndex, gender]);
 
     // Removed `beforeunload` listener since the application continuously auto-saves progress.
@@ -411,6 +419,9 @@ export default function QuestionsPage() {
         if (currentStepIndex > 0) {
             setDirection(-1);
             setCurrentStepIndex(prev => prev - 1);
+            // 回退时重置质量检测基准，避免"填写过快"误判
+            startStepIndex.current = currentStepIndex - 1;
+            sessionStartTime.current = Date.now();
         } else {
             // 如果在第一题点击返回，回到性别选择
             setGender(null);
@@ -625,7 +636,34 @@ export default function QuestionsPage() {
         );
     }
 
-    if (!currentQuestion) return null;
+    if (!currentQuestion) {
+        return (
+            <div className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col items-center justify-center bg-[#F5F2E9] gap-4 px-4">
+                <p className="text-sm text-[#5E5E5E] tracking-wide">题目加载异常，请刷新页面或返回首页重试。</p>
+                <button
+                    onClick={() => router.push("/")}
+                    className="px-6 h-10 rounded-lg border border-[#1B3A5C] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
+                >
+                    返回首页
+                </button>
+            </div>
+        );
+    }
+
+    // 入口守卫：未同意隐私协议时显示友好提示
+    if (accessDenied) {
+        return (
+            <div className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col items-center justify-center bg-[#F5F2E9] gap-4 px-4">
+                <p className="text-sm text-[#5E5E5E] tracking-wide text-center leading-relaxed">请从首页同意隐私协议后开始测评。</p>
+                <button
+                    onClick={() => router.push("/")}
+                    className="px-6 h-10 rounded-lg border border-[#1B3A5C] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
+                >
+                    返回首页
+                </button>
+            </div>
+        );
+    }
 
     return (
         <div className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col bg-[#F5F2E9] text-[#1A1A1A] overflow-hidden pointer-events-auto">

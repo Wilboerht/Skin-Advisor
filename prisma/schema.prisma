@@ -57,6 +57,7 @@ model AdvisorSession {
   utmSource       String?   // UTM来源
   utmMedium       String?   // UTM媒介
   utmCampaign     String?   // UTM活动
+  refSource       String?   // ref 来源归因（如 poster_xxx）
   
   userId          String?
   user            User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -182,7 +183,6 @@ model User {
   campaignEntries   CampaignEntry[]
   refreshTokens     RefreshToken[]
   productFeedbacks  ProductFeedback[]
-  communityPosts    CommunityPost[]
 
   // 隐私同意
   privacyConsentAt     DateTime?
@@ -463,31 +463,4 @@ model ProductFeedback {
   @@index([createdAt])
 }
 
-// ===== UGC 社区内容 =====
-
-model CommunityPost {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // 内容
-  beforeImage String?  // 使用前照片 URL
-  afterImage  String?  // 使用后照片 URL
-  note        String?  // 用户心得/反馈
-  personaLabel String? // 用户所属派系（如 "沙漠派"）
-
-  // 状态
-  status      String   @default("pending") // pending | approved | rejected
-  reviewerId  String?  // 审核人 AdminUser id
-  reviewNote  String?  // 审核备注
-  reviewedAt  DateTime?
-
-  // 激励
-  testBonusAwarded Boolean @default(false) // 是否已发放额外测试次数
-
-  createdAt   DateTime @default(now())
-
-  @@index([status, createdAt])
-  @@index([userId])
-}
 

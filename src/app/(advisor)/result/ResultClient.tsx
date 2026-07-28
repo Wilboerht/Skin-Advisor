@@ -190,6 +190,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
     // 入口守卫：必须通过首页引导弹窗后才能查看结果
     // 历史报告页面（/reports/:id）会传入 id 与 initialData，跳过此守卫
+    const [accessDenied, setAccessDenied] = useState(false);
     useEffect(() => {
         if (id || initialData) return;
         try {
@@ -197,10 +198,10 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             const hasAnswers = localStorage.getItem("advisor_answers");
             const hasConsent = localStorage.getItem(STORAGE_KEYS.ADVISOR_PRIVACY_CONSENT);
             if (!hasResult && !hasAnswers && !hasConsent) {
-                router.replace("/");
+                setAccessDenied(true);
             }
         } catch {
-            router.replace("/");
+            setAccessDenied(true);
         }
     }, [router, id, initialData]);
     const { trackResultView, trackResultShare, trackProductClick } = useAdvisorAnalytics();
@@ -874,6 +875,32 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
             abortController.abort();
         };
     }, [searchParams, result, analysisState.status, runAnalysis, recoverSession, router]);
+
+    // 入口守卫：拒绝访问时显示友好提示，而非静默跳转
+    if (accessDenied) {
+        return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div className="absolute inset-0 bg-[#F5F2E9]/80 backdrop-blur-sm" />
+                <div className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm">
+                    <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+                        <div className="sm:w-[60%] text-center sm:text-left">
+                            <h3 className="text-lg font-serif text-[#1A1A1A] mb-3 sm:mb-2">未授权访问</h3>
+                            <p className="text-sm text-[#5E5E5E] leading-relaxed">请从首页开始皮肤测评，完成问卷后即可查看您的分析报告。</p>
+                        </div>
+                        <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
+                            <button
+                                onClick={() => router.push("/")}
+                                className="px-6 h-10 rounded-lg border border-[#1B3A5C] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                            >
+                                返回首页
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <Image src="/images/watermark.png" alt="" width={200} height={200} className="absolute bottom-4 left-1/2 -translate-x-1/2 w-32 h-auto object-contain opacity-15 pointer-events-none" unoptimized />
+            </div>
+        );
+    }
 
     // Error State
     if (analysisState.status === 'error') {

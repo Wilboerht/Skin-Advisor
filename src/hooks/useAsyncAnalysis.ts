@@ -261,6 +261,8 @@ export function useAsyncAnalysis() {
             // 获取全局分析锁，防止组件 unmount/remount 或 StrictMode 双 mount 导致重复分析
             if (!acquireAnalysisLock(sessionId)) {
                 console.warn(`[useAsyncAnalysis] Analysis lock already held for another session, skipping`);
+                // 设置错误状态让 ResultClient 感知并显示重试按钮，而非永久停留在 preparing 状态
+                setAnalysisState({ status: 'error', progress: 0, error: '检测到已有分析正在进行，请等待完成或刷新页面重试' });
                 return;
             }
 
@@ -531,7 +533,25 @@ export function useAsyncAnalysis() {
             try {
                 localStorage.setItem(STORAGE_KEYS.ADVISOR_RESULT, JSON.stringify(result));
             } catch (e) {
-                console.warn("Failed to save result to localStorage", e);
+                console.warn("Failed to save full result to localStorage, attempting stripped save", e);
+                // 配额满了：只保留关键字段（移除大体积的 labAnalysis 和 faceAnalysis 详情），保证基本展示可用
+                try {
+                    const stripped = {
+                        ...result,
+                        faceAnalysis: result.faceAnalysis ? {
+                            skinType: (result.faceAnalysis as Record<string, unknown>)?.skinType,
+                            overallScore: (result.faceAnalysis as Record<string, unknown>)?.overallScore,
+                            summary: (result.faceAnalysis as Record<string, unknown>)?.summary,
+                            labAnalysis: undefined,
+                            zoneAnalysis: undefined,
+                            recommendations: undefined,
+                            dimensions: (result.faceAnalysis as Record<string, unknown>)?.dimensions,
+                        } : undefined,
+                    };
+                    localStorage.setItem(STORAGE_KEYS.ADVISOR_RESULT, JSON.stringify(stripped));
+                } catch (e2) {
+                    console.warn("Failed to save even stripped result to localStorage", e2);
+                }
             }
             trackAnalysisComplete(result.dataSource === "comprehensive" || result.dataSource === "hybrid" ? "ai" : "fallback");
 

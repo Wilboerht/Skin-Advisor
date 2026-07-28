@@ -134,6 +134,7 @@ export async function POST(request: NextRequest) {
                         utmSource: (data?.utm_source as string) || null,
                         utmMedium: (data?.utm_medium as string) || null,
                         utmCampaign: (data?.utm_campaign as string) || null,
+                        refSource: (data?.ref_source as string) || null,
                     },
                     update: {
                         // 会话已存在时关联当前登录用户（session_start 仅对已登录用户触发，安全写入）
