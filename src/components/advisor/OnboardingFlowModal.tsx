@@ -46,9 +46,10 @@ export function OnboardingFlowModal({
 
     const getScreens = useCallback(() => {
         const s: string[] = [];
-        // 问卷模式：跳过昵称和定位，仅保留法律合规
+        // 问卷模式：只需法律合规授权，跳过昵称和定位
         if (mode !== "questionnaire" && hasNicknameScreen) s.push("nickname");
-        if (mode !== "questionnaire") s.push("location");
+        // 定位仅扫描模式需要（用于气候关联推荐）
+        if (mode === "scan") s.push("location");
         if (hasLegalScreen) s.push("legal");
         return s;
     }, [hasNicknameScreen, hasLegalScreen, mode]);

@@ -123,10 +123,10 @@ export async function GET() {
       }
     );
   } catch (error) {
-    console.error("[stats] Failed to count sessions:", error);
+    console.warn("[stats] DB unavailable, returning empty:", (error as Error).message);
     return NextResponse.json(
-      { totalCompleted: 0, personaDistribution: [], recentSessions: [], error: "Service temporarily unavailable" },
-      { status: 500 }
+      { totalCompleted: 0, personaDistribution: [], recentSessions: [] },
+      { status: 200, headers: { "Cache-Control": "no-store" } }
     );
   }
 }
