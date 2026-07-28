@@ -135,22 +135,37 @@ export function ScanGuideModal({ isOpen, onConfirm, onCancel, onExit }: ScanGuid
                                     }}
                                     className="group relative inline-flex items-center justify-center gap-3 px-12 py-4 sm:px-16 border border-[#4A3728] text-[#4A3728] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#4A3728] hover:text-[#FAF8F5]"
                                 >
-                                    <span>我已准备好</span>
+                                    <span>开始扫描，解锁完整报告</span>
                                     <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-2" />
                                 </button>
 
-                                {/* 差异化引导文案 */}
-                                <p className="mt-4 text-xs text-[#8B7355]/70 text-center max-w-xs leading-relaxed">
-                                    完成面部扫描可解锁 <span className="font-semibold text-[#5c4937]">10 维深度分析</span>（肤龄、水油平衡、毛孔、纹理、泛红区域等）
-                                </p>
+                                {/* 模式对比卡片 */}
+                                <div className="mt-5 w-full max-w-sm rounded-2xl border border-[#E8E2D9] bg-white/40 backdrop-blur-sm overflow-hidden">
+                                    {/* 扫描模式说明 */}
+                                    <div className="px-5 py-3.5">
+                                        <div className="flex items-center gap-2 mb-1.5">
+                                            <span className="text-base">🧬</span>
+                                            <span className="text-sm font-semibold text-[#4A3728]">面部扫描模式</span>
+                                            <span className="ml-auto inline-flex items-center px-2 py-0.5 rounded-full bg-[#4A3728]/10 text-[11px] font-medium text-[#4A3728]">10 维深度分析</span>
+                                        </div>
+                                        <p className="text-xs text-[#5C5855]/60 pl-7 leading-relaxed">肤龄 · 水油平衡 · 毛孔 · 纹理 · 泛红区域等</p>
+                                    </div>
 
-                                {/* 跳过按钮 */}
-                                <button
-                                    onClick={handleClose}
-                                    className="mt-6 text-xs text-[#5E5E5E]/50 hover:text-[#5E5E5E]/80 transition-colors underline underline-offset-2 cursor-pointer bg-transparent border-none"
-                                >
-                                    跳过扫描，仅获取基础 5 维问卷分析
-                                </button>
+                                    {/* 分隔线 */}
+                                    <div className="mx-5 border-t border-[#E8E2D9]/50" />
+
+                                    {/* 问卷模式 - 点击跳过 */}
+                                    <button
+                                        onClick={handleClose}
+                                        className="w-full text-left px-5 py-3 hover:bg-[#1A1A1A]/[0.03] transition-colors cursor-pointer bg-transparent border-none"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-base opacity-60">📋</span>
+                                            <span className="text-sm text-[#5C5855]/70">纯问卷模式</span>
+                                            <span className="ml-auto inline-flex items-center px-2 py-0.5 rounded-full bg-[#1A1A1A]/5 text-[11px] text-[#5C5855]/50">5 维基础分析</span>
+                                        </div>
+                                    </button>
+                                </div>
                             </motion.div>
                         </div>
                     </div>

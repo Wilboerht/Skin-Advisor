@@ -435,7 +435,14 @@ export default function QuestionsPage() {
         localStorage.setItem("advisor_answers", JSON.stringify(finalAnswers));
         // 不再此处清除进度，以便用户从扫脸页返回时能恢复问卷位置
         trackQuestionnaireComplete(finalAnswers);
-        router.push("/face-scan");
+
+        // 检查测肤模式：纯问卷模式直接进结果页，扫描模式进扫脸页
+        const scanMode = localStorage.getItem("advisor_scan_mode");
+        if (scanMode === "questionnaire") {
+            router.push("/result?status=analyzing&source=questionnaire");
+        } else {
+            router.push("/face-scan");
+        }
     };
 
     // 辅助函数：处理带特定答案的完成逻辑

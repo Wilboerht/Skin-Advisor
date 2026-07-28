@@ -321,7 +321,10 @@ export default function Home() {
     startNewTest();
   }, [startNewTest]);
 
-  const handleStart = async () => {
+  const handleStart = useCallback(async (mode: "scan" | "questionnaire" = "scan") => {
+    // Save scan mode for downstream routing (questions page checks this to decide next step)
+    safeStorage.set("advisor_scan_mode", mode);
+
     // Check test limit first
     const canTest = await checkTestLimit();
     if (!canTest) {
@@ -336,7 +339,7 @@ export default function Home() {
     }
     setIsHomeExiting(true);
     setShowOnboardingModal(true);
-  };
+  }, [checkTestLimit, user]);
 
   const handleNicknameSubmit = () => {
     if (!nickname.trim()) {
@@ -439,23 +442,47 @@ export default function Home() {
 
                     {/* CTA + Guide + History */}
                     <div className="flex flex-col items-center gap-6 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.4s', animationFillMode: 'forwards' }}>
-                      <button
-                        onClick={handleStart}
-                        disabled={isLoading || checkingLimit}
-                        className="group relative inline-flex items-center justify-center gap-3 px-12 py-4 sm:px-16 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500 hover:bg-[#1B3A5C] hover:text-white"
-                      >
-                        {isLoading || checkingLimit ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            <span>正在连接</span>
-                          </>
-                        ) : (
-                          <>
-                            <span>立即开启</span>
-                            <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-2" />
-                          </>
-                        )}
-                      </button>
+                      {/* 双模式 CTA */}
+                      <div className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-md">
+                        {/* 面部扫描 - 主推 */}
+                        <button
+                          onClick={() => handleStart("scan")}
+                          disabled={isLoading || checkingLimit}
+                          className="group relative flex-1 inline-flex items-center justify-center gap-2.5 px-8 py-4 border border-[#4A3728] text-[#FAF8F5] bg-[#4A3728] rounded-xl text-[13px] sm:text-[14px] tracking-[0.1em] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500 hover:bg-[#3A2A1E] hover:shadow-lg hover:shadow-[#4A3728]/10"
+                        >
+                          {isLoading || checkingLimit ? (
+                            <>
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              <span>正在连接</span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="text-base">🧬</span>
+                              <span>面部扫描测肤</span>
+                              <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1" />
+                            </>
+                          )}
+                        </button>
+
+                        {/* 纯问卷 - 备选 */}
+                        <button
+                          onClick={() => handleStart("questionnaire")}
+                          disabled={isLoading || checkingLimit}
+                          className="group relative flex-1 inline-flex items-center justify-center gap-2.5 px-8 py-4 border border-[#D9D0C3] text-[#5C5855] bg-transparent rounded-xl text-[13px] sm:text-[14px] tracking-[0.1em] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500 hover:border-[#B8A898] hover:text-[#1A1A1A] hover:bg-[#F5F1EB]/50"
+                        >
+                          {isLoading || checkingLimit ? (
+                            <>
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              <span>正在连接</span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="text-base">📋</span>
+                              <span>看看你属于哪一派</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
 
                       {/* 社交证明：动态滚动数字 */}
                       {totalCompleted !== null && totalCompleted > 0 && (
