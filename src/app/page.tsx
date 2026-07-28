@@ -93,6 +93,9 @@ export default function Home() {
   const [nickname, setNickname] = useState("");
   const [isHomeExiting, setIsHomeExiting] = useState(false);
 
+  // 防止用户在 checkTestLimit 进行过程中关闭弹窗后，异步回调又重新打开弹窗
+  const startCancelledRef = useRef(false);
+
   // Location/Region states
   const [isLocating, setIsLocating] = useState(false);
   const locationRequestId = useRef(0);
@@ -334,11 +337,19 @@ export default function Home() {
     safeStorage.set("advisor_scan_mode", mode);
 
     // 精准标记被点击的按钮，避免两个按钮同时转圈
+    startCancelledRef.current = false;
     setLoadingMode(mode);
     setScanMode(mode);
 
     // Check test limit first
     const canTest = await checkTestLimit();
+
+    // 用户在等待限额检查时已主动关闭弹窗/返回首页：中止后续流程并清理 loading 状态
+    if (startCancelledRef.current) {
+      setLoadingMode(null);
+      return;
+    }
+
     if (!canTest) {
       setLoadingMode(null);
       setShowLimitModal(true);
@@ -353,6 +364,12 @@ export default function Home() {
         consentedAt: new Date().toISOString()
       }));
       startNewTest();
+      return;
+    }
+
+    // 用户在 checkTestLimit 完成后、打开弹窗前又关闭了：清理状态并中止
+    if (startCancelledRef.current) {
+      setLoadingMode(null);
       return;
     }
 
@@ -569,8 +586,11 @@ export default function Home() {
         key={onboardingOpenCount}
         isOpen={showOnboardingModal}
         onClose={() => {
+          // 标记用户已主动取消，防止 handleStart 中待完成的异步回调重新打开弹窗或恢复 loading
+          startCancelledRef.current = true;
           setShowOnboardingModal(false);
           setIsHomeExiting(false);
+          setIsLoading(false);
           setLoadingMode(null);
         }}
         nickname={nickname}
