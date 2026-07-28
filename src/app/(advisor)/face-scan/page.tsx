@@ -397,7 +397,6 @@ export default function FaceScanPage() {
                     setIsModalOpen(false);
                 }}
                 onExit={() => router.push(skipUrl)}
-                onCancel={() => router.push(skipUrl)}
             />
         </div>
     );

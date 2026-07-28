@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { DEFAULT_QUESTIONS, type Question } from "@/config/questions";
+import { QUESTIONNAIRE_ONLY_QUESTIONS, matchQuestionnairePersona } from "@/lib/questionnaire-mapping";
 import { QuestionStep } from "@/components/advisor/QuestionStep";
 import Image from "next/image";
 import Link from "next/link";
@@ -98,7 +99,21 @@ export default function QuestionsPage() {
     }, []);
 
     // 从 API 获取问题列表（数据库优先，静态降级）
+    // 纯问卷模式在客户端挂载后通过 useEffect 追加剧外问题，避免 SSR hydration 不匹配
     const [allQuestions, setAllQuestions] = useState<Question[]>(DEFAULT_QUESTIONS);
+
+    // 缓存扫描模式（仅在客户端读取 localStorage）
+    const scanModeRef = useRef<string | null>(null);
+    useEffect(() => {
+        try { scanModeRef.current = localStorage.getItem("advisor_scan_mode"); } catch { /* ignore */ }
+        // 纯问卷模式追加剧外问题（仅在 API 尚未覆盖时生效，hasExtra 防重复追加）
+        if (scanModeRef.current === "questionnaire") {
+            setAllQuestions(prev => {
+                const hasExtra = prev.some(q => q.fieldName.startsWith("q_"));
+                return hasExtra ? prev : [...prev, ...QUESTIONNAIRE_ONLY_QUESTIONS];
+            });
+        }
+    }, []);
     const [questionsError, setQuestionsError] = useState<string | null>(null);
 
     // 入口守卫：必须通过首页引导弹窗后才能进入问卷
@@ -126,7 +141,12 @@ export default function QuestionsPage() {
                 if (res.ok) {
                     const data: Question[] = await res.json();
                     if (Array.isArray(data) && data.length > 0) {
-                        setAllQuestions(data);
+                        // 纯问卷模式追加剧外问题（使用缓存的 scanModeRef）
+                        setAllQuestions(
+                            scanModeRef.current === "questionnaire"
+                                ? [...data, ...QUESTIONNAIRE_ONLY_QUESTIONS]
+                                : data
+                        );
                     }
                 } else {
                     console.error("Failed to fetch questions from API, using defaults:", res.status);
@@ -436,10 +456,11 @@ export default function QuestionsPage() {
         // 不再此处清除进度，以便用户从扫脸页返回时能恢复问卷位置
         trackQuestionnaireComplete(finalAnswers);
 
-        // 检查测肤模式：纯问卷模式直接进结果页，扫描模式进扫脸页
+        // 检查测肤模式：纯问卷模式通过完整匹配链映射到全部 8 种派系
         const scanMode = localStorage.getItem("advisor_scan_mode");
         if (scanMode === "questionnaire") {
-            router.push("/result?status=analyzing&source=questionnaire");
+            const { route } = matchQuestionnairePersona(finalAnswers);
+            router.push(route ? `/skin-types/${route}` : "/skin-types");
         } else {
             router.push("/face-scan");
         }
@@ -685,7 +706,17 @@ export default function QuestionsPage() {
                         className="fixed inset-0 z-[60] bg-[#F5F2E9]/90 backdrop-blur-sm flex flex-col items-center justify-center gap-4"
                     >
                         <Loader2 className="w-8 h-8 text-[#3D4430] animate-spin" />
-                        <p className="text-sm text-[#5E5E5E] tracking-wide">正在准备面部扫描...</p>
+                        <p className="text-sm text-[#5E5E5E] tracking-wide">
+                            {(() => {
+                                try {
+                                    return localStorage.getItem("advisor_scan_mode") === "questionnaire"
+                                        ? "正在分析你的肌肤派系..."
+                                        : "正在准备面部扫描...";
+                                } catch {
+                                    return "正在准备面部扫描...";
+                                }
+                            })()}
+                        </p>
                     </m.div>
                 )}
             </AnimatePresence>

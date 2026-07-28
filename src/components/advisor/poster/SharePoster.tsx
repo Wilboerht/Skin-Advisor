@@ -4,7 +4,7 @@ import { forwardRef, useState, useEffect } from "react";
 import { Inria_Serif, Noto_Sans_SC } from "next/font/google";
 
 const inriaSerif = Inria_Serif({ weight: ["400", "700"], subsets: ["latin"] });
-const notoSansSC = Noto_Sans_SC({ weight: ["300", "400", "700"] });
+const notoSansSC = Noto_Sans_SC({ weight: ["300", "400", "700"], preload: false });
 
 const posterFontFamily = `${inriaSerif.style.fontFamily}, ${notoSansSC.style.fontFamily}`;
 
