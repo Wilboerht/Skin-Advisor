@@ -74,9 +74,10 @@ const DEFAULT_AI_SETTINGS: AISettings = {
     },
 };
 
-// 服务商降级链（qwen 优先，失败后降级 deepseek）
-const PROVIDER_FALLBACK_CHAIN: Record<string, AIProvider[]> = {
+// 服务商降级链（qwen 优先，失败后降级 deepseek；deepseek 失败后降级 qwen）
+export const PROVIDER_FALLBACK_CHAIN: Record<string, AIProvider[]> = {
     qwen: ["deepseek"],
+    deepseek: ["qwen"],
 };
 
 // 缓存配置
@@ -176,7 +177,8 @@ export async function getAISettings(): Promise<AISettings> {
             cachedSettings = { ...DEFAULT_AI_SETTINGS };
         }
 
-        cacheTimestamp = now;
+        // 缓存时间戳应在 DB 读取完成后设置，避免读取期间并发重复请求
+        cacheTimestamp = Date.now();
         return cachedSettings;
     } catch (error) {
         // DB 不可用时使用最便宜的默认配置（qwen-turbo 全天最低价）
@@ -206,10 +208,70 @@ export async function isAIEnabled(): Promise<boolean> {
     // 2. 检查是否有有效的 API Key 配置
     const settings = await getAISettings();
     const provider = settings.provider || "qwen";
-    const keys = getApiKeysForProvider(provider, settings);
+    const keys = getApiKeysForProvider(provider, settings).filter(isKeyFormatValid);
 
-    // 仅判断 Key 是否存在，不再调用服务商接口做可用性探测
-    return keys.length > 0;
+    if (keys.length === 0) {
+        return false;
+    }
+
+    // 3. 轻量缓存式 key 有效性校验（每 key 每 5 分钟最多一次 models.list）
+    // 仅 401/403 视为明确无效；其他错误保守认为有效，避免网络抖动导致服务误判关闭。
+    const validityResults = await Promise.all(keys.map(key => checkApiKeyValid(provider, key)));
+    return validityResults.some(Boolean);
+}
+
+/**
+ * API Key 格式校验：排除空值、含空白、过短、非标准前缀的 key
+ */
+function isKeyFormatValid(key: string): boolean {
+    if (!key || typeof key !== "string") return false;
+    if (key.length < 10) return false;
+    if (/\s/.test(key)) return false;
+    if (!key.startsWith("sk-")) return false;
+    return true;
+}
+
+interface KeyValidityEntry {
+    valid: boolean;
+    checkedAt: number;
+}
+
+const keyValidityCache = new Map<string, KeyValidityEntry>();
+const KEY_VALIDITY_CACHE_MS = 5 * 60 * 1000;
+
+/**
+ * 轻量校验 API Key 是否有效（缓存 5 分钟）
+ * 使用 models.list 进行探测，失败时仅当 401/403 才判定为无效。
+ */
+async function checkApiKeyValid(provider: AIProvider, apiKey: string): Promise<boolean> {
+    const cacheKey = `${provider}:${apiKey.slice(-8)}`;
+    const cached = keyValidityCache.get(cacheKey);
+    if (cached && Date.now() - cached.checkedAt < KEY_VALIDITY_CACHE_MS) {
+        return cached.valid;
+    }
+
+    try {
+        const client = createOpenAIClient(provider, apiKey);
+        await client.models.list();
+        keyValidityCache.set(cacheKey, { valid: true, checkedAt: Date.now() });
+        return true;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+        const status = error?.status || error?.response?.status;
+        const errorStr = String(error);
+        const isAuthError = status === 401 || status === 403 || errorStr.includes("401") || errorStr.includes("403");
+
+        if (isAuthError) {
+            aiLogger.warn(`[isAIEnabled] API key invalid for ${provider}: ${error.message || errorStr}`);
+            keyValidityCache.set(cacheKey, { valid: false, checkedAt: Date.now() });
+            return false;
+        }
+
+        // 网络/服务端错误不直接判定 key 无效，避免偶发抖动关闭 AI
+        aiLogger.warn(`[isAIEnabled] API key validation inconclusive for ${provider}`, { error: errorStr });
+        keyValidityCache.set(cacheKey, { valid: true, checkedAt: Date.now() });
+        return true;
+    }
 }
 
 /**
@@ -259,13 +321,15 @@ export function createOpenAIClient(provider: AIProvider, apiKey: string) {
 /**
  * 文本生成 (支持服务商降级 & 多 Key 轮询)
  * @param userId - 可选登录用户ID，用于单用户每日AI调用硬限流
+ * @param sessionId - 可选会话ID，用于 AI 用量审计
  */
 export async function generateText(
     systemPrompt: string,
     userPrompt: string,
     preferredProvider?: AIProvider,
     signal?: AbortSignal,
-    userId?: string | null
+    userId?: string | null,
+    sessionId?: string | null
 ): Promise<string> {
     // 如果外部 signal 已 abort，直接抛出
     if (signal?.aborted) {
@@ -295,7 +359,7 @@ export async function generateText(
             const model = provider === primaryProvider ? primaryModel : getModelForProvider(provider);
 
             try {
-                const result = await callProviderWithRetry(provider as AIProvider, model, systemPrompt, userPrompt, settings, signal);
+                const result = await callProviderWithRetry(provider as AIProvider, model, systemPrompt, userPrompt, settings, signal, userId, sessionId);
                 aiLogger.info(`AI Generation Success using provider: ${provider}`);
                 return result;
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -325,7 +389,9 @@ async function callProviderWithRetry(
     systemPrompt: string,
     userPrompt: string,
     settings: AISettings,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    userId?: string | null,
+    sessionId?: string | null
 ): Promise<string> {
     let apiKeys = getApiKeysForProvider(provider, settings);
 
@@ -345,7 +411,7 @@ async function callProviderWithRetry(
         const apiKey = apiKeys[i];
         try {
             if (i > 0) aiLogger.info(`Retrying with key ${i + 1}/${apiKeys.length} for ${provider}`);
-            const result = await callProviderInternal(provider, apiKey, model, systemPrompt, userPrompt, settings, signal);
+            const result = await callProviderInternal(provider, apiKey, model, systemPrompt, userPrompt, settings, signal, userId, sessionId);
             recordKeyResult(provider, apiKey, { success: true });
             return result;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -408,7 +474,9 @@ async function callProviderInternal(
     systemPrompt: string,
     userPrompt: string,
     settings: AISettings,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    userId?: string | null,
+    sessionId?: string | null
 ): Promise<string> {
     const serviceKey = `text-${provider}`;
 
@@ -489,6 +557,8 @@ async function callProviderInternal(
                 totalTokens: usage.total_tokens || 0,
                 durationMs: Date.now() - startedAt,
                 success: true,
+                userId,
+                sessionId,
             });
         }
         // 记录成功到熔断器
@@ -509,6 +579,8 @@ async function callProviderInternal(
             durationMs: Date.now() - startedAt,
             success: false,
             errorCode: isTimeout ? "timeout" : e.message?.slice(0, 200),
+            userId,
+            sessionId,
         });
 
         // 客户端主动取消或内部超时不应计入熔断器失败统计

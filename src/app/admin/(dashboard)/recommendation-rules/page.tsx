@@ -2,13 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
-    Loader2, Trash2, Plus, Sparkles, X, Pencil
+    Loader2, Trash2, Plus, Sparkles, Pencil
 } from "lucide-react";
 import { SKIN_TYPE_OPTIONS } from "@/types/product";
 import { useToast } from "@/components/ui/Toast";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { AdminModal } from "@/components/ui/AdminModal";
-import { useMounted } from "@/hooks/use-mounted";
 
 interface Product {
     id: string;
@@ -83,8 +82,7 @@ export default function RecommendationRulesPage() {
 
     useEffect(() => {
         // Intentional mount-only data fetch: setLoading(false) runs in promise finally,
-        // not synchronously during render. Disabling strict rule for this common pattern.
-        // eslint-disable-next-line react-hooks/set-state-in-effect
+        // not synchronously during render.
         Promise.all([fetchRules(), fetchProducts()]).finally(() => setLoading(false));
     }, [fetchRules, fetchProducts]);
 

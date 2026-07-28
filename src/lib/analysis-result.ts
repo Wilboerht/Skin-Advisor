@@ -35,6 +35,25 @@ export interface ComprehensiveResult {
     expiresAt?: string;
 }
 
+function normalizeDataSource(
+    dataSource: unknown,
+    source: unknown
+): ComprehensiveResult["dataSource"] {
+    const allowed = ["comprehensive", "questionnaire", "hybrid"] as const;
+    if (typeof dataSource === "string" && allowed.includes(dataSource as typeof allowed[number])) {
+        return dataSource as ComprehensiveResult["dataSource"];
+    }
+
+    const effective = typeof source === "string" ? source : dataSource;
+    if (effective === "ai" || effective === "hybrid" || effective === "comprehensive") {
+        return "comprehensive";
+    }
+    if (effective === "fallback") {
+        return "questionnaire";
+    }
+    return "questionnaire";
+}
+
 /**
  * 标准化 analysisResult 数据结构，兼容新旧两种格式：
  * - 新格式: { skinProfile, analysis, products, dataSource }
@@ -59,7 +78,7 @@ export function normalizeAnalysisResult(raw: unknown): ComprehensiveResult | nul
             details: (analysis?.details as string[] | undefined) || [],
             lifestyleTips: (analysis?.lifestyleTips as string[] | undefined) || [],
         },
-        dataSource: (record.dataSource as ComprehensiveResult["dataSource"] | undefined) || (record.source === "ai" ? "comprehensive" : "questionnaire"),
+        dataSource: normalizeDataSource(record.dataSource, record.source),
         products: (record.products as ComprehensiveResult["products"]) || [],
         persona: record.persona as string | undefined,
         expiresAt: record.expiresAt as string | undefined,

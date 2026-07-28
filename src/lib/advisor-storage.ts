@@ -3,6 +3,8 @@
  * localStorage has ~5MB limit, IndexedDB can store much more
  */
 
+import { STORAGE_KEYS } from "@/lib/storage-keys";
+
 const DB_NAME = "MySkinAdvisorDB";
 const DB_VERSION = 1;
 const STORES = {
@@ -228,7 +230,7 @@ export async function clearAllData(): Promise<boolean> {
 /**
  * Clear expired data (older than specified hours)
  */
-export async function clearExpiredData(maxAgeHours: number = 24): Promise<void> {
+export async function clearExpiredData(maxAgeHours: number = 1): Promise<void> {
     try {
         const db = await getDB();
         const maxAgeMs = maxAgeHours * 60 * 60 * 1000;
@@ -279,7 +281,7 @@ export const advisorStorage = {
                     localStorage.removeItem("advisor_face_images");
                     return true;
                 }
-            } catch (e) {
+            } catch {
                 console.warn("IndexedDB save failed, falling back to localStorage");
             }
         }
@@ -289,7 +291,7 @@ export const advisorStorage = {
             localStorage.setItem("advisor_face_images", JSON.stringify(images));
             localStorage.removeItem("advisor_face_images_idb");
             return true;
-        } catch (e) {
+        } catch {
             console.error("localStorage save failed too");
             return false;
         }
@@ -301,7 +303,7 @@ export const advisorStorage = {
             try {
                 const images = await getFaceImages();
                 if (images) return images;
-            } catch (e) {
+            } catch {
                 console.warn("IndexedDB get failed, trying localStorage");
             }
         }
@@ -310,7 +312,7 @@ export const advisorStorage = {
         try {
             const str = localStorage.getItem("advisor_face_images");
             if (str) return JSON.parse(str);
-        } catch (e) {
+        } catch {
             console.error("localStorage parse error");
         }
 
@@ -326,7 +328,7 @@ export const advisorStorage = {
                     localStorage.removeItem("advisor_result");
                     return true;
                 }
-            } catch (e) {
+            } catch {
                 console.warn("IndexedDB save failed, falling back to localStorage");
             }
         }
@@ -335,7 +337,7 @@ export const advisorStorage = {
             localStorage.setItem("advisor_result", JSON.stringify(result));
             localStorage.removeItem("advisor_result_idb");
             return true;
-        } catch (e) {
+        } catch {
             console.error("localStorage save failed too");
             return false;
         }
@@ -346,7 +348,7 @@ export const advisorStorage = {
             try {
                 const result = await getResult();
                 if (result) return result as Record<string, unknown>;
-            } catch (e) {
+            } catch {
                 console.warn("IndexedDB get failed, trying localStorage");
             }
         }
@@ -354,7 +356,7 @@ export const advisorStorage = {
         try {
             const str = localStorage.getItem("advisor_result");
             if (str) return JSON.parse(str);
-        } catch (e) {
+        } catch {
             console.error("localStorage parse error");
         }
 
@@ -385,7 +387,7 @@ export const advisorStorage = {
                 return null;
             }
             return data.images;
-        } catch (e) {
+        } catch {
             return null;
         }
     },
@@ -395,18 +397,22 @@ export const advisorStorage = {
         if (isIndexedDBAvailable()) {
             try {
                 await clearAllData();
-            } catch (e) {
+            } catch {
                 console.warn("IndexedDB clear failed");
             }
         }
 
         // Clear localStorage markers and data
-        localStorage.removeItem("advisor_face_images");
-        localStorage.removeItem("advisor_face_images_idb");
-        localStorage.removeItem("advisor_result");
-        localStorage.removeItem("advisor_result_idb");
-        localStorage.removeItem("advisor_processed_images");
-        localStorage.removeItem("advisor_step");
+        Object.values(STORAGE_KEYS).forEach((key) => {
+            if (typeof key === "string") {
+                try { localStorage.removeItem(key); } catch { /* ignore */ }
+            }
+        });
+        // 补充非 STORAGE_KEYS 但本流程使用的遗留 key
+        const legacyKeys = ["advisor_scan_mode"];
+        legacyKeys.forEach((key) => {
+            try { localStorage.removeItem(key); } catch { /* ignore */ }
+        });
     },
 
     /** 仅清除人脸照片缓存（保留问卷答案和进度） */

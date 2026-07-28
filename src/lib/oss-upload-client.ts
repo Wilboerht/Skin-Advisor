@@ -1,5 +1,12 @@
 import { fetchWithCsrf } from "./fetch-client";
 
+export interface UploadMetadata {
+    sessionId?: string;
+    guestId?: string;
+    cookieId?: string;
+    fingerprint?: string;
+}
+
 const MAX_UPLOAD_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_UPLOAD_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
@@ -26,18 +33,25 @@ export function isOSSConfigured(): boolean {
  * 上传文件到阿里云 OSS (直传)
  * @param file 文件对象或 Blob
  * @param filename 文件名
+ * @param metadata 可选的游客/会话标识
  */
-export async function uploadImageToOSS(file: Blob, filename: string = "image.jpg"): Promise<string> {
+export async function uploadImageToOSS(file: Blob, filename: string = "image.jpg", metadata?: UploadMetadata): Promise<string> {
     validateImageFile(file);
 
     // 1. 获取上传签名
+    const signBody: Record<string, unknown> = {
+        filename: filename,
+        type: file.type || "image/jpeg"
+    };
+    if (metadata?.sessionId) signBody.sessionId = metadata.sessionId;
+    if (metadata?.guestId) signBody.guestId = metadata.guestId;
+    if (metadata?.cookieId) signBody.cookieId = metadata.cookieId;
+    if (metadata?.fingerprint) signBody.fingerprint = metadata.fingerprint;
+
     const signRes = await fetchWithCsrf("/api/oss/sign", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            filename: filename,
-            type: file.type || "image/jpeg"
-        }),
+        body: JSON.stringify(signBody),
     });
 
     const signData = await signRes.json();

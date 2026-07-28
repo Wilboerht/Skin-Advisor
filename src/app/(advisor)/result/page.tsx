@@ -2,6 +2,9 @@ import { Metadata } from "next";
 import ResultClient from "./ResultClient";
 import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import prisma from "@/lib/prisma";
+import { normalizeAnalysisResult, type ComprehensiveResult } from "@/lib/analysis-result";
+import type { FaceAnalysisResult } from "@/lib/advisor-utils";
 
 export default async function ResultPage(props: {
     searchParams: Promise<{ id?: string; status?: string }>;
@@ -18,8 +21,32 @@ export default async function ResultPage(props: {
         redirect(`/reports/${id}`);
     }
 
-    // 当前结果由客户端从 localStorage 或分析流程恢复
-    return <ResultClient id={undefined} initialData={null} />;
+    let initialData: { result: ComprehensiveResult; faceAnalysis: FaceAnalysisResult | null } | null = null;
+
+    // 服务端预加载：登录用户携带 id 且非分析中时，直接查询该会话
+    if (id && status !== 'analyzing' && user) {
+        try {
+            const session = await prisma.advisorSession.findUnique({
+                where: { sessionId: id, userId: user.id },
+                select: { analysisResult: true, expiresAt: true },
+            });
+            if (session?.analysisResult && (!session.expiresAt || new Date() <= new Date(session.expiresAt))) {
+                const rawResult = session.analysisResult as unknown as Record<string, unknown>;
+                const result = normalizeAnalysisResult(rawResult);
+                if (result) {
+                    result.expiresAt = session.expiresAt?.toISOString();
+                    initialData = {
+                        result,
+                        faceAnalysis: (rawResult.faceAnalysis as FaceAnalysisResult | null) || null,
+                    };
+                }
+            }
+        } catch (e) {
+            console.error("Failed to preload result session:", e);
+        }
+    }
+
+    return <ResultClient id={id} initialData={initialData} user={user} />;
 }
 
 export async function generateMetadata(): Promise<Metadata> {

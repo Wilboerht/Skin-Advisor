@@ -2,7 +2,7 @@
  * 统一的图片上传客户端
  * 自动选择存储后端: 阿里云 OSS > 本地存储
  */
-import { uploadImageToOSS, isOSSConfigured } from "./oss-upload-client";
+import { uploadImageToOSS, isOSSConfigured, type UploadMetadata } from "./oss-upload-client";
 import { fetchWithCsrf } from "./fetch-client";
 
 export type StorageProvider = "oss" | "local";
@@ -27,8 +27,9 @@ async function compressImage(file: Blob): Promise<Blob> {
     // 小于 200KB 的图不压缩
     if (file.size < 200 * 1024) return file;
 
+    let bitmap: ImageBitmap | null = null;
     try {
-        const bitmap = await createImageBitmap(file);
+        bitmap = await createImageBitmap(file);
         const MAX_WIDTH = 1200;
         let { width, height } = bitmap;
         if (width > MAX_WIDTH) {
@@ -43,7 +44,6 @@ async function compressImage(file: Blob): Promise<Blob> {
         if (!ctx) return file;
 
         ctx.drawImage(bitmap, 0, 0, width, height);
-        bitmap.close();
 
         const compressed = await new Promise<Blob>((resolve) => {
             canvas.toBlob((b) => resolve(b || file), "image/jpeg", 0.85);
@@ -52,6 +52,8 @@ async function compressImage(file: Blob): Promise<Blob> {
         return compressed;
     } catch {
         return file; // 压缩失败则原图上传
+    } finally {
+        bitmap?.close();
     }
 }
 
@@ -59,11 +61,13 @@ async function compressImage(file: Blob): Promise<Blob> {
  * 上传图片到云存储
  * @param file 文件对象或 Blob
  * @param filename 可选的文件名
+ * @param metadata 可选的游客/会话标识，用于生成隔离的上传路径
  * @returns 公开访问的 URL
  */
 export async function uploadImage(
     file: Blob,
-    filename: string = "image.jpg"
+    filename: string = "image.jpg",
+    metadata?: UploadMetadata
 ): Promise<string> {
     validateImageFile(file);
 
@@ -74,7 +78,7 @@ export async function uploadImage(
     if (isOSSConfigured()) {
         try {
             console.log("[Storage] 使用阿里云 OSS 上传");
-            return await uploadImageToOSS(compressed, filename);
+            return await uploadImageToOSS(compressed, filename, metadata);
         } catch (error) {
             console.warn("[Storage] OSS 上传失败，尝试备选方案:", error);
         }
@@ -82,13 +86,19 @@ export async function uploadImage(
 
     // 降级到本地存储
     console.log("[Storage] 使用本地存储上传");
+    const signBody: Record<string, unknown> = {
+        filename: filename,
+        type: compressed.type || "image/jpeg"
+    };
+    if (metadata?.sessionId) signBody.sessionId = metadata.sessionId;
+    if (metadata?.guestId) signBody.guestId = metadata.guestId;
+    if (metadata?.cookieId) signBody.cookieId = metadata.cookieId;
+    if (metadata?.fingerprint) signBody.fingerprint = metadata.fingerprint;
+
     const signRes = await fetchWithCsrf("/api/oss/sign", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            filename: filename,
-            type: compressed.type || "image/jpeg"
-        }),
+        body: JSON.stringify(signBody),
     });
 
     const signData = await signRes.json();
@@ -132,3 +142,4 @@ export function getAvailableProvider(): StorageProvider | null {
 
 // 重新导出便捷方法
 export { uploadImageToOSS } from "./oss-upload-client";
+export type { UploadMetadata } from "./oss-upload-client";

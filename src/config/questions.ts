@@ -23,6 +23,8 @@ export interface Question {
         value: string | string[];
         operator?: 'equals' | 'notEquals' | 'contains';
     };
+    /** 是否允许跳过（记录空值并继续） */
+    skippable?: boolean;
 }
 
 export const DEFAULT_QUESTIONS: Question[] = [
@@ -134,6 +136,7 @@ export const DEFAULT_QUESTIONS: Question[] = [
         question: "您有以下过敏情况吗？",
         subtext: "可多选，无过敏可跳过或选「没有过敏史」，完成后点击下一步",
         type: "multiple",
+        skippable: true,
         options: [
             { value: "none", label: "没有过敏史", description: "从未对护肤品或成分过敏" },
             { value: "fragrance", label: "香精过敏", description: "对护肤品中的\"香精\"成分敏感" },

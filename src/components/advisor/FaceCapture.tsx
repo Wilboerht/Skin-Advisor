@@ -61,11 +61,19 @@ const HEAD_POSE_THRESHOLDS = {
   chinTiltMax: 0.15,
 };
 
+// 下颚（抬头）检测阈值：兼顾严格与宽松，与注释保持一致
+const CHIN_PITCH_THRESHOLD = 0.35;
+
+// 光线不足阈值：低于此值时禁止自动拍摄，但允许手动拍照
+const MIN_LIGHT_LEVEL_FOR_AUTO_CAPTURE = 0.15;
+// 光线分析节流间隔（ms），避免主线程被密集计算阻塞
+const LIGHT_ANALYSIS_INTERVAL_MS = 250;
+
 // 步骤配置
 const CAPTURE_STEPS: { step: CaptureStep; label: string; instruction: string; icon: React.ReactNode }[] = [
   { step: "front", label: "正脸", instruction: "请正对镜头", icon: <User className="h-6 w-6" /> },
-  { step: "left", label: "左转", instruction: "请向左转头", icon: <ChevronLeft className="h-6 w-6" /> },
-  { step: "right", label: "右转", instruction: "请向右转头", icon: <ChevronRight className="h-6 w-6" /> },
+  { step: "left", label: "左转", instruction: "请向屏幕左侧转头", icon: <ChevronLeft className="h-6 w-6" /> },
+  { step: "right", label: "右转", instruction: "请向屏幕右侧转头", icon: <ChevronRight className="h-6 w-6" /> },
   { step: "chin", label: "下颚", instruction: "请微微抬头", icon: <ChevronUp className="h-6 w-6" /> },
 ];
 
@@ -100,28 +108,42 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     right: null,
     chin: null,
   });
+  const capturedImagesRef = useRef(capturedImages);
   const [currentStep, setCurrentStep] = useState<CaptureStep>("front");
+  const currentStepRef = useRef(currentStep);
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
+  const facingModeRef = useRef(facingMode);
   const [lightLevel, setLightLevel] = useState<LightLevel>("unknown");
+  const lightLevelRef = useRef(lightLevel);
   const [error, setError] = useState<string | null>(null);
   const [stabilityProgress, setStabilityProgress] = useState<number>(0); // 姿势稳定进度 0-100
   const [isInCooldown, setIsInCooldown] = useState<boolean>(false); // 冷却状态 UI 显示
   // cooldownProgress 已移除：UI 未使用，避免无意义的状态更新
   const [isMuted, setIsMuted] = useState(false); // 静音状态
+  const isMutedRef = useRef(isMuted);
   const [reducedMotion, setReducedMotion] = useState(() => {
     if (typeof window === 'undefined') return false;
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   }); // 减少动效偏好（初始值通过函数避免 effect 同步 setState）
+  const reducedMotionRef = useRef(reducedMotion);
   const [showSuccessForStep, setShowSuccessForStep] = useState<CaptureStep | null>(null); // 拍摄成功确认态
   const [isLoading, setIsLoading] = useState(true);
+  const isLoadingRef = useRef(isLoading);
   const [faceStatus, setFaceStatus] = useState<FaceStatus>("none");
   const [showManualButton, setShowManualButton] = useState(false); // 是否显示手动拍照按钮
   const [modelsLoaded, setModelsLoaded] = useState(false);
   const [faceApiLoaded, setFaceApiLoaded] = useState(false);
   const [isAllCaptured, setIsAllCaptured] = useState(false);
-  const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
+  const isAllCapturedRef = useRef(isAllCaptured);
+  const [hasMultipleCameras, setHasMultipleCameras] = useState(() => {
+    if (typeof navigator === 'undefined') return false;
+    return /Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/i.test(navigator.userAgent);
+  });
   const [modelLoadFailed, setModelLoadFailed] = useState(false); // 模型加载失败状态
+  const modelLoadFailedRef = useRef(modelLoadFailed);
   const faceApiRef = useRef<FaceApiModule | null>(null);
+  // 检测循环回调 ref，避免依赖变化导致 requestAnimationFrame 重启
+  const detectFaceRef = useRef<() => Promise<void>>(async () => {});
   // 保存最新的面部检测框，用于裁剪
   const faceBoxRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
   // 摄像头初始化调用ID，防竞态
@@ -143,6 +165,12 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
   const detectionTimesRef = useRef<number[]>([]);
   // 解决 takePhotoAuto 在 detectFace 之前被访问的闭包问题
   const takePhotoAutoRef = useRef<() => void>(() => {});
+  // 光线分析最后运行时间，用于节流
+  const lastLightAnalysisRef = useRef<number>(0);
+  // 光线亮度数值 (0-1)，供检测循环判断是否能自动拍照
+  const lightBrightnessRef = useRef<number>(1);
+  // 屏幕常亮锁
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   // 调试信息
   const [debugInfo, setDebugInfo] = useState<{
     headPose: string;
@@ -165,6 +193,16 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     return () => mql.removeEventListener('change', handler);
   }, []);
 
+  // 保持 ref 与最新状态同步，供检测循环使用（避免 loop 因依赖变化而重启）
+  useEffect(() => { capturedImagesRef.current = capturedImages; }, [capturedImages]);
+  useEffect(() => { currentStepRef.current = currentStep; }, [currentStep]);
+  useEffect(() => { facingModeRef.current = facingMode; }, [facingMode]);
+  useEffect(() => { lightLevelRef.current = lightLevel; }, [lightLevel]);
+  useEffect(() => { isMutedRef.current = isMuted; }, [isMuted]);
+  useEffect(() => { reducedMotionRef.current = reducedMotion; }, [reducedMotion]);
+  useEffect(() => { isLoadingRef.current = isLoading; }, [isLoading]);
+  useEffect(() => { isAllCapturedRef.current = isAllCaptured; }, [isAllCaptured]);
+  useEffect(() => { modelLoadFailedRef.current = modelLoadFailed; }, [modelLoadFailed]);
   /**
    * 初始化摄像头
    * 注意：禁用美颜效果，确保获取原始相机画面用于AI肌肤分析
@@ -322,7 +360,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
    * 使用鼻尖和眼睛位置来判断头部方向
    * 包含左右转头和仰头（下颚）检测
    */
-  const calculateHeadPose = useCallback((landmarks: { positions: { x: number; y: number }[] }, targetStep: CaptureStep): HeadPose => {
+  const calculateHeadPose = useCallback((landmarks: { positions: { x: number; y: number }[] }, targetStep: CaptureStep, facingMode: "user" | "environment" = "user"): HeadPose => {
     const positions = landmarks.positions;
 
     // 68点面部关键点索引：位置16/30/36/45必须存在，面部宽度不能为0
@@ -341,7 +379,13 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     const eyesCenterX = (leftEyeOuter.x + rightEyeOuter.x) / 2;
     const eyesCenterY = (leftEyeOuter.y + rightEyeOuter.y) / 2;
 
-    const noseOffsetRatio = (noseTip.x - eyesCenterX) / faceWidth;
+    let noseOffsetRatio = (noseTip.x - eyesCenterX) / faceWidth;
+
+    // 前置摄像头预览做了 CSS 镜像；为了让检测与用户镜像视角的“左/右”一致，
+    // 对用户-facing 摄像头反转水平偏移的符号。
+    if (facingMode === "user") {
+      noseOffsetRatio = -noseOffsetRatio;
+    }
 
     // 计算仰头指标：鼻尖到眼连线垂距 / 眼到下巴垂距
     const noseToEyesY = noseTip.y - eyesCenterY;
@@ -373,10 +417,9 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
 
     if (targetStep === 'chin') {
       // 抬头检测：tiltRatio 越小表示仰头越明显
-      // 注意：不同人面部比例差异大（鼻子长短、下巴长短），正常平视的 tiltRatio
-      // 可能在 0.25~0.55 之间波动。阈值设得太低（如 0.30）会导致很多用户正常
-      // 平视时被误判为抬头。收紧到 0.15 确保只有真正明显的抬头动作才会触发。
-      if (tiltRatio < HEAD_POSE_THRESHOLDS.chinTiltMax && Math.abs(noseOffsetRatio) < HEAD_POSE_THRESHOLDS.chinNoseOffsetMax) {
+      // 正常平视 tiltRatio 多在 0.25~0.55 之间波动。使用单一阈值 CHIN_PITCH_THRESHOLD(0.35)
+      // 作为判定界线，既保证真正的抬头动作能触发，也避免正常平视被误判。
+      if (tiltRatio < CHIN_PITCH_THRESHOLD && Math.abs(noseOffsetRatio) < HEAD_POSE_THRESHOLDS.chinNoseOffsetMax) {
         return "chin";
       }
     }
@@ -481,7 +524,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
 
   /* 语音播报函数 */
   const speak = useCallback((text: string): SpeechSynthesisUtterance | null => {
-    if (isMuted || reducedMotion || typeof window === 'undefined') return null;
+    if (isMutedRef.current || reducedMotionRef.current || typeof window === 'undefined') return null;
     try {
       // 防止同一个指令在短时间内重复堆积
       if (window.speechSynthesis.speaking && text === lastSpokenPhraseRef.current) {
@@ -507,14 +550,15 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
       console.error("Speech synthesis failed", e);
       return null;
     }
-  }, [isMuted, reducedMotion]);
+  }, []);
 
   /**
    * 检测面部和头部朝向
+   * 使用 ref 读取可变状态，避免每次状态变化都重启 requestAnimationFrame 循环。
    */
-  const detectFace = useCallback(async () => {
+  const detectFace = async () => {
     if (cooldownRef.current || isDetectingRef.current) return;
-    if (!videoRef.current || !faceApiRef.current || !modelsLoaded || isAllCaptured) return;
+    if (!videoRef.current || !faceApiRef.current || !modelsLoaded || isAllCapturedRef.current || isLoadingRef.current || modelLoadFailedRef.current) return;
 
     const video = videoRef.current;
     if (video.readyState < 2) return;
@@ -545,7 +589,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
           videoHeight,
           displayWidth,
           displayHeight,
-          facingMode
+          facingModeRef.current
         );
 
         // 检查面部是否在椭圆框内（仅作为视觉引导，不作为硬性拍照门槛）
@@ -556,8 +600,9 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
         const faceToEllipseRatio = box.height / ellipseHeight;
         const isSizeOk = faceToEllipseRatio > 0.15 && faceToEllipseRatio < 1.05;
 
-        // 计算头部朝向 (传入 currentStep 以优化判定逻辑)
-        const headPose = calculateHeadPose(detection.landmarks, currentStep);
+        const currentStep = currentStepRef.current;
+        // 计算头部朝向 (传入 currentStep 以优化判定逻辑；前置摄像头时反转水平偏移以匹配镜像视角)
+        const headPose = calculateHeadPose(detection.landmarks, currentStep, facingModeRef.current);
 
         // 检查当前头部朝向是否匹配当前步骤
         const isPoseCorrect = headPose === currentStep;
@@ -574,7 +619,8 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
           const eyesCenterX = (leftEyeOuter.x + rightEyeOuter.x) / 2;
           const eyesCenterY = (leftEyeOuter.y + rightEyeOuter.y) / 2;
           const faceWidth = faceRight.x - faceLeft.x;
-          const noseOffsetRatio = (noseTip.x - eyesCenterX) / faceWidth;
+          let noseOffsetRatio = (noseTip.x - eyesCenterX) / faceWidth;
+          if (facingModeRef.current === "user") noseOffsetRatio = -noseOffsetRatio;
           const noseToEyesY = noseTip.y - eyesCenterY;
           const eyesToChinY = chin.y - eyesCenterY;
           const tiltRatio = eyesToChinY !== 0 ? noseToEyesY / eyesToChinY : 0.5;
@@ -596,8 +642,9 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
         const requiredFrames = currentStep === 'chin' ? 7 : 5;
         const progressFrames = currentStep === 'chin' ? 8 : 6;
 
-        // 核心拍照条件：姿势正确 + 大小基本合适（椭圆框只是视觉引导，不硬性限制）
-        const canCapture = isSizeOk && isPoseCorrect;
+        // 核心拍照条件：姿势正确 + 大小基本合适 + 光线足够（光线不足仍可手动拍照）
+        const isLightSufficient = lightBrightnessRef.current >= MIN_LIGHT_LEVEL_FOR_AUTO_CAPTURE;
+        const canCapture = isSizeOk && isPoseCorrect && isLightSufficient;
 
         if (canCapture) {
           // 冷却结束后的静默期内：检测正常进行但不累加 stableCount，给用户调整姿势的缓冲
@@ -645,9 +692,9 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
           if (now > speakLockUntilRef.current && now - lastSpeakTimeRef.current > 6000 && !isPoseCorrect) {
             let feedback = "";
             if (currentStep === "left") {
-              feedback = "请向左边转头";
+              feedback = "请向屏幕左侧转头";
             } else if (currentStep === "right") {
-              feedback = "请向右边转头";
+              feedback = "请向屏幕右侧转头";
             } else if (currentStep === "chin") {
               feedback = "请稍微抬头";
             } else if (currentStep === "front") {
@@ -687,7 +734,12 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
         }
       }
     }
-  }, [modelsLoaded, isAllCaptured, calculateHeadPose, currentStep, isFaceInEllipse, mapVideoBoxToDisplay, speak, facingMode, takePhotoAutoRef]);
+  };
+
+  // 保持检测回调最新，供 requestAnimationFrame 循环使用；依赖变化不再重启 loop
+  useEffect(() => {
+    detectFaceRef.current = detectFace;
+  });
 
   // 监听步骤变化并播报语音指令
   useEffect(() => {
@@ -742,11 +794,12 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
   /**
    * 自动拍照并进入下一步
    * 优化：根据面部检测框裁剪图像，去除多余背景
+   * 使用 ref 读取 currentStep/capturedImages，避免 setTimeout 闭包过时。
    */
   const takePhotoAuto = useCallback(() => {
     if (!videoRef.current || !canvasRef.current || cooldownRef.current) return;
 
-    // 立即进入冷却，防止 detectFace 在 setTimeout(0) 的异步窗口内再次触发
+    // 立即进入冷却，防止 detectFace 在异步窗口内再次触发
     cooldownRef.current = true;
     setIsInCooldown(true);
 
@@ -834,10 +887,13 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
       imageData = canvas.toDataURL("image/jpeg", 0.75);
     }
 
+    // 从 ref 读取当前步骤，避免闭包过时
+    const step = currentStepRef.current;
+
     // 保存当前步骤的照片
     setCapturedImages(prev => ({
       ...prev,
-      [currentStep]: imageData,
+      [step]: imageData,
     }));
 
     // 播报拍照成功反馈，先清空队列避免旧指令滞后
@@ -847,7 +903,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     speak("好");
 
     // 震动反馈（支持移动设备），弥补 TTS 不可靠的场景
-    if (!reducedMotion && typeof navigator !== 'undefined' && navigator.vibrate) {
+    if (!reducedMotionRef.current && typeof navigator !== 'undefined' && navigator.vibrate) {
       navigator.vibrate(50);
     }
 
@@ -857,7 +913,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     faceBoxRef.current = null; // 重置面部框
 
     // 检查是否还有下一步
-    const nextStep = getNextStep(currentStep);
+    const nextStep = getNextStep(step);
 
     // 成功提示持续 1000ms
     const successDisplayDuration = 1000;
@@ -866,7 +922,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
       // 冷却已在 takePhotoAuto 入口处设置，这里只需展示成功状态
       // ★ 拍摄成功确认：先展示完成状态，再进入下一步
       setFaceStatus("success");
-      setShowSuccessForStep(currentStep);
+      setShowSuccessForStep(step);
 
       successTimerRef.current = setTimeout(() => {
         setFaceStatus("none");
@@ -910,7 +966,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     } else {
       // ★ 最后一张也显示拍摄成功提示
       setFaceStatus("success");
-      setShowSuccessForStep(currentStep);
+      setShowSuccessForStep(step);
 
       successTimerRef.current = setTimeout(() => {
         // 所有步骤完成 - 直接调用 onCapture 并传递所有照片
@@ -932,20 +988,40 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
         }
         setStream(null);
 
-        // 直接调用 onCapture，传递所有四张照片
+        // 从 ref 读取已拍照片，避免 setTimeout 闭包过时
         const allImages: FaceCaptureImages = {
-          front: currentStep === "front" ? imageData : capturedImages.front!,
-          left: currentStep === "left" ? imageData : capturedImages.left!,
-          right: currentStep === "right" ? imageData : capturedImages.right!,
-          chin: imageData, // 最后一步一定是 chin
+          front: step === "front" ? imageData : capturedImagesRef.current.front!,
+          left: step === "left" ? imageData : capturedImagesRef.current.left!,
+          right: step === "right" ? imageData : capturedImagesRef.current.right!,
+          chin: step === "chin" ? imageData : capturedImagesRef.current.chin!,
         };
+
+        // 校验四个角度是否全部非空；若缺失则回到缺失步骤重拍，避免传空图给下游
+        const missingStep = (["front", "left", "right", "chin"] as CaptureStep[]).find((k) => !allImages[k]);
+        if (missingStep) {
+          console.error("[FaceCapture] Missing capture angle", missingStep);
+          setError(`拍摄数据不完整，请重新拍摄${CAPTURE_STEPS.find(s => s.step === missingStep)?.label}照片`);
+          setIsAllCaptured(false);
+          setCurrentStep(missingStep);
+          setFaceStatus("none");
+          setShowSuccessForStep(null);
+          setStabilityProgress(0);
+          stableCountRef.current = 0;
+          cooldownRef.current = false;
+          setIsInCooldown(false);
+          stepStartTimeRef.current = Date.now();
+          setShowManualButton(false);
+          successTimerRef.current = null;
+          return;
+        }
+
         onCapture(allImages);
 
         successTimerRef.current = null;
       }, successDisplayDuration);
     }
     }, 0);
-  }, [currentStep, getNextStep, capturedImages, onCapture, speak, reducedMotion]);
+  }, [getNextStep, onCapture, speak]);
 
   // 保持 detectFace 始终能访问到最新的 takePhotoAuto，避免闭包过时
   useEffect(() => {
@@ -955,8 +1031,13 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
   /**
    * 分析光线条件 - 增强版
    * 检测：亮度、对比度、均匀度
+   * 已节流：每 250ms 最多运行一次；使用 50x38 下采样降低主线程压力。
    */
   const analyzeLightLevel = useCallback(() => {
+    const now = Date.now();
+    if (now - lastLightAnalysisRef.current < LIGHT_ANALYSIS_INTERVAL_MS) return;
+    lastLightAnalysisRef.current = now;
+
     if (!videoRef.current || !canvasRef.current) return;
 
     const canvas = canvasRef.current;
@@ -965,14 +1046,16 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     // 等待视频就绪，避免 drawImage 抛异常
     if (video.readyState < 2) return;
 
-    canvas.width = 100; // 小尺寸用于快速分析
-    canvas.height = 75;
+    const W = 50;
+    const H = 38;
+    canvas.width = W;
+    canvas.height = H;
 
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
     try {
-      ctx.drawImage(video, 0, 0, 100, 75);
+      ctx.drawImage(video, 0, 0, W, H);
     } catch (e) {
       console.warn("[FaceCapture] drawImage failed in analyzeLightLevel:", e);
       return;
@@ -980,7 +1063,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
 
     let imageData: ImageData;
     try {
-      imageData = ctx.getImageData(0, 0, 100, 75);
+      imageData = ctx.getImageData(0, 0, W, H);
     } catch (e) {
       console.warn("[FaceCapture] getImageData failed in analyzeLightLevel:", e);
       return;
@@ -1007,6 +1090,8 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     }
 
     const avgBrightness = totalBrightness / pixelCount;
+    // 归一化到 0-1，供检测循环做阈值判断
+    lightBrightnessRef.current = avgBrightness / 255;
 
     // 计算标准差（光线均匀度）
     let variance = 0;
@@ -1077,21 +1162,20 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
 
   // 加载 face-api.js（异步初始化外部模型，必须在 effect 中执行）
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadFaceApi();
   }, [loadFaceApi]);
 
-  // 检测是否有多个摄像头
+  // 检测是否有多个摄像头；默认在移动端显示切换按钮，授权后重新枚举以获取标签
   useEffect(() => {
     navigator.mediaDevices.enumerateDevices().then(devices => {
       const videoInputs = devices.filter(d => d.kind === 'videoinput');
       setHasMultipleCameras(videoInputs.length > 1);
     }).catch(() => {
-      setHasMultipleCameras(false);
+      // 保持移动端默认显示
     });
   }, []);
 
-  // Separate Effect to bind stream to video element
+  // 视频流绑定到 video 元素；授权成功后重新枚举设备以获取带标签的摄像头列表
   useEffect(() => {
     if (stream && videoRef.current) {
       videoRef.current.srcObject = stream;
@@ -1100,15 +1184,24 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
           console.warn("Video play error (handled):", e);
         }
       });
+      // 重新枚举设备，通常在授权后标签可用
+      navigator.mediaDevices.enumerateDevices().then(devices => {
+        const videoInputs = devices.filter(d => d.kind === 'videoinput');
+        setHasMultipleCameras(videoInputs.length > 1);
+      }).catch(() => {
+        // 保持移动端默认显示
+      });
     }
   }, [stream]);
 
   // 初始化摄像头（异步初始化外部硬件，必须在 effect 中执行）
   useEffect(() => {
-    const video = videoRef.current;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     void initCamera();
+  }, [facingMode, initCamera]);
 
+  // 统一的摄像头流清理：组件卸载或 stream 变化时停止旧流的所有轨道
+  useEffect(() => {
+    const video = videoRef.current;
     return () => {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
@@ -1129,18 +1222,18 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
         window.speechSynthesis.cancel();
       }
     };
-  }, [facingMode, initCamera]);
+  }, [stream]);
 
-  // 面部检测循环
+  // 面部检测循环：依赖项精简，避免 currentStep/facingMode 等变化导致 loop 重启
   useEffect(() => {
-    if (!stream || !modelsLoaded || isAllCaptured || isLoading) return;
+    if (!stream || !modelsLoaded || isAllCaptured || isLoading || modelLoadFailed) return;
 
     let animationId: number;
     let lastDetectionTime = 0;
 
     const runDetection = (timestamp: number) => {
       if (timestamp - lastDetectionTime >= detectionIntervalRef.current) {
-        detectFace();
+        detectFaceRef.current();
         lastDetectionTime = timestamp;
       }
       animationId = requestAnimationFrame(runDetection);
@@ -1154,19 +1247,20 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
         cancelAnimationFrame(animationId);
       }
     };
-  }, [stream, modelsLoaded, isAllCaptured, isLoading, detectFace]);
+  }, [stream, modelsLoaded, isAllCaptured, isLoading, modelLoadFailed]);
 
-  // 定时检测光线
+  // 定时检测光线（analyzeLightLevel 内部已节流）
   useEffect(() => {
     if (!stream || isAllCaptured) return;
 
-    const interval = setInterval(analyzeLightLevel, 1000);
+    const interval = setInterval(analyzeLightLevel, 300);
     return () => clearInterval(interval);
   }, [stream, isAllCaptured, analyzeLightLevel]);
 
-  // 5秒后显示手动拍照按钮（步骤切换时通过 currentStep 依赖自动重置计时）
+  // 步骤切换时重置手动拍照按钮；计时到 5 秒后显示手动按钮
   useEffect(() => {
-    if (isAllCaptured || isLoading || error || isInCooldown) {
+    setShowManualButton(false);
+    if (isAllCaptured || isLoading || error || isInCooldown || modelLoadFailed) {
       return;
     }
 
@@ -1176,7 +1270,30 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     }, remaining);
 
     return () => clearTimeout(timer);
-  }, [isAllCaptured, isLoading, error, isInCooldown, currentStep]);
+  }, [isAllCaptured, isLoading, error, isInCooldown, currentStep, modelLoadFailed]);
+
+  // 人脸捕获期间保持屏幕常亮，NotAllowedError 静默忽略
+  useEffect(() => {
+    if (!stream || isAllCaptured || typeof navigator === 'undefined' || !('wakeLock' in navigator)) return;
+
+    const requestWakeLock = async () => {
+      try {
+        const sentinel = await (navigator as unknown as { wakeLock: { request: (type: 'screen') => Promise<WakeLockSentinel> } }).wakeLock.request('screen');
+        wakeLockRef.current = sentinel;
+      } catch (e) {
+        if (DEBUG) {
+          console.warn("Wake lock request failed (ignored):", e);
+        }
+      }
+    };
+
+    requestWakeLock();
+
+    return () => {
+      wakeLockRef.current?.release().catch(() => {});
+      wakeLockRef.current = null;
+    };
+  }, [stream, isAllCaptured]);
 
   // 获取当前步骤配置
   const currentStepConfig = CAPTURE_STEPS.find(s => s.step === currentStep);
@@ -1323,7 +1440,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
                 {lightLevel === 'low' || lightLevel === 'too_dark' ? (
                   <>
                     <SunDim className="w-4 h-4 text-yellow-300" />
-                    <span className="text-yellow-100">光线不足</span>
+                    <span className="text-yellow-100">光线不足，请移至明亮处</span>
                   </>
                 ) : (
                   <>

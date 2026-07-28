@@ -45,16 +45,19 @@ if (isOSSConfigured()) {
 
 /**
  * 生成直传签名 URL
- * @param filename 文件名
+ * @param filename 文件名（仅用于推断扩展名，当 objectName 传入时忽略其路径部分）
  * @param type 文件类型 (MIME type)
+ * @param objectName 可选指定 OSS object key；未提供时按默认规则生成
  * @returns { uploadUrl, publicUrl } 用于前端上传和访问
  */
-export async function generateUploadSignature(filename: string, type: string) {
-    // 生成随机文件路径: advisor/日期/随机ID.ext
-    const date = new Date().toISOString().split("T")[0];
-    const randomId = crypto.randomUUID();
-    const ext = filename.split(".").pop()?.toLowerCase() || "jpg";
-    const objectName = `advisor/${date}/${randomId}.${ext}`;
+export async function generateUploadSignature(filename: string, type: string, objectName?: string) {
+    if (!objectName) {
+        // 生成随机文件路径: advisor/日期/随机ID.ext
+        const date = new Date().toISOString().split("T")[0];
+        const randomId = crypto.randomUUID();
+        const ext = filename.split(".").pop()?.toLowerCase() || "jpg";
+        objectName = `advisor/${date}/${randomId}.${ext}`;
+    }
 
     if (!ossClient) {
         logger.warn("阿里云 OSS 未配置，使用本地存储降级方案");

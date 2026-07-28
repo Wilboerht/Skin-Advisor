@@ -13,6 +13,17 @@ export function formatDate(date: Date | string | number) {
     });
 }
 
+export function formatPrice(price: string | number | null | undefined): string {
+    if (price === null || price === undefined || price === "") {
+        return "咨询价格";
+    }
+    const raw = String(price).replace(/[¥,\s]/g, "").trim();
+    if (!raw || isNaN(Number(raw)) || Number(raw) < 0) {
+        return "咨询价格";
+    }
+    return `¥ ${raw}`;
+}
+
 export function formatDateTime(date: Date | string | number) {
     return new Date(date).toLocaleString("zh-CN", {
         month: "long",

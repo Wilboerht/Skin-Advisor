@@ -129,7 +129,7 @@ export function FaceScanOverlay({
                         >
                             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 backdrop-blur-md border border-white/40 shadow-lg">
                                 <span className="font-mono text-3xl font-bold text-white tracking-tighter drop-shadow-md">
-                                    {Math.ceil((100 - stabilityProgress) / 25)}
+                                    {Math.max(1, Math.ceil((100 - stabilityProgress) / 25))}
                                 </span>
                                 <svg className="absolute inset-0 h-full w-full -rotate-90">
                                     <circle cx="40" cy="40" r="38" className="fill-none stroke-white/20 stroke-[3]" />

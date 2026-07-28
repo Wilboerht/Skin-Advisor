@@ -91,15 +91,23 @@ class AIRequestQueue {
     /** 追踪已获取但未释放的槽位数，防止 double release */
     private acquireCount = 0;
 
-    constructor(maxConcurrent = 10, maxConcurrentPerUser = 1) {
+    /** 最大队列长度（防止无界增长） */
+    private maxQueueLength: number;
+
+    constructor(maxConcurrent = 10, maxConcurrentPerUser = 1, maxQueueLength = 100) {
         if (typeof maxConcurrent !== 'number' || isNaN(maxConcurrent) || maxConcurrent < 1) {
             throw new Error(`[AIQueue] Invalid maxConcurrent: ${maxConcurrent}. Must be a positive integer.`);
         }
+        if (typeof maxQueueLength !== 'number' || isNaN(maxQueueLength) || maxQueueLength < 1) {
+            throw new Error(`[AIQueue] Invalid maxQueueLength: ${maxQueueLength}. Must be a positive integer.`);
+        }
         this.maxConcurrent = Math.floor(maxConcurrent);
         this.maxConcurrentPerUser = Math.floor(maxConcurrentPerUser || 1);
+        this.maxQueueLength = Math.floor(maxQueueLength);
         aiLogger.info("AI Queue initialized", {
             maxConcurrent: this.maxConcurrent,
             maxConcurrentPerUser: this.maxConcurrentPerUser,
+            maxQueueLength: this.maxQueueLength,
         });
     }
 
@@ -145,6 +153,18 @@ class AIRequestQueue {
         const position = this.queue.length + 1;
 
         const promise = new Promise<T>((resolve, reject) => {
+            // 队列长度保护：超出上限时直接拒绝，避免内存无限增长
+            if (this.queue.length >= this.maxQueueLength) {
+                aiLogger.warn("Queue is full, rejecting request", {
+                    type,
+                    userId: userId || "anonymous",
+                    queueLength: this.queue.length,
+                    maxQueueLength: this.maxQueueLength,
+                });
+                reject(new Error(`Server busy: queue is full (max ${this.maxQueueLength})`));
+                return;
+            }
+
             const item: QueueItem<T> = {
                 id,
                 type,
@@ -192,6 +212,7 @@ class AIRequestQueue {
         return new Promise<void>((headerResolve, headerReject) => {
             let timeout: ReturnType<typeof setTimeout> | null = null;
             let resolved = false;
+            let abortedOrTimedOut = false;
 
             const cleanup = () => {
                 if (timeout) clearTimeout(timeout);
@@ -203,6 +224,7 @@ class AIRequestQueue {
                 // 只有在任务尚未开始执行时才减计数并拒绝；
                 // 若已开始执行，由调用方的 finally / release() 负责清理
                 if (!resolved) {
+                    abortedOrTimedOut = true;
                     this.acquireCount = Math.max(0, this.acquireCount - 1);
                     headerReject(new Error("Queue acquire aborted by signal"));
                 }
@@ -213,6 +235,7 @@ class AIRequestQueue {
             timeout = setTimeout(() => {
                 cleanup();
                 if (!resolved) {
+                    abortedOrTimedOut = true;
                     this.acquireCount = Math.max(0, this.acquireCount - 1);
                     headerReject(new Error(`Queue acquire timed out after ${timeoutMs}ms`));
                 }
@@ -222,6 +245,14 @@ class AIRequestQueue {
                 // 这个 Promise 会在任务开始执行时被创建，并一直挂起直到 release() 被调用
                 return new Promise<void>((done) => {
                     cleanup();
+
+                    // 如果调用方在排队期间已经 abort/timeout，立即结束任务释放槽位，
+                    // 否则 releaseResolvers 中的 done 将永远等待，导致 runningCount 泄漏。
+                    if (abortedOrTimedOut || signal?.aborted) {
+                        done();
+                        return;
+                    }
+
                     resolved = true;
                     // 1. 任务已开始执行，通知 acquire 调用者可以继续了
                     headerResolve();
@@ -401,12 +432,19 @@ class AIRequestQueue {
 // 并发配置: 共计 30 并发槽位 (vision 12 + analysis 18)，匹配 ¥200/天 预算
 export const aiQueue = new AIRequestQueue(
     parseInt(process.env.AI_QUEUE_MAX_CONCURRENT || "15", 10),
-    parseInt(process.env.AI_MAX_CONCURRENT_PER_USER || "1", 10)
-);
-
-export const visionQueue = new AIRequestQueue(12);  // 视觉分析并发
-export const chatQueue = new AIRequestQueue(15);    // 聊天并发
-export const analysisQueue = new AIRequestQueue(18); // 综合分析并发（LLM 长文本）
+    parseInt(process.env.AI_MAX_CONCURRENT_PER_USER || "1", 10),
+    parseInt(process.env.AI_QUEUE_MAX_LENGTH || "100", 10)
+); // 通用 AI 队列（check-config 等监控使用）
+export const visionQueue = new AIRequestQueue(
+    parseInt(process.env.AI_VISION_QUEUE_MAX_CONCURRENT || "12", 10),
+    parseInt(process.env.AI_MAX_CONCURRENT_PER_USER || "1", 10),
+    parseInt(process.env.AI_VISION_QUEUE_MAX_LENGTH || "100", 10)
+); // 视觉分析并发
+export const analysisQueue = new AIRequestQueue(
+    parseInt(process.env.AI_QUEUE_MAX_CONCURRENT || "18", 10),
+    parseInt(process.env.AI_MAX_CONCURRENT_PER_USER || "1", 10),
+    parseInt(process.env.AI_QUEUE_MAX_LENGTH || "100", 10)
+); // 综合分析并发（LLM 长文本）
 
 // 导出类型供测试使用
 export { AIRequestQueue };

@@ -20,6 +20,8 @@ interface QuestionStepProps {
   direction: number; // 1: 向前, -1: 向后
   currentStep: number;
   totalSteps: number;
+  mode?: "scan" | "questionnaire";
+  onSkip?: () => void;
 }
 
 /**
@@ -39,6 +41,8 @@ export function QuestionStep({
   direction,
   currentStep,
   totalSteps,
+  mode = "scan",
+  onSkip,
 }: QuestionStepProps) {
   // 检测用户是否偏好减少动画
   const prefersReducedMotion = useReducedMotion();
@@ -54,7 +58,10 @@ export function QuestionStep({
   const nextLabel = (() => {
     if (isNextDisabled) return "请至少选择一项";
     if (currentStep === totalSteps) {
-      return question.type === "multiple" ? `已选 ${selectedCount} 项，开始面部检测` : "开始面部检测";
+      if (question.type === "multiple") {
+        return mode === "questionnaire" ? `已选 ${selectedCount} 项，查看我的派系` : `已选 ${selectedCount} 项，开始面部检测`;
+      }
+      return mode === "questionnaire" ? "查看我的派系" : "开始面部检测";
     }
     return `已选 ${selectedCount} 项，点击继续`;
   })();
@@ -115,10 +122,24 @@ export function QuestionStep({
                 isSelected={isSelected}
                 onClick={() => onSelect(option.value)}
                 index={prefersReducedMotion ? 0 : index}
+                role={question.type === "multiple" ? "checkbox" : "radio"}
               />
             );
           })}
         </div>
+
+        {/* Skip button for skippable questions */}
+        {question.skippable && onSkip && !selectedValue && (
+          <div className="mt-4 flex justify-center">
+            <button
+              type="button"
+              onClick={onSkip}
+              className="text-[13px] text-[#8B7355]/70 hover:text-[#5C4A35] font-medium tracking-wide underline underline-offset-4 transition-colors"
+            >
+              跳过此题
+            </button>
+          </div>
+        )}
 
         {/* Next Button - Centered below options */}
         <AnimatePresence>

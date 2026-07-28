@@ -31,12 +31,11 @@ const FACE_CACHE_MAX_SIZE = 50; // 最多缓存 50 条
 
 function buildCacheKey(_sessionId: string, images: VisionImage[]): string {
     // 仅基于图片内容哈希（不含 sessionId），这样刷新页面也能命中缓存
-    // 使用完整数据哈希（头部+尾部+长度）避免前缀碰撞
+    // 对单张图片取前 50KB 进行 sha256，避免超大 base64 占用内存；多张图片合并后再哈希
     const samples = images.map(img => {
         const data = img.data || "";
-        const head = data.slice(0, 1024);
-        const tail = data.length > 2048 ? data.slice(-1024) : "";
-        return `${img.angle}:${crypto.createHash("sha256").update(`${data.length}:${head}:${tail}`).digest("hex")}`;
+        const sample = data.slice(0, 50 * 1024);
+        return `${img.angle}:${crypto.createHash("sha256").update(sample).digest("hex")}`;
     }).join("|");
     return `face:${crypto.createHash("sha256").update(samples).digest("hex")}`;
 }
@@ -169,6 +168,24 @@ export async function POST(request: NextRequest) {
             aiLogger.warn("Sharp module not found, compression disabled");
         }
 
+        // 安全解析本地上传路径：仅允许 public/uploads 目录内的文件，防止路径遍历
+        const resolveLocalUploadPath = (imgData: string): string | null => {
+            try {
+                const relativePath = imgData.startsWith('/') ? imgData.slice(1) : imgData;
+                const uploadRoot = path.resolve(process.cwd(), 'public', 'uploads');
+                const filePath = path.resolve(uploadRoot, relativePath);
+                const rel = path.relative(uploadRoot, filePath);
+                if (rel.startsWith('..') || rel === '' || path.isAbsolute(rel)) {
+                    aiLogger.warn(`Blocked out-of-bounds file access: ${imgData}`);
+                    return null;
+                }
+                return filePath;
+            } catch (e) {
+                aiLogger.warn(`Failed to resolve local upload path: ${imgData}`, { error: (e as Error).message });
+                return null;
+            }
+        };
+
         // Helper to resolve and optionally compress image data
         const resolveImageData = async (imgData: string, compress: boolean = false) => {
             if (!imgData) return null;
@@ -180,19 +197,8 @@ export async function POST(request: NextRequest) {
 
             if ((imgData.startsWith('/') || imgData.startsWith('\\')) && !imgData.startsWith('data:')) {
                 try {
-                    const relativePath = imgData.startsWith('/') ? imgData.slice(1) : imgData;
-
-                    // Security: resolve and whitelist to public/uploads only
-                    const uploadRoot = path.resolve(process.cwd(), 'public', 'uploads');
-                    const normalized = path.normalize(relativePath);
-
-                    // 统一使用标准化后的绝对路径做白名单校验，避免平台分隔符差异被绕过
-                    const filePath = path.resolve(uploadRoot, normalized);
-                    const resolvedRoot = path.resolve(uploadRoot);
-                    if (!filePath.startsWith(resolvedRoot + path.sep) && filePath !== resolvedRoot) {
-                        aiLogger.warn(`Blocked out-of-bounds file access: ${imgData}`);
-                        return null;
-                    }
+                    const filePath = resolveLocalUploadPath(imgData);
+                    if (!filePath) return null;
 
                     buffer = await fs.readFile(filePath);
                     const ext = path.extname(filePath).toLowerCase();
@@ -282,9 +288,9 @@ export async function POST(request: NextRequest) {
         // Initial Load (Compressed Quality to prevent Payload Too Large & reduce latency)
         let validImages = await loadImages(true);
 
-        // 收集所有需要清理的上传照片 URL
+        // 收集所有需要清理的上传照片 URL（包括 OSS 直传 URL 和本地存储路径）
         const uploadedFaceUrls = validImages
-            .filter(img => !!img.data && img.data.startsWith('http'))
+            .filter(img => !!img.data && (img.data.startsWith('http') || img.data.startsWith('/uploads/') || img.data.startsWith('uploads/')))
             .map(img => img.data);
 
         if (validImages.length === 0) {
@@ -344,7 +350,8 @@ export async function POST(request: NextRequest) {
                     VISION_ANALYSIS_USER_PROMPT,
                     provider as AIProvider,
                     abortController.signal,
-                    session?.id
+                    session?.id,
+                    faceSessionId
                 ) as Record<string, unknown>;
             } catch (e: unknown) {
                 const err = e as Error;
@@ -404,7 +411,8 @@ export async function POST(request: NextRequest) {
                             VISION_ANALYSIS_USER_PROMPT,
                             provider as AIProvider,
                             abortController.signal,
-                            session?.id
+                            session?.id,
+                            faceSessionId
                         ) as Record<string, unknown>;
                         aiLogger.info(`[FaceAnalyze] Retry successful.`);
                     } catch (retryErr: unknown) {
@@ -488,31 +496,29 @@ export async function POST(request: NextRequest) {
 
             // 清理上传的照片（内联实现，避免单独模块中的 fs 静态导入触发 NFT tracer 警告）
             if (uploadedFaceUrls.length > 0) {
-                Promise.resolve().then(async () => {
-                    for (const photoUrl of uploadedFaceUrls) {
-                        try {
-                            if (!photoUrl || photoUrl.startsWith("data:")) continue;
-                            if (photoUrl.startsWith("/")) {
-                                const relativePath = photoUrl.slice(1);
-                                const normalized = path.normalize(relativePath);
-                                if (path.isAbsolute(normalized) || normalized.startsWith("..")) continue;
-                                const uploadRoot = path.resolve(process.cwd(), "public", "uploads");
-                                const filePath = path.resolve(uploadRoot, normalized);
-                                if (filePath.startsWith(uploadRoot + path.sep) || filePath === uploadRoot) {
-                                    const { realpath } = await import("fs/promises");
-                                    const realUploadRoot = await realpath(uploadRoot);
-                                    const realFilePath = await realpath(filePath);
-                                    if (realFilePath.startsWith(realUploadRoot + path.sep) || realFilePath === realUploadRoot) {
-                                        await fs.unlink(realFilePath);
-                                    }
-                                }
-                            } else if (photoUrl.startsWith("http")) {
-                                const { deleteOSSFiles } = await import("@/lib/ali-oss");
-                                await deleteOSSFiles([photoUrl]);
+                const deletionResults = await Promise.allSettled(
+                    uploadedFaceUrls.map(async (photoUrl) => {
+                        if (!photoUrl || photoUrl.startsWith("data:")) return;
+                        if (photoUrl.startsWith("/uploads/") || photoUrl.startsWith("uploads/")) {
+                            const filePath = resolveLocalUploadPath(photoUrl);
+                            if (!filePath) return;
+                            const realFilePath = await fs.realpath(filePath).catch(() => filePath);
+                            const realUploadRoot = await fs.realpath(path.resolve(process.cwd(), "public", "uploads")).catch(() => path.resolve(process.cwd(), "public", "uploads"));
+                            const rel = path.relative(realUploadRoot, realFilePath);
+                            if (rel.startsWith("..") || rel === "" || path.isAbsolute(rel)) {
+                                aiLogger.warn(`Cleanup blocked out-of-bounds path: ${photoUrl}`);
+                                return;
                             }
-                        } catch {
-                            // 忽略清理失败
+                            await fs.unlink(realFilePath);
+                        } else if (photoUrl.startsWith("http")) {
+                            const { deleteOSSFiles } = await import("@/lib/ali-oss");
+                            await deleteOSSFiles([photoUrl]);
                         }
+                    })
+                );
+                deletionResults.forEach((r, i) => {
+                    if (r.status === "rejected") {
+                        aiLogger.warn(`Failed to delete uploaded face image: ${uploadedFaceUrls[i]}`, { error: String(r.reason) });
                     }
                 });
             }

@@ -3,6 +3,7 @@ import {
     getApiKeysForProvider,
     createOpenAIClient,
     isAllowedAIModel,
+    PROVIDER_FALLBACK_CHAIN,
     type AIProvider,
     type AISettings
 } from "./ai";
@@ -14,7 +15,10 @@ import {
     VISION_ANALYSIS_SYSTEM_PROMPT,
     QWEN_VISION_PROMPT
 } from "@/config/ai-prompts";
-import { extractJsonFromResponse } from "./advisor-utils";
+import {
+    validateAndExtractJson,
+    VisionAnalysisOutputSchema,
+} from "./advisor-utils";
 
 export interface VisionImage {
     data: string; // base64 string (data:image/...)
@@ -60,7 +64,8 @@ export async function analyzeImages(
     userPrompt: string,
     _defaultProvider: AIProvider = "qwen",
     signal?: AbortSignal,
-    userId?: string | null
+    userId?: string | null,
+    sessionId?: string | null
 ) {
     // 如果外部 signal 已 abort，直接抛出
     if (signal?.aborted) {
@@ -75,30 +80,89 @@ export async function analyzeImages(
     try {
         // 1. 获取配置
         const settings = await getAISettings();
-    // 优先使用数据库配置的 provider，如果没有则回退到传入参数或默认值
-    const provider = (settings.visionProvider || _defaultProvider) as AIProvider;
-    let model = settings.visionModel || getDefaultVisionModel(provider);
+        const primaryProvider = (settings.visionProvider || _defaultProvider) as AIProvider;
+        const fallbackList = PROVIDER_FALLBACK_CHAIN[primaryProvider] || [];
+        const providerQueue = [primaryProvider, ...fallbackList];
 
-    // 模型白名单校验（防止被切到高价视觉模型）
-    if (!isAllowedAIModel(provider, model)) {
-        const fallbackModel = getDefaultVisionModel(provider);
-        aiLogger.warn(`[AISettings] Rejected illegal vision model: ${provider}/${model}, fallback to ${fallbackModel}`);
-        model = fallbackModel;
+        // 2. 准备 Prompt 上下文
+        let finalUserPrompt = userPrompt;
+        if (images.length > 1) {
+            const angles = images.map(i => i.angle || 'unknown').join(', ');
+            finalUserPrompt += `\n\n我提供了${images.length}张照片，分别是：${angles}。请综合分析所有照片。`;
+        }
+
+        let lastError: Error | null = null;
+
+        for (const provider of providerQueue) {
+            const isPrimary = provider === primaryProvider;
+            let model = isPrimary ? (settings.visionModel || getDefaultVisionModel(provider)) : getDefaultVisionModel(provider);
+
+            // 模型白名单校验（防止被切到高价视觉模型）
+            if (!isAllowedAIModel(provider, model)) {
+                const fallbackModel = getDefaultVisionModel(provider);
+                aiLogger.warn(`[AISettings] Rejected illegal vision model: ${provider}/${model}, fallback to ${fallbackModel}`);
+                model = fallbackModel;
+            }
+
+            // 获取 prompt (优先数据库配置)
+            const systemPrompt = getVisionSystemPrompt(provider, settings) || _defaultSystemPrompt;
+
+            // 视觉 system prompt 长度保护：防止自定义 DB prompt 膨胀请求
+            const MAX_VISION_SYSTEM_PROMPT_CHARS = 4000;
+            let safeSystemPrompt = systemPrompt;
+            if (systemPrompt.length > MAX_VISION_SYSTEM_PROMPT_CHARS) {
+                safeSystemPrompt = systemPrompt.slice(0, MAX_VISION_SYSTEM_PROMPT_CHARS) +
+                    "\n\n[提示：系统提示词过长，已截断以控制成本]";
+                aiLogger.warn(`Vision system prompt truncated: ${systemPrompt.length} -> ${safeSystemPrompt.length} chars`);
+            }
+
+            aiLogger.info(`Starting Vision Analysis: ${provider} (${model})`, { imageCount: images.length, isFallback: !isPrimary });
+
+            try {
+                const result = await tryVisionProviderWithKeys(
+                    provider,
+                    model,
+                    images,
+                    safeSystemPrompt,
+                    finalUserPrompt,
+                    signal,
+                    userId,
+                    sessionId
+                );
+                return result;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            } catch (error: any) {
+                if (error.name === 'AbortError' || signal?.aborted) {
+                    throw new Error("Vision request cancelled by client.");
+                }
+                lastError = error;
+                aiLogger.warn(`Vision provider ${provider} failed: ${error.message}. Switching to next...`);
+                continue;
+            }
+        }
+
+        throw lastError || new Error("Vision analysis failed after exhausting all providers.");
+    } finally {
+        releasePendingReservation("vision", 0.30);
     }
+}
 
-    // 获取 prompt (优先数据库配置)
-    const systemPrompt = getVisionSystemPrompt(provider, settings) || _defaultSystemPrompt;
+/**
+ * 单个视觉服务商的多 Key 轮询
+ */
+async function tryVisionProviderWithKeys(
+    provider: AIProvider,
+    model: string,
+    images: VisionImage[],
+    systemPrompt: string,
+    userPrompt: string,
+    signal?: AbortSignal,
+    userId?: string | null,
+    sessionId?: string | null
+): Promise<Record<string, unknown>> {
+    const settings = await getAISettings();
 
-    aiLogger.info(`Starting Vision Analysis: ${provider} (${model})`, { imageCount: images.length });
-
-    // 2. 准备 Prompt 上下文
-    let finalUserPrompt = userPrompt;
-    if (images.length > 1) {
-        const angles = images.map(i => i.angle || 'unknown').join(', ');
-        finalUserPrompt += `\n\n我提供了${images.length}张照片，分别是：${angles}。请综合分析所有照片。`;
-    }
-
-    // 3. 多 Key 轮询机制（带指数退避 + key 健康管理）
+    // 多 Key 轮询机制（带指数退避 + key 健康管理）
     let apiKeys = getApiKeysForProvider(provider, settings);
     if (apiKeys.length === 0) {
         throw new Error(`No API keys found for vision provider: ${provider}`);
@@ -120,25 +184,16 @@ export async function analyzeImages(
         try {
             if (i > 0) aiLogger.warn(`Vision Retry: Key ${i + 1}/${apiKeys.length}`);
 
-            const result = await callVisionAPI(provider, apiKey, model, images, systemPrompt, finalUserPrompt, signal);
+            const result = await callVisionAPI(provider, apiKey, model, images, systemPrompt, userPrompt, signal, userId, sessionId);
 
-            // 解析与验证
-            const jsonData = extractJsonFromResponse<Record<string, unknown>>(result);
-            if (!jsonData) throw new Error("Failed to parse JSON from Vision API");
+            // 解析与 Zod 结构验证
+            const jsonData = validateAndExtractJson(result, VisionAnalysisOutputSchema);
 
             // 优先检查 validation 拦截状态（非真人/翻拍/遮挡等）
             const validation = jsonData.validation as { isValid?: boolean; message?: string } | undefined;
             if (validation && validation.isValid === false) {
                 const reason = validation.message || "图片未通过验证";
                 throw new Error(`[Validation] ${reason}`);
-            }
-
-            // 结构验证：必须包含核心分析字段，且 dimensions 应为对象
-            const hasDimensions = jsonData.dimensions && typeof jsonData.dimensions === 'object';
-            const hasSkinType = jsonData.skinType && typeof jsonData.skinType === 'object';
-            const hasFaceAnalysis = jsonData.faceAnalysis && typeof jsonData.faceAnalysis === 'object';
-            if (!hasDimensions && !hasSkinType && !hasFaceAnalysis) {
-                throw new Error("AI response structure missing critical fields (dimensions/skinType/faceAnalysis)");
             }
 
             return jsonData; // 成功返回
@@ -192,10 +247,7 @@ export async function analyzeImages(
         }
     }
 
-    throw lastError || new Error("Vision analysis failed after exhausting all keys.");
-    } finally {
-        releasePendingReservation("vision", 0.30);
-    }
+    throw lastError || new Error(`Vision analysis failed after exhausting all keys for ${provider}.`);
 }
 
 // ============================================================================
@@ -209,10 +261,12 @@ async function callVisionAPI(
     images: VisionImage[],
     systemPrompt: string,
     userPrompt: string,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    userId?: string | null,
+    sessionId?: string | null
 ): Promise<string> {
     // DeepSeek 和 Qwen 均使用 OpenAI 兼容接口
-    return callOpenAICompatibleVision(provider, apiKey, model, images, systemPrompt, userPrompt, signal);
+    return callOpenAICompatibleVision(provider, apiKey, model, images, systemPrompt, userPrompt, signal, userId, sessionId);
 }
 
 async function callOpenAICompatibleVision(
@@ -222,7 +276,9 @@ async function callOpenAICompatibleVision(
     images: VisionImage[],
     systemPrompt: string,
     userPrompt: string,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    userId?: string | null,
+    sessionId?: string | null
 ) {
     const serviceKey = `vision-${provider}`;
 
@@ -248,13 +304,28 @@ async function callOpenAICompatibleVision(
     // 估算图片 Base64 大小用于日志
     let totalImageBytes = 0;
     images.forEach(img => {
-        // Ensure data URI format
+        // Ensure data URI format and validate early
         let url = img.data;
-        if (!url.startsWith("http") && !url.startsWith("data:")) {
-            url = `data:image/jpeg;base64,${url}`;
-        }
+        const dataUrlRegex = /^data:image\/[^;]+;base64,/;
+
         if (url.startsWith("data:")) {
-            totalImageBytes += url.length;
+            if (!dataUrlRegex.test(url)) {
+                throw new Error(`[Validation] 图片数据格式无效：${img.angle || 'unknown'} 角度缺少有效的 base64 数据 URL 前缀`);
+            }
+        } else if (!url.startsWith("http")) {
+            // Treat as plain base64: strip whitespace and validate
+            const cleaned = url.replace(/\s/g, "");
+            const base64Regex = /^[A-Za-z0-9+/]+={0,2}$/;
+            if (!base64Regex.test(cleaned) || cleaned.length % 4 !== 0) {
+                throw new Error(`[Validation] 图片数据格式无效：${img.angle || 'unknown'} 角度无法识别为有效的 base64 或 URL`);
+            }
+            url = `data:image/jpeg;base64,${cleaned}`;
+        }
+
+        if (url.startsWith("data:")) {
+            // 使用实际字节数而非字符串长度，更准确的遥测
+            const base64Part = url.split(',')[1] || "";
+            totalImageBytes += Buffer.byteLength(base64Part, 'base64');
         }
 
         content.push({
@@ -297,6 +368,8 @@ async function callOpenAICompatibleVision(
             durationMs: Date.now() - startedAt,
             success: false,
             errorCode: isTimeout ? "timeout" : e.message?.slice(0, 200),
+            userId,
+            sessionId,
         });
 
         if (!isTimeout && !signal?.aborted) {
@@ -327,6 +400,8 @@ async function callOpenAICompatibleVision(
             totalTokens: usage.total_tokens || 0,
             durationMs,
             success: true,
+            userId,
+            sessionId,
         });
     }
 

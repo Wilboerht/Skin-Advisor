@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Share2, Loader2 } from 'lucide-react';
 import Image from 'next/image';
@@ -85,10 +85,25 @@ export default function ResultCards({
     [dimensions]
   );
 
+  const [characterImgSrc, setCharacterImgSrc] = useState(characterImage);
+  const [characterImgError, setCharacterImgError] = useState(false);
 
+  useEffect(() => {
+    setCharacterImgSrc(characterImage);
+    setCharacterImgError(false);
+  }, [characterImage]);
+
+  const handleCharacterImageError = useCallback(() => {
+    if (!characterImgError) {
+      setCharacterImgSrc((prev) => prev.replace('_male', '_female'));
+      setCharacterImgError(true);
+    } else {
+      setCharacterImgSrc('/images/character/unknown.png');
+    }
+  }, [characterImgError]);
 
   return (
-    <div className="w-full flex flex-col gap-6">
+    <div className="w-full flex flex-col gap-6" aria-label={`${nickname || '用户'}的肤质检测结果`}>
       {/* Mobile: Character IP Image + Share Card (no gap between them) */}
       <div className="flex flex-col gap-0 lg:contents">
         {/* Mobile: Character IP Image above Share Card */}
@@ -105,16 +120,13 @@ export default function ResultCards({
             />
           </div>
           <Image
-            src={characterImage}
+            src={characterImgSrc}
             alt={skinTypeName}
             width={280}
             height={280}
             className="relative z-10 h-[270px] w-[270px] object-contain drop-shadow-[0_3px_8px_rgba(92,73,55,0.12)]"
             priority
-            onError={(e) => {
-              const fallback = characterImage.replace('_male', '_female');
-              (e.target as HTMLImageElement).src = fallback;
-            }}
+            onError={handleCharacterImageError}
           />
         </div>
         {/* Share Version Card */}
@@ -179,16 +191,13 @@ export default function ResultCards({
           {/* Desktop: Character IP Image (absolute right) */}
           <div className="hidden lg:block absolute right-0 top-[40%] -translate-y-1/2 z-0 pointer-events-none">
             <Image
-              src={characterImage}
+              src={characterImgSrc}
               alt={skinTypeName}
               width={320}
               height={320}
               className="w-[320px] h-[320px] object-contain object-right"
               priority
-              onError={(e) => {
-                const fallback = characterImage.replace('_male', '_female');
-                (e.target as HTMLImageElement).src = fallback;
-              }}
+              onError={handleCharacterImageError}
             />
           </div>
         </div>

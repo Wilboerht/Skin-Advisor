@@ -1,10 +1,9 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { apiError, apiSuccess } from "@/lib/api-response";
 import { ErrorCode } from "@/lib/error-codes";
 import { writeFile, mkdir, realpath } from "fs/promises";
 import path from "path";
 import { enforceStorageLimits } from "@/lib/shared-upload-utils";
-import { getSession } from "@/lib/auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { logger } from "@/lib/logger";
 
@@ -14,14 +13,9 @@ const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
 /**
  * PUT /api/local-upload
  * Local file upload handler (fallback for OSS)
+ * 支持游客和登录用户上传，但保留频率限制与文件校验。
  */
 export async function PUT(request: NextRequest) {
-    // Authentication required
-    const session = await getSession();
-    if (!session) {
-        return apiError(ErrorCode.UNAUTHORIZED, "请先登录后再上传文件", 401);
-    }
-
     // Rate limiting per IP
     const ip = getClientIP(request);
     const limit = await rateLimit(`local-upload-${ip}`, "default", {

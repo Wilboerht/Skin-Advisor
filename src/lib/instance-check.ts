@@ -11,7 +11,7 @@ import { logger } from "@/lib/logger";
 import { hostname as getHostname } from "os";
 
 const HEARTBEAT_INTERVAL_MS = 60_000; // 1 分钟更新一次心跳
-const INSTANCE_TIMEOUT_MS = 3 * 60_000; // 3 分钟无心跳视为离线
+const INSTANCE_TIMEOUT_MS = 5 * 60_000; // 5 分钟无心跳视为离线
 const ALERT_COOLDOWN_MS = 5 * 60_000; // 同一告警冷却 5 分钟
 
 let instanceId: string | null = null;
@@ -125,17 +125,9 @@ export async function detectMultiInstance(): Promise<void> {
     if (count > 1 && !hasWarned) {
         hasWarned = true;
         lastAlertTime = now;
-        logger.error(
-            `\n` +
-            `🔴🔴🔴 SECURITY WARNING 🔴🔴🔴\n` +
-            `[InstanceCheck] 检测到 ${count} 个活跃的应用实例同时运行！\n` +
-            `当前基于内存的 rateLimit 在多实例环境下完全失效。\n` +
-            `攻击者可在每个实例上独立达到限流上限。\n` +
-            `建议立即采取以下措施之一：\n` +
-            `  1. 降级为单实例部署（PM2 fork mode, instances: 1）\n` +
-            `  2. 引入 Redis / Upstash Redis 作为分布式限流存储\n` +
-            `  3. 使用 @upstash/ratelimit 替代内存 Map 实现\n` +
-            `🔴🔴🔴 SECURITY WARNING 🔴🔴🔴\n`
+        logger.warn(
+            `检测到多实例部署，进程内限流/队列/熔断/缓存将失效，请迁移到 Redis。` +
+            ` 当前检测到 ${count} 个活跃实例。`
         );
     }
 }

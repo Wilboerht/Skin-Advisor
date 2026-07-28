@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -11,6 +11,7 @@ import { useToast } from "@/components/ui/Toast";
 import { ScanGuideModal } from "@/components/advisor/ScanGuideModal";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
+import type { UploadMetadata } from "@/lib/upload-client";
 
 export default function FaceScanPage() {
     const router = useRouter();
@@ -89,109 +90,121 @@ export default function FaceScanPage() {
         if (isSubmitting) return;
         setIsSubmitting(true);
 
+        // 1. 必须四个角度全部存在，不再接受单张正面照片 fallback
+        const requiredAngles: (keyof FaceCaptureImages)[] = ["front", "left", "right", "chin"];
+        const missing = requiredAngles.filter((k) => !images[k]);
+        if (missing.length > 0) {
+            toast.error(`缺少 ${missing.join("、")} 角度照片，请重新拍摄`);
+            setIsSubmitting(false);
+            return;
+        }
+
         const { advisorStorage } = await import("@/lib/advisor-storage");
 
         const success = await advisorStorage.saveFaceImages(images);
 
-        if (success) {
-            // 标记预处理进行中，结果页检测到此标记时可显示等待提示
-            try { sessionStorage.setItem("advisor_preprocessing", "true"); } catch { /* ignore */ }
+        if (!success) {
+            console.warn("Storage full, attempting cleanup...");
+            toast.warning("正在优化存储空间...");
 
-            // ★ 后台立即预处理+上传（不阻塞跳转）
-            Promise.resolve().then(async () => {
-                try {
-                    const { preprocessFaceImage, getBase64Size } = await import("@/lib/image-processing");
-                    const { uploadImage } = await import("@/lib/upload-client");
+            await advisorStorage.clearAll();
 
-                    const angles = [
-                        { key: 'front' as const, label: 'front' },
-                        { key: 'left' as const, label: 'left' },
-                        { key: 'right' as const, label: 'right' },
-                        { key: 'chin' as const, label: 'chin' },
-                    ];
+            const retrySuccess = await advisorStorage.saveFaceImages(images);
+            if (!retrySuccess) {
+                toast.error("存储空间不足，请清理浏览器缓存后重试");
+                setIsSubmitting(false);
+                setStorageError(true);
+                return;
+            }
+        }
 
-                    const processedEntries = await Promise.all(
-                        angles.map(async ({ key, label }) => {
-                            const imgData = images[key];
-                            if (!imgData) return null;
+        // 标记预处理进行中，结果页检测到此标记时可显示等待提示
+        try { sessionStorage.setItem("advisor_preprocessing", "true"); } catch { /* ignore */ }
 
-                            let finalData = imgData;
+        // 获取游客标识，用于上传路径隔离
+        const uploadMetadata: UploadMetadata = {};
+        try {
+            const { getGuestIdentity } = await import("@/lib/guest-identity");
+            const identity = await getGuestIdentity();
+            uploadMetadata.cookieId = identity.cookieId;
+            uploadMetadata.fingerprint = identity.fingerprint || undefined;
+        } catch (e) {
+            console.warn("[FaceScan] Failed to get guest identity", e);
+        }
 
-                            // 预处理：base64 且 >300KB 才处理
-                            if (finalData.startsWith('data:')) {
-                                const base64Size = getBase64Size(finalData);
-                                if (base64Size < 300 * 1024) {
-                                    console.log(`[Background] ${label} already small (${Math.round(base64Size / 1024)}KB), skipping preprocess`);
-                                } else {
-                                    try {
-                                        const { imageData } = await preprocessFaceImage(imgData);
-                                        finalData = imageData;
-                                    } catch (e) {
-                                        console.warn(`[Background] Preprocess failed for ${label}`, e);
-                                    }
-                                }
+        // 2. 先完成本地保存，再等待上传（成功或失败）后跳转，避免图片丢失
+        let uploadFailed = false;
+        try {
+            const { preprocessFaceImage, getBase64Size } = await import("@/lib/image-processing");
+            const { uploadImage } = await import("@/lib/upload-client");
+
+            const angles = [
+                { key: "front" as const, label: "front" },
+                { key: "left" as const, label: "left" },
+                { key: "right" as const, label: "right" },
+                { key: "chin" as const, label: "chin" },
+            ];
+
+            const processedEntries = await Promise.all(
+                angles.map(async ({ key, label }) => {
+                    const imgData = images[key];
+                    if (!imgData) return null;
+
+                    let finalData = imgData;
+
+                    // 预处理：base64 且 >300KB 才处理
+                    if (finalData.startsWith("data:")) {
+                        const base64Size = getBase64Size(finalData);
+                        if (base64Size >= 300 * 1024) {
+                            try {
+                                const { imageData } = await preprocessFaceImage(imgData);
+                                finalData = imageData;
+                            } catch (e) {
+                                console.warn(`[Upload] Preprocess failed for ${label}`, e);
                             }
-
-                            // 上传（只有 base64 才需要上传）
-                            if (finalData.startsWith('data:')) {
-                                try {
-                                    const blob = await (await fetch(finalData)).blob();
-                                    const url = await uploadImage(blob, `face-${label}.jpg`);
-                                    if (url) finalData = url;
-                                } catch (e) {
-                                    console.warn(`[Background] Upload failed for ${label}`, e);
-                                }
-                            }
-
-                            return { key, finalData };
-                        })
-                    );
-
-                    const processed: Record<string, string> = {};
-                    for (const entry of processedEntries) {
-                        if (entry) processed[entry.key] = entry.finalData;
+                        }
                     }
 
-                    if (Object.keys(processed).length > 0) {
-                        await advisorStorage.saveProcessedImages(processed);
-                        console.log("[Background] Preprocess+upload complete", Object.keys(processed));
+                    // 上传（只有 base64 才需要上传）
+                    if (finalData.startsWith("data:")) {
+                        try {
+                            const blob = await (await fetch(finalData)).blob();
+                            const url = await uploadImage(blob, `face-${label}.jpg`, uploadMetadata);
+                            if (url) finalData = url;
+                        } catch (e) {
+                            console.warn(`[Upload] Upload failed for ${label}`, e);
+                            uploadFailed = true;
+                        }
                     }
-                } catch (e) {
-                    console.warn("[Background] Preprocess+upload task failed", e);
-                } finally {
-                    // 清除预处理标记，结果页可以开始分析
-                    try { sessionStorage.removeItem("advisor_preprocessing"); } catch { /* ignore */ }
-                }
-            });
 
-            trackFaceScanComplete();
-            router.push(resultUrl);
-            return;
+                    return { key, finalData };
+                })
+            );
+
+            const processed: Record<string, string> = {};
+            for (const entry of processedEntries) {
+                if (entry) processed[entry.key] = entry.finalData;
+            }
+
+            if (Object.keys(processed).length > 0) {
+                await advisorStorage.saveProcessedImages(processed);
+                console.log("[Upload] Preprocess+upload complete", Object.keys(processed));
+            }
+        } catch (e) {
+            console.warn("[Upload] Preprocess+upload task failed", e);
+            uploadFailed = true;
+        } finally {
+            // 清除预处理标记，结果页可以开始分析
+            try { sessionStorage.removeItem("advisor_preprocessing"); } catch { /* ignore */ }
         }
 
-        console.warn("Storage full, attempting cleanup...");
-        toast.warning("正在优化存储空间...");
-
-        await advisorStorage.clearAll();
-
-        const retrySuccess = await advisorStorage.saveFaceImages(images);
-        if (retrySuccess) {
-            trackFaceScanComplete();
-            router.push(resultUrl);
-            return;
+        if (uploadFailed) {
+            toast.warning("图片上传遇到网络问题，将在结果页使用本地缓存继续分析");
         }
 
-        const frontOnlySuccess = await advisorStorage.saveFaceImages({ front: images.front });
-        if (frontOnlySuccess) {
-            toast.warning("仅保存了正面照片");
-            trackFaceScanComplete();
-            router.push(resultUrl);
-            return;
-        }
-
-        toast.error("存储空间不足，请清理浏览器缓存后重试");
+        trackFaceScanComplete();
         setIsSubmitting(false);
-        setStorageError(true);
+        router.push(resultUrl);
     };
 
     return (

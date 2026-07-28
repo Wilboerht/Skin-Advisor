@@ -5,9 +5,9 @@ import { createPortal } from "react-dom";
 import Image from "next/image";
 import { m, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatPrice } from "@/lib/utils";
 import type { ProductCardData } from "./ProductCard";
-import { getProductLinks, openAffiliateLink } from "@/lib/affiliate-links";
+import { getProductLinks } from "@/lib/affiliate-links";
 import { PlatformIcon } from "./PlatformIcon";
 import { lookupIngredient } from "@/lib/ingredient-glossary";
 
@@ -218,7 +218,7 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
 
                             {/* Price */}
                             <div className="mb-4 text-lg font-bold text-[#3d2f25]">
-                                ¥ {product.price || "咨询价格"}
+                                {formatPrice(product.price)}
                             </div>
 
                             {/* Reason */}

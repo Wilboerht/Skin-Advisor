@@ -5,11 +5,11 @@ import { ErrorCode } from "@/lib/error-codes";
 import { generateText, isAIEnabled, fallbackAnalysis, type AIProvider } from "@/lib/ai";
 import { analysisQueue } from "@/lib/ai-queue";
 import { circuitBreaker } from "@/lib/circuit-breaker";
-import { extractJsonFromResponse } from "@/lib/advisor-utils";
+import { validateAndExtractJson, TextAnalysisOutputSchema } from "@/lib/advisor-utils";
 import { buildTextAnalysisPrompt, TEXT_ANALYSIS_SYSTEM_PROMPT, REGISTERED_USER_DEEP_ANALYSIS_INSTRUCTION } from "@/config/ai-prompts";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import prisma from "@/lib/prisma";
-import { getSkinTypeLabel, getConcernLabel } from "@/lib/advisor-utils";
+import { getSkinTypeLabel, getConcernLabel, type FaceAnalysisResult } from "@/lib/advisor-utils";
 // import { PRODUCTS_CATALOG } from "@/config/products"; // Deprecated, use DB or matchProducts
 import { determineSkinType, identifyConcerns } from "@/lib/advisor-utils";
 import { AnalyzeRequestSchema } from "@/lib/schemas";
@@ -30,6 +30,9 @@ import { parseUserAgent } from "@/lib/user-agent-parser";
 const WECHAT_TEMPLATE_CIRCUIT_KEY = "official-wechat-template";
 const WECHAT_TEMPLATE_MAX_RETRIES = 3;
 const WECHAT_TEMPLATE_TIMEOUT_MS = 15000;
+
+// 服务端最长执行时间：匹配 90s 客户端/服务端超时上限
+export const maxDuration = 90;
 
 /**
  * 调用官网内部 API v1 发送微信模板消息
@@ -132,7 +135,8 @@ function sanitizeReason(reason: string): string {
     };
     let sanitized = reason;
     for (const [en, cn] of Object.entries(replacements)) {
-        const regex = new RegExp(`\\b${en}\\b`, "gi");
+        // 使用非字母前后断言，避免中文语境下 \b 失效；同时防止误切合法产品名中的子串
+        const regex = new RegExp(`(?<![a-zA-Z])${en}(?![a-zA-Z])`, "gi");
         sanitized = sanitized.replace(regex, cn);
     }
     return sanitized;
@@ -157,7 +161,8 @@ function sanitizeLabStatus(status: string): string {
     };
     let sanitized = status;
     for (const [en, cn] of Object.entries(replacements)) {
-        const regex = new RegExp(`\\b${en}\\b`, "gi");
+        // 使用非字母前后断言，避免中文语境下 \b 失效；同时防止误切合法产品名中的子串
+        const regex = new RegExp(`(?<![a-zA-Z])${en}(?![a-zA-Z])`, "gi");
         sanitized = sanitized.replace(regex, cn);
     }
     return sanitized;
@@ -180,6 +185,27 @@ function sanitizeLabAnalysis(labAnalysis: unknown): unknown {
         }
     }
     return result;
+}
+
+/**
+ * 检查指定 session 是否已成功完成面部分析（AI 视觉调用已真实扣费/存储）。
+ * 用于防止综合 analyze 回滚时退还已被 face-analyze 消耗的额度。
+ */
+async function hasSuccessfulFaceAnalysis(sessionId: string): Promise<boolean> {
+    try {
+        const count = await prisma.aIUsageLog.count({
+            where: {
+                sessionId,
+                requestType: "vision",
+                success: true,
+            },
+        });
+        return count > 0;
+    } catch (e) {
+        logger.warn(`[analyze] Failed to check face analysis usage for ${sessionId}:`, e);
+        // 保守认为已消费，避免免费重试漏洞
+        return true;
+    }
 }
 
 /**
@@ -544,6 +570,7 @@ export async function POST(request: NextRequest) {
             skinTypeLabel,
             ageRange: answers.ageRange,
             concerns: concernLabels,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             gender: (answers as any).gender,
             location: geoLocation ? `${geoLocation.region || ''} ${geoLocation.city || ''}（${envContext.description}）`.trim() : undefined,
             budget: answers.budget,
@@ -578,7 +605,7 @@ export async function POST(request: NextRequest) {
                 summary: faceAnalysis.summary,
                 zoneAnalysis: faceAnalysis.zoneAnalysis,
                 skinAge: faceAnalysis.skinAge,
-            } : undefined,
+            } as Partial<FaceAnalysisResult> : undefined,
             products: candidateProducts
         });
 
@@ -612,8 +639,8 @@ export async function POST(request: NextRequest) {
                 throw new Error(`[CircuitBreaker] Text AI service ${provider} is temporarily unavailable`);
             }
 
-            const resultText = await generateText(systemPrompt, userPrompt, provider as AIProvider, abortController.signal, user?.id);
-            resultJson = extractJsonFromResponse<Record<string, unknown>>(resultText);
+            const resultText = await generateText(systemPrompt, userPrompt, provider as AIProvider, abortController.signal, user?.id, effectiveSessionId);
+            resultJson = validateAndExtractJson(resultText, TextAnalysisOutputSchema) as Record<string, unknown>;
         } catch (e: unknown) {
             const err = e instanceof Error ? e : new Error(String(e));
             if (err.message?.includes("cancelled") || err.name === 'AbortError') {
@@ -622,13 +649,17 @@ export async function POST(request: NextRequest) {
                 // AI 调用进行中取消不回滚：API 可能已处理并计费
                 const isQueueOnlyCancel = err.message === "Request cancelled during queue wait.";
                 if (isQueueOnlyCancel) {
-                    await rollbackUsage(request, effectiveSessionId, body as Record<string, unknown>);
+                    if (!(await hasSuccessfulFaceAnalysis(effectiveSessionId))) {
+                        await rollbackUsage(request, effectiveSessionId, body as Record<string, unknown>);
+                    }
                 }
                 return apiError(ErrorCode.INTERNAL_ERROR, "分析请求已取消，请重试", 499);
             }
             if (err.message?.includes("[AIBudget]")) {
                 aiLogger.warn("AI budget exceeded, rejecting request", { error: err.message });
-                await rollbackUsage(request, effectiveSessionId, body as Record<string, unknown>);
+                if (!(await hasSuccessfulFaceAnalysis(effectiveSessionId))) {
+                    await rollbackUsage(request, effectiveSessionId, body as Record<string, unknown>);
+                }
                 const response = apiError("AI_BUDGET_EXCEEDED", "服务暂不可用，请稍后重试", 503);
                 response.headers.set("Retry-After", "3600");
                 return response;
@@ -636,7 +667,9 @@ export async function POST(request: NextRequest) {
             // 熔断器触发：直接返回 503，不走 fallback（fallback 会隐藏服务异常）
             if (err.message?.includes("[CircuitBreaker]")) {
                 aiLogger.warn("Circuit breaker open, rejecting request", { error: err.message });
-                await rollbackUsage(request, effectiveSessionId, body as Record<string, unknown>);
+                if (!(await hasSuccessfulFaceAnalysis(effectiveSessionId))) {
+                    await rollbackUsage(request, effectiveSessionId, body as Record<string, unknown>);
+                }
                 const response = apiError("AI_CIRCUIT_OPEN", "服务暂不可用，请稍后重试", 503);
                 response.headers.set("Retry-After", "60");
                 return response;

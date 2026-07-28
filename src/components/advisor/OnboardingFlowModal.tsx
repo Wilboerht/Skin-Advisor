@@ -78,26 +78,6 @@ export function OnboardingFlowModal({
         }
     }, [isOpen]);
 
-    // Reset when opened
-    useEffect(() => {
-        if (isOpen) {
-            setActiveIndex(0);
-            setLocationView("main");
-            setIsAgreed(false);
-            setMaxVisitedIndex(0);
-            setRegionSearch("");
-        }
-    }, [isOpen]);
-
-    // Reset location sub-view when navigating back to the location step
-    const previousScreenRef = useRef(currentScreen);
-    useEffect(() => {
-        if (currentScreen === "location" && previousScreenRef.current !== "location") {
-            setLocationView("main");
-        }
-        previousScreenRef.current = currentScreen;
-    }, [currentScreen]);
-
     // Keyboard support: Escape to close (except on legal step)
     useEffect(() => {
         if (!isOpen) return;
@@ -112,6 +92,11 @@ export function OnboardingFlowModal({
 
     const goTo = (index: number) => {
         if (index < 0 || index >= totalScreens) return;
+        const targetScreen = screens[index];
+        // Reset location sub-view when navigating back to the location step
+        if (targetScreen === "location" && currentScreen !== "location") {
+            setLocationView("main");
+        }
         setActiveIndex(index);
         setMaxVisitedIndex(prev => Math.max(prev, index));
     };
@@ -138,7 +123,7 @@ export function OnboardingFlowModal({
             } else {
                 goNext();
             }
-        } catch (e) {
+        } catch {
             toast.warning("无法获取位置信息，请手动选择所在地区");
             setLocationView("region");
         }

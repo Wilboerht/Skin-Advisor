@@ -5,9 +5,10 @@ import { Venus, Mars } from "lucide-react";
 
 interface GenderSelectionProps {
     onSelect: (gender: "female" | "male") => void;
+    selectedGender?: "female" | "male" | null;
 }
 
-export function GenderSelection({ onSelect }: GenderSelectionProps) {
+export function GenderSelection({ onSelect, selectedGender }: GenderSelectionProps) {
     const item = {
         hidden: { opacity: 0, y: 20 },
         show: { opacity: 1, y: 0 }
@@ -29,7 +30,7 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
                     onClick={() => onSelect("female")}
                     whileTap={{ scale: 0.98 }}
                     role="radio"
-                    aria-checked={false}
+                    aria-checked={selectedGender === "female"}
                     aria-label="女性"
                     className="group flex flex-row items-center gap-4 sm:flex-col sm:items-center sm:gap-5 rounded-xl border border-[#E8E2D9] bg-white px-5 sm:px-12 py-5 sm:py-12 text-left sm:text-center transition-[border-color,background-color,box-shadow] duration-300 hover:border-[#C9A86C] hover:shadow-sm touch-manipulation"
                 >
@@ -47,7 +48,7 @@ export function GenderSelection({ onSelect }: GenderSelectionProps) {
                     onClick={() => onSelect("male")}
                     whileTap={{ scale: 0.98 }}
                     role="radio"
-                    aria-checked={false}
+                    aria-checked={selectedGender === "male"}
                     aria-label="男性"
                     className="group flex flex-row items-center gap-4 sm:flex-col sm:items-center sm:gap-5 rounded-xl border border-[#E8E2D9] bg-white px-5 sm:px-12 py-5 sm:py-12 text-left sm:text-center transition-[border-color,background-color,box-shadow] duration-300 hover:border-[#1B3A5C]/40 hover:shadow-sm touch-manipulation"
                 >

@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react";
 import { m } from "framer-motion";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ProductCard, ProductCardData } from "./ProductCard";
 import { ProductDetailModal } from "./ProductDetailModal";
 import { cn } from "@/lib/utils";
@@ -120,14 +119,6 @@ export function ProductRecommendationSection({
             hasCentered.current = true;
         }
     }, [processedProducts]);
-
-    const scroll = (direction: 'left' | 'right') => {
-        if (!scrollRef.current) return;
-        const container = scrollRef.current;
-        const cardWidth = container.firstElementChild?.clientWidth || 320;
-        const scrollAmount = cardWidth * 3 + 16 * 3;
-        container.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
-    };
 
     if (!isLoading && products.length === 0) {
         return (

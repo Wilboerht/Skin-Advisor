@@ -1,31 +1,25 @@
 /**
  * POST /api/oss/sign
- * 获取阿里云 OSS 直传签名
+ * 获取阿里云 OSS 直传签名（支持游客和登录用户）
  */
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
 import { generateUploadSignature } from "@/lib/ali-oss";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
-import { getSession } from "@/lib/auth";
-import { verifyAdminSession } from "@/lib/admin-auth";
+import { extractGuestIdentifiers } from "@/lib/guest-limit";
 import { logger } from "@/lib/logger";
 
 export async function POST(request: NextRequest) {
     try {
-        // 0. 必须登录才能获取 OSS 签名（支持普通用户或管理员）
-        const user = await getSession();
-        const admin = !user ? await verifyAdminSession() : null;
-        if (!user && !admin) {
-            return NextResponse.json({ error: "请先登录" }, { status: 401 });
-        }
-
-        // 1. 简单的身份/频率检查
+        // 1. 简单的身份/频率检查（不再强制登录，face-scan 对游客开放）
         const ip = getClientIP(request);
         const limitParams = await rateLimit(ip + ":oss-sign", "oss-sign", { maxRequests: 20 });
         if (!limitParams.success) {
             return NextResponse.json({ error: "请求过于频繁" }, { status: 429 });
         }
 
-        const { filename, type } = await request.json();
+        const body = await request.json();
+        const { filename, type, sessionId, guestId, cookieId, fingerprint } = body;
 
         if (!filename || !type) {
             return NextResponse.json({ error: "Missing filename or type" }, { status: 400 });
@@ -39,8 +33,16 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "仅支持 jpg/png/webp/gif 图片上传" }, { status: 400 });
         }
 
-        // 3. 生成签名
-        const signature = await generateUploadSignature(filename, type);
+        // 3. 游客路径隔离：使用可溯源但不暴露原始标识的短哈希作为前缀
+        const identifiers = extractGuestIdentifiers(request, { cookieId, fingerprint, guestId });
+        const rawId = sessionId || guestId || identifiers.cookieId || identifiers.fingerprint || crypto.randomUUID();
+        const idHash = crypto.createHash("sha256").update(String(rawId)).digest("hex").slice(0, 16);
+        const date = new Date().toISOString().split("T")[0];
+        const randomId = crypto.randomUUID();
+        const objectName = `guest/${idHash}/${date}/${randomId}${ext}`;
+
+        // 4. 生成签名
+        const signature = await generateUploadSignature(filename, type, objectName);
 
         return NextResponse.json({
             success: true,

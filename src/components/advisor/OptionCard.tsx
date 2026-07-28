@@ -12,6 +12,7 @@ interface OptionCardProps {
     isSelected: boolean;
     onClick: () => void;
     index: number;
+    role?: "radio" | "checkbox";
 }
 
 /**
@@ -25,12 +26,13 @@ export function OptionCard({
     isSelected,
     onClick,
     index,
+    role = "radio",
 }: OptionCardProps) {
     return (
         <m.button
             type="button"
             onClick={onClick}
-            role="radio"
+            role={role}
             aria-checked={isSelected}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}

@@ -200,8 +200,8 @@ export function useAsyncAnalysis() {
             const promise = new Promise<never>((_, reject) => {
                 timeoutId = setTimeout(() => {
                     abortController.abort();
-                    reject(new Error("分析超时 (120秒)。请检查网络连接后重试。"));
-                }, 120 * 1000); // 120 seconds, aligned with server timeout
+                    reject(new Error("分析超时 (95秒)。请检查网络连接后重试。"));
+                }, 95 * 1000); // 95 秒，与服务端 maxDuration=90s 对齐并留 5s 缓冲
             });
             return { promise, cancel: () => clearTimeout(timeoutId) };
         };

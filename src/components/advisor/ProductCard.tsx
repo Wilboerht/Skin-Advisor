@@ -10,7 +10,7 @@ import {
     getPrimaryLink,
     openAffiliateLink,
 } from "@/lib/affiliate-links";
-import { cn } from "@/lib/utils";
+import { cn, formatPrice } from "@/lib/utils";
 
 export interface ProductCardData {
     id: string;
@@ -119,7 +119,7 @@ function CompactProductCard({
     const handleCardClick = useCallback(() => {
         onProductClick?.(product.id);
         onViewDetail?.(product);
-    }, [product.id, product, onProductClick, onViewDetail]);
+    }, [product, onProductClick, onViewDetail]);
 
     const handleBuyClick = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
@@ -164,6 +164,13 @@ function CompactProductCard({
                             {product.name}
                         </h4>
 
+                        {/* 匹配度 */}
+                        {typeof product.matchScore === "number" && product.matchScore > 0 && (
+                            <span className="mb-1 inline-flex items-center rounded-full bg-[#5c4937]/8 px-2 py-0.5 text-[10px] font-medium text-[#5c4937]">
+                                匹配度 {product.matchScore}%
+                            </span>
+                        )}
+
                         {/* 功效标签 */}
                         {product.benefits && product.benefits.length > 0 && (
                             <p className="mb-1 truncate text-xs text-[#C8A97E] lg:text-xs">
@@ -190,7 +197,7 @@ function CompactProductCard({
                     {/* 价格 + 购买按钮 - mobile only */}
                     <div className="mt-auto flex items-center justify-between lg:hidden">
                         <span className="text-base font-bold text-[#1a1a1a]">
-                            {product.price ? `¥ ${product.price.replace('¥', '')}` : '咨询价格'}
+                            {formatPrice(product.price)}
                         </span>
                         {allLinks.length > 0 && (
                             <button
@@ -206,7 +213,7 @@ function CompactProductCard({
                     {/* 底部操作栏 - desktop only */}
                     <div className="hidden items-center justify-between pt-3 lg:flex">
                         <span className="text-xl font-bold text-[#1a1a1a]">
-                            {product.price ? `¥ ${product.price.replace('¥', '')}` : '咨询价格'}
+                            {formatPrice(product.price)}
                         </span>
                         <div className="flex items-center gap-2">
                             {/* 购买按钮 */}
@@ -481,7 +488,7 @@ function HorizontalProductCard({
                 </div>
 
                 <div className="mt-2 flex items-center justify-between">
-                    <span className="text-sm font-semibold text-white">{product.price ? `¥ ${product.price.replace('¥', '')}` : ''}</span>
+                    <span className="text-sm font-semibold text-white">{formatPrice(product.price)}</span>
                 </div>
             </div>
         </m.div>

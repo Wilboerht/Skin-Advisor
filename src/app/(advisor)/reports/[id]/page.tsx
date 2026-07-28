@@ -4,7 +4,7 @@ import ResultClient from "../../result/ResultClient";
 import { type ComprehensiveResult, normalizeAnalysisResult } from "@/lib/analysis-result";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { FaceAnalysisResult } from "@/lib/advisor-utils";
 
 // getSession 已在 auth.ts 中通过 React cache() 包装，请求内自动去重
@@ -38,28 +38,36 @@ export default async function ReportDetailPage(props: {
         try {
             const session = await getReportCached(id, user.id);
 
-            if (session && session.analysisResult) {
-                if (session.expiresAt && new Date() > new Date(session.expiresAt)) {
-                    isExpired = true;
-                } else {
-                    const rawResult = session.analysisResult as unknown as Record<string, unknown>;
-                    const result = normalizeAnalysisResult(rawResult);
-                    if (result) {
-                        result.expiresAt = session.expiresAt?.toISOString();
-                        initialData = {
-                            result,
-                            faceAnalysis: (rawResult.faceAnalysis as FaceAnalysisResult | null) || null,
-                        };
-                    }
+            if (!session || !session.analysisResult) {
+                notFound();
+            }
+
+            if (session.expiresAt && new Date() > new Date(session.expiresAt)) {
+                isExpired = true;
+            } else {
+                const rawResult = session.analysisResult as unknown as Record<string, unknown>;
+                const result = normalizeAnalysisResult(rawResult);
+                if (!result) {
+                    notFound();
                 }
+                result.expiresAt = session.expiresAt?.toISOString();
+                initialData = {
+                    result,
+                    faceAnalysis: (rawResult.faceAnalysis as FaceAnalysisResult | null) || null,
+                };
             }
         } catch (e) {
             console.error("Failed to fetch report:", e);
+            notFound();
         }
     }
 
     if (isExpired) {
         return <ReportExpired />;
+    }
+
+    if (!initialData) {
+        notFound();
     }
 
     return <ResultClient id={id} initialData={initialData} />;
@@ -92,7 +100,7 @@ export async function generateMetadata(props: {
     const id = params.id;
     let title = "我的专业护肤报告";
     let description = "基于 AI 的深度肤质分析，为您定制专属护肤方案。";
-    let ogImage = "/images/og-default.png";
+    const ogImage = "/images/og-default.png";
 
     const user = await getSession();
     if (id && user) {

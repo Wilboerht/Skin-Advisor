@@ -1,6 +1,6 @@
-﻿"use client";
+"use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { DEFAULT_QUESTIONS, type Question } from "@/config/questions";
 import { QUESTIONNAIRE_ONLY_QUESTIONS, matchQuestionnairePersona } from "@/lib/questionnaire-mapping";
@@ -10,13 +10,55 @@ import Link from "next/link";
 import { GenderSelection } from "@/components/advisor/GenderSelection";
 
 import { m, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ArrowRight, LogOut, Loader2 } from "lucide-react";
+import { ChevronLeft, LogOut, Loader2 } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useToast } from "@/components/ui/Toast";
 import { cn } from "@/lib/utils";
 import { preloadAllFaceModels } from "@/lib/preload-models";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
+import { z } from "zod";
+import { skinTypes } from "@/lib/result-content";
+import { type ComprehensiveResult } from "@/lib/analysis-result";
+
+const SCAN_MODE_KEY = "advisor_scan_mode";
+
+const safeStorage = {
+    get: (key: string) => {
+        try { return localStorage.getItem(key); } catch { return null; }
+    },
+    set: (key: string, value: string) => {
+        try { localStorage.setItem(key, value); } catch (e) { console.warn("Failed to write to localStorage", e); }
+    },
+    remove: (key: string) => {
+        try { localStorage.removeItem(key); } catch { /* ignore */ }
+    },
+};
+
+const questionOptionSchema = z.object({
+    value: z.string(),
+    label: z.string(),
+    description: z.string().optional(),
+    icon: z.string().optional(),
+    emoji: z.string().optional(),
+});
+
+const questionSchema = z.object({
+    id: z.string(),
+    fieldName: z.string(),
+    question: z.string(),
+    type: z.enum(["single", "multiple"]),
+    options: z.array(questionOptionSchema).min(1),
+    subtext: z.string().optional(),
+    dependsOn: z.object({
+        field: z.string(),
+        value: z.union([z.string(), z.array(z.string())]),
+        operator: z.enum(["equals", "notEquals", "contains"]).optional(),
+    }).optional(),
+    skippable: z.boolean().optional(),
+});
+
+const questionListSchema = z.array(questionSchema);
 
 export default function QuestionsPage() {
     const router = useRouter();
@@ -24,7 +66,6 @@ export default function QuestionsPage() {
     const [gender, setGender] = useState<"female" | "male" | null>(null);
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
     const [answers, setAnswers] = useState<Record<string, unknown>>({});
-    const [committedAnswers, setCommittedAnswers] = useState<Record<string, unknown>>({});
     const [direction, setDirection] = useState(0);
     const [showExitConfirm, setShowExitConfirm] = useState(false);
     const { trackQuestionnaireStart, trackQuestionnaireComplete } = useAdvisorAnalytics();
@@ -38,6 +79,8 @@ export default function QuestionsPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const genderScrollRef = useRef<HTMLDivElement>(null);
+    const [restoredStepIndex, setRestoredStepIndex] = useState<number | null>(null);
+    const isQuestionnaireMode = () => safeStorage.get(SCAN_MODE_KEY) === "questionnaire";
 
     // 锁定 body 滚动，防止 iPhone 上出现滚动条 / overscroll（与首页一致）
     useBodyScrollLock({ enabled: true });
@@ -100,28 +143,58 @@ export default function QuestionsPage() {
 
     // 从 API 获取问题列表（数据库优先，静态降级）
     // 纯问卷模式在客户端挂载后通过 useEffect 追加剧外问题，避免 SSR hydration 不匹配
-    const [allQuestions, setAllQuestions] = useState<Question[]>(DEFAULT_QUESTIONS);
 
     // 缓存扫描模式（仅在客户端读取 localStorage）
-    const scanModeRef = useRef<string | null>(null);
+    const [scanMode, setScanMode] = useState<string | null>(null);
     useEffect(() => {
-        try { scanModeRef.current = localStorage.getItem("advisor_scan_mode"); } catch { /* ignore */ }
-        // 纯问卷模式追加剧外问题（仅在 API 尚未覆盖时生效，hasExtra 防重复追加）
-        if (scanModeRef.current === "questionnaire") {
-            setAllQuestions(prev => {
-                const hasExtra = prev.some(q => q.fieldName.startsWith("q_"));
-                return hasExtra ? prev : [...prev, ...QUESTIONNAIRE_ONLY_QUESTIONS];
-            });
-        }
+        setScanMode(safeStorage.get(SCAN_MODE_KEY));
     }, []);
+
+    const [allQuestions, setAllQuestions] = useState<Question[]>(DEFAULT_QUESTIONS);
     const [questionsError, setQuestionsError] = useState<string | null>(null);
+    const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
+
+    const appendQuestionnaireOnly = useCallback((base: Question[]): Question[] => {
+        const hasExtra = base.some(q => q.fieldName.startsWith("q_"));
+        return hasExtra ? base : [...base, ...QUESTIONNAIRE_ONLY_QUESTIONS];
+    }, []);
+
+    const fetchQuestions = useCallback(async () => {
+        setIsLoadingQuestions(true);
+        setQuestionsError(null);
+        try {
+            const res = await fetch("/api/advisor/questions");
+            if (!res.ok) {
+                throw new Error(`API returned ${res.status}`);
+            }
+            const data: unknown = await res.json();
+            const parsed = questionListSchema.safeParse(data);
+            if (!parsed.success || parsed.data.length === 0) {
+                console.warn("Questions API returned invalid payload, using defaults:", parsed.error?.issues);
+                setQuestionsError("问题列表数据异常，已使用默认问题。");
+                setAllQuestions(appendQuestionnaireOnly(DEFAULT_QUESTIONS));
+                return;
+            }
+            setAllQuestions(isQuestionnaireMode() ? appendQuestionnaireOnly(parsed.data) : parsed.data);
+        } catch (e) {
+            console.error("Failed to fetch questions from API, using defaults:", e);
+            setQuestionsError("问题列表加载失败，已使用默认问题。");
+            setAllQuestions(appendQuestionnaireOnly(DEFAULT_QUESTIONS));
+        } finally {
+            setIsLoadingQuestions(false);
+        }
+    }, [appendQuestionnaireOnly]);
+
+    useEffect(() => {
+        fetchQuestions();
+    }, [fetchQuestions]);
 
     // 入口守卫：必须通过首页引导弹窗后才能进入问卷
     const [accessDenied, setAccessDenied] = useState(false);
     useEffect(() => {
         try {
             const hasConsent = localStorage.getItem(STORAGE_KEYS.ADVISOR_PRIVACY_CONSENT);
-            const hasAnswers = localStorage.getItem("advisor_answers");
+            const hasAnswers = localStorage.getItem(STORAGE_KEYS.ADVISOR_ANSWERS);
             if (!hasConsent && !hasAnswers) {
                 setAccessDenied(true);
             }
@@ -129,44 +202,11 @@ export default function QuestionsPage() {
             setAccessDenied(true);
         }
     }, [router]);
-    const hasFetchedQuestions = useRef(false);
-
-    useEffect(() => {
-        if (hasFetchedQuestions.current) return;
-        hasFetchedQuestions.current = true;
-
-        const fetchQuestions = async () => {
-            try {
-                const res = await fetch("/api/advisor/questions");
-                if (res.ok) {
-                    const data: Question[] = await res.json();
-                    if (Array.isArray(data) && data.length > 0) {
-                        // 纯问卷模式追加剧外问题（使用缓存的 scanModeRef）
-                        // 使用函数式更新 + hasExtra 防重复追加，避免与 Effect A 产生二次冗余更新
-                        setAllQuestions(prev => {
-                            if (scanModeRef.current === "questionnaire") {
-                                const hasExtra = prev.some(q => q.fieldName.startsWith("q_"));
-                                return hasExtra ? prev : [...data, ...QUESTIONNAIRE_ONLY_QUESTIONS];
-                            }
-                            return data;
-                        });
-                    }
-                } else {
-                    console.error("Failed to fetch questions from API, using defaults:", res.status);
-                    setQuestionsError("问题列表加载失败，已使用默认问题。");
-                }
-            } catch (e) {
-                console.error("Failed to fetch questions from API, using defaults:", e);
-                setQuestionsError("问题列表加载失败，已使用默认问题。");
-            }
-        };
-        fetchQuestions();
-    }, []);
 
     // 预加载面部识别模型，在用户填问卷时后台加载
     // 纯问卷模式跳过（不需要面部扫描）
     useEffect(() => {
-        if (scanModeRef.current !== "questionnaire") {
+        if (!isQuestionnaireMode()) {
             preloadAllFaceModels();
         }
     }, []);
@@ -196,7 +236,7 @@ export default function QuestionsPage() {
         });
     };
 
-    const questions = getFilteredQuestions(committedAnswers, gender);
+    const questions = getFilteredQuestions(answers, gender);
     const currentQuestion = questions[currentStepIndex];
 
     // 4. 确保 stepIndex 有效（使用 requestAnimationFrame 避免同步 setState）
@@ -301,16 +341,21 @@ export default function QuestionsPage() {
         }
     }, [gender, aiConfigured]);
 
-    // 恢复之前的状态（从扫脸页点击“返回修改”时调用）
-    const resumeSavedProgress = () => {
-        try {
-            const savedAnswers = localStorage.getItem("advisor_answers");
-            const savedGender = localStorage.getItem("advisor_gender");
-            const savedStep = localStorage.getItem("advisor_step");
+    // 恢复之前的状态（刷新或直接导航时，只要存在有效进度且同意隐私协议就恢复）
+    const resumeSavedProgress = useCallback(() => {
+        const hasConsent = safeStorage.get(STORAGE_KEYS.ADVISOR_PRIVACY_CONSENT);
+        if (!hasConsent) return;
 
-            let initialAnswers = {};
+        const savedAnswers = safeStorage.get(STORAGE_KEYS.ADVISOR_ANSWERS);
+        const savedGender = safeStorage.get(STORAGE_KEYS.ADVISOR_GENDER);
+        const savedStep = safeStorage.get(STORAGE_KEYS.ADVISOR_STEP);
+
+        if (!savedAnswers && !savedGender) return;
+
+        try {
+            let initialAnswers: Record<string, unknown> = {};
             if (savedAnswers) {
-                initialAnswers = JSON.parse(savedAnswers);
+                initialAnswers = JSON.parse(savedAnswers) as Record<string, unknown>;
             }
 
             if (savedGender === "female" || savedGender === "male") {
@@ -320,71 +365,82 @@ export default function QuestionsPage() {
             }
 
             setAnswers(initialAnswers);
-            setCommittedAnswers(initialAnswers);
 
-            // Restore step index (after next render when questions are filtered)
             if (savedStep) {
                 const stepIndex = parseInt(savedStep, 10);
                 if (!isNaN(stepIndex) && stepIndex >= 0) {
-                    setTimeout(() => {
-                        setCurrentStepIndex(stepIndex);
-                        // 重置质量检测计时器
-                        sessionStartTime.current = Date.now();
-                        startStepIndex.current = stepIndex;
-                    }, 0);
+                    setRestoredStepIndex(stepIndex);
                 }
             }
+
+            // 重置质量检测计时器
+            sessionStartTime.current = Date.now();
+            startStepIndex.current = 0;
         } catch (e) {
             console.error("Failed to restore saved progress:", e);
         }
-    };
-
-    // resumeSavedProgress ref（必须在函数定义之后）
-    const resumeSavedProgressRef = useRef(resumeSavedProgress);
-    useEffect(() => {
-        resumeSavedProgressRef.current = resumeSavedProgress;
-    });
-
-    // 从扫脸页点击“返回修改”时自动恢复进度
-    const hasCheckedResume = useRef(false);
-    useEffect(() => {
-        if (hasCheckedResume.current) return;
-        hasCheckedResume.current = true;
-
-        try {
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('edit') === 'true') {
-                resumeSavedProgressRef.current();
-            }
-        } catch (e) {
-            console.error("Failed to parse edit URL params:", e);
-        }
     }, []);
+
+    useEffect(() => {
+        resumeSavedProgress();
+    }, [resumeSavedProgress]);
+
+    // 在问题列表加载完成后再应用恢复的步骤，并自动限制在有效范围内
+    useEffect(() => {
+        if (restoredStepIndex === null || isLoadingQuestions) return;
+        const validIndex = Math.max(0, Math.min(restoredStepIndex, questions.length - 1));
+        setCurrentStepIndex(validIndex);
+        startStepIndex.current = validIndex;
+        sessionStartTime.current = Date.now();
+        setRestoredStepIndex(null);
+    }, [restoredStepIndex, isLoadingQuestions, questions.length]);
 
     // 自动保存答案和步骤（带防抖，避免快速连续选择时频繁写入 localStorage）
     const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const flushAnswers = useCallback(() => {
+        if (Object.keys(answers).length > 0) {
+            safeStorage.set(STORAGE_KEYS.ADVISOR_ANSWERS, JSON.stringify(answers));
+        }
+        if (gender) {
+            safeStorage.set(STORAGE_KEYS.ADVISOR_STEP, String(currentStepIndex));
+        }
+    }, [answers, currentStepIndex, gender]);
+
     useEffect(() => {
         if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
         saveTimerRef.current = setTimeout(() => {
-            if (Object.keys(answers).length > 0) {
-                localStorage.setItem("advisor_answers", JSON.stringify(answers));
-            }
-            if (gender) {
-                localStorage.setItem("advisor_step", String(currentStepIndex));
-            }
+            flushAnswers();
         }, 300);
         return () => {
             if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
         };
-    }, [answers, currentStepIndex, gender]);
+    }, [answers, currentStepIndex, gender, flushAnswers]);
 
-    // Removed `beforeunload` listener since the application continuously auto-saves progress.
-    // Prompting users aggressively when we already have an effective "Resume Test" feature feels intrusive.
+    // 在页面关闭或隐藏前同步刷新防抖中的保存，避免最新答案丢失
+    useEffect(() => {
+        const handleBeforeUnload = () => flushAnswers();
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === "hidden") flushAnswers();
+        };
+        window.addEventListener("beforeunload", handleBeforeUnload);
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+        return () => {
+            window.removeEventListener("beforeunload", handleBeforeUnload);
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+        };
+    }, [flushAnswers]);
+
+    // 组件卸载时再次 flush（安全网）
+    useEffect(() => {
+        return () => {
+            flushAnswers();
+        };
+    }, [flushAnswers]);
 
     const handleGenderSelect = (selectedGender: "female" | "male") => {
         setGender(selectedGender);
         setAnswers(prev => ({ ...prev, gender: selectedGender }));
-        localStorage.setItem("advisor_gender", selectedGender);
+        safeStorage.set(STORAGE_KEYS.ADVISOR_GENDER, selectedGender);
         // 追踪问卷开始（从选择性别开始算）
         if (!hasTrackedStart.current) {
             trackQuestionnaireStart();
@@ -438,6 +494,15 @@ export default function QuestionsPage() {
         setAnswers(newAnswers);
     };
 
+    const handleSkip = () => {
+        if (!currentQuestion || !currentQuestion.skippable) return;
+        const newAnswers = { ...answers, [currentQuestion.fieldName]: [] };
+        setAnswers(newAnswers);
+        setTimeout(() => {
+            handleNextWithAnswers(newAnswers);
+        }, 50);
+    };
+
 
 
     const handleBack = () => {
@@ -450,23 +515,39 @@ export default function QuestionsPage() {
         } else {
             // 如果在第一题点击返回，回到性别选择
             setGender(null);
-            localStorage.removeItem("advisor_gender");
+            safeStorage.remove(STORAGE_KEYS.ADVISOR_GENDER);
         }
     };
 
     // 真正执行提交的逻辑
     const processSubmission = (finalAnswers: Record<string, unknown>) => {
         setIsSubmitting(true);
-        localStorage.setItem("advisor_answers", JSON.stringify(finalAnswers));
+        safeStorage.set(STORAGE_KEYS.ADVISOR_ANSWERS, JSON.stringify(finalAnswers));
         // 不再此处清除进度，以便用户从扫脸页返回时能恢复问卷位置
         trackQuestionnaireComplete(finalAnswers);
 
         // 检查测肤模式：纯问卷模式通过完整匹配链映射到全部 8 种派系
-        const scanMode = localStorage.getItem("advisor_scan_mode");
+        const scanMode = safeStorage.get(SCAN_MODE_KEY);
         if (scanMode === "questionnaire") {
             const result = matchQuestionnairePersona(finalAnswers);
-            // 持久化评分与派系结果，供下游页面（结果页/分享等）使用
-            localStorage.setItem("advisor_result", JSON.stringify(result));
+            // 构建可被 /result 页面兼容的 ComprehensiveResult 占位结构
+            const typeEntry = skinTypes.find(t => t.route === result.route);
+            const comprehensiveResult: ComprehensiveResult = {
+                skinProfile: {
+                    type: result.route || "unknown",
+                    typeLabel: typeEntry?.typeName || result.name || "未知派系",
+                    concerns: [],
+                },
+                analysis: {
+                    summary: `您的肌肤形象类型为「${result.name || "未知派系"}」，综合评分 ${result.score} 分。`,
+                    details: [],
+                },
+                products: [],
+                dataSource: "questionnaire",
+                persona: result.name,
+                expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+            };
+            safeStorage.set(STORAGE_KEYS.ADVISOR_RESULT, JSON.stringify(comprehensiveResult));
             router.push(result.route ? `/skin-types/${result.route}` : "/skin-types");
         } else {
             router.push("/face-scan");
@@ -477,11 +558,9 @@ export default function QuestionsPage() {
     const handleNextWithAnswers = (currentAnswers: Record<string, unknown>) => {
         const nextQs = getFilteredQuestions(currentAnswers, gender);
         if (currentStepIndex < nextQs.length - 1) {
-            setCommittedAnswers(currentAnswers);
             setDirection(1);
             setCurrentStepIndex(prev => prev + 1);
         } else {
-            setCommittedAnswers(currentAnswers);
             // 到达最后一题，触发完成逻辑
             // 1. 质量检测：计算耗时
             const now = Date.now();
@@ -593,7 +672,7 @@ export default function QuestionsPage() {
                                     <Loader2 className="w-4 h-4 animate-spin" />
                                     正在检查服务状态...
                                 </div>
-                            ) : aiConfigured === false && scanModeRef.current !== "questionnaire" ? (
+                            ) : aiConfigured === false && scanMode !== "questionnaire" ? (
                                 <div className="w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm text-center">
                                     <h3 className="text-lg font-serif text-[#1A1A1A] mb-2">服务暂未就绪</h3>
                                     <p className="text-sm text-[#5E5E5E] mb-6">{configMessage}</p>
@@ -644,7 +723,7 @@ export default function QuestionsPage() {
                                     </div>
                                 </div>
                             ) : (
-                                <GenderSelection onSelect={handleGenderSelect} />
+                                <GenderSelection onSelect={handleGenderSelect} selectedGender={gender} />
                             )}
                         </div>
                     </div>
@@ -714,7 +793,7 @@ export default function QuestionsPage() {
                     >
                         <Loader2 className="w-8 h-8 text-[#3D4430] animate-spin" />
                         <p className="text-sm text-[#5E5E5E] tracking-wide">
-                            {scanModeRef.current === "questionnaire"
+                            {scanMode === "questionnaire"
                                 ? "正在分析你的肌肤派系..."
                                 : "正在准备面部扫描..."}
                         </p>
@@ -762,13 +841,22 @@ export default function QuestionsPage() {
                 <div className="shrink-0 px-4 pb-2">
                     <div className="max-w-4xl mx-auto rounded-lg bg-amber-50 border border-amber-200 px-4 py-2 text-xs text-amber-800 flex items-center justify-between">
                         <span>{questionsError}</span>
-                        <button
-                            onClick={() => setQuestionsError(null)}
-                            className="ml-3 text-amber-600 hover:text-amber-900"
-                            aria-label="关闭提示"
-                        >
-                            ✕
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={fetchQuestions}
+                                className="ml-2 text-amber-700 hover:text-amber-900 font-medium underline underline-offset-2"
+                                aria-label="重新加载问题"
+                            >
+                                重试
+                            </button>
+                            <button
+                                onClick={() => setQuestionsError(null)}
+                                className="ml-2 text-amber-600 hover:text-amber-900"
+                                aria-label="关闭提示"
+                            >
+                                ✕
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
@@ -794,6 +882,8 @@ export default function QuestionsPage() {
                                 direction={direction}
                                 currentStep={currentStepIndex + 1}
                                 totalSteps={questions.length}
+                                mode={isQuestionnaireMode() ? "questionnaire" : "scan"}
+                                onSkip={handleSkip}
                             />
                         </m.div>
                     </AnimatePresence>
@@ -818,7 +908,13 @@ export default function QuestionsPage() {
             {/* Exit Modal */}
             <AnimatePresence>
                 {showExitConfirm && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="exit-modal-title"
+                        tabIndex={-1}
+                    >
                         <m.div
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                             className="absolute inset-0 bg-black/20 backdrop-blur-sm"
@@ -829,10 +925,11 @@ export default function QuestionsPage() {
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 10 }}
                             className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm"
+                            tabIndex={-1}
                         >
                             <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                                 <div className="sm:w-[60%] text-center sm:text-left">
-                                    <h3 className="text-lg font-serif text-[#1A1A1A] mb-3 sm:mb-2">退出测试？</h3>
+                                    <h3 id="exit-modal-title" className="text-lg font-serif text-[#1A1A1A] mb-3 sm:mb-2">退出测试？</h3>
                                     <p className="text-sm text-[#5E5E5E] leading-relaxed">
                                         您的进度已自动保存，下次返回可直接从此处继续。
                                     </p>
@@ -861,7 +958,13 @@ export default function QuestionsPage() {
             {/* Quality Check Modal */}
             <AnimatePresence>
                 {showQualityWarning && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="quality-modal-title"
+                        tabIndex={-1}
+                    >
                         <m.div
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                             className="absolute inset-0 bg-[#F5F2E9]/80 backdrop-blur-sm"
@@ -872,10 +975,11 @@ export default function QuestionsPage() {
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 10 }}
                             className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm"
+                            tabIndex={-1}
                         >
                             <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                                 <div className="sm:w-[60%] text-center sm:text-left">
-                                    <h3 className="text-lg font-serif text-[#1A1A1A] mb-3 sm:mb-2">确认提交？</h3>
+                                    <h3 id="quality-modal-title" className="text-lg font-serif text-[#1A1A1A] mb-3 sm:mb-2">确认提交？</h3>
                                     <p className="text-sm text-[#5E5E5E] leading-relaxed">
                                         我们检测到您的填写速度较快。建议您再次核对，确保 AI 能为您提供<span className="text-[#1A1A1A] font-medium"> 最精准 </span>的分析结果。
                                     </p>

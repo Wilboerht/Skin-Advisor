@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState, useCallback, Suspense, useRef } from "react";
-import { Link, useTransitionRouter } from "next-view-transitions";
+import { useTransitionRouter } from "next-view-transitions";
 import { useSearchParams } from "next/navigation";
 import { LazyMotion, domAnimation, AnimatePresence, m, useReducedMotion } from "framer-motion";
 import Image from "next/image";
-import { ArrowRight, Loader2, MapPin, ClipboardList, ScanFace, X, CircleAlert } from "lucide-react";
+import { ArrowRight, Loader2, ClipboardList, ScanFace, X } from "lucide-react";
 
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,8 +18,6 @@ import { CONSENT_VERSION } from "@/components/advisor/PrivacyConsent";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import dynamic from "next/dynamic";
-
-const BaseModal = dynamic(() => import("@/components/ui/BaseModal").then((mod) => mod.BaseModal), { ssr: false });
 const OnboardingFlowModal = dynamic(() => import("@/components/advisor/OnboardingFlowModal").then((mod) => mod.OnboardingFlowModal), { ssr: false });
 const HomepageFooter = dynamic(() => import("@/components/website/HomepageFooter").then((mod) => mod.HomepageFooter), { ssr: false });
 
@@ -27,7 +25,7 @@ const HomepageFooter = dynamic(() => import("@/components/website/HomepageFooter
 // Safe storage helper to prevent QuotaExceededError or Privacy Mode crashes
 const safeStorage = {
   get: (key: string) => {
-    try { return localStorage.getItem(key); } catch (e) { return null; }
+    try { return localStorage.getItem(key); } catch { return null; }
   },
   set: (key: string, value: string) => {
     try { localStorage.setItem(key, value); } catch (e) { console.warn("Failed to write to localStorage", e); }
@@ -36,7 +34,7 @@ const safeStorage = {
     try { localStorage.removeItem(key); } catch (e) { console.warn("Failed to remove from localStorage", e); }
   },
   getSession: (key: string) => {
-    try { return sessionStorage.getItem(key); } catch (e) { return null; }
+    try { return sessionStorage.getItem(key); } catch { return null; }
   },
   setSession: (key: string, value: string) => {
     try { sessionStorage.setItem(key, value); } catch (e) { console.warn("Failed to write to sessionStorage", e); }
@@ -94,13 +92,6 @@ export default function Home() {
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
   const [nickname, setNickname] = useState("");
   const [isHomeExiting, setIsHomeExiting] = useState(false);
-
-  // 安全网：只要引导弹窗关闭（无论通过何种路径），重置按钮加载状态
-  useEffect(() => {
-    if (!showOnboardingModal) {
-      setLoadingMode(null);
-    }
-  }, [showOnboardingModal]);
 
   // Location/Region states
   const [isLocating, setIsLocating] = useState(false);
@@ -271,8 +262,8 @@ export default function Home() {
     isBlocked?: boolean;
     blockReason?: string | null;
   } | null>(null);
-  const [checkingLimit, setCheckingLimit] = useState(false);
   const [showLimitModal, setShowLimitModal] = useState(false);
+  const [onboardingOpenCount, setOnboardingOpenCount] = useState(0);
   const [guestIdentity, setGuestIdentity] = useState<GuestIdentity | null>(null);
 
   // Initialize guest identity on mount
@@ -289,51 +280,52 @@ export default function Home() {
   }, []);
 
   // Check test limit with multi-factor identity
-  const checkTestLimit = useCallback(async (allowRefresh = true) => {
-    setCheckingLimit(true);
-    try {
-      // Get fresh identity if not available
-      let identity = guestIdentity;
-      if (!identity) {
-        identity = await getGuestIdentity();
-        setGuestIdentity(identity);
-      }
+  const checkTestLimit = useCallback(async (allowRefresh = true): Promise<boolean> => {
+    const runCheck = async (canRefresh: boolean): Promise<boolean> => {
+      try {
+        // Get fresh identity if not available
+        let identity = guestIdentity;
+        if (!identity) {
+          identity = await getGuestIdentity();
+          setGuestIdentity(identity);
+        }
 
-      const params = new URLSearchParams();
-      params.set('cookieId', identity.cookieId);
-      if (identity.fingerprint) {
-        params.set('fingerprint', identity.fingerprint);
-      }
+        const params = new URLSearchParams();
+        params.set('cookieId', identity.cookieId);
+        if (identity.fingerprint) {
+          params.set('fingerprint', identity.fingerprint);
+        }
 
-      const res = await fetch(`/api/advisor/test-limit?${params.toString()}`);
-      if (!res.ok) {
-        const errorText = await res.text().catch(() => "未知错误");
-        console.error("Test limit check failed:", res.status, errorText);
-        return true; // Allow on error so the user is not blocked by a transient server issue
-      }
+        const res = await fetch(`/api/advisor/test-limit?${params.toString()}`);
+        if (!res.ok) {
+          const errorText = await res.text().catch(() => "未知错误");
+          console.error("Test limit check failed:", res.status, errorText);
+          return true; // Allow on error so the user is not blocked by a transient server issue
+        }
 
-      const data = await res.json();
-      setTestLimitInfo(data);
+        const data = await res.json();
+        setTestLimitInfo(data);
 
-      // Frontend safeguard: if frontend thinks user is logged in but backend treats as guest,
-      // the JWT token may be invalid/mismatched. Refresh user state and re-check once.
-      if (user && data.isGuest && allowRefresh) {
-        console.warn("[Auth Mismatch] Frontend has user but backend returned guest. Refreshing session...");
-        await refreshUser();
-        return await checkTestLimit(false);
-      }
+        // Frontend safeguard: if frontend thinks user is logged in but backend treats as guest,
+        // the JWT token may be invalid/mismatched. Refresh user state and re-check once.
+        if (user && data.isGuest && canRefresh) {
+          console.warn("[Auth Mismatch] Frontend has user but backend returned guest. Refreshing session...");
+          await refreshUser();
+          return runCheck(false);
+        }
 
-      // Check if blocked
-      if (data.isBlocked) {
-        return false;
+        // Check if blocked
+        if (data.isBlocked) {
+          return false;
+        }
+        return data.canTest;
+      } catch (err) {
+        console.error("Failed to check test limit:", err);
+        return true; // Allow on error so the user is not blocked by a transient network issue
       }
-      return data.canTest;
-    } catch (err) {
-      console.error("Failed to check test limit:", err);
-      return true; // Allow on error so the user is not blocked by a transient network issue
-    } finally {
-      setCheckingLimit(false);
-    }
+    };
+
+    return runCheck(allowRefresh);
   }, [guestIdentity, user, refreshUser]);
 
 
@@ -370,8 +362,11 @@ export default function Home() {
       safeStorage.set("advisor_nickname", user.name);
     }
     setIsHomeExiting(true);
+    if (!showOnboardingModal) {
+      setOnboardingOpenCount(prev => prev + 1);
+    }
     setShowOnboardingModal(true);
-  }, [checkTestLimit, user, startNewTest]);
+  }, [checkTestLimit, user, startNewTest, showOnboardingModal]);
 
   const handleNicknameSubmit = () => {
     if (!nickname.trim()) {
@@ -571,6 +566,7 @@ export default function Home() {
 
       {/* Modals */}
       <OnboardingFlowModal
+        key={onboardingOpenCount}
         isOpen={showOnboardingModal}
         onClose={() => {
           setShowOnboardingModal(false);

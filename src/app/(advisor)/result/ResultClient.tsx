@@ -58,6 +58,7 @@ interface ResultClientProps {
         result: ComprehensiveResult;
         faceAnalysis: FaceAnalysisResult | null;
     } | null;
+    user?: { id: string } | null;
 }
 
 // --- Poster image helpers ---
@@ -82,6 +83,15 @@ async function waitForImages(container: HTMLElement): Promise<void> {
             });
         })
     );
+}
+
+function getErrorRetryLabel(): string {
+    try {
+        const hasFaceImages = !!localStorage.getItem(STORAGE_KEYS.ADVISOR_FACE_IMAGES);
+        return hasFaceImages ? "重新测试" : "重新填写问卷";
+    } catch {
+        return "重新填写问卷";
+    }
 }
 
 // 手机端：十维分析表单（替代 ScientificBarChart）
@@ -185,30 +195,27 @@ export default function ResultClient(props: ResultClientProps) {
     );
 }
 
-function ResultClientContent({ id, initialData }: ResultClientProps) {
+function ResultClientContent({ id, initialData, user: serverUser }: ResultClientProps) {
     const router = useRouter();
 
     // 入口守卫：必须通过首页引导弹窗后才能查看结果
     // 历史报告页面（/reports/:id）会传入 id 与 initialData，跳过此守卫
-    const [accessDenied, setAccessDenied] = useState(false);
-    useEffect(() => {
-        if (id || initialData) return;
+    const accessDenied = useMemo(() => {
+        if (id || initialData) return false;
         try {
             const hasResult = localStorage.getItem("advisor_result");
             const hasAnswers = localStorage.getItem("advisor_answers");
             const hasConsent = localStorage.getItem(STORAGE_KEYS.ADVISOR_PRIVACY_CONSENT);
-            if (!hasResult && !hasAnswers && !hasConsent) {
-                setAccessDenied(true);
-            }
+            return !hasResult && !hasAnswers && !hasConsent;
         } catch {
-            setAccessDenied(true);
+            return true;
         }
-    }, [router, id, initialData]);
+    }, [id, initialData]);
     const { trackResultView, trackResultShare, trackProductClick } = useAdvisorAnalytics();
     const { user, isInitialized: authInitialized } = useAuth();
     const { openAuthModal } = useAuthModal();
     const searchParams = useSearchParams();
-    const { runAnalysis, analysisState, reset: resetAnalysis, recoverSession } = useAsyncAnalysis();
+    const { runAnalysis, analysisState, recoverSession } = useAsyncAnalysis();
 
     // Session ID state - needed early for QR code generation
     const [sessionId, setSessionId] = useState<string | undefined>(id);
@@ -230,8 +237,8 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     }, [sessionId]);
 
     // Refs for latest auth state to avoid adding them to effect dependency arrays
-    const userRef = useRef(user);
-    const authInitializedRef = useRef(authInitialized);
+    const userRef = useRef(serverUser ?? user);
+    const authInitializedRef = useRef(!!serverUser || authInitialized);
     useEffect(() => { userRef.current = user; }, [user]);
     useEffect(() => { authInitializedRef.current = authInitialized; }, [authInitialized]);
 
@@ -332,9 +339,20 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     }, [faceAnalysis, socialGender]);
 
     const showGenderMismatchModal = useMemo(
-        () => !loading && !!result && !!faceAnalysis && isGenderMismatch && ackedSessionId !== sessionId,
+        () => !loading && !!result && !!faceAnalysis && isGenderMismatch && !!sessionId && ackedSessionId !== sessionId,
         [loading, result, faceAnalysis, isGenderMismatch, ackedSessionId, sessionId]
     );
+
+    const hasUsedFreeRetry = useMemo(() => {
+        if (!sessionId) return false;
+        try {
+            const freeRetry = localStorage.getItem(STORAGE_KEYS.ADVISOR_FREE_RETRY) === "true";
+            const freeRetrySessionId = localStorage.getItem(STORAGE_KEYS.ADVISOR_FREE_RETRY_SESSION_ID);
+            return freeRetry && freeRetrySessionId === sessionId;
+        } catch {
+            return false;
+        }
+    }, [sessionId]);
 
     // Auto-focus primary button when modal opens
     useEffect(() => {
@@ -726,7 +744,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                 if (!abortController.signal.aborted && res.ok) {
                     localStorage.setItem(claimedKey, 'true');
                     const reportPath = `/reports/${sessionId}`;
-                    if (typeof window === 'undefined' || window.location.pathname !== reportPath) {
+                    if (typeof window !== 'undefined' && window.location.pathname !== reportPath && !window.location.pathname.startsWith('/result')) {
                         router.replace(reportPath);
                     }
                 }
@@ -921,7 +939,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                 onClick={() => router.push('/questions?edit=true')}
                                 className="px-6 h-10 rounded-lg border border-[#1B3A5C] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                             >
-                                退出
+                                {getErrorRetryLabel()}
                             </button>
                         </div>
                     </div>
@@ -962,7 +980,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
     }
 
     return (
-        <ResultErrorBoundary>
+        <ResultErrorBoundary resetKeys={[id, sessionId]}>
             <>
             <AnimatePresence mode="wait">
                 {showLoading && (
@@ -1033,7 +1051,11 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                         <Lightbulb className="w-4 h-4 shrink-0 mt-0.5 text-[#1B3A5C]/70" strokeWidth={1.5} />
                                         <div className="space-y-2 text-[13px] text-[#5E5E5E] leading-relaxed">
                                             <p>这可能会影响为您匹配<span className="font-semibold text-[#1A1A1A]">“针对性护肤方案”</span>的精准度，导致分析结论与您的实际肤感产生偏差。</p>
-                                            <p>建议核实信息以获得更准确的建议。若是填写有误？<span className="font-semibold text-[#1B3A5C]">本次重新填写不消耗测试次数</span>。</p>
+                                            {hasUsedFreeRetry ? (
+                                                <p>该会话已使用过免费重试，重新填写将正常消耗测试次数。</p>
+                                            ) : (
+                                                <p>建议核实信息以获得更准确的建议。若是填写有误？<span className="font-semibold text-[#1B3A5C]">本次重新填写不消耗测试次数</span>。</p>
+                                            )}
                                         </div>
                                     </div>
 
@@ -1041,11 +1063,11 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                                     <div className="flex flex-col gap-3 pt-2">
                                         <button
                                             ref={retryButtonRef}
-                                            onClick={handleMismatchRetry}
+                                            onClick={hasUsedFreeRetry ? handleMismatchContinue : handleMismatchRetry}
                                             className="w-full h-11 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent text-[14px] font-medium rounded-lg hover:bg-[#1B3A5C] hover:text-white active:scale-[0.99] transition-all flex items-center justify-center gap-2"
                                         >
                                             <RotateCcw size={14} strokeWidth={2} />
-                                            <span>重新填写问卷</span>
+                                            <span>{hasUsedFreeRetry ? "我已了解" : "重新填写问卷"}</span>
                                         </button>
 
                                         <button
@@ -1123,7 +1145,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
 
                         {/* Report Summary Cards */}
                         <ResultCards
-                            score={faceAnalysis?.overallScore ?? (result?.dataSource === "questionnaire" ? undefined : 0)}
+                            score={faceAnalysis?.overallScore ?? undefined}
                             skinAge={result?.skinProfile?.skinAge ?? 25}
                             dimensions={faceAnalysis?.dimensions || {}}
                             nickname={userNickname}
@@ -1508,7 +1530,7 @@ function ResultClientContent({ id, initialData }: ResultClientProps) {
                         <SharePoster
                             ref={posterRef}
                             nickname={userNickname || "用户"}
-                            score={faceAnalysis?.overallScore ?? (result?.dataSource === "questionnaire" ? undefined : 0)}
+                            score={faceAnalysis?.overallScore ?? undefined}
                             percentile={rankPercentile}
                             waterOil={faceAnalysis?.dimensions?.waterOil?.score}
                             skinTypeName={result?.persona ? skinTypes.find(t => t.ipKey === result.persona)?.typeName : undefined}

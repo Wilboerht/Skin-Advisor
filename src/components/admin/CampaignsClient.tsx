@@ -53,7 +53,6 @@ export function CampaignsClient() {
   }, [page, statusFilter, toast])
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchCampaigns()
   }, [fetchCampaigns])
 

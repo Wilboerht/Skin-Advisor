@@ -88,7 +88,8 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
 
     // 2. 如果是访客 — 每日 1 次
     const identifiers = extractGuestIdentifiers(request, body);
-    const { ipAddress, fingerprint } = identifiers;
+    const { ipAddress, fingerprint, cookieId } = identifiers;
+    const limit = 1;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -107,7 +108,7 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
                 orderBy: { todayCount: 'desc' },
             })
         );
-        crossIpCount = Math.min(crossIpRecord?.todayCount || 0, Math.ceil(1 * 0.5));
+        crossIpCount = Math.min(crossIpRecord?.todayCount || 0, Math.floor(limit * 0.5));
     }
 
     // 安全：始终以服务端可信的 IP 哈希作为主匹配键，fingerprint/cookieId 仅作辅助存储。
@@ -122,14 +123,21 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
 
     const blockedRecord = await withDbRetry(() =>
         prisma.guestUsage.findFirst({
-            where: { ipAddress, isBlocked: true }
+            where: {
+                isBlocked: true,
+                OR: [
+                    { ipAddress },
+                    ...(fingerprint ? [{ fingerprint }] : []),
+                    ...(cookieId ? [{ cookieId }] : [])
+                ]
+            }
         })
     );
     if (blockedRecord) {
         return {
             canTest: false,
             remaining: 0,
-            dailyLimit: 1,
+            dailyLimit: limit,
             role: 'guest',
             error: blockedRecord.blockedReason || '您的访问已被限制，请联系客服。'
         };
@@ -142,7 +150,6 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
     );
 
     const totalCount = count + inProgressCount;
-    const limit = 1;
 
     if (totalCount >= limit) {
         return {
@@ -211,8 +218,16 @@ export async function reserveUsage(
                 }
 
                 // 2. 访客 — IP 为主匹配键，fingerprint/cookieId 为辅助维度防止 VPN 绕过
+                const limit = 1;
                 const blockedRecord = await tx.guestUsage.findFirst({
-                    where: { ipAddress, isBlocked: true }
+                    where: {
+                        isBlocked: true,
+                        OR: [
+                            { ipAddress },
+                            ...(fingerprint ? [{ fingerprint }] : []),
+                            ...(cookieId ? [{ cookieId }] : [])
+                        ]
+                    }
                 });
                 if (blockedRecord) {
                     return { success: false, error: blockedRecord.blockedReason || '您的访问已被限制，请联系客服。', role: 'guest' };
@@ -229,7 +244,7 @@ export async function reserveUsage(
                         },
                         orderBy: { todayCount: 'desc' },
                     });
-                    crossIpCount = Math.min(crossIpRecord?.todayCount || 0, Math.ceil(1 * 0.5));
+                    crossIpCount = Math.min(crossIpRecord?.todayCount || 0, Math.floor(limit * 0.5));
                 }
 
                 // 按 IP 匹配当日记录
@@ -244,7 +259,6 @@ export async function reserveUsage(
 
                 const currentCount = (todayRecord?.todayCount || 0) + crossIpCount;
                 const totalCount = currentCount + guestInProgress;
-                const limit = 1;
 
                 if (totalCount >= limit) {
                     return { success: false, error: '今日测试次数已用完，登录后可获更多次数。', role: 'guest' };

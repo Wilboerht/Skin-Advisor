@@ -98,9 +98,6 @@ const PRICE_TIERS = [
     { min: 1500, max: Infinity, tier: 3 }, // 不设上限
 ] as const;
 
-/** 预算超支惩罚：超出 tier 数越多，惩罚越重 */
-const BUDGET_OVERAGE_PENALTY = [0, 40, 120, 250]; // tier 差 0/1/2/3+ 的扣分
-
 /** 环境功效匹配权重（每标签 +15 分，低于肤质但高于精选产品 */
 const ENV_BENEFIT_SCORE = 15;
 
@@ -191,9 +188,7 @@ function calculateScore(
         });
     }
 
-    // 4. 预算匹配（相关性门槛加权：仅对已证明合适的产品加分）
-    //   预算分 = min(30, 基础相关分 / 3)，产品越合适预算加成越多
-    //   同时增加超预算惩罚机制
+    // 4. 预算匹配：在预算范围内的产品获得固定 +25 分奖励，不扣分
     if (answers.budget) {
         const userBudget = BUDGET_TO_PRICE[answers.budget];
         const priceMatch = String(product.price).match(/[0-9]+(?:\.[0-9]+)?/);
@@ -204,26 +199,14 @@ function calculateScore(
             const userTier = userBudget.tier;
 
             if (productPrice >= userBudget.min && productPrice <= userBudget.max) {
-                // 完全在预算范围内：加分
-                const budgetBonus = Math.min(30, Math.floor(score / 3));
-                score += Math.max(5, budgetBonus);
+                score += 25;
                 reasons.push("符合预算范围");
                 budgetLabel = "within_budget";
             } else if (productPrice <= userBudget.max * 1.3) {
-                // 轻微超预算（如在 500 预算下价格 600）：标为 near_budget，不做惩罚
                 budgetLabel = "near_budget";
             } else if (productTier > userTier) {
-                // 严重超预算：按 tier 差距惩罚
-                const tierDiff = productTier - userTier;
-                const penaltyIdx = Math.min(tierDiff, BUDGET_OVERAGE_PENALTY.length - 1);
-                const penalty = BUDGET_OVERAGE_PENALTY[penaltyIdx];
-                score -= penalty;
                 budgetLabel = "over_budget";
-                if (penalty > 0) {
-                    reasons.push(`超出预算范围（${getBudgetLabel(answers.budget)}）`);
-                }
             } else {
-                // 低于预算范围（如 高端用户 看到 平价产品）：不做惩罚
                 budgetLabel = "within_budget";
             }
         }
@@ -311,17 +294,6 @@ function findPriceTier(price: number): number {
         if (price >= tier.min && price <= tier.max) return tier.tier;
     }
     return Number.MAX_SAFE_INTEGER;
-}
-
-/** 获取预算档次中文名 */
-function getBudgetLabel(budget: string): string {
-    const labels: Record<string, string> = {
-        budget: "性价比",
-        mid: "中等预算",
-        premium: "品质优先",
-        luxury: "不设上限",
-    };
-    return labels[budget] || budget;
 }
 
 /**
@@ -597,8 +569,7 @@ export async function getCandidateProducts(
  */
 export async function getClusterSocialProof(
     skinType: string,
-    persona?: string,
-    budget?: string
+    persona?: string
 ): Promise<Map<string, { affinity: number; repurchaseRate: number; label: string }>> {
     const result = new Map<string, { affinity: number; repurchaseRate: number; label: string }>();
     try {
@@ -651,7 +622,7 @@ export async function getClusterSocialProof(
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-        let repurchaseMap = new Map<string, number>();
+        const repurchaseMap = new Map<string, number>();
         try {
             const feedbackAggs = await prisma.productFeedback.groupBy({
                 by: ["productId"],
@@ -815,7 +786,7 @@ export async function recommendProducts(
         scored.sort((a, b) => b.rawScore - a.rawScore);
 
         // Compute persona pool for source tagging
-        let personaPoolIds = new Set<string>();
+        const personaPoolIds = new Set<string>();
         if (persona) {
             try {
                 const personaRules = await prisma.recommendationRule.findMany({
@@ -836,7 +807,7 @@ export async function recommendProducts(
         // 5b. 协同过滤社交证明（异步、非阻断）
         let socialProofMap = new Map<string, { affinity: number; repurchaseRate: number; label: string }>();
         try {
-            socialProofMap = await getClusterSocialProof(skinType, persona, answers.budget);
+            socialProofMap = await getClusterSocialProof(skinType, persona);
         } catch {
             // 非阻断，降级为空
         }
@@ -849,7 +820,7 @@ export async function recommendProducts(
             // 4. 产品级运营配置 recommendReasons[skinType]（旧格式兼容：字符串直接使用）
             // 5. 算法模板 generateSmartReason（兜底）
             let reason: string;
-            const rawRecommendReasons = (p as any).recommendReasons as Record<string, string | Record<string, string>> | undefined;
+            const rawRecommendReasons = p.recommendReasons as Record<string, string | Record<string, string>> | undefined;
             if (rawRecommendReasons && typeof rawRecommendReasons === "object" && skinType) {
                 const skinTypeEntry = rawRecommendReasons[skinType];
                 if (typeof skinTypeEntry === "string" && skinTypeEntry.trim()) {
@@ -902,7 +873,7 @@ export async function recommendProducts(
             name: p.name,
             category: p.category,
             image: p.image,
-            images: (p as any).images || null,
+            images: (p.images as string[] | null) || null,
             price: p.price,
             reason,
             description: p.description || null,
@@ -913,8 +884,8 @@ export async function recommendProducts(
             benefits: Array.isArray(p.benefits) ? p.benefits : [],
             keyIngredients: Array.isArray(p.keyIngredients) ? p.keyIngredients : [],
             source: personaPoolIds.has(p.id) ? "persona" as const : "algorithm" as const,
-            budgetLabel: (p as any).budgetLabel || "unknown",
-            envTags: (p as any).envTags || [],
+            budgetLabel: p.budgetLabel || "unknown",
+            envTags: p.envTags || [],
             socialProof,
             };
         });

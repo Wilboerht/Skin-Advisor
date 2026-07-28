@@ -50,6 +50,8 @@ interface ModelPricing {
 
 const DEFAULT_PRICING: ModelPricing = { input: 0.1, output: 0.3 };
 
+// TODO: 价格表当前硬编码在代码中。后续应迁移到数据库/环境变量配置，
+// 以便运营人员在模型价格调整或新增 provider 时无需发版。
 const PRICING_TABLE: Record<string, Partial<Record<string, ModelPricing>>> = {
     qwen: {
         "qwen-turbo": { input: 0.0005, output: 0.002 },

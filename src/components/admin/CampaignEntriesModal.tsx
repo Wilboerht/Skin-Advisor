@@ -71,7 +71,6 @@ export function CampaignEntriesModal({ isOpen, campaign, onClose, confirm }: Cam
 
   useEffect(() => {
     if (isOpen) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchEntries()
     }
   }, [isOpen, filter, page, fetchEntries])

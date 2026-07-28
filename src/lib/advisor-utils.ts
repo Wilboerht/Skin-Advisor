@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 /**
  * MySkin.Technology 专业皆肆分析类形定义
  */
@@ -240,7 +242,7 @@ export function extractJsonFromResponse<T>(content: string): T {
         if ((trimmed.startsWith("{") && trimmed.endsWith("}")) || (trimmed.startsWith("[") && trimmed.endsWith("]"))) {
             return JSON.parse(trimmed) as T;
         }
-    } catch (e) {
+    } catch {
         // 忽略错误，尝试其他方法
     }
 
@@ -250,7 +252,7 @@ export function extractJsonFromResponse<T>(content: string): T {
         try {
             const fixed = fixJsonString(codeBlockMatch[1]);
             return JSON.parse(fixed) as T;
-        } catch (e) {
+        } catch {
             // 忽略
         }
     }
@@ -261,7 +263,7 @@ export function extractJsonFromResponse<T>(content: string): T {
         try {
             const fixed = fixJsonString(jsonMatch[0]);
             return JSON.parse(fixed) as T;
-        } catch (e) {
+        } catch {
             // 忽略
         }
     }
@@ -473,6 +475,100 @@ export interface SharedAnalysisResult {
     products?: unknown[];
     dataSource?: string;
     userLocation?: string;
+}
+
+// ============================================================================
+// AI 输出 JSON 结构验证（Zod）
+// ============================================================================
+
+const DimensionScoreSchema = z.object({
+    score: z.number().optional(),
+    percentile: z.number().optional(),
+    grade: z.enum(["excellent", "good", "average", "fair", "poor"]).optional(),
+    details: z.string().optional(),
+});
+
+const ZoneDataSchema = z.object({
+    condition: z.string().optional(),
+    advice: z.string().optional(),
+    oil: z.number().optional(),
+    texture: z.number().optional(),
+    wrinkles: z.number().optional(),
+    spots: z.number().optional(),
+    redness: z.number().optional(),
+    darkCircles: z.number().optional(),
+    firmness: z.number().optional(),
+    contour: z.number().optional(),
+}).passthrough();
+
+export const VisionAnalysisOutputSchema = z.object({
+    validation: z.object({
+        isValid: z.boolean(),
+        message: z.string().optional(),
+    }).optional(),
+    skinType: z.object({
+        type: z.string(),
+        confidence: z.number().optional(),
+        description: z.string().optional(),
+    }).optional(),
+    gender: z.object({
+        value: z.enum(["male", "female"]),
+        confidence: z.number().optional(),
+    }).optional(),
+    skinAge: z.object({
+        estimated: z.number().optional(),
+        factors: z.array(z.string()).optional(),
+    }).optional(),
+    dimensions: z.record(z.string(), DimensionScoreSchema).optional(),
+    overallScore: z.number().optional(),
+    summary: z.string().optional(),
+    recommendations: z.array(z.string()).optional(),
+    skinConditions: z.array(z.object({
+        condition: z.string(),
+        severity: z.enum(["mild", "moderate", "severe"]).optional(),
+        area: z.string().optional(),
+        description: z.string().optional(),
+    })).optional(),
+    zoneAnalysis: z.object({
+        forehead: ZoneDataSchema,
+        tZone: ZoneDataSchema,
+        leftCheek: ZoneDataSchema,
+        rightCheek: ZoneDataSchema,
+        eyeArea: ZoneDataSchema,
+        jawline: ZoneDataSchema,
+    }).optional(),
+    labAnalysis: z.object({
+        glogau: z.object({ value: z.string(), status: z.string() }).optional(),
+        homogeneity: z.object({ value: z.number(), unit: z.string(), status: z.string() }).optional(),
+        wrinkleGrade: z.object({ value: z.string(), status: z.string() }).optional(),
+    }).optional(),
+}).passthrough();
+
+export const TextAnalysisOutputSchema = z.object({
+    summary: z.string().min(1),
+    skinTypeAnalysis: z.string().optional(),
+    concernAnalysis: z.array(z.string()).optional(),
+    lifestyleTips: z.array(z.string()).optional(),
+    products: z.array(z.object({
+        id: z.union([z.string(), z.number()]),
+        reason: z.string().optional(),
+    }).passthrough()).optional(),
+}).passthrough();
+
+/**
+ * 安全提取并校验 AI 返回的 JSON
+ * @param content - AI 原始文本
+ * @param schema - Zod 校验 schema
+ * @returns 校验通过的解析结果
+ * @throws 若无法解析或校验失败
+ */
+export function validateAndExtractJson<T>(content: string, schema: z.ZodType<T>): T {
+    const raw = extractJsonFromResponse<unknown>(content);
+    const parsed = schema.safeParse(raw);
+    if (!parsed.success) {
+        throw new Error(`AI response schema validation failed: ${parsed.error.message}`);
+    }
+    return parsed.data;
 }
 
 // Note: Product recommendation logic has been moved to src/lib/recommendations.ts
