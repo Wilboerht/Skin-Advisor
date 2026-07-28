@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useId, useRef } from "react";
 import { AdminModal } from "./AdminModal";
 import { AlertTriangle, Loader2 } from "lucide-react";
 
@@ -29,7 +29,7 @@ export function ConfirmModal({
 }: ConfirmModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const titleId = useRef(`confirm-modal-title-${Math.random().toString(36).slice(2, 9)}`).current;
+  const titleId = useId();
   const descId = `${titleId}-desc`;
 
   const handleConfirm = async () => {
