@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, Suspense } from "react";
+import { useEffect, useState, useCallback, Suspense, useRef } from "react";
 import { Link, useTransitionRouter } from "next-view-transitions";
 import { useSearchParams } from "next/navigation";
 import { LazyMotion, domAnimation, AnimatePresence, m, useReducedMotion } from "framer-motion";
@@ -88,7 +88,7 @@ export default function Home() {
   // Capture ref parameter: moved to <RefCapture /> rendered in JSX (useSearchParams needs Suspense boundary)
 
   // 首页锁定 body 滚动，防止 iPhone 上出现滚动条 / overscroll
-  useBodyScrollLock({ enabled: true });
+  useBodyScrollLock({ enabled: true, iosSafe: true });
 
   // Nickname state
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
@@ -104,6 +104,7 @@ export default function Home() {
 
   // Location/Region states
   const [isLocating, setIsLocating] = useState(false);
+  const locationRequestId = useRef(0);
 
   // Region options moved outside component
 
@@ -111,13 +112,15 @@ export default function Home() {
 
   const startNewTest = useCallback(() => {
     // Clear previous advisor state to ensure fresh start
-    safeStorage.remove("advisor_answers");
-    safeStorage.remove("advisor_gender");
-    safeStorage.remove("advisor_face_images");
-    safeStorage.remove("advisor_result");
-    safeStorage.remove("advisor_gender_mismatch_ack");
-    safeStorage.remove("advisor_free_retry");
-    safeStorage.remove("advisor_step");
+    safeStorage.remove(STORAGE_KEYS.ADVISOR_ANSWERS);
+    safeStorage.remove(STORAGE_KEYS.ADVISOR_GENDER);
+    safeStorage.remove(STORAGE_KEYS.ADVISOR_FACE_IMAGES);
+    safeStorage.remove(STORAGE_KEYS.ADVISOR_RESULT);
+    safeStorage.remove(STORAGE_KEYS.ADVISOR_GENDER_MISMATCH_ACK);
+    safeStorage.remove(STORAGE_KEYS.ADVISOR_FREE_RETRY);
+    safeStorage.remove(STORAGE_KEYS.ADVISOR_STEP);
+    safeStorage.remove(STORAGE_KEYS.ADVISOR_NICKNAME);
+    safeStorage.remove("advisor_scan_mode");
 
     // 修复 iOS 从首页 modal 进入 questions 页面时滚动位置异常：
     // 跳转前恢复 body overflow 并把页面滚动重置到顶部
@@ -142,6 +145,7 @@ export default function Home() {
 
   const handleLocationAccept = async () => {
     setIsLocating(true);
+    const requestId = ++locationRequestId.current;
     if ("geolocation" in navigator) {
       try {
         const position = await new Promise<GeolocationPosition>((resolve, reject) => {
@@ -151,6 +155,11 @@ export default function Home() {
             maximumAge: 300000,
           });
         });
+
+        // Ignore stale result if user has already moved past the location step
+        if (requestId !== locationRequestId.current) {
+          return;
+        }
 
         safeStorage.set("userRegion", JSON.stringify({
           lat: position.coords.latitude,
@@ -170,6 +179,7 @@ export default function Home() {
   };
 
   const handleRegionSelect = (region: string) => {
+    locationRequestId.current += 1;
     safeStorage.setSession("locationConsent", "granted");
     safeStorage.set("userRegion", JSON.stringify({ province: region, city: region }));
     // Do not close or start test here, let legal step handle it
@@ -177,6 +187,7 @@ export default function Home() {
 
   const handleSkipRegionSelect = () => {
     // This is now repurposed as the FINAL completion handler from the Legal step
+    locationRequestId.current += 1;
     setShowOnboardingModal(false);
     setIsLoading(true);
     
@@ -196,6 +207,7 @@ export default function Home() {
 
   const handleLocationDecline = () => {
     // Declining loc will naturally open Region Select, but handled by OnboardingFlowModal now implicitly via callback
+    locationRequestId.current += 1;
     safeStorage.setSession("locationConsent", "declined");
   };
 
@@ -277,7 +289,7 @@ export default function Home() {
   }, []);
 
   // Check test limit with multi-factor identity
-  const checkTestLimit = useCallback(async () => {
+  const checkTestLimit = useCallback(async (allowRefresh = true) => {
     setCheckingLimit(true);
     try {
       // Get fresh identity if not available
@@ -304,12 +316,11 @@ export default function Home() {
       setTestLimitInfo(data);
 
       // Frontend safeguard: if frontend thinks user is logged in but backend treats as guest,
-      // the JWT token may be invalid/mismatched. Refresh user state and warn.
-      if (user && data.isGuest) {
+      // the JWT token may be invalid/mismatched. Refresh user state and re-check once.
+      if (user && data.isGuest && allowRefresh) {
         console.warn("[Auth Mismatch] Frontend has user but backend returned guest. Refreshing session...");
         await refreshUser();
-        // After refresh, allow the test to proceed; next check will use fresh state
-        return true;
+        return await checkTestLimit(false);
       }
 
       // Check if blocked
@@ -628,11 +639,23 @@ export default function Home() {
                     今日测试次数已用完
                   </h3>
                   <p className="text-sm leading-relaxed" style={{ color: '#5c4937', opacity: 0.8 }}>
-                    {user ? (
-                      <>您今日的 3 次测试机会已全部使用，请明天再来</>
-                    ) : (
-                      <>游客每天仅有 1 次测试机会<br />登录会员每天可测 3 次，立即注册解锁完整权益</>
-                    )}
+                    {(() => {
+                      const info = testLimitInfo;
+                      const dailyLimit = info?.dailyLimit ?? (user ? 3 : 1);
+                      const usedCount = info?.usedCount ?? dailyLimit;
+                      const remaining = info?.remaining ?? 0;
+                      if (remaining > 0) {
+                        return <>您今日已用 {usedCount} 次，共 {dailyLimit} 次，剩余 {remaining} 次</>;
+                      }
+                      return (
+                        <>
+                          今日测试次数已用完（共 {dailyLimit} 次）
+                          {!user && (
+                            <><br />登录会员可获更多次数，立即注册解锁完整权益</>
+                          )}
+                        </>
+                      );
+                    })()}
                   </p>
                 </div>
 

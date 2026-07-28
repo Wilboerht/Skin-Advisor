@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Loader2, MapPin, ShieldCheck, ArrowRight, LogOut } from "lucide-react";
 import { AnimatePresence, motion as m, useReducedMotion } from "framer-motion";
 import Image from "next/image";
@@ -57,12 +57,26 @@ export function OnboardingFlowModal({
     const [activeIndex, setActiveIndex] = useState(0);
     const [locationView, setLocationView] = useState<LocationSubView>("main");
     const [isAgreed, setIsAgreed] = useState(false);
+    const [isFinishing, setIsFinishing] = useState(false);
     const [maxVisitedIndex, setMaxVisitedIndex] = useState(0);
     const [regionSearch, setRegionSearch] = useState("");
     const prefersReducedMotion = useReducedMotion();
     const screens = getScreens();
     const totalScreens = screens.length;
     const currentScreen = screens[activeIndex];
+    const onCloseRef = useRef(onClose);
+    const modalRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        onCloseRef.current = onClose;
+    }, [onClose]);
+
+    // Focus the modal container when it opens for accessibility
+    useEffect(() => {
+        if (isOpen) {
+            modalRef.current?.focus();
+        }
+    }, [isOpen]);
 
     // Reset when opened
     useEffect(() => {
@@ -75,17 +89,26 @@ export function OnboardingFlowModal({
         }
     }, [isOpen]);
 
+    // Reset location sub-view when navigating back to the location step
+    const previousScreenRef = useRef(currentScreen);
+    useEffect(() => {
+        if (currentScreen === "location" && previousScreenRef.current !== "location") {
+            setLocationView("main");
+        }
+        previousScreenRef.current = currentScreen;
+    }, [currentScreen]);
+
     // Keyboard support: Escape to close (except on legal step)
     useEffect(() => {
         if (!isOpen) return;
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === "Escape" && currentScreen !== "legal") {
-                onClose();
+                onCloseRef.current();
             }
         };
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [isOpen, currentScreen, onClose]);
+    }, [isOpen, currentScreen]);
 
     const goTo = (index: number) => {
         if (index < 0 || index >= totalScreens) return;
@@ -152,7 +175,8 @@ export function OnboardingFlowModal({
 
     /* ---- Legal handlers ---- */
     const handleLegalSubmit = () => {
-        if (!isAgreed) return;
+        if (!isAgreed || isFinishing) return;
+        setIsFinishing(true);
         finish();
     };
 
@@ -180,12 +204,19 @@ export function OnboardingFlowModal({
         <AnimatePresence>
             {isOpen && (
                 <m.div
+                    ref={modalRef}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="onboarding-modal-title"
+                    tabIndex={-1}
                     className="fixed inset-0 z-[100002] overflow-hidden"
                     initial={prefersReducedMotion ? { opacity: 0 } : { y: "100%" }}
                     animate={{ y: 0, opacity: 1 }}
                     exit={prefersReducedMotion ? { opacity: 0 } : { y: "100%" }}
                     transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.7, ease: [0.65, 0, 0.35, 1] }}
                 >
+                    <div id="onboarding-modal-title" className="sr-only">肌肤测试引导</div>
+
                     {/* ---- App Bar / Header ---- */}
                     <header className="fixed top-0 left-0 right-0 z-[100003] flex items-center justify-between px-6 md:px-12 lg:px-20 py-6 md:py-7 bg-[#FDFBF7]/95 backdrop-blur-sm border-b border-[#1A1A1A]/5">
                         <button
@@ -564,11 +595,20 @@ export function OnboardingFlowModal({
                                     <div className="flex flex-col items-center space-y-4">
                                         <button
                                             onClick={handleLegalSubmit}
-                                            disabled={!isAgreed}
+                                            disabled={!isAgreed || isFinishing}
                                             className="group relative inline-flex items-center justify-center gap-3 px-12 py-4 sm:px-16 border border-[#8B7355] text-[#8B7355] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500 hover:bg-[#8B7355] hover:text-white"
                                         >
-                                            <span>开始测试</span>
-                                            <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-2" />
+                                            {isFinishing ? (
+                                                <>
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                    <span>处理中...</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span>开始测试</span>
+                                                    <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-2" />
+                                                </>
+                                            )}
                                         </button>
 
                                         <button
