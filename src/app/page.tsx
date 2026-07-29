@@ -500,7 +500,7 @@ export default function Home() {
                           ) : (
                             <>
                               <ScanFace className="w-4 h-4" />
-                              <span>面部扫描测肤</span>
+                              <span>开始 AI 面部扫描</span>
                               <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1" />
                             </>
                           )}
