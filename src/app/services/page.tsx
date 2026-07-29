@@ -90,15 +90,15 @@ export default function ServicesPage() {
 
       {/* 页脚 */}
       <footer className="pt-4 md:pt-8 pb-[calc(1rem+env(safe-area-inset-bottom,16px))] md:pb-[calc(2rem+env(safe-area-inset-bottom,16px))] px-6 text-center shrink-0">
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-4 text-[10px] md:text-xs tracking-widest text-[#5E5E5E]/60">
-          <p>© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
-          <span className="hidden sm:inline text-[#5E5E5E]/30">·</span>
-          <div className="hidden sm:flex items-center gap-4">
-            <Link href="https://nihplod.cn/privacy" className="hover:text-[#3D4430] transition-colors duration-300">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-3 text-[11px] font-light text-brand-charcoal/[0.48]">
+          <p className="tracking-[0.1em] md:tracking-[0.15em]">© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
+          <span className="hidden sm:inline text-brand-charcoal/20">·</span>
+          <div className="hidden sm:flex items-center gap-3 tracking-[0.12em]">
+            <Link href="https://nihplod.cn/privacy" className="transition-colors duration-300 hover:text-brand-charcoal/70">
                 隐私政策
             </Link>
-            <span className="text-[#5E5E5E]/30">·</span>
-            <Link href="https://nihplod.cn/terms" className="hover:text-[#3D4430] transition-colors duration-300">
+            <span className="text-brand-charcoal/20">·</span>
+            <Link href="https://nihplod.cn/terms" className="transition-colors duration-300 hover:text-brand-charcoal/70">
                 服务条款
             </Link>
           </div>

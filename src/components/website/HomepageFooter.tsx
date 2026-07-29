@@ -8,9 +8,9 @@ export function HomepageFooter() {
     return (
         <m.footer
             className="home-footer w-full mt-auto"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1.2, delay: 1 }}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1.2, delay: 1, ease: "easeOut" }}
         >
             <p className="footer-copyright relative z-10">
                 &copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.

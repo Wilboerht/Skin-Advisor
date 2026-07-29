@@ -533,7 +533,6 @@
   margin-top: auto;
   padding-top: 2rem;
   padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
-  border-top: 1px solid rgba(61, 68, 48, 0.08);
 }
 
 .home-container .footer-copyright,
@@ -543,12 +542,12 @@
   font-weight: 300;
   font-size: 11px;
   letter-spacing: 0.12em;
-  color: var(--home-text-secondary);
+  color: color-mix(in srgb, var(--color-brand-charcoal) 48%, transparent);
   transition: color 0.3s ease;
 }
 
 .home-container .footer-beian a:hover {
-  color: var(--home-text-primary);
+  color: color-mix(in srgb, var(--color-brand-charcoal) 70%, transparent);
 }
 
 .home-container .footer-copyright {
