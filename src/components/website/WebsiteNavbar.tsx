@@ -106,12 +106,12 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                 <Link
                   key={item.label}
                   href={item.href}
-                  className={`group relative ${(item.icon || item.badge) ? "flex items-center gap-1.5" : ""} text-[15px] font-light tracking-[0.15em] transition-colors duration-500 ${
+                  className={`group relative py-2 px-1 -mx-1 rounded-md ${(item.icon || item.badge) ? "flex items-center gap-1.5" : ""} text-[15px] font-light tracking-[0.15em] transition-colors duration-500 focus-visible:outline-none ${
                     isActive
                       ? isDark ? "text-white" : "text-[#00263E]"
                       : isDark
-                        ? "text-white/70 hover:text-white"
-                        : "text-[#00263E] hover:text-[#4A6272]"
+                        ? `text-white/70 hover:text-white focus-visible:text-white ${scrolled ? "hover:bg-white/[0.06]" : ""}`
+                        : `text-[#00263E] hover:text-[#4A6272] focus-visible:text-[#4A6272] ${scrolled ? "hover:bg-[#00263E]/[0.03]" : ""}`
                   }`}
                 >
                   {item.label}
@@ -123,7 +123,11 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                   {item.icon && (
                     <item.icon className="w-3.5 h-3.5 transition-transform duration-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                   )}
-                  <span className="absolute bottom-1 left-1/2 h-[1px] w-0 -translate-x-1/2 bg-current transition-all duration-500 group-hover:w-[calc(100%-1.5rem)]" />
+                  {isActive ? (
+                    <span className="absolute bottom-0 left-1/2 -translate-x-1/2 scale-y-50 h-[1px] w-[calc(100%-2rem)] bg-current opacity-40" />
+                  ) : (
+                    <span className="absolute bottom-0 left-1/2 h-[1px] w-0 -translate-x-1/2 scale-y-50 bg-current transition-[width] duration-500 ease-out group-hover:w-[calc(100%-1.5rem)] group-focus-visible:w-[calc(100%-1.5rem)]" />
+                  )}
                 </Link>
               );
             })}
@@ -131,15 +135,15 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
               href="https://nihplod.cn/about"
               target="_blank"
               rel="noopener noreferrer"
-              className={`group relative flex items-center gap-1.5 text-[15px] font-light tracking-[0.15em] transition-colors duration-500 ${
+              className={`group relative flex items-center gap-1.5 py-2 px-1 -mx-1 rounded-md text-[15px] font-light tracking-[0.15em] transition-colors duration-500 focus-visible:outline-none ${
                 isDark
-                  ? "text-white/70 hover:text-white"
-                  : "text-[#00263E] hover:text-[#4A6272]"
+                  ? `text-white/70 hover:text-white focus-visible:text-white ${scrolled ? "hover:bg-white/[0.06]" : ""}`
+                  : `text-[#00263E] hover:text-[#4A6272] focus-visible:text-[#4A6272] ${scrolled ? "hover:bg-[#00263E]/[0.03]" : ""}`
               }`}
             >
               探索旎柏
               <ExternalLink className="w-3.5 h-3.5 transition-transform duration-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-              <span className="absolute bottom-1 left-1/2 h-[1px] w-0 -translate-x-1/2 bg-current transition-all duration-500 group-hover:w-[calc(100%-1.5rem)]" />
+              <span className="absolute bottom-0 left-1/2 h-[1px] w-0 -translate-x-1/2 scale-y-50 bg-current transition-[width] duration-500 ease-out group-hover:w-[calc(100%-1.5rem)] group-focus-visible:w-[calc(100%-1.5rem)]" />
             </a>
           </div>
 
@@ -148,10 +152,10 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
             {user ? (
               <Link
                 href="/profile"
-                className={`group relative flex items-center gap-2 text-[15px] font-light tracking-[0.15em] transition-colors duration-500 cursor-pointer ${
+                className={`group relative flex items-center gap-2 py-2 px-1 -mx-1 rounded-md text-[15px] font-light tracking-[0.15em] transition-colors duration-500 cursor-pointer focus-visible:outline-none ${
                   isDark
-                    ? "text-white/70 hover:text-white"
-                    : "text-[#00263E] hover:text-[#4A6272]"
+                    ? `text-white/70 hover:text-white focus-visible:text-white ${scrolled ? "hover:bg-white/[0.06]" : ""}`
+                    : `text-[#00263E] hover:text-[#4A6272] focus-visible:text-[#4A6272] ${scrolled ? "hover:bg-[#00263E]/[0.03]" : ""}`
                 }`}
               >
                 <div className="relative w-7 h-7 rounded-full overflow-hidden bg-[#00263E]/10 flex items-center justify-center text-[#00263E] text-xs font-serif shrink-0">
@@ -164,38 +168,38 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                 <span className="hidden lg:inline max-w-[120px] truncate">
                   {user.name || user.email || user.phone || "用户"}
                 </span>
-                <span className="absolute bottom-1 left-1/2 h-[1px] w-0 -translate-x-1/2 bg-current transition-all duration-500 group-hover:w-[calc(100%-1.5rem)]" />
+                <span className="absolute bottom-0 left-1/2 h-[1px] w-0 -translate-x-1/2 scale-y-50 bg-current transition-[width] duration-500 ease-out group-hover:w-[calc(100%-1.5rem)] group-focus-visible:w-[calc(100%-1.5rem)]" />
               </Link>
             ) : (
               <button
                 onClick={() => openAuthModal("login")}
-                className={`group relative flex items-center gap-2 text-[15px] font-light tracking-[0.15em] transition-colors duration-500 cursor-pointer ${
+                className={`group relative flex items-center gap-2 py-2 px-1 -mx-1 rounded-md text-[15px] font-light tracking-[0.15em] transition-colors duration-500 cursor-pointer focus-visible:outline-none ${
                   isDark
-                    ? "text-white/70 hover:text-white"
-                    : "text-[#00263E] hover:text-[#4A6272]"
+                    ? `text-white/70 hover:text-white focus-visible:text-white ${scrolled ? "hover:bg-white/[0.06]" : ""}`
+                    : `text-[#00263E] hover:text-[#4A6272] focus-visible:text-[#4A6272] ${scrolled ? "hover:bg-[#00263E]/[0.03]" : ""}`
                 }`}
               >
                 <User className="w-5 h-5 sm:w-[1.125rem] sm:h-[1.125rem] transition-opacity duration-500" />
                 <span className="hidden sm:inline">
                   登录
                 </span>
-                <span className="absolute bottom-1 left-1/2 h-[1px] w-0 -translate-x-1/2 bg-current transition-all duration-500 group-hover:w-[calc(100%-1.5rem)]" />
+                <span className="absolute bottom-0 left-1/2 h-[1px] w-0 -translate-x-1/2 scale-y-50 bg-current transition-[width] duration-500 ease-out group-hover:w-[calc(100%-1.5rem)] group-focus-visible:w-[calc(100%-1.5rem)]" />
               </button>
             )}
             {pathname !== "/" && (
               <Link
                 href="/"
-                className={`group relative flex items-center gap-2 text-[15px] font-light tracking-[0.15em] transition-colors duration-500 ${
+                className={`group relative flex items-center gap-2 py-2 px-1 -mx-1 rounded-md text-[15px] font-light tracking-[0.15em] transition-colors duration-500 focus-visible:outline-none ${
                   isDark
-                    ? "text-white/70 hover:text-white"
-                    : "text-[#00263E] hover:text-[#4A6272]"
+                    ? `text-white/70 hover:text-white focus-visible:text-white ${scrolled ? "hover:bg-white/[0.06]" : ""}`
+                    : `text-[#00263E] hover:text-[#4A6272] focus-visible:text-[#4A6272] ${scrolled ? "hover:bg-[#00263E]/[0.03]" : ""}`
                 }`}
               >
                 <HomeSvg className="w-6 h-6 sm:w-5 sm:h-5 transition-opacity duration-500" />
                 <span className="hidden sm:inline">
                   首页
                 </span>
-                <span className="absolute bottom-1 left-1/2 h-[1px] w-0 -translate-x-1/2 bg-current transition-all duration-500 group-hover:w-[calc(100%-1.5rem)]" />
+                <span className="absolute bottom-0 left-1/2 h-[1px] w-0 -translate-x-1/2 scale-y-50 bg-current transition-[width] duration-500 ease-out group-hover:w-[calc(100%-1.5rem)] group-focus-visible:w-[calc(100%-1.5rem)]" />
               </Link>
             )}
           </div>
@@ -208,8 +212,8 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
             aria-controls={MOBILE_MENU_ID}
             className={`md:hidden absolute left-0 flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-500 cursor-pointer ${
               isDark
-                ? "text-white/70 hover:text-white hover:bg-white/10"
-                : "text-[#00263E] hover:bg-[#00263E]/5"
+                ? "text-white/70 active:text-white active:bg-white/10"
+                : "text-[#00263E] active:bg-[#00263E]/5"
             }`}
           >
             <Menu className="w-5 h-5 transition-opacity duration-500" />
@@ -222,8 +226,8 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
               aria-label="个人中心"
               className={`md:hidden absolute right-0 flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-500 ${
                 isDark
-                  ? "text-white/70 hover:text-white hover:bg-white/10"
-                  : "text-[#00263E] hover:bg-[#00263E]/5"
+                  ? "text-white/70 active:text-white active:bg-white/10"
+                  : "text-[#00263E] active:bg-[#00263E]/5"
               }`}
             >
               <div className="relative w-7 h-7 rounded-full overflow-hidden bg-[#00263E]/10 flex items-center justify-center text-[#00263E] text-xs font-serif">
@@ -240,8 +244,8 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
               aria-label="登录"
               className={`md:hidden absolute right-0 flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-500 cursor-pointer ${
                 isDark
-                  ? "text-white/70 hover:text-white hover:bg-white/10"
-                  : "text-[#00263E] hover:bg-[#00263E]/5"
+                  ? "text-white/70 active:text-white active:bg-white/10"
+                  : "text-[#00263E] active:bg-[#00263E]/5"
               }`}
             >
               <User className="w-5 h-5 transition-opacity duration-500" />
