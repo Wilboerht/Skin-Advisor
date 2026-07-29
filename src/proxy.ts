@@ -16,10 +16,22 @@ const ssoMiddleware = createSsoMiddleware({
   redirectUri: process.env.NEXT_PUBLIC_SSO_REDIRECT_URI!,
   scopes: process.env.NEXT_PUBLIC_SSO_SCOPES || "openid profile",
   publicPaths: [
-    "/",
-    "/login",
-    "/register",
-    "/forgot-password",
+    "/",                       // 首页
+    "/login",                  // SSO 登录跳转页
+    "/register",               // SSO 注册跳转页
+    "/forgot-password",        // 密码重置弹窗页
+    "/reset-password",         // 密码重置弹窗页
+    "/questions",              // 问卷页（允许游客测试）
+    "/face-scan",              // 面部扫描页（允许游客）
+    "/skin-types",             // 肤质类型列表
+    "/skin-types/:path*",      // 具体肤质类型页
+    "/services",               // 顾问服务
+    "/faq",                    // FAQ
+    "/privacy",                // 隐私政策
+    "/terms",                  // 服务条款
+    "/gift",                   // 活动页
+    "/robots.txt",
+    "/sitemap.xml",
     "/api/auth/callback",
     "/api/auth/me",
     "/api/auth/logout",
