@@ -473,13 +473,13 @@ export default function Home() {
                     </m.div>
 
                     {/* Title */}
-                    <h1 className="text-[40px] sm:text-[48px] md:text-[58px] font-serif text-[#1A1A1A] font-normal leading-[1.1] tracking-tight mb-10 md:mb-12">
+                    <h1 className="text-[40px] sm:text-[48px] md:text-[58px] font-serif text-brand-charcoal font-light leading-[1.1] tracking-[0.02em] mb-10 md:mb-12">
                       在线素颜测肤
                     </h1>
 
                     {/* Description */}
-                    <p className="text-brand-charcoal/60 leading-[1.9] mb-10 md:mb-12 max-w-xl mx-auto font-light text-sm sm:text-base tracking-wide opacity-0 animate-fade-in-up" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
-                      为了精准分析你的肌肤状态并生成专业定制化报告，<br className="hidden sm:block" />接下来我们将引导您<br className="sm:hidden" />进行个性化问卷调查与多维面部肌肤分析，<br />整个过程预计占用 <span className="text-[#3D4430]/80">2-5 分钟</span>。
+                    <p className="text-brand-charcoal/60 text-[13px] md:text-base font-light leading-[1.8] md:leading-normal tracking-[0.06em] md:tracking-[0.12em] mb-10 md:mb-12 max-w-xl mx-auto opacity-0 animate-fade-in-up" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
+                      为了精准分析你的肌肤状态并生成专业定制化报告，<br className="hidden sm:block" />接下来我们将引导您<br className="sm:hidden" />进行个性化问卷调查与多维面部肌肤分析，<br />整个过程预计占用 <span className="text-brand-charcoal/80">2-5 分钟</span>。
                     </p>
 
                     {/* CTA + Guide + History */}
