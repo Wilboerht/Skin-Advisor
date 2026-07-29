@@ -45,10 +45,10 @@ export default function ServicesPage() {
           <div className="grid grid-cols-1 lg:grid-cols-[7fr_3fr] gap-8 md:gap-12 lg:gap-20 items-center">
             {/* 左侧文字 */}
             <div>
-              <h1 className="text-xl md:text-3xl font-serif text-[#1A1A1A] leading-[1.1] mb-4 md:mb-8">
+              <h1 className="text-xl md:text-3xl font-serif text-brand-charcoal font-light leading-[1.1] tracking-[0.02em] mb-4 md:mb-8">
                 顾问服务
               </h1>
-              <p className="text-[13px] md:text-base text-brand-charcoal/60 font-light leading-[1.8] md:leading-normal tracking-[0.06em] md:tracking-[0.12em] max-w-lg mb-4 md:mb-8">
+              <p className="text-[13px] md:text-base text-brand-charcoal/75 font-light leading-[1.8] md:leading-normal tracking-[0.06em] md:tracking-[0.12em] max-w-lg mb-4 md:mb-8">
                 如需获得更具针对性的护肤建议，欢迎关注旎柏 NIHPLOD 微信服务号，由我们的专业护肤顾问为您提供一对一咨询服务。
               </p>
 

@@ -478,8 +478,8 @@ export default function Home() {
                     </h1>
 
                     {/* Description */}
-                    <p className="text-brand-charcoal/60 text-[13px] md:text-base font-light leading-[1.8] md:leading-normal tracking-[0.06em] md:tracking-[0.12em] mb-10 md:mb-12 max-w-xl mx-auto opacity-0 animate-fade-in-up" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
-                      为了精准分析你的肌肤状态并生成专业定制化报告，<br className="hidden sm:block" />接下来我们将引导您<br className="sm:hidden" />进行个性化问卷调查与多维面部肌肤分析，<br />整个过程预计占用 <span className="text-brand-charcoal/80">2-5 分钟</span>。
+                    <p className="text-brand-charcoal/75 text-[13px] md:text-base font-light leading-[1.8] md:leading-normal tracking-[0.06em] md:tracking-[0.12em] mb-10 md:mb-12 max-w-xl mx-auto opacity-0 animate-fade-in-up" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
+                      为了精准分析你的肌肤状态并生成专业定制化报告，<br className="hidden sm:block" />接下来我们将引导您<br className="sm:hidden" />进行个性化问卷调查与多维面部肌肤分析，<br />整个过程预计占用 <span className="text-brand-charcoal/90">2-5 分钟</span>。
                     </p>
 
                     {/* CTA + Guide + History */}
@@ -490,7 +490,7 @@ export default function Home() {
                         <button
                           onClick={() => handleStart("scan")}
                           disabled={loadingMode !== null || isLoading}
-                          className="group relative w-full inline-flex items-center justify-center gap-2.5 px-8 py-4 border border-[#4A3728] text-[#FAF8F5] bg-[#4A3728] rounded-xl text-[13px] sm:text-[14px] tracking-[0.1em] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500 hover:bg-[#3A2A1E] hover:shadow-lg hover:shadow-[#4A3728]/10"
+                          className="group relative w-full inline-flex items-center justify-center gap-2.5 px-8 py-4 text-[13px] sm:text-[14px] tracking-[0.1em] font-medium cursor-pointer border border-brand-charcoal/60 text-brand-charcoal bg-transparent transition-all duration-500 hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,38,62,0.12)] active:translate-y-0 active:shadow-none disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                           {loadingMode === "scan" ? (
                             <>
@@ -510,7 +510,7 @@ export default function Home() {
                         <button
                           onClick={() => handleStart("questionnaire")}
                           disabled={loadingMode !== null || isLoading}
-                          className="group relative w-full inline-flex items-center justify-center gap-2.5 px-8 py-4 border border-[#D9D0C3] text-[#5C5855] bg-transparent rounded-xl text-[13px] sm:text-[14px] tracking-[0.1em] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500 hover:border-[#B8A898] hover:text-[#1A1A1A] hover:bg-[#F5F1EB]/50"
+                          className="group relative w-full inline-flex items-center justify-center gap-2.5 px-8 py-4 text-[13px] sm:text-[14px] tracking-[0.1em] font-medium cursor-pointer text-brand-charcoal/60 transition-colors duration-500 hover:text-brand-charcoal disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                           {loadingMode === "questionnaire" ? (
                             <>
