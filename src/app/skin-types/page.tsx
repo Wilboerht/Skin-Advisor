@@ -47,20 +47,20 @@ export default function ResultIndexPage() {
 
         <div className="relative z-10 max-w-5xl mx-auto text-center">
           <h1
-            className="text-xl md:text-3xl font-serif text-[#1A1A1A] mb-5 opacity-0 animate-fade-in-up"
+            className="text-xl md:text-3xl font-serif font-light text-brand-charcoal leading-[1.1] tracking-[0.02em] mb-5 opacity-0 animate-fade-in-up"
             style={{ animationFillMode: "forwards" }}
           >
             发现你的肌肤形象类型
           </h1>
           <p
-            className="text-[13px] md:text-base text-[#5E5E5E] font-light max-w-xl mx-auto leading-relaxed mb-5 opacity-0 animate-fade-in-up"
+            className="text-[13px] md:text-base text-brand-charcoal/75 font-light leading-[1.8] md:leading-normal tracking-[0.06em] md:tracking-[0.12em] max-w-xl mx-auto mb-5 opacity-0 animate-fade-in-up"
             style={{ animationDelay: "0.1s", animationFillMode: "forwards" }}
           >
             每一种肌肤，都有自己的性格。从素颜状态出发，读懂肌肤真正需要什么。
           </p>
           <Link
             href="/"
-            className="w-full sm:w-auto group relative inline-flex items-center justify-center gap-3 px-8 py-3 md:px-10 md:py-3.5 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#1B3A5C] hover:text-white opacity-0 animate-fade-in-up"
+            className="w-full sm:w-auto group relative inline-flex items-center justify-center gap-3 px-8 py-3 md:px-10 md:py-3.5 border border-brand-charcoal/60 text-brand-charcoal bg-transparent text-[13px] sm:text-[14px] tracking-[0.1em] font-medium cursor-pointer transition-all duration-500 hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,38,62,0.12)] active:translate-y-0 active:shadow-none opacity-0 animate-fade-in-up"
             style={{ animationDelay: "0.2s", animationFillMode: "forwards" }}
           >
             <span>前往测肤</span>
@@ -68,7 +68,7 @@ export default function ResultIndexPage() {
           </Link>
           <Link
             href="/gift"
-            className="flex items-center justify-center gap-1.5 mt-5 text-[13px] sm:text-[14px] text-[#A0784C] tracking-[0.1em] font-medium opacity-0 animate-fade-in-up hover:text-[#8B6840] transition-colors duration-300"
+            className="flex items-center justify-center gap-1.5 mt-5 text-[13px] sm:text-[14px] text-brand-charcoal/60 tracking-[0.1em] font-medium opacity-0 animate-fade-in-up hover:text-brand-charcoal transition-colors duration-300"
             style={{ animationDelay: "0.3s", animationFillMode: "forwards" }}
           >
             参与「肌智派」活动，抽奖赢好礼
@@ -87,7 +87,7 @@ export default function ResultIndexPage() {
               <Link
                 key={type.route}
                 href={`/skin-types/${type.route}`}
-                className="group relative rounded-2xl border border-[rgba(61,68,48,0.08)] bg-[#FAF9F6] p-4 md:p-9 transition-all duration-500 hover:shadow-[0_16px_32px_rgba(61,68,48,0.08)] hover:-translate-y-1"
+                className="group relative rounded-2xl border border-brand-charcoal/[0.08] bg-[#FAF9F6] p-4 md:p-9 transition-all duration-500 hover:shadow-[0_16px_32px_rgba(0,38,62,0.08)] hover:-translate-y-1"
               >
                 <Image
                   src={`/images/character/${type.ipKey}/${type.ipKey}_female.png`}
@@ -97,13 +97,13 @@ export default function ResultIndexPage() {
                   className="absolute -right-2 -bottom-3 w-[110px] h-[184px] md:w-[152px] md:h-[264px] object-contain opacity-100 group-hover:scale-105 transition-transform duration-500 pointer-events-none select-none"
                 />
                 <div className="relative z-10 pr-20 md:pr-24">
-                  <h2 className="text-lg md:text-2xl font-serif tracking-wide text-[#1A1A1A] mb-1 md:mb-2 group-hover:text-[#3D4430] transition-colors duration-500">
+                  <h2 className="text-lg md:text-2xl font-serif font-light tracking-[0.02em] text-brand-charcoal mb-1 md:mb-2 group-hover:text-brand-charcoal-light transition-colors duration-500">
                     {type.typeName}
                   </h2>
-                  <p className="text-xs md:text-sm text-[#5E5E5E]/70 leading-relaxed mb-3 md:mb-5 line-clamp-1 font-light">
+                  <p className="text-[13px] md:text-sm text-brand-charcoal/60 font-light tracking-[0.06em] md:tracking-[0.12em] mb-3 md:mb-5 line-clamp-1">
                     {type.m1.persona}
                   </p>
-                  <div className="inline-flex items-center text-[11px] md:text-xs font-medium tracking-[0.15em] text-[#3D4430] group-hover:text-[#3D4430]/80 transition-colors duration-300">
+                  <div className="inline-flex items-center text-xs md:text-[13px] font-medium tracking-[0.15em] text-brand-charcoal/60 group-hover:text-brand-charcoal-light transition-colors duration-300">
                     查看完整解读
                     <ArrowRight className="w-3.5 h-3.5 ml-1.5 transition-transform duration-500 group-hover:translate-x-1.5" />
                   </div>
@@ -140,13 +140,13 @@ export default function ResultIndexPage() {
                 unoptimized
               />
               <div className="text-center md:text-left">
-                <h3 className="text-lg md:text-2xl font-serif text-[#1A1A1A] mb-1 md:mb-2 tracking-wide">
+                <h3 className="text-lg md:text-2xl font-serif font-light text-brand-charcoal mb-1 md:mb-2 tracking-[0.02em]">
                   肌智派送好礼
                 </h3>
-                <p className="text-[13px] md:text-base text-[#5E5E5E] font-light leading-relaxed mb-3 md:mb-4">
+                <p className="text-[13px] md:text-base text-brand-charcoal/75 font-light leading-[1.8] md:leading-normal tracking-[0.06em] md:tracking-[0.12em] mb-3 md:mb-4">
                   完成您的专属肌肤诊断后，即可参与 NIHPLOD 限定抽奖——甄选护肤好礼，静候与您相遇。
                 </p>
-                <span className="inline-flex items-center gap-2 text-sm font-medium tracking-[0.15em] text-[#A0784C] group-hover:text-[#8B6840] transition-colors duration-300">
+                <span className="inline-flex items-center gap-2 text-[13px] sm:text-[14px] font-medium tracking-[0.15em] text-brand-charcoal group-hover:text-brand-charcoal-light transition-colors duration-300">
                   立即参与
                   <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
                 </span>
@@ -158,15 +158,15 @@ export default function ResultIndexPage() {
 
       {/* 页脚 */}
       <footer className="pt-6 md:pt-8 pb-[calc(1.5rem+env(safe-area-inset-bottom,16px))] px-6 text-center">
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-4 text-[10px] md:text-xs tracking-widest text-[#5E5E5E]/60">
-          <p>© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
-          <span className="hidden sm:inline text-[#5E5E5E]/30">·</span>
-          <div className="hidden sm:flex items-center gap-4">
-            <Link href="https://nihplod.cn/privacy" className="hover:text-[#3D4430] transition-colors duration-300">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-3 text-[11px] font-light text-brand-charcoal/[0.48]">
+          <p className="tracking-[0.1em] md:tracking-[0.15em]">© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
+          <span className="hidden sm:inline text-brand-charcoal/20">·</span>
+          <div className="hidden sm:flex items-center gap-3 tracking-[0.12em]">
+            <Link href="https://nihplod.cn/privacy" className="transition-colors duration-300 hover:text-brand-charcoal/70">
               隐私政策
             </Link>
-            <span className="text-[#5E5E5E]/30">·</span>
-            <Link href="https://nihplod.cn/terms" className="hover:text-[#3D4430] transition-colors duration-300">
+            <span className="text-brand-charcoal/20">·</span>
+            <Link href="https://nihplod.cn/terms" className="transition-colors duration-300 hover:text-brand-charcoal/70">
               服务条款
             </Link>
           </div>

@@ -18,8 +18,8 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: "素颜测肤", href: "/" },
-  { label: "肌智派", href: "/skin-types", badge: "送好礼" },
+  { label: "问卷&素颜测肤", href: "/" },
+  { label: "全部肌智派类型", href: "/skin-types" },
   { label: "顾问服务", href: "/services" },
 ];
 
@@ -124,9 +124,9 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                     <item.icon className="w-3.5 h-3.5 transition-transform duration-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                   )}
                   {isActive ? (
-                    <span className="absolute bottom-0 left-1/2 -translate-x-1/2 scale-y-50 h-[1px] w-[calc(100%-1.5rem)] bg-current" />
+                    <span className="absolute bottom-0 left-1/2 -translate-x-1/2 scale-y-50 h-[1px] w-[calc(100%-1.5rem)] bg-current opacity-40" />
                   ) : (
-                    <span className="absolute bottom-0 left-1/2 h-[1px] w-0 -translate-x-1/2 scale-y-50 bg-current transition-[width] duration-500 ease-out group-hover:w-[calc(100%-1.5rem)] group-focus-visible:w-[calc(100%-1.5rem)]" />
+                    <span className="absolute bottom-0 left-1/2 h-[1px] w-0 -translate-x-1/2 scale-y-50 bg-current opacity-40 transition-[width] duration-500 ease-out group-hover:w-[calc(100%-1.5rem)] group-focus-visible:w-[calc(100%-1.5rem)]" />
                   )}
                 </Link>
               );
@@ -143,7 +143,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
             >
               探索旎柏
               <ExternalLink className="w-3.5 h-3.5 transition-transform duration-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-              <span className="absolute bottom-0 left-1/2 h-[1px] w-0 -translate-x-1/2 scale-y-50 bg-current transition-[width] duration-500 ease-out group-hover:w-[calc(100%-1.5rem)] group-focus-visible:w-[calc(100%-1.5rem)]" />
+              <span className="absolute bottom-0 left-1/2 h-[1px] w-0 -translate-x-1/2 scale-y-50 bg-current opacity-40 transition-[width] duration-500 ease-out group-hover:w-[calc(100%-1.5rem)] group-focus-visible:w-[calc(100%-1.5rem)]" />
             </a>
           </div>
 
@@ -168,7 +168,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                 <span className="hidden lg:inline max-w-[120px] truncate">
                   {user.name || user.email || user.phone || "用户"}
                 </span>
-                <span className="absolute bottom-0 left-1/2 h-[1px] w-0 -translate-x-1/2 scale-y-50 bg-current transition-[width] duration-500 ease-out group-hover:w-[calc(100%-1.5rem)] group-focus-visible:w-[calc(100%-1.5rem)]" />
+                <span className="absolute bottom-0 left-1/2 h-[1px] w-0 -translate-x-1/2 scale-y-50 bg-current opacity-40 transition-[width] duration-500 ease-out group-hover:w-[calc(100%-1.5rem)] group-focus-visible:w-[calc(100%-1.5rem)]" />
               </Link>
             ) : (
               <button
@@ -183,7 +183,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                 <span className="hidden sm:inline">
                   登录
                 </span>
-                <span className="absolute bottom-0 left-1/2 h-[1px] w-0 -translate-x-1/2 scale-y-50 bg-current transition-[width] duration-500 ease-out group-hover:w-[calc(100%-1.5rem)] group-focus-visible:w-[calc(100%-1.5rem)]" />
+                <span className="absolute bottom-0 left-1/2 h-[1px] w-0 -translate-x-1/2 scale-y-50 bg-current opacity-40 transition-[width] duration-500 ease-out group-hover:w-[calc(100%-1.5rem)] group-focus-visible:w-[calc(100%-1.5rem)]" />
               </button>
             )}
             {pathname !== "/" && (
@@ -199,7 +199,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                 <span className="hidden sm:inline">
                   首页
                 </span>
-                <span className="absolute bottom-0 left-1/2 h-[1px] w-0 -translate-x-1/2 scale-y-50 bg-current transition-[width] duration-500 ease-out group-hover:w-[calc(100%-1.5rem)] group-focus-visible:w-[calc(100%-1.5rem)]" />
+                <span className="absolute bottom-0 left-1/2 h-[1px] w-0 -translate-x-1/2 scale-y-50 bg-current opacity-40 transition-[width] duration-500 ease-out group-hover:w-[calc(100%-1.5rem)] group-focus-visible:w-[calc(100%-1.5rem)]" />
               </Link>
             )}
           </div>
