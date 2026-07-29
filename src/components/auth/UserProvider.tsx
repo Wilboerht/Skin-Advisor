@@ -1,7 +1,8 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react';
-import { fetchWithCsrf } from "@/lib/fetch-client";
+import { createContext, useContext, useMemo, ReactNode } from 'react';
+import { SsoProvider, useSso } from "@nihplod/sso-sdk/react";
+import type { SsoUser } from "@nihplod/sso-sdk";
 
 // --- Types ---
 
@@ -23,7 +24,7 @@ interface LoginCredentials {
 interface RegisterData {
     email?: string;
     phone?: string;
-    password: string;
+    password?: string;
     name?: string;
     code?: string;
 }
@@ -32,226 +33,103 @@ interface AuthContextType {
     user: User | null;
     loading: boolean;
     isInitialized: boolean;
-    login: (credentials: LoginCredentials) => Promise<void>;
+    login: (credentials?: LoginCredentials) => Promise<void>;
     loginWithCode: (credentials: { phone: string; code: string }) => Promise<void>;
-    register: (userData: RegisterData) => Promise<void>;
+    register: (userData?: RegisterData) => Promise<void>;
     logout: () => Promise<void>;
     refresh: () => Promise<void>;
 }
 
-// --- Constants & Helpers ---
+// --- Constants ---
 
-const AUTH_CACHE_KEY = 'auth_user_cache';
-const AUTH_CACHE_EXPIRY_KEY = 'auth_user_cache_expiry';
-// Cache duration: 5 minutes. Tradeoff: faster initial render after refresh,
-// but role changes server-side may take up to 5 min to propagate client-side.
-// Server-side API authorization is unaffected; only client-side role-based UI may be stale.
-const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
+const SSO_CLIENT_ID = process.env.NEXT_PUBLIC_SSO_CLIENT_ID!;
+const SSO_BASE_URL = process.env.NEXT_PUBLIC_SSO_BASE_URL!;
+const SSO_REDIRECT_URI = process.env.NEXT_PUBLIC_SSO_REDIRECT_URI!;
+const SSO_SCOPES = process.env.NEXT_PUBLIC_SSO_SCOPES || "openid profile phone";
 
-function getCachedUser(): { user: User | null; needsRefresh: boolean } {
-    if (typeof window === 'undefined') return { user: null, needsRefresh: false };
-    try {
-        const expiry = localStorage.getItem(AUTH_CACHE_EXPIRY_KEY);
-        if (expiry && Date.now() > parseInt(expiry, 10)) {
-            localStorage.removeItem(AUTH_CACHE_KEY);
-            localStorage.removeItem(AUTH_CACHE_EXPIRY_KEY);
-            return { user: null, needsRefresh: false };
-        }
-        const cached = localStorage.getItem(AUTH_CACHE_KEY);
-        if (!cached) return { user: null, needsRefresh: false };
-
-        const user: User = JSON.parse(cached);
-        // 缓存中缺少敏感字段时强制刷新
-        if (!('role' in user)) {
-            return { user, needsRefresh: true };
-        }
-        return { user, needsRefresh: false };
-    } catch {
-        return { user: null, needsRefresh: false };
-    }
-}
-
-function setCachedUser(user: User | null) {
-    if (typeof window === 'undefined') return;
-    try {
-        if (user) {
-            const cacheable = {
-                id: user.id,
-                name: user.name,
-                avatar: user.avatar,
-                role: user.role,
-            };
-            localStorage.setItem(AUTH_CACHE_KEY, JSON.stringify(cacheable));
-            localStorage.setItem(AUTH_CACHE_EXPIRY_KEY, String(Date.now() + CACHE_DURATION_MS));
-        } else {
-            localStorage.removeItem(AUTH_CACHE_KEY);
-            localStorage.removeItem(AUTH_CACHE_EXPIRY_KEY);
-        }
-    } catch {
-        // Ignore storage errors
-    }
+function mapSsoUserToLegacyUser(ssoUser: SsoUser | null): User | null {
+    if (!ssoUser) return null;
+    return {
+        id: ssoUser.sub,
+        phone: ssoUser.phone || null,
+        name: ssoUser.nickname,
+        avatar: ssoUser.avatar || null,
+        role: "user",
+    };
 }
 
 // --- Context ---
 
 const UserContext = createContext<AuthContextType | undefined>(undefined);
 
-export function UserProvider({ children }: { children: ReactNode }) {
-    const [user, setUser] = useState<User | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [isInitialized, setIsInitialized] = useState(false);
-    const isMountedRef = useRef(true);
+function UserProviderInner({ children }: { children: ReactNode }) {
+    const { user: ssoUser, isLoading, isAuthenticated, login: ssoLogin, logout: ssoLogout, refreshUser } = useSso();
 
-    useEffect(() => {
-        isMountedRef.current = true;
-        return () => { isMountedRef.current = false; };
-    }, []);
+    const user = useMemo(() => mapSsoUserToLegacyUser(ssoUser), [ssoUser]);
 
-    const checkSession = useCallback(async () => {
-        try {
-            const res = await fetchWithCsrf("/api/auth/me");
-            if (!isMountedRef.current) return;
-            if (res.ok) {
-                const data = await res.json();
-            setUser(data.user || data.data?.user);
-            setCachedUser(data.user || data.data?.user);
-            } else {
-                setUser(null);
-                setCachedUser(null);
-            }
-        } catch (e) {
-            console.error("Session check failed", e);
-        } finally {
-            if (isMountedRef.current) {
-                setLoading(false);
-                setIsInitialized(true);
-            }
-        }
-    }, []);
+    // Preserve legacy async signatures while delegating to SSO
+    const login = async (_credentials?: LoginCredentials) => {
+        await ssoLogin();
+    };
 
-    // Initial Load
-    useEffect(() => {
-        const { user: cachedUser, needsRefresh } = getCachedUser();
-        // 仅当缓存包含完整信息（含 role）时才用于提前渲染；否则避免展示无 role 的残缺状态
-        if (cachedUser && !needsRefresh) {
-            setUser(cachedUser);
-            setLoading(false);
-            setIsInitialized(true);
-        }
+    const loginWithCode = async (_credentials: { phone: string; code: string }) => {
+        // SSO provider handles SMS code login on the central login page
+        await ssoLogin();
+    };
 
-        const params = new URLSearchParams(window.location.search);
-        const wechatAuth = params.get("wechat_auth");
-        if (wechatAuth === "success") {
-            // 微信授权成功回调后刷新 session，确保 Cookie 生效
-            checkSession().then(() => {
-                if (typeof window !== "undefined") {
-                    const url = new URL(window.location.href);
-                    url.searchParams.delete("wechat_auth");
-                    window.history.replaceState({}, "", url.toString());
-                }
-            });
-        } else {
-            checkSession();
-        }
-    }, [checkSession]);
+    const register = async (_userData?: RegisterData) => {
+        // SSO provider handles registration on the central login page
+        await ssoLogin();
+    };
 
-    const login = useCallback(async (credentials: LoginCredentials) => {
-        try {
-            const res = await fetchWithCsrf("/api/auth/login", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(credentials),
-                credentials: "include" // 确保Cookie被发送和接收
-            });
-            const data = await res.json();
-            
-            if (!res.ok) {
-                console.error("🔴 Login API returned error:", data.error);
-                throw new Error(data.error || "Login failed");
-            }
+    const logout = async () => {
+        await ssoLogout(false);
+    };
 
-            setUser(data.user);
-            setCachedUser(data.user);
+    const refresh = async () => {
+        await refreshUser();
+    };
 
-            // 立即刷新 session 以确保 Cookie 已正确设置
-            await checkSession();
-        } catch (err: unknown) {
-            console.error("🔴 Login failed:", err);
-            throw err;
-        }
-    }, [checkSession]);
-
-    const loginWithCode = useCallback(async (credentials: { phone: string; code: string }) => {
-        try {
-            const res = await fetchWithCsrf("/api/auth/login-code", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(credentials),
-                credentials: "include"
-            });
-            const data = await res.json();
-            
-            if (!res.ok) {
-                console.error("🔴 LoginCode API returned error:", data.error);
-                throw new Error(data.error || "Login failed");
-            }
-
-            setUser(data.user || data.data?.user);
-            setCachedUser(data.user || data.data?.user);
-
-            await checkSession();
-        } catch (err: unknown) {
-            console.error("🔴 LoginWithCode failed:", err);
-            throw err;
-        }
-    }, [checkSession]);
-
-    const register = useCallback(async (userData: RegisterData) => {
-        const res = await fetchWithCsrf("/api/auth/register", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(userData)
-        });
-        const data = await res.json();
-        if (!res.ok) {
-            console.error("Register API returned error:", data.error);
-            throw new Error(data.error || "Registration failed");
-        }
-
-        setUser(data.user || data.data?.user);
-        setCachedUser(data.user || data.data?.user);
-
-        // 立即刷新 session 以确保 Cookie / 本地 token 已正确设置
-        await checkSession();
-    }, [checkSession]);
-
-    const logout = useCallback(async () => {
-        try {
-            await fetchWithCsrf("/api/auth/logout", { method: "POST" });
-        } catch (e) {
-            console.error("Logout request failed", e);
-        } finally {
-            // 无论网络请求是否成功，都清除本地状态，确保用户感知到已登出
-            setUser(null);
-            setCachedUser(null);
-        }
-    }, []);
-
-    const value = {
+    const value: AuthContextType = {
         user,
-        loading,
-        isInitialized,
+        loading: isLoading,
+        isInitialized: !isLoading,
         login,
         loginWithCode,
         register,
         logout,
-        refresh: checkSession
+        refresh,
     };
 
     return (
         <UserContext.Provider value={value}>
             {children}
         </UserContext.Provider>
+    );
+}
+
+export function UserProvider({ children }: { children: ReactNode }) {
+    if (!SSO_CLIENT_ID || !SSO_BASE_URL || !SSO_REDIRECT_URI) {
+        console.error(
+            "[UserProvider] Missing SSO environment variables. " +
+            "Please set NEXT_PUBLIC_SSO_CLIENT_ID, NEXT_PUBLIC_SSO_BASE_URL and NEXT_PUBLIC_SSO_REDIRECT_URI."
+        );
+    }
+
+    return (
+        <SsoProvider
+            config={{
+                clientId: SSO_CLIENT_ID,
+                ssoBaseUrl: SSO_BASE_URL,
+                redirectUri: SSO_REDIRECT_URI,
+                scopes: SSO_SCOPES,
+                // Public Client: no clientSecret
+            }}
+        >
+            <UserProviderInner>
+                {children}
+            </UserProviderInner>
+        </SsoProvider>
     );
 }
 

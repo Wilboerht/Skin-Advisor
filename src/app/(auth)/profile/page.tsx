@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
-import { getSession } from "@/lib/auth";
+import { getSessionUser } from "@/lib/sso-auth";
 import ProfileClient from "./ProfileClient";
 
 export default async function ProfilePage() {
-    const user = await getSession();
+    const user = await getSessionUser();
 
     if (!user) {
         redirect("/?auth=login&redirect=/profile");

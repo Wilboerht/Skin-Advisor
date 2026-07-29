@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma"
-import { getSession } from "@/lib/auth"
+import { getSessionUser } from "@/lib/sso-auth"
 import { NextRequest, NextResponse } from "next/server"
 import { apiError } from "@/lib/api-response";
 import { ErrorCode } from "@/lib/error-codes";
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 获取用户身份（提前验证，事务内不再调 auth）
-    const session = await getSession()
+    const session = await getSessionUser(req)
 
     if (!session?.id) {
       return apiError("LOGIN_REQUIRED", "请先登录后再参与活动", 401)
@@ -141,7 +141,7 @@ export async function GET(req: NextRequest) {
       return apiError(ErrorCode.VALIDATION_ERROR, "缺少活动ID", 400)
     }
 
-    const session = await getSession()
+    const session = await getSessionUser(req)
     if (!session?.id) {
       return NextResponse.json({ hasEntry: false, entry: null })
     }

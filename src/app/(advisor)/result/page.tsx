@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import ResultClient from "./ResultClient";
-import { getSession } from "@/lib/auth";
+import { getSessionUser } from "@/lib/sso-auth";
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { normalizeAnalysisResult, type ComprehensiveResult } from "@/lib/analysis-result";
@@ -12,7 +12,7 @@ export default async function ResultPage(props: {
     const searchParams = await props.searchParams;
     const id = searchParams.id;
     const status = searchParams.status;
-    const user = await getSession();
+    const user = await getSessionUser();
 
     // /result 只表示「当前结果」。
     // 登录用户且 URL 带了已完成报告的 id 时，直接跳转到历史报告页 /reports/:id，

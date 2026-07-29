@@ -2,16 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { apiError } from "@/lib/api-response";
 import { ErrorCode } from "@/lib/error-codes";
 import prisma from "@/lib/prisma";
-import { getSession } from "@/lib/auth";
-import { callOfficialApi, type OfficialApiResponse } from "@/lib/official-api";
-import { cookies } from "next/headers";
+import { getSessionUser, getAccessToken } from "@/lib/sso-auth";
 import { logger } from "@/lib/logger";
+
+const SSO_BASE_URL = process.env.NEXT_PUBLIC_SSO_BASE_URL || "https://nihplod.cn";
 
 export async function PUT(req: NextRequest) {
     try {
-        const session = await getSession();
+        const session = await getSessionUser(req);
         if (!session) {
             return apiError(ErrorCode.UNAUTHORIZED, "请先登录", 401);
+        }
+
+        const token = await getAccessToken(req);
+        if (!token) {
+            return apiError(ErrorCode.UNAUTHORIZED, "登录已过期，请重新登录", 401);
         }
 
         const body = await req.json();
@@ -55,27 +60,23 @@ export async function PUT(req: NextRequest) {
             },
         });
 
-        // 2. 同步更新到官网
+        // 2. 同步更新到官网（Bearer token，不再依赖官网 session cookie）
         const officialBody: { nickname?: string; avatar?: string } = {};
         if (updateData.name) officialBody.nickname = updateData.name;
         if (updateData.avatarUrl) officialBody.avatar = updateData.avatarUrl;
 
-        // 仅透传官网相关 Cookie（user_token, user_refresh_token），不发送子站本地 auth_token
-        const cookieStore = await cookies();
-        const officialCookieNames = ["__Host-user_token", "__Host-user_refresh_token", "user_token", "user_refresh_token"];
-        const allCookies = cookieStore.getAll()
-            .filter(c => officialCookieNames.includes(c.name))
-            .map(c => `${c.name}=${c.value}`).join('; ');
-
         try {
-            await callOfficialApi<OfficialApiResponse<{ user: unknown }>>({
+            const res = await fetch(`${SSO_BASE_URL}/api/user/profile`, {
                 method: "PUT",
-                path: "/api/user/profile",
-                body: officialBody,
-                cookies: allCookies,
-                requireSignature: false,
-                timeoutMs: 10000,
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`,
+                },
+                body: JSON.stringify(officialBody),
             });
+            if (!res.ok) {
+                logger.warn(`[user/profile] Official site sync returned ${res.status}`);
+            }
         } catch (err) {
             logger.warn("[user/profile] Failed to sync profile to official site:", err);
         }

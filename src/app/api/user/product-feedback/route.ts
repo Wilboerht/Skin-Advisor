@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getSession } from "@/lib/auth";
+import { getSessionUser } from "@/lib/sso-auth";
 
 // POST: 提交产品使用反馈
 export async function POST(request: NextRequest) {
     try {
-        const user = await getSession();
+        const user = await getSessionUser(request);
         if (!user) {
             return NextResponse.json({ error: "请先登录" }, { status: 401 });
         }

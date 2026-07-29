@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState } from "react";
+import { useUser } from "@/components/auth/UserProvider";
 
 export type AuthView = "login" | "register" | "forgot_password" | "wechat_bind";
 
@@ -17,8 +18,16 @@ const AuthModalContext = createContext<AuthModalContextType | undefined>(undefin
 export function AuthModalProvider({ children }: { children: React.ReactNode }) {
     const [isOpen, setIsOpen] = useState(false);
     const [view, setView] = useState<AuthView>("login");
+    const { login } = useUser();
 
     const openAuthModal = (initialView: AuthView = "login") => {
+        // SSO unified login: redirect to the central NIHPLOD login page
+        // instead of opening the legacy local modal.
+        if (initialView === "login" || initialView === "register") {
+            login();
+            return;
+        }
+
         setView(initialView);
         setIsOpen(true);
     };

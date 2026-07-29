@@ -3,7 +3,7 @@ import { cache } from "react";
 import ResultClient from "../../result/ResultClient";
 import { type ComprehensiveResult, normalizeAnalysisResult } from "@/lib/analysis-result";
 import prisma from "@/lib/prisma";
-import { getSession } from "@/lib/auth";
+import { getSessionUser } from "@/lib/sso-auth";
 import { notFound, redirect } from "next/navigation";
 import type { FaceAnalysisResult } from "@/lib/advisor-utils";
 
@@ -28,7 +28,7 @@ export default async function ReportDetailPage(props: {
     let initialData: { result: ComprehensiveResult; faceAnalysis: FaceAnalysisResult | null } | null = null;
     let isExpired = false;
 
-    const user = await getSession();
+    const user = await getSessionUser();
 
     if (!user) {
         redirect(`/?auth=login&redirect=${encodeURIComponent(`/reports/${id}`)}`);
@@ -102,7 +102,7 @@ export async function generateMetadata(props: {
     let description = "基于 AI 的深度肤质分析，为您定制专属护肤方案。";
     const ogImage = "/images/og-default.png";
 
-    const user = await getSession();
+    const user = await getSessionUser();
     if (id && user) {
         try {
             const session = await getReportCached(id, user.id);

@@ -106,12 +106,12 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                 <Link
                   key={item.label}
                   href={item.href}
-                  className={`group relative ${(item.icon || item.badge) ? "flex items-center gap-1.5" : ""} text-[15px] font-medium tracking-[0.2em] transition-colors duration-500 ${
+                  className={`group relative ${(item.icon || item.badge) ? "flex items-center gap-1.5" : ""} text-[15px] font-light tracking-[0.15em] transition-colors duration-500 ${
                     isActive
-                      ? isDark ? "text-white" : "text-[#3D4430]"
+                      ? isDark ? "text-white" : "text-[#00263E]"
                       : isDark
                         ? "text-white/70 hover:text-white"
-                        : "text-[#3D4430]/70 hover:text-[#3D4430]"
+                        : "text-[#00263E] hover:text-[#4A6272]"
                   }`}
                 >
                   {item.label}
@@ -123,9 +123,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                   {item.icon && (
                     <item.icon className="w-3.5 h-3.5 transition-transform duration-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                   )}
-                  {!isActive && (
-                    <span className="absolute -bottom-0.5 left-0 w-0 h-[1px] bg-[#3D4430]/30 group-hover:w-full transition-all duration-500 ease-out" />
-                  )}
+                  <span className="absolute bottom-1 left-1/2 h-[1px] w-0 -translate-x-1/2 bg-current transition-all duration-500 group-hover:w-[calc(100%-1.5rem)]" />
                 </Link>
               );
             })}
@@ -133,15 +131,15 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
               href="https://nihplod.cn/about"
               target="_blank"
               rel="noopener noreferrer"
-              className={`group relative flex items-center gap-1.5 text-[15px] font-medium tracking-[0.2em] transition-colors duration-500 ${
+              className={`group relative flex items-center gap-1.5 text-[15px] font-light tracking-[0.15em] transition-colors duration-500 ${
                 isDark
                   ? "text-white/70 hover:text-white"
-                  : "text-[#3D4430]/70 hover:text-[#3D4430]"
+                  : "text-[#00263E] hover:text-[#4A6272]"
               }`}
             >
               探索旎柏
               <ExternalLink className="w-3.5 h-3.5 transition-transform duration-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-              <span className="absolute -bottom-0.5 left-0 w-0 h-[1px] bg-[#3D4430]/30 group-hover:w-full transition-all duration-500 ease-out" />
+              <span className="absolute bottom-1 left-1/2 h-[1px] w-0 -translate-x-1/2 bg-current transition-all duration-500 group-hover:w-[calc(100%-1.5rem)]" />
             </a>
           </div>
 
@@ -150,54 +148,54 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
             {user ? (
               <Link
                 href="/profile"
-                className={`group flex items-center gap-2 text-[15px] font-medium tracking-[0.2em] transition-colors duration-500 cursor-pointer ${
+                className={`group relative flex items-center gap-2 text-[15px] font-light tracking-[0.15em] transition-colors duration-500 cursor-pointer ${
                   isDark
                     ? "text-white/70 hover:text-white"
-                    : "text-[#3D4430]/70 hover:text-[#3D4430]"
+                    : "text-[#00263E] hover:text-[#4A6272]"
                 }`}
               >
-                <div className="relative w-7 h-7 rounded-full overflow-hidden bg-[#3D4430]/10 flex items-center justify-center text-[#3D4430] text-xs font-serif shrink-0">
+                <div className="relative w-7 h-7 rounded-full overflow-hidden bg-[#00263E]/10 flex items-center justify-center text-[#00263E] text-xs font-serif shrink-0">
                   {user.avatar ? (
                     <Image src={user.avatar} alt="" fill unoptimized className="object-cover" />
                   ) : (
                     (user.name || user.email || user.phone || "U").charAt(0).toUpperCase()
                   )}
                 </div>
-                <span className="hidden lg:inline relative max-w-[120px] truncate">
+                <span className="hidden lg:inline max-w-[120px] truncate">
                   {user.name || user.email || user.phone || "用户"}
-                  <span className="absolute -bottom-0.5 left-0 w-0 h-[1px] bg-[#3D4430]/30 group-hover:w-full transition-all duration-500 ease-out" />
                 </span>
+                <span className="absolute bottom-1 left-1/2 h-[1px] w-0 -translate-x-1/2 bg-current transition-all duration-500 group-hover:w-[calc(100%-1.5rem)]" />
               </Link>
             ) : (
               <button
                 onClick={() => openAuthModal("login")}
-                className={`group flex items-center gap-2 text-[15px] font-medium tracking-[0.2em] transition-colors duration-500 cursor-pointer ${
+                className={`group relative flex items-center gap-2 text-[15px] font-light tracking-[0.15em] transition-colors duration-500 cursor-pointer ${
                   isDark
                     ? "text-white/70 hover:text-white"
-                    : "text-[#3D4430]/70 hover:text-[#3D4430]"
+                    : "text-[#00263E] hover:text-[#4A6272]"
                 }`}
               >
                 <User className="w-5 h-5 sm:w-[1.125rem] sm:h-[1.125rem] transition-opacity duration-500" />
-                <span className="hidden sm:inline relative">
+                <span className="hidden sm:inline">
                   登录
-                  <span className="absolute -bottom-0.5 left-0 w-0 h-[1px] bg-[#3D4430]/30 group-hover:w-full transition-all duration-500 ease-out" />
                 </span>
+                <span className="absolute bottom-1 left-1/2 h-[1px] w-0 -translate-x-1/2 bg-current transition-all duration-500 group-hover:w-[calc(100%-1.5rem)]" />
               </button>
             )}
             {pathname !== "/" && (
               <Link
                 href="/"
-                className={`group flex items-center gap-2 text-[15px] font-medium tracking-[0.2em] transition-colors duration-500 ${
+                className={`group relative flex items-center gap-2 text-[15px] font-light tracking-[0.15em] transition-colors duration-500 ${
                   isDark
                     ? "text-white/70 hover:text-white"
-                    : "text-[#3D4430]/70 hover:text-[#3D4430]"
+                    : "text-[#00263E] hover:text-[#4A6272]"
                 }`}
               >
                 <HomeSvg className="w-6 h-6 sm:w-5 sm:h-5 transition-opacity duration-500" />
-                <span className="hidden sm:inline relative">
+                <span className="hidden sm:inline">
                   首页
-                  <span className="absolute -bottom-0.5 left-0 w-0 h-[1px] bg-[#3D4430]/30 group-hover:w-full transition-all duration-500 ease-out" />
                 </span>
+                <span className="absolute bottom-1 left-1/2 h-[1px] w-0 -translate-x-1/2 bg-current transition-all duration-500 group-hover:w-[calc(100%-1.5rem)]" />
               </Link>
             )}
           </div>
@@ -211,7 +209,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
             className={`md:hidden absolute left-0 flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-500 cursor-pointer ${
               isDark
                 ? "text-white/70 hover:text-white hover:bg-white/10"
-                : "text-[#3D4430]/70 hover:text-[#3D4430] hover:bg-[#3D4430]/5"
+                : "text-[#00263E] hover:bg-[#00263E]/5"
             }`}
           >
             <Menu className="w-5 h-5 transition-opacity duration-500" />
@@ -225,10 +223,10 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
               className={`md:hidden absolute right-0 flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-500 ${
                 isDark
                   ? "text-white/70 hover:text-white hover:bg-white/10"
-                  : "text-[#3D4430]/70 hover:text-[#3D4430] hover:bg-[#3D4430]/5"
+                  : "text-[#00263E] hover:bg-[#00263E]/5"
               }`}
             >
-              <div className="relative w-7 h-7 rounded-full overflow-hidden bg-[#3D4430]/10 flex items-center justify-center text-[#3D4430] text-xs font-serif">
+              <div className="relative w-7 h-7 rounded-full overflow-hidden bg-[#00263E]/10 flex items-center justify-center text-[#00263E] text-xs font-serif">
                 {user.avatar ? (
                   <Image src={user.avatar} alt="" fill unoptimized className="object-cover" />
                 ) : (
@@ -243,7 +241,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
               className={`md:hidden absolute right-0 flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-500 cursor-pointer ${
                 isDark
                   ? "text-white/70 hover:text-white hover:bg-white/10"
-                  : "text-[#3D4430]/70 hover:text-[#3D4430] hover:bg-[#3D4430]/5"
+                  : "text-[#00263E] hover:bg-[#00263E]/5"
               }`}
             >
               <User className="w-5 h-5 transition-opacity duration-500" />
@@ -295,7 +293,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                   onClick={handleNavClick}
                   className="flex items-center gap-4 group"
                 >
-                  <div className="relative w-14 h-14 rounded-full overflow-hidden bg-[#3D4430]/10 flex items-center justify-center text-[#3D4430] shrink-0">
+                  <div className="relative w-14 h-14 rounded-full overflow-hidden bg-[#00263E]/10 flex items-center justify-center text-[#00263E] shrink-0">
                     {user.avatar ? (
                       <Image src={user.avatar} alt="" fill unoptimized className="object-cover" />
                     ) : (
@@ -305,11 +303,11 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                     )}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[15px] font-medium text-[#1A1A1A] truncate">
+                    <p className="text-[15px] font-light text-[#00263E] truncate">
                       {user.name || user.email || user.phone || "用户"}
                     </p>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-[13px] text-[#5E5E5E]/70">
+                      <span className="text-[15px] text-[#4A6272]">
                         查看个人中心
                       </span>
                     </div>
@@ -320,19 +318,19 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                   onClick={handleLoginClick}
                   className="w-full flex items-center gap-4 group cursor-pointer"
                 >
-                  <div className="w-14 h-14 rounded-full bg-[#3D4430]/8 flex items-center justify-center text-[#3D4430]/50 shrink-0 group-hover:bg-[#3D4430]/12 transition-colors duration-300">
+                  <div className="w-14 h-14 rounded-full bg-[#00263E]/8 flex items-center justify-center text-[#00263E]/50 shrink-0 group-hover:bg-[#00263E]/12 transition-colors duration-300">
                     <User className="w-7 h-7" />
                   </div>
                   <div className="flex-1 min-w-0 text-left">
-                    <p className="text-[15px] font-medium text-[#1A1A1A]">
+                    <p className="text-[15px] font-light text-[#00263E]">
                       未登录
                     </p>
-                    <p className="text-[13px] text-[#5E5E5E]/70 mt-0.5">
+                    <p className="text-[15px] text-[#4A6272] mt-0.5">
                       点击登录或注册
                     </p>
                   </div>
                   <svg
-                    className="w-5 h-5 text-[#3D4430]/30 group-hover:text-[#3D4430]/50 transition-colors duration-300"
+                    className="w-5 h-5 text-[#00263E]/30 group-hover:text-[#00263E]/50 transition-colors duration-300"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -355,10 +353,10 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                     key={item.label}
                     href={item.href}
                     onClick={handleNavClick}
-                    className={`group relative ${item.icon ? "flex items-center gap-2" : ""} px-4 py-4 text-[15px] font-medium tracking-[0.2em] rounded-xl transition-all duration-300 ${
+                    className={`group relative ${item.icon ? "flex items-center gap-2" : ""} px-4 py-4 text-[15px] font-light tracking-[0.08em] rounded-xl transition-all duration-300 ${
                       isActive
-                        ? "text-[#3D4430] bg-[#3D4430]/8"
-                        : "text-[#3D4430]/70 hover:text-[#3D4430] hover:bg-[#3D4430]/5"
+                        ? "text-[#00263E] bg-[#00263E]/8"
+                        : "text-[#00263E] active:bg-[#00263E]/5"
                     }`}
                   >
                     {item.label}
@@ -373,7 +371,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={handleNavClick}
-                className="group flex items-center gap-2 px-4 py-4 text-[15px] font-medium tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] hover:bg-[#3D4430]/5 rounded-xl transition-all duration-300"
+                className="group flex items-center gap-2 px-4 py-4 text-[15px] font-light tracking-[0.08em] text-[#00263E] active:bg-[#00263E]/5 rounded-xl transition-all duration-300"
               >
                 探索旎柏
                 <ExternalLink className="w-3.5 h-3.5" />
@@ -385,7 +383,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                 <Link
                   href="/"
                   onClick={handleNavClick}
-                  className="group flex items-center gap-3 px-4 py-4 text-[15px] font-medium tracking-[0.2em] text-[#3D4430]/70 hover:text-[#3D4430] hover:bg-[#3D4430]/5 rounded-xl transition-all duration-300"
+                  className="group flex items-center gap-3 px-4 py-4 text-[15px] font-light tracking-[0.08em] text-[#00263E] active:bg-[#00263E]/5 rounded-xl transition-all duration-300"
                 >
                   <HomeSvg className="w-5 h-5" />
                   首页

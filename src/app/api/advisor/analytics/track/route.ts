@@ -9,7 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
-import { getSession } from "@/lib/auth";
+import { getSessionUser } from "@/lib/sso-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { hashIP } from "@/lib/privacy";
 import { logger } from "@/lib/logger";
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
         }
 
         // 只有已登录用户才保存追踪数据到数据库
-        const user = await getSession();
+        const user = await getSessionUser(request);
         if (!user) {
             // 未登录用户直接返回成功，但不保存数据
             return NextResponse.json({ success: true });

@@ -1,13 +1,33 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { createSsoMiddleware } from "@nihplod/sso-sdk/next";
 import { verifySessionSignature, ADMIN_SESSION_COOKIE_NAME } from "@/lib/session-verify";
 import { verifyCsrfToken } from "@/lib/csrf";
 
 /**
- * Next.js 全局 Middleware
+ * Next.js 全局 Proxy (formerly Middleware)
  * 部署环境：云服务器（PM2 单实例常驻进程）
- * 注意：此 middleware 在 Edge Runtime 中运行，不使用 Node.js 原生 API
+ * 注意：此 proxy 在 Edge Runtime 中运行，不使用 Node.js 原生 API
  */
+
+const ssoMiddleware = createSsoMiddleware({
+  clientId: process.env.NEXT_PUBLIC_SSO_CLIENT_ID!,
+  ssoBaseUrl: process.env.NEXT_PUBLIC_SSO_BASE_URL!,
+  redirectUri: process.env.NEXT_PUBLIC_SSO_REDIRECT_URI!,
+  scopes: process.env.NEXT_PUBLIC_SSO_SCOPES || "openid profile",
+  publicPaths: [
+    "/",
+    "/login",
+    "/register",
+    "/forgot-password",
+    "/api/auth/callback",
+    "/api/auth/me",
+    "/api/auth/logout",
+    "/api/admin/:path*",
+    "/admin/:path*",
+    "/api/health",
+  ],
+});
 
 // 敏感路径前缀列表（需要额外安全检查）
 const SENSITIVE_PATHS = ["/api/admin", "/api/cron"];
@@ -36,6 +56,22 @@ const DISABLE_CSRF = process.env.DISABLE_CSRF === "true";
 
 export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
+
+    // Skip Next.js internal routes and static assets before SSO check
+    if (
+        pathname.startsWith("/_next/") ||
+        pathname === "/favicon.ico" ||
+        pathname.match(/\.(ico|png|jpg|jpeg|svg|css|js|woff2?)$/)
+    ) {
+        return NextResponse.next();
+    }
+
+    // ==================== SSO 一网通登录保护 ====================
+    const ssoResponse = await ssoMiddleware(request);
+    if (ssoResponse.headers.get("location") || (ssoResponse.status >= 300 && ssoResponse.status < 400)) {
+        return ssoResponse;
+    }
+
     const response = NextResponse.next();
 
     // ==================== CORS 全局配置 ====================
@@ -96,16 +132,12 @@ export async function proxy(request: NextRequest) {
     // ==================== C 端 API CSRF 防护 ====================
     if (!DISABLE_CSRF) {
     const csrfExemptPaths = [
-        // 公开认证接口
-        "/api/auth/login",
-        "/api/auth/login-code",
-        "/api/auth/register",
+        // 公开认证接口（SSO 迁移后仅保留仍被 AuthModal 使用的接口）
         "/api/auth/send-code",
         "/api/auth/forgot-password",
         "/api/auth/reset-password",
         "/api/auth/wechat",
         "/api/auth/wechat/bind",
-        "/api/auth/refresh",
         // 匿名/埋点接口：sendBeacon 无法携带自定义 header
         "/api/advisor/analytics/track",
         // 允许游客使用的 AI 分析接口（仍受 AI_ENDPOINTS 的 Origin/Referer/Content-Type 保护）

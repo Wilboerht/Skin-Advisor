@@ -1,18 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
-import { apiError } from "@/lib/api-response";
-import { ErrorCode } from "@/lib/error-codes";
 import { cookies } from "next/headers";
+import { createTokenVerifier } from "@nihplod/sso-verify";
+import { apiError, apiSuccess } from "@/lib/api-response";
+import { ErrorCode } from "@/lib/error-codes";
 import prisma from "@/lib/prisma";
-import { getSession, signLocalSession } from "@/lib/auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
-import { mirrorOfficialCookies } from "@/lib/cookie-mirror";
-import { createHash } from "crypto";
-import { UserRole } from "@/lib/permissions";
-import { callOfficialApi, type OfficialApiResponse } from "@/lib/official-api";
-import { logger } from "@/lib/logger";
 import { verifyCsrfToken } from "@/lib/csrf";
+import { logger } from "@/lib/logger";
 
-// 官网 /api/user/profile 返回的用户结构
+const SSO_BASE_URL = process.env.NEXT_PUBLIC_SSO_BASE_URL || "https://nihplod.cn";
+const SSO_CLIENT_ID = process.env.NEXT_PUBLIC_SSO_CLIENT_ID!;
+const ACCESS_TOKEN_COOKIE = "__Host-nihplod_sso_at";
+
+const verifier = createTokenVerifier({
+    introspectionEndpoint: `${SSO_BASE_URL}/api/oauth/introspect`,
+    clientId: SSO_CLIENT_ID,
+    audience: SSO_CLIENT_ID,
+    issuer: SSO_BASE_URL,
+});
+
 interface OfficialProfileUser {
     id: string;
     phone: string;
@@ -25,201 +31,103 @@ interface OfficialProfileUser {
     };
 }
 
-// 简单的内存缓存，防止外部官方 API 慢导致每个请求都阻塞 10s+
-const meCache = new Map<string, { data: unknown; timestamp: number }>();
-const ME_CACHE_TTL_MS = 1000; // 1 秒缓存：在降低官方 API 压力与会话状态及时性之间取平衡
-const MAX_CACHE_SIZE = 100;
-
-function getCacheKey(cookieStr: string): string {
-    return createHash('sha256').update(cookieStr).digest('hex');
-}
-
-function getMeCache(key: string): unknown | null {
-    const entry = meCache.get(key);
-    if (!entry) return null;
-    if (Date.now() - entry.timestamp > ME_CACHE_TTL_MS) {
-        meCache.delete(key);
-        return null;
+async function getAccessToken(req: NextRequest): Promise<string | null> {
+    // 1. Authorization header (API / BFF usage)
+    const authHeader = req.headers.get("authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+        return authHeader.slice(7);
     }
-    return entry.data;
+
+    // 2. SSO access_token cookie set by the SDK callback handler
+    const cookieStore = await cookies();
+    return cookieStore.get(ACCESS_TOKEN_COOKIE)?.value || null;
 }
 
-function setMeCache(key: string, data: unknown) {
-    if (meCache.size >= MAX_CACHE_SIZE) {
-        const oldestKey = meCache.keys().next().value as string | undefined;
-        if (oldestKey) meCache.delete(oldestKey);
-    }
-    meCache.set(key, { data, timestamp: Date.now() });
-}
-
-async function getLocalSessionUser(): Promise<NextResponse | null> {
+async function upsertLocalUser(userId: string, phone: string, nickname?: string | null, avatar?: string | null) {
     try {
-        const localUser = await getSession();
-        if (!localUser) return null;
-
-        const dbUser = await prisma.user.findUnique({
-            where: { id: localUser.id },
-            select: { id: true, phoneNumber: true, name: true, avatarUrl: true, role: true }
-        });
-        if (!dbUser) return null;
-
-        return NextResponse.json({
-            user: {
-                id: dbUser.id,
-                phone: dbUser.phoneNumber,
-                name: dbUser.name || dbUser.phoneNumber,
-                avatar: dbUser.avatarUrl,
-                role: dbUser.role || "user"
-            }
+        return await prisma.user.upsert({
+            where: { id: userId },
+            update: {
+                phoneNumber: phone,
+                name: nickname || phone,
+                avatarUrl: avatar || null,
+            },
+            create: {
+                id: userId,
+                phoneNumber: phone,
+                password: "",
+                name: nickname || phone,
+                avatarUrl: avatar || null,
+                role: "user",
+                tokenVersion: 0,
+            },
         });
     } catch (err) {
-        logger.error("[auth/me] Local session lookup failed:", err);
+        logger.error("[auth/me] Failed to upsert local user:", err);
         return null;
     }
 }
 
 export async function GET(req: NextRequest) {
     const ip = getClientIP(req);
-    const ipLimit = await rateLimit(`me-get-ip-${ip}`, "default", { maxRequests: 30, windowMs: 60 * 1000 });
-    if (!ipLimit.success) {
+    const limit = await rateLimit(`me-get-ip-${ip}`, "default", { maxRequests: 30, windowMs: 60 * 1000 });
+    if (!limit.success) {
         return apiError(ErrorCode.RATE_LIMITED, "请求过于频繁，请稍后再试", 429);
     }
 
-    const cookieStore = await cookies();
-    const allCookies = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ');
-
-    if (!allCookies) {
-        const localResponse = await getLocalSessionUser();
-        return localResponse || NextResponse.json({ user: null });
+    const token = await getAccessToken(req);
+    if (!token) {
+        return NextResponse.json({ user: null });
     }
 
-    try {
-        const cacheKey = getCacheKey(allCookies);
-        const cached = getMeCache(cacheKey);
-        if (cached) {
-            return NextResponse.json(cached);
-        }
-
-        const result = await callOfficialApi<OfficialApiResponse<OfficialProfileUser>>({
-            method: "GET",
-            path: "/api/user/profile",
-            cookies: allCookies,
-            requireSignature: false,
-            timeoutMs: 30000,
-        });
-
-        if (!result) {
-            // 网络错误或签名校验失败：回退到本地 session
-            const localResponse = await getLocalSessionUser();
-            return localResponse || NextResponse.json({ user: null });
-        }
-
-        const data = result.data;
-
-        // 官网明确返回 401/403：用户未认证或已禁用，不 fallback 到本地 session
-        if (!result.ok && (result.status === 401 || result.status === 403)) {
-            return NextResponse.json({ user: null });
-        }
-
-        if (!result.ok || !data.success || !data.data) {
-            // 其他错误（如 500、参数错误等）：可能为临时故障，回退到本地 session
-            const localResponse = await getLocalSessionUser();
-            return localResponse || NextResponse.json({ user: null });
-        }
-
-        const userPayload = data.data;
-
-        // Prevent unique constraint collision if the phone exists on a different ID locally
-        const existingByPhone = await prisma.user.findUnique({ where: { phoneNumber: userPayload.phone } });
-        if (existingByPhone && existingByPhone.id !== userPayload.id) {
-            logger.warn(`[AUDIT] Phone collision detected (me): new user ${userPayload.id} conflicts with existing user ${existingByPhone.id}.`);
-            await prisma.user.update({
-                where: { id: existingByPhone.id },
-                data: { phoneNumber: `merged_${existingByPhone.id}_${userPayload.phone}` }
-            });
-        }
-
-        const localUser = await prisma.user.upsert({
-            where: { id: userPayload.id },
-            update: {
-                phoneNumber: userPayload.phone,
-                name: userPayload.nickname || userPayload.phone,
-                avatarUrl: userPayload.avatar || null,
-            },
-            create: {
-                id: userPayload.id,
-                phoneNumber: userPayload.phone,
-                password: "",
-                name: userPayload.nickname || userPayload.phone,
-                avatarUrl: userPayload.avatar || null,
-                role: UserRole.USER,
-                tokenVersion: 0
-            }
-        });
-
-        const responseUser = {
-            id: userPayload.id,
-            phone: userPayload.phone,
-            name: userPayload.nickname || userPayload.phone,
-            avatar: userPayload.avatar,
-            role: localUser.role,
-            createdAt: userPayload.createdAt,
-            stats: userPayload.stats,
-        };
-
-        const responsePayload = { user: responseUser };
-        setMeCache(cacheKey, responsePayload);
-
-        const response = NextResponse.json(responsePayload);
-
-        // 签发/刷新子站本地 session，让后续本地 API 能正确识别用户
-        await signLocalSession(response, {
-            id: responseUser.id,
-            email: null,
-            phone: responseUser.phone || null,
-            name: responseUser.name,
-            role: responseUser.role,
-            tokenVersion: localUser.tokenVersion,
-            dailyTestLimit: localUser.dailyTestLimit,
-        });
-
-        mirrorOfficialCookies(result.officialResponse, response, "me");
-
-        return response;
-
-    } catch (e) {
-        logger.error("Me GET Proxy Error", e);
-        const localResponse = await getLocalSessionUser();
-        return localResponse || NextResponse.json({ user: null });
+    const payload = await verifier.verify(token);
+    if (!payload?.sub) {
+        return NextResponse.json({ user: null });
     }
+
+    // Sync local user record so that existing features (tests, campaigns) keep working
+    const localUser = await upsertLocalUser(
+        payload.sub,
+        payload.phone || "",
+        undefined,
+        undefined
+    );
+
+    return NextResponse.json({
+        user: {
+            id: payload.sub,
+            phone: payload.phone || null,
+            name: localUser?.name || payload.phone || "",
+            avatar: localUser?.avatarUrl || null,
+            role: localUser?.role || "user",
+        },
+    });
 }
 
 export async function PUT(req: NextRequest) {
     const ip = getClientIP(req);
-    const ipLimit = await rateLimit(`me-put-ip-${ip}`, "default", { maxRequests: 10, windowMs: 60 * 1000 });
-    if (!ipLimit.success) {
+    const limit = await rateLimit(`me-put-ip-${ip}`, "default", { maxRequests: 10, windowMs: 60 * 1000 });
+    if (!limit.success) {
         return apiError(ErrorCode.RATE_LIMITED, "请求过于频繁，请稍后再试", 429);
     }
 
-    // CSRF 防护：验证 Double-Submit Cookie 令牌
-    const csrfResult = await verifyCsrfToken(req);
-    if (!csrfResult.valid) {
-        logger.warn("[Me PUT] CSRF validation failed", { reason: csrfResult.reason, path: req.nextUrl.pathname });
+    // CSRF protection for the sub-project's own endpoint
+    if (!verifyCsrfToken(req)) {
         return apiError(ErrorCode.FORBIDDEN, "安全验证失败，请刷新页面后重试", 403);
     }
 
-    const cookieStore = await cookies();
-    const allCookies = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ');
+    const token = await getAccessToken(req);
+    if (!token) {
+        return apiError(ErrorCode.UNAUTHORIZED, "请先登录", 401);
+    }
 
-    if (!allCookies) {
-        return apiError(ErrorCode.UNAUTHORIZED, "Not authenticated", 401);
+    const payload = await verifier.verify(token);
+    if (!payload?.sub) {
+        return apiError(ErrorCode.UNAUTHORIZED, "登录已过期，请重新登录", 401);
     }
 
     try {
         const body = await req.json();
-
-        // 官网 PUT /api/user/profile 只接受 nickname / avatar
-        // 子站前端可能使用 name，这里做字段映射
         const officialBody: { nickname?: string; avatar?: string } = {};
         if (body.nickname !== undefined) {
             officialBody.nickname = body.nickname;
@@ -230,39 +138,44 @@ export async function PUT(req: NextRequest) {
             officialBody.avatar = body.avatar;
         }
 
-        const result = await callOfficialApi<OfficialApiResponse<{ user: OfficialProfileUser }>>({
+        const response = await fetch(`${SSO_BASE_URL}/api/user/profile`, {
             method: "PUT",
-            path: "/api/user/profile",
-            body: officialBody,
-            cookies: allCookies,
-            requireSignature: false,
-            timeoutMs: 30000,
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify(officialBody),
         });
 
-        if (!result) {
-            return apiError(ErrorCode.UPSTREAM_ERROR, "更新失败：上游服务响应异常", 502);
+        if (response.status === 401 || response.status === 403) {
+            return apiError(ErrorCode.UNAUTHORIZED, "登录已过期，请重新登录", 401);
         }
 
-        const data = result.data;
-
-        if (!result.ok || !data.success || !data.data?.user) {
-            return apiError(ErrorCode.VALIDATION_ERROR, data.error?.message || "更新失败", result.status || 400);
+        const data = (await response.json()) as { success?: boolean; data?: { user?: OfficialProfileUser }; error?: { message?: string } };
+        if (!response.ok || !data.success || !data.data?.user) {
+            return apiError(
+                ErrorCode.UPSTREAM_ERROR,
+                data.error?.message || "更新失败",
+                response.status || 502
+            );
         }
 
         const user = data.data.user;
 
-        return NextResponse.json({
-            success: true,
+        // Sync the updated profile back to the local DB
+        await upsertLocalUser(user.id, user.phone, user.nickname, user.avatar);
+
+        return apiSuccess({
             user: {
                 id: user.id,
                 phone: user.phone,
                 name: user.nickname || user.phone,
                 avatar: user.avatar,
-                role: UserRole.USER
-            }
+                role: "user",
+            },
         });
-    } catch (e) {
-        logger.error("Me PUT Proxy Error", e);
+    } catch (err) {
+        logger.error("[auth/me] PUT error:", err);
         return apiError(ErrorCode.INTERNAL_ERROR, "应用系统异常，请稍后重试", 500);
     }
 }

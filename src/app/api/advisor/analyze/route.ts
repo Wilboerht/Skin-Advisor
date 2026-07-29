@@ -15,7 +15,7 @@ import { determineSkinType, identifyConcerns } from "@/lib/advisor-utils";
 import { AnalyzeRequestSchema } from "@/lib/schemas";
 import { recommendProducts, getCandidateProducts, type ProductRecommendation } from "@/lib/recommendations";
 import { resolveIPLocation } from "@/lib/geoip";
-import { getSession } from "@/lib/auth";
+import { getSessionUser } from "@/lib/sso-auth";
 import { hashIP } from "@/lib/privacy";
 import { matchCharacterIP } from "@/lib/result-utils";
 import { getEnvContextFromLocation } from "@/lib/weather-context";
@@ -288,7 +288,7 @@ export async function POST(request: NextRequest) {
 
         // 4. 检查使用限制 (Guest/Member)
         // 提前获取用户会话，避免 freeRetry 路径中重复调用 getSession()
-        const user = await getSession();
+        const user = await getSessionUser(request);
 
         // freeRetry 有效性标记：外部仅做快速预筛（session 存在 + 已完成），
         // ownership 验证与 freeRetryUsed 原子性检查一并移入 DB 行锁事务内，消除 TOCTOU 窗口。

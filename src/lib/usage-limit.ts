@@ -1,7 +1,7 @@
 
 import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getSession } from '@/lib/auth';
+import { getSessionUser } from '@/lib/sso-auth';
 import { extractGuestIdentifiers } from './guest-limit';
 import { withDbRetry } from './utils';
 
@@ -52,7 +52,7 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
         return { canTest: true, remaining: 999, dailyLimit: 999, role: 'member' };
     }
 
-    const user = await getSession();
+    const user = await getSessionUser(request);
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
 
     // 1. 如果是登录用户
@@ -187,7 +187,7 @@ export async function reserveUsage(
         return { success: true, role: 'member' };
     }
 
-    const user = await getSession();
+    const user = await getSessionUser(request);
     const identifiers = extractGuestIdentifiers(request, body);
     const { ipAddress, cookieId, fingerprint, userAgent } = identifiers;
 
@@ -336,7 +336,7 @@ export async function rollbackUsage(
     sessionId: string,
     body?: Record<string, unknown>
 ): Promise<boolean> {
-    const user = await getSession();
+    const user = await getSessionUser(request);
     const identifiers = extractGuestIdentifiers(request, body);
     const { ipAddress, cookieId, fingerprint } = identifiers;
 

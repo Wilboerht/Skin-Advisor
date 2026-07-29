@@ -14,7 +14,7 @@ import {
     QWEN_VISION_PROMPT,
     REGISTERED_USER_DEEP_ANALYSIS_INSTRUCTION,
 } from "@/config/ai-prompts";
-import { getSession } from "@/lib/auth";
+import { getSessionUser } from "@/lib/sso-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { reserveUsage, rollbackUsage } from "@/lib/usage-limit";
 import { aiLogger } from "@/lib/logger";
@@ -308,7 +308,7 @@ export async function POST(request: NextRequest) {
         }
 
         // --- Registered user deep analysis prompt injection ---
-        const session = await getSession();
+        const session = await getSessionUser(request);
         const isLoggedIn = !!session;
 
         if (isLoggedIn && REGISTERED_USER_DEEP_ANALYSIS_INSTRUCTION) {
