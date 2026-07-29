@@ -124,7 +124,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                     <item.icon className="w-3.5 h-3.5 transition-transform duration-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                   )}
                   {isActive ? (
-                    <span className="absolute bottom-0 left-1/2 -translate-x-1/2 scale-y-50 h-[1px] w-[calc(100%-2rem)] bg-current opacity-40" />
+                    <span className="absolute bottom-0 left-1/2 -translate-x-1/2 scale-y-50 h-[1px] w-[calc(100%-1.5rem)] bg-current" />
                   ) : (
                     <span className="absolute bottom-0 left-1/2 h-[1px] w-0 -translate-x-1/2 scale-y-50 bg-current transition-[width] duration-500 ease-out group-hover:w-[calc(100%-1.5rem)] group-focus-visible:w-[calc(100%-1.5rem)]" />
                   )}

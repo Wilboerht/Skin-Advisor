@@ -25,8 +25,10 @@
   --color-cream: #F0EDE1;
   --color-olive: #3D4430;
   --color-olive-light: rgba(61, 68, 48, 0.15);
+  --color-brand-charcoal: #00263E;
+  --color-brand-charcoal-light: #4A6272;
   --color-text-primary: #1A1A1A;
-  --color-text-secondary: #5E5E5E;
+  --color-text-secondary: #00263E;
   --color-white: #ffffff;
 
   --font-sans: "Futura LT", "Futura", "PingFang SC", "Source Han Sans", "Microsoft YaHei", sans-serif;
@@ -108,8 +110,10 @@
     --color-cream: #F0EDE1;
     --color-olive: #3D4430;
     --color-olive-light: rgba(61, 68, 48, 0.15);
+    --color-brand-charcoal: #00263E;
+    --color-brand-charcoal-light: #4A6272;
     --color-text-primary: #1A1A1A;
-    --color-text-secondary: #5E5E5E;
+    --color-text-secondary: #00263E;
     --color-white: #ffffff;
 
     --section-padding: 6rem;

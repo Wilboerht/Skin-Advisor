@@ -48,8 +48,8 @@ export default function ServicesPage() {
               <h1 className="text-xl md:text-3xl font-serif text-[#1A1A1A] leading-[1.1] mb-4 md:mb-8">
                 顾问服务
               </h1>
-              <p className="text-[13px] md:text-base text-[#5E5E5E] font-light leading-relaxed max-w-lg mb-4 md:mb-8">
-                如需获得更具针对性的护肤建议，欢迎添加 NIHPLOD 护肤顾问微信，由专业顾问为您提供一对一咨询服务。
+              <p className="text-[13px] md:text-base text-brand-charcoal/60 font-light leading-[1.8] md:leading-normal tracking-[0.06em] md:tracking-[0.12em] max-w-lg mb-4 md:mb-8">
+                如需获得更具针对性的护肤建议，欢迎关注旎柏 NIHPLOD 微信服务号，由我们的专业护肤顾问为您提供一对一咨询服务。
               </p>
 
               <div className="grid grid-cols-3 gap-3 md:gap-5 max-w-lg">
@@ -58,9 +58,9 @@ export default function ServicesPage() {
                   { icon: LineChart, text: "跟踪调整" },
                   { icon: Sparkles, text: "定制方案" },
                 ].map(({ icon: Icon, text }) => (
-                  <div key={text} className="flex items-center gap-2 md:gap-3 text-[#3D4430]">
-                    <Icon className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#3D4430]" strokeWidth={1.5} />
-                    <span className="text-xs md:text-sm font-light tracking-wide">{text}</span>
+                  <div key={text} className="flex items-center gap-2 md:gap-3 text-brand-charcoal">
+                    <Icon className="w-3.5 h-3.5 md:w-4 md:h-4 text-brand-charcoal/70" strokeWidth={1.5} />
+                    <span className="text-[13px] md:text-[15px] font-light tracking-[0.08em] md:tracking-[0.15em]">{text}</span>
                   </div>
                 ))}
               </div>
@@ -79,8 +79,8 @@ export default function ServicesPage() {
                     className="object-contain p-2 md:p-3"
                   />
                 </div>
-                <p className="text-[10px] md:text-[12px] text-[#5E5E5E] font-light tracking-[0.1em]">
-                  关注我们 · 获取服务
+                <p className="text-[13px] text-brand-charcoal/60 font-light tracking-[0.06em]">
+                  扫码关注，获取服务
                 </p>
               </div>
             </div>
