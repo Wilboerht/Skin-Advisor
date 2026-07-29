@@ -520,7 +520,7 @@ export default function Home() {
                           ) : (
                             <>
                               <ClipboardList className="w-4 h-4" />
-                              <span>发现你的肌智派形象</span>
+                              <span>发现你的肌智派形象（仅问卷）</span>
                             </>
                           )}
                         </button>

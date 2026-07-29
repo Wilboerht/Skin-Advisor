@@ -15,10 +15,12 @@ interface NavItem {
   href: string;
   icon?: React.ComponentType<{ className?: string }>;
   badge?: string;
+  image?: string;
 }
 
 const navItems: NavItem[] = [
   { label: "问卷&素颜测肤", href: "/" },
+  { label: "测肤有礼", href: "/gift", image: "/images/watermark.png" },
   { label: "全部肌智派类型", href: "/skin-types" },
   { label: "顾问服务", href: "/services" },
 ];
@@ -106,7 +108,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                 <Link
                   key={item.label}
                   href={item.href}
-                  className={`group relative py-2 px-1 -mx-1 rounded-md ${(item.icon || item.badge) ? "flex items-center gap-1.5" : ""} text-[15px] font-light tracking-[0.15em] transition-colors duration-500 focus-visible:outline-none ${
+                  className={`group relative py-2 px-1 -mx-1 rounded-md ${(item.icon || item.badge || item.image) ? "flex items-center gap-1.5" : ""} text-[15px] font-light tracking-[0.15em] transition-colors duration-500 focus-visible:outline-none ${
                     isActive
                       ? isDark ? "text-white" : "text-[#00263E]"
                       : isDark
@@ -114,6 +116,15 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                         : `text-[#00263E] hover:text-[#4A6272] focus-visible:text-[#4A6272] ${scrolled ? "hover:bg-[#00263E]/[0.03]" : ""}`
                   }`}
                 >
+                  {item.image && (
+                    <Image
+                      src={item.image}
+                      alt=""
+                      width={36}
+                      height={36}
+                      className="w-6 h-6 md:w-7 md:h-7 object-contain drop-shadow-[0_1px_0_rgba(0,38,62,0.28)] animate-[soft-blink_3s_ease-in-out_infinite]"
+                    />
+                  )}
                   {item.label}
                   {item.badge && (
                     <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-semibold leading-none tracking-wider rounded bg-[#C8A27A]/15 text-[#A0784C] border border-[#C8A27A]/30">
@@ -357,12 +368,21 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                     key={item.label}
                     href={item.href}
                     onClick={handleNavClick}
-                    className={`group relative ${item.icon ? "flex items-center gap-2" : ""} px-4 py-4 text-[15px] font-light tracking-[0.08em] rounded-xl transition-all duration-300 ${
+                    className={`group relative ${(item.icon || item.image) ? "flex items-center gap-2" : ""} px-4 py-4 text-[15px] font-light tracking-[0.08em] rounded-xl transition-all duration-300 ${
                       isActive
                         ? "text-[#00263E] bg-[#00263E]/8"
                         : "text-[#00263E] active:bg-[#00263E]/5"
                     }`}
                   >
+                    {item.image && (
+                      <Image
+                        src={item.image}
+                        alt=""
+                        width={36}
+                        height={36}
+                        className="w-6 h-6 object-contain drop-shadow-[0_1px_0_rgba(0,38,62,0.28)] animate-[soft-blink_3s_ease-in-out_infinite]"
+                      />
+                    )}
                     {item.label}
                     {item.icon && (
                       <item.icon className="w-3.5 h-3.5" />
