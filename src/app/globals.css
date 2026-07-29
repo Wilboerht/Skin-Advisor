@@ -450,6 +450,8 @@
   --home-morandi: #A89F91;
   --home-dark: #6B655E;
   --home-gold: #FFD700;
+  --home-text-primary: #1A1A1A;
+  --home-text-secondary: rgba(26, 26, 26, 0.5);
 
   display: flex;
   justify-content: center;
@@ -515,6 +517,69 @@
 .home-container .wave-2 {
   animation: waveMove 20s ease-in-out infinite reverse;
   opacity: 0.2;
+}
+
+/* 首页底部 footer 区域 - 版权与备案 */
+.home-container .home-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  margin-top: auto;
+  padding-top: 2rem;
+  padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid rgba(61, 68, 48, 0.08);
+}
+
+.home-container .footer-copyright,
+.home-container .footer-beian,
+.home-container .footer-beian a,
+.home-container .footer-beian span {
+  font-weight: 300;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--home-text-secondary);
+  transition: color 0.3s ease;
+}
+
+.home-container .footer-beian a:hover {
+  color: var(--home-text-primary);
+}
+
+.home-container .footer-copyright {
+  letter-spacing: 0.15em;
+}
+
+.home-container .footer-beian {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  letter-spacing: 0.12em;
+}
+
+/* 手机端 footer 排版优化：备案信息垂直堆叠 */
+@media (max-width: 767px) {
+  .home-container .home-footer {
+    gap: 0.625rem;
+    padding-top: 1.5rem;
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .home-container .footer-copyright {
+    letter-spacing: 0.1em;
+  }
+
+  .home-container .footer-beian {
+    flex-direction: column;
+    gap: 0.625rem;
+  }
+
+  .home-container .footer-beian > span[aria-hidden="true"] {
+    display: none;
+  }
 }
 
 /* ========== Graphite Kinetic Grid 全局背景 (nihplod.cn 复刻版) ========== */

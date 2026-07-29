@@ -7,46 +7,42 @@ import Image from "next/image";
 export function HomepageFooter() {
     return (
         <m.footer
-            className="absolute bottom-6 left-0 right-0 flex flex-col items-center gap-4 pointer-events-none"
+            className="home-footer w-full mt-auto"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1.2, delay: 1 }}
         >
-            {/* 版权文本 & 备案信息栏 */}
-            <div className="flex flex-col items-center gap-1 opacity-40 pointer-events-auto">
-                {/* 版权声明 */}
-                <p className="text-[10px] sm:text-[11px] font-light tracking-widest text-[#1A1A1A] relative z-10 leading-tight">
-                    &copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.
-                </p>
+            <p className="footer-copyright relative z-10">
+                &copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.
+            </p>
 
-                {/* 备案号栏 */}
-                <div className="flex items-center justify-center gap-2 sm:gap-4 text-[9px] sm:text-[10px] font-light tracking-normal sm:tracking-widest text-[#1A1A1A] whitespace-nowrap flex-nowrap leading-tight">
-                    {/* ICP 备案 */}
-                    <Link
-                        href="https://beian.miit.gov.cn/"
-                        target="_blank" rel="noopener noreferrer"
-                        className="!min-h-0 !min-w-0 hover:text-brand-gold transition-colors flex items-center"
-                    >
-                        沪ICP备2026014764号-1
-                    </Link>
+            <div className="footer-beian">
+                <Link
+                    href="https://beian.miit.gov.cn/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex !min-h-0 !min-w-0 items-center"
+                >
+                    沪ICP备2026014764号-1
+                </Link>
 
-                    <span className="text-[#1A1A1A]/30">|</span>
+                <span aria-hidden="true">|</span>
 
-                    <Link
-                        href="http://www.beian.gov.cn/portal/registerSystemInfo"
-                        target="_blank" rel="noopener noreferrer"
-                        className="!min-h-0 !min-w-0 hover:text-brand-gold transition-colors flex items-center gap-1"
-                    >
-                        <Image
-                            src="/images/beian.webp"
-                            alt="备案图标"
-                            width={12}
-                            height={12}
-                            className="shrink-0 opacity-80 w-3 h-3"
-                        />
-                        <span>沪公网安备31010702010178号</span>
-                    </Link>
-                </div>
+                <Link
+                    href="http://www.beian.gov.cn/portal/registerSystemInfo"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex !min-h-0 !min-w-0 items-center gap-1"
+                >
+                    <Image
+                        src="/images/beian.webp"
+                        alt=""
+                        width={12}
+                        height={12}
+                        className="shrink-0 opacity-80"
+                    />
+                    <span>沪公网安备31010702010178号</span>
+                </Link>
             </div>
         </m.footer>
     );

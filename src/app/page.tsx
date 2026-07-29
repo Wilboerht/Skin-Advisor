@@ -422,16 +422,14 @@ export default function Home() {
 
       {/* 内容区域容器 - 全屏显示 */}
       <m.div
-        className="fixed inset-0 z-20"
+        className="fixed inset-0 z-20 flex flex-col bg-[#F8F7F3]"
         initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.98 }}
         animate={isHomeExiting ? (prefersReducedMotion ? { opacity: 0 } : { y: "-100%" }) : { opacity: 1, scale: 1, y: 0 }}
         transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.7, ease: [0.65, 0, 0.35, 1] }}
       >
-        <div className="h-full">
-          <div className="relative z-20 w-full h-full bg-[#F8F7F3]">
-            <div className="home-container relative h-full w-full">
-              {/* Main Content Area */}
-              <main className="main-content relative z-10 w-full min-h-screen flex flex-col items-center justify-center text-center px-6 pt-24 md:pt-28 pb-24">
+        <div className="home-container relative flex flex-col flex-1 w-full">
+          {/* Main Content Area */}
+          <main className="main-content relative z-10 flex flex-col flex-1 items-center justify-center text-center px-6 pt-24 md:pt-28">
                 {/* Center AI Actions */}
                 <div className="z-10 flex flex-col items-center text-center max-w-3xl mx-auto">
                   <div className="animate-fade-in-up flex flex-col items-center">
@@ -573,13 +571,12 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Homepage Footer */}
-                <HomepageFooter />
-              </main>
-            </div>
+            </main>
+
+            {/* Homepage Footer */}
+            <HomepageFooter />
           </div>
-        </div>
-      </m.div>
+        </m.div>
 
       {/* Modals */}
       <OnboardingFlowModal
