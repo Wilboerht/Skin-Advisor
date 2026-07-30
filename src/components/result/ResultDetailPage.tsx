@@ -68,19 +68,19 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
           <h2 className="text-lg md:text-2xl font-serif font-light text-brand-charcoal tracking-[0.02em] mb-6 md:mb-8">
             {data.m5?.title || "优势高光"}
           </h2>
-          <div className="grid md:grid-cols-2 gap-4 md:gap-6">
+          <div className="grid grid-cols-1">
             {(data.m5?.advantages ?? []).map((adv, i) => (
               <div
                 key={i}
-                className="bg-white/70 rounded-xl border border-brand-charcoal/[0.06] p-4 md:bg-white md:rounded-2xl md:p-8 md:shadow-sm md:border md:border-brand-charcoal/[0.08] md:hover:shadow-md transition-shadow"
+                className={`group py-6 md:py-8 ${i < (data.m5?.advantages?.length ?? 0) - 1 ? 'border-b border-brand-charcoal/[0.06]' : ''}`}
               >
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-full border border-brand-charcoal/25 text-brand-charcoal text-xs md:text-sm font-light">
-                    {i + 1}
+                <div className="flex items-baseline gap-4 md:gap-6 mb-3 md:mb-4">
+                  <span className="text-2xl md:text-3xl font-serif font-light text-brand-charcoal/15 leading-none transition-colors duration-300 group-hover:text-brand-charcoal/30 select-none">
+                    {String(i + 1).padStart(2, '0')}
                   </span>
-                  <h3 className="text-base md:text-lg font-light text-brand-charcoal">{adv.title}</h3>
+                  <h3 className="text-lg md:text-xl font-serif font-light text-brand-charcoal tracking-[0.02em]">{adv.title}</h3>
                 </div>
-                <p className="text-brand-charcoal/60 font-light leading-[1.8] md:leading-normal tracking-[0.06em] md:tracking-[0.12em] text-[13px] md:text-sm">{adv.content}</p>
+                <p className="pl-10 md:pl-[3.75rem] text-brand-charcoal/60 font-light leading-[1.8] md:leading-normal tracking-[0.06em] md:tracking-[0.12em] text-[13px] md:text-sm">{adv.content}</p>
               </div>
             ))}
           </div>
