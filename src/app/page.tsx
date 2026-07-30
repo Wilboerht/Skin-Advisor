@@ -432,7 +432,7 @@ export default function Home() {
           <main className="main-content relative z-10 flex flex-col flex-1 items-center justify-center text-center px-6 pt-24 md:pt-28">
                 {/* Center AI Actions */}
                 <div className="z-10 flex flex-col items-center text-center max-w-3xl mx-auto">
-                  <div className="animate-fade-in-up flex flex-col items-center">
+                  <div className="opacity-0 animate-fade-in-up flex flex-col items-center">
                     {/* Eyebrow */}
                     <m.div
                       className="w-full max-w-xl mb-10 md:mb-12"
