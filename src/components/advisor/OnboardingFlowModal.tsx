@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Loader2, MapPin, ShieldCheck, ArrowRight, LogOut } from "lucide-react";
+import { Loader2, MapPin, ShieldCheck, ArrowRight, LogOut, X } from "lucide-react";
 import { AnimatePresence, motion as m, useReducedMotion } from "framer-motion";
 import Image from "next/image";
 import { useToast } from "@/components/ui/Toast";
@@ -358,7 +358,7 @@ export function OnboardingFlowModal({
                                 ) : (
                                     <m.div
                                         key="location-region"
-                                        className="relative z-10 w-full max-w-5xl h-full mx-auto flex flex-col px-4 sm:px-6"
+                                        className="relative z-10 w-full max-w-lg h-full mx-auto flex flex-col px-4 sm:px-6"
                                         initial={{ opacity: 0, x: 40 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         exit={{ opacity: 0, x: 40 }}
@@ -366,38 +366,27 @@ export function OnboardingFlowModal({
                                     >
                                         {/* Region Select Header */}
                                         <div className="shrink-0 pt-24 md:pt-28 pb-4 md:pb-6 text-center">
-                                            <h3 className="text-xl md:text-2xl font-serif font-light text-brand-charcoal tracking-[0.02em]">选择所在地区</h3>
-                                            <p className="text-[13px] text-brand-charcoal/60 mt-3 font-light">根据当地气候为您提供更精准的分析建议</p>
+                                            <h3 className="text-lg md:text-2xl font-serif font-light text-brand-charcoal tracking-[0.02em]">选择所在地区</h3>
+                                            <p className="text-sm md:text-base text-brand-charcoal/75 font-light leading-relaxed tracking-[0.06em] md:tracking-[0.12em] mt-3">结合当地气候情况，为您提供更精准的分析建议</p>
                                         </div>
 
                                         {/* Search with blur overlay */}
                                         <div className="shrink-0">
-                                            <div className="relative max-w-sm md:max-w-md mx-auto">
+                                            <div className="relative w-full">
                                                 <input
                                                     type="text"
                                                     value={regionSearch}
                                                     onChange={(e) => setRegionSearch(e.target.value)}
-                                                    placeholder="搜索省份 / 城市"
+                                                    placeholder="搜索省份"
                                                     className="w-full bg-white/60 border border-[#3D4430]/10 rounded-full py-2.5 pl-4 pr-10 text-[16px] text-brand-charcoal placeholder:text-brand-charcoal/30 focus:outline-none focus:border-[#8B7355]/40 transition-colors"
                                                 />
-                                                {/* Decorative watermark placeholder */}
-                                                {!regionSearch && (
-                                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                                                        <Image
-                                                            src="/images/watermark.png"
-                                                            alt=""
-                                                            width={20}
-                                                            height={20}
-                                                            className="w-5 h-5 object-contain opacity-90 drop-shadow-[0_1px_1px_rgba(61,68,48,0.4)]"
-                                                        />
-                                                    </div>
-                                                )}
                                                 {regionSearch && (
                                                     <button
                                                         onClick={() => setRegionSearch("")}
-                                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-brand-charcoal/40 hover:text-brand-charcoal px-1.5 py-0.5 rounded-full bg-[#3D4430]/5 hover:bg-[#3D4430]/10 transition-colors"
+                                                        aria-label="清除搜索"
+                                                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full text-brand-charcoal/40 hover:text-brand-charcoal bg-[#3D4430]/5 hover:bg-[#3D4430]/10 transition-colors"
                                                     >
-                                                        清除
+                                                        <X className="w-3.5 h-3.5" strokeWidth={2} />
                                                     </button>
                                                 )}
                                             </div>
@@ -409,41 +398,31 @@ export function OnboardingFlowModal({
                                         <div className="flex-1 overflow-y-auto px-2 md:px-4 pb-24 scrollbar-hide">
                                             {(() => {
                                                 const filtered = regionOptions
-                                                    .map((group) => ({
-                                                        ...group,
-                                                        regions: group.regions.filter((r) => r.includes(regionSearch.trim())),
-                                                    }))
-                                                    .filter((group) => group.regions.length > 0);
+                                                    .flatMap((group) => group.regions)
+                                                    .filter((r) => r.includes(regionSearch.trim()));
 
                                                 if (filtered.length === 0) {
                                                     return (
-                                                        <div className="text-center py-12 text-brand-charcoal/60 text-sm">
-                                                            未找到匹配的地区
+                                                        <div className="text-center py-12">
+                                                            <p className="text-sm text-brand-charcoal/60 font-light tracking-[0.06em]">未找到匹配的地区</p>
+                                                            <p className="text-[13px] text-brand-charcoal/48 mt-2 font-light tracking-[0.06em]">试试其他关键词，或点击下方跳过</p>
                                                         </div>
                                                     );
                                                 }
 
-                                                return filtered.map((group) => (
-                                                    <div key={group.group} className="mb-5 md:mb-6 last:mb-2">
-                                                        <div className="flex items-center gap-3 mb-3 md:mb-4">
-                                                            <span className="text-[11px] font-bold text-brand-charcoal/60 uppercase tracking-[0.2em]">
-                                                                {group.group}
-                                                            </span>
-                                                            <div className="h-[1px] flex-1 bg-[#8B7355]/10" />
-                                                        </div>
-                                                        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-10 gap-2 md:gap-3 lg:gap-4">
-                                                            {group.regions.map((region) => (
-                                                                <button
-                                                                    key={region}
-                                                                    onClick={() => handleRegionOption(region)}
-                                                                    className="py-2.5 md:py-3 px-1 rounded-xl text-[12px] md:text-[13px] text-brand-charcoal/70 bg-white/50 hover:bg-[#8B7355]/10 hover:text-brand-charcoal border border-[#3D4430]/5 hover:border-[#8B7355]/20 transition-all duration-300 font-medium active:scale-95"
-                                                                >
-                                                                    {region}
-                                                                </button>
-                                                            ))}
-                                                        </div>
+                                                return (
+                                                    <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 md:gap-3">
+                                                        {filtered.map((region) => (
+                                                            <button
+                                                                key={region}
+                                                                onClick={() => handleRegionOption(region)}
+                                                                className="py-2.5 md:py-3 px-1 rounded-xl text-[12px] md:text-[13px] tracking-[0.1em] text-brand-charcoal/70 bg-white/50 border border-brand-charcoal/10 hover:bg-brand-charcoal/[0.06] hover:text-brand-charcoal hover:border-brand-charcoal/30 transition-all duration-300 font-medium active:scale-95"
+                                                            >
+                                                                {region}
+                                                            </button>
+                                                        ))}
                                                     </div>
-                                                ));
+                                                );
                                             })()}
                                         </div>
 
