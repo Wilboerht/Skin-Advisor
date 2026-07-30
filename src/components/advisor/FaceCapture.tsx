@@ -359,6 +359,10 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     }
   }, [facingMode, isSwitchingCamera]);
 
+  // 始终指向最新的 initCamera，避免将 initCamera 放入 effect 依赖导致循环触发
+  const initCameraRef = useRef(initCamera);
+  initCameraRef.current = initCamera;
+
   /**
    * 加载 face-api.js 和模型
    * 支持外部预加载：如果父组件已经加载了模型，直接使用外部实例
@@ -1252,12 +1256,12 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     }
   }, [stream]);
 
-  // 初始化摄像头（异步初始化外部硬件，必须在 effect 中执行）
+  // 初始化摄像头：仅在 facingMode 变化时重新初始化（通过 ref 调用避免 initCamera 引用变化导致重复触发）
   useEffect(() => {
-    void initCamera();
-  }, [facingMode, initCamera]);
+    void initCameraRef.current();
+  }, [facingMode]);
 
-  // 统一的摄像头流清理：组件卸载或 stream 变化时停止旧流的所有轨道
+  // 组件卸载时清理摄像头流（stream 切换由 initCamera 内部自行处理旧流停止）
   useEffect(() => {
     const video = videoRef.current;
     return () => {
@@ -1280,7 +1284,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
         window.speechSynthesis.cancel();
       }
     };
-  }, [stream]);
+  }, []);
 
   // 面部检测循环：依赖项精简，避免 currentStep/facingMode 等变化导致 loop 重启
   useEffect(() => {
