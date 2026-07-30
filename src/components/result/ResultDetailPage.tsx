@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
-import { Sun, Moon, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
 import type { SkinTypeData } from "@/lib/result-content";
 
@@ -189,28 +189,25 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       {/* Daily Routine */}
       <section className="py-14 md:py-16 px-6 md:px-12 lg:px-20 bg-white">
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-lg md:text-2xl font-serif font-light text-brand-charcoal tracking-[0.02em] mb-6 md:mb-8">
+          <h2 className="text-lg md:text-2xl font-serif font-light text-brand-charcoal tracking-[0.02em] mb-8 md:mb-10">
             {data.m4?.title || "我们建议的护肤日常"}
           </h2>
-          <div className="grid md:grid-cols-2 gap-4 md:gap-6">
+          <div className="grid md:grid-cols-2 md:divide-x md:divide-brand-charcoal/[0.08]">
             {[
-              { label: "晨间", icon: Sun, content: data.m4?.morning },
-              { label: "夜间", icon: Moon, content: data.m4?.night },
+              { label: "晨", content: data.m4?.morning },
+              { label: "夜", content: data.m4?.night },
             ].map((item, i) => {
               if (!item.content) return null;
-              const Icon = item.icon;
               return (
                 <div
                   key={i}
-                  className="bg-[#FAF9F6] rounded-2xl border border-brand-charcoal/[0.08] p-6 md:p-8 transition-shadow duration-300 hover:shadow-[0_8px_24px_rgba(0,38,62,0.06)]"
+                  className={`relative ${i === 0 ? 'md:pr-10 lg:pr-14' : 'md:pl-10 lg:pl-14'} ${i === 0 ? 'mb-10 md:mb-0' : ''}`}
                 >
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="flex items-center justify-center w-8 h-8 md:w-9 md:h-9 rounded-full bg-white border border-brand-charcoal/[0.10]">
-                      <Icon className="w-4 h-4 md:w-[18px] md:h-[18px] text-brand-charcoal/70 stroke-[1.25]" />
-                    </div>
-                    <h3 className="text-base md:text-lg font-light text-brand-charcoal tracking-[0.02em]">{item.label}</h3>
-                  </div>
-                  <p className="text-[13px] md:text-sm text-brand-charcoal/60 font-light leading-[1.8] md:leading-normal tracking-[0.06em] md:tracking-[0.12em]">
+                  {/* Watermark time marker */}
+                  <span className="block text-5xl md:text-7xl font-serif font-light text-brand-charcoal/[0.06] leading-none mb-4 md:mb-6 select-none" aria-hidden="true">
+                    {item.label}
+                  </span>
+                  <p className="text-[13px] md:text-sm text-brand-charcoal/60 font-light leading-[1.9] md:leading-[1.8] tracking-[0.06em] md:tracking-[0.12em] max-w-md">
                     {item.content}
                   </p>
                 </div>
@@ -221,40 +218,42 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       </section>
 
       {/* CTA */}
-      <section className="relative py-14 md:py-16 px-6 md:px-12 lg:px-20 bg-white border-t border-brand-charcoal/[0.06]">
+      <section className="relative py-16 md:py-20 px-6 md:px-12 lg:px-20 bg-[#FAFAF7] border-t border-brand-charcoal/[0.06]">
         <div className="relative z-10 max-w-3xl mx-auto text-center">
-          <h2 className="text-lg md:text-2xl font-serif font-light text-brand-charcoal tracking-[0.02em] mb-6 md:mb-8">
+          <span aria-hidden="true" className="block w-10 h-px bg-brand-charcoal/20 mx-auto mb-6 md:mb-8" />
+          <h2 className="text-xl md:text-3xl font-serif font-light text-brand-charcoal tracking-[0.04em] leading-relaxed mb-8 md:mb-10">
             每一种肌肤，都值得被认真对待
           </h2>
-          <Link
-            href="/"
-            className="group w-full sm:w-auto inline-flex items-center justify-center gap-3 px-10 py-3.5 border border-brand-charcoal/60 text-brand-charcoal bg-transparent text-[13px] sm:text-[14px] tracking-[0.1em] font-light cursor-pointer transition-all duration-500 hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,38,62,0.12)] active:translate-y-0 active:shadow-none"
-          >
-            <span>前往测肤</span>
-            <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
-          </Link>
-          <Link
-            href="/gift"
-            className="flex items-center justify-center gap-2 mt-4 text-[13px] sm:text-[14px] text-brand-charcoal/60 tracking-[0.1em] font-light hover:text-brand-charcoal transition-colors duration-300"
-          >
-            <Image
-              src="/images/watermark.png"
-              alt=""
-              width={28}
-              height={28}
-              className="w-7 h-7 object-contain drop-shadow-[0_1px_1px_rgba(61,68,48,0.25)] animate-soft-blink"
-              unoptimized
-            />
-            参与「肌智派」活动，抽奖赢好礼
-          </Link>
+          <div className="flex justify-center">
+            <Link
+              href="/"
+              className="group w-full sm:w-auto inline-flex items-center justify-center gap-3 px-10 py-3.5 border border-brand-charcoal/60 text-brand-charcoal bg-transparent text-[13px] sm:text-[14px] tracking-[0.1em] font-light cursor-pointer transition-all duration-500 hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,38,62,0.12)] active:translate-y-0 active:shadow-none"
+            >
+              <span>前往测肤</span>
+              <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
+            </Link>
+          </div>
+          <div className="mt-6">
+            <Link
+              href="/gift"
+              className="group inline-flex items-center gap-1.5 text-[13px] text-brand-charcoal/50 tracking-[0.1em] font-light transition-colors duration-300 hover:text-brand-charcoal/80"
+            >
+              <span className="relative">
+                参与「肌智派」活动，抽奖赢好礼
+                <span className="absolute left-0 -bottom-0.5 w-0 h-px bg-brand-charcoal/40 transition-all duration-500 group-hover:w-full" />
+              </span>
+              <ArrowRight className="w-3 h-3 opacity-0 -translate-x-1 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0" />
+            </Link>
+          </div>
         </div>
       </section>
 
       {/* Footer */}
       <footer className="pt-6 md:pt-8 pb-[calc(1.5rem+env(safe-area-inset-bottom,16px))] px-6 text-center">
         <div className="flex flex-col items-center justify-center gap-2 text-[11px] font-light text-brand-charcoal/[0.48]">
-          <p suppressHydrationWarning className="tracking-[0.1em] md:tracking-[0.15em]">© {CURRENT_YEAR} NIHPLOD. All Rights Reserved.</p>
-          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 tracking-[0.12em]">
+          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 tracking-[0.1em] md:tracking-[0.12em]">
+            <p suppressHydrationWarning>© {CURRENT_YEAR} NIHPLOD. All Rights Reserved.</p>
+            <span className="text-brand-charcoal/20">·</span>
             <Link href="https://nihplod.cn/privacy" className="transition-colors duration-300 hover:text-brand-charcoal/70">
               隐私政策
             </Link>
