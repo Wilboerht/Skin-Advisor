@@ -19,7 +19,7 @@ export function GenderSelection({ onSelect, selectedGender }: GenderSelectionPro
             <m.h2
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mb-8 text-center font-serif font-light text-2xl md:text-3xl text-brand-charcoal tracking-[0.02em]"
+                className="mb-8 text-center font-serif font-light text-lg md:text-2xl text-brand-charcoal tracking-[0.02em]"
             >
                 开始之前，请选择您的性别
             </m.h2>
@@ -32,14 +32,14 @@ export function GenderSelection({ onSelect, selectedGender }: GenderSelectionPro
                     role="radio"
                     aria-checked={selectedGender === "female"}
                     aria-label="女性"
-                    className="group flex flex-row items-center gap-4 sm:flex-col sm:items-center sm:gap-5 rounded-xl border border-[#E8E2D9] bg-white px-5 sm:px-12 py-5 sm:py-12 text-left sm:text-center transition-[border-color,background-color,box-shadow] duration-300 hover:border-[#C9A86C] hover:shadow-sm touch-manipulation"
+                    className="group flex flex-row items-center gap-4 sm:flex-col sm:items-center sm:gap-5 rounded-xl border border-brand-charcoal/12 bg-white px-5 sm:px-12 py-5 sm:py-12 text-left sm:text-center transition-all duration-300 hover:border-brand-charcoal/35 hover:shadow-[0_8px_24px_rgba(0,38,62,0.08)] touch-manipulation"
                 >
-                    <div className="flex h-12 w-12 sm:h-28 sm:w-28 shrink-0 items-center justify-center rounded-full bg-[#A0784C]/[0.08] transition-colors duration-300 group-hover:bg-[#A0784C]/[0.12]">
-                        <Venus className="h-6 w-6 sm:h-14 sm:w-14 text-[#A0784C]" strokeWidth={1.5} />
+                    <div className="flex h-12 w-12 sm:h-28 sm:w-28 shrink-0 items-center justify-center rounded-full bg-brand-charcoal/[0.06] transition-colors duration-300 group-hover:bg-brand-charcoal/[0.10]">
+                        <Venus className="h-6 w-6 sm:h-14 sm:w-14 text-brand-charcoal/70" strokeWidth={1.5} />
                     </div>
 
                     <div>
-                        <h3 className="text-lg sm:text-2xl font-serif font-medium text-brand-charcoal">女性</h3>
+                        <h3 className="text-lg sm:text-2xl font-serif font-light text-brand-charcoal">女性</h3>
                     </div>
                 </m.button>
 
@@ -50,14 +50,14 @@ export function GenderSelection({ onSelect, selectedGender }: GenderSelectionPro
                     role="radio"
                     aria-checked={selectedGender === "male"}
                     aria-label="男性"
-                    className="group flex flex-row items-center gap-4 sm:flex-col sm:items-center sm:gap-5 rounded-xl border border-[#E8E2D9] bg-white px-5 sm:px-12 py-5 sm:py-12 text-left sm:text-center transition-[border-color,background-color,box-shadow] duration-300 hover:border-[#1B3A5C]/40 hover:shadow-sm touch-manipulation"
+                    className="group flex flex-row items-center gap-4 sm:flex-col sm:items-center sm:gap-5 rounded-xl border border-brand-charcoal/12 bg-white px-5 sm:px-12 py-5 sm:py-12 text-left sm:text-center transition-all duration-300 hover:border-brand-charcoal/35 hover:shadow-[0_8px_24px_rgba(0,38,62,0.08)] touch-manipulation"
                 >
-                    <div className="flex h-12 w-12 sm:h-28 sm:w-28 shrink-0 items-center justify-center rounded-full bg-[#1B3A5C]/[0.08] transition-colors duration-300 group-hover:bg-[#1B3A5C]/[0.12]">
-                        <Mars className="h-6 w-6 sm:h-14 sm:w-14 text-[#1B3A5C]" strokeWidth={1.5} />
+                    <div className="flex h-12 w-12 sm:h-28 sm:w-28 shrink-0 items-center justify-center rounded-full bg-brand-charcoal/[0.06] transition-colors duration-300 group-hover:bg-brand-charcoal/[0.10]">
+                        <Mars className="h-6 w-6 sm:h-14 sm:w-14 text-brand-charcoal/70" strokeWidth={1.5} />
                     </div>
 
                     <div>
-                        <h3 className="text-lg sm:text-2xl font-serif font-medium text-brand-charcoal">男性</h3>
+                        <h3 className="text-lg sm:text-2xl font-serif font-light text-brand-charcoal">男性</h3>
                     </div>
                 </m.button>
             </div>
