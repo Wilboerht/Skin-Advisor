@@ -58,9 +58,9 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       {/* Advantages */}
       <section className="relative overflow-hidden py-14 md:py-16 px-6 md:px-12 lg:px-20 bg-white">
         <Threads
-          className="hidden md:block absolute top-[40%] left-0 right-0 -translate-y-1/2 h-[95%] z-0 pointer-events-none"
-          color={[0.941, 0.929, 0.882]}
-          amplitude={1.5}
+          className="hidden md:block absolute top-[40%] left-0 right-0 -translate-y-1/2 h-[95%] z-0 pointer-events-none opacity-30"
+          color={[0.92, 0.93, 0.94]}
+          amplitude={0.8}
           distance={0}
           enableMouseInteraction={false}
         />
@@ -90,82 +90,91 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       {/* Skincare Formula */}
       <section className="py-14 md:py-16 px-6 md:px-12 lg:px-20 bg-[#F8F7F3]">
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-lg md:text-2xl font-serif font-light text-brand-charcoal tracking-[0.02em] mb-6 md:mb-8">
+          <h2 className="text-lg md:text-2xl font-serif font-light text-brand-charcoal tracking-[0.02em] mb-4 md:mb-5">
             {data.m7?.title || `${data.typeName}的精准护肤公式`}
           </h2>
           {data.m7?.formulaCore && (
-            <p className="text-sm md:text-base text-brand-charcoal/60 font-light leading-[1.8] md:leading-normal tracking-[0.06em] md:tracking-[0.12em] mb-6 md:mb-10">
-              {data.m7.formulaCore}
-            </p>
-          )}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            {(data.m7?.suggestions ?? []).map((sug, i) => (
-              <div key={i} className="flex flex-row md:flex-col items-start md:bg-white md:rounded-2xl md:shadow-sm md:border md:border-brand-charcoal/[0.08] p-0 md:p-6 gap-3 md:gap-0">
-                <span className="flex items-center justify-center w-5 h-5 md:w-8 md:h-8 rounded-full bg-transparent border border-brand-charcoal/25 text-brand-charcoal text-[10px] md:text-sm font-light shrink-0 md:mb-4">
-                  {i + 1}
+            <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-8 md:mb-10">
+              {data.m7.formulaCore.split(/\s*[·・]\s*/).filter(Boolean).map((keyword, i) => (
+                <span key={i} className="text-[11px] md:text-xs tracking-[0.12em] text-brand-charcoal/50 border border-brand-charcoal/12 rounded-full px-3 py-1 font-light">
+                  {keyword}
                 </span>
-                <div className="flex-1">
-                  <h3 className="text-base font-light text-brand-charcoal mb-1 md:mb-3">{sug.title}</h3>
-                  <p className="text-brand-charcoal/60 font-light leading-[1.8] md:leading-normal tracking-[0.06em] md:tracking-[0.12em] text-[13px] md:text-sm">{sug.content}</p>
+              ))}
+            </div>
+          )}
+
+          {/* Suggestions — editorial 2-col */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 md:gap-x-12">
+            {(data.m7?.suggestions ?? []).map((sug, i) => (
+              <div
+                key={i}
+                className="group py-5 md:py-6 border-b border-brand-charcoal/[0.06] last:border-b-0 md:[&:nth-last-child(2)]:border-b-0"
+              >
+                <div className="flex items-baseline gap-3 md:gap-4 mb-2 md:mb-3">
+                  <span className="text-xl md:text-2xl font-serif font-light text-brand-charcoal/15 leading-none transition-colors duration-300 group-hover:text-brand-charcoal/30 select-none">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <h3 className="text-base md:text-lg font-serif font-light text-brand-charcoal tracking-[0.02em]">{sug.title}</h3>
                 </div>
+                <p className="pl-8 md:pl-10 text-brand-charcoal/60 font-light leading-[1.8] md:leading-normal tracking-[0.06em] md:tracking-[0.12em] text-[13px] md:text-sm">{sug.content}</p>
               </div>
             ))}
           </div>
 
           {data.m7?.ingredientTable?.length > 0 && (
             <>
-              {/* 桌面端：表格 — CSS hidden/md:block 避免 CLS */}
-              <div className="hidden md:block overflow-x-auto mt-8 md:mt-12">
-              <table className="w-full text-sm border-collapse">
-                <thead>
-                  <tr className="border-b border-brand-charcoal/20">
-                    {tableColumns.map((h) => (
-                      <th key={h} className="text-left py-3 px-4 font-light text-brand-charcoal tracking-[0.08em] text-sm">
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.m7.ingredientTable.map((row, i) => (
-                    <tr key={i} className="border-b border-brand-charcoal/[0.08] last:border-0 hover:bg-white/60">
+              {/* 桌面端：表格 */}
+              <div className="hidden md:block overflow-hidden rounded-xl border border-brand-charcoal/[0.08] bg-white mt-10 md:mt-12">
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr className="bg-brand-charcoal/[0.03]">
                       {tableColumns.map((h) => (
-                        <td key={h} className="py-4 px-4 text-brand-charcoal/75 font-light">
-                          {row[h]}
-                        </td>
+                        <th key={h} className="text-left py-3.5 px-5 font-light text-brand-charcoal/70 tracking-[0.08em] text-xs">
+                          {h}
+                        </th>
                       ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {data.m7.ingredientTable.map((row, i) => (
+                      <tr key={i} className="border-t border-brand-charcoal/[0.06] hover:bg-brand-charcoal/[0.02] transition-colors duration-200">
+                        {tableColumns.map((h) => (
+                          <td key={h} className="py-4 px-5 text-brand-charcoal/75 font-light text-[13px]">
+                            {row[h]}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
-            {/* 手机端：卡片列表 */}
-            <div className="md:hidden mt-8 space-y-6">
-              {data.m7.ingredientTable.map((row, i) => (
-                <div key={i} className="border-l-2 border-brand-charcoal pl-3">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="inline-block px-2 py-0.5 text-[11px] tracking-[0.1em] text-brand-charcoal bg-brand-charcoal/[0.06] rounded-full">
-                      {row["护肤层级"]}
-                    </span>
+              {/* 手机端：卡片列表 */}
+              <div className="md:hidden mt-8 space-y-5">
+                {data.m7.ingredientTable.map((row, i) => (
+                  <div key={i} className="border-l-2 border-brand-charcoal/20 pl-4">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="inline-block px-2 py-0.5 text-[11px] tracking-[0.1em] text-brand-charcoal/60 bg-brand-charcoal/[0.04] rounded-full">
+                        {row["护肤层级"]}
+                      </span>
+                    </div>
+                    <p className="text-[13px] text-brand-charcoal/90 font-light mb-1">
+                      {row["推荐产品"]}
+                    </p>
+                    <div className="flex items-center gap-2 text-[11px] text-brand-charcoal/50 tracking-[0.06em]">
+                      <span>{row["适用场景"]}</span>
+                      <span className="text-brand-charcoal/20">·</span>
+                      <span>{row["使用频率"]}</span>
+                    </div>
                   </div>
-                  <p className="text-[13px] text-brand-charcoal font-light">
-                    {row["推荐产品"]}
-                  </p>
-                  <div className="flex items-center gap-2 text-xs text-brand-charcoal/60">
-                    <span>{row["适用场景"]}</span>
-                    <span className="text-brand-charcoal/20">·</span>
-                    <span>{row["使用频率"]}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
             </>
           )}
 
           {/* Only One Set */}
           {data.m7?.onlyOneSet && (
-            <div className="mt-8 md:mt-12 border-l-[3px] border-brand-charcoal/20 pl-5 md:pl-8 group transition-colors duration-300 hover:border-brand-charcoal/40">
+            <div className="mt-10 md:mt-12 border-l-[3px] border-brand-charcoal/20 pl-5 md:pl-8 group transition-colors duration-300 hover:border-brand-charcoal/40">
               <span className="inline-block text-[11px] tracking-[0.15em] text-brand-charcoal/60 bg-brand-charcoal/[0.05] rounded-full px-3 py-1 mb-3">
                 极简之选
               </span>
