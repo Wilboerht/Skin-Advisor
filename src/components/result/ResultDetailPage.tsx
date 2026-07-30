@@ -189,7 +189,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       {/* Daily Routine */}
       <section className="py-14 md:py-16 px-6 md:px-12 lg:px-20 bg-white">
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-lg md:text-2xl font-serif font-light text-brand-charcoal tracking-[0.02em] mb-8 md:mb-10">
+          <h2 className="text-lg md:text-2xl font-serif font-light text-brand-charcoal tracking-[0.02em] mb-6 md:mb-8">
             {data.m4?.title || "我们建议的护肤日常"}
           </h2>
           <div className="grid md:grid-cols-2 md:divide-x md:divide-brand-charcoal/[0.08]">
