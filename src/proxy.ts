@@ -40,6 +40,9 @@ const ssoMiddleware = createSsoMiddleware({
       "/api/advisor/check-config", // AI 配置检查（游客可用）
       "/api/advisor/questions",  // 问卷题目（游客可用）
       "/api/advisor/test-limit", // 测试次数检查（游客可用）
+      "/api/advisor/face-analyze", // AI 视觉分析（游客可用）
+      "/api/advisor/analyze",    // AI 综合分析（游客可用）
+      "/api/advisor/session/status", // 游客分析结果轮询
       "/api/oss/sign",           // 游客上传签名（扫脸后保存图片）
       "/api/local-upload",       // 游客本地上传端点
       "/api/admin/:path*",
