@@ -23,10 +23,10 @@ export const QUESTIONNAIRE_ONLY_QUESTIONS: Question[] = [
         question: "你的护肤哲学更接近哪种？",
         type: "single",
         options: [
-            { value: "minimal", label: "🧘 Less is More", description: "精简高效，少即是多" },
-            { value: "explorer", label: "🔬 成分党", description: "喜欢研究成分，什么都想试" },
-            { value: "ritual", label: "✨ 仪式感", description: "护肤是一种享受和自我宠爱" },
-            { value: "lazy", label: "⚡ 不麻烦就行", description: "能省一步是一步" },
+            { value: "minimal", label: "Less is More", description: "精简高效，少即是多" },
+            { value: "explorer", label: "成分党", description: "喜欢研究成分，什么都想试" },
+            { value: "ritual", label: "仪式感", description: "护肤是一种享受和自我宠爱" },
+            { value: "lazy", label: "不麻烦就行", description: "能省一步是一步" },
         ],
     },
     {
@@ -47,10 +47,10 @@ export const QUESTIONNAIRE_ONLY_QUESTIONS: Question[] = [
         question: "驱动你认真护肤的最大动力是什么？",
         type: "single",
         options: [
-            { value: "antiAging", label: "⏳ 延缓衰老", description: "想比同龄人看起来年轻" },
-            { value: "confidence", label: "💪 增强自信", description: "素颜也能大方出门" },
-            { value: "social", label: "💼 社交形象", description: "工作/社交需要" },
-            { value: "selfCare", label: "🌸 自我宠爱", description: "纯粹享受照顾自己的过程" },
+            { value: "antiAging", label: "延缓衰老", description: "想比同龄人看起来年轻" },
+            { value: "confidence", label: "增强自信", description: "素颜也能大方出门" },
+            { value: "social", label: "社交形象", description: "工作/社交需要" },
+            { value: "selfCare", label: "自我宠爱", description: "纯粹享受照顾自己的过程" },
         ],
     },
 ];
