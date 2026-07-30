@@ -527,7 +527,7 @@ export default function Home() {
                             </>
                           ) : (
                             <>
-                              <span>了解不同肤质类型（仅问卷）</span>
+                              <span>了解你的肤质类型（仅问卷）</span>
                             </>
                           )}
                         </button>
