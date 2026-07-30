@@ -23,6 +23,7 @@ const ssoMiddleware = createSsoMiddleware({
       "/reset-password",         // 密码重置弹窗页
       "/questions",              // 问卷页（允许游客测试）
       "/face-scan",              // 面部扫描页（允许游客）
+      "/result",                 // 结果页（允许游客查看分析结果）
       "/skin-types",             // 肤质类型列表
       "/skin-types/:path*",      // 具体肤质类型页
       "/services",               // 顾问服务
@@ -40,9 +41,9 @@ const ssoMiddleware = createSsoMiddleware({
       "/api/advisor/check-config", // AI 配置检查（游客可用）
       "/api/advisor/questions",  // 问卷题目（游客可用）
       "/api/advisor/test-limit", // 测试次数检查（游客可用）
-      "/api/advisor/face-analyze", // AI 视觉分析（游客可用）
-      "/api/advisor/analyze",    // AI 综合分析（游客可用）
-      "/api/advisor/session/status", // 游客分析结果轮询
+      "/api/advisor/face-analyze", // 面部分析（游客可用，受 Origin/Referer 保护）
+      "/api/advisor/analyze",    // 肌肤分析（游客可用，受 Origin/Referer 保护）
+      "/api/advisor/session/status", // 分析状态轮询（游客可用）
       "/api/oss/sign",           // 游客上传签名（扫脸后保存图片）
       "/api/local-upload",       // 游客本地上传端点
       "/api/admin/:path*",
@@ -166,6 +167,9 @@ export async function proxy(request: NextRequest) {
         // 允许游客使用的 AI 分析接口（仍受 AI_ENDPOINTS 的 Origin/Referer/Content-Type 保护）
         "/api/advisor/face-analyze",
         "/api/advisor/analyze",
+        // 游客上传接口（无 JWT，无法通过 CSRF 校验）
+        "/api/oss/sign",
+        "/api/local-upload",
     ];
     const isCApi = pathname.startsWith("/api/") && !isAdminApi && !csrfExemptPaths.some((p) => pathname === p);
     if (isCApi) {
