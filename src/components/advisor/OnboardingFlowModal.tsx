@@ -206,7 +206,7 @@ export function OnboardingFlowModal({
                     <header className="fixed top-0 left-0 right-0 z-[100003] flex items-center justify-between px-6 md:px-12 lg:px-20 py-6 md:py-7 bg-[#FDFBF7]/95 backdrop-blur-sm border-b border-[#1A1A1A]/5">
                         <button
                             onClick={onClose}
-                            className="group flex items-center gap-2 text-[#1A1A1A]/80 hover:text-[#1A1A1A] transition-colors cursor-pointer bg-transparent border-none"
+                            className="group flex items-center gap-2 text-brand-charcoal/80 hover:text-brand-charcoal transition-colors cursor-pointer bg-transparent border-none"
                             aria-label="关闭"
                         >
                             <Image
@@ -219,11 +219,11 @@ export function OnboardingFlowModal({
                         </button>
                         <button
                             onClick={onClose}
-                            className="flex items-center gap-2 px-4 py-2 rounded-full text-[#1A1A1A]/60 hover:text-[#1A1A1A] hover:bg-[#1A1A1A]/5 transition-all cursor-pointer bg-transparent border-none"
+                            className="flex items-center gap-2 px-4 py-2 rounded-full text-brand-charcoal/60 hover:text-brand-charcoal hover:bg-[#1A1A1A]/5 transition-all cursor-pointer bg-transparent border-none"
                             aria-label="退出"
                         >
                             <LogOut className="w-4 h-4" strokeWidth={1.5} />
-                            <span className="text-sm tracking-wide">退出</span>
+                            <span className="text-sm tracking-[0.1em]">退出</span>
                         </button>
                     </header>
 
@@ -258,11 +258,11 @@ export function OnboardingFlowModal({
                                         />
                                     </div>
 
-                                    <h3 className="mb-5 text-2xl md:text-3xl font-serif text-[#1A1A1A]">
+                                    <h3 className="mb-5 text-2xl md:text-3xl font-serif font-light text-brand-charcoal tracking-[0.02em]">
                                         您好，请问怎么称呼？
                                     </h3>
 
-                                    <p className="mb-7 text-sm md:text-base text-[#5E5E5E] leading-relaxed font-light">
+                                    <p className="mb-7 text-sm md:text-base text-brand-charcoal/75 font-light leading-relaxed tracking-[0.06em] md:tracking-[0.12em]">
                                         输入昵称，让报告更有温度
                                     </p>
 
@@ -272,7 +272,7 @@ export function OnboardingFlowModal({
                                         onChange={(e) => setNickname(e.target.value)}
                                         placeholder="输入您的昵称"
                                         maxLength={10}
-                                        className="w-full bg-transparent border-0 border-b border-[#3D4430]/20 rounded-none py-4 px-0 mb-7 text-center text-[#1A1A1A] focus:outline-none focus:border-[#3D4430]/40 transition-colors placeholder:text-[#3D4430]/25 text-[16px] tracking-wide"
+                                        className="w-full bg-transparent border-0 border-b border-[#3D4430]/20 rounded-none py-4 px-0 mb-7 text-center text-brand-charcoal focus:outline-none focus:border-[#3D4430]/40 transition-colors placeholder:text-brand-charcoal/30 text-[16px] tracking-wide"
                                         onKeyDown={(e) => {
                                             if (e.key === "Enter") handleNicknameNext();
                                         }}
@@ -282,7 +282,7 @@ export function OnboardingFlowModal({
                                     <button
                                         onClick={handleNicknameNext}
                                         disabled={!nickname.trim()}
-                                        className="group relative inline-flex items-center justify-center gap-3 px-12 py-4 sm:px-16 border border-[#8B7355] text-[#8B7355] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500 hover:bg-[#8B7355] hover:text-white"
+                                        className="group relative inline-flex items-center justify-center gap-3 px-12 py-4 sm:px-16 border border-[#8B7355] text-[#8B7355] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.1em] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500 hover:bg-[#8B7355] hover:text-white"
                                     >
                                         <span>下一步</span>
                                         <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-2" />
@@ -318,11 +318,11 @@ export function OnboardingFlowModal({
                                             <MapPin className="h-10 w-10 md:h-12 md:w-12 opacity-90" strokeWidth={1.2} />
                                         </div>
 
-                                        <h3 className="mb-5 text-2xl md:text-3xl font-serif text-[#1A1A1A]">
+                                        <h3 className="mb-5 text-2xl md:text-3xl font-serif font-light text-brand-charcoal tracking-[0.02em]">
                                             开启定位服务
                                         </h3>
 
-                                        <p className="mb-7 text-sm md:text-base text-[#5E5E5E] leading-relaxed font-light max-w-sm mx-auto">
+                                        <p className="mb-7 text-sm md:text-base text-brand-charcoal/75 font-light leading-relaxed tracking-[0.06em] md:tracking-[0.12em] max-w-sm mx-auto">
                                             为获得更精准的分析数据，我们需要您授权当前的地理位置信息（仅用于环境数据分析），<br className="sm:hidden" />
                                             在结合温度、气候、空气湿度、紫外线等多维数据后<br className="sm:hidden" />
                                             生成更个性化的定制化报告。
@@ -332,7 +332,7 @@ export function OnboardingFlowModal({
                                             <button
                                                 onClick={handleLocationAcceptWrapper}
                                                 disabled={isLocating}
-                                                className="group relative inline-flex items-center justify-center gap-3 px-12 py-4 sm:px-16 border border-[#8B7355] text-[#8B7355] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium disabled:opacity-40 disabled:cursor-wait cursor-pointer transition-all duration-500 hover:bg-[#8B7355] hover:text-white"
+                                                className="group relative inline-flex items-center justify-center gap-3 px-12 py-4 sm:px-16 border border-[#8B7355] text-[#8B7355] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.1em] font-medium disabled:opacity-40 disabled:cursor-wait cursor-pointer transition-all duration-500 hover:bg-[#8B7355] hover:text-white"
                                             >
                                                 {isLocating ? (
                                                     <>
@@ -350,7 +350,7 @@ export function OnboardingFlowModal({
                                             <div>
                                                 <button
                                                     onClick={handleDecline}
-                                                    className="py-2 text-[13px] tracking-widest text-[#1B3A5C]/45 hover:text-[#1B3A5C] transition-colors bg-transparent border-none cursor-pointer"
+                                                    className="py-2 text-[13px] tracking-[0.1em] text-brand-charcoal/60 hover:text-brand-charcoal transition-colors bg-transparent border-none cursor-pointer"
                                                 >
                                                     不提供我的位置信息
                                                 </button>
@@ -368,8 +368,8 @@ export function OnboardingFlowModal({
                                     >
                                         {/* Region Select Header */}
                                         <div className="shrink-0 pt-24 md:pt-28 pb-4 md:pb-6 text-center">
-                                            <h3 className="text-xl md:text-2xl font-serif text-[#1A1A1A] tracking-wider">选择所在地区</h3>
-                                            <p className="text-[13px] text-[#5E5E5E] mt-3 font-light opacity-80">根据当地气候为您提供更精准的分析建议</p>
+                                            <h3 className="text-xl md:text-2xl font-serif font-light text-brand-charcoal tracking-[0.02em]">选择所在地区</h3>
+                                            <p className="text-[13px] text-brand-charcoal/60 mt-3 font-light">根据当地气候为您提供更精准的分析建议</p>
                                         </div>
 
                                         {/* Search with blur overlay */}
@@ -380,7 +380,7 @@ export function OnboardingFlowModal({
                                                     value={regionSearch}
                                                     onChange={(e) => setRegionSearch(e.target.value)}
                                                     placeholder="搜索省份 / 城市"
-                                                    className="w-full bg-white/60 border border-[#3D4430]/10 rounded-full py-2.5 pl-4 pr-10 text-[16px] text-[#1A1A1A] placeholder:text-[#3D4430]/30 focus:outline-none focus:border-[#8B7355]/40 transition-colors"
+                                                    className="w-full bg-white/60 border border-[#3D4430]/10 rounded-full py-2.5 pl-4 pr-10 text-[16px] text-brand-charcoal placeholder:text-brand-charcoal/30 focus:outline-none focus:border-[#8B7355]/40 transition-colors"
                                                 />
                                                 {/* Decorative watermark placeholder */}
                                                 {!regionSearch && (
@@ -397,7 +397,7 @@ export function OnboardingFlowModal({
                                                 {regionSearch && (
                                                     <button
                                                         onClick={() => setRegionSearch("")}
-                                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-[#3D4430]/40 hover:text-[#3D4430] px-1.5 py-0.5 rounded-full bg-[#3D4430]/5 hover:bg-[#3D4430]/10 transition-colors"
+                                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-brand-charcoal/40 hover:text-brand-charcoal px-1.5 py-0.5 rounded-full bg-[#3D4430]/5 hover:bg-[#3D4430]/10 transition-colors"
                                                     >
                                                         清除
                                                     </button>
@@ -419,7 +419,7 @@ export function OnboardingFlowModal({
 
                                                 if (filtered.length === 0) {
                                                     return (
-                                                        <div className="text-center py-12 text-[#5E5E5E]/60 text-sm">
+                                                        <div className="text-center py-12 text-brand-charcoal/60 text-sm">
                                                             未找到匹配的地区
                                                         </div>
                                                     );
@@ -428,7 +428,7 @@ export function OnboardingFlowModal({
                                                 return filtered.map((group) => (
                                                     <div key={group.group} className="mb-5 md:mb-6 last:mb-2">
                                                         <div className="flex items-center gap-3 mb-3 md:mb-4">
-                                                            <span className="text-[11px] font-bold text-[#8B7355]/70 uppercase tracking-[0.2em]">
+                                                            <span className="text-[11px] font-bold text-brand-charcoal/60 uppercase tracking-[0.2em]">
                                                                 {group.group}
                                                             </span>
                                                             <div className="h-[1px] flex-1 bg-[#8B7355]/10" />
@@ -438,7 +438,7 @@ export function OnboardingFlowModal({
                                                                 <button
                                                                     key={region}
                                                                     onClick={() => handleRegionOption(region)}
-                                                                    className="py-2.5 md:py-3 px-1 rounded-xl text-[12px] md:text-[13px] text-[#3D4430] bg-white/50 hover:bg-[#8B7355]/10 hover:text-[#8B7355] border border-[#3D4430]/5 hover:border-[#8B7355]/20 transition-all duration-300 font-medium active:scale-95"
+                                                                    className="py-2.5 md:py-3 px-1 rounded-xl text-[12px] md:text-[13px] text-brand-charcoal/70 bg-white/50 hover:bg-[#8B7355]/10 hover:text-brand-charcoal border border-[#3D4430]/5 hover:border-[#8B7355]/20 transition-all duration-300 font-medium active:scale-95"
                                                                 >
                                                                     {region}
                                                                 </button>
@@ -453,7 +453,7 @@ export function OnboardingFlowModal({
                                         <div className="absolute bottom-0 left-0 right-0 pt-8 pb-5 md:pb-6 text-center pointer-events-none bg-gradient-to-t from-[#FDFBF7] via-[#FDFBF7]/95 to-transparent">
                                             <button
                                                 onClick={handleSkipRegion}
-                                                className="pointer-events-auto text-[13px] tracking-[0.15em] text-[#1B3A5C]/55 hover:text-[#1B3A5C] transition-colors bg-transparent border-none cursor-pointer"
+                                                className="pointer-events-auto text-[13px] tracking-[0.1em] text-brand-charcoal/60 hover:text-brand-charcoal transition-colors bg-transparent border-none cursor-pointer"
                                             >
                                                 暂不提供
                                             </button>
@@ -486,7 +486,7 @@ export function OnboardingFlowModal({
                                         <ShieldCheck className="h-10 w-10 md:h-12 md:w-12 opacity-90" strokeWidth={1.2} />
                                     </div>
 
-                                    <h3 className="mb-5 text-2xl md:text-3xl font-serif text-[#1A1A1A]">
+                                    <h3 className="mb-5 text-2xl md:text-3xl font-serif font-light text-brand-charcoal tracking-[0.02em]">
                                         服务确认与授权
                                     </h3>
 
@@ -545,7 +545,7 @@ export function OnboardingFlowModal({
                                                 </m.div>
                                             </label>
                                             <span
-                                                className="text-sm text-[#5E5E5E] leading-relaxed font-normal select-none"
+                                                className="text-sm text-brand-charcoal/60 leading-relaxed font-normal select-none"
                                                 onClick={(e) => {
                                                     if ((e.target as HTMLElement).tagName !== "A") {
                                                         e.stopPropagation();
@@ -558,7 +558,7 @@ export function OnboardingFlowModal({
                                                     href="https://nihplod.cn/privacy"
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="text-[#3D4430] font-medium underline underline-offset-4 mx-1"
+                                                    className="text-brand-charcoal font-medium underline underline-offset-4 mx-1"
                                                     onClick={(e) => e.stopPropagation()}
                                                 >
                                                     隐私政策
@@ -568,7 +568,7 @@ export function OnboardingFlowModal({
                                                     href="https://nihplod.cn/terms"
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="text-[#3D4430] font-medium underline underline-offset-4 mx-1"
+                                                    className="text-brand-charcoal font-medium underline underline-offset-4 mx-1"
                                                     onClick={(e) => e.stopPropagation()}
                                                 >
                                                     服务条款
@@ -581,7 +581,7 @@ export function OnboardingFlowModal({
                                         <button
                                             onClick={handleLegalSubmit}
                                             disabled={!isAgreed || isFinishing}
-                                            className="group relative inline-flex items-center justify-center gap-3 px-12 py-4 sm:px-16 border border-[#8B7355] text-[#8B7355] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500 hover:bg-[#8B7355] hover:text-white"
+                                            className="group relative inline-flex items-center justify-center gap-3 px-12 py-4 sm:px-16 border border-[#8B7355] text-[#8B7355] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.1em] font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all duration-500 hover:bg-[#8B7355] hover:text-white"
                                         >
                                             {isFinishing ? (
                                                 <>
@@ -598,7 +598,7 @@ export function OnboardingFlowModal({
 
                                         <button
                                             onClick={onClose}
-                                            className="py-2 text-[13px] tracking-widest text-[#1B3A5C]/55 hover:text-[#1B3A5C] transition-colors bg-transparent border-none cursor-pointer"
+                                            className="py-2 text-[13px] tracking-[0.1em] text-brand-charcoal/60 hover:text-brand-charcoal transition-colors bg-transparent border-none cursor-pointer"
                                         >
                                             暂不测试
                                         </button>

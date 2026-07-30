@@ -62,7 +62,7 @@ export default function ResultIndexPage() {
           </Link>
           <Link
             href="/gift"
-            className="flex items-center justify-center gap-1.5 mt-5 text-[13px] sm:text-[14px] text-brand-charcoal/60 tracking-[0.1em] font-medium opacity-0 animate-fade-in-up hover:text-brand-charcoal transition-colors duration-300"
+            className="flex items-center justify-center gap-1.5 mt-5 text-[13px] sm:text-[14px] text-brand-charcoal/75 tracking-[0.1em] font-medium opacity-0 animate-fade-in-up hover:text-brand-charcoal transition-colors duration-300"
             style={{ animationDelay: "0.3s", animationFillMode: "forwards" }}
           >
             参与「肌智派」活动，抽奖赢好礼
