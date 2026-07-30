@@ -99,6 +99,12 @@ export default function QuestionsPage() {
     const [limitMessage, setLimitMessage] = useState("");
 
     useEffect(() => {
+        // 纯问卷模式走客户端规则映射，不调用 AI 分析接口，无需检查 AI 配置/排队状态
+        if (safeStorage.get(SCAN_MODE_KEY) === "questionnaire") {
+            setAiConfigured(true);
+            return;
+        }
+
         fetch("/api/advisor/check-config")
             .then((r) => r.json())
             .then((data) => {
