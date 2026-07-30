@@ -157,7 +157,7 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
                   ))}
                 </div>
               </div>
-              <div className="flex flex-col items-center gap-3 w-full max-w-md mx-auto">
+              <div className="flex flex-col items-center gap-3 w-full max-w-xs mx-auto">
                 <Link
                   href="/"
                   className="w-full group relative inline-flex items-center justify-center gap-3 px-8 py-4 border border-brand-charcoal/60 text-brand-charcoal bg-transparent text-[13px] sm:text-[14px] tracking-[0.1em] font-medium cursor-pointer transition-all duration-500 hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,38,62,0.12)] active:translate-y-0 active:shadow-none"
@@ -281,7 +281,7 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
                   ))}
                 </div>
               </div>
-              <div className="flex flex-col items-center gap-3 w-full max-w-md mx-auto">
+              <div className="flex flex-col items-center gap-3 w-full max-w-xs mx-auto">
                 <Link
                   href="/"
                   className="w-full group relative inline-flex items-center justify-center gap-3 px-8 py-4 border border-brand-charcoal/60 text-brand-charcoal bg-transparent text-[13px] sm:text-[14px] tracking-[0.1em] font-medium cursor-pointer transition-all duration-500 hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,38,62,0.12)] active:translate-y-0 active:shadow-none"

@@ -842,30 +842,6 @@ export default function QuestionsPage() {
                 </button>
             </div>
 
-            {/* 问题列表加载失败提示 */}
-            {questionsError && (
-                <div className="shrink-0 px-4 pb-2">
-                    <div className="max-w-4xl mx-auto rounded-lg bg-amber-50 border border-amber-200 px-4 py-2 text-xs text-amber-800 flex items-center justify-between">
-                        <span>{questionsError}</span>
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={fetchQuestions}
-                                className="ml-2 text-amber-700 hover:text-amber-900 font-medium underline underline-offset-2"
-                                aria-label="重新加载问题"
-                            >
-                                重试
-                            </button>
-                            <button
-                                onClick={() => setQuestionsError(null)}
-                                className="ml-2 text-amber-600 hover:text-amber-900"
-                                aria-label="关闭提示"
-                            >
-                                ✕
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {/* Main Content Area */}
             <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain scrollbar-hide relative w-full max-w-5xl mx-auto z-10 px-4 md:px-8 mb-4">

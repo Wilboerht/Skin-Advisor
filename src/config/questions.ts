@@ -32,7 +32,7 @@ export const DEFAULT_QUESTIONS: Question[] = [
     {
         id: "skinType",
         fieldName: "skinType",
-        question: "您感觉您的肤质属于哪一种？",
+        question: "您的肤质属于哪一种？",
         type: "single",
         options: [
             { value: "dry", label: "干性 (紧绷、脱皮)", description: "洗脸后感觉紧绷，易脱皮" },
