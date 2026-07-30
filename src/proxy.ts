@@ -32,9 +32,12 @@ const ssoMiddleware = createSsoMiddleware({
     "/gift",                   // 活动页
     "/robots.txt",
     "/sitemap.xml",
+    "/models/:path*",          // face-api 模型文件（静态资源）
     "/api/auth/callback",
     "/api/auth/me",
     "/api/auth/logout",
+    "/api/advisor/questions",  // 问卷题目（游客可用）
+    "/api/advisor/test-limit", // 测试次数检查（游客可用）
     "/api/admin/:path*",
     "/admin/:path*",
     "/api/health",
@@ -73,7 +76,8 @@ export async function proxy(request: NextRequest) {
     if (
         pathname.startsWith("/_next/") ||
         pathname === "/favicon.ico" ||
-        pathname.match(/\.(ico|png|jpg|jpeg|webp|avif|gif|svg|css|js|woff2?)$/)
+        pathname.match(/\.(ico|png|jpg|jpeg|webp|avif|gif|svg|css|js|json|woff2?)$/) ||
+        pathname.startsWith("/models/")
     ) {
         return NextResponse.next();
     }
@@ -256,11 +260,12 @@ export async function proxy(request: NextRequest) {
             "Content-Security-Policy",
             [
                 "default-src 'self'",
-                "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://static.cloudflareinsights.com",
+                "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://static.cloudflareinsights.com https://www.googletagmanager.com",
                 "style-src 'self' 'unsafe-inline'",
                 "img-src 'self' blob: data: https://images.unsplash.com https://wp-cdn.4ce.cn https://*.alicdn.com https://*.aliyuncs.com https://*.qpic.cn https://*.myqcloud.com https://*.jd.com https://*.tmall.com https://*.taobao.com https://*.xiaohongshu.com https://*.douyincdn.com https://*.bilibili.com https://*.cdninstagram.com",
                 "font-src 'self'",
-                "connect-src 'self' data: https://*.aliyuncs.com https://wp-cdn.4ce.cn https://images.unsplash.com https://static.cloudflareinsights.com",
+                "connect-src 'self' data: https://*.aliyuncs.com https://wp-cdn.4ce.cn https://images.unsplash.com https://static.cloudflareinsights.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com",
+                "manifest-src 'self'",
                 "frame-ancestors 'none'",
                 "base-uri 'self'",
                 "form-action 'self'",

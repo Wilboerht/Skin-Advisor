@@ -111,6 +111,7 @@ const nextConfig: NextConfig = {
               "img-src 'self' blob: data: https://images.unsplash.com https://wp-cdn.4ce.cn https://*.alicdn.com https://*.aliyuncs.com https://*.qpic.cn https://*.myqcloud.com https://*.jd.com https://*.tmall.com https://*.taobao.com https://*.xiaohongshu.com https://*.douyincdn.com https://*.bilibili.com https://*.cdninstagram.com;",
               "font-src 'self';",
               "connect-src 'self' data: https://*.aliyuncs.com https://wp-cdn.4ce.cn https://images.unsplash.com https://static.cloudflareinsights.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com;",
+              "manifest-src 'self';",
               "frame-ancestors 'none'; base-uri 'self'; form-action 'self';",
             ].join(" "),
           },
@@ -124,7 +125,7 @@ const nextConfig: NextConfig = {
             : []),
           {
             key: "Permissions-Policy",
-            value: "camera=(self), microphone=(self), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), speaker=(self)",
+            value: "camera=(self), microphone=(self), geolocation=(self), payment=(), usb=(), magnetometer=(), gyroscope=(), speaker=(self)",
           },
         ],
       },
