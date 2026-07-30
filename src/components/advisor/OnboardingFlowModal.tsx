@@ -546,10 +546,8 @@ export function OnboardingFlowModal({
                     </div>
 
                     {/* ---- Progress Indicators (minimal text) ---- */}
-                    {/* Hidden in region select sub-view to avoid overlapping the footer */}
-                    {locationView !== "region" && (
-                        <div className="fixed bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 z-[110]">
-                            <div className="flex items-center gap-3 md:gap-4 text-[11px] md:text-xs tracking-[0.12em]">
+                    <div className="fixed bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 z-[110]">
+                        <div className="flex items-center gap-3 md:gap-4 text-[11px] md:text-xs tracking-[0.12em]">
                                 {screens.map((screen, index) => {
                                     const isActive = index === activeIndex;
                                     const isCompleted = index < activeIndex;
@@ -582,9 +580,8 @@ export function OnboardingFlowModal({
                                         </div>
                                     );
                                 })}
-                            </div>
                         </div>
-                    )}
+                    </div>
 
                 </m.div>
             )}
