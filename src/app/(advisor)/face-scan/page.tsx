@@ -90,6 +90,7 @@ export default function FaceScanPage() {
         if (isSubmitting) return;
         setIsSubmitting(true);
 
+        try {
         // 1. 必须四个角度全部存在，不再接受单张正面照片 fallback
         const requiredAngles: (keyof FaceCaptureImages)[] = ["front", "left", "right", "chin"];
         const missing = requiredAngles.filter((k) => !images[k]);
@@ -205,6 +206,13 @@ export default function FaceScanPage() {
         trackFaceScanComplete();
         setIsSubmitting(false);
         router.push(resultUrl);
+        } catch (err) {
+            // 捕获动态导入失败（ChunkLoadError）等未预期异常，避免 UI 卡在转圈
+            console.error("[FaceScan] handleCaptureComplete failed:", err);
+            const isChunkError = (err as Error)?.name === 'ChunkLoadError' || (err as Error)?.message?.includes('Failed to load chunk');
+            toast.error(isChunkError ? "资源加载失败，请刷新页面后重试" : "处理失败，请重试");
+            setIsSubmitting(false);
+        }
     };
 
     return (
