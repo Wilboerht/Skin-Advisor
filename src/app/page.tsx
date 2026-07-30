@@ -479,10 +479,17 @@ export default function Home() {
                       在线素颜测肤
                     </h1>
 
-                    {/* Description */}
-                    <p className="text-brand-charcoal/75 text-[13px] md:text-base font-light leading-[1.8] md:leading-normal tracking-[0.06em] md:tracking-[0.12em] mb-10 md:mb-12 max-w-3xl mx-auto opacity-0 animate-fade-in-up" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
-                      为了精准分析你的肌肤状态并生成定制化专业报告，<br className="hidden sm:block" />我们将引导您进行个性化问卷调查与多维面部肌肤分析，<br className="sm:hidden" />整个过程预计占用 <span className="text-brand-charcoal/90">2-5 分钟</span>。
-                    </p>
+                    {/* Info Chips */}
+                    <div className="flex flex-wrap items-center justify-center gap-2.5 md:gap-3 mb-10 md:mb-12 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
+                      {["2-5 分钟", "10 维 AI 分析", "定制化报告"].map((chip) => (
+                        <span
+                          key={chip}
+                          className="px-4 py-1.5 rounded-full border border-brand-charcoal/15 text-brand-charcoal/60 text-[11px] font-light tracking-[0.15em] transition-colors duration-300 hover:border-brand-charcoal/30 hover:text-brand-charcoal/80"
+                        >
+                          {chip}
+                        </span>
+                      ))}
+                    </div>
 
                     {/* CTA + Guide + History */}
                     <div className="flex flex-col items-center gap-6 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.4s', animationFillMode: 'forwards' }}>
