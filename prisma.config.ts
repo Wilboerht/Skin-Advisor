@@ -8,10 +8,11 @@
 import { config } from "dotenv";
 import { defineConfig } from "prisma/config";
 
-// 优先加载 .env（生产环境配置），开发环境下再用 .env.local 覆盖
+// 加载顺序：.env.production → .env → .env.local（后加载的覆盖先加载的）
+config({ path: ".env.production" });
 config({ path: ".env" });
 if (process.env.NODE_ENV !== "production") {
-    config({ path: ".env.local" });
+    config({ path: ".env.local", override: true });
 }
 
 // 获取数据库 URL
