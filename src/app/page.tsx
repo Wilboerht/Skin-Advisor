@@ -5,7 +5,7 @@ import { useTransitionRouter } from "next-view-transitions";
 import { useSearchParams } from "next/navigation";
 import { LazyMotion, domAnimation, AnimatePresence, m, useReducedMotion } from "framer-motion";
 import Image from "next/image";
-import { ArrowRight, Loader2, ClipboardList, ScanFace, X } from "lucide-react";
+import { ArrowRight, Loader2, X } from "lucide-react";
 
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
@@ -444,7 +444,7 @@ export default function Home() {
                         visible: { transition: { staggerChildren: 0.12 } },
                       }}
                     >
-                      <span className="inline-flex items-center gap-2.5 text-[13px] font-medium tracking-[0.3em] text-[#8B7355] uppercase">
+                      <span className="inline-flex items-center gap-2.5 text-[13px] md:text-base font-medium tracking-[0.3em] text-[#8B7355] uppercase">
                         <m.span
                           className="block w-5 h-px bg-gradient-to-r from-transparent to-[#C8A27A]/50"
                           variants={{
@@ -454,11 +454,13 @@ export default function Home() {
                           style={{ transformOrigin: "right center" }}
                         />
                         <m.span
+                          className="inline-flex items-center gap-2"
                           variants={{
                             hidden: { opacity: 0 },
                             visible: { opacity: 1, transition: { duration: 0.3 } },
                           }}
                         >
+                          <Image src="/images/jzp-badge.svg" alt="" width={36} height={36} className="w-6 h-6 object-contain" />
                           肌智派
                         </m.span>
                         <m.span
@@ -478,8 +480,8 @@ export default function Home() {
                     </h1>
 
                     {/* Description */}
-                    <p className="text-brand-charcoal/75 text-[13px] md:text-base font-light leading-[1.8] md:leading-normal tracking-[0.06em] md:tracking-[0.12em] mb-10 md:mb-12 max-w-xl mx-auto opacity-0 animate-fade-in-up" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
-                      为了精准分析你的肌肤状态并生成专业定制化报告，<br className="hidden sm:block" />接下来我们将引导您<br className="sm:hidden" />进行个性化问卷调查与多维面部肌肤分析，<br />整个过程预计占用 <span className="text-brand-charcoal/90">2-5 分钟</span>。
+                    <p className="text-brand-charcoal/75 text-[13px] md:text-base font-light leading-[1.8] md:leading-normal tracking-[0.06em] md:tracking-[0.12em] mb-10 md:mb-12 max-w-3xl mx-auto opacity-0 animate-fade-in-up" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
+                      为了精准分析你的肌肤状态并生成定制化专业报告，<br className="hidden sm:block" />我们将引导您进行个性化问卷调查与多维面部肌肤分析，<br className="sm:hidden" />整个过程预计占用 <span className="text-brand-charcoal/90">2-5 分钟</span>。
                     </p>
 
                     {/* CTA + Guide + History */}
@@ -499,7 +501,6 @@ export default function Home() {
                             </>
                           ) : (
                             <>
-                              <ScanFace className="w-4 h-4" />
                               <span>开始 AI 面部扫描</span>
                               <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1" />
                             </>
@@ -519,7 +520,6 @@ export default function Home() {
                             </>
                           ) : (
                             <>
-                              <ClipboardList className="w-4 h-4" />
                               <span>发现你的肌智派形象（仅问卷）</span>
                             </>
                           )}

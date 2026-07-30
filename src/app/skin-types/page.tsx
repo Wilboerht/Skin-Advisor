@@ -32,7 +32,7 @@ export default function ResultIndexPage() {
     .filter(Boolean);
 
   return (
-    <main className="relative min-h-screen text-[#1A1A1A] bg-[#F8F7F3]">
+    <main className="relative min-h-screen text-brand-charcoal bg-[#F8F7F3]">
       <BreadcrumbSchema
         items={[
           { name: "首页", url: BASE_URL },
@@ -53,14 +53,14 @@ export default function ResultIndexPage() {
             发现你的肌肤形象类型
           </h1>
           <p
-            className="text-[13px] md:text-base text-brand-charcoal/75 font-light leading-[1.8] md:leading-normal tracking-[0.06em] md:tracking-[0.12em] max-w-xl mx-auto mb-5 opacity-0 animate-fade-in-up"
+            className="text-[13px] md:text-base text-brand-charcoal/75 font-light leading-[1.8] md:leading-normal tracking-[0.06em] md:tracking-[0.12em] max-w-2xl mx-auto mb-5 opacity-0 animate-fade-in-up"
             style={{ animationDelay: "0.1s", animationFillMode: "forwards" }}
           >
             每一种肌肤，都有自己的性格。从素颜状态出发，读懂肌肤真正需要什么。
           </p>
           <Link
             href="/"
-            className="w-full sm:w-auto group relative inline-flex items-center justify-center gap-3 px-8 py-3 md:px-10 md:py-3.5 border border-brand-charcoal/60 text-brand-charcoal bg-transparent text-[13px] sm:text-[14px] tracking-[0.1em] font-medium cursor-pointer transition-all duration-500 hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,38,62,0.12)] active:translate-y-0 active:shadow-none opacity-0 animate-fade-in-up"
+            className="w-full sm:w-auto group relative inline-flex items-center justify-center gap-3 px-8 py-4 border border-brand-charcoal/60 text-brand-charcoal bg-transparent text-[13px] sm:text-[14px] tracking-[0.1em] font-medium cursor-pointer transition-all duration-500 hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,38,62,0.12)] active:translate-y-0 active:shadow-none opacity-0 animate-fade-in-up"
             style={{ animationDelay: "0.2s", animationFillMode: "forwards" }}
           >
             <span>前往测肤</span>
@@ -103,7 +103,7 @@ export default function ResultIndexPage() {
                   <p className="text-[13px] md:text-sm text-brand-charcoal/60 font-light tracking-[0.06em] md:tracking-[0.12em] mb-3 md:mb-5 line-clamp-1">
                     {type.m1.persona}
                   </p>
-                  <div className="inline-flex items-center text-xs md:text-[13px] font-medium tracking-[0.15em] text-brand-charcoal/60 group-hover:text-brand-charcoal-light transition-colors duration-300">
+                  <div className="inline-flex items-center text-xs md:text-[13px] font-medium tracking-[0.1em] text-brand-charcoal/60 group-hover:text-brand-charcoal-light transition-colors duration-300">
                     查看完整解读
                     <ArrowRight className="w-3.5 h-3.5 ml-1.5 transition-transform duration-500 group-hover:translate-x-1.5" />
                   </div>
@@ -146,7 +146,7 @@ export default function ResultIndexPage() {
                 <p className="text-[13px] md:text-base text-brand-charcoal/75 font-light leading-[1.8] md:leading-normal tracking-[0.06em] md:tracking-[0.12em] mb-3 md:mb-4">
                   完成您的专属肌肤诊断后，即可参与 NIHPLOD 限定抽奖——甄选护肤好礼，静候与您相遇。
                 </p>
-                <span className="inline-flex items-center gap-2 text-[13px] sm:text-[14px] font-medium tracking-[0.15em] text-brand-charcoal group-hover:text-brand-charcoal-light transition-colors duration-300">
+                <span className="inline-flex items-center gap-2 text-[13px] sm:text-[14px] font-medium tracking-[0.1em] text-brand-charcoal group-hover:text-brand-charcoal-light transition-colors duration-300">
                   立即参与
                   <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
                 </span>

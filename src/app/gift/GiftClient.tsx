@@ -57,32 +57,29 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
   };
 
   return (
-    <main className="relative min-h-screen flex flex-col text-[#1A1A1A] bg-[#F8F7F3] overflow-hidden">
+    <main className="relative min-h-screen flex flex-col text-brand-charcoal bg-[#F8F7F3] overflow-hidden">
       <WebsiteNavbar />
 
       <div className="flex-1">
         {/* Hero */}
         <section className="relative pt-24 md:pt-40 pb-18 px-6 md:px-12 lg:px-20">
           <div className="relative z-10 max-w-5xl mx-auto text-center">
-            <h1 className="text-xl md:text-3xl font-serif text-[#1A1A1A] mb-5 opacity-0 animate-fade-in-up" style={{ animationFillMode: "forwards" }}>
+            <h1 className="text-xl md:text-3xl font-serif font-light text-brand-charcoal leading-[1.1] tracking-[0.02em] mb-5 opacity-0 animate-fade-in-up" style={{ animationFillMode: "forwards" }}>
               肌智派送好礼
             </h1>
-            <p className="text-[15px] md:text-base text-[#5E5E5E] font-light max-w-xl mx-auto leading-relaxed mb-5 opacity-0 animate-fade-in-up" style={{ animationDelay: "0.1s", animationFillMode: "forwards" }}>
-              分享你的肌肤形象类型，与 NIHPLOD 一起探索护肤之美，解锁限定礼遇。
-            </p>
 
             {/* 状态信息 */}
             <div className="opacity-0 animate-fade-in-up" style={{ animationDelay: "0.2s", animationFillMode: "forwards" }}>
               {pageState === "loading" && (
-                <div className="inline-flex items-center gap-2 text-sm text-[#5E5E5E]">
-                  <Loader2 className="w-4 h-4 text-[#8B7355] animate-spin" />
+                <div className="inline-flex items-center gap-2 text-sm text-brand-charcoal/60">
+                  <Loader2 className="w-4 h-4 text-brand-charcoal/70 animate-spin" />
                   正在加载活动信息…
                 </div>
               )}
 
               {pageState === "no_campaign" && (
-                <div className="inline-flex items-center gap-2 text-sm text-[#5E5E5E]">
-                  <Sparkles className="w-4 h-4 text-[#8B7355]" />
+                <div className="inline-flex items-center gap-2 text-sm text-brand-charcoal/60">
+                  <Sparkles className="w-4 h-4 text-brand-charcoal/70" />
                   <span>下一期活动筹备中，敬请期待</span>
                 </div>
               )}
@@ -96,13 +93,13 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
 
               {pageState === "show_campaign" && campaign && (
                 <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8">
-                  <div className={`flex items-center gap-2 ${new Date() >= new Date(campaign.startDate) ? "text-xs" : "text-sm"} text-[#5E5E5E]`}>
-                    <Users className="w-4 h-4 text-[#8B7355]" />
+                  <div className={`flex items-center gap-2 ${new Date() >= new Date(campaign.startDate) ? "text-xs" : "text-sm"} text-brand-charcoal/60`}>
+                    <Users className="w-4 h-4 text-brand-charcoal/70" />
                     <span>已参与 {campaign.entryCount} 人{campaign.maxEntries > 0 ? ` / ${campaign.maxEntries}` : ""}</span>
                   </div>
                   {campaign.drawDate && (
-                    <div className={`flex items-center gap-2 ${new Date() >= new Date(campaign.startDate) ? "text-xs" : "text-sm"} text-[#5E5E5E]`}>
-                      <Sparkles className="w-4 h-4 text-[#8B7355]" />
+                    <div className={`flex items-center gap-2 ${new Date() >= new Date(campaign.startDate) ? "text-xs" : "text-sm"} text-brand-charcoal/60`}>
+                      <Sparkles className="w-4 h-4 text-brand-charcoal/70" />
                       <span>开奖时间：{formatDate(campaign.drawDate)}</span>
                     </div>
                   )}
@@ -146,28 +143,28 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
                       key={i}
                       className="flex items-start gap-4"
                     >
-                      <span className="shrink-0 w-8 h-8 rounded-full bg-transparent border border-[#1B3A5C] flex items-center justify-center text-sm font-medium text-[#1B3A5C]">
+                      <span className="shrink-0 w-8 h-8 rounded-full bg-transparent border border-brand-charcoal/60 flex items-center justify-center text-sm font-medium text-brand-charcoal">
                         {parseInt(item.step)}
                       </span>
                       <div className="min-w-0">
-                        <h3 className="text-sm font-medium text-[#1A1A1A] mb-1">{item.title}</h3>
-                        <p className="text-[13px] text-[#5E5E5E] leading-[1.85]">{item.desc}</p>
+                        <h3 className="text-sm font-light text-brand-charcoal tracking-[0.06em] mb-1">{item.title}</h3>
+                        <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">{item.desc}</p>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <div className="flex flex-col items-center gap-3 w-full max-w-md mx-auto">
                 <Link
                   href="/"
-                  className="w-full sm:w-auto group relative inline-flex items-center justify-center gap-3 px-10 py-3.5 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#1B3A5C] hover:text-white"
+                  className="w-full group relative inline-flex items-center justify-center gap-3 px-8 py-4 border border-brand-charcoal/60 text-brand-charcoal bg-transparent text-[13px] sm:text-[14px] tracking-[0.1em] font-medium cursor-pointer transition-all duration-500 hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,38,62,0.12)] active:translate-y-0 active:shadow-none"
                 >
-                  <span>开始测肤</span>
+                  <span>查看我的肌肤形象</span>
                   <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
                 </Link>
                 <Link
                   href="/skin-types"
-                  className="w-full sm:w-auto group relative inline-flex items-center justify-center gap-3 px-10 py-3.5 border border-[#8B7355] text-[#8B7355] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#8B7355] hover:text-white"
+                  className="w-full group relative inline-flex items-center justify-center gap-3 px-8 py-4 text-[13px] sm:text-[14px] tracking-[0.1em] font-medium cursor-pointer text-brand-charcoal/60 transition-colors duration-500 hover:text-brand-charcoal"
                 >
                   <span>了解肌肤类型</span>
                   <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
@@ -181,15 +178,15 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
         {pageState === "error" && (
           <section className="relative z-10 pb-18 px-6 md:px-12 lg:px-20">
             <div className="max-w-md mx-auto text-center">
-              <div className="rounded-2xl border border-[rgba(61,68,48,0.08)] bg-[#FAF9F6] p-5 md:p-9">
+              <div className="rounded-2xl border border-brand-charcoal/[0.08] bg-[#FAF9F6] p-5 md:p-9">
                 <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-5">
                   <AlertCircle className="w-6 h-6 text-red-400" />
                 </div>
-                <h2 className="text-lg font-serif text-[#1A1A1A] mb-2">活动信息加载失败</h2>
-                <p className="text-sm text-[#5E5E5E]/80 mb-6">请检查网络连接后刷新页面，或稍后再试。</p>
+                <h2 className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-2">活动信息加载失败</h2>
+                <p className="text-sm text-brand-charcoal/60 font-light mb-6">请检查网络连接后刷新页面，或稍后再试。</p>
                 <button
                   onClick={() => window.location.reload()}
-                  className="w-full sm:w-auto group relative inline-flex items-center justify-center gap-3 px-10 py-3.5 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#1B3A5C] hover:text-white"
+                  className="w-full sm:w-auto group relative inline-flex items-center justify-center gap-3 px-8 py-4 border border-brand-charcoal/60 text-brand-charcoal bg-transparent text-[13px] sm:text-[14px] tracking-[0.1em] font-medium cursor-pointer transition-all duration-500 hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,38,62,0.12)] active:translate-y-0 active:shadow-none"
                 >
                   <Loader2 className="w-4 h-4" />
                   <span>重新加载</span>
@@ -203,9 +200,9 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
         {pageState === "show_campaign" && campaign && (
           <section className="relative z-10 pb-18 px-6 md:px-12 lg:px-20">
             <div className="max-w-2xl mx-auto">
-              <div className="rounded-2xl border border-[#C9B896] p-6 md:p-8 relative">
+              <div className="rounded-2xl border border-brand-charcoal/[0.12] p-6 md:p-8 relative">
                 <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-                  <span className="inline-block px-4 py-1.5 text-[11px] uppercase tracking-[0.2em] text-[#1B3A5C] bg-white rounded-full border border-[#C9B896] whitespace-nowrap">
+                  <span className="inline-block px-4 py-1.5 text-[11px] uppercase tracking-[0.2em] text-brand-charcoal bg-white rounded-full border border-brand-charcoal/20 whitespace-nowrap">
                     本期好礼
                   </span>
                 </div>
@@ -221,16 +218,16 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
                             className="object-contain"
                           />
                         ) : (
-                          <Gift className="w-8 h-8 text-[#8B7355]/30" />
+                          <Gift className="w-8 h-8 text-brand-charcoal/20" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-[13px] font-medium text-[#1B3A5C] mb-0.5 leading-tight">{prize.name}</h3>
+                        <h3 className="text-[13px] font-medium text-brand-charcoal mb-0.5 leading-tight">{prize.name}</h3>
                         {prize.description && (
-                          <p className="text-[13px] text-[#5E5E5E] leading-relaxed">{prize.description}</p>
+                          <p className="text-[13px] text-brand-charcoal/60 font-light leading-relaxed">{prize.description}</p>
                         )}
                       </div>
-                      <p className="text-[13px] text-[#8B7355] shrink-0">×{prize.quantity}</p>
+                      <p className="text-[13px] text-brand-charcoal/60 shrink-0">×{prize.quantity}</p>
                     </div>
                   ))}
                 </div>
@@ -267,28 +264,28 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
                       key={i}
                       className="flex items-start gap-4"
                     >
-                      <span className="shrink-0 w-8 h-8 rounded-full bg-transparent border border-[#1B3A5C] flex items-center justify-center text-sm font-medium text-[#1B3A5C]">
+                      <span className="shrink-0 w-8 h-8 rounded-full bg-transparent border border-brand-charcoal/60 flex items-center justify-center text-sm font-medium text-brand-charcoal">
                         {parseInt(item.step)}
                       </span>
                       <div className="min-w-0">
-                        <h3 className="text-sm font-medium text-[#1A1A1A] mb-1">{item.title}</h3>
-                        <p className="text-[13px] text-[#5E5E5E] leading-[1.85]">{item.desc}</p>
+                        <h3 className="text-sm font-light text-brand-charcoal tracking-[0.06em] mb-1">{item.title}</h3>
+                        <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">{item.desc}</p>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <div className="flex flex-col items-center gap-3 w-full max-w-md mx-auto">
                 <Link
                   href="/"
-                  className="w-full sm:w-auto group relative inline-flex items-center justify-center gap-3 px-10 py-3.5 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#1B3A5C] hover:text-white"
+                  className="w-full group relative inline-flex items-center justify-center gap-3 px-8 py-4 border border-brand-charcoal/60 text-brand-charcoal bg-transparent text-[13px] sm:text-[14px] tracking-[0.1em] font-medium cursor-pointer transition-all duration-500 hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,38,62,0.12)] active:translate-y-0 active:shadow-none"
                 >
-                  <span>开始测肤</span>
+                  <span>查看我的肌肤形象</span>
                   <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
                 </Link>
                 <Link
                   href="/skin-types"
-                  className="w-full sm:w-auto group relative inline-flex items-center justify-center gap-3 px-10 py-3.5 border border-[#8B7355] text-[#8B7355] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#8B7355] hover:text-white"
+                  className="w-full group relative inline-flex items-center justify-center gap-3 px-8 py-4 text-[13px] sm:text-[14px] tracking-[0.1em] font-medium cursor-pointer text-brand-charcoal/60 transition-colors duration-500 hover:text-brand-charcoal"
                 >
                   <span>了解肌肤类型</span>
                   <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
@@ -300,16 +297,16 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
 
       </div>
 
-      <footer className="relative z-10 pt-6 md:pt-8 pb-[calc(1.5rem+env(safe-area-inset-bottom,16px))] px-6 text-center border-t border-[rgba(61,68,48,0.06)]">
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-4 text-[10px] md:text-xs tracking-widest text-[#5E5E5E]/60">
-          <p>© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
-          <span className="hidden sm:inline text-[#5E5E5E]/30">·</span>
-          <div className="hidden sm:flex items-center gap-4">
-            <Link href="/privacy" className="hover:text-[#3D4430] transition-colors duration-300">
+      <footer className="relative z-10 pt-4 md:pt-8 pb-[calc(1rem+env(safe-area-inset-bottom,16px))] md:pb-[calc(2rem+env(safe-area-inset-bottom,16px))] px-6 text-center">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-3 text-[11px] font-light text-brand-charcoal/[0.48]">
+          <p className="tracking-[0.1em] md:tracking-[0.15em]">© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
+          <span className="hidden sm:inline text-brand-charcoal/20">·</span>
+          <div className="hidden sm:flex items-center gap-3 tracking-[0.12em]">
+            <Link href="/privacy" className="transition-colors duration-300 hover:text-brand-charcoal/70">
               隐私政策
             </Link>
-            <span className="text-[#5E5E5E]/30">·</span>
-            <Link href="/terms" className="hover:text-[#3D4430] transition-colors duration-300">
+            <span className="text-brand-charcoal/20">·</span>
+            <Link href="/terms" className="transition-colors duration-300 hover:text-brand-charcoal/70">
               服务条款
             </Link>
           </div>

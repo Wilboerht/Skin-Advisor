@@ -72,7 +72,7 @@ export function CountdownTimer({ endDate, label, onExpire, className = "" }: Cou
   // 已过期
   if (!timeLeft) {
     return (
-      <span className={`inline-flex items-center gap-1.5 text-[12px] text-[#8B7355]/60 ${className}`}>
+      <span className={`inline-flex items-center gap-1.5 text-[12px] text-brand-charcoal/60 ${className}`}>
         <Clock className="w-3.5 h-3.5" />
         活动已结束
       </span>
@@ -84,7 +84,7 @@ export function CountdownTimer({ endDate, label, onExpire, className = "" }: Cou
   parts.push(`${pad(timeLeft.hours)}:${pad(timeLeft.minutes)}:${pad(timeLeft.seconds)}`);
 
   return (
-    <span className={`inline-flex items-center gap-1.5 text-[12px] text-[#8B7355] ${className}`}>
+    <span className={`inline-flex items-center gap-1.5 text-[12px] text-brand-charcoal/70 ${className}`}>
       <Clock className="w-3.5 h-3.5" />
       {label && <span>{label}</span>}
       <span className="font-mono font-medium tabular-nums">{parts.join(" ")}</span>
