@@ -127,7 +127,7 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
                     alt="肌智派送好礼"
                     width={200}
                     height={150}
-                    className="w-96 h-auto object-contain"
+                    className="w-72 h-auto object-contain"
                     unoptimized
                   />
                 </div>
@@ -251,7 +251,7 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
                     alt="肌智派送好礼"
                     width={200}
                     height={150}
-                    className="w-96 h-auto object-contain"
+                    className="w-72 h-auto object-contain"
                     unoptimized
                   />
                 </div>
