@@ -495,7 +495,7 @@ export function OnboardingFlowModal({
                                                     href="https://nihplod.cn/privacy"
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="text-brand-charcoal/75 underline underline-offset-4 mx-1"
+                                                    className="text-brand-charcoal/75 mx-1"
                                                     onClick={(e) => e.stopPropagation()}
                                                 >
                                                     隐私政策
@@ -505,7 +505,7 @@ export function OnboardingFlowModal({
                                                     href="https://nihplod.cn/terms"
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="text-brand-charcoal/75 underline underline-offset-4 mx-1"
+                                                    className="text-brand-charcoal/75 mx-1"
                                                     onClick={(e) => e.stopPropagation()}
                                                 >
                                                     服务条款
