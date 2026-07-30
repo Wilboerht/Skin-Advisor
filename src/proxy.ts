@@ -15,33 +15,34 @@ const ssoMiddleware = createSsoMiddleware({
   ssoBaseUrl: process.env.NEXT_PUBLIC_SSO_BASE_URL!,
   redirectUri: process.env.NEXT_PUBLIC_SSO_REDIRECT_URI!,
   scopes: process.env.NEXT_PUBLIC_SSO_SCOPES || "openid profile",
-  publicPaths: [
-    "/",                       // 首页
-    "/login",                  // SSO 登录跳转页
-    "/register",               // SSO 注册跳转页
-    "/forgot-password",        // 密码重置弹窗页
-    "/reset-password",         // 密码重置弹窗页
-    "/questions",              // 问卷页（允许游客测试）
-    "/face-scan",              // 面部扫描页（允许游客）
-    "/skin-types",             // 肤质类型列表
-    "/skin-types/:path*",      // 具体肤质类型页
-    "/services",               // 顾问服务
-    "/faq",                    // FAQ
-    "/privacy",                // 隐私政策
-    "/terms",                  // 服务条款
-    "/gift",                   // 活动页
-    "/robots.txt",
-    "/sitemap.xml",
-    "/models/:path*",          // face-api 模型文件（静态资源）
-    "/api/auth/callback",
-    "/api/auth/me",
-    "/api/auth/logout",
-    "/api/advisor/questions",  // 问卷题目（游客可用）
-    "/api/advisor/test-limit", // 测试次数检查（游客可用）
-    "/api/admin/:path*",
-    "/admin/:path*",
-    "/api/health",
-  ],
+    publicPaths: [
+      "/",                       // 首页
+      "/login",                  // SSO 登录跳转页
+      "/register",               // SSO 注册跳转页
+      "/forgot-password",        // 密码重置弹窗页
+      "/reset-password",         // 密码重置弹窗页
+      "/questions",              // 问卷页（允许游客测试）
+      "/face-scan",              // 面部扫描页（允许游客）
+      "/skin-types",             // 肤质类型列表
+      "/skin-types/:path*",      // 具体肤质类型页
+      "/services",               // 顾问服务
+      "/faq",                    // FAQ
+      "/privacy",                // 隐私政策
+      "/terms",                  // 服务条款
+      "/gift",                   // 活动页
+      "/robots.txt",
+      "/sitemap.xml",
+      "/models/:path*",          // face-api 模型文件（静态资源）
+      "/api/auth/callback",
+      "/api/auth/me",
+      "/api/auth/logout",
+      "/api/advisor/check-config", // AI 配置检查（游客可用）
+      "/api/advisor/questions",  // 问卷题目（游客可用）
+      "/api/advisor/test-limit", // 测试次数检查（游客可用）
+      "/api/admin/:path*",
+      "/admin/:path*",
+      "/api/health",
+    ],
 });
 
 // 敏感路径前缀列表（需要额外安全检查）
