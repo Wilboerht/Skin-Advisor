@@ -110,9 +110,10 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline';",
               "img-src 'self' blob: data: https://images.unsplash.com https://wp-cdn.4ce.cn https://*.alicdn.com https://*.aliyuncs.com https://*.qpic.cn https://*.myqcloud.com https://*.jd.com https://*.tmall.com https://*.taobao.com https://*.xiaohongshu.com https://*.douyincdn.com https://*.bilibili.com https://*.cdninstagram.com;",
               "font-src 'self';",
-              "connect-src 'self' data: https://*.aliyuncs.com https://wp-cdn.4ce.cn https://images.unsplash.com https://static.cloudflareinsights.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com;",
-              "manifest-src 'self';",
-              "frame-ancestors 'none'; base-uri 'self'; form-action 'self';",
+              "connect-src 'self' data: https://nihplod.cn https://*.aliyuncs.com https://wp-cdn.4ce.cn https://images.unsplash.com https://static.cloudflareinsights.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com;",
+              "manifest-src 'self' https://nihplod.cn;",
+              "frame-src 'self' https://nihplod.cn;",
+              "frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://nihplod.cn;",
             ].join(" "),
           },
           ...(process.env.NODE_ENV === "production"

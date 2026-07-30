@@ -3,7 +3,7 @@
  * 自动选择存储后端: 阿里云 OSS > 本地存储
  */
 import { uploadImageToOSS, isOSSConfigured, type UploadMetadata } from "./oss-upload-client";
-import { fetchWithCsrf } from "./fetch-client";
+import { fetchWithCsrf, fetchWithRetry } from "./fetch-client";
 
 export type StorageProvider = "oss" | "local";
 
@@ -99,7 +99,7 @@ export async function uploadImage(
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(signBody),
-    });
+    }, { retries: 2, timeoutMs: 15_000 });
 
     const signData = await signRes.json();
     if (!signRes.ok || !signData.success) {
@@ -115,13 +115,13 @@ export async function uploadImage(
             "Content-Type": compressed.type || "image/jpeg"
         },
         body: compressed
-    }) : fetch(uploadUrl, {
+    }, { retries: 2, timeoutMs: 60_000 }) : fetchWithRetry(uploadUrl, {
         method: "PUT",
         headers: {
             "Content-Type": compressed.type || "image/jpeg"
         },
         body: compressed
-    }));
+    }, { timeoutMs: 60_000, retries: 2 }));
 
     if (!uploadRes.ok) {
         throw new Error("上传图片到本地存储失败");

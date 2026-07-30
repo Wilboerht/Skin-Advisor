@@ -40,6 +40,8 @@ const ssoMiddleware = createSsoMiddleware({
       "/api/advisor/check-config", // AI 配置检查（游客可用）
       "/api/advisor/questions",  // 问卷题目（游客可用）
       "/api/advisor/test-limit", // 测试次数检查（游客可用）
+      "/api/oss/sign",           // 游客上传签名（扫脸后保存图片）
+      "/api/local-upload",       // 游客本地上传端点
       "/api/admin/:path*",
       "/admin/:path*",
       "/api/health",
@@ -266,11 +268,12 @@ export async function proxy(request: NextRequest) {
                 "style-src 'self' 'unsafe-inline'",
                 "img-src 'self' blob: data: https://images.unsplash.com https://wp-cdn.4ce.cn https://*.alicdn.com https://*.aliyuncs.com https://*.qpic.cn https://*.myqcloud.com https://*.jd.com https://*.tmall.com https://*.taobao.com https://*.xiaohongshu.com https://*.douyincdn.com https://*.bilibili.com https://*.cdninstagram.com",
                 "font-src 'self'",
-                "connect-src 'self' data: https://*.aliyuncs.com https://wp-cdn.4ce.cn https://images.unsplash.com https://static.cloudflareinsights.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com",
-                "manifest-src 'self'",
+                "connect-src 'self' data: https://nihplod.cn https://*.aliyuncs.com https://wp-cdn.4ce.cn https://images.unsplash.com https://static.cloudflareinsights.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com",
+                "manifest-src 'self' https://nihplod.cn",
+                "frame-src 'self' https://nihplod.cn",
                 "frame-ancestors 'none'",
                 "base-uri 'self'",
-                "form-action 'self'",
+                "form-action 'self' https://nihplod.cn",
             ].join("; ")
         );
     }

@@ -1,4 +1,4 @@
-import { fetchWithCsrf } from "./fetch-client";
+import { fetchWithCsrf, fetchWithRetry } from "./fetch-client";
 
 export interface UploadMetadata {
     sessionId?: string;
@@ -52,7 +52,7 @@ export async function uploadImageToOSS(file: Blob, filename: string = "image.jpg
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(signBody),
-    });
+    }, { retries: 2, timeoutMs: 15_000 });
 
     const signData = await signRes.json();
     if (!signRes.ok || !signData.success) {
@@ -69,13 +69,13 @@ export async function uploadImageToOSS(file: Blob, filename: string = "image.jpg
             "Content-Type": file.type || "image/jpeg"
         },
         body: file
-    }) : fetch(uploadUrl, {
+    }, { retries: 2, timeoutMs: 60_000 }) : fetchWithRetry(uploadUrl, {
         method: "PUT",
         headers: {
             "Content-Type": file.type || "image/jpeg"
         },
         body: file
-    }));
+    }, { timeoutMs: 60_000, retries: 2 }));
 
     if (!uploadRes.ok) {
         throw new Error("上传图片到 OSS 失败");

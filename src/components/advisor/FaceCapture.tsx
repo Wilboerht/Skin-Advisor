@@ -65,9 +65,14 @@ const HEAD_POSE_THRESHOLDS = {
 const CHIN_PITCH_THRESHOLD = 0.35;
 
 // 光线不足阈值：低于此值时禁止自动拍摄，但允许手动拍照
-const MIN_LIGHT_LEVEL_FOR_AUTO_CAPTURE = 0.15;
+// 取值 0-1；0.08 对应约 20 的灰度值，比原 0.15 更宽松，适应更多室内场景
+const MIN_LIGHT_LEVEL_FOR_AUTO_CAPTURE = 0.08;
 // 光线分析节流间隔（ms），避免主线程被密集计算阻塞
 const LIGHT_ANALYSIS_INTERVAL_MS = 250;
+// 手动拍照按钮延迟：用户进入某一步骤后等待多久显示“手动拍照”
+const MANUAL_BUTTON_DELAY_MS = 3000; // 3 秒，比原 5 秒更友好
+// 若持续未检测到面部，提前显示手动拍照按钮
+const NO_FACE_MANUAL_BUTTON_DELAY_MS = 5000;
 
 // 步骤配置
 const CAPTURE_STEPS: { step: CaptureStep; label: string; instruction: string; icon: React.ReactNode }[] = [
@@ -129,6 +134,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
   const [showSuccessForStep, setShowSuccessForStep] = useState<CaptureStep | null>(null); // 拍摄成功确认态
   const [isLoading, setIsLoading] = useState(true);
   const isLoadingRef = useRef(isLoading);
+  const [isSwitchingCamera, setIsSwitchingCamera] = useState(false); // 切换摄像头中
   const [faceStatus, setFaceStatus] = useState<FaceStatus>("none");
   const [showManualButton, setShowManualButton] = useState(false); // 是否显示手动拍照按钮
   const [modelsLoaded, setModelsLoaded] = useState(false);
@@ -156,6 +162,8 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
   const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   // 当前步骤开始时间，用于手动按钮计时
   const stepStartTimeRef = useRef<number>(0);
+  // 最近一次检测到面部的时间，用于无脸时提前显示手动按钮
+  const lastFaceDetectedRef = useRef<number>(Date.now());
   // 冷却结束后的静默期截止时间，给用户调整姿势的缓冲
   const cooldownGracePeriodUntilRef = useRef<number>(0);
   // 标记刚完成拍照的时间戳，用于语音时序对齐
@@ -208,7 +216,10 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
    * 注意：禁用美颜效果，确保获取原始相机画面用于AI肌肤分析
    */
   const initCamera = useCallback(async () => {
-    setIsLoading(true);
+    // 切换摄像头时不重复显示初始加载遮罩，只显示切换中状态
+    if (!isSwitchingCamera) {
+      setIsLoading(true);
+    }
     setError(null);
     const callId = ++initCallIdRef.current;
 
@@ -225,17 +236,22 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
       let mediaStream: MediaStream;
 
       // 构建基础约束 + 可选 facingMode
-      const baseConstraints = (withFacingMode: boolean) => ({
+      const baseConstraints = (withFacingMode: boolean, mode?: "user" | "environment") => ({
         video: withFacingMode
-          ? { facingMode, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, min: 15 } }
+          ? { facingMode: mode || facingMode, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, min: 15 } }
           : { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, min: 15 } },
       });
 
-      // 尝试多组分辨率，从优到劣；优先带 facingMode，失败时移除 facingMode 再试（兼容台式机/特殊设备）
+      const oppositeFacingMode = facingMode === "user" ? "environment" : "user";
+
+      // 尝试多组分辨率，从优到劣；优先带 facingMode，失败时移除 facingMode 或尝试反向摄像头，再降级到任意摄像头
       const constraintsList = [
-        baseConstraints(true),
+        baseConstraints(true, facingMode),
         { video: { facingMode, width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 30, min: 15 } } },
         { video: { facingMode, width: { ideal: 320 }, height: { ideal: 240 }, frameRate: { ideal: 30, min: 15 } } },
+        baseConstraints(true, oppositeFacingMode),
+        { video: { facingMode: oppositeFacingMode, width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 30, min: 15 } } },
+        { video: { facingMode: oppositeFacingMode, width: { ideal: 320 }, height: { ideal: 240 }, frameRate: { ideal: 30, min: 15 } } },
         { video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, min: 15 } } },
         { video: { width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 30, min: 15 } } },
         { video: { width: { ideal: 320 }, height: { ideal: 240 }, frameRate: { ideal: 30, min: 15 } } },
@@ -309,6 +325,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
       streamRef.current = mediaStream!;
       setStream(mediaStream!);
       setIsLoading(false);
+      setIsSwitchingCamera(false);
     } catch (err) {
       // 竞态保护：忽略过期的错误
       if (callId !== initCallIdRef.current) return;
@@ -319,6 +336,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
         if (DEBUG) {
           console.warn("Camera init interrupted, ignoring.");
         }
+        setIsSwitchingCamera(false);
         return;
       }
 
@@ -337,8 +355,9 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
 
       setError(errorMessage);
       setIsLoading(false);
+      setIsSwitchingCamera(false);
     }
-  }, [facingMode]);
+  }, [facingMode, isSwitchingCamera]);
 
   /**
    * 加载 face-api.js 和模型
@@ -606,6 +625,8 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
         .withFaceLandmarks();
 
       if (detection) {
+        lastFaceDetectedRef.current = Date.now();
+
         const { box } = detection.detection;
         const videoWidth = video.videoWidth;
         const videoHeight = video.videoHeight;
@@ -1137,47 +1158,48 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     const dynamicRange = maxBrightness - minBrightness;
 
     // 综合评分计算
+    // 阈值已适度放宽：室内普通灯光（avgBrightness 60-200）且无明显逆光即可满足自动拍摄
     let score = 0;
     let level: LightLevel = "unknown";
 
-    // 亮度评分 (0-40分) - 理想范围 100-180
-    if (avgBrightness >= 100 && avgBrightness <= 180) {
+    // 亮度评分 (0-40分) - 理想范围 80-200（比原 100-180 更宽松）
+    if (avgBrightness >= 80 && avgBrightness <= 200) {
       score += 40;
-    } else if (avgBrightness >= 80 && avgBrightness <= 200) {
+    } else if (avgBrightness >= 60 && avgBrightness <= 220) {
       score += 30;
-    } else if (avgBrightness >= 50 && avgBrightness <= 220) {
+    } else if (avgBrightness >= 40 && avgBrightness <= 240) {
       score += 15;
     }
 
-    // 均匀度评分 (0-30分) - 标准差越小越好，理想 < 40
-    if (stdDev < 30) {
+    // 均匀度评分 (0-30分) - 标准差越小越好，理想 < 45（比原 < 30 更宽松）
+    if (stdDev < 45) {
       score += 30;
-    } else if (stdDev < 50) {
+    } else if (stdDev < 65) {
       score += 20;
-    } else if (stdDev < 70) {
+    } else if (stdDev < 85) {
       score += 10;
     }
 
-    // 对比度评分 (0-30分) - 动态范围适中 60-150
-    if (dynamicRange >= 60 && dynamicRange <= 150) {
+    // 对比度评分 (0-30分) - 动态范围适中 40-180（比原 60-150 更宽松）
+    if (dynamicRange >= 40 && dynamicRange <= 180) {
       score += 30;
-    } else if (dynamicRange >= 40 && dynamicRange <= 180) {
+    } else if (dynamicRange >= 25 && dynamicRange <= 210) {
       score += 20;
-    } else if (dynamicRange >= 20) {
+    } else if (dynamicRange >= 15) {
       score += 10;
     }
 
 
     // 根据评分和具体问题设置状态
-    if (score >= 85) {
+    if (score >= 75) {
       level = "excellent";
-    } else if (score >= 65) {
+    } else if (score >= 55) {
       level = "good";
-    } else if (avgBrightness > 220) {
+    } else if (avgBrightness > 230) {
       level = "too_bright";
-    } else if (avgBrightness < 50) {
+    } else if (avgBrightness < 40) {
       level = "too_dark";
-    } else if (stdDev > 60) {
+    } else if (stdDev > 80) {
       level = "uneven";
     } else {
       level = "low";
@@ -1188,8 +1210,11 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
 
   /**
    * 切换前后摄像头
+   * 切换过程中显示切换状态，并清除之前的错误提示
    */
   const toggleCamera = useCallback(() => {
+    setIsSwitchingCamera(true);
+    setError(null);
     setFacingMode((prev) => (prev === "user" ? "environment" : "user"));
   }, []);
 
@@ -1290,20 +1315,35 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     return () => clearInterval(interval);
   }, [stream, isAllCaptured, analyzeLightLevel]);
 
-  // 步骤切换时重置手动拍照按钮；计时到 5 秒后显示手动按钮
+  // 步骤切换时重置手动拍照按钮；计时到 MANUAL_BUTTON_DELAY_MS（3秒）后显示手动按钮
   useEffect(() => {
     setShowManualButton(false);
     if (isAllCaptured || isLoading || error || isInCooldown || modelLoadFailed) {
       return;
     }
 
-    const remaining = Math.max(0, 5000 - (Date.now() - stepStartTimeRef.current));
+    const remaining = Math.max(0, MANUAL_BUTTON_DELAY_MS - (Date.now() - stepStartTimeRef.current));
     const timer = setTimeout(() => {
       setShowManualButton(true);
     }, remaining);
 
     return () => clearTimeout(timer);
   }, [isAllCaptured, isLoading, error, isInCooldown, currentStep, modelLoadFailed]);
+
+  // 若长时间未检测到面部，也提前显示手动拍照按钮，避免用户一直卡在当前步骤
+  useEffect(() => {
+    if (isAllCaptured || isLoading || error || isInCooldown || modelLoadFailed || showManualButton) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      if (Date.now() - lastFaceDetectedRef.current >= NO_FACE_MANUAL_BUTTON_DELAY_MS) {
+        setShowManualButton(true);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isAllCaptured, isLoading, error, isInCooldown, modelLoadFailed, showManualButton]);
 
   // 人脸捕获期间保持屏幕常亮，NotAllowedError 静默忽略
   useEffect(() => {
@@ -1559,9 +1599,18 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
           {hasMultipleCameras && (
             <button
               onClick={toggleCamera}
-              className="p-3 rounded-full bg-black/20 border border-white/10 text-white hover:bg-black/40 backdrop-blur-md transition-all"
+              disabled={isSwitchingCamera}
+              className={cn(
+                "p-3 rounded-full bg-black/20 border border-white/10 text-white backdrop-blur-md transition-all",
+                isSwitchingCamera ? "opacity-50 cursor-not-allowed" : "hover:bg-black/40"
+              )}
+              aria-label="切换摄像头"
             >
-              <RefreshCw className="w-5 h-5" />
+              {isSwitchingCamera ? (
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+              ) : (
+                <RefreshCw className="w-5 h-5" />
+              )}
             </button>
           )}
         </div>

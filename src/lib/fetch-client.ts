@@ -13,6 +13,7 @@
 import { CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from "@/lib/csrf-client";
 
 const DEFAULT_TIMEOUT_MS = 30_000;
+const UPLOAD_TIMEOUT_MS = 60_000; // 上传大图片需要更长时间
 
 function getCookie(name: string): string | null {
     if (typeof document === "undefined") return null;
@@ -26,31 +27,96 @@ export function getCsrfToken(): string | null {
 
 export async function fetchWithCsrf(
     input: RequestInfo | URL,
-    init: RequestInit = {}
+    init: RequestInit = {},
+    options: { retries?: number; timeoutMs?: number } = {}
 ): Promise<Response> {
+    const { retries = 0, timeoutMs = DEFAULT_TIMEOUT_MS } = options;
     const method = (init.method || "GET").toUpperCase();
     const unsafeMethods = ["POST", "PUT", "PATCH", "DELETE"];
 
-    const headers = new Headers(init.headers);
+    let lastError: Error | null = null;
 
-    if (unsafeMethods.includes(method)) {
-        const csrfToken = getCsrfToken();
-        if (csrfToken) {
-            headers.set(CSRF_HEADER_NAME, csrfToken);
+    for (let attempt = 0; attempt <= retries; attempt++) {
+        const headers = new Headers(init.headers);
+
+        if (unsafeMethods.includes(method)) {
+            const csrfToken = getCsrfToken();
+            if (csrfToken) {
+                headers.set(CSRF_HEADER_NAME, csrfToken);
+            }
+        }
+
+        const hasExternalSignal = !!init.signal;
+        const controller = hasExternalSignal ? null : new AbortController();
+        const timeoutId = hasExternalSignal ? null : setTimeout(() => controller!.abort(), timeoutMs);
+
+        try {
+            const res = await fetch(input, {
+                ...init,
+                headers,
+                signal: init.signal || controller?.signal,
+            });
+
+            // 5xx 才重试；4xx 立即返回给上层处理
+            if (!res.ok && attempt < retries && res.status >= 500 && res.status < 600) {
+                throw new Error(`Server returned ${res.status}`);
+            }
+            return res;
+        } catch (e) {
+            lastError = e instanceof Error ? e : new Error(String(e));
+            if (attempt < retries) {
+                const delay = 1000 * Math.pow(2, attempt);
+                await new Promise((resolve) => setTimeout(resolve, delay));
+            }
+        } finally {
+            if (timeoutId) clearTimeout(timeoutId);
         }
     }
 
-    const hasExternalSignal = !!init.signal;
-    const controller = hasExternalSignal ? null : new AbortController();
-    const timeoutId = hasExternalSignal ? null : setTimeout(() => controller!.abort(), DEFAULT_TIMEOUT_MS);
+    throw lastError || new Error("Request failed after retries");
+}
 
-    try {
-        return await fetch(input, {
-            ...init,
-            headers,
-            signal: init.signal || controller?.signal,
-        });
-    } finally {
-        if (timeoutId) clearTimeout(timeoutId);
+/**
+ * 带超时和重试的 fetch 封装
+ * 用于上传等可能因网络抖动失败的请求
+ *
+ * @param input 请求 URL
+ * @param init fetch 选项
+ * @param options 重试配置
+ */
+export async function fetchWithRetry(
+    input: RequestInfo | URL,
+    init: RequestInit = {},
+    options: { retries?: number; timeoutMs?: number; retryDelayMs?: number } = {}
+): Promise<Response> {
+    const { retries = 2, timeoutMs = UPLOAD_TIMEOUT_MS, retryDelayMs = 1000 } = options;
+    let lastError: Error | null = null;
+
+    for (let attempt = 0; attempt <= retries; attempt++) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+        try {
+            const res = await fetch(input, {
+                ...init,
+                signal: init.signal || controller.signal,
+            });
+
+            // 5xx 错误才重试；4xx 通常是客户端错误，立即返回让上层处理
+            if (!res.ok && attempt < retries && res.status >= 500 && res.status < 600) {
+                throw new Error(`Server returned ${res.status}`);
+            }
+            return res;
+        } catch (e) {
+            lastError = e instanceof Error ? e : new Error(String(e));
+            if (attempt < retries) {
+                const delay = retryDelayMs * Math.pow(2, attempt);
+                await new Promise((resolve) => setTimeout(resolve, delay));
+            }
+        } finally {
+            clearTimeout(timeoutId);
+        }
     }
+
+    throw lastError || new Error("Request failed after retries");
 }
