@@ -98,44 +98,11 @@ function CompactProductCard({
     onViewDetail?: (product: ProductCardData) => void;
 }) {
     const [imageError, setImageError] = useState(false);
-    const [showPlatforms, setShowPlatforms] = useState(false);
-    const platformRef = useRef<HTMLDivElement>(null);
-
-    const allLinks = getProductLinks(product.affiliateLinks);
-    const primaryLink = getPrimaryLink(product.affiliateLinks);
-
-    // 点击外部关闭平台下拉
-    useEffect(() => {
-        if (!showPlatforms) return;
-        const handleClick = (e: MouseEvent) => {
-            if (platformRef.current && !platformRef.current.contains(e.target as Node)) {
-                setShowPlatforms(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClick);
-        return () => document.removeEventListener('mousedown', handleClick);
-    }, [showPlatforms]);
 
     const handleCardClick = useCallback(() => {
         onProductClick?.(product.id);
         onViewDetail?.(product);
     }, [product, onProductClick, onViewDetail]);
-
-    const handleBuyClick = useCallback((e: React.MouseEvent) => {
-        e.stopPropagation();
-        onProductClick?.(product.id);
-
-        if (allLinks.length > 1) {
-            setShowPlatforms(prev => !prev);
-        } else if (primaryLink) {
-            openAffiliateLink(primaryLink.url, product.id, primaryLink.platform);
-        }
-    }, [allLinks, primaryLink, product.id, onProductClick]);
-
-    const handlePlatformClick = useCallback((platform: typeof allLinks[0]) => {
-        openAffiliateLink(platform.url, product.id, platform.platform);
-        setShowPlatforms(false);
-    }, [product.id]);
 
     return (
         <m.div
@@ -194,20 +161,21 @@ function CompactProductCard({
                         )}
                     </div>
 
-                    {/* 价格 + 购买按钮 - mobile only */}
+                    {/* 价格 + 查看详情 - mobile only */}
                     <div className="mt-auto flex items-center justify-between lg:hidden">
                         <span className="text-base font-bold text-[#1a1a1a]">
                             {formatPrice(product.price)}
                         </span>
-                        {allLinks.length > 0 && (
-                            <button
-                                onClick={handleBuyClick}
-                                className="flex items-center gap-1 rounded-full bg-[#5c4937] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#4a3a2c] active:scale-95"
-                            >
-                                {primaryLink ? `${primaryLink.config.name}购买` : '去购买'}
-                                {allLinks.length > 1 && <ChevronRight className="w-3 h-3" />}
-                            </button>
-                        )}
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onViewDetail?.(product);
+                            }}
+                            className="inline-flex items-center gap-1 rounded-full border border-[#5c4937]/30 bg-transparent px-3 py-1.5 text-xs font-medium text-[#5c4937] transition-colors hover:border-[#5c4937]/50 hover:bg-[#5c4937]/5"
+                        >
+                            查看详情
+                            <ChevronRight className="w-3 h-3" />
+                        </button>
                     </div>
 
                     {/* 底部操作栏 - desktop only */}
@@ -215,57 +183,16 @@ function CompactProductCard({
                         <span className="text-xl font-bold text-[#1a1a1a]">
                             {formatPrice(product.price)}
                         </span>
-                        <div className="flex items-center gap-2">
-                            {/* 购买按钮 */}
-                            {allLinks.length > 0 && (
-                                <div className="relative" ref={platformRef}>
-                                    <button
-                                        onClick={handleBuyClick}
-                                        className="group/btn inline-flex items-center gap-1.5 rounded-full bg-[#5c4937] px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-[#4a3a2c]"
-                                    >
-                                        {primaryLink ? `${primaryLink.config.name}购买` : '去购买'}
-                                        {allLinks.length > 1 ? (
-                                            <ChevronRight className={cn(
-                                                "w-3.5 h-3.5 transition-transform",
-                                                showPlatforms && "rotate-90"
-                                            )} />
-                                        ) : (
-                                            <ExternalLink className="w-3 h-3" />
-                                        )}
-                                    </button>
-
-                                    {/* 多平台选择下拉 */}
-                                    {showPlatforms && allLinks.length > 1 && (
-                                        <div className="absolute bottom-full right-0 z-20 mb-1 min-w-[130px] rounded-xl border border-[#E8E2D9] bg-white py-1 shadow-lg">
-                                            {allLinks.map(link => (
-                                                <button
-                                                    key={link.platform}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handlePlatformClick(link);
-                                                    }}
-                                                    className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-medium transition-colors hover:bg-[#F5F2E9]"
-                                                    style={{ color: link.config.color }}
-                                                >
-                                                    <span>{link.config.icon}</span>
-                                                    {link.config.name}购买
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onViewDetail?.(product);
-                                }}
-                                className="group/btn inline-flex items-center gap-1.5 rounded-full border border-[#5c4937]/30 bg-transparent px-4 py-2 text-[13px] font-medium text-[#5c4937] transition-colors hover:border-[#5c4937]/50 hover:bg-[#5c4937]/5"
-                            >
-                                查看详情
-                                <ChevronRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover/btn:translate-x-0.5" />
-                            </button>
-                        </div>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onViewDetail?.(product);
+                            }}
+                            className="group/btn inline-flex items-center gap-1.5 rounded-full border border-[#5c4937]/30 bg-transparent px-4 py-2 text-[13px] font-medium text-[#5c4937] transition-colors hover:border-[#5c4937]/50 hover:bg-[#5c4937]/5"
+                        >
+                            查看详情
+                            <ChevronRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover/btn:translate-x-0.5" />
+                        </button>
                     </div>
                 </div>
             </div>
