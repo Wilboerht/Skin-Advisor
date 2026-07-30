@@ -114,7 +114,7 @@ export default function Home() {
     safeStorage.remove(STORAGE_KEYS.ADVISOR_FREE_RETRY);
     safeStorage.remove(STORAGE_KEYS.ADVISOR_STEP);
     safeStorage.remove(STORAGE_KEYS.ADVISOR_NICKNAME);
-    safeStorage.remove("advisor_scan_mode");
+    // 保留 advisor_scan_mode：它是本次新测试的入口模式，清除后纯问卷模式会被误判为 AI 扫描模式
 
     // 修复 iOS 从首页 modal 进入 questions 页面时滚动位置异常：
     // 跳转前恢复 body overflow 并把页面滚动重置到顶部
