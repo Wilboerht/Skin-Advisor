@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Loader2, MapPin, ShieldCheck, ArrowRight, LogOut, X } from "lucide-react";
+import { Loader2, MapPin, ShieldCheck, ArrowRight, LogOut, X, ChevronDown } from "lucide-react";
 import { AnimatePresence, motion as m, useReducedMotion } from "framer-motion";
 import Image from "next/image";
 import { useToast } from "@/components/ui/Toast";
@@ -60,6 +60,9 @@ export function OnboardingFlowModal({
     const [isFinishing, setIsFinishing] = useState(false);
     const [maxVisitedIndex, setMaxVisitedIndex] = useState(0);
     const [regionSearch, setRegionSearch] = useState("");
+    const [regionOpen, setRegionOpen] = useState(false);
+    const regionBoxRef = useRef<HTMLDivElement>(null);
+    const regionInputRef = useRef<HTMLInputElement>(null);
     const prefersReducedMotion = useReducedMotion();
     const screens = getScreens();
     const totalScreens = screens.length;
@@ -157,6 +160,30 @@ export function OnboardingFlowModal({
             goNext();
         }
     };
+
+    // Combobox: open & focus when entering region view; close on outside click
+    useEffect(() => {
+        if (locationView === "region") {
+            setRegionSearch("");
+            const t = setTimeout(() => {
+                setRegionOpen(true);
+                regionInputRef.current?.focus();
+            }, 380);
+            return () => clearTimeout(t);
+        }
+        setRegionOpen(false);
+    }, [locationView]);
+
+    useEffect(() => {
+        if (!regionOpen) return;
+        const handler = (e: MouseEvent) => {
+            if (regionBoxRef.current && !regionBoxRef.current.contains(e.target as Node)) {
+                setRegionOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handler);
+        return () => document.removeEventListener("mousedown", handler);
+    }, [regionOpen]);
 
     /* ---- Legal handlers ---- */
     const handleLegalSubmit = () => {
@@ -358,79 +385,94 @@ export function OnboardingFlowModal({
                                 ) : (
                                     <m.div
                                         key="location-region"
-                                        className="relative z-10 w-full max-w-lg h-full mx-auto flex flex-col px-4 sm:px-6"
+                                        className="relative z-10 w-full max-w-lg h-full mx-auto flex flex-col justify-center px-4 sm:px-6"
                                         initial={{ opacity: 0, x: 40 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         exit={{ opacity: 0, x: 40 }}
                                         transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
                                     >
                                         {/* Region Select Header */}
-                                        <div className="shrink-0 pt-24 md:pt-28 pb-4 md:pb-6 text-center">
+                                        <div className="shrink-0 pb-6 md:pb-8 text-center">
                                             <h3 className="text-lg md:text-2xl font-serif font-light text-brand-charcoal tracking-[0.02em]">选择所在地区</h3>
                                             <p className="text-sm md:text-base text-brand-charcoal/75 font-light leading-relaxed tracking-[0.06em] md:tracking-[0.12em] mt-3">结合当地气候情况，为您提供更精准的分析建议</p>
                                         </div>
 
-                                        {/* Search with blur overlay */}
-                                        <div className="shrink-0">
+                                        {/* Province Combobox */}
+                                        <div className="shrink-0" ref={regionBoxRef}>
                                             <div className="relative w-full">
                                                 <input
+                                                    ref={regionInputRef}
                                                     type="text"
                                                     value={regionSearch}
-                                                    onChange={(e) => setRegionSearch(e.target.value)}
-                                                    placeholder="搜索省份"
-                                                    className="w-full bg-white/60 border border-[#3D4430]/10 rounded-full py-2.5 pl-4 pr-10 text-[16px] text-brand-charcoal placeholder:text-brand-charcoal/30 focus:outline-none focus:border-[#8B7355]/40 transition-colors"
+                                                    onChange={(e) => { setRegionSearch(e.target.value); setRegionOpen(true); }}
+                                                    onClick={() => setRegionOpen(true)}
+                                                    placeholder="选择或搜索省份"
+                                                    aria-expanded={regionOpen}
+                                                    aria-haspopup="listbox"
+                                                    className="w-full bg-white/70 border border-brand-charcoal/15 rounded-xl py-3.5 pl-5 pr-12 text-[15px] text-brand-charcoal placeholder:text-brand-charcoal/35 focus:outline-none focus:border-brand-charcoal/35 focus:bg-white/90 focus:shadow-[0_4px_20px_rgba(0,38,62,0.06)] transition-all duration-300"
                                                 />
-                                                {regionSearch && (
-                                                    <button
-                                                        onClick={() => setRegionSearch("")}
-                                                        aria-label="清除搜索"
-                                                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full text-brand-charcoal/40 hover:text-brand-charcoal bg-[#3D4430]/5 hover:bg-[#3D4430]/10 transition-colors"
-                                                    >
-                                                        <X className="w-3.5 h-3.5" strokeWidth={2} />
-                                                    </button>
-                                                )}
+                                                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                                                    {regionSearch && (
+                                                        <button
+                                                            onClick={() => { setRegionSearch(""); regionInputRef.current?.focus(); }}
+                                                            aria-label="清除"
+                                                            className="p-1.5 rounded-full text-brand-charcoal/40 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.06] transition-colors cursor-pointer"
+                                                        >
+                                                            <X className="w-3.5 h-3.5" strokeWidth={2} />
+                                                        </button>
+                                                    )}
+                                                    <ChevronDown className={`w-4 h-4 text-brand-charcoal/40 transition-transform duration-300 pointer-events-none ${regionOpen ? "rotate-180" : ""}`} />
+                                                </div>
                                             </div>
-                                            {/* Blur overlay below search box */}
-                                            <div className="mt-2 h-6 bg-gradient-to-b from-[#FDFBF7]/90 via-[#FDFBF7]/70 to-transparent backdrop-blur-[2px] pointer-events-none" />
-                                        </div>
 
-                                        {/* Region List */}
-                                        <div className="flex-1 overflow-y-auto px-2 md:px-4 pb-24 scrollbar-hide">
-                                            {(() => {
-                                                const filtered = regionOptions
-                                                    .flatMap((group) => group.regions)
-                                                    .filter((r) => r.includes(regionSearch.trim()));
+                                            {/* Dropdown */}
+                                            <AnimatePresence>
+                                                {regionOpen && (
+                                                    <m.div
+                                                        initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                        exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                                                        transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                                                        className="absolute z-20 mt-2 w-full bg-white/95 backdrop-blur-md border border-brand-charcoal/10 rounded-xl shadow-[0_12px_40px_rgba(0,38,62,0.10)] overflow-hidden"
+                                                    >
+                                                        <div className="max-h-[46vh] overflow-y-auto py-2 scrollbar-hide" role="listbox">
+                                                            {(() => {
+                                                                const filtered = regionOptions
+                                                                    .flatMap((group) => group.regions)
+                                                                    .filter((r) => r.includes(regionSearch.trim()));
 
-                                                if (filtered.length === 0) {
-                                                    return (
-                                                        <div className="text-center py-12">
-                                                            <p className="text-sm text-brand-charcoal/60 font-light tracking-[0.06em]">未找到匹配的地区</p>
-                                                            <p className="text-[13px] text-brand-charcoal/48 mt-2 font-light tracking-[0.06em]">试试其他关键词，或点击下方跳过</p>
+                                                                if (filtered.length === 0) {
+                                                                    return (
+                                                                        <div className="text-center py-10">
+                                                                            <p className="text-sm text-brand-charcoal/60 font-light tracking-[0.06em]">未找到匹配的地区</p>
+                                                                            <p className="text-[13px] text-brand-charcoal/48 mt-2 font-light tracking-[0.06em]">试试其他关键词，或点击下方跳过</p>
+                                                                        </div>
+                                                                    );
+                                                                }
+
+                                                                return filtered.map((region) => (
+                                                                    <button
+                                                                        key={region}
+                                                                        role="option"
+                                                                        aria-selected={false}
+                                                                        onClick={() => handleRegionOption(region)}
+                                                                        className="w-full text-left px-5 py-3 text-[14px] tracking-[0.08em] text-brand-charcoal/75 hover:bg-brand-charcoal/[0.05] hover:text-brand-charcoal active:bg-brand-charcoal/[0.08] transition-colors duration-200 cursor-pointer"
+                                                                    >
+                                                                        {region}
+                                                                    </button>
+                                                                ));
+                                                            })()}
                                                         </div>
-                                                    );
-                                                }
-
-                                                return (
-                                                    <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 md:gap-3">
-                                                        {filtered.map((region) => (
-                                                            <button
-                                                                key={region}
-                                                                onClick={() => handleRegionOption(region)}
-                                                                className="py-2.5 md:py-3 px-1 rounded-xl text-[12px] md:text-[13px] tracking-[0.1em] text-brand-charcoal/70 bg-white/50 border border-brand-charcoal/10 hover:bg-brand-charcoal/[0.06] hover:text-brand-charcoal hover:border-brand-charcoal/30 transition-all duration-300 font-medium active:scale-95"
-                                                            >
-                                                                {region}
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                );
-                                            })()}
+                                                    </m.div>
+                                                )}
+                                            </AnimatePresence>
                                         </div>
 
-                                        {/* Footer */}
-                                        <div className="absolute bottom-0 left-0 right-0 pt-8 pb-5 md:pb-6 text-center pointer-events-none bg-gradient-to-t from-[#FDFBF7] via-[#FDFBF7]/95 to-transparent">
+                                        {/* Skip */}
+                                        <div className="shrink-0 mt-6 md:mt-8 text-center">
                                             <button
                                                 onClick={handleSkipRegion}
-                                                className="pointer-events-auto text-[13px] tracking-[0.1em] text-brand-charcoal/60 hover:text-brand-charcoal transition-colors bg-transparent border-none cursor-pointer"
+                                                className="text-[13px] tracking-[0.1em] text-brand-charcoal/60 hover:text-brand-charcoal transition-colors bg-transparent border-none cursor-pointer"
                                             >
                                                 暂不提供
                                             </button>
