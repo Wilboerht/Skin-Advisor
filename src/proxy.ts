@@ -32,6 +32,7 @@ const ssoMiddleware = createSsoMiddleware({
       "/gift",                   // 活动页
       "/robots.txt",
       "/sitemap.xml",
+      "/site.webmanifest",       // PWA manifest
       "/models/:path*",          // face-api 模型文件（静态资源）
       "/api/auth/callback",
       "/api/auth/me",

@@ -224,11 +224,22 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
 
       let mediaStream: MediaStream;
 
-      // 尝试多组分辨率，从优到劣
+      // 构建基础约束 + 可选 facingMode
+      const baseConstraints = (withFacingMode: boolean) => ({
+        video: withFacingMode
+          ? { facingMode, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, min: 15 } }
+          : { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, min: 15 } },
+      });
+
+      // 尝试多组分辨率，从优到劣；优先带 facingMode，失败时移除 facingMode 再试（兼容台式机/特殊设备）
       const constraintsList = [
-        { video: { facingMode, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, min: 15 } } },
+        baseConstraints(true),
         { video: { facingMode, width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 30, min: 15 } } },
         { video: { facingMode, width: { ideal: 320 }, height: { ideal: 240 }, frameRate: { ideal: 30, min: 15 } } },
+        { video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, min: 15 } } },
+        { video: { width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 30, min: 15 } } },
+        { video: { width: { ideal: 320 }, height: { ideal: 240 }, frameRate: { ideal: 30, min: 15 } } },
+        { video: true },
       ];
 
       let lastError: Error | null = null;
@@ -236,11 +247,14 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
         try {
           mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
           lastError = null;
+          if (DEBUG) {
+            console.log("Camera constraints matched:", JSON.stringify(constraints));
+          }
           break;
         } catch (e) {
           lastError = e as Error;
           if ((e as Error)?.name !== 'OverconstrainedError') throw e;
-          // 继续尝试更低分辨率
+          // 继续尝试更低要求
         }
       }
 
@@ -252,25 +266,44 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
         return;
       }
 
+      const videoTrack = mediaStream!.getVideoTracks()[0];
       if (DEBUG) {
-        console.log("Camera stream obtained:", mediaStream!.id, mediaStream!.getVideoTracks()[0].label);
+        console.log("Camera stream obtained:", mediaStream!.id, videoTrack?.label, "muted:", videoTrack?.muted);
       }
 
-      // Try to apply advanced constraints after stream is obtained
-      try {
-        const videoTrack = mediaStream!.getVideoTracks()[0];
-        if (videoTrack) {
-          await videoTrack.applyConstraints({
-            advanced: [
-              { beautificationMode: "off" } as MediaTrackConstraintsWithEnhancement,
-              { imageEnhancement: false } as MediaTrackConstraintsWithEnhancement
-            ]
-          });
+      // 安全地关闭非标准美颜/增强约束，避免部分设备黑屏；仅当设备明确支持时才应用
+      if (videoTrack && typeof videoTrack.getCapabilities === 'function') {
+        try {
+          const caps = videoTrack.getCapabilities() as Record<string, unknown>;
+          const advanced: MediaTrackConstraintSet[] = [];
+          if ('beautificationMode' in caps) {
+            advanced.push({ beautificationMode: "off" } as MediaTrackConstraintSet);
+          }
+          if ('imageEnhancement' in caps) {
+            advanced.push({ imageEnhancement: false } as MediaTrackConstraintSet);
+          }
+          if (advanced.length > 0) {
+            await videoTrack.applyConstraints({ advanced });
+            if (DEBUG) console.log("Applied safe beautification constraints:", advanced);
+          }
+        } catch (e) {
+          if (DEBUG) {
+            console.warn("Could not apply beautification constraints:", e);
+          }
         }
-      } catch (e) {
-        if (DEBUG) {
-          console.warn("Could not apply beautification constraints:", e);
-        }
+      }
+
+      // 监听 track muted 状态（如摄像头被其他应用抢占时给出提示）
+      if (videoTrack) {
+        const onMute = () => {
+          console.warn("Camera track muted — camera may be in use by another app or hardware disabled.");
+        };
+        const onUnmute = () => {
+          if (DEBUG) console.log("Camera track unmuted.");
+        };
+        videoTrack.addEventListener("mute", onMute);
+        videoTrack.addEventListener("unmute", onUnmute);
+        // 清理函数在 stream 变化时由后续 useEffect 的 cleanup 执行
       }
 
       streamRef.current = mediaStream!;
