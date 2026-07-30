@@ -1077,7 +1077,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
           await onCapture(allImages);
         } catch (err) {
           console.error("[FaceCapture] onCapture failed, resetting capture state:", err);
-          // 父级处理失败（如资源加载失败），回到拍摄界面让用户可重试
+          // 父级处理失败（如资源加载失败），重置拍摄状态，由错误浮层引导用户重试
           setIsAllCaptured(false);
           setError("处理失败，请重新拍摄");
           setFaceStatus("none");
@@ -1088,10 +1088,6 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
           setIsInCooldown(false);
           stepStartTimeRef.current = Date.now();
           setShowManualButton(false);
-          // 恢复摄像头以便用户重拍
-          if (initCameraRef.current) {
-            void initCameraRef.current();
-          }
           successTimerRef.current = null;
           return;
         }
@@ -1593,7 +1589,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
       {error && (
         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/90 p-8 text-center">
           <AlertCircle className="h-12 w-12 text-red-400 mb-4" />
-          <h3 className="text-white text-lg font-medium mb-2">摄像头访问失败</h3>
+          <h3 className="text-white text-lg font-medium mb-2">拍摄遇到问题</h3>
           <p className="text-white/60 max-w-md mb-8">{error}</p>
           <div className="flex gap-4">
             <button
