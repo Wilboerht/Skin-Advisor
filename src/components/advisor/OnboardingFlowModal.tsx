@@ -59,10 +59,6 @@ export function OnboardingFlowModal({
     const [isAgreed, setIsAgreed] = useState(false);
     const [isFinishing, setIsFinishing] = useState(false);
     const [maxVisitedIndex, setMaxVisitedIndex] = useState(0);
-    const [regionSearch, setRegionSearch] = useState("");
-    const [regionOpen, setRegionOpen] = useState(false);
-    const regionBoxRef = useRef<HTMLDivElement>(null);
-    const regionInputRef = useRef<HTMLInputElement>(null);
     const prefersReducedMotion = useReducedMotion();
     const screens = getScreens();
     const totalScreens = screens.length;
@@ -161,29 +157,6 @@ export function OnboardingFlowModal({
         }
     };
 
-    // Combobox: open & focus when entering region view; close on outside click
-    useEffect(() => {
-        if (locationView === "region") {
-            setRegionSearch("");
-            const t = setTimeout(() => {
-                setRegionOpen(true);
-                regionInputRef.current?.focus();
-            }, 380);
-            return () => clearTimeout(t);
-        }
-        setRegionOpen(false);
-    }, [locationView]);
-
-    useEffect(() => {
-        if (!regionOpen) return;
-        const handler = (e: MouseEvent) => {
-            if (regionBoxRef.current && !regionBoxRef.current.contains(e.target as Node)) {
-                setRegionOpen(false);
-            }
-        };
-        document.addEventListener("mousedown", handler);
-        return () => document.removeEventListener("mousedown", handler);
-    }, [regionOpen]);
 
     /* ---- Legal handlers ---- */
     const handleLegalSubmit = () => {
@@ -397,75 +370,20 @@ export function OnboardingFlowModal({
                                             <p className="text-sm md:text-base text-brand-charcoal/75 font-light leading-relaxed tracking-[0.06em] md:tracking-[0.12em] mt-3">结合当地气候情况，为您提供更精准的分析建议</p>
                                         </div>
 
-                                        {/* Province Combobox */}
-                                        <div className="shrink-0" ref={regionBoxRef}>
-                                            <div className="relative w-full">
-                                                <input
-                                                    ref={regionInputRef}
-                                                    type="text"
-                                                    value={regionSearch}
-                                                    onChange={(e) => { setRegionSearch(e.target.value); setRegionOpen(true); }}
-                                                    onClick={() => setRegionOpen(true)}
-                                                    placeholder="选择或搜索省份"
-                                                    aria-expanded={regionOpen}
-                                                    aria-haspopup="listbox"
-                                                    className="w-full bg-white/70 border border-brand-charcoal/15 rounded-xl py-3.5 pl-5 pr-12 text-[15px] text-brand-charcoal placeholder:text-brand-charcoal/35 focus:outline-none focus:border-brand-charcoal/35 focus:bg-white/90 focus:shadow-[0_4px_20px_rgba(0,38,62,0.06)] transition-all duration-300"
-                                                />
-                                                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                                                    {regionSearch && (
-                                                        <button
-                                                            onClick={() => { setRegionSearch(""); regionInputRef.current?.focus(); }}
-                                                            aria-label="清除"
-                                                            className="p-1.5 rounded-full text-brand-charcoal/40 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.06] transition-colors cursor-pointer"
-                                                        >
-                                                            <X className="w-3.5 h-3.5" strokeWidth={2} />
-                                                        </button>
-                                                    )}
-                                                    <ChevronDown className={`w-4 h-4 text-brand-charcoal/40 transition-transform duration-300 pointer-events-none ${regionOpen ? "rotate-180" : ""}`} />
-                                                </div>
-                                            </div>
-
-                                            {/* Dropdown */}
-                                            <AnimatePresence>
-                                                {regionOpen && (
-                                                    <m.div
-                                                        initial={{ opacity: 0, y: -6, scale: 0.98 }}
-                                                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                                                        exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                                                        transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                                                        className="absolute z-20 mt-2 w-full bg-white/95 backdrop-blur-md border border-brand-charcoal/10 rounded-xl shadow-[0_12px_40px_rgba(0,38,62,0.10)] overflow-hidden"
-                                                    >
-                                                        <div className="max-h-[46vh] overflow-y-auto py-2 scrollbar-hide" role="listbox">
-                                                            {(() => {
-                                                                const filtered = regionOptions
-                                                                    .flatMap((group) => group.regions)
-                                                                    .filter((r) => r.includes(regionSearch.trim()));
-
-                                                                if (filtered.length === 0) {
-                                                                    return (
-                                                                        <div className="text-center py-10">
-                                                                            <p className="text-sm text-brand-charcoal/60 font-light tracking-[0.06em]">未找到匹配的地区</p>
-                                                                            <p className="text-[13px] text-brand-charcoal/48 mt-2 font-light tracking-[0.06em]">试试其他关键词，或点击下方跳过</p>
-                                                                        </div>
-                                                                    );
-                                                                }
-
-                                                                return filtered.map((region) => (
-                                                                    <button
-                                                                        key={region}
-                                                                        role="option"
-                                                                        aria-selected={false}
-                                                                        onClick={() => handleRegionOption(region)}
-                                                                        className="w-full text-left px-5 py-3 text-[14px] tracking-[0.08em] text-brand-charcoal/75 hover:bg-brand-charcoal/[0.05] hover:text-brand-charcoal active:bg-brand-charcoal/[0.08] transition-colors duration-200 cursor-pointer"
-                                                                    >
-                                                                        {region}
-                                                                    </button>
-                                                                ));
-                                                            })()}
-                                                        </div>
-                                                    </m.div>
-                                                )}
-                                            </AnimatePresence>
+                                        {/* Province Select (native) */}
+                                        <div className="shrink-0 relative">
+                                            <select
+                                                value=""
+                                                onChange={(e) => { if (e.target.value) handleRegionOption(e.target.value); }}
+                                                aria-label="选择所在地区"
+                                                className="w-full appearance-none bg-white/70 border border-brand-charcoal/15 rounded-xl py-3.5 pl-5 pr-12 text-[15px] text-brand-charcoal focus:outline-none focus:border-brand-charcoal/35 transition-colors duration-300 cursor-pointer"
+                                            >
+                                                <option value="" disabled>选择省份</option>
+                                                {regionOptions.flatMap((group) => group.regions).map((region) => (
+                                                    <option key={region} value={region}>{region}</option>
+                                                ))}
+                                            </select>
+                                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-charcoal/40 pointer-events-none" />
                                         </div>
 
                                         {/* Skip */}
