@@ -481,7 +481,7 @@ export default function Home() {
 
                     {/* Info Chips */}
                     <div className="flex flex-wrap items-center justify-center gap-2.5 md:gap-3 mb-10 md:mb-12 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
-                      {["2-5 分钟完成", "多维度肌肤状态检测", "定制化专属报告"].map((chip) => (
+                      {["2-5 分钟完成", "多维度精准肌肤状态检测", "定制化专属报告"].map((chip) => (
                         <span
                           key={chip}
                           className="px-4 py-1.5 rounded-full border border-brand-charcoal/15 text-brand-charcoal/60 text-[12px] md:text-[13px] font-light tracking-[0.15em] transition-colors duration-300 hover:border-brand-charcoal/30 hover:text-brand-charcoal/80"

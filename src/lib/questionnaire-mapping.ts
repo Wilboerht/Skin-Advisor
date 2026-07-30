@@ -20,7 +20,7 @@ export const QUESTIONNAIRE_ONLY_QUESTIONS: Question[] = [
     {
         id: "q_skincareAttitude",
         fieldName: "q_skincareAttitude",
-        question: "你的护肤哲学更接近哪种？",
+        question: "您的护肤哲学更接近哪种？",
         type: "single",
         options: [
             { value: "minimal", label: "Less is More", description: "精简高效，少即是多" },
@@ -32,19 +32,19 @@ export const QUESTIONNAIRE_ONLY_QUESTIONS: Question[] = [
     {
         id: "q_selfRating",
         fieldName: "q_selfRating",
-        question: "给自己的皮肤状态打分，你会给多少？",
+        question: "您会给自己的皮肤状态打多少分？",
         type: "single",
         options: [
             { value: "great", label: "90+ 非常好", description: "基本没大问题" },
             { value: "good", label: "70-89 还不错", description: "有些小瑕疵" },
             { value: "average", label: "50-69 一般般", description: "有明显困扰" },
-            { value: "poor", label: "50 以下", description: "不太满意，急需改善" },
+            { value: "poor", label: "50 以下 不理想", description: "不太满意，急需改善" },
         ],
     },
     {
         id: "q_skincareMotivation",
         fieldName: "q_skincareMotivation",
-        question: "驱动你认真护肤的最大动力是什么？",
+        question: "驱动您认真护肤的最大动力是什么？",
         type: "single",
         options: [
             { value: "antiAging", label: "延缓衰老", description: "想比同龄人看起来年轻" },

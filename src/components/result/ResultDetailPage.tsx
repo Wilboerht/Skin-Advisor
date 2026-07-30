@@ -64,7 +64,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
               {data.m1.persona}
             </p>
           </div>
-          <div className="relative w-full max-w-[180px] mx-auto lg:max-w-[260px] lg:ml-auto aspect-[3/4]">
+          <div className="relative w-full max-w-[180px] mx-auto lg:max-w-[260px] lg:ml-auto lg:mr-0 aspect-[3/4]">
             <Image
               src={`/images/character/${data.ipKey}/${data.ipKey}_female.png`}
               alt={`${data.typeName} 形象`}
