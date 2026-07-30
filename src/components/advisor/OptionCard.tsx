@@ -74,15 +74,15 @@ export function OptionCard({
             {/* Text Content */}
             <div className="flex-1 min-w-0">
                 <p className={cn(
-                    "text-[15px] md:text-base tracking-wide mb-0.5 md:mb-1 transition-colors duration-300",
-                    isSelected ? "text-[#1A1A1A] font-semibold" : "text-[#3D4430]/80 font-medium"
+                    "text-[15px] md:text-base tracking-[0.06em] mb-0.5 md:mb-1 transition-colors duration-300",
+                    isSelected ? "text-brand-charcoal font-semibold" : "text-brand-charcoal/70 font-medium"
                 )}>
                     {label}
                 </p>
                 {description && (
                     <p className={cn(
                         "text-xs md:text-sm leading-relaxed transition-colors duration-300",
-                        isSelected ? "text-[#8B7355] font-normal" : "text-[#5E5E5E]/60 font-light"
+                        isSelected ? "text-brand-charcoal/70 font-normal" : "text-brand-charcoal/60 font-light"
                     )}>
                         {description}
                     </p>

@@ -50,20 +50,14 @@ export default function ResultIndexPage() {
             className="text-xl md:text-3xl font-serif font-light text-brand-charcoal leading-[1.1] tracking-[0.02em] mb-5 opacity-0 animate-fade-in-up"
             style={{ animationFillMode: "forwards" }}
           >
-            发现你的肌肤形象类型
+            了解不同肌肤类型与护理方案
           </h1>
-          <p
-            className="text-[13px] md:text-base text-brand-charcoal/75 font-light leading-[1.8] md:leading-normal tracking-[0.06em] md:tracking-[0.12em] max-w-2xl mx-auto mb-5 opacity-0 animate-fade-in-up"
-            style={{ animationDelay: "0.1s", animationFillMode: "forwards" }}
-          >
-            每一种肌肤，都有自己的性格。从素颜状态出发，读懂肌肤真正需要什么。
-          </p>
           <Link
             href="/"
             className="w-full sm:w-auto group relative inline-flex items-center justify-center gap-3 px-8 py-4 border border-brand-charcoal/60 text-brand-charcoal bg-transparent text-[13px] sm:text-[14px] tracking-[0.1em] font-medium cursor-pointer transition-all duration-500 hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,38,62,0.12)] active:translate-y-0 active:shadow-none opacity-0 animate-fade-in-up"
-            style={{ animationDelay: "0.2s", animationFillMode: "forwards" }}
+            style={{ animationDelay: "0.1s", animationFillMode: "forwards" }}
           >
-            <span>前往测肤</span>
+            <span>了解我的肤质类型</span>
             <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
           </Link>
           <Link

@@ -19,7 +19,7 @@ export function GenderSelection({ onSelect, selectedGender }: GenderSelectionPro
             <m.h2
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mb-8 text-center font-serif text-2xl md:text-3xl text-[#1A1A1A]"
+                className="mb-8 text-center font-serif font-light text-2xl md:text-3xl text-brand-charcoal tracking-[0.02em]"
             >
                 开始之前，请选择您的性别
             </m.h2>
@@ -39,7 +39,7 @@ export function GenderSelection({ onSelect, selectedGender }: GenderSelectionPro
                     </div>
 
                     <div>
-                        <h3 className="text-lg sm:text-2xl font-serif font-medium text-[#1A1A1A]">女性</h3>
+                        <h3 className="text-lg sm:text-2xl font-serif font-medium text-brand-charcoal">女性</h3>
                     </div>
                 </m.button>
 
@@ -57,7 +57,7 @@ export function GenderSelection({ onSelect, selectedGender }: GenderSelectionPro
                     </div>
 
                     <div>
-                        <h3 className="text-lg sm:text-2xl font-serif font-medium text-[#1A1A1A]">男性</h3>
+                        <h3 className="text-lg sm:text-2xl font-serif font-medium text-brand-charcoal">男性</h3>
                     </div>
                 </m.button>
             </div>

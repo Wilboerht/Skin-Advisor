@@ -644,11 +644,11 @@ export default function QuestionsPage() {
                     <div className="relative flex items-center justify-center pt-[calc(1.75rem+env(safe-area-inset-top,0px))] pb-7 px-4 md:px-12 lg:px-20 border-b border-[#3D4430]/5 z-20">
                         <button
                             onClick={() => router.push("/")}
-                            className="absolute left-2 sm:left-4 md:left-12 lg:left-20 min-w-[44px] min-h-[44px] p-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-[#3D4430]/70 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5 touch-manipulation active:scale-95"
+                            className="absolute left-2 sm:left-4 md:left-12 lg:left-20 min-w-[44px] min-h-[44px] p-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-brand-charcoal/60 hover:text-brand-charcoal transition-colors rounded-md hover:bg-[#3D4430]/5 touch-manipulation active:scale-95"
                             aria-label="回首页"
                         >
                             <ChevronLeft className="w-6 h-6 sm:w-5 sm:h-5" strokeWidth={1.5} />
-                            <span className="hidden sm:inline text-[14px] font-medium tracking-wide">回首页</span>
+                            <span className="hidden sm:inline text-[14px] font-medium tracking-[0.1em]">回首页</span>
                         </button>
                         <Image
                             src="/NIHPLOD-logo.svg"
@@ -660,11 +660,11 @@ export default function QuestionsPage() {
                         />
                         <button
                             onClick={() => router.push("/")}
-                            className="absolute right-2 sm:right-4 md:right-12 lg:right-20 min-w-[44px] min-h-[44px] p-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-[#3D4430]/70 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5 touch-manipulation active:scale-95"
+                            className="absolute right-2 sm:right-4 md:right-12 lg:right-20 min-w-[44px] min-h-[44px] p-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-brand-charcoal/60 hover:text-brand-charcoal transition-colors rounded-md hover:bg-[#3D4430]/5 touch-manipulation active:scale-95"
                             aria-label="回到首页"
                         >
                             <LogOut className="w-6 h-6 sm:w-5 sm:h-5" strokeWidth={1.5} />
-                            <span className="hidden sm:inline text-[14px] font-medium tracking-wide">退出</span>
+                            <span className="hidden sm:inline text-[14px] font-medium tracking-[0.1em]">退出</span>
                         </button>
                     </div>
 
@@ -674,17 +674,17 @@ export default function QuestionsPage() {
                     >
                         <div className="h-full min-h-0 py-4 sm:py-0 flex flex-col items-center justify-center">
                             {aiConfigured === null ? (
-                                <div className="flex items-center gap-2 text-[#5E5E5E]">
+                                <div className="flex items-center gap-2 text-brand-charcoal/60">
                                     <Loader2 className="w-4 h-4 animate-spin" />
                                     正在检查服务状态...
                                 </div>
                             ) : aiConfigured === false && scanMode !== "questionnaire" ? (
                                 <div className="w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm text-center">
-                                    <h3 className="text-lg font-serif text-[#1A1A1A] mb-2">服务暂未就绪</h3>
-                                    <p className="text-sm text-[#5E5E5E] mb-6">{configMessage}</p>
+                                    <h3 className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-2">服务暂未就绪</h3>
+                                    <p className="text-sm text-brand-charcoal/60 font-light mb-6">{configMessage}</p>
                                     <button
                                         onClick={() => router.push("/")}
-                                        className="px-6 h-10 rounded-lg border border-[#1B3A5C] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
+                                        className="px-6 h-10 rounded-lg border border-brand-charcoal text-brand-charcoal hover:bg-brand-charcoal hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
                                     >
                                         返回首页
                                     </button>
@@ -692,12 +692,12 @@ export default function QuestionsPage() {
                             ) : limitExceeded ? (
                                 <div className="w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm text-center">
                                     <div className="text-4xl mb-4">⏳</div>
-                                    <h3 className="text-lg font-serif text-[#1A1A1A] mb-2">今日次数已用完</h3>
-                                    <p className="text-sm text-[#5E5E5E] mb-6">{limitMessage}</p>
+                                    <h3 className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-2">今日次数已用完</h3>
+                                    <p className="text-sm text-brand-charcoal/60 font-light mb-6">{limitMessage}</p>
                                     <div className="flex flex-col sm:flex-row gap-3 justify-center">
                                         <button
                                             onClick={() => router.push("/")}
-                                            className="px-6 h-10 rounded-lg border border-[#1B3A5C] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
+                                            className="px-6 h-10 rounded-lg border border-brand-charcoal text-brand-charcoal hover:bg-brand-charcoal hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
                                         >
                                             返回首页
                                         </button>
@@ -706,8 +706,8 @@ export default function QuestionsPage() {
                             ) : queueBusy && !queueDismissed ? (
                                 <div className="w-full max-w-lg bg-amber-50/95 backdrop-blur-sm rounded-2xl p-6 border border-amber-200 shadow-sm text-center">
                                     <div className="text-3xl mb-3">⏳</div>
-                                    <h3 className="text-base font-serif text-[#1A1A1A] mb-2">当前访问人数较多</h3>
-                                    <p className="text-sm text-[#5E5E5E] mb-4">
+                                    <h3 className="text-base font-serif font-light text-brand-charcoal tracking-[0.02em] mb-2">当前访问人数较多</h3>
+                                    <p className="text-sm text-brand-charcoal/60 font-light mb-4">
                                         预计分析等待{queueWaitSeconds >= 60
                                             ? `约 ${Math.ceil(queueWaitSeconds / 60)} 分钟`
                                             : `约 ${queueWaitSeconds} 秒`}，
@@ -716,13 +716,13 @@ export default function QuestionsPage() {
                                     <div className="flex flex-col sm:flex-row gap-3 justify-center">
                                         <button
                                             onClick={() => setQueueDismissed(true)}
-                                            className="px-6 h-10 rounded-lg bg-[#8B7355] text-white hover:bg-[#7A6347] text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
+                                            className="px-6 h-10 rounded-lg bg-brand-charcoal text-white hover:bg-brand-charcoal/90 text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
                                         >
                                             继续测试
                                         </button>
                                         <button
                                             onClick={() => router.push("/")}
-                                            className="px-6 h-10 rounded-lg border border-[#8B7355] text-[#8B7355] hover:bg-[#8B7355]/5 text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
+                                            className="px-6 h-10 rounded-lg border border-brand-charcoal/60 text-brand-charcoal/60 hover:bg-brand-charcoal/[0.07] text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
                                         >
                                             稍后再来
                                         </button>
@@ -739,15 +739,15 @@ export default function QuestionsPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ duration: 1.2, delay: 1 }}
-                        className="hidden sm:flex justify-center pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,16px))] opacity-40 px-4"
+                        className="hidden sm:flex justify-center pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,16px))] px-4"
                     >
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-center text-[10px] sm:text-[11px] font-light tracking-widest text-[#1A1A1A] leading-tight">
-                            <p>&copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
-                            <span className="hidden sm:inline text-[#1A1A1A]/30">·</span>
-                            <div className="hidden sm:flex items-center gap-4">
-                                <Link href="/privacy" className="hover:text-[#3D4430] transition-colors duration-300">隐私政策</Link>
-                                <span className="text-[#1A1A1A]/30">·</span>
-                                <Link href="/terms" className="hover:text-[#3D4430] transition-colors duration-300">服务条款</Link>
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-center text-[10px] sm:text-[11px] font-light text-brand-charcoal/[0.48] leading-tight">
+                            <p className="tracking-[0.1em] md:tracking-[0.15em]">&copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
+                            <span className="hidden sm:inline text-brand-charcoal/20">·</span>
+                            <div className="hidden sm:flex items-center gap-4 tracking-[0.12em]">
+                                <Link href="/privacy" className="transition-colors duration-300 hover:text-brand-charcoal/70">隐私政策</Link>
+                                <span className="text-brand-charcoal/20">·</span>
+                                <Link href="/terms" className="transition-colors duration-300 hover:text-brand-charcoal/70">服务条款</Link>
                             </div>
                         </div>
                     </m.div>
@@ -759,10 +759,10 @@ export default function QuestionsPage() {
     if (!currentQuestion) {
         return (
             <div className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col items-center justify-center bg-[#F5F2E9] gap-4 px-4">
-                <p className="text-sm text-[#5E5E5E] tracking-wide">题目加载异常，请刷新页面或返回首页重试。</p>
+                <p className="text-sm text-brand-charcoal/60 font-light tracking-wide">题目加载异常，请刷新页面或返回首页重试。</p>
                 <button
                     onClick={() => router.push("/")}
-                    className="px-6 h-10 rounded-lg border border-[#1B3A5C] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
+                    className="px-6 h-10 rounded-lg border border-brand-charcoal text-brand-charcoal hover:bg-brand-charcoal hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
                 >
                     返回首页
                 </button>
@@ -774,10 +774,10 @@ export default function QuestionsPage() {
     if (accessDenied) {
         return (
             <div className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col items-center justify-center bg-[#F5F2E9] gap-4 px-4">
-                <p className="text-sm text-[#5E5E5E] tracking-wide text-center leading-relaxed">请从首页同意隐私协议后开始测评。</p>
+                <p className="text-sm text-brand-charcoal/60 font-light tracking-wide text-center leading-relaxed">请从首页同意隐私协议后开始测评。</p>
                 <button
                     onClick={() => router.push("/")}
-                    className="px-6 h-10 rounded-lg border border-[#1B3A5C] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
+                    className="px-6 h-10 rounded-lg border border-brand-charcoal text-brand-charcoal hover:bg-brand-charcoal hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
                 >
                     返回首页
                 </button>
@@ -786,7 +786,7 @@ export default function QuestionsPage() {
     }
 
     return (
-        <div className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col bg-[#F5F2E9] text-[#1A1A1A] overflow-hidden pointer-events-auto">
+        <div className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col bg-[#F5F2E9] text-brand-charcoal overflow-hidden pointer-events-auto">
 
             {/* 提交中加载遮罩 */}
             <AnimatePresence>
@@ -797,8 +797,8 @@ export default function QuestionsPage() {
                         exit={{ opacity: 0 }}
                         className="fixed inset-0 z-[60] bg-[#F5F2E9]/90 backdrop-blur-sm flex flex-col items-center justify-center gap-4"
                     >
-                        <Loader2 className="w-8 h-8 text-[#3D4430] animate-spin" />
-                        <p className="text-sm text-[#5E5E5E] tracking-wide">
+                        <Loader2 className="w-8 h-8 text-brand-charcoal animate-spin" />
+                        <p className="text-sm text-brand-charcoal/60 font-light tracking-wide">
                             {scanMode === "questionnaire"
                                 ? "正在分析你的肌肤派系..."
                                 : "正在准备面部扫描..."}
@@ -812,13 +812,13 @@ export default function QuestionsPage() {
                 <button
                     onClick={handleBack}
                     className={cn(
-                        "absolute left-2 sm:left-4 md:left-12 lg:left-20 min-w-[44px] min-h-[44px] p-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-[#3D4430]/70 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5 touch-manipulation active:scale-95",
+                        "absolute left-2 sm:left-4 md:left-12 lg:left-20 min-w-[44px] min-h-[44px] p-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-brand-charcoal/60 hover:text-brand-charcoal transition-colors rounded-md hover:bg-[#3D4430]/5 touch-manipulation active:scale-95",
                         (currentStepIndex === 0 && !gender) ? "opacity-0 pointer-events-none" : "opacity-100"
                     )}
                     aria-label={!gender ? "回首页" : "上一题"}
                 >
                     <ChevronLeft className="w-6 h-6 sm:w-5 sm:h-5" strokeWidth={1.5} />
-                    <span className="hidden sm:inline text-[14px] font-medium tracking-wide">
+                    <span className="hidden sm:inline text-[14px] font-medium tracking-[0.1em]">
                         {!gender ? "回首页" : "上一题"}
                     </span>
                 </button>
@@ -835,10 +835,10 @@ export default function QuestionsPage() {
                 <button
                     onClick={() => setShowExitConfirm(true)}
                     aria-label="退出测评"
-                    className="absolute right-2 sm:right-4 md:right-12 lg:right-20 min-w-[44px] min-h-[44px] p-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-[#3D4430]/70 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5 touch-manipulation active:scale-95"
+                    className="absolute right-2 sm:right-4 md:right-12 lg:right-20 min-w-[44px] min-h-[44px] p-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-brand-charcoal/60 hover:text-brand-charcoal transition-colors rounded-md hover:bg-[#3D4430]/5 touch-manipulation active:scale-95"
                 >
                     <LogOut className="w-6 h-6 sm:w-5 sm:h-5" strokeWidth={1.5} />
-                    <span className="hidden sm:inline text-[14px] font-medium tracking-wide">退出</span>
+                    <span className="hidden sm:inline text-[14px] font-medium tracking-[0.1em]">退出</span>
                 </button>
             </div>
 
@@ -898,14 +898,14 @@ export default function QuestionsPage() {
             </div>
 
             {/* Footer */}
-            <div className="hidden sm:flex sm:justify-center pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,16px))] opacity-40 shrink-0 text-center px-4">
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-[10px] sm:text-[11px] font-light tracking-widest text-[#1A1A1A] leading-tight">
-                    <p>&copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
-                    <span className="hidden sm:inline text-[#1A1A1A]/30">·</span>
-                    <div className="hidden sm:flex items-center gap-4">
-                        <Link href="/privacy" className="hover:text-[#3D4430] transition-colors duration-300">隐私政策</Link>
-                        <span className="text-[#1A1A1A]/30">·</span>
-                        <Link href="/terms" className="hover:text-[#3D4430] transition-colors duration-300">服务条款</Link>
+            <div className="hidden sm:flex sm:justify-center pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,16px))] shrink-0 text-center px-4">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-[10px] sm:text-[11px] font-light text-brand-charcoal/[0.48] leading-tight">
+                    <p className="tracking-[0.1em] md:tracking-[0.15em]">&copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
+                    <span className="hidden sm:inline text-brand-charcoal/20">·</span>
+                    <div className="hidden sm:flex items-center gap-4 tracking-[0.12em]">
+                        <Link href="/privacy" className="transition-colors duration-300 hover:text-brand-charcoal/70">隐私政策</Link>
+                        <span className="text-brand-charcoal/20">·</span>
+                        <Link href="/terms" className="transition-colors duration-300 hover:text-brand-charcoal/70">服务条款</Link>
                     </div>
                 </div>
             </div>
@@ -935,21 +935,21 @@ export default function QuestionsPage() {
                         >
                             <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                                 <div className="sm:w-[60%] text-center sm:text-left">
-                                    <h3 id="exit-modal-title" className="text-lg font-serif text-[#1A1A1A] mb-3 sm:mb-2">退出测试？</h3>
-                                    <p className="text-sm text-[#5E5E5E] leading-relaxed">
+                                    <h3 id="exit-modal-title" className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-3 sm:mb-2">退出测试？</h3>
+                                    <p className="text-sm text-brand-charcoal/60 font-light leading-relaxed">
                                         您的进度已自动保存，下次返回可直接从此处继续。
                                     </p>
                                 </div>
                                 <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
                                     <button
                                         onClick={() => setShowExitConfirm(false)}
-                                        className="px-6 h-10 rounded-lg border border-[#1B3A5C] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                                        className="px-6 h-10 rounded-lg border border-brand-charcoal text-brand-charcoal hover:bg-brand-charcoal hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                                     >
                                         继续测试
                                     </button>
                                     <button
                                         onClick={() => router.push("/")}
-                                        className="px-6 h-10 rounded-lg border border-[#E8E2D9] text-[#5E5E5E] hover:text-[#1A1A1A] hover:border-[#D9D0C3] text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                                        className="px-6 h-10 rounded-lg border border-[#E8E2D9] text-brand-charcoal/60 hover:text-brand-charcoal hover:border-[#D9D0C3] text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                                     >
                                         退出并返回首页
                                     </button>
@@ -985,9 +985,9 @@ export default function QuestionsPage() {
                         >
                             <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                                 <div className="sm:w-[60%] text-center sm:text-left">
-                                    <h3 id="quality-modal-title" className="text-lg font-serif text-[#1A1A1A] mb-3 sm:mb-2">确认提交？</h3>
-                                    <p className="text-sm text-[#5E5E5E] leading-relaxed">
-                                        我们检测到您的填写速度较快。建议您再次核对，确保 AI 能为您提供<span className="text-[#1A1A1A] font-medium"> 最精准 </span>的分析结果。
+                                    <h3 id="quality-modal-title" className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-3 sm:mb-2">确认提交？</h3>
+                                    <p className="text-sm text-brand-charcoal/60 font-light leading-relaxed">
+                                        我们检测到您的填写速度较快。建议您再次核对，确保 AI 能为您提供<span className="text-brand-charcoal font-medium"> 最精准 </span>的分析结果。
                                     </p>
                                 </div>
                                 <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
@@ -998,13 +998,13 @@ export default function QuestionsPage() {
                                             startStepIndex.current = currentStepIndex;
                                             if (pendingAnswers) processSubmission(pendingAnswers);
                                         }}
-                                        className="px-6 h-10 rounded-lg border border-[#1B3A5C] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                                        className="px-6 h-10 rounded-lg border border-brand-charcoal text-brand-charcoal hover:bg-brand-charcoal hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                                     >
                                         我已确认，去提交
                                     </button>
                                     <button
                                         onClick={() => setShowQualityWarning(false)}
-                                        className="px-6 h-10 rounded-lg border border-[#E8E2D9] text-[#5E5E5E] hover:text-[#1A1A1A] hover:border-[#D9D0C3] text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                                        className="px-6 h-10 rounded-lg border border-[#E8E2D9] text-brand-charcoal/60 hover:text-brand-charcoal hover:border-[#D9D0C3] text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                                     >
                                         返回检查
                                     </button>

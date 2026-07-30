@@ -80,7 +80,7 @@ export function QuestionStep({
         {/* Header - Centered & Clean */}
         <div className="text-center mb-8 pt-8 sm:pt-10 md:pt-6">
           <m.h2
-            className="text-2xl md:text-3xl lg:text-4xl font-serif text-[#1A1A1A] leading-snug"
+            className="text-2xl md:text-3xl lg:text-4xl font-serif font-light text-brand-charcoal leading-snug tracking-[0.02em]"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, duration: 0.5 }}
@@ -90,7 +90,7 @@ export function QuestionStep({
 
           {question.subtext && (
             <m.p
-              className="mt-3 text-sm md:text-[15px] text-[#5E5E5E] font-light leading-relaxed max-w-lg mx-auto text-center"
+              className="mt-3 text-sm md:text-[15px] text-brand-charcoal/75 font-light leading-[1.8] md:leading-normal tracking-[0.06em] md:tracking-[0.12em] max-w-lg mx-auto text-center"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2, duration: 0.5 }}
@@ -134,7 +134,7 @@ export function QuestionStep({
             <button
               type="button"
               onClick={onSkip}
-              className="text-[13px] text-[#8B7355]/70 hover:text-[#5C4A35] font-medium tracking-wide underline underline-offset-4 transition-colors"
+              className="text-[13px] text-brand-charcoal/60 hover:text-brand-charcoal font-medium tracking-[0.1em] underline underline-offset-4 transition-colors"
             >
               跳过此题
             </button>
@@ -156,11 +156,11 @@ export function QuestionStep({
                 onClick={onNext}
                 disabled={isNextDisabled}
                 className={cn(
-                  "text-[13px] font-medium tracking-[0.15em] transition-all duration-300 flex items-center justify-center gap-2",
+                  "text-[13px] font-medium tracking-[0.1em] transition-all duration-300 flex items-center justify-center gap-2",
                   "min-h-[48px] min-w-[140px] py-3 px-6 sm:py-4 sm:px-8 rounded-full touch-manipulation active:scale-95 bg-transparent",
                   isNextDisabled
-                    ? "text-[#8B7355]/30 cursor-not-allowed"
-                    : "text-[#8B7355] hover:text-[#5C4A35]"
+                    ? "text-brand-charcoal/30 cursor-not-allowed"
+                    : "text-brand-charcoal/70 hover:text-brand-charcoal"
                 )}
               >
                 <span>{nextLabel}</span>
