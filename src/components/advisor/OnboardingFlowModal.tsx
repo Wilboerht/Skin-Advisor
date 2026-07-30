@@ -482,7 +482,7 @@ export function OnboardingFlowModal({
                                                 </m.div>
                                             </label>
                                             <span
-                                                className="text-sm text-brand-charcoal/60 leading-relaxed font-normal select-none"
+                                                className="text-[13px] md:text-base text-brand-charcoal/60 font-light leading-[1.8] md:leading-normal tracking-[0.06em] md:tracking-[0.12em] select-none"
                                                 onClick={(e) => {
                                                     if ((e.target as HTMLElement).tagName !== "A") {
                                                         e.stopPropagation();
@@ -490,12 +490,12 @@ export function OnboardingFlowModal({
                                                     }
                                                 }}
                                             >
-                                                请确认您已年满 14 周岁（未满 14 周岁已获得监护人许可），且已阅读并同意我们的
+                                                根据相关法律法规，请确认您已年满 14 周岁，且已阅读并同意我们的
                                                 <a
                                                     href="https://nihplod.cn/privacy"
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="text-brand-charcoal font-medium underline underline-offset-4 mx-1"
+                                                    className="text-brand-charcoal/75 underline underline-offset-4 mx-1"
                                                     onClick={(e) => e.stopPropagation()}
                                                 >
                                                     隐私政策
@@ -505,7 +505,7 @@ export function OnboardingFlowModal({
                                                     href="https://nihplod.cn/terms"
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="text-brand-charcoal font-medium underline underline-offset-4 mx-1"
+                                                    className="text-brand-charcoal/75 underline underline-offset-4 mx-1"
                                                     onClick={(e) => e.stopPropagation()}
                                                 >
                                                     服务条款
