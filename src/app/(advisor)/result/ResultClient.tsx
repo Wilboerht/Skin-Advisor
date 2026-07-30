@@ -1490,14 +1490,14 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                     <span className="opacity-90" suppressHydrationWarning>© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</span>
                                     <span className="opacity-40">•</span>
                                     <Link
-                                        href="/terms"
+                                        href="https://nihplod.cn/terms"
                                         className="transition-colors opacity-80 hover:opacity-100 font-medium"
                                     >
                                         服务条款
                                     </Link>
                                     <span className="opacity-40 sm:hidden">•</span>
                                     <Link
-                                        href="/privacy"
+                                        href="https://nihplod.cn/privacy"
                                         className="transition-colors opacity-80 hover:opacity-100 font-medium"
                                     >
                                         隐私政策

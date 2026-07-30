@@ -745,9 +745,9 @@ export default function QuestionsPage() {
                             <p className="tracking-[0.1em] md:tracking-[0.15em]">&copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
                             <span className="hidden sm:inline text-brand-charcoal/20">·</span>
                             <div className="hidden sm:flex items-center gap-4 tracking-[0.12em]">
-                                <Link href="/privacy" className="transition-colors duration-300 hover:text-brand-charcoal/70">隐私政策</Link>
+                                <Link href="https://nihplod.cn/privacy" className="transition-colors duration-300 hover:text-brand-charcoal/70">隐私政策</Link>
                                 <span className="text-brand-charcoal/20">·</span>
-                                <Link href="/terms" className="transition-colors duration-300 hover:text-brand-charcoal/70">服务条款</Link>
+                                <Link href="https://nihplod.cn/terms" className="transition-colors duration-300 hover:text-brand-charcoal/70">服务条款</Link>
                             </div>
                         </div>
                     </m.div>
@@ -903,9 +903,9 @@ export default function QuestionsPage() {
                     <p className="tracking-[0.1em] md:tracking-[0.15em]">&copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
                     <span className="hidden sm:inline text-brand-charcoal/20">·</span>
                     <div className="hidden sm:flex items-center gap-4 tracking-[0.12em]">
-                        <Link href="/privacy" className="transition-colors duration-300 hover:text-brand-charcoal/70">隐私政策</Link>
+                        <Link href="https://nihplod.cn/privacy" className="transition-colors duration-300 hover:text-brand-charcoal/70">隐私政策</Link>
                         <span className="text-brand-charcoal/20">·</span>
-                        <Link href="/terms" className="transition-colors duration-300 hover:text-brand-charcoal/70">服务条款</Link>
+                        <Link href="https://nihplod.cn/terms" className="transition-colors duration-300 hover:text-brand-charcoal/70">服务条款</Link>
                     </div>
                 </div>
             </div>

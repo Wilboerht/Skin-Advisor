@@ -243,7 +243,7 @@ export function OnboardingFlowModal({
                                     }}
                                 />
                                 <m.div
-                                    className="relative z-10 w-full max-w-sm md:max-w-md text-center"
+                                    className="relative z-10 w-full max-w-lg text-center"
                                     variants={contentVariants}
                                     initial="hidden"
                                     animate={currentScreen === "nickname" ? "visible" : "hidden"}
@@ -308,7 +308,7 @@ export function OnboardingFlowModal({
                                 {locationView === "main" ? (
                                     <m.div
                                         key="location-main"
-                                        className="relative z-10 w-full max-w-md text-center"
+                                        className="relative z-10 w-full max-w-lg text-center"
                                         initial={{ opacity: 0, x: -20 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         exit={{ opacity: 0, x: -20 }}
@@ -322,10 +322,8 @@ export function OnboardingFlowModal({
                                             开启定位服务
                                         </h3>
 
-                                        <p className="mb-7 text-sm md:text-base text-brand-charcoal/75 font-light leading-relaxed tracking-[0.06em] md:tracking-[0.12em] max-w-sm mx-auto">
-                                            为获得更精准的分析数据，我们需要您授权当前的地理位置信息（仅用于环境数据分析），<br className="sm:hidden" />
-                                            在结合温度、气候、空气湿度、紫外线等多维数据后<br className="sm:hidden" />
-                                            生成更个性化的定制化报告。
+                                        <p className="mb-7 text-sm md:text-base text-brand-charcoal/75 font-light leading-relaxed tracking-[0.06em] md:tracking-[0.12em]">
+                                            为获得更精准的分析数据，我们需要您授权当前的地理位置信息，结合当地气候情况，生成更个性化的定制化报告。
                                         </p>
 
                                         <div className="space-y-4">
@@ -477,7 +475,7 @@ export function OnboardingFlowModal({
                                     }}
                                 />
                                 <m.div
-                                    className="relative z-10 w-full max-w-md text-center"
+                                    className="relative z-10 w-full max-w-lg text-center"
                                     variants={contentVariants}
                                     initial="hidden"
                                     animate={currentScreen === "legal" ? "visible" : "hidden"}
@@ -491,7 +489,7 @@ export function OnboardingFlowModal({
                                     </h3>
 
                                     <div
-                                        className={`p-5 md:p-6 mb-7 text-left max-w-md mx-auto rounded-xl border cursor-pointer transition-all duration-300 ${
+                                        className={`p-5 md:p-6 mb-7 text-left max-w-lg mx-auto rounded-xl border cursor-pointer transition-all duration-300 ${
                                             isAgreed
                                                 ? "bg-white/60 border-[#8B7355]/25 shadow-[0_2px_12px_rgba(139,115,85,0.06)]"
                                                 : "bg-white/40 border-[#3D4430]/8 hover:border-[#8B7355]/15 hover:bg-white/50"

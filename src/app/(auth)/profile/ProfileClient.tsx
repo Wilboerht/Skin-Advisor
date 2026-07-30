@@ -458,11 +458,11 @@ export default function ProfileClient() {
             <p>© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
             <span className="hidden sm:inline text-[#5E5E5E]/30">·</span>
             <div className="flex items-center gap-4">
-              <Link href="/privacy" className="hover:text-[#3D4430] transition-colors duration-300">
+              <Link href="https://nihplod.cn/privacy" className="hover:text-[#3D4430] transition-colors duration-300">
                 隐私政策
               </Link>
               <span className="text-[#5E5E5E]/30">·</span>
-              <Link href="/terms" className="hover:text-[#3D4430] transition-colors duration-300">
+              <Link href="https://nihplod.cn/terms" className="hover:text-[#3D4430] transition-colors duration-300">
                 服务条款
               </Link>
             </div>
