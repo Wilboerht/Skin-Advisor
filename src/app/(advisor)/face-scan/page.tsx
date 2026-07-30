@@ -212,6 +212,7 @@ export default function FaceScanPage() {
             const isChunkError = (err as Error)?.name === 'ChunkLoadError' || (err as Error)?.message?.includes('Failed to load chunk');
             toast.error(isChunkError ? "资源加载失败，请刷新页面后重试" : "处理失败，请重试");
             setIsSubmitting(false);
+            throw err; // 通知 FaceCapture 重置拍摄状态，避免一直卡在“正在分析”
         }
     };
 

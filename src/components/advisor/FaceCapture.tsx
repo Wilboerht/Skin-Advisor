@@ -38,7 +38,7 @@ export interface FaceCaptureImages {
 }
 
 interface FaceCaptureProps {
-  onCapture: (images: FaceCaptureImages) => void;
+  onCapture: (images: FaceCaptureImages) => Promise<void> | void;
   onModelsLoaded?: () => void;
   externalFaceApi?: FaceApiModule; // 外部预加载的 face-api 实例
 }
@@ -1026,7 +1026,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
       setFaceStatus("success");
       setShowSuccessForStep(step);
 
-      successTimerRef.current = setTimeout(() => {
+      successTimerRef.current = setTimeout(async () => {
         // 所有步骤完成 - 直接调用 onCapture 并传递所有照片
         setIsAllCaptured(true);
 
@@ -1073,7 +1073,28 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
           return;
         }
 
-        onCapture(allImages);
+        try {
+          await onCapture(allImages);
+        } catch (err) {
+          console.error("[FaceCapture] onCapture failed, resetting capture state:", err);
+          // 父级处理失败（如资源加载失败），回到拍摄界面让用户可重试
+          setIsAllCaptured(false);
+          setError("处理失败，请重新拍摄");
+          setFaceStatus("none");
+          setShowSuccessForStep(null);
+          setStabilityProgress(0);
+          stableCountRef.current = 0;
+          cooldownRef.current = false;
+          setIsInCooldown(false);
+          stepStartTimeRef.current = Date.now();
+          setShowManualButton(false);
+          // 恢复摄像头以便用户重拍
+          if (initCameraRef.current) {
+            void initCameraRef.current();
+          }
+          successTimerRef.current = null;
+          return;
+        }
 
         successTimerRef.current = null;
       }, successDisplayDuration);
