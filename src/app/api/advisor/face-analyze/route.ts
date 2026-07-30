@@ -169,9 +169,14 @@ export async function POST(request: NextRequest) {
         }
 
         // 安全解析本地上传路径：仅允许 public/uploads 目录内的文件，防止路径遍历
+        // 注意：本地上传的 publicUrl 以 /uploads/ 开头，需去掉该前缀再定位到实际文件
         const resolveLocalUploadPath = (imgData: string): string | null => {
             try {
-                const relativePath = imgData.startsWith('/') ? imgData.slice(1) : imgData;
+                let relativePath = imgData.startsWith('/') ? imgData.slice(1) : imgData;
+                // 统一去掉 /uploads/ 前缀，避免重复 public/uploads/uploads/... 路径
+                if (relativePath.startsWith('uploads/')) {
+                    relativePath = relativePath.slice('uploads/'.length);
+                }
                 const uploadRoot = path.resolve(process.cwd(), 'public', 'uploads');
                 const filePath = path.resolve(uploadRoot, relativePath);
                 const rel = path.relative(uploadRoot, filePath);
