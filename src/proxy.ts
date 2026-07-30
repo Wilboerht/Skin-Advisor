@@ -73,7 +73,7 @@ export async function proxy(request: NextRequest) {
     if (
         pathname.startsWith("/_next/") ||
         pathname === "/favicon.ico" ||
-        pathname.match(/\.(ico|png|jpg|jpeg|svg|css|js|woff2?)$/)
+        pathname.match(/\.(ico|png|jpg|jpeg|webp|avif|gif|svg|css|js|woff2?)$/)
     ) {
         return NextResponse.next();
     }

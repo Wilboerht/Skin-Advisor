@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { Fragment, useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Gift, Users, Sparkles, AlertCircle, Loader2 } from "lucide-react";
@@ -119,9 +119,9 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
         {pageState === "no_campaign" && (
           <section className="relative z-10 pb-18 px-6 md:px-12 lg:px-20">
             <div className="max-w-4xl mx-auto">
-              <div className="grid grid-cols-1 md:grid-cols-[6fr_4fr] gap-8 md:gap-12 items-center max-w-4xl mx-auto mb-18">
-                {/* 左侧引导文案 */}
-                <div className="flex justify-center">
+              <div className="max-w-4xl mx-auto mb-18">
+                {/* 顶部形象图 */}
+                <div className="flex justify-center mb-12">
                   <Image
                     src="/images/gift-badge.png"
                     alt="肌智派送好礼"
@@ -132,25 +132,28 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
                   />
                 </div>
 
-                {/* 右侧步骤 */}
-                <div className="space-y-4">
+                {/* 步骤横排，分隔符分开 */}
+                <div className="flex flex-col md:flex-row items-center md:items-stretch justify-center">
                   {[
                     { step: "01", title: "完成测肤", desc: "获取你的专属肌肤形象类型" },
                     { step: "02", title: "分享小红书", desc: "发布海报并 @NIHPLOD" },
                     { step: "03", title: "解锁礼遇", desc: "提交分享链接，等待开奖" },
                   ].map((item, i) => (
-                    <div
-                      key={i}
-                      className="flex items-start gap-4"
-                    >
-                      <span className="shrink-0 w-8 h-8 rounded-full bg-transparent border border-brand-charcoal/60 flex items-center justify-center text-sm font-medium text-brand-charcoal">
-                        {parseInt(item.step)}
-                      </span>
-                      <div className="min-w-0">
+                    <Fragment key={i}>
+                      {i > 0 && (
+                        <>
+                          <div className="md:hidden h-px w-16 bg-brand-charcoal/15 my-6" />
+                          <div className="hidden md:block w-px self-stretch bg-brand-charcoal/15" />
+                        </>
+                      )}
+                      <div className="flex-1 max-w-[280px] flex flex-col items-center justify-center text-center px-6 md:px-8">
+                        <span className="shrink-0 w-8 h-8 rounded-full bg-transparent border border-brand-charcoal/60 flex items-center justify-center text-sm font-medium text-brand-charcoal mb-3">
+                          {parseInt(item.step)}
+                        </span>
                         <h3 className="text-sm font-light text-brand-charcoal tracking-[0.06em] mb-1">{item.title}</h3>
                         <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">{item.desc}</p>
                       </div>
-                    </div>
+                    </Fragment>
                   ))}
                 </div>
               </div>
@@ -159,14 +162,14 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
                   href="/"
                   className="w-full group relative inline-flex items-center justify-center gap-3 px-8 py-4 border border-brand-charcoal/60 text-brand-charcoal bg-transparent text-[13px] sm:text-[14px] tracking-[0.1em] font-medium cursor-pointer transition-all duration-500 hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,38,62,0.12)] active:translate-y-0 active:shadow-none"
                 >
-                  <span>查看我的肌肤形象</span>
+                  <span>前往测试，看看你的肌肤形象</span>
                   <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
                 </Link>
                 <Link
                   href="/skin-types"
                   className="w-full group relative inline-flex items-center justify-center gap-3 px-8 py-4 text-[13px] sm:text-[14px] tracking-[0.1em] font-medium cursor-pointer text-brand-charcoal/60 transition-colors duration-500 hover:text-brand-charcoal"
                 >
-                  <span>了解肌肤类型</span>
+                  <span>查看全部肌智派类型</span>
                   <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
                 </Link>
               </div>
@@ -240,9 +243,9 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
         {pageState === "show_campaign" && campaign && (
           <section className="relative z-10 pb-18 px-6 md:px-12 lg:px-20">
             <div className="max-w-4xl mx-auto">
-              <div className="grid grid-cols-1 md:grid-cols-[6fr_4fr] gap-8 md:gap-12 items-center max-w-4xl mx-auto mb-18">
-                {/* 左侧引导文案 */}
-                <div className="flex justify-center">
+              <div className="max-w-4xl mx-auto mb-18">
+                {/* 顶部形象图 */}
+                <div className="flex justify-center mb-12">
                   <Image
                     src="/images/gift-badge.png"
                     alt="肌智派送好礼"
@@ -253,25 +256,28 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
                   />
                 </div>
 
-                {/* 右侧步骤 */}
-                <div className="space-y-4">
+                {/* 步骤横排，分隔符分开 */}
+                <div className="flex flex-col md:flex-row items-center md:items-stretch justify-center">
                   {[
                     { step: "01", title: "生成专属海报", desc: "点击下方按钮，生成您的专属活动海报与小红书分享文案。" },
                     { step: "02", title: "分享到小红书", desc: "将海报发布到您的小红书账号，附上活动文案并 @NIHPLOD" },
                     { step: "03", title: "等待开奖", desc: `审核通过后即可参与抽奖，开奖时间：${campaign.drawDate ? formatDate(campaign.drawDate) : "敬请期待"}。` },
                   ].map((item, i) => (
-                    <div
-                      key={i}
-                      className="flex items-start gap-4"
-                    >
-                      <span className="shrink-0 w-8 h-8 rounded-full bg-transparent border border-brand-charcoal/60 flex items-center justify-center text-sm font-medium text-brand-charcoal">
-                        {parseInt(item.step)}
-                      </span>
-                      <div className="min-w-0">
+                    <Fragment key={i}>
+                      {i > 0 && (
+                        <>
+                          <div className="md:hidden h-px w-16 bg-brand-charcoal/15 my-6" />
+                          <div className="hidden md:block w-px self-stretch bg-brand-charcoal/15" />
+                        </>
+                      )}
+                      <div className="flex-1 max-w-[300px] flex flex-col items-center justify-center text-center px-6 md:px-8">
+                        <span className="shrink-0 w-8 h-8 rounded-full bg-transparent border border-brand-charcoal/60 flex items-center justify-center text-sm font-medium text-brand-charcoal mb-3">
+                          {parseInt(item.step)}
+                        </span>
                         <h3 className="text-sm font-light text-brand-charcoal tracking-[0.06em] mb-1">{item.title}</h3>
                         <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">{item.desc}</p>
                       </div>
-                    </div>
+                    </Fragment>
                   ))}
                 </div>
               </div>
@@ -280,14 +286,14 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
                   href="/"
                   className="w-full group relative inline-flex items-center justify-center gap-3 px-8 py-4 border border-brand-charcoal/60 text-brand-charcoal bg-transparent text-[13px] sm:text-[14px] tracking-[0.1em] font-medium cursor-pointer transition-all duration-500 hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,38,62,0.12)] active:translate-y-0 active:shadow-none"
                 >
-                  <span>查看我的肌肤形象</span>
+                  <span>前往测试，看看你的肌肤形象</span>
                   <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
                 </Link>
                 <Link
                   href="/skin-types"
                   className="w-full group relative inline-flex items-center justify-center gap-3 px-8 py-4 text-[13px] sm:text-[14px] tracking-[0.1em] font-medium cursor-pointer text-brand-charcoal/60 transition-colors duration-500 hover:text-brand-charcoal"
                 >
-                  <span>了解肌肤类型</span>
+                  <span>查看全部肌智派类型</span>
                   <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
                 </Link>
               </div>
