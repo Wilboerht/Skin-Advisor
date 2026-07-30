@@ -28,11 +28,14 @@ function copyDir(src, dest) {
   for (const entry of entries) {
     const srcPath = path.join(src, entry.name);
     const destPath = path.join(dest, entry.name);
-    if (entry.isDirectory()) {
+    // 使用 statSync 跟随符号链接判断真实类型
+    const stat = fs.statSync(srcPath);
+    if (stat.isDirectory()) {
       copyDir(srcPath, destPath);
-    } else {
+    } else if (stat.isFile()) {
       fs.copyFileSync(srcPath, destPath);
     }
+    // 跳过其他类型（socket、fifo 等）
   }
 }
 
