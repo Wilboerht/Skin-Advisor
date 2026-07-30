@@ -205,57 +205,6 @@ export default function Home() {
     safeStorage.setSession("locationConsent", "declined");
   };
 
-  // Social proof: stats data
-  const [totalCompleted, setTotalCompleted] = useState<number | null>(null);
-  const [personaDistribution, setPersonaDistribution] = useState<Array<{ persona: string; count: number }>>([]);
-  const [recentSessions, setRecentSessions] = useState<Array<{ skinType: string | null; completedAt: string }>>([]);
-  const [displayedCount, setDisplayedCount] = useState(0);
-  const [currentRecentIdx, setCurrentRecentIdx] = useState(0);
-
-  useEffect(() => {
-    fetch("/api/advisor/stats")
-      .then((res) => res.json())
-      .then((data) => {
-        if (typeof data.totalCompleted === "number") {
-          setTotalCompleted(data.totalCompleted);
-        }
-        if (Array.isArray(data.personaDistribution)) {
-          setPersonaDistribution(data.personaDistribution);
-        }
-        if (Array.isArray(data.recentSessions)) {
-          setRecentSessions(data.recentSessions);
-        }
-      })
-      .catch(() => {
-        // 静默失败，不影响用户体验
-      });
-  }, []);
-
-  // Animated number counter
-  useEffect(() => {
-    if (totalCompleted === null || totalCompleted <= 0) return;
-    const target = totalCompleted;
-    const duration = 1500; // ms
-    const steps = 30;
-    const increment = Math.ceil(target / steps);
-    let current = 0;
-    const timer = setInterval(() => {
-      current = Math.min(current + increment, target);
-      setDisplayedCount(current);
-      if (current >= target) clearInterval(timer);
-    }, duration / steps);
-    return () => clearInterval(timer);
-  }, [totalCompleted]);
-
-  // Cycle through recent persona joins
-  useEffect(() => {
-    if (recentSessions.length === 0) return;
-    const timer = setInterval(() => {
-      setCurrentRecentIdx((prev) => (prev + 1) % recentSessions.length);
-    }, 3000);
-    return () => clearInterval(timer);
-  }, [recentSessions.length]);
-
   // Test limit state
   const [testLimitInfo, setTestLimitInfo] = useState<{
     canTest: boolean;
@@ -533,46 +482,7 @@ export default function Home() {
                         </button>
                       </div>
 
-                      {/* 社交证明：动态滚动数字 */}
-                      {totalCompleted !== null && totalCompleted > 0 && (
-                        <div className="mt-2 flex flex-col items-center gap-1">
-                          <p className="text-[12px] text-[#8B7355]/70 font-light tracking-wide">
-                            已有{" "}
-                            <span className="font-mono text-[13px] font-semibold text-[#8B7355] tabular-nums">
-                              {displayedCount > 0 ? displayedCount.toLocaleString("zh-CN") : totalCompleted.toLocaleString("zh-CN")}
-                            </span>{" "}
-                            人发现自己的肌肤形象
-                          </p>
-                          {/* 最新加入动态 */}
-                          {recentSessions.length > 0 && (() => {
-                            const skinTypeToPersona: Record<string, string> = {
-                              sensitive: "敏敏派", dry: "沙漠派", oily: "油条派",
-                              combination: "混合派", combination_dry: "混合派", combination_oily: "混合派",
-                              normal: "极简派", unknown: "守护派",
-                            };
-                            const session = recentSessions[currentRecentIdx];
-                            const persona = session?.skinType ? (skinTypeToPersona[session.skinType] || "守护派") : null;
-                            return persona ? (
-                              <p className="text-[11px] text-[#C8A97E]/80 font-light tracking-wide animate-fade-in-up">
-                                最新加入：<span className="font-medium text-[#8B7355]">{persona}</span>
-                              </p>
-                            ) : null;
-                          })()}
-                          {/* 派系分布标签 */}
-                          {personaDistribution.length > 0 && (
-                            <div className="flex flex-wrap items-center justify-center gap-1.5 mt-1">
-                              {personaDistribution.slice(0, 5).map((p) => (
-                                <span
-                                  key={p.persona}
-                                  className="inline-flex items-center px-2 py-0.5 rounded-full bg-[#F0EDE1]/60 text-[10px] text-[#8B7355]/80 font-medium"
-                                >
-                                  {p.persona} · {p.count}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
+
 
                     </div>
                   </div>
