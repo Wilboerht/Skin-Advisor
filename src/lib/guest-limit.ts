@@ -6,7 +6,7 @@ import { logger } from '@/lib/logger';
 import { parseUserAgent } from '@/lib/user-agent-parser';
 
 // 默认游客每日测试次数限制
-export const DEFAULT_GUEST_LIMIT = 1;
+export const DEFAULT_GUEST_LIMIT = 3;
 
 // 游客身份标识
 export interface GuestIdentifiers {

@@ -71,6 +71,19 @@ interface FetchWithRetryOptions {
     retryOnServerError?: boolean;
 }
 
+// 统一解析服务端错误响应（兼容扁平 { error: string } 与官网 { error: { code, message } } 格式）
+function getServerErrorMessage(errorData: Record<string, unknown>, fallback: string): string {
+    if (typeof errorData.message === 'string') return errorData.message;
+    if (typeof errorData.error === 'string') return errorData.error;
+    if (errorData.error && typeof errorData.error === 'object') {
+        const nested = errorData.error as Record<string, unknown>;
+        if (typeof nested.message === 'string') return nested.message;
+        return JSON.stringify(errorData.error);
+    }
+    if (Object.keys(errorData).length > 0) return JSON.stringify(errorData);
+    return fallback;
+}
+
 // Helper for auto-retry
 async function fetchWithRetry(
     url: string,
@@ -82,7 +95,7 @@ async function fetchWithRetry(
         // 429 is a business logic rejection (usage limit), do NOT retry
         if (!res.ok && res.status === 429) {
             const errorData = await res.json().catch(() => ({}));
-            throw new Error(errorData.error || '您已达到测试次数上限');
+            throw new Error(getServerErrorMessage(errorData, '您已达到测试次数上限'));
         }
         // 默认不在 5xx 时重试；调用方可显式开启（仅用于幂等、非 AI 调用）
         if (!res.ok && res.status >= 500) {
@@ -420,7 +433,7 @@ export function useAsyncAnalysis() {
                                 if (faceRes.status === 503 || faceRes.status === 504) { // This case should ideally be caught by fetchWithRetry
                                     throw new Error("AI 服务暂时繁忙，请稍后重试");
                                 }
-                                throw new Error(errorData.message || errorData.error || "面部分析失败");
+                                throw new Error(getServerErrorMessage(errorData, "面部分析失败"));
                             }
                         } catch (e: unknown) {
                             const err = e as Error;
@@ -510,7 +523,7 @@ export function useAsyncAnalysis() {
                     let serverError = "分析失败，请重试";
                     try {
                         const errorData = await analyzeRes.json();
-                        serverError = errorData.error || errorData.message || serverError;
+                        serverError = getServerErrorMessage(errorData, serverError);
                     } catch {
                         serverError = "服务器繁忙，请稍后重试";
                     }

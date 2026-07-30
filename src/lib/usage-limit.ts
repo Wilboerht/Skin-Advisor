@@ -26,13 +26,16 @@ export interface ReserveUsageResult {
     role: 'guest' | 'member';
 }
 
+// 游客每日测试次数限制（业务可随时调整，保持单点配置）
+const GUEST_DAILY_LIMIT = 3;
+
 /**
  * 获取登录用户的每日测试限制
  */
 function getUserDailyLimit(user: { dailyTestLimit?: number | null } | null | undefined): number {
     // dailyTestLimit 为 null/undefined 时回退到系统默认 3 次；
     // 显式设置为 0-1 均视为有效自定义值（0 表示禁用测试）。
-    // 登录用户享有比游客（1次/天）更多的测试权益。
+    // 登录用户享有与游客（3次/天）相同或更多的测试权益。
     if (user && typeof user.dailyTestLimit === 'number') {
         return Math.max(0, user.dailyTestLimit);
     }
@@ -43,7 +46,7 @@ function getUserDailyLimit(user: { dailyTestLimit?: number | null } | null | und
  * 检查用户或访客的测试频率限制（快速前置检查，不扣费）
  *
  * 规则：
- * 1. 访客：每日 1 次
+ * 1. 访客：每日 3 次
  * 2. 登录用户：每日 3 次（管理员可通过 dailyTestLimit 调整）
  */
 export async function checkUsageLimit(request: NextRequest, body?: Record<string, unknown>): Promise<UsageLimitResult> {
@@ -86,10 +89,10 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
         };
     }
 
-    // 2. 如果是访客 — 每日 1 次
+    // 2. 如果是访客 — 每日 3 次
     const identifiers = extractGuestIdentifiers(request, body);
     const { ipAddress, fingerprint, cookieId } = identifiers;
-    const limit = 1;
+    const limit = GUEST_DAILY_LIMIT;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -218,7 +221,7 @@ export async function reserveUsage(
                 }
 
                 // 2. 访客 — IP 为主匹配键，fingerprint/cookieId 为辅助维度防止 VPN 绕过
-                const limit = 1;
+                const limit = GUEST_DAILY_LIMIT;
                 const blockedRecord = await tx.guestUsage.findFirst({
                     where: {
                         isBlocked: true,
