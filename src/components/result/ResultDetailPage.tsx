@@ -1,12 +1,13 @@
 ﻿"use client";
 
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
 import type { SkinTypeData } from "@/lib/result-content";
+import { STORAGE_KEYS } from "@/lib/storage-keys";
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -22,6 +23,19 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
     if (!data.m7?.ingredientTable?.length) return [];
     return Object.keys(data.m7.ingredientTable[0]);
   }, [data.m7?.ingredientTable]);
+
+  const [genderSuffix, setGenderSuffix] = useState<"female" | "male">("female");
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEYS.ADVISOR_GENDER);
+      if (stored === "male") setGenderSuffix("male");
+    } catch {
+      // ignore SSR/localStorage unavailable
+    }
+  }, []);
+
+  const characterSrc = `/images/character/${data.ipKey}/${data.ipKey}_${genderSuffix}.png`;
 
   return (
     <main className="min-h-screen bg-[#FAF8F5] text-brand-charcoal">
@@ -44,7 +58,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
           </div>
           <div className="relative w-full max-w-[180px] mx-auto lg:max-w-[260px] lg:ml-auto lg:mr-0 aspect-[3/4]">
             <Image
-              src={`/images/character/${data.ipKey}/${data.ipKey}_female.png`}
+              src={characterSrc}
               alt={`${data.typeName} 形象`}
               fill
               className="object-contain object-bottom"
