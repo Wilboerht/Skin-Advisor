@@ -77,8 +77,8 @@ const NO_FACE_MANUAL_BUTTON_DELAY_MS = 5000;
 // 步骤配置
 const CAPTURE_STEPS: { step: CaptureStep; label: string; instruction: string; icon: React.ReactNode }[] = [
   { step: "front", label: "正脸", instruction: "请正对镜头", icon: <User className="h-6 w-6" /> },
-  { step: "left", label: "左转", instruction: "请向右转头", icon: <ChevronLeft className="h-6 w-6" /> },
-  { step: "right", label: "右转", instruction: "请向左转头", icon: <ChevronRight className="h-6 w-6" /> },
+  { step: "left", label: "右转", instruction: "请向右转头", icon: <ChevronLeft className="h-6 w-6" /> },
+  { step: "right", label: "左转", instruction: "请向左转头", icon: <ChevronRight className="h-6 w-6" /> },
   { step: "chin", label: "下颚", instruction: "请微微抬头", icon: <ChevronUp className="h-6 w-6" /> },
 ];
 
