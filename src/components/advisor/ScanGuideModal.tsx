@@ -49,7 +49,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
                             alt="NIHPLOD"
                             width={120}
                             height={36}
-                            className="h-7 md:h-9 w-auto object-contain opacity-80"
+                            className="h-7 md:h-9 w-auto object-contain"
                         />
 
                         <button

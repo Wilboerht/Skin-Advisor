@@ -327,7 +327,7 @@ export default function FaceScanPage() {
                             initial={{ opacity: 0, scale: 0.95, y: 10 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                            className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm overflow-hidden"
+                            className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-brand-charcoal/[0.08] shadow-sm overflow-hidden"
                         >
 <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                                 <div className="sm:w-[60%] text-center sm:text-left">
@@ -374,7 +374,7 @@ export default function FaceScanPage() {
                             initial={{ opacity: 0, scale: 0.95, y: 10 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                            className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm overflow-hidden"
+                            className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-brand-charcoal/[0.08] shadow-sm overflow-hidden"
                         >
 <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                                 <div className="sm:w-[60%] text-center sm:text-left">
