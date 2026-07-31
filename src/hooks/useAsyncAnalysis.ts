@@ -696,5 +696,27 @@ export function useAsyncAnalysis() {
         releaseAnalysisLock();
     }, []);
 
-    return { runAnalysis, analysisState, reset, recoverSession };
+    // Mock 模式：纯前端模拟进度，不调用任何 API，用于本地预览 AnalyzingOverlay / 结果页 UI
+    const mockTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const startMock = useCallback(() => {
+        if (mockTimerRef.current) return;
+        setAnalysisState({ status: 'preparing', progress: 2, error: null });
+        mockTimerRef.current = setInterval(() => {
+            setAnalysisState(prev => {
+                const p = prev.progress + 0.4;
+                let status = prev.status;
+                if (p < 20) status = 'preparing';
+                else if (p < 55) status = 'analyzing_face';
+                else if (p < 100) status = 'analyzing_skin';
+                if (p >= 100) {
+                    if (mockTimerRef.current) clearInterval(mockTimerRef.current);
+                    mockTimerRef.current = null;
+                    return { status: 'completed', progress: 100, error: null };
+                }
+                return { ...prev, status, progress: p };
+            });
+        }, 100);
+    }, []);
+
+    return { runAnalysis, analysisState, reset, recoverSession, startMock };
 }

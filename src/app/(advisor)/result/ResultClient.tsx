@@ -45,6 +45,7 @@ import { SaveReportBanner } from "@/components/advisor/SaveReportBanner";
 import { RegisterConversionModal } from "@/components/advisor/RegisterConversionModal";
 import { CountdownTimer } from "@/components/advisor/CountdownTimer";
 import { AnalyzingOverlay } from "@/components/advisor/AnalyzingOverlay";
+// mock 数据仅在 ?mock=true 时动态加载，不打入生产 bundle
 import { skinTypes } from "@/lib/result-content";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { ResultErrorBoundary } from "@/components/advisor/ResultErrorBoundary";
@@ -215,7 +216,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
     const { user, isInitialized: authInitialized } = useAuth();
     const { openAuthModal } = useAuthModal();
     const searchParams = useSearchParams();
-    const { runAnalysis, analysisState, recoverSession } = useAsyncAnalysis();
+    const { runAnalysis, analysisState, recoverSession, startMock } = useAsyncAnalysis();
 
     // Session ID state - needed early for QR code generation
     const [sessionId, setSessionId] = useState<string | undefined>(id);
@@ -796,6 +797,11 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
         if (analysisStartedRef.current) return;
         analysisStartedRef.current = true;
 
+        // Mock 模式：纯前端预览 AnalyzingOverlay，不调用后端
+        if (searchParams.get('mock') === 'true') {
+            startMock();
+            return;
+        }
         const abortController = new AbortController();
 
         const execute = async () => {
@@ -826,6 +832,12 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
 
                         const normalized = normalizeAnalysisResult(rawResult);
 
+                        // 昵称兜底：localStorage 可能已被首页清空，从会话结果中提取
+                        const recoveredNickname = (rawResult as Record<string, unknown>).nickname;
+                        if (typeof recoveredNickname === 'string' && recoveredNickname) {
+                            setUserNickname(prev => (prev === '您' ? recoveredNickname : prev));
+                        }
+
                         if (authInitializedRef.current) {
                             if (userRef.current) {
                                 router.replace(`/reports/${recoveredSessionId}`, { scroll: false });
@@ -853,6 +865,12 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                 const analysisResult = await runAnalysis();
                 if (!analysisResult) return; // Already running, skip
                 const { result: newResult, faceAnalysis: newFace, sessionId: newSessionId } = analysisResult;
+
+                // 昵称兜底：localStorage 可能已被首页清空，从分析结果中提取
+                const freshNickname = (newResult as Record<string, unknown>).nickname;
+                if (typeof freshNickname === 'string' && freshNickname) {
+                    setUserNickname(prev => (prev === '您' ? freshNickname : prev));
+                }
 
                 // Save sessionId for sharing
                 if (newSessionId) {
@@ -893,6 +911,20 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
             abortController.abort();
         };
     }, [searchParams, result, analysisState.status, runAnalysis, recoverSession, router]);
+
+    // Mock 完成后注入假数据，渲染结果页（动态加载 mock 数据，不影响生产包体积）
+    useEffect(() => {
+        if (searchParams.get('mock') !== 'true') return;
+        if (analysisState.status !== 'completed') return;
+        import("./mock-result").then(({ MOCK_RESULT, MOCK_FACE_ANALYSIS }) => {
+            setResult(MOCK_RESULT);
+            setFaceAnalysis(MOCK_FACE_ANALYSIS);
+            setUserNickname("测试用户");
+            setSocialGender("female");
+            setSessionId("mock-session");
+            router.replace('/result?mock=done', { scroll: false });
+        });
+    }, [analysisState.status, searchParams, router]);
 
     // 入口守卫：拒绝访问时显示友好提示，而非静默跳转
     if (accessDenied) {
@@ -950,7 +982,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
     }
 
     // Enhanced Loading State
-    const isAsyncAnalyzing = searchParams.get('status') === 'analyzing' || analysisState.status !== 'idle';
+    const isAsyncAnalyzing = (searchParams.get('status') === 'analyzing' && searchParams.get('mock') !== 'true') || !['idle', 'completed', 'error'].includes(analysisState.status);
     const showLoading = loading || (!result && isAsyncAnalyzing);
 
     // Fallback if truly nothing to show (not loading, no result)
@@ -1484,26 +1516,33 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                 )}
                             </div>
 
-                            {/* Minimal Footer Text */}
-                            <div className="text-center">
-                                <div className="flex flex-row justify-center items-center gap-1 sm:gap-5 text-[10px] sm:text-xs mb-2 sm:mb-3 text-[var(--result-text-primary)]">
-                                    <span className="opacity-90" suppressHydrationWarning>© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</span>
-                                    <span className="opacity-40">•</span>
-                                    <Link
-                                        href="https://nihplod.cn/terms"
-                                        className="transition-colors opacity-80 hover:opacity-100 font-medium"
+                            {/* Minimal Footer Text — 与首页 Footer 对齐 */}
+                            <div className="text-center flex flex-col items-center gap-3">
+                                <p className="text-[11px] font-light tracking-[0.15em] text-brand-charcoal/48" suppressHydrationWarning>
+                                    © {new Date().getFullYear()} NIHPLOD. All Rights Reserved.
+                                </p>
+
+                                <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 text-[11px] font-light tracking-[0.12em] text-brand-charcoal/48">
+                                    <a
+                                        href="https://beian.miit.gov.cn/"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="transition-colors hover:text-brand-charcoal/70"
                                     >
-                                        服务条款
-                                    </Link>
-                                    <span className="opacity-40 sm:hidden">•</span>
-                                    <Link
-                                        href="https://nihplod.cn/privacy"
-                                        className="transition-colors opacity-80 hover:opacity-100 font-medium"
+                                        沪ICP备2026014764号-1
+                                    </a>
+                                    <span aria-hidden="true" className="hidden sm:inline">|</span>
+                                    <a
+                                        href="http://www.beian.gov.cn/portal/registerSystemInfo"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-1 transition-colors hover:text-brand-charcoal/70"
                                     >
-                                        隐私政策
-                                    </Link>
+                                        <Image src="/images/beian.webp" alt="" width={12} height={12} className="shrink-0 opacity-80" />
+                                        <span>沪公网安备31010702010178号</span>
+                                    </a>
                                 </div>
-                                <p className="text-[10px] sm:text-xs opacity-70 text-[var(--result-text-primary)]">
+                                <p className="text-[11px] font-light tracking-[0.12em] text-brand-charcoal/48">
                                     *AI 分析结果受图像质量影响仅供参考，不构成医疗诊断建议
                                 </p>
                             </div>

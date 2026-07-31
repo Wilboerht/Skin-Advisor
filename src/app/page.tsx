@@ -403,13 +403,12 @@ export default function Home() {
                           style={{ transformOrigin: "right center" }}
                         />
                         <m.span
-                          className="inline-flex items-center gap-2"
+                          className="inline-flex items-center"
                           variants={{
                             hidden: { opacity: 0 },
                             visible: { opacity: 1, transition: { duration: 0.3 } },
                           }}
                         >
-                          <Image src="/images/jzp-badge.svg" alt="" width={36} height={36} className="w-6 h-6 object-contain" />
                           肌智派
                         </m.span>
                         <m.span
