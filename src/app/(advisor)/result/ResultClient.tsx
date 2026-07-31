@@ -27,6 +27,7 @@ import { computeLabAnalysis } from "@/lib/analysis-lab";
 import type { LabMetric } from "@/lib/analysis-lab";
 import { cn } from "@/lib/utils";
 import { fetchWithCsrf } from "@/lib/fetch-client";
+import type { SessionUser } from "@/lib/auth";
 
 import { ScientificBarChart } from "@/components/advisor/ScientificBarChart";
 
@@ -59,7 +60,7 @@ interface ResultClientProps {
         result: ComprehensiveResult;
         faceAnalysis: FaceAnalysisResult | null;
     } | null;
-    user?: { id: string } | null;
+    user?: SessionUser | null;
 }
 
 // --- Poster image helpers ---
@@ -252,7 +253,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
     }, [result]);
     const [faceAnalysis, setFaceAnalysis] = useState<FaceAnalysisResult | null>(initialData?.faceAnalysis || null);
 
-    const [userNickname, setUserNickname] = useState<string>("您");
+    const [userNickname, setUserNickname] = useState<string>(user?.name || "您");
     const [socialGender, setSocialGender] = useState<string>(''); // Initialize empty to avoid flash mismatch
 
     // IP 匹配所需数据
@@ -456,7 +457,12 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
 
                 // Restore Nickname
                 const storedNickname = localStorage.getItem(STORAGE_KEYS.ADVISOR_NICKNAME);
-                if (storedNickname) setUserNickname(storedNickname);
+                if (storedNickname) {
+                    setUserNickname(storedNickname);
+                } else if (user?.name) {
+                    // 未填写过昵称的已登录用户，回退到官网昵称
+                    setUserNickname(user.name);
+                }
 
                 // Restore Gender
                 const storedGender = localStorage.getItem(STORAGE_KEYS.ADVISOR_GENDER);
@@ -497,7 +503,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                 // 昵称兜底：localStorage 的 ADVISOR_NICKNAME 可能已被首页清空，从缓存结果中提取
                                 const cachedNickname = advisorResult.nickname;
                                 if (typeof cachedNickname === 'string' && cachedNickname) {
-                                    setUserNickname(prev => (prev === '您' ? cachedNickname : prev));
+                                    setUserNickname(prev => (prev === '您' || prev === userRef.current?.name ? cachedNickname : prev));
                                 }
 
                                 // If we successfully recovered data, remove 'analyzing' status from URL to stop re-analysis
@@ -562,7 +568,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
         };
 
         loadClientData();
-    }, [initialData, router, trackResultView, searchParams]);
+    }, [initialData, router, trackResultView, searchParams, user]);
 
     // --- Environment Data Integration ---
     // REMOVED: Weather component has been disabled per user request
@@ -824,7 +830,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                         // 昵称兜底：localStorage 可能已被首页清空，从会话结果中提取
                         const recoveredNickname = (rawResult as Record<string, unknown>).nickname;
                         if (typeof recoveredNickname === 'string' && recoveredNickname) {
-                            setUserNickname(prev => (prev === '您' ? recoveredNickname : prev));
+                            setUserNickname(prev => (prev === '您' || prev === userRef.current?.name ? recoveredNickname : prev));
                         }
 
                         if (authInitializedRef.current) {
@@ -858,7 +864,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                 // 昵称兜底：localStorage 可能已被首页清空，从分析结果中提取
                 const freshNickname = (newResult as Record<string, unknown>).nickname;
                 if (typeof freshNickname === 'string' && freshNickname) {
-                    setUserNickname(prev => (prev === '您' ? freshNickname : prev));
+                    setUserNickname(prev => (prev === '您' || prev === userRef.current?.name ? freshNickname : prev));
                 }
 
                 // Save sessionId for sharing

@@ -113,7 +113,11 @@ export default function Home() {
     safeStorage.remove(STORAGE_KEYS.ADVISOR_GENDER_MISMATCH_ACK);
     safeStorage.remove(STORAGE_KEYS.ADVISOR_FREE_RETRY);
     safeStorage.remove(STORAGE_KEYS.ADVISOR_STEP);
-    safeStorage.remove(STORAGE_KEYS.ADVISOR_NICKNAME);
+    // 保留 ADVISOR_NICKNAME：昵称是用户资料而非本次测试数据，清空会导致结果页显示"您"
+    // 若当前没有保存昵称且用户已登录，自动回填 user.name
+    if (user?.name && !safeStorage.get(STORAGE_KEYS.ADVISOR_NICKNAME)) {
+      safeStorage.set(STORAGE_KEYS.ADVISOR_NICKNAME, user.name);
+    }
     // 保留 advisor_scan_mode：它是本次新测试的入口模式，清除后纯问卷模式会被误判为 AI 扫描模式
 
     // 修复 iOS 从首页 modal 进入 questions 页面时滚动位置异常：
@@ -135,7 +139,7 @@ export default function Home() {
 
     setIsLoading(true);
     router.push("/questions");
-  }, [router]);
+  }, [router, user]);
 
   const handleLocationAccept = async () => {
     setIsLocating(true);
@@ -195,6 +199,13 @@ export default function Home() {
         version: CONSENT_VERSION,
         consentedAt: new Date().toISOString()
     }));
+
+    // 最终提交前确保昵称已保存：用户填写优先，否则已登录用户回退到官网昵称
+    if (nickname.trim()) {
+      safeStorage.set(STORAGE_KEYS.ADVISOR_NICKNAME, nickname.trim());
+    } else if (user?.name && !safeStorage.get(STORAGE_KEYS.ADVISOR_NICKNAME)) {
+      safeStorage.set(STORAGE_KEYS.ADVISOR_NICKNAME, user.name);
+    }
     
     startNewTest();
   };
@@ -312,6 +323,10 @@ export default function Home() {
         version: CONSENT_VERSION,
         consentedAt: new Date().toISOString()
       }));
+      // 已登录用户直接用官网昵称，避免结果页显示"您"
+      if (user.name) {
+        safeStorage.set(STORAGE_KEYS.ADVISOR_NICKNAME, user.name);
+      }
       startNewTest();
       return;
     }

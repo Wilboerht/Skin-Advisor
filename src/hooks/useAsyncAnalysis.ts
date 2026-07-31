@@ -1,6 +1,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAdvisorAnalytics } from './useAdvisorAnalytics';
+import { useAuth } from './useAuth';
 import { fetchWithCsrf } from '@/lib/fetch-client';
 import { preprocessFaceImage } from '@/lib/image-processing';
 
@@ -136,6 +137,7 @@ export function useAsyncAnalysis() {
         error: null
     });
     const { trackAnalysisStart, trackAnalysisComplete } = useAdvisorAnalytics();
+    const { user } = useAuth();
 
     const isRunningRef = useRef(false);
 
@@ -226,7 +228,7 @@ export function useAsyncAnalysis() {
             let nickname = "您";
             try {
                 answersStr = localStorage.getItem(STORAGE_KEYS.ADVISOR_ANSWERS);
-                nickname = localStorage.getItem(STORAGE_KEYS.ADVISOR_NICKNAME) || "您";
+                nickname = localStorage.getItem(STORAGE_KEYS.ADVISOR_NICKNAME) || user?.name || "您";
             } catch (e) {
                 console.warn("localStorage access failed", e);
             }
@@ -606,7 +608,7 @@ export function useAsyncAnalysis() {
                 console.warn("sessionStorage access failed", e);
             }
         }
-    }, [trackAnalysisStart, trackAnalysisComplete, pollSessionResult]);
+    }, [trackAnalysisStart, trackAnalysisComplete, pollSessionResult, user]);
 
     // Fake progress animation to fill the gaps between milestones
     useEffect(() => {
