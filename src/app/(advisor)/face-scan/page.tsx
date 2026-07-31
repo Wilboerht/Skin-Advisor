@@ -256,7 +256,7 @@ export default function FaceScanPage() {
                             initial={{ opacity: 0, scale: 0.9, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                            className="relative w-full max-w-[420px] md:max-w-[480px] aspect-[3/4] max-h-[65vh] md:max-h-[70vh] bg-black rounded-[2rem] overflow-hidden shadow-[0_24px_70px_-18px_rgba(0,0,0,0.28)] ring-[5px] ring-[#FAF8F5] z-10 flex flex-col before:absolute before:inset-0 before:rounded-[2rem] before:ring-1 before:ring-inset before:ring-white/15 before:pointer-events-none"
+                            className="relative w-full max-w-[420px] md:max-w-[480px] aspect-[3/4] max-h-[65vh] md:max-h-[70vh] bg-black rounded-[2rem] overflow-hidden shadow-[0_8px_32px_-8px_rgba(0,38,62,0.12),0_24px_60px_-20px_rgba(0,38,62,0.18)] ring-[3px] ring-[#FAF8F5] z-10 flex flex-col before:absolute before:inset-0 before:rounded-[2rem] before:ring-1 before:ring-inset before:ring-white/10 before:pointer-events-none"
                         >
                             {/* Real Camera Component */}
                             <FaceCapture
@@ -275,18 +275,22 @@ export default function FaceScanPage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.5, duration: 1 }}
-                className="flex flex-col items-center py-6 shrink-0"
+                className="hidden sm:flex justify-center pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,16px))] px-4 shrink-0"
             >
-                <div className="flex flex-col items-center gap-1 opacity-40">
-                    <p className="text-[10px] sm:text-[11px] font-light tracking-widest text-[#1A1A1A]">
-                        &copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.
-                    </p>
-                    <div className="flex items-center justify-center gap-3 text-[9px] sm:text-[10px] font-light text-[#1A1A1A]">
-                        <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" className="hover:text-brand-gold transition-colors">沪ICP备2026014764号-1</a>
-                        <span className="opacity-20">|</span>
-                        <a href="#" className="flex items-center gap-1 hover:text-brand-gold transition-colors">
-                            <Image src="/images/beian.webp" alt="" width={12} height={12} className="w-3 h-3 opacity-80" />
-                            <span>沪公网安备 31011502019404号</span>
+                <div className="flex flex-col items-center gap-2 text-[11px] font-light text-brand-charcoal/[0.48] leading-tight">
+                    <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 tracking-[0.1em] md:tracking-[0.12em]">
+                        <p suppressHydrationWarning>&copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
+                        <span className="text-brand-charcoal/20">·</span>
+                        <a href="https://nihplod.cn/privacy" target="_blank" rel="noopener noreferrer" className="transition-colors duration-300 hover:text-brand-charcoal/70">隐私政策</a>
+                        <span className="text-brand-charcoal/20">·</span>
+                        <a href="https://nihplod.cn/terms" target="_blank" rel="noopener noreferrer" className="transition-colors duration-300 hover:text-brand-charcoal/70">服务条款</a>
+                    </div>
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-3 tracking-[0.12em]">
+                        <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" className="transition-colors duration-300 hover:text-brand-charcoal/70">沪ICP备2026014764号-1</a>
+                        <span aria-hidden="true" className="hidden sm:inline text-brand-charcoal/20">|</span>
+                        <a href="http://www.beian.gov.cn/portal/registerSystemInfo" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 transition-colors duration-300 hover:text-brand-charcoal/70">
+                            <Image src="/images/beian.webp" alt="" width={12} height={12} className="shrink-0 opacity-80" />
+                            <span>沪公网安备31010702010178号</span>
                         </a>
                     </div>
                 </div>
