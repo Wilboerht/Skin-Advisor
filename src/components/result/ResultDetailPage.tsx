@@ -1,10 +1,10 @@
 ﻿"use client";
 
-import { useMemo, useEffect, useState } from "react";
+import { useMemo, useEffect, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Download } from "lucide-react";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
 import type { SkinTypeData } from "@/lib/result-content";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
@@ -35,6 +35,13 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
     }
   }, []);
 
+  const [showPosterToast, setShowPosterToast] = useState(false);
+
+  const handleSavePoster = useCallback(() => {
+    setShowPosterToast(true);
+    setTimeout(() => setShowPosterToast(false), 2500);
+  }, []);
+
   const characterSrc = `/images/character/${data.ipKey}/${data.ipKey}_${genderSuffix}.png`;
 
   return (
@@ -55,6 +62,13 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
             <p className="text-[13px] md:text-base text-brand-charcoal/75 font-light leading-[1.8] md:leading-normal tracking-[0.06em] md:tracking-[0.12em] max-w-xl">
               {data.m1.persona}
             </p>
+            <button
+              onClick={handleSavePoster}
+              className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 border border-brand-charcoal/25 text-brand-charcoal/70 text-[13px] tracking-[0.08em] font-light rounded-full hover:border-brand-charcoal/50 hover:text-brand-charcoal transition-colors duration-300"
+            >
+              <Download className="w-3.5 h-3.5" />
+              保存我的肌智派形象海报
+            </button>
           </div>
           <div className="relative w-full max-w-[180px] mx-auto lg:max-w-[260px] lg:ml-auto lg:mr-0 aspect-[3/4]">
             <Image
@@ -289,6 +303,12 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
         </div>
       </footer>
       </article>
+
+      {showPosterToast && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 px-6 py-3 bg-brand-charcoal/90 text-white text-sm tracking-[0.08em] font-light rounded-full shadow-lg">
+          海报功能正在制作中，敬请期待
+        </div>
+      )}
     </main>
   );
 }

@@ -561,7 +561,7 @@ export default function QuestionsPage() {
             }, 1800);
             setTimeout(() => {
                 router.push(result.route ? `/skin-types/${result.route}` : "/skin-types");
-            }, 3200);
+            }, 4500);
         } else {
             router.push("/face-scan");
         }
@@ -818,12 +818,12 @@ export default function QuestionsPage() {
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ duration: 0.5, ease: "easeOut" }}
-                                className="flex flex-col items-center gap-3"
+                                className="flex flex-col items-center gap-5"
                             >
-                                <p className="text-sm text-brand-charcoal/50 font-light tracking-wide">
+                                <p className="text-base md:text-lg text-brand-charcoal/50 font-light tracking-wide">
                                     你的肌肤类型派系是：
                                 </p>
-                                <p className="text-2xl md:text-3xl font-serif font-light tracking-[0.06em] text-brand-charcoal">
+                                <p className="text-3xl md:text-5xl font-serif font-light tracking-[0.06em] text-brand-charcoal">
                                     {revealedPersona}
                                 </p>
                             </m.div>
