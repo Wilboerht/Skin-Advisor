@@ -288,25 +288,10 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                                                     <div className="pb-4 space-y-3">
                                                         {product.keyIngredients.map((ingredient, i) => {
                                                             const info = lookupIngredient(ingredient);
-                                                            if (info) {
-                                                                return (
-                                                                    <div key={i} className="flex items-start gap-2.5">
-                                                                        <span className="shrink-0 mt-1 w-1.5 h-1.5 rounded-full bg-[#8B7355]" />
-                                                                        <div className="min-w-0">
-                                                                            <span className="text-[14px] font-medium text-[#3d2f25]">
-                                                                                {info.title}
-                                                                            </span>
-                                                                            <p className="text-[12px] text-[#8c7a6b] leading-relaxed mt-1">
-                                                                                {info.description}
-                                                                            </p>
-                                                                        </div>
-                                                                    </div>
-                                                                );
-                                                            }
                                                             return (
                                                                 <div key={i} className="flex items-center gap-2.5">
                                                                     <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-[#8B7355]/40" />
-                                                                    <span className="text-[14px] text-[#5c4937]">{ingredient}</span>
+                                                                    <span className="text-[15px] text-[#5c4937]">{info ? info.title : ingredient}</span>
                                                                 </div>
                                                             );
                                                         })}
