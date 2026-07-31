@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import Image from "next/image";
 import { m } from "framer-motion";
-import { ChevronRight, ExternalLink, ShoppingCart } from "lucide-react";
+import { ChevronRight, ExternalLink, ShoppingCart, ImageOff } from "lucide-react";
 import {
     AffiliateLinks,
     getProductLinks,
@@ -120,6 +120,7 @@ function CompactProductCard({
                         imageError={imageError}
                         onImageError={() => setImageError(true)}
                         compact
+                        priority={index < 3}
                     />
                 </div>
 
@@ -262,6 +263,7 @@ function DefaultProductCard({
                     product={product}
                     imageError={imageError}
                     onImageError={() => setImageError(true)}
+                    priority={index < 3}
                 />
             </div>
 
@@ -327,19 +329,31 @@ function ProductImage({
     imageError,
     onImageError,
     compact = false,
+    priority = false,
 }: {
     product: ProductCardData;
     imageError: boolean;
     onImageError: () => void;
     compact?: boolean;
+    priority?: boolean;
 }) {
+    // 与产品详情弹窗保持一致：本地图片与外链 https 图均绕过 Next.js 图片优化器
+    // 原因：/uploads/ 图片在 standalone 构建中被排除，由 Nginx 直接 alias；
+    //       /images/ 图片为静态资源；HTTPS 图片多为 CDN/OSS，无需二次优化。
+    const isUnoptimized = !!product.image && (
+        product.image.startsWith('/') || product.image.startsWith('https://')
+    );
+
     if (imageError) {
         return (
             <div className={cn(
-                "flex h-full w-full items-center justify-center",
+                "flex h-full w-full flex-col items-center justify-center",
                 compact ? "text-[#8c7a6b]/50" : "text-white/30"
             )}>
-                <ShoppingCart className={cn("h-12 w-12", compact && "h-8 w-8")} />
+                <ImageOff className={cn("h-8 w-8", compact && "h-6 w-6")} />
+                {!compact && (
+                    <span className="mt-1 text-[10px]">图片加载失败</span>
+                )}
             </div>
         );
     }
@@ -354,7 +368,8 @@ function ProductImage({
                 sizes="(max-width: 1023px) 120px, (max-width: 1200px) 33vw, 25vw"
                 placeholder="blur"
                 blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMCwsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wAARCAAIAAoDASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAAAAUH/8QAIRAAAgIBAwUBAAAAAAAAAAAAAwQBAgAFBhESEyExQVH/xAAVAQEBAAAAAAAAAAAAAAAAAAAFBv/EABoRAAICAwAAAAAAAAAAAAAAAAECAAMEESH/2gAMAwEAAhEDEEAAAAGqpnWZZMmf/9k="
-
+                unoptimized={isUnoptimized}
+                priority={priority}
                 onError={onImageError}
             />
         </div>
@@ -372,7 +387,8 @@ function HorizontalProductCard({
     onProductClick?: (productId: string) => void;
 }) {
     const [imageError, setImageError] = useState(false);
-    const isLocalImage = product.image?.startsWith('/') && !product.image?.startsWith('//');
+    // 与产品详情弹窗保持一致：本地 SVG 与外链 https 图均绕过图片优化器
+    const isLocalImage = product.image?.startsWith('/') || product.image?.startsWith('https://');
 
     return (
         <m.div

@@ -14,6 +14,7 @@ import { getSkinTypeLabel, getConcernLabel, type FaceAnalysisResult } from "@/li
 import { determineSkinType, identifyConcerns } from "@/lib/advisor-utils";
 import { AnalyzeRequestSchema } from "@/lib/schemas";
 import { recommendProducts, getCandidateProducts, type ProductRecommendation } from "@/lib/recommendations";
+import { normalizeImagePath } from "@/types/product";
 import { resolveIPLocation } from "@/lib/geoip";
 import { getSessionUser } from "@/lib/sso-auth";
 import { hashIP } from "@/lib/privacy";
@@ -756,6 +757,8 @@ export async function POST(request: NextRequest) {
         // 统一清理所有推荐理由中的英文词汇（兜底）
         finalProducts = finalProducts.map((p) => ({
             ...p,
+            image: normalizeImagePath(p.image),
+            images: p.images ? p.images.map(normalizeImagePath).filter(Boolean) : null,
             reason: sanitizeReason(p.reason)
         }));
 
