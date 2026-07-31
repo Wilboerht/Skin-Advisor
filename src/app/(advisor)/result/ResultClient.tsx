@@ -511,6 +511,12 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                 const normalized = normalizeAnalysisResult(advisorResult);
                                 const recoveredSessionId = advisorResult.sessionId as string | undefined;
 
+                                // 昵称兜底：localStorage 的 ADVISOR_NICKNAME 可能已被首页清空，从缓存结果中提取
+                                const cachedNickname = advisorResult.nickname;
+                                if (typeof cachedNickname === 'string' && cachedNickname) {
+                                    setUserNickname(prev => (prev === '您' ? cachedNickname : prev));
+                                }
+
                                 // If we successfully recovered data, remove 'analyzing' status from URL to stop re-analysis
                                 if (searchParams.get('status') === 'analyzing') {
                                     if (authInitializedRef.current) {
