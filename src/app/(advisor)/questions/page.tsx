@@ -77,6 +77,7 @@ export default function QuestionsPage() {
     const [showQualityWarning, setShowQualityWarning] = useState(false);
     const [pendingAnswers, setPendingAnswers] = useState<Record<string, unknown> | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [revealedPersona, setRevealedPersona] = useState<string | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const genderScrollRef = useRef<HTMLDivElement>(null);
     const [restoredStepIndex, setRestoredStepIndex] = useState<number | null>(null);
@@ -554,7 +555,13 @@ export default function QuestionsPage() {
                 expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
             };
             safeStorage.set(STORAGE_KEYS.ADVISOR_RESULT, JSON.stringify(comprehensiveResult));
-            router.push(result.route ? `/skin-types/${result.route}` : "/skin-types");
+            // 模拟分析过程：先思考，再揭晓，像分院帽一样
+            setTimeout(() => {
+                setRevealedPersona(result.name);
+            }, 1800);
+            setTimeout(() => {
+                router.push(result.route ? `/skin-types/${result.route}` : "/skin-types");
+            }, 3200);
         } else {
             router.push("/face-scan");
         }
@@ -797,12 +804,30 @@ export default function QuestionsPage() {
                         exit={{ opacity: 0 }}
                         className="fixed inset-0 z-[60] bg-[#F5F2E9]/90 backdrop-blur-sm flex flex-col items-center justify-center gap-4"
                     >
-                        <Loader2 className="w-8 h-8 text-brand-charcoal animate-spin" />
-                        <p className="text-sm text-brand-charcoal/60 font-light tracking-wide">
-                            {scanMode === "questionnaire"
-                                ? "正在分析你的肌肤派系..."
-                                : "正在准备面部扫描..."}
-                        </p>
+                        {!revealedPersona ? (
+                            <>
+                                <Loader2 className="w-8 h-8 text-brand-charcoal animate-spin" />
+                                <p className="text-sm text-brand-charcoal/60 font-light tracking-wide">
+                                    {scanMode === "questionnaire"
+                                        ? "正在分析你的肌肤派系..."
+                                        : "正在准备面部扫描..."}
+                                </p>
+                            </>
+                        ) : (
+                            <m.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ duration: 0.5, ease: "easeOut" }}
+                                className="flex flex-col items-center gap-3"
+                            >
+                                <p className="text-sm text-brand-charcoal/50 font-light tracking-wide">
+                                    嗯，你的肌肤类型派系是：
+                                </p>
+                                <p className="text-2xl md:text-3xl font-serif font-light tracking-[0.06em] text-brand-charcoal">
+                                    {revealedPersona}
+                                </p>
+                            </m.div>
+                        )}
                     </m.div>
                 )}
             </AnimatePresence>

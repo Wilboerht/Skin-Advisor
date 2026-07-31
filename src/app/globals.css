@@ -571,6 +571,17 @@
     padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
   }
 
+  .home-container .footer-copyright,
+  .home-container .footer-beian,
+  .home-container .footer-beian a,
+  .home-container .footer-beian span {
+    color: color-mix(in srgb, var(--color-brand-charcoal) 28%, transparent);
+  }
+
+  .home-container .footer-beian a:hover {
+    color: color-mix(in srgb, var(--color-brand-charcoal) 42%, transparent);
+  }
+
   .home-container .footer-copyright {
     letter-spacing: 0.1em;
   }
