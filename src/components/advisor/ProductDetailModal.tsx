@@ -4,7 +4,7 @@ import { useEffect, useCallback, useState, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { m, AnimatePresence } from "framer-motion";
-import { X, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, ImageOff } from "lucide-react";
 import { cn, formatPrice } from "@/lib/utils";
 import type { ProductCardData } from "./ProductCard";
 import { getProductLinks } from "@/lib/affiliate-links";
@@ -21,6 +21,7 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
     const [mounted, setMounted] = useState(false);
     const [openAccordion, setOpenAccordion] = useState<string | null>(null);
     const [activeImageIndex, setActiveImageIndex] = useState(0);
+    const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
     const touchStartX = useRef(0);
     const touchStartY = useRef(0);
 
@@ -39,9 +40,10 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
         return imgs;
     }, [product]);
 
-    // 重置索引
+    // 重置索引与错误状态
     useEffect(() => {
         setActiveImageIndex(0);
+        setImageErrors({});
     }, [product?.id]);
 
     const hasMultipleImages = galleryImages.length > 1;
@@ -144,16 +146,25 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                         >
                             {galleryImages.length > 0 ? (
                                 <>
-                                    <Image
-                                        src={galleryImages[activeImageIndex]}
-                                        alt={product.name}
-                                        fill
-                                        className="object-cover"
-                                        sizes="(max-width: 1024px) 100vw, 42vw"
-                                        quality={90}
-                                        priority
-                                        unoptimized={galleryImages[activeImageIndex]?.startsWith('/') || galleryImages[activeImageIndex]?.startsWith('https://')}
-                                    />
+                                    {imageErrors[galleryImages[activeImageIndex]] ? (
+                                        <div className="flex h-full w-full flex-col items-center justify-center text-[#8c7a6b]/50">
+                                            <ImageOff className="h-12 w-12" />
+                                            <span className="mt-2 text-sm">图片加载失败</span>
+                                        </div>
+                                    ) : (
+                                        <Image
+                                            key={galleryImages[activeImageIndex]}
+                                            src={galleryImages[activeImageIndex]}
+                                            alt={product.name}
+                                            fill
+                                            className="object-cover"
+                                            sizes="(max-width: 1024px) 100vw, 42vw"
+                                            quality={90}
+                                            priority={activeImageIndex === 0}
+                                            unoptimized={galleryImages[activeImageIndex]?.startsWith('/') || galleryImages[activeImageIndex]?.startsWith('https://')}
+                                            onError={() => setImageErrors(prev => ({ ...prev, [galleryImages[activeImageIndex]]: true }))}
+                                        />
+                                    )}
                                     {/* 左右翻页按钮 */}
                                     {hasMultipleImages && (
                                         <>

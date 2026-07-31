@@ -152,30 +152,40 @@ export function ProductRecommendationSection({
             <div className="relative">
                 {/* 滚动容器 */}
                 {isLoading ? (
-                    <div className={cn("flex gap-3 px-[2%] sm:px-[4%] md:px-[6%]", centered && "justify-center")}>
+                    <div className={cn(
+                        "flex gap-3",
+                        centered
+                            ? "flex-col lg:flex-row lg:justify-center"
+                            : "px-[2%] sm:px-[4%] md:px-[6%]"
+                    )}>
                         {[0, 1, 2].map(i => (
-                            <div key={i} className="flex-shrink-0 w-[85vw] sm:w-[45vw] md:w-[32vw] lg:w-[28vw]">
+                            <div key={i} className={cn(
+                                centered
+                                    ? "w-full lg:flex-1 lg:min-w-[220px] lg:max-w-[290px]"
+                                    : "flex-shrink-0 w-[85vw] sm:w-[45vw] md:w-[32vw] lg:w-[28vw]"
+                            )}>
                                 <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/10 h-[380px] animate-pulse" />
                             </div>
                         ))}
                     </div>
                 ) : (
-                    <div
-                        ref={scrollRef}
-                        className={cn(
-                            "flex gap-3 overflow-x-auto snap-x snap-mandatory pb-3 pt-3",
-                            centered ? "flex-col lg:flex-row lg:justify-center pb-0 pt-0 lg:pb-2 lg:pt-2" : "px-[2%] sm:px-[4%] md:px-[6%]"
-                        )}
-                        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', overscrollBehaviorX: 'contain' }}
-                    >
+            <div
+                ref={scrollRef}
+                className={cn(
+                    "flex gap-3 pb-3 pt-3",
+                    centered
+                        ? "flex-col lg:flex-row lg:overflow-x-auto lg:snap-x lg:snap-mandatory lg:justify-center pb-0 pt-0 lg:pb-2 lg:pt-2"
+                        : "overflow-x-auto snap-x snap-mandatory px-[2%] sm:px-[4%] md:px-[6%]"
+                )}
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', overscrollBehaviorX: 'contain' }}
+            >
                         {processedProducts.map((product, index) => (
                             <div
                                 key={product.id}
                                 className={cn(
-                                    "snap-center",
                                     centered
-                                        ? "w-full lg:flex-1 lg:min-w-[220px] lg:max-w-[290px]"
-                                        : "flex-shrink-0 w-[85vw] sm:w-[45vw] md:w-[32vw] lg:w-[28vw] xl:w-[25vw]"
+                                        ? "w-full lg:snap-center lg:flex-1 lg:min-w-[220px] lg:max-w-[290px]"
+                                        : "snap-center flex-shrink-0 w-[85vw] sm:w-[45vw] md:w-[32vw] lg:w-[28vw] xl:w-[25vw]"
                                 )}
                             >
                                 <div className="relative">

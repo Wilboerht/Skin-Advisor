@@ -99,6 +99,10 @@ function CompactProductCard({
 }) {
     const [imageError, setImageError] = useState(false);
 
+    useEffect(() => {
+        setImageError(false);
+    }, [product.image]);
+
     const handleCardClick = useCallback(() => {
         onProductClick?.(product.id);
         onViewDetail?.(product);
@@ -213,6 +217,10 @@ function DefaultProductCard({
     const [imageError, setImageError] = useState(false);
     const [showPlatforms, setShowPlatforms] = useState(false);
     const platformRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        setImageError(false);
+    }, [product.image]);
 
     // 点击外部关闭平台下拉
     useEffect(() => {
