@@ -21,6 +21,10 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
+// 自动加载 .env.production，确保生产环境变量在脚本执行前可用
+// 已存在的环境变量不会被覆盖
+require('dotenv').config({ path: path.join(__dirname, '..', '.env.production') });
+
 const SCHEMA_PATH = path.join(__dirname, '..', 'prisma', 'schema.prisma');
 
 console.log('🚀 准备生产环境...\n');
