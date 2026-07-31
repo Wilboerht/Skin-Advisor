@@ -285,22 +285,6 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
     const retryButtonRef = useRef<HTMLButtonElement>(null);
     const scrollContainerRef = useRef<HTMLElement | null>(null);
 
-    // Social proof: total completed skin tests
-    const [totalCompleted, setTotalCompleted] = useState<number | null>(null);
-
-    useEffect(() => {
-        fetch("/api/advisor/stats")
-            .then((res) => res.json())
-            .then((data) => {
-                if (typeof data.totalCompleted === "number") {
-                    setTotalCompleted(data.totalCompleted);
-                }
-            })
-            .catch(() => {
-                // 静默失败
-            });
-    }, []);
-
     // Fetch active campaign for countdown
     useEffect(() => {
         fetch("/api/campaign/active")
@@ -314,7 +298,6 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                 // 静默失败
             });
     }, []);
-
 
     const rankPercentile = useMemo(
         () => {
@@ -1145,12 +1128,6 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                             <Sparkles className="w-4 h-4 lg:w-5 lg:h-5" />
                             {userNickname} 的专属肌智派素颜分析报告
                         </p>
-                        {/* Social proof */}
-                        {totalCompleted !== null && totalCompleted > 0 && (
-                            <p className="text-center text-[11px] sm:text-[12px] text-[#8B7355]/60 -mt-4 mb-6 lg:-mt-6 lg:mb-8 tracking-wide">
-                                已有 {totalCompleted.toLocaleString("zh-CN")} 位肌智派用户完成测肤
-                            </p>
-                        )}
                     </div>
 
                     {/* Validation Warning Banner */}
