@@ -219,14 +219,14 @@ export default function FaceScanPage() {
     return (
         <div className="relative h-dvh overflow-hidden w-full bg-[#F5F2E9] flex flex-col items-center">
             {/* Top Bar —— 复用 /questions 统一样式 */}
-            <header className={`w-full relative flex items-center justify-center py-6 md:py-7 px-4 md:px-12 lg:px-20 z-[310] shrink-0 border-b border-[#3D4430]/5 transition-colors duration-300 ${isModalOpen ? 'bg-[#FAF8F5]' : 'bg-[#F5F2E9]'}`}>
+            <header className={`w-full relative flex items-center justify-center py-6 md:py-7 px-4 md:px-12 lg:px-20 z-[310] shrink-0 border-b border-brand-charcoal/5 transition-colors duration-300 ${isModalOpen ? 'bg-[#FAF8F5]' : 'bg-[#F5F2E9]'}`}>
                 <button
                     onClick={() => router.push("/questions?edit=true")}
-                    className="absolute left-4 md:left-12 lg:left-20 px-3 py-2 flex items-center gap-1.5 text-[#3D4430]/70 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5"
+                    className="absolute left-4 md:left-12 lg:left-20 px-3 py-2 flex items-center gap-1.5 text-brand-charcoal/70 hover:text-brand-charcoal transition-colors rounded-md hover:bg-brand-charcoal/5"
                     aria-label="返回"
                 >
                     <ChevronLeft className="w-5 h-5" strokeWidth={1.5} />
-                    <span className="hidden sm:inline text-[14px] font-medium tracking-wide">返回</span>
+                    <span className="hidden sm:inline text-[14px] font-light tracking-[0.08em]">返回</span>
                 </button>
 
                 <Image
@@ -240,11 +240,11 @@ export default function FaceScanPage() {
 
                 <button
                     onClick={() => setShowExitConfirm(true)}
-                    className="absolute right-4 md:right-12 lg:right-20 px-3 py-2 flex items-center gap-1.5 text-[#3D4430]/70 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5"
+                    className="absolute right-4 md:right-12 lg:right-20 px-3 py-2 flex items-center gap-1.5 text-brand-charcoal/70 hover:text-brand-charcoal transition-colors rounded-md hover:bg-brand-charcoal/5"
                     aria-label="退出测试"
                 >
                     <LogOut className="w-5 h-5" strokeWidth={1.5} />
-                    <span className="hidden sm:inline text-[14px] font-medium tracking-wide">退出</span>
+                    <span className="hidden sm:inline text-[14px] font-light tracking-[0.08em]">退出</span>
                 </button>
             </header>
 
@@ -304,8 +304,8 @@ export default function FaceScanPage() {
                         className="fixed inset-0 z-[9999] bg-[#FDFBF7] flex flex-col items-center justify-center"
                     >
                         <Loader2 className="w-10 h-10 text-[#8B7355] animate-spin mb-8" />
-                        <p className="text-[#1A1A1A] text-xl md:text-2xl font-serif tracking-wide">正在准备 AI 面部扫描</p>
-                        <p className="text-[#5E5E5E] text-sm md:text-[15px] mt-3 font-light max-w-xs text-center leading-relaxed">首次加载模型需要几秒钟，请稍等</p>
+                        <p className="text-brand-charcoal text-xl md:text-2xl font-serif font-light tracking-[0.02em]">正在准备 AI 面部扫描</p>
+                        <p className="text-brand-charcoal/60 text-[13px] md:text-sm mt-3 font-light max-w-xs text-center leading-[1.8] tracking-[0.06em]">首次加载模型需要几秒钟，请稍等</p>
                     </m.div>
                 )}
             </AnimatePresence>
@@ -327,15 +327,15 @@ export default function FaceScanPage() {
                         >
 <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                                 <div className="sm:w-[60%] text-center sm:text-left">
-                                    <h3 className="text-lg font-serif text-[#1A1A1A] mb-3 sm:mb-2">退出测试？</h3>
-                                    <p className="text-sm text-[#5E5E5E] leading-relaxed">
+                                    <h3 className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-3 sm:mb-2">退出测试？</h3>
+                                    <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">
                                         您的进度已自动保存，下次返回可直接从此处继续。
                                     </p>
                                 </div>
                                 <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
                                     <button
                                         onClick={() => setShowExitConfirm(false)}
-                                        className="px-6 h-10 rounded-lg border border-[#1B3A5C] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                                        className="px-6 h-10 border border-brand-charcoal/60 text-brand-charcoal hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                                     >
                                         继续测试
                                     </button>
@@ -346,7 +346,7 @@ export default function FaceScanPage() {
                                             await advisorStorage.clearFaceImages();
                                             router.push("/");
                                         }}
-                                        className="px-6 h-10 rounded-lg border border-[#E8E2D9] text-[#5E5E5E] hover:text-[#1A1A1A] hover:border-[#D9D0C3] text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                                        className="px-6 h-10 border border-brand-charcoal/20 text-brand-charcoal/60 hover:text-brand-charcoal hover:border-brand-charcoal/40 text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                                     >
                                         退出并返回首页
                                     </button>
@@ -374,8 +374,8 @@ export default function FaceScanPage() {
                         >
 <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                                 <div className="sm:w-[60%] text-center sm:text-left">
-                                    <h3 className="text-lg font-serif text-[#1A1A1A] mb-3 sm:mb-2">存储空间不足</h3>
-                                    <p className="text-sm text-[#5E5E5E] leading-relaxed">
+                                    <h3 className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-3 sm:mb-2">存储空间不足</h3>
+                                    <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">
                                         浏览器存储空间已满，无法保存照片。请清理浏览器缓存后重新尝试。
                                     </p>
                                 </div>
@@ -385,7 +385,7 @@ export default function FaceScanPage() {
                                             setStorageError(false);
                                             setIsSubmitting(false);
                                         }}
-                                        className="px-6 h-10 rounded-lg border border-[#1B3A5C] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                                        className="px-6 h-10 border border-brand-charcoal/60 text-brand-charcoal hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                                     >
                                         重新尝试拍照
                                     </button>
@@ -396,7 +396,7 @@ export default function FaceScanPage() {
                                             await advisorStorage.clearAll();
                                             router.push("/");
                                         }}
-                                        className="px-6 h-10 rounded-lg border border-[#E8E2D9] text-[#5E5E5E] hover:text-[#1A1A1A] hover:border-[#D9D0C3] text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                                        className="px-6 h-10 border border-brand-charcoal/20 text-brand-charcoal/60 hover:text-brand-charcoal hover:border-brand-charcoal/40 text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                                     >
                                         退出并返回首页
                                     </button>

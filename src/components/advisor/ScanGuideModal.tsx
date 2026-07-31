@@ -34,14 +34,14 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
                     className="fixed inset-0 z-[320] bg-[#FAF8F5] flex flex-col items-center overflow-y-auto overscroll-contain"
                 >
                     {/* ---- App Bar / Header ---- */}
-                    <header className="fixed top-0 left-0 right-0 z-[330] flex items-center justify-center px-6 md:px-12 lg:px-20 py-6 md:py-7 bg-[#FAF8F5]/95 backdrop-blur-sm border-b border-[#1A1A1A]/5">
+                    <header className="fixed top-0 left-0 right-0 z-[330] flex items-center justify-center px-6 md:px-12 lg:px-20 py-6 md:py-7 bg-[#FAF8F5]/95 backdrop-blur-sm border-b border-brand-charcoal/5">
                         <button
                             onClick={handleClose}
-                            className="absolute left-4 md:left-12 lg:left-20 px-3 py-2 flex items-center gap-1.5 text-[#3D4430]/70 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5 cursor-pointer bg-transparent border-none"
+                            className="absolute left-4 md:left-12 lg:left-20 px-3 py-2 flex items-center gap-1.5 text-brand-charcoal/70 hover:text-brand-charcoal transition-colors rounded-md hover:bg-brand-charcoal/5 cursor-pointer bg-transparent border-none"
                             aria-label="返回"
                         >
                             <ChevronLeft className="w-5 h-5" strokeWidth={1.5} />
-                            <span className="hidden sm:inline text-[14px] font-medium tracking-wide">返回</span>
+                            <span className="hidden sm:inline text-[14px] font-light tracking-[0.08em]">返回</span>
                         </button>
 
                         <Image
@@ -54,11 +54,11 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
 
                         <button
                             onClick={handleClose}
-                            className="absolute right-4 md:right-12 lg:right-20 px-3 py-2 flex items-center gap-1.5 text-[#3D4430]/70 hover:text-[#3D4430] transition-colors rounded-md hover:bg-[#3D4430]/5 cursor-pointer bg-transparent border-none"
+                            className="absolute right-4 md:right-12 lg:right-20 px-3 py-2 flex items-center gap-1.5 text-brand-charcoal/70 hover:text-brand-charcoal transition-colors rounded-md hover:bg-brand-charcoal/5 cursor-pointer bg-transparent border-none"
                             aria-label="退出"
                         >
                             <LogOut className="w-5 h-5" strokeWidth={1.5} />
-                            <span className="hidden sm:inline text-[14px] font-medium tracking-wide">退出</span>
+                            <span className="hidden sm:inline text-[14px] font-light tracking-[0.08em]">退出</span>
                         </button>
                     </header>
 
@@ -72,7 +72,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
                                 transition={{ delay: 0.1, duration: 0.5 }}
                                 className="flex flex-col items-center text-center"
                             >
-                                <h3 className="text-3xl md:text-4xl font-serif text-[#1A1A1A] tracking-tight mb-6 md:mb-8">
+                                <h3 className="text-2xl md:text-3xl font-serif font-light text-brand-charcoal tracking-[0.02em] mb-6 md:mb-8">
                                     开始面部扫描
                                 </h3>
                                 <Image
@@ -90,21 +90,18 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.2, duration: 0.5 }}
-                                className="w-full flex items-center justify-center mb-10 md:mb-12"
+                                className="w-full flex items-center justify-center gap-8 md:gap-14 mb-10 md:mb-12"
                             >
                                 {guideItems.map((item, index) => {
                                     const Icon = item.icon;
                                     return (
-                                        <div key={index} className="flex items-center">
-                                            <div className="flex flex-col items-center gap-3 px-6 sm:px-10">
-                                                <Icon className="w-6 h-6 text-[#4A3728]/50" strokeWidth={1.5} />
-                                                <span className="text-sm text-[#1A1A1A]/70 font-light tracking-wide">
-                                                    {item.title}
-                                                </span>
+                                        <div key={index} className="flex flex-col items-center gap-3">
+                                            <div className="w-12 h-12 rounded-full bg-brand-charcoal/[0.04] flex items-center justify-center">
+                                                <Icon className="w-5 h-5 text-brand-charcoal/50" strokeWidth={1.25} />
                                             </div>
-                                            {index < guideItems.length - 1 && (
-                                                <div className="w-px h-10 bg-[#4A3728]/15" />
-                                            )}
+                                            <span className="text-sm text-brand-charcoal/70 font-light tracking-[0.08em]">
+                                                {item.title}
+                                            </span>
                                         </div>
                                     );
                                 })}
@@ -131,7 +128,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
                                         }
                                         onConfirm();
                                     }}
-                                    className="group relative inline-flex items-center justify-center gap-3 px-12 py-4 sm:px-16 border border-[#4A3728] text-[#4A3728] bg-transparent rounded-lg text-[13px] sm:text-[14px] tracking-[0.15em] font-medium cursor-pointer transition-all duration-500 hover:bg-[#4A3728] hover:text-[#FAF8F5]"
+                                    className="group relative inline-flex items-center justify-center gap-3 px-10 py-4 sm:px-14 border border-brand-charcoal/60 text-brand-charcoal bg-transparent text-[13px] sm:text-[14px] tracking-[0.1em] font-light cursor-pointer transition-all duration-500 hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,38,62,0.12)] active:translate-y-0 active:shadow-none"
                                 >
                                     <span>开始测肤，解锁完整报告</span>
                                     <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-2" />
@@ -142,13 +139,13 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
 
                     {/* Footer */}
                     <div className="py-6 opacity-40 shrink-0 text-center px-4">
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-[10px] sm:text-[11px] font-light tracking-widest text-[#1A1A1A] leading-tight">
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-[11px] font-light tracking-[0.1em] md:tracking-[0.12em] text-brand-charcoal/[0.48] leading-tight">
                             <p>&copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
-                            <span className="hidden sm:inline text-[#1A1A1A]/30">·</span>
-                            <div className="hidden sm:flex items-center gap-4">
-                                <Link href="https://nihplod.cn/privacy" className="hover:text-[#3D4430] transition-colors duration-300">隐私政策</Link>
-                                <span className="text-[#5E5E5E]/30">·</span>
-                                <Link href="https://nihplod.cn/terms" className="hover:text-[#3D4430] transition-colors duration-300">服务条款</Link>
+                            <span className="hidden sm:inline text-brand-charcoal/20">·</span>
+                            <div className="hidden sm:flex items-center gap-4 tracking-[0.12em]">
+                                <Link href="https://nihplod.cn/privacy" className="hover:text-brand-charcoal/70 transition-colors duration-300">隐私政策</Link>
+                                <span className="text-brand-charcoal/20">·</span>
+                                <Link href="https://nihplod.cn/terms" className="hover:text-brand-charcoal/70 transition-colors duration-300">服务条款</Link>
                             </div>
                         </div>
                     </div>
