@@ -5,7 +5,12 @@
  * 构建前自动执行：
  * 1. 验证必要的环境变量
  * 2. 执行 prisma generate
- * 3. 执行 prisma db push（同步数据库结构）
+ * 3. 执行 prisma migrate deploy（应用已版本控制的迁移文件）
+ *
+ * 注意：本脚本假定项目已存在 prisma/migrations/ 迁移文件。
+ * 如果是首次初始化空数据库且尚未创建迁移，请先在开发环境运行：
+ *   npx prisma migrate dev
+ * 切勿在生产环境直接运行 prisma db push，否则可能破坏数据。
  *
  * 使用方法：
  * - 构建命令: node scripts/prepare-production.js && next build
@@ -144,18 +149,20 @@ try {
 }
 
 // ========================================
-// 3. 执行 prisma db push
+// 3. 执行 prisma migrate deploy
 // ========================================
-console.log('⚙️  执行 prisma db push...');
+console.log('⚙️  执行 prisma migrate deploy...');
 console.log('   📡 连接到:', process.env.DATABASE_URL.replace(/:[^:@]+@/, ':****@').substring(0, 60) + '...');
+console.log('   ℹ️  将应用 prisma/migrations/ 下的迁移文件');
 try {
-  execSync('npx prisma db push', {
+  execSync('npx prisma migrate deploy', {
     stdio: 'inherit',
     cwd: path.join(__dirname, '..')
   });
-  console.log('   ✅ prisma db push 完成\n');
+  console.log('   ✅ prisma migrate deploy 完成\n');
 } catch (error) {
-  console.error('   ❌ prisma db push 失败');
+  console.error('   ❌ prisma migrate deploy 失败');
+  console.error('      如果此前在该数据库上执行过 prisma db push，请先按项目文档处理迁移冲突。');
   process.exit(1);
 }
 

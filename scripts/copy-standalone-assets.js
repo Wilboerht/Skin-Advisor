@@ -21,17 +21,22 @@ if (!fs.existsSync(STANDALONE)) {
 
 /**
  * 递归复制目录
+ * @param {string} src 源目录
+ * @param {string} dest 目标目录
+ * @param {Set<string>} exclude 要排除的目录/文件名集合
  */
-function copyDir(src, dest) {
+function copyDir(src, dest, exclude = new Set()) {
   fs.mkdirSync(dest, { recursive: true });
   const entries = fs.readdirSync(src, { withFileTypes: true });
   for (const entry of entries) {
+    if (exclude.has(entry.name)) continue;
+
     const srcPath = path.join(src, entry.name);
     const destPath = path.join(dest, entry.name);
     // 使用 statSync 跟随符号链接判断真实类型
     const stat = fs.statSync(srcPath);
     if (stat.isDirectory()) {
-      copyDir(srcPath, destPath);
+      copyDir(srcPath, destPath, exclude);
     } else if (stat.isFile()) {
       fs.copyFileSync(srcPath, destPath);
     }
@@ -39,12 +44,12 @@ function copyDir(src, dest) {
   }
 }
 
-// 1. 复制 public/ → .next/standalone/public/
+// 1. 复制 public/ → .next/standalone/public/（排除 uploads，避免把上传文件打包进构建产物）
 const publicSrc = path.join(ROOT, 'public');
 const publicDest = path.join(STANDALONE, 'public');
 if (fs.existsSync(publicSrc)) {
   console.log('📦 复制 public/ → .next/standalone/public/ ...');
-  copyDir(publicSrc, publicDest);
+  copyDir(publicSrc, publicDest, new Set(['uploads']));
   console.log('   ✅ public/ 复制完成');
 } else {
   console.log('⚠️  public/ 目录不存在，跳过');

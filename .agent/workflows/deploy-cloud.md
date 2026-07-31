@@ -57,7 +57,7 @@ npm run dev
 # 安装依赖
 npm install
 
-# 准备生产环境（验证变量 + 同步数据库 + 生成客户端）
+# 准备生产环境（验证变量 + 生成客户端 + 应用迁移）
 node scripts/prepare-production.js
 
 # 构建
