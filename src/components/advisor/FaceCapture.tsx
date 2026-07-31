@@ -179,6 +179,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
   const lightBrightnessRef = useRef<number>(1);
   // 屏幕常亮锁
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+  const trackMuteListenersRef = useRef<{ track: MediaStreamTrack; onMute: () => void; onUnmute: () => void } | null>(null);
   // 调试信息
   const [debugInfo, setDebugInfo] = useState<{
     headPose: string;
@@ -319,7 +320,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
         };
         videoTrack.addEventListener("mute", onMute);
         videoTrack.addEventListener("unmute", onUnmute);
-        // 清理函数在 stream 变化时由后续 useEffect 的 cleanup 执行
+        trackMuteListenersRef.current = { track: videoTrack, onMute, onUnmute };
       }
 
       streamRef.current = mediaStream!;
@@ -861,7 +862,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     cooldownRef.current = true;
     setIsInCooldown(true);
 
-    setTimeout(() => {
+    setTimeout(async () => {
       const canvas = canvasRef.current;
       const video = videoRef.current;
       if (!canvas || !video) {
@@ -884,66 +885,79 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
 
     let imageData: string;
 
-    // 如果有面部检测框，进行智能裁剪
-    if (faceBoxRef.current) {
-      const faceBox = faceBoxRef.current;
+    // 辅助函数：将 canvas 异步编码为 data URL，避免 toDataURL 主线程阻塞
+    const encodeCanvas = (c: HTMLCanvasElement): Promise<string> =>
+      new Promise((resolve) => {
+        c.toBlob((blob) => {
+          if (!blob) { resolve(c.toDataURL("image/jpeg", 0.75)); return; }
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        }, "image/jpeg", 0.75);
+      });
 
-      // 扩展裁剪区域：上方多留40%（头发），下方多留30%（脖子），左右各多留35%
-      const expandTop = faceBox.height * 0.5;
-      const expandBottom = faceBox.height * 0.35;
-      const expandSide = faceBox.width * 0.4;
+    const doCapture = async () => {
+      // 如果有面部检测框，进行智能裁剪
+      if (faceBoxRef.current) {
+        const faceBox = faceBoxRef.current;
 
-      // 计算裁剪区域
-      let cropX = faceBox.x - expandSide;
-      let cropY = faceBox.y - expandTop;
-      let cropWidth = faceBox.width + expandSide * 2;
-      let cropHeight = faceBox.height + expandTop + expandBottom;
+        // 扩展裁剪区域：上方多留40%（头发），下方多留30%（脖子），左右各多留35%
+        const expandTop = faceBox.height * 0.5;
+        const expandBottom = faceBox.height * 0.35;
+        const expandSide = faceBox.width * 0.4;
 
-      // 确保不超出视频边界
-      cropX = Math.max(0, cropX);
-      cropY = Math.max(0, cropY);
-      cropWidth = Math.min(cropWidth, videoWidth - cropX);
-      cropHeight = Math.min(cropHeight, videoHeight - cropY);
+        // 计算裁剪区域
+        let cropX = faceBox.x - expandSide;
+        let cropY = faceBox.y - expandTop;
+        let cropWidth = faceBox.width + expandSide * 2;
+        let cropHeight = faceBox.height + expandTop + expandBottom;
 
-      // 保持宽高比为 3:4（适合人像）
-      const targetRatio = 3 / 4;
-      const currentRatio = cropWidth / cropHeight;
+        // 确保不超出视频边界
+        cropX = Math.max(0, cropX);
+        cropY = Math.max(0, cropY);
+        cropWidth = Math.min(cropWidth, videoWidth - cropX);
+        cropHeight = Math.min(cropHeight, videoHeight - cropY);
 
-      if (currentRatio > targetRatio) {
-        // 太宽了，增加高度或减少宽度
-        const newWidth = cropHeight * targetRatio;
-        cropX += (cropWidth - newWidth) / 2;
-        cropWidth = newWidth;
+        // 保持宽高比为 3:4（适合人像）
+        const targetRatio = 3 / 4;
+        const currentRatio = cropWidth / cropHeight;
+
+        if (currentRatio > targetRatio) {
+          // 太宽了，增加高度或减少宽度
+          const newWidth = cropHeight * targetRatio;
+          cropX += (cropWidth - newWidth) / 2;
+          cropWidth = newWidth;
+        } else {
+          // 太高了，增加宽度或减少高度
+          const newHeight = cropWidth / targetRatio;
+          cropY += (cropHeight - newHeight) / 2;
+          cropHeight = newHeight;
+        }
+
+        // 再次确保边界
+        cropX = Math.max(0, Math.min(cropX, videoWidth - cropWidth));
+        cropY = Math.max(0, Math.min(cropY, videoHeight - cropHeight));
+
+        // 设置输出尺寸（保持高质量）
+        const outputWidth = 720;
+        const outputHeight = 960;
+        canvas.width = outputWidth;
+        canvas.height = outputHeight;
+
+        // 前置摄像头不再做水平镜像，上传给 AI 的图像与摄像头原始帧保持一致
+        ctx.drawImage(video, cropX, cropY, cropWidth, cropHeight, 0, 0, outputWidth, outputHeight);
       } else {
-        // 太高了，增加宽度或减少高度
-        const newHeight = cropWidth / targetRatio;
-        cropY += (cropHeight - newHeight) / 2;
-        cropHeight = newHeight;
+        // 没有面部检测框，使用原始方式
+        canvas.width = videoWidth;
+        canvas.height = videoHeight;
+
+        ctx.drawImage(video, 0, 0);
       }
 
-      // 再次确保边界
-      cropX = Math.max(0, Math.min(cropX, videoWidth - cropWidth));
-      cropY = Math.max(0, Math.min(cropY, videoHeight - cropHeight));
+      imageData = await encodeCanvas(canvas);
+    };
 
-      // 设置输出尺寸（保持高质量）
-      const outputWidth = 720;
-      const outputHeight = 960;
-      canvas.width = outputWidth;
-      canvas.height = outputHeight;
-
-      // 前置摄像头不再做水平镜像，上传给 AI 的图像与摄像头原始帧保持一致
-      ctx.drawImage(video, cropX, cropY, cropWidth, cropHeight, 0, 0, outputWidth, outputHeight);
-
-      // Encode with standard quality to reduce base64 size for the API
-      imageData = canvas.toDataURL("image/jpeg", 0.75);
-    } else {
-      // 没有面部检测框，使用原始方式
-      canvas.width = videoWidth;
-      canvas.height = videoHeight;
-
-      ctx.drawImage(video, 0, 0);
-      imageData = canvas.toDataURL("image/jpeg", 0.75);
-    }
+    await doCapture();
 
     // 从 ref 读取当前步骤，避免闭包过时
     const step = currentStepRef.current;
@@ -1282,6 +1296,12 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
   useEffect(() => {
     const video = videoRef.current;
     return () => {
+      const listeners = trackMuteListenersRef.current;
+      if (listeners) {
+        try { listeners.track.removeEventListener("mute", listeners.onMute); } catch { /* ignore */ }
+        try { listeners.track.removeEventListener("unmute", listeners.onUnmute); } catch { /* ignore */ }
+        trackMuteListenersRef.current = null;
+      }
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
         streamRef.current = null;
@@ -1321,7 +1341,17 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     animationId = requestAnimationFrame(runDetection);
     faceDetectionRef.current = animationId;
 
+    const handleVisibility = () => {
+      if (document.hidden) {
+        if (animationId) { cancelAnimationFrame(animationId); animationId = 0; }
+      } else {
+        if (!animationId) { lastDetectionTime = 0; animationId = requestAnimationFrame(runDetection); faceDetectionRef.current = animationId; }
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
     return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
       if (animationId) {
         cancelAnimationFrame(animationId);
       }

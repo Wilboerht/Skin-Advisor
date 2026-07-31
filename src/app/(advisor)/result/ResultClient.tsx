@@ -1115,7 +1115,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
             {result && (
                 <div className={styles.container}>
                     {/* Save Report Banner for unauthenticated users */}
-                    <SaveReportBanner />
+                    <SaveReportBanner className="hidden md:block" />
 
                     {/* Register Conversion Modal: 游客深度浏览后弹出注册引导 */}
                     <RegisterConversionModal scrollContainerRef={scrollContainerRef} />
