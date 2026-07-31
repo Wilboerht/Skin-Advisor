@@ -821,7 +821,7 @@ export default function QuestionsPage() {
                                 className="flex flex-col items-center gap-3"
                             >
                                 <p className="text-sm text-brand-charcoal/50 font-light tracking-wide">
-                                    嗯，你的肌肤类型派系是：
+                                    你的肌肤类型派系是：
                                 </p>
                                 <p className="text-2xl md:text-3xl font-serif font-light tracking-[0.06em] text-brand-charcoal">
                                     {revealedPersona}
