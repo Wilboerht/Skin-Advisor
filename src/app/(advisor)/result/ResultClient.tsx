@@ -899,16 +899,16 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
         return (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                 <div className="absolute inset-0 bg-[#F5F2E9]/80 backdrop-blur-sm" />
-                <div className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm">
+                <div className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-brand-charcoal/[0.08] shadow-sm">
                     <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                         <div className="sm:w-[60%] text-center sm:text-left">
-                            <h3 className="text-lg font-serif text-[#1A1A1A] mb-3 sm:mb-2">未授权访问</h3>
-                            <p className="text-sm text-[#5E5E5E] leading-relaxed">请从首页开始皮肤测评，完成问卷后即可查看您的分析报告。</p>
+                            <h3 className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-3 sm:mb-2">未授权访问</h3>
+                            <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">请从首页开始皮肤测评，完成问卷后即可查看您的分析报告。</p>
                         </div>
                         <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
                             <button
                                 onClick={() => router.push("/")}
-                                className="px-6 h-10 rounded-lg border border-[#1B3A5C] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                                className="px-6 h-10 border border-brand-charcoal/60 text-brand-charcoal hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                             >
                                 返回首页
                             </button>
@@ -926,18 +926,18 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
             <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
                 <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
 
-                <div className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm">
+                <div className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-brand-charcoal/[0.08] shadow-sm">
                     <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                         <div className="sm:w-[60%] text-center sm:text-left">
-                            <h3 className="text-lg font-serif text-[#1A1A1A] mb-3 sm:mb-2">分析遇到了一些问题</h3>
-                            <p className="text-sm text-[#5E5E5E] leading-relaxed">
+                            <h3 className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-3 sm:mb-2">分析遇到了一些问题</h3>
+                            <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">
                                 {analysisState.error || "服务器暂时无法响应，请稍后再试。"}
                             </p>
                         </div>
                         <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
                             <button
                                 onClick={() => router.push('/questions?edit=true')}
-                                className="px-6 h-10 rounded-lg border border-[#1B3A5C] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                                className="px-6 h-10 border border-brand-charcoal/60 text-brand-charcoal hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                             >
                                 {getErrorRetryLabel()}
                             </button>
@@ -958,16 +958,16 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
         return (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                 <div className="absolute inset-0 bg-[#F5F2E9]/80 backdrop-blur-sm" />
-                <div className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm">
+                <div className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-brand-charcoal/[0.08] shadow-sm">
                     <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                         <div className="sm:w-[60%] text-center sm:text-left">
-                            <h3 className="text-lg font-serif text-[#1A1A1A] mb-3 sm:mb-2">报告加载失败</h3>
-                            <p className="text-sm text-[#5E5E5E] leading-relaxed">数据可能已过期或不存在</p>
+                            <h3 className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-3 sm:mb-2">报告加载失败</h3>
+                            <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">数据可能已过期或不存在</p>
                         </div>
                         <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
                             <button
                                 onClick={() => router.push("/questions?edit=true")}
-                                className="px-6 h-10 rounded-lg border border-[#1B3A5C] text-[#1B3A5C] hover:bg-[#1B3A5C] hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
+                                className="px-6 h-10 border border-brand-charcoal/60 text-brand-charcoal hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                             >
                                 重新测试
                             </button>
@@ -1001,14 +1001,14 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[300] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4"
+                        className="fixed inset-0 z-[300] bg-brand-charcoal/40 backdrop-blur-sm flex items-center justify-center p-4"
                     >
                         <m.div
                             initial={{ scale: 0.95, opacity: 0, y: 8 }}
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.95, opacity: 0, y: 8 }}
                             transition={{ type: "spring", stiffness: 350, damping: 25 }}
-                            className="bg-[#FDFBF7] rounded-2xl shadow-sm w-full max-w-[420px] overflow-hidden border border-[#3D4430]/10"
+                            className="bg-[#FDFBF7] rounded-2xl shadow-sm w-full max-w-[420px] overflow-hidden border border-brand-charcoal/10"
                             role="dialog"
                             aria-modal="true"
                             aria-labelledby="gender-mismatch-title"
@@ -1022,39 +1022,39 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                             <div className="p-7 md:p-8">
                                 {/* Header */}
                                 <div className="flex flex-col items-center text-center gap-4 mb-6">
-                                    <div className="w-12 h-12 rounded-full bg-[#1B3A5C]/8 flex items-center justify-center">
-                                        <AlertTriangle className="w-6 h-6 text-[#1B3A5C]" strokeWidth={1.5} />
+                                    <div className="w-12 h-12 rounded-full bg-brand-charcoal/[0.08] flex items-center justify-center">
+                                        <AlertTriangle className="w-6 h-6 text-brand-charcoal" strokeWidth={1.5} />
                                     </div>
                                     <h3
                                         id="gender-mismatch-title"
-                                        className="text-[17px] font-semibold text-[#1A1A1A] tracking-wide"
+                                        className="text-[17px] font-light text-brand-charcoal tracking-[0.02em]"
                                     >
                                         测前信息准确性提示
                                     </h3>
                                     </div>
 
                                 <div className="space-y-5">
-                                    <p className="text-[14px] text-[#5E5E5E] leading-[1.8] text-left px-1">
+                                    <p className="text-[14px] text-brand-charcoal/60 font-light leading-[1.8] text-left px-1">
                                         AI 面部识别结果显示您的面部特征更接近
-                                        <span className="font-medium bg-[#1B3A5C]/8 px-1.5 py-0.5 rounded text-[#1B3A5C] mx-1">
+                                        <span className="font-light bg-brand-charcoal/[0.08] px-1.5 py-0.5 rounded text-brand-charcoal mx-1">
                                             {faceAnalysis?.gender?.value === 'male' ? '男性' : '女性'}
                                         </span>
                                         ，但您在问卷中选择的是
-                                        <span className="font-medium bg-[#1B3A5C]/8 px-1.5 py-0.5 rounded text-[#1B3A5C] mx-1">
+                                        <span className="font-light bg-brand-charcoal/[0.08] px-1.5 py-0.5 rounded text-brand-charcoal mx-1">
                                             {socialGender === 'male' ? '男性' : '女性'}
                                         </span>
                                         ，二者不一致。
                                     </p>
 
                                     {/* Callout Block */}
-                                    <div className="bg-[#1B3A5C]/4 p-4 rounded-lg flex items-start gap-3">
-                                        <Lightbulb className="w-4 h-4 shrink-0 mt-0.5 text-[#1B3A5C]/70" strokeWidth={1.5} />
-                                        <div className="space-y-2 text-[13px] text-[#5E5E5E] leading-relaxed">
-                                            <p>这可能会影响为您匹配<span className="font-semibold text-[#1A1A1A]">“针对性护肤方案”</span>的精准度，导致分析结论与您的实际肤感产生偏差。</p>
+                                    <div className="bg-brand-charcoal/[0.04] p-4 rounded-lg flex items-start gap-3">
+                                        <Lightbulb className="w-4 h-4 shrink-0 mt-0.5 text-brand-charcoal/70" strokeWidth={1.5} />
+                                        <div className="space-y-2 text-[13px] text-brand-charcoal/60 font-light leading-[1.8]">
+                                            <p>这可能会影响为您匹配<span className="font-light text-brand-charcoal">“针对性护肤方案”</span>的精准度，导致分析结论与您的实际肤感产生偏差。</p>
                                             {hasUsedFreeRetry ? (
                                                 <p>该会话已使用过免费重试，重新填写将正常消耗测试次数。</p>
                                             ) : (
-                                                <p>建议核实信息以获得更准确的建议。若是填写有误？<span className="font-semibold text-[#1B3A5C]">本次重新填写不消耗测试次数</span>。</p>
+                                                <p>建议核实信息以获得更准确的建议。若是填写有误？<span className="font-light text-brand-charcoal">本次重新填写不消耗测试次数</span>。</p>
                                             )}
                                         </div>
                                     </div>
@@ -1064,7 +1064,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                         <button
                                             ref={retryButtonRef}
                                             onClick={hasUsedFreeRetry ? handleMismatchContinue : handleMismatchRetry}
-                                            className="w-full h-11 border border-[#1B3A5C] text-[#1B3A5C] bg-transparent text-[14px] font-medium rounded-lg hover:bg-[#1B3A5C] hover:text-white active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+                                            className="w-full h-11 border border-brand-charcoal/60 text-brand-charcoal bg-transparent text-[14px] font-light hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal active:scale-[0.99] transition-all flex items-center justify-center gap-2"
                                         >
                                             <RotateCcw size={14} strokeWidth={2} />
                                             <span>{hasUsedFreeRetry ? "我已了解" : "重新填写问卷"}</span>
@@ -1072,7 +1072,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
 
                                         <button
                                             onClick={handleMismatchContinue}
-                                            className="w-full h-11 bg-transparent text-[#5E5E5E] text-[14px] font-medium rounded-lg hover:bg-[#1B3A5C]/6 hover:text-[#1B3A5C] transition-all flex items-center justify-center gap-2"
+                                            className="w-full h-11 bg-transparent text-brand-charcoal/60 text-[14px] font-light hover:bg-brand-charcoal/[0.06] hover:text-brand-charcoal transition-all flex items-center justify-center gap-2"
                                         >
                                             <span>信息无误，继续查看</span>
                                         </button>

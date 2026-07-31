@@ -1,20 +1,21 @@
 ﻿"use client";
 
 import { motion as m, AnimatePresence } from "framer-motion";
-import { useEffect, useState, useMemo, useRef, useCallback, useSyncExternalStore } from "react";
-import { Sparkles, LogOut } from "lucide-react";
+import { useEffect, useState, useRef, useCallback, useSyncExternalStore } from "react";
+import { LogOut } from "lucide-react";
 import Image from "next/image";
+import { STORAGE_KEYS } from "@/lib/storage-keys";
 
-const PRODUCT_IMAGES = [
-    "/images/products/Body Lotion.svg",
-    "/images/products/Face Cream.svg",
-    "/images/products/Face Mask.svg",
-    "/images/products/Face Scrub.svg",
-    "/images/products/Foam Cleanser.svg",
-    "/images/products/Hand Cream.svg",
-    "/images/products/Serum.svg",
-    "/images/products/Sunscreen.svg",
-    "/images/products/Treatment Oil.svg",
+// 8 大派系 IP 形象
+const PERSONAS = [
+    { key: "sensitive", name: "敏敏派" },
+    { key: "minimalist", name: "极简派" },
+    { key: "luxury", name: "奢华派" },
+    { key: "ageless", name: "冻龄派" },
+    { key: "desert", name: "沙漠派" },
+    { key: "oily", name: "油条派" },
+    { key: "combination", name: "混合派" },
+    { key: "guardian", name: "守护派" },
 ];
 
 interface AnalyzingOverlayProps {
@@ -25,7 +26,6 @@ interface AnalyzingOverlayProps {
 }
 
 export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitSeconds }: AnalyzingOverlayProps) {
-    const [activeIconIndex, setActiveIconIndex] = useState(0);
     const [showCancel, setShowCancel] = useState(false);
     // 避免 SSR 与服务端渲染状态不一致，同时避免 effect 中同步 setState
     const isMounted = useSyncExternalStore(
@@ -35,19 +35,24 @@ export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitS
     );
     const [isExiting, setIsExiting] = useState(false);
 
+    // IP 形象轮播
+    const [personaIdx, setPersonaIdx] = useState(0);
+    const [gender, setGender] = useState("female");
+    useEffect(() => {
+        try {
+            const g = localStorage.getItem(STORAGE_KEYS.ADVISOR_GENDER);
+            if (g === "male" || g === "female") setGender(g);
+        } catch { /* ignore */ }
+    }, []);
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setPersonaIdx((prev) => (prev + 1) % PERSONAS.length);
+        }, 2500);
+        return () => clearInterval(interval);
+    }, []);
+
     const [stuckTime, setStuckTime] = useState(0);
     const stuckStartRef = useRef<number | null>(null);
-
-    // Memoize particles to prevent jumping on re-renders (triggered by progress updates)
-    const particles = useMemo(() => {
-        return [...Array(6)].map((_, i) => ({
-            id: i,
-            duration: 2 + (((i * 37) % 100) / 100),
-            delay: (((i * 53) % 100) / 50),
-            left: 50 + (((i * 71) % 100) - 50),
-            top: 50 + (((i * 89) % 100) - 50),
-        }));
-    }, []);
 
     // Track how long we've been stuck at the LLM waiting phase (75%-90%)
     const stuckIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -64,7 +69,6 @@ export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitS
             }
         } else {
             stuckStartRef.current = null;
-            // 不在这里同步 setState；isWaitingLLM 条件已控制显示，progress 离开范围后自然隐藏
             if (stuckIntervalRef.current) {
                 clearInterval(stuckIntervalRef.current);
                 stuckIntervalRef.current = null;
@@ -78,40 +82,30 @@ export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitS
         };
     }, [progress]);
 
-    // Cycle through icons for "loading" animation
+    // Show cancel button after 2 seconds
     useEffect(() => {
-        const interval = setInterval(() => {
-            setActiveIconIndex((prev) => (prev + 1) % 9);
-        }, 800);
-
-        const timeoutId = setTimeout(() => {
-            setShowCancel(true);
-        }, 2000);
-
-        return () => {
-            clearInterval(interval);
-            clearTimeout(timeoutId);
-        };
+        const timeoutId = setTimeout(() => setShowCancel(true), 2000);
+        return () => clearTimeout(timeoutId);
     }, []);
 
-    // Dynamic status messages based on progress, wait time, and queue info
+    // Status messages: user-value language, not system language
     const getStatusText = useCallback((p: number, stuckSeconds: number, qPos?: number) => {
-        if (p < 20) return "正在准备您的面部数据...";
-        if (p < 45) return "正在识别面部轮廓与特征...";
-        if (p < 60) return "正在进行皮肤纹理分析...";
-        if (p < 75) return "正在整理分析结果...";
+        if (p < 20) return "正在为您准备专属分析空间...";
+        if (p < 45) return "正在阅读您的肌肤故事...";
+        if (p < 60) return "正在为您匹配最合适的护理方案...";
+        if (p < 75) return "正在梳理专属于您的护肤建议...";
         if (p < 90) {
             if (qPos && qPos > 0) {
-                if (stuckSeconds < 3) return "系统繁忙，AI 专家正在接入...";
-                if (stuckSeconds < 10) return "当前使用人数较多，AI 正在全力处理中...";
-                return "系统负载较高，正在加速处理您的分析...";
+                if (stuckSeconds < 3) return "正在为您接通 AI 护肤顾问...";
+                if (stuckSeconds < 10) return "当前咨询人数较多，正在为您加速处理...";
+                return "请再稍候片刻，精准分析值得等待...";
             }
-            if (stuckSeconds < 3) return "正在连接 AI 护肤专家...";
-            if (stuckSeconds < 10) return "AI 正在深度思考中，请稍候...";
-            return "正在处理复杂的肌肤数据，即将完成...";
+            if (stuckSeconds < 3) return "AI 顾问正在深入分析您的肌肤数据...";
+            if (stuckSeconds < 10) return "AI 顾问正在为您斟酌最佳方案...";
+            return "即将完成，好的分析值得多等几秒...";
         }
-        if (p < 100) return "正在生成您的专属肌肤报告...";
-        return "即将为您呈现专属肌肤报告...";
+        if (p < 100) return "正在生成您的专属护肤报告...";
+        return "报告已就绪，即将呈现...";
     }, []);
 
     const statusText = getStatusText(progress, stuckTime, queuePosition);
@@ -119,13 +113,25 @@ export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitS
     const hasQueued = (queuePosition !== undefined && queuePosition > 0);
 
     return (
-        <m.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0, transition: { duration: 0.8 } }}
-            className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-[#F8F7F3] overflow-hidden"
-        >
-            {/* Elegant Cancel Button (appears after 5 seconds) */}
+        <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-[#FAF8F5] overflow-hidden">
+            {/* Brand anchor — 立即出现，不参与淡入 */}
+            <div className="absolute top-0 left-0 right-0 flex justify-center pt-8 px-4 md:px-12 lg:px-20">
+                <Image
+                    src="/NIHPLOD-logo.svg"
+                    alt="NIHPLOD"
+                    width={120}
+                    height={36}
+                    className="h-7 md:h-9 w-auto object-contain"
+                />
+            </div>
+
+            <m.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0, transition: { duration: 0.8 } }}
+                className="absolute inset-0 flex flex-col items-center justify-center"
+            >
+            {/* Exit */}
             <AnimatePresence>
                 {showCancel && onCancel && (
                     <m.button
@@ -139,222 +145,119 @@ export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitS
                             onCancel();
                         }}
                         disabled={isExiting}
-                        className="absolute top-8 right-8 z-50 flex items-center gap-2 transition-all group text-[#1B3A5C]/60 hover:text-[#1B3A5C] disabled:opacity-30 disabled:cursor-not-allowed"
+                        className="absolute top-8 right-4 md:right-12 lg:right-20 z-50 flex items-center gap-2 transition-all group text-brand-charcoal/60 hover:text-brand-charcoal disabled:opacity-30 disabled:cursor-not-allowed"
                         aria-label="Exit analysis"
                     >
-                        <span className="text-[12px] font-medium tracking-[0.2em] transition-colors">
+                        <span className="text-[12px] font-light tracking-[0.12em] transition-colors">
                             {isExiting ? "退出中..." : "退出测试"}
                         </span>
                         <LogOut className="w-4 h-4 opacity-40 group-hover:opacity-100 transition-opacity" strokeWidth={1.5} />
                     </m.button>
                 )}
             </AnimatePresence>
-            {/* 1. Background Ambience */}
-            <div className="absolute inset-0 pointer-events-none">
-                <m.div
-                    animate={{ opacity: [0.4, 0.6, 0.4], scale: [1, 1.1, 1] }}
-                    transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-                    className="absolute -top-[20%] -left-[10%] w-[70vw] h-[70vw] bg-[#E8DCC6] rounded-full blur-[120px] opacity-40"
-                />
-                {/* Secondary warmer light from bottom-right */}
-                <m.div
-                    animate={{ opacity: [0.3, 0.5, 0.3], scale: [1.1, 1, 1.1] }}
-                    transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                    className="absolute -bottom-[10%] -right-[10%] w-[60vw] h-[60vw] bg-[#D4B78F] rounded-full blur-[100px] opacity-30"
-                />
 
+            {/* Ambient: single soft radial glow, cold blue */}
+            <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute top-[15%] left-1/2 -translate-x-1/2 w-[50vw] h-[50vw] max-w-[560px] max-h-[560px] bg-brand-charcoal/[0.03] rounded-full blur-[100px]" />
             </div>
 
-            {/* 2. Main Visual Content */}
+            {/* Main Content */}
             <div className="relative z-10 flex flex-col items-center w-full max-w-md px-8">
 
-                {/* Central Visualization */}
-                <div className="relative w-48 h-48 mb-12 flex items-center justify-center">
-                    {/* Ripple Effects behind */}
-                    {[0, 1, 2].map((i) => (
-                        <m.div
-                            key={i}
-                            className="absolute inset-0 border border-[#D4B78F] rounded-full"
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{
-                                opacity: [0, 0.3, 0],
-                                scale: [0.8, 1.4, 1.6],
-                            }}
-                            transition={{
-                                duration: 3,
-                                repeat: Infinity,
-                                delay: i * 1,
-                                ease: "easeOut"
-                            }}
-                        />
-                    ))}
-
-                    {/* Abstract Icon Container */}
-                    <div className="relative w-28 h-28 rounded-full overflow-hidden shadow-[0_20px_40px_rgba(212,183,143,0.2)] border-[1px] border-white/50 z-20 bg-gradient-to-br from-[#FFFBF5] to-[#F2EFE9] flex items-center justify-center">
-                        <m.div
-                            animate={{
-                                scale: [1, 1.1, 1],
-                                opacity: [0.8, 1, 0.8],
-                                rotate: [0, 5, -5, 0]
-                            }}
-                            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                        >
-                            <Sparkles className="w-8 h-8 text-[#D4B78F]" strokeWidth={1} />
-                        </m.div>
-
-                        {/* Inner Glow */}
-                        <m.div
-                            className="absolute inset-0 bg-radial-gradient from-[#D4B78F]/10 to-transparent"
-                            animate={{ opacity: [0.3, 0.6, 0.3] }}
-                            transition={{ duration: 3, repeat: Infinity }}
-                        />
-
-                        {/* Scanning Light Sweep - Very subtle & elegant */}
-                        <m.div
-                            className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/40 to-transparent"
-                            animate={{ rotate: [0, 360] }}
-                            transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-                            style={{ opacity: 0.3 }}
-                        />
-                    </div>
-
-                    {/* Floating particles */}
-                    {isMounted && particles.map((p) => (
-                        <m.div
-                            key={`p-${p.id}`}
-                            className="absolute w-1.5 h-1.5 bg-[#D4B78F] rounded-full"
-                            animate={{
-                                y: [0, -40],
-                                opacity: [0, 1, 0],
-                                scale: [0, 1, 0]
-                            }}
-                            transition={{
-                                duration: p.duration,
-                                repeat: Infinity,
-                                delay: p.delay,
-                                ease: "easeOut"
-                            }}
-                            style={{
-                                left: `${p.left}%`,
-                                top: `${p.top}%`,
-                            }}
-                        />
-                    ))}
-                </div>
-
-                {/* Text Information */}
-                <div className="flex flex-col items-center gap-6 w-full">
-                    {/* Status with smooth transition */}
-                    <div className="h-8 flex items-center justify-center">
-                        <AnimatePresence mode="wait">
-                            <m.span
-                                key={statusText}
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -10 }}
-                                className="text-[15px] text-[#5E5E5E] font-medium tracking-wider text-center"
-                            >
-                                {statusText}
-                            </m.span>
-                        </AnimatePresence>
-                    </div>
-
-                    {/* Progress Bar */}
-                    <div className="w-full max-w-[280px] relative h-[6px] bg-transparent border border-[#1B3A5C]/40 rounded-full overflow-hidden">
-                        <m.div
-                            className="absolute top-0 bottom-0 left-0 bg-[#1B3A5C]/85 rounded-full"
-                            initial={{ width: 0 }}
-                            animate={{ width: `${progress}%`, transition: { duration: 0.4, ease: "easeInOut" } }}
-                        />
-                        {isWaitingLLM && (
-                            <m.div
-                                className="absolute top-0 bottom-0 bg-gradient-to-r from-transparent via-[#1B3A5C]/40 to-transparent rounded-full"
-                                style={{ width: '30%' }}
-                                initial={{ left: '-30%' }}
-                                animate={{ left: '100%' }}
-                                transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
-                            />
-                        )}
-                    </div>
-
-                    {/* Percentage + Wait hint */}
-                    <div className="flex flex-col items-center gap-2">
-                        <span className="text-xs text-[#5E5E5E] font-mono tracking-widest">
-                            {Math.round(progress)}%
-                        </span>
-                        {hasQueued && (
-                            <m.span
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className="text-[10px] text-[#1B3A5C]/60 tracking-wider font-medium"
-                            >
-                                当前使用人数较多{queueWaitSeconds ? `，预计等待约 ${queueWaitSeconds} 秒` : ""}
-                            </m.span>
-                        )}
-                        {isWaitingLLM && stuckTime >= 3 && !hasQueued && (
-                            <m.span
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className="text-[10px] text-[#5E5E5E]/60 tracking-wider"
-                            >
-                                已等待 {stuckTime} 秒，AI 专家正在工作中
-                            </m.span>
-                        )}
-                    </div>
-                </div>
-
-            </div>
-
-            {/* 3. Analysis Icons Row (9 Metrics) */}
-            <div className="absolute bottom-24 w-full px-4 z-50">
+                {/* IP 形象轮播 — 无框裸排 + 极慢浮动 */}
                 <m.div
-                    className="flex flex-nowrap items-center justify-center gap-2 sm:gap-4 md:gap-6 max-w-[95vw] sm:max-w-2xl mx-auto"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5, duration: 0.8 }}
+                    animate={{ y: [0, -6, 0] }}
+                    transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+                    className="relative w-40 h-48 md:w-52 md:h-60 mb-4 flex items-center justify-center"
                 >
-                    {PRODUCT_IMAGES.map((src, i) => {
-                        const isCurrent = i === activeIconIndex;
-
-                        return (
-                            <m.div
-                                key={i}
-                                className="relative flex items-center justify-center"
-                                animate={isCurrent ? {
-                                    scale: [1, 1.2, 1],
-                                    y: [0, -8, 0],
-                                    filter: "brightness(1.1)",
-                                    opacity: 1
-                                } : {
-                                    scale: 0.9,
-                                    y: 0,
-                                    filter: "brightness(0.85)",
-                                    opacity: 0.4
-                                }}
-                                transition={{
-                                    duration: 0.8,
-                                    ease: "easeInOut"
-                                }}
-                            >
-                                <Image
-                                    src={src}
-                                    alt=""
-                                    width={48}
-                                    height={48}
-                                    className="w-6 h-6 sm:w-11 sm:h-11 md:w-12 md:h-12 drop-shadow-sm transition-all duration-300 object-contain"
-                                />
-                            </m.div>
-                        );
-                    })}
+                    <AnimatePresence mode="wait">
+                        <m.div
+                            key={personaIdx}
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }}
+                            exit={{ opacity: 0, y: -8, transition: { duration: 0.4, ease: "easeIn" } }}
+                            className="absolute inset-0 flex items-center justify-center"
+                        >
+                            <Image
+                                src={`/images/character/${PERSONAS[personaIdx].key}/${PERSONAS[personaIdx].key}_${gender}.png`}
+                                alt={PERSONAS[personaIdx].name}
+                                width={208}
+                                height={240}
+                                className="w-full h-full object-contain drop-shadow-[0_12px_24px_rgba(0,38,62,0.08)]"
+                            />
+                        </m.div>
+                    </AnimatePresence>
                 </m.div>
+
+                {/* 当前派系名 — 暗示"其中一个就是你" */}
+                <AnimatePresence mode="wait">
+                    <m.span
+                        key={personaIdx}
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.5 }}
+                        className="text-[12px] text-brand-charcoal/40 font-light tracking-[0.15em] mb-12"
+                    >
+                        {PERSONAS[personaIdx].name}
+                    </m.span>
+                </AnimatePresence>
+
+                {/* Status text */}
+                <div className="h-7 flex items-center justify-center mb-8">
+                    <AnimatePresence mode="wait">
+                        <m.span
+                            key={statusText}
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -8 }}
+                            transition={{ duration: 0.5 }}
+                            className="text-[14px] text-brand-charcoal/70 font-light tracking-[0.08em] text-center"
+                        >
+                            {statusText}
+                        </m.span>
+                    </AnimatePresence>
+                </div>
+
+                {/* Progress — hairline, no percentage */}
+                <div className="w-full max-w-[240px] relative h-px bg-brand-charcoal/10 overflow-hidden">
+                    <m.div
+                        className="absolute top-0 bottom-0 left-0 bg-brand-charcoal/50"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progress}%`, transition: { duration: 0.4, ease: "easeInOut" } }}
+                    />
+                    {isWaitingLLM && (
+                        <m.div
+                            className="absolute top-0 bottom-0 bg-gradient-to-r from-transparent via-brand-charcoal/30 to-transparent"
+                            style={{ width: '30%' }}
+                            initial={{ left: '-30%' }}
+                            animate={{ left: '100%' }}
+                            transition={{ duration: 1.6, repeat: Infinity, ease: "linear" }}
+                        />
+                    )}
+                </div>
+
+                {/* Queue / wait hints */}
+                {isMounted && (hasQueued || (isWaitingLLM && stuckTime >= 5)) && (
+                    <m.p
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="mt-6 text-[11px] text-brand-charcoal/40 font-light tracking-[0.06em] text-center"
+                    >
+                        {hasQueued
+                            ? `当前使用人数较多${queueWaitSeconds ? `，预计还需约 ${queueWaitSeconds} 秒` : ""}`
+                            : "AI 顾问正在全力为您分析，请再稍候片刻"}
+                    </m.p>
+                )}
             </div>
 
-            {/* Footer Branding */}
-            <div className="absolute bottom-8 text-center opacity-40">
-                <p className="text-[9px] text-[#8A8A8A] tracking-[0.2em] font-light">
-                    MySkinToday™ Technology Support
+            {/* Footer: privacy reassurance */}
+            <div className="absolute bottom-10 text-center px-6">
+                <p className="text-[11px] text-brand-charcoal/35 font-light tracking-[0.06em] leading-relaxed">
+                    您的面部数据仅用于本次分析，不会被存储或分享
                 </p>
             </div>
-        </m.div>
+            </m.div>
+        </div>
     );
 }
