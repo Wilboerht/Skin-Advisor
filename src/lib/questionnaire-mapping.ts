@@ -24,9 +24,9 @@ export const QUESTIONNAIRE_ONLY_QUESTIONS: Question[] = [
         type: "single",
         options: [
             { value: "minimal", label: "Less is More", description: "精简高效，少即是多" },
-            { value: "explorer", label: "成分党", description: "喜欢研究成分，什么都想试" },
-            { value: "ritual", label: "仪式感", description: "护肤是一种享受和自我宠爱" },
-            { value: "lazy", label: "不麻烦就行", description: "能省一步是一步" },
+            { value: "explorer", label: "成分党", description: "乐于研究成分与配方" },
+            { value: "ritual", label: "仪式感", description: "护肤是一种享受与自我宠爱" },
+            { value: "lazy", label: "追求便捷", description: "偏好精简高效的流程" },
         ],
     },
     {
@@ -37,7 +37,7 @@ export const QUESTIONNAIRE_ONLY_QUESTIONS: Question[] = [
         options: [
             { value: "great", label: "90+ 非常好", description: "基本没大问题" },
             { value: "good", label: "70-89 还不错", description: "有些小瑕疵" },
-            { value: "average", label: "50-69 一般般", description: "有明显困扰" },
+            { value: "average", label: "50-69 一般", description: "有明显困扰" },
             { value: "poor", label: "50 以下 不理想", description: "不太满意，急需改善" },
         ],
     },
@@ -59,10 +59,10 @@ export const QUESTIONNAIRE_ONLY_QUESTIONS: Question[] = [
         question: "早上起床时，你的皮肤摸起来是什么感觉？",
         type: "single",
         options: [
-            { value: "tight", label: "紧绷、粗糙", description: "感觉皮肤紧紧的，摸起来不光滑" },
-            { value: "greasy", label: "油腻、有光泽", description: "T区或全脸摸起来有油感" },
-            { value: "tzone_only", label: "T区油，脸颊正常", description: "鼻子额头有油，脸颊触感干爽" },
-            { value: "balanced", label: "不干不油，软嫩舒适", description: "整体触感很舒服" },
+            { value: "tight", label: "紧绷、粗糙", description: "感觉皮肤紧绷，触感不光滑" },
+            { value: "greasy", label: "油腻、有光泽", description: "面部中央区域有油感" },
+            { value: "tzone_only", label: "T区偏油，脸颊正常", description: "前额及鼻部有油，面颊触感干爽" },
+            { value: "balanced", label: "不干不油，柔软舒适", description: "整体触感舒适" },
         ],
     },
     {
@@ -71,10 +71,10 @@ export const QUESTIONNAIRE_ONLY_QUESTIONS: Question[] = [
         question: "每日午后，你的脸部出油情况是？",
         type: "single",
         options: [
-            { value: "none", label: "几乎不出油", description: "整天都很干爽" },
-            { value: "tzone", label: "鼻子/额头泛油光", description: "T区出油，需要吸油纸按压" },
-            { value: "full", label: "全脸油光满面", description: "需要用吸油纸多次处理" },
-            { value: "seasonal", label: "看季节变化", description: "夏天偏油，冬天偏干" },
+            { value: "none", label: "几乎不出油", description: "全天保持干爽" },
+            { value: "tzone", label: "前额/鼻部泛油光", description: "T区出油，需用吸油纸按压" },
+            { value: "full", label: "全脸泛油", description: "需多次使用吸油纸" },
+            { value: "seasonal", label: "随季节变化", description: "夏季偏油，冬季偏干" },
         ],
     },
     {
@@ -83,10 +83,10 @@ export const QUESTIONNAIRE_ONLY_QUESTIONS: Question[] = [
         question: "你更偏好什么质地的护肤品？",
         type: "single",
         options: [
-            { value: "rich", label: "滋润厚重型", description: "面霜/油类，喜欢被包裹的安全感" },
-            { value: "gel", label: "清爽凝胶型", description: "啫喱/凝露质地，讨厌黏腻感" },
-            { value: "layered", label: "分区护理", description: "T区用清爽，两颊用滋润" },
-            { value: "adaptive", label: "随季节切换", description: "夏天清爽、冬天滋润" },
+            { value: "rich", label: "滋润厚重型", description: "面霜/护肤油，偏好充分滋润的肤感" },
+            { value: "gel", label: "清爽凝胶型", description: "啫喱/凝露质地，不喜欢黏腻感" },
+            { value: "layered", label: "分区护理", description: "T区用清爽型，面颊用滋润型" },
+            { value: "adaptive", label: "随季节切换", description: "夏季清爽、冬季滋润" },
         ],
     },
     {
@@ -95,10 +95,10 @@ export const QUESTIONNAIRE_ONLY_QUESTIONS: Question[] = [
         question: "换季或使用新产品时，你的皮肤通常会？",
         type: "single",
         options: [
-            { value: "sensitive", label: "容易泛红、刺痛、过敏", description: "皮肤反应比较强烈" },
-            { value: "breakout", label: "容易闷痘、长闭口", description: "用错产品就容易爆痘" },
+            { value: "sensitive", label: "容易泛红、刺痛、过敏", description: "皮肤反应较为明显" },
+            { value: "breakout", label: "容易长痘、起闭口", description: "使用不当产品后易出现痘痘" },
             { value: "dryPeel", label: "容易干燥起皮", description: "换季时皮肤干燥脱屑" },
-            { value: "stable", label: "基本稳定，没大问题", description: "皮肤适应能力较强" },
+            { value: "stable", label: "基本稳定", description: "皮肤适应能力较强" },
         ],
     },
     {
@@ -143,7 +143,7 @@ export const QUESTIONNAIRE_ONLY_QUESTIONS: Question[] = [
         question: "你每天大概喝多少水？",
         type: "single",
         options: [
-            { value: "abundant", label: "2升以上", description: "水杯不离手，习惯很好" },
+            { value: "abundant", label: "2升以上", description: "饮水充足，习惯良好" },
             { value: "moderate", label: "1-2升", description: "正常饮水，想起来就喝" },
             { value: "little", label: "不到 1 升", description: "经常忘记喝水" },
             { value: "beverages", label: "喝得少，主要喝饮料/咖啡", description: "饮料代替水" },
@@ -182,7 +182,7 @@ export const QUESTIONNAIRE_ONLY_QUESTIONS: Question[] = [
         options: [
             { value: "minimal", label: "1-2 步（洁面+面霜）", description: "极简护肤" },
             { value: "basic", label: "3-4 步", description: "基础护理流程" },
-            { value: "advanced", label: "5-6 步", description: "早晚全套，精华面霜不落" },
+            { value: "advanced", label: "5-6 步", description: "早晚全套使用，精华面霜俱全" },
             { value: "elaborate", label: "7 步以上", description: "仪器、面膜、多瓶精华叠加" },
         ],
     },
@@ -196,7 +196,7 @@ export const QUESTIONNAIRE_ONLY_QUESTIONS: Question[] = [
             { value: "light", label: "4 小时以下", description: "屏幕时间较少" },
             { value: "moderate", label: "4-8 小时", description: "普通上班族水平" },
             { value: "heavy", label: "8-12 小时", description: "长时间面对电脑/手机" },
-            { value: "extreme", label: "12 小时以上", description: "除了睡觉几乎都对着屏幕" },
+            { value: "extreme", label: "12 小时以上", description: "几乎全天面对屏幕" },
         ],
     },
     {
@@ -207,8 +207,8 @@ export const QUESTIONNAIRE_ONLY_QUESTIONS: Question[] = [
         options: [
             { value: "rarely", label: "几乎不出差", description: "工作生活都在本地" },
             { value: "occasional", label: "偶尔出行（每月1-2次）", description: "短途差旅" },
-            { value: "frequent", label: "频繁出差（每周都有）", description: "空中飞人，经常换城市" },
-            { value: "constant", label: "长期跨地域", description: "南北/国内外来回跑" },
+            { value: "frequent", label: "频繁出差（每周都有）", description: "经常往返不同城市" },
+            { value: "constant", label: "长期跨地域", description: "经常往返于不同气候地域" },
         ],
     },
     {
@@ -218,10 +218,10 @@ export const QUESTIONNAIRE_ONLY_QUESTIONS: Question[] = [
         subtext: "水温、频率、产品类型综合考虑",
         type: "single",
         options: [
-            { value: "gentle", label: "温水+温和洁面，早晚各一次", description: "最理想的洁面方式" },
-            { value: "overwash", label: "一天洗三次以上/偏爱强力控油", description: "用皂基或磨砂，追求搓盘子感" },
-            { value: "hot_cold", label: "用很热或很冷的水洗脸", description: "冷热水交替刺激皮肤" },
-            { value: "casual", label: "不太讲究，有啥用啥", description: "没固定习惯，随手用洗手液/香皂" },
+            { value: "gentle", label: "温水+温和洁面，早晚各一次", description: "理想的洁面方式" },
+            { value: "overwash", label: "一天洗三次以上/偏爱强力控油", description: "使用皂基或磨砂产品，追求强力洁净感" },
+            { value: "hot_cold", label: "用过热或过冷的水洗脸", description: "冷热水交替刺激皮肤" },
+            { value: "casual", label: "没有固定习惯", description: "随手取用，未特别选择洁面产品" },
         ],
     },
     {
@@ -233,7 +233,7 @@ export const QUESTIONNAIRE_ONLY_QUESTIONS: Question[] = [
             { value: "never", label: "几乎不敷", description: "没有敷面膜的习惯" },
             { value: "weekly", label: "每周 1-2 次", description: "适度补水修护" },
             { value: "every_other_day", label: "隔天敷一次", description: "使用频率偏高" },
-            { value: "daily", label: "每天敷/一天多片", description: "过度水合风险，屏障反而变脆弱" },
+            { value: "daily", label: "每天敷/一天多片", description: "高频使用需注意水合过度风险" },
         ],
     },
 ];

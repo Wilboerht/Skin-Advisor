@@ -53,7 +53,7 @@ export const DEFAULT_QUESTIONS: Question[] = [
             { value: "aging", label: "细纹/松弛", description: "眼周、法令纹、嘴角纹路" },
             { value: "acne", label: "痘痘/粉刺", description: "闭口、黑头、炎症痘、粉刺" },
             { value: "spots", label: "色斑/暗沉", description: "雀斑、晒斑、肤色不均" },
-            { value: "dryness", label: "干燥缺水", description: "紧绷、起皮、卡粉" },
+            { value: "dryness", label: "干燥缺水", description: "紧绷、起皮、妆容不服帖" },
             { value: "sensitivity", label: "敏感/泛红", description: "易过敏、发红、刺痛" },
             { value: "dark_circles", label: "黑眼圈/眼袋", description: "眼周暗沉、浮肿" },
         ],
@@ -126,8 +126,8 @@ export const DEFAULT_QUESTIONS: Question[] = [
         options: [
             { value: "na", label: "不适用", description: "男性或绝经期等" },
             { value: "menstrual", label: "经期中 (第1-7天)", description: "肌肤敏感期，需温和护理" },
-            { value: "follicular", label: "滤泡期 (经后一周/状态好)", description: "肌肤状态最佳，适合精细护理" },
-            { value: "luteal", label: "黄体期 (经前一周/易冒痘)", description: "油脂分泌增加，注意清洁" },
+            { value: "follicular", label: "滤泡期 (经后一周/状态较佳)", description: "肌肤状态较佳，适合精细护理" },
+            { value: "luteal", label: "黄体期 (经前一周/易出现痘痘)", description: "油脂分泌增加，需加强清洁" },
         ],
     },
     {
@@ -152,10 +152,10 @@ export const DEFAULT_QUESTIONS: Question[] = [
         question: "您的日常护肤习惯是？",
         type: "single",
         options: [
-            { value: "daily", label: "每天精细护肤", description: "早晚全套流程，精华面霜防晒不落" },
-            { value: "regular", label: "经常护肤", description: "大部分时间坚持，偶尔偷懒" },
-            { value: "occasional", label: "偶尔护肤", description: "想起来才护理，步骤简单" },
-            { value: "rarely", label: "几乎不护肤", description: "洗脸即护肤，很少用护肤品" },
+            { value: "daily", label: "每天精细护肤", description: "早晚全套流程，精华面霜防晒俱全" },
+            { value: "regular", label: "经常护肤", description: "大部分时间坚持，偶尔简略" },
+            { value: "occasional", label: "偶尔护肤", description: "不定期护理，步骤简单" },
+            { value: "rarely", label: "几乎不护肤", description: "仅基础清洁，较少使用护肤品" },
         ],
     },
     {
