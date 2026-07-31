@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { m, AnimatePresence } from "framer-motion";
-import { X, UserCheck, TrendingUp, Bell, Gift } from "lucide-react";
+import { X, UserCheck, Gift, ArrowRight } from "lucide-react";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -109,16 +109,6 @@ export function RegisterConversionModal({ scrollContainerRef }: RegisterConversi
       desc: "保存每次测肤报告，建立专属肌肤数据库",
     },
     {
-      icon: TrendingUp,
-      title: "历史趋势追踪",
-      desc: "对比不同时期数据，直观看到你的肌肤改善",
-    },
-    {
-      icon: Bell,
-      title: "季节智能提醒",
-      desc: "根据季节变化和你的肤质，推送精准护肤提醒",
-    },
-    {
       icon: Gift,
       title: "会员专属礼遇",
       desc: "参与肌智派抽奖活动，赢取精选护肤好礼",
@@ -150,7 +140,7 @@ export function RegisterConversionModal({ scrollContainerRef }: RegisterConversi
             {/* Close Button */}
             <button
               onClick={handleClose}
-              className="absolute top-4 right-4 z-20 w-8 h-8 flex items-center justify-center rounded-full bg-white/80 text-[#8B7355] hover:bg-[#F0EBE3] transition-colors"
+              className="absolute top-4 right-4 z-20 w-8 h-8 flex items-center justify-center text-[#8B7355]/40 hover:text-[#8B7355] transition-colors"
               aria-label="关闭"
             >
               <X className="w-4 h-4" />
@@ -160,29 +150,29 @@ export function RegisterConversionModal({ scrollContainerRef }: RegisterConversi
             <div className="p-6 sm:p-8">
               {/* Header */}
               <div className="text-center mb-6">
-                <h3 className="text-[18px] font-serif text-[#1A1A1A] mb-2">
+                <h3 className="text-[18px] font-serif font-light tracking-[0.04em] leading-[1.3] text-[#1A1A1A] mb-2">
                   注册解锁完整体验
                 </h3>
-                <p className="text-[13px] text-[#5E5E5E] leading-relaxed">
+                <p className="text-[13px] text-[#5E5E5E] leading-relaxed tracking-[0.08em]">
                   注册成为旎柏会员，解锁以下专属功能
                 </p>
               </div>
 
-              {/* Benefits Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+              {/* Benefits */}
+              <div className="flex flex-col gap-3 mb-6">
                 {benefits.map((item, i) => (
                   <div
                     key={i}
-                    className="flex items-start gap-3 p-3 rounded-xl bg-[#F5F2ED]/60 border border-[#E8E2D9]/50"
+                    className="flex items-center gap-4 p-4 rounded-xl bg-[#F5F2ED]/60 border border-[#E8E2D9]/50"
                   >
-                    <div className="shrink-0 w-8 h-8 rounded-lg bg-[#8B7355]/10 flex items-center justify-center">
-                      <item.icon className="w-4 h-4 text-[#8B7355]" />
+                    <div className="shrink-0 w-10 h-10 rounded-lg bg-[#8B7355]/10 flex items-center justify-center">
+                      <item.icon className="w-5 h-5 text-[#8B7355]" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[13px] font-medium text-[#3D4430] mb-0.5">
+                      <p className="text-[13px] font-medium text-[#3D4430] mb-0.5 tracking-[0.06em]">
                         {item.title}
                       </p>
-                      <p className="text-[11px] text-[#8A8A8A] leading-snug">
+                      <p className="text-[11px] text-[#8A8A8A] leading-snug tracking-[0.06em]">
                         {item.desc}
                       </p>
                     </div>
@@ -193,12 +183,15 @@ export function RegisterConversionModal({ scrollContainerRef }: RegisterConversi
               {/* CTA */}
               <button
                 onClick={handleRegister}
-                className="w-full py-3 rounded-full bg-[#5c4937] text-white text-[14px] font-medium tracking-wide hover:bg-[#4a3a2c] transition-colors active:scale-[0.99]"
+                className="w-full py-3 rounded-full bg-[#5c4937] text-white text-[14px] font-medium tracking-[0.1em] hover:bg-[#4a3a2c] transition-colors active:scale-[0.99] inline-flex items-center justify-center gap-2"
               >
                 立即注册
+                <ArrowRight className="w-4 h-4" />
               </button>
 
-              <p className="text-center text-[11px] text-[#8A8A8A] mt-3 leading-relaxed">
+              {/* Divider + Login */}
+              <div className="mt-4 mb-3 border-t border-[#3D4430]/10" />
+              <p className="text-center text-[11px] text-[#8A8A8A] leading-relaxed tracking-[0.08em]">
                 已有账号？
                 <button
                   onClick={() => {

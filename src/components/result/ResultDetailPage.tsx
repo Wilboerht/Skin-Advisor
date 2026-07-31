@@ -281,14 +281,6 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
         <div className="flex flex-col items-center justify-center gap-2 text-[11px] font-light text-brand-charcoal/[0.48]">
           <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 tracking-[0.1em] md:tracking-[0.12em]">
             <p suppressHydrationWarning>© {CURRENT_YEAR} NIHPLOD. All Rights Reserved.</p>
-            <span className="text-brand-charcoal/20">·</span>
-            <Link href="https://nihplod.cn/privacy" className="transition-colors duration-300 hover:text-brand-charcoal/70">
-              隐私政策
-            </Link>
-            <span className="text-brand-charcoal/20">·</span>
-            <Link href="https://nihplod.cn/terms" className="transition-colors duration-300 hover:text-brand-charcoal/70">
-              服务条款
-            </Link>
           </div>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-3 tracking-[0.12em]">
             <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" className="transition-colors duration-300 hover:text-brand-charcoal/70">
