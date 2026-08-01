@@ -20,8 +20,10 @@ export const CAMPAIGN_STATUS_LABELS: Record<CampaignStatus, string> = {
 }
 
 export interface Prize {
+  productId?: string
   name: string
   image?: string
+  price?: string
   quantity: number
   description?: string
 }
@@ -78,8 +80,10 @@ export interface PaginatedResponse<T> {
 }
 
 export const prizeSchema = z.object({
+  productId: z.string().optional(),
   name: z.string().min(1, "奖品名称不能为空"),
   image: z.string().optional(),
+  price: z.string().optional(),
   quantity: z.number().min(1, "奖品数量至少为 1"),
   description: z.string().optional(),
 })
