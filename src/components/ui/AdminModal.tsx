@@ -149,31 +149,31 @@ export function AdminModal({
           <motion.div
             {...motionProps}
             onClick={() => !disabled && onClose()}
-            className="absolute inset-0 bg-slate-900/30 backdrop-blur-md forced-colors:bg-[Canvas] forced-colors:opacity-70"
+            className="absolute inset-0 bg-black/20 forced-colors:bg-[Canvas] forced-colors:opacity-70"
           />
           <motion.div
             {...contentProps}
             className={cn(
-              "relative z-10 w-full mx-4 bg-white/70 forced-colors:bg-[Canvas] forced-colors:border-[ButtonText] backdrop-blur-3xl rounded-[28px] border-[1.5px] border-white/80 shadow-[0_40px_100px_rgba(0,0,0,0.08),inset_0_2px_10px_rgba(255,255,255,0.5)] overflow-hidden max-h-[90vh] flex flex-col",
+              "relative z-10 w-full mx-4 bg-[#FDFBF7] forced-colors:bg-[Canvas] forced-colors:border-[ButtonText] rounded-2xl border border-[#1A1A1A]/10 shadow-[0_8px_40px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.04)] overflow-hidden max-h-[90vh] flex flex-col",
               maxWidthClasses[maxWidth],
               className
             )}
           >
             {(title || showCloseButton || headerExtra || headerIcon) && (
-              <div className="flex items-center justify-between px-4 sm:px-8 pt-5 sm:pt-8 pb-2 sm:pb-4 shrink-0">
+              <div className="flex items-center justify-between px-4 sm:px-8 pt-5 sm:pt-8 pb-2 sm:pb-4 shrink-0 border-b border-[#1A1A1A]/5">
                 <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                   {headerIcon}
                   <div className="min-w-0">
                     {title && (
                       <h3
                         id={titleId}
-                        className="text-base sm:text-lg font-bold text-slate-900 forced-colors:text-[ButtonText] tracking-tight truncate"
+                        className="text-base sm:text-lg font-bold text-[#1A1A1A] forced-colors:text-[ButtonText] tracking-tight truncate"
                       >
                         {title}
                       </h3>
                     )}
                     {subtitle && (
-                      <p className="text-[11px] sm:text-xs text-slate-500 forced-colors:text-[GrayText] mt-0.5">{subtitle}</p>
+                      <p className="text-[11px] sm:text-xs text-[#1A1A1A]/50 forced-colors:text-[GrayText] mt-0.5">{subtitle}</p>
                     )}
                   </div>
                 </div>
@@ -185,7 +185,7 @@ export function AdminModal({
                       onClick={onClose}
                       disabled={disabled}
                       aria-label="关闭"
-                      className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full text-slate-400 hover:text-slate-900 hover:bg-white/50 forced-colors:text-[ButtonText] forced-colors:border forced-colors:border-[ButtonText] transition-all disabled:opacity-50"
+                      className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full text-[#1A1A1A]/40 hover:text-[#1A1A1A] hover:bg-[#1A1A1A]/5 forced-colors:text-[ButtonText] forced-colors:border forced-colors:border-[ButtonText] transition-colors disabled:opacity-50"
                     >
                       <X className="w-5 h-5" />
                     </button>

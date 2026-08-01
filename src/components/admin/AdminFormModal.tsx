@@ -125,15 +125,15 @@ export function AdminFormModal({ isOpen, onClose, onSubmit, admin, loading }: Ad
       maxWidth="md"
       disabled={loading}
       headerIcon={
-        <div className="w-10 h-10 rounded-xl bg-slate-900/5 flex items-center justify-center">
-          <UserCog className="w-5 h-5 text-slate-700" />
+        <div className="w-10 h-10 rounded-xl bg-[#1A1A1A]/5 flex items-center justify-center">
+          <UserCog className="w-5 h-5 text-[#1A1A1A]/60" />
         </div>
       }
     >
       <form onSubmit={handleSubmit}>
         <div className="space-y-5">
           <div>
-            <label htmlFor="admin-username" className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label htmlFor="admin-username" className="block text-sm font-medium text-[#5E5E5E] mb-1.5">
               用户名 {!isEditing && <span className="text-red-500">*</span>}
             </label>
             <input
@@ -144,13 +144,13 @@ export function AdminFormModal({ isOpen, onClose, onSubmit, admin, loading }: Ad
               disabled={isEditing || loading}
               placeholder="输入用户名"
               onBlur={() => { if (username.trim() && username.length < 3) setErrors(prev => ({ ...prev, username: "用户名至少3个字符" })); else if (errors.username) setErrors(prev => { const n = { ...prev }; delete n.username; return n; }); }}
-              className="block w-full rounded-xl border-slate-200 bg-white/50 py-2.5 px-4 text-sm text-slate-900 placeholder:text-slate-500 focus:bg-white focus:border-slate-400 focus:ring-1 focus:ring-slate-400/30 transition-all disabled:opacity-60"
+              className="w-full px-3 py-2.5 rounded-lg border border-[#E9E9E7] text-sm text-[#1A1A1A] placeholder:text-[#1A1A1A]/30 focus:outline-none focus:border-[#3D4430]/40 transition-colors disabled:opacity-60 bg-white"
             />
             {errors.username && <p className="mt-1 text-xs text-red-600" role="alert">{errors.username}</p>}
           </div>
 
           <div>
-            <label htmlFor="admin-email" className="block text-sm font-medium text-slate-700 mb-1.5">邮箱</label>
+            <label htmlFor="admin-email" className="block text-sm font-medium text-[#5E5E5E] mb-1.5">邮箱</label>
             <input
               id="admin-email"
               type="email"
@@ -159,13 +159,13 @@ export function AdminFormModal({ isOpen, onClose, onSubmit, admin, loading }: Ad
               disabled={loading}
               placeholder="输入邮箱地址"
               onBlur={() => { if (email && !email.includes("@")) setErrors(prev => ({ ...prev, email: "请输入有效的邮箱地址" })); else if (errors.email) setErrors(prev => { const n = { ...prev }; delete n.email; return n; }); }}
-              className="block w-full rounded-xl border-slate-200 bg-white/50 py-2.5 px-4 text-sm text-slate-900 placeholder:text-slate-500 focus:bg-white focus:border-slate-400 focus:ring-1 focus:ring-slate-400/30 transition-all disabled:opacity-60"
+              className="w-full px-3 py-2.5 rounded-lg border border-[#E9E9E7] text-sm text-[#1A1A1A] placeholder:text-[#1A1A1A]/30 focus:outline-none focus:border-[#3D4430]/40 transition-colors disabled:opacity-60 bg-white"
             />
             {errors.email && <p className="mt-1 text-xs text-red-600" role="alert">{errors.email}</p>}
           </div>
 
           <div>
-            <label htmlFor="admin-name" className="block text-sm font-medium text-slate-700 mb-1.5">姓名</label>
+            <label htmlFor="admin-name" className="block text-sm font-medium text-[#5E5E5E] mb-1.5">姓名</label>
             <input
               id="admin-name"
               type="text"
@@ -173,14 +173,14 @@ export function AdminFormModal({ isOpen, onClose, onSubmit, admin, loading }: Ad
               onChange={(e) => { setName(e.target.value); markDirty(); }}
               disabled={loading}
               placeholder="输入显示姓名"
-              className="block w-full rounded-xl border-slate-200 bg-white/50 py-2.5 px-4 text-sm text-slate-900 placeholder:text-slate-500 focus:bg-white focus:border-slate-400 focus:ring-1 focus:ring-slate-400/30 transition-all disabled:opacity-60"
+              className="w-full px-3 py-2.5 rounded-lg border border-[#E9E9E7] text-sm text-[#1A1A1A] placeholder:text-[#1A1A1A]/30 focus:outline-none focus:border-[#3D4430]/40 transition-colors disabled:opacity-60 bg-white"
             />
           </div>
 
           <div>
-            <label htmlFor="admin-password" className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label htmlFor="admin-password" className="block text-sm font-medium text-[#5E5E5E] mb-1.5">
               密码 {!isEditing && <span className="text-red-500">*</span>}
-              {isEditing && <span className="text-slate-400 font-normal">（留空则不修改）</span>}
+              {isEditing && <span className="text-[#1A1A1A]/40 font-normal">（留空则不修改）</span>}
             </label>
             <div className="relative">
               <input
@@ -191,12 +191,12 @@ export function AdminFormModal({ isOpen, onClose, onSubmit, admin, loading }: Ad
                 disabled={loading}
                 placeholder={isEditing ? "输入新密码以重置" : "输入密码"}
                 onBlur={() => { if (!isEditing && password && password.length < 6) setErrors(prev => ({ ...prev, password: "密码至少6个字符" })); else if (errors.password) setErrors(prev => { const n = { ...prev }; delete n.password; return n; }); }}
-                className="block w-full rounded-xl border-slate-200 bg-white/50 py-2.5 px-4 pr-10 text-sm text-slate-900 placeholder:text-slate-500 focus:bg-white focus:border-slate-400 focus:ring-1 focus:ring-slate-400/30 transition-all disabled:opacity-60"
+                className="block w-full rounded-xl border-[#E9E9E7] bg-white/50 py-2.5 px-4 pr-10 text-sm text-[#1A1A1A] placeholder:text-[#1A1A1A]/50 focus:bg-white focus:border-slate-400 focus:ring-1 focus:ring-slate-400/30 transition-all disabled:opacity-60"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1A1A1A]/40 hover:text-slate-600"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -206,15 +206,15 @@ export function AdminFormModal({ isOpen, onClose, onSubmit, admin, loading }: Ad
 
           <div>
             <fieldset>
-              <legend className="block text-sm font-medium text-slate-700 mb-2">角色</legend>
+              <legend className="block text-sm font-medium text-[#5E5E5E] mb-2">角色</legend>
             <div className="space-y-2">
               {ROLE_OPTIONS.map((option) => (
                 <label
                   key={option.value}
                   className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
                     role === option.value
-                      ? "border-slate-900/20 bg-slate-900/5"
-                      : "border-slate-200 bg-white/30 hover:bg-white/50"
+                      ? "border-[#1A1A1A]/10 bg-[#1A1A1A]/5"
+                      : "border-[#E9E9E7] bg-transparent hover:bg-[#1A1A1A]/[0.03]"
                   }`}
                 >
                   <input
@@ -234,12 +234,12 @@ export function AdminFormModal({ isOpen, onClose, onSubmit, admin, loading }: Ad
                             ? "text-amber-500"
                             : option.value === "admin"
                             ? "text-blue-500"
-                            : "text-slate-400"
+                            : "text-[#1A1A1A]/40"
                         }`}
                       />
-                      <span className="text-sm font-medium text-slate-900">{option.label}</span>
+                      <span className="text-sm font-medium text-[#1A1A1A]">{option.label}</span>
                     </div>
-                    <p className="text-xs text-slate-500 mt-0.5">{option.description}</p>
+                    <p className="text-xs text-[#1A1A1A]/50 mt-0.5">{option.description}</p>
                   </div>
                 </label>
               ))}
@@ -253,14 +253,14 @@ export function AdminFormModal({ isOpen, onClose, onSubmit, admin, loading }: Ad
             type="button"
             onClick={handleClose}
             disabled={loading}
-            className="flex-1 px-4 py-3 text-sm font-bold text-slate-600 bg-white/40 hover:bg-white/60 border border-white/60 rounded-2xl transition-all shadow-sm disabled:opacity-50"
+            className="flex-1 px-4 py-3 text-sm font-bold text-[#1A1A1A]/60 bg-[#1A1A1A]/5 hover:bg-[#1A1A1A]/10 border border-[#1A1A1A]/10 rounded-xl transition-colors disabled:opacity-50"
           >
             取消
           </button>
           <button
             type="submit"
             disabled={loading}
-            className="flex-1 px-4 py-3 text-sm font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-70"
+            className="flex-1 px-4 py-3 text-sm font-bold text-white bg-[#3D4430] hover:bg-[#3D4430]/90 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-70"
           >
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
             {isEditing ? "保存修改" : "创建管理员"}

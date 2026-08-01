@@ -55,16 +55,16 @@ export function ConfirmModal({
 
   const variantStyles = {
     danger: {
-      icon: "bg-red-100 text-red-600",
+      icon: "bg-red-50 text-red-600 border-red-100",
       button: "bg-red-600 hover:bg-red-700 focus:ring-red-500",
     },
     warning: {
-      icon: "bg-amber-100 text-amber-600",
+      icon: "bg-amber-50 text-amber-600 border-amber-100",
       button: "bg-amber-600 hover:bg-amber-700 focus:ring-amber-500",
     },
     default: {
-      icon: "bg-slate-100 text-slate-600",
-      button: "bg-slate-900 hover:bg-slate-800 focus:ring-slate-500",
+      icon: "bg-[#1A1A1A]/5 text-[#1A1A1A]/60 border-[#1A1A1A]/10",
+      button: "bg-[#3D4430] hover:bg-[#3D4430]/90 focus:ring-[#3D4430]/50",
     },
   };
 
@@ -87,7 +87,7 @@ export function ConfirmModal({
         >
           <AlertTriangle className="w-8 h-8" />
         </div>
-        <p id={descId} className="text-sm font-medium text-slate-500 text-center mb-8 leading-relaxed px-2">
+        <p id={descId} className="text-sm font-medium text-[#1A1A1A]/70 text-center mb-8 leading-relaxed px-2">
           {message}
         </p>
         {error && (
@@ -100,7 +100,7 @@ export function ConfirmModal({
             type="button"
             onClick={onClose}
             disabled={isLoading}
-            className="flex-1 px-4 py-3 text-sm font-bold text-slate-600 bg-white/40 hover:bg-white/60 border border-white/60 rounded-2xl transition-all shadow-sm disabled:opacity-50"
+            className="flex-1 px-4 py-3 text-sm font-bold text-[#1A1A1A]/60 bg-[#1A1A1A]/5 hover:bg-[#1A1A1A]/10 border border-[#1A1A1A]/10 rounded-xl transition-colors disabled:opacity-50"
           >
             {cancelText}
           </button>
@@ -108,7 +108,7 @@ export function ConfirmModal({
             type="button"
             onClick={handleConfirm}
             disabled={isLoading}
-            className={`flex-1 px-4 py-3 text-sm font-bold text-white rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-70 ${styles.button}`}
+            className={`flex-1 px-4 py-3 text-sm font-bold text-white rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm hover:shadow-md active:scale-95 disabled:opacity-70 ${styles.button}`}
           >
             {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
             {confirmText}

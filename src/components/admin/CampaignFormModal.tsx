@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useCallback, useMemo } from "react"
-import { AlertCircle, CheckCircle2, Loader2, Plus, Trash2, Package } from "lucide-react"
+import { AlertCircle, CheckCircle2, Loader2, Plus, Trash2, Package, ShoppingBag } from "lucide-react"
 import { CampaignModal } from "./CampaignModal"
 import { FormField, inputCls, inputAriaProps } from "./FormField"
 import { ProductPickerModal } from "./ProductPickerModal"
@@ -61,7 +61,7 @@ function getInitialFormData(campaign?: Campaign | null): CampaignFormData {
       prizes:
         campaign.prizes.length > 0
           ? campaign.prizes.map((p) => ({ ...p, _key: crypto.randomUUID() }))
-          : [emptyPrize()],
+          : [],
       shareText: campaign.shareText || "",
       rules: campaign.rules || "",
       maxEntries: campaign.maxEntries,
@@ -76,7 +76,7 @@ function getInitialFormData(campaign?: Campaign | null): CampaignFormData {
     startDate: "",
     endDate: "",
     drawDate: "",
-    prizes: [emptyPrize()],
+      prizes: [],
     shareText: "",
     rules: "",
     maxEntries: 0,
@@ -173,6 +173,14 @@ export function CampaignFormModal({ isOpen, campaign, onClose, onSuccess }: Camp
     }))
   }
 
+  const addManualPrize = () => {
+    setData((prev) => ({
+      ...prev,
+      prizes: [...prev.prizes, emptyPrize()],
+    }))
+    setTouched((prev) => ({ ...prev, prizes: true }))
+  }
+
   const selectedProductIds = data.prizes.map((p) => p.productId).filter((id): id is string => !!id)
 
   const handleProductsSelected = (products: { id: string; name: string; image: string; price: string; description: string }[]) => {
@@ -189,15 +197,10 @@ export function CampaignFormModal({ isOpen, campaign, onClose, onSuccess }: Camp
         quantity: 1,
       }))
     if (newPrizes.length > 0) {
-      setData((prev) => {
-        const hasEmpty = prev.prizes.length === 1 && !prev.prizes[0].name && !prev.prizes[0].productId
-        return {
-          ...prev,
-          prizes: hasEmpty
-            ? newPrizes
-            : [...prev.prizes, ...newPrizes],
-        }
-      })
+      setData((prev) => ({
+        ...prev,
+        prizes: [...prev.prizes, ...newPrizes],
+      }))
       setTouched((prev) => ({ ...prev, prizes: true }))
     }
   }
@@ -412,27 +415,46 @@ export function CampaignFormModal({ isOpen, campaign, onClose, onSuccess }: Camp
                 <label className="block text-xs font-medium text-[#5E5E5E]">
                   奖品列表 <span aria-hidden="true">*</span>
                 </label>
-                <button
-                  type="button"
-                  onClick={() => setShowPicker(true)}
-                  className="inline-flex items-center gap-1 text-xs text-[#3D4430] hover:text-[#3D4430]/80 font-medium"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  从产品库选择
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={addManualPrize}
+                    className="inline-flex items-center gap-1 text-xs text-[#5E5E5E] hover:text-[#3D4430] font-medium"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    手动录入
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowPicker(true)}
+                    className="inline-flex items-center gap-1 text-xs text-[#3D4430] hover:text-[#3D4430]/80 font-medium"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    从产品库选择
+                  </button>
+                </div>
               </div>
 
               {data.prizes.length === 0 ? (
                 <div className="text-center py-10 border-2 border-dashed border-[#E9E9E7] rounded-xl">
                   <Package className="w-8 h-8 text-[#8B7355]/30 mx-auto mb-2" />
                   <p className="text-sm text-[#5E5E5E]">暂未选择奖品</p>
-                  <button
-                    type="button"
-                    onClick={() => setShowPicker(true)}
-                    className="mt-2 text-xs text-[#3D4430] underline hover:text-[#3D4430]/80"
-                  >
-                    从产品库选择奖品
-                  </button>
+                  <div className="flex items-center gap-3 mt-2">
+                    <button
+                      type="button"
+                      onClick={addManualPrize}
+                      className="text-xs text-[#5E5E5E] underline hover:text-[#3D4430]"
+                    >
+                      手动录入奖品
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowPicker(true)}
+                      className="text-xs text-[#3D4430] underline hover:text-[#3D4430]/80"
+                    >
+                      从产品库选择奖品
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -464,9 +486,17 @@ export function CampaignFormModal({ isOpen, campaign, onClose, onSuccess }: Camp
                           <div className="text-sm font-medium text-[#1A1A1A] truncate">
                             {prize.name || "未命名奖品"}
                           </div>
-                          {prize.price && (
-                            <div className="text-xs text-[#8B7355] mt-0.5">{prize.price}</div>
-                          )}
+                          <div className="flex items-center gap-2 mt-0.5">
+                            {prize.price && (
+                              <span className="text-xs text-[#8B7355]">{prize.price}</span>
+                            )}
+                            {prize.productId && (
+                              <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-[#3D4430]/5 text-[#3D4430] font-medium">
+                                <ShoppingBag className="w-3 h-3" />
+                                产品库
+                              </span>
+                            )}
+                          </div>
                           <div className="flex items-center gap-3 mt-2">
                             <label className="sr-only" htmlFor={`prize-qty-${prize._key}`}>
                               数量
@@ -499,6 +529,18 @@ export function CampaignFormModal({ isOpen, campaign, onClose, onSuccess }: Camp
 
                       {!prize.productId && (
                         <div className="space-y-2 pl-0">
+                          <div>
+                            <label className="sr-only" htmlFor={`prize-name-${prize._key}`}>
+                              名称
+                            </label>
+                            <input
+                              id={`prize-name-${prize._key}`}
+                              value={prize.name}
+                              onChange={(e) => updatePrize(index, { name: e.target.value })}
+                              placeholder="奖品名称 *"
+                              className={inputCls(false)}
+                            />
+                          </div>
                           <div className="grid grid-cols-2 gap-2">
                             <div>
                               <label className="sr-only" htmlFor={`prize-image-${prize._key}`}>

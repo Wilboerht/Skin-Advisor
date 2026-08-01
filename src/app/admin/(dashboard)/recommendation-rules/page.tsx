@@ -291,7 +291,7 @@ export default function RecommendationRulesPage() {
                                             </span>
                                         ))}
                                         {!((rule.conditions as { skinType?: string[] })?.skinType?.length || (rule.conditions as { concern?: string[] })?.concern?.length || (rule.conditions as { persona?: string[] })?.persona?.length) && (
-                                            <span className="text-xs text-slate-400">—</span>
+                                            <span className="text-xs text-[#1A1A1A]/40">—</span>
                                         )}
                                     </div>
                                 </td>
@@ -357,7 +357,7 @@ export default function RecommendationRulesPage() {
                 <form onSubmit={handleSubmit}>
                     <div className="space-y-5">
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                            <label className="block text-sm font-medium text-[#5E5E5E] mb-1.5">
                                 规则名称 <span className="text-red-500">*</span>
                             </label>
                             <input
@@ -366,25 +366,25 @@ export default function RecommendationRulesPage() {
                                 onChange={(e) => setFormName(e.target.value)}
                                 placeholder="例如：油性肌肤痘痘护理"
                                 required
-                                className="block w-full rounded-xl border-slate-200 bg-white/50 py-2.5 px-4 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-400 focus:ring-0 transition-all"
+                                className="w-full px-3 py-2.5 rounded-lg border border-[#E9E9E7] text-sm text-[#1A1A1A] placeholder:text-[#1A1A1A]/30 focus:outline-none focus:border-[#3D4430]/40 transition-colors"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                            <label className="block text-sm font-medium text-[#5E5E5E] mb-1.5">
                                 优先级
                             </label>
                             <input
                                 type="number"
                                 value={formPriority}
                                 onChange={(e) => setFormPriority(Number(e.target.value))}
-                                className="block w-full rounded-xl border-slate-200 bg-white/50 py-2.5 px-4 text-sm text-slate-900 focus:bg-white focus:border-slate-400 focus:ring-0 transition-all"
+                                className="block w-full rounded-xl border-[#E9E9E7] bg-white py-2.5 px-4 text-sm text-slate-900 focus:bg-white focus:border-slate-400 focus:ring-0 transition-all"
                             />
-                            <p className="text-xs text-slate-400 mt-1">数字越大优先级越高</p>
+                            <p className="text-xs text-[#1A1A1A]/40 mt-1">数字越大优先级越高</p>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                            <label className="block text-sm font-medium text-[#5E5E5E] mb-2">
                                 肤质条件
                             </label>
                             <div className="flex flex-wrap gap-2">
@@ -396,7 +396,7 @@ export default function RecommendationRulesPage() {
                                         className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                                             selectedSkinTypes.includes(opt.value)
                                                 ? "bg-[#3D4430] text-white"
-                                                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                                : "bg-[#1A1A1A]/5 text-[#1A1A1A]/60 hover:bg-[#1A1A1A]/10"
                                         }`}
                                     >
                                         {opt.label}
@@ -406,7 +406,7 @@ export default function RecommendationRulesPage() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                            <label className="block text-sm font-medium text-[#5E5E5E] mb-2">
                                 肌肤问题
                             </label>
                             <div className="flex flex-wrap gap-2">
@@ -418,7 +418,7 @@ export default function RecommendationRulesPage() {
                                         className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                                             selectedConcerns.includes(concern)
                                                 ? "bg-[#3D4430] text-white"
-                                                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                                : "bg-[#1A1A1A]/5 text-[#1A1A1A]/60 hover:bg-[#1A1A1A]/10"
                                         }`}
                                     >
                                         {concern}
@@ -428,7 +428,7 @@ export default function RecommendationRulesPage() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                            <label className="block text-sm font-medium text-[#5E5E5E] mb-2">
                                 IP 形象（8 派）
                             </label>
                             <div className="flex flex-wrap gap-2">
@@ -440,7 +440,7 @@ export default function RecommendationRulesPage() {
                                         className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                                             selectedPersonas.includes(p.value)
                                                 ? "bg-[#3D4430] text-white"
-                                                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                                : "bg-[#1A1A1A]/5 text-[#1A1A1A]/60 hover:bg-[#1A1A1A]/10"
                                         }`}
                                     >
                                         {p.label}
@@ -450,7 +450,7 @@ export default function RecommendationRulesPage() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                            <label className="block text-sm font-medium text-[#5E5E5E] mb-1.5">
                                 推荐语
                             </label>
                             <textarea
@@ -458,36 +458,36 @@ export default function RecommendationRulesPage() {
                                 onChange={(e) => setFormMessage(e.target.value)}
                                 placeholder="输入推荐说明文字"
                                 rows={3}
-                                className="block w-full rounded-xl border-slate-200 bg-white/50 py-2.5 px-4 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-400 focus:ring-0 transition-all resize-none"
+                                className="w-full px-3 py-2.5 rounded-lg border border-[#E9E9E7] text-sm text-[#1A1A1A] placeholder:text-[#1A1A1A]/30 focus:outline-none focus:border-[#3D4430]/40 transition-colors resize-none"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                            <label className="block text-sm font-medium text-[#5E5E5E] mb-2">
                                 关联产品
                             </label>
-                            <div className="max-h-48 overflow-y-auto rounded-xl border border-slate-200 bg-white/50 p-2 space-y-1">
+                            <div className="max-h-48 overflow-y-auto rounded-xl border border-[#E9E9E7] bg-white p-2 space-y-1">
                                 {products.length === 0 ? (
-                                    <p className="text-xs text-slate-400 px-2 py-1">暂无产品</p>
+                                    <p className="text-xs text-[#1A1A1A]/40 px-2 py-1">暂无产品</p>
                                 ) : (
                                     products.map(product => (
                                         <label
                                             key={product.id}
-                                            className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors"
+                                            className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-[#1A1A1A]/5 cursor-pointer transition-colors"
                                         >
                                             <input
                                                 type="checkbox"
                                                 checked={selectedProductIds.includes(product.id)}
                                                 onChange={() => toggleSelection(product.id, selectedProductIds, setSelectedProductIds)}
-                                                className="rounded border-slate-300 text-[#3D4430] focus:ring-[#3D4430]"
+                                                className="rounded border-[#E9E9E7] text-[#3D4430] focus:ring-[#3D4430]"
                                             />
-                                            <span className="text-sm text-slate-700">{product.name}</span>
-                                            <span className="text-xs text-slate-400 ml-auto">{product.category}</span>
+                                            <span className="text-sm text-[#5E5E5E]">{product.name}</span>
+                                            <span className="text-xs text-[#1A1A1A]/40 ml-auto">{product.category}</span>
                                         </label>
                                     ))
                                 )}
                             </div>
-                            <p className="text-xs text-slate-400 mt-1">
+                            <p className="text-xs text-[#1A1A1A]/40 mt-1">
                                 已选择 {selectedProductIds.length} 个产品
                             </p>
                         </div>
@@ -497,9 +497,9 @@ export default function RecommendationRulesPage() {
                                 type="checkbox"
                                 checked={formActive}
                                 onChange={(e) => setFormActive(e.target.checked)}
-                                className="rounded border-slate-300 text-[#3D4430] focus:ring-[#3D4430]"
+                                className="rounded border-[#E9E9E7] text-[#3D4430] focus:ring-[#3D4430]"
                             />
-                            <span className="text-sm text-slate-700">启用此规则</span>
+                            <span className="text-sm text-[#5E5E5E]">启用此规则</span>
                         </label>
                     </div>
 
@@ -508,14 +508,14 @@ export default function RecommendationRulesPage() {
                             type="button"
                             onClick={() => { setShowModal(false); resetForm(); }}
                             disabled={submitting}
-                            className="flex-1 px-4 py-3 text-sm font-bold text-slate-600 bg-white/40 hover:bg-white/60 border border-white/60 rounded-2xl transition-all shadow-sm disabled:opacity-50"
+                            className="flex-1 px-4 py-3 text-sm font-bold text-[#1A1A1A]/60 bg-[#1A1A1A]/5 hover:bg-[#1A1A1A]/10 border border-[#1A1A1A]/10 rounded-xl transition-colors disabled:opacity-50"
                         >
                             取消
                         </button>
                         <button
                             type="submit"
                             disabled={submitting}
-                            className="flex-1 px-4 py-3 text-sm font-bold text-white bg-[#1A1A1A] hover:bg-[#3D4430] rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg disabled:opacity-70"
+                            className="flex-1 px-4 py-3 text-sm font-bold text-white bg-[#1A1A1A] hover:bg-[#3D4430] rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-70"
                         >
                             {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
                             {editingRule ? "保存修改" : "创建规则"}
