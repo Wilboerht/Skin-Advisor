@@ -204,7 +204,7 @@ function AdminLoginForm() {
               <div className="px-8 pb-5 pt-10 text-center sm:px-10 sm:pb-6 sm:pt-12">
                 <div className="relative mx-auto mb-4 h-[34px] w-[140px] sm:mb-5 sm:w-[160px]">
                   <Image
-                    src="/images/NIHPLOD-logo.svg"
+                    src="/NIHPLOD-logo.svg"
                     alt="NIHPLOD"
                     fill
                     className="object-contain"

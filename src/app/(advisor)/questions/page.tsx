@@ -501,17 +501,6 @@ export default function QuestionsPage() {
         setAnswers(newAnswers);
     };
 
-    const handleSkip = () => {
-        if (!currentQuestion || !currentQuestion.skippable) return;
-        const newAnswers = { ...answers, [currentQuestion.fieldName]: [] };
-        setAnswers(newAnswers);
-        setTimeout(() => {
-            handleNextWithAnswers(newAnswers);
-        }, 50);
-    };
-
-
-
     const handleBack = () => {
         if (currentStepIndex > 0) {
             setDirection(-1);
@@ -890,7 +879,6 @@ export default function QuestionsPage() {
                                 currentStep={currentStepIndex + 1}
                                 totalSteps={questions.length}
                                 mode={isQuestionnaireMode() ? "questionnaire" : "scan"}
-                                onSkip={handleSkip}
                             />
                         </m.div>
                     </AnimatePresence>

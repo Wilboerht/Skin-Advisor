@@ -21,7 +21,6 @@ interface QuestionStepProps {
   currentStep: number;
   totalSteps: number;
   mode?: "scan" | "questionnaire";
-  onSkip?: () => void;
 }
 
 /**
@@ -42,7 +41,6 @@ export function QuestionStep({
   currentStep,
   totalSteps,
   mode = "scan",
-  onSkip,
 }: QuestionStepProps) {
   // 检测用户是否偏好减少动画
   const prefersReducedMotion = useReducedMotion();
@@ -127,19 +125,6 @@ export function QuestionStep({
             );
           })}
         </div>
-
-        {/* Skip button for skippable questions */}
-        {question.skippable && onSkip && !selectedValue && (
-          <div className="mt-4 flex justify-center">
-            <button
-              type="button"
-              onClick={onSkip}
-              className="text-[13px] text-brand-charcoal/60 hover:text-brand-charcoal font-medium tracking-[0.1em] underline underline-offset-4 transition-colors"
-            >
-              跳过此题
-            </button>
-          </div>
-        )}
 
         {/* Next Button - Centered below options */}
         <AnimatePresence>
