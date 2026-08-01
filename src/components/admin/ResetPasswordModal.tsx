@@ -53,7 +53,7 @@ export function ResetPasswordModal({
     >
       <form onSubmit={handleSubmit}>
         <div className="mb-6">
-          <label htmlFor="reset-password-input" className="block text-sm font-medium text-slate-700 mb-1.5">
+          <label htmlFor="reset-password-input" className="block text-sm font-medium text-[#5E5E5E] mb-1.5">
             新密码
           </label>
           <div className="relative">
@@ -63,12 +63,12 @@ export function ResetPasswordModal({
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder="输入新密码（至少6位）"
-              className="block w-full rounded-xl border-slate-200 bg-white/50 py-2.5 px-4 pr-10 text-sm text-slate-900 placeholder:text-slate-500 focus:bg-white focus:border-slate-400 focus:ring-1 focus:ring-slate-400/30 transition-all"
+              className="w-full px-3 py-2.5 rounded-lg border border-[#E9E9E7] text-sm text-[#1A1A1A] placeholder:text-[#1A1A1A]/30 focus:outline-none focus:border-[#3D4430]/40 transition-colors pr-10"
             />
             <button
               type="button"
               onClick={() => setShowPassword((v) => !v)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1A1A1A]/40 hover:text-[#1A1A1A]/60"
               aria-label={showPassword ? "隐藏密码" : "显示密码"}
             >
               {showPassword ? (
@@ -90,14 +90,14 @@ export function ResetPasswordModal({
             type="button"
             onClick={handleClose}
             disabled={loading}
-            className="flex-1 px-4 py-3 text-sm font-bold text-slate-600 bg-white/40 hover:bg-white/60 border border-white/60 rounded-2xl transition-all shadow-sm disabled:opacity-50"
+            className="flex-1 px-4 py-3 text-sm font-bold text-[#1A1A1A]/60 bg-[#1A1A1A]/5 hover:bg-[#1A1A1A]/10 border border-[#1A1A1A]/10 rounded-xl transition-colors disabled:opacity-50"
           >
             取消
           </button>
           <button
             type="submit"
             disabled={loading || newPassword.length < 6}
-            className="flex-1 px-4 py-3 text-sm font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-70"
+            className="flex-1 px-4 py-3 text-sm font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-70"
           >
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
             重置密码

@@ -203,7 +203,7 @@ export function CampaignEntriesModal({ isOpen, campaign, onClose, confirm }: Cam
             id="entries-filter"
             value={filter}
             onChange={(e) => handleFilterChange(e.target.value)}
-            className="px-3 py-1.5 rounded-lg border border-[#E9E9E7] text-sm bg-white/50"
+            className="px-3 py-1.5 rounded-lg border border-[#E9E9E7] text-sm bg-white"
           >
             <option value="">全部状态</option>
             {CAMPAIGN_ENTRY_STATUSES.map((s) => (
@@ -225,7 +225,7 @@ export function CampaignEntriesModal({ isOpen, campaign, onClose, confirm }: Cam
             {entries.map((e) => (
               <div
                 key={e.id}
-                className="flex items-center gap-4 p-4 rounded-xl border border-[#E9E9E7] bg-white/60"
+                className="flex items-center gap-4 p-4 rounded-xl border border-[#E9E9E7] bg-white"
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -275,7 +275,7 @@ export function CampaignEntriesModal({ isOpen, campaign, onClose, confirm }: Cam
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1 || loading}
               aria-label="上一页"
-              className="p-2 rounded-lg border border-[#E9E9E7] hover:bg-gray-50 disabled:opacity-40"
+              className="p-2 rounded-lg border border-[#E9E9E7] hover:bg-[#1A1A1A]/5 disabled:opacity-40"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -287,7 +287,7 @@ export function CampaignEntriesModal({ isOpen, campaign, onClose, confirm }: Cam
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages || loading}
               aria-label="下一页"
-              className="p-2 rounded-lg border border-[#E9E9E7] hover:bg-gray-50 disabled:opacity-40"
+              className="p-2 rounded-lg border border-[#E9E9E7] hover:bg-[#1A1A1A]/5 disabled:opacity-40"
             >
               <ChevronRight className="w-4 h-4" />
             </button>

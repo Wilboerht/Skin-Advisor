@@ -378,7 +378,7 @@ export default function RecommendationRulesPage() {
                                 type="number"
                                 value={formPriority}
                                 onChange={(e) => setFormPriority(Number(e.target.value))}
-                                className="block w-full rounded-xl border-[#E9E9E7] bg-white py-2.5 px-4 text-sm text-slate-900 focus:bg-white focus:border-slate-400 focus:ring-0 transition-all"
+                                className="w-full px-3 py-2.5 rounded-lg border border-[#E9E9E7] text-sm text-[#1A1A1A] focus:outline-none focus:border-[#3D4430]/40 transition-colors bg-white"
                             />
                             <p className="text-xs text-[#1A1A1A]/40 mt-1">数字越大优先级越高</p>
                         </div>
