@@ -72,14 +72,14 @@ const RESOURCE_ICONS: Record<string, any> = {
 
 const ACTION_COLORS: Record<string, string> = {
     login: "bg-emerald-100 text-emerald-700",
-    logout: "bg-slate-100 text-slate-700",
+    logout: "bg-[#1A1A1A]/5 text-[#5E5E5E]",
     login_failed: "bg-red-100 text-red-700",
     create: "bg-blue-100 text-blue-700",
     update: "bg-amber-100 text-amber-700",
     delete: "bg-red-100 text-red-700",
     batch_delete: "bg-red-100 text-red-700",
     batch_activate: "bg-emerald-100 text-emerald-700",
-    batch_deactivate: "bg-slate-100 text-slate-700",
+    batch_deactivate: "bg-[#1A1A1A]/5 text-[#5E5E5E]",
     ship: "bg-blue-100 text-blue-700",
     reward_approved: "bg-emerald-100 text-emerald-700",
     reward_rejected: "bg-red-100 text-red-700",
@@ -273,10 +273,10 @@ export default function AuditLogsClient({ role }: AuditLogsClientProps) {
         <div className="space-y-6 animate-in fade-in duration-500">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900 tracking-tight">审计日志</h1>
-                    <p className="text-slate-500 text-sm mt-1">
+                    <h1 className="text-2xl font-bold text-[#1A1A1A] tracking-tight">审计日志</h1>
+                    <p className="text-[#1A1A1A]/50 text-sm mt-1">
                         查看管理员操作记录
-                        {total > 0 && <span className="ml-2 text-slate-400">· 共 {total} 条记录</span>}
+                        {total > 0 && <span className="ml-2 text-[#1A1A1A]/40">· 共 {total} 条记录</span>}
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -284,7 +284,7 @@ export default function AuditLogsClient({ role }: AuditLogsClientProps) {
                         <button
                             onClick={handleExport}
                             disabled={exporting || logs.length === 0}
-                            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm disabled:opacity-50"
+                            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#5E5E5E] bg-white border border-[#E9E9E7] rounded-lg hover:bg-[#1A1A1A]/[0.02] transition-colors shadow-sm disabled:opacity-50"
                         >
                             {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                             导出记录
@@ -293,7 +293,7 @@ export default function AuditLogsClient({ role }: AuditLogsClientProps) {
                     <button
                         onClick={() => fetchLogs()}
                         disabled={loading}
-                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm"
+                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#5E5E5E] bg-white border border-[#E9E9E7] rounded-lg hover:bg-[#1A1A1A]/[0.02] transition-colors shadow-sm"
                     >
                         <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                         刷新
@@ -303,8 +303,8 @@ export default function AuditLogsClient({ role }: AuditLogsClientProps) {
 
             {/* Filter Bar - Users Management Style */}
             <div className="space-y-3">
-                <div className="flex flex-wrap items-center gap-4 p-4 bg-white/40 backdrop-blur-3xl rounded-2xl border-[1.5px] border-white/70 shadow-[0_20px_60px_rgba(0,0,0,0.03),inset_0_1px_5px_rgba(255,255,255,0.4)] transition-all">
-                    <div className="flex items-center gap-3 px-2 text-slate-400">
+                <div className="flex flex-wrap items-center gap-4 p-4 bg-white rounded-2xl border border-[#1A1A1A]/10 shadow-sm">
+                    <div className="flex items-center gap-3 px-2 text-[#1A1A1A]/40">
                         <Filter className="w-4 h-4" />
                     </div>
 
@@ -321,7 +321,7 @@ export default function AuditLogsClient({ role }: AuditLogsClientProps) {
                                     }
                                     setPage(1);
                                 }}
-                                className="w-full pl-3 pr-10 py-1.5 text-sm border border-slate-200 rounded-lg bg-slate-50/30 hover:bg-white hover:border-slate-300 focus:outline-none focus:ring-1 focus:ring-slate-300 transition-all cursor-pointer appearance-none"
+                                className="w-full pl-3 pr-10 py-1.5 text-sm border border-[#E9E9E7] rounded-lg bg-[#1A1A1A]/[0.02] hover:bg-white hover:border-[#E9E9E7] focus:outline-none focus:ring-1 focus:ring-[#3D4430]/20 transition-all cursor-pointer appearance-none"
                             >
                                 {TIME_PRESETS.map((preset) => (
                                     <option key={preset.value} value={preset.value}>
@@ -329,17 +329,17 @@ export default function AuditLogsClient({ role }: AuditLogsClientProps) {
                                     </option>
                                 ))}
                             </select>
-                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1A1A1A]/40 pointer-events-none" />
                         </div>
 
-                        <div className="h-4 w-px bg-slate-200 mx-2 hidden sm:block"></div>
+                        <div className="h-4 w-px bg-[#E9E9E7] mx-2 hidden sm:block"></div>
 
                         {/* Admin Filter */}
                         <div className="relative min-w-[150px]">
                             <select
                                 value={selectedAdmin}
                                 onChange={(e) => { setSelectedAdmin(e.target.value); setPage(1); }}
-                                className="w-full pl-3 pr-10 py-1.5 text-sm border border-slate-200 rounded-lg bg-slate-50/30 hover:bg-white hover:border-slate-300 focus:outline-none focus:ring-1 focus:ring-slate-300 transition-all cursor-pointer appearance-none"
+                                className="w-full pl-3 pr-10 py-1.5 text-sm border border-[#E9E9E7] rounded-lg bg-[#1A1A1A]/[0.02] hover:bg-white hover:border-[#E9E9E7] focus:outline-none focus:ring-1 focus:ring-[#3D4430]/20 transition-all cursor-pointer appearance-none"
                             >
                                 <option value="all">所有操作人员</option>
                                 {filterOptions.admins.map((admin) => (
@@ -348,7 +348,7 @@ export default function AuditLogsClient({ role }: AuditLogsClientProps) {
                                     </option>
                                 ))}
                             </select>
-                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1A1A1A]/40 pointer-events-none" />
                         </div>
 
                         {/* Action Filter */}
@@ -356,7 +356,7 @@ export default function AuditLogsClient({ role }: AuditLogsClientProps) {
                             <select
                                 value={selectedAction}
                                 onChange={(e) => { setSelectedAction(e.target.value); setPage(1); }}
-                                className="w-full pl-3 pr-10 py-1.5 text-sm border border-slate-200 rounded-lg bg-slate-50/30 hover:bg-white hover:border-slate-300 focus:outline-none focus:ring-1 focus:ring-slate-300 transition-all cursor-pointer appearance-none"
+                                className="w-full pl-3 pr-10 py-1.5 text-sm border border-[#E9E9E7] rounded-lg bg-[#1A1A1A]/[0.02] hover:bg-white hover:border-[#E9E9E7] focus:outline-none focus:ring-1 focus:ring-[#3D4430]/20 transition-all cursor-pointer appearance-none"
                             >
                                 <option value="all">所有操作行为</option>
                                 {filterOptions.actions.map((action) => (
@@ -365,7 +365,7 @@ export default function AuditLogsClient({ role }: AuditLogsClientProps) {
                                     </option>
                                 ))}
                             </select>
-                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1A1A1A]/40 pointer-events-none" />
                         </div>
 
                         {/* Resource Filter */}
@@ -373,7 +373,7 @@ export default function AuditLogsClient({ role }: AuditLogsClientProps) {
                             <select
                                 value={selectedResource}
                                 onChange={(e) => { setSelectedResource(e.target.value); setPage(1); }}
-                                className="w-full pl-3 pr-10 py-1.5 text-sm border border-slate-200 rounded-lg bg-slate-50/30 hover:bg-white hover:border-slate-300 focus:outline-none focus:ring-1 focus:ring-slate-300 transition-all cursor-pointer appearance-none"
+                                className="w-full pl-3 pr-10 py-1.5 text-sm border border-[#E9E9E7] rounded-lg bg-[#1A1A1A]/[0.02] hover:bg-white hover:border-[#E9E9E7] focus:outline-none focus:ring-1 focus:ring-[#3D4430]/20 transition-all cursor-pointer appearance-none"
                             >
                                 <option value="all">所有资源模块</option>
                                 {filterOptions.resources.map((resource) => (
@@ -382,64 +382,64 @@ export default function AuditLogsClient({ role }: AuditLogsClientProps) {
                                     </option>
                                 ))}
                             </select>
-                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1A1A1A]/40 pointer-events-none" />
                         </div>
                     </div>
 
                     {hasActiveFilters && (
                         <>
-                            <div className="h-4 w-px bg-slate-200 mx-1 hidden lg:block"></div>
+                            <div className="h-4 w-px bg-[#E9E9E7] mx-1 hidden lg:block"></div>
                             <button
                                 onClick={clearFilters}
-                                className="px-3 py-1.5 text-xs font-bold text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all uppercase tracking-widest border border-transparent hover:border-rose-100"
+                                className="px-3 py-1.5 text-xs font-bold text-[#1A1A1A]/40 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all uppercase tracking-widest border border-transparent hover:border-rose-100"
                             >
                                 清除所有
                             </button>
                         </>
                     )}
 
-                    <span className="ml-auto text-xs text-slate-400 hidden xl:block">
+                    <span className="ml-auto text-xs text-[#1A1A1A]/40 hidden xl:block">
                         找到 {total} 条记录
                     </span>
                 </div>
 
                 {/* Custom Date Range Row */}
                 {timePreset === "custom" && (
-                    <div className="flex items-center gap-3 p-3 bg-slate-50/50 rounded-xl border border-slate-200 border-dashed animate-in slide-in-from-top-1 duration-200">
-                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-2 whitespace-nowrap">自定义时段:</span>
+                    <div className="flex items-center gap-3 p-3 bg-[#1A1A1A]/[0.02] rounded-xl border border-[#E9E9E7] border-dashed animate-in slide-in-from-top-1 duration-200">
+                        <span className="text-[11px] font-bold text-[#1A1A1A]/40 uppercase tracking-widest ml-2 whitespace-nowrap">自定义时段:</span>
                         <input
                             type="date"
                             value={startDate}
                             onChange={(e) => { setStartDate(e.target.value); setPage(1); }}
-                            className="rounded-lg border-slate-200 text-sm bg-white px-3 py-1 focus:outline-none focus:ring-1 focus:ring-slate-300 transition-all"
+                            className="rounded-lg border-[#E9E9E7] text-sm bg-white px-3 py-1 focus:outline-none focus:ring-1 focus:ring-[#3D4430]/20 transition-all"
                         />
-                        <span className="text-slate-300">至</span>
+                        <span className="text-[#1A1A1A]/30">至</span>
                         <input
                             type="date"
                             value={endDate}
                             onChange={(e) => { setEndDate(e.target.value); setPage(1); }}
-                            className="rounded-lg border-slate-200 text-sm bg-white px-3 py-1 focus:outline-none focus:ring-1 focus:ring-slate-300 transition-all"
+                            className="rounded-lg border-[#E9E9E7] text-sm bg-white px-3 py-1 focus:outline-none focus:ring-1 focus:ring-[#3D4430]/20 transition-all"
                         />
                     </div>
                 )}
             </div>
 
-            <div className="bg-white/40 backdrop-blur-3xl rounded-[32px] border-[1.5px] border-white/60 shadow-[0_32px_100px_rgba(0,0,0,0.05),inset_0_2px_10px_rgba(255,255,255,0.4)] overflow-hidden">
+            <div className="bg-white rounded-2xl border border-[#1A1A1A]/10 shadow-sm overflow-hidden">
                 {loading && logs.length === 0 ? (
                     <div className="flex items-center justify-center h-64">
-                        <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+                        <Loader2 className="w-6 h-6 animate-spin text-[#1A1A1A]/40" />
                     </div>
                 ) : logs.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-64 text-slate-400">
+                    <div className="flex flex-col items-center justify-center h-64 text-[#1A1A1A]/40">
                         <Shield className="w-12 h-12 mb-4 opacity-50" />
                         <p>暂无审计日志</p>
                     </div>
                 ) : (
-                    <div className="divide-y divide-white/20">
+                    <div className="divide-y divide-[#E9E9E7]">
                         {logs.map((log) => {
                             const ActionIcon = ACTION_ICONS[log.action] || Edit;
                             const ResourceIcon = RESOURCE_ICONS[log.resource] || Package;
-                            const colorClass = ACTION_COLORS[log.action] || "bg-slate-100 text-slate-700";
+                            const colorClass = ACTION_COLORS[log.action] || "bg-[#1A1A1A]/5 text-[#5E5E5E]";
 
                             return (
                                 <div
@@ -455,7 +455,7 @@ export default function AuditLogsClient({ role }: AuditLogsClientProps) {
                                     tabIndex={log.details ? 0 : undefined}
                                     className={cn(
                                         "px-6 py-3 transition-colors group",
-                                        log.details ? "cursor-pointer hover:bg-slate-50" : "cursor-default"
+                                        log.details ? "cursor-pointer hover:bg-[#1A1A1A]/[0.02]" : "cursor-default"
                                     )}
                                 >
                                     <div className="flex items-center gap-4">
@@ -464,21 +464,21 @@ export default function AuditLogsClient({ role }: AuditLogsClientProps) {
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 flex-wrap text-sm">
-                                                <span className="font-semibold text-slate-900">
+                                                <span className="font-semibold text-[#1A1A1A]">
                                                     {log.admin?.name || log.admin?.username || '系统'}
                                                 </span>
-                                                <span className="text-slate-400 text-xs">执行了</span>
+                                                <span className="text-[#1A1A1A]/40 text-xs">执行了</span>
                                                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${colorClass}`}>
                                                     {getActionLabel(log.action)}
                                                 </span>
                                             </div>
-                                            <div className="flex items-center gap-3 mt-0.5 text-[11px] text-slate-500">
+                                            <div className="flex items-center gap-3 mt-0.5 text-[11px] text-[#1A1A1A]/50">
                                                 <div className="flex items-center gap-1.5">
-                                                    <ResourceIcon className="w-3.5 h-3.5 text-slate-400" />
+                                                    <ResourceIcon className="w-3.5 h-3.5 text-[#1A1A1A]/40" />
                                                     <span className="font-medium">{log.resource}</span>
                                                 </div>
                                                 {log.resourceId && (
-                                                    <span className="font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-400 border border-slate-200/50">
+                                                    <span className="font-mono bg-[#1A1A1A]/5 px-1.5 py-0.5 rounded text-[#1A1A1A]/40 border border-[#E9E9E7]">
                                                         ID: {log.resourceId.slice(0, 8)}
                                                     </span>
                                                 )}
@@ -487,11 +487,11 @@ export default function AuditLogsClient({ role }: AuditLogsClientProps) {
 
                                         <div className="flex items-center gap-6">
                                             <div className="text-right shrink-0 min-w-[100px]">
-                                                <div className="text-[11px] font-medium text-slate-500">
+                                                <div className="text-[11px] font-medium text-[#1A1A1A]/50">
                                                     {formatTime(log.createdAt)}
                                                 </div>
                                                 {log.ip && (
-                                                    <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                                    <div className="text-[10px] text-[#1A1A1A]/40 font-mono mt-0.5">
                                                         {log.ip}
                                                     </div>
                                                 )}
@@ -506,25 +506,25 @@ export default function AuditLogsClient({ role }: AuditLogsClientProps) {
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                    <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/30">
-                        <div className="text-sm text-slate-500">
+                    <div className="px-6 py-4 border-t border-[#E9E9E7] flex items-center justify-between bg-[#1A1A1A]/[0.02]">
+                        <div className="text-sm text-[#1A1A1A]/50">
                             共 {total} 条记录
                         </div>
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={() => setPage(p => Math.max(1, p - 1))}
                                 disabled={page === 1}
-                                className="p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                className="p-2 rounded-lg border border-[#E9E9E7] bg-white hover:bg-[#1A1A1A]/[0.02] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                             >
                                 <ChevronDown className="w-4 h-4 rotate-90" />
                             </button>
-                            <span className="text-sm font-medium text-slate-600 px-3">
+                            <span className="text-sm font-medium text-[#1A1A1A]/60 px-3">
                                 {page} / {totalPages}
                             </span>
                             <button
                                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                                 disabled={page === totalPages}
-                                className="p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                className="p-2 rounded-lg border border-[#E9E9E7] bg-white hover:bg-[#1A1A1A]/[0.02] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                             >
                                 <ChevronDown className="w-4 h-4 -rotate-90" />
                             </button>

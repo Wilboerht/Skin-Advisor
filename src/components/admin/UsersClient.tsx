@@ -153,14 +153,14 @@ export function UsersClient() {
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">用户管理</h1>
-          <p className="text-slate-500 text-sm mt-1">
+          <h1 className="text-2xl font-bold text-[#1A1A1A] tracking-tight">用户管理</h1>
+          <p className="text-[#1A1A1A]/50 text-sm mt-1">
             管理注册用户 &middot; 共 {pagination?.total || 0} 人
           </p>
         </div>
         <div className="flex items-center gap-3">
           <button
-            className="flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 transition-colors"
+            className="flex items-center rounded-lg border border-[#E9E9E7] bg-white px-4 py-2 text-sm font-medium text-[#5E5E5E] shadow-sm hover:bg-[#1A1A1A]/[0.02] transition-colors"
             onClick={() => window.open("/api/admin/export?type=users", "_blank")}
           >
             <Download className="mr-2 h-4 w-4" />
@@ -177,52 +177,52 @@ export function UsersClient() {
         </p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 p-4 bg-white/40 backdrop-blur-3xl rounded-2xl border-[1.5px] border-white/70 shadow-[0_20px_60px_rgba(0,0,0,0.03),inset_0_1px_5px_rgba(255,255,255,0.4)] transition-all">
-        <Search className="w-4 h-4 text-slate-400" />
+      <div className="flex flex-wrap items-center gap-3 p-4 bg-white rounded-2xl border border-[#1A1A1A]/10 shadow-sm">
+        <Search className="w-4 h-4 text-[#1A1A1A]/40" />
         <div className="relative flex-1 sm:flex-none">
           <input
             type="text"
             placeholder="搜索用户姓名或邮箱..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="block w-full sm:w-64 rounded-lg border-slate-200 bg-slate-50/50 py-1.5 px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-400 focus:ring-0 transition-all"
+            className="block w-full sm:w-64 rounded-lg border-[#E9E9E7] bg-[#1A1A1A]/[0.03] py-1.5 px-3 text-sm text-[#1A1A1A] placeholder:text-[#1A1A1A]/40 focus:bg-white focus:border-[#3D4430]/40 focus:ring-0 transition-all"
           />
         </div>
 
-        <div className="h-4 w-px bg-slate-200 mx-1 hidden sm:block" />
+        <div className="h-4 w-px bg-[#E9E9E7] mx-1 hidden sm:block" />
 
         <div className="relative min-w-[140px]">
           <select
             value={status}
             onChange={(e) => { setStatus(e.target.value); setPage(1); }}
-            className="w-full pl-3 pr-10 py-1.5 text-sm border border-slate-200 rounded-lg bg-white hover:bg-slate-50 hover:border-slate-300 focus:outline-none focus:ring-1 focus:ring-slate-300 transition-all cursor-pointer appearance-none"
+            className="w-full pl-3 pr-10 py-1.5 text-sm border border-[#E9E9E7] rounded-lg bg-white hover:bg-[#1A1A1A]/[0.02] hover:border-[#E9E9E7] focus:outline-none focus:ring-1 focus:ring-[#3D4430]/20 transition-all cursor-pointer appearance-none"
           >
             <option value="all">所有用户状态</option>
             <option value="active">活跃用户</option>
             <option value="inactive">已禁用</option>
           </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1A1A1A]/40 pointer-events-none" />
         </div>
 
-        <span className="ml-auto text-xs text-slate-400">
+        <span className="ml-auto text-xs text-[#1A1A1A]/40">
           显示 {users.length} 条数据
         </span>
       </div>
 
-      <div className="overflow-hidden rounded-[32px] border-[1.5px] border-white/60 bg-white/40 backdrop-blur-3xl shadow-[0_32px_100px_rgba(0,0,0,0.05),inset_0_2px_10px_rgba(255,255,255,0.4)]">
+      <div className="overflow-hidden rounded-2xl border border-[#1A1A1A]/10 bg-white shadow-sm">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-white/20">
-            <thead className="bg-white/30 border-b border-white/20">
+          <table className="min-w-full divide-y divide-[#E9E9E7]">
+            <thead className="bg-[#1A1A1A]/[0.02] border-b border-[#1A1A1A]/5">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">用户</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">状态</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">注册日期</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">最后活跃</th>
-                <th className="px-6 py-4 text-right text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">测试次数</th>
-                <th className="px-6 py-4 text-right text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">操作</th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-[#1A1A1A]/50 uppercase tracking-wider align-middle">用户</th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-[#1A1A1A]/50 uppercase tracking-wider align-middle">状态</th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-[#1A1A1A]/50 uppercase tracking-wider align-middle">注册日期</th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-[#1A1A1A]/50 uppercase tracking-wider align-middle">最后活跃</th>
+                <th className="px-6 py-4 text-right text-xs font-medium text-[#1A1A1A]/50 uppercase tracking-wider align-middle">测试次数</th>
+                <th className="px-6 py-4 text-right text-xs font-medium text-[#1A1A1A]/50 uppercase tracking-wider align-middle">操作</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/20">
+            <tbody className="divide-y divide-[#E9E9E7]">
               {loading ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center">
@@ -237,15 +237,15 @@ export function UsersClient() {
                 </tr>
               ) : (
                 users.map((user) => (
-                  <tr key={user.id} className="group hover:bg-white/50 transition-colors">
+                  <tr key={user.id} className="group hover:bg-white transition-colors">
                     <td className="px-6 py-4 align-middle">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-[#1A1A1A]/5 flex items-center justify-center text-[#1A1A1A]/50 shrink-0">
                           <UserIcon className="w-4 h-4" />
                         </div>
                         <div className="min-w-0">
-                          <div className="font-medium text-slate-900 truncate">{user.name || "匿名用户"}</div>
-                          <div className="text-xs text-slate-500 truncate">{user.email}</div>
+                          <div className="font-medium text-[#1A1A1A] truncate">{user.name || "匿名用户"}</div>
+                          <div className="text-xs text-[#1A1A1A]/50 truncate">{user.email}</div>
                         </div>
                       </div>
                     </td>
@@ -258,15 +258,15 @@ export function UsersClient() {
                         {isDisabledUser(user.role) ? "已禁用" : "处于活跃状态"}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-slate-600 align-middle">
+                    <td className="px-6 py-4 text-[#1A1A1A]/60 align-middle">
                       {new Date(user.createdAt).toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-4 text-slate-600 align-middle">
+                    <td className="px-6 py-4 text-[#1A1A1A]/60 align-middle">
                       {user.advisorSessions[0]
                         ? new Date(user.advisorSessions[0].createdAt).toLocaleDateString()
                         : "-"}
                     </td>
-                    <td className="px-6 py-4 text-right tabular-nums text-slate-900 align-middle">
+                    <td className="px-6 py-4 text-right tabular-nums text-[#1A1A1A] align-middle">
                       {user._count.advisorSessions}
                     </td>
                     <td className="px-6 py-4 text-right relative align-middle">
@@ -279,7 +279,7 @@ export function UsersClient() {
                           onClick={() => {
                             setShowDropdown(showDropdown === user.id ? null : user.id);
                           }}
-                          className="p-2 text-slate-400 hover:text-slate-600 transition-colors rounded-full hover:bg-slate-100"
+                          className="p-2 text-[#1A1A1A]/40 hover:text-[#1A1A1A]/60 transition-colors rounded-full hover:bg-[#1A1A1A]/5"
                           aria-label={`操作菜单 - ${user.name || user.email}`}
                         >
                           <MoreHorizontal className="w-4 h-4" />
@@ -316,7 +316,7 @@ export function UsersClient() {
                   setShowDropdown(null);
                 }
               }}
-              icon={<Eye className="w-4 h-4 text-slate-500" />}
+              icon={<Eye className="w-4 h-4 text-[#1A1A1A]/50" />}
             >
               查看详情
             </DropdownMenuItem>

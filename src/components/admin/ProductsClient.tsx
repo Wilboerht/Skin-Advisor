@@ -45,18 +45,18 @@ const ProductRow = memo(function ProductRow({
 }) {
     return (
         <tr
-            className={`hover:bg-white/50 transition-colors ${isSelected ? 'bg-white/30' : ''}`}
+            className={`hover:bg-white transition-colors ${isSelected ? 'bg-[#1A1A1A]/[0.02]' : ''}`}
         >
             <td className="px-2 py-4 w-10 align-middle">
                 <div className="flex items-center justify-center">
                     <button
                         type="button"
                         onClick={() => onSelect(product.id)}
-                        className="text-slate-400 hover:text-slate-600"
+                        className="text-[#1A1A1A]/40 hover:text-[#1A1A1A]/60"
                         aria-label={isSelected ? "取消选择" : "选择"}
                     >
                         {isSelected ? (
-                            <CheckSquare className="w-5 h-5 text-slate-900" />
+                            <CheckSquare className="w-5 h-5 text-[#1A1A1A]" />
                         ) : (
                             <Square className="w-5 h-5" />
                         )}
@@ -64,7 +64,7 @@ const ProductRow = memo(function ProductRow({
                 </div>
             </td>
             <td className="px-4 py-4 whitespace-nowrap align-middle">
-                <div className="relative h-12 w-12 overflow-hidden rounded-lg border border-slate-100 bg-slate-50 mx-auto sm:mx-0">
+                <div className="relative h-12 w-12 overflow-hidden rounded-lg border border-[#E9E9E7] bg-[#1A1A1A]/[0.02] mx-auto sm:mx-0">
                     {product.image && (product.image.startsWith("/") || product.image.startsWith("http")) ? (
                         <Image
                             src={product.image}
@@ -81,7 +81,7 @@ const ProductRow = memo(function ProductRow({
                         />
                     ) : null}
                     <div
-                        className={`img-fallback h-full w-full bg-slate-100 flex flex-col items-center justify-center text-slate-300 ${product.image && (product.image.startsWith("/") || product.image.startsWith("http")) ? 'hidden' : 'flex'}`}
+                        className={`img-fallback h-full w-full bg-[#1A1A1A]/5 flex flex-col items-center justify-center text-[#1A1A1A]/30 ${product.image && (product.image.startsWith("/") || product.image.startsWith("http")) ? 'hidden' : 'flex'}`}
                         aria-label="无图片"
                     >
                         <ImageOff className="w-5 h-5" />
@@ -92,7 +92,7 @@ const ProductRow = memo(function ProductRow({
             <td className="px-4 py-4 align-middle">
                 <div className="flex items-center gap-2">
                     <div>
-                        <div className="text-sm font-medium text-slate-900">{product.name}</div>
+                        <div className="text-sm font-medium text-[#1A1A1A]">{product.name}</div>
                     </div>
                     {product.featured && (
                         <Star className="w-4 h-4 text-amber-500 fill-amber-500" aria-label="精选置顶" />
@@ -100,17 +100,17 @@ const ProductRow = memo(function ProductRow({
                 </div>
             </td>
             <td className="px-4 py-4 whitespace-nowrap align-middle">
-                <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700">
+                <span className="inline-flex rounded-full bg-[#1A1A1A]/5 px-2.5 py-0.5 text-xs font-medium text-[#5E5E5E]">
                     {product.category}
                 </span>
             </td>
-            <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-600 align-middle">
+            <td className="px-4 py-4 whitespace-nowrap text-sm text-[#1A1A1A]/60 align-middle">
                 {product.price}
             </td>
             <td className="px-4 py-4 whitespace-nowrap align-middle">
                 <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${product.active
                     ? 'bg-emerald-50 text-emerald-700'
-                    : 'bg-slate-100 text-slate-500'
+                    : 'bg-[#1A1A1A]/5 text-[#1A1A1A]/50'
                     }`}>
                     {product.active ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
                     {product.active ? '上架' : '下架'}
@@ -121,7 +121,7 @@ const ProductRow = memo(function ProductRow({
                     <button
                         type="button"
                         onClick={() => onEdit(product)}
-                        className="rounded p-2 text-slate-600 hover:bg-slate-100 transition-colors"
+                        className="rounded p-2 text-[#1A1A1A]/60 hover:bg-[#1A1A1A]/5 transition-colors"
                         aria-label={`编辑 ${product.name}`}
                     >
                         <Edit className="h-4 w-4" />
@@ -291,14 +291,14 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
         <div className="relative space-y-6 animate-in fade-in duration-500">
             {/* Loading Overlay */}
             {isRefreshing && (
-                <div className="absolute inset-0 z-50 bg-white/40 backdrop-blur-[1px] flex items-center justify-center rounded-2xl">
-                    <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+                <div className="absolute inset-0 z-50 bg-[#FDFBF7]/60 flex items-center justify-center rounded-2xl">
+                    <Loader2 className="w-8 h-8 animate-spin text-[#1A1A1A]/40" />
                 </div>
             )}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900 tracking-tight">产品管理</h1>
-                    <p className="text-slate-500 text-sm mt-1">
+                    <h1 className="text-2xl font-bold text-[#1A1A1A] tracking-tight">产品管理</h1>
+                    <p className="text-[#1A1A1A]/50 text-sm mt-1">
                         共 {products.length} 个产品
                     </p>
                 </div>
@@ -308,7 +308,7 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                         setEditingProduct(null);
                         setModalOpen(true);
                     }}
-                    className="flex items-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-slate-800 transition-colors"
+                    className="flex items-center rounded-lg bg-[#3D4430] px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-[#3D4430]/90 transition-colors"
                 >
                     <Plus className="mr-2 h-4 w-4" />
                     添加产品
@@ -316,21 +316,21 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
             </div>
 
             {/* Filter Controls */}
-            <div className="flex flex-wrap items-center gap-3 p-4 bg-white/40 backdrop-blur-3xl rounded-2xl border-[1.5px] border-white/70 shadow-[0_20px_60px_rgba(0,0,0,0.03),inset_0_1px_5px_rgba(255,255,255,0.4)] transition-all">
-                <Filter className="w-4 h-4 text-slate-400" />
+            <div className="flex flex-wrap items-center gap-3 p-4 bg-white rounded-2xl border border-[#1A1A1A]/10 shadow-sm">
+                <Filter className="w-4 h-4 text-[#1A1A1A]/40" />
                 {/* Category Filter */}
                 <div className="relative min-w-[140px]">
                     <select
                         value={categoryFilter}
                         onChange={(e) => setCategoryFilter(e.target.value)}
-                        className="w-full pl-3 pr-10 py-1.5 text-sm border border-slate-200 rounded-lg bg-white hover:bg-slate-50 hover:border-slate-300 focus:outline-none focus:ring-1 focus:ring-slate-300 transition-all cursor-pointer appearance-none"
+                        className="w-full pl-3 pr-10 py-1.5 text-sm border border-[#E9E9E7] rounded-lg bg-white hover:bg-[#1A1A1A]/[0.02] hover:border-[#E9E9E7] focus:outline-none focus:ring-1 focus:ring-[#3D4430]/20 transition-all cursor-pointer appearance-none"
                     >
                         <option value="all">所有分类</option>
                         {categories.map(cat => (
                             <option key={cat} value={cat}>{cat}</option>
                         ))}
                     </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1A1A1A]/40 pointer-events-none" />
                 </div>
 
                 {/* Status Filter */}
@@ -338,24 +338,24 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                     <select
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
-                        className="w-full pl-3 pr-10 py-1.5 text-sm border border-slate-200 rounded-lg bg-white hover:bg-slate-50 hover:border-slate-300 focus:outline-none focus:ring-1 focus:ring-slate-300 transition-all cursor-pointer appearance-none"
+                        className="w-full pl-3 pr-10 py-1.5 text-sm border border-[#E9E9E7] rounded-lg bg-white hover:bg-[#1A1A1A]/[0.02] hover:border-[#E9E9E7] focus:outline-none focus:ring-1 focus:ring-[#3D4430]/20 transition-all cursor-pointer appearance-none"
                     >
                         <option value="all">所有状态</option>
                         <option value="active">已上架</option>
                         <option value="inactive">已下架</option>
                     </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1A1A1A]/40 pointer-events-none" />
                 </div>
 
                 {/* Search Input */}
                 <div className="relative flex-1 min-w-[180px] max-w-xs">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1A1A1A]/40" />
                     <input
                         type="text"
                         placeholder="搜索产品名称..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white hover:border-slate-300 focus:outline-none focus:ring-1 focus:ring-slate-300 transition-all"
+                        className="w-full pl-10 pr-3 py-1.5 text-sm border border-[#E9E9E7] rounded-lg bg-white hover:border-[#E9E9E7] focus:outline-none focus:ring-1 focus:ring-[#3D4430]/20 transition-all"
                     />
                 </div>
 
@@ -363,22 +363,22 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                     <button
                         type="button"
                         onClick={() => { setCategoryFilter("all"); setStatusFilter("all"); }}
-                        className="px-3 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-700"
+                        className="px-3 py-1.5 text-xs font-medium text-[#1A1A1A]/50 hover:text-[#5E5E5E]"
                     >
                         清除筛选
                     </button>
                 )}
-                <span className="ml-auto text-xs text-slate-400">
+                <span className="ml-auto text-xs text-[#1A1A1A]/40">
                     显示 {filteredProducts.length} / {products.length}
                 </span>
             </div>
 
             {/* Batch Actions Bar - Floating Liquid Glass */}
             {selectedIds.length > 0 && (
-                <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 p-3 bg-white/40 backdrop-blur-3xl rounded-[32px] border-[1.5px] border-white/60 shadow-[0_40px_100px_rgba(0,0,0,0.1),inset_0_2px_10px_rgba(255,255,255,0.4)] animate-in fade-in slide-in-from-bottom-10 duration-500 w-full max-w-3xl ring-1 ring-white/20">
+                <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 p-3 bg-white rounded-2xl border border-[#1A1A1A]/10 shadow-lg animate-in fade-in slide-in-from-bottom-10 duration-500 w-full max-w-3xl ring-1 ring-[#1A1A1A]/5">
                     <div className="absolute -inset-4 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 blur-3xl -z-10 opacity-70" />
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-900/5 rounded-full border border-slate-900/10">
-                        <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-[#1A1A1A]/5 rounded-full border border-[#1A1A1A]/10">
+                        <span className="text-xs font-bold text-[#1A1A1A] uppercase tracking-wider">
                             已选择 {selectedIds.length} 个产品
                         </span>
                     </div>
@@ -395,7 +395,7 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                         type="button"
                         onClick={() => handleBatchAction('deactivate')}
                         disabled={batchLoading !== null}
-                        className="px-4 py-2 text-xs font-bold bg-slate-900/5 text-slate-700 border border-slate-900/10 hover:bg-slate-900/10 rounded-2xl transition-all shadow-sm active:scale-95"
+                        className="px-4 py-2 text-xs font-bold bg-[#1A1A1A]/5 text-[#5E5E5E] border border-[#1A1A1A]/10 hover:bg-[#1A1A1A]/10 rounded-2xl transition-all shadow-sm active:scale-95"
                     >
                         {batchLoading === 'deactivate' ? <Loader2 className="w-4 h-4 animate-spin" /> : '批量下架'}
                     </button>
@@ -426,42 +426,42 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                     <button
                         type="button"
                         onClick={() => setSelectedIds([])}
-                        className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-slate-900 transition-colors"
+                        className="px-4 py-2 text-xs font-bold text-[#1A1A1A]/40 hover:text-[#1A1A1A] transition-colors"
                     >
                         取消
                     </button>
                 </div>
             )}
 
-            <div className="overflow-hidden rounded-[32px] border-[1.5px] border-white/60 bg-white/40 backdrop-blur-3xl shadow-[0_32px_100px_rgba(0,0,0,0.05),inset_0_2px_10px_rgba(255,255,255,0.4)]">
-                <table className="min-w-full divide-y divide-white/20" aria-label="产品列表">
-                    <thead className="bg-white/30 border-b border-white/20">
+            <div className="overflow-hidden rounded-2xl border border-[#1A1A1A]/10 bg-white shadow-sm">
+                <table className="min-w-full divide-y divide-[#E9E9E7]" aria-label="产品列表">
+                    <thead className="bg-[#1A1A1A]/[0.02] border-b border-[#1A1A1A]/5">
                         <tr>
                             <th scope="col" className="px-2 py-4 w-10 align-middle">
                                 <div className="flex items-center justify-center">
                                     <button
                                         type="button"
                                         onClick={handleSelectAll}
-                                        className="text-slate-400 hover:text-slate-600"
+                                        className="text-[#1A1A1A]/40 hover:text-[#1A1A1A]/60"
                                         aria-label={selectedIds.length === filteredProducts.length && filteredProducts.length > 0 ? "取消全选" : "全选"}
                                     >
                                         {selectedIds.length === filteredProducts.length && filteredProducts.length > 0 ? (
-                                            <CheckSquare className="w-5 h-5 text-slate-900" />
+                                            <CheckSquare className="w-5 h-5 text-[#1A1A1A]" />
                                         ) : (
                                             <Square className="w-5 h-5" />
                                         )}
                                     </button>
                                 </div>
                             </th>
-                            <th scope="col" className="px-4 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">图片</th>
-                            <th scope="col" className="px-4 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">名称</th>
-                            <th scope="col" className="px-4 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">分类</th>
-                            <th scope="col" className="px-4 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">价格</th>
-                            <th scope="col" className="px-4 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">状态</th>
-                            <th scope="col" className="px-4 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider align-middle">操作</th>
+                            <th scope="col" className="px-4 py-4 text-left text-xs font-medium text-[#1A1A1A]/50 uppercase tracking-wider align-middle">图片</th>
+                            <th scope="col" className="px-4 py-4 text-left text-xs font-medium text-[#1A1A1A]/50 uppercase tracking-wider align-middle">名称</th>
+                            <th scope="col" className="px-4 py-4 text-left text-xs font-medium text-[#1A1A1A]/50 uppercase tracking-wider align-middle">分类</th>
+                            <th scope="col" className="px-4 py-4 text-left text-xs font-medium text-[#1A1A1A]/50 uppercase tracking-wider align-middle">价格</th>
+                            <th scope="col" className="px-4 py-4 text-left text-xs font-medium text-[#1A1A1A]/50 uppercase tracking-wider align-middle">状态</th>
+                            <th scope="col" className="px-4 py-4 text-left text-xs font-medium text-[#1A1A1A]/50 uppercase tracking-wider align-middle">操作</th>
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-slate-200">
+                    <tbody className="bg-white divide-y divide-[#E9E9E7]">
                         {paginatedProducts.map((product) => (
                             <ProductRow
                                 key={product.id}
@@ -477,7 +477,7 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                         ))}
                         {paginatedProducts.length === 0 && (
                             <tr>
-                                <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
+                                <td colSpan={7} className="px-6 py-12 text-center text-[#1A1A1A]/50">
                                     暂无产品，点击&quot;添加产品&quot;开始。
                                 </td>
                             </tr>
