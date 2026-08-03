@@ -153,6 +153,8 @@ export async function GET(request: NextRequest) {
             const fileCutoff = now - 30 * 24 * 60 * 60 * 1000;
             for (const file of files) {
                 try {
+                    // products/ 子目录存的是展品图等永久资产，豁免清理
+                    if (file === "products") continue;
                     const filePath = path.join(uploadDir, file);
                     const stat = await fs.stat(filePath);
                     if (stat.mtimeMs < fileCutoff) {

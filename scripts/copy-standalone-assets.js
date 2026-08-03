@@ -66,5 +66,33 @@ if (fs.existsSync(staticSrc)) {
   console.log('⚠️  .next/static/ 目录不存在，跳过');
 }
 
+// 3. 建立 uploads 符号链接：.next/standalone/public/uploads → 源码 public/uploads
+// 原因：standalone 运行时 process.cwd() 是 .next/standalone，上传文件会写入该目录；
+// Nginx /uploads/ 也可能映射到这里。通过符号链接让上传文件始终落到源码目录的持久化位置，
+// 避免每次重新部署后展品图等上传文件全部 404。
+const uploadsSrc = path.join(publicSrc, 'uploads');
+const uploadsDest = path.join(publicDest, 'uploads');
+try {
+  fs.mkdirSync(uploadsSrc, { recursive: true });
+  if (fs.existsSync(uploadsDest) || fs.lstatSync(uploadsDest, { throwIfNoEntry: false })) {
+    const destStat = fs.lstatSync(uploadsDest);
+    if (destStat.isSymbolicLink()) {
+      console.log('🔗 uploads 符号链接已存在，跳过');
+    } else if (destStat.isDirectory()) {
+      // standalone 目录里已有真实 uploads（历史上传），先合并回源码目录再替换为链接
+      console.log('📦 合并 standalone/public/uploads 中已有文件 → public/uploads ...');
+      copyDir(uploadsDest, uploadsSrc);
+      fs.rmSync(uploadsDest, { recursive: true, force: true });
+      fs.symlinkSync(uploadsSrc, uploadsDest, 'junction');
+      console.log('   ✅ uploads 已合并并替换为符号链接');
+    }
+  } else {
+    fs.symlinkSync(uploadsSrc, uploadsDest, 'junction');
+    console.log('🔗 已创建符号链接 .next/standalone/public/uploads → public/uploads');
+  }
+} catch (err) {
+  console.log('⚠️  uploads 符号链接创建失败（不影响构建）：', err.message);
+}
+
 console.log('\n✅ standalone 静态文件准备完成！');
 console.log('   部署时只需上传 .next/standalone/ 目录 + .env.production');

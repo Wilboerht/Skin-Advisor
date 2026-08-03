@@ -14,7 +14,12 @@ const ALLOWED_MIME_TYPES = [
 ];
 const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
 
-export async function handleUpload(request: NextRequest): Promise<NextResponse> {
+/**
+ * 上传目录分类：
+ * - 根目录 public/uploads/：临时文件（游客/用户上传），受 30 天清理策略约束
+ * - products/ 子目录：展品图等永久资产，清理任务只扫根目录文件，天然豁免
+ */
+export async function handleUpload(request: NextRequest, subdir?: "products"): Promise<NextResponse> {
     // Rate limiting per IP
     const ip = getClientIP(request);
     const limit = await rateLimit(`upload-ip-${ip}`, "default", {
@@ -76,11 +81,15 @@ export async function handleUpload(request: NextRequest): Promise<NextResponse> 
     }
 
     // Ensure upload directory exists
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
+    const uploadDir = subdir
+        ? path.join(process.cwd(), "public", "uploads", subdir)
+        : path.join(process.cwd(), "public", "uploads");
     await mkdir(uploadDir, { recursive: true });
 
-    // Enforce storage limits before writing
-    await enforceStorageLimits(uploadDir);
+    // Enforce storage limits before writing（永久资产目录跳过清理策略）
+    if (!subdir) {
+        await enforceStorageLimits(uploadDir);
+    }
 
     // Generate unique filename with timestamp prefix (helps sorting for cleanup)
     const filename = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}${ext}`;
@@ -90,7 +99,7 @@ export async function handleUpload(request: NextRequest): Promise<NextResponse> 
     await writeFile(filePath, buffer);
 
     // Return URL
-    const url = `/uploads/${filename}`;
+    const url = subdir ? `/uploads/${subdir}/${filename}` : `/uploads/${filename}`;
 
     return NextResponse.json({ url });
 }
