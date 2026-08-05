@@ -132,29 +132,28 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
                   />
                 </div>
 
-                {/* 步骤横排，分隔符分开 */}
-                <div className="flex flex-col md:flex-row items-center md:items-stretch justify-center">
-                  {[
-                    { step: "01", title: "完成测肤或护肤习惯问卷", desc: "获取您的肌智派测肤结果及所属派系形象海报" },
-                    { step: "02", title: "分享小红书", desc: "发布海报并 @NIHPLOD" },
-                    { step: "03", title: "解锁礼遇", desc: "提交分享链接，等待开奖" },
-                  ].map((item, i) => (
-                    <Fragment key={i}>
-                      {i > 0 && (
-                        <>
-                          <div className="md:hidden h-px w-16 bg-brand-charcoal/15 my-6" />
-                          <div className="hidden md:block w-px self-stretch bg-brand-charcoal/15" />
-                        </>
-                      )}
-                      <div className="flex-1 max-w-[280px] flex flex-col items-center justify-center text-center px-6 md:px-8">
-                        <span className="shrink-0 w-8 h-8 rounded-full bg-transparent border border-brand-charcoal/60 flex items-center justify-center text-sm font-medium text-brand-charcoal mb-3">
-                          {parseInt(item.step)}
-                        </span>
-                        <h3 className="text-sm font-light text-brand-charcoal tracking-[0.06em] mb-1">{item.title}</h3>
-                        <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">{item.desc}</p>
+                {/* 步骤列表，编号左、文字右 */}
+                <div className="flex flex-col items-center">
+                  <div className="w-full max-w-xl">
+                    {[
+                      { step: "01", title: "完成测肤或护肤习惯问卷", desc: "获取您的肌智派测肤结果及所属派系形象海报" },
+                      { step: "02", title: "分享小红书", desc: "发布海报并 @NIHPLOD" },
+                      { step: "03", title: "解锁礼遇", desc: "提交分享链接，等待开奖" },
+                    ].map((item, i) => (
+                      <div key={i} className="flex items-start gap-4 md:gap-6">
+                        <div className="flex flex-col items-center self-stretch">
+                          <span className="shrink-0 w-8 h-8 md:w-9 md:h-9 rounded-full bg-transparent border border-brand-charcoal/60 flex items-center justify-center text-sm md:text-base font-medium text-brand-charcoal">
+                            {parseInt(item.step)}
+                          </span>
+                          {i < 2 && <div className="w-px flex-1 bg-brand-charcoal/15 my-2" />}
+                        </div>
+                        <div className={`flex-1 ${i < 2 ? "pb-8 md:pb-10" : ""}`}>
+                          <h3 className="text-sm md:text-base font-light text-brand-charcoal tracking-[0.06em] mb-1">{item.title}</h3>
+                          <p className="text-[13px] md:text-sm text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">{item.desc}</p>
+                        </div>
                       </div>
-                    </Fragment>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
               <div className="flex flex-col items-center gap-3 w-full max-w-xs mx-auto">
@@ -256,29 +255,28 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
                   />
                 </div>
 
-                {/* 步骤横排，分隔符分开 */}
-                <div className="flex flex-col md:flex-row items-center md:items-stretch justify-center">
-                  {[
-                    { step: "01", title: "生成专属海报", desc: "点击下方按钮，生成您的专属活动海报与小红书分享文案。" },
-                    { step: "02", title: "分享到小红书", desc: "将海报发布到您的小红书账号，附上活动文案并 @NIHPLOD" },
-                    { step: "03", title: "等待开奖", desc: `审核通过后即可参与抽奖，开奖时间：${campaign.drawDate ? formatDate(campaign.drawDate) : "敬请期待"}。` },
-                  ].map((item, i) => (
-                    <Fragment key={i}>
-                      {i > 0 && (
-                        <>
-                          <div className="md:hidden h-px w-16 bg-brand-charcoal/15 my-6" />
-                          <div className="hidden md:block w-px self-stretch bg-brand-charcoal/15" />
-                        </>
-                      )}
-                      <div className="flex-1 max-w-[300px] flex flex-col items-center justify-center text-center px-6 md:px-8">
-                        <span className="shrink-0 w-8 h-8 rounded-full bg-transparent border border-brand-charcoal/60 flex items-center justify-center text-sm font-medium text-brand-charcoal mb-3">
-                          {parseInt(item.step)}
-                        </span>
-                        <h3 className="text-sm font-light text-brand-charcoal tracking-[0.06em] mb-1">{item.title}</h3>
-                        <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">{item.desc}</p>
+                {/* 步骤列表，编号左、文字右 */}
+                <div className="flex flex-col items-center">
+                  <div className="w-full max-w-xl">
+                    {[
+                      { step: "01", title: "生成专属海报", desc: "点击下方按钮，生成您的专属活动海报与小红书分享文案。" },
+                      { step: "02", title: "分享到小红书", desc: "将海报发布到您的小红书账号，附上活动文案并 @NIHPLOD" },
+                      { step: "03", title: "等待开奖", desc: `审核通过后即可参与抽奖，开奖时间：${campaign.drawDate ? formatDate(campaign.drawDate) : "敬请期待"}。` },
+                    ].map((item, i) => (
+                      <div key={i} className="flex items-start gap-4 md:gap-6">
+                        <div className="flex flex-col items-center self-stretch">
+                          <span className="shrink-0 w-8 h-8 md:w-9 md:h-9 rounded-full bg-transparent border border-brand-charcoal/60 flex items-center justify-center text-sm md:text-base font-medium text-brand-charcoal">
+                            {parseInt(item.step)}
+                          </span>
+                          {i < 2 && <div className="w-px flex-1 bg-brand-charcoal/15 my-2" />}
+                        </div>
+                        <div className={`flex-1 ${i < 2 ? "pb-8 md:pb-10" : ""}`}>
+                          <h3 className="text-sm md:text-base font-light text-brand-charcoal tracking-[0.06em] mb-1">{item.title}</h3>
+                          <p className="text-[13px] md:text-sm text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">{item.desc}</p>
+                        </div>
                       </div>
-                    </Fragment>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
               <div className="flex flex-col items-center gap-3 w-full max-w-xs mx-auto">
