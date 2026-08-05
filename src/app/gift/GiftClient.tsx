@@ -121,7 +121,7 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
             <div className="max-w-4xl mx-auto">
               <div className="max-w-4xl mx-auto mb-18">
                 {/* 顶部形象图 */}
-                <div className="flex justify-center mb-12">
+                <div className="flex justify-center mb-18">
                   <Image
                     src="/images/gift-badge.png"
                     alt="肌智派送好礼"
@@ -244,7 +244,7 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
             <div className="max-w-4xl mx-auto">
               <div className="max-w-4xl mx-auto mb-18">
                 {/* 顶部形象图 */}
-                <div className="flex justify-center mb-12">
+                <div className="flex justify-center mb-18">
                   <Image
                     src="/images/gift-badge.png"
                     alt="肌智派送好礼"
