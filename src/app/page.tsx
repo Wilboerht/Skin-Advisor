@@ -5,7 +5,7 @@ import { useTransitionRouter } from "next-view-transitions";
 import { useSearchParams } from "next/navigation";
 import { LazyMotion, domAnimation, AnimatePresence, m, useReducedMotion } from "framer-motion";
 import Image from "next/image";
-import { ArrowRight, Loader2, X } from "lucide-react";
+import { ArrowRight, Loader2, X, Clock, ScanFace, FileText } from "lucide-react";
 
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
@@ -444,9 +444,14 @@ export default function Home() {
 
                     {/* Info Features */}
                     <div className="flex flex-col md:flex-row items-center justify-center gap-2.5 md:gap-4 mb-10 md:mb-12 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
-                      {["2-5 分钟完成", "多维度精准肌肤状态检测", "定制化专属报告"].map((item, index, arr) => (
-                        <span key={item} className="flex items-center gap-2.5 md:gap-4 text-brand-charcoal/70 text-[15px] md:text-base font-light tracking-[0.06em]">
-                          <span>{item}</span>
+                      {[
+                        { label: "2-5 分钟完成", icon: Clock },
+                        { label: "多维度精准肌肤状态检测", icon: ScanFace },
+                        { label: "定制化专属报告", icon: FileText },
+                      ].map(({ label, icon: Icon }, index, arr) => (
+                        <span key={label} className="flex items-center gap-2 md:gap-3 text-brand-charcoal/70 text-[15px] md:text-base font-light tracking-[0.06em]">
+                          <Icon className="hidden md:block w-4 h-4 text-brand-charcoal/40 flex-shrink-0" strokeWidth={1.5} />
+                          <span>{label}</span>
                           {index < arr.length - 1 && (
                             <span className="hidden md:inline text-brand-charcoal/25" aria-hidden="true">·</span>
                           )}
