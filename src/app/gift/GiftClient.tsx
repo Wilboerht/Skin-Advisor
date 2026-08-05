@@ -135,7 +135,7 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
                 {/* 步骤横排，分隔符分开 */}
                 <div className="flex flex-col md:flex-row items-center md:items-stretch justify-center">
                   {[
-                    { step: "01", title: "完成测肤", desc: "获取你的专属肌肤形象类型" },
+                    { step: "01", title: "完成测肤或护肤习惯问卷", desc: "获取您的肌智派测肤结果及所属派系形象海报" },
                     { step: "02", title: "分享小红书", desc: "发布海报并 @NIHPLOD" },
                     { step: "03", title: "解锁礼遇", desc: "提交分享链接，等待开奖" },
                   ].map((item, i) => (
