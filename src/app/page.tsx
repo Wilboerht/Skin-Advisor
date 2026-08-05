@@ -442,14 +442,14 @@ export default function Home() {
                       在线素颜测肤
                     </h1>
 
-                    {/* Info Chips */}
-                    <div className="flex flex-wrap items-center justify-center gap-2.5 md:gap-3 mb-10 md:mb-12 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
-                      {["2-5 分钟完成", "多维度精准肌肤状态检测", "定制化专属报告"].map((chip) => (
-                        <span
-                          key={chip}
-                          className="px-4 py-1.5 rounded-full border border-brand-charcoal/15 text-brand-charcoal/60 text-[12px] md:text-[13px] font-light tracking-[0.15em] transition-colors duration-300 hover:border-brand-charcoal/30 hover:text-brand-charcoal/80"
-                        >
-                          {chip}
+                    {/* Info Features */}
+                    <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-3 mb-10 md:mb-12 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
+                      {["2-5 分钟完成", "多维度精准肌肤状态检测", "定制化专属报告"].map((item, index, arr) => (
+                        <span key={item} className="flex items-center gap-2 md:gap-3 text-brand-charcoal/60 text-[13px] font-light tracking-[0.08em]">
+                          <span>{item}</span>
+                          {index < arr.length - 1 && (
+                            <span className="hidden md:inline-block w-[3px] h-[3px] rounded-full bg-brand-charcoal/25" aria-hidden="true" />
+                          )}
                         </span>
                       ))}
                     </div>
