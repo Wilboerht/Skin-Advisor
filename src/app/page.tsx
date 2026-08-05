@@ -443,12 +443,12 @@ export default function Home() {
                     </h1>
 
                     {/* Info Features */}
-                    <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-3 mb-10 md:mb-12 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
+                    <div className="flex flex-col md:flex-row items-center justify-center gap-2.5 md:gap-4 mb-10 md:mb-12 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
                       {["2-5 分钟完成", "多维度精准肌肤状态检测", "定制化专属报告"].map((item, index, arr) => (
-                        <span key={item} className="flex items-center gap-2 md:gap-3 text-brand-charcoal/60 text-[13px] font-light tracking-[0.08em]">
+                        <span key={item} className="flex items-center gap-2.5 md:gap-4 text-brand-charcoal/70 text-[15px] md:text-base font-light tracking-[0.06em]">
                           <span>{item}</span>
                           {index < arr.length - 1 && (
-                            <span className="hidden md:inline-block w-[3px] h-[3px] rounded-full bg-brand-charcoal/25" aria-hidden="true" />
+                            <span className="hidden md:inline text-brand-charcoal/25" aria-hidden="true">·</span>
                           )}
                         </span>
                       ))}
