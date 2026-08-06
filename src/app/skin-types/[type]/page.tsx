@@ -75,6 +75,7 @@ export default async function TypeResultPage({ params }: PageProps) {
         headline={`${data.typeName}肤质详解 — NIHPLOD 肌肤类型分析`}
         description={data.m1.persona}
         image={`${BASE_URL}/images/character/${data.ipKey}/${data.ipKey}_female.png`}
+        url={`${BASE_URL}/skin-types/${type}`}
       />
       <FAQPageSchema faqs={faqs} />
       <BreadcrumbSchema

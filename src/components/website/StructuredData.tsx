@@ -140,6 +140,7 @@ export function ArticleSchema({
   datePublished,
   dateModified,
   authorName = "NIHPLOD",
+  url,
 }: {
   headline: string;
   description: string;
@@ -147,6 +148,7 @@ export function ArticleSchema({
   datePublished?: string;
   dateModified?: string;
   authorName?: string;
+  url: string;
 }) {
   const schema: Record<string, unknown> = {
     "@context": "https://schema.org",
@@ -170,7 +172,7 @@ export function ArticleSchema({
     dateModified: dateModified || new Date().toISOString().split("T")[0],
     mainEntityOfPage: {
       "@type": "WebPage",
-      "@id": BASE_URL,
+      "@id": url,
     },
   };
 
@@ -245,14 +247,6 @@ export function WebsiteSearchSchema() {
     name: "NIHPLOD AI 护肤顾问",
     description:
       "基于 AI 面部识别技术的专业护肤分析平台",
-    potentialAction: {
-      "@type": "SearchAction",
-      target: {
-        "@type": "EntryPoint",
-        urlTemplate: `${BASE_URL}/skin-types?q={search_term_string}`,
-      },
-      "query-input": "required name=search_term_string",
-    },
   };
 
   return (

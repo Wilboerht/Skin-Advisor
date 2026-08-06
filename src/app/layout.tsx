@@ -35,9 +35,6 @@ export const metadata: Metadata = {
   creator: "NIHPLOD",
   publisher: "NIHPLOD",
   formatDetection: { telephone: false },
-  alternates: {
-    canonical: "/",
-  },
   openGraph: {
     type: "website",
     locale: "zh_CN",
