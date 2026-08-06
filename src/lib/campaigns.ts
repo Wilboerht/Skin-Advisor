@@ -3,16 +3,6 @@ import { z } from "zod"
 export const CAMPAIGN_STATUSES = ["draft", "active", "ended"] as const
 export type CampaignStatus = (typeof CAMPAIGN_STATUSES)[number]
 
-export const CAMPAIGN_ENTRY_STATUSES = ["pending", "verified", "rejected", "won"] as const
-export type CampaignEntryStatus = (typeof CAMPAIGN_ENTRY_STATUSES)[number]
-
-export const CAMPAIGN_ENTRY_STATUS_LABELS: Record<CampaignEntryStatus, string> = {
-  pending: "待审核",
-  verified: "已通过",
-  rejected: "未通过",
-  won: "已中奖",
-}
-
 export const CAMPAIGN_STATUS_LABELS: Record<CampaignStatus, string> = {
   draft: "草稿",
   active: "进行中",
@@ -43,30 +33,6 @@ export interface Campaign {
   rules: string | null
   maxEntries: number
   sortOrder: number
-  winnerIds: string[] | null
-  _count: { entries: number }
-}
-
-export interface CampaignEntry {
-  id: string
-  status: CampaignEntryStatus
-  lotteryCode: string | null
-  prizeName: string | null
-  shareLink: string | null
-  contactName: string | null
-  contactPhone: string | null
-  contactEmail: string | null
-  reviewNote: string | null
-  createdAt: string
-  reviewedAt: string | null
-  verifiedAt: string | null
-  wonAt: string | null
-  user: {
-    id: string
-    name: string | null
-    email: string | null
-    phoneNumber: string | null
-  } | null
 }
 
 export interface PaginatedResponse<T> {
@@ -111,19 +77,6 @@ export const campaignUpdateSchema = campaignCreateSchema.partial().omit({ status
 export type CampaignCreateInput = z.infer<typeof campaignCreateSchema>
 export type CampaignUpdateInput = z.infer<typeof campaignUpdateSchema>
 
-export const entryPatchSchema = z.object({
-  entryId: z.string().min(1),
-  action: z.enum(["verify", "reject", "win", "unwin"]),
-  reviewNote: z.string().max(2000).optional(),
-  prizeName: z.string().max(200).optional(),
-})
-
-export const entryQuerySchema = z.object({
-  status: z.enum(CAMPAIGN_ENTRY_STATUSES).optional(),
-  page: z.coerce.number().min(1).default(1),
-  limit: z.coerce.number().min(1).max(100).default(50),
-})
-
 export const campaignQuerySchema = z.object({
   status: z.enum(CAMPAIGN_STATUSES).optional(),
   page: z.coerce.number().min(1).default(1),
@@ -132,10 +85,6 @@ export const campaignQuerySchema = z.object({
 
 export function isValidCampaignStatus(value: string): value is CampaignStatus {
   return CAMPAIGN_STATUSES.includes(value as CampaignStatus)
-}
-
-export function isValidEntryStatus(value: string): value is CampaignEntryStatus {
-  return CAMPAIGN_ENTRY_STATUSES.includes(value as CampaignEntryStatus)
 }
 
 export function toISOLocalString(date: Date): string {

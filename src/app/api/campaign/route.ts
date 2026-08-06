@@ -19,9 +19,6 @@ export async function GET(req: NextRequest) {
         endDate: { gte: now },
       },
       orderBy: { sortOrder: "desc" },
-      include: {
-        _count: { select: { entries: true } },
-      },
     })
 
     if (!campaign) {
@@ -42,8 +39,6 @@ export async function GET(req: NextRequest) {
         shareText: campaign.shareText,
         rules: campaign.rules,
         maxEntries: campaign.maxEntries,
-        entryCount: campaign._count.entries,
-        winnerIds: campaign.winnerIds,
       },
     })
   } catch (error) {

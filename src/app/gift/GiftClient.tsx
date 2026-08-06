@@ -3,7 +3,7 @@
 import { Fragment, useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Gift, Users, Sparkles, AlertCircle, Loader2 } from "lucide-react";
+import { ArrowRight, Gift, Sparkles, AlertCircle, Loader2 } from "lucide-react";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
 import { CountdownTimer } from "@/components/advisor/CountdownTimer";
 
@@ -20,8 +20,6 @@ interface CampaignData {
   shareText: string | null;
   rules: string | null;
   maxEntries: number;
-  entryCount: number;
-  winnerIds: string[] | null;
 }
 
 type PageState = "loading" | "no_campaign" | "show_campaign" | "error";
@@ -93,10 +91,6 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
 
               {pageState === "show_campaign" && campaign && (
                 <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8">
-                  <div className={`flex items-center gap-2 ${new Date() >= new Date(campaign.startDate) ? "text-xs" : "text-sm"} text-brand-charcoal/60`}>
-                    <Users className="w-4 h-4 text-brand-charcoal/70" />
-                    <span>已参与 {campaign.entryCount} 人{campaign.maxEntries > 0 ? ` / ${campaign.maxEntries}` : ""}</span>
-                  </div>
                   {campaign.drawDate && (
                     <div className={`flex items-center gap-2 ${new Date() >= new Date(campaign.startDate) ? "text-xs" : "text-sm"} text-brand-charcoal/60`}>
                       <Sparkles className="w-4 h-4 text-brand-charcoal/70" />
@@ -138,7 +132,7 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
                     {[
                       { step: "01", title: "完成测肤或护肤习惯问卷", desc: "获取您的肌智派测肤结果及所属派系形象海报" },
                       { step: "02", title: "分享小红书", desc: "发布海报并 @NIHPLOD" },
-                      { step: "03", title: "解锁礼遇", desc: "完成分享即参与抽奖，等待开奖" },
+                      { step: "03", title: "查看好礼", desc: "浏览活动奖品详情与活动规则" },
                     ].map((item, i) => (
                       <div key={i} className="flex items-start gap-4 md:gap-6">
                         <div className="flex flex-col items-center self-stretch">
@@ -261,7 +255,7 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
                     {[
                       { step: "01", title: "生成专属海报", desc: "点击下方按钮，生成您的专属活动海报与小红书分享文案。" },
                       { step: "02", title: "分享到小红书", desc: "将海报发布到您的小红书账号，附上活动文案并 @NIHPLOD" },
-                      { step: "03", title: "解锁礼遇", desc: `完成分享即参与抽奖，等待开奖${campaign.drawDate ? `（开奖时间：${formatDate(campaign.drawDate)}）` : ""}。` },
+                      { step: "03", title: "查看好礼", desc: `浏览活动奖品详情${campaign.drawDate ? `（活动时间：${formatDate(campaign.drawDate)}）` : ""}。` },
                     ].map((item, i) => (
                       <div key={i} className="flex items-start gap-4 md:gap-6">
                         <div className="flex flex-col items-center self-stretch">

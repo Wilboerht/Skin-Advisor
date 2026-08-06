@@ -29,7 +29,6 @@ export const GET = withAdminAuth(async (req) => {
         orderBy: { sortOrder: "desc" },
         skip,
         take: limit,
-        include: { _count: { select: { entries: true } } },
       }),
       prisma.campaign.count({ where }),
     ])

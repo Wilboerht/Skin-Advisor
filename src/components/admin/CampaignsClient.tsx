@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react"
 import { CampaignList } from "./CampaignList"
 import { CampaignFormModal } from "./CampaignFormModal"
-import { CampaignEntriesModal } from "./CampaignEntriesModal"
 import { useConfirm } from "@/components/ui/ConfirmModal"
 import { useToast } from "@/components/ui/Toast"
 import {
@@ -26,9 +25,6 @@ export function CampaignsClient() {
 
   const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null)
   const [showForm, setShowForm] = useState(false)
-
-  const [entriesCampaign, setEntriesCampaign] = useState<Campaign | null>(null)
-  const [showEntries, setShowEntries] = useState(false)
 
   const fetchCampaigns = useCallback(async () => {
     setLoading(true)
@@ -104,7 +100,7 @@ export function CampaignsClient() {
     if (campaign.status === "draft" && newStatus === "active") {
       const ok = await confirm({
         title: "发布活动",
-        message: `确定要发布活动 "${campaign.title}" 吗？发布后活动将对外可见，参与者可开始提交。`,
+        message: `确定要发布活动 "${campaign.title}" 吗？发布后活动将对外可见。`,
         variant: "warning",
         confirmText: "发布",
       })
@@ -132,16 +128,6 @@ export function CampaignsClient() {
     }
   }
 
-  const handleOpenEntries = (campaign: Campaign) => {
-    setEntriesCampaign(campaign)
-    setShowEntries(true)
-  }
-
-  const handleEntriesClose = () => {
-    setShowEntries(false)
-    setEntriesCampaign(null)
-  }
-
   return (
     <div className="space-y-6">
       <CampaignList
@@ -156,7 +142,6 @@ export function CampaignsClient() {
         onEdit={handleOpenEdit}
         onDelete={handleDelete}
         onStatusChange={handleStatusChange}
-        onOpenEntries={handleOpenEntries}
       />
 
       {totalPages > 1 && (
@@ -189,14 +174,6 @@ export function CampaignsClient() {
         campaign={editingCampaign}
         onClose={handleFormClose}
         onSuccess={handleFormSuccess}
-      />
-
-      <CampaignEntriesModal
-        key={`campaign-entries-${showEntries ? entriesCampaign?.id ?? "none" : "closed"}`}
-        isOpen={showEntries}
-        campaign={entriesCampaign}
-        onClose={handleEntriesClose}
-        confirm={confirm}
       />
 
       <ConfirmDialog />

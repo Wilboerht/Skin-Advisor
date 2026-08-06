@@ -10,19 +10,19 @@ export const revalidate = 300;
 
 export const metadata: Metadata = withDefaultOgImage({
   title: "肌智派送好礼",
-  description: "完成 NIHPLOD AI 测肤并分享至小红书，即可参与「肌智派」抽奖活动，赢取精选护肤好礼。",
-  keywords: ["NIHPLOD", "肌智派", "护肤抽奖", "AI测肤活动", "小红书分享", "护肤礼包"],
+  description: "探索 NIHPLOD AI 测肤活动，了解精选护肤好礼。",
+  keywords: ["NIHPLOD", "肌智派", "AI测肤活动", "护肤礼包"],
   alternates: { canonical: "/gift" },
   openGraph: {
-    title: "NIHPLOD 肌智派 · 分享测肤赢好礼",
-    description: "完成 AI 测肤，分享小红书，参与抽奖赢取护肤礼包。",
+    title: "NIHPLOD 肌智派 · 精选护肤好礼",
+    description: "探索 NIHPLOD AI 测肤活动，了解精选护肤好礼。",
     type: "website",
     locale: "zh_CN",
   },
   twitter: {
     card: "summary_large_image",
-    title: "NIHPLOD 肌智派 · 分享测肤赢好礼",
-    description: "完成 AI 测肤，分享小红书，参与抽奖赢取护肤礼包。",
+    title: "NIHPLOD 肌智派 · 精选护肤好礼",
+    description: "探索 NIHPLOD AI 测肤活动，了解精选护肤好礼。",
   },
 });
 
@@ -33,7 +33,6 @@ export default async function GiftPage() {
     campaign = await prisma.campaign.findFirst({
       where: { status: "active", startDate: { lte: new Date() }, endDate: { gte: new Date() } },
       orderBy: { sortOrder: "asc" },
-      include: { _count: { select: { entries: true } } },
     });
   } catch {
     // 构建时数据库不可用则降级为空活动（运行时 ISR 会重新获取）
@@ -53,8 +52,6 @@ export default async function GiftPage() {
         shareText: campaign.shareText,
         rules: campaign.rules,
         maxEntries: campaign.maxEntries,
-        entryCount: campaign._count.entries,
-        winnerIds: campaign.winnerIds as string[] | null,
       }
     : null;
 

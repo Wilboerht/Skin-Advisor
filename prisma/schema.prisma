@@ -388,59 +388,12 @@ model Campaign {
   rules       String?                 // 活动规则（Markdown）
   maxEntries  Int      @default(0)    // 参与上限（0=不限制）
   drawDate    DateTime?               // 开奖时间（显示用）
-  winnerIds   Json?                   // 中奖用户 entryId 数组
   sortOrder   Int      @default(0)    // 排序权重
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  entries     CampaignEntry[]
-
   @@index([status, startDate])
   @@index([sortOrder])
-}
-
-// 活动参与记录
-model CampaignEntry {
-  id          String   @id @default(cuid())
-  campaignId  String
-  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  userId      String?
-  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  guestId     String?                 // 游客标识（指纹）
-  
-  status      String   @default("pending") // pending | verified | rejected | won
-  
-  // 小红书分享链接
-  shareLink   String?                 // 用户提交的小红书分享链接
-  
-  // 抽奖相关
-  lotteryCode String?  @unique        // 抽奖码（如 NPL-XXXX）
-  prizeName   String?                 // 中奖奖品名
-  
-  // 提交人联系信息
-  contactName  String?                // 中奖联系人姓名
-  contactPhone String?                // 中奖联系人电话
-  contactEmail String?                // 中奖联系人邮箱
-  
-  // 审核信息
-  reviewerId   String?                // 审核人（AdminUser id）
-  reviewNote   String?                // 审核备注
-  reviewedAt   DateTime?
-  verifiedAt   DateTime?
-  
-  // 中奖信息
-  wonAt        DateTime?
-  claimedAt    DateTime?              // 领奖时间
-  claimNote    String?                // 领奖备注
-
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  @@unique([campaignId, userId])
-  @@unique([campaignId, guestId])
-  @@index([campaignId, status])
-  @@index([userId])
-  @@index([lotteryCode])
 }
 
 // ===== 产品反馈系统 =====

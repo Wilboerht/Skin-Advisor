@@ -1,6 +1,6 @@
 "use client"
 
-import { Calendar, Edit, Gift, Loader2, Pause, Play, Plus, Trash2, Users } from "lucide-react"
+import { Calendar, Edit, Gift, Loader2, Pause, Play, Plus, Trash2 } from "lucide-react"
 import {
   CAMPAIGN_STATUS_LABELS,
   type Campaign,
@@ -17,7 +17,6 @@ interface CampaignListProps {
   onEdit: (campaign: Campaign) => void
   onDelete: (campaign: Campaign) => void
   onStatusChange: (campaign: Campaign, newStatus: CampaignStatus) => void
-  onOpenEntries: (campaign: Campaign) => void
 }
 
 function formatDate(iso: string): string {
@@ -47,7 +46,6 @@ export function CampaignList({
   onEdit,
   onDelete,
   onStatusChange,
-  onOpenEntries,
 }: CampaignListProps) {
   return (
     <div>
@@ -110,10 +108,6 @@ export function CampaignList({
                       <Calendar className="w-3.5 h-3.5" />
                       {formatDate(c.startDate)} - {formatDate(c.endDate)}
                     </span>
-                    <span className="flex items-center gap-1">
-                      <Users className="w-3.5 h-3.5" />
-                      {c._count.entries} 人参与
-                    </span>
                     {c.drawDate && (
                       <span className="flex items-center gap-1 text-[#8B7355]">
                         开奖：{formatDate(c.drawDate)}
@@ -135,17 +129,6 @@ export function CampaignList({
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  {c.status !== "draft" && (
-                    <button
-                      type="button"
-                      onClick={() => onOpenEntries(c)}
-                      aria-label={`查看参与 - ${c.title}`}
-                      title="查看参与"
-                      className="p-2 rounded-lg text-[#3D4430] hover:bg-[#3D4430]/5 transition-colors"
-                    >
-                      <Users className="w-4 h-4" />
-                    </button>
-                  )}
                   {c.status === "draft" && (
                     <button
                       type="button"
