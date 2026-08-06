@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import { createSsoMiddleware } from "@nihplod/sso-sdk/next";
 import { verifySessionSignature, ADMIN_SESSION_COOKIE_NAME } from "@/lib/session-verify";
 import { verifyCsrfToken } from "@/lib/csrf";
+import { AUTH_COOKIE_NAME } from "@/lib/auth-config";
 
 /**
  * Next.js 全局 Proxy (formerly Middleware)
@@ -10,49 +11,52 @@ import { verifyCsrfToken } from "@/lib/csrf";
  * 注意：此 proxy 在 Edge Runtime 中运行，不使用 Node.js 原生 API
  */
 
+const PUBLIC_PATHS = [
+    "/",                       // 首页
+    "/login",                  // SSO 登录跳转页
+    "/register",               // SSO 注册跳转页
+    "/forgot-password",        // 密码重置弹窗页
+    "/reset-password",         // 密码重置弹窗页
+    "/questions",              // 问卷页（允许游客测试）
+    "/face-scan",              // 面部扫描页（允许游客）
+    "/result",                 // 结果页（允许游客查看分析结果）
+    "/skin-types",             // 肤质类型列表
+    "/skin-types/:path*",      // 具体肤质类型页
+    "/services",               // 顾问服务
+    "/faq",                    // FAQ
+    "/privacy",                // 隐私政策
+    "/terms",                  // 服务条款
+    "/gift",                   // 活动页
+    "/robots.txt",
+    "/sitemap.xml",
+    "/site.webmanifest",       // PWA manifest
+    "/models/:path*",          // face-api 模型文件（静态资源）
+    "/api/auth/callback",
+    "/api/auth/me",
+    "/api/auth/logout",
+    "/api/auth/session-init",
+    "/api/advisor/check-config", // AI 配置检查（游客可用）
+    "/api/advisor/questions",  // 问卷题目（游客可用）
+    "/api/advisor/test-limit", // 测试次数检查（游客可用）
+    "/api/advisor/face-analyze", // 面部分析（游客可用，受 Origin/Referer 保护）
+    "/api/advisor/analyze",    // 肌肤分析（游客可用，受 Origin/Referer 保护）
+    "/api/advisor/session/status", // 分析状态轮询（游客可用）
+    "/api/advisor/stats",      // 公开统计（游客首页/结果页展示）
+    "/api/campaign",           // 当前活动详情（游客可用）
+    "/api/campaign/active",    // 当前活动倒计时（游客可用）
+    "/api/oss/sign",           // 游客上传签名（扫脸后保存图片）
+    "/api/local-upload",       // 游客本地上传端点
+    "/api/admin/:path*",
+    "/admin/:path*",
+    "/api/health",
+];
+
 const ssoMiddleware = createSsoMiddleware({
   clientId: process.env.NEXT_PUBLIC_SSO_CLIENT_ID!,
   ssoBaseUrl: process.env.NEXT_PUBLIC_SSO_BASE_URL!,
   redirectUri: process.env.NEXT_PUBLIC_SSO_REDIRECT_URI!,
   scopes: process.env.NEXT_PUBLIC_SSO_SCOPES || "openid profile",
-    publicPaths: [
-      "/",                       // 首页
-      "/login",                  // SSO 登录跳转页
-      "/register",               // SSO 注册跳转页
-      "/forgot-password",        // 密码重置弹窗页
-      "/reset-password",         // 密码重置弹窗页
-      "/questions",              // 问卷页（允许游客测试）
-      "/face-scan",              // 面部扫描页（允许游客）
-      "/result",                 // 结果页（允许游客查看分析结果）
-      "/skin-types",             // 肤质类型列表
-      "/skin-types/:path*",      // 具体肤质类型页
-      "/services",               // 顾问服务
-      "/faq",                    // FAQ
-      "/privacy",                // 隐私政策
-      "/terms",                  // 服务条款
-      "/gift",                   // 活动页
-      "/robots.txt",
-      "/sitemap.xml",
-      "/site.webmanifest",       // PWA manifest
-      "/models/:path*",          // face-api 模型文件（静态资源）
-      "/api/auth/callback",
-      "/api/auth/me",
-      "/api/auth/logout",
-      "/api/advisor/check-config", // AI 配置检查（游客可用）
-      "/api/advisor/questions",  // 问卷题目（游客可用）
-      "/api/advisor/test-limit", // 测试次数检查（游客可用）
-      "/api/advisor/face-analyze", // 面部分析（游客可用，受 Origin/Referer 保护）
-      "/api/advisor/analyze",    // 肌肤分析（游客可用，受 Origin/Referer 保护）
-      "/api/advisor/session/status", // 分析状态轮询（游客可用）
-      "/api/advisor/stats",      // 公开统计（游客首页/结果页展示）
-      "/api/campaign",           // 当前活动详情（游客可用）
-      "/api/campaign/active",    // 当前活动倒计时（游客可用）
-      "/api/oss/sign",           // 游客上传签名（扫脸后保存图片）
-      "/api/local-upload",       // 游客本地上传端点
-      "/api/admin/:path*",
-      "/admin/:path*",
-      "/api/health",
-    ],
+    publicPaths: PUBLIC_PATHS,
 });
 
 // 敏感路径前缀列表（需要额外安全检查）
@@ -99,6 +103,24 @@ export async function proxy(request: NextRequest) {
         return ssoResponse;
     }
 
+    // ==================== SSO 回调中断恢复 ====================
+    // 若浏览器持有 SSO Cookie 但缺少本地 JWT Cookie（回调中断、
+    // 浏览器关闭等场景），自动引导至 session-init 重新签发本地 session
+    if (
+        pathname !== "/api/auth/session-init" &&
+        !pathname.startsWith("/_next/") &&
+        !pathname.match(/\.\w+$/) &&
+        !PUBLIC_PATHS.includes(pathname)
+    ) {
+        const ssoTokenCookie = request.cookies.get("__Host-nihplod_sso_at")?.value;
+        const localAuthCookie = request.cookies.get(AUTH_COOKIE_NAME)?.value;
+        if (ssoTokenCookie && !localAuthCookie) {
+            const recoveryUrl = new URL("/api/auth/session-init", request.url);
+            recoveryUrl.searchParams.set("return_to", pathname + request.nextUrl.search);
+            return NextResponse.redirect(recoveryUrl);
+        }
+    }
+
     const response = NextResponse.next();
 
     // ==================== CORS 全局配置 ====================
@@ -118,7 +140,7 @@ export async function proxy(request: NextRequest) {
     // ==================== Admin 区域鉴权 ====================
     const isAdminPage = pathname.startsWith("/admin");
     const isAdminApi = pathname.startsWith("/api/admin");
-    if ((isAdminPage || isAdminApi) && !ADMIN_PUBLIC_PATHS.some((p) => pathname === p)) {
+    if ((isAdminPage || isAdminApi) && !ADMIN_PUBLIC_PATHS.some((p) => pathname === p || pathname === p + "/")) {
         const adminSession = request.cookies.get(ADMIN_SESSION_COOKIE_NAME)?.value;
         const sessionData = adminSession
             ? await verifySessionSignature(adminSession)
@@ -138,7 +160,7 @@ export async function proxy(request: NextRequest) {
     }
 
     // ==================== Admin API CSRF 防护 ====================
-    if (!DISABLE_CSRF && isAdminApi && !ADMIN_PUBLIC_PATHS.some((p) => pathname === p)) {
+    if (!DISABLE_CSRF && isAdminApi && !ADMIN_PUBLIC_PATHS.some((p) => pathname === p || pathname === p + "/")) {
         const unsafeMethods = ["POST", "PUT", "PATCH", "DELETE"];
         if (unsafeMethods.includes(request.method)) {
             const reqOrigin = request.headers.get("origin");
@@ -165,6 +187,7 @@ export async function proxy(request: NextRequest) {
         "/api/auth/reset-password",
         "/api/auth/wechat",
         "/api/auth/wechat/bind",
+        "/api/auth/session-init",   // SSO 本地 session 引导（尚无本地 JWT）
         // 匿名/埋点接口：sendBeacon 无法携带自定义 header
         "/api/advisor/analytics/track",
         // 允许游客使用的 AI 分析接口（仍受 AI_ENDPOINTS 的 Origin/Referer/Content-Type 保护）
@@ -174,7 +197,7 @@ export async function proxy(request: NextRequest) {
         "/api/oss/sign",
         "/api/local-upload",
     ];
-    const isCApi = pathname.startsWith("/api/") && !isAdminApi && !csrfExemptPaths.some((p) => pathname === p);
+    const isCApi = pathname.startsWith("/api/") && !isAdminApi && !csrfExemptPaths.some((p) => pathname === p || pathname === p + "/");
     if (isCApi) {
         const csrfResult = await verifyCsrfToken(request);
         if (!csrfResult.valid) {

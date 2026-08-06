@@ -11,6 +11,8 @@
 
 import { jwtVerify } from "jose";
 import type { NextRequest } from "next/server";
+// 直接导入 auth-config 而非 auth — csrf.ts 运行在 Edge Runtime，
+// 不能引入 auth.ts（后者依赖 bcryptjs / prisma 等 Node.js 原生模块）。
 import { AUTH_COOKIE_NAME, getJwtSecret } from "@/lib/auth-config";
 import { CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";

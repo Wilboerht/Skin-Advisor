@@ -12,29 +12,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSignedInternalApiHeaders } from "@/lib/internal-api";
 import { parseOfficialResponse } from "@/lib/official-api";
 import { signLocalSession } from "@/lib/auth";
+import {
+    USER_COOKIE_NAME,
+    USER_REFRESH_COOKIE_NAME,
+    USER_ACCESS_COOKIE_OPTIONS,
+    USER_REFRESH_COOKIE_OPTIONS,
+} from "@/lib/wechat-constants";
 import prisma from "@/lib/prisma";
 import { UserRole } from "@/lib/permissions";
 import { logger } from "@/lib/logger";
-
-// 与官网 src/types/auth.ts 保持一致
-const USER_COOKIE_NAME = "__Host-user_token";
-const USER_REFRESH_COOKIE_NAME = "__Host-user_refresh_token";
-
-const USER_ACCESS_COOKIE_OPTIONS = {
-    httpOnly: true,
-    secure: true,
-    sameSite: "lax" as const,
-    path: "/",
-    maxAge: 15 * 60, // 15 分钟
-};
-
-const USER_REFRESH_COOKIE_OPTIONS = {
-    httpOnly: true,
-    secure: true,
-    sameSite: "lax" as const,
-    path: "/",
-    maxAge: 30 * 24 * 60 * 60, // 30 天
-};
 
 export const dynamic = "force-dynamic";
 
@@ -185,7 +171,7 @@ export async function GET(req: NextRequest) {
             create: {
                 id: userPayload.id,
                 phoneNumber: userPayload.phone,
-                password: "",
+                password: null,
                 name: userPayload.nickname || userPayload.phone,
                 avatarUrl: userPayload.avatar || null,
                 role: UserRole.USER,
@@ -206,7 +192,7 @@ export async function GET(req: NextRequest) {
         response.cookies.set(USER_REFRESH_COOKIE_NAME, result.refreshToken, USER_REFRESH_COOKIE_OPTIONS);
 
         // 立即签发子站本地 session
-        await signLocalSession(response, {
+        const sessionSigned = await signLocalSession(response, {
             id: localUser.id,
             email: null,
             phone: localUser.phoneNumber,
@@ -215,6 +201,14 @@ export async function GET(req: NextRequest) {
             tokenVersion: localUser.tokenVersion,
             dailyTestLimit: localUser.dailyTestLimit,
         });
+
+        if (!signed) {
+            const errorUrl = new URL(redirect, req.url);
+            errorUrl.searchParams.set("wechat_auth", "error");
+            errorUrl.searchParams.set("code", "SESSION_SIGN_FAILED");
+            errorUrl.searchParams.set("message", encodeURIComponent("会话创建失败"));
+            return NextResponse.redirect(errorUrl, 302);
+        }
 
         return response;
 

@@ -8,12 +8,13 @@
 import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
 import { createTokenVerifier, type VerifiedTokenPayload } from "@nihplod/sso-verify";
+import { UserRole } from "@/lib/permissions";
 import prisma from "@/lib/prisma";
 import type { SessionUser } from "@/lib/auth";
 
 const SSO_BASE_URL = process.env.NEXT_PUBLIC_SSO_BASE_URL || "https://nihplod.cn";
 const SSO_CLIENT_ID = process.env.NEXT_PUBLIC_SSO_CLIENT_ID!;
-const ACCESS_TOKEN_COOKIE = "__Host-nihplod_sso_at";
+export const ACCESS_TOKEN_COOKIE = "__Host-nihplod_sso_at";
 
 export const ssoVerifier = createTokenVerifier({
     introspectionEndpoint: `${SSO_BASE_URL}/api/oauth/introspect`,
@@ -28,13 +29,11 @@ export interface SsoAuthUser {
 }
 
 export async function getAccessToken(req?: NextRequest): Promise<string | null> {
-    // 1. Authorization header
     const authHeader = req?.headers.get("authorization");
     if (authHeader?.startsWith("Bearer ")) {
         return authHeader.slice(7);
     }
 
-    // 2. SSO access_token cookie
     const cookieStore = await cookies();
     return cookieStore.get(ACCESS_TOKEN_COOKIE)?.value || null;
 }
@@ -54,17 +53,23 @@ export async function getSsoUser(req?: NextRequest): Promise<SsoAuthUser | null>
     };
 }
 
-/**
- * 兼容旧 getSession() 的 SSO 版实现。
- * 通过 access_token 验证主站身份后，返回本地 User 表的完整会话信息。
- * 若本地不存在该用户则自动创建（保留肤质测试等业务关联）。
- */
-export async function getSessionUser(req?: NextRequest): Promise<SessionUser | null> {
-    const payload = await verifySsoToken(req);
-    if (!payload?.sub) return null;
+export async function upsertLocalUser(payload: VerifiedTokenPayload) {
+    if (!payload.sub) return null;
 
-    let dbUser = await prisma.user.findUnique({
+    const dbUser = await prisma.user.upsert({
         where: { id: payload.sub },
+        update: {
+            phoneNumber: payload.phone || undefined,
+            name: payload.phone || undefined,
+        },
+        create: {
+            id: payload.sub,
+            phoneNumber: payload.phone || null,
+            name: payload.phone || "",
+            password: null,
+            role: UserRole.USER,
+            tokenVersion: 0,
+        },
         select: {
             id: true,
             email: true,
@@ -76,27 +81,20 @@ export async function getSessionUser(req?: NextRequest): Promise<SessionUser | n
         },
     });
 
-    if (!dbUser) {
-        dbUser = await prisma.user.create({
-            data: {
-                id: payload.sub,
-                phoneNumber: payload.phone || null,
-                name: payload.phone || "",
-                password: "",
-                role: "user",
-                tokenVersion: 0,
-            },
-            select: {
-                id: true,
-                email: true,
-                phoneNumber: true,
-                name: true,
-                role: true,
-                dailyTestLimit: true,
-                tokenVersion: true,
-            },
-        });
-    }
+    return dbUser;
+}
+
+/**
+ * 兼容旧 getSession() 的 SSO 版实现。
+ * 通过 access_token 验证主站身份后，返回本地 User 表的完整会话信息。
+ * 若本地不存在该用户则自动创建（保留肤质测试等业务关联）。
+ */
+export async function getSessionUser(req?: NextRequest): Promise<SessionUser | null> {
+    const payload = await verifySsoToken(req);
+    if (!payload?.sub) return null;
+
+    const dbUser = await upsertLocalUser(payload);
+    if (!dbUser) return null;
 
     return {
         id: dbUser.id,

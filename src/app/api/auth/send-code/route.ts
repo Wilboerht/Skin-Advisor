@@ -29,13 +29,15 @@ export async function POST(req: NextRequest) {
         }
 
         const cookieStore = await cookies();
-        const allCookies = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ');
+        const authCookies = cookieStore.getAll()
+            .filter(c => c.name.startsWith("__Host-"))
+            .map(c => `${c.name}=${c.value}`).join('; ');
 
         const result = await callOfficialApi<OfficialApiResponse<{ expiresIn: number }>>({
             method: "POST",
             path: "/api/auth/send-code",
             body,
-            cookies: allCookies,
+            cookies: authCookies,
             requireSignature: false,
             timeoutMs: 30000,
         });

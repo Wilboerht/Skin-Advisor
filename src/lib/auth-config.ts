@@ -110,7 +110,7 @@ export async function verifyRefreshToken(token: string): Promise<JWTPayload | nu
 }
 
 /**
- * Access Token Cookie 配置（15 分钟）
+ * Access Token Cookie 配置（1 小时，与 SSO access token 对齐）
  */
 export function accessCookieOptions(secure: boolean = true) {
     return {
@@ -118,7 +118,7 @@ export function accessCookieOptions(secure: boolean = true) {
         secure,
         sameSite: "strict" as const,
         path: "/",
-        maxAge: 15 * 60,
+        maxAge: 60 * 60,
     };
 }
 

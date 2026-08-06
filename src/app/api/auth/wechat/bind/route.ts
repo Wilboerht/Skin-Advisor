@@ -15,27 +15,13 @@ import { UserRole } from "@/lib/permissions";
 import { createSignedInternalApiHeaders } from "@/lib/internal-api";
 import { parseOfficialResponse } from "@/lib/official-api";
 import { signLocalSession } from "@/lib/auth";
+import {
+    USER_COOKIE_NAME,
+    USER_REFRESH_COOKIE_NAME,
+    USER_ACCESS_COOKIE_OPTIONS,
+    USER_REFRESH_COOKIE_OPTIONS,
+} from "@/lib/wechat-constants";
 import { logger } from "@/lib/logger";
-
-// 与官网 src/types/auth.ts 保持一致
-const USER_COOKIE_NAME = "__Host-user_token";
-const USER_REFRESH_COOKIE_NAME = "__Host-user_refresh_token";
-
-const USER_ACCESS_COOKIE_OPTIONS = {
-    httpOnly: true,
-    secure: true,
-    sameSite: "lax" as const,
-    path: "/",
-    maxAge: 15 * 60,
-};
-
-const USER_REFRESH_COOKIE_OPTIONS = {
-    httpOnly: true,
-    secure: true,
-    sameSite: "lax" as const,
-    path: "/",
-    maxAge: 30 * 24 * 60 * 60,
-};
 
 interface OfficialBindUser {
     id: string;
@@ -140,7 +126,7 @@ export async function POST(req: NextRequest) {
             create: {
                 id: userPayload.id,
                 phoneNumber: userPayload.phone,
-                password: "",
+                password: null,
                 name: userPayload.nickname || userPayload.phone,
                 avatarUrl: userPayload.avatar || null,
                 role: UserRole.USER,
@@ -164,7 +150,7 @@ export async function POST(req: NextRequest) {
         // 清除临时绑定 token Cookie
         response.cookies.delete("__Host-wechat_bind_token");
 
-        await signLocalSession(response, {
+        const sessionOk = await signLocalSession(response, {
             id: localUser.id,
             email: userPayload.email || null,
             phone: localUser.phoneNumber,
@@ -173,6 +159,10 @@ export async function POST(req: NextRequest) {
             tokenVersion: localUser.tokenVersion,
             dailyTestLimit: localUser.dailyTestLimit,
         });
+
+        if (!sessionOk) {
+            return apiError(ErrorCode.INTERNAL_ERROR, "会话创建失败", 500);
+        }
 
         return response;
 

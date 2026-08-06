@@ -1,10 +1,16 @@
 import prisma from "@/lib/prisma"
 import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server"
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
 // GET /api/campaign - 获取当前活跃活动
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
+    const ip = getClientIP(req);
+    const limit = await rateLimit(`campaign-ip-${ip}`, "default", { maxRequests: 30, windowMs: 60 * 1000 });
+    if (!limit.success) {
+      return NextResponse.json({ error: "请求过于频繁，请稍后再试" }, { status: 429 });
+    }
     const now = new Date()
     const campaign = await prisma.campaign.findFirst({
       where: {

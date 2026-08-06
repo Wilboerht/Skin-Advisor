@@ -288,7 +288,7 @@ export async function POST(request: NextRequest) {
         }
 
         // 4. 检查使用限制 (Guest/Member)
-        // 提前获取用户会话，避免 freeRetry 路径中重复调用 getSession()
+        // 提前获取用户会话，避免 freeRetry 路径中重复调用 getSessionUser()
         const user = await getSessionUser(request);
 
         // freeRetry 有效性标记：外部仅做快速预筛（session 存在 + 已完成），

@@ -62,7 +62,6 @@ export function AuthModal() {
 
     const [showPassword, setShowPassword] = useState(false);
     const [mobileAgreed, setMobileAgreed] = useState(false);
-    const [wechatExchangeToken, setWechatExchangeToken] = useState<string | null>(null);
     const [agreementShake, setAgreementShake] = useState(0);
     const [mobileForgotStep, setMobileForgotStep] = useState<"phone" | "code" | "password" | "success">("phone");
 
@@ -98,7 +97,6 @@ export function AuthModal() {
             setMobileAgreed(false);
             setMobileForgotStep("phone");
             setLoginMethod("password");
-            setWechatExchangeToken(null);
             setAgreementShake(0);
         }
     }, [isOpen]);
@@ -207,8 +205,8 @@ export function AuthModal() {
     };
 
     const handleCancelWechatBind = () => {
-        // 清除微信授权凭证状态（当前使用 URL 参数 wechat_exchange_token，无对应 Cookie）
-        setWechatExchangeToken(null);
+        // 微信绑定凭证由 httpOnly Cookie (__Host-wechat_bind_token) 管理
+        // 取消绑定时后端清除该 Cookie，前端无需额外操作
         toast.error("微信登录已取消，请使用手机号登录");
         closeAuthModal();
     };
@@ -910,8 +908,8 @@ export function AuthModal() {
                                                 type="tel"
                                                 inputMode="numeric"
                                                 required
-                                                value={regPhone}
-                                                onChange={(e) => setRegPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
+                                                value={forgotPhone}
+                                                onChange={(e) => setForgotPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
                                                 className={pcInputClass}
                                                 placeholder="手机号"
                                             />

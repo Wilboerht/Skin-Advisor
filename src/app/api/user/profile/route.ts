@@ -3,12 +3,19 @@ import { apiError } from "@/lib/api-response";
 import { ErrorCode } from "@/lib/error-codes";
 import prisma from "@/lib/prisma";
 import { getSessionUser, getAccessToken } from "@/lib/sso-auth";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { logger } from "@/lib/logger";
 
 const SSO_BASE_URL = process.env.NEXT_PUBLIC_SSO_BASE_URL || "https://nihplod.cn";
 
 export async function PUT(req: NextRequest) {
     try {
+        const ip = getClientIP(req);
+        const limit = await rateLimit(`profile-put-ip-${ip}`, "default", { maxRequests: 10, windowMs: 60 * 1000 });
+        if (!limit.success) {
+            return apiError(ErrorCode.RATE_LIMITED, "请求过于频繁，请稍后再试", 429);
+        }
+
         const session = await getSessionUser(req);
         if (!session) {
             return apiError(ErrorCode.UNAUTHORIZED, "请先登录", 401);

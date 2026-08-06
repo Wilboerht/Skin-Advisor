@@ -74,12 +74,23 @@ export async function POST(request: NextRequest) {
     }
 }
 
-// GET: 查询产品反馈统计（公开，用于展示平均评分等）
+// GET: 查询产品反馈（productId=公开聚合；userId=需登录且仅限本人）
 export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
         const productId = searchParams.get("productId");
         const userId = searchParams.get("userId");
+
+        if (userId) {
+            // 查询个人反馈历史需登录且仅限本人
+            const user = await getSessionUser(request);
+            if (!user) {
+                return NextResponse.json({ error: "请先登录" }, { status: 401 });
+            }
+            if (user.id !== userId) {
+                return NextResponse.json({ error: "无权查看他人反馈" }, { status: 403 });
+            }
+        }
 
         if (productId) {
             // 查询单个产品的反馈统计

@@ -78,7 +78,7 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
         ]);
 
         const totalCount = count + inProgressCount;
-        // getSession() 已返回最新的 dailyTestLimit（每次调用都查数据库确认状态）
+        // getSessionUser() 已返回最新的 dailyTestLimit（每次调用都查数据库确认状态）
         const limit = getUserDailyLimit(user);
         return {
             canTest: totalCount < limit,
