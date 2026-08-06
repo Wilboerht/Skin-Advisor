@@ -109,7 +109,7 @@ export async function PUT(req: NextRequest) {
                 phoneNumber: user.phone,
                 password: null,
                 name: user.nickname || user.phone,
-                role: "user",
+                role: UserRole.USER,
                 tokenVersion: 0,
             },
         });

@@ -16,13 +16,26 @@ export interface User {
     avatar?: string | null;
 }
 
+// --- Types ---
+
+export interface User {
+    id: string;
+    email?: string | null;
+    phone?: string | null;
+    name?: string;
+    role: string;
+    avatar?: string | null;
+}
+
 interface AuthContextType {
     user: User | null;
     loading: boolean;
     isInitialized: boolean;
-    login: () => Promise<void>;
-    loginWithCode: () => Promise<void>;
-    register: () => Promise<void>;
+    // SSO 迁移后所有 credential 参数不再使用（由 nihplod.cn 集中处理），
+    // 保留参数签名以维持向后兼容，实际调用均忽略参数
+    login: (credentials?: { email?: string; phone?: string; password?: string }) => Promise<void>;
+    loginWithCode: (credentials: { phone: string; code: string }) => Promise<void>;
+    register: (userData?: { email?: string; phone?: string; password?: string; name?: string; code?: string }) => Promise<void>;
     logout: () => Promise<void>;
     refresh: () => Promise<void>;
 }
@@ -54,18 +67,19 @@ function UserProviderInner({ children }: { children: ReactNode }) {
 
     const user = useMemo(() => mapSsoUserToLegacyUser(ssoUser), [ssoUser]);
 
-    // Preserve legacy async signatures while delegating to SSO
-    const login = async (_credentials?: LoginCredentials) => {
+    // Preserve legacy async signatures while delegating to SSO (credentials ignored)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const login = async (_credentials?: { email?: string; phone?: string; password?: string }) => {
         await ssoLogin();
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const loginWithCode = async (_credentials: { phone: string; code: string }) => {
-        // SSO provider handles SMS code login on the central login page
         await ssoLogin();
     };
 
-    const register = async (_userData?: RegisterData) => {
-        // SSO provider handles registration on the central login page
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const register = async (_userData?: { email?: string; phone?: string; password?: string; name?: string; code?: string }) => {
         await ssoLogin();
     };
 
