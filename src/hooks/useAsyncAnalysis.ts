@@ -257,8 +257,8 @@ export function useAsyncAnalysis() {
             }
 
             // 刷新页面时复用正在分析中的 sessionId，避免重复扣费/重复生成新会话
-            // 仅在当前浏览器会话（sessionStorage）中保留，关闭标签页后不再复用
-            const ANALYZING_TTL_MS = 80 * 1000; // 短于服务端超时(90s)，避免获取到已清理的 session
+            // sessionStorage（标签页内刷新）+ localStorage 持久备份（关闭标签页后重新打开可恢复）
+            const ANALYZING_TTL_MS = 80 * 1000;
             let analyzingSessionId: string | null = null;
             let analyzingStartedAt = 0;
             try {
@@ -266,6 +266,21 @@ export function useAsyncAnalysis() {
                 analyzingStartedAt = Number(sessionStorage.getItem(STORAGE_KEYS.ADVISOR_ANALYZING_STARTED_AT) || '0');
             } catch (e) {
                 console.warn("sessionStorage access failed", e);
+            }
+            // sessionStorage 为空时尝试从 localStorage 恢复（关闭标签页后场景）
+            if (!analyzingSessionId) {
+                try {
+                    const localEntry = localStorage.getItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_LOCAL);
+                    if (localEntry) {
+                        const parsed = JSON.parse(localEntry);
+                        if (parsed.sessionId && (Date.now() - parsed.startedAt) < ANALYZING_TTL_MS) {
+                            analyzingSessionId = parsed.sessionId;
+                            analyzingStartedAt = parsed.startedAt;
+                        }
+                    }
+                } catch {
+                    // localStorage parse failed, ignore
+                }
             }
             const isAnalyzingSessionValid = analyzingSessionId && (Date.now() - analyzingStartedAt) < ANALYZING_TTL_MS;
 
@@ -286,8 +301,13 @@ export function useAsyncAnalysis() {
                 try {
                     sessionStorage.setItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_ID, sessionId);
                     sessionStorage.setItem(STORAGE_KEYS.ADVISOR_ANALYZING_STARTED_AT, String(Date.now()));
+                    // 同步持久化到 localStorage（关闭标签页后仍可恢复）
+                    localStorage.setItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_LOCAL, JSON.stringify({
+                        sessionId,
+                        startedAt: Date.now(),
+                    }));
                 } catch (e) {
-                    console.warn("sessionStorage access failed", e);
+                    console.warn("sessionStorage/localStorage access failed", e);
                 }
             }
 
@@ -604,8 +624,9 @@ export function useAsyncAnalysis() {
             try {
                 sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_ID);
                 sessionStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_STARTED_AT);
+                localStorage.removeItem(STORAGE_KEYS.ADVISOR_ANALYZING_SESSION_LOCAL);
             } catch (e) {
-                console.warn("sessionStorage access failed", e);
+                console.warn("sessionStorage/localStorage access failed", e);
             }
         }
     }, [trackAnalysisStart, trackAnalysisComplete, pollSessionResult, user]);

@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ssoVerifier, getAccessToken, upsertLocalUser } from "@/lib/sso-auth";
+import { ssoVerifier, getAccessToken, upsertLocalUser, SSO_BASE_URL } from "@/lib/sso-auth";
 import prisma from "@/lib/prisma";
 import { apiError, apiSuccess } from "@/lib/api-response";
 import { ErrorCode } from "@/lib/error-codes";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { verifyCsrfToken } from "@/lib/csrf";
 import { logger } from "@/lib/logger";
-
-const SSO_BASE_URL = process.env.NEXT_PUBLIC_SSO_BASE_URL || "https://nihplod.cn";
 
 export async function GET(req: NextRequest) {
     const ip = getClientIP(req);

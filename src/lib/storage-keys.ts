@@ -21,12 +21,26 @@ export const STORAGE_KEYS = {
     // 分析中会话（防止刷新页面重复生成 sessionId 导致重复扣费）
     ADVISOR_ANALYZING_SESSION_ID: 'advisor_analyzing_session_id',
     ADVISOR_ANALYZING_STARTED_AT: 'advisor_analyzing_started_at',
+    // localStorage 持久备份（sessionStorage 在关闭标签页后丢失，
+    // 重新打开 /result?status=analyzing 时可从 localStorage 恢复会话 ID）
+    ADVISOR_ANALYZING_SESSION_LOCAL: 'advisor_analyzing_session_local',
 
     // 全局分析锁（防止组件 unmount/remount 或 StrictMode 双 mount 导致重复分析）
     ADVISOR_ANALYSIS_LOCK: 'advisor_analysis_lock',
 
     // 地理位置
     USER_REGION: 'userRegion',
+
+    // 扫描模式与预处理状态
+    ADVISOR_SCAN_MODE: 'advisor_scan_mode',
+    ADVISOR_PREPROCESSING: 'advisor_preprocessing',
+
+    // 地理位置授权（sessionStorage）
+    LOCATION_CONSENT: 'locationConsent',
+
+    // 认证重定向（sessionStorage）
+    AUTH_REDIRECT: 'auth_redirect',
+    ADVISOR_REF_SOURCE: 'advisor_ref_source',
 
     // 会话认领标记（按 sessionId 存储）
     claimedSession: (sessionId: string) => `claimed_${sessionId}`,

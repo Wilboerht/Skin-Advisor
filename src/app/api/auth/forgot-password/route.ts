@@ -5,8 +5,7 @@ import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { callOfficialApi, type OfficialApiResponse } from "@/lib/official-api";
 import { cookies } from "next/headers";
 import { logger } from "@/lib/logger";
-
-const PHONE_REGEX = /^1[3-9]\d{9}$/;
+import { PHONE_REGEX } from "@/lib/validation";
 
 export async function POST(req: NextRequest) {
     try {

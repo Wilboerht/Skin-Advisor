@@ -96,22 +96,3 @@ export function filterHealthyKeys(provider: string, apiKeys: string[]): string[]
         return true;
     });
 }
-
-/**
- * 获取所有 API key 健康状态（供管理后台 AI 成本/监控页使用）
- */
-export function getKeyHealthStatus(): Record<string, Omit<KeyHealthEntry, "cooledUntil"> & { cooledUntil?: number; isCoolingDown: boolean }> {
-    const now = Date.now();
-    const result: Record<string, Omit<KeyHealthEntry, "cooledUntil"> & { cooledUntil?: number; isCoolingDown: boolean }> = {};
-    keyHealthMap.forEach((entry, fingerprint) => {
-        const isCoolingDown = entry.cooledUntil > now;
-        result[fingerprint] = {
-            failCount: entry.failCount,
-            rateLimitCount: entry.rateLimitCount,
-            lastFailureAt: entry.lastFailureAt,
-            ...(isCoolingDown ? { cooledUntil: entry.cooledUntil } : {}),
-            isCoolingDown,
-        };
-    });
-    return result;
-}

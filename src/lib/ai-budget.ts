@@ -107,14 +107,6 @@ export function estimateAICost(
     return Math.round((inputCost + outputCost) * multiplier * 1_000_000) / 1_000_000;
 }
 
-/**
- * 获取模型价格信息（供管理后台 AI 成本页使用）
- */
-export function getModelPricing(provider: string, model: string): ModelPricing {
-    const providerTable = PRICING_TABLE[provider.toLowerCase()] || {};
-    return providerTable[model.toLowerCase()] || DEFAULT_PRICING;
-}
-
 // ============================================================================
 // 预算读取
 // ============================================================================
@@ -381,52 +373,6 @@ export async function recordAIUsage(record: AIUsageRecord): Promise<void> {
 
 // ============================================================================
 // 单用户/单会话异常用量检测（供告警使用）
-// ============================================================================
-
-export interface AnomalyCheckResult {
-    anomaly: boolean;
-    message?: string;
-    userDailyTokens?: number;
-    userDailyCost?: number;
-}
-
-/**
- * 检查单个用户/会话在当日的 AI 用量是否异常突增（供 analyze 路由防滥用接入）
- */
-export async function checkUserUsageAnomaly(
-    userId: string | null | undefined,
-    sessionId: string | null | undefined,
-    thresholdTokens = 50_000,
-    thresholdCost = 5
-): Promise<AnomalyCheckResult> {
-    const day = getDayBounds();
-    const where: { createdAt: { gte: Date; lt: Date }; userId?: string; sessionId?: string } = {
-        createdAt: { gte: day.start, lt: day.end },
-    };
-    if (userId) where.userId = userId;
-    else if (sessionId) where.sessionId = sessionId;
-    else return { anomaly: false };
-
-    const agg = await prisma.aIUsageLog.aggregate({
-        where,
-        _sum: { totalTokens: true, estimatedCost: true },
-    });
-
-    const tokens = agg._sum.totalTokens || 0;
-    const cost = agg._sum.estimatedCost || 0;
-
-    if (tokens >= thresholdTokens || cost >= thresholdCost) {
-        return {
-            anomaly: true,
-            message: `AI 用量异常：userId=${userId || "n/a"}, sessionId=${sessionId || "n/a"}, 日 token=${tokens}, 日 cost=${cost.toFixed(4)} CNY`,
-            userDailyTokens: tokens,
-            userDailyCost: cost,
-        };
-    }
-
-    return { anomaly: false, userDailyTokens: tokens, userDailyCost: cost };
-}
-
 // ============================================================================
 // 预算健康状态（供管理端 AI 成本页使用）
 // ============================================================================

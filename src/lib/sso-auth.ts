@@ -13,6 +13,7 @@ import prisma from "@/lib/prisma";
 import type { SessionUser } from "@/lib/auth";
 
 const SSO_BASE_URL = process.env.NEXT_PUBLIC_SSO_BASE_URL || "https://nihplod.cn";
+export { SSO_BASE_URL };
 const SSO_CLIENT_ID = process.env.NEXT_PUBLIC_SSO_CLIENT_ID!;
 export const ACCESS_TOKEN_COOKIE = "__Host-nihplod_sso_at";
 

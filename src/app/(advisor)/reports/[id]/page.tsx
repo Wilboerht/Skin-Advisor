@@ -3,6 +3,7 @@ import { cache } from "react";
 import ResultClient from "../../result/ResultClient";
 import { type ComprehensiveResult, normalizeAnalysisResult } from "@/lib/analysis-result";
 import prisma from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 import { getSessionUser } from "@/lib/sso-auth";
 import { notFound, redirect } from "next/navigation";
 import type { FaceAnalysisResult } from "@/lib/advisor-utils";
@@ -57,7 +58,7 @@ export default async function ReportDetailPage(props: {
                 };
             }
         } catch (e) {
-            console.error("Failed to fetch report:", e);
+            logger.error(`Failed to fetch report: ${String(e)}`);
             notFound();
         }
     }
@@ -123,7 +124,7 @@ export async function generateMetadata(props: {
                 }
             }
         } catch (e) {
-            console.error(e);
+            logger.error(String(e));
         }
     }
 

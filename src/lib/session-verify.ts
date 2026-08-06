@@ -7,6 +7,8 @@
  * 使用完全一致的算法，避免维护两套独立实现导致的不一致风险。
  */
 
+import { logger } from "@/lib/logger";
+
 const SESSION_MAX_AGE_MS = 8 * 60 * 60 * 1000;
 
 /**
@@ -123,7 +125,7 @@ export async function verifySessionSignature(
         );
 
         if (!valid) {
-            console.warn("[Security] Session cookie signature mismatch — possible tampering");
+            logger.warn("[Security] Session cookie signature mismatch — possible tampering");
             return null;
         }
 

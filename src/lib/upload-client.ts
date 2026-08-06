@@ -4,20 +4,9 @@
  */
 import { uploadImageToOSS, isOSSConfigured, type UploadMetadata } from "./oss-upload-client";
 import { fetchWithCsrf, fetchWithRetry } from "./fetch-client";
+import { MAX_UPLOAD_SIZE, ALLOWED_UPLOAD_TYPES, validateImageFile } from "./upload-constants";
 
 export type StorageProvider = "oss" | "local";
-
-const MAX_UPLOAD_SIZE = 10 * 1024 * 1024; // 10MB
-const ALLOWED_UPLOAD_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-
-function validateImageFile(file: Blob): void {
-    if (!file.type || !ALLOWED_UPLOAD_TYPES.includes(file.type)) {
-        throw new Error("不支持的图片格式，仅支持 jpg/png/webp/gif");
-    }
-    if (file.size > MAX_UPLOAD_SIZE) {
-        throw new Error("图片大小超过 10MB 限制");
-    }
-}
 
 /**
  * 客户端压缩图片（Canvas API，无需 sharp）
@@ -77,7 +66,7 @@ export async function uploadImage(
     // 优先使用阿里云 OSS
     if (isOSSConfigured()) {
         try {
-            console.log("[Storage] 使用阿里云 OSS 上传");
+            if (process.env.NODE_ENV !== "production") console.log("[Storage] 使用阿里云 OSS 上传");
             return await uploadImageToOSS(compressed, filename, metadata);
         } catch (error) {
             console.warn("[Storage] OSS 上传失败，尝试备选方案:", error);
@@ -85,7 +74,7 @@ export async function uploadImage(
     }
 
     // 降级到本地存储
-    console.log("[Storage] 使用本地存储上传");
+    if (process.env.NODE_ENV !== "production") console.log("[Storage] 使用本地存储上传");
     const signBody: Record<string, unknown> = {
         filename: filename,
         type: compressed.type || "image/jpeg"

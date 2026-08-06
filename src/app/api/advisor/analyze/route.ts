@@ -315,6 +315,18 @@ export async function POST(request: NextRequest) {
         }
 
         if (!isFreeRetryAllowed) {
+            // 清理僵尸会话：超过 2 分钟仍未完成的 analysis（服务器崩溃、网络中断等）
+            // 不清除则这些会话的 analysisStartedAt 会持续占用配额
+            const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
+            await prisma.advisorSession.updateMany({
+                where: {
+                    userId: user?.id,
+                    analysisStartedAt: { lt: twoMinutesAgo },
+                    completedAt: null,
+                },
+                data: { analysisStartedAt: null },
+            });
+
             const usageLimit = await checkUsageLimit(request, body as Record<string, unknown>);
             if (!usageLimit.canTest) {
                 return apiError(ErrorCode.RATE_LIMITED, usageLimit.error || "您已达到今日测试上限", 429);
@@ -339,7 +351,7 @@ export async function POST(request: NextRequest) {
             });
             if (existingSession?.completedAt && existingSession?.analysisResult) {
                 const cachedResult = existingSession.analysisResult as Record<string, unknown>;
-                console.log(`[analyze] Returning cached result for completed session ${effectiveSessionId}`);
+                if (process.env.NODE_ENV !== "production") console.log(`[analyze] Returning cached result for completed session ${effectiveSessionId}`);
                 return NextResponse.json(cachedResult, { status: 200, headers: rateLimitHeaders });
             }
         }

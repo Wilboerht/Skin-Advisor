@@ -4,6 +4,7 @@ import { createSsoMiddleware } from "@nihplod/sso-sdk/next";
 import { verifySessionSignature, ADMIN_SESSION_COOKIE_NAME } from "@/lib/session-verify";
 import { verifyCsrfToken } from "@/lib/csrf";
 import { AUTH_COOKIE_NAME, verifyToken } from "@/lib/auth-config";
+import { ACCESS_TOKEN_COOKIE } from "@/lib/sso-auth";
 
 /**
  * Next.js 全局 Proxy (formerly Middleware)
@@ -31,22 +32,31 @@ const PUBLIC_PATHS = [
     "/sitemap.xml",
     "/site.webmanifest",       // PWA manifest
     "/models/:path*",          // face-api 模型文件（静态资源）
-    "/api/auth/callback",
-    "/api/auth/me",
-    "/api/auth/logout",
-    "/api/auth/session-init",
+      "/api/auth/callback",
+      "/api/auth/me",
+      "/api/auth/logout",
+      "/api/auth/session-init",
+      "/api/auth/send-code",        // 注册/登录短信验证码
+      "/api/auth/forgot-password",  // 密码重置发起
+      "/api/auth/reset-password",   // 密码重置执行
+      "/api/auth/wechat",           // 微信 OAuth 初始跳转
+      "/api/auth/wechat/bind",      // 微信手机号绑定
+      "/api/auth/wechat/callback",  // 微信 OAuth 回调
     "/api/advisor/check-config", // AI 配置检查（游客可用）
     "/api/advisor/questions",  // 问卷题目（游客可用）
     "/api/advisor/test-limit", // 测试次数检查（游客可用）
     "/api/advisor/face-analyze", // 面部分析（游客可用，受 Origin/Referer 保护）
     "/api/advisor/analyze",    // 肌肤分析（游客可用，受 Origin/Referer 保护）
-    "/api/advisor/session/status", // 分析状态轮询（游客可用）
-    "/api/advisor/stats",      // 公开统计（游客首页/结果页展示）
-    "/api/campaign",           // 当前活动详情（游客可用）
+      "/api/advisor/session/status", // 分析状态轮询（游客可用）
+      "/api/advisor/stats",      // 公开统计（游客首页/结果页展示）
+      "/api/advisor/analytics/track", // 前端埋点（sendBeacon 无 Cookie）
+      "/api/campaign",           // 当前活动详情（游客可用）
     "/api/campaign/active",    // 当前活动倒计时（游客可用）
-    "/api/oss/sign",           // 游客上传签名（扫脸后保存图片）
-    "/api/local-upload",       // 游客本地上传端点
-    "/api/admin/:path*",
+      "/api/oss/sign",           // 游客上传签名（扫脸后保存图片）
+      "/api/local-upload",       // 游客本地上传端点
+      "/api/products",           // 公开产品列表
+      "/api/wechat/webhook",     // 微信回调（无需用户认证）
+      "/api/admin/:path*",
     "/admin/:path*",
     "/api/health",
 ];
@@ -121,7 +131,7 @@ export async function proxy(request: NextRequest) {
         !pathname.match(/\.\w+$/) &&
         !isPublicPath(pathname)
     ) {
-        const ssoTokenCookie = request.cookies.get("__Host-nihplod_sso_at")?.value;
+        const ssoTokenCookie = request.cookies.get(ACCESS_TOKEN_COOKIE)?.value;
         const localAuthCookieVal = request.cookies.get(AUTH_COOKIE_NAME)?.value;
         if (ssoTokenCookie && (!localAuthCookieVal || !(await verifyToken(localAuthCookieVal)))) {
             const recoveryUrl = new URL("/api/auth/session-init", request.url);

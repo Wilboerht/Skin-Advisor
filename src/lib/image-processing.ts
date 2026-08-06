@@ -43,7 +43,7 @@ const DEFAULT_OPTIONS: Required<PreprocessOptions> = {
  * - 尺寸限制：最长边不超过 1024px，保持宽高比 (不裁切，防止丢失下巴/额头)
  * - JPEG 70% 质量压缩
  * - Base64 编码 (大小控制在 300KB 以内)
- * - TODO: 处理移动设备 JPEG 的 EXIF 方向信息，避免照片被错误旋转
+ * - EXIF 方向信息：现代浏览器 canvas.drawImage() 自动处理，无需单独旋转
  * - TODO: 重型图像处理建议迁移到 Web Worker，避免阻塞主线程
  */
 export async function preprocessFaceImage(

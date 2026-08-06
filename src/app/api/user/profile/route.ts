@@ -2,11 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { apiError } from "@/lib/api-response";
 import { ErrorCode } from "@/lib/error-codes";
 import prisma from "@/lib/prisma";
-import { getSessionUser, getAccessToken } from "@/lib/sso-auth";
+import { getSessionUser, getAccessToken, SSO_BASE_URL } from "@/lib/sso-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { logger } from "@/lib/logger";
-
-const SSO_BASE_URL = process.env.NEXT_PUBLIC_SSO_BASE_URL || "https://nihplod.cn";
 
 export async function PUT(req: NextRequest) {
     try {

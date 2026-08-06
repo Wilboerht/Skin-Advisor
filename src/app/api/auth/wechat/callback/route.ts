@@ -202,7 +202,7 @@ export async function GET(req: NextRequest) {
             dailyTestLimit: localUser.dailyTestLimit,
         });
 
-        if (!signed) {
+        if (!sessionSigned) {
             const errorUrl = new URL(redirect, req.url);
             errorUrl.searchParams.set("wechat_auth", "error");
             errorUrl.searchParams.set("code", "SESSION_SIGN_FAILED");

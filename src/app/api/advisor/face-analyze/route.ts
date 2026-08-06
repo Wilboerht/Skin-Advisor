@@ -17,6 +17,7 @@ import {
 import { getSessionUser } from "@/lib/sso-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { reserveUsage, rollbackUsage } from "@/lib/usage-limit";
+import prisma from "@/lib/prisma";
 import { aiLogger } from "@/lib/logger";
 
 import { visionQueue } from "@/lib/ai-queue";
@@ -149,6 +150,12 @@ export async function POST(request: NextRequest) {
 
         // 1.5 每日用量上限预占（复用业务 sessionId，避免与 analyze 重复扣费）
         faceSessionId = result.data.sessionId || crypto.randomUUID();
+        // 清理僵尸会话（超过 2 分钟未完成）
+        const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
+        await prisma.advisorSession.updateMany({
+            where: { ip: ip, analysisStartedAt: { lt: twoMinutesAgo }, completedAt: null },
+            data: { analysisStartedAt: null },
+        });
         const usageReserve = await reserveUsage(request, faceSessionId, body);
         if (!usageReserve.success) {
             const response = apiError(ErrorCode.RATE_LIMITED, usageReserve.error || "今日测试次数已用完，请明天再试", 429);

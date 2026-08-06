@@ -76,7 +76,7 @@ export default function FaceScanPage() {
                 ]);
                 if (!cancelled) {
                     setPreloadedFaceApi(faceapi);
-                    console.log("Face-api models preloaded successfully");
+                    if (process.env.NODE_ENV !== "production") console.log("Face-api models preloaded successfully");
                 }
             } catch (err) {
                 console.error("Failed to preload face-api models:", err);
