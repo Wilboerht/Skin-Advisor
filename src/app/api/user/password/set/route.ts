@@ -31,6 +31,10 @@ export async function POST(req: NextRequest) {
 
         const body = await req.json();
 
+        if (!body.password) {
+            return apiError(ErrorCode.VALIDATION_ERROR, "请提供新密码", 400);
+        }
+
         const res = await fetch(`${SSO_BASE_URL}/api/user/password/set`, {
             method: "POST",
             headers: {

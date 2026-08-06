@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { createSsoMiddleware } from "@nihplod/sso-sdk/next";
 import { verifySessionSignature, ADMIN_SESSION_COOKIE_NAME } from "@/lib/session-verify";
 import { verifyCsrfToken } from "@/lib/csrf";
-import { AUTH_COOKIE_NAME } from "@/lib/auth-config";
+import { AUTH_COOKIE_NAME, verifyToken } from "@/lib/auth-config";
 
 /**
  * Next.js 全局 Proxy (formerly Middleware)
@@ -59,7 +59,16 @@ const ssoMiddleware = createSsoMiddleware({
     publicPaths: PUBLIC_PATHS,
 });
 
-// 敏感路径前缀列表（需要额外安全检查）
+/**
+ * 检查 pathname 是否匹配公开路径（支持 :path* 通配符）。
+ */
+function isPublicPath(pathname: string): boolean {
+    return PUBLIC_PATHS.some((p) => {
+        if (!p.includes(":path*")) return pathname === p || pathname === p + "/";
+        const prefix = p.replace(":path*", "");
+        return pathname.startsWith(prefix);
+    });
+}
 const SENSITIVE_PATHS = ["/api/admin", "/api/cron"];
 
 // AI 端点列表（高价值目标，需严格防护）
@@ -104,17 +113,17 @@ export async function proxy(request: NextRequest) {
     }
 
     // ==================== SSO 回调中断恢复 ====================
-    // 若浏览器持有 SSO Cookie 但缺少本地 JWT Cookie（回调中断、
-    // 浏览器关闭等场景），自动引导至 session-init 重新签发本地 session
+    // 若浏览器持有 SSO Cookie 但本地 JWT Cookie 缺失或无效（回调中断、
+    // 浏览器关闭、JWT_SECRET 轮换等场景），自动引导至 session-init 重新签发
     if (
         pathname !== "/api/auth/session-init" &&
         !pathname.startsWith("/_next/") &&
         !pathname.match(/\.\w+$/) &&
-        !PUBLIC_PATHS.includes(pathname)
+        !isPublicPath(pathname)
     ) {
         const ssoTokenCookie = request.cookies.get("__Host-nihplod_sso_at")?.value;
-        const localAuthCookie = request.cookies.get(AUTH_COOKIE_NAME)?.value;
-        if (ssoTokenCookie && !localAuthCookie) {
+        const localAuthCookieVal = request.cookies.get(AUTH_COOKIE_NAME)?.value;
+        if (ssoTokenCookie && (!localAuthCookieVal || !(await verifyToken(localAuthCookieVal)))) {
             const recoveryUrl = new URL("/api/auth/session-init", request.url);
             recoveryUrl.searchParams.set("return_to", pathname + request.nextUrl.search);
             return NextResponse.redirect(recoveryUrl);
@@ -272,7 +281,7 @@ export async function proxy(request: NextRequest) {
             if (!cronSecret) {
                 return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
             }
-            if (authHeader !== `Bearer ${cronSecret}` && request.nextUrl.searchParams.get("secret") !== cronSecret) {
+            if (authHeader !== `Bearer ${cronSecret}`) {
                 return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
             }
         }

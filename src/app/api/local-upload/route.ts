@@ -54,6 +54,12 @@ export async function PUT(request: NextRequest) {
     }
 
     try {
+        // Check Content-Length before reading body to prevent memory exhaustion
+        const contentLength = request.headers.get("content-length");
+        if (contentLength && parseInt(contentLength, 10) > MAX_FILE_SIZE) {
+            return apiError(ErrorCode.VALIDATION_ERROR, `File too large. Max size: ${MAX_FILE_SIZE / 1024 / 1024}MB`, 413);
+        }
+
         // Read the file content
         const buffer = Buffer.from(await request.arrayBuffer());
 

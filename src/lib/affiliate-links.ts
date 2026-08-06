@@ -143,7 +143,7 @@ export function openAffiliateLink(
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            event: 'affiliate_click',
+            event: 'product_click',
             properties: {
                 productId,
                 platform,

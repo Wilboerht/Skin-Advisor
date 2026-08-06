@@ -33,13 +33,12 @@ const GUEST_DAILY_LIMIT = 3;
  * 获取登录用户的每日测试限制
  */
 function getUserDailyLimit(user: { dailyTestLimit?: number | null } | null | undefined): number {
-    // dailyTestLimit 为 null/undefined 时回退到系统默认 3 次；
+    // dailyTestLimit 为 null/undefined 时回退到系统默认值；
     // 显式设置为 0-1 均视为有效自定义值（0 表示禁用测试）。
-    // 登录用户享有与游客（3次/天）相同或更多的测试权益。
     if (user && typeof user.dailyTestLimit === 'number') {
         return Math.max(0, user.dailyTestLimit);
     }
-    return 3;
+    return 10;
 }
 
 /**

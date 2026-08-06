@@ -3,9 +3,10 @@
  * GET /api/health - 用于 PM2 和负载均衡器健康检查
  * 检查：进程存活 + 数据库连通 + AI 服务状态 + OSS + 官网 API
  */
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
 import { isAIEnabled } from "@/lib/ai";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +24,13 @@ async function checkHttp(url: string, timeoutMs = 3000): Promise<string> {
     }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+    const ip = getClientIP(req);
+    const limit = await rateLimit(`health-ip-${ip}`, "default", { maxRequests: 60, windowMs: 60 * 1000 });
+    if (!limit.success) {
+        return NextResponse.json({ status: "degraded", error: "rate limited" }, { status: 429 });
+    }
+
     const checks: Record<string, string> = {};
 
     // 1. 数据库连通性

@@ -31,6 +31,10 @@ export async function PUT(req: NextRequest) {
 
         const body = await req.json();
 
+        if (!body.oldPassword || !body.newPassword) {
+            return apiError(ErrorCode.VALIDATION_ERROR, "请提供原密码和新密码", 400);
+        }
+
         const res = await fetch(`${SSO_BASE_URL}/api/user/password`, {
             method: "PUT",
             headers: {
