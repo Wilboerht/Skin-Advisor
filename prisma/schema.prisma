@@ -180,7 +180,6 @@ model User {
   pushSubscriptions PushSubscription[]
   reminderSettings  ReminderSettings?
   testRecords       TestRecord[]
-  campaignEntries   CampaignEntry[]
   refreshTokens     RefreshToken[]
   productFeedbacks  ProductFeedback[]
 
