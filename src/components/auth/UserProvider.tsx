@@ -3,6 +3,7 @@
 import { createContext, useContext, useMemo, ReactNode } from 'react';
 import { SsoProvider, useSso } from "@nihplod/sso-sdk/react";
 import type { SsoUser } from "@nihplod/sso-sdk";
+import { UserRole } from "@/lib/permissions";
 
 // --- Types ---
 
@@ -15,27 +16,13 @@ export interface User {
     avatar?: string | null;
 }
 
-interface LoginCredentials {
-    email?: string;
-    phone?: string;
-    password: string;
-}
-
-interface RegisterData {
-    email?: string;
-    phone?: string;
-    password?: string;
-    name?: string;
-    code?: string;
-}
-
 interface AuthContextType {
     user: User | null;
     loading: boolean;
     isInitialized: boolean;
-    login: (credentials?: LoginCredentials) => Promise<void>;
-    loginWithCode: (credentials: { phone: string; code: string }) => Promise<void>;
-    register: (userData?: RegisterData) => Promise<void>;
+    login: () => Promise<void>;
+    loginWithCode: () => Promise<void>;
+    register: () => Promise<void>;
     logout: () => Promise<void>;
     refresh: () => Promise<void>;
 }
@@ -54,7 +41,7 @@ function mapSsoUserToLegacyUser(ssoUser: SsoUser | null): User | null {
         phone: ssoUser.phone || null,
         name: ssoUser.nickname,
         avatar: ssoUser.avatar || null,
-        role: "user",
+        role: UserRole.USER,
     };
 }
 

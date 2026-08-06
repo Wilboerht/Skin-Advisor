@@ -36,8 +36,7 @@ const PUBLIC_PATHS = [
       "/api/auth/me",
       "/api/auth/logout",
       "/api/auth/session-init",
-      "/api/auth/send-code",        // 注册/登录短信验证码
-      "/api/auth/forgot-password",  // 密码重置发起
+      "/api/auth/send-code",        // 注册/登录/重置 短信验证码
       "/api/auth/reset-password",   // 密码重置执行
       "/api/auth/wechat",           // 微信 OAuth 初始跳转
       "/api/auth/wechat/bind",      // 微信手机号绑定
@@ -202,7 +201,6 @@ export async function proxy(request: NextRequest) {
     const csrfExemptPaths = [
         // 公开认证接口（SSO 迁移后仅保留仍被 AuthModal 使用的接口）
         "/api/auth/send-code",
-        "/api/auth/forgot-password",
         "/api/auth/reset-password",
         "/api/auth/wechat",
         "/api/auth/wechat/bind",

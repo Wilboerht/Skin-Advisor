@@ -6,6 +6,7 @@ import { ErrorCode } from "@/lib/error-codes";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { verifyCsrfToken } from "@/lib/csrf";
 import { logger } from "@/lib/logger";
+import { UserRole } from "@/lib/permissions";
 
 export async function GET(req: NextRequest) {
     const ip = getClientIP(req);

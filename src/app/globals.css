@@ -925,15 +925,6 @@
     color: #ffffff !important;
 }
 
-/* 隐藏滚动条但保留滚动功能 */
-.no-scrollbar::-webkit-scrollbar {
-    display: none;
-}
-.no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-}
-
 /* ========== 首页水波纹背景动画 ========== */
 
 @keyframes waveFlow1 {
