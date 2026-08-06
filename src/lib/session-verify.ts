@@ -9,7 +9,7 @@
 
 import { logger } from "@/lib/logger";
 
-const SESSION_MAX_AGE_MS = 8 * 60 * 60 * 1000;
+const SESSION_MAX_AGE_MS = 2 * 60 * 60 * 1000; // 2h，与登录接口设置的 Cookie maxAge 保持一致
 
 /**
  * 服务端会话撤销集合

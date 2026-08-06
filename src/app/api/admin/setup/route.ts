@@ -43,12 +43,12 @@ export async function POST(request: NextRequest) {
             providedSecret = authHeader;
         }
 
-        const isSuperAdmin = adminCount > 0;
+        const hasExistingAdmins = adminCount > 0;
         const secretValid = typeof providedSecret === "string" && safeTimingEqual(providedSecret, setupSecret);
-        if (!isSuperAdmin && !secretValid) {
+        if (!hasExistingAdmins && !secretValid) {
             return apiError(ErrorCode.FORBIDDEN, "Invalid setup secret", 403);
         }
-        if (isSuperAdmin && providedSecret && !secretValid) {
+        if (hasExistingAdmins && providedSecret && !secretValid) {
             return apiError(ErrorCode.FORBIDDEN, "Invalid setup secret", 403);
         }
 
