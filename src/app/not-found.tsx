@@ -15,7 +15,7 @@ export default function NotFound() {
       </p>
       <h1 className="text-xl md:text-2xl font-serif mb-3">页面未找到</h1>
       <p className="text-[14px] text-[#5E5E5E] font-light max-w-md mb-8 leading-relaxed">
-        你访问的页面不存在或已被移除。也许你想回到首页开始一次 AI 肤质分析？
+         您访问的页面可能已移动或暂时不可用。不如回到首页，开始一次 AI 肤质分析？
       </p>
       <Link
         href="/"

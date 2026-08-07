@@ -168,7 +168,7 @@ export async function proxy(request: NextRequest) {
         if (!isValid) {
             if (isAdminApi) {
                 return NextResponse.json(
-                    { success: false, error: "Unauthorized" },
+                    { success: false, error: "未登录" },
                     { status: 401 }
                 );
             }
@@ -241,7 +241,7 @@ export async function proxy(request: NextRequest) {
         // 1. 仅允许 POST 方法
         if (request.method !== "POST") {
             return NextResponse.json(
-                { error: "Method Not Allowed" },
+                { error: "请求方式不支持" },
                 { status: 405 }
             );
         }

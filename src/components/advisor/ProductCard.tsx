@@ -360,7 +360,7 @@ function ProductImage({
             )}>
                 <ImageOff className={cn("h-8 w-8", compact && "h-6 w-6")} />
                 {!compact && (
-                    <span className="mt-1 text-[10px]">图片加载失败</span>
+                    <span className="mt-1 text-[10px]">图片加载未成功</span>
                 )}
             </div>
         );

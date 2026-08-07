@@ -50,14 +50,14 @@ export async function POST(req: NextRequest) {
         });
 
         if (!result) {
-            return apiError(ErrorCode.UPSTREAM_ERROR, "重置失败：上游服务响应异常", 502);
+            return apiError(ErrorCode.UPSTREAM_ERROR, "重置未成功：上游服务响应异常", 502);
         }
 
         const responseData = result.data;
 
         if (!result.ok || !responseData.success) {
             return NextResponse.json(
-                { success: false, error: responseData.error || { code: ErrorCode.VALIDATION_ERROR, message: "重置失败" } },
+                { success: false, error: responseData.error || { code: ErrorCode.VALIDATION_ERROR, message: "重置未成功" } },
                 { status: result.status || 400 }
             );
         }

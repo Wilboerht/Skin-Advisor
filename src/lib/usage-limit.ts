@@ -84,7 +84,7 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
             remaining: Math.max(0, limit - totalCount),
             dailyLimit: limit,
             role: 'member',
-            error: totalCount >= limit ? '今日测试次数已用完，请明天再试。' : undefined
+            error: totalCount >= limit ? '今日免费测试已达上限，登录即可继续。' : undefined
         };
     }
 
@@ -141,7 +141,7 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
             remaining: 0,
             dailyLimit: limit,
             role: 'guest',
-            error: blockedRecord.blockedReason || '您的访问已被限制，请联系客服。'
+            error: blockedRecord.blockedReason || '如需帮助，请联系客服。'
         };
     }
 
@@ -159,7 +159,7 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
             remaining: 0,
             dailyLimit: limit,
             role: 'guest',
-            error: '今日测试次数已用完，登录后可获更多次数。'
+            error: '今日免费测试已达上限，登录即可解锁更多次数。'
         };
     }
 
@@ -322,7 +322,7 @@ export async function reserveUsage(
             return { success: true, role: user ? 'member' : 'guest' };
         }
         console.error('Failed to reserve usage:', e);
-        return { success: false, error: '额度预占失败，请重试', role: user ? 'member' : 'guest' };
+        return { success: false, error: '请稍后再试。', role: user ? 'member' : 'guest' };
     }
 }
 

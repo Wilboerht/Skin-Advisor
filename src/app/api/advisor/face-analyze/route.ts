@@ -87,13 +87,6 @@ export async function POST(request: NextRequest) {
     try {
         // 0. 检查 AI 开关
         if (!(await isAIEnabled())) {
-            // if (process.env.NODE_ENV === 'development' || process.env.ALLOW_FALLBACK !== 'false') {
-            //     aiLogger.warn("AI disabled, using fallback result for face analysis.");
-            //     // 模拟延迟
-            //     await new Promise(resolve => setTimeout(resolve, 1500));
-            //     return NextResponse.json(getDefaultFaceAnalysisResult());
-            // }
-
             return apiError(ErrorCode.SERVICE_UNAVAILABLE, "AI 助手当前已暂停服务", 503);
         }
 

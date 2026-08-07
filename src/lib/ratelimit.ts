@@ -13,6 +13,8 @@
  * 当前部署环境为 PM2 单实例常驻进程，故暂使用内存实现。
  */
 
+import { FACE_ANALYZE_RATE_LIMIT, COMPREHENSIVE_ANALYZE_RATE_LIMIT } from "@/config/ai";
+
 /** 速率限制配置 */
 export interface RateLimitOptions {
     /** 最大请求数 */
@@ -82,25 +84,16 @@ const DEFAULT_OPTIONS: RateLimitOptions = {
     windowMs: 60 * 1000, // 1 分钟
 };
 
-/** 预定义的限制配置 */
 export const RATE_LIMIT_PRESETS = {
-    /** 默认 API 限制 */
     default: { maxRequests: 100, windowMs: 60 * 1000 },
-    /** AI 顾问限制 - 较宽松 */
     advisor: { maxRequests: 30, windowMs: 60 * 1000 },
-    /** 面部分析限制 - 严格 */
-    "face-analyze": { maxRequests: 5, windowMs: 60 * 60 * 1000 },
-    /** 综合分析限制 - 严格，与面部分析一致 */
-    "comprehensive-analyze": { maxRequests: 5, windowMs: 60 * 60 * 1000 },
-    /** 表单提交限制 */
+    "face-analyze": { maxRequests: FACE_ANALYZE_RATE_LIMIT, windowMs: 60 * 60 * 1000 },
+    "comprehensive-analyze": { maxRequests: COMPREHENSIVE_ANALYZE_RATE_LIMIT, windowMs: 60 * 60 * 1000 },
     form: { maxRequests: 10, windowMs: 60 * 1000 },
-    /** 登录限制 - 防暴力破解 */
     login: { maxRequests: 5, windowMs: 15 * 60 * 1000 },
-    /** OSS 签名获取限制 - 每分钟 20 次 */
     "oss-sign": { maxRequests: 20, windowMs: 60 * 1000 },
-    /** 会话状态查询限制 - 每分钟 60 次 */
     "session-status": { maxRequests: 60, windowMs: 60 * 1000 },
-} as const;
+};
 
 /**
  * 速率限制检查

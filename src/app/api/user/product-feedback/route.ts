@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     } catch (error) {
         console.error("Failed to submit product feedback:", error);
         return NextResponse.json(
-            { error: "提交反馈失败，请稍后重试" },
+            { error: "提交反馈未成功，请稍后重试" },
             { status: 500 }
         );
     }
@@ -140,7 +140,7 @@ export async function GET(request: NextRequest) {
     } catch (error) {
         console.error("Failed to fetch product feedback:", error);
         return NextResponse.json(
-            { error: "获取反馈失败" },
+            { error: "获取反馈未成功" },
             { status: 500 }
         );
     }

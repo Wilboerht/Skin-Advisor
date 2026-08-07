@@ -44,14 +44,14 @@ export async function POST(req: NextRequest) {
         });
 
         if (!result) {
-            return apiError(ErrorCode.UPSTREAM_ERROR, "发送验证码失败：上游服务响应异常", 502);
+            return apiError(ErrorCode.UPSTREAM_ERROR, "验证码发送未成功：上游服务响应异常", 502);
         }
 
         const responseData = result.data;
 
         if (!result.ok || !responseData.success) {
             return NextResponse.json(
-                { success: false, error: responseData.error || { code: ErrorCode.UPSTREAM_ERROR, message: "发送验证码失败" } },
+                { success: false, error: responseData.error || { code: ErrorCode.UPSTREAM_ERROR, message: "验证码发送未成功" } },
                 { status: result.status || 400 }
             );
         }

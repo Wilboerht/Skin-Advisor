@@ -149,7 +149,7 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                                     {imageErrors[galleryImages[activeImageIndex]] ? (
                                         <div className="flex h-full w-full flex-col items-center justify-center text-[#8c7a6b]/50">
                                             <ImageOff className="h-12 w-12" />
-                                            <span className="mt-2 text-sm">图片加载失败</span>
+                                            <span className="mt-2 text-sm">图片加载未成功</span>
                                         </div>
                                     ) : (
                                         <Image

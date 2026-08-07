@@ -18,7 +18,7 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
     const ip = getClientIP(request);
     const limitResult = await rateLimit(`admin-ai-costs-${ip}`, "default", { maxRequests: 30, windowMs: 60 * 1000 });
     if (!limitResult.success) {
-        return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+        return NextResponse.json(            { error: "请求过于频繁，请稍后再试。" }, { status: 429 });
     }
 
     const { searchParams } = new URL(request.url);

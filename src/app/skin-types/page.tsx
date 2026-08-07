@@ -130,7 +130,7 @@ export default function ResultIndexPage() {
                 alt=""
                 width={160}
                 height={120}
-                className="w-36 md:w-48 h-auto object-contain shrink-0"
+                className="w-36 md:w-52 h-auto object-contain shrink-0"
                 unoptimized
               />
               <div className="text-center md:text-left">

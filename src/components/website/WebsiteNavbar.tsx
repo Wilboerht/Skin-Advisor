@@ -19,9 +19,9 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: "问卷&素颜测肤", href: "/" },
+  { label: "素颜测肤", href: "/" },
   { label: "测肤有礼", href: "/gift" },
-  { label: "全部肌智派类型", href: "/skin-types" },
+  { label: "了解肌智派", href: "/skin-types" },
   { label: "顾问服务", href: "/services" },
 ];
 

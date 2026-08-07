@@ -299,7 +299,7 @@ export default function ResultCards({
               </div>
             </motion.div>
 
-            {/* Last slot: 皮肤弹性（取 firmness 维度，问卷模式无数据时显示 -） */}
+            {/* Last slot: 皮肤弹性（取 firmness 维度，无数据时显示 -） */}
             <div
               className="flex p-3 lg:p-4 rounded-xl lg:rounded-2xl flex-row lg:flex-col items-center lg:items-start justify-between lg:aspect-[2/3] min-h-[48px] lg:min-h-0 relative overflow-hidden"
               style={{

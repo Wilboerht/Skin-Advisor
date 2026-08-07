@@ -20,7 +20,6 @@ interface QuestionStepProps {
   direction: number; // 1: 向前, -1: 向后
   currentStep: number;
   totalSteps: number;
-  mode?: "scan" | "questionnaire";
 }
 
 /**
@@ -40,7 +39,6 @@ export function QuestionStep({
   direction,
   currentStep,
   totalSteps,
-  mode = "scan",
 }: QuestionStepProps) {
   // 检测用户是否偏好减少动画
   const prefersReducedMotion = useReducedMotion();
@@ -57,9 +55,9 @@ export function QuestionStep({
     if (isNextDisabled) return "请至少选择一项";
     if (currentStep === totalSteps) {
       if (question.type === "multiple") {
-        return mode === "questionnaire" ? `已选 ${selectedCount} 项，查看我的派系` : `已选 ${selectedCount} 项，开始面部检测`;
+        return `已选 ${selectedCount} 项，开始面部检测`;
       }
-      return mode === "questionnaire" ? "查看我的派系" : "开始面部检测";
+      return "开始面部检测";
     }
     return `已选 ${selectedCount} 项，点击继续`;
   })();

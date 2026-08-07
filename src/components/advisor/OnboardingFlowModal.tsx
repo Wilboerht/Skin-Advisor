@@ -19,7 +19,6 @@ interface OnboardingFlowProps {
     onRegionSelect: (region: string) => void;
     regionOptions: { group: string; regions: string[] }[];
     isLoggedIn: boolean;
-    mode?: "scan" | "questionnaire";
 }
 
 type LocationSubView = "main" | "region";
@@ -37,7 +36,6 @@ export function OnboardingFlowModal({
     onRegionSelect,
     regionOptions,
     isLoggedIn,
-    mode = "scan",
 }: OnboardingFlowProps) {
     const toast = useToast();
     // Determine which screens to show
@@ -46,13 +44,11 @@ export function OnboardingFlowModal({
 
     const getScreens = useCallback(() => {
         const s: string[] = [];
-        // 问卷模式：只需法律合规授权，跳过昵称和定位
-        if (mode !== "questionnaire" && hasNicknameScreen) s.push("nickname");
-        // 定位仅扫描模式需要（用于气候关联推荐）
-        if (mode === "scan") s.push("location");
+        if (hasNicknameScreen) s.push("nickname");
+        s.push("location");
         if (hasLegalScreen) s.push("legal");
         return s;
-    }, [hasNicknameScreen, hasLegalScreen, mode]);
+    }, [hasNicknameScreen, hasLegalScreen]);
 
     const [activeIndex, setActiveIndex] = useState(0);
     const [locationView, setLocationView] = useState<LocationSubView>("main");

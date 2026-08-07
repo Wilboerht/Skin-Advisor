@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAISettings } from "@/lib/ai";
+import { isAIEnabled } from "@/lib/ai";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { aiQueue, visionQueue, analysisQueue, type QueueStats } from "@/lib/ai-queue";
 
@@ -11,21 +11,18 @@ export async function GET(request: NextRequest) {
     const limit = await rateLimit(`check-config-${ip}`, "default", { maxRequests: 30, windowMs: 60 * 1000 });
     if (!limit.success) {
         return NextResponse.json(
-            { error: "请求过于频繁" },
+            { error: "操作太快了，请稍等片刻再试。" },
             { status: 429 }
         );
     }
 
     try {
-        const settings = await getAISettings();
-        const provider = settings.provider;
-        const keys = settings.apiKeys || {};
-        const key = keys[provider];
+        const aiEnabled = await isAIEnabled();
 
-        if (!key) {
+        if (!aiEnabled) {
             return NextResponse.json({
                 configured: false,
-                message: "AI 服务尚未配置，请先设置 API 密钥后再进行测试。",
+                message: "AI 肌肤检测服务正在准备中，请稍后再来体验。",
             });
         }
 
@@ -52,7 +49,7 @@ export async function GET(request: NextRequest) {
     } catch {
         return NextResponse.json({
             configured: false,
-            message: "无法获取 AI 配置，请稍后重试。",
+            message: "AI 肌肤检测服务正在准备中，请稍后再来体验。",
         });
     }
 }

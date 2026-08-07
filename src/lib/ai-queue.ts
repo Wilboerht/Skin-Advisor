@@ -12,6 +12,14 @@
  */
 
 import { aiLogger } from "./logger";
+import {
+    AI_QUEUE_MAX_CONCURRENT,
+    AI_ANALYSIS_QUEUE_MAX_CONCURRENT,
+    AI_VISION_QUEUE_MAX_CONCURRENT,
+    AI_MAX_CONCURRENT_PER_USER,
+    AI_QUEUE_MAX_LENGTH,
+    AI_VISION_QUEUE_MAX_LENGTH,
+} from "@/config/ai";
 
 /**
  * 队列项
@@ -77,7 +85,7 @@ class AIRequestQueue {
     private userRunningCount = new Map<string, number>();
 
     /** 平均执行时间（毫秒），用于估算等待时间 */
-    private avgExecutionTimeMs = 8000; // 默认 8 秒
+    private avgExecutionTimeMs = 40000; // 初始 40 秒，随实际执行自动校准
 
     /** 最近执行时间记录（用于计算平均值） */
     private executionTimes: number[] = [];
@@ -428,22 +436,21 @@ class AIRequestQueue {
     }
 }
 
-// 全局单例
-// 并发配置: 共计 30 并发槽位 (vision 12 + analysis 18)，匹配 ¥200/天 预算
+// 全局单例 — 配置集中管理在 @/config/ai.ts
 export const aiQueue = new AIRequestQueue(
-    parseInt(process.env.AI_QUEUE_MAX_CONCURRENT || "15", 10),
-    parseInt(process.env.AI_MAX_CONCURRENT_PER_USER || "1", 10),
-    parseInt(process.env.AI_QUEUE_MAX_LENGTH || "100", 10)
+    AI_QUEUE_MAX_CONCURRENT,
+    AI_MAX_CONCURRENT_PER_USER,
+    AI_QUEUE_MAX_LENGTH
 ); // 通用 AI 队列（check-config 等监控使用）
 export const visionQueue = new AIRequestQueue(
-    parseInt(process.env.AI_VISION_QUEUE_MAX_CONCURRENT || "12", 10),
-    parseInt(process.env.AI_MAX_CONCURRENT_PER_USER || "1", 10),
-    parseInt(process.env.AI_VISION_QUEUE_MAX_LENGTH || "100", 10)
+    AI_VISION_QUEUE_MAX_CONCURRENT,
+    AI_MAX_CONCURRENT_PER_USER,
+    AI_VISION_QUEUE_MAX_LENGTH
 ); // 视觉分析并发
 export const analysisQueue = new AIRequestQueue(
-    parseInt(process.env.AI_QUEUE_MAX_CONCURRENT || "18", 10),
-    parseInt(process.env.AI_MAX_CONCURRENT_PER_USER || "1", 10),
-    parseInt(process.env.AI_QUEUE_MAX_LENGTH || "100", 10)
+    AI_ANALYSIS_QUEUE_MAX_CONCURRENT,
+    AI_MAX_CONCURRENT_PER_USER,
+    AI_QUEUE_MAX_LENGTH
 ); // 综合分析并发（LLM 长文本）
 
 // 导出类型供测试使用

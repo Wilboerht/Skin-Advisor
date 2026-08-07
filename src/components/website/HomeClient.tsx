@@ -70,8 +70,6 @@ export default function HomeClient() {
   const router = useTransitionRouter();
   const { openAuthModal } = useAuthModal();
   const [isLoading, setIsLoading] = useState(false);
-  const [loadingMode, setLoadingMode] = useState<"scan" | "questionnaire" | null>(null);
-  const [scanMode, setScanMode] = useState<"scan" | "questionnaire" | null>(null);
   const { initSession } = useAdvisorAnalytics();
   const { user, refresh: refreshUser } = useAuth();
 
@@ -118,7 +116,6 @@ export default function HomeClient() {
     if (user?.name && !safeStorage.get(STORAGE_KEYS.ADVISOR_NICKNAME)) {
       safeStorage.set(STORAGE_KEYS.ADVISOR_NICKNAME, user.name);
     }
-    // 保留 advisor_scan_mode：它是本次新测试的入口模式，清除后纯问卷模式会被误判为 AI 扫描模式
 
     // 修复 iOS 从首页 modal 进入 questions 页面时滚动位置异常：
     // 跳转前恢复 body overflow 并把页面滚动重置到顶部
@@ -292,48 +289,24 @@ export default function HomeClient() {
   }, [guestIdentity, user, refreshUser]);
 
 
-  const handleStart = useCallback(async (mode: "scan" | "questionnaire" = "scan") => {
-    // Save scan mode for downstream routing (questions page checks this to decide next step)
-    safeStorage.set("advisor_scan_mode", mode);
-
-    // 精准标记被点击的按钮，避免两个按钮同时转圈
+  const handleStart = useCallback(async () => {
     startCancelledRef.current = false;
-    setLoadingMode(mode);
-    setScanMode(mode);
 
     // Check test limit first
     const canTest = await checkTestLimit();
 
     // 用户在等待限额检查时已主动关闭弹窗/返回首页：中止后续流程并清理 loading 状态
     if (startCancelledRef.current) {
-      setLoadingMode(null);
       return;
     }
 
     if (!canTest) {
-      setLoadingMode(null);
       setShowLimitModal(true);
-      return;
-    }
-
-    // 问卷模式 + 已登录：直通问卷，跳过昵称/定位/合规引导
-    // 但仍需存储隐私同意标记，否则 questions 页入口守卫会拦截
-    if (mode === "questionnaire" && user) {
-      safeStorage.set(STORAGE_KEYS.ADVISOR_PRIVACY_CONSENT, JSON.stringify({
-        version: CONSENT_VERSION,
-        consentedAt: new Date().toISOString()
-      }));
-      // 已登录用户直接用官网昵称，避免结果页显示"您"
-      if (user.name) {
-        safeStorage.set(STORAGE_KEYS.ADVISOR_NICKNAME, user.name);
-      }
-      startNewTest();
       return;
     }
 
     // 用户在 checkTestLimit 完成后、打开弹窗前又关闭了：清理状态并中止
     if (startCancelledRef.current) {
-      setLoadingMode(null);
       return;
     }
 
@@ -347,7 +320,7 @@ export default function HomeClient() {
       setOnboardingOpenCount(prev => prev + 1);
     }
     setShowOnboardingModal(true);
-  }, [checkTestLimit, user, startNewTest, showOnboardingModal]);
+  }, [checkTestLimit, user, showOnboardingModal]);
 
   const handleNicknameSubmit = () => {
     if (!nickname.trim()) {
@@ -376,7 +349,7 @@ export default function HomeClient() {
             className="fixed inset-0 z-[9999] bg-[#FDFBF7] flex flex-col items-center justify-center pointer-events-none"
           >
             <Loader2 className="w-10 h-10 text-[#3D4430] animate-spin mb-6" />
-            <p className="text-[#5E5E5E] text-[15px] font-medium tracking-wide">{scanMode === "questionnaire" ? "正在进入肌肤测评..." : "即将进入 AI 问卷..."}</p>
+            <p className="text-[#5E5E5E] text-[15px] font-medium tracking-wide">即将进入 AI 问卷...</p>
           </m.div>
         )}
       </AnimatePresence>
@@ -424,7 +397,14 @@ export default function HomeClient() {
                             visible: { opacity: 1, transition: { duration: 0.3 } },
                           }}
                         >
-                          肌智派
+                          <Image
+                            src="/images/jzp-eyebrow.png"
+                            alt="肌智派"
+                            width={120}
+                            height={30}
+                            className="h-5 md:h-6 w-auto"
+                            priority
+                          />
                         </m.span>
                         <m.span
                           className="block w-5 h-px bg-gradient-to-r from-[#C8A27A]/50 to-transparent"
@@ -439,7 +419,7 @@ export default function HomeClient() {
 
                     {/* Title */}
                     <h1 className="text-[40px] sm:text-[48px] md:text-[58px] font-serif text-brand-charcoal font-light leading-[1.1] tracking-[0.02em] mb-10 md:mb-12">
-                      在线素颜测肤
+                      在线 AI 测肤
                     </h1>
 
                     {/* Info Features */}
@@ -461,15 +441,14 @@ export default function HomeClient() {
 
                     {/* CTA + Guide + History */}
                     <div className="flex flex-col items-center gap-6 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.4s', animationFillMode: 'forwards' }}>
-                      {/* 双模式 CTA */}
+                      {/* CTA */}
                       <div className="flex flex-col items-center gap-3 w-full max-w-md">
-                        {/* 面部扫描 - 主推 */}
                         <button
-                          onClick={() => handleStart("scan")}
-                          disabled={loadingMode !== null || isLoading}
+                          onClick={handleStart}
+                          disabled={isLoading}
                           className="group relative w-full inline-flex items-center justify-center gap-2.5 px-8 py-4 text-[13px] sm:text-[14px] tracking-[0.1em] font-medium cursor-pointer border border-brand-charcoal/60 text-brand-charcoal bg-transparent transition-all duration-500 hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,38,62,0.12)] active:translate-y-0 active:shadow-none disabled:opacity-40 disabled:cursor-not-allowed"
                         >
-                          {loadingMode === "scan" ? (
+                          {isLoading ? (
                             <>
                               <Loader2 className="w-4 h-4 animate-spin" />
                               <span>正在连接</span>
@@ -478,24 +457,6 @@ export default function HomeClient() {
                             <>
                               <span>开始完整肌肤检测</span>
                               <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1" />
-                            </>
-                          )}
-                        </button>
-
-                        {/* 纯问卷 - 备选 */}
-                        <button
-                          onClick={() => handleStart("questionnaire")}
-                          disabled={loadingMode !== null || isLoading}
-                          className="group relative w-full inline-flex items-center justify-center gap-2.5 px-8 py-4 text-[13px] sm:text-[14px] tracking-[0.1em] font-medium cursor-pointer text-brand-charcoal/60 transition-colors duration-500 hover:text-brand-charcoal disabled:opacity-40 disabled:cursor-not-allowed"
-                        >
-                          {loadingMode === "questionnaire" ? (
-                            <>
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                              <span>正在连接</span>
-                            </>
-                          ) : (
-                            <>
-                              <span>了解你的肤质类型（仅问卷）</span>
                             </>
                           )}
                         </button>
@@ -524,7 +485,7 @@ export default function HomeClient() {
           setShowOnboardingModal(false);
           setIsHomeExiting(false);
           setIsLoading(false);
-          setLoadingMode(null);
+          setIsHomeExiting(false);
         }}
         nickname={nickname}
         setNickname={setNickname}
@@ -536,7 +497,6 @@ export default function HomeClient() {
         onRegionSelect={handleRegionSelect}
         regionOptions={regionOptions}
         isLoggedIn={!!user}
-        mode={scanMode ?? "scan"}
       />
 
       <AnimatePresence>

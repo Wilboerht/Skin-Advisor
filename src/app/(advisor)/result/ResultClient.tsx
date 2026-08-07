@@ -77,11 +77,11 @@ async function waitForImages(container: HTMLElement): Promise<void> {
         images.map((img) => {
             if (img.complete && img.naturalWidth > 0) return Promise.resolve();
             if (img.complete && img.naturalWidth === 0) {
-                return Promise.reject(new Error("海报图片加载失败"));
+                return Promise.reject(new Error("海报图片加载未成功"));
             }
             return new Promise<void>((resolve, reject) => {
                 img.onload = () => resolve();
-                img.onerror = () => reject(new Error("海报图片加载失败"));
+                img.onerror = () => reject(new Error("海报图片加载未成功"));
             });
         })
     );
@@ -712,7 +712,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
             trackResultShare("image");
         } catch (error) {
             console.error("海报生成失败:", error);
-            setPosterError("证书生成失败，请稍后重试");
+            setPosterError("海报生成遇到问题，请稍后重试。");
         } finally {
             setIsGeneratingPoster(false);
         }
@@ -988,8 +988,8 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                 <div className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-brand-charcoal/[0.08] shadow-sm">
                     <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                         <div className="sm:w-[60%] text-center sm:text-left">
-                            <h3 className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-3 sm:mb-2">报告加载失败</h3>
-                            <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">数据可能已过期或不存在</p>
+                            <h3 className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-3 sm:mb-2">报告暂时无法加载</h3>
+                            <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">请重新开始一次肌肤检测，获取您的专属分析报告。</p>
                         </div>
                         <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
                             <button

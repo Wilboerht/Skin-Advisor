@@ -193,7 +193,7 @@ export function useAsyncAnalysis() {
                 });
             }
         }
-        throw new Error('等待分析结果超时，请重试');
+        throw new Error('分析结果准备时间有点长，请重试一次。');
     }, [checkSessionStatus]);
 
     const runAnalysis = useCallback(async () => {
@@ -215,7 +215,7 @@ export function useAsyncAnalysis() {
             const promise = new Promise<never>((_, reject) => {
                 timeoutId = setTimeout(() => {
                     abortController.abort();
-                    reject(new Error("分析超时 (95秒)。请检查网络连接后重试。"));
+                    reject(new Error("分析时间较长，请检查网络后重试。"));
                 }, 95 * 1000); // 95 秒，与服务端 maxDuration=90s 对齐并留 5s 缓冲
             });
             return { promise, cancel: () => clearTimeout(timeoutId) };
@@ -292,7 +292,7 @@ export function useAsyncAnalysis() {
             if (!acquireAnalysisLock(sessionId)) {
                 console.warn(`[useAsyncAnalysis] Analysis lock already held for another session, skipping`);
                 // 设置错误状态让 ResultClient 感知并显示重试按钮，而非永久停留在 preparing 状态
-                setAnalysisState({ status: 'error', progress: 0, error: '检测到已有分析正在进行，请等待完成或刷新页面重试' });
+                setAnalysisState({ status: 'error', progress: 0, error: '上一次分析还在进行中，请稍候，完成后将自动展示结果。' });
                 return;
             }
 
@@ -450,18 +450,18 @@ export function useAsyncAnalysis() {
 
                                 // Specific error messages for known status codes not handled by retry
                                 if (faceRes.status === 429) { // This case should ideally be caught by fetchWithRetry, but kept for explicit handling if needed
-                                    throw new Error("请求过于频繁，请稍后重试");
+                                    throw new Error("当前排队人数较多，请稍后再试。");
                                 }
                                 if (faceRes.status === 503 || faceRes.status === 504) { // This case should ideally be caught by fetchWithRetry
                                     throw new Error("AI 服务暂时繁忙，请稍后重试");
                                 }
-                                throw new Error(getServerErrorMessage(errorData, "面部分析失败"));
+                                throw new Error(getServerErrorMessage(errorData, "面部分析未完成"));
                             }
                         } catch (e: unknown) {
                             const err = e as Error;
                             console.error("Face analysis fetch failed", e);
                             if (err.name === 'AbortError') {
-                                throw new Error("面部分析超时，请稍后重试");
+                                throw new Error("面部分析时间较长，请稍后重试。");
                             }
                             // Check if the error is from fetchWithRetry's specific message
                             if (err.message.includes("Request failed: 429")) {
@@ -536,18 +536,18 @@ export function useAsyncAnalysis() {
                     signal: abortController.signal
                 });
                 if (pollResult.status !== 'completed' || !pollResult.rawResult) {
-                    throw new Error('等待分析结果失败，请重试');
+                    throw new Error('分析等待超时，建议重试一次。');
                 }
                 result = pollResult.rawResult;
             } else {
                 if (!analyzeRes.ok) {
                     // 解析服务端错误信息，透传给用户
-                    let serverError = "分析失败，请重试";
+                    let serverError = "分析未完成，请重试。";
                     try {
                         const errorData = await analyzeRes.json();
                         serverError = getServerErrorMessage(errorData, serverError);
                     } catch {
-                        serverError = "服务器繁忙，请稍后重试";
+                        serverError = "当前访问人数较多，请稍后再试。";
                     }
                     throw new Error(serverError);
                 }
@@ -556,7 +556,7 @@ export function useAsyncAnalysis() {
             }
 
             if (!result) {
-                throw new Error('分析结果为空，请重试');
+                throw new Error('未获取到分析结果，请重试一次。');
             }
 
             if (faceAnalysis && !result.faceAnalysis) {

@@ -85,7 +85,7 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
               {pageState === "error" && (
                 <div className="inline-flex items-center gap-2 text-sm text-red-600">
                   <AlertCircle className="w-4 h-4" />
-                  加载失败，请刷新页面重试
+                  加载未成功，请刷新页面重试
                 </div>
               )}
 
@@ -105,23 +105,23 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
                   />
                 </div>
               )}
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
 
         {/* 无活动 - 玩法预告 */}
         {pageState === "no_campaign" && (
-          <section className="relative z-10 pb-18 px-6 md:px-12 lg:px-20">
+          <section className="relative z-10 pb-12 md:pb-16 px-6 md:px-12 lg:px-20">
             <div className="max-w-4xl mx-auto">
-              <div className="max-w-4xl mx-auto mb-18">
+              <div className="max-w-4xl mx-auto mb-12 md:mb-16">
                 {/* 顶部形象图 */}
-                <div className="flex justify-center mb-18">
+                <div className="flex justify-center mb-12 md:mb-16">
                   <Image
                     src="/images/gift-badge.png"
                     alt="肌智派送好礼"
                     width={200}
                     height={150}
-                    className="w-72 h-auto object-contain"
+                    className="w-72 md:w-80 h-auto object-contain"
                     unoptimized
                   />
                 </div>
@@ -172,13 +172,13 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
 
         {/* 错误状态 */}
         {pageState === "error" && (
-          <section className="relative z-10 pb-18 px-6 md:px-12 lg:px-20">
+          <section className="relative z-10 pb-12 md:pb-16 px-6 md:px-12 lg:px-20">
             <div className="max-w-md mx-auto text-center">
               <div className="rounded-2xl border border-brand-charcoal/[0.08] bg-[#FAF9F6] p-5 md:p-9">
                 <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-5">
                   <AlertCircle className="w-6 h-6 text-red-400" />
                 </div>
-                <h2 className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-2">活动信息加载失败</h2>
+                <h2 className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-2">活动信息加载未成功</h2>
                 <p className="text-sm text-brand-charcoal/60 font-light mb-6">请检查网络连接后刷新页面，或稍后再试。</p>
                 <button
                   onClick={() => window.location.reload()}
@@ -194,7 +194,7 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
 
         {/* 奖品展示 */}
         {pageState === "show_campaign" && campaign && (
-          <section className="relative z-10 pb-18 px-6 md:px-12 lg:px-20">
+          <section className="relative z-10 pb-12 md:pb-16 px-6 md:px-12 lg:px-20">
             <div className="max-w-2xl mx-auto">
               <div className="rounded-2xl border border-brand-charcoal/[0.12] p-6 md:p-8 relative">
                 <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
@@ -234,17 +234,17 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
 
         {/* 活动规则 */}
         {pageState === "show_campaign" && campaign && (
-          <section className="relative z-10 pb-18 px-6 md:px-12 lg:px-20">
+          <section className="relative z-10 pb-12 md:pb-16 px-6 md:px-12 lg:px-20">
             <div className="max-w-4xl mx-auto">
-              <div className="max-w-4xl mx-auto mb-18">
+              <div className="max-w-4xl mx-auto mb-12 md:mb-16">
                 {/* 顶部形象图 */}
-                <div className="flex justify-center mb-18">
+                <div className="flex justify-center mb-12 md:mb-16">
                   <Image
                     src="/images/gift-badge.png"
                     alt="肌智派送好礼"
                     width={200}
                     height={150}
-                    className="w-72 h-auto object-contain"
+                    className="w-72 md:w-80 h-auto object-contain"
                     unoptimized
                   />
                 </div>

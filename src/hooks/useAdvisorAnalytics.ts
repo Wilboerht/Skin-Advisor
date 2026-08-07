@@ -15,7 +15,6 @@ type AnalyticsEvent =
   | "questionnaire_complete"
   | "face_scan_start"
   | "face_scan_complete"
-  | "face_scan_skip"
   | "analysis_start"
   | "analysis_complete"
   | "result_view"
@@ -162,11 +161,6 @@ export function useAdvisorAnalytics() {
     sendTrackEvent("face_scan_complete");
   }, []);
 
-  // 追踪跳过面部扫描
-  const trackFaceScanSkip = useCallback(() => {
-    sendTrackEvent("face_scan_skip");
-  }, []);
-
   // 追踪分析开始
   const trackAnalysisStart = useCallback(() => {
     sendTrackEvent("analysis_start");
@@ -203,7 +197,6 @@ export function useAdvisorAnalytics() {
     trackQuestionnaireComplete,
     trackFaceScanStart,
     trackFaceScanComplete,
-    trackFaceScanSkip,
     trackAnalysisStart,
     trackAnalysisComplete,
     trackResultView,

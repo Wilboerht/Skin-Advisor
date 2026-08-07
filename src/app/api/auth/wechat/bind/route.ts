@@ -95,12 +95,12 @@ export async function POST(req: NextRequest) {
         const responseData = parsed.data;
 
         if (!officialResponse.ok || !responseData.success) {
-            return apiError(ErrorCode.VALIDATION_ERROR, responseData.error?.message || "绑定失败", officialResponse.status || 400);
+            return apiError(ErrorCode.VALIDATION_ERROR, responseData.error?.message || "绑定未成功", officialResponse.status || 400);
         }
 
         const result = responseData.data;
         if (!result?.user || !result.accessToken || !result.refreshToken) {
-            return apiError(ErrorCode.UPSTREAM_ERROR, "绑定失败：上游响应格式异常", 502);
+            return apiError(ErrorCode.UPSTREAM_ERROR, "绑定未成功：上游响应格式异常", 502);
         }
 
         const userPayload = result.user;

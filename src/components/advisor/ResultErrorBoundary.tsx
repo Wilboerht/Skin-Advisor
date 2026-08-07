@@ -52,9 +52,9 @@ export class ResultErrorBoundary extends Component<Props, State> {
                 <div className="flex min-h-screen items-center justify-center bg-[#FDFBF7] px-4">
                     <div className="text-center max-w-md">
                         <AlertCircle className="w-12 h-12 text-[#8c7a6b] mx-auto mb-4" />
-                        <h2 className="text-xl font-bold text-[#5c4937] mb-2">页面加载出错</h2>
+                        <h2 className="text-xl font-bold text-[#5c4937] mb-2">报告页面出现了问题</h2>
                         <p className="text-sm text-[#8c7a6b] mb-6">
-                            抱歉，报告页面渲染时发生错误。请尝试重试或返回首页重新测试。
+                            报告页面暂时无法显示。请重试或返回首页重新开始。
                         </p>
                         <div className="flex items-center justify-center gap-3">
                             <button

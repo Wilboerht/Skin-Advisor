@@ -8,6 +8,12 @@
  */
 
 import { aiLogger } from "./logger";
+import {
+    CIRCUIT_FAILURE_THRESHOLD,
+    CIRCUIT_COOLDOWN_MS,
+    CIRCUIT_HALF_OPEN_MAX,
+    CIRCUIT_FAILURE_WINDOW_MS,
+} from "@/config/ai";
 
 /** 熔断器状态 */
 type CircuitState = "closed" | "open" | "half-open";
@@ -24,10 +30,10 @@ interface CircuitConfig {
 }
 
 const DEFAULT_CONFIG: CircuitConfig = {
-    failureThreshold: 5,
-    cooldownMs: 60 * 1000, // 1 分钟
-    halfOpenMaxRequests: 2,
-    failureWindowMs: 2 * 60 * 1000, // 2 分钟窗口
+    failureThreshold: CIRCUIT_FAILURE_THRESHOLD,
+    cooldownMs: CIRCUIT_COOLDOWN_MS,
+    halfOpenMaxRequests: CIRCUIT_HALF_OPEN_MAX,
+    failureWindowMs: CIRCUIT_FAILURE_WINDOW_MS,
 };
 
 interface CircuitBreakerEntry {
@@ -212,12 +218,7 @@ class AICircuitBreaker {
 }
 
 // 全局单例
-export const circuitBreaker = new AICircuitBreaker({
-    failureThreshold: 5,      // 连续 5 次失败后熔断
-    cooldownMs: 60 * 1000,    // 1 分钟冷却
-    halfOpenMaxRequests: 2,   // 半开时允许 2 个探测请求
-    failureWindowMs: 2 * 60 * 1000, // 2 分钟窗口
-});
+export const circuitBreaker = new AICircuitBreaker();
 
 export { AICircuitBreaker };
 export type { CircuitState };

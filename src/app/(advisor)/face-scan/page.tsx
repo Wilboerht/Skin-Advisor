@@ -95,7 +95,7 @@ export default function FaceScanPage() {
         const requiredAngles: (keyof FaceCaptureImages)[] = ["front", "left", "right", "chin"];
         const missing = requiredAngles.filter((k) => !images[k]);
         if (missing.length > 0) {
-            toast.error(`缺少 ${missing.join("、")} 角度照片，请重新拍摄`);
+            toast.error("请完成全部角度的拍摄后再继续。");
             setIsSubmitting(false);
             return;
         }
@@ -210,7 +210,7 @@ export default function FaceScanPage() {
             // 捕获动态导入失败（ChunkLoadError）等未预期异常，避免 UI 卡在转圈
             console.error("[FaceScan] handleCaptureComplete failed:", err);
             const isChunkError = (err as Error)?.name === 'ChunkLoadError' || (err as Error)?.message?.includes('Failed to load chunk');
-            toast.error(isChunkError ? "资源加载失败，请刷新页面后重试" : "处理失败，请重试");
+            toast.error(isChunkError ? "加载未成功，请刷新后重试。" : "处理未成功，请重试。");
             setIsSubmitting(false);
             throw err; // 通知 FaceCapture 重置拍摄状态，避免一直卡在“正在分析”
         }

@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { DEFAULT_QUESTIONS, type Question } from "@/config/questions";
-import { QUESTIONNAIRE_ONLY_QUESTIONS, matchQuestionnairePersona } from "@/lib/questionnaire-mapping";
 import { QuestionStep } from "@/components/advisor/QuestionStep";
 import Image from "next/image";
 import Link from "next/link";
@@ -18,10 +17,6 @@ import { preloadAllFaceModels } from "@/lib/preload-models";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { z } from "zod";
-import { skinTypes } from "@/lib/result-content";
-import { type ComprehensiveResult } from "@/lib/analysis-result";
-
-const SCAN_MODE_KEY = "advisor_scan_mode";
 
 const safeStorage = {
     get: (key: string) => {
@@ -77,11 +72,9 @@ export default function QuestionsPage() {
     const [showQualityWarning, setShowQualityWarning] = useState(false);
     const [pendingAnswers, setPendingAnswers] = useState<Record<string, unknown> | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [revealedPersona, setRevealedPersona] = useState<string | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const genderScrollRef = useRef<HTMLDivElement>(null);
     const [restoredStepIndex, setRestoredStepIndex] = useState<number | null>(null);
-    const isQuestionnaireMode = () => safeStorage.get(SCAN_MODE_KEY) === "questionnaire";
 
     // 锁定 body 滚动，防止 iPhone 上出现滚动条 / overscroll（与首页一致）
     useBodyScrollLock({ enabled: true });
@@ -100,12 +93,6 @@ export default function QuestionsPage() {
     const [limitMessage, setLimitMessage] = useState("");
 
     useEffect(() => {
-        // 纯问卷模式走客户端规则映射，不调用 AI 分析接口，无需检查 AI 配置/排队状态
-        if (safeStorage.get(SCAN_MODE_KEY) === "questionnaire") {
-            setAiConfigured(true);
-            return;
-        }
-
         fetch("/api/advisor/check-config")
             .then((r) => r.json())
             .then((data) => {
@@ -149,26 +136,12 @@ export default function QuestionsPage() {
     }, []);
 
     // 从 API 获取问题列表（数据库优先，静态降级）
-    // 纯问卷模式在客户端挂载后通过 useEffect 追加剧外问题，避免 SSR hydration 不匹配
-
-    // 缓存扫描模式（仅在客户端读取 localStorage）
-    const [scanMode, setScanMode] = useState<string | null>(null);
-    useEffect(() => {
-        setScanMode(safeStorage.get(SCAN_MODE_KEY));
-    }, []);
 
     const [allQuestions, setAllQuestions] = useState<Question[]>(DEFAULT_QUESTIONS);
-    const [questionsError, setQuestionsError] = useState<string | null>(null);
     const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
-
-    const appendQuestionnaireOnly = useCallback((base: Question[]): Question[] => {
-        const hasExtra = base.some(q => q.fieldName.startsWith("q_"));
-        return hasExtra ? base : [...base, ...QUESTIONNAIRE_ONLY_QUESTIONS];
-    }, []);
 
     const fetchQuestions = useCallback(async () => {
         setIsLoadingQuestions(true);
-        setQuestionsError(null);
         try {
             const res = await fetch("/api/advisor/questions");
             if (!res.ok) {
@@ -178,19 +151,17 @@ export default function QuestionsPage() {
             const parsed = questionListSchema.safeParse(data);
             if (!parsed.success || parsed.data.length === 0) {
                 console.warn("Questions API returned invalid payload, using defaults:", parsed.error?.issues);
-                setQuestionsError("问题列表数据异常，已使用默认问题。");
-                setAllQuestions(appendQuestionnaireOnly(DEFAULT_QUESTIONS));
+                setAllQuestions(DEFAULT_QUESTIONS);
                 return;
             }
-            setAllQuestions(isQuestionnaireMode() ? appendQuestionnaireOnly(parsed.data) : parsed.data);
+            setAllQuestions(parsed.data);
         } catch (e) {
             console.error("Failed to fetch questions from API, using defaults:", e);
-            setQuestionsError("问题列表加载失败，已使用默认问题。");
-            setAllQuestions(appendQuestionnaireOnly(DEFAULT_QUESTIONS));
+            setAllQuestions(DEFAULT_QUESTIONS);
         } finally {
             setIsLoadingQuestions(false);
         }
-    }, [appendQuestionnaireOnly]);
+    }, []);
 
     useEffect(() => {
         fetchQuestions();
@@ -211,11 +182,8 @@ export default function QuestionsPage() {
     }, [router]);
 
     // 预加载面部识别模型，在用户填问卷时后台加载
-    // 纯问卷模式跳过（不需要面部扫描）
     useEffect(() => {
-        if (!isQuestionnaireMode()) {
-            preloadAllFaceModels();
-        }
+        preloadAllFaceModels();
     }, []);
 
     const getFilteredQuestions = (currentAnswers: Record<string, unknown>, currentGender: typeof gender) => {
@@ -519,41 +487,8 @@ export default function QuestionsPage() {
     const processSubmission = (finalAnswers: Record<string, unknown>) => {
         setIsSubmitting(true);
         safeStorage.set(STORAGE_KEYS.ADVISOR_ANSWERS, JSON.stringify(finalAnswers));
-        // 不再此处清除进度，以便用户从扫脸页返回时能恢复问卷位置
         trackQuestionnaireComplete(finalAnswers);
-
-        // 检查测肤模式：纯问卷模式通过完整匹配链映射到全部 8 种派系
-        const scanMode = safeStorage.get(SCAN_MODE_KEY);
-        if (scanMode === "questionnaire") {
-            const result = matchQuestionnairePersona(finalAnswers);
-            // 构建可被 /result 页面兼容的 ComprehensiveResult 占位结构
-            const typeEntry = skinTypes.find(t => t.route === result.route);
-            const comprehensiveResult: ComprehensiveResult = {
-                skinProfile: {
-                    type: result.route || "unknown",
-                    typeLabel: typeEntry?.typeName || result.name || "未知派系",
-                    concerns: [],
-                },
-                analysis: {
-                    summary: `您的肌肤形象类型为「${result.name || "未知派系"}」，综合评分 ${result.score} 分。`,
-                    details: [],
-                },
-                products: [],
-                dataSource: "questionnaire",
-                persona: result.name,
-                expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-            };
-            safeStorage.set(STORAGE_KEYS.ADVISOR_RESULT, JSON.stringify(comprehensiveResult));
-            // 模拟分析过程：先思考，再揭晓，像分院帽一样
-            setTimeout(() => {
-                setRevealedPersona(result.name);
-            }, 1800);
-            setTimeout(() => {
-                router.push(result.route ? `/skin-types/${result.route}` : "/skin-types");
-            }, 4500);
-        } else {
-            router.push("/face-scan");
-        }
+        router.push("/face-scan");
     };
 
     // 辅助函数：处理带特定答案的完成逻辑
@@ -674,9 +609,9 @@ export default function QuestionsPage() {
                                     <Loader2 className="w-4 h-4 animate-spin" />
                                     正在检查服务状态...
                                 </div>
-                            ) : aiConfigured === false && scanMode !== "questionnaire" ? (
+                            ) : aiConfigured === false ? (
                                 <div className="w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm text-center">
-                                    <h3 className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-2">服务暂未就绪</h3>
+                                    <h3 className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-2">敬请期待</h3>
                                     <p className="text-sm text-brand-charcoal/60 font-light mb-6">{configMessage}</p>
                                     <button
                                         onClick={() => router.push("/")}
@@ -793,31 +728,11 @@ export default function QuestionsPage() {
                         exit={{ opacity: 0 }}
                         className="fixed inset-0 z-[60] bg-[#F5F2E9]/90 backdrop-blur-sm flex flex-col items-center justify-center gap-4"
                     >
-                        {!revealedPersona ? (
-                            <>
-                                <Loader2 className="w-8 h-8 text-brand-charcoal animate-spin" />
+                        <Loader2 className="w-8 h-8 text-brand-charcoal animate-spin" />
                                 <p className="text-sm text-brand-charcoal/60 font-light tracking-wide">
-                                    {scanMode === "questionnaire"
-                                        ? "正在分析你的肌肤派系..."
-                                        : "正在准备面部扫描..."}
-                                </p>
-                            </>
-                        ) : (
-                            <m.div
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ duration: 0.5, ease: "easeOut" }}
-                                className="flex flex-col items-center gap-5"
-                            >
-                                <p className="text-base md:text-lg text-brand-charcoal/50 font-light tracking-wide">
-                                    你的肌肤类型派系是：
-                                </p>
-                                <p className="text-3xl md:text-5xl font-serif font-light tracking-[0.06em] text-brand-charcoal">
-                                    {revealedPersona}
+                                    正在准备面部扫描...
                                 </p>
                             </m.div>
-                        )}
-                    </m.div>
                 )}
             </AnimatePresence>
 
@@ -878,7 +793,6 @@ export default function QuestionsPage() {
                                 direction={direction}
                                 currentStep={currentStepIndex + 1}
                                 totalSteps={questions.length}
-                                mode={isQuestionnaireMode() ? "questionnaire" : "scan"}
                             />
                         </m.div>
                     </AnimatePresence>

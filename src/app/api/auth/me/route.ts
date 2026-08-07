@@ -48,7 +48,7 @@ export async function PUT(req: NextRequest) {
     // CSRF protection for the sub-project's own endpoint
     const csrfResult = await verifyCsrfToken(req);
     if (!csrfResult.valid) {
-        return apiError(ErrorCode.FORBIDDEN, "安全验证失败，请刷新页面后重试", 403);
+        return apiError(ErrorCode.FORBIDDEN, "会话校验未通过，请刷新页面后再试。", 403);
     }
 
     const token = await getAccessToken(req);
@@ -125,6 +125,6 @@ export async function PUT(req: NextRequest) {
         });
     } catch (err) {
         logger.error("[auth/me] PUT error:", err);
-        return apiError(ErrorCode.INTERNAL_ERROR, "应用系统异常，请稍后重试", 500);
+        return apiError(ErrorCode.INTERNAL_ERROR, "服务暂时不可用，请稍后再试。", 500);
     }
 }

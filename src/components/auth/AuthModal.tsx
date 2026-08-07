@@ -169,7 +169,7 @@ export function AuthModal() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             console.error("[Login]", err.message);
-            toast.error(err.message || "登录失败，请检查账号密码");
+            toast.error(err.message || "登录未成功，请检查手机号和密码后重试。");
         } finally {
             setLoading(false);
         }
@@ -198,7 +198,7 @@ export function AuthModal() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             console.error("[Register]", err.message);
-            toast.error(err.message || "注册失败，请稍后重试");
+            toast.error(err.message || "注册未成功，请稍后再试。");
         } finally {
             setLoading(false);
         }
@@ -207,7 +207,7 @@ export function AuthModal() {
     const handleCancelWechatBind = () => {
         // 微信绑定凭证由 httpOnly Cookie (__Host-wechat_bind_token) 管理
         // 取消绑定时后端清除该 Cookie，前端无需额外操作
-        toast.error("微信登录已取消，请使用手机号登录");
+        toast.error("已退出微信登录，您可以使用手机号登录。");
         closeAuthModal();
     };
 
@@ -240,7 +240,7 @@ export function AuthModal() {
             });
 
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || "绑定失败");
+            if (!res.ok) throw new Error(data.error || "绑定未成功");
 
             toast.success("绑定成功！");
 
@@ -251,7 +251,7 @@ export function AuthModal() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             console.error("[WechatBind]", err.message);
-            toast.error(err.message || "绑定失败，请稍后重试");
+            toast.error(err.message || "绑定未成功，请稍后重试");
         } finally {
             setLoading(false);
         }
@@ -273,14 +273,14 @@ export function AuthModal() {
                 : callbackUrl;
             window.location.href = `/api/auth/wechat?redirect=${encodeURIComponent(returnUrl)}`;
         } catch {
-            toast.error("网络错误，请重试");
+            toast.error("网络连接异常，请检查网络后重试。");
             setLoading(false);
         }
     };
 
     const handleSendRegCode = async () => {
         if (!/^1[3-9]\d{9}$/.test(regPhone)) {
-            toast.error("请输入正确的手机号");
+            toast.error("请输入有效的 11 位手机号。");
             return;
         }
         setRegCodeSending(true);
@@ -291,13 +291,13 @@ export function AuthModal() {
                 body: JSON.stringify({ phone: regPhone, type: "register" })
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error?.message || data.error || "发送验证码失败");
+            if (!res.ok) throw new Error(data.error?.message || data.error || "验证码发送未成功");
             toast.success("验证码已发送");
             setRegCountdown(60);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error("[SendRegCode]", error.message);
-            toast.error(error.message || "发送失败，请稍后重试");
+            toast.error(error.message || "验证码发送未成功，请稍后再试。");
         } finally {
             setRegCodeSending(false);
         }
@@ -314,7 +314,7 @@ export function AuthModal() {
             });
             const data = await res.json();
 
-            if (!res.ok) throw new Error(data.error?.message || data.error || "请求失败");
+            if (!res.ok) throw new Error(data.error?.message || data.error || "请求未成功");
 
             setForgotSubmitted(true);
             setResetCountdown(60);
@@ -322,7 +322,7 @@ export function AuthModal() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error("[ForgotPassword]", error.message);
-            toast.error(error.message || "发送失败，请稍后重试");
+            toast.error(error.message || "验证码发送未成功，请稍后再试。");
         } finally {
             setLoading(false);
         }
@@ -340,7 +340,7 @@ export function AuthModal() {
     // 手机端登录面板：发送登录验证码
     const handleSendLoginCode = async () => {
         if (!/^1[3-9]\d{9}$/.test(loginPhone)) {
-            toast.error("请输入正确的手机号");
+            toast.error("请输入有效的 11 位手机号。");
             return;
         }
         setLoginCodeSending(true);
@@ -351,13 +351,13 @@ export function AuthModal() {
                 body: JSON.stringify({ phone: loginPhone, type: "login" })
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error?.message || data.error || "发送失败");
+            if (!res.ok) throw new Error(data.error?.message || data.error || "发送未成功");
             setLoginCodeCountdown(60);
             toast.success("验证码已发送");
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error("[SendLoginCode]", error.message);
-            toast.error(error.message || "发送失败，请稍后重试");
+            toast.error(error.message || "验证码发送未成功，请稍后再试。");
         } finally {
             setLoginCodeSending(false);
         }
@@ -366,7 +366,7 @@ export function AuthModal() {
     // 手机端专用：发送重置验证码
     const handleMobileSendResetCode = async () => {
         if (!/^1[3-9]\d{9}$/.test(forgotPhone)) {
-            toast.error("请输入正确的手机号");
+            toast.error("请输入有效的 11 位手机号。");
             return;
         }
         setLoading(true);
@@ -377,14 +377,14 @@ export function AuthModal() {
                 body: JSON.stringify({ phone: forgotPhone, type: "reset" })
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error?.message || data.error || "请求失败");
+            if (!res.ok) throw new Error(data.error?.message || data.error || "请求未成功");
             setResetCountdown(60);
             setMobileForgotStep("code");
             toast.success("重置验证码已发送");
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error("[MobileResetCode]", error.message);
-            toast.error(error.message || "发送失败，请稍后重试");
+            toast.error(error.message || "验证码发送未成功，请稍后再试。");
         } finally {
             setLoading(false);
         }
@@ -410,7 +410,7 @@ export function AuthModal() {
                 body: JSON.stringify({ phone: forgotPhone, code: resetCode, password: resetNewPassword })
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error?.message || data.error || "重置失败");
+            if (!res.ok) throw new Error(data.error?.message || data.error || "重置未成功");
             toast.success("密码已重置，请登录");
             setResetCode("");
             setResetNewPassword("");
@@ -419,7 +419,7 @@ export function AuthModal() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error("[MobileResetPassword]", error.message);
-            toast.error(error.message || "重置密码失败，请稍后重试");
+            toast.error(error.message || "密码重置未成功，请稍后再试。");
         } finally {
             setLoading(false);
         }
@@ -444,7 +444,7 @@ export function AuthModal() {
                 body: JSON.stringify({ phone: forgotPhone, code: resetCode, password: resetNewPassword })
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error?.message || data.error || "重置失败");
+            if (!res.ok) throw new Error(data.error?.message || data.error || "重置未成功");
 
             toast.success("密码已重置，请登录");
             setAuthView("login");
@@ -457,7 +457,7 @@ export function AuthModal() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error("[ResetPassword]", error.message);
-            toast.error(error.message || "重置密码失败，请稍后重试");
+            toast.error(error.message || "密码重置未成功，请稍后再试。");
         } finally {
             setLoading(false);
         }
@@ -1442,7 +1442,7 @@ export function AuthModal() {
                                                 type="button"
                                                 onClick={() => {
                                                     if (!/^\d{6}$/.test(resetCode)) {
-                                                        toast.error("请输入6位验证码");
+                                                        toast.error("请输入 6 位短信验证码。");
                                                         return;
                                                     }
                                                     setMobileForgotStep("password");

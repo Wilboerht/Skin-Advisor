@@ -97,6 +97,6 @@ export async function PUT(req: NextRequest) {
         });
     } catch (error) {
         logger.error("[user/profile] Update failed:", error);
-        return apiError(ErrorCode.INTERNAL_ERROR, "更新失败", 500);
+        return apiError(ErrorCode.INTERNAL_ERROR, "信息更新未成功", 500);
     }
 }

@@ -47,7 +47,7 @@ export function ConfirmModal({
       setIsSubmitting(false);
     } catch (err) {
       setIsSubmitting(false);
-      setError(err instanceof Error ? err.message : "操作失败，请重试");
+      setError(err instanceof Error ? err.message : "操作未成功，请重试");
     }
   };
 

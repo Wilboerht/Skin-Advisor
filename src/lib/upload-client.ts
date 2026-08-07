@@ -92,7 +92,7 @@ export async function uploadImage(
 
     const signData = await signRes.json();
     if (!signRes.ok || !signData.success) {
-        throw new Error(signData.error || "获取上传签名失败");
+        throw new Error(signData.error || "获取上传签名未成功");
     }
 
     const { uploadUrl, publicUrl } = signData.data;

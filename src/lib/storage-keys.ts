@@ -31,8 +31,7 @@ export const STORAGE_KEYS = {
     // 地理位置
     USER_REGION: 'userRegion',
 
-    // 扫描模式与预处理状态
-    ADVISOR_SCAN_MODE: 'advisor_scan_mode',
+    // 预处理状态
     ADVISOR_PREPROCESSING: 'advisor_preprocessing',
 
     // 地理位置授权（sessionStorage）

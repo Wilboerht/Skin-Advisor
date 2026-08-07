@@ -68,18 +68,18 @@ export default function ProfileClient() {
       formData.append("file", file);
       const uploadRes = await fetchWithCsrf("/api/upload", { method: "POST", body: formData });
       const uploadData = await uploadRes.json();
-      if (!uploadRes.ok || !uploadData.url) throw new Error(uploadData.error || "上传失败");
+      if (!uploadRes.ok || !uploadData.url) throw new Error(uploadData.error || "上传未成功");
 
       const updateRes = await fetchWithCsrf("/api/user/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ avatar: uploadData.url }),
       });
-      if (!updateRes.ok) throw new Error("保存失败");
+      if (!updateRes.ok) throw new Error("保存未成功");
       await refresh();
     } catch (err) {
       console.error("Avatar update error:", err);
-      toast.error(err instanceof Error ? err.message : "头像更新失败");
+      toast.error(err instanceof Error ? err.message : "头像更新未成功");
     } finally {
       setUpdatingAvatar(false);
     }
@@ -100,7 +100,7 @@ export default function ProfileClient() {
       setIsEditingName(false);
     } catch (err) {
       console.error("Name update error:", err);
-      toast.error("昵称更新失败");
+      toast.error("昵称更新未成功");
     }
   };
 

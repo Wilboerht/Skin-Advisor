@@ -23,7 +23,6 @@ const EventSchema = z.object({
         "questionnaire_complete",  // 完成问卷
         "face_scan_start",         // 开始面部扫描
         "face_scan_complete",      // 完成面部扫描
-        "face_scan_skip",          // 跳过面部扫描
         "analysis_start",          // 开始分析
         "analysis_complete",       // 分析完成
         "result_view",             // 查看结果
@@ -219,28 +218,6 @@ export async function POST(request: NextRequest) {
                         faceScanCompletedAt: now,
                         faceScanUsed: true,
                         faceScanSkipped: false,
-                    },
-                });
-                break;
-            }
-
-            case "face_scan_skip": {
-                await prisma.advisorSession.upsert({
-                    where: { sessionId },
-                    create: {
-                        sessionId,
-                        faceScanSkipped: true,
-                        faceScanUsed: false,
-                        userAgent: clientInfo.userAgent,
-                        ip: clientInfo.ip,
-                        referrer: clientInfo.referer,
-                        deviceType: clientInfo.deviceType,
-                        browser: clientInfo.browser,
-                        os: clientInfo.os,
-                    },
-                    update: {
-                        faceScanSkipped: true,
-                        faceScanUsed: false,
                     },
                 });
                 break;

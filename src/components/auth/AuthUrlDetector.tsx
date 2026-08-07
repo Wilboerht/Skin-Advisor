@@ -70,7 +70,7 @@ export function AuthUrlDetector() {
                 ? decodeURIComponent(message)
                 : code === "WECHAT_DENIED"
                 ? "您取消了微信授权"
-                : "微信授权失败，请稍后重试";
+                : "微信授权未成功，请稍后重试";
             toast.error(displayMessage);
 
             if (typeof window !== "undefined") {

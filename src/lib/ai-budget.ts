@@ -11,6 +11,7 @@
 import prisma from "./prisma";
 import { aiLogger } from "./logger";
 import type { AIProvider } from "./ai";
+import { AI_DAILY_TOKEN_BUDGET, AI_DAILY_COST_BUDGET_CNY, AI_MONTHLY_TOKEN_BUDGET, AI_MONTHLY_COST_BUDGET_CNY, USER_DAILY_AI_CALL_LIMIT } from "@/config/ai";
 
 export type AIRequestType = "text" | "vision";
 
@@ -107,23 +108,12 @@ export function estimateAICost(
     return Math.round((inputCost + outputCost) * multiplier * 1_000_000) / 1_000_000;
 }
 
-// ============================================================================
-// 预算读取
-// ============================================================================
-
-function parseBudgetEnv(value: string | undefined): number | null {
-    if (!value) return null;
-    const n = Number(value);
-    if (!Number.isFinite(n) || n <= 0) return null;
-    return n;
-}
-
 function getBudgetConfig() {
     return {
-        dailyTokenBudget: parseBudgetEnv(process.env.AI_DAILY_TOKEN_BUDGET) ?? 500000,     // 默认 50万 tokens/天
-        dailyCostBudget: parseBudgetEnv(process.env.AI_DAILY_COST_BUDGET_CNY) ?? 200,       // 默认 ¥200/天
-        monthlyTokenBudget: parseBudgetEnv(process.env.AI_MONTHLY_TOKEN_BUDGET) ?? 10000000, // 默认 1000万 tokens/月
-        monthlyCostBudget: parseBudgetEnv(process.env.AI_MONTHLY_COST_BUDGET_CNY) ?? 500,   // 默认 ¥500/月
+        dailyTokenBudget: AI_DAILY_TOKEN_BUDGET || undefined,
+        dailyCostBudget: AI_DAILY_COST_BUDGET_CNY || undefined,
+        monthlyTokenBudget: AI_MONTHLY_TOKEN_BUDGET || undefined,
+        monthlyCostBudget: AI_MONTHLY_COST_BUDGET_CNY || undefined,
     };
 }
 
@@ -263,16 +253,16 @@ export async function checkAIBudget(
     }
 
     if (budget.dailyTokenBudget && stats.dailyTokens >= budget.dailyTokenBudget) {
-        return { allowed: false, reason: "AI 日 token 预算已耗尽", ...stats };
+        return { allowed: false, reason: "服务当前繁忙，请稍后再试。", ...stats };
     }
     if (budget.dailyCostBudget && effectiveDailyCost >= budget.dailyCostBudget) {
-        return { allowed: false, reason: "AI 日费用预算已耗尽（含在途调用）", ...stats };
+        return { allowed: false, reason: "服务当前繁忙，请稍后再试。", ...stats };
     }
     if (budget.monthlyTokenBudget && stats.monthlyTokens >= budget.monthlyTokenBudget) {
-        return { allowed: false, reason: "AI 月 token 预算已耗尽", ...stats };
+        return { allowed: false, reason: "服务当前繁忙，请稍后再试。", ...stats };
     }
     if (budget.monthlyCostBudget && effectiveMonthlyCost >= budget.monthlyCostBudget) {
-        return { allowed: false, reason: "AI 月费用预算已耗尽", ...stats };
+        return { allowed: false, reason: "服务当前繁忙，请稍后再试。", ...stats };
     }
 
     // 预留预估成本作为在途开销，防止并发请求同时通过预算检查
@@ -282,7 +272,7 @@ export async function checkAIBudget(
     // TOCTOU 防护：用当前调用成本 + 在途预留 做二次校验，关小并发绕过窗口
     // 8 个并发槽位 × ¥0.30 = ¥2.40 理论最大超支，二次校验将其压缩到 ~¥0.30
     if (budget.dailyCostBudget && effectiveDailyCost + effectiveEstimatedCost > budget.dailyCostBudget * 1.05) {
-        return { allowed: false, reason: "AI 日费用预算接近上限（含预估本次消耗）", ...stats };
+        return { allowed: false, reason: "服务当前繁忙，请稍后再试。", ...stats };
     }
 
     if (requestType) {
@@ -296,8 +286,6 @@ export async function checkAIBudget(
 // 单用户每日 AI 调用硬上限
 // ============================================================================
 
-const USER_DAILY_AI_CALL_LIMIT = 30; // 单用户每日 AI 调用次数上限
-
 async function checkUserAILimit(userId: string): Promise<{ allowed: boolean; reason?: string }> {
     const day = getDayBounds();
     const userCallCount = await prisma.aIUsageLog.count({
@@ -310,7 +298,7 @@ async function checkUserAILimit(userId: string): Promise<{ allowed: boolean; rea
     if (userCallCount >= USER_DAILY_AI_CALL_LIMIT) {
         return {
             allowed: false,
-            reason: `用户每日 AI 调用次数已达上限（${USER_DAILY_AI_CALL_LIMIT} 次），请明天再试`,
+            reason: `今日分析次数已达上限，明天自动恢复。如需继续请联系客服。`,
         };
     }
     return { allowed: true };

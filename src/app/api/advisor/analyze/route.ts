@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { apiError } from "@/lib/api-response";
 import { ErrorCode } from "@/lib/error-codes";
-import { generateText, isAIEnabled, fallbackAnalysis, type AIProvider } from "@/lib/ai";
+import { generateText, fallbackAnalysis, type AIProvider } from "@/lib/ai";
 import { analysisQueue } from "@/lib/ai-queue";
 import { circuitBreaker } from "@/lib/circuit-breaker";
 import { validateAndExtractJson, TextAnalysisOutputSchema } from "@/lib/advisor-utils";
@@ -473,91 +473,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // 5. 检查 AI 开关
-        const aiEnabled = await isAIEnabled();
-
-        if (!aiEnabled) {
-            // 降级模式：使用规则引擎生成面部分析数据
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const fallbackFace = fallbackAnalysis(answers as any);
-
-            // 补全产品推荐 (DB) — 与正式 AI 路径一致：先走 IP 匹配 + 候选池
-            const fallbackSkinType = fallbackFace.skinType.type;
-            const enrichedAnswers = { ...answers, skinType: fallbackSkinType };
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const concerns = identifyConcerns(enrichedAnswers as any, fallbackFace);
-            const personaKey = matchCharacterIP({
-                score: fallbackFace.overallScore ?? 0,
-                skinType: fallbackSkinType,
-                budget: answers.budget,
-                skincareFrequency: answers.skincareFrequency,
-            }).key;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const candidateProducts = await getCandidateProducts(enrichedAnswers as any, concerns, 3, personaKey, envContext);
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const products = await recommendProducts(enrichedAnswers as any, concerns, candidateProducts, 3, personaKey, envContext);
-
-            // 构造符合 ComprehensiveResult 结构的数据
-            const finalResult = {
-                skinProfile: {
-                    type: fallbackFace.skinType.type,
-                    typeLabel: getSkinTypeLabel(fallbackFace.skinType.type),
-                    concerns: concerns,
-                    skinAge: 25
-                },
-                analysis: {
-                    summary: fallbackFace.skinType.description || "基于您的问卷数据生成的初步分析报告。",
-                    details: [
-                        "由于 AI 服务暂时不可用，本报告基于您的问卷回答生成。",
-                        `检测到的主要肤质特征为：${getSkinTypeLabel(fallbackFace.skinType.type)}。`,
-                        ...fallbackFace.recommendations
-                    ]
-                },
-                products: products,
-                dataSource: "questionnaire" as const,
-                persona: personaKey,
-                userLocation: geoLocation,
-                nickname: nickname || "护肤达人"
-            };
-
-            // 持久化降级结果（effectiveSessionId 总是存在）
-            // 游客统一 1 小时，与 hybrid 路径一致
-            {
-                const GUEST_RETENTION_HOURS = 1;
-                const expiresAt = user?.id
-                    ? new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
-                    : new Date(Date.now() + GUEST_RETENTION_HOURS * 60 * 60 * 1000);
-                try {
-                    await prisma.advisorSession.upsert({
-                        where: { sessionId: effectiveSessionId },
-                        update: {
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            analysisResult: finalResult as any,
-                            analysisSource: "fallback",
-                            completedAt: new Date(),
-                            expiresAt
-                            // answers 已在前面保存，此处不覆盖
-                        },
-                        create: {
-                            sessionId: effectiveSessionId,
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            answers: answers as any,
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            analysisResult: finalResult as any,
-                            analysisSource: "fallback",
-                            completedAt: new Date(),
-                            expiresAt
-                        }
-                    });
-                } catch (persistErr) {
-                    logger.error("[AI-Disabled] Failed to persist fallback result:", persistErr);
-                }
-            }
-
-            return NextResponse.json(finalResult, { headers: rateLimitHeaders });
-        }
-
-        // 6. 构建 AI 提示词与调用
+        // 5. 构建 AI 提示词与调用
         // Resolve Skin Type (Priority: Face Analysis > User Answer)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const finalSkinType = determineSkinType(answers, (faceAnalysis as any) || undefined);
@@ -889,7 +805,7 @@ export async function POST(request: NextRequest) {
                 });
             } catch (txErr) {
                 logger.error("Failed to persist final analysis:", txErr);
-                const response = apiError(ErrorCode.SERVICE_UNAVAILABLE, "分析结果保存失败，请重试", 503, "DATABASE_PERSISTENCE_ERROR");
+                const response = apiError(ErrorCode.SERVICE_UNAVAILABLE, "分析结果保存未成功，请重试", 503, "DATABASE_PERSISTENCE_ERROR");
             Object.entries(rateLimitHeaders).forEach(([k, v]) => response.headers.set(k, v));
             return response;
             }
@@ -943,7 +859,7 @@ export async function POST(request: NextRequest) {
         }
         // 预算熔断 / 熔断器错误（可能从 AI 调用之外的其他路径逃逸）
         if (err.message?.includes("[AIBudget]")) {
-            const response = apiError("AI_BUDGET_EXCEEDED", "AI 服务当前额度已用完，请稍后再试", 503);
+            const response = apiError("AI_BUDGET_EXCEEDED", "当前访问人数较多，请稍后再试。", 503);
             response.headers.set("Retry-After", "3600");
             return response;
         }
@@ -958,7 +874,7 @@ export async function POST(request: NextRequest) {
             errorName: err.name,
             sessionId: effectiveSessionId || undefined,
         });
-        return apiError(ErrorCode.INTERNAL_ERROR, "生成分析报告失败，请重试", 500);
+        return apiError(ErrorCode.INTERNAL_ERROR, "报告生成遇到问题，请重试一次。", 500);
     } finally {
         clearTimeout(serverTimeout);
         request.signal.removeEventListener('abort', onClientAbort);

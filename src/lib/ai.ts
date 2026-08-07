@@ -8,6 +8,7 @@ import { filterHealthyKeys, recordKeyResult } from "./ai-key-health";
 import {
     extractJsonFromResponse,
     getDefaultFaceAnalysisResult,
+    getSkinTypeLabel,
     identifyConcerns,
     type QuestionnaireAnswers,
     type FaceAnalysisResult
@@ -622,7 +623,7 @@ export function fallbackAnalysis(answers: QuestionnaireAnswers): FaceAnalysisRes
 
     // 1. 肤质推断
     result.skinType.type = answers.skinType || "combination";
-    result.skinType.description = "根据您的问卷反馈，初步推测为" + (answers.skinType || "混合性") + "肌肤。";
+    result.skinType.description = "根据您的问卷反馈，初步推测为" + (getSkinTypeLabel(answers.skinType || "") || "混合性") + "肌肤。";
 
     // 2. 关注点映射
     const concerns = identifyConcerns(answers);

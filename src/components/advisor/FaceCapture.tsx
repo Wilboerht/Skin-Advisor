@@ -1093,7 +1093,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
           console.error("[FaceCapture] onCapture failed, resetting capture state:", err);
           // 父级处理失败（如资源加载失败），重置拍摄状态，由错误浮层引导用户重试
           setIsAllCaptured(false);
-          setError("处理失败，请重新拍摄");
+          setError("处理未成功，请重新拍摄");
           setFaceStatus("none");
           setShowSuccessForStep(null);
           setStabilityProgress(0);
@@ -1610,7 +1610,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
       {modelLoadFailed && !isLoading && (
         <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm p-8 text-center">
           <AlertCircle className="h-10 w-10 text-yellow-400 mb-3" />
-          <p className="text-white/80 text-sm mb-2">面部检测加载失败</p>
+           <p className="text-white/80 text-sm mb-2">面部检测加载未成功</p>
           <p className="text-white/50 text-xs">您可以点击下方按钮手动拍照</p>
         </div>
       )}
