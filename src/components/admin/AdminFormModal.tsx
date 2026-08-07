@@ -86,8 +86,8 @@ export function AdminFormModal({ isOpen, onClose, onSubmit, admin, loading }: Ad
       if (!username.trim() || username.length < 3) {
         newErrors.username = "用户名至少3个字符";
       }
-      if (!password || password.length < 6) {
-        newErrors.password = "密码至少6个字符";
+      if (!password || password.length < 8) {
+        newErrors.password = "密码至少需要 8 个字符";
       }
     }
     if (email && !email.includes("@")) {
