@@ -29,6 +29,11 @@ export const GET = withAdminAuth(async (
     { params }
 ) => {
     try {
+        const ip = getClientIP(request);
+        const rc = await rateLimit(`admin-products-get-${ip}`, "default", { maxRequests: 60, windowMs: 60 * 1000 });
+        if (!rc.success) {
+            return NextResponse.json({ error: "请求过于频繁" }, { status: 429 });
+        }
         const { id } = await params;
         const product = await prisma.product.findUnique({
             where: { id }

@@ -225,9 +225,8 @@ export function WeeklyGrowth({ data }: { data?: StatsData['weeklyGrowth'] }) {
     );
 }
 
-// Wrapper that fetches data
-export function DashboardCharts() {
-    const { stats, loading } = useDashboardStats();
+// Wrapper that receives data from parent
+export function DashboardCharts({ stats, loading }: { stats: StatsData | null; loading?: boolean }) {
 
     if (loading) {
         return (

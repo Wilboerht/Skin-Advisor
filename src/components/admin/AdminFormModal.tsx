@@ -190,12 +190,13 @@ export function AdminFormModal({ isOpen, onClose, onSubmit, admin, loading }: Ad
                 onChange={(e) => { setPassword(e.target.value); markDirty(); }}
                 disabled={loading}
                 placeholder={isEditing ? "输入新密码以重置" : "输入密码"}
-                onBlur={() => { if (!isEditing && password && password.length < 6) setErrors(prev => ({ ...prev, password: "密码至少6个字符" })); else if (errors.password) setErrors(prev => { const n = { ...prev }; delete n.password; return n; }); }}
+                onBlur={() => { if (!isEditing && password && password.length < 8) setErrors(prev => ({ ...prev, password: "密码至少需要 8 个字符" })); else if (errors.password) setErrors(prev => { const n = { ...prev }; delete n.password; return n; }); }}
                 className="w-full px-3 py-2.5 rounded-lg border border-[#E9E9E7] text-sm text-[#1A1A1A] placeholder:text-[#1A1A1A]/30 focus:outline-none focus:border-[#3D4430]/40 transition-colors disabled:opacity-60 bg-white pr-10"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "隐藏密码" : "显示密码"}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1A1A1A]/40 hover:text-[#1A1A1A]"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}

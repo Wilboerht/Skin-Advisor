@@ -22,6 +22,11 @@ import { logger } from "@/lib/logger";
 // Available to super_admin and admin
 export const GET = withAdminAuth(async (request: NextRequest) => {
     try {
+        const ip = getClientIP(request);
+        const rc = await rateLimit(`admin-products-${ip}`, "default", { maxRequests: 60, windowMs: 60 * 1000 });
+        if (!rc.success) {
+            return NextResponse.json({ error: "请求过于频繁" }, { status: 429 });
+        }
         const searchParams = request.nextUrl.searchParams;
         const page = Math.max(1, parseInt(searchParams.get("page") || "1") || 1);
         const limit = Math.min(500, Math.max(1, parseInt(searchParams.get("limit") || "50") || 50));

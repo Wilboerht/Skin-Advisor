@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import { CampaignList } from "./CampaignList"
 import { CampaignFormModal } from "./CampaignFormModal"
 import { useConfirm } from "@/components/ui/ConfirmModal"
+import { PaginationBar } from "@/components/ui/PaginationBar"
 import { useToast } from "@/components/ui/Toast"
 import {
   type Campaign,
@@ -144,29 +145,12 @@ export function CampaignsClient() {
         onStatusChange={handleStatusChange}
       />
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-4">
-          <button
-            type="button"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1 || loading}
-            className="px-3 py-1.5 rounded-lg border border-[#E9E9E7] text-sm hover:bg-gray-50 disabled:opacity-40"
-          >
-            上一页
-          </button>
-          <span className="text-sm text-[#5E5E5E]">
-            第 {page} / {totalPages} 页
-          </span>
-          <button
-            type="button"
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages || loading}
-            className="px-3 py-1.5 rounded-lg border border-[#E9E9E7] text-sm hover:bg-gray-50 disabled:opacity-40"
-          >
-            下一页
-          </button>
-        </div>
-      )}
+      <PaginationBar
+        page={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        disabled={loading}
+      />
 
       <CampaignFormModal
         key={`campaign-form-${showForm ? editingCampaign?.id ?? "new" : "closed"}`}

@@ -4,6 +4,7 @@ import { Clock, Smartphone, Settings, Save, User as UserIcon, Loader2 } from "lu
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { AdminModal } from "@/components/ui/AdminModal";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { useMounted } from "@/hooks/use-mounted";
 import { isDisabledUser, UserRole } from "@/lib/permissions";
 
@@ -36,6 +37,7 @@ export function UserDetailModal({ isOpen, onClose, userId, onUpdate }: UserDetai
   const [newLimit, setNewLimit] = useState(1);
   const [saving, setSaving] = useState(false);
   const [limitDirty, setLimitDirty] = useState(false);
+  const [showUnsavedConfirm, setShowUnsavedConfirm] = useState(false);
   const toast = useToast();
   const mounted = useMounted();
   const abortRef = useRef<AbortController | null>(null);
@@ -115,11 +117,17 @@ export function UserDetailModal({ isOpen, onClose, userId, onUpdate }: UserDetai
 
   const handleClose = useCallback(() => {
     if (limitDirty) {
-      if (!window.confirm("您有未保存的测试次数更改，确定要关闭吗？")) return;
-      setLimitDirty(false);
+      setShowUnsavedConfirm(true);
+      return;
     }
     onClose();
   }, [limitDirty, onClose]);
+
+  const handleConfirmClose = useCallback(() => {
+    setShowUnsavedConfirm(false);
+    setLimitDirty(false);
+    onClose();
+  }, [onClose]);
 
   if (!mounted) return null;
 
@@ -264,6 +272,17 @@ export function UserDetailModal({ isOpen, onClose, userId, onUpdate }: UserDetai
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={showUnsavedConfirm}
+        onClose={() => setShowUnsavedConfirm(false)}
+        onConfirm={handleConfirmClose}
+        title="未保存的更改"
+        message="您有未保存的测试次数更改，确定要关闭吗？"
+        confirmText="放弃更改"
+        cancelText="继续编辑"
+        variant="warning"
+      />
     </AdminModal>
   );
 }

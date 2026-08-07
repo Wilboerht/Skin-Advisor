@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireRole, logAdminAction, getClientInfo } from "@/lib/admin-auth";
 import { AdminRole } from "@/lib/permissions";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { revokeAdminSessions } from "@/lib/session-verify";
 import bcrypt from "bcryptjs";
 import { logger } from "@/lib/logger";
@@ -9,6 +10,11 @@ import { logger } from "@/lib/logger";
 // POST /api/admin/admins/[id]/reset-password
 export const POST = requireRole(AdminRole.SUPER_ADMIN)(async (request, { admin, params }) => {
     try {
+        const ip = getClientIP(request);
+        const rc = await rateLimit(`admin-reset-password-${ip}`, "default", { maxRequests: 10, windowMs: 60 * 1000 });
+        if (!rc.success) {
+            return NextResponse.json({ error: "请求过于频繁" }, { status: 429 });
+        }
         const { id } = await params;
         const body = await request.json();
         const { password } = body;

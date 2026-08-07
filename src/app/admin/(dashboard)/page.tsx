@@ -108,7 +108,7 @@ export default function AdminDashboardPage() {
             </div>
 
             {/* Charts */}
-            <DashboardCharts />
+            <DashboardCharts stats={stats} />
 
             {/* Today's Activity */}
             <motion.div

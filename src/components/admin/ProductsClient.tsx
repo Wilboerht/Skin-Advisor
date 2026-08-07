@@ -235,6 +235,7 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                 setIsRefreshing(true);
                 router.refresh();
                 setSelectedIds([]);
+                toast.success("批量操作完成");
             } else {
                 const message = await parseErrorMessage(res, "批量操作失败");
                 toast.error(message);

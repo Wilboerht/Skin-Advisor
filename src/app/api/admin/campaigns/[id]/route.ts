@@ -1,11 +1,17 @@
 import prisma from "@/lib/prisma"
 import { withAdminAuth, logAdminAction, getClientInfo } from "@/lib/admin-auth"
+import { rateLimit, getClientIP } from "@/lib/ratelimit"
 import { logger } from "@/lib/logger"
 import { campaignUpdateSchema } from "@/lib/campaigns"
 import { NextResponse } from "next/server"
 
 // PATCH /api/admin/campaigns/[id] - 更新活动
 export const PATCH = withAdminAuth(async (req, { admin, params }) => {
+  const ip = getClientIP(req);
+  const rc = await rateLimit(`admin-campaigns-patch-${ip}`, "default", { maxRequests: 30, windowMs: 60 * 1000 });
+  if (!rc.success) {
+    return NextResponse.json({ error: "请求过于频繁" }, { status: 429 });
+  }
   const { id } = await params
   try {
     const body = await req.json()
@@ -49,9 +55,18 @@ export const PATCH = withAdminAuth(async (req, { admin, params }) => {
 
 // DELETE /api/admin/campaigns/[id] - 删除活动
 export const DELETE = withAdminAuth(async (req, { admin, params }) => {
+  const ip = getClientIP(req);
+  const rc = await rateLimit(`admin-campaigns-delete-${ip}`, "default", { maxRequests: 20, windowMs: 60 * 1000 });
+  if (!rc.success) {
+    return NextResponse.json({ error: "请求过于频繁" }, { status: 429 });
+  }
 
   const { id } = await params
   try {
+    const existing = await prisma.campaign.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ error: "活动不存在" }, { status: 404 });
+    }
     await prisma.campaign.delete({ where: { id } })
 
     // 审计日志

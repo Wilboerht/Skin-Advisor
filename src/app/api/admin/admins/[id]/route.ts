@@ -5,13 +5,19 @@ import { ErrorCode } from "@/lib/error-codes";
 import prisma from "@/lib/prisma";
 import { requireRole, logAdminAction, getClientInfo } from "@/lib/admin-auth";
 import { AdminRole, VALID_ADMIN_ROLES, isSuperAdmin } from "@/lib/permissions";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import bcrypt from "bcryptjs";
 import { logger } from "@/lib/logger";
 
 // PATCH /api/admin/admins/[id] - Update admin info
 export const PATCH = requireRole(AdminRole.SUPER_ADMIN)(async (request, { admin, params }) => {
+    const ip = getClientIP(request);
+    const rc = await rateLimit(`admin-admins-patch-${ip}`, "default", { maxRequests: 20, windowMs: 60 * 1000 });
+    if (!rc.success) {
+        return NextResponse.json({ error: "请求过于频繁" }, { status: 429 });
+    }
+    const { id } = await params;
     try {
-        const { id } = await params;
         const body = await request.json();
         const { name, email, role, password, active } = body;
 
@@ -140,6 +146,12 @@ export const PATCH = requireRole(AdminRole.SUPER_ADMIN)(async (request, { admin,
 // DELETE /api/admin/admins/[id] - Delete admin
 export const DELETE = requireRole(AdminRole.SUPER_ADMIN)(async (request, { admin, params }) => {
     try {
+        const ip = getClientIP(request);
+        const rc = await rateLimit(`admin-admins-delete-${ip}`, "default", { maxRequests: 20, windowMs: 60 * 1000 });
+        if (!rc.success) {
+            return NextResponse.json({ error: "请求过于频繁" }, { status: 429 });
+        }
+
         const { id } = await params;
 
         // Cannot delete self
@@ -147,22 +159,31 @@ export const DELETE = requireRole(AdminRole.SUPER_ADMIN)(async (request, { admin
             return apiError(ErrorCode.VALIDATION_ERROR, "不能删除自己的账号", 400);
         }
 
-        const targetAdmin = await prisma.adminUser.findUnique({ where: { id } });
-        if (!targetAdmin) {
-            return apiError(ErrorCode.NOT_FOUND, "管理员不存在", 404);
-        }
-
-        // Cannot delete the last active super_admin
-        if (isSuperAdmin(targetAdmin.role)) {
-            const activeSuperAdminCount = await prisma.adminUser.count({
-                where: { role: AdminRole.SUPER_ADMIN, active: true },
-            });
-            if (activeSuperAdminCount <= 1) {
-                return apiError(ErrorCode.VALIDATION_ERROR, "不能删除最后一个活跃的超级管理员", 400);
+        // Atomic transaction: count + delete to prevent race on last super_admin
+        const deleteResult = await prisma.$transaction(async (tx) => {
+            const targetAdmin = await tx.adminUser.findUnique({ where: { id } });
+            if (!targetAdmin) {
+                return { __error: apiError(ErrorCode.NOT_FOUND, "管理员不存在", 404) };
             }
+
+            if (isSuperAdmin(targetAdmin.role)) {
+                const activeSuperAdminCount = await tx.adminUser.count({
+                    where: { role: AdminRole.SUPER_ADMIN, active: true },
+                });
+                if (activeSuperAdminCount <= 1) {
+                    return { __error: apiError(ErrorCode.VALIDATION_ERROR, "不能删除最后一个活跃的超级管理员", 400) };
+                }
+            }
+
+            await tx.adminUser.delete({ where: { id } });
+            return { targetAdmin };
+        });
+
+        if ("__error" in deleteResult) {
+            return deleteResult.__error as NextResponse;
         }
 
-        await prisma.adminUser.delete({ where: { id } });
+        const { targetAdmin } = deleteResult as { targetAdmin: { username: string; name: string | null; role: string } };
 
         // Log audit
         const clientInfo = getClientInfo(request);

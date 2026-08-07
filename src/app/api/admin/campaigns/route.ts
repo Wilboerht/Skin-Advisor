@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma"
 import { withAdminAuth, logAdminAction, getClientInfo } from "@/lib/admin-auth"
+import { rateLimit, getClientIP } from "@/lib/ratelimit"
 import { logger } from "@/lib/logger"
 import { NextResponse } from "next/server"
 import {
@@ -11,6 +12,11 @@ import {
 // GET /api/admin/campaigns - 获取活动列表（分页）
 export const GET = withAdminAuth(async (req) => {
   try {
+    const ip = getClientIP(req);
+    const rl = await rateLimit(`admin-campaigns-${ip}`, "default", { maxRequests: 30, windowMs: 60 * 1000 });
+    if (!rl.success) {
+      return NextResponse.json({ error: "请求过于频繁" }, { status: 429 });
+    }
     const { searchParams } = new URL(req.url)
     const parsed = campaignQuerySchema.parse({
       status: searchParams.get("status") || undefined,
@@ -54,6 +60,11 @@ export const GET = withAdminAuth(async (req) => {
 
 // POST /api/admin/campaigns - 创建活动
 export const POST = withAdminAuth(async (req, { admin }) => {
+  const ip = getClientIP(req);
+  const rc = await rateLimit(`admin-campaigns-create-${ip}`, "default", { maxRequests: 20, windowMs: 60 * 1000 });
+  if (!rc.success) {
+    return NextResponse.json({ error: "请求过于频繁" }, { status: 429 });
+  }
   try {
     const body = await req.json()
     const parsed = campaignCreateSchema.safeParse(body)

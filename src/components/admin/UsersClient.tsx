@@ -118,7 +118,7 @@ export function UsersClient() {
         fetchUsers();
       } else {
         const errData = await res.json().catch(() => null);
-        toast.error((errData as { message?: string })?.message || "操作失败");
+        toast.error((errData as { error?: string })?.error || "操作失败");
       }
     } catch {
       toast.error("网络异常，请稍后重试");
