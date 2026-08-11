@@ -25,7 +25,6 @@ export function OrganizationSchema() {
     },
     sameAs: [
       "https://www.xiaohongshu.com/user/profile/nihplod",
-      "https://weixin.qq.com/",
     ],
   };
 

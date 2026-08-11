@@ -544,9 +544,9 @@ export default function HomeClient() {
               {/* Content */}
               <div className="px-10 pb-10 pt-2 flex flex-col items-center gap-6">
                 <div className="text-center space-y-2">
-                  <h3 className="text-base font-bold" style={{ color: '#5c4937' }}>
+                  <h2 className="text-base font-bold" style={{ color: '#5c4937' }}>
                     今日测试次数已用完
-                  </h3>
+                  </h2>
                   <p className="text-sm leading-relaxed" style={{ color: '#5c4937', opacity: 0.8 }}>
                     {(() => {
                       const info = testLimitInfo;

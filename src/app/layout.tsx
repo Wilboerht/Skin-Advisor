@@ -8,8 +8,6 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://nihplod.cn";
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   viewportFit: 'cover',
   themeColor: '#F8F7F3',
 };

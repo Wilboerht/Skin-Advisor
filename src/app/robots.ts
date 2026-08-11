@@ -32,7 +32,7 @@ export default function robots(): MetadataRoute.Robots {
       },
       {
         userAgent: "Baiduspider",
-        allow: ["/", "/skin-types/", "/services/", "/faq/", "/gift/", "/privacy/", "/terms/"],
+        allow: ["/", "/skin-types/", "/services/", "/faq/", "/gift/"],
         disallow: ["/admin/", "/api/", "/result", "/reports/", "/face-scan/", "/questions/"],
         crawlDelay: 1,
       },
