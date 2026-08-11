@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Loader2, MapPin, ShieldCheck, ArrowRight, LogOut, X, ChevronDown } from "lucide-react";
+import { Loader2, MapPin, ShieldCheck, ArrowRight, LogOut, ChevronDown } from "lucide-react";
 import { AnimatePresence, motion as m, useReducedMotion } from "framer-motion";
 import Image from "next/image";
 import { useToast } from "@/components/ui/Toast";

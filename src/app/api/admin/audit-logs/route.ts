@@ -1,5 +1,5 @@
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { withAdminAuth } from "@/lib/admin-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
@@ -13,7 +13,9 @@ const FILTERS_CACHE_TTL = 5 * 60 * 1000;
 
 // GET /api/admin/audit-logs - List audit logs with filtering
 // Available to super_admin and admin
-export const GET = withAdminAuth(async (request) => {
+// 非超管脱敏 ip/userAgent：与导出接口仅超管可用的策略保持一致，
+// 避免普通 admin 查看全量日志中的敏感客户端信息
+export const GET = withAdminAuth(async (request, { admin }) => {
     // Rate limit
     const ip = getClientIP(request);
     const limitResult = await rateLimit(`admin-audit-logs-${ip}`, "default", { maxRequests: 60, windowMs: 60 * 1000 });
@@ -104,9 +106,14 @@ export const GET = withAdminAuth(async (request) => {
             cacheTimestamp = Date.now();
         }
 
+        // 非超管：脱敏敏感字段（ip/userAgent），保留操作审计能力
+        const data = admin.role === "super_admin"
+            ? logs
+            : logs.map(log => ({ ...log, ip: log.ip ? "***" : null, userAgent: log.userAgent ? "***" : null }));
+
         return NextResponse.json({
             success: true,
-            data: logs,
+            data,
             filters: {
                 admins,
                 ...cachedFilters!,

@@ -1,15 +1,25 @@
 "use client";
 
-import { X, Copy, Check, Terminal, History, ArrowRight, ShieldCheck } from "lucide-react";
+import { Copy, Check, Terminal, History, ArrowRight, ShieldCheck } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { AdminModal } from "@/components/ui/AdminModal";
 import { useMounted } from "@/hooks/use-mounted";
 
+interface AuditLogEntry {
+  id: string;
+  action: string;
+  resource: string;
+  resourceId: string | null;
+  details: Record<string, unknown> | null;
+  ip: string | null;
+  createdAt: string;
+}
+
 interface LogDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
-  log: any | null;
+  log: AuditLogEntry | null;
 }
 
 export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
@@ -48,7 +58,9 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
     if (!details) return null;
 
     if (details.prev && details.next && typeof details.prev === "object" && typeof details.next === "object") {
-      const keys = Array.from(new Set([...Object.keys(details.prev), ...Object.keys(details.next)]));
+      const prevObj = details.prev as Record<string, unknown>;
+      const nextObj = details.next as Record<string, unknown>;
+      const keys = Array.from(new Set([...Object.keys(prevObj), ...Object.keys(nextObj)]));
       return (
         <div className="space-y-4">
           <div className="flex items-center gap-2 mb-2">
@@ -57,8 +69,8 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
           </div>
           <div className="border border-[#E9E9E7] rounded-xl overflow-hidden divide-y divide-[#E9E9E7]">
             {keys.map((key) => {
-              const prevVal = details.prev[key];
-              const nextVal = details.next[key];
+              const prevVal = prevObj[key];
+              const nextVal = nextObj[key];
               const isChanged = JSON.stringify(prevVal) !== JSON.stringify(nextVal);
               if (!isChanged) return null;
               return (

@@ -18,7 +18,8 @@ export async function GET(req: NextRequest) {
         startDate: { lte: now },
         endDate: { gte: now },
       },
-      orderBy: { sortOrder: "desc" },
+      // 与 gift 页 SSR / campaign/active 保持同向排序，避免多活动并存时 SSR 与 API 选出不同活动
+      orderBy: { sortOrder: "asc" },
     })
 
     if (!campaign) {
@@ -38,7 +39,6 @@ export async function GET(req: NextRequest) {
         prizes: campaign.prizes,
         shareText: campaign.shareText,
         rules: campaign.rules,
-        maxEntries: campaign.maxEntries,
       },
     })
   } catch (error) {

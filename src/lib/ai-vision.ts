@@ -203,6 +203,11 @@ async function tryVisionProviderWithKeys(
             if (error.name === 'AbortError' || signal?.aborted) {
                 throw new Error("Vision request cancelled by client.");
             }
+            // 业务校验失败（非真人/翻拍等）与 Key 健康无关：
+            // 直接抛出，不轮换 Key、不重复计费、不误标 Key 不健康
+            if (typeof error?.message === 'string' && error.message.startsWith('[Validation]')) {
+                throw error;
+            }
             lastError = error;
             aiLogger.warn(`Vision Error (${provider}, key ${i + 1}/${apiKeys.length}): ${error.message}`);
 

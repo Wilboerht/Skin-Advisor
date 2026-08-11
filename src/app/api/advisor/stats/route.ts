@@ -16,9 +16,6 @@ const SKINTYPE_TO_PERSONA: Record<string, string> = {
   unknown: "守护派",
 };
 
-/** 派系显示顺序（按热度） */
-const PERSONA_ORDER = ["敏敏派", "沙漠派", "油条派", "混合派", "极简派", "敏敏派", "冻龄派", "奢华派", "守护派"];
-
 interface PersonaStat {
   persona: string;
   count: number;

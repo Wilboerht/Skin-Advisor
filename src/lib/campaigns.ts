@@ -31,7 +31,6 @@ export interface Campaign {
   prizes: Prize[]
   shareText: string | null
   rules: string | null
-  maxEntries: number
   sortOrder: number
 }
 
@@ -65,7 +64,6 @@ export const campaignCreateSchema = z.object({
   prizes: z.array(prizeSchema).min(1, "至少需要一个奖品"),
   shareText: z.string().optional(),
   rules: z.string().optional(),
-  maxEntries: z.number().min(0).default(0),
   sortOrder: z.number().default(0),
   status: z.enum(CAMPAIGN_STATUSES).default("draft"),
 })

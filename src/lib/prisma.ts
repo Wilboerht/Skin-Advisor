@@ -47,7 +47,7 @@ const prismaClientSingleton = () => {
     // PostgreSQL 连接池配置（常驻进程优化）
     const pool = new Pool({
         connectionString: url,
-        max: 30,
+        max: 50,
         min: 2, // 保持最小连接以减少请求延迟
         idleTimeoutMillis: 60000,
         connectionTimeoutMillis: 30000,

@@ -1,5 +1,6 @@
 "use client";
 
+import { adminFetch } from "@/lib/admin-fetch";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Search, MoreHorizontal, User as UserIcon, Shield, ShieldOff, Trash2, Eye, Loader2, Download, ChevronDown, Info } from "lucide-react";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
@@ -44,7 +45,8 @@ export function UsersClient() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState<string | null>(null);
-  const dropdownTriggerRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+  // 用 state 而非 ref 存储触发按钮 DOM，避免 render 期间读取 ref（React Compiler 不支持）
+  const [dropdownTriggerEls, setDropdownTriggerEls] = useState<Map<string, HTMLButtonElement>>(() => new Map());
   const [confirmToggle, setConfirmToggle] = useState<{ user: User; isDisabling: boolean } | null>(null);
   const [detailUser, setDetailUser] = useState<string | null>(null);
 
@@ -57,7 +59,7 @@ export function UsersClient() {
         search,
         status,
       });
-      const res = await fetch(`/api/admin/users?${params}`);
+      const res = await adminFetch(`/api/admin/users?${params}`);
       if (res.ok) {
         const data = await res.json();
         setUsers(data.users);
@@ -70,7 +72,7 @@ export function UsersClient() {
     } finally {
       setLoading(false);
     }
-  }, [page, search, status]);
+  }, [page, search, status, toast]);
 
   const fetchUsersRef = useRef(fetchUsers);
   const pageRef = useRef(page);
@@ -109,7 +111,7 @@ export function UsersClient() {
     setActionLoading(true);
     try {
       const body = isDisabling ? { role: "disabled" } : { role: "user" };
-      const res = await fetch(`/api/admin/users/${user.id}`, {
+      const res = await adminFetch(`/api/admin/users/${user.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -132,7 +134,7 @@ export function UsersClient() {
     if (!selectedUser) return;
     setActionLoading(true);
     try {
-      const res = await fetch(`/api/admin/users/${selectedUser.id}`, { method: "DELETE" });
+      const res = await adminFetch(`/api/admin/users/${selectedUser.id}`, { method: "DELETE" });
       if (res.ok) {
         setShowDeleteModal(false);
         setSelectedUser(null);
@@ -147,7 +149,7 @@ export function UsersClient() {
     }
   };
 
-  const anchorEl = showDropdown ? dropdownTriggerRefs.current.get(showDropdown) ?? null : null;
+  const anchorEl = showDropdown ? dropdownTriggerEls.get(showDropdown) ?? null : null;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -274,7 +276,14 @@ export function UsersClient() {
                         <button
                           data-dropdown-trigger
                           ref={(el) => {
-                            if (el) dropdownTriggerRefs.current.set(user.id, el);
+                            if (el) {
+                              setDropdownTriggerEls((prev) => {
+                                if (prev.get(user.id) === el) return prev;
+                                const next = new Map(prev);
+                                next.set(user.id, el);
+                                return next;
+                              });
+                            }
                           }}
                           onClick={() => {
                             setShowDropdown(showDropdown === user.id ? null : user.id);

@@ -13,7 +13,7 @@ import { jwtVerify } from "jose";
 import type { NextRequest } from "next/server";
 // 直接导入 auth-config 而非 auth — csrf.ts 运行在 Edge Runtime，
 // 不能引入 auth.ts（后者依赖 bcryptjs / prisma 等 Node.js 原生模块）。
-import { AUTH_COOKIE_NAME, getJwtSecret } from "@/lib/auth-config";
+import { AUTH_COOKIE_NAME, getJwtSecret, getJwtIssuer } from "@/lib/auth-config";
 import { CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
 
@@ -88,7 +88,12 @@ export async function verifyCsrfToken(request: NextRequest): Promise<CsrfVerific
     }
 
     try {
-        const { payload } = await jwtVerify(authCookie, getJwtSecret());
+        // 与主路径 verifyTokenDetailed 一致：校验 issuer/audience，
+        // 防止其他服务用同一 JWT_SECRET 签发的 token 被用于 CSRF 通过
+        const { payload } = await jwtVerify(authCookie, getJwtSecret(), {
+            issuer: getJwtIssuer(),
+            audience: "advisor-api",
+        });
         const tokenFromJwt = payload.csrf;
         if (typeof tokenFromJwt !== "string") {
             logger.warn("[CSRF] JWT payload missing csrf field", { path: request.nextUrl.pathname });

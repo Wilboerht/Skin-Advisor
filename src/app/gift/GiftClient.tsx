@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Gift, Sparkles, AlertCircle, Loader2 } from "lucide-react";
@@ -19,36 +19,40 @@ interface CampaignData {
   prizes: Array<{ name: string; image: string; quantity: number; description?: string }>;
   shareText: string | null;
   rules: string | null;
-  maxEntries: number;
 }
 
-type PageState = "loading" | "no_campaign" | "show_campaign" | "error";
+type PageState = "no_campaign" | "show_campaign" | "error";
 
 export default function GiftClient({ serverCampaign }: { serverCampaign: CampaignData | null }) {
-  const [pageState, setPageState] = useState<PageState>(
-    serverCampaign ? "show_campaign" : "no_campaign"
-  );
-  const [campaign] = useState<CampaignData | null>(serverCampaign);
+  const [campaign, setCampaign] = useState<CampaignData | null>(serverCampaign);
+  const [fetchFailed, setFetchFailed] = useState(false);
 
-  // 后台静默刷新最新数据（客户端保底：若有更新的活动数据则更新 UI）
-  const refreshCampaign = useCallback(async () => {
-    try {
-      const res = await fetch("/api/campaign");
-      const data = await res.json();
-      if (data.campaign) {
-        window.location.reload(); // 简化处理：有更新时刷新页面触发 SSR 重建
-      }
-    } catch {
-      // 静默失败
-    }
-  }, []);
-
+  // SSR 没拿到数据时客户端兜底请求，直接渲染接口数据（不再 reload，
+  // 避免 ISR 300s 缓存期内返回旧页导致无限刷新循环）
   useEffect(() => {
-    if (!serverCampaign) {
-      // SSR 没有拿到数据时，客户端回退请求
-      refreshCampaign();
-    }
-  }, [serverCampaign, refreshCampaign]);
+    if (serverCampaign) return;
+    let cancelled = false;
+    fetch("/api/campaign")
+      .then((res) => res.json())
+      .then((data: { campaign?: CampaignData | null }) => {
+        if (cancelled) return;
+        if (data.campaign) {
+          setCampaign(data.campaign);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setFetchFailed(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [serverCampaign]);
+
+  const pageState: PageState = fetchFailed
+    ? "error"
+    : campaign
+      ? "show_campaign"
+      : "no_campaign";
 
   const formatDate = (iso: string) => {
     return new Date(iso).toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" });
@@ -68,13 +72,6 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
 
             {/* 状态信息 */}
             <div className="opacity-0 animate-fade-in-up" style={{ animationDelay: "0.2s", animationFillMode: "forwards" }}>
-              {pageState === "loading" && (
-                <div className="inline-flex items-center gap-2 text-sm text-brand-charcoal/60">
-                  <Loader2 className="w-4 h-4 text-brand-charcoal/70 animate-spin" />
-                  正在加载活动信息…
-                </div>
-              )}
-
               {pageState === "no_campaign" && (
                 <div className="inline-flex items-center gap-2 text-sm text-brand-charcoal/60">
                   <Sparkles className="w-4 h-4 text-brand-charcoal/70" />

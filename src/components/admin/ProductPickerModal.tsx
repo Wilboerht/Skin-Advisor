@@ -1,5 +1,6 @@
 "use client"
 
+import { adminFetch } from "@/lib/admin-fetch"
 import { useState, useEffect, useCallback } from "react"
 import { Search, Loader2, Check, Package } from "lucide-react"
 import { CampaignModal } from "./CampaignModal"
@@ -35,7 +36,7 @@ export function ProductPickerModal({ isOpen, onClose, onSelect, selectedIds = []
     setLoading(true)
     setError("")
     try {
-      const res = await fetch("/api/admin/products?limit=500")
+      const res = await adminFetch("/api/admin/products?limit=500")
       if (!res.ok) throw new Error("获取产品列表失败")
       const data = await res.json()
       const mapped: ProductBrief[] = (data.products || []).map(

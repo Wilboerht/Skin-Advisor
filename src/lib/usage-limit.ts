@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import { getSessionUser } from '@/lib/sso-auth';
 import { extractGuestIdentifiers } from './guest-limit';
 import { withDbRetry } from './utils';
+import { startOfTodayShanghai } from './time';
 
 /**
  * 使用频率限制结果
@@ -24,6 +25,11 @@ export interface ReserveUsageResult {
     success: boolean;
     error?: string;
     role: 'guest' | 'member';
+    /**
+     * true 表示同一 sessionId 已存在预占记录（P2002 幂等命中），本次并未实际新增计数。
+     * 调用方据此决定是否可安全回滚，避免误删其他请求的预占。
+     */
+    alreadyReserved?: boolean;
 }
 
 // 游客每日测试次数限制（业务可随时调整，保持单点配置）
@@ -46,7 +52,7 @@ function getUserDailyLimit(user: { dailyTestLimit?: number | null } | null | und
  *
  * 规则：
  * 1. 访客：每日 3 次
- * 2. 登录用户：每日 3 次（管理员可通过 dailyTestLimit 调整）
+ * 2. 登录用户：默认每日 10 次（管理员可通过 dailyTestLimit 按用户调整，0 表示禁用）
  */
 export async function checkUsageLimit(request: NextRequest, body?: Record<string, unknown>): Promise<UsageLimitResult> {
     // 本地开发环境不限制次数
@@ -60,8 +66,8 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
     // 1. 如果是登录用户
     if (user) {
         const userId = user.id;
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        // 日界固定北京时间，避免 UTC 部署时凌晨时段额度计算漂移
+        const today = startOfTodayShanghai();
 
         const [count, inProgressCount] = await Promise.all([
             withDbRetry(() =>
@@ -93,8 +99,7 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
     const { ipAddress, fingerprint, cookieId } = identifiers;
     const limit = GUEST_DAILY_LIMIT;
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = startOfTodayShanghai();
 
     // 跨 IP 指纹检查：同一指纹在其他 IP 上的用量也计入 (防 VPN 切换)
     // 但上限为限制的 50%，避免 CGNAT/IP 频繁切换的合法用户被过度惩罚
@@ -196,8 +201,7 @@ export async function reserveUsage(
     try {
         return await withDbRetry(async () => {
             return await prisma.$transaction(async (tx) => {
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
+                const today = startOfTodayShanghai();
                 const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
 
                 // 1. 登录用户（从数据库读取最新额度，避免 JWT 缓存滞后）
@@ -213,9 +217,18 @@ export async function reserveUsage(
                     if (totalCount >= limit) {
                         return { success: false, error: '今日测试次数已用完，请明天再试。', role: 'member' };
                     }
-                    await tx.testRecord.create({
-                        data: { userId, sessionId, testDate: new Date() }
+                    // upsert 语义：createMany + skipDuplicates 天然幂等。
+                    // 原 create 在 withDbRetry 重试时会撞 P2002 被外层 catch 归为
+                    // alreadyReserved，但首次尝试可能已建 TestRecord 而 GuestUsage
+                    // 未自增，造成漏计；改为按实际插入行数判断。
+                    const created = await tx.testRecord.createMany({
+                        data: { userId, sessionId, testDate: new Date() },
+                        skipDuplicates: true
                     });
+                    if (created.count === 0) {
+                        // sessionId 已预占（重试/重复请求），本次未实际新增计数
+                        return { success: true, role: 'member', alreadyReserved: true };
+                    }
                     return { success: true, role: 'member' };
                 }
 
@@ -266,9 +279,15 @@ export async function reserveUsage(
                     return { success: false, error: '今日测试次数已用完，登录后可获更多次数。', role: 'guest' };
                 }
 
-                await tx.testRecord.create({
-                    data: { guestId: fingerprint || cookieId || ipAddress, sessionId, testDate: new Date() }
+                // upsert 语义：同登录用户分支，按实际插入行数判断是否首次预占，
+                // 仅在真实新增时才自增 GuestUsage，避免重试导致的漏计/重复计数
+                const created = await tx.testRecord.createMany({
+                    data: { guestId: fingerprint || cookieId || ipAddress, sessionId, testDate: new Date() },
+                    skipDuplicates: true
                 });
+                if (created.count === 0) {
+                    return { success: true, role: 'guest', alreadyReserved: true };
+                }
 
                 // 更新 GuestUsage 时同样以 IP 为主要键，fingerprint/cookieId 作为辅助元数据存储
                 const existing = await tx.guestUsage.findFirst({
@@ -278,25 +297,37 @@ export async function reserveUsage(
 
                 const now = new Date();
                 if (existing) {
-                    // 安全处理 lastResetDate 为 null 的边界情况
-                    const lastReset = existing.lastResetDate || existing.lastTestAt || now;
-                    const todayStart = new Date();
-                    todayStart.setHours(0, 0, 0, 0);
-                    const needsReset = !lastReset || new Date(lastReset).setHours(0, 0, 0, 0) < todayStart.getTime();
-
-                    await tx.guestUsage.update({
-                        where: { id: existing.id },
-                        data: {
-                            lastTestAt: now,
-                            testCount: { increment: 1 },
-                            todayCount: needsReset ? 1 : { increment: 1 },
-                            lastResetDate: needsReset ? todayStart : undefined,
-                            ipAddress,
-                            cookieId: cookieId || existing.cookieId,
-                            fingerprint: fingerprint || existing.fingerprint,
-                            userAgent
-                        }
+                    // 日切并发竞态保护：用条件 UPDATE 替代"读-改-写"，
+                    // 避免两个并发请求同时判定 needsReset=true、都写 todayCount=1 导致丢计数。
+                    const meta = {
+                        lastTestAt: now,
+                        ipAddress,
+                        cookieId: cookieId || existing.cookieId,
+                        fingerprint: fingerprint || existing.fingerprint,
+                        userAgent
+                    };
+                    // 1) 今日已重置过（lastResetDate >= 当日零点，null 不匹配）：直接自增
+                    let updated = await tx.guestUsage.updateMany({
+                        where: { id: existing.id, lastResetDate: { gte: today } },
+                        data: { ...meta, testCount: { increment: 1 }, todayCount: { increment: 1 } }
                     });
+                    if (updated.count === 0) {
+                        // 2) 需要日切重置：竞争重置权，仅首个满足"今日未重置"的请求置 todayCount=1
+                        updated = await tx.guestUsage.updateMany({
+                            where: {
+                                id: existing.id,
+                                lastResetDate: { lt: today }
+                            },
+                            data: { ...meta, testCount: { increment: 1 }, todayCount: 1, lastResetDate: today }
+                        });
+                        if (updated.count === 0) {
+                            // 3) 另一并发请求已完成日切重置，直接自增即可
+                            await tx.guestUsage.updateMany({
+                                where: { id: existing.id },
+                                data: { ...meta, testCount: { increment: 1 }, todayCount: { increment: 1 } }
+                            });
+                        }
+                    }
                 } else {
                     await tx.guestUsage.create({
                         data: {
@@ -317,9 +348,10 @@ export async function reserveUsage(
         });
     } catch (e: unknown) {
         const err = e instanceof Error ? e : new Error(String(e));
-        // P2002 = unique constraint violation (already recorded) — 幂等行为，视为成功
+        // P2002 = unique constraint violation — createMany skipDuplicates 下不应再触发，
+        // 保留作兼容兜底：视为幂等成功，但标记 alreadyReserved，调用方不得据此回滚。
         if ((err as { code?: string }).code === 'P2002' || err.message?.includes('Unique constraint')) {
-            return { success: true, role: user ? 'member' : 'guest' };
+            return { success: true, role: user ? 'member' : 'guest', alreadyReserved: true };
         }
         console.error('Failed to reserve usage:', e);
         return { success: false, error: '请稍后再试。', role: user ? 'member' : 'guest' };
@@ -330,8 +362,9 @@ export async function reserveUsage(
  * 回滚已预占的额度（用于 AI 服务不可用、图片验证失败等明确非用户原因的场景）
  *
  * 规则：
- * 1. 登录用户：删除本次创建的 TestRecord
- * 2. 游客：将 GuestUsage 的 testCount/todayCount 减 1（不低于 0）
+ * 1. 按 sessionId 精确冲销：仅当本 session 的 TestRecord 真实存在时才回滚
+ * 2. 天然幂等：重复调用时删除 0 行，不会重复扣减
+ * 3. 游客：在确认实际计过数的前提下，将 GuestUsage 的 testCount/todayCount 减 1（不低于 0）
  */
 export async function rollbackUsage(
     request: NextRequest,
@@ -345,10 +378,12 @@ export async function rollbackUsage(
     try {
         await withDbRetry(async () => {
             await prisma.$transaction(async (tx) => {
-                // 1. 删除 TestRecord（登录用户或游客都会创建）
-                await tx.testRecord.deleteMany({
+                // 1. 按 sessionId 精确删除本次预占的 TestRecord（登录用户或游客都会创建）
+                const deleted = await tx.testRecord.deleteMany({
                     where: { sessionId }
                 });
+                // 无记录 = 本 session 未实际预占（幂等命中或已回滚过），不做任何扣减
+                if (deleted.count === 0) return;
 
                 // 2. 游客回滚 GuestUsage 计数
                 if (!user) {

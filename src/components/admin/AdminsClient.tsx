@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { adminFetch } from "@/lib/admin-fetch";
+import { useState, useEffect, useCallback } from "react";
 import {
   Search,
   MoreHorizontal,
@@ -53,7 +54,8 @@ export function AdminsClient() {
   const [resetTarget, setResetTarget] = useState<Admin | null>(null);
 
   const [dropdownId, setDropdownId] = useState<string | null>(null);
-  const dropdownTriggerRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+  // 用 state 而非 ref 存储触发按钮 DOM，避免 render 期间读取 ref（React Compiler 不支持）
+  const [dropdownTriggerEls, setDropdownTriggerEls] = useState<Map<string, HTMLButtonElement>>(() => new Map());
 
   const toast = useToast();
 
@@ -62,7 +64,7 @@ export function AdminsClient() {
     try {
       const params = new URLSearchParams();
       if (search) params.set("search", search);
-      const res = await fetch(`/api/admin/admins?${params}`);
+      const res = await adminFetch(`/api/admin/admins?${params}`);
       if (res.ok) {
         const data = await res.json();
         setAdmins(data.admins || []);
@@ -75,10 +77,6 @@ export function AdminsClient() {
       setLoading(false);
     }
   }, [search, toast]);
-
-  useEffect(() => {
-    fetchAdmins();
-  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -96,7 +94,7 @@ export function AdminsClient() {
   }) => {
     setActionLoading(true);
     try {
-      const res = await fetch("/api/admin/admins", {
+      const res = await adminFetch("/api/admin/admins", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -126,7 +124,7 @@ export function AdminsClient() {
     if (!editingAdmin) return;
     setActionLoading(true);
     try {
-      const res = await fetch(`/api/admin/admins/${editingAdmin.id}`, {
+      const res = await adminFetch(`/api/admin/admins/${editingAdmin.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -151,7 +149,7 @@ export function AdminsClient() {
     if (!deleteTarget) return;
     setActionLoading(true);
     try {
-      const res = await fetch(`/api/admin/admins/${deleteTarget.id}`, {
+      const res = await adminFetch(`/api/admin/admins/${deleteTarget.id}`, {
         method: "DELETE",
       });
       const result = await res.json();
@@ -174,7 +172,7 @@ export function AdminsClient() {
     if (!resetTarget) return;
     setActionLoading(true);
     try {
-      const res = await fetch(`/api/admin/admins/${resetTarget.id}/reset-password`, {
+      const res = await adminFetch(`/api/admin/admins/${resetTarget.id}/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password }),
@@ -222,7 +220,7 @@ export function AdminsClient() {
     const { id, active: current } = confirmToggle;
     setActionLoading(true);
     try {
-      const res = await fetch(`/api/admin/admins/${id}`, {
+      const res = await adminFetch(`/api/admin/admins/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ active: !current }),
@@ -244,7 +242,7 @@ export function AdminsClient() {
 
   const roleConfig = (role: string) => ROLE_LABELS[role] || ROLE_LABELS.admin;
 
-  const anchorEl = dropdownId ? dropdownTriggerRefs.current.get(dropdownId) ?? null : null;
+  const anchorEl = dropdownId ? dropdownTriggerEls.get(dropdownId) ?? null : null;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -354,7 +352,14 @@ export function AdminsClient() {
                           <button
                             data-dropdown-trigger
                             ref={(el) => {
-                              if (el) dropdownTriggerRefs.current.set(admin.id, el);
+                              if (el) {
+                                setDropdownTriggerEls((prev) => {
+                                  if (prev.get(admin.id) === el) return prev;
+                                  const next = new Map(prev);
+                                  next.set(admin.id, el);
+                                  return next;
+                                });
+                              }
                             }}
                             onClick={() => {
                               setDropdownId(dropdownId === admin.id ? null : admin.id);

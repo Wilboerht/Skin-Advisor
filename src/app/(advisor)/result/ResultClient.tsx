@@ -3,7 +3,6 @@
 import { useEffect, useState, useRef, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import Link from "next/link";
 import { House, MessageCircle, Gift, ArrowRight, AlertTriangle, Lightbulb, Lock } from "lucide-react";
 import { useAsyncAnalysis } from "@/hooks/useAsyncAnalysis";
 import { motion as m, AnimatePresence } from "framer-motion";
@@ -905,7 +904,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
         return () => {
             abortController.abort();
         };
-    }, [searchParams, result, analysisState.status, runAnalysis, recoverSession, router]);
+    }, [searchParams, result, analysisState.status, runAnalysis, recoverSession, router, startMock]);
 
     // Mock 完成后注入假数据，渲染结果页（动态加载 mock 数据，不影响生产包体积）
     useEffect(() => {

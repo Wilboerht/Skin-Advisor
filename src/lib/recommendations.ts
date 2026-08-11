@@ -135,12 +135,15 @@ function calculateScore(
     concerns: string[],
     answers: QuestionnaireAnswers,
     envContext?: EnvContext
-): { score: number; reasons: string[]; matchedBenefits: string[]; envTags: string[]; budgetLabel: ProductRecommendation["budgetLabel"] } {
+): { score: number; reasons: string[]; matchedBenefits: string[]; envTags: string[]; budgetLabel: ProductRecommendation["budgetLabel"]; excluded: boolean } {
     let score = 0;
     const reasons: string[] = [];
     const matchedBenefits: string[] = [];
     const envTags: string[] = [];
     let budgetLabel: ProductRecommendation["budgetLabel"] = "unknown";
+    // 负面命中（不适合肤质/孕妇等）：选品前硬过滤剔除，
+    // 仅置 0 分在商品库小时会被补位逻辑推入 Top-N
+    let excluded = false;
 
     // Parse JSON fields safely if stringified or use directly if object
     // Assuming Prisma returns Json value which is already parsed object/array
@@ -260,30 +263,34 @@ function calculateScore(
         const skinNegatives = skinTypeNegativeMap[skinType] || [];
         if (skinNegatives.some(tag => negativeTags.includes(tag))) {
             score -= 300;
+            excluded = true;
             reasons.push("⚠️ 不适合您的肤质");
         }
 
         // 关注点负面匹配
         if (concerns.includes("acne") && negativeTags.some(t => ["致痘", "痘痘肌", "闷痘"].includes(t))) {
             score = 0;
+            excluded = true;
             reasons.push("⚠️ 不适合您的肤质/状况");
         }
         if (concerns.includes("sensitivity") && negativeTags.some(t => ["刺激", "敏感肌", "酒精", "香精"].includes(t))) {
             score = 0;
+            excluded = true;
             reasons.push("⚠️ 不适合您的肤质/状况");
         }
         if (concerns.includes("anti_aging") && negativeTags.some(t => ["孕妇", "哺乳期"].includes(t))) {
             score = 0;
+            excluded = true;
             reasons.push("⚠️ 不适合您的肤质/状况");
         }
     }
 
     // Base Score fallback：有负面理由时保持 0 分，不允许被恢复为保底分
-    const hasNegativeReason = reasons.some(r => r.includes("不适合"));
+    const hasNegativeReason = excluded || reasons.some(r => r.includes("不适合"));
     if (score < 0) score = 0;
     if (score === 0 && !hasNegativeReason) score = 10;
 
-    return { score, reasons, matchedBenefits, envTags, budgetLabel };
+    return { score, reasons, matchedBenefits, envTags, budgetLabel, excluded };
 }
 
 // ==================== 辅助函数 ====================
@@ -468,10 +475,13 @@ export async function getCandidateProducts(
         const skinType = answers.skinType || "combination";
 
         // 2. Score using our heuristic engine (now with envContext)
-        let scored = allProducts.map(p => {
-            const { score, matchedBenefits, envTags, budgetLabel } = calculateScore(p, skinType, concerns, answers, envContext);
-            return { ...p, _score: score, matchedBenefits, _envTags: envTags, _budgetLabel: budgetLabel };
-        });
+        // 负面产品（不适合肤质/孕妇等）硬过滤剔除，不参与后续排序/补位
+        let scored = allProducts
+            .map(p => {
+                const { score, matchedBenefits, envTags, budgetLabel, excluded } = calculateScore(p, skinType, concerns, answers, envContext);
+                return { ...p, _score: score, matchedBenefits, _envTags: envTags, _budgetLabel: budgetLabel, _excluded: excluded };
+            })
+            .filter(p => !p._excluded);
 
         // 2b. User feedback boost: batch query product average ratings (last 30 days)
         try {
@@ -739,17 +749,21 @@ export async function recommendProducts(
                 price: p.price
             }));
         } else {
-            scored = allProducts.map(p => {
-                const { score, matchedBenefits, envTags, budgetLabel } = calculateScore(p, skinType, concerns, answers, envContext);
-                return {
-                    ...p,
-                    rawScore: score,
-                    matchedBenefits,
-                    envTags,
-                    budgetLabel,
-                    price: p.price
-                };
-            });
+            // 负面产品硬过滤剔除，不参与后续排序/补位（pre-scored 路径已在 getCandidateProducts 过滤）
+            scored = allProducts
+                .map(p => {
+                    const { score, matchedBenefits, envTags, budgetLabel, excluded } = calculateScore(p, skinType, concerns, answers, envContext);
+                    return {
+                        ...p,
+                        rawScore: score,
+                        matchedBenefits,
+                        envTags,
+                        budgetLabel,
+                        price: p.price,
+                        _excluded: excluded
+                    };
+                })
+                .filter(p => !p._excluded);
         }
 
         // 3. Apply RecommendationRule engine (skip if already applied by getCandidateProducts)

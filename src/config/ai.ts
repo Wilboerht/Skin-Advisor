@@ -8,32 +8,32 @@
 // ============================================================================
 
 /** 通用/文本分析队列最大并发数（check-config 等） */
-export const AI_QUEUE_MAX_CONCURRENT = parseEnvInt("AI_QUEUE_MAX_CONCURRENT", 15);
+export const AI_QUEUE_MAX_CONCURRENT = parseEnvInt("AI_QUEUE_MAX_CONCURRENT", 20);
 
 /** 综合分析队列最大并发数（LLM 长文本，独立于通用队列） */
-export const AI_ANALYSIS_QUEUE_MAX_CONCURRENT = parseEnvInt("AI_ANALYSIS_QUEUE_MAX_CONCURRENT", 18);
+export const AI_ANALYSIS_QUEUE_MAX_CONCURRENT = parseEnvInt("AI_ANALYSIS_QUEUE_MAX_CONCURRENT", 30);
 
 /** 视觉分析队列最大并发数 */
-export const AI_VISION_QUEUE_MAX_CONCURRENT = parseEnvInt("AI_VISION_QUEUE_MAX_CONCURRENT", 12);
+export const AI_VISION_QUEUE_MAX_CONCURRENT = parseEnvInt("AI_VISION_QUEUE_MAX_CONCURRENT", 30);
 
 /** 单用户最大并发 AI 请求数 */
 export const AI_MAX_CONCURRENT_PER_USER = parseEnvInt("AI_MAX_CONCURRENT_PER_USER", 1);
 
 /** 队列最大排队数 */
-export const AI_QUEUE_MAX_LENGTH = parseEnvInt("AI_QUEUE_MAX_LENGTH", 100);
+export const AI_QUEUE_MAX_LENGTH = parseEnvInt("AI_QUEUE_MAX_LENGTH", 300);
 
 /** 视觉队列最大排队数 */
-export const AI_VISION_QUEUE_MAX_LENGTH = parseEnvInt("AI_VISION_QUEUE_MAX_LENGTH", 100);
+export const AI_VISION_QUEUE_MAX_LENGTH = parseEnvInt("AI_VISION_QUEUE_MAX_LENGTH", 300);
 
 // ============================================================================
 // 预算熔断
 // ============================================================================
 
 /** 每日 token 预算（单位：tokens，0 = 不限制） */
-export const AI_DAILY_TOKEN_BUDGET = parseEnvIntOptional("AI_DAILY_TOKEN_BUDGET") ?? 500000;
+export const AI_DAILY_TOKEN_BUDGET = parseEnvIntOptional("AI_DAILY_TOKEN_BUDGET") ?? 3000000;
 
 /** 每日费用预算（单位：元，0 = 不限制） */
-export const AI_DAILY_COST_BUDGET_CNY = parseEnvFloatOptional("AI_DAILY_COST_BUDGET_CNY") ?? 200;
+export const AI_DAILY_COST_BUDGET_CNY = parseEnvFloatOptional("AI_DAILY_COST_BUDGET_CNY") ?? 1000;
 
 /** 每月 token 预算 */
 export const AI_MONTHLY_TOKEN_BUDGET = parseEnvIntOptional("AI_MONTHLY_TOKEN_BUDGET") ?? 10000000;
@@ -65,10 +65,10 @@ export const CIRCUIT_FAILURE_WINDOW_MS = parseEnvInt("AI_CIRCUIT_FAILURE_WINDOW_
 // ============================================================================
 
 /** 面部分析每 IP 每小时限制 */
-export const FACE_ANALYZE_RATE_LIMIT = parseEnvInt("AI_FACE_ANALYZE_RATE_LIMIT_PER_HOUR", 20);
+export const FACE_ANALYZE_RATE_LIMIT = parseEnvInt("AI_FACE_ANALYZE_RATE_LIMIT_PER_HOUR", 60);
 
 /** 综合分析每 IP 每小时限制 */
-export const COMPREHENSIVE_ANALYZE_RATE_LIMIT = parseEnvInt("AI_COMPREHENSIVE_RATE_LIMIT_PER_HOUR", 20);
+export const COMPREHENSIVE_ANALYZE_RATE_LIMIT = parseEnvInt("AI_COMPREHENSIVE_RATE_LIMIT_PER_HOUR", 60);
 
 // ============================================================================
 // Key 健康检查

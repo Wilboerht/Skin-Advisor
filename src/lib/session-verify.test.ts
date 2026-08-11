@@ -44,7 +44,7 @@ describe("session-verify", () => {
             role: "super_admin",
         });
 
-        const [dataPart, sig] = signed.split(".");
+        const [dataPart] = signed.split(".");
         const payload = JSON.parse(dataPart);
         payload.exp = 1;
 

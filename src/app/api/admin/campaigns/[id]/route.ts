@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma"
 import { withAdminAuth, logAdminAction, getClientInfo } from "@/lib/admin-auth"
 import { rateLimit, getClientIP } from "@/lib/ratelimit"
 import { logger } from "@/lib/logger"
+import { parseUserInputDateTime } from "@/lib/time"
 import { campaignUpdateSchema } from "@/lib/campaigns"
 import { NextResponse } from "next/server"
 
@@ -26,9 +27,26 @@ export const PATCH = withAdminAuth(async (req, { admin, params }) => {
         data[key] = value
       }
     }
-    if (data.startDate) data.startDate = new Date(data.startDate as string)
-    if (data.endDate) data.endDate = new Date(data.endDate as string)
-    if (data.drawDate !== undefined) data.drawDate = data.drawDate ? new Date(data.drawDate as string) : null
+    if (data.startDate) {
+      // datetime-local 固定按北京时间解析，与创建路径保持一致
+      const d = parseUserInputDateTime(data.startDate as string)
+      if (!d) return NextResponse.json({ error: "时间格式无效" }, { status: 400 })
+      data.startDate = d
+    }
+    if (data.endDate) {
+      const d = parseUserInputDateTime(data.endDate as string)
+      if (!d) return NextResponse.json({ error: "时间格式无效" }, { status: 400 })
+      data.endDate = d
+    }
+    if (data.drawDate !== undefined) {
+      if (data.drawDate) {
+        const d = parseUserInputDateTime(data.drawDate as string)
+        if (!d) return NextResponse.json({ error: "时间格式无效" }, { status: 400 })
+        data.drawDate = d
+      } else {
+        data.drawDate = null
+      }
+    }
 
     const campaign = await prisma.campaign.update({
       where: { id },

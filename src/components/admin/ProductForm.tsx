@@ -1,5 +1,6 @@
 "use client";
 
+import { adminFetch } from "@/lib/admin-fetch";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -228,7 +229,7 @@ export default function ProductForm({
         try {
             const formData = new FormData();
             formData.append("file", file);
-            const res = await fetch("/api/admin/upload", {
+            const res = await adminFetch("/api/admin/upload", {
                 method: "POST",
                 body: formData,
             });
@@ -326,7 +327,7 @@ export default function ProductForm({
                 ? `/api/admin/products/${initialData.id}`
                 : `/api/admin/products`;
             const method = initialData?.id ? "PUT" : "POST";
-            const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+            const res = await adminFetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
             if (!res.ok) {
                 let message = "保存失败";
                 try {

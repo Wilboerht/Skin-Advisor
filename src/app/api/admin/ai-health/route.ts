@@ -4,7 +4,7 @@
  * 返回 AI 预算使用率、熔断器状态等实时健康指标
  */
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { withAdminAuth } from "@/lib/admin-auth";
 import { getAIBudgetHealth } from "@/lib/ai-budget";
 import { circuitBreaker } from "@/lib/circuit-breaker";
@@ -39,7 +39,7 @@ export interface AIHealthResponse {
     status: "healthy" | "warning" | "critical";
 }
 
-export const GET = withAdminAuth(async (_request: NextRequest) => {
+export const GET = withAdminAuth(async () => {
     try {
         const budgetHealth = await getAIBudgetHealth();
 

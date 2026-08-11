@@ -126,23 +126,23 @@ export const POST = withAdminAuth(async (request, { admin }) => {
         }
 
         // Validate string array JSON fields
-        const validateStringArray = (value: unknown, _fieldName: string) => {
+        const validateStringArray = (value: unknown) => {
             if (value === undefined || value === null) return true;
             if (!Array.isArray(value)) return false;
             if (value.length > MAX_TAG_ARRAY_LENGTH) return false;
             return value.every((item) => typeof item === "string" && item.length <= MAX_TAG_ITEM_LENGTH);
         };
 
-        if (!validateStringArray(body.keyIngredients, "keyIngredients")) {
+        if (!validateStringArray(body.keyIngredients)) {
             return NextResponse.json({ error: `keyIngredients must be an array of strings (max ${MAX_TAG_ARRAY_LENGTH} items, each max ${MAX_TAG_ITEM_LENGTH} chars)` }, { status: 400 });
         }
-        if (!validateStringArray(body.suitableSkinTypes, "suitableSkinTypes")) {
+        if (!validateStringArray(body.suitableSkinTypes)) {
             return NextResponse.json({ error: `suitableSkinTypes must be an array of strings (max ${MAX_TAG_ARRAY_LENGTH} items, each max ${MAX_TAG_ITEM_LENGTH} chars)` }, { status: 400 });
         }
-        if (!validateStringArray(body.benefits, "benefits")) {
+        if (!validateStringArray(body.benefits)) {
             return NextResponse.json({ error: `benefits must be an array of strings (max ${MAX_TAG_ARRAY_LENGTH} items, each max ${MAX_TAG_ITEM_LENGTH} chars)` }, { status: 400 });
         }
-        if (!validateStringArray(body.negativeFor, "negativeFor")) {
+        if (!validateStringArray(body.negativeFor)) {
             return NextResponse.json({ error: `negativeFor must be an array of strings (max ${MAX_TAG_ARRAY_LENGTH} items, each max ${MAX_TAG_ITEM_LENGTH} chars)` }, { status: 400 });
         }
 

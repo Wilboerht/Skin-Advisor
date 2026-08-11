@@ -1,5 +1,6 @@
 "use client"
 
+import { adminFetch } from "@/lib/admin-fetch"
 import { useState, useEffect, useCallback } from "react"
 import { CampaignList } from "./CampaignList"
 import { CampaignFormModal } from "./CampaignFormModal"
@@ -34,7 +35,7 @@ export function CampaignsClient() {
       if (statusFilter) params.set("status", statusFilter)
       params.set("page", String(page))
       params.set("limit", String(PAGE_LIMIT))
-      const res = await fetch(`/api/admin/campaigns?${params.toString()}`)
+      const res = await adminFetch(`/api/admin/campaigns?${params.toString()}`)
       if (!res.ok) {
         const data = await res.json().catch(() => ({ error: "加载失败" }))
         throw new Error(data.error || "加载失败")
@@ -84,7 +85,7 @@ export function CampaignsClient() {
     if (!ok) return
 
     try {
-      const res = await fetch(`/api/admin/campaigns/${campaign.id}`, { method: "DELETE" })
+      const res = await adminFetch(`/api/admin/campaigns/${campaign.id}`, { method: "DELETE" })
       if (!res.ok) {
         const data = await res.json().catch(() => ({ error: "删除失败" }))
         toast.error(data.error || "删除失败")
@@ -109,7 +110,7 @@ export function CampaignsClient() {
     }
 
     try {
-      const res = await fetch(`/api/admin/campaigns/${campaign.id}`, {
+      const res = await adminFetch(`/api/admin/campaigns/${campaign.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),

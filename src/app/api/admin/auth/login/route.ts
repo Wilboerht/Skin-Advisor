@@ -6,7 +6,7 @@ import prisma from "@/lib/prisma";
 import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import { logAdminAction, getClientInfo } from "@/lib/admin-auth";
-import { rateLimit, getClientIP, resetRateLimit } from "@/lib/ratelimit";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { ADMIN_SESSION_COOKIE_NAME } from "@/lib/session-verify";
 import { logger } from "@/lib/logger";
 
@@ -27,8 +27,12 @@ export async function POST(request: NextRequest) {
             return apiError(ErrorCode.VALIDATION_ERROR, "Invalid request", 400);
         }
 
+        // 与数据库查询同一规则规范化用户名：限流 key 若不 trim，
+        // 攻击者可用 "admin"/" admin"/"admin " 等变体绕过用户名维度限流
+        const normalizedUsername = username.toLowerCase().trim();
+
         // Rate limit: max 5 login attempts per 15 minutes per username (防止多 IP 爆破同一账号)
-        const usernameLimit = await rateLimit(`admin-login-user-${username.toLowerCase()}`, "login");
+        const usernameLimit = await rateLimit(`admin-login-user-${normalizedUsername}`, "login");
         if (!usernameLimit.success) {
             return apiError(ErrorCode.RATE_LIMITED, "Too many login attempts. Please try again later.", 429);
         }
@@ -37,8 +41,6 @@ export async function POST(request: NextRequest) {
         if (username.length > 255 || password.length > 255) {
             return apiError(ErrorCode.VALIDATION_ERROR, "Input too long", 400);
         }
-
-        const normalizedUsername = username.toLowerCase().trim();
 
         const INVALID_CREDENTIALS_RESPONSE = apiError(ErrorCode.UNAUTHORIZED, "Invalid credentials", 401);
 

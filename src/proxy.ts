@@ -99,6 +99,27 @@ const ALLOWED_ORIGINS = [
     ...(process.env.NODE_ENV !== "production" ? ["http://localhost:3000", "http://127.0.0.1:3000"] : []),
 ].filter(Boolean);
 
+/**
+ * 严格判断 Origin/Referer 是否属于允许列表。
+ * 必须完整相等（Referer 取其 origin 部分），禁止前缀匹配，
+ * 防止 https://advisor.nihplod.cn.evil.com 之类的域名前缀绕过。
+ */
+function isAllowedOrigin(value: string | null): boolean {
+    if (!value) return false;
+    return ALLOWED_ORIGINS.some((allowed) => {
+        if (value === allowed) return true;
+        // Referer 是完整 URL，提取其 origin 后再比较
+        try {
+            return new URL(value).origin === allowed;
+        } catch {
+            return false;
+        }
+    });
+}
+
+// 是否启用同源保护（任一允许源已配置即生效）
+const ORIGIN_PROTECTION_ENABLED = ALLOWED_ORIGINS.length > 0;
+
 // 演示模式：DISABLE_CSRF=true 时跳过所有 CSRF 检查（Origin + Token）
 const DISABLE_CSRF = process.env.DISABLE_CSRF === "true";
 
@@ -123,9 +144,12 @@ export async function proxy(request: NextRequest) {
 
     // ==================== SSO 回调中断恢复 ====================
     // 若浏览器持有 SSO Cookie 但本地 JWT Cookie 缺失或无效（回调中断、
-    // 浏览器关闭、JWT_SECRET 轮换等场景），自动引导至 session-init 重新签发
+    // 浏览器关闭、JWT_SECRET 轮换等场景），自动引导至 session-init 重新签发。
+    // API 路径排除在外：307 会保留 POST 方法导致 session-init 返回 405，
+    // API 应直接返回 401 交由前端 fetchWithCsrf 触发会话重建。
     if (
         pathname !== "/api/auth/session-init" &&
+        !pathname.startsWith("/api/") &&
         !pathname.startsWith("/_next/") &&
         !pathname.match(/\.\w+$/) &&
         !isPublicPath(pathname)
@@ -168,7 +192,7 @@ export async function proxy(request: NextRequest) {
         if (!isValid) {
             if (isAdminApi) {
                 return NextResponse.json(
-                    { success: false, error: "未登录" },
+                    { success: false, error: "未登录", code: "UNAUTHORIZED" },
                     { status: 401 }
                 );
             }
@@ -183,11 +207,9 @@ export async function proxy(request: NextRequest) {
         if (unsafeMethods.includes(request.method)) {
             const reqOrigin = request.headers.get("origin");
             const referer = request.headers.get("referer");
-            const isSameOrigin =
-                (reqOrigin && ALLOWED_ORIGINS.some((o) => o && reqOrigin.startsWith(o))) ||
-                (referer && ALLOWED_ORIGINS.some((o) => o && referer.startsWith(o)));
+            const isSameOrigin = isAllowedOrigin(reqOrigin) || isAllowedOrigin(referer);
 
-            if (ALLOWED_ORIGINS.length > 0 && ALLOWED_ORIGINS[0] && !isSameOrigin) {
+            if (ORIGIN_PROTECTION_ENABLED && !isSameOrigin) {
                 return NextResponse.json(
                     { error: "Forbidden: cross-origin mutations not allowed" },
                     { status: 403 }
@@ -218,19 +240,20 @@ export async function proxy(request: NextRequest) {
     if (isCApi) {
         const csrfResult = await verifyCsrfToken(request);
         if (!csrfResult.valid) {
-            // 区分“未登录”与“CSRF 不匹配”，帮助前端与用户定位问题
-            const errorMessages: Record<typeof csrfResult.reason, { status: number; message: string }> = {
-                ok: { status: 200, message: "" },
-                missing_auth: { status: 401, message: "Unauthorized: session expired or not logged in" },
-                missing_csrf_cookie: { status: 403, message: "Forbidden: CSRF cookie missing" },
-                missing_csrf_header: { status: 403, message: "Forbidden: CSRF header missing" },
-                jwt_invalid: { status: 401, message: "Unauthorized: session invalid" },
-                jwt_missing_csrf: { status: 403, message: "Forbidden: CSRF token missing in session" },
-                cookie_mismatch: { status: 403, message: "Forbidden: CSRF cookie mismatch" },
-                jwt_mismatch: { status: 403, message: "Forbidden: CSRF token invalid" },
+            // 区分“未登录”与“CSRF 不匹配”，帮助前端与用户定位问题；
+            // 统一携带 code 字段，前端可据此分支处理（会话重建/提示）
+            const errorMessages: Record<typeof csrfResult.reason, { status: number; message: string; code: string }> = {
+                ok: { status: 200, message: "", code: "" },
+                missing_auth: { status: 401, message: "Unauthorized: session expired or not logged in", code: "UNAUTHORIZED" },
+                missing_csrf_cookie: { status: 403, message: "Forbidden: CSRF cookie missing", code: "FORBIDDEN" },
+                missing_csrf_header: { status: 403, message: "Forbidden: CSRF header missing", code: "FORBIDDEN" },
+                jwt_invalid: { status: 401, message: "Unauthorized: session invalid", code: "TOKEN_EXPIRED" },
+                jwt_missing_csrf: { status: 403, message: "Forbidden: CSRF token missing in session", code: "FORBIDDEN" },
+                cookie_mismatch: { status: 403, message: "Forbidden: CSRF cookie mismatch", code: "FORBIDDEN" },
+                jwt_mismatch: { status: 403, message: "Forbidden: CSRF token invalid", code: "FORBIDDEN" },
             };
-            const { status, message } = errorMessages[csrfResult.reason];
-            return NextResponse.json({ error: message }, { status });
+            const { status, message, code } = errorMessages[csrfResult.reason];
+            return NextResponse.json({ error: message, code }, { status });
         }
     }
     }
@@ -249,12 +272,10 @@ export async function proxy(request: NextRequest) {
         // 2. 检查 Origin / Referer（防止跨站请求）
         const reqOrigin = request.headers.get("origin");
         const referer = request.headers.get("referer");
-        const isSameOrigin =
-            (reqOrigin && ALLOWED_ORIGINS.some((o) => o && reqOrigin.startsWith(o))) ||
-            (referer && ALLOWED_ORIGINS.some((o) => o && referer.startsWith(o)));
+        const isSameOrigin = isAllowedOrigin(reqOrigin) || isAllowedOrigin(referer);
 
         // 如果配置了 ALLOWED_ORIGINS 但请求不带 Origin/Referer 或不匹配，拒绝
-        if (ALLOWED_ORIGINS.length > 0 && ALLOWED_ORIGINS[0] && !isSameOrigin) {
+        if (ORIGIN_PROTECTION_ENABLED && !isSameOrigin) {
             return NextResponse.json(
                 { error: "Forbidden: cross-origin requests not allowed" },
                 { status: 403 }

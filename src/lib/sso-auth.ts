@@ -8,7 +8,7 @@
 import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
 import { createTokenVerifier, type VerifiedTokenPayload } from "@nihplod/sso-verify";
-import { UserRole } from "@/lib/permissions";
+import { UserRole, isDisabledUser } from "@/lib/permissions";
 import prisma from "@/lib/prisma";
 import type { SessionUser } from "@/lib/auth";
 
@@ -96,6 +96,9 @@ export async function getSessionUser(req?: NextRequest): Promise<SessionUser | n
 
     const dbUser = await upsertLocalUser(payload);
     if (!dbUser) return null;
+
+    // 被管理员禁用的用户不允许继续访问任何功能
+    if (isDisabledUser(dbUser.role)) return null;
 
     return {
         id: dbUser.id,

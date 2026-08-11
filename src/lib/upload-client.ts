@@ -4,7 +4,7 @@
  */
 import { uploadImageToOSS, isOSSConfigured, type UploadMetadata } from "./oss-upload-client";
 import { fetchWithCsrf, fetchWithRetry } from "./fetch-client";
-import { MAX_UPLOAD_SIZE, ALLOWED_UPLOAD_TYPES, validateImageFile } from "./upload-constants";
+import { validateImageFile } from "./upload-constants";
 
 export type StorageProvider = "oss" | "local";
 

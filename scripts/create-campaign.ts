@@ -18,7 +18,6 @@ async function main() {
       startDate,
       endDate,
       drawDate,
-      maxEntries: 0,
       prizes: [
         {
           name: "NIHPLOD 旎柏恒彩修护面霜",

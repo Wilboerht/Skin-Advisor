@@ -20,18 +20,36 @@ export async function GET(req: NextRequest) {
   const response = await ssoCallback(req);
 
   const location = response.headers.get("location");
-  if (location && !location.includes("error=")) {
-    // 将最终跳转目标作为 return_to 参数，先经过 session-init 引导签发本地 session
-    const sessionInitUrl = new URL("/api/auth/session-init", req.url);
-    sessionInitUrl.searchParams.set("return_to", location);
-
-    const newResponse = NextResponse.redirect(sessionInitUrl);
-    // 复制原始响应的 Set-Cookie 头（SSO token cookies），确保浏览器收到
-    const setCookieHeaders = response.headers.getSetCookie?.() ?? [];
-    for (const h of setCookieHeaders) {
-      newResponse.headers.append("Set-Cookie", h);
+  if (location) {
+    // 用 URL 解析判断错误态：原 `includes("error=")` 会把合法 query（如 ?return_to=/x?error=0）误判为失败
+    let target: URL;
+    try {
+      target = new URL(location, req.url);
+    } catch {
+      return response;
     }
-    return newResponse;
+
+    if (!target.searchParams.has("error")) {
+      // session-init 仅接受同源相对路径（防开放重定向），绝对 URL 会被丢弃回退到 "/"；
+      // 此处规范化为同源相对路径，保留原始 pathname + query
+      const requestOrigin = new URL(req.url).origin;
+      if (target.origin !== requestOrigin) {
+        // 跨域目标不经过 session-init 包装，直接透传 SDK 响应
+        return response;
+      }
+
+      // 将最终跳转目标作为 return_to 参数，先经过 session-init 引导签发本地 session
+      const sessionInitUrl = new URL("/api/auth/session-init", req.url);
+      sessionInitUrl.searchParams.set("return_to", target.pathname + target.search);
+
+      const newResponse = NextResponse.redirect(sessionInitUrl);
+      // 复制原始响应的 Set-Cookie 头（SSO token cookies），确保浏览器收到
+      const setCookieHeaders = response.headers.getSetCookie?.() ?? [];
+      for (const h of setCookieHeaders) {
+        newResponse.headers.append("Set-Cookie", h);
+      }
+      return newResponse;
+    }
   }
 
   // 登录失败/取消等场景，直接透传 SDK 响应

@@ -23,12 +23,6 @@ const DEBUG = process.env.NODE_ENV === 'development';
 
 type FaceApiModule = typeof FaceApi;
 
-// 扩展 MediaTrackConstraints 以支持部分设备的非标准美颜约束
-interface MediaTrackConstraintsWithEnhancement extends MediaTrackConstraints {
-  beautificationMode?: string;
-  imageEnhancement?: boolean;
-}
-
 // 四张照片的数据结构
 export interface FaceCaptureImages {
   front: string;
@@ -163,7 +157,8 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
   // 当前步骤开始时间，用于手动按钮计时
   const stepStartTimeRef = useRef<number>(0);
   // 最近一次检测到面部的时间，用于无脸时提前显示手动按钮
-  const lastFaceDetectedRef = useRef<number>(Date.now());
+  // 初始值 0，挂载时在 effect 中初始化为当前时间（避免 render 期间调用 Date.now 不纯函数）
+  const lastFaceDetectedRef = useRef<number>(0);
   // 冷却结束后的静默期截止时间，给用户调整姿势的缓冲
   const cooldownGracePeriodUntilRef = useRef<number>(0);
   // 标记刚完成拍照的时间戳，用于语音时序对齐
@@ -212,6 +207,11 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
   useEffect(() => { isLoadingRef.current = isLoading; }, [isLoading]);
   useEffect(() => { isAllCapturedRef.current = isAllCaptured; }, [isAllCaptured]);
   useEffect(() => { modelLoadFailedRef.current = modelLoadFailed; }, [modelLoadFailed]);
+
+  // 挂载时初始化“最近检测到面部的时间”为当前时间（避免 render 期间调用 Date.now）
+  useEffect(() => {
+    lastFaceDetectedRef.current = Date.now();
+  }, []);
   /**
    * 初始化摄像头
    * 注意：禁用美颜效果，确保获取原始相机画面用于AI肌肤分析
@@ -362,7 +362,9 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
 
   // 始终指向最新的 initCamera，避免将 initCamera 放入 effect 依赖导致循环触发
   const initCameraRef = useRef(initCamera);
-  initCameraRef.current = initCamera;
+  useEffect(() => {
+    initCameraRef.current = initCamera;
+  }, [initCamera]);
 
   /**
    * 加载 face-api.js 和模型
@@ -389,22 +391,47 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
       const faceapi = await import("@vladmandic/face-api");
       faceApiRef.current = faceapi;
 
-      // 从本地加载 TinyFaceDetector 和 faceLandmark68Net 模型，15秒超时
-      await Promise.race([
-        Promise.all([
-          faceapi.nets.tinyFaceDetector.loadFromUri("/models"),
-          faceapi.nets.faceLandmark68Net.loadFromUri("/models"),
-        ]),
-        new Promise((_, reject) => setTimeout(() => reject(new Error("模型加载超时")), 15000))
+      // 从本地加载 TinyFaceDetector 和 faceLandmark68Net 模型
+      const loadPromise = Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri("/models"),
+        faceapi.nets.faceLandmark68Net.loadFromUri("/models"),
       ]);
 
-      setModelsLoaded(true);
-      setFaceApiLoaded(true);
-      setModelLoadFailed(false);
-      if (DEBUG) {
-        console.log("Face detection models loaded (including landmarks)");
+      try {
+        // 15 秒内未完成则先降级为手动拍照，避免用户无限等待
+        await Promise.race([
+          loadPromise,
+          new Promise((_, reject) => setTimeout(() => reject(new Error("模型加载超时")), 15000))
+        ]);
+
+        setModelsLoaded(true);
+        setFaceApiLoaded(true);
+        setModelLoadFailed(false);
+        if (DEBUG) {
+          console.log("Face detection models loaded (including landmarks)");
+        }
+        onModelsLoaded?.();
+      } catch (timeoutErr) {
+        console.error("Failed to load face detection:", timeoutErr);
+        setModelsLoaded(false);
+        setModelLoadFailed(true);
+        // 恢复路径：超时只是"等不及"，后台加载仍会继续。
+        // 若模型最终加载成功（如网络慢），自动恢复自动检测状态，
+        // 避免用户永久停留在"手动拍照"降级模式。
+        loadPromise
+          .then(() => {
+            setModelsLoaded(true);
+            setFaceApiLoaded(true);
+            setModelLoadFailed(false);
+            if (DEBUG) {
+              console.log("Face detection models loaded after timeout, auto-detection restored");
+            }
+            onModelsLoaded?.();
+          })
+          .catch(() => {
+            // 真实加载失败，保持手动拍照降级模式
+          });
       }
-      onModelsLoaded?.();
     } catch (err) {
       console.error("Failed to load face detection:", err);
       setModelsLoaded(false);

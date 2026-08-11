@@ -4,7 +4,7 @@ import { apiError, apiSuccess } from "@/lib/api-response";
 import { ErrorCode } from "@/lib/error-codes";
 import prisma from "@/lib/prisma";
 import { requireRole, getClientInfo, logAdminAction } from "@/lib/admin-auth";
-import { canViewFullPII, UserRole, isValidUserRole, AdminRole } from "@/lib/permissions";
+import { canViewFullPII, UserRole, AdminRole } from "@/lib/permissions";
 import { incrementTokenVersion } from "@/lib/auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { Prisma } from "@prisma/client";

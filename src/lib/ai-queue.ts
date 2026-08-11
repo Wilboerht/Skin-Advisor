@@ -210,11 +210,12 @@ class AIRequestQueue {
      * 兼容旧版 acquire/release 模式的包装器
      * 通过 enqueue 一个挂起的任务来占用并发槽位
      *
-     * @param options - timeoutMs: 队列等待超时（默认 60s）; signal: 外部 abort signal
+     * @param options - timeoutMs: 队列等待超时（默认 60s）; signal: 外部 abort signal; userId: 用于单用户并发限制
      */
-    async acquire(options?: { timeoutMs?: number; signal?: AbortSignal }): Promise<void> {
+    async acquire(options?: { timeoutMs?: number; signal?: AbortSignal; userId?: string }): Promise<void> {
         const timeoutMs = options?.timeoutMs ?? 60000;
         const signal = options?.signal;
+        const userId = options?.userId;
 
         this.acquireCount++;
         return new Promise<void>((headerResolve, headerReject) => {
@@ -268,7 +269,7 @@ class AIRequestQueue {
                     // 2. 将结束任务的控制权(done)暴露给 release 方法
                     this.releaseResolvers.push(done);
                 });
-            }).promise.catch(err => {
+            }, userId).promise.catch(err => {
                 // 如果入队或执行出错
                 cleanup();
                 if (!resolved) {
@@ -347,17 +348,27 @@ class AIRequestQueue {
 
         // 异步执行，不阻塞 processQueue 继续分发其他任务（如果有空闲槽位）
         (async () => {
-            // 安全网：任务最大执行时间 (AI 调用通常 <30s，120s 留有充足余量)
-            const taskTimeoutMs = item.type === 'legacy-acquire' ? 60_000 : 120_000;
-            let timeoutId: ReturnType<typeof setTimeout> | undefined;
-            const timeoutPromise = new Promise<never>((_, reject) => {
-                timeoutId = setTimeout(() => reject(new Error(`Queue task timeout after ${taskTimeoutMs}ms`)), taskTimeoutMs);
-            });
-            timeoutPromise.catch(() => {}); // 防止输掉的 Promise 触发 unhandled rejection
-
             try {
-                const result = await Promise.race([item.execute(), timeoutPromise]);
-                clearTimeout(timeoutId);
+                let result: unknown;
+                if (item.type === 'legacy-acquire') {
+                    // acquire/release 模式：槽位由调用方显式 release() 释放，
+                    // 不应用任务级超时（否则会在路由超时前强制释放槽位，突破并发上限）；
+                    // 排队等待超时由 acquire(options.timeoutMs) 控制
+                    result = await item.execute();
+                } else {
+                    // 安全网：任务最大执行时间 (AI 调用通常 <30s，120s 留有充足余量)
+                    const taskTimeoutMs = 120_000;
+                    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+                    const timeoutPromise = new Promise<never>((_, reject) => {
+                        timeoutId = setTimeout(() => reject(new Error(`Queue task timeout after ${taskTimeoutMs}ms`)), taskTimeoutMs);
+                    });
+                    timeoutPromise.catch(() => {}); // 防止输掉的 Promise 触发 unhandled rejection
+                    try {
+                        result = await Promise.race([item.execute(), timeoutPromise]);
+                    } finally {
+                        clearTimeout(timeoutId);
+                    }
+                }
                 const durationMs = Date.now() - (item.startedAt || 0);
 
                 // 更新平均执行时间
@@ -372,7 +383,6 @@ class AIRequestQueue {
 
                 item.resolve(result);
             } catch (error) {
-                clearTimeout(timeoutId);
                 aiLogger.error("Request failed", {
                     id: item.id,
                     type: item.type,

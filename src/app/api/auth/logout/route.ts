@@ -11,6 +11,28 @@ const handler = createLogoutRouteHandler({
   redirectToSso: true,
 });
 
+// 允许的登出请求源（防 CSRF 登出：恶意页面不得通过 GET 链接/图片强制用户登出）
+const ALLOWED_LOGOUT_ORIGINS = [
+  process.env.NEXT_PUBLIC_SITE_URL || "",
+  process.env.NEXT_PUBLIC_BASE_URL || "",
+  ...(process.env.NODE_ENV !== "production" ? ["http://localhost:3000", "http://127.0.0.1:3000"] : []),
+].filter(Boolean);
+
+function isSameOriginRequest(req: NextRequest): boolean {
+  const candidates = [req.headers.get("origin"), req.headers.get("referer")];
+  return candidates.some((value) => {
+    if (!value) return false;
+    return ALLOWED_LOGOUT_ORIGINS.some((allowed) => {
+      if (value === allowed) return true;
+      try {
+        return new URL(value).origin === allowed;
+      } catch {
+        return false;
+      }
+    });
+  });
+}
+
 /**
  * SSO 登出处理器（同步清除本地 Session Cookie）。
  *
@@ -22,13 +44,19 @@ const handler = createLogoutRouteHandler({
  * 导致已登出用户的浏览器在共享设备上仍可发起受保护写操作。
  *
  * 因此无论 SSO 登出成功与否，始终同步清除本地 session Cookie。
+ *
+ * 仅保留 POST：登出是状态变更操作，GET 登出可被恶意站点通过
+ * <img>/<link> 等无需用户交互的方式触发（登出型 CSRF）。
  */
-async function handleLogout(req: NextRequest): Promise<NextResponse> {
+export async function POST(req: NextRequest): Promise<NextResponse> {
+  if (!isSameOriginRequest(req)) {
+    return NextResponse.json(
+      { error: "Forbidden: cross-origin logout not allowed", code: "FORBIDDEN_ORIGIN" },
+      { status: 403 }
+    );
+  }
   const response = await handler(req);
   // 不论 SSO 登出是否成功，始终清除本地 JWT + CSRF Cookie
   clearLocalSession(response);
   return response;
 }
-
-export const GET = handleLogout;
-export const POST = handleLogout;

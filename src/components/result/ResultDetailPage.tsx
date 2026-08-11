@@ -1,10 +1,10 @@
 ﻿"use client";
 
-import { useMemo, useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Download } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
 import type { SkinTypeData } from "@/lib/result-content";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
@@ -19,10 +19,10 @@ interface ResultDetailPageProps {
 }
 
 export default function ResultDetailPage({ data }: ResultDetailPageProps) {
-  const tableColumns = useMemo(() => {
-    if (!data.m7?.ingredientTable?.length) return [];
-    return Object.keys(data.m7.ingredientTable[0]);
-  }, [data.m7?.ingredientTable]);
+  // React Compiler 自动优化记忆化，无需手写 useMemo（手写依赖与推断不一致会导致编译降级）
+  const tableColumns = !data.m7?.ingredientTable?.length
+    ? []
+    : Object.keys(data.m7.ingredientTable[0]);
 
   const [genderSuffix, setGenderSuffix] = useState<"female" | "male">("female");
 
@@ -33,13 +33,6 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
     } catch {
       // ignore SSR/localStorage unavailable
     }
-  }, []);
-
-  const [showPosterToast, setShowPosterToast] = useState(false);
-
-  const handleSavePoster = useCallback(() => {
-    setShowPosterToast(true);
-    setTimeout(() => setShowPosterToast(false), 2500);
   }, []);
 
   const characterSrc = `/images/character/${data.ipKey}/${data.ipKey}_${genderSuffix}.png`;
@@ -62,13 +55,13 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
             <p className="text-[13px] md:text-base text-brand-charcoal/75 font-light leading-[1.8] md:leading-normal tracking-[0.06em] md:tracking-[0.12em] max-w-xl">
               {data.m1.persona}
             </p>
-            <button
-              onClick={handleSavePoster}
-              className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 border border-brand-charcoal/25 text-brand-charcoal/70 text-[13px] tracking-[0.08em] font-light rounded-full hover:border-brand-charcoal/50 hover:text-brand-charcoal transition-colors duration-300"
+            <Link
+              href="/"
+              className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 border border-brand-charcoal/60 text-brand-charcoal text-[13px] tracking-[0.08em] font-light rounded-full hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal transition-colors duration-300"
             >
-              <Download className="w-3.5 h-3.5" />
-              保存我的肌智派形象海报
-            </button>
+              开始测肤，解锁你的专属形象
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
           <div className="relative w-full max-w-[180px] mx-auto lg:max-w-[260px] lg:ml-auto lg:mr-0 aspect-[3/4]">
             <Image
@@ -295,12 +288,6 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
         </div>
       </footer>
       </article>
-
-      {showPosterToast && (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 px-6 py-3 bg-brand-charcoal/90 text-white text-sm tracking-[0.08em] font-light rounded-full shadow-lg">
-          海报功能正在制作中，敬请期待
-        </div>
-      )}
     </main>
   );
 }

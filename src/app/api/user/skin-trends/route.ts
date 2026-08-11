@@ -49,14 +49,28 @@ export async function GET(request: NextRequest) {
             }, { headers: rateLimitHeaders });
         }
 
+        // analysisResult 为 JSON 快照，用结构化类型收窄后安全读取
+        interface TrendDimension { score?: number }
+        interface TrendFaceAnalysis {
+            overallScore?: number;
+            dimensions?: {
+                wrinkles?: TrendDimension;
+                waterOil?: TrendDimension;
+                spots?: TrendDimension;
+                texture?: TrendDimension;
+            };
+        }
+        const asFaceAnalysis = (result: unknown): TrendFaceAnalysis | undefined =>
+            (result as { faceAnalysis?: TrendFaceAnalysis } | null | undefined)?.faceAnalysis;
+
         const trends = {
             dates: recentSessions.map(s => s.completedAt),
-            scores: recentSessions.map(s => (s.analysisResult as any)?.faceAnalysis?.overallScore || 0),
+            scores: recentSessions.map(s => asFaceAnalysis(s.analysisResult)?.overallScore || 0),
             dimensions: {
-                wrinkles: recentSessions.map(s => (s.analysisResult as any)?.faceAnalysis?.dimensions?.wrinkles?.score || 0),
-                waterOil: recentSessions.map(s => (s.analysisResult as any)?.faceAnalysis?.dimensions?.waterOil?.score || 0),
-                spots: recentSessions.map(s => (s.analysisResult as any)?.faceAnalysis?.dimensions?.spots?.score || 0),
-                texture: recentSessions.map(s => (s.analysisResult as any)?.faceAnalysis?.dimensions?.texture?.score || 0),
+                wrinkles: recentSessions.map(s => asFaceAnalysis(s.analysisResult)?.dimensions?.wrinkles?.score || 0),
+                waterOil: recentSessions.map(s => asFaceAnalysis(s.analysisResult)?.dimensions?.waterOil?.score || 0),
+                spots: recentSessions.map(s => asFaceAnalysis(s.analysisResult)?.dimensions?.spots?.score || 0),
+                texture: recentSessions.map(s => asFaceAnalysis(s.analysisResult)?.dimensions?.texture?.score || 0),
             }
         };
 

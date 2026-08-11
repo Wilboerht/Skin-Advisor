@@ -326,16 +326,6 @@ model ReminderSettings {
   updatedAt       DateTime @updatedAt
 }
 
-model WeatherCache {
-  id          String   @id @default(cuid())
-  locationKey String   @unique // "121.39,31.25"
-  data        String   // JSON stringified SkinEnvData
-  createdAt   DateTime @default(now())
-  expiresAt   DateTime
-
-  @@index([expiresAt])
-}
-
 // 应用实例注册表 — 用于检测多实例部署（限流兼容性告警）
 model AppInstance {
   id        String   @id  // hostname-pid-启动时间戳
@@ -385,7 +375,6 @@ model Campaign {
   prizes      Json                    // 奖品列表 [{name, image, quantity, description?}]
   shareText   String?                 // 小红书分享文案模板（支持 {{nickname}} 占位符）
   rules       String?                 // 活动规则（Markdown）
-  maxEntries  Int      @default(0)    // 参与上限（0=不限制）
   drawDate    DateTime?               // 开奖时间（显示用）
   sortOrder   Int      @default(0)    // 排序权重
   createdAt   DateTime @default(now())

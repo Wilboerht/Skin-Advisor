@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAccessToken, ssoVerifier, upsertLocalUser } from "@/lib/sso-auth";
 import { signLocalSession } from "@/lib/auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { isDisabledUser } from "@/lib/permissions";
 import { logger } from "@/lib/logger";
 
 /**
@@ -49,6 +50,12 @@ export async function GET(req: NextRequest) {
         if (!dbUser) {
             logger.error("[session-init] Failed to upsert local user", { sub: payload.sub });
             return NextResponse.redirect(new URL(`/?error=db_error&return_to=${encodeURIComponent(returnTo)}`, req.url));
+        }
+
+        // 被禁用的用户不签发本地会话
+        if (isDisabledUser(dbUser.role)) {
+            logger.warn("[session-init] Disabled user attempted session init", { sub: payload.sub });
+            return NextResponse.redirect(new URL(`/?error=no_session&return_to=${encodeURIComponent(returnTo)}`, req.url));
         }
 
         const response = NextResponse.redirect(new URL(returnTo, req.url));

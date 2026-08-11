@@ -51,7 +51,6 @@ export default async function GiftPage() {
         prizes: campaign.prizes as Array<{ name: string; image: string; quantity: number; description?: string }>,
         shareText: campaign.shareText,
         rules: campaign.rules,
-        maxEntries: campaign.maxEntries,
       }
     : null;
 

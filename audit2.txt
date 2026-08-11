@@ -1,0 +1,52 @@
+﻿# npm audit report
+
+@tootallnate/once  <2.0.1
+@tootallnate/once vulnerable to Incorrect Control Flow Scoping - https://github.com/advisories/GHSA-vpq2-c234-7xj6
+fix available via `npm audit fix`
+node_modules/@tootallnate/once
+  get-uri  3.0.1 - 3.0.2
+  Depends on vulnerable versions of @tootallnate/once
+  node_modules/ali-oss/node_modules/get-uri
+  http-proxy-agent  4.0.1
+  Depends on vulnerable versions of @tootallnate/once
+  node_modules/ali-oss/node_modules/http-proxy-agent
+    pac-proxy-agent  1.1.0 - 6.0.4
+    Depends on vulnerable versions of @tootallnate/once
+    Depends on vulnerable versions of http-proxy-agent
+    Depends on vulnerable versions of pac-resolver
+    node_modules/ali-oss/node_modules/pac-proxy-agent
+
+ip  *
+Severity: high
+ip SSRF improper categorization in isPublic - https://github.com/advisories/GHSA-2p57-rm9w-gvfp
+fix available via `npm audit fix`
+node_modules/ip
+  pac-resolver  1.3.0 - 7.0.0
+  Depends on vulnerable versions of ip
+  node_modules/ali-oss/node_modules/pac-resolver
+
+ip-address  <=10.3.0
+Severity: high
+ip-address has XSS in Address6 HTML-emitting methods - https://github.com/advisories/GHSA-v2v4-37r5-5v8g
+ip-address: Address4 decodes leading-zero octets as decimal while resolvers decode them as octal, allowing SSRF and trust-boundary bypass - https://github.com/advisories/GHSA-mwp4-54f8-5fhr
+fix available via `npm audit fix --force`
+Will install geoip-lite@1.2.2, which is a breaking change
+node_modules/ip-address
+  geoip-lite  1.3.0 - 2.0.1
+  Depends on vulnerable versions of ip-address
+  node_modules/geoip-lite
+
+sharp  <0.35.0
+Severity: high
+sharp inherited vulnerabilities in libvips: CVE-2026-33327, CVE-2026-33328, CVE-2026-35590, CVE-2026-35591 - https://github.com/advisories/GHSA-f88m-g3jw-g9cj
+fix available via `npm audit fix --force`
+Will install sharp@0.35.3, which is a breaking change
+node_modules/sharp
+
+9 vulnerabilities (3 low, 1 moderate, 5 high)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force

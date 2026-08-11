@@ -12,12 +12,12 @@ import {
     XAxis,
     YAxis,
 } from "recharts";
+import type { LabelProps } from "recharts";
 import type { SkinDimensions, SkinDimensionKey } from "@/lib/advisor-utils";
 import { DIMENSION_LABELS } from "@/lib/advisor-utils";
 
 interface ScientificBarChartProps {
     dimensions: SkinDimensions;
-    size?: number;
     activeDimension?: string | null;
     onDimensionSelect?: (key: SkinDimensionKey) => void;
 }
@@ -34,7 +34,7 @@ const getScoreColor = (score: number) => {
     return "#ef4444"; // Red
 };
 
-export function ScientificBarChart({ dimensions, size = 300, activeDimension, onDimensionSelect }: ScientificBarChartProps) {
+export function ScientificBarChart({ dimensions, activeDimension, onDimensionSelect }: ScientificBarChartProps) {
     const mounted = useMounted();
     const [initialLoad, setInitialLoad] = useState(true);
     useEffect(() => {
@@ -92,10 +92,16 @@ export function ScientificBarChart({ dimensions, size = 300, activeDimension, on
                         <LabelList
                             dataKey="score"
                             position="right"
-                            content={(props: any) => {
-                                const { x, y, width, value, index } = props;
+                            content={(props: LabelProps) => {
+                                // LabelList 运行时额外注入 x/y/width/index，类型定义未包含，在此收窄
+                                const extra = props as LabelProps & { x?: number | string; y?: number | string; width?: number | string; index?: number };
+                                const x = Number(extra.x ?? 0);
+                                const y = Number(extra.y ?? 0);
+                                const width = Number(extra.width ?? 0);
+                                const { value } = props;
+                                const index = extra.index ?? 0;
                                 const data = chartData[index];
-                                const isActive = activeDimension === data.key;
+                                const isActive = activeDimension === data?.key;
                                 return (
                                     <text
                                         x={x + width + 6}

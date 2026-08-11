@@ -1,5 +1,6 @@
 "use client";
 
+import { adminFetch } from "@/lib/admin-fetch";
 import { useState, memo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/Toast";
@@ -225,7 +226,7 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
 
         setBatchLoading(action);
         try {
-            const res = await fetch('/api/admin/products/batch', {
+            const res = await adminFetch('/api/admin/products/batch', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ids: selectedIds, action }),
@@ -240,7 +241,7 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                 const message = await parseErrorMessage(res, "批量操作失败");
                 toast.error(message);
             }
-        } catch (e) {
+        } catch {
             toast.error("网络异常，请稍后重试");
         } finally {
             setBatchLoading(null);
@@ -251,7 +252,7 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
         if (deleteConfirm.batch) {
             if (selectedIds.length === 0) return;
             try {
-                const res = await fetch('/api/admin/products/batch', {
+                const res = await adminFetch('/api/admin/products/batch', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ ids: selectedIds, action: 'delete' }),
@@ -265,12 +266,12 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                     const message = await parseErrorMessage(res, "批量删除失败");
                     toast.error(message);
                 }
-            } catch (e) {
+            } catch {
                 toast.error("网络异常，请稍后重试");
             }
         } else if (deleteConfirm.id) {
             try {
-                const res = await fetch(`/api/admin/products/${deleteConfirm.id}`, {
+                const res = await adminFetch(`/api/admin/products/${deleteConfirm.id}`, {
                     method: 'DELETE',
                 });
 
@@ -281,7 +282,7 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
                     const message = await parseErrorMessage(res, "删除失败");
                     toast.error(message);
                 }
-            } catch (e) {
+            } catch {
                 toast.error("网络异常，请稍后重试");
             }
         }

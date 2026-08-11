@@ -95,7 +95,7 @@ export default function ProfileClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: trimmed }),
       });
-      if (!res.ok) throw new Error("保存失败");
+      if (!res.ok) throw new Error("保存未成功");
       await refresh();
       setIsEditingName(false);
     } catch (err) {

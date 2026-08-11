@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Sparkles, Gift } from "lucide-react";
+import { ArrowRight, Gift } from "lucide-react";
 import { skinTypes, routeOrder } from "@/lib/result-content";
 import { withDefaultOgImage } from "@/lib/metadata";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
@@ -75,7 +75,7 @@ export default function ResultIndexPage() {
       {/* 类型卡片 */}
       <section className="px-6 md:px-12 lg:px-20">
         <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-x-5 md:gap-x-7 gap-y-6 md:gap-y-10">
-          {orderedTypes.map((type, i) => {
+          {orderedTypes.map((type) => {
             if (!type) return null;
             return (
               <Link

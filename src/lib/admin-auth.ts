@@ -7,7 +7,7 @@ import { Prisma } from "@prisma/client";
 import { getClientIP } from "@/lib/ratelimit";
 import { verifySessionSignature, createSignedSession, ADMIN_SESSION_COOKIE_NAME } from "@/lib/session-verify";
 import { logger } from "@/lib/logger";
-import { AdminRole, VALID_ADMIN_ROLES, canAccessAdminDashboard } from "@/lib/permissions";
+import { AdminRole, VALID_ADMIN_ROLES } from "@/lib/permissions";
 
 interface AdminSession {
     adminId: string;

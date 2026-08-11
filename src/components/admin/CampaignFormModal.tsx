@@ -1,5 +1,6 @@
 "use client"
 
+import { adminFetch } from "@/lib/admin-fetch"
 import { useState, useCallback, useMemo } from "react"
 import { AlertCircle, CheckCircle2, Loader2, Plus, Trash2, Package, ShoppingBag } from "lucide-react"
 import { CampaignModal } from "./CampaignModal"
@@ -38,7 +39,6 @@ interface CampaignFormData {
   prizes: PrizeFormItem[]
   shareText: string
   rules: string
-  maxEntries: number
   sortOrder: number
 }
 
@@ -64,7 +64,6 @@ function getInitialFormData(campaign?: Campaign | null): CampaignFormData {
           : [],
       shareText: campaign.shareText || "",
       rules: campaign.rules || "",
-      maxEntries: campaign.maxEntries,
       sortOrder: campaign.sortOrder,
     }
   }
@@ -79,7 +78,6 @@ function getInitialFormData(campaign?: Campaign | null): CampaignFormData {
       prizes: [],
     shareText: "",
     rules: "",
-    maxEntries: 0,
     sortOrder: 0,
   }
 }
@@ -242,11 +240,10 @@ export function CampaignFormModal({ isOpen, campaign, onClose, onSuccess }: Camp
         })),
         shareText: data.shareText.trim() || undefined,
         rules: data.rules.trim() || undefined,
-        maxEntries: data.maxEntries,
         sortOrder: data.sortOrder,
       }
 
-      const res = await fetch(
+      const res = await adminFetch(
         isEdit ? `/api/admin/campaigns/${campaign.id}` : "/api/admin/campaigns",
         {
           method: isEdit ? "PATCH" : "POST",
@@ -612,33 +609,18 @@ export function CampaignFormModal({ isOpen, campaign, onClose, onSuccess }: Camp
               />
             </FormField>
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField label="参与上限" htmlFor="maxEntries" hint="0=不限">
-                <input
-                  id="maxEntries"
-                  type="number"
-                  min={0}
-                  value={data.maxEntries}
-                  onChange={(e) => {
-                    const val = e.target.value === "" ? 0 : Number(e.target.value)
-                    updateField("maxEntries", val)
-                  }}
-                  className={inputCls(false)}
-                />
-              </FormField>
-              <FormField label="排序权重" htmlFor="sortOrder">
-                <input
-                  id="sortOrder"
-                  type="number"
-                  value={data.sortOrder}
-                  onChange={(e) => {
-                    const val = e.target.value === "" ? 0 : Number(e.target.value)
-                    updateField("sortOrder", val)
-                  }}
-                  className={inputCls(false)}
-                />
-              </FormField>
-            </div>
+            <FormField label="排序权重" htmlFor="sortOrder">
+              <input
+                id="sortOrder"
+                type="number"
+                value={data.sortOrder}
+                onChange={(e) => {
+                  const val = e.target.value === "" ? 0 : Number(e.target.value)
+                  updateField("sortOrder", val)
+                }}
+                className={inputCls(false)}
+              />
+            </FormField>
           </div>
 
           <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-[#E9E9E7]">

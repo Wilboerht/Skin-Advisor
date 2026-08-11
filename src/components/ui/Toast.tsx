@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from "lucide-react";
+import { CheckCircle, AlertCircle, Info, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export type ToastType = "success" | "error" | "info" | "warning";
@@ -31,9 +31,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     const timeoutRefs = React.useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
 
     React.useEffect(() => {
+        const timers = timeoutRefs.current;
         return () => {
-            timeoutRefs.current.forEach(clearTimeout);
-            timeoutRefs.current.clear();
+            timers.forEach(clearTimeout);
+            timers.clear();
         };
     }, []);
 
@@ -96,8 +97,6 @@ function ToastContainer({
     toasts: Toast[];
     removeToast: (id: string) => void;
 }) {
-    // pause-on-hover: mouse/touch suspends auto-dismiss
-    const [pausedIds, setPausedIds] = React.useState<Set<string>>(new Set());
     const [reducedMotion, setReducedMotion] = React.useState(false);
 
     React.useEffect(() => {
@@ -135,10 +134,6 @@ function ToastContainer({
                         animate={reducedMotion ? {} : { opacity: 1, y: 0, x: 0 }}
                         exit={reducedMotion ? {} : { opacity: 0, y: 8, transition: { duration: 0.15 } }}
                         layout
-                        onMouseEnter={() => setPausedIds((prev) => new Set(prev).add(t.id))}
-                        onMouseLeave={() => setPausedIds((prev) => { const next = new Set(prev); next.delete(t.id); return next; })}
-                        onTouchStart={() => setPausedIds((prev) => new Set(prev).add(t.id))}
-                        onTouchEnd={() => setTimeout(() => setPausedIds((prev) => { const next = new Set(prev); next.delete(t.id); return next; }), 2000)}
                         onClick={() => removeToast(t.id)}
                         className="flex items-center gap-2.5 rounded-2xl bg-white/90 backdrop-blur-xl px-4 py-2.5 text-[13px] leading-snug text-[#1A1A1A] cursor-pointer select-none shadow-[0_2px_16px_-2px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.04)] w-full md:w-auto"
                     >

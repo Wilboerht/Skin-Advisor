@@ -5,7 +5,6 @@ import {
     isValidUserRole,
     isValidAdminRole,
     isDisabledUser,
-    isSuperAdmin,
     canManageAdmins,
     canViewFullPII,
     canExportPII,

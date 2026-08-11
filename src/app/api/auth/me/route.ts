@@ -6,7 +6,7 @@ import { ErrorCode } from "@/lib/error-codes";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { verifyCsrfToken } from "@/lib/csrf";
 import { logger } from "@/lib/logger";
-import { UserRole } from "@/lib/permissions";
+import { UserRole, isDisabledUser } from "@/lib/permissions";
 
 export async function GET(req: NextRequest) {
     const ip = getClientIP(req);
@@ -26,6 +26,11 @@ export async function GET(req: NextRequest) {
     }
 
     const localUser = await upsertLocalUser(payload);
+
+    // 被禁用的用户视为未登录，前端会引导其退出
+    if (localUser && isDisabledUser(localUser.role)) {
+        return NextResponse.json({ user: null });
+    }
 
     return NextResponse.json({
         user: {
@@ -59,6 +64,15 @@ export async function PUT(req: NextRequest) {
     const payload = await ssoVerifier.verify(token);
     if (!payload?.sub) {
         return apiError(ErrorCode.UNAUTHORIZED, "登录已过期，请重新登录", 401);
+    }
+
+    // 被禁用的用户不允许修改资料
+    const existingUser = await prisma.user.findUnique({
+        where: { id: payload.sub },
+        select: { role: true },
+    });
+    if (existingUser && isDisabledUser(existingUser.role)) {
+        return apiError(ErrorCode.FORBIDDEN, "该账号已被禁用", 403);
     }
 
     try {

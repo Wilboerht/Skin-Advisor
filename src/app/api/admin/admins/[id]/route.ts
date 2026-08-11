@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { apiError, apiSuccess } from "@/lib/api-response";
 import { ErrorCode } from "@/lib/error-codes";
@@ -6,6 +6,7 @@ import prisma from "@/lib/prisma";
 import { requireRole, logAdminAction, getClientInfo } from "@/lib/admin-auth";
 import { AdminRole, VALID_ADMIN_ROLES, isSuperAdmin } from "@/lib/permissions";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { revokeAdminSessions } from "@/lib/session-verify";
 import bcrypt from "bcryptjs";
 import { logger } from "@/lib/logger";
 
@@ -90,7 +91,7 @@ export const PATCH = requireRole(AdminRole.SUPER_ADMIN)(async (request, { admin,
                     ...(name !== undefined && { name: name || null }),
                     ...(email !== undefined && { email: email || null }),
                     ...(role !== undefined && { role }),
-                    ...(hashedPassword && { password: hashedPassword }),
+                    ...(hashedPassword && { password: hashedPassword, passwordChangedAt: new Date() }),
                     ...(active !== undefined && { active }),
                 },
                 select: {
@@ -113,6 +114,11 @@ export const PATCH = requireRole(AdminRole.SUPER_ADMIN)(async (request, { admin,
         }
 
         const { updated, targetAdmin } = txResult;
+
+        // 密码修改后撤销该管理员所有现有会话，强制重新登录（与 reset-password 对齐）
+        if (hashedPassword) {
+            revokeAdminSessions(id);
+        }
 
         // Log audit
         const clientInfo = getClientInfo(request);

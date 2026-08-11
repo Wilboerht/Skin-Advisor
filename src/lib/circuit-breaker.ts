@@ -59,10 +59,6 @@ class AICircuitBreaker {
         const entry = this.getOrCreate(service);
         const now = Date.now();
 
-        const activeFailures = entry.failures.filter(
-            f => now - f.timestamp < this.config.failureWindowMs
-        );
-
         switch (entry.state) {
             case "closed":
                 return true;

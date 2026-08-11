@@ -1,5 +1,6 @@
 "use client";
 
+import { adminFetch } from "@/lib/admin-fetch";
 import { useState, useEffect, useCallback } from "react";
 import { Loader2, TrendingDown, Zap, AlertTriangle, BarChart3, DollarSign, CheckCircle2, XCircle, AlertCircle, RefreshCw } from "lucide-react";
 import { motion } from "framer-motion";
@@ -102,7 +103,7 @@ export default function AdminAICostsPage() {
         setLoading(true);
         setError(null);
         try {
-            const res = await fetch(`/api/admin/ai-costs?period=${period}`);
+            const res = await adminFetch(`/api/admin/ai-costs?period=${period}`);
             if (!res.ok) throw new Error("Failed to fetch");
             const json = await res.json();
             setData(json);
@@ -117,7 +118,7 @@ export default function AdminAICostsPage() {
         setIsRefreshing(true);
         setError(null);
         try {
-            const res = await fetch(`/api/admin/ai-costs?period=${period}`);
+            const res = await adminFetch(`/api/admin/ai-costs?period=${period}`);
             if (!res.ok) throw new Error("Failed to fetch");
             const json = await res.json();
             setData(json);
@@ -133,7 +134,7 @@ export default function AdminAICostsPage() {
     }, [fetchData]);
 
     useEffect(() => {
-        fetch("/api/admin/ai-health")
+        adminFetch("/api/admin/ai-health")
             .then((res) => {
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 return res.json();

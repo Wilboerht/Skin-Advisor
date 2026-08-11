@@ -5,9 +5,11 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { withAdminAuth } from "@/lib/admin-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { startOfTodayShanghai } from "@/lib/time";
 import { logger } from "@/lib/logger";
 
 // 成本数据缓存 (30s TTL，减少 DB 压力)
@@ -38,7 +40,8 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
         let dateFilter: Date;
         switch (period) {
             case "today":
-                dateFilter = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                // 今日口径固定北京时间零点，与趋势图的 Asia/Shanghai 分组保持一致
+                dateFilter = startOfTodayShanghai(now);
                 break;
             case "week":
                 dateFilter = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -50,7 +53,7 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
                 dateFilter = new Date(0); // all time
         }
 
-        const whereClause: Record<string, unknown> = {
+        const whereClause: Prisma.AIUsageLogWhereInput = {
             createdAt: { gte: dateFilter },
         };
         if (provider) {
@@ -61,7 +64,7 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
         const [summary, byProvider, byModel, byType, recentFailures, dailyCosts] = await Promise.all([
             // 总体汇总
             prisma.aIUsageLog.aggregate({
-                where: whereClause as any,
+                where: whereClause,
                 _sum: {
                     promptTokens: true,
                     completionTokens: true,
@@ -79,7 +82,7 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
             // 按提供者分组
             prisma.aIUsageLog.groupBy({
                 by: ["provider"],
-                where: whereClause as any,
+                where: whereClause,
                 _sum: { totalTokens: true, estimatedCost: true },
                 _count: { id: true },
             }),
@@ -87,7 +90,7 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
             // 按模型分组
             prisma.aIUsageLog.groupBy({
                 by: ["model"],
-                where: whereClause as any,
+                where: whereClause,
                 _sum: { totalTokens: true, estimatedCost: true },
                 _count: { id: true },
                 orderBy: { _sum: { estimatedCost: "desc" } },
@@ -96,14 +99,14 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
             // 按请求类型分组
             prisma.aIUsageLog.groupBy({
                 by: ["requestType"],
-                where: whereClause as any,
+                where: whereClause,
                 _sum: { totalTokens: true, estimatedCost: true },
                 _count: { id: true },
             }),
 
             // 最近失败记录
             prisma.aIUsageLog.findMany({
-                where: { ...whereClause as any, success: false },
+                where: { ...whereClause, success: false },
                 orderBy: { createdAt: "desc" },
                 take: 20,
                 select: {
@@ -118,6 +121,7 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
             }),
 
             // 每日成本趋势（最近30天，按北京时间日期分组）
+            // provider 过滤与其他统计口径保持一致，避免筛选后趋势图仍含全部 provider
             prisma.$queryRaw<Array<{ date: string; cost: number; count: number }>>`
                 SELECT 
                     DATE("createdAt" AT TIME ZONE 'Asia/Shanghai') as date,
@@ -125,6 +129,7 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
                     COUNT(*)::int as count
                 FROM "AIUsageLog"
                 WHERE "createdAt" >= ${new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)}
+                ${provider ? Prisma.sql`AND "provider" = ${provider}` : Prisma.empty}
                 GROUP BY DATE("createdAt" AT TIME ZONE 'Asia/Shanghai')
                 ORDER BY date DESC
             `,
@@ -133,7 +138,7 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
         // 计算成功率
         const totalCalls = summary._count.id;
         const failedCalls = await prisma.aIUsageLog.count({
-            where: { ...whereClause as any, success: false },
+            where: { ...whereClause, success: false },
         });
         const successRate = totalCalls > 0
             ? ((totalCalls - failedCalls) / totalCalls * 100).toFixed(1)

@@ -1,5 +1,6 @@
 "use client";
 
+import { adminFetch } from "@/lib/admin-fetch";
 import { useEffect, useState } from "react";
 import { useMounted } from "@/hooks/use-mounted";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
@@ -32,7 +33,7 @@ export function useDashboardStats() {
     useEffect(() => {
         const controller = new AbortController();
         setLoading(true);
-        fetch('/api/admin/stats', { signal: controller.signal })
+        adminFetch('/api/admin/stats', { signal: controller.signal })
             .then(res => {
                 if (!res.ok) {
                     throw new Error(`HTTP ${res.status}`);
@@ -115,7 +116,7 @@ export function SkinTypeDistribution({ data }: { data?: StatsData['skinTypeDistr
                                     boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
                                     fontSize: '12px',
                                 }}
-                                formatter={(value: any, name: any) => [`${value} 人`, name]}
+                                formatter={(value, name) => [`${value} 人`, name]}
                             />
                         )}
                     </PieChart>

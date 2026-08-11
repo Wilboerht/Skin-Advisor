@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { withAdminAuth } from "@/lib/admin-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { startOfTodayShanghai } from "@/lib/time";
 import { logger } from "@/lib/logger";
 
 // GET /api/admin/stats - Dashboard statistics
@@ -31,7 +32,11 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
 
         // ===== 肤质分布 (使用 SQL 在数据库端聚合，避免全表加载到内存) =====
         // 注意：数据实际存储在 analysisResult->skinProfile->type，不是根级的 skinType
-        const skinTypeRaw = await prisma.$queryRaw<Array<{ skin_type: string; count: bigint }>>`
+        // raw SQL 容错与 advisor/stats 对齐：聚合查询失败时降级为空分布，
+        // 不让仪表盘整体 500（基础统计仍可展示）
+        let skinTypeRaw: Array<{ skin_type: string; count: bigint }> = [];
+        try {
+            skinTypeRaw = await prisma.$queryRaw<Array<{ skin_type: string; count: bigint }>>`
             SELECT 
                 LOWER("analysisResult"->'skinProfile'->>'type') as skin_type,
                 COUNT(*) as count
@@ -40,6 +45,9 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
               AND "analysisResult"->'skinProfile'->>'type' IS NOT NULL
             GROUP BY LOWER("analysisResult"->'skinProfile'->>'type')
         `;
+        } catch (error) {
+            logger.warn("[admin/stats] skin type aggregation failed, degrading to empty distribution:", error);
+        }
 
         const validSkinTypes = ['dry', 'oily', 'combination', 'sensitive', 'normal'];
         const skinTypeCount: Record<string, number> = {
@@ -66,7 +74,10 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
         const now = new Date();
         const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-        const weeklyRaw = await prisma.$queryRaw<Array<{ day: string; started: bigint; completed: bigint }>>`
+        // 同样容错：周趋势聚合失败时降级为零值趋势，不影响基础统计展示
+        let weeklyRaw: Array<{ day: string; started: bigint; completed: bigint }> = [];
+        try {
+            weeklyRaw = await prisma.$queryRaw<Array<{ day: string; started: bigint; completed: bigint }>>`
             SELECT 
                 TO_CHAR("createdAt" AT TIME ZONE 'UTC' AT TIME ZONE ${TIMEZONE}, 'YYYY-MM-DD') as day,
                 COUNT(*) as started,
@@ -76,8 +87,10 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
             GROUP BY TO_CHAR("createdAt" AT TIME ZONE 'UTC' AT TIME ZONE ${TIMEZONE}, 'YYYY-MM-DD')
             ORDER BY day
         `;
+        } catch (error) {
+            logger.warn("[admin/stats] weekly trend aggregation failed, degrading to zero trend:", error);
+        }
 
-        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
         const weeklyData: Record<string, { started: number; completed: number }> = {};
 
         // Helper to get day name in Asia/Shanghai timezone
@@ -110,9 +123,9 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
         }));
 
         // ===== 今日数据 (使用 Asia/Shanghai 时区) =====
-        const nowShanghai = new Date().toLocaleString('en-US', { timeZone: TIMEZONE });
-        const todayStart = new Date(nowShanghai);
-        todayStart.setHours(0, 0, 0, 0);
+        // 直接计算北京时间当日零点的 UTC 绝对时刻，
+        // 避免 toLocaleString 再二次解析带来的漂移与本地时区依赖
+        const todayStart = startOfTodayShanghai();
 
         const [todaySessions, todayCompletions] = await Promise.all([
             prisma.advisorSession.count({

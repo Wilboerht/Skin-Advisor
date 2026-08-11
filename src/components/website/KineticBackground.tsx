@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
 
 /**
  * KineticBackground - NIHPLOD 品牌动力学背景组件

@@ -1,5 +1,6 @@
 "use client";
 
+import { adminFetch } from "@/lib/admin-fetch";
 import { useState, useEffect } from "react";
 import {
     Shield,
@@ -12,15 +13,12 @@ import {
     Trash2,
     Package,
     Settings,
-    Gift,
     FileQuestion,
-    Calendar,
     Filter,
-    X,
     ChevronDown,
-    Download,
-    Eye
+    Download
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { LogDetailModal } from "./LogDetailModal";
 import { useToast } from "@/components/ui/Toast";
 import { isSuperAdmin } from "@/lib/permissions";
@@ -51,7 +49,7 @@ interface FilterOptions {
     resources: string[];
 }
 
-const ACTION_ICONS: Record<string, any> = {
+const ACTION_ICONS: Record<string, LucideIcon> = {
     login: LogIn,
     logout: LogOut,
     login_failed: LogIn,
@@ -63,7 +61,7 @@ const ACTION_ICONS: Record<string, any> = {
     batch_deactivate: Package,
 };
 
-const RESOURCE_ICONS: Record<string, any> = {
+const RESOURCE_ICONS: Record<string, LucideIcon> = {
     Product: Package,
     AdminUser: User,
     Setting: Settings,
@@ -128,7 +126,6 @@ export default function AuditLogsClient({ role }: AuditLogsClientProps) {
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const [showFilters, setShowFilters] = useState(false);
     const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
 
     // Filters
@@ -162,7 +159,7 @@ export default function AuditLogsClient({ role }: AuditLogsClientProps) {
                 if (dateRange.end) params.append("endDate", dateRange.end);
             }
 
-            const res = await fetch(`/api/admin/audit-logs?${params.toString()}`);
+            const res = await adminFetch(`/api/admin/audit-logs?${params.toString()}`);
             const data = await res.json();
             if (data.success) {
                 setLogs(data.data);
@@ -185,6 +182,8 @@ export default function AuditLogsClient({ role }: AuditLogsClientProps) {
             fetchLogs();
         }, 300);
         return () => clearTimeout(timer);
+        // fetchLogs 未 memo 化，依赖列表已覆盖其全部输入
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [page, selectedAdmin, selectedAction, selectedResource, timePreset, startDate, endDate]);
 
     const clearFilters = () => {
@@ -246,7 +245,7 @@ export default function AuditLogsClient({ role }: AuditLogsClientProps) {
             if (exportEndDate) params.append("endDate", exportEndDate);
 
             // Use backend export API
-            const res = await fetch(`/api/admin/export?${params.toString()}`);
+            const res = await adminFetch(`/api/admin/export?${params.toString()}`);
             if (!res.ok) {
                 const err = await res.json();
                 throw new Error(err.error || "导出失败");
@@ -262,7 +261,7 @@ export default function AuditLogsClient({ role }: AuditLogsClientProps) {
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
-        } catch (err: unknown) {
+        } catch {
             toast.error("导出失败，请稍后重试");
         } finally {
             setExporting(false);

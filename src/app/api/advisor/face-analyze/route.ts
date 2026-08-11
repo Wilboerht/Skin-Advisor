@@ -17,6 +17,8 @@ import {
 import { getSessionUser } from "@/lib/sso-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { reserveUsage, rollbackUsage } from "@/lib/usage-limit";
+import { recordAIUsage } from "@/lib/ai-budget";
+import { hashIP } from "@/lib/privacy";
 import prisma from "@/lib/prisma";
 import { aiLogger } from "@/lib/logger";
 
@@ -83,6 +85,8 @@ export async function POST(request: NextRequest) {
     // 在 try 外部声明，供 catch/finally 回滚额度时使用
     let body: Record<string, unknown> | undefined;
     let faceSessionId: string | undefined;
+    // 预占是否已成功：外层 catch 仅在预占后才回滚，避免预占前异常触发误回滚
+    let reserved = false;
 
     try {
         // 0. 检查 AI 开关
@@ -133,9 +137,9 @@ export async function POST(request: NextRequest) {
         const MAX_FACE_IMAGES = 4;
         const imageCount = Array.isArray(result.data.images) ? result.data.images.length : 0;
         if (imageCount > MAX_FACE_IMAGES) {
-            aiLogger.warn(`[Security] Face analysis attack detected: ${imageCount} images from IP ${ip}`, {
+            aiLogger.warn(`[Security] Face analysis attack detected: ${imageCount} images from IP ${hashIP(ip)}`, {
                 imageCount,
-                ip,
+                ip: hashIP(ip),
                 sessionId: result.data.sessionId,
             });
             return apiError(ErrorCode.VALIDATION_ERROR, "请求异常，请重新操作", 400);
@@ -143,10 +147,11 @@ export async function POST(request: NextRequest) {
 
         // 1.5 每日用量上限预占（复用业务 sessionId，避免与 analyze 重复扣费）
         faceSessionId = result.data.sessionId || crypto.randomUUID();
-        // 清理僵尸会话（超过 2 分钟未完成）
-        const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
+        // 清理僵尸会话：库中 ip 存的是 hashIP 哈希值，必须用哈希后查询才能命中。
+        // 阈值 4 分钟 > 最坏耗时（队列等待 60s + maxDuration 65s），避免误杀在途分析
+        const fourMinutesAgo = new Date(Date.now() - 4 * 60 * 1000);
         await prisma.advisorSession.updateMany({
-            where: { ip: ip, analysisStartedAt: { lt: twoMinutesAgo }, completedAt: null },
+            where: { ip: hashIP(ip), analysisStartedAt: { lt: fourMinutesAgo }, completedAt: null },
             data: { analysisStartedAt: null },
         });
         const usageReserve = await reserveUsage(request, faceSessionId, body);
@@ -155,15 +160,18 @@ export async function POST(request: NextRequest) {
             Object.entries(rateLimitHeaders).forEach(([k, v]) => response.headers.set(k, v));
             return response;
         }
+        // 预占成功标记：仅在此之后的异常路径才需要回滚，
+        // 避免预占前的异常（如僵尸清理失败）触发无意义的 rollback
+        reserved = true;
 
         // Dynamic imports for file handling
         const fs = await import('fs/promises');
         const path = await import('path');
-        // Lazy import sharp
-        let sharp: typeof import('sharp') | undefined;
+        // Lazy import sharp（sharp 0.35+ 改为命名导出）
+        let sharp: typeof import('sharp').sharp | undefined;
         try {
             const sharpModule = await import('sharp');
-            sharp = (sharpModule.default ?? sharpModule) as typeof import('sharp');
+            sharp = sharpModule.sharp;
         } catch {
             aiLogger.warn("Sharp module not found, compression disabled");
         }
@@ -302,7 +310,7 @@ export async function POST(request: NextRequest) {
             return apiError(ErrorCode.VALIDATION_ERROR, "无有效图片数据", 400);
         }
 
-        aiLogger.info(`Starting face analysis for IP ${ip} with ${validImages.length} images`);
+        aiLogger.info(`Starting face analysis for IP ${hashIP(ip)} with ${validImages.length} images`);
 
         // 3. 准备提示词与 Provider
         const provider = process.env.AI_VISION_PROVIDER || "qwen";
@@ -329,6 +337,20 @@ export async function POST(request: NextRequest) {
             const cachedResult = getCachedResult(cacheKey);
             if (cachedResult) {
                 aiLogger.info(`[FaceAnalyze] Cache hit, returning cached result`);
+                // 缓存命中也写一条 vision 成功日志：预占已实际扣数，若不记录，
+                // 后续 analyze 失败时 hasSuccessfulFaceAnalysis() 为 false 会全额退还本次额度，
+                // 导致熔断期间可反复免费获取面部结果
+                await recordAIUsage({
+                    provider: "cache",
+                    model: "cache",
+                    requestType: "vision",
+                    sessionId: faceSessionId,
+                    userId: session?.id ?? null,
+                    promptTokens: 0,
+                    completionTokens: 0,
+                    totalTokens: 0,
+                    success: true,
+                });
                 return NextResponse.json(cachedResult, {
                     headers: {
                         ...rateLimitHeaders,
@@ -342,7 +364,8 @@ export async function POST(request: NextRequest) {
             // P3: 请求队列处理 - 申请令牌
             // 这是一个异步操作，如果队列已满会等待，直到超时
             aiLogger.debug(`[Queue] Requesting lock. Stats:`, visionQueue.getStats() as unknown as Record<string, unknown>);
-            await visionQueue.acquire({ signal: abortController.signal });
+            // 透传 userId 使队列的 maxConcurrentPerUser 生效
+            await visionQueue.acquire({ signal: abortController.signal, userId: session?.id });
             acquired = true;
             aiLogger.debug(`[Queue] Lock acquired.`);
 
@@ -534,8 +557,8 @@ export async function POST(request: NextRequest) {
         if (err.message?.includes("cancelled") || (err as { name?: string }).name === 'AbortError') {
             return apiError(ErrorCode.INTERNAL_ERROR, "分析请求已取消，请重试", 499);
         }
-        // 服务器内部错误，非用户原因，回滚预占
-        if (faceSessionId) {
+        // 服务器内部错误，非用户原因，回滚预占（仅限预占成功后的异常）
+        if (faceSessionId && reserved) {
             await rollbackUsage(request, faceSessionId, body);
         }
         // 使用脱敏 logger，避免 error 对象泄露请求上下文

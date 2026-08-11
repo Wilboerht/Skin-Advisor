@@ -63,7 +63,7 @@ function mapSsoUserToLegacyUser(ssoUser: SsoUser | null): User | null {
 const UserContext = createContext<AuthContextType | undefined>(undefined);
 
 function UserProviderInner({ children }: { children: ReactNode }) {
-    const { user: ssoUser, isLoading, isAuthenticated, login: ssoLogin, logout: ssoLogout, refreshUser } = useSso();
+    const { user: ssoUser, isLoading, login: ssoLogin, logout: ssoLogout, refreshUser } = useSso();
 
     const user = useMemo(() => mapSsoUserToLegacyUser(ssoUser), [ssoUser]);
 

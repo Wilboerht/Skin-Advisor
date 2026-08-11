@@ -7,7 +7,6 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { getSessionUser } from "@/lib/sso-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
@@ -32,8 +31,6 @@ const EventSchema = z.object({
     data: z.record(z.string(), z.unknown()).optional(), // 附加数据
     timestamp: z.string().optional(),
 });
-
-type _TrackEvent = z.infer<typeof EventSchema>;
 
 // 获取客户端信息
 function getClientInfo(request: NextRequest) {

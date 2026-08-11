@@ -1,5 +1,6 @@
 "use client";
 
+import { adminFetch } from "@/lib/admin-fetch";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -50,7 +51,8 @@ export default function AdminSidebar() {
     const exportMenuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        fetch("/api/admin/auth/me")
+        // adminFetch 统一拦截 401：会话过期时自动跳转 /admin/login
+        adminFetch("/api/admin/auth/me")
             .then(res => res.ok ? res.json() : null)
             .then((data: { user?: AdminMe } | null) => {
                 if (data?.user) setAdmin(data.user);

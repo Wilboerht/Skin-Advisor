@@ -193,13 +193,30 @@ export function resetRateLimit(
     rateLimitCache.delete(cacheKey);
 }
 
-/** 可信代理层数（从请求头最右端向左排除的代理数量） */
+/** 可信代理层数（从请求头最右端向左排除的代理数量）
+ *
+ * 生产部署要求：
+ * 1. 必须配置 TRUSTED_PROXY_HOPS（例如 nginx 单层代理设 1），
+ *    否则 X-Real-IP 不被信任，IP 维度限流可能不准确。
+ * 2. 边缘代理（nginx）必须主动覆写而非透传客户端 IP，例如：
+ *      proxy_set_header X-Real-IP $remote_addr;
+ *      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+ */
 const TRUSTED_PROXY_HOPS = (() => {
     const raw = process.env.TRUSTED_PROXY_HOPS;
     if (!raw) return 0;
     const n = Number(raw);
     return Number.isFinite(n) && n >= 0 ? n : 0;
 })();
+
+// 启动告警：生产环境未配置可信代理时，IP 类限流/配额可被伪造头绕过
+if (process.env.NODE_ENV === "production" && !process.env.TRUSTED_PROXY_HOPS) {
+    console.warn(
+        "[ratelimit] WARNING: TRUSTED_PROXY_HOPS is not set in production. " +
+        "X-Real-IP will be ignored and IP-based rate limiting may be inaccurate. " +
+        "Set TRUSTED_PROXY_HOPS and ensure the edge proxy overwrites X-Real-IP/X-Forwarded-For."
+    );
+}
 
 function normalizeClientIp(ip: string): string {
     if (ip === '::1' || ip === '127.0.0.1') {
@@ -213,14 +230,16 @@ function normalizeClientIp(ip: string): string {
  * 支持代理环境
  *
  * 优先级：
- * 1. X-Real-IP（通常由最外层可信代理设置）
+ * 1. X-Real-IP（仅在配置了 TRUSTED_PROXY_HOPS 时信任，否则客户端可直接伪造该头绕过 IP 限流）
  * 2. X-Forwarded-For：按 TRUSTED_PROXY_HOPS 从右向左取真实客户端 IP
  * 3. 未配置可信代理时，使用 X-Forwarded-For 最后一个值（离服务器最近的一跳）
  */
 export function getClientIP(request: Request): string {
-    const realIp = request.headers.get("x-real-ip");
-    if (realIp) {
-        return normalizeClientIp(realIp.trim());
+    if (TRUSTED_PROXY_HOPS > 0) {
+        const realIp = request.headers.get("x-real-ip");
+        if (realIp) {
+            return normalizeClientIp(realIp.trim());
+        }
     }
 
     const forwardedFor = request.headers.get("x-forwarded-for");

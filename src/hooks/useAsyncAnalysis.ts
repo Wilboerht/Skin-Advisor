@@ -216,7 +216,7 @@ export function useAsyncAnalysis() {
                 timeoutId = setTimeout(() => {
                     abortController.abort();
                     reject(new Error("分析时间较长，请检查网络后重试。"));
-                }, 95 * 1000); // 95 秒，与服务端 maxDuration=90s 对齐并留 5s 缓冲
+                }, 180 * 1000); // 180 秒，服务端 maxDuration=90s，队列场景需更充裕
             });
             return { promise, cancel: () => clearTimeout(timeoutId) };
         };

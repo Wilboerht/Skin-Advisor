@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAIEnabled } from "@/lib/ai";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
-import { aiQueue, visionQueue, analysisQueue, type QueueStats } from "@/lib/ai-queue";
+import { aiQueue, visionQueue, analysisQueue } from "@/lib/ai-queue";
 
 export const dynamic = "force-dynamic";
 

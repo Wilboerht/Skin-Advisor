@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { containsInsensitive } from "@/lib/prisma-search";
 import { requireRole } from "@/lib/admin-auth";

@@ -29,7 +29,7 @@ module.exports = {
         max_restarts: 10,
         min_uptime: '10s',
         // 内存限制
-        max_memory_restart: '2G',
+        max_memory_restart: '6G',
         // 优雅关闭 (15s 充足余量)
         kill_timeout: 15000,
         listen_timeout: 10000,

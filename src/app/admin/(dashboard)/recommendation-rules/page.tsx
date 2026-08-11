@@ -1,5 +1,6 @@
 "use client";
 
+import { adminFetch } from "@/lib/admin-fetch";
 import { useState, useEffect, useCallback } from "react";
 import {
     Loader2, Trash2, Plus, Sparkles, Pencil
@@ -61,7 +62,7 @@ export default function RecommendationRulesPage() {
 
     const fetchRules = useCallback(async () => {
         try {
-            const res = await fetch("/api/admin/recommendation-rules");
+            const res = await adminFetch("/api/admin/recommendation-rules");
             if (!res.ok) throw new Error("Failed to fetch");
             const data = await res.json();
             setRules(data);
@@ -71,7 +72,7 @@ export default function RecommendationRulesPage() {
 
     const fetchProducts = useCallback(async () => {
         try {
-            const res = await fetch("/api/admin/products?limit=500");
+            const res = await adminFetch("/api/admin/products?limit=500");
             if (!res.ok) throw new Error("Failed to fetch");
             const data = await res.json();
             setProducts(data.products || []);
@@ -150,7 +151,7 @@ export default function RecommendationRulesPage() {
             };
 
             if (editingRule) {
-                const res = await fetch(`/api/admin/recommendation-rules/${editingRule.id}`, {
+                const res = await adminFetch(`/api/admin/recommendation-rules/${editingRule.id}`, {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(body),
@@ -160,7 +161,7 @@ export default function RecommendationRulesPage() {
                     throw new Error(err.error || "更新失败");
                 }
             } else {
-                const res = await fetch("/api/admin/recommendation-rules", {
+                const res = await adminFetch("/api/admin/recommendation-rules", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(body),
@@ -187,7 +188,7 @@ export default function RecommendationRulesPage() {
         // 乐观更新
         setRules(prev => prev.map(r => r.id === id ? { ...r, active: !active } : r));
         try {
-            const res = await fetch(`/api/admin/recommendation-rules/${id}`, {
+            const res = await adminFetch(`/api/admin/recommendation-rules/${id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ active: !active })
@@ -204,7 +205,7 @@ export default function RecommendationRulesPage() {
         if (!deleteTarget) return;
         const id = deleteTarget.id;
         try {
-            const res = await fetch(`/api/admin/recommendation-rules/${id}`, {
+            const res = await adminFetch(`/api/admin/recommendation-rules/${id}`, {
                 method: "DELETE"
             });
             if (!res.ok) throw new Error("Failed to delete");

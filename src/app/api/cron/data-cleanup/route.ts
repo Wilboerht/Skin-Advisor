@@ -4,8 +4,6 @@ import { logger } from "@/lib/logger";
 
 export const maxDuration = 60;
 
-// 游客保留 1 小时
-const GUEST_RETENTION_MS = 1 * 60 * 60 * 1000;
 // 注册用户保留 3 个月 (90 天)
 const USER_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 // 单个用户最多保留报告数
@@ -68,12 +66,19 @@ export async function GET(request: NextRequest) {
 
         const now = Date.now();
 
-        // ===== 1. 清理已过期的游客数据（expiresAt 已过）=====
+        // 兜底时限：expiresAt 为 NULL 的会话（从未完成分析，如 analytics track 创建的中断会话）
+        // 按 createdAt 满 24 小时清理，避免表无限增长（比较操作符不匹配 NULL）
+        const nullExpiryFallback = new Date(now - 24 * 60 * 60 * 1000);
+
+        // ===== 1. 清理已过期的游客数据（expiresAt 已过 或 expiresAt 为 NULL 且创建超过兜底时限）=====
         // 使用 expiresAt 而非 createdAt，与用户端过期判断同源
         const guestSessions = await prisma.advisorSession.findMany({
             where: {
                 userId: null,
-                expiresAt: { lt: new Date(now) },
+                OR: [
+                    { expiresAt: { lt: new Date(now) } },
+                    { expiresAt: null, createdAt: { lt: nullExpiryFallback } },
+                ],
             },
             select: {
                 sessionId: true,
@@ -81,11 +86,14 @@ export async function GET(request: NextRequest) {
         });
         await cleanupSessions(guestSessions, stats);
 
-        // ===== 2. 清理已过期的注册用户数据（expiresAt 已过）=====
+        // ===== 2. 清理已过期的注册用户数据（expiresAt 已过 或 expiresAt 为 NULL 且创建超过兜底时限）=====
         const oldUserSessions = await prisma.advisorSession.findMany({
             where: {
                 userId: { not: null },
-                expiresAt: { lt: new Date(now) },
+                OR: [
+                    { expiresAt: { lt: new Date(now) } },
+                    { expiresAt: null, createdAt: { lt: nullExpiryFallback } },
+                ],
             },
             select: {
                 sessionId: true,
@@ -132,37 +140,47 @@ export async function GET(request: NextRequest) {
             where: { lastTestAt: { lt: guestCutoff } },
         });
 
-        // ===== 7. 清理过期 WeatherCache =====
-        const deletedWeather = await prisma.weatherCache.deleteMany({
-            where: { expiresAt: { lt: new Date() } },
-        });
-
-        // ===== 8. 清理僵尸 AppInstance（心跳超过 5 分钟未更新）=====
+        // ===== 7. 清理僵尸 AppInstance（心跳超过 5 分钟未更新）=====
         const staleInstanceCutoff = new Date(now - 5 * 60 * 1000);
         const deletedInstances = await prisma.appInstance.deleteMany({
             where: { lastPing: { lt: staleInstanceCutoff } },
         });
 
-        // ===== 9. 清理过期上传文件（保留 30 天）=====
+        // ===== 8. 清理过期上传文件（保留 30 天，递归处理嵌套目录）=====
+        // 旧实现只对根目录条目 unlink，guest/、advisor/ 等子目录会因 EISDIR 被吞掉永不清理
         let deletedFiles = 0;
         try {
             const fs = await import("fs/promises");
             const path = await import("path");
             const uploadDir = path.resolve(process.cwd(), "public", "uploads");
-            const files = await fs.readdir(uploadDir).catch(() => [] as string[]);
             const fileCutoff = now - 30 * 24 * 60 * 60 * 1000;
-            for (const file of files) {
-                try {
+
+            // 递归按 mtime 清理；目录自底向上、仅在过期且已清空时删除
+            const cleanDir = async (dir: string, isRoot: boolean): Promise<void> => {
+                const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => []);
+                for (const entry of entries) {
                     // products/ 子目录存的是展品图等永久资产，豁免清理
-                    if (file === "products") continue;
-                    const filePath = path.join(uploadDir, file);
-                    const stat = await fs.stat(filePath);
-                    if (stat.mtimeMs < fileCutoff) {
-                        await fs.unlink(filePath);
-                        deletedFiles++;
-                    }
-                } catch { /* skip unreadable files */ }
-            }
+                    if (isRoot && entry.name === "products") continue;
+                    const fullPath = path.join(dir, entry.name);
+                    try {
+                        if (entry.isDirectory()) {
+                            await cleanDir(fullPath, false);
+                            const stat = await fs.stat(fullPath);
+                            const remaining = await fs.readdir(fullPath);
+                            if (stat.mtimeMs < fileCutoff && remaining.length === 0) {
+                                await fs.rmdir(fullPath);
+                            }
+                        } else if (entry.isFile()) {
+                            const stat = await fs.stat(fullPath);
+                            if (stat.mtimeMs < fileCutoff) {
+                                await fs.unlink(fullPath);
+                                deletedFiles++;
+                            }
+                        }
+                    } catch { /* skip unreadable files */ }
+                }
+            };
+            await cleanDir(uploadDir, true);
         } catch { /* upload dir may not exist */ }
 
         return NextResponse.json({
@@ -173,7 +191,6 @@ export async function GET(request: NextRequest) {
                 aiLogs: deletedAiLogs.count,
                 auditLogs: deletedAuditLogs.count,
                 guests: deletedGuests.count,
-                weather: deletedWeather.count,
                 instances: deletedInstances.count,
                 files: deletedFiles,
             },

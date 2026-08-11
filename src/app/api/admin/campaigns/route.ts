@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma"
 import { withAdminAuth, logAdminAction, getClientInfo } from "@/lib/admin-auth"
 import { rateLimit, getClientIP } from "@/lib/ratelimit"
 import { logger } from "@/lib/logger"
+import { parseUserInputDateTime } from "@/lib/time"
 import { NextResponse } from "next/server"
 import {
   campaignCreateSchema,
@@ -72,12 +73,21 @@ export const POST = withAdminAuth(async (req, { admin }) => {
       return NextResponse.json({ error: "参数错误", details: parsed.error.flatten() }, { status: 400 })
     }
 
+    // datetime-local 无时区信息，固定按北京时间解析，
+    // 避免 UTC 部署时活动时间整体偏移 8 小时
+    const startDate = parseUserInputDateTime(parsed.data.startDate)
+    const endDate = parseUserInputDateTime(parsed.data.endDate)
+    const drawDate = parsed.data.drawDate ? parseUserInputDateTime(parsed.data.drawDate) : null
+    if (!startDate || !endDate || (parsed.data.drawDate && !drawDate)) {
+      return NextResponse.json({ error: "时间格式无效" }, { status: 400 })
+    }
+
     const campaign = await prisma.campaign.create({
       data: {
         ...parsed.data,
-        startDate: new Date(parsed.data.startDate),
-        endDate: new Date(parsed.data.endDate),
-        drawDate: parsed.data.drawDate ? new Date(parsed.data.drawDate) : null,
+        startDate,
+        endDate,
+        drawDate,
         prizes: parsed.data.prizes,
       },
     })

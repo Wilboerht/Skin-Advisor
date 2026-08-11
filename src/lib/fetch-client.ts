@@ -11,6 +11,7 @@
  */
 
 import { CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from "@/lib/csrf-client";
+import { AUTH_COOKIE_NAME } from "@/lib/auth-config";
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 const UPLOAD_TIMEOUT_MS = 60_000; // 上传大图片需要更长时间
@@ -25,10 +26,29 @@ export function getCsrfToken(): string | null {
     return getCookie(CSRF_COOKIE_NAME);
 }
 
+/**
+ * 本地会话重建：本地 JWT 过期（1h）后 CSRF 校验会返回 401，
+ * 此时若 SSO token 仍有效，请求 session-init 重新签发本地双 token。
+ * 返回 true 表示重建成功（CSRF cookie 已重新下发）。
+ */
+async function rebuildLocalSession(): Promise<boolean> {
+    if (typeof window === "undefined") return false;
+    try {
+        await fetch(
+            `/api/auth/session-init?return_to=${encodeURIComponent(window.location.pathname)}`,
+            { redirect: "manual" }
+        );
+        // 重建成功的标志：本地 JWT cookie 被重新签发
+        return getCookie(AUTH_COOKIE_NAME) !== null;
+    } catch {
+        return false;
+    }
+}
+
 export async function fetchWithCsrf(
     input: RequestInfo | URL,
     init: RequestInit = {},
-    options: { retries?: number; timeoutMs?: number } = {}
+    options: { retries?: number; timeoutMs?: number; _sessionRebuilt?: boolean } = {}
 ): Promise<Response> {
     const { retries = 0, timeoutMs = DEFAULT_TIMEOUT_MS } = options;
     const method = (init.method || "GET").toUpperCase();
@@ -60,6 +80,18 @@ export async function fetchWithCsrf(
             // 5xx 才重试；4xx 立即返回给上层处理
             if (!res.ok && attempt < retries && res.status >= 500 && res.status < 600) {
                 throw new Error(`Server returned ${res.status}`);
+            }
+
+            // 写操作 401：本地 JWT 可能已过期，静默重建本地会话后重试一次
+            if (
+                res.status === 401 &&
+                unsafeMethods.includes(method) &&
+                !options._sessionRebuilt
+            ) {
+                const rebuilt = await rebuildLocalSession();
+                if (rebuilt) {
+                    return fetchWithCsrf(input, init, { ...options, _sessionRebuilt: true });
+                }
             }
             return res;
         } catch (e) {

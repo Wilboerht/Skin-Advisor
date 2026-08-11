@@ -28,7 +28,7 @@ export function getJwtSecret(): Uint8Array {
     return new TextEncoder().encode(secret);
 }
 
-function getJwtIssuer(): string {
+export function getJwtIssuer(): string {
     const configured = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL;
     if (configured) return configured;
     if (process.env.NODE_ENV === "production") {

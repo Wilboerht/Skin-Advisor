@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireRole, getClientInfo, logAdminAction } from "@/lib/admin-auth";
 import { canExportPII, AdminRole } from "@/lib/permissions";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { parseBeijingDate } from "@/lib/time";
 import { logger } from "@/lib/logger";
 
 // GET /api/admin/export?type=products|users|sessions|audit-logs
@@ -27,6 +28,9 @@ export const GET = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (re
         let data: unknown[][] = [];
         let filename = "";
         let headers: string[] = [];
+        // 截断标注：达到 take 上限时在响应头与文件名中显式标注，避免静默丢数据
+        let truncated = false;
+        let rowLimit = 0;
 
         switch (type) {
             case "products":
@@ -45,6 +49,8 @@ export const GET = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (re
                     new Date(p.createdAt).toISOString(),
                 ]);
                 filename = `products_export_${new Date().toISOString().split("T")[0]}.csv`;
+                rowLimit = 5000;
+                truncated = products.length >= rowLimit;
                 break;
 
             case "users":
@@ -65,6 +71,8 @@ export const GET = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (re
                     new Date(u.createdAt).toISOString(),
                 ]);
                 filename = `users_export_${new Date().toISOString().split("T")[0]}.csv`;
+                rowLimit = 5000;
+                truncated = users.length >= rowLimit;
                 break;
 
             case "sessions":
@@ -87,6 +95,8 @@ export const GET = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (re
                     s.resultShared ? "Yes" : "No",
                 ]);
                 filename = `sessions_export_${new Date().toISOString().split("T")[0]}.csv`;
+                rowLimit = 1000;
+                truncated = sessions.length >= rowLimit;
                 break;
 
             case "audit-logs":
@@ -94,12 +104,20 @@ export const GET = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (re
                 const endDate = request.nextUrl.searchParams.get("endDate") || undefined;
                 const where: { createdAt?: { gte?: Date; lte?: Date } } = {};
                 if (startDate) {
-                    where.createdAt = { ...where.createdAt, gte: new Date(startDate) };
+                    // 固定按北京时间零点解析；非法日期返回 400 而非 Invalid Date 导致 500
+                    const d = parseBeijingDate(startDate);
+                    if (!d) {
+                        return NextResponse.json({ error: "Invalid startDate" }, { status: 400 });
+                    }
+                    where.createdAt = { ...where.createdAt, gte: d };
                 }
                 if (endDate) {
-                    const d = new Date(endDate);
-                    d.setDate(d.getDate() + 1);
-                    where.createdAt = { ...where.createdAt, lte: d };
+                    const d = parseBeijingDate(endDate);
+                    if (!d) {
+                        return NextResponse.json({ error: "Invalid endDate" }, { status: 400 });
+                    }
+                    // 包含结束日全天（北京时间次日零点）
+                    where.createdAt = { ...where.createdAt, lte: new Date(d.getTime() + 24 * 60 * 60 * 1000) };
                 }
                 const auditLogs = await prisma.adminAuditLog.findMany({
                     where,
@@ -121,6 +139,8 @@ export const GET = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (re
                     new Date(log.createdAt).toISOString(),
                 ]);
                 filename = `audit_logs_export_${new Date().toISOString().split("T")[0]}.csv`;
+                rowLimit = 5000;
+                truncated = auditLogs.length >= rowLimit;
                 break;
 
             default:
@@ -152,15 +172,26 @@ export const GET = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (re
             adminId: admin.adminId,
             action: "export",
             resource: type.charAt(0).toUpperCase() + type.slice(1),
-            details: { count: data.length },
+            details: { count: data.length, truncated, rowLimit },
             ...clientInfo,
         });
+
+        // 截断时在文件名插入标注（.csv 前缀之前），并在响应头中携带，便于调用方识别数据不完整
+        if (truncated) {
+            filename = filename.replace(/\.csv$/i, `_truncated_first_${rowLimit}.csv`);
+        }
 
         // Return CSV file
         return new NextResponse(csvContent, {
             headers: {
                 "Content-Type": "text/csv; charset=utf-8",
                 "Content-Disposition": `attachment; filename="${filename}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
+                ...(truncated
+                    ? {
+                        "X-Export-Truncated": "true",
+                        "X-Export-Row-Limit": String(rowLimit),
+                    }
+                    : {}),
             },
         });
     } catch (error) {

@@ -21,7 +21,7 @@ import { hashIP } from "@/lib/privacy";
 import { matchCharacterIP } from "@/lib/result-utils";
 import { getEnvContextFromLocation } from "@/lib/weather-context";
 
-import { checkUsageLimit, reserveUsage, rollbackUsage } from "@/lib/usage-limit";
+import { checkUsageLimit, reserveUsage, rollbackUsage, type ReserveUsageResult } from "@/lib/usage-limit";
 import { extractGuestIdentifiers } from "@/lib/guest-limit";
 import { aiLogger, logger } from "@/lib/logger";
 import { createSignedInternalApiHeaders } from "@/lib/internal-api";
@@ -315,15 +315,16 @@ export async function POST(request: NextRequest) {
         }
 
         if (!isFreeRetryAllowed) {
-            // 清理僵尸会话：超过 2 分钟仍未完成的 analysis（服务器崩溃、网络中断等）
-            // 不清除则这些会话的 analysisStartedAt 会持续占用配额
-            const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
+            // 清理僵尸会话：超过阈值仍未完成的 analysis（服务器崩溃、网络中断等）
+            // 不清除则这些会话的 analysisStartedAt 会持续占用配额。
+            // 阈值 4 分钟 > 最坏耗时（队列等待 60s + face 65s + LLM 90s），避免误杀在途分析。
+            // 注意：游客时 user?.id 为 undefined，Prisma 会忽略 undefined 字段导致退化为全表清理；
+            // 游客会话需按 userId: null + IP 哈希匹配。
+            const staleBefore = new Date(Date.now() - 4 * 60 * 1000);
             await prisma.advisorSession.updateMany({
-                where: {
-                    userId: user?.id,
-                    analysisStartedAt: { lt: twoMinutesAgo },
-                    completedAt: null,
-                },
+                where: user
+                    ? { userId: user.id, analysisStartedAt: { lt: staleBefore }, completedAt: null }
+                    : { userId: null, ip: ipHash, analysisStartedAt: { lt: staleBefore }, completedAt: null },
                 data: { analysisStartedAt: null },
             });
 
@@ -356,6 +357,7 @@ export async function POST(request: NextRequest) {
             }
         }
 
+        let reservedResult: ReserveUsageResult | null = null;
         if (!isFreeRetryAllowed) {
             const reserved = await reserveUsage(request, effectiveSessionId, body as Record<string, unknown>);
             if (!reserved.success) {
@@ -363,6 +365,7 @@ export async function POST(request: NextRequest) {
                 Object.entries(rateLimitHeaders).forEach(([k, v]) => response.headers.set(k, v));
                 return response;
             }
+            reservedResult = reserved;
         }
 
         // 分布式锁：防止同一 sessionId 并发重复跑 AI
@@ -452,6 +455,11 @@ export async function POST(request: NextRequest) {
 
         if (lockResult.status === 'completed') {
             const cachedResult = lockResult.result as Record<string, unknown>;
+            // 返回缓存时退还本次预占：仅当本请求实际新增了计数时才回滚
+            //（P2002 幂等命中时 alreadyReserved=true，回滚会误删其他请求的预占）
+            if (reservedResult && !reservedResult.alreadyReserved) {
+                await rollbackUsage(request, effectiveSessionId, body as Record<string, unknown>);
+            }
             console.log(`[analyze] Returning cached result after lock for session ${effectiveSessionId}`);
             return NextResponse.json(cachedResult, { status: 200, headers: rateLimitHeaders });
         }
@@ -549,7 +557,8 @@ export async function POST(request: NextRequest) {
         let queueAcquired = false;
         try {
             // P3: 请求队列处理 - 申请令牌（防止并发过高打爆 LLM API）
-            await analysisQueue.acquire({ signal: abortController.signal });
+            // 透传 userId 使队列的 maxConcurrentPerUser 生效
+            await analysisQueue.acquire({ signal: abortController.signal, userId: user?.id });
             queueAcquired = true;
 
             // 记录队列状态到响应头

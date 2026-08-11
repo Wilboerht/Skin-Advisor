@@ -6,7 +6,7 @@
 
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useRef } from "react";
 
 // 事件类型
 type AnalyticsEvent =

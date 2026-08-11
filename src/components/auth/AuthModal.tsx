@@ -6,7 +6,7 @@ import { useAuthModal } from "./AuthModalContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/Toast";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Loader2, Eye, EyeOff, ArrowRight, ArrowLeft, Phone, CheckCircle, Check, KeyRound, CheckCircle2, ChevronLeft, ArrowLeftRight } from "lucide-react";
+import { X, Eye, EyeOff, ArrowLeft, Phone, CheckCircle, Check, CheckCircle2, ChevronLeft, ArrowLeftRight } from "lucide-react";
 import { validatePasswordStrength, PASSWORD_MIN_LENGTH } from "@/lib/password";
 import { fetchWithCsrf } from "@/lib/fetch-client";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";

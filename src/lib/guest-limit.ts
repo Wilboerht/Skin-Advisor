@@ -3,10 +3,6 @@ import prisma from '@/lib/prisma';
 import { hashIP } from '@/lib/privacy';
 import { getClientIP } from '@/lib/ratelimit';
 import { logger } from '@/lib/logger';
-import { parseUserAgent } from '@/lib/user-agent-parser';
-
-// 默认游客每日测试次数限制
-export const DEFAULT_GUEST_LIMIT = 3;
 
 // 游客身份标识
 export interface GuestIdentifiers {
@@ -16,17 +12,8 @@ export interface GuestIdentifiers {
     userAgent: string | null;
 }
 
-// 游客限制检查结果
-export interface GuestLimitCheckResult {
-    canTest: boolean;
-    usedCount: number;
-    dailyLimit: number;
-    remaining: number;
-    isBlocked: boolean;
-    blockReason: string | null;
-    matchedBy: 'ip' | 'cookie' | 'fingerprint' | 'combined' | 'none';
-    confidenceScore: number; // 0-100 置信度
-}
+// 游客限制检查逻辑已迁移至 usage-limit.ts（checkUsageLimit/reserveUsage），
+// 本文件仅保留游客身份提取与封禁/解封能力。
 
 /**
  * 从请求中提取游客标识
@@ -53,127 +40,6 @@ export function extractGuestIdentifiers(request: NextRequest, body?: {
         cookieId,
         fingerprint,
         userAgent
-    };
-}
-
-/**
- * 检查游客是否可以测试
- * 使用多维度标识进行去重和限流
- */
-export async function checkGuestLimit(
-    identifiers: GuestIdentifiers
-): Promise<GuestLimitCheckResult> {
-    const { ipAddress, cookieId, fingerprint } = identifiers;
-
-    // 获取今天的日期边界
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    // 查询匹配的游客记录
-    const whereConditions = [];
-
-    // IP 匹配 (最基础)
-    whereConditions.push({ ipAddress });
-
-    // Cookie 匹配 (中等可靠)
-    if (cookieId) {
-        whereConditions.push({ cookieId });
-    }
-
-    // 指纹匹配 (最可靠)
-    if (fingerprint) {
-        whereConditions.push({ fingerprint });
-    }
-
-    // 查询所有可能匹配的记录（限制返回数量防止滥用）
-    const matchedRecords = await prisma.guestUsage.findMany({
-        where: { OR: whereConditions },
-        orderBy: { todayCount: 'desc' }, // 优先取使用次数最多的
-        take: 50
-    });
-
-    // 如果没有任何记录，说明是新访客
-    if (matchedRecords.length === 0) {
-        return {
-            canTest: true,
-            usedCount: 0,
-            dailyLimit: DEFAULT_GUEST_LIMIT,
-            remaining: DEFAULT_GUEST_LIMIT,
-            isBlocked: false,
-            blockReason: null,
-            matchedBy: 'none',
-            confidenceScore: 0
-        };
-    }
-
-    // 分析匹配结果
-    let primaryRecord = matchedRecords[0];
-    let matchedBy: 'ip' | 'cookie' | 'fingerprint' | 'combined' = 'ip';
-    let confidenceScore = 30; // IP 匹配基础分
-
-    // 寻找最佳匹配
-    for (const record of matchedRecords) {
-        let score = 0;
-
-        if (record.ipAddress === ipAddress) score += 30;
-        if (cookieId && record.cookieId === cookieId) score += 35;
-        if (fingerprint && record.fingerprint === fingerprint) score += 50;
-
-        if (score > confidenceScore) {
-            confidenceScore = Math.min(100, score);
-            primaryRecord = record;
-
-            // 确定匹配类型
-            if (fingerprint && record.fingerprint === fingerprint) {
-                matchedBy = 'fingerprint';
-            } else if (cookieId && record.cookieId === cookieId) {
-                matchedBy = 'cookie';
-            } else if (score > 50) {
-                matchedBy = 'combined';
-            }
-        }
-    }
-
-    // 检查是否被封禁
-    if (primaryRecord.isBlocked) {
-        return {
-            canTest: false,
-            usedCount: primaryRecord.todayCount,
-            dailyLimit: DEFAULT_GUEST_LIMIT,
-            remaining: 0,
-            isBlocked: true,
-            blockReason: primaryRecord.blockedReason,
-            matchedBy,
-            confidenceScore
-        };
-    }
-
-    // 检查是否需要重置今日计数（跨天）
-    let todayCount = primaryRecord.todayCount;
-    // 安全处理 lastResetDate 为 null 的边界情况（理论上 schema 有 default，但防御性编码）
-    const rawLastReset = primaryRecord.lastResetDate || primaryRecord.lastTestAt;
-    if (!rawLastReset) {
-        todayCount = 0; // 安全重置：无历史记录时视为需要重置
-    } else {
-        const lastReset = new Date(rawLastReset);
-        lastReset.setHours(0, 0, 0, 0);
-        if (lastReset < today) {
-            // 需要重置
-            todayCount = 0;
-        }
-    }
-
-    const canTest = todayCount < DEFAULT_GUEST_LIMIT;
-
-    return {
-        canTest,
-        usedCount: todayCount,
-        dailyLimit: DEFAULT_GUEST_LIMIT,
-        remaining: Math.max(0, DEFAULT_GUEST_LIMIT - todayCount),
-        isBlocked: false,
-        blockReason: null,
-        matchedBy,
-        confidenceScore
     };
 }
 

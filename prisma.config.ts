@@ -1,9 +1,9 @@
 /**
  * Prisma 配置文件
  * Prisma 7.x 使用 prisma.config.ts 管理数据源配置
- * 
- * 本地开发: 自动使用 SQLite (file:./prisma/dev.db)
- * 生产环境: 使用 PostgreSQL (通过环境变量)
+ *
+ * 数据库统一使用 PostgreSQL（schema provider = postgresql），
+ * 需通过 DIRECT_URL 或 DATABASE_URL 环境变量提供连接串。
  */
 import { config } from "dotenv";
 import { defineConfig } from "prisma/config";
@@ -27,8 +27,10 @@ const getDatabaseUrl = () => {
     return process.env.DATABASE_URL;
   }
 
-  // 默认: 本地 SQLite
-  return "file:./prisma/dev.db";
+  // 未配置时给出明确报错（schema 为 postgresql，不能回退到 SQLite URL）
+  throw new Error(
+    "DATABASE_URL 未配置：请在 .env.local 或 .env.production 中设置 DATABASE_URL（PostgreSQL 连接串）"
+  );
 };
 
 export default defineConfig({

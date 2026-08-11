@@ -49,8 +49,11 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-        // 计算 1 小时前的时间点
-        const oneHourAgo = new Date(Date.now() - 1 * 60 * 60 * 1000);
+        // 与 data-cleanup 同源：以 expiresAt 为过期判据（expiresAt 缺失时用 createdAt 24h 兑底）。
+        // 原按 createdAt 清理会提前删除仍在"完成+1h"免费回看期内有效的报告。
+        // 注意：兑底时限与 data-cleanup 保持一致（24 小时）。
+        const nowDate = new Date();
+        const nullExpiryFallback = new Date(nowDate.getTime() - 24 * 60 * 60 * 1000);
 
         // 2. 查找过期的游客会话 (没有绑定 userId)，分批处理避免参数超限
         const DB_BATCH_SIZE = 500;
@@ -63,7 +66,10 @@ export async function POST(req: NextRequest) {
             const guestSessions = await prisma.advisorSession.findMany({
                 where: {
                     userId: null,
-                    createdAt: { lt: oneHourAgo }
+                    OR: [
+                        { expiresAt: { lt: nowDate } },
+                        { expiresAt: null, createdAt: { lt: nullExpiryFallback } },
+                    ],
                 },
                 select: {
                     sessionId: true
@@ -127,7 +133,7 @@ export async function POST(req: NextRequest) {
             resource: "AdvisorSession",
             details: {
                 dbStats: deletedStats,
-                threshold: oneHourAgo.toISOString(),
+                threshold: nowDate.toISOString(),
                 authMethod: authMethod,
             },
             ip: ip,
@@ -137,7 +143,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({
             success: true,
             timestamp: new Date().toISOString(),
-            message: `成功清理 ${oneHourAgo.toISOString()} 之前的游客数据`,
+            message: `成功清理已过期的游客数据（expiresAt < ${nowDate.toISOString()}）`,
             data: {
                 dbStats: deletedStats
             }

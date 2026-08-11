@@ -1,5 +1,6 @@
 "use client";
 
+import { adminFetch } from "@/lib/admin-fetch";
 import { Clock, Smartphone, Settings, Save, User as UserIcon, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useToast } from "@/components/ui/Toast";
@@ -15,6 +16,13 @@ interface UserDetailModalProps {
   onUpdate?: () => void;
 }
 
+interface SessionSummary {
+  createdAt: string;
+  deviceType?: string | null;
+  province?: string | null;
+  completedAt?: string | null;
+}
+
 interface UserDetail {
   id: string;
   email: string;
@@ -23,7 +31,7 @@ interface UserDetail {
   role: string;
   dailyTestLimit: number;
   createdAt: string;
-  advisorSessions: any[];
+  advisorSessions: SessionSummary[];
   _count?: {
     testRecords?: number;
   };
@@ -50,7 +58,7 @@ export function UserDetailModal({ isOpen, onClose, userId, onUpdate }: UserDetai
     abortRef.current = controller;
     setLoading(true);
     setFetchError(false);
-    fetch(`/api/admin/users/${userId}`, { signal: controller.signal })
+    adminFetch(`/api/admin/users/${userId}`, { signal: controller.signal })
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
@@ -93,7 +101,7 @@ export function UserDetailModal({ isOpen, onClose, userId, onUpdate }: UserDetai
     if (!user) return;
     setSaving(true);
     try {
-      const res = await fetch(`/api/admin/users/${user.id}`, {
+      const res = await adminFetch(`/api/admin/users/${user.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ dailyTestLimit: newLimit }),

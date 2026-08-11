@@ -152,23 +152,23 @@ export const PUT = withAdminAuth(async (
         }
 
         // Validate JSON string array fields
-        const validateStringArray = (value: unknown, _fieldName: string) => {
+        const validateStringArray = (value: unknown) => {
             if (value === undefined || value === null) return true;
             if (!Array.isArray(value)) return false;
             if (value.length > MAX_TAG_ARRAY_LENGTH) return false;
             return value.every((item) => typeof item === "string" && item.length <= MAX_TAG_ITEM_LENGTH);
         };
 
-        if (!validateStringArray(updateData.keyIngredients, "keyIngredients")) {
+        if (!validateStringArray(updateData.keyIngredients)) {
             return apiError(ErrorCode.VALIDATION_ERROR, `keyIngredients must be an array of strings (max ${MAX_TAG_ARRAY_LENGTH} items, each max ${MAX_TAG_ITEM_LENGTH} chars)`, 400);
         }
-        if (!validateStringArray(updateData.suitableSkinTypes, "suitableSkinTypes")) {
+        if (!validateStringArray(updateData.suitableSkinTypes)) {
             return apiError(ErrorCode.VALIDATION_ERROR, `suitableSkinTypes must be an array of strings (max ${MAX_TAG_ARRAY_LENGTH} items, each max ${MAX_TAG_ITEM_LENGTH} chars)`, 400);
         }
-        if (!validateStringArray(updateData.benefits, "benefits")) {
+        if (!validateStringArray(updateData.benefits)) {
             return apiError(ErrorCode.VALIDATION_ERROR, `benefits must be an array of strings (max ${MAX_TAG_ARRAY_LENGTH} items, each max ${MAX_TAG_ITEM_LENGTH} chars)`, 400);
         }
-        if (!validateStringArray(updateData.negativeFor, "negativeFor")) {
+        if (!validateStringArray(updateData.negativeFor)) {
             return apiError(ErrorCode.VALIDATION_ERROR, `negativeFor must be an array of strings (max ${MAX_TAG_ARRAY_LENGTH} items, each max ${MAX_TAG_ITEM_LENGTH} chars)`, 400);
         }
 

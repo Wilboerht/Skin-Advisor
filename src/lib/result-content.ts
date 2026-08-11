@@ -6,7 +6,8 @@ export interface M1Data {
   persona: string;
 }
 
-export interface M2Data {}
+// m2 区块当前 JSON 结构无固定字段，用宽泛对象类型代替空 interface
+export type M2Data = Record<string, unknown>;
 
 export interface M4Data {
   title: string;

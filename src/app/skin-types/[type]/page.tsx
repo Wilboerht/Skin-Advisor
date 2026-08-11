@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import ResultDetailPage from "@/components/result/ResultDetailPage";
-import { skinTypes, routeOrder, getSkinTypeByRoute } from "@/lib/result-content";
+import { routeOrder, getSkinTypeByRoute } from "@/lib/result-content";
 import { ArticleSchema, FAQPageSchema, BreadcrumbSchema } from "@/components/website/StructuredData";
 import { withDefaultOgImage } from "@/lib/metadata";
 

@@ -13,7 +13,9 @@ export function AuthUrlDetector() {
     const router = useRouter();
     const toast = useToast();
     const openAuthModalRef = useRef(openAuthModal);
-    openAuthModalRef.current = openAuthModal;
+    useEffect(() => {
+        openAuthModalRef.current = openAuthModal;
+    }, [openAuthModal]);
 
     // 检测 URL 参数：打开弹窗或直接跳转（已登录时）
     useEffect(() => {
