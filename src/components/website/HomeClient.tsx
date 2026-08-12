@@ -362,13 +362,13 @@ export default function HomeClient() {
       >
         <div className="home-container relative flex flex-col flex-1 w-full">
           {/* Main Content Area */}
-          <main className="main-content relative z-10 flex flex-col flex-1 items-center justify-center text-center px-6 pt-24 md:pt-28">
+          <main className="main-content relative z-10 flex flex-col flex-1 items-center justify-center text-center px-6 pt-20 md:pt-28">
                 {/* Center AI Actions */}
                 <div className="z-10 flex flex-col items-center text-center max-w-3xl mx-auto">
                   <div className="opacity-0 animate-fade-in-up flex flex-col items-center">
                     {/* 印章徽标（标题上方居中） */}
                     <m.div
-                      className="mb-10 md:mb-12 inline-flex items-center"
+                      className="mb-8 md:mb-12 inline-flex items-center"
                       initial={{ opacity: 0, scale: 1.5, y: -10, filter: "blur(2px)" }}
                       animate={{ opacity: [0, 1, 1], scale: [1.5, 0.97, 1], y: [-10, 0, 0], filter: ["blur(2px)", "blur(0px)", "blur(0px)"] }}
                       transition={{ delay: 0.5, duration: 0.45, ease: "easeOut", times: [0, 0.55, 1] }}
@@ -384,12 +384,12 @@ export default function HomeClient() {
                     </m.div>
 
                     {/* Title */}
-                    <h1 className="text-[40px] sm:text-[48px] md:text-[58px] font-serif text-brand-charcoal font-light leading-[1.1] tracking-[0.02em] mb-10 md:mb-12">
+                    <h1 className="text-[40px] sm:text-[48px] md:text-[58px] font-serif text-brand-charcoal font-light leading-[1.1] tracking-[0.02em] mb-8 md:mb-12">
                       在线 AI 测肤
                     </h1>
 
                     {/* Info Features */}
-                    <div className="flex flex-col md:flex-row items-center justify-center gap-2.5 md:gap-4 mb-10 md:mb-12 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
+                    <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4 mb-8 md:mb-12 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
                       {[
                         { num: "2-5 分钟", rest: "完成", icon: Clock },
                         { num: "10 维", rest: "精准检测", icon: ScanFace },
