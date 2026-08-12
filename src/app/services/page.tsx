@@ -31,7 +31,7 @@ export const revalidate = 86400;
 
 export default function ServicesPage() {
   return (
-    <main className="relative flex flex-col h-dvh overflow-hidden text-brand-charcoal bg-[#F8F7F3]">
+    <main className="relative flex flex-col h-dvh overflow-hidden text-brand-charcoal bg-[#FDFBF7]">
       <BreadcrumbSchema
         items={[
           { name: "首页", url: BASE_URL },

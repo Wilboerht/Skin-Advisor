@@ -158,7 +158,7 @@ export default function ProfileClient() {
 
   if (loading || !user) {
     return (
-      <div className="min-h-screen bg-[#F8F7F3] flex items-center justify-center">
+      <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-[#C9A86C] animate-spin" />
       </div>
     );
@@ -188,7 +188,7 @@ export default function ProfileClient() {
 
   return (
     <LazyMotion features={domAnimation}>
-      <div className="min-h-screen bg-[#F8F7F3] text-[#1A1A1A]">
+      <div className="min-h-screen bg-[#FDFBF7] text-[#1A1A1A]">
         <WebsiteNavbar />
 
         <main className="pt-20 md:pt-24 pb-20 md:pb-28">
@@ -199,7 +199,7 @@ export default function ProfileClient() {
             {/* Avatar + basic info */}
             <div className="relative px-6 md:px-8 pb-5">
               <div className="flex justify-between items-end -mt-16 md:-mt-20 mb-4">
-                <label className="relative w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden bg-[#ECEBE6] border-4 border-[#F8F7F3] cursor-pointer group shadow-lg">
+                <label className="relative w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden bg-[#ECEBE6] border-4 border-[#FDFBF7] cursor-pointer group shadow-lg">
                   {avatarUrl ? (
                     <Image src={avatarUrl} alt="" fill unoptimized className="object-cover" />
                   ) : (

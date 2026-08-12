@@ -9,7 +9,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: '#F8F7F3',
+  themeColor: '#FDFBF7',
 };
 
 export const metadata: Metadata = {
@@ -126,7 +126,7 @@ export default function RootLayout({
           )}
         </head>
         <body
-          className={`antialiased bg-[#F8F7F3]`}
+          className={`antialiased bg-[#FDFBF7]`}
           suppressHydrationWarning
         >
           <ToastProvider>

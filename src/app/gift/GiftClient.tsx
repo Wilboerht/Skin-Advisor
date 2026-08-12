@@ -59,7 +59,7 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
   };
 
   return (
-    <main className="relative min-h-screen flex flex-col text-brand-charcoal bg-[#F8F7F3] overflow-hidden">
+    <main className="relative min-h-screen flex flex-col text-brand-charcoal bg-[#FDFBF7] overflow-hidden">
       <WebsiteNavbar />
 
       <div className="flex-1">

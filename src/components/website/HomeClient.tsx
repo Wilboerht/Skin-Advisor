@@ -213,14 +213,14 @@ export default function HomeClient() {
     safeStorage.setSession("locationConsent", "declined");
   };
 
-  // Test limit state
+  // Test limit state（与 /api/advisor/test-limit 返回结构对齐）
   const [testLimitInfo, setTestLimitInfo] = useState<{
     canTest: boolean;
     usedCount: number;
     dailyLimit: number;
     remaining: number;
-    isBlocked?: boolean;
-    blockReason?: string | null;
+    isGuest?: boolean;
+    error?: string | null;
   } | null>(null);
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [onboardingOpenCount, setOnboardingOpenCount] = useState(0);
@@ -266,18 +266,14 @@ export default function HomeClient() {
         const data = await res.json();
         setTestLimitInfo(data);
 
-        // Frontend safeguard: if frontend thinks user is logged in but backend treats as guest,
-        // the JWT token may be invalid/mismatched. Refresh user state and re-check once.
+        // 前端认为已登录但后端按游客处理时，可能 JWT 已失效，
+        // 刷新用户态后重试一次。
         if (user && data.isGuest && canRefresh) {
           console.warn("[Auth Mismatch] Frontend has user but backend returned guest. Refreshing session...");
           await refreshUser();
           return runCheck(false);
         }
 
-        // Check if blocked
-        if (data.isBlocked) {
-          return false;
-        }
         return data.canTest;
       } catch (err) {
         console.error("Failed to check test limit:", err);
@@ -313,7 +309,7 @@ export default function HomeClient() {
     // If user is logged in and has a name, pre-fill it and let the modal handle skipping the step
     if (user?.name) {
       setNickname(user.name);
-      safeStorage.set("advisor_nickname", user.name);
+      safeStorage.set(STORAGE_KEYS.ADVISOR_NICKNAME, user.name);
     }
     setIsHomeExiting(true);
     if (!showOnboardingModal) {
@@ -327,7 +323,7 @@ export default function HomeClient() {
       return;
     }
     // Save nickname to localStorage
-    safeStorage.set("advisor_nickname", nickname.trim());
+    safeStorage.set(STORAGE_KEYS.ADVISOR_NICKNAME, nickname.trim());
   };
 
 
@@ -359,7 +355,7 @@ export default function HomeClient() {
 
       {/* 内容区域容器 - 全屏显示 */}
       <m.div
-        className="fixed inset-0 z-20 flex flex-col bg-[#F8F7F3]"
+        className="fixed inset-0 z-20 flex flex-col bg-[#FDFBF7]"
         initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.98 }}
         animate={isHomeExiting ? (prefersReducedMotion ? { opacity: 0 } : { y: "-100%" }) : { opacity: 1, scale: 1, y: 0 }}
         transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.7, ease: [0.65, 0, 0.35, 1] }}
@@ -383,14 +379,6 @@ export default function HomeClient() {
                     >
                       <span className="inline-flex items-center gap-2.5 text-[13px] md:text-base font-medium tracking-[0.3em] text-[#8B7355] uppercase">
                         <m.span
-                          className="block w-5 h-px bg-gradient-to-r from-transparent to-[#C8A27A]/50"
-                          variants={{
-                            hidden: { scaleX: 0, opacity: 0 },
-                            visible: { scaleX: 1, opacity: 1, transition: { duration: 0.6, ease: [0.65, 0, 0.35, 1] } },
-                          }}
-                          style={{ transformOrigin: "right center" }}
-                        />
-                        <m.span
                           className="inline-flex items-center"
                           variants={{
                             hidden: { opacity: 0 },
@@ -400,20 +388,12 @@ export default function HomeClient() {
                           <Image
                             src="/images/jzp-eyebrow.png"
                             alt="肌智派"
-                            width={120}
-                            height={30}
-                            className="h-5 md:h-6 w-auto"
+                            width={502}
+                            height={228}
+                            className="h-6 md:h-7 w-auto"
                             priority
                           />
                         </m.span>
-                        <m.span
-                          className="block w-5 h-px bg-gradient-to-r from-[#C8A27A]/50 to-transparent"
-                          variants={{
-                            hidden: { scaleX: 0, opacity: 0 },
-                            visible: { scaleX: 1, opacity: 1, transition: { duration: 0.6, ease: [0.65, 0, 0.35, 1] } },
-                          }}
-                          style={{ transformOrigin: "left center" }}
-                        />
                       </span>
                     </m.div>
 
@@ -430,7 +410,7 @@ export default function HomeClient() {
                         { label: "定制化专属报告", icon: FileText },
                       ].map(({ label, icon: Icon }, index, arr) => (
                         <span key={label} className="flex items-center gap-2 md:gap-3 text-brand-charcoal/70 text-[15px] md:text-base font-light tracking-[0.06em]">
-                          <Icon className="hidden md:block w-4 h-4 text-brand-charcoal/40 flex-shrink-0" strokeWidth={1.5} />
+                          <Icon className="hidden md:block w-4 h-4 text-[#173D62] flex-shrink-0" strokeWidth={1.5} />
                           <span>{label}</span>
                           {index < arr.length - 1 && (
                             <span className="hidden md:inline text-brand-charcoal/25" aria-hidden="true">·</span>
@@ -483,7 +463,6 @@ export default function HomeClient() {
           // 标记用户已主动取消，防止 handleStart 中待完成的异步回调重新打开弹窗或恢复 loading
           startCancelledRef.current = true;
           setShowOnboardingModal(false);
-          setIsHomeExiting(false);
           setIsLoading(false);
           setIsHomeExiting(false);
         }}
@@ -551,10 +530,10 @@ export default function HomeClient() {
                     {(() => {
                       const info = testLimitInfo;
                       const dailyLimit = info?.dailyLimit ?? (user ? 3 : 1);
-                      const usedCount = info?.usedCount ?? dailyLimit;
                       const remaining = info?.remaining ?? 0;
+                      // 被封禁/限制但仍有剩余次数：展示限制原因而非次数信息
                       if (remaining > 0) {
-                        return <>您今日已用 {usedCount} 次，共 {dailyLimit} 次，剩余 {remaining} 次</>;
+                        return <>{info?.error || "当前暂时无法开始测肤，请稍后再试"}</>;
                       }
                       return (
                         <>

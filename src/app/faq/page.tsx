@@ -82,7 +82,7 @@ export const revalidate = 86400;
 
 export default function FAQPage() {
   return (
-    <main className="relative min-h-screen text-[#1A1A1A] bg-[#F8F7F3]">
+    <main className="relative min-h-screen text-[#1A1A1A] bg-[#FDFBF7]">
       <FAQPageSchema faqs={faqs} />
       <BreadcrumbSchema
         items={[

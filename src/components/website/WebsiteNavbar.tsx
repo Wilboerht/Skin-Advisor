@@ -80,7 +80,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
         style={{ pointerEvents: "none" }}
         className={`fixed top-0 left-0 right-0 z-[100000] px-6 md:px-12 lg:px-20 py-7 transition-all duration-500 ${
           scrolled
-            ? "bg-[#F8F7F3]/80 backdrop-blur-md border-b border-[rgba(61,68,48,0.06)]"
+            ? "bg-[#FDFBF7]/80 backdrop-blur-md border-b border-[rgba(61,68,48,0.06)]"
             : isDark
               ? "bg-transparent border-b border-transparent"
               : "bg-transparent border-b border-transparent"
@@ -284,7 +284,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
 
         {/* 菜单面板 */}
         <div
-          className={`absolute top-0 left-0 h-full w-[min(320px,85vw)] bg-[#F8F7F3] shadow-2xl rounded-r-3xl transform transition-transform duration-500 ease-out ${
+          className={`absolute top-0 left-0 h-full w-[min(320px,85vw)] bg-[#FDFBF7] shadow-2xl rounded-r-3xl transform transition-transform duration-500 ease-out ${
             mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >

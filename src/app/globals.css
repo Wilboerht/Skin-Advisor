@@ -158,11 +158,11 @@
 
   html {
     scroll-behavior: smooth;
-    background-color: #F8F7F3;
+    background-color: #FDFBF7;
   }
 
   body {
-    background-color: #F8F7F3;
+    background-color: #FDFBF7;
     color: var(--color-text-primary);
     font-family: var(--font-sans);
     overflow-x: hidden;
@@ -404,7 +404,7 @@
   position: fixed;
   inset: 0;
   z-index: -1;
-  background-color: #F8F7F3;
+  background-color: #FDFBF7;
 }
 
 /* 全屏背景容器 - 带边距和圆角 */
@@ -449,13 +449,7 @@
 /* ========== 首页专用样式 (一模一样) ========== */
 
 .home-container {
-  --home-bg: #F8F7F3;
-  --home-text: #3A3530;
-  --home-morandi: #A89F91;
-  --home-dark: #6B655E;
-  --home-gold: #FFD700;
-  --home-text-primary: #1A1A1A;
-  --home-text-secondary: rgba(26, 26, 26, 0.5);
+  --home-bg: #FDFBF7;
 
   display: flex;
   justify-content: center;
@@ -464,63 +458,6 @@
   overflow: hidden;
   width: 100%;
   height: 100%;
-}
-
-/* 矿物纹理覆盖层 */
-.home-container .mineral-texture {
-  position: absolute;
-  inset: 0;
-  opacity: 0.04;
-  pointer-events: none;
-  z-index: 10;
-}
-
-/* 波浪容器 */
-.home-container .wave-container {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.home-container .wave {
-  position: absolute;
-  width: 200%;
-  max-width: none;
-  height: 100%;
-  top: 10%;
-  left: -50%;
-  opacity: 0.4;
-}
-
-.home-container .wave path {
-  fill: none;
-  stroke: #DED9C7;
-  stroke-width: 1px;
-}
-
-@keyframes waveMove {
-  0% {
-    transform: translateX(0) translateY(0) rotate(0deg);
-  }
-
-  50% {
-    transform: translateX(5%) translateY(-2%) rotate(1deg);
-  }
-
-  100% {
-    transform: translateX(0) translateY(0) rotate(0deg);
-  }
-}
-
-.home-container .wave-1 {
-  animation: waveMove 15s ease-in-out infinite;
-}
-
-.home-container .wave-2 {
-  animation: waveMove 20s ease-in-out infinite reverse;
-  opacity: 0.2;
 }
 
 /* 首页底部 footer 区域 - 版权与备案 */
@@ -923,35 +860,6 @@
 .kinetic-cell-orange .kinetic-name,
 .kinetic-cell-orange .kinetic-desc {
     color: #ffffff !important;
-}
-
-/* ========== 首页水波纹背景动画 ========== */
-
-@keyframes waveFlow1 {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-
-@keyframes waveFlow2 {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-
-@keyframes waveFlow3 {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-
-.animate-wave-1 {
-  animation: waveFlow1 18s linear infinite;
-}
-
-.animate-wave-2 {
-  animation: waveFlow2 14s linear infinite;
-}
-
-.animate-wave-3 {
-  animation: waveFlow3 22s linear infinite;
 }
 
 /* 隐藏滚动条但保留滚动功能 */

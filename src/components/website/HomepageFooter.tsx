@@ -1,17 +1,11 @@
 "use client";
 
-import { m } from "framer-motion";
 import { Link } from "next-view-transitions";
 import Image from "next/image";
 
 export function HomepageFooter() {
     return (
-        <m.footer
-            className="home-footer w-full mt-auto"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1.2, delay: 1, ease: "easeOut" }}
-        >
+        <footer className="home-footer w-full mt-auto">
             <p className="footer-copyright relative z-10">
                 &copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.
             </p>
@@ -44,6 +38,6 @@ export function HomepageFooter() {
                     <span>沪公网安备31010702010178号</span>
                 </Link>
             </div>
-        </m.footer>
+        </footer>
     );
 }

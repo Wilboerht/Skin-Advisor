@@ -32,7 +32,7 @@ export default function ResultIndexPage() {
     .filter(Boolean);
 
   return (
-    <main className="relative min-h-screen text-brand-charcoal bg-[#F8F7F3]">
+    <main className="relative min-h-screen text-brand-charcoal bg-[#FDFBF7]">
       <BreadcrumbSchema
         items={[
           { name: "首页", url: BASE_URL },

@@ -32,7 +32,7 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
 
         // ===== 肤质分布 (使用 SQL 在数据库端聚合，避免全表加载到内存) =====
         // 注意：数据实际存储在 analysisResult->skinProfile->type，不是根级的 skinType
-        // raw SQL 容错与 advisor/stats 对齐：聚合查询失败时降级为空分布，
+        // raw SQL 容错：聚合查询失败时降级为空分布，
         // 不让仪表盘整体 500（基础统计仍可展示）
         let skinTypeRaw: Array<{ skin_type: string; count: bigint }> = [];
         try {

@@ -38,14 +38,14 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
   const characterSrc = `/images/character/${data.ipKey}/${data.ipKey}_${genderSuffix}.png`;
 
   return (
-    <main className="min-h-screen bg-[#FAF8F5] text-brand-charcoal">
+    <main className="min-h-screen bg-[#FDFBF7] text-brand-charcoal">
       {/* 顶部导航 */}
       <WebsiteNavbar />
 
       <article>
       {/* Hero */}
       <section
-        className="relative min-h-[380px] md:min-h-[560px] px-6 md:px-12 lg:px-20 overflow-hidden bg-[#F8F7F3] text-brand-charcoal"
+        className="relative min-h-[380px] md:min-h-[560px] px-6 md:px-12 lg:px-20 overflow-hidden bg-[#FDFBF7] text-brand-charcoal"
       >
         <div className="relative z-10 max-w-5xl mx-auto w-full pt-24 md:pt-28 pb-10 md:pb-14 grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 lg:gap-12 items-center">
           <div className="max-w-2xl">
@@ -109,7 +109,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       </section>
 
       {/* Skincare Formula */}
-      <section className="py-14 md:py-16 px-6 md:px-12 lg:px-20 bg-[#F8F7F3]">
+      <section className="py-14 md:py-16 px-6 md:px-12 lg:px-20 bg-[#FDFBF7]">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-lg md:text-2xl font-serif font-light text-brand-charcoal tracking-[0.02em] mb-4 md:mb-5">
             {data.m7?.title || `${data.typeName}的精准护肤公式`}

@@ -47,7 +47,6 @@ const PUBLIC_PATHS = [
     "/api/advisor/face-analyze", // 面部分析（游客可用，受 Origin/Referer 保护）
     "/api/advisor/analyze",    // 肌肤分析（游客可用，受 Origin/Referer 保护）
       "/api/advisor/session/status", // 分析状态轮询（游客可用）
-      "/api/advisor/stats",      // 公开统计（游客首页/结果页展示）
       "/api/advisor/analytics/track", // 前端埋点（sendBeacon 无 Cookie）
       "/api/campaign",           // 当前活动详情（游客可用）
     "/api/campaign/active",    // 当前活动倒计时（游客可用）
