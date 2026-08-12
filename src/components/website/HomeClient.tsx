@@ -415,7 +415,7 @@ export default function HomeClient() {
                         <button
                           onClick={handleStart}
                           disabled={isLoading}
-                          className="group relative w-full inline-flex items-center justify-center gap-2.5 px-8 py-4 text-[13px] sm:text-[14px] tracking-[0.1em] font-medium cursor-pointer border border-brand-charcoal/60 text-brand-charcoal bg-transparent transition-all duration-500 hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,38,62,0.12)] active:translate-y-0 active:shadow-none disabled:opacity-40 disabled:cursor-not-allowed"
+                          className="group relative w-full inline-flex items-center justify-center gap-2.5 px-8 py-4 text-[13px] sm:text-[14px] tracking-[0.12em] font-light cursor-pointer border border-brand-charcoal/60 text-brand-charcoal bg-transparent transition-all duration-500 hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,38,62,0.12)] focus-visible:outline-none focus-visible:border-brand-charcoal focus-visible:bg-brand-charcoal/[0.05] active:translate-y-0 active:shadow-none disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                           {isLoading ? (
                             <>

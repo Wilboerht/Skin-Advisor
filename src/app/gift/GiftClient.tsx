@@ -150,14 +150,14 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
               <div className="flex flex-col items-center gap-3 w-full max-w-xs mx-auto">
                 <Link
                   href="/"
-                  className="w-full group relative inline-flex items-center justify-center gap-3 px-8 py-4 border border-brand-charcoal/60 text-brand-charcoal bg-transparent text-[13px] sm:text-[14px] tracking-[0.1em] font-medium cursor-pointer transition-all duration-500 hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,38,62,0.12)] active:translate-y-0 active:shadow-none"
+                  className="w-full group relative inline-flex items-center justify-center gap-3 px-8 py-4 border border-brand-charcoal/60 text-brand-charcoal bg-transparent text-[13px] sm:text-[14px] tracking-[0.12em] font-light cursor-pointer transition-all duration-500 hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,38,62,0.12)] focus-visible:outline-none focus-visible:border-brand-charcoal focus-visible:bg-brand-charcoal/[0.05] active:translate-y-0 active:shadow-none"
                 >
                   <span>前往测试，看看你的肌肤形象</span>
                   <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
                 </Link>
                 <Link
                   href="/skin-types"
-                  className="w-full group relative inline-flex items-center justify-center gap-3 px-8 py-4 text-[13px] sm:text-[14px] tracking-[0.1em] font-medium cursor-pointer text-brand-charcoal/60 transition-colors duration-500 hover:text-brand-charcoal"
+                  className="w-full group relative inline-flex items-center justify-center gap-3 px-8 py-4 text-[13px] sm:text-[14px] tracking-[0.12em] font-light cursor-pointer text-brand-charcoal/60 transition-colors duration-500 hover:text-brand-charcoal focus-visible:outline-none focus-visible:text-brand-charcoal"
                 >
                   <span>查看全部肌智派类型</span>
                   <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
@@ -179,7 +179,7 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
                 <p className="text-sm text-brand-charcoal/60 font-light mb-6">请检查网络连接后刷新页面，或稍后再试。</p>
                 <button
                   onClick={() => window.location.reload()}
-                  className="w-full sm:w-auto group relative inline-flex items-center justify-center gap-3 px-8 py-4 border border-brand-charcoal/60 text-brand-charcoal bg-transparent text-[13px] sm:text-[14px] tracking-[0.1em] font-medium cursor-pointer transition-all duration-500 hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,38,62,0.12)] active:translate-y-0 active:shadow-none"
+                  className="w-full sm:w-auto group relative inline-flex items-center justify-center gap-3 px-8 py-4 border border-brand-charcoal/60 text-brand-charcoal bg-transparent text-[13px] sm:text-[14px] tracking-[0.12em] font-light cursor-pointer transition-all duration-500 hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,38,62,0.12)] focus-visible:outline-none focus-visible:border-brand-charcoal focus-visible:bg-brand-charcoal/[0.05] active:translate-y-0 active:shadow-none"
                 >
                   <Loader2 className="w-4 h-4" />
                   <span>重新加载</span>
@@ -273,14 +273,14 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
               <div className="flex flex-col items-center gap-3 w-full max-w-xs mx-auto">
                 <Link
                   href="/"
-                  className="w-full group relative inline-flex items-center justify-center gap-3 px-8 py-4 border border-brand-charcoal/60 text-brand-charcoal bg-transparent text-[13px] sm:text-[14px] tracking-[0.1em] font-medium cursor-pointer transition-all duration-500 hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,38,62,0.12)] active:translate-y-0 active:shadow-none"
+                  className="w-full group relative inline-flex items-center justify-center gap-3 px-8 py-4 border border-brand-charcoal/60 text-brand-charcoal bg-transparent text-[13px] sm:text-[14px] tracking-[0.12em] font-light cursor-pointer transition-all duration-500 hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,38,62,0.12)] focus-visible:outline-none focus-visible:border-brand-charcoal focus-visible:bg-brand-charcoal/[0.05] active:translate-y-0 active:shadow-none"
                 >
                   <span>前往测试，看看你的肌肤形象</span>
                   <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
                 </Link>
                 <Link
                   href="/skin-types"
-                  className="w-full group relative inline-flex items-center justify-center gap-3 px-8 py-4 text-[13px] sm:text-[14px] tracking-[0.1em] font-medium cursor-pointer text-brand-charcoal/60 transition-colors duration-500 hover:text-brand-charcoal"
+                  className="w-full group relative inline-flex items-center justify-center gap-3 px-8 py-4 text-[13px] sm:text-[14px] tracking-[0.12em] font-light cursor-pointer text-brand-charcoal/60 transition-colors duration-500 hover:text-brand-charcoal focus-visible:outline-none focus-visible:text-brand-charcoal"
                 >
                   <span>查看全部肌智派类型</span>
                   <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />

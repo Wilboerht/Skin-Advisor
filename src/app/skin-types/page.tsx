@@ -54,7 +54,7 @@ export default function ResultIndexPage() {
           </h1>
           <Link
             href="/"
-            className="w-full sm:w-auto group relative inline-flex items-center justify-center gap-3 px-8 py-4 border border-brand-charcoal/60 text-brand-charcoal bg-transparent text-[13px] sm:text-[14px] tracking-[0.1em] font-medium cursor-pointer transition-all duration-500 hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,38,62,0.12)] active:translate-y-0 active:shadow-none opacity-0 animate-fade-in-up"
+            className="w-full sm:w-auto group relative inline-flex items-center justify-center gap-3 px-8 py-4 border border-brand-charcoal/60 text-brand-charcoal bg-transparent text-[13px] sm:text-[14px] tracking-[0.12em] font-light cursor-pointer transition-all duration-500 hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,38,62,0.12)] focus-visible:outline-none focus-visible:border-brand-charcoal focus-visible:bg-brand-charcoal/[0.05] active:translate-y-0 active:shadow-none opacity-0 animate-fade-in-up"
             style={{ animationDelay: "0.1s", animationFillMode: "forwards" }}
           >
             <span>了解我的肤质类型</span>
@@ -62,7 +62,7 @@ export default function ResultIndexPage() {
           </Link>
           <Link
             href="/gift"
-            className="flex items-center justify-center gap-1.5 mt-5 text-[13px] sm:text-[14px] text-brand-charcoal/75 tracking-[0.1em] font-medium opacity-0 animate-fade-in-up hover:text-brand-charcoal transition-colors duration-300"
+            className="flex items-center justify-center gap-1.5 mt-5 text-[13px] sm:text-[14px] text-brand-charcoal/75 tracking-[0.12em] font-light opacity-0 animate-fade-in-up hover:text-brand-charcoal focus-visible:outline-none focus-visible:text-brand-charcoal transition-colors duration-300"
             style={{ animationDelay: "0.3s", animationFillMode: "forwards" }}
           >
             参与「肌智派」活动，抽奖赢好礼
@@ -97,7 +97,7 @@ export default function ResultIndexPage() {
                   <p className="text-[13px] md:text-sm text-brand-charcoal/60 font-light tracking-[0.06em] md:tracking-[0.12em] mb-3 md:mb-5 line-clamp-1">
                     {type.m1.persona}
                   </p>
-                  <div className="inline-flex items-center text-xs md:text-[13px] font-medium tracking-[0.1em] text-brand-charcoal/60 group-hover:text-brand-charcoal-light transition-colors duration-300">
+                  <div className="inline-flex items-center text-xs md:text-[13px] font-light tracking-[0.12em] text-brand-charcoal/60 group-hover:text-brand-charcoal-light transition-colors duration-300">
                     查看完整解读
                     <ArrowRight className="w-3.5 h-3.5 ml-1.5 transition-transform duration-500 group-hover:translate-x-1.5" />
                   </div>
@@ -140,7 +140,7 @@ export default function ResultIndexPage() {
                 <p className="text-[13px] md:text-base text-brand-charcoal/75 font-light leading-[1.8] md:leading-normal tracking-[0.06em] md:tracking-[0.12em] mb-3 md:mb-4">
                   完成您的专属肌肤诊断后，即可参与 NIHPLOD 限定抽奖——甄选护肤好礼，静候与您相遇。
                 </p>
-                <span className="inline-flex items-center gap-2 text-[13px] sm:text-[14px] font-medium tracking-[0.1em] text-brand-charcoal group-hover:text-brand-charcoal-light transition-colors duration-300">
+                <span className="inline-flex items-center gap-2 text-[13px] sm:text-[14px] font-light tracking-[0.12em] text-brand-charcoal group-hover:text-brand-charcoal-light transition-colors duration-300">
                   立即参与
                   <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
                 </span>

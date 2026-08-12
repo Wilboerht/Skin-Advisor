@@ -19,7 +19,7 @@ export default function NotFound() {
       </p>
       <Link
         href="/"
-        className="inline-flex items-center gap-2 px-8 py-3 border border-[#1B3A5C] text-[#1B3A5C] rounded-lg text-[13px] tracking-[0.1em] font-medium hover:bg-[#1B3A5C] hover:text-white transition-all duration-500"
+        className="inline-flex items-center gap-2 px-8 py-3 border border-[#1B3A5C] text-[#1B3A5C] rounded-lg text-[13px] tracking-[0.12em] font-light hover:bg-[#1B3A5C] hover:text-white focus-visible:outline-none focus-visible:bg-[#1B3A5C]/[0.08] transition-all duration-500"
       >
         回到首页
         <ArrowRight className="w-4 h-4" />
