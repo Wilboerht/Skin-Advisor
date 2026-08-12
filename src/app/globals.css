@@ -18,6 +18,26 @@
   50% { opacity: 1; }
 }
 
+/* ========== 顶栏导航逐字波浪跳（低频循环提示，每 30s 一轮，如“顾问服务”；
+   单字跳动占周期前 ~1.33%（0.4s），其余时间静止） ========== */
+@keyframes nav-char-hop {
+  0% { transform: translateY(0); }
+  0.6% { transform: translateY(-4px); }
+  0.93% { transform: translateY(1px); }
+  1.33%, 100% { transform: translateY(0); }
+}
+
+.nav-char-hop {
+  display: inline-block;
+  animation: nav-char-hop 30s ease-out infinite both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-char-hop {
+    animation: none;
+  }
+}
+
 @theme {
   /* 使用 srgb 色彩空间确保海报截图颜色一致 */
   --default-color-space: srgb;

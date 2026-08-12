@@ -16,13 +16,14 @@ interface NavItem {
   icon?: React.ComponentType<{ className?: string }>;
   badge?: string;
   image?: string;
+  hop?: boolean;
 }
 
 const navItems: NavItem[] = [
   { label: "素颜测肤", href: "/" },
   { label: "测肤有礼", href: "/gift" },
   { label: "了解肌智派", href: "/skin-types" },
-  { label: "顾问服务", href: "/services" },
+  { label: "顾问服务", href: "/services", hop: true },
 ];
 
 interface WebsiteNavbarProps {
@@ -125,7 +126,22 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                       className="w-6 h-6 md:w-7 md:h-7 object-contain drop-shadow-[0_1px_0_rgba(0,38,62,0.28)] animate-[soft-blink_3s_ease-in-out_infinite]"
                     />
                   )}
-                  {item.label}
+                  {item.hop ? (
+                    <span aria-label={item.label}>
+                      {item.label.split("").map((ch, i) => (
+                        <span
+                          key={i}
+                          className="nav-char-hop"
+                          style={{ animationDelay: `${2.5 + i * 0.08}s` }}
+                          aria-hidden="true"
+                        >
+                          {ch}
+                        </span>
+                      ))}
+                    </span>
+                  ) : (
+                    item.label
+                  )}
                   {item.badge && (
                     <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-semibold leading-none tracking-wider rounded bg-[#C8A27A]/15 text-[#A0784C] border border-[#C8A27A]/30">
                       {item.badge}
