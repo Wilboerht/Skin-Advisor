@@ -411,7 +411,7 @@ export default function HomeClient() {
                     {/* CTA + Guide + History */}
                     <div className="flex flex-col items-center gap-6 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.4s', animationFillMode: 'forwards' }}>
                       {/* CTA */}
-                      <div className="flex flex-col items-center gap-3 w-full max-w-md">
+                      <div className="flex flex-col items-center gap-3 md:gap-4 w-full max-w-md">
                         <button
                           onClick={handleStart}
                           disabled={isLoading}
@@ -429,6 +429,9 @@ export default function HomeClient() {
                             </>
                           )}
                         </button>
+                        <p className="text-[13px] md:text-[14px] text-brand-charcoal/50 font-light tracking-[0.08em]">
+                          深读水油、斑纹与真皮层状态
+                        </p>
                       </div>
 
 
