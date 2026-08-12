@@ -366,35 +366,21 @@ export default function HomeClient() {
                 {/* Center AI Actions */}
                 <div className="z-10 flex flex-col items-center text-center max-w-3xl mx-auto">
                   <div className="opacity-0 animate-fade-in-up flex flex-col items-center">
-                    {/* Eyebrow */}
+                    {/* 印章徽标（标题上方居中） */}
                     <m.div
-                      className="w-full max-w-xl mb-8 md:mb-7"
-                      initial="hidden"
-                      whileInView="visible"
-                      viewport={{ once: true }}
-                      variants={{
-                        hidden: {},
-                        visible: { transition: { staggerChildren: 0.12 } },
-                      }}
+                      className="mb-10 md:mb-12 inline-flex items-center"
+                      initial={{ opacity: 0, scale: 1.5, y: -10, filter: "blur(2px)" }}
+                      animate={{ opacity: [0, 1, 1], scale: [1.5, 0.97, 1], y: [-10, 0, 0], filter: ["blur(2px)", "blur(0px)", "blur(0px)"] }}
+                      transition={{ delay: 0.5, duration: 0.45, ease: "easeOut", times: [0, 0.55, 1] }}
                     >
-                      <span className="inline-flex items-center gap-2.5 text-[13px] md:text-base font-medium tracking-[0.3em] text-[#8B7355] uppercase">
-                        <m.span
-                          className="inline-flex items-center"
-                          variants={{
-                            hidden: { opacity: 0 },
-                            visible: { opacity: 1, transition: { duration: 0.3 } },
-                          }}
-                        >
-                          <Image
-                            src="/images/jzp-eyebrow.png"
-                            alt="肌智派"
-                            width={502}
-                            height={228}
-                            className="h-6 md:h-7 w-auto"
-                            priority
-                          />
-                        </m.span>
-                      </span>
+                      <Image
+                        src="/images/jzp-eyebrow.png"
+                        alt="肌智派"
+                        width={502}
+                        height={228}
+                        className="h-6 md:h-7 w-auto opacity-90 mix-blend-multiply stamp-ink"
+                        priority
+                      />
                     </m.div>
 
                     {/* Title */}
@@ -405,13 +391,16 @@ export default function HomeClient() {
                     {/* Info Features */}
                     <div className="flex flex-col md:flex-row items-center justify-center gap-2.5 md:gap-4 mb-10 md:mb-12 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
                       {[
-                        { label: "2-5 分钟完成", icon: Clock },
-                        { label: "多维度精准肌肤状态检测", icon: ScanFace },
-                        { label: "定制化专属报告", icon: FileText },
-                      ].map(({ label, icon: Icon }, index, arr) => (
-                        <span key={label} className="flex items-center gap-2 md:gap-3 text-brand-charcoal/70 text-[15px] md:text-base font-light tracking-[0.06em]">
+                        { num: "2-5 分钟", rest: "完成", icon: Clock },
+                        { num: "10 维", rest: "精准检测", icon: ScanFace },
+                        { num: "1 份", rest: "专属报告", icon: FileText },
+                      ].map(({ num, rest, icon: Icon }, index, arr) => (
+                        <span key={rest} className="flex items-center gap-2 md:gap-3 text-brand-charcoal/70 text-[15px] md:text-base font-light tracking-[0.06em]">
                           <Icon className="hidden md:block w-4 h-4 text-[#173D62] flex-shrink-0" strokeWidth={1.5} />
-                          <span>{label}</span>
+                          <span>
+                            <span className="text-brand-charcoal/90">{num}</span>
+                            {rest}
+                          </span>
                           {index < arr.length - 1 && (
                             <span className="hidden md:inline text-brand-charcoal/25" aria-hidden="true">·</span>
                           )}
