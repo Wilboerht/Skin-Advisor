@@ -368,7 +368,7 @@ export default function HomeClient() {
                   <div className="opacity-0 animate-fade-in-up flex flex-col items-center">
                     {/* Eyebrow */}
                     <m.div
-                      className="w-full max-w-xl mb-10 md:mb-12"
+                      className="w-full max-w-xl mb-8 md:mb-7"
                       initial="hidden"
                       whileInView="visible"
                       viewport={{ once: true }}
