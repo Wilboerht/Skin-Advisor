@@ -5,7 +5,7 @@ import { useTransitionRouter } from "next-view-transitions";
 import { useSearchParams } from "next/navigation";
 import { LazyMotion, domAnimation, AnimatePresence, m, useReducedMotion } from "framer-motion";
 import Image from "next/image";
-import { ArrowRight, Loader2, X, Clock, ScanFace, FileText } from "lucide-react";
+import { ArrowRight, Loader2, X, Clock, ScanFace, FileText, BadgeCheck } from "lucide-react";
 
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
@@ -396,6 +396,7 @@ export default function HomeClient() {
                         { num: "1 份", rest: "专属报告", icon: FileText },
                       ].map(({ num, rest, icon: Icon }, index, arr) => (
                         <span key={rest} className="flex items-center gap-2 md:gap-3 text-brand-charcoal/70 text-[15px] md:text-base font-light tracking-[0.06em]">
+                          <BadgeCheck className="md:hidden w-4 h-4 text-[#173D62]/60 flex-shrink-0" strokeWidth={1.5} />
                           <Icon className="hidden md:block w-4 h-4 text-[#173D62] flex-shrink-0" strokeWidth={1.5} />
                           <span>
                             <span className="text-brand-charcoal/90">{num}</span>
