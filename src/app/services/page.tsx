@@ -11,19 +11,19 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://nihplod.cn";
 export const metadata: Metadata = withDefaultOgImage({
   title: "顾问服务",
   description:
-    "添加 NIHPLOD 护肤顾问微信，获取一对一专业护肤建议。专属顾问根据你的肤质类型量身定制护肤方案，持续跟踪调整。",
-  keywords: ["护肤顾问", "一对一咨询", "皮肤管理", "NIHPLOD", "微信顾问"],
+    "关注 NIHPLOD 微信服务号，回复「护肤顾问」，即可解锁您的专属护肤顾问，长效陪伴、跟踪调整，让护肤方案跟上肌肤的每一步变化。",
+  keywords: ["护肤顾问", "专属护肤顾问", "皮肤管理", "NIHPLOD", "微信服务号"],
   alternates: { canonical: "/services" },
   openGraph: {
     title: "顾问服务 | NIHPLOD",
-    description: "添加 NIHPLOD 护肤顾问微信，获取一对一专业护肤建议。",
+    description: "关注 NIHPLOD 微信服务号，回复「护肤顾问」，解锁您的专属护肤顾问。",
     type: "website",
     locale: "zh_CN",
   },
   twitter: {
     card: "summary_large_image",
     title: "顾问服务 | NIHPLOD",
-    description: "添加 NIHPLOD 护肤顾问微信，获取一对一专业护肤建议。",
+    description: "关注 NIHPLOD 微信服务号，回复「护肤顾问」，解锁您的专属护肤顾问。",
   },
 });
 
@@ -45,11 +45,14 @@ export default function ServicesPage() {
           <div className="grid grid-cols-1 lg:grid-cols-[7fr_3fr] gap-8 md:gap-12 lg:gap-20 items-center">
             {/* 左侧文字 */}
             <div>
-              <h1 className="text-xl md:text-3xl font-serif text-brand-charcoal font-light leading-[1.1] tracking-[0.02em] mb-4 md:mb-8">
+              <h1 className="flex items-center gap-3 text-xl md:text-3xl font-serif text-brand-charcoal font-light leading-[1.1] tracking-[0.02em] mb-4 md:mb-8">
                 顾问服务
+                <span className="inline-flex items-center px-2.5 py-1 text-[10px] md:text-[11px] uppercase tracking-[0.2em] font-light text-brand-charcoal/70 border border-brand-charcoal/25 rounded-full">
+                  free
+                </span>
               </h1>
               <p className="text-[13px] md:text-base text-brand-charcoal/75 font-light leading-[1.8] md:leading-normal tracking-[0.06em] md:tracking-[0.12em] max-w-lg mb-4 md:mb-8">
-                如需获得更具针对性的护肤建议，欢迎关注旎柏 NIHPLOD 微信服务号，由我们的专业护肤顾问为您提供一对一咨询服务。
+                关注 NIHPLOD 微信服务号，回复「护肤顾问」，即可解锁专属您的护肤顾问服务，让护肤方案跟上肌肤的每一步变化，让旎柏陪伴您护肤的每一天。
               </p>
 
               <div className="grid grid-cols-3 gap-3 md:gap-5 max-w-lg">
