@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ssoVerifier, getAccessToken, upsertLocalUser, SSO_BASE_URL } from "@/lib/sso-auth";
+import { cookies } from "next/headers";
+import { ssoVerifier, getAccessToken, upsertLocalUser, SSO_BASE_URL, REFRESH_TOKEN_COOKIE, ACCESS_TOKEN_COOKIE, ID_TOKEN_COOKIE, refreshSsoTokens } from "@/lib/sso-auth";
 import prisma from "@/lib/prisma";
 import { apiError, apiSuccess } from "@/lib/api-response";
 import { ErrorCode } from "@/lib/error-codes";
@@ -16,11 +17,21 @@ export async function GET(req: NextRequest) {
     }
 
     const token = await getAccessToken(req);
-    if (!token) {
-        return NextResponse.json({ user: null });
+    let payload = token ? await ssoVerifier.verify(token) : null;
+
+    // access_token（15 分钟）过期后，用 refresh_token 静默轮换，避免页面停留期间掉登录态
+    let refreshed: Awaited<ReturnType<typeof refreshSsoTokens>> = null;
+    if (!payload?.sub) {
+        const cookieStore = await cookies();
+        const refreshToken = cookieStore.get(REFRESH_TOKEN_COOKIE)?.value;
+        if (refreshToken) {
+            refreshed = await refreshSsoTokens(refreshToken);
+            if (refreshed) {
+                payload = await ssoVerifier.verify(refreshed.access_token);
+            }
+        }
     }
 
-    const payload = await ssoVerifier.verify(token);
     if (!payload?.sub) {
         return NextResponse.json({ user: null });
     }
@@ -32,7 +43,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ user: null });
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
         user: {
             id: payload.sub,
             phone: payload.phone || null,
@@ -41,6 +52,27 @@ export async function GET(req: NextRequest) {
             role: localUser?.role || "user",
         },
     });
+
+    // 轮换成功：把新 token 种回 httpOnly Cookie（与 SSO 回调的 Cookie 约定一致）
+    if (refreshed) {
+        const cookieOpts = { httpOnly: true, secure: true, sameSite: "lax" as const, path: "/" };
+        response.cookies.set(ACCESS_TOKEN_COOKIE, refreshed.access_token, {
+            ...cookieOpts,
+            maxAge: refreshed.expires_in,
+        });
+        response.cookies.set(REFRESH_TOKEN_COOKIE, refreshed.refresh_token, {
+            ...cookieOpts,
+            maxAge: refreshed.refresh_expires_in ?? 30 * 24 * 3600,
+        });
+        if (refreshed.id_token) {
+            response.cookies.set(ID_TOKEN_COOKIE, refreshed.id_token, {
+                ...cookieOpts,
+                maxAge: refreshed.expires_in,
+            });
+        }
+    }
+
+    return response;
 }
 
 export async function PUT(req: NextRequest) {

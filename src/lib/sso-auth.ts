@@ -15,14 +15,56 @@ import type { SessionUser } from "@/lib/auth";
 const SSO_BASE_URL = process.env.NEXT_PUBLIC_SSO_BASE_URL || "https://nihplod.cn";
 export { SSO_BASE_URL };
 const SSO_CLIENT_ID = process.env.NEXT_PUBLIC_SSO_CLIENT_ID!;
+// Confidential Client 密钥：仅服务端使用（introspect / refresh），切勿暴露到浏览器
+const SSO_CLIENT_SECRET = process.env.SSO_CLIENT_SECRET;
 export const ACCESS_TOKEN_COOKIE = "__Host-nihplod_sso_at";
+export const REFRESH_TOKEN_COOKIE = "__Host-nihplod_sso_rt";
+export const ID_TOKEN_COOKIE = "__Host-nihplod_sso_id";
 
 export const ssoVerifier = createTokenVerifier({
     introspectionEndpoint: `${SSO_BASE_URL}/api/oauth/introspect`,
     clientId: SSO_CLIENT_ID,
+    clientSecret: SSO_CLIENT_SECRET,
     audience: SSO_CLIENT_ID,
     issuer: SSO_BASE_URL,
 });
+
+/** refresh_token 轮换后主站返回的 token 集 */
+export interface RefreshedTokens {
+    access_token: string;
+    refresh_token: string;
+    id_token?: string;
+    expires_in: number;
+    /** 主站返回的 refresh_token 剩余有效期（秒），缺省 30 天 */
+    refresh_expires_in?: number;
+}
+
+/**
+ * 用 refresh_token 向主站换取新 token（原子轮换）。
+ * 仅服务端调用；Confidential Client 必须携带 client_secret。
+ * 失败（refresh_token 过期/被撤销/网络异常）返回 null，调用方按未登录处理。
+ */
+export async function refreshSsoTokens(refreshToken: string): Promise<RefreshedTokens | null> {
+    if (!SSO_CLIENT_SECRET) return null;
+    try {
+        const res = await fetch(`${SSO_BASE_URL}/api/oauth/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+                grant_type: "refresh_token",
+                refresh_token: refreshToken,
+                client_id: SSO_CLIENT_ID,
+                client_secret: SSO_CLIENT_SECRET,
+            }),
+        });
+        if (!res.ok) return null;
+        const data = (await res.json()) as RefreshedTokens;
+        if (!data.access_token || !data.refresh_token) return null;
+        return data;
+    } catch {
+        return null;
+    }
+}
 
 export interface SsoAuthUser {
     id: string;

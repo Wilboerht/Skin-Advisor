@@ -1,20 +1,6 @@
 "use client";
 
-import { createContext, useContext, useMemo, ReactNode } from 'react';
-import { SsoProvider, useSso } from "@nihplod/sso-sdk/react";
-import type { SsoUser } from "@nihplod/sso-sdk";
-import { UserRole } from "@/lib/permissions";
-
-// --- Types ---
-
-export interface User {
-    id: string;
-    email?: string | null;
-    phone?: string | null;
-    name?: string;
-    role: string;
-    avatar?: string | null;
-}
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 
 // --- Types ---
 
@@ -40,61 +26,77 @@ interface AuthContextType {
     refresh: () => Promise<void>;
 }
 
-// --- Constants ---
-
-const SSO_CLIENT_ID = process.env.NEXT_PUBLIC_SSO_CLIENT_ID!;
-const SSO_BASE_URL = process.env.NEXT_PUBLIC_SSO_BASE_URL!;
-const SSO_REDIRECT_URI = process.env.NEXT_PUBLIC_SSO_REDIRECT_URI!;
-const SSO_SCOPES = process.env.NEXT_PUBLIC_SSO_SCOPES || "openid profile phone";
-
-function mapSsoUserToLegacyUser(ssoUser: SsoUser | null): User | null {
-    if (!ssoUser) return null;
-    return {
-        id: ssoUser.sub,
-        phone: ssoUser.phone || null,
-        name: ssoUser.nickname,
-        avatar: ssoUser.avatar || null,
-        role: UserRole.USER,
-    };
-}
-
 // --- Context ---
 
 const UserContext = createContext<AuthContextType | undefined>(undefined);
 
-function UserProviderInner({ children }: { children: ReactNode }) {
-    const { user: ssoUser, isLoading, login: ssoLogin, logout: ssoLogout, refreshUser } = useSso();
+/**
+ * BFF 模式的用户会话 Provider。
+ *
+ * SSO token 全部存于 httpOnly Cookie（浏览器 JS 不可读），前端登录态以
+ * 服务端 /api/auth/me 为准：挂载时拉取一次；access_token 过期由该端点
+ * 用 refresh_token 静默轮换。
+ *
+ * 登录/登出均为整页跳转的服务端流程：
+ * - login  → /api/auth/login（服务端种 PKCE Cookie 后 302 到主站 authorize）
+ * - logout → POST /api/auth/logout（清 SSO + 本地会话 Cookie）后回首页
+ */
+export function UserProvider({ children }: { children: ReactNode }) {
+    const [user, setUser] = useState<User | null>(null);
+    const [loading, setLoading] = useState(true);
 
-    const user = useMemo(() => mapSsoUserToLegacyUser(ssoUser), [ssoUser]);
+    const loadUser = useCallback(async () => {
+        try {
+            const res = await fetch("/api/auth/me", { cache: "no-store" });
+            if (!res.ok) {
+                setUser(null);
+                return;
+            }
+            const data = (await res.json()) as { user: User | null };
+            setUser(data.user ?? null);
+        } catch {
+            setUser(null);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
-    // Preserve legacy async signatures while delegating to SSO (credentials ignored)
+    useEffect(() => {
+        loadUser();
+    }, [loadUser]);
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const login = async (_credentials?: { email?: string; phone?: string; password?: string }) => {
-        await ssoLogin();
+        // 登录/注册页自身不作为回跳目标，避免登录成功后回到 /login 再次触发跳转
+        const { pathname, search } = window.location;
+        const returnTo = pathname === "/login" || pathname === "/register" ? "/" : pathname + search;
+        window.location.href = `/api/auth/login?return_to=${encodeURIComponent(returnTo)}`;
     };
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const loginWithCode = async (_credentials: { phone: string; code: string }) => {
-        await ssoLogin();
-    };
-
+    const loginWithCode = async (_credentials: { phone: string; code: string }) => login();
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const register = async (_userData?: { email?: string; phone?: string; password?: string; name?: string; code?: string }) => {
-        await ssoLogin();
-    };
+    const register = async (_userData?: { email?: string; phone?: string; password?: string; name?: string; code?: string }) => login();
 
     const logout = async () => {
-        await ssoLogout(false);
+        try {
+            // POST-only + 同源校验；服务端会清除 SSO Cookie、撤销 refresh_token 并清本地会话
+            await fetch("/api/auth/logout", { method: "POST" });
+        } catch {
+            // 网络异常也继续本地清理并回首页
+        }
+        setUser(null);
+        window.location.href = "/";
     };
 
     const refresh = async () => {
-        await refreshUser();
+        await loadUser();
     };
 
     const value: AuthContextType = {
         user,
-        loading: isLoading,
-        isInitialized: !isLoading,
+        loading,
+        isInitialized: !loading,
         login,
         loginWithCode,
         register,
@@ -109,35 +111,10 @@ function UserProviderInner({ children }: { children: ReactNode }) {
     );
 }
 
-export function UserProvider({ children }: { children: ReactNode }) {
-    if (!SSO_CLIENT_ID || !SSO_BASE_URL || !SSO_REDIRECT_URI) {
-        console.error(
-            "[UserProvider] Missing SSO environment variables. " +
-            "Please set NEXT_PUBLIC_SSO_CLIENT_ID, NEXT_PUBLIC_SSO_BASE_URL and NEXT_PUBLIC_SSO_REDIRECT_URI."
-        );
-    }
-
-    return (
-        <SsoProvider
-            config={{
-                clientId: SSO_CLIENT_ID,
-                ssoBaseUrl: SSO_BASE_URL,
-                redirectUri: SSO_REDIRECT_URI,
-                scopes: SSO_SCOPES,
-                // Public Client: no clientSecret
-            }}
-        >
-            <UserProviderInner>
-                {children}
-            </UserProviderInner>
-        </SsoProvider>
-    );
-}
-
 export function useUser() {
     const context = useContext(UserContext);
     if (context === undefined) {
-        throw new Error('useUser must be used within a UserProvider');
+        throw new Error('useUser must be used within UserProvider');
     }
     return context;
 }

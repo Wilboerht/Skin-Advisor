@@ -33,6 +33,7 @@ const PUBLIC_PATHS = [
     "/site.webmanifest",       // PWA manifest
     "/models/:path*",          // face-api 模型文件（静态资源）
       "/api/auth/callback",
+      "/api/auth/login",
       "/api/auth/me",
       "/api/auth/logout",
       "/api/auth/session-init",
@@ -61,6 +62,8 @@ const PUBLIC_PATHS = [
 
 const ssoMiddleware = createSsoMiddleware({
   clientId: process.env.NEXT_PUBLIC_SSO_CLIENT_ID!,
+  // Confidential Client：introspect 校验必须携带客户端密钥（服务端变量，不进浏览器包）
+  clientSecret: process.env.SSO_CLIENT_SECRET,
   ssoBaseUrl: process.env.NEXT_PUBLIC_SSO_BASE_URL!,
   redirectUri: process.env.NEXT_PUBLIC_SSO_REDIRECT_URI!,
   scopes: process.env.NEXT_PUBLIC_SSO_SCOPES || "openid profile",

@@ -4,10 +4,11 @@ import { clearLocalSession } from "@/lib/auth";
 
 const handler = createLogoutRouteHandler({
   clientId: process.env.NEXT_PUBLIC_SSO_CLIENT_ID!,
+  // Confidential Client：撤销 refresh_token 必须携带客户端密钥（服务端变量，不进浏览器包）
+  clientSecret: process.env.SSO_CLIENT_SECRET,
   ssoBaseUrl: process.env.NEXT_PUBLIC_SSO_BASE_URL!,
   redirectUri: process.env.NEXT_PUBLIC_SSO_REDIRECT_URI!,
   postLogoutRedirectUri: process.env.NEXT_PUBLIC_BASE_URL || "https://advisor.nihplod.cn",
-  // Public Client: no clientSecret
   redirectToSso: true,
 });
 

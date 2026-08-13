@@ -6,7 +6,8 @@
  * 默认 30 秒超时，防止网络挂起导致 UI 永久等待。
  *
  * SSO 迁移说明：
- * - access_token 的刷新由 @nihplod/sso-sdk/react 的 SsoProvider 自动处理。
+ * - SSO token 存于 httpOnly Cookie；access_token 过期由 /api/auth/me 用
+ *   refresh_token 静默轮换（UserProvider 挂载及 refresh() 时触发）。
  * - 本封装不再调用 /api/auth/refresh；收到 401 时由业务层决定跳转登录或降级处理。
  */
 
