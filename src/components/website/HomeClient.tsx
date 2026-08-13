@@ -376,9 +376,9 @@ export default function HomeClient() {
                       <Image
                         src="/images/jzp-eyebrow.png"
                         alt="肌智派"
-                        width={502}
-                        height={228}
-                        className="h-6 md:h-7 w-auto opacity-90 mix-blend-multiply stamp-ink"
+                        width={514}
+                        height={258}
+                        className="h-8 md:h-10 w-auto opacity-90 mix-blend-multiply"
                         priority
                       />
                     </m.div>
