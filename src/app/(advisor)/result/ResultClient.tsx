@@ -44,7 +44,6 @@ import styles from "./result.module.css";
 import { ProductRecommendationSection } from "@/components/advisor/ProductRecommendationSection";
 import type { ProductCardData } from "@/components/advisor/ProductCard";
 import { SaveReportBanner } from "@/components/advisor/SaveReportBanner";
-import { RegisterConversionModal } from "@/components/advisor/RegisterConversionModal";
 import { CountdownTimer } from "@/components/advisor/CountdownTimer";
 import { AnalyzingOverlay } from "@/components/advisor/AnalyzingOverlay";
 // mock 数据仅在 ?mock=true 时动态加载，不打入生产 bundle
@@ -285,7 +284,6 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
     });
     const posterRef = useRef<HTMLDivElement>(null);
     const retryButtonRef = useRef<HTMLButtonElement>(null);
-    const scrollContainerRef = useRef<HTMLElement | null>(null);
 
     // Fetch active campaign for countdown
     useEffect(() => {
@@ -1153,9 +1151,6 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                 <div className={styles.container}>
                     {/* Save Report Banner for unauthenticated users */}
                     <SaveReportBanner className="hidden md:block" />
-
-                    {/* Register Conversion Modal: 游客深度浏览后弹出注册引导 */}
-                    <RegisterConversionModal scrollContainerRef={scrollContainerRef} />
 
                     {/* Logo */}
                     <div className="w-full flex flex-col items-center pt-12">
