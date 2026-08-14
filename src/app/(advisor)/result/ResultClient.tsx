@@ -1511,6 +1511,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                 reportText={advisorReportText}
                                 advisorLink={advisorLink}
                                 onCopied={() => trackResultShare("link")}
+                                onOpenAdvisor={() => trackResultShare("wechat")}
                                 onOpenQr={() => setShowContactAdvisor(true)}
                             />
 

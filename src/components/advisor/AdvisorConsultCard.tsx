@@ -8,6 +8,7 @@ interface AdvisorConsultCardProps {
     reportText: string;
     advisorLink?: string;
     onCopied?: () => void;
+    onOpenAdvisor?: () => void;
     onOpenQr?: () => void;
 }
 
@@ -51,6 +52,7 @@ export default function AdvisorConsultCard({
     reportText,
     advisorLink = ADVISOR_WECOM_LINK,
     onCopied,
+    onOpenAdvisor,
     onOpenQr,
 }: AdvisorConsultCardProps) {
     const [copied, setCopied] = useState(false);
@@ -134,6 +136,7 @@ export default function AdvisorConsultCard({
                 </button>
                 <a
                     href={advisorLink}
+                    onClick={onOpenAdvisor}
                     className="inline-flex items-center justify-center gap-2 px-5 sm:px-8 py-2.5 sm:py-3 rounded-full border border-[#5c4937]/30 text-[#5c4937] text-[12px] sm:text-[13px] tracking-[0.1em] font-medium hover:bg-[#5c4937]/5 transition-colors"
                 >
                     <MessageCircle className="w-4 h-4" />
