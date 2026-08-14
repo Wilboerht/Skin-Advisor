@@ -74,8 +74,9 @@ export default function AdvisorConsultCard({
     return (
         <section
             aria-label="咨询护肤顾问"
-            className="w-full max-w-[560px] mx-auto rounded-2xl border border-brand-charcoal/[0.08] bg-white p-6 sm:p-8"
+            className="w-full mt-12 pt-10 border-t border-brand-charcoal/[0.08]"
         >
+            <div className="max-w-[560px] mx-auto">
             {/* Header */}
             <div className="text-center mb-6">
                 <h3 className="text-base sm:text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-2">
@@ -179,6 +180,7 @@ export default function AdvisorConsultCard({
                     </button>
                 </div>
             )}
+            </div>
         </section>
     );
 }
