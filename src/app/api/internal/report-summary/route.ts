@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
         }
         return NextResponse.json(summary);
     } catch (error) {
-        logger.error("report-summary failed", error);
+        logger.error("report-summary failed", { error: String(error) });
         return NextResponse.json({ error: "Internal error" }, { status: 500 });
     }
 }
