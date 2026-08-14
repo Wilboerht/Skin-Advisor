@@ -80,7 +80,7 @@ export default function AdvisorConsultCard({
             {/* Header */}
             <div className="text-center mb-6">
                 <h3 className="text-base sm:text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-2">
-                    报告看不懂？问你的护肤顾问
+                    报告看不懂？联系您的专属顾问
                 </h3>
                 <p className="text-[12px] text-brand-charcoal/50 font-light tracking-[0.08em]">
                     三步让 AI 护肤顾问读懂你的专属报告
