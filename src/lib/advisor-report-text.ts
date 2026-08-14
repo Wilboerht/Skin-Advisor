@@ -32,21 +32,36 @@ export interface AdvisorReportTextParams {
     nickname?: string;
 }
 
+export interface ReportIssue {
+    label: string;
+    score: number;
+}
+
+/** 从十维分析中提取重点问题（<70 分，按分数升序，最多 3 个） */
+export function getIssueList(
+    dimensions: Record<string, { score?: number } | undefined> | undefined
+): ReportIssue[] {
+    if (!dimensions || Object.keys(dimensions).length === 0) return [];
+    return ISSUE_ORDER
+        .map((key) => ({ key, score: dimensions[key]?.score }))
+        .filter((d): d is { key: string; score: number } => typeof d.score === "number")
+        .sort((a, b) => a.score - b.score)
+        .filter((d) => d.score < 70)
+        .slice(0, 3)
+        .map((d) => ({ label: DIMENSION_LABELS[d.key] ?? d.key, score: d.score }));
+}
+
 function buildIssueLine(
     faceAnalysis: FaceAnalysisResult | null,
     result: ComprehensiveResult
 ): string {
-    const dimensions = faceAnalysis?.dimensions;
-    if (dimensions && Object.keys(dimensions).length > 0) {
-        const dims = dimensions as Record<string, { score?: number } | undefined>;
-        const problems = ISSUE_ORDER
-            .map((key) => ({ key, score: dims[key]?.score }))
-            .filter((d): d is { key: string; score: number } => typeof d.score === "number")
-            .sort((a, b) => a.score - b.score)
-            .filter((d) => d.score < 70)
-            .slice(0, 3)
-            .map((d) => `${DIMENSION_LABELS[d.key] ?? d.key}（${d.score}分）`);
-        if (problems.length > 0) return `重点问题：${problems.join("、")}`;
+    const issues = getIssueList(
+        faceAnalysis?.dimensions as Record<string, { score?: number } | undefined> | undefined
+    );
+    if (issues.length > 0) {
+        return `重点问题：${issues.map((i) => `${i.label}（${i.score}分）`).join("、")}`;
+    }
+    if (faceAnalysis?.dimensions && Object.keys(faceAnalysis.dimensions).length > 0) {
         return "重点问题：无明显问题";
     }
     const concerns = result.skinProfile.concerns;

@@ -37,7 +37,7 @@ import { toDataURL } from "qrcode";
 import { ContactAdvisorModal } from "@/components/advisor/ContactAdvisorModal";
 import ResultCards from "@/components/advisor/ResultCards";
 import AdvisorConsultCard from "@/components/advisor/AdvisorConsultCard";
-import { buildAdvisorReportText } from "@/lib/advisor-report-text";
+import { buildAdvisorReportText, ADVISOR_WECOM_LINK } from "@/lib/advisor-report-text";
 
 // Import the new CSS Module
 import styles from "./result.module.css";
@@ -321,6 +321,31 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
             nickname: userNickname,
         });
     }, [result, faceAnalysis, socialGender, userNickname]);
+
+    // 带 scene_param 的顾问客服链接：进入会话事件会把 scene_param 原样返回，
+    // 客服后端据此自动拉取报告写入档案。失败时回退静态链接（复制粘贴流程兜底）。
+    const [advisorLink, setAdvisorLink] = useState<string>(ADVISOR_WECOM_LINK);
+
+    useEffect(() => {
+        if (!sessionId) {
+            setAdvisorLink(ADVISOR_WECOM_LINK);
+            return;
+        }
+        let cancelled = false;
+        fetch(`/api/advisor/kf-link?sessionId=${encodeURIComponent(sessionId)}`, {
+            cache: "no-store",
+        })
+            .then((res) => res.json())
+            .then((data) => {
+                if (!cancelled && data?.url) setAdvisorLink(data.url);
+            })
+            .catch(() => {
+                // 保持静态链接兜底
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [sessionId]);
 
     const isGenderMismatch = useMemo(() => {
         if (!faceAnalysis || !socialGender) return false;
@@ -1484,6 +1509,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                             {/* 咨询护肤顾问：三步引导 + 一键复制报告摘要 + 直达微信客服 */}
                             <AdvisorConsultCard
                                 reportText={advisorReportText}
+                                advisorLink={advisorLink}
                                 onCopied={() => trackResultShare("link")}
                                 onOpenQr={() => setShowContactAdvisor(true)}
                             />
