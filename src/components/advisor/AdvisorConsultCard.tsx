@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useState } from "react";
-import { Check, ChevronRight, Copy, MessageCircle, QrCode } from "lucide-react";
+import { Check, ChevronRight, Copy, MessageCircle } from "lucide-react";
 import { ADVISOR_WECOM_LINK } from "@/lib/advisor-report-text";
 
 interface AdvisorConsultCardProps {
@@ -9,7 +9,6 @@ interface AdvisorConsultCardProps {
     advisorLink?: string;
     onCopied?: () => void;
     onOpenAdvisor?: () => void;
-    onOpenQr?: () => void;
 }
 
 async function copyTextToClipboard(text: string): Promise<boolean> {
@@ -53,7 +52,6 @@ export default function AdvisorConsultCard({
     advisorLink = ADVISOR_WECOM_LINK,
     onCopied,
     onOpenAdvisor,
-    onOpenQr,
 }: AdvisorConsultCardProps) {
     const [copied, setCopied] = useState(false);
     const [copyFailed, setCopyFailed] = useState(false);
@@ -99,13 +97,13 @@ export default function AdvisorConsultCard({
                         <li className="flex sm:flex-none sm:flex-col items-start sm:items-center gap-3 sm:gap-2.5 sm:text-center">
                             <span
                                 className={`mt-0.5 sm:mt-0 w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-[12px] font-semibold transition-colors duration-300 shadow-[0_1px_4px_rgba(92,73,55,0.15)] ${
-                                    copied && i === STEPS.length - 1
+                                    copied && i === 0
                                         ? "bg-[#5c4937] border border-[#5c4937] text-white"
                                         : "bg-[#5c4937]/[0.06] border border-[#5c4937]/20 text-[#5c4937]"
                                 }`}
                                 aria-hidden="true"
                             >
-                                {copied && i === STEPS.length - 1 ? (
+                                {copied && i === 0 ? (
                                     <Check className="w-3.5 h-3.5" />
                                 ) : (
                                     i + 1
@@ -174,7 +172,6 @@ export default function AdvisorConsultCard({
                     已复制，打开顾问后长按输入框粘贴发送即可
                 </p>
             )}
-
             {/* Copy failed fallback */}
             {copyFailed && !copied && (
                 <div className="mt-2">
@@ -187,19 +184,6 @@ export default function AdvisorConsultCard({
                         onFocus={(e) => e.currentTarget.select()}
                         className="w-full h-28 resize-none rounded-lg border border-brand-charcoal/15 bg-[#FAFAF7] p-3 text-[12px] leading-relaxed text-brand-charcoal/80 font-light focus:outline-none"
                     />
-                </div>
-            )}
-
-            {/* QR fallback */}
-            {onOpenQr && (
-                <div className="mt-5 pt-5 border-t border-dashed border-brand-charcoal/[0.08] text-center">
-                    <button
-                        onClick={onOpenQr}
-                        className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full border border-[#5c4937]/15 text-[12px] sm:text-[13px] tracking-[0.06em] text-[#7a6552] font-medium transition-all duration-300 hover:text-[#5c4937] hover:border-[#5c4937]/35 hover:bg-[#5c4937]/[0.03]"
-                    >
-                        <QrCode className="w-3.5 h-3.5" />
-                        也可扫码关注服务号，获取更多定制化服务
-                    </button>
                 </div>
             )}
             </div>

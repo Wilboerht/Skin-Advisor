@@ -34,7 +34,6 @@ import { ScientificBarChart } from "@/components/advisor/ScientificBarChart";
 import { SharePoster } from "@/components/advisor/poster/SharePoster";
 import { toBlob } from "html-to-image";
 import { toDataURL } from "qrcode";
-import { ContactAdvisorModal } from "@/components/advisor/ContactAdvisorModal";
 import ResultCards from "@/components/advisor/ResultCards";
 import AdvisorConsultCard from "@/components/advisor/AdvisorConsultCard";
 import { buildAdvisorReportText, ADVISOR_WECOM_LINK } from "@/lib/advisor-report-text";
@@ -291,7 +290,6 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
     // New State for interactivity
 
     const [showLabData, setShowLabData] = useState(false);
-    const [showContactAdvisor, setShowContactAdvisor] = useState(false);
     const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
     const [posterError, setPosterError] = useState<string | null>(null);
     // 微信内嵌浏览器无法可靠触发下载，生成后改用「长按保存」引导弹窗
@@ -1558,7 +1556,6 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                 advisorLink={advisorLink}
                                 onCopied={() => trackResultShare("link")}
                                 onOpenAdvisor={() => trackResultShare("wechat")}
-                                onOpenQr={() => setShowContactAdvisor(true)}
                             />
 
                             {/* Secondary actions */}
@@ -1718,11 +1715,6 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                             </m.div>
                         )}
                     </AnimatePresence>
-
-                    <ContactAdvisorModal
-                        isOpen={showContactAdvisor}
-                        onClose={() => setShowContactAdvisor(false)}
-                    />
                 </div>)}
         </>
         </ResultErrorBoundary>
