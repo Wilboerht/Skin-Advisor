@@ -45,7 +45,7 @@ async function copyTextToClipboard(text: string): Promise<boolean> {
 const STEPS = [
     { label: "复制报告摘要" },
     { label: "打开护肤顾问" },
-    { label: "粘贴发送，顾问据此定制方案" },
+    { label: "获取专属方案" },
 ];
 
 export default function AdvisorConsultCard({
