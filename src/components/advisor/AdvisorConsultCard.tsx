@@ -91,12 +91,12 @@ export default function AdvisorConsultCard({
             </div>
 
             {/* Three steps */}
-            <ol className="flex flex-col sm:flex-row sm:items-start gap-y-4 mb-6 sm:mb-7">
+            <ol className="flex flex-col sm:flex-row sm:items-start mb-6 sm:mb-7">
                 {STEPS.map((step, i) => (
                     <Fragment key={i}>
-                        <li className="flex sm:flex-none sm:flex-col items-start sm:items-center gap-3 sm:gap-2.5 sm:text-center">
+                        <li className={`relative flex flex-col items-center gap-2 sm:gap-2.5 text-center sm:flex-none ${i < STEPS.length - 1 ? "pb-5 sm:pb-0 after:absolute after:left-1/2 after:-translate-x-1/2 after:top-10 after:bottom-1.5 after:w-[1.5px] after:rounded after:bg-[#5c4937]/15 sm:after:hidden" : ""}`}>
                             <span
-                                className={`mt-0.5 sm:mt-0 w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-[12px] font-semibold transition-colors duration-300 shadow-[0_1px_4px_rgba(92,73,55,0.15)] ${
+                                className={`w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-[12px] font-semibold transition-colors duration-300 shadow-[0_1px_4px_rgba(92,73,55,0.15)] ${
                                     copied && i === 0
                                         ? "bg-[#5c4937] border border-[#5c4937] text-white"
                                         : "bg-[#5c4937]/[0.06] border border-[#5c4937]/20 text-[#5c4937]"
