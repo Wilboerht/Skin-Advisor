@@ -1562,26 +1562,24 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                             />
 
                             {/* Secondary actions */}
-                            <div className="flex flex-row justify-center gap-3 mt-8 mb-4">
-                                <button
-                                    onClick={() => router.push('/')}
-                                    className="inline-flex items-center justify-center gap-2 px-5 sm:px-8 py-2.5 sm:py-3 rounded-full border border-[#5c4937]/30 text-[#5c4937] text-[12px] sm:text-[13px] tracking-[0.1em] font-medium hover:bg-[#5c4937]/5 transition-colors"
-                                >
-                                    <House className="w-4 h-4" />
-                                    回到首页
-                                </button>
-                            </div>
-
-                            {/* 肌智派送好礼 CTA */}
-                            <div className="flex flex-col items-center justify-center mb-10 gap-2">
-                                <button
-                                    onClick={() => router.push('/gift')}
-                                    className="group inline-flex items-center justify-center gap-2 w-auto sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 rounded-full border border-dashed border-[#8B7355]/40 bg-[#8B7355]/[0.04] text-[12px] sm:text-[13px] tracking-[0.1em] text-[#8B7355] hover:text-[#5c4937] hover:border-[#5c4937]/40 hover:bg-[#5c4937]/5 transition-all duration-300"
-                                >
-                                    <Gift className="w-4 h-4" />
-                                    肌智派送好礼 · 参与抽奖
-                                    <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
-                                </button>
+                            <div className="flex flex-col items-center justify-center gap-3 mt-8 mb-10">
+                                <div className="flex flex-row flex-wrap justify-center gap-3">
+                                    <button
+                                        onClick={() => router.push('/')}
+                                        className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-[12px] sm:text-[13px] tracking-[0.1em] text-[#5c4937]/70 font-medium hover:text-[#5c4937] transition-colors"
+                                    >
+                                        <House className="w-3.5 h-3.5" />
+                                        回到首页
+                                    </button>
+                                    <button
+                                        onClick={() => router.push('/gift')}
+                                        className="group inline-flex items-center justify-center gap-2 w-auto sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 rounded-full border border-dashed border-[#8B7355]/40 bg-[#8B7355]/[0.04] text-[12px] sm:text-[13px] tracking-[0.1em] text-[#8B7355] hover:text-[#5c4937] hover:border-[#5c4937]/40 hover:bg-[#5c4937]/5 transition-all duration-300"
+                                    >
+                                        <Gift className="w-4 h-4" />
+                                        肌智派送好礼 · 参与抽奖
+                                        <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
+                                    </button>
+                                </div>
                                 {activeCampaign && (
                                     <CountdownTimer
                                         endDate={activeCampaign.endDate}
