@@ -133,10 +133,10 @@ export default function AdvisorConsultCard({
                 <button
                     onClick={handleCopy}
                     disabled={!reportText || copied}
-                    className={`group flex flex-col items-center justify-center gap-2 rounded-2xl px-3 py-5 border text-center transition-all duration-300 ${
+                    className={`group flex flex-col items-center justify-center gap-2.5 rounded-2xl px-3 py-4 border text-center transition-all duration-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] ${
                         copied
                             ? "border-[#5c4937]/15 bg-[#F0EDE8] cursor-default"
-                            : "border-[#5c4937]/12 bg-[#F5F2ED] hover:border-[#5c4937]/30 hover:bg-[#FAF8F4] hover:shadow-[0_6px_20px_rgba(61,47,37,0.10)] hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50"
+                            : "border-[#5c4937]/15 bg-[#F5F2ED] hover:border-[#5c4937]/35 hover:bg-[#FAF8F4] hover:shadow-[0_6px_20px_rgba(61,47,37,0.10)] hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50"
                     }`}
                 >
                     <span className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors duration-300 ${
@@ -157,7 +157,7 @@ export default function AdvisorConsultCard({
                 <a
                     href={advisorLink}
                     onClick={onOpenAdvisor}
-                    className="group flex flex-col items-center justify-center gap-2 rounded-2xl px-3 py-5 border border-[#5c4937]/12 bg-[#F5F2ED] text-center transition-all duration-300 hover:border-[#5c4937]/30 hover:bg-[#FAF8F4] hover:shadow-[0_6px_20px_rgba(61,47,37,0.10)] hover:-translate-y-0.5 active:translate-y-0"
+                    className="group flex flex-col items-center justify-center gap-2.5 rounded-2xl px-3 py-4 border border-[#5c4937]/15 bg-[#F5F2ED] text-center transition-all duration-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] hover:border-[#5c4937]/35 hover:bg-[#FAF8F4] hover:shadow-[0_6px_20px_rgba(61,47,37,0.10)] hover:-translate-y-0.5 active:translate-y-0"
                 >
                     <span className="w-11 h-11 rounded-full bg-[#5c4937]/10 flex items-center justify-center transition-colors duration-300 group-hover:bg-[#5c4937]/15">
                         <MessageCircle className="w-5 h-5 text-[#5c4937]" />
