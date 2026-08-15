@@ -192,12 +192,12 @@ export default function AdvisorConsultCard({
 
             {/* QR fallback */}
             {onOpenQr && (
-                <div className="mt-6 pt-5 border-t border-dashed border-brand-charcoal/[0.08] text-center">
+                <div className="mt-5 pt-5 border-t border-dashed border-brand-charcoal/[0.08] text-center">
                     <button
                         onClick={onOpenQr}
-                        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full border border-dashed border-[#8c7a6b]/45 bg-[#8c7a6b]/[0.05] text-[12px] sm:text-[13px] tracking-[0.06em] text-[#7a6552] font-medium transition-all duration-300 hover:text-[#5c4937] hover:border-[#5c4937]/50 hover:bg-[#5c4937]/5"
+                        className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full border border-[#5c4937]/15 text-[12px] sm:text-[13px] tracking-[0.06em] text-[#7a6552] font-medium transition-all duration-300 hover:text-[#5c4937] hover:border-[#5c4937]/35 hover:bg-[#5c4937]/[0.03]"
                     >
-                        <QrCode className="w-4 h-4" />
+                        <QrCode className="w-3.5 h-3.5" />
                         也可扫码关注服务号，获取更多定制化服务
                     </button>
                 </div>

@@ -1562,7 +1562,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                             />
 
                             {/* Secondary actions */}
-                            <div className="flex flex-col items-center justify-center gap-3 mt-8 mb-10">
+                            <div className="flex flex-col items-center justify-center gap-2.5 mt-6 mb-10">
                                 <div className="flex flex-row flex-wrap justify-center gap-3">
                                     <button
                                         onClick={() => router.push('/')}
