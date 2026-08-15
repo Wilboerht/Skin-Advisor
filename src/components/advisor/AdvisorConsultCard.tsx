@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useState } from "react";
-import { ArrowRight, Check, Copy, MessageCircle, QrCode } from "lucide-react";
+import { Check, ChevronRight, Copy, MessageCircle, QrCode } from "lucide-react";
 import { ADVISOR_WECOM_LINK } from "@/lib/advisor-report-text";
 
 interface AdvisorConsultCardProps {
@@ -93,10 +93,10 @@ export default function AdvisorConsultCard({
             </div>
 
             {/* Three steps */}
-            <ol className="flex flex-col sm:flex-row sm:justify-center gap-y-4 sm:gap-1 mb-6 sm:mb-7">
+            <ol className="flex flex-col sm:flex-row sm:items-start gap-y-4 mb-6 sm:mb-7">
                 {STEPS.map((step, i) => (
                     <Fragment key={i}>
-                        <li className="flex flex-1 sm:flex-col items-start sm:items-center gap-3 sm:gap-2.5 sm:text-center sm:px-1">
+                        <li className="flex sm:flex-none sm:flex-col items-start sm:items-center gap-3 sm:gap-2.5 sm:text-center">
                             <span
                                 className={`mt-0.5 sm:mt-0 w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-[12px] font-semibold transition-colors duration-300 shadow-[0_1px_4px_rgba(92,73,55,0.15)] ${
                                     copied && i === STEPS.length - 1
@@ -116,10 +116,13 @@ export default function AdvisorConsultCard({
                             </span>
                         </li>
                         {i < STEPS.length - 1 && (
-                            <ArrowRight
-                                className="hidden sm:block w-4 h-4 text-[#5c4937]/25 shrink-0 self-start sm:mt-2"
+                            <span
+                                className="hidden sm:flex items-center flex-1 min-w-6 mx-2 shrink-0 self-start sm:mt-[9px]"
                                 aria-hidden="true"
-                            />
+                            >
+                                <span className="flex-1 h-[1.5px] rounded bg-[#5c4937]/25" />
+                                <ChevronRight className="w-3.5 h-3.5 -ml-0.5 text-[#5c4937]/25" strokeWidth={2.5} />
+                            </span>
                         )}
                     </Fragment>
                 ))}
