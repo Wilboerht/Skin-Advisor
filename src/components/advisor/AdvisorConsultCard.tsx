@@ -79,8 +79,11 @@ export default function AdvisorConsultCard({
             <div className="max-w-[560px] mx-auto">
             {/* Header */}
             <div className="text-center mb-6">
-                <h3 className="text-lg lg:text-2xl font-bold text-[#3d2f25] tracking-wide mb-2">
-                    报告看不懂？联系您的专属顾问
+                <h3 className="text-lg lg:text-2xl font-bold text-[#3d2f25] tracking-wide mb-2 flex items-center justify-center gap-2 flex-wrap">
+                    联系您的专属顾问，获取更多专属护肤建议
+                    <span className="inline-flex items-center rounded-full border border-[#C9A86C]/50 bg-[#C9A86C]/15 px-2.5 py-0.5 text-[10px] font-bold tracking-[0.14em] text-[#8c6b3f] leading-none">
+                        FREE
+                    </span>
                 </h3>
                 <p className="text-xs lg:text-sm text-[#8c7a6b]">
                     三步让 AI 护肤顾问读懂你的专属报告
