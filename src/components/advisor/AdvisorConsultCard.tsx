@@ -91,11 +91,11 @@ export default function AdvisorConsultCard({
             </div>
 
             {/* Three steps */}
-            <ol className="space-y-3 mb-6 sm:mb-7">
+            <ol className="grid grid-cols-1 sm:grid-cols-3 gap-y-3 sm:gap-3 mb-6 sm:mb-7">
                 {STEPS.map((step, i) => (
-                    <li key={i} className="flex items-start gap-3">
+                    <li key={i} className="flex sm:flex-col items-start sm:items-center gap-3 sm:gap-2.5 sm:text-center">
                         <span
-                            className={`mt-0.5 w-6 h-6 shrink-0 rounded-full border text-[11px] font-light flex items-center justify-center transition-colors duration-300 ${
+                            className={`mt-0.5 sm:mt-0 w-6 h-6 shrink-0 rounded-full border text-[11px] font-light flex items-center justify-center transition-colors duration-300 ${
                                 copied && i === STEPS.length - 1
                                     ? "bg-[#5c4937] border-[#5c4937] text-white"
                                     : "border-brand-charcoal/25 text-brand-charcoal/60"
@@ -122,8 +122,8 @@ export default function AdvisorConsultCard({
                     disabled={!reportText || copied}
                     className={`group flex flex-col items-center justify-center gap-2 rounded-2xl px-3 py-5 border text-center transition-all duration-300 ${
                         copied
-                            ? "border-[#5c4937]/15 bg-[#F5F2ED] cursor-default"
-                            : "border-[#5c4937]/10 bg-[#FBF9F5] hover:border-[#5c4937]/30 hover:bg-white hover:shadow-[0_6px_20px_rgba(61,47,37,0.10)] hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50"
+                            ? "border-[#5c4937]/15 bg-[#F0EDE8] cursor-default"
+                            : "border-[#5c4937]/12 bg-[#F5F2ED] hover:border-[#5c4937]/30 hover:bg-[#FAF8F4] hover:shadow-[0_6px_20px_rgba(61,47,37,0.10)] hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50"
                     }`}
                 >
                     <span className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors duration-300 ${
@@ -140,23 +140,17 @@ export default function AdvisorConsultCard({
                     <span className={`text-[13px] font-semibold tracking-[0.04em] ${copied ? "text-[#5c4937]" : "text-[#3d2f25]"}`}>
                         {copied ? "已复制" : "复制报告摘要"}
                     </span>
-                    <span className="text-[11px] text-[#8c7a6b] font-light tracking-[0.04em]">
-                        {copied ? "粘贴给顾问即可" : "一键复制，直接粘贴"}
-                    </span>
                 </button>
                 <a
                     href={advisorLink}
                     onClick={onOpenAdvisor}
-                    className="group flex flex-col items-center justify-center gap-2 rounded-2xl px-3 py-5 border border-[#5c4937]/10 bg-[#FBF9F5] text-center transition-all duration-300 hover:border-[#5c4937]/30 hover:bg-white hover:shadow-[0_6px_20px_rgba(61,47,37,0.10)] hover:-translate-y-0.5 active:translate-y-0"
+                    className="group flex flex-col items-center justify-center gap-2 rounded-2xl px-3 py-5 border border-[#5c4937]/12 bg-[#F5F2ED] text-center transition-all duration-300 hover:border-[#5c4937]/30 hover:bg-[#FAF8F4] hover:shadow-[0_6px_20px_rgba(61,47,37,0.10)] hover:-translate-y-0.5 active:translate-y-0"
                 >
                     <span className="w-11 h-11 rounded-full bg-[#5c4937]/10 flex items-center justify-center transition-colors duration-300 group-hover:bg-[#5c4937]/15">
                         <MessageCircle className="w-5 h-5 text-[#5c4937]" />
                     </span>
                     <span className="text-[13px] font-semibold tracking-[0.04em] text-[#3d2f25]">
                         打开护肤顾问
-                    </span>
-                    <span className="text-[11px] text-[#8c7a6b] font-light tracking-[0.04em]">
-                        直达微信客服
                     </span>
                 </a>
             </div>
