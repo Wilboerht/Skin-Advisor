@@ -117,33 +117,43 @@ export default function AdvisorConsultCard({
                 <button
                     onClick={handleCopy}
                     disabled={!reportText || copied}
-                    className={`flex flex-col items-center justify-center gap-2.5 rounded-2xl px-3 py-5 border text-center transition-all duration-300 ${
+                    className={`group flex flex-col items-center justify-center gap-2 rounded-2xl px-3 py-5 border text-center transition-all duration-300 ${
                         copied
-                            ? "border-[#5c4937]/15 bg-[#5c4937]/[0.06] cursor-default"
-                            : "border-[#5c4937]/10 bg-white hover:border-[#5c4937]/30 hover:shadow-[0_4px_16px_rgba(61,47,37,0.08)] disabled:opacity-50"
+                            ? "border-[#5c4937]/15 bg-[#F5F2ED] cursor-default"
+                            : "border-[#5c4937]/10 bg-[#FBF9F5] hover:border-[#5c4937]/30 hover:bg-white hover:shadow-[0_6px_20px_rgba(61,47,37,0.10)] hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50"
                     }`}
                 >
-                    <span className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${copied ? "bg-[#5c4937]/10" : "bg-[#5c4937]"}`}>
+                    <span className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors duration-300 ${
+                        copied
+                            ? "bg-[#5c4937]/10"
+                            : "bg-[#5c4937] shadow-[0_2px_8px_rgba(92,73,55,0.35)] group-hover:bg-[#4a3a2c]"
+                    }`}>
                         {copied ? (
-                            <Check className="w-4 h-4 text-[#5c4937]" />
+                            <Check className="w-5 h-5 text-[#5c4937]" />
                         ) : (
-                            <Copy className="w-4 h-4 text-white" />
+                            <Copy className="w-5 h-5 text-white" />
                         )}
                     </span>
-                    <span className={`text-[13px] font-medium tracking-[0.04em] ${copied ? "text-[#5c4937]" : "text-[#3d2f25]"}`}>
+                    <span className={`text-[13px] font-semibold tracking-[0.04em] ${copied ? "text-[#5c4937]" : "text-[#3d2f25]"}`}>
                         {copied ? "已复制" : "复制报告摘要"}
+                    </span>
+                    <span className="text-[11px] text-[#8c7a6b] font-light tracking-[0.04em]">
+                        {copied ? "粘贴给顾问即可" : "一键复制，直接粘贴"}
                     </span>
                 </button>
                 <a
                     href={advisorLink}
                     onClick={onOpenAdvisor}
-                    className="flex flex-col items-center justify-center gap-2.5 rounded-2xl px-3 py-5 border border-[#5c4937]/10 bg-white text-center transition-all duration-300 hover:border-[#5c4937]/30 hover:shadow-[0_4px_16px_rgba(61,47,37,0.08)]"
+                    className="group flex flex-col items-center justify-center gap-2 rounded-2xl px-3 py-5 border border-[#5c4937]/10 bg-[#FBF9F5] text-center transition-all duration-300 hover:border-[#5c4937]/30 hover:bg-white hover:shadow-[0_6px_20px_rgba(61,47,37,0.10)] hover:-translate-y-0.5 active:translate-y-0"
                 >
-                    <span className="w-10 h-10 rounded-full bg-[#5c4937]/10 flex items-center justify-center">
-                        <MessageCircle className="w-4 h-4 text-[#5c4937]" />
+                    <span className="w-11 h-11 rounded-full bg-[#5c4937]/10 flex items-center justify-center transition-colors duration-300 group-hover:bg-[#5c4937]/15">
+                        <MessageCircle className="w-5 h-5 text-[#5c4937]" />
                     </span>
-                    <span className="text-[13px] font-medium tracking-[0.04em] text-[#3d2f25]">
+                    <span className="text-[13px] font-semibold tracking-[0.04em] text-[#3d2f25]">
                         打开护肤顾问
+                    </span>
+                    <span className="text-[11px] text-[#8c7a6b] font-light tracking-[0.04em]">
+                        直达微信客服
                     </span>
                 </a>
             </div>
