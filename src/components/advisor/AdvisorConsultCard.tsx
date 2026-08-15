@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Check, Copy, MessageCircle, QrCode } from "lucide-react";
+import { Fragment, useState } from "react";
+import { ArrowRight, Check, Copy, MessageCircle, QrCode } from "lucide-react";
 import { ADVISOR_WECOM_LINK } from "@/lib/advisor-report-text";
 
 interface AdvisorConsultCardProps {
@@ -79,10 +79,12 @@ export default function AdvisorConsultCard({
             <div className="max-w-[560px] mx-auto">
             {/* Header */}
             <div className="text-center mb-6">
-                <h3 className="text-lg lg:text-2xl font-bold text-[#3d2f25] tracking-wide mb-2 flex items-center justify-center gap-2 flex-wrap">
-                    联系您的专属顾问，获取更多专属护肤建议
-                    <span className="inline-flex items-center rounded-full border border-[#C9A86C]/50 bg-[#C9A86C]/15 px-2.5 py-0.5 text-[10px] font-bold tracking-[0.14em] text-[#8c6b3f] leading-none">
-                        FREE
+                <h3 className="text-[17px] sm:text-lg lg:text-2xl font-bold text-[#3d2f25] tracking-wide mb-2">
+                    <span className="relative inline-block">
+                        联系您的专属顾问，获取更多专属护肤建议
+                        <span className="absolute left-full top-1/2 -translate-y-1/2 ml-1.5 sm:ml-2 inline-flex items-center rounded-full border border-[#C9A86C]/50 bg-[#C9A86C]/15 px-2 sm:px-2.5 py-0.5 text-[9px] sm:text-[10px] font-bold tracking-[0.14em] text-[#8c6b3f] leading-none whitespace-nowrap">
+                            FREE
+                        </span>
                     </span>
                 </h3>
                 <p className="text-xs lg:text-sm text-[#8c7a6b]">
@@ -91,27 +93,35 @@ export default function AdvisorConsultCard({
             </div>
 
             {/* Three steps */}
-            <ol className="grid grid-cols-1 sm:grid-cols-3 gap-y-3 sm:gap-3 mb-6 sm:mb-7">
+            <ol className="flex flex-col sm:flex-row sm:justify-center gap-y-4 sm:gap-1 mb-6 sm:mb-7">
                 {STEPS.map((step, i) => (
-                    <li key={i} className="flex sm:flex-col items-start sm:items-center gap-3 sm:gap-2.5 sm:text-center">
-                        <span
-                            className={`mt-0.5 sm:mt-0 w-6 h-6 shrink-0 rounded-full border text-[11px] font-light flex items-center justify-center transition-colors duration-300 ${
-                                copied && i === STEPS.length - 1
-                                    ? "bg-[#5c4937] border-[#5c4937] text-white"
-                                    : "border-brand-charcoal/25 text-brand-charcoal/60"
-                            }`}
-                            aria-hidden="true"
-                        >
-                            {copied && i === STEPS.length - 1 ? (
-                                <Check className="w-3.5 h-3.5" />
-                            ) : (
-                                i + 1
-                            )}
-                        </span>
-                        <span className="text-[13px] sm:text-sm text-brand-charcoal/85 font-medium tracking-[0.04em] leading-6">
-                            {step.label}
-                        </span>
-                    </li>
+                    <Fragment key={i}>
+                        <li className="flex flex-1 sm:flex-none sm:max-w-[150px] sm:flex-col items-start sm:items-center gap-3 sm:gap-2.5 sm:text-center sm:px-1">
+                            <span
+                                className={`mt-0.5 sm:mt-0 w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-[12px] font-semibold transition-colors duration-300 shadow-[0_1px_4px_rgba(92,73,55,0.15)] ${
+                                    copied && i === STEPS.length - 1
+                                        ? "bg-[#5c4937] border border-[#5c4937] text-white"
+                                        : "bg-[#5c4937]/[0.06] border border-[#5c4937]/20 text-[#5c4937]"
+                                }`}
+                                aria-hidden="true"
+                            >
+                                {copied && i === STEPS.length - 1 ? (
+                                    <Check className="w-3.5 h-3.5" />
+                                ) : (
+                                    i + 1
+                                )}
+                            </span>
+                            <span className="text-[13px] sm:text-sm text-[#3d2f25]/90 font-medium tracking-[0.03em] leading-6">
+                                {step.label}
+                            </span>
+                        </li>
+                        {i < STEPS.length - 1 && (
+                            <ArrowRight
+                                className="hidden sm:block w-4 h-4 text-[#5c4937]/25 shrink-0 self-start sm:mt-2"
+                                aria-hidden="true"
+                            />
+                        )}
+                    </Fragment>
                 ))}
             </ol>
 
