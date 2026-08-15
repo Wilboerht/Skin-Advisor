@@ -77,10 +77,10 @@ export default function AdvisorConsultCard({
             <div className="max-w-[560px] mx-auto">
             {/* Header */}
             <div className="text-center mb-6">
-                <h3 className="text-[17px] sm:text-lg lg:text-2xl font-bold text-[#3d2f25] tracking-wide mb-2">
+                <h3 className="text-[17px] sm:text-lg lg:text-2xl font-bold text-[#3d2f25] tracking-wide mb-2 pb-4 sm:pb-0">
                     <span className="relative inline-block">
                         联系您的专属顾问，获取更多专属护肤建议
-                        <span className="absolute left-full top-1/2 -translate-y-1/2 ml-1.5 sm:ml-2 inline-flex items-center rounded-full border border-[#C9A86C]/50 bg-[#C9A86C]/15 px-2 sm:px-2.5 py-0.5 text-[9px] sm:text-[10px] font-bold tracking-[0.14em] text-[#8c6b3f] leading-none whitespace-nowrap">
+                        <span className="absolute top-full left-1/2 -translate-x-1/2 mt-1 sm:mt-0 sm:top-1/2 sm:left-full sm:-translate-y-1/2 sm:translate-x-0 sm:ml-2 inline-flex items-center rounded-full border border-[#C9A86C]/50 bg-[#C9A86C]/15 px-2 sm:px-2.5 py-0.5 text-[9px] sm:text-[10px] font-bold tracking-[0.14em] text-[#8c6b3f] leading-none whitespace-nowrap">
                             FREE
                         </span>
                     </span>
