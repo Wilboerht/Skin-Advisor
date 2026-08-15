@@ -14,19 +14,13 @@ import {
 } from "recharts";
 import type { LabelProps } from "recharts";
 import type { SkinDimensions, SkinDimensionKey } from "@/lib/advisor-utils";
-import { DIMENSION_LABELS } from "@/lib/advisor-utils";
+import { DIMENSION_LABELS, DIMENSION_ORDER } from "@/lib/advisor-utils";
 
 interface ScientificBarChartProps {
     dimensions: SkinDimensions;
     activeDimension?: string | null;
     onDimensionSelect?: (key: SkinDimensionKey) => void;
 }
-
-const DIMENSION_ORDER: SkinDimensionKey[] = [
-    'radiance', 'acne', 'firmness', 'darkCircles',
-    'sensitivity', 'uvDamage', 'wrinkles', 'spots',
-    'skinTone', 'waterOil'
-];
 
 const getScoreColor = (score: number) => {
     if (score >= 80) return "#10b981"; // Green

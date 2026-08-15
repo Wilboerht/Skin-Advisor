@@ -2,6 +2,8 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
+import Image from "next/image";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 
 interface ContactAdvisorModalProps {
     isOpen: boolean;
@@ -9,6 +11,8 @@ interface ContactAdvisorModalProps {
 }
 
 export function ContactAdvisorModal({ isOpen, onClose }: ContactAdvisorModalProps) {
+    const modalRef = useFocusTrap<HTMLDivElement>(isOpen);
+
     return (
         <AnimatePresence>
             {isOpen && (
@@ -24,16 +28,27 @@ export function ContactAdvisorModal({ isOpen, onClose }: ContactAdvisorModalProp
 
                     {/* Modal Content */}
                     <motion.div
+                        ref={modalRef}
                         initial={{ opacity: 0, scale: 0.96, y: 10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.96, y: 10 }}
                         transition={{ type: "spring", damping: 25, stiffness: 300 }}
                         className="relative z-10 w-full max-w-[420px] bg-white rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="联系顾问"
                         onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                        onKeyDown={(e) => {
+                            if (e.key === "Escape") {
+                                e.stopPropagation();
+                                onClose();
+                            }
+                        }}
                     >
                         {/* Close Button */}
                         <button
                             onClick={onClose}
+                            aria-label="关闭"
                             className="absolute top-6 right-6 z-20 w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
                         >
                             <X size={16} strokeWidth={2.5} />
@@ -42,10 +57,12 @@ export function ContactAdvisorModal({ isOpen, onClose }: ContactAdvisorModalProp
                         {/* Header */}
                         <div className="p-10 pt-14 text-center pb-6">
                             <div className="mb-7 flex justify-center">
-                                <img
+                                <Image
                                     src="/NIHPLOD-logo.svg"
                                     alt="NIHPLOD"
-                                    className="h-[34px] object-contain"
+                                    width={136}
+                                    height={34}
+                                    className="h-[34px] w-auto object-contain"
                                 />
                             </div>
                             <p className="text-slate-400 text-sm font-bold tracking-widest uppercase">
@@ -57,9 +74,11 @@ export function ContactAdvisorModal({ isOpen, onClose }: ContactAdvisorModalProp
                         <div className="px-10 pb-10 pt-2 flex flex-col items-center gap-6">
                             {/* Advisor QR Code */}
                             <div className="w-[200px] h-[200px] rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden">
-                                <img
+                                <Image
                                     src="/images/advisor-qr.jpg"
                                     alt="顾问二维码"
+                                    width={200}
+                                    height={200}
                                     className="w-full h-full object-cover"
                                 />
                             </div>

@@ -18,7 +18,7 @@ import {
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
 import type { FaceAnalysisResult } from "@/lib/advisor-utils";
-import { DIMENSION_LABELS, DIMENSION_DESCRIPTIONS } from "@/lib/advisor-utils";
+import { DIMENSION_LABELS, DIMENSION_DESCRIPTIONS, DIMENSION_ORDER } from "@/lib/advisor-utils";
 import { normalizeAnalysisResult, type ComprehensiveResult } from "@/lib/analysis-result";
 import { getRankPercentile, getCharacterImage } from "@/lib/result-utils";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
@@ -50,6 +50,7 @@ import { AnalyzingOverlay } from "@/components/advisor/AnalyzingOverlay";
 import { skinTypes } from "@/lib/result-content";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { ResultErrorBoundary } from "@/components/advisor/ResultErrorBoundary";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 
 // Re-export for backward compatibility with existing imports
 export { normalizeAnalysisResult, type ComprehensiveResult } from "@/lib/analysis-result";
@@ -98,7 +99,7 @@ function getErrorRetryLabel(): string {
 
 // 手机端：十维分析表单（替代 ScientificBarChart）
 function MobileDimensionForm({ dimensions }: { dimensions: Record<string, { score?: number } | undefined> }) {
-    const order = ['radiance', 'acne', 'firmness', 'darkCircles', 'sensitivity', 'uvDamage', 'wrinkles', 'spots', 'skinTone', 'waterOil'];
+    const order = DIMENSION_ORDER;
 
     return (
         <div className="sm:hidden mb-5">
@@ -224,9 +225,10 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
 
     // Pre-generate QR code for poster (avoids race condition on save click)
     useEffect(() => {
+        const siteBase = process.env.NEXT_PUBLIC_SITE_URL || "https://advisor.nihplod.cn";
         const qrUrl = sessionId
-            ? `https://advisor.nihplod.cn/?ref=poster_${sessionId}`
-            : "https://advisor.nihplod.cn/gift";
+            ? `${siteBase}/?ref=poster_${sessionId}`
+            : `${siteBase}/gift`;
         toDataURL(
             qrUrl,
             { width: 80, margin: 1, color: { dark: "#00263E", light: "#0000" } }
@@ -256,6 +258,23 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
     const [userNickname, setUserNickname] = useState<string>(user?.name || "您");
     const [socialGender, setSocialGender] = useState<string>(''); // Initialize empty to avoid flash mismatch
 
+    // 性别恢复：独立执行，保证 initialData（历史报告）提前 return 的路径也能恢复性别。
+    // 缺失时回退到面部分析检测的性别，避免 IP 形象/海报头像长期为默认值。
+    useEffect(() => {
+        if (socialGender === 'male' || socialGender === 'female') return;
+        try {
+            const storedGender = localStorage.getItem(STORAGE_KEYS.ADVISOR_GENDER);
+            if (storedGender === 'male' || storedGender === 'female') {
+                setSocialGender(storedGender);
+                return;
+            }
+        } catch { /* ignore */ }
+        const faGender = faceAnalysis?.gender?.value;
+        if (faGender === 'male' || faGender === 'female') {
+            setSocialGender(faGender);
+        }
+    }, [socialGender, faceAnalysis]);
+
     // IP 匹配所需数据
     const [ipBudget, setIpBudget] = useState<string | undefined>(undefined);
     const [ipSkincareFrequency, setIpSkincareFrequency] = useState<string | undefined>(undefined);
@@ -275,6 +294,8 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
     const [showContactAdvisor, setShowContactAdvisor] = useState(false);
     const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
     const [posterError, setPosterError] = useState<string | null>(null);
+    // 微信内嵌浏览器无法可靠触发下载，生成后改用「长按保存」引导弹窗
+    const [savedPosterForSave, setSavedPosterForSave] = useState<string | null>(null);
     const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
     const [preloadedPosterBlob, setPreloadedPosterBlob] = useState<Blob | null>(null);
     // Active campaign for countdown
@@ -383,6 +404,11 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
         }
     }, [showGenderMismatchModal]);
 
+    // 弹窗焦点陷阱（Tab 循环 + 关闭后焦点还原）
+    const genderModalRef = useFocusTrap<HTMLDivElement>(!!showGenderMismatchModal);
+    const labModalRef = useFocusTrap<HTMLDivElement>(showLabData);
+    const savePosterModalRef = useFocusTrap<HTMLDivElement>(savedPosterForSave !== null);
+
     // 页面进入后后台预加载海报素材
     useEffect(() => {
         if (!result) return;
@@ -401,8 +427,9 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
     }, [result, faceAnalysis?.overallScore, result?.skinProfile?.type, ipBudget, ipSkincareFrequency, socialGender]);
 
     // 后台预生成海报 blob：素材和二维码就绪后延迟执行，点击保存时直接使用
+    // 性别就绪后才生成，避免把默认女版头像烘焙进海报缓存
     useEffect(() => {
-        if (!result || !qrDataUrl || preloadedPosterBlob) return;
+        if (!result || !qrDataUrl || preloadedPosterBlob || !socialGender) return;
 
         let cancelled = false;
         const timer = setTimeout(async () => {
@@ -430,7 +457,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
             cancelled = true;
             clearTimeout(timer);
         };
-    }, [result, qrDataUrl, preloadedPosterBlob]);
+    }, [result, qrDataUrl, preloadedPosterBlob, socialGender]);
 
     const handleMismatchRetry = () => {
         // Clear previous answers to force a fresh start
@@ -499,10 +526,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                     setUserNickname(user.name);
                 }
 
-                // Restore Gender
-                const storedGender = localStorage.getItem(STORAGE_KEYS.ADVISOR_GENDER);
-                if (storedGender) setSocialGender(storedGender);
-
+                // Restore Gender（独立 effect 已负责恢复，这里不再重复设置）
                 // Restore budget & skincare frequency for IP matching
                 const answersStr = localStorage.getItem(STORAGE_KEYS.ADVISOR_ANSWERS);
                 if (answersStr) {
@@ -742,6 +766,17 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                 throw new Error("海报生成结果为空");
             }
 
+            // 微信移动端内置浏览器：<a download> 与 navigator.share(files) 均不可靠，
+            // 改为展示海报图片，引导用户长按保存到相册
+            const isWeChatMobile = typeof navigator !== "undefined" &&
+                /MicroMessenger/i.test(navigator.userAgent) &&
+                (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || navigator.maxTouchPoints > 1);
+            if (isWeChatMobile) {
+                setSavedPosterForSave(URL.createObjectURL(blob));
+                trackResultShare("image");
+                return;
+            }
+
             const safeName = sanitizeFilename(userNickname || "用户");
             await triggerDownload(blob, `${safeName}的肌智派证书.png`);
             trackResultShare("image");
@@ -751,6 +786,11 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
         } finally {
             setIsGeneratingPoster(false);
         }
+    };
+
+    const closePosterSaveModal = () => {
+        if (savedPosterForSave) URL.revokeObjectURL(savedPosterForSave);
+        setSavedPosterForSave(null);
     };
 
     // --- Auto-Claim Session ---
@@ -964,7 +1004,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                 <div className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-brand-charcoal/[0.08] shadow-sm">
                     <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                         <div className="sm:w-[60%] text-center sm:text-left">
-                            <h3 className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-3 sm:mb-2">未授权访问</h3>
+                            <h3 className="text-lg font-bold text-[#3d2f25] mb-3 sm:mb-2">未授权访问</h3>
                             <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">请从首页开始皮肤测评，完成问卷后即可查看您的分析报告。</p>
                         </div>
                         <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
@@ -991,7 +1031,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                 <div className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-brand-charcoal/[0.08] shadow-sm">
                     <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                         <div className="sm:w-[60%] text-center sm:text-left">
-                            <h3 className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-3 sm:mb-2">分析遇到了一些问题</h3>
+                            <h3 className="text-lg font-bold text-[#3d2f25] mb-3 sm:mb-2">分析遇到了一些问题</h3>
                             <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">
                                 {analysisState.error || "服务器暂时无法响应，请稍后再试。"}
                             </p>
@@ -1023,7 +1063,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                 <div className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-brand-charcoal/[0.08] shadow-sm">
                     <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                         <div className="sm:w-[60%] text-center sm:text-left">
-                            <h3 className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-3 sm:mb-2">报告暂时无法加载</h3>
+                            <h3 className="text-lg font-bold text-[#3d2f25] mb-3 sm:mb-2">报告暂时无法加载</h3>
                             <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">请重新开始一次肌肤检测，获取您的专属分析报告。</p>
                         </div>
                         <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
@@ -1066,6 +1106,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                         className="fixed inset-0 z-[300] bg-brand-charcoal/40 backdrop-blur-sm flex items-center justify-center p-4"
                     >
                         <m.div
+                            ref={genderModalRef}
                             initial={{ scale: 0.95, opacity: 0, y: 8 }}
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.95, opacity: 0, y: 8 }}
@@ -1199,7 +1240,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                         {/* Report Summary Cards */}
                         <ResultCards
                             score={faceAnalysis?.overallScore ?? undefined}
-                            skinAge={result?.skinProfile?.skinAge ?? 25}
+                            skinAge={result?.skinProfile?.skinAge}
                             dimensions={faceAnalysis?.dimensions || {}}
                             nickname={userNickname}
                             gender={socialGender}
@@ -1339,9 +1380,10 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
 
                                     {/* Lab-Grade Analysis Metrics */}
                                     {result?.dataSource !== "questionnaire" && faceAnalysis && (
-                                        <div
-                                            className="rounded-xl border border-[#3d2f25]/15 bg-[#3d2f25]/5 shadow-sm overflow-hidden font-sans cursor-pointer hover:bg-[#3d2f25]/[0.07] transition-colors"
+                                        <button
+                                            type="button"
                                             onClick={() => setShowLabData(true)}
+                                            className="w-full text-left rounded-xl border border-[#3d2f25]/15 bg-[#3d2f25]/5 shadow-sm overflow-hidden font-sans cursor-pointer hover:bg-[#3d2f25]/[0.07] transition-colors"
                                         >
                                             <div className="px-5 py-3 flex justify-between items-center">
                                                 <div className="flex items-center gap-2">
@@ -1360,7 +1402,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                                     联系您的专属护肤顾问，或咨询门店顾问获取专业分析解读
                                                 </p>
                                             </div>
-                                        </div>
+                                        </button>
                                     )}
                                 </>
                             }
@@ -1383,11 +1425,21 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                         onClick={() => setShowLabData(false)}
                                     />
                                     <m.div
+                                        ref={labModalRef}
                                         className="relative z-10 w-full max-w-3xl max-h-[85vh] rounded-2xl border border-[#3d2f25]/10 shadow-2xl flex flex-col bg-[#F5F2ED]"
                                         initial={{ opacity: 0, scale: 0.95, y: 20 }}
                                         animate={{ opacity: 1, scale: 1, y: 0 }}
                                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
                                         transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                                        role="dialog"
+                                        aria-modal="true"
+                                        aria-label="定制化专业分析数据详情"
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Escape") {
+                                                e.stopPropagation();
+                                                setShowLabData(false);
+                                            }
+                                        }}
                                     >
                                         <button
                                             onClick={() => setShowLabData(false)}
@@ -1493,7 +1545,6 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                     trackProductClick(productId, product.name);
                                 }
                             }}
-                            className={styles.fadeInUp}
                             centered
                         />
                     </div>
@@ -1597,13 +1648,13 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                             waterOil={faceAnalysis?.dimensions?.waterOil?.score}
                             skinTypeName={result?.persona ? skinTypes.find(t => t.ipKey === result.persona)?.typeName : undefined}
                             skinAge={result?.skinProfile?.skinAge}
-                            avatar={getCharacterImage({
+                            avatar={socialGender ? getCharacterImage({
                                 score: faceAnalysis?.overallScore ?? 0,
                                 skinType: result?.skinProfile?.type || 'combination',
                                 budget: ipBudget,
                                 skincareFrequency: ipSkincareFrequency,
                                 gender: socialGender,
-                            })}
+                            }) : ""}
                             posterTemplate="/images/poster-template.png?v=4"
                             posterOverlay="/images/poster-overlay.png"
                             qrDataUrl={qrDataUrl}
@@ -1611,6 +1662,65 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                             summary={result?.analysis?.summary}
                         />
                     </div>
+
+                    {/* 微信内嵌浏览器海报保存兜底：长按图片保存引导 */}
+                    <AnimatePresence>
+                        {savedPosterForSave && (
+                            <m.div
+                                className="fixed inset-0 z-[99998] flex items-center justify-center p-4"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                            >
+                                <m.div
+                                    className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    onClick={closePosterSaveModal}
+                                />
+                                <m.div
+                                    ref={savePosterModalRef}
+                                    initial={{ scale: 0.95, opacity: 0, y: 12 }}
+                                    animate={{ scale: 1, opacity: 1, y: 0 }}
+                                    exit={{ scale: 0.95, opacity: 0, y: 12 }}
+                                    transition={{ type: "spring", stiffness: 300, damping: 28 }}
+                                    className="relative z-10 w-full max-w-[420px] rounded-2xl bg-white p-5 text-center shadow-xl"
+                                    role="dialog"
+                                    aria-modal="true"
+                                    aria-label="保存素颜证书"
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Escape") {
+                                            e.stopPropagation();
+                                            closePosterSaveModal();
+                                        }
+                                    }}
+                                >
+                                    <p className="text-[15px] font-medium text-[#3d2f25] mb-1">长按图片保存证书</p>
+                                    <p className="text-[12px] text-[#8c7a6b] mb-4">
+                                        微信内长按下方图片，选择「保存图片」即可存入相册
+                                    </p>
+                                    <div className="mx-auto w-full max-w-[300px] rounded-xl overflow-hidden border border-black/5 bg-[#F5F2ED]">
+                                        <Image
+                                            src={savedPosterForSave}
+                                            alt="肌智派证书海报"
+                                            width={480}
+                                            height={640}
+                                            unoptimized
+                                            className="w-full h-auto"
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={closePosterSaveModal}
+                                        className="mt-4 inline-flex items-center justify-center gap-2 px-8 py-2.5 rounded-full border border-[#5c4937]/30 text-[#5c4937] text-[13px] tracking-[0.1em] font-medium hover:bg-[#5c4937]/5 transition-colors"
+                                    >
+                                        已保存，关闭
+                                    </button>
+                                </m.div>
+                            </m.div>
+                        )}
+                    </AnimatePresence>
+
                     <ContactAdvisorModal
                         isOpen={showContactAdvisor}
                         onClose={() => setShowContactAdvisor(false)}

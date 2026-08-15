@@ -14,7 +14,7 @@ interface Dimension {
 
 interface ResultCardsProps {
   score?: number;
-  skinAge: number;
+  skinAge?: number;
   dimensions: Record<string, Dimension | undefined>;
   nickname: string;
   gender?: string;
@@ -64,7 +64,7 @@ export default function ResultCards({
   skinAge,
   dimensions,
   nickname,
-  gender = 'female',
+  gender = '',
   skinType = 'combination',
   budget,
   skincareFrequency,
@@ -77,6 +77,8 @@ export default function ResultCards({
   comprehensiveReport,
 }: ResultCardsProps) {
   const ipParams: IPMatchParams = { score: score ?? 0, skinType, budget, skincareFrequency };
+  // 性别未就绪时不渲染 IP 形象，避免男性用户首帧闪现女版角色
+  const characterReady = gender === 'male' || gender === 'female';
   const characterImage = getCharacterImage({ ...ipParams, gender });
   const skinTypeName = getSkinTypeName(ipParams);
 
@@ -119,17 +121,20 @@ export default function ResultCards({
               aria-hidden="true"
             />
           </div>
-          <Image
-            src={characterImgSrc}
-            alt={skinTypeName}
-            width={280}
-            height={280}
-            className="relative z-10 h-[270px] w-[270px] object-contain drop-shadow-[0_3px_8px_rgba(92,73,55,0.12)]"
-            priority
-            onError={handleCharacterImageError}
-          />
+          {characterReady ? (
+            <Image
+              src={characterImgSrc}
+              alt={skinTypeName}
+              width={280}
+              height={280}
+              className="relative z-10 h-[270px] w-[270px] object-contain drop-shadow-[0_3px_8px_rgba(92,73,55,0.12)]"
+              priority
+              onError={handleCharacterImageError}
+            />
+          ) : (
+            <div className="relative z-10 h-[270px] w-[270px]" aria-hidden="true" />
+          )}
         </div>
-        {/* Share Version Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -189,17 +194,19 @@ export default function ResultCards({
           </div>
 
           {/* Desktop: Character IP Image (absolute right) */}
-          <div className="hidden lg:block absolute right-0 top-[40%] -translate-y-1/2 z-0 pointer-events-none">
-            <Image
-              src={characterImgSrc}
-              alt={skinTypeName}
-              width={320}
-              height={320}
-              className="w-[320px] h-[320px] object-contain object-right"
-              priority
-              onError={handleCharacterImageError}
-            />
-          </div>
+          {characterReady && (
+            <div className="hidden lg:block absolute right-0 top-[40%] -translate-y-1/2 z-0 pointer-events-none">
+              <Image
+                src={characterImgSrc}
+                alt={skinTypeName}
+                width={320}
+                height={320}
+                className="w-[320px] h-[320px] object-contain object-right"
+                priority
+                onError={handleCharacterImageError}
+              />
+            </div>
+          )}
         </div>
       </motion.div>
       </div>
@@ -259,26 +266,28 @@ export default function ResultCards({
             </motion.div>
 
             {/* Skin Age */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.35 }}
-              className="p-3 lg:p-4 rounded-xl lg:rounded-2xl flex flex-row lg:flex-col items-center lg:items-start justify-between lg:aspect-[2/3] min-h-[48px] lg:min-h-0 relative overflow-hidden"
-              style={{
-                background: '#EBE8E2',
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)',
-              }}
-            >
-              <div className="flex flex-row lg:flex-col items-center lg:items-start gap-2 lg:justify-between w-full h-full relative z-20">
-                <p className="text-xs lg:text-xs text-[#7a6552] font-medium shrink-0">肌肤年龄</p>
-                <div className="flex items-baseline">
-                  <span className="text-xs lg:text-3xl font-bold text-[#00263e] lg:text-[#5c4937] leading-none">
-                    <AnimatedNumber value={skinAge} duration={1.5} />
-                  </span>
-                  <span className="text-xs lg:text-xs text-[#7a6552] ml-0.5 font-medium">岁</span>
+            {skinAge !== undefined && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.35 }}
+                className="p-3 lg:p-4 rounded-xl lg:rounded-2xl flex flex-row lg:flex-col items-center lg:items-start justify-between lg:aspect-[2/3] min-h-[48px] lg:min-h-0 relative overflow-hidden"
+                style={{
+                  background: '#EBE8E2',
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)',
+                }}
+              >
+                <div className="flex flex-row lg:flex-col items-center lg:items-start gap-2 lg:justify-between w-full h-full relative z-20">
+                  <p className="text-xs lg:text-xs text-[#7a6552] font-medium shrink-0">肌肤年龄</p>
+                  <div className="flex items-baseline">
+                    <span className="text-xs lg:text-3xl font-bold text-[#00263e] lg:text-[#5c4937] leading-none">
+                      <AnimatedNumber value={skinAge} duration={1.5} />
+                    </span>
+                    <span className="text-xs lg:text-xs text-[#7a6552] ml-0.5 font-medium">岁</span>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            )}
 
             {/* T-zone Indicator */}
             <motion.div

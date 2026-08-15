@@ -2,9 +2,6 @@ import { Metadata } from "next";
 import ResultClient from "./ResultClient";
 import { getSessionUser } from "@/lib/sso-auth";
 import { redirect } from "next/navigation";
-import prisma from "@/lib/prisma";
-import { normalizeAnalysisResult, type ComprehensiveResult } from "@/lib/analysis-result";
-import type { FaceAnalysisResult } from "@/lib/advisor-utils";
 
 export default async function ResultPage(props: {
     searchParams: Promise<{ id?: string; status?: string }>;
@@ -17,36 +14,12 @@ export default async function ResultPage(props: {
     // /result 只表示「当前结果」。
     // 登录用户且 URL 带了已完成报告的 id 时，直接跳转到历史报告页 /reports/:id，
     // 避免客户端先渲染 /result 再跳转的闪烁。
+    // 会话数据由 ResultClient 客户端恢复（localStorage / 分析流程），此处无需重复预加载。
     if (id && status !== 'analyzing' && user) {
         redirect(`/reports/${id}`);
     }
 
-    let initialData: { result: ComprehensiveResult; faceAnalysis: FaceAnalysisResult | null } | null = null;
-
-    // 服务端预加载：登录用户携带 id 且非分析中时，直接查询该会话
-    if (id && status !== 'analyzing' && user) {
-        try {
-            const session = await prisma.advisorSession.findUnique({
-                where: { sessionId: id, userId: user.id },
-                select: { analysisResult: true, expiresAt: true },
-            });
-            if (session?.analysisResult && (!session.expiresAt || new Date() <= new Date(session.expiresAt))) {
-                const rawResult = session.analysisResult as unknown as Record<string, unknown>;
-                const result = normalizeAnalysisResult(rawResult);
-                if (result) {
-                    result.expiresAt = session.expiresAt?.toISOString();
-                    initialData = {
-                        result,
-                        faceAnalysis: (rawResult.faceAnalysis as FaceAnalysisResult | null) || null,
-                    };
-                }
-            }
-        } catch (e) {
-            console.error("Failed to preload result session:", e);
-        }
-    }
-
-    return <ResultClient id={id} initialData={initialData} user={user} />;
+    return <ResultClient id={id} initialData={null} user={user} />;
 }
 
 export async function generateMetadata(): Promise<Metadata> {

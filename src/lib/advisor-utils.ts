@@ -127,6 +127,13 @@ export const DIMENSION_DESCRIPTIONS: Record<string, string> = {
     radiance: "皮肤表面光泽感与通透度"
 };
 
+// 十维分析展示顺序：PC 条形图与移动端表单共用，避免两处硬编码漂移
+export const DIMENSION_ORDER: SkinDimensionKey[] = [
+    'radiance', 'acne', 'firmness', 'darkCircles',
+    'sensitivity', 'uvDamage', 'wrinkles', 'spots',
+    'skinTone', 'waterOil'
+];
+
 export function getSkinTypeLabel(type: string): string {
     const map: Record<string, string> = {
         dry: "干性肌肤",

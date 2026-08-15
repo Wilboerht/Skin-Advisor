@@ -146,7 +146,7 @@ export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitS
                         }}
                         disabled={isExiting}
                         className="absolute top-8 right-4 md:right-12 lg:right-20 z-50 flex items-center gap-2 transition-all group text-brand-charcoal/60 hover:text-brand-charcoal disabled:opacity-30 disabled:cursor-not-allowed"
-                        aria-label="Exit analysis"
+                        aria-label="退出测试"
                     >
                         <span className="text-[12px] font-light tracking-[0.12em] transition-colors">
                             {isExiting ? "退出中..." : "退出测试"}
