@@ -1550,7 +1550,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                     </div>
 
                     {/* Global Footer */}
-                    <footer className="w-full bg-transparent mt-0 py-12">
+                    <footer className="w-full bg-transparent mt-0 pb-12">
                         <div className="max-w-[900px] mx-auto px-6 lg:px-10">
                             {/* 咨询护肤顾问：三步引导 + 一键复制报告摘要 + 直达微信客服 */}
                             <AdvisorConsultCard

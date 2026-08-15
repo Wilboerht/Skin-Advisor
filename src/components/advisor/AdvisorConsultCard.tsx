@@ -74,7 +74,7 @@ export default function AdvisorConsultCard({
     return (
         <section
             aria-label="咨询护肤顾问"
-            className="w-full mt-12 pt-10 border-t border-brand-charcoal/[0.08]"
+            className="w-full mt-6 pt-10 border-t border-brand-charcoal/[0.08]"
         >
             <div className="max-w-[560px] mx-auto">
             {/* Header */}
@@ -105,7 +105,7 @@ export default function AdvisorConsultCard({
                                 i + 1
                             )}
                         </span>
-                        <span className="text-[13px] text-brand-charcoal/70 font-light tracking-[0.04em] leading-6">
+                        <span className="text-[13px] sm:text-sm text-brand-charcoal/85 font-medium tracking-[0.04em] leading-6">
                             {step.label}
                         </span>
                     </li>
@@ -173,9 +173,9 @@ export default function AdvisorConsultCard({
                 <div className="mt-6 pt-5 border-t border-dashed border-brand-charcoal/[0.08] text-center">
                     <button
                         onClick={onOpenQr}
-                        className="inline-flex items-center gap-1.5 text-[12px] text-brand-charcoal/45 tracking-[0.08em] font-light transition-colors hover:text-brand-charcoal/75"
+                        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full border border-dashed border-[#8c7a6b]/45 bg-[#8c7a6b]/[0.05] text-[12px] sm:text-[13px] tracking-[0.06em] text-[#7a6552] font-medium transition-all duration-300 hover:text-[#5c4937] hover:border-[#5c4937]/50 hover:bg-[#5c4937]/5"
                     >
-                        <QrCode className="w-3.5 h-3.5" />
+                        <QrCode className="w-4 h-4" />
                         也可扫码关注服务号，获取更多定制化服务
                     </button>
                 </div>
