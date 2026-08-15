@@ -96,7 +96,7 @@ export default function AdvisorConsultCard({
             <ol className="flex flex-col sm:flex-row sm:justify-center gap-y-4 sm:gap-1 mb-6 sm:mb-7">
                 {STEPS.map((step, i) => (
                     <Fragment key={i}>
-                        <li className="flex flex-1 sm:flex-none sm:max-w-[150px] sm:flex-col items-start sm:items-center gap-3 sm:gap-2.5 sm:text-center sm:px-1">
+                        <li className="flex flex-1 sm:flex-col items-start sm:items-center gap-3 sm:gap-2.5 sm:text-center sm:px-1">
                             <span
                                 className={`mt-0.5 sm:mt-0 w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-[12px] font-semibold transition-colors duration-300 shadow-[0_1px_4px_rgba(92,73,55,0.15)] ${
                                     copied && i === STEPS.length - 1
@@ -111,7 +111,7 @@ export default function AdvisorConsultCard({
                                     i + 1
                                 )}
                             </span>
-                            <span className="text-[13px] sm:text-sm text-[#3d2f25]/90 font-medium tracking-[0.03em] leading-6">
+                            <span className="text-[13px] sm:text-sm text-[#3d2f25]/90 font-medium tracking-[0.03em] leading-6 sm:whitespace-nowrap">
                                 {step.label}
                             </span>
                         </li>
