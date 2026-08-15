@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Check, Copy, MessageCircle, QrCode } from "lucide-react";
+import { Check, Copy, MessageCircle, QrCode } from "lucide-react";
 import { ADVISOR_WECOM_LINK } from "@/lib/advisor-report-text";
 
 interface AdvisorConsultCardProps {
@@ -74,7 +74,7 @@ export default function AdvisorConsultCard({
     return (
         <section
             aria-label="咨询护肤顾问"
-            className="w-full mt-6 pt-10 border-t border-brand-charcoal/[0.08]"
+            className="w-full pt-10 border-t border-brand-charcoal/[0.08]"
         >
             <div className="max-w-[560px] mx-auto">
             {/* Header */}
@@ -113,36 +113,38 @@ export default function AdvisorConsultCard({
             </ol>
 
             {/* Actions */}
-            <div className="flex flex-col sm:flex-row justify-center gap-3 mb-4">
+            <div className="grid grid-cols-2 gap-3 mb-4">
                 <button
                     onClick={handleCopy}
                     disabled={!reportText || copied}
-                    className={`inline-flex items-center justify-center gap-2 px-5 sm:px-8 py-2.5 sm:py-3 rounded-full text-[12px] sm:text-[13px] tracking-[0.1em] font-medium transition-colors ${
+                    className={`flex flex-col items-center justify-center gap-2.5 rounded-2xl px-3 py-5 border text-center transition-all duration-300 ${
                         copied
-                            ? "bg-[#5c4937]/10 text-[#5c4937] border border-[#5c4937]/20 cursor-default"
-                            : "bg-[#5c4937] text-white hover:bg-[#4a3a2c] disabled:opacity-50"
+                            ? "border-[#5c4937]/15 bg-[#5c4937]/[0.06] cursor-default"
+                            : "border-[#5c4937]/10 bg-white hover:border-[#5c4937]/30 hover:shadow-[0_4px_16px_rgba(61,47,37,0.08)] disabled:opacity-50"
                     }`}
                 >
-                    {copied ? (
-                        <>
-                            <Check className="w-4 h-4" />
-                            已复制
-                        </>
-                    ) : (
-                        <>
-                            <Copy className="w-4 h-4" />
-                            复制报告摘要
-                        </>
-                    )}
+                    <span className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${copied ? "bg-[#5c4937]/10" : "bg-[#5c4937]"}`}>
+                        {copied ? (
+                            <Check className="w-4 h-4 text-[#5c4937]" />
+                        ) : (
+                            <Copy className="w-4 h-4 text-white" />
+                        )}
+                    </span>
+                    <span className={`text-[13px] font-medium tracking-[0.04em] ${copied ? "text-[#5c4937]" : "text-[#3d2f25]"}`}>
+                        {copied ? "已复制" : "复制报告摘要"}
+                    </span>
                 </button>
                 <a
                     href={advisorLink}
                     onClick={onOpenAdvisor}
-                    className="inline-flex items-center justify-center gap-2 px-5 sm:px-8 py-2.5 sm:py-3 rounded-full border border-[#5c4937]/30 text-[#5c4937] text-[12px] sm:text-[13px] tracking-[0.1em] font-medium hover:bg-[#5c4937]/5 transition-colors"
+                    className="flex flex-col items-center justify-center gap-2.5 rounded-2xl px-3 py-5 border border-[#5c4937]/10 bg-white text-center transition-all duration-300 hover:border-[#5c4937]/30 hover:shadow-[0_4px_16px_rgba(61,47,37,0.08)]"
                 >
-                    <MessageCircle className="w-4 h-4" />
-                    打开护肤顾问
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    <span className="w-10 h-10 rounded-full bg-[#5c4937]/10 flex items-center justify-center">
+                        <MessageCircle className="w-4 h-4 text-[#5c4937]" />
+                    </span>
+                    <span className="text-[13px] font-medium tracking-[0.04em] text-[#3d2f25]">
+                        打开护肤顾问
+                    </span>
                 </a>
             </div>
 
