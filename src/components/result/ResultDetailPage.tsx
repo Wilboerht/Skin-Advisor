@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
@@ -35,7 +35,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
     }
   }, []);
 
-  const characterSrc = `/images/character/${data.ipKey}/${data.ipKey}_${genderSuffix}.png`;
+  const characterSrc = `/images/character/${data.ipKey}/${data.ipKey}_${genderSuffix}.webp`;
 
   return (
     <main className="min-h-screen bg-[#FDFBF7] text-brand-charcoal">

@@ -119,12 +119,12 @@ export function matchCharacterIP(params: IPMatchParams): CharacterIP {
 
 /**
  * 根据匹配参数和性别获取角色插图路径
- * @returns 角色图片路径，如 "/images/character/ageless/ageless_female.png"
+ * @returns 角色图片路径，如 "/images/character/ageless/ageless_female.webp"
  */
 export function getCharacterImage(params: IPMatchParams & { gender: string }): string {
     const ip = matchCharacterIP(params);
     const genderSuffix = params.gender === "male" ? "male" : "female";
-    return `/images/character/${ip.key}/${ip.key}_${genderSuffix}.png`;
+    return `/images/character/${ip.key}/${ip.key}_${genderSuffix}.webp`;
 }
 
 /**

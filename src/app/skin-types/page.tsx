@@ -84,7 +84,7 @@ export default function ResultIndexPage() {
                 className="group relative rounded-2xl border border-brand-charcoal/[0.08] bg-[#FAF9F6] p-4 md:p-9 transition-all duration-500 hover:shadow-[0_16px_32px_rgba(0,38,62,0.08)] hover:-translate-y-1"
               >
                 <Image
-                  src={`/images/character/${type.ipKey}/${type.ipKey}_female.png`}
+                  src={`/images/character/${type.ipKey}/${type.ipKey}_female.webp`}
                   alt=""
                   width={180}
                   height={280}

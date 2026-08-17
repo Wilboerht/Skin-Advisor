@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { motion as m, AnimatePresence } from "framer-motion";
 import { useEffect, useState, useRef, useCallback, useSyncExternalStore } from "react";
@@ -179,7 +179,7 @@ export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitS
                             className="absolute inset-0 flex items-center justify-center"
                         >
                             <Image
-                                src={`/images/character/${PERSONAS[personaIdx].key}/${PERSONAS[personaIdx].key}_${gender}.png`}
+                                src={`/images/character/${PERSONAS[personaIdx].key}/${PERSONAS[personaIdx].key}_${gender}.webp`}
                                 alt={PERSONAS[personaIdx].name}
                                 width={208}
                                 height={240}
@@ -256,6 +256,22 @@ export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitS
                 <p className="text-[11px] text-brand-charcoal/35 font-light tracking-[0.06em] leading-relaxed">
                     您的面部数据仅用于本次分析，不会被存储或分享
                 </p>
+            </div>
+
+            {/* 预加载全部派系形象：分析阶段（30s+）并行拉取进浏览器缓存，
+                轮播切换到对应形象时零等待。priority 关闭懒加载，
+                display:none 的 img 浏览器仍会发起请求 */}
+            <div className="hidden" aria-hidden="true">
+                {PERSONAS.map((p) => (
+                    <Image
+                        key={p.key}
+                        src={`/images/character/${p.key}/${p.key}_${gender}.webp`}
+                        alt=""
+                        width={208}
+                        height={240}
+                        priority
+                    />
+                ))}
             </div>
             </m.div>
         </div>

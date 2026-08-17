@@ -10,6 +10,10 @@ const nextConfig: NextConfig = {
   turbopack: {},
   output: 'standalone',
   images: {
+    // 优化后图片的浏览器缓存时长（秒）。默认仅 4 小时（max-age=14400），
+    // 对 /images/character 等静态品牌资产太短，每次会话都回源；
+    // 7 天可覆盖复访用户，内容更新时更换文件名即可刷新。
+    minimumCacheTTL: 604800,
     remotePatterns: [
       {
         protocol: 'https',
