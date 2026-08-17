@@ -5,7 +5,9 @@ import {
     DEFAULT_VERIFIER_COOKIE_NAME,
     getHostCookieOptions,
     getSecureCookieOptions,
+    toInsecureCookieName,
 } from "@nihplod/sso-sdk/next";
+import { SSO_INSECURE_LOCAL_DEV } from "@/lib/sso-config";
 
 /**
  * SSO 登录入口（BFF 模式）。
@@ -66,9 +68,15 @@ export async function GET(req: NextRequest) {
         code_challenge_method: "S256",
     });
 
+    // 本地 HTTP 开发模式：Cookie 名去除 __Host-/__Secure- 前缀并关闭 Secure，
+    // 与 createCallbackRouteHandler 读取侧保持一致（浏览器拒绝 HTTP 下带前缀的 Cookie）
+    const cookieName = (name: string) =>
+        SSO_INSECURE_LOCAL_DEV ? toInsecureCookieName(name) : name;
+    const secure = !SSO_INSECURE_LOCAL_DEV;
+
     const response = NextResponse.redirect(`${SSO_BASE_URL}/api/oauth/authorize?${authorizeParams.toString()}`);
-    response.cookies.set(DEFAULT_STATE_COOKIE_NAME, state, getHostCookieOptions(600));
-    response.cookies.set(DEFAULT_VERIFIER_COOKIE_NAME, verifier, getSecureCookieOptions(600, CALLBACK_PATH));
-    response.cookies.set(DEFAULT_RETURN_COOKIE_NAME, returnTo, getHostCookieOptions(600));
+    response.cookies.set(cookieName(DEFAULT_STATE_COOKIE_NAME), state, getHostCookieOptions(600, secure));
+    response.cookies.set(cookieName(DEFAULT_VERIFIER_COOKIE_NAME), verifier, getSecureCookieOptions(600, CALLBACK_PATH, secure));
+    response.cookies.set(cookieName(DEFAULT_RETURN_COOKIE_NAME), returnTo, getHostCookieOptions(600, secure));
     return response;
 }

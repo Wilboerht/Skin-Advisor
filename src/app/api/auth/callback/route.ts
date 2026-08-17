@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createCallbackRouteHandler } from "@nihplod/sso-sdk/next";
+import { SSO_INSECURE_LOCAL_DEV } from "@/lib/sso-config";
 
 const ssoCallback = createCallbackRouteHandler({
   clientId: process.env.NEXT_PUBLIC_SSO_CLIENT_ID!,
@@ -7,6 +8,8 @@ const ssoCallback = createCallbackRouteHandler({
   clientSecret: process.env.SSO_CLIENT_SECRET,
   ssoBaseUrl: process.env.NEXT_PUBLIC_SSO_BASE_URL!,
   redirectUri: process.env.NEXT_PUBLIC_SSO_REDIRECT_URI!,
+  // 本地 HTTP 开发模式：必须与 middleware/logout/login 保持一致
+  insecureLocalDev: SSO_INSECURE_LOCAL_DEV,
 });
 
 /**

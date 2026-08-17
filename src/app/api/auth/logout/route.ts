@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createLogoutRouteHandler } from "@nihplod/sso-sdk/next";
 import { clearLocalSession } from "@/lib/auth";
+import { SSO_INSECURE_LOCAL_DEV } from "@/lib/sso-config";
 
 const handler = createLogoutRouteHandler({
   clientId: process.env.NEXT_PUBLIC_SSO_CLIENT_ID!,
@@ -10,6 +11,8 @@ const handler = createLogoutRouteHandler({
   redirectUri: process.env.NEXT_PUBLIC_SSO_REDIRECT_URI!,
   postLogoutRedirectUri: process.env.NEXT_PUBLIC_BASE_URL || "https://advisor.nihplod.cn",
   redirectToSso: true,
+  // 本地 HTTP 开发模式：必须与 middleware/callback/login 保持一致
+  insecureLocalDev: SSO_INSECURE_LOCAL_DEV,
 });
 
 // 允许的登出请求源（防 CSRF 登出：恶意页面不得通过 GET 链接/图片强制用户登出）

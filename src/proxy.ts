@@ -5,6 +5,7 @@ import { verifySessionSignature, ADMIN_SESSION_COOKIE_NAME } from "@/lib/session
 import { verifyCsrfToken } from "@/lib/csrf";
 import { AUTH_COOKIE_NAME, verifyToken } from "@/lib/auth-config";
 import { ACCESS_TOKEN_COOKIE } from "@/lib/sso-auth";
+import { SSO_INSECURE_LOCAL_DEV } from "@/lib/sso-config";
 
 /**
  * Next.js 全局 Proxy (formerly Middleware)
@@ -70,6 +71,8 @@ const ssoMiddleware = createSsoMiddleware({
   redirectUri: process.env.NEXT_PUBLIC_SSO_REDIRECT_URI!,
   scopes: process.env.NEXT_PUBLIC_SSO_SCOPES || "openid profile",
     publicPaths: PUBLIC_PATHS,
+    // 本地 HTTP 开发模式：与 callback/logout/login 保持一致（生产被 SDK 强制忽略）
+    insecureLocalDev: SSO_INSECURE_LOCAL_DEV,
 });
 
 /**

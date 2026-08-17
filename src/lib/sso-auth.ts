@@ -8,6 +8,8 @@
 import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
 import { createTokenVerifier, type VerifiedTokenPayload } from "@nihplod/sso-verify";
+import { toInsecureCookieName } from "@nihplod/sso-sdk/next";
+import { SSO_INSECURE_LOCAL_DEV } from "@/lib/sso-config";
 import { UserRole, isDisabledUser } from "@/lib/permissions";
 import prisma from "@/lib/prisma";
 import type { SessionUser } from "@/lib/auth";
@@ -17,9 +19,17 @@ export { SSO_BASE_URL };
 const SSO_CLIENT_ID = process.env.NEXT_PUBLIC_SSO_CLIENT_ID!;
 // Confidential Client 密钥：仅服务端使用（introspect / refresh），切勿暴露到浏览器
 const SSO_CLIENT_SECRET = process.env.SSO_CLIENT_SECRET;
-export const ACCESS_TOKEN_COOKIE = "__Host-nihplod_sso_at";
-export const REFRESH_TOKEN_COOKIE = "__Host-nihplod_sso_rt";
-export const ID_TOKEN_COOKIE = "__Host-nihplod_sso_id";
+/**
+ * insecureLocalDev（本地 HTTP 开发）下 SDK 写入的 Cookie 名会去除
+ * __Host-/__Secure- 前缀（浏览器拒绝在 HTTP 下写入带前缀的 Cookie），
+ * 此处读取侧必须与 SDK 保持一致。
+ */
+const ssoCookieName = (name: string): string =>
+    SSO_INSECURE_LOCAL_DEV ? toInsecureCookieName(name) : name;
+
+export const ACCESS_TOKEN_COOKIE = ssoCookieName("__Host-nihplod_sso_at");
+export const REFRESH_TOKEN_COOKIE = ssoCookieName("__Host-nihplod_sso_rt");
+export const ID_TOKEN_COOKIE = ssoCookieName("__Host-nihplod_sso_id");
 
 export const ssoVerifier = createTokenVerifier({
     introspectionEndpoint: `${SSO_BASE_URL}/api/oauth/introspect`,

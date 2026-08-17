@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { ssoVerifier, getAccessToken, upsertLocalUser, SSO_BASE_URL, REFRESH_TOKEN_COOKIE, ACCESS_TOKEN_COOKIE, ID_TOKEN_COOKIE, refreshSsoTokens } from "@/lib/sso-auth";
+import { SSO_INSECURE_LOCAL_DEV } from "@/lib/sso-config";
 import prisma from "@/lib/prisma";
 import { apiError, apiSuccess } from "@/lib/api-response";
 import { ErrorCode } from "@/lib/error-codes";
@@ -55,7 +56,8 @@ export async function GET(req: NextRequest) {
 
     // 轮换成功：把新 token 种回 httpOnly Cookie（与 SSO 回调的 Cookie 约定一致）
     if (refreshed) {
-        const cookieOpts = { httpOnly: true, secure: true, sameSite: "lax" as const, path: "/" };
+        // 本地 HTTP 开发模式下关闭 Secure（与 SDK insecureLocalDev 的 Cookie 约定一致）
+        const cookieOpts = { httpOnly: true, secure: !SSO_INSECURE_LOCAL_DEV, sameSite: "lax" as const, path: "/" };
         response.cookies.set(ACCESS_TOKEN_COOKIE, refreshed.access_token, {
             ...cookieOpts,
             maxAge: refreshed.expires_in,
