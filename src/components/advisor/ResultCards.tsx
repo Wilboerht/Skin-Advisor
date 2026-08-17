@@ -100,7 +100,9 @@ export default function ResultCards({
       setCharacterImgSrc((prev) => prev.replace('_male', '_female'));
       setCharacterImgError(true);
     } else {
-      setCharacterImgSrc('/images/character/unknown.png');
+      // 最终兜底：守护派女版（与 matchCharacterIP 的兜底派系一致，文件确保存在；
+      // 原 /images/character/unknown.png 从未存在过，兜底自身是坏的）
+      setCharacterImgSrc('/images/character/guardian/guardian_female.webp');
     }
   }, [characterImgError]);
 
