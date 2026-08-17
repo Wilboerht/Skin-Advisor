@@ -50,11 +50,12 @@ describe("buildAdvisorReportText", () => {
         });
 
         expect(text).toContain("性别：男");
-        expect(text).toContain("重点问题：");
-        expect(text).toContain("粉刺/痤疮（40分）");
-        expect(text).toContain("光泽度（58分）");
-        expect(text).toContain("水油平衡（65分）");
-        expect(text).not.toContain("皮肤弹性");
+        // 重点问题行只含 <70 分的最低 3 项；皮肤弹性（90分）出现在完整十维行而非重点问题行
+        const issueLine = text.split("\n").find((l) => l.startsWith("重点问题："))!;
+        expect(issueLine).toContain("粉刺/痤疮（40分）");
+        expect(issueLine).toContain("光泽度（58分）");
+        expect(issueLine).toContain("水油平衡（65分）");
+        expect(issueLine).not.toContain("皮肤弹性");
     });
 
     it("无低分维度时标记无明显问题", () => {
