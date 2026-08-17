@@ -5,7 +5,14 @@
  */
 import { normalizeAnalysisResult } from "@/lib/analysis-result";
 import { getRankPercentile } from "@/lib/result-utils";
-import { getIssueList, type ReportIssue } from "@/lib/advisor-report-text";
+import {
+    extractQuestionnaireProfile,
+    getDimensionScores,
+    getIssueList,
+    type DimensionScoreItem,
+    type QuestionnaireProfile,
+    type ReportIssue,
+} from "@/lib/advisor-report-text";
 import { getSkinTypeLabel } from "@/lib/advisor-utils";
 
 export interface ReportSummary {
@@ -18,7 +25,16 @@ export interface ReportSummary {
     skinAge?: number | null;
     overallScore?: number | null;
     percentile?: number | null;
+    /** 重点问题（<70 分维度，最多 3 项） */
     issues?: ReportIssue[];
+    /** 完整维度评分（全部十维，含正常项） */
+    dimensions?: DimensionScoreItem[];
+    /** AI 分析得出的肌肤问题标签（questionnaire 模式下 issues 为空时的兜底） */
+    concerns?: string[];
+    /** 问卷档案（过敏史/孕期/医美/生活方式/预算等，已标签化） */
+    questionnaire?: QuestionnaireProfile;
+    /** 数据来源：comprehensive（问卷+扫脸）/ questionnaire（纯问卷）/ hybrid */
+    dataSource?: string;
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -77,6 +93,11 @@ export function extractReportSummary(
         | Record<string, { score?: number } | undefined>
         | undefined;
 
+    const concerns = result?.skinProfile.concerns;
+    const questionnaire = extractQuestionnaireProfile(asRecord(answers));
+    const dataSource = result?.dataSource ??
+        (typeof record?.dataSource === "string" ? record.dataSource : undefined);
+
     return {
         found: true,
         sessionId,
@@ -91,5 +112,9 @@ export function extractReportSummary(
                 ? getRankPercentile(overallScore)
                 : null,
         issues: getIssueList(dimensions),
+        dimensions: getDimensionScores(dimensions),
+        concerns: concerns && concerns.length > 0 ? concerns : undefined,
+        questionnaire: Object.keys(questionnaire).length > 0 ? questionnaire : undefined,
+        dataSource,
     };
 }

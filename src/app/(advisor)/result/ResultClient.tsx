@@ -276,6 +276,8 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
 
     // IP 匹配所需数据
     const [ipBudget, setIpBudget] = useState<string | undefined>(undefined);
+    // 完整问卷答案：用于生成给护肤顾问的报告摘要（含过敏史/孕期/预算等档案字段）
+    const [questionnaireAnswers, setQuestionnaireAnswers] = useState<Record<string, unknown> | null>(null);
     const [ipSkincareFrequency, setIpSkincareFrequency] = useState<string | undefined>(undefined);
 
     // UI State
@@ -328,7 +330,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
         [faceAnalysis?.overallScore, result?.dataSource]
     );
 
-    // 给护肤顾问的报告摘要（结构化档案格式，供一键复制粘贴）
+    // 给护肤顾问的报告摘要（结构化档案格式，供一键复制粘贴；含完整问卷档案，与内部 API 口径一致）
     const advisorReportText = useMemo(() => {
         if (!result) return "";
         return buildAdvisorReportText({
@@ -336,8 +338,9 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
             faceAnalysis,
             gender: socialGender,
             nickname: userNickname,
+            answers: questionnaireAnswers,
         });
-    }, [result, faceAnalysis, socialGender, userNickname]);
+    }, [result, faceAnalysis, socialGender, userNickname, questionnaireAnswers]);
 
     // 带 scene_param 的顾问客服链接：进入会话事件会把 scene_param 原样返回，
     // 客服后端据此自动拉取报告写入档案。失败时回退静态链接（复制粘贴流程兜底）。
@@ -530,6 +533,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                 if (answersStr) {
                     try {
                         const answers = JSON.parse(answersStr);
+                        setQuestionnaireAnswers(answers);
                         if (answers.budget) setIpBudget(answers.budget);
                         if (answers.skincareFrequency) setIpSkincareFrequency(answers.skincareFrequency);
                     } catch { /* ignore parse errors */ }

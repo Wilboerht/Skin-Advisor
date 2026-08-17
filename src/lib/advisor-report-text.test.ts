@@ -88,6 +88,82 @@ describe("buildAdvisorReportText", () => {
         expect(text).not.toContain("昵称：");
     });
 
+    it("传入 answers 时附带完整问卷档案（过敏史/孕期/预算等）", () => {
+        const text = buildAdvisorReportText({
+            result: makeResult(),
+            faceAnalysis: null,
+            gender: "female",
+            answers: {
+                ageRange: "26-30",
+                primaryConcern: ["aging", "spots"],
+                allergies: ["fragrance", "alcohol"],
+                pregnancy: "yes",
+                medicalBeauty: "laser",
+                sleepQuality: "poor",
+                stressLevel: "high",
+                menstrualCycle: "luteal",
+                skincareFrequency: "daily",
+                budget: "mid",
+            },
+        });
+
+        expect(text).toContain("年龄段：26-30岁");
+        expect(text).toContain("关注问题：细纹/松弛、色斑/暗沉");
+        expect(text).toContain("⚠️过敏史：香精过敏、酒精过敏");
+        expect(text).toContain("⚠️备孕/孕期/哺乳期：是");
+        expect(text).toContain("医美经历（近3月）：光子/激光类");
+        expect(text).toContain("睡眠质量：较差（经常熬夜/失眠）");
+        expect(text).toContain("压力水平：很大（焦虑/紧绷）");
+        expect(text).toContain("生理周期：黄体期（经前一周）");
+        expect(text).toContain("护肤习惯：每天精细护肤");
+        expect(text).toContain("护肤预算：中等预算（单品300-1000元）");
+    });
+
+    it("无过敏史/非孕期时不加 ⚠️ 标记", () => {
+        const text = buildAdvisorReportText({
+            result: makeResult(),
+            faceAnalysis: null,
+            gender: "female",
+            answers: { allergies: ["none"], pregnancy: "no", medicalBeauty: "none", menstrualCycle: "na" },
+        });
+
+        expect(text).toContain("过敏史：无过敏史");
+        expect(text).not.toContain("⚠️");
+        expect(text).not.toContain("孕期");
+        expect(text).not.toContain("医美经历");
+        expect(text).not.toContain("生理周期");
+    });
+
+    it("兼容旧键名 pregnancyStatus 与旧版题库取值", () => {
+        const text = buildAdvisorReportText({
+            result: makeResult(),
+            faceAnalysis: null,
+            gender: "female",
+            answers: { pregnancyStatus: "yes", skincareFrequency: "advanced" },
+        });
+
+        expect(text).toContain("⚠️备孕/孕期/哺乳期：是");
+        expect(text).toContain("护肤习惯：精细护理（多步骤）");
+    });
+
+    it("包含完整十维评分（含 ≥70 分的正常维度）", () => {
+        const text = buildAdvisorReportText({
+            result: makeResult(),
+            faceAnalysis: {
+                overallScore: 80,
+                dimensions: {
+                    waterOil: { score: 65, grade: "average", details: "" },
+                    firmness: { score: 90, grade: "excellent", details: "" },
+                },
+            } as never,
+            gender: "",
+        });
+
+        expect(text).toContain("各维度评分：");
+        expect(text).toContain("水油平衡65分");
+        expect(text).toContain("皮肤弹性90分");
+    });
+
     it("顾问链接为护肤顾问 kfid 客服链接", () => {
         expect(ADVISOR_WECOM_LINK).toBe("https://work.weixin.qq.com/kfid/kfc7834894b7ee2b86a");
     });
