@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getSessionUser } from "@/lib/sso-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
+import { hashIP } from "@/lib/privacy";
 import { logger } from "@/lib/logger";
 
 /**
@@ -36,6 +37,20 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "Missing sessionId" }, { status: 400, headers: rateLimitHeaders });
         }
 
+        // 归属校验：未被认领的游客会话，仅允许同 IP（哈希比对，与 analyze 写入一致）认领，
+        // 防止知道他人 sessionId 的用户把别人的游客报告绑到自己账号。
+        // 历史遗留的无 ip 记录放行（仍需持有不可猜测的 UUID sessionId）。
+        const existing = await prisma.advisorSession.findUnique({
+            where: { sessionId },
+            select: { userId: true, ip: true }
+        });
+        if (existing && !existing.userId && existing.ip && existing.ip !== hashIP(ip)) {
+            logger.warn(`Claim rejected for session ${sessionId}: IP hash mismatch, requester ${user.id}`);
+            return NextResponse.json(
+                { error: "Session ownership verification failed" },
+                { status: 403, headers: rateLimitHeaders }
+            );
+        }
 
         // Atomic claim: only update if userId is null (not yet claimed)
         try {
