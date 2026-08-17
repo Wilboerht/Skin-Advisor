@@ -26,7 +26,11 @@ export default async function ReportDetailPage(props: {
 }) {
     const params = await props.params;
     const id = params.id;
-    let initialData: { result: ComprehensiveResult; faceAnalysis: FaceAnalysisResult | null } | null = null;
+    let initialData: {
+        result: ComprehensiveResult;
+        faceAnalysis: FaceAnalysisResult | null;
+        answers: Record<string, unknown> | null;
+    } | null = null;
     let isExpired = false;
 
     const user = await getSessionUser();
@@ -55,6 +59,8 @@ export default async function ReportDetailPage(props: {
                 initialData = {
                     result,
                     faceAnalysis: (rawResult.faceAnalysis as FaceAnalysisResult | null) || null,
+                    // 该次测肤的问卷答案，供报告摘要（复制给护肤顾问）使用
+                    answers: (session.answers as Record<string, unknown> | null) || null,
                 };
             }
         } catch (e) {

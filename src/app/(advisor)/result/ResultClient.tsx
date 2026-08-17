@@ -59,6 +59,8 @@ interface ResultClientProps {
     initialData?: {
         result: ComprehensiveResult;
         faceAnalysis: FaceAnalysisResult | null;
+        /** 该次测肤的问卷答案（历史报告页从 DB 传入；优先于 localStorage，避免与最新一次测肤串数据） */
+        answers?: Record<string, unknown> | null;
     } | null;
     user?: SessionUser | null;
 }
@@ -276,8 +278,11 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
 
     // IP 匹配所需数据
     const [ipBudget, setIpBudget] = useState<string | undefined>(undefined);
-    // 完整问卷答案：用于生成给护肤顾问的报告摘要（含过敏史/孕期/预算等档案字段）
-    const [questionnaireAnswers, setQuestionnaireAnswers] = useState<Record<string, unknown> | null>(null);
+    // 完整问卷答案：用于生成给护肤顾问的报告摘要（含过敏史/孕期/预算等档案字段）。
+    // 历史报告页（initialData.answers 来自 DB）优先，避免与 localStorage 里最新一次测肤串数据
+    const [questionnaireAnswers, setQuestionnaireAnswers] = useState<Record<string, unknown> | null>(
+        initialData?.answers ?? null
+    );
     const [ipSkincareFrequency, setIpSkincareFrequency] = useState<string | undefined>(undefined);
 
     // UI State
@@ -533,7 +538,8 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                 if (answersStr) {
                     try {
                         const answers = JSON.parse(answersStr);
-                        setQuestionnaireAnswers(answers);
+                        // 历史报告页已有 DB 下发的该次答案，不用 localStorage（可能是最新一次测肤的）覆盖
+                        if (!initialData?.answers) setQuestionnaireAnswers(answers);
                         if (answers.budget) setIpBudget(answers.budget);
                         if (answers.skincareFrequency) setIpSkincareFrequency(answers.skincareFrequency);
                     } catch { /* ignore parse errors */ }
