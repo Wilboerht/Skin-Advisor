@@ -115,7 +115,7 @@ export default function ResultCards({
           {/* Mobile-only decorative background behind character */}
           <div className="absolute inset-0 z-0 translate-y-12">
             <Image
-              src="/images/character-bg-mobile.png"
+              src="/images/character-bg-mobile.webp"
               alt=""
               fill
               className="object-contain brightness-125"

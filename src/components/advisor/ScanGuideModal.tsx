@@ -76,7 +76,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
                                     开始面部扫描
                                 </h3>
                                 <Image
-                                    src="/images/scan-guide-character.png"
+                                    src="/images/scan-guide-character.webp"
                                     alt="扫脸引导示意"
                                     width={448}
                                     height={600}
