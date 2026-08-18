@@ -22,7 +22,7 @@ model AdvisorSession {
   analysisCompletedAt     DateTime? // 分析完成时间
   resultViewedAt          DateTime? // 结果查看时间
   completedAt             DateTime? // 完成时间
-  expiresAt               DateTime? // 数据过期时间 (1个月后自动清理)
+  expiresAt               DateTime? // "当前档案"有效期（注册用户 90 天滚动 / 游客 1 小时）；过期仅提示复测，注册用户历史报告长期保留不删除
   
   // ===== 问卷数据 =====
   answers         Json?     // 问卷答案
@@ -68,11 +68,18 @@ model AdvisorSession {
   privacyConsentAt    DateTime?
   privacyConsentVersion String?
 
+  // ===== 冷热分层归档 =====
+  // 每用户仅最近 10 条已完成报告保留完整数据（热层，用户可见）；
+  // 更早的报告由 data-cleanup 就地脱水为脱敏摘要（冷层，用户不可见），
+  // answers/完整 analysisResult 被清除，仅留分数/肤质等统计字段，本字段记录归档时间。
+  archivedAt      DateTime?
+
   // ===== 性能索引 =====
   @@index([userId])              // JOIN User 加速
   @@index([createdAt])           // 时间范围查询加速
   @@index([expiresAt])           // 清理任务按过期时间过滤
   @@index([completedAt])         // 历史记录查询加速
+  @@index([archivedAt])          // 归档任务过滤/历史接口排除归档行
 }
 
 

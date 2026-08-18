@@ -35,7 +35,8 @@ export async function GET(req: NextRequest) {
             prisma.advisorSession.findMany({
                 where: {
                     userId: user.id,
-                    completedAt: { not: null }
+                    completedAt: { not: null },
+                    archivedAt: null // 冷层归档摘要对用户不可见
                 },
                 orderBy: { completedAt: "desc" },
                 select: {
@@ -49,7 +50,8 @@ export async function GET(req: NextRequest) {
             prisma.advisorSession.count({
                 where: {
                     userId: user.id,
-                    completedAt: { not: null }
+                    completedAt: { not: null },
+                    archivedAt: null
                 }
             })
         ]);

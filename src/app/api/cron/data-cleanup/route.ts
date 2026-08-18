@@ -1,17 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { buildArchivedSummary } from "@/lib/session-archive";
 
 export const maxDuration = 60;
 
-// 注册用户保留 3 个月 (90 天)
-const USER_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
-// 单个用户最多保留报告数
+// 热层：每用户最近 N 条已完成报告保留完整数据、用户可见；更早的脱水为冷层摘要
+const MAX_FULL_REPORTS = 10;
+// 冷层归档单轮处理上限（多轮 cron 收敛，避免超时）
+const ARCHIVE_BATCH_LIMIT = 500;
+// 单个用户最多保留报告数（热层 + 冷层摘要合计，滚动续期策略下的安全阀）
 const MAX_USER_REPORTS = 100;
 
 interface CleanupStats {
     sessions: number;
     testRecords: number;
+    archived: number;
 }
 
 async function cleanupSessions(
@@ -62,6 +67,7 @@ export async function GET(request: NextRequest) {
         const stats: CleanupStats = {
             sessions: 0,
             testRecords: 0,
+            archived: 0,
         };
 
         const now = Date.now();
@@ -86,10 +92,16 @@ export async function GET(request: NextRequest) {
         });
         await cleanupSessions(guestSessions, stats);
 
-        // ===== 2. 清理已过期的注册用户数据（expiresAt 已过 或 expiresAt 为 NULL 且创建超过兜底时限）=====
+        // ===== 2. 清理注册用户的垃圾会话 =====
+        // 「滚动续期的长期资产」策略：已完成的报告是用户的历史肌肤档案，
+        // 按冷热分层保留（见步骤 3），不按 expiresAt 删除；expiresAt 仅表示
+        // "当前档案"的 90 天有效期（报告页据此提示复测）。
+        // 此步骤仅清理从未完成分析的中断会话（无档案价值），按 expiresAt 过期或
+        // createdAt 满 24 小时兜底清理。
         const oldUserSessions = await prisma.advisorSession.findMany({
             where: {
                 userId: { not: null },
+                completedAt: null, // 仅清理从未完成分析的中断会话；已完成报告进入冷热分层保留
                 OR: [
                     { expiresAt: { lt: new Date(now) } },
                     { expiresAt: null, createdAt: { lt: nullExpiryFallback } },
@@ -101,10 +113,48 @@ export async function GET(request: NextRequest) {
         });
         await cleanupSessions(oldUserSessions, stats);
 
-        // Recalculate for per-user retention
-        const userCutoff = new Date(now - USER_RETENTION_MS);
+        // ===== 3. 冷热分层：每用户最近 10 条完整报告之外的，就地脱水为脱敏摘要 =====
+        // 热层（最近 10 条）用户可见、数据完整；冷层仅留统计摘要（无敏感问卷字段），
+        // 用户不可见，供趋势对比与白皮书群体统计。单次限量，多轮 cron 收敛。
+        const archivable = await prisma.$queryRaw<Array<{ sessionId: string }>>`
+            SELECT "sessionId"
+            FROM (
+                SELECT "sessionId",
+                       ROW_NUMBER() OVER (PARTITION BY "userId" ORDER BY "completedAt" DESC) as rn
+                FROM "AdvisorSession"
+                WHERE "userId" IS NOT NULL
+                  AND "completedAt" IS NOT NULL
+                  AND "archivedAt" IS NULL
+            ) t
+            WHERE rn > ${MAX_FULL_REPORTS}
+            LIMIT ${ARCHIVE_BATCH_LIMIT}
+        `;
 
-        // ===== 3. 清理注册用户超量数据（3 个月内每个用户最多保留 100 条）=====
+        for (const { sessionId } of archivable) {
+            try {
+                const row = await prisma.advisorSession.findUnique({
+                    where: { sessionId },
+                    select: { analysisResult: true, answers: true },
+                });
+                if (!row) continue;
+                const summary = buildArchivedSummary(row.analysisResult, row.answers);
+                await prisma.advisorSession.update({
+                    where: { sessionId },
+                    data: {
+                        analysisResult: summary as unknown as Prisma.InputJsonValue,
+                        answers: Prisma.DbNull,      // 敏感问卷字段不进冷层
+                        interactions: Prisma.DbNull, // 行为记录一并清除
+                        archivedAt: new Date(now),
+                    },
+                });
+                stats.archived++;
+            } catch (archiveErr) {
+                // 单行失败不阻塞整体任务，下一轮 cron 重试
+                logger.error("[Cleanup] Archive session failed", { sessionId, error: String(archiveErr) });
+            }
+        }
+
+        // ===== 4. 清理注册用户超量数据（全部历史中每个用户最多保留 100 条，含冷层摘要）=====
         // 使用 window function 一次性获取所有超量记录，避免 N+1 查询
         const excessSessions = await prisma.$queryRaw<Array<{ sessionId: string }>>`
             SELECT "sessionId"
@@ -113,7 +163,6 @@ export async function GET(request: NextRequest) {
                        ROW_NUMBER() OVER (PARTITION BY "userId" ORDER BY "createdAt" DESC) as rn
                 FROM "AdvisorSession"
                 WHERE "userId" IS NOT NULL
-                  AND "createdAt" >= ${userCutoff}
             ) t
             WHERE rn > ${MAX_USER_REPORTS}
             ORDER BY "createdAt" ASC
@@ -122,31 +171,31 @@ export async function GET(request: NextRequest) {
         await cleanupSessions(excessSessions, stats);
 
 
-        // ===== 4. 清理过期 AI 用量日志（保留 30 天）=====
+        // ===== 5. 清理过期 AI 用量日志（保留 30 天）=====
         const aiLogCutoff = new Date(now - 30 * 24 * 60 * 60 * 1000);
         const deletedAiLogs = await prisma.aIUsageLog.deleteMany({
             where: { createdAt: { lt: aiLogCutoff } },
         });
 
-        // ===== 5. 清理过期管理审计日志（保留 180 天）=====
+        // ===== 6. 清理过期管理审计日志（保留 180 天）=====
         const auditLogCutoff = new Date(now - 180 * 24 * 60 * 60 * 1000);
         const deletedAuditLogs = await prisma.adminAuditLog.deleteMany({
             where: { createdAt: { lt: auditLogCutoff } },
         });
 
-        // ===== 6. 清理过期 GuestUsage（保留 30 天）=====
+        // ===== 7. 清理过期 GuestUsage（保留 30 天）=====
         const guestCutoff = new Date(now - 30 * 24 * 60 * 60 * 1000);
         const deletedGuests = await prisma.guestUsage.deleteMany({
             where: { lastTestAt: { lt: guestCutoff } },
         });
 
-        // ===== 7. 清理僵尸 AppInstance（心跳超过 5 分钟未更新）=====
+        // ===== 8. 清理僵尸 AppInstance（心跳超过 5 分钟未更新）=====
         const staleInstanceCutoff = new Date(now - 5 * 60 * 1000);
         const deletedInstances = await prisma.appInstance.deleteMany({
             where: { lastPing: { lt: staleInstanceCutoff } },
         });
 
-        // ===== 8. 清理过期上传文件（保留 30 天，递归处理嵌套目录）=====
+        // ===== 9. 清理过期上传文件（保留 30 天，递归处理嵌套目录）=====
         // 旧实现只对根目录条目 unlink，guest/、advisor/ 等子目录会因 EISDIR 被吞掉永不清理
         let deletedFiles = 0;
         try {

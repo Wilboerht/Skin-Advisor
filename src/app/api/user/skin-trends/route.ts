@@ -27,19 +27,21 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // 获取最近 5 次分析结果，用于对比
-        const recentSessions = await prisma.advisorSession.findMany({
-            where: {
-                user: { id: user.id }, // Use relation filter
-                completedAt: { not: null }
-            },
-            orderBy: { completedAt: 'asc' }, // 按时间顺序
-            take: 5,
-            select: {
-                completedAt: true,
-                analysisResult: true
-            }
-        });
+        // 获取最近 5 次分析结果，用于对比（先按时间倒序取最新 5 条，再翻转为时间正序）
+        const recentSessions = (
+            await prisma.advisorSession.findMany({
+                where: {
+                    user: { id: user.id }, // Use relation filter
+                    completedAt: { not: null }
+                },
+                orderBy: { completedAt: 'desc' },
+                take: 5,
+                select: {
+                    completedAt: true,
+                    analysisResult: true
+                }
+            })
+        ).reverse();
 
         if (recentSessions.length < 2) {
             return NextResponse.json({

@@ -17,6 +17,7 @@ const getReportCached = cache((id: string, userId: string) =>
             analysisResult: true,
             faceScanUsed: true,
             expiresAt: true,
+            archivedAt: true,
         },
     })
 );
@@ -32,6 +33,7 @@ export default async function ReportDetailPage(props: {
         answers: Record<string, unknown> | null;
     } | null = null;
     let isExpired = false;
+    let isArchived = false;
 
     const user = await getSessionUser();
 
@@ -47,9 +49,14 @@ export default async function ReportDetailPage(props: {
                 notFound();
             }
 
-            if (session.expiresAt && new Date() > new Date(session.expiresAt)) {
-                isExpired = true;
+            // 冷层归档报告（每用户仅最近 10 条保留完整数据）对用户不可见
+            if (session.archivedAt) {
+                isArchived = true;
             } else {
+                // 过期报告仍作为历史档案可查看（滚动续期策略），页面顶部提示复测
+                if (session.expiresAt && new Date() > new Date(session.expiresAt)) {
+                    isExpired = true;
+                }
                 const rawResult = session.analysisResult as unknown as Record<string, unknown>;
                 const result = normalizeAnalysisResult(rawResult);
                 if (!result) {
@@ -69,29 +76,52 @@ export default async function ReportDetailPage(props: {
         }
     }
 
-    if (isExpired) {
-        return <ReportExpired />;
+    if (isArchived) {
+        return <ReportArchived />;
     }
 
     if (!initialData) {
         notFound();
     }
 
-    return <ResultClient id={id} initialData={initialData} />;
+    return (
+        <>
+            {isExpired && <ReportExpiredBanner />}
+            <ResultClient id={id} initialData={initialData} />
+        </>
+    );
 }
 
-function ReportExpired() {
+function ReportArchived() {
     return (
         <div className="flex min-h-screen items-center justify-center bg-[#FDFBF7] px-4">
             <div className="text-center max-w-md">
-                <div className="text-5xl mb-4">⏰</div>
-                <h2 className="text-xl font-bold text-[#5c4937] mb-2">报告已过期</h2>
+                <div className="text-5xl mb-4">🗂️</div>
+                <h2 className="text-xl font-bold text-[#5c4937] mb-2">报告已归档</h2>
                 <p className="text-sm text-[#8c7a6b] mb-6">
-                    该分析报告已超过保存期限，数据已自动清除。请重新进行肤质测试获取最新报告。
+                    历史报告仅保留最近 10 份的完整内容，更早的报告已归档为统计数据。您的肤质趋势对比不受影响。
                 </p>
                 <a
                     href="/questions"
                     className="inline-flex items-center justify-center gap-2 rounded-full bg-[#5c4937] px-6 py-3 text-sm font-medium text-white shadow-lg transition-transform active:scale-95"
+                >
+                    重新测试
+                </a>
+            </div>
+        </div>
+    );
+}
+
+function ReportExpiredBanner() {
+    return (
+        <div className="w-full bg-[#f5ead9] px-4 py-3">
+            <div className="mx-auto flex max-w-[900px] flex-wrap items-center justify-center gap-x-4 gap-y-2 text-center">
+                <p className="text-sm text-[#8c6d3f]">
+                    该报告已超过 90 天有效期，皮肤状态可能已变化。为保持肌肤档案准确，建议重新测试更新档案。
+                </p>
+                <a
+                    href="/questions"
+                    className="inline-flex items-center justify-center rounded-full bg-[#5c4937] px-4 py-1.5 text-xs font-medium text-white transition-transform active:scale-95"
                 >
                     重新测试
                 </a>
@@ -114,20 +144,18 @@ export async function generateMetadata(props: {
         try {
             const session = await getReportCached(id, user.id);
 
-            if (session && session.analysisResult) {
-                if (session.expiresAt && new Date() > new Date(session.expiresAt)) {
-                    title = "报告已过期";
-                    description = "该分析报告已超过保存期限，请重新测试。";
-                } else {
-                    const rawResult = session.analysisResult as unknown as Record<string, unknown>;
-                    const faceAnalysis = rawResult.faceAnalysis as Record<string, unknown> | undefined;
-                    const skinAnalysis = rawResult.skinAnalysis as Record<string, unknown> | undefined;
-                    const score = (faceAnalysis?.overallScore as number | undefined) || (skinAnalysis?.score as number | undefined) || 85;
-                    const skinType = (skinAnalysis?.typeLabel as string | undefined) || "未知肤质";
+            if (session && session.archivedAt) {
+                title = "报告已归档";
+                description = "该历史报告已归档为统计数据，请查看最新报告。";
+            } else if (session && session.analysisResult) {
+                const rawResult = session.analysisResult as unknown as Record<string, unknown>;
+                const faceAnalysis = rawResult.faceAnalysis as Record<string, unknown> | undefined;
+                const skinAnalysis = rawResult.skinAnalysis as Record<string, unknown> | undefined;
+                const score = (faceAnalysis?.overallScore as number | undefined) || (skinAnalysis?.score as number | undefined) || 85;
+                const skinType = (skinAnalysis?.typeLabel as string | undefined) || "未知肤质";
 
-                    title = `${score}分！我的${skinType}护肤报告已生成`;
-                    description = `AI 分析得分 ${score} 分，肤质类型：${skinType}。查看完整护肤方案与产品推荐。`;
-                }
+                title = `${score}分！我的${skinType}护肤报告已生成`;
+                description = `AI 分析得分 ${score} 分，肤质类型：${skinType}。查看完整护肤方案与产品推荐。`;
             }
         } catch (e) {
             logger.error(String(e));
