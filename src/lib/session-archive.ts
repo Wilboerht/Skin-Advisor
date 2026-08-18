@@ -37,6 +37,66 @@ export interface ArchivedSessionSummary {
 
 const ANSWERS_WHITELIST = ["ageRange", "budget", "skinType", "primaryConcern"] as const;
 
+/** 白皮书统计行：从测肤会话提取的脱敏统计字段（热层/冷层通吃） */
+export interface SessionStats {
+    /** 肤质拟人化 IP key（8 派） */
+    persona: string | null;
+    /** 诊断肤质类型标签 */
+    skinTypeLabel: string | null;
+    /** 综合评分 */
+    overallScore: number | null;
+    /** 维度评分：皱纹/水油/色斑/纹理 */
+    dimensions: { wrinkles: number | null; waterOil: number | null; spots: number | null; texture: number | null } | null;
+    /** 问卷脱敏白名单字段 */
+    ageRange: string | null;
+    budget: string | null;
+    selfSkinType: string | null;
+    primaryConcern: string | null;
+}
+
+/**
+ * 提取脱敏统计字段：热层读完整 answers/analysisResult，
+ * 冷层读归档摘要（analysisResult.profile / faceAnalysis），敏感字段一律不取。
+ * 供白皮书数据导出等群体统计场景使用。
+ */
+export function extractSessionStats(
+    analysisResult: unknown,
+    answers: unknown
+): SessionStats {
+    const result = (analysisResult ?? null) as Record<string, unknown> | null;
+    const ans = (answers ?? null) as Record<string, unknown> | null;
+
+    const faceAnalysis = result?.faceAnalysis as Record<string, unknown> | undefined;
+    const skinAnalysis = result?.skinAnalysis as Record<string, unknown> | undefined;
+    // 冷层摘要：白名单字段在 analysisResult.profile 下
+    const profile = result?.profile as Record<string, unknown> | undefined;
+    const dims = faceAnalysis?.dimensions as Record<string, { score?: number } | undefined> | undefined;
+
+    const pick = (key: (typeof ANSWERS_WHITELIST)[number]): unknown =>
+        ans?.[key] ?? profile?.[key === "skinType" ? "selfSkinType" : key] ?? null;
+
+    const asStringList = (v: unknown): string | null =>
+        Array.isArray(v) ? v.join("、") : v != null ? String(v) : null;
+
+    return {
+        persona: (result?.persona as string | undefined) ?? null,
+        skinTypeLabel: (skinAnalysis?.typeLabel as string | undefined) ?? null,
+        overallScore: (faceAnalysis?.overallScore as number | undefined) ?? null,
+        dimensions: dims
+            ? {
+                wrinkles: dims.wrinkles?.score ?? null,
+                waterOil: dims.waterOil?.score ?? null,
+                spots: dims.spots?.score ?? null,
+                texture: dims.texture?.score ?? null,
+            }
+            : null,
+        ageRange: asStringList(pick("ageRange")),
+        budget: asStringList(pick("budget")),
+        selfSkinType: asStringList(pick("skinType")),
+        primaryConcern: asStringList(pick("primaryConcern")),
+    };
+}
+
 export function buildArchivedSummary(
     analysisResult: unknown,
     answers: unknown

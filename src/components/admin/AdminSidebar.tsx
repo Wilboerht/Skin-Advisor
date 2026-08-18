@@ -20,6 +20,7 @@ import {
     Wand2,
     Gift,
     BarChart3,
+    FileSpreadsheet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { isSuperAdmin } from "@/lib/permissions";
@@ -212,6 +213,7 @@ export default function AdminSidebar() {
                                     >
                                         {[
                                             { id: 'products', label: '产品数据报表', icon: Package },
+                                            { id: 'whitepaper', label: '白皮书统计数据', icon: FileSpreadsheet },
                                             ...(isSuperAdmin(admin?.role ?? null) ? [
                                                 { id: 'users', label: '用户增长数据', icon: Users },
                                                 { id: 'sessions', label: '诊断请求记录', icon: Activity },

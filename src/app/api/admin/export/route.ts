@@ -4,11 +4,13 @@ import { requireRole, getClientInfo, logAdminAction } from "@/lib/admin-auth";
 import { canExportPII, AdminRole } from "@/lib/permissions";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { parseBeijingDate } from "@/lib/time";
+import { extractSessionStats } from "@/lib/session-archive";
 import { logger } from "@/lib/logger";
 
-// GET /api/admin/export?type=products|users|sessions|audit-logs
+// GET /api/admin/export?type=products|users|sessions|audit-logs|whitepaper
 // Restricted to super_admin and admin
 // PII exports (users, sessions, audit-logs) restricted to super_admin only
+// whitepaper 为脱敏群体统计数据（无身份标识、无敏感问卷字段），admin 可导出
 export const GET = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (request, { admin }) => {
     // Rate limit
     const ip = getClientIP(request);
@@ -97,6 +99,61 @@ export const GET = requireRole(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)(async (re
                 filename = `sessions_export_${new Date().toISOString().split("T")[0]}.csv`;
                 rowLimit = 1000;
                 truncated = sessions.length >= rowLimit;
+                break;
+
+            case "whitepaper":
+                // 白皮书群体统计：每行一条已完成测肤的脱敏统计字段（热层+冷层通吃）。
+                // 不含任何身份标识（userId/邮箱/昵称）与敏感问卷字段（过敏史/孕期/医美等），
+                // 地域粒度只到省级，供《NIHPLOD 中国女性白皮书》等群体统计使用。
+                const statsSessions = await prisma.advisorSession.findMany({
+                    where: { completedAt: { not: null } },
+                    orderBy: { completedAt: "asc" },
+                    take: 20000, // Hard limit to prevent memory exhaustion
+                    select: {
+                        completedAt: true,
+                        answers: true,
+                        analysisResult: true,
+                        faceScanUsed: true,
+                        faceScanSkipped: true,
+                        province: true,
+                        shareMethod: true,
+                        resultShared: true,
+                        archivedAt: true,
+                        utmSource: true,
+                    },
+                });
+                headers = [
+                    "CompletedAt", "SkinType(AI)", "Persona", "OverallScore",
+                    "Wrinkles", "WaterOil", "Spots", "Texture",
+                    "AgeRange", "Budget", "SkinType(Self)", "PrimaryConcern",
+                    "Province", "ScanMode", "Shared", "ShareChannel", "UTMSource", "DataLayer",
+                ];
+                data = statsSessions.map((s) => {
+                    const st = extractSessionStats(s.analysisResult, s.answers);
+                    return [
+                        s.completedAt ? new Date(s.completedAt).toISOString() : "",
+                        st.skinTypeLabel || "",
+                        st.persona || "",
+                        st.overallScore ?? "",
+                        st.dimensions?.wrinkles ?? "",
+                        st.dimensions?.waterOil ?? "",
+                        st.dimensions?.spots ?? "",
+                        st.dimensions?.texture ?? "",
+                        st.ageRange || "",
+                        st.budget || "",
+                        st.selfSkinType || "",
+                        st.primaryConcern || "",
+                        s.province || "",
+                        s.faceScanUsed ? "face-scan" : s.faceScanSkipped ? "questionnaire-only" : "unknown",
+                        s.resultShared ? "Yes" : "No",
+                        s.shareMethod || "",
+                        s.utmSource || "",
+                        s.archivedAt ? "cold" : "hot",
+                    ];
+                });
+                filename = `whitepaper_stats_${new Date().toISOString().split("T")[0]}.csv`;
+                rowLimit = 20000;
+                truncated = statsSessions.length >= rowLimit;
                 break;
 
             case "audit-logs":
