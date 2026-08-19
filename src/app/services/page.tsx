@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { HeartHandshake, LineChart, Sparkles } from "lucide-react";
@@ -30,6 +31,9 @@ export const metadata: Metadata = withDefaultOgImage({
 export const revalidate = 86400;
 
 export default function ServicesPage() {
+  // 该页面暂时不对外开放，直接返回 404。恢复开放时删除下一行即可。
+  notFound();
+
   return (
     <main className="relative flex flex-col h-dvh overflow-hidden text-brand-charcoal bg-[#FDFBF7]">
       <BreadcrumbSchema

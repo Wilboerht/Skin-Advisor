@@ -23,7 +23,8 @@ const navItems: NavItem[] = [
   { label: "素颜测肤", href: "/" },
   { label: "测肤有礼", href: "/gift" },
   { label: "了解肌智派", href: "/skin-types" },
-  { label: "顾问服务", href: "/services", hop: true },
+  // 顾问服务页暂时下线，重新开放后取消下面这行注释
+  // { label: "顾问服务", href: "/services", hop: true },
 ];
 
 interface WebsiteNavbarProps {

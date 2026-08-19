@@ -335,7 +335,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
         [faceAnalysis?.overallScore, result?.dataSource]
     );
 
-    // 给护肤顾问的报告摘要（结构化档案格式，供一键复制粘贴；含完整问卷档案，与内部 API 口径一致）
+    // 给护肤顾问的报告摘要（只含用户问卷主动填写的信息，供一键复制粘贴）
     const advisorReportText = useMemo(() => {
         if (!result) return "";
         return buildAdvisorReportText({

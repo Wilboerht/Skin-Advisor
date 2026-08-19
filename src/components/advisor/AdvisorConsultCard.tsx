@@ -175,6 +175,12 @@ export default function AdvisorConsultCard({
                     已复制，打开顾问后长按输入框粘贴发送即可
                 </p>
             )}
+            {/* 兜底提示：无 welcome_code 时顾问无法主动打招呼（微信平台限制），引导用户先开口 */}
+            {!copied && !copyFailed && (
+                <p className="text-center text-[11px] text-[#8c7a6b]/80 font-light tracking-[0.04em]">
+                    若打开后顾问未主动打招呼，粘贴报告或发送任意消息即可开始咨询
+                </p>
+            )}
             {/* Copy failed fallback */}
             {copyFailed && !copied && (
                 <div className="mt-2">

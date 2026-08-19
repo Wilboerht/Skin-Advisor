@@ -1,11 +1,10 @@
 /**
  * 生成「给护肤顾问的报告摘要」文本
  *
- * 文本按结构化档案格式组织（性别/肌肤年龄/肤质/评分/重点问题），
+ * 复制文本只包含用户主动填写的问卷信息（昵称/性别/年龄段/关注问题/医美经历/护肤习惯），
  * 便于用户一键复制粘贴给微信客服（企业微信护肤顾问），AI 可直接解析为档案。
  */
-import { DIMENSION_LABELS, getSkinTypeLabel } from "@/lib/advisor-utils";
-import { getRankPercentile } from "@/lib/result-utils";
+import { DIMENSION_LABELS } from "@/lib/advisor-utils";
 import type { ComprehensiveResult } from "@/lib/analysis-result";
 import type { FaceAnalysisResult } from "@/lib/advisor-utils";
 
@@ -137,7 +136,7 @@ export interface AdvisorReportTextParams {
     faceAnalysis: FaceAnalysisResult | null;
     gender: string;
     nickname?: string;
-    /** 问卷答案（键为题目 fieldName）。传入后摘要附带完整问卷档案，与内部 API 口径一致 */
+    /** 问卷答案（键为题目 fieldName）。摘要只取年龄段/关注问题/医美经历/护肤习惯 */
     answers?: Record<string, unknown> | null;
 }
 
@@ -255,33 +254,13 @@ export function getIssueList(
         .map((d) => ({ label: DIMENSION_LABELS[d.key] ?? d.key, score: d.score }));
 }
 
-function buildIssueLine(
-    faceAnalysis: FaceAnalysisResult | null,
-    result: ComprehensiveResult
-): string {
-    const issues = getIssueList(
-        faceAnalysis?.dimensions as Record<string, { score?: number } | undefined> | undefined
-    );
-    if (issues.length > 0) {
-        return `重点问题：${issues.map((i) => `${i.label}（${i.score}分）`).join("、")}`;
-    }
-    if (faceAnalysis?.dimensions && Object.keys(faceAnalysis.dimensions).length > 0) {
-        return "重点问题：无明显问题";
-    }
-    const concerns = result.skinProfile.concerns;
-    if (concerns && concerns.length > 0) return `重点问题：${concerns.join("、")}`;
-    return "";
-}
-
 /**
  * 生成可复制的顾问报告摘要文本。
  * 每行一个字段，避免长段落，方便 AI 顾问按字段解析。
- * 传入 answers 时附带完整问卷档案（过敏史/孕期/医美/生活方式/预算等），
- * 与内部 API /api/internal/report-summary 返回的口径一致。
+ * 只包含用户问卷主动填写的信息：昵称/性别/年龄段/关注问题/医美经历/护肤习惯，
+ * 不带评分、肤质、过敏史等系统分析结果。
  */
 export function buildAdvisorReportText({
-    result,
-    faceAnalysis,
     gender,
     nickname,
     answers,
@@ -298,62 +277,15 @@ export function buildAdvisorReportText({
     if (profile.ageRange) {
         lines.push(`年龄段：${profile.ageRange}`);
     }
-
-    const skinAge = result.skinProfile.skinAge;
-    if (typeof skinAge === "number" && !Number.isNaN(skinAge)) {
-        lines.push(`肌肤年龄：${skinAge}岁`);
-    }
-
-    lines.push(`肤质：${getSkinTypeLabel(result.skinProfile.type)}`);
-
-    const score = faceAnalysis?.overallScore;
-    if (typeof score === "number" && !Number.isNaN(score)) {
-        lines.push(`素颜评分：${score}分（超越全国${getRankPercentile(score)}%的用户）`);
-    }
-
-    const issueLine = buildIssueLine(faceAnalysis, result);
-    if (issueLine) lines.push(issueLine);
-
-    // 完整十维评分：让顾问看到全部维度，而非只有 <70 分的问题项
-    const allDimensions = getDimensionScores(
-        faceAnalysis?.dimensions as Record<string, { score?: number } | undefined> | undefined
-    );
-    if (allDimensions.length > 0) {
-        lines.push(`各维度评分：${allDimensions.map((d) => `${d.label}${d.score}分`).join("、")}`);
-    }
-
-    // 用户主诉（问卷自选的关注点）
     if (profile.primaryConcerns && profile.primaryConcerns.length > 0) {
         lines.push(`关注问题：${profile.primaryConcerns.join("、")}`);
     }
-
-    // 安全相关字段放前面：过敏史 / 孕期状态直接影响产品成分推荐
-    if (profile.allergies && profile.allergies.length > 0) {
-        const safe = profile.allergies.length === 1 && profile.allergies[0] === "无过敏史";
-        lines.push(`${safe ? "" : "⚠️"}过敏史：${profile.allergies.join("、")}`);
-    }
-    if (profile.pregnancy && profile.pregnancy !== "否") {
-        lines.push(`⚠️备孕/孕期/哺乳期：${profile.pregnancy}`);
-    }
-
     if (profile.medicalBeauty && profile.medicalBeauty !== "无") {
         lines.push(`医美经历（近3月）：${profile.medicalBeauty}`);
     }
-
-    // 生活方式背景
-    if (profile.sleepQuality) lines.push(`睡眠质量：${profile.sleepQuality}`);
-    if (profile.stressLevel) lines.push(`压力水平：${profile.stressLevel}`);
-    if (profile.menstrualCycle && profile.menstrualCycle !== "不适用") {
-        lines.push(`生理周期：${profile.menstrualCycle}`);
+    if (profile.skincareFrequency) {
+        lines.push(`护肤习惯：${profile.skincareFrequency}`);
     }
-    if (profile.waterIntake) lines.push(`饮水习惯：${profile.waterIntake}`);
-    if (profile.exerciseFrequency) lines.push(`运动频率：${profile.exerciseFrequency}`);
-    if (profile.dietaryHabits) lines.push(`饮食习惯：${profile.dietaryHabits}`);
-    if (profile.sunExposure) lines.push(`日晒程度：${profile.sunExposure}`);
-
-    // 护肤现状与预算
-    if (profile.skincareFrequency) lines.push(`护肤习惯：${profile.skincareFrequency}`);
-    if (profile.budget) lines.push(`护肤预算：${profile.budget}`);
 
     return lines.join("\n");
 }
