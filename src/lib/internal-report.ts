@@ -35,6 +35,8 @@ export interface ReportSummary {
     questionnaire?: QuestionnaireProfile;
     /** 数据来源：comprehensive（问卷+扫脸）/ questionnaire（纯问卷）/ hybrid */
     dataSource?: string;
+    /** 测肤会话创建时间（ISO 8601，由 route 层从数据库补充，非 analysisResult 快照内容） */
+    createdAt?: string;
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {

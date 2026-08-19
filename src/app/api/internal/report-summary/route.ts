@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     try {
         const session = await prisma.advisorSession.findUnique({
             where: { sessionId },
-            select: { analysisResult: true, answers: true, expiresAt: true },
+            select: { analysisResult: true, answers: true, expiresAt: true, createdAt: true },
         });
 
         if (!session?.analysisResult) {
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
         if (!summary.found) {
             return NextResponse.json({ found: false }, { status: 404 });
         }
-        return NextResponse.json(summary);
+        return NextResponse.json({ ...summary, createdAt: session.createdAt.toISOString() });
     } catch (error) {
         logger.error("report-summary failed", { error: String(error) });
         return NextResponse.json({ error: "Internal error" }, { status: 500 });
