@@ -635,7 +635,7 @@ export function useAsyncAnalysis() {
     useEffect(() => {
         let interval: ReturnType<typeof setInterval> | undefined;
 
-        // 200ms 更新一次进度足够平滑，同时避免频繁 setState 导致低端机掉帧
+        // 400ms 更新一次进度足够平滑，同时避免频繁 setState 导致低端机掉帧
         if (['preparing', 'analyzing_face', 'analyzing_skin'].includes(analysisState.status)) {
             interval = setInterval(() => {
                 setAnalysisState(prev => {
@@ -657,7 +657,7 @@ export function useAsyncAnalysis() {
                         if (remaining > 20) increment = 0.18;
                         else if (remaining > 10) increment = 0.10;
                         else if (remaining > 3) increment = 0.04;
-                        else increment = 0.045; // 200ms 间隔下约 0.225%/s，仍不会感觉卡住
+                        else increment = 0.045; // 400ms 间隔下约 0.11%/s，仍不会感觉卡住
                     }
 
                     if (prev.progress >= target) return prev;
@@ -667,7 +667,7 @@ export function useAsyncAnalysis() {
                         progress: Math.min(prev.progress + increment, target)
                     };
                 });
-            }, 200);
+            }, 400);
         }
 
         return () => clearInterval(interval);

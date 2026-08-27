@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useCallback, Suspense, useRef } from "react";
-import { useTransitionRouter } from "next-view-transitions";
 import { useSearchParams } from "next/navigation";
 import { LazyMotion, domAnimation, AnimatePresence, m, useReducedMotion } from "framer-motion";
 import Image from "next/image";
@@ -17,6 +16,7 @@ import { getGuestIdentity, type GuestIdentity } from "@/lib/guest-identity";
 import { CONSENT_VERSION } from "@/components/advisor/PrivacyConsent";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
+import { useNavPush } from "@/hooks/use-nav-push";
 import dynamic from "next/dynamic";
 const OnboardingFlowModal = dynamic(() => import("@/components/advisor/OnboardingFlowModal").then((mod) => mod.OnboardingFlowModal), { ssr: false });
 const HomepageFooter = dynamic(() => import("@/components/website/HomepageFooter").then((mod) => mod.HomepageFooter), { ssr: false });
@@ -67,7 +67,9 @@ const regionOptions = [
 ];
 
 export default function HomeClient() {
-  const router = useTransitionRouter();
+  // 预取问卷页路由，点击跳转近乎即时；isNavigating 用于 CTA 按钮禁用/反馈
+  // （不再使用 next-view-transitions 的 useTransitionRouter：iOS 18.2+ 上 view transition 快照会冻结 loading 画面）
+  const { push: navPush, isPending: isNavigating } = useNavPush(["/questions"]);
   const { openAuthModal } = useAuthModal();
   const [isLoading, setIsLoading] = useState(false);
   const { initSession } = useAdvisorAnalytics();
@@ -78,8 +80,7 @@ export default function HomeClient() {
   // Initialize session
   useEffect(() => {
     initSession();
-    router.prefetch("/questions");
-  }, [initSession, router]);
+  }, [initSession]);
 
   // Capture ref parameter: moved to <RefCapture /> rendered in JSX (useSearchParams needs Suspense boundary)
 
@@ -135,8 +136,8 @@ export default function HomeClient() {
     }
 
     setIsLoading(true);
-    router.push("/questions");
-  }, [router, user]);
+    navPush("/questions");
+  }, [navPush, user]);
 
   const handleLocationAccept = async () => {
     setIsLocating(true);
@@ -227,6 +228,8 @@ export default function HomeClient() {
   const [guestIdentity, setGuestIdentity] = useState<GuestIdentity | null>(null);
 
   // Initialize guest identity on mount
+  // 指纹采集（FingerprintJS）在主线程耗时数百 ms，错峰到浏览器空闲时执行，
+  // 避免与首屏动画争抢主线程；Safari 不支持 requestIdleCallback，用 setTimeout 兜底
   useEffect(() => {
     const initGuestIdentity = async () => {
       try {
@@ -236,7 +239,12 @@ export default function HomeClient() {
         console.error('Failed to get guest identity:', error);
       }
     };
-    initGuestIdentity();
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+      const idleId = window.requestIdleCallback(() => initGuestIdentity(), { timeout: 3000 });
+      return () => window.cancelIdleCallback(idleId);
+    }
+    const timer = setTimeout(initGuestIdentity, 1500);
+    return () => clearTimeout(timer);
   }, []);
 
   // Check test limit with multi-factor identity
@@ -342,7 +350,7 @@ export default function HomeClient() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[9999] bg-[#FDFBF7] flex flex-col items-center justify-center pointer-events-none"
+            className="fixed inset-0 z-[9999] bg-[#FDFBF7] flex flex-col items-center justify-center"
           >
             <Loader2 className="w-10 h-10 text-[#3D4430] animate-spin mb-6" />
             <p className="text-[#5E5E5E] text-[15px] font-medium tracking-wide">即将进入 AI 问卷...</p>
@@ -415,7 +423,7 @@ export default function HomeClient() {
                       <div className="flex flex-col items-center gap-3 md:gap-4 w-full max-w-md">
                         <button
                           onClick={handleStart}
-                          disabled={isLoading}
+                          disabled={isLoading || isNavigating}
                           className="group relative w-full inline-flex items-center justify-center gap-2.5 px-8 py-4 text-[13px] sm:text-[14px] tracking-[0.12em] font-light cursor-pointer border border-brand-charcoal/60 text-brand-charcoal bg-transparent transition-all duration-500 hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,38,62,0.12)] focus-visible:outline-none focus-visible:border-brand-charcoal focus-visible:bg-brand-charcoal/[0.05] active:translate-y-0 active:shadow-none disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                           {isLoading ? (

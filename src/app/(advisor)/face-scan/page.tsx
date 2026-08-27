@@ -67,6 +67,13 @@ export default function FaceScanPage() {
         }
     }, [trackFaceScanStart, router]);
 
+    // 双保险：isPreparing 全屏遮罩 30 秒兜底关闭，防止模型加载异常时遮罩永不消失
+    useEffect(() => {
+        if (!isPreparing) return;
+        const timer = setTimeout(() => setIsPreparing(false), 30000);
+        return () => clearTimeout(timer);
+    }, [isPreparing]);
+
     // 预加载 face-api 模型：用户还在看引导页时就开始加载，减少等待时间
     useEffect(() => {
         let cancelled = false;
@@ -244,7 +251,7 @@ export default function FaceScanPage() {
 
                 <button
                     onClick={() => setShowExitConfirm(true)}
-                    className="absolute right-4 md:right-12 lg:right-20 px-3 py-2 flex items-center gap-1.5 text-brand-charcoal/70 hover:text-brand-charcoal transition-colors rounded-md hover:bg-brand-charcoal/5"
+                    className="absolute right-4 md:right-12 lg:right-20 min-w-[44px] min-h-[44px] px-3 py-2 flex items-center justify-center gap-1.5 text-brand-charcoal/70 hover:text-brand-charcoal transition-colors rounded-md hover:bg-brand-charcoal/5 touch-manipulation active:scale-95"
                     aria-label="退出测试"
                 >
                     <LogOut className="w-5 h-5" strokeWidth={1.5} />
@@ -260,7 +267,7 @@ export default function FaceScanPage() {
                             initial={{ opacity: 0, scale: 0.9, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                            className="relative w-full max-w-[420px] md:max-w-[480px] aspect-[3/4] max-h-[65vh] md:max-h-[70vh] bg-black rounded-[2rem] overflow-hidden shadow-[0_8px_32px_-8px_rgba(0,38,62,0.12),0_24px_60px_-20px_rgba(0,38,62,0.18)] ring-[3px] ring-[#FAF8F5] z-10 flex flex-col before:absolute before:inset-0 before:rounded-[2rem] before:ring-1 before:ring-inset before:ring-white/10 before:pointer-events-none"
+                            className="relative w-full max-w-[420px] md:max-w-[480px] aspect-[3/4] max-h-[65dvh] md:max-h-[70dvh] bg-black rounded-[2rem] overflow-hidden shadow-[0_8px_32px_-8px_rgba(0,38,62,0.12),0_24px_60px_-20px_rgba(0,38,62,0.18)] ring-[3px] ring-[#FAF8F5] z-10 flex flex-col before:absolute before:inset-0 before:rounded-[2rem] before:ring-1 before:ring-inset before:ring-white/10 before:pointer-events-none"
                         >
                             {/* Real Camera Component */}
                             <FaceCapture

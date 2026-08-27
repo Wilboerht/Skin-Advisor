@@ -87,7 +87,7 @@ export function PrivacyConsent({ onConsent }: PrivacyConsentProps) {
                 {/* 详细条款折叠 */}
                 <button
                     onClick={() => setShowDetails(!showDetails)}
-                    className="flex items-center gap-1 text-xs text-[#3D4430]/60 hover:text-[#3D4430] transition-colors mx-auto"
+                    className="flex items-center gap-1 min-h-[44px] py-2 px-1 -mx-1 text-xs text-[#3D4430]/60 hover:text-[#3D4430] transition-colors mx-auto"
                 >
                     <span>{showDetails ? "收起" : "查看完整隐私政策与服务条款"}</span>
                     <ChevronRight

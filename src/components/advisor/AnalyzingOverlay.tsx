@@ -47,7 +47,7 @@ export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitS
     useEffect(() => {
         const interval = setInterval(() => {
             setPersonaIdx((prev) => (prev + 1) % PERSONAS.length);
-        }, 2500);
+        }, 4000);
         return () => clearInterval(interval);
     }, []);
 

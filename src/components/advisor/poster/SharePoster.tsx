@@ -54,7 +54,6 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
             src={posterTemplate}
             alt=""
             loading="eager"
-            decoding="sync"
             className="absolute inset-0 w-full h-full"
             onError={() => setTemplateFailed(true)}
           />
@@ -69,7 +68,6 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
               src={avatar}
               alt=""
               loading="eager"
-              decoding="sync"
               className="w-[40%] h-auto"
               onError={() => setAvatarFailed(true)}
             />
@@ -82,7 +80,6 @@ export const SharePoster = forwardRef<HTMLDivElement, SharePosterProps>(
             src={posterOverlay}
             alt=""
             loading="eager"
-            decoding="sync"
             className="absolute z-20 pointer-events-none"
             style={{
               width: "85.5%",

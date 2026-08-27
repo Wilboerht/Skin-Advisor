@@ -199,7 +199,7 @@ export function OnboardingFlowModal({
                     <div id="onboarding-modal-title" className="sr-only">肌肤测试引导</div>
 
                     {/* ---- App Bar / Header ---- */}
-                    <header className="fixed top-0 left-0 right-0 z-[100003] flex items-center justify-between px-6 md:px-12 lg:px-20 py-6 md:py-7 bg-[#FDFBF7]/95 backdrop-blur-sm border-b border-[#1A1A1A]/5">
+                    <header className="fixed top-0 left-0 right-0 z-[100003] flex items-center justify-between px-6 md:px-12 lg:px-20 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-6 md:pt-[calc(1.75rem+env(safe-area-inset-top,0px))] md:pb-7 bg-[#FDFBF7]/95 backdrop-blur-sm border-b border-[#1A1A1A]/5">
                         <button
                             onClick={onClose}
                             className="group flex items-center gap-2 text-brand-charcoal/80 hover:text-brand-charcoal transition-colors cursor-pointer bg-transparent border-none"
@@ -542,7 +542,7 @@ export function OnboardingFlowModal({
                     </div>
 
                     {/* ---- Progress Indicators (minimal text) ---- */}
-                    <div className="fixed bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 z-[110]">
+                    <div className="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))] md:bottom-8 left-1/2 -translate-x-1/2 z-[110]">
                         <div className="flex items-center gap-3 md:gap-4 text-[11px] md:text-xs tracking-[0.12em]">
                                 {screens.map((screen, index) => {
                                     const isActive = index === activeIndex;

@@ -29,7 +29,10 @@ import { cn } from "@/lib/utils";
 import { fetchWithCsrf } from "@/lib/fetch-client";
 import type { SessionUser } from "@/lib/auth";
 
-import { ScientificBarChart } from "@/components/advisor/ScientificBarChart";
+import dynamic from "next/dynamic";
+
+// recharts 体积较大且仅桌面端 Lab 弹窗使用，改为客户端懒加载，不打入结果页首屏包
+const ScientificBarChart = dynamic(() => import("@/components/advisor/ScientificBarChart").then((mod) => mod.ScientificBarChart), { ssr: false });
 
 
 import { SharePoster } from "@/components/advisor/poster/SharePoster";
@@ -439,6 +442,9 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
     // 性别就绪后才生成，避免把默认女版头像烘焙进海报缓存
     useEffect(() => {
         if (!result || !qrDataUrl || preloadedPosterBlob || !socialGender) return;
+        // 触屏设备（手机/平板）跳过预生成：toBlob(pixelRatio:2) 会冻结主线程数百 ms，
+        // iOS 低端机甚至可能被杀进程，改为用户点击保存时再现场生成
+        if (window.matchMedia("(hover: none)").matches) return;
 
         let cancelled = false;
         const timer = setTimeout(async () => {

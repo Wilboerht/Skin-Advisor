@@ -134,7 +134,7 @@ export function RegisterConversionModal({ scrollContainerRef }: RegisterConversi
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 40, scale: 0.96 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative z-10 w-full max-w-[420px] max-h-[85vh] overflow-y-auto bg-[#FDFBF7] rounded-t-2xl sm:rounded-2xl shadow-2xl border border-[#3D4430]/10"
+            className="relative z-10 w-full max-w-[420px] max-h-[85dvh] overflow-y-auto bg-[#FDFBF7] rounded-t-2xl sm:rounded-2xl shadow-2xl border border-[#3D4430]/10"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close Button */}

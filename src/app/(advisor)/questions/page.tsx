@@ -77,6 +77,10 @@ export default function QuestionsPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const genderScrollRef = useRef<HTMLDivElement>(null);
+    // 自动切题定时器（单选/互斥多选 300ms 后自动跳转），用于清理与防重入
+    const autoAdvanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    // 同步跟踪最新 answers，供自动切题定时器回调校验（闭包捕获的是旧 state）
+    const answersRef = useRef(answers);
     const [restoredStepIndex, setRestoredStepIndex] = useState<number | null>(null);
 
     // 锁定 body 滚动，防止 iPhone 上出现滚动条 / overscroll（与首页一致）
@@ -184,11 +188,6 @@ export default function QuestionsPage() {
         }
     }, [router]);
 
-    // 预加载面部识别模型，在用户填问卷时后台加载
-    useEffect(() => {
-        preloadAllFaceModels();
-    }, []);
-
     const getFilteredQuestions = (currentAnswers: Record<string, unknown>, currentGender: typeof gender) => {
         return allQuestions.filter(q => {
             if (currentGender === "male" && (q.fieldName === "pregnancy" || q.fieldName === "menstrualCycle")) return false;
@@ -227,10 +226,10 @@ export default function QuestionsPage() {
         }
     }, [questions.length, currentStepIndex]);
 
-    // 每次切题时重置滚动位置到顶部
+    // 每次切题时重置滚动位置到顶部（behavior: "instant" 避免被全局 scroll-behavior:smooth 变成动画滚动）
     useEffect(() => {
         if (scrollContainerRef.current) {
-            scrollContainerRef.current.scrollTop = 0;
+            scrollContainerRef.current.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
         }
     }, [currentStepIndex]);
 
@@ -384,6 +383,17 @@ export default function QuestionsPage() {
         }
     }, [answers, currentStepIndex, gender]);
 
+    // 用 ref 持有最新 flushAnswers，避免卸载/页面隐藏 effect 因 answers 变化而频繁重注册
+    const flushRef = useRef(flushAnswers);
+    useEffect(() => {
+        flushRef.current = flushAnswers;
+    });
+
+    // 同步最新 answers 到 ref，供自动切题定时器回调校验
+    useEffect(() => {
+        answersRef.current = answers;
+    }, [answers]);
+
     useEffect(() => {
         if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
         saveTimerRef.current = setTimeout(() => {
@@ -396,9 +406,9 @@ export default function QuestionsPage() {
 
     // 在页面关闭或隐藏前同步刷新防抖中的保存，避免最新答案丢失
     useEffect(() => {
-        const handleBeforeUnload = () => flushAnswers();
+        const handleBeforeUnload = () => flushRef.current();
         const handleVisibilityChange = () => {
-            if (document.visibilityState === "hidden") flushAnswers();
+            if (document.visibilityState === "hidden") flushRef.current();
         };
         window.addEventListener("beforeunload", handleBeforeUnload);
         document.addEventListener("visibilitychange", handleVisibilityChange);
@@ -406,19 +416,25 @@ export default function QuestionsPage() {
             window.removeEventListener("beforeunload", handleBeforeUnload);
             document.removeEventListener("visibilitychange", handleVisibilityChange);
         };
-    }, [flushAnswers]);
+    }, []);
 
-    // 组件卸载时再次 flush（安全网）
+    // 组件卸载时再次 flush（安全网），同时清理未触发的自动切题定时器
     useEffect(() => {
         return () => {
-            flushAnswers();
+            flushRef.current();
+            if (autoAdvanceTimerRef.current) {
+                clearTimeout(autoAdvanceTimerRef.current);
+                autoAdvanceTimerRef.current = null;
+            }
         };
-    }, [flushAnswers]);
+    }, []);
 
     const handleGenderSelect = (selectedGender: "female" | "male") => {
         setGender(selectedGender);
         setAnswers(prev => ({ ...prev, gender: selectedGender }));
         safeStorage.set(STORAGE_KEYS.ADVISOR_GENDER, selectedGender);
+        // 首次交互后再开始预加载面部识别模型，避免 mount 时 import face-api/TF.js 阻塞主线程
+        preloadAllFaceModels();
         // 追踪问卷开始（从选择性别开始算）
         if (!hasTrackedStart.current) {
             trackQuestionnaireStart();
@@ -428,8 +444,25 @@ export default function QuestionsPage() {
         }
     };
 
+    // 调度自动切题：回调里通过 answersRef 校验该题答案未被改动（闭包捕获的是旧 state，必须读 ref），
+    // 防止 300ms 内改选/回退后 pending 的定时器把用户推到错误位置
+    const scheduleAutoAdvance = (fieldName: string, expected: unknown, newAnswers: Record<string, unknown>) => {
+        autoAdvanceTimerRef.current = setTimeout(() => {
+            autoAdvanceTimerRef.current = null;
+            const latest = answersRef.current[fieldName];
+            if (JSON.stringify(latest ?? null) !== JSON.stringify(expected ?? null)) return;
+            handleNextWithAnswers(newAnswers);
+        }, 300);
+    };
+
     const handleSelect = (value: string) => {
         if (!currentQuestion) return;
+
+        // 先清除上一个未触发的自动切题，避免 300ms 内改选另一个选项导致跳两题
+        if (autoAdvanceTimerRef.current) {
+            clearTimeout(autoAdvanceTimerRef.current);
+            autoAdvanceTimerRef.current = null;
+        }
 
         const newAnswers = { ...answers };
 
@@ -442,9 +475,7 @@ export default function QuestionsPage() {
                 newAnswers[currentQuestion.fieldName] = [value];
 
                 // 互斥选项视作单选，选完后给个小延迟自动跳转
-                setTimeout(() => {
-                    handleNextWithAnswers(newAnswers);
-                }, 300);
+                scheduleAutoAdvance(currentQuestion.fieldName, [value], newAnswers);
             } else {
                 // 如果选择了普通选项
                 // 1. 先清除互斥选项
@@ -464,15 +495,18 @@ export default function QuestionsPage() {
         } else {
             newAnswers[currentQuestion.fieldName] = value;
             // 单选自动跳转
-            setTimeout(() => {
-                handleNextWithAnswers(newAnswers);
-            }, 300);
+            scheduleAutoAdvance(currentQuestion.fieldName, value, newAnswers);
         }
 
         setAnswers(newAnswers);
     };
 
     const handleBack = () => {
+        // 清除未触发的自动切题，避免点"上一题"后又被 pending 的定时器推回去
+        if (autoAdvanceTimerRef.current) {
+            clearTimeout(autoAdvanceTimerRef.current);
+            autoAdvanceTimerRef.current = null;
+        }
         if (currentStepIndex > 0) {
             setDirection(-1);
             setCurrentStepIndex(prev => prev - 1);
@@ -786,7 +820,8 @@ export default function QuestionsPage() {
                             custom={direction}
                             initial={{ opacity: 0, x: direction > 0 ? 20 : -20 }}
                             animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: direction > 0 ? -20 : 20 }}
+                            // 滑出中的旧题不再响应点击，避免 iOS 上 tap 命中位移中的选项
+                            exit={{ opacity: 0, x: direction > 0 ? -20 : 20, pointerEvents: "none" }}
                             transition={{ duration: 0.25, ease: "easeOut" }}
                             className="w-full"
                         >

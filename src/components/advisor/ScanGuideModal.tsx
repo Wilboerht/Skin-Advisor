@@ -37,7 +37,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
                     <header className="fixed top-0 left-0 right-0 z-[330] flex items-center justify-center px-6 md:px-12 lg:px-20 py-6 md:py-7 bg-[#FAF8F5]/95 backdrop-blur-sm border-b border-brand-charcoal/5">
                         <button
                             onClick={handleClose}
-                            className="absolute left-4 md:left-12 lg:left-20 px-3 py-2 flex items-center gap-1.5 text-brand-charcoal/70 hover:text-brand-charcoal transition-colors rounded-md hover:bg-brand-charcoal/5 cursor-pointer bg-transparent border-none"
+                            className="absolute left-4 md:left-12 lg:left-20 min-w-[44px] min-h-[44px] px-3 py-2 flex items-center justify-center gap-1.5 text-brand-charcoal/70 hover:text-brand-charcoal transition-colors rounded-md hover:bg-brand-charcoal/5 cursor-pointer bg-transparent border-none touch-manipulation active:scale-95"
                             aria-label="返回"
                         >
                             <ChevronLeft className="w-5 h-5" strokeWidth={1.5} />
@@ -54,7 +54,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
 
                         <button
                             onClick={handleClose}
-                            className="absolute right-4 md:right-12 lg:right-20 px-3 py-2 flex items-center gap-1.5 text-brand-charcoal/70 hover:text-brand-charcoal transition-colors rounded-md hover:bg-brand-charcoal/5 cursor-pointer bg-transparent border-none"
+                            className="absolute right-4 md:right-12 lg:right-20 min-w-[44px] min-h-[44px] px-3 py-2 flex items-center justify-center gap-1.5 text-brand-charcoal/70 hover:text-brand-charcoal transition-colors rounded-md hover:bg-brand-charcoal/5 cursor-pointer bg-transparent border-none touch-manipulation active:scale-95"
                             aria-label="退出"
                         >
                             <LogOut className="w-5 h-5" strokeWidth={1.5} />

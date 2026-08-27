@@ -34,3 +34,8 @@ export function useIsTablet() {
 export function useIsDesktop() {
   return useMediaQuery("(min-width: 1025px)");
 }
+
+// 触屏设备（无悬停能力，如手机/平板）
+export function useIsTouch() {
+  return useMediaQuery("(hover: none)");
+}

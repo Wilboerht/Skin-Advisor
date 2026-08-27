@@ -66,10 +66,9 @@ export function useBodyScrollLock({ enabled, iosSafe = false }: UseBodyScrollLoc
                 document.body.style.position = originalPosition;
                 document.body.style.width = originalWidth;
                 document.body.style.top = originalTop;
-                // Restore scroll position
-                if (originalTop?.startsWith("-")) {
-                    window.scrollTo(0, parseInt(originalTop.replace("-", ""), 10) || savedScrollY.current);
-                }
+                // 无条件恢复加锁时保存的滚动位置
+                // （originalTop 是加锁前的值，几乎恒为空字符串，用它判断会导致 iOS 解锁后页面跳回顶部）
+                window.scrollTo(0, savedScrollY.current);
             }
         };
     }, [enabled, iosSafe, isMobile, mounted]);

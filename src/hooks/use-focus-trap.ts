@@ -33,10 +33,11 @@ export function useFocusTrap<T extends HTMLElement>(isOpen: boolean) {
         const firstElement = focusableElements[0];
 
         // 聚焦第一个可聚焦元素，或容器本身
-        if (firstElement) {
-            firstElement.focus();
-        } else {
-            container.focus();
+        // 触屏设备（hover: none）跳过自动聚焦，避免 iOS 弹虚拟键盘；
+        // preventScroll 防止 iOS Safari 因程序化聚焦把页面滚动进可视区而跳动
+        const isTouchDevice = window.matchMedia("(hover: none)").matches;
+        if (!isTouchDevice) {
+            (firstElement ?? container).focus({ preventScroll: true });
         }
 
         const handleKeyDown = (e: KeyboardEvent) => {

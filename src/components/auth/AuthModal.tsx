@@ -209,14 +209,14 @@ export function AuthModal() {
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.3 }}
                     onClick={view === "wechat_bind" ? undefined : closeAuthModal}
-                    className="fixed inset-0 z-[99998] bg-black/20 backdrop-blur-md"
+                    className="fixed inset-0 z-[100002] bg-black/20 backdrop-blur-md"
                 />
                 <motion.div
                     key={`pc-panel-${view}`}
                     initial={{ x: "100%" }}
                     animate={{ x: 0, transition: { duration: 0.8, ease: [0.8, 0, 0.13, 1] } }}
                     exit={{ x: "100%", transition: { duration: 0.5, ease: [0.8, 0, 0.13, 1] } }}
-                    className="hidden md:flex fixed inset-y-0 right-0 w-full bg-white flex-col z-[99999]"
+                    className="hidden md:flex fixed inset-y-0 right-0 w-full bg-white flex-col z-[100003]"
                 >
                         {/* 关闭/取消按钮 */}
                         {view === "wechat_bind" ? (
@@ -357,7 +357,7 @@ export function AuthModal() {
                     initial={{ x: "100%" }}
                     animate={{ x: 0, transition: { duration: 0.8, ease: [0.8, 0, 0.13, 1] } }}
                     exit={{ x: "100%", transition: { duration: 0.5, ease: [0.8, 0, 0.13, 1] } }}
-                    className="md:hidden fixed inset-0 z-[99999] pl-4 pr-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top,0px))] bg-[#FDFBF7] flex flex-col"
+                    className="md:hidden fixed inset-0 z-[100003] pl-4 pr-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] pt-[calc(1rem+env(safe-area-inset-top,0px))] bg-[#FDFBF7] flex flex-col"
                 >
                     {/* 手机端顶部栏 */}
                     <div className="flex-shrink-0 h-[56px] w-full flex items-center justify-center relative">

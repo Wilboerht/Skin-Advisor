@@ -54,12 +54,18 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
       ? "show_campaign"
       : "no_campaign";
 
+  // 活动是否已开始：挪到客户端 effect 计算，避免 ISR 页面 SSR 与水合时当前时间不一致
+  const [campaignStarted, setCampaignStarted] = useState(false);
+  useEffect(() => {
+    setCampaignStarted(!!campaign && new Date() >= new Date(campaign.startDate));
+  }, [campaign]);
+
   const formatDate = (iso: string) => {
     return new Date(iso).toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" });
   };
 
   return (
-    <main className="relative min-h-screen flex flex-col text-brand-charcoal bg-[#FDFBF7] overflow-hidden">
+    <main className="relative min-h-dvh flex flex-col text-brand-charcoal bg-[#FDFBF7] overflow-hidden">
       <WebsiteNavbar />
 
       <div className="flex-1">
@@ -89,7 +95,7 @@ export default function GiftClient({ serverCampaign }: { serverCampaign: Campaig
               {pageState === "show_campaign" && campaign && (
                 <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8">
                   {campaign.drawDate && (
-                    <div className={`flex items-center gap-2 ${new Date() >= new Date(campaign.startDate) ? "text-xs" : "text-sm"} text-brand-charcoal/60`}>
+                    <div className={`flex items-center gap-2 ${campaignStarted ? "text-xs" : "text-sm"} text-brand-charcoal/60`}>
                       <Sparkles className="w-4 h-4 text-brand-charcoal/70" />
                       <span>开奖时间：{formatDate(campaign.drawDate)}</span>
                     </div>

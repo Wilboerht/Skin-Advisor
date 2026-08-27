@@ -164,7 +164,8 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
   // 标记刚完成拍照的时间戳，用于语音时序对齐
   const justCapturedRef = useRef<number | null>(null);
   // 动态检测间隔：根据设备性能自适应，避免低端机掉帧
-  const detectionIntervalRef = useRef(50);
+  // 档位整体放宽（最快 100ms、最慢 300ms），为触摸事件留出主线程时间
+  const detectionIntervalRef = useRef(100);
   const detectionTimesRef = useRef<number[]>([]);
   // 解决 takePhotoAuto 在 detectFace 之前被访问的闭包问题
   const takePhotoAutoRef = useRef<() => void>(() => {});
@@ -223,6 +224,14 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     }
     setError(null);
     const callId = ++initCallIdRef.current;
+
+    // 非 HTTPS 或旧 webview 中 navigator.mediaDevices 可能为 undefined，走独立错误文案而非抛 TypeError
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+      setError("当前环境不支持摄像头，请使用 HTTPS 访问或更换浏览器后重试");
+      setIsLoading(false);
+      setIsSwitchingCamera(false);
+      return;
+    }
 
     try {
       // 先停止现有流
@@ -415,6 +424,8 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
         console.error("Failed to load face detection:", timeoutErr);
         setModelsLoaded(false);
         setModelLoadFailed(true);
+        // 已进入手动拍照降级模式，通知页面关闭全屏准备遮罩，避免遮罩永不消失
+        onModelsLoaded?.();
         // 恢复路径：超时只是"等不及"，后台加载仍会继续。
         // 若模型最终加载成功（如网络慢），自动恢复自动检测状态，
         // 避免用户永久停留在"手动拍照"降级模式。
@@ -436,6 +447,8 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
       console.error("Failed to load face detection:", err);
       setModelsLoaded(false);
       setModelLoadFailed(true);
+      // 已进入手动拍照降级模式，通知页面关闭全屏准备遮罩，避免遮罩永不消失
+      onModelsLoaded?.();
     }
   }, [faceApiLoaded, externalFaceApi, onModelsLoaded]);
 
@@ -652,8 +665,10 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
 
     try {
       const faceapi = faceApiRef.current;
+      // 移动设备降低输入分辨率（416→320），降低单帧推理耗时，避免主线程被占满导致触摸事件排队
+      const isMobileInput = typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches;
       const detection = await faceapi
-        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.3 }))
+        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: isMobileInput ? 320 : 416, scoreThreshold: 0.3 }))
         .withFaceLandmarks();
 
       if (detection) {
@@ -738,10 +753,14 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
           if (!inGracePeriod) {
             stableCountRef.current += 1;
           }
-          setFaceStatus("found");
+          setFaceStatus((prev) => (prev === "found" ? prev : "found"));
 
           // 更新稳定进度：统一使用 progressFrames 作为分母，避免进度回跳
-          setStabilityProgress(Math.min(100, (stableCountRef.current / progressFrames) * 100));
+          // 取整后与旧值相同则跳过 setState，减少检测高频回调带来的无效重渲染
+          setStabilityProgress((prev) => {
+            const next = Math.round(Math.min(100, (stableCountRef.current / progressFrames) * 100));
+            return prev === next ? prev : next;
+          });
 
           // 达到稳定帧数立即拍照，先打断当前语音避免滞后播报
           if (stableCountRef.current >= requiredFrames) {
@@ -771,8 +790,11 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
           // 轻微衰减，流程更宽容
           stableCountRef.current = Math.max(0, stableCountRef.current - 1);
           // 使用与正向累加相同的 progressFrames 分母，避免进度回跳
-          setStabilityProgress(Math.min(100, (stableCountRef.current / progressFrames) * 100));
-          setFaceStatus("detecting");
+          setStabilityProgress((prev) => {
+            const next = Math.round(Math.min(100, (stableCountRef.current / progressFrames) * 100));
+            return prev === next ? prev : next;
+          });
+          setFaceStatus((prev) => (prev === "detecting" ? prev : "detecting"));
 
           const now = Date.now();
           if (now > speakLockUntilRef.current && now - lastSpeakTimeRef.current > 6000 && !isPoseCorrect) {
@@ -798,7 +820,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
         stableCountRef.current = 0;
         faceBoxRef.current = null;
 
-        setFaceStatus("detecting");
+        setFaceStatus((prev) => (prev === "detecting" ? prev : "detecting"));
       }
     } catch (err) {
       console.error("Face detection error:", err);
@@ -813,10 +835,12 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
       }
       if (detectionTimesRef.current.length >= 3) {
         const avg = detectionTimesRef.current.reduce((a, b) => a + b, 0) / detectionTimesRef.current.length;
-        if (avg > 35) {
-          detectionIntervalRef.current = 80;
+        if (avg > 60) {
+          detectionIntervalRef.current = 300;
+        } else if (avg > 35) {
+          detectionIntervalRef.current = 200;
         } else if (avg < 20) {
-          detectionIntervalRef.current = 50;
+          detectionIntervalRef.current = 100;
         }
       }
     }
@@ -1287,6 +1311,8 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
 
   // 检测是否有多个摄像头；默认在移动端显示切换按钮，授权后重新枚举以获取标签
   useEffect(() => {
+    // 非 HTTPS 或旧 webview 中 mediaDevices 可能不存在
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices) return;
     navigator.mediaDevices.enumerateDevices().then(devices => {
       const videoInputs = devices.filter(d => d.kind === 'videoinput');
       setHasMultipleCameras(videoInputs.length > 1);
@@ -1616,7 +1642,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
             <div className="pointer-events-auto mt-4">
               <button
                 onClick={takePhotoAuto}
-                className="px-6 py-2 rounded-full border border-white/30 text-white text-sm hover:bg-white/10 transition-colors backdrop-blur-sm"
+                className="px-6 py-2 min-h-[44px] rounded-full border border-white/30 text-white text-sm hover:bg-white/10 transition-colors backdrop-blur-sm touch-manipulation"
               >
                 {modelLoadFailed ? "面部检测不可用，点击手动拍照" : "无法自动识别？点击手动拍照"}
               </button>

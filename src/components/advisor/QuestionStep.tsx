@@ -5,19 +5,14 @@ import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { type Question } from "@/config/questions";
 import { OptionCard } from "./OptionCard";
-import {
-  slideVariants,
-  slideTransition,
-  reducedMotionVariants,
-  reducedMotionTransition,
-} from "./animations";
+import { useIsTouch } from "@/hooks/useMediaQuery";
 
 interface QuestionStepProps {
   question: Question;
   selectedValue: string | string[] | null;
   onSelect: (value: string) => void;
   onNext: () => void;
-  direction: number; // 1: 向前, -1: 向后
+  direction: number; // 1: 向前, -1: 向后（切题滑入滑出由外层 page 的 AnimatePresence 负责）
   currentStep: number;
   totalSteps: number;
 }
@@ -27,25 +22,23 @@ interface QuestionStepProps {
  * 显示单个问题及其选项，支持优雅的动画过渡
  *
  * 功能：
- * - 进入动画：从右侧滑入（向前）/ 从左侧滑入（向后）
- * - 退出动画：向左侧滑出（向前）/ 向右侧滑出（向后）
+ * - 切题滑入滑出由外层 page 的 AnimatePresence 负责，本组件不再叠加位移动画，
+ *   避免 iOS 上多层动画叠加导致选项长时间处于位移中、tap 命中偏移
  * - 支持 prefers-reduced-motion 降级
+ * - 触屏设备（hover: none）选项无逐卡入场延迟
  */
 export function QuestionStep({
   question,
   selectedValue,
   onSelect,
   onNext,
-  direction,
   currentStep,
   totalSteps,
 }: QuestionStepProps) {
   // 检测用户是否偏好减少动画
   const prefersReducedMotion = useReducedMotion();
-
-  // 根据用户偏好选择动画配置
-  const variants = prefersReducedMotion ? reducedMotionVariants : slideVariants;
-  const transition = prefersReducedMotion ? reducedMotionTransition : slideTransition;
+  // 触屏设备上去掉逐卡入场延迟，缩短选项处于动画中的时间
+  const isTouch = useIsTouch();
 
   const isNextDisabled = !selectedValue || (Array.isArray(selectedValue) && selectedValue.length === 0);
   const selectedCount = Array.isArray(selectedValue) ? selectedValue.length : selectedValue ? 1 : 0;
@@ -63,16 +56,7 @@ export function QuestionStep({
   })();
 
   return (
-      <m.div
-        key={question.id}
-        custom={direction}
-        variants={variants}
-        initial="enter"
-        animate="center"
-        exit="exit"
-        transition={transition}
-        className="w-full"
-      >
+      <div className="w-full">
         {/* Header - Centered & Clean */}
         <div className="text-center mb-8 pt-8 sm:pt-10 md:pt-6">
           <m.h2
@@ -117,7 +101,7 @@ export function QuestionStep({
                 emoji={option.emoji}
                 isSelected={isSelected}
                 onClick={() => onSelect(option.value)}
-                index={prefersReducedMotion ? 0 : index}
+                index={prefersReducedMotion || isTouch ? 0 : index}
                 role={question.type === "multiple" ? "checkbox" : "radio"}
               />
             );
@@ -152,6 +136,6 @@ export function QuestionStep({
             </m.div>
           )}
         </AnimatePresence>
-      </m.div>
+      </div>
   );
 }

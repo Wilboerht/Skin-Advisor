@@ -9,6 +9,7 @@ import { HomeSvg } from "@/components/icons/HomeSvg";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { useUser } from "@/components/auth/UserProvider";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
+import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 
 interface NavItem {
   label: string;
@@ -51,21 +52,8 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // 打开移动端菜单时禁止背景滚动（iOS 兼容：使用 position:fixed 防止页面跳到顶部）
-  useEffect(() => {
-    if (mobileMenuOpen) {
-      const scrollY = window.scrollY;
-      document.body.style.position = "fixed";
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.width = "100%";
-      return () => {
-        document.body.style.position = "";
-        document.body.style.top = "";
-        document.body.style.width = "";
-        window.scrollTo(0, scrollY);
-      };
-    }
-  }, [mobileMenuOpen]);
+  // 打开移动端菜单时锁定背景滚动（与首页的锁可正确嵌套：菜单关闭时还原到"已锁定"状态）
+  useBodyScrollLock({ enabled: mobileMenuOpen, iosSafe: true });
 
   const handleNavClick = () => {
     setMobileMenuOpen(false);

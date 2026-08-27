@@ -14,7 +14,7 @@ export function GiftFloatCard() {
   if (!mounted) return null;
 
   return (
-    <div className="fixed bottom-3 right-6 md:bottom-4 md:right-8 z-[9999]">
+    <div className="fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom,0px))] right-6 md:bottom-4 md:right-8 z-[9999]">
       <Link
         href="/gift"
         className="group flex items-center gap-2 text-sm text-[#8B7355] hover:text-[#5c4937] transition-colors duration-300"
@@ -29,13 +29,6 @@ export function GiftFloatCard() {
         />
         <span className="tracking-[0.05em]">肌智派送好礼</span>
       </Link>
-
-      <style>{`
-        @keyframes soft-blink {
-          0%, 100% { opacity: 0.88; }
-          50% { opacity: 1; }
-        }
-      `}</style>
     </div>
   );
 }

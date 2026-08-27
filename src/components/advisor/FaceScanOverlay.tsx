@@ -99,13 +99,14 @@ export function FaceScanOverlay({
                     )}
                 </div>
 
-                {/* 扫描激光 */}
+                {/* 扫描激光：元素高度等于扫描轨道（top 10% → 90%），仅顶部 2px 线条可见；
+                    用 transform（y 百分比相对自身高度）替代 top 动画，只走合成层，避免每帧 layout */}
                 <AnimatePresence>
                     {currentStep === "front" && faceStatus !== "ready" && faceStatus !== "success" && (
                         <m.div
-                            className="absolute left-[8%] right-[8%] h-[2px] bg-gradient-to-r from-transparent via-brand-gold to-transparent shadow-[0_0_15px_rgba(234,179,8,0.5)]"
-                            initial={{ top: "10%", opacity: 0 }}
-                            animate={{ top: ["10%", "90%", "10%"], opacity: 1 }}
+                            className="absolute left-[8%] right-[8%] top-[10%] h-[80%] bg-[linear-gradient(to_right,transparent,#C9A86C,transparent)] bg-[length:100%_2px] bg-no-repeat [filter:drop-shadow(0_0_7px_rgba(234,179,8,0.5))]"
+                            initial={{ y: "0%", opacity: 0 }}
+                            animate={{ y: ["0%", "100%", "0%"], opacity: 1 }}
                             transition={{ repeat: Infinity, duration: 3.5, ease: "easeInOut" }}
                             exit={{ opacity: 0 }}
                         />
