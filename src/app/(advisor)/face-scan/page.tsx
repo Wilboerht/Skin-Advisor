@@ -11,10 +11,13 @@ import { useToast } from "@/components/ui/Toast";
 import { ScanGuideModal } from "@/components/advisor/ScanGuideModal";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
+import { useNavPush } from "@/hooks/use-nav-push";
 import type { UploadMetadata } from "@/lib/upload-client";
 
 export default function FaceScanPage() {
     const router = useRouter();
+    // 预取首页与问卷页路由，避免顶部栏按钮冷导航"点了没反应"；isNavigating 提供即时反馈
+    const { push: navPush, isPending: isNavigating } = useNavPush(["/", "/questions?edit=true"]);
     const toast = useToast();
     const { trackFaceScanStart, trackFaceScanComplete } = useAdvisorAnalytics();
 
@@ -221,8 +224,9 @@ export default function FaceScanPage() {
             {/* Top Bar —— 复用 /questions 统一样式 */}
             <header className={`w-full relative flex items-center justify-center py-6 md:py-7 px-4 md:px-12 lg:px-20 z-[310] shrink-0 border-b border-brand-charcoal/5 transition-colors duration-300 ${isModalOpen ? 'bg-[#FAF8F5]' : 'bg-[#F5F2E9]'}`}>
                 <button
-                    onClick={() => router.push("/questions?edit=true")}
-                    className="absolute left-4 md:left-12 lg:left-20 px-3 py-2 flex items-center gap-1.5 text-brand-charcoal/70 hover:text-brand-charcoal transition-colors rounded-md hover:bg-brand-charcoal/5"
+                    onClick={() => navPush("/questions?edit=true")}
+                    disabled={isNavigating}
+                    className="absolute left-4 md:left-12 lg:left-20 min-w-[44px] min-h-[44px] px-3 py-2 flex items-center justify-center gap-1.5 text-brand-charcoal/70 hover:text-brand-charcoal transition-colors rounded-md hover:bg-brand-charcoal/5 touch-manipulation active:scale-95 disabled:opacity-40"
                     aria-label="返回"
                 >
                     <ChevronLeft className="w-5 h-5" strokeWidth={1.5} />
@@ -348,7 +352,7 @@ export default function FaceScanPage() {
                                             // 仅清除人脸照片缓存，保留问卷答案和进度供用户返回修改
                                             const { advisorStorage } = await import("@/lib/advisor-storage");
                                             await advisorStorage.clearFaceImages();
-                                            router.push("/");
+                                            navPush("/");
                                         }}
                                         className="px-6 h-10 border border-brand-charcoal/20 text-brand-charcoal/60 hover:text-brand-charcoal hover:border-brand-charcoal/40 text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                                     >
@@ -398,7 +402,7 @@ export default function FaceScanPage() {
                                             // 清理人脸照片缓存释放空间，但保留问卷进度
                                             const { advisorStorage } = await import("@/lib/advisor-storage");
                                             await advisorStorage.clearAll();
-                                            router.push("/");
+                                            navPush("/");
                                         }}
                                         className="px-6 h-10 border border-brand-charcoal/20 text-brand-charcoal/60 hover:text-brand-charcoal hover:border-brand-charcoal/40 text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                                     >
@@ -420,7 +424,7 @@ export default function FaceScanPage() {
                     setIsPreparing(true);
                     setIsModalOpen(false);
                 }}
-                onExit={() => router.push("/questions?edit=true")}
+                onExit={() => navPush("/questions?edit=true")}
             />
         </div>
     );

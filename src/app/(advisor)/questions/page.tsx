@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { preloadAllFaceModels } from "@/lib/preload-models";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
+import { useNavPush } from "@/hooks/use-nav-push";
 import { z } from "zod";
 
 const safeStorage = {
@@ -57,6 +58,8 @@ const questionListSchema = z.array(questionSchema);
 
 export default function QuestionsPage() {
     const router = useRouter();
+    // 预取首页与扫脸页路由，避免顶部栏按钮冷导航"点了没反应"；isNavigating 提供即时反馈
+    const { push: navPush, isPending: isNavigating } = useNavPush(["/", "/face-scan"]);
     const toast = useToast();
     const [gender, setGender] = useState<"female" | "male" | null>(null);
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
@@ -488,7 +491,7 @@ export default function QuestionsPage() {
         setIsSubmitting(true);
         safeStorage.set(STORAGE_KEYS.ADVISOR_ANSWERS, JSON.stringify(finalAnswers));
         trackQuestionnaireComplete(finalAnswers);
-        router.push("/face-scan");
+        navPush("/face-scan");
     };
 
     // 辅助函数：处理带特定答案的完成逻辑
@@ -574,8 +577,9 @@ export default function QuestionsPage() {
                     {/* Top Bar */}
                     <div className="relative flex items-center justify-center pt-[calc(1.75rem+env(safe-area-inset-top,0px))] pb-7 px-4 md:px-12 lg:px-20 border-b border-[#3D4430]/5 z-20">
                         <button
-                            onClick={() => router.push("/")}
-                            className="absolute left-2 sm:left-4 md:left-12 lg:left-20 min-w-[44px] min-h-[44px] p-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-brand-charcoal/60 hover:text-brand-charcoal transition-colors rounded-md hover:bg-[#3D4430]/5 touch-manipulation active:scale-95"
+                            onClick={() => navPush("/")}
+                            disabled={isNavigating}
+                            className="absolute left-2 sm:left-4 md:left-12 lg:left-20 min-w-[44px] min-h-[44px] p-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-brand-charcoal/60 hover:text-brand-charcoal transition-colors rounded-md hover:bg-[#3D4430]/5 touch-manipulation active:scale-95 disabled:opacity-40"
                             aria-label="回首页"
                         >
                             <ChevronLeft className="w-6 h-6 sm:w-5 sm:h-5" strokeWidth={1.5} />
@@ -590,8 +594,9 @@ export default function QuestionsPage() {
                             priority
                         />
                         <button
-                            onClick={() => router.push("/")}
-                            className="absolute right-2 sm:right-4 md:right-12 lg:right-20 min-w-[44px] min-h-[44px] p-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-brand-charcoal/60 hover:text-brand-charcoal transition-colors rounded-md hover:bg-[#3D4430]/5 touch-manipulation active:scale-95"
+                            onClick={() => navPush("/")}
+                            disabled={isNavigating}
+                            className="absolute right-2 sm:right-4 md:right-12 lg:right-20 min-w-[44px] min-h-[44px] p-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-brand-charcoal/60 hover:text-brand-charcoal transition-colors rounded-md hover:bg-[#3D4430]/5 touch-manipulation active:scale-95 disabled:opacity-40"
                             aria-label="回到首页"
                         >
                             <LogOut className="w-6 h-6 sm:w-5 sm:h-5" strokeWidth={1.5} />
@@ -614,7 +619,7 @@ export default function QuestionsPage() {
                                     <h3 className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-2">敬请期待</h3>
                                     <p className="text-sm text-brand-charcoal/60 font-light mb-6">{configMessage}</p>
                                     <button
-                                        onClick={() => router.push("/")}
+                                        onClick={() => navPush("/")}
                                         className="px-6 h-10 rounded-lg border border-brand-charcoal text-brand-charcoal hover:bg-brand-charcoal hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
                                     >
                                         返回首页
@@ -627,7 +632,7 @@ export default function QuestionsPage() {
                                     <p className="text-sm text-brand-charcoal/60 font-light mb-6">{limitMessage}</p>
                                     <div className="flex flex-col sm:flex-row gap-3 justify-center">
                                         <button
-                                            onClick={() => router.push("/")}
+                                            onClick={() => navPush("/")}
                                             className="px-6 h-10 rounded-lg border border-brand-charcoal text-brand-charcoal hover:bg-brand-charcoal hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
                                         >
                                             返回首页
@@ -652,7 +657,7 @@ export default function QuestionsPage() {
                                             继续测试
                                         </button>
                                         <button
-                                            onClick={() => router.push("/")}
+                                            onClick={() => navPush("/")}
                                             className="px-6 h-10 rounded-lg border border-brand-charcoal/60 text-brand-charcoal/60 hover:bg-brand-charcoal/[0.07] text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
                                         >
                                             稍后再来
@@ -692,7 +697,7 @@ export default function QuestionsPage() {
             <div className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col items-center justify-center bg-[#F5F2E9] gap-4 px-4">
                 <p className="text-sm text-brand-charcoal/60 font-light tracking-wide">题目加载异常，请刷新页面或返回首页重试。</p>
                 <button
-                    onClick={() => router.push("/")}
+                    onClick={() => navPush("/")}
                     className="px-6 h-10 rounded-lg border border-brand-charcoal text-brand-charcoal hover:bg-brand-charcoal hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
                 >
                     返回首页
@@ -707,7 +712,7 @@ export default function QuestionsPage() {
             <div className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col items-center justify-center bg-[#F5F2E9] gap-4 px-4">
                 <p className="text-sm text-brand-charcoal/60 font-light tracking-wide text-center leading-relaxed">请从首页同意隐私协议后开始测评。</p>
                 <button
-                    onClick={() => router.push("/")}
+                    onClick={() => navPush("/")}
                     className="px-6 h-10 rounded-lg border border-brand-charcoal text-brand-charcoal hover:bg-brand-charcoal hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
                 >
                     返回首页
@@ -851,7 +856,7 @@ export default function QuestionsPage() {
                                         继续测试
                                     </button>
                                     <button
-                                        onClick={() => router.push("/")}
+                                        onClick={() => navPush("/")}
                                         className="px-6 h-10 rounded-lg border border-[#E8E2D9] text-brand-charcoal/60 hover:text-brand-charcoal hover:border-[#D9D0C3] text-[13px] font-medium tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                                     >
                                         退出并返回首页

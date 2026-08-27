@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
+import { useNavPush } from "@/hooks/use-nav-push";
 import type { FaceAnalysisResult } from "@/lib/advisor-utils";
 import { DIMENSION_LABELS, DIMENSION_DESCRIPTIONS, DIMENSION_ORDER } from "@/lib/advisor-utils";
 import { normalizeAnalysisResult, type ComprehensiveResult } from "@/lib/analysis-result";
@@ -201,6 +202,8 @@ export default function ResultClient(props: ResultClientProps) {
 
 function ResultClientContent({ id, initialData, user: serverUser }: ResultClientProps) {
     const router = useRouter();
+    // 预取首页/问卷/好礼页路由，避免点击导航按钮时冷导航"点了没反应"；isNavigating 提供即时反馈
+    const { push: navPush, isPending: isNavigating } = useNavPush(["/", "/questions?edit=true", "/gift"]);
 
     // 入口守卫：必须通过首页引导弹窗后才能查看结果
     // 历史报告页面（/reports/:id）会传入 id 与 initialData，跳过此守卫
@@ -485,7 +488,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
         setAckedSessionId(currentSessionId ?? null);
         try { if (currentSessionId) localStorage.setItem(STORAGE_KEYS.ADVISOR_GENDER_MISMATCH_ACK, currentSessionId); } catch { /* ignore */ }
 
-        router.push("/questions");
+        navPush("/questions");
     };
 
     const handleMismatchContinue = () => {
@@ -1017,7 +1020,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                         </div>
                         <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
                             <button
-                                onClick={() => router.push("/")}
+                                onClick={() => navPush("/")}
                                 className="px-6 h-10 border border-brand-charcoal/60 text-brand-charcoal hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                             >
                                 返回首页
@@ -1046,7 +1049,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                         </div>
                         <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
                             <button
-                                onClick={() => router.push('/questions?edit=true')}
+                                onClick={() => navPush('/questions?edit=true')}
                                 className="px-6 h-10 border border-brand-charcoal/60 text-brand-charcoal hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                             >
                                 {getErrorRetryLabel()}
@@ -1076,7 +1079,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                         </div>
                         <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
                             <button
-                                onClick={() => router.push("/questions?edit=true")}
+                                onClick={() => navPush("/questions?edit=true")}
                                 className="px-6 h-10 border border-brand-charcoal/60 text-brand-charcoal hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                             >
                                 重新测试
@@ -1097,7 +1100,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                     <AnalyzingOverlay
                         key="analyzing-overlay"
                         progress={analysisState.progress}
-                        onCancel={() => router.push('/questions?edit=true')}
+                        onCancel={() => navPush('/questions?edit=true')}
                         queuePosition={analysisState.queuePosition}
                         queueWaitSeconds={analysisState.queueWaitSeconds}
                     />
@@ -1572,14 +1575,16 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                             <div className="flex flex-col items-center justify-center gap-2.5 mt-10 mb-10">
                                 <div className="flex flex-row flex-wrap justify-center gap-3">
                                     <button
-                                        onClick={() => router.push('/')}
+                                        onClick={() => navPush('/')}
+                                        disabled={isNavigating}
                                         className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-[12px] sm:text-[13px] tracking-[0.1em] text-[#5c4937]/70 font-medium hover:text-[#5c4937] transition-colors"
                                     >
                                         <House className="w-3.5 h-3.5" />
                                         回到首页
                                     </button>
                                     <button
-                                        onClick={() => router.push('/gift')}
+                                        onClick={() => navPush('/gift')}
+                                        disabled={isNavigating}
                                         className="group inline-flex items-center justify-center gap-2 w-auto sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 rounded-full border border-dashed border-[#8B7355]/40 bg-[#8B7355]/[0.04] text-[12px] sm:text-[13px] tracking-[0.1em] text-[#8B7355] hover:text-[#5c4937] hover:border-[#5c4937]/40 hover:bg-[#5c4937]/5 transition-all duration-300"
                                     >
                                         <Gift className="w-4 h-4" />
