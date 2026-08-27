@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
 import prisma from "@/lib/prisma";
 import { extractReportSummary } from "@/lib/internal-report";
+import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { logger } from "@/lib/logger";
 
 const SESSION_ID_RE = /^[0-9A-Za-z-]{8,128}$/;
@@ -29,6 +30,13 @@ export async function GET(request: NextRequest) {
     const sessionId = request.nextUrl.searchParams.get("sessionId") || "";
     if (!SESSION_ID_RE.test(sessionId)) {
         return NextResponse.json({ error: "Invalid sessionId" }, { status: 400 });
+    }
+
+    // IP 级兜底限流，防止密钥泄漏后被批量扫描
+    const ip = getClientIP(request);
+    const limitResult = await rateLimit(`internal-report-summary-${ip}`, "default", { maxRequests: 120, windowMs: 60 * 1000 });
+    if (!limitResult.success) {
+        return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
 
     try {
