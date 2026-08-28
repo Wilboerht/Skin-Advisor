@@ -9,6 +9,7 @@ import { ArrowRight, Loader2, X, Clock, ScanFace, FileText, BadgeCheck } from "l
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
+import { GiftFloatCard } from "@/components/website/GiftFloatCard";
 
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { AuthUrlDetector } from "@/components/auth/AuthUrlDetector";
@@ -483,6 +484,9 @@ export default function HomeClient() {
             <HomepageFooter />
           </div>
         </m.div>
+
+      {/* 右下角悬浮"测肤有礼"入口 */}
+      <GiftFloatCard onClick={openGiftModal} />
 
       {/* Modals */}
       <GiftModal
