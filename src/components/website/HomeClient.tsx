@@ -462,14 +462,6 @@ export default function HomeClient() {
                         <p className="text-[13px] md:text-[14px] text-brand-charcoal/50 font-light tracking-[0.08em]">
                           肌肤的现在和未来，我们与您同在
                         </p>
-                        {/* 测肤有礼活动入口（弹窗形式，替代原 /gift 独立页面） */}
-                        <button
-                          onClick={openGiftModal}
-                          className="group relative inline-flex items-center justify-center gap-2 px-6 py-2 text-[13px] sm:text-[14px] tracking-[0.12em] font-light cursor-pointer text-brand-charcoal/60 transition-colors duration-500 hover:text-brand-charcoal focus-visible:outline-none focus-visible:text-brand-charcoal"
-                        >
-                          <span>肌智派送好礼 · 查看活动</span>
-                          <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1" />
-                        </button>
                       </div>
 
 

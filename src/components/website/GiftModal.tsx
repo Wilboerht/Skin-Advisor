@@ -70,7 +70,7 @@ export function GiftModal({ isOpen, onClose, onStartTest }: GiftModalProps) {
             <div className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain px-6 md:px-8 pt-10 pb-8">
               <h2
                 id="gift-modal-title"
-                className="text-xl font-serif font-light text-brand-charcoal text-center tracking-[0.02em] mb-8"
+                className="text-2xl font-serif font-light text-brand-charcoal text-center tracking-[0.08em] mb-8"
               >
                 肌智派送好礼
               </h2>
