@@ -40,7 +40,7 @@ export function parseBeijingDate(value: string): Date | null {
 }
 
 /**
- * 解析前端提交的时间输入（campaign 表单等）：
+ * 解析前端提交的时间输入（后台表单等）：
  * - 带显式时区（Z 或 ±HH:mm）的字符串按原生规则解析
  * - 无时区的 datetime-local 固定按北京时间解析（避免按服务器时区漂移）
  * 非法输入返回 null。

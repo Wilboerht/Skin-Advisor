@@ -18,7 +18,6 @@ import {
     Activity,
     UserCog,
     Wand2,
-    Gift,
     BarChart3,
     FileSpreadsheet,
 } from "lucide-react";
@@ -29,7 +28,6 @@ import { motion, AnimatePresence } from "framer-motion";
 const BASE_MENU_ITEMS = [
     { href: "/admin/products", label: "产品管理", icon: Package },
     { href: "/admin/recommendation-rules", label: "推荐规则", icon: Wand2 },
-    { href: "/admin/campaigns", label: "活动管理", icon: Gift },
     { href: "/admin/ai-costs", label: "AI成本", icon: BarChart3 },
     { href: "/admin/users", label: "用户管理", icon: Users },
     { href: "/admin/audit-logs", label: "安全审计", icon: Shield },

@@ -12,7 +12,7 @@
  *   - Vercel Cron Jobs: 在 vercel.json 中配置 cron 触发
  *   - 或通过 scripts/run-cron.js 手动执行
  *
- * 使用: npx tsx scripts/wechat-lifecycle.ts [--dry-run] [--stage=day1|day3|day7|season|campaign]
+ * 使用: npx tsx scripts/wechat-lifecycle.ts [--dry-run] [--stage=day1|day3|day7|season]
  */
 
 import { PrismaClient } from "@prisma/client";
@@ -286,67 +286,6 @@ async function sendSeasonChangeMessages() {
     }
 }
 
-// ==================== 活动上线推送 ====================
-
-async function sendCampaignNotifications() {
-    console.log("\n📅 活动上线推送");
-
-    // 查找今天开始的活动（startDate 在今天）
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayEnd = new Date(today);
-    todayEnd.setHours(23, 59, 59, 999);
-
-    const newCampaigns = await prisma.campaign.findMany({
-        where: {
-            status: "active",
-            startDate: { gte: today, lte: todayEnd },
-        },
-        take: 10,
-    });
-
-    if (newCampaigns.length === 0) {
-        console.log("  无今日上线的活动");
-        return;
-    }
-
-    console.log(`  找到 ${newCampaigns.length} 个今日上线活动`);
-
-    // 查找近30天活跃用户
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-    const activeUsers = await prisma.advisorSession.findMany({
-        where: {
-            completedAt: { gte: thirtyDaysAgo },
-            userId: { not: null },
-        },
-        select: { userId: true, user: { select: { name: true } } },
-        distinct: ["userId"],
-        take: 500,
-    });
-
-    console.log(`  找到 ${activeUsers.length} 个活跃用户`);
-
-    for (const campaign of newCampaigns) {
-        for (const record of activeUsers) {
-            if (!record.userId) continue;
-
-            if (DRY_RUN) {
-                console.log(`  [DRY RUN] 发送活动通知: userId=${record.userId}, campaign=${campaign.title}`);
-                continue;
-            }
-
-            await sendWechatMessage(record.userId, {
-                templateType: "campaign",
-                userName: record.user?.name || "用户",
-                campaignTitle: campaign.title,
-                campaignUrl: `${BASE_URL}/?gift=1&campaign=${campaign.id}`,
-            });
-        }
-    }
-}
-
 // ==================== 主入口 ====================
 
 async function main() {
@@ -371,9 +310,6 @@ async function main() {
         }
         if (TARGET_STAGE === "all" || TARGET_STAGE === "season") {
             await sendSeasonChangeMessages();
-        }
-        if (TARGET_STAGE === "all" || TARGET_STAGE === "campaign") {
-            await sendCampaignNotifications();
         }
 
         console.log("\n✅ 生命周期消息链执行完成");

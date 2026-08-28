@@ -51,8 +51,6 @@ const PUBLIC_PATHS = [
       "/api/advisor/analytics/track", // 前端埋点（sendBeacon 无 Cookie）
       "/api/advisor/kf-link",      // 顾问客服链接生成（游客结果页可用，路由内自带 sessionId 格式校验）
       "/api/internal/:path*",      // 内部 API（x-internal-key 鉴权，供企业微信 AI 客服服务端调用）
-      "/api/campaign",           // 当前活动详情（游客可用）
-    "/api/campaign/active",    // 当前活动倒计时（游客可用）
       "/api/oss/sign",           // 游客上传签名（扫脸后保存图片）
       "/api/local-upload",       // 游客本地上传端点
       "/api/products",           // 公开产品列表
