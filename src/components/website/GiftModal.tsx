@@ -67,7 +67,7 @@ export function GiftModal({ isOpen, onClose, onStartTest }: GiftModalProps) {
             </button>
 
             {/* 可滚动内容区 */}
-            <div className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain px-6 md:px-8 pt-10 pb-8">
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain no-scrollbar px-6 md:px-8 pt-10 pb-8">
               <h2
                 id="gift-modal-title"
                 className="text-2xl font-serif font-light text-brand-charcoal text-center tracking-[0.08em] mb-8"
@@ -108,10 +108,9 @@ export function GiftModal({ isOpen, onClose, onStartTest }: GiftModalProps) {
                 {onStartTest ? (
                   <button
                     onClick={onStartTest}
-                    className="w-full group relative inline-flex items-center justify-center gap-3 px-8 py-4 border border-brand-charcoal/60 text-brand-charcoal bg-transparent text-[13px] sm:text-[14px] tracking-[0.12em] font-light cursor-pointer transition-all duration-500 hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,38,62,0.12)] focus-visible:outline-none focus-visible:border-brand-charcoal focus-visible:bg-brand-charcoal/[0.05] active:translate-y-0 active:shadow-none"
+                    className="w-full group relative inline-flex items-center justify-center gap-3 px-8 py-4 rounded-full bg-[#5c4937] text-[#FDFBF7] text-[13px] sm:text-[14px] tracking-[0.12em] font-light cursor-pointer shadow-[0_6px_20px_rgba(92,73,55,0.3)] transition-all duration-500 hover:bg-[#4a3a2c] hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5c4937]/40 active:translate-y-0"
                   >
-                    <span>前往测试，看看你的肌肤形象</span>
-                    <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
+                    <span>开始测肤</span>
                   </button>
                 ) : (
                   <Link
