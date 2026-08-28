@@ -86,6 +86,16 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      // 测肤有礼已改为首页弹窗：/gift 旧链接（分享文案、搜索结果）308 到首页并自动打开弹窗
+      {
+        source: "/gift",
+        destination: "/?gift=1",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {

@@ -28,7 +28,6 @@ const PUBLIC_PATHS = [
     "/faq",                    // FAQ
     "/privacy",                // 隐私政策
     "/terms",                  // 服务条款
-    "/gift",                   // 活动页
     "/robots.txt",
     "/sitemap.xml",
     "/site.webmanifest",       // PWA manifest

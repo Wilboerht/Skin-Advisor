@@ -256,7 +256,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
           </div>
           <div className="mt-6">
             <Link
-              href="/gift"
+              href="/?gift=1"
               className="group inline-flex items-center gap-1.5 text-[13px] text-brand-charcoal/50 tracking-[0.1em] font-light transition-colors duration-300 hover:text-brand-charcoal/80"
             >
               <span className="relative">

@@ -341,7 +341,7 @@ async function sendCampaignNotifications() {
                 templateType: "campaign",
                 userName: record.user?.name || "用户",
                 campaignTitle: campaign.title,
-                campaignUrl: `${BASE_URL}/gift?campaign=${campaign.id}`,
+                campaignUrl: `${BASE_URL}/?gift=1&campaign=${campaign.id}`,
             });
         }
     }

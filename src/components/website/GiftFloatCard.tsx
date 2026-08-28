@@ -16,7 +16,7 @@ export function GiftFloatCard() {
   return (
     <div className="fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom,0px))] right-6 md:bottom-4 md:right-8 z-[9999]">
       <Link
-        href="/gift"
+        href="/?gift=1"
         className="group flex items-center gap-2 text-sm text-[#8B7355] hover:text-[#5c4937] transition-colors duration-300"
       >
         <Image

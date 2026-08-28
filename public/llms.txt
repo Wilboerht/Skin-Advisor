@@ -14,7 +14,7 @@
   - [守护派 — 问题型](https://nihplod.cn/skin-types/shouhupai): 问题型肤质详解，痘痘肌与屏障修复方案
 - [顾问服务](https://nihplod.cn/services): 一对一专属护肤顾问服务，微信扫码咨询
 - [常见问题](https://nihplod.cn/faq): AI 测肤准确性、使用方法、数据隐私等 FAQ
-- [肌智派送好礼](https://nihplod.cn/gift): 用户活动与福利
+- [肌智派送好礼](https://nihplod.cn/?gift=1): 用户活动与福利（首页弹窗展示）
 
 ## NIHPLOD 肤质分类体系
 NIHPLOD 将肤质分为 8 种"肌肤形象类型"（IP Types），基于 AI 对 68 个面部特征点的深度学习检测：

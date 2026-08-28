@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, Suspense, useRef } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { LazyMotion, domAnimation, AnimatePresence, m, useReducedMotion } from "framer-motion";
 import Image from "next/image";
 import { ArrowRight, Loader2, X, Clock, ScanFace, FileText, BadgeCheck } from "lucide-react";
@@ -20,6 +20,7 @@ import { useNavPush } from "@/hooks/use-nav-push";
 import dynamic from "next/dynamic";
 const OnboardingFlowModal = dynamic(() => import("@/components/advisor/OnboardingFlowModal").then((mod) => mod.OnboardingFlowModal), { ssr: false });
 const HomepageFooter = dynamic(() => import("@/components/website/HomepageFooter").then((mod) => mod.HomepageFooter), { ssr: false });
+const GiftModal = dynamic(() => import("@/components/website/GiftModal").then((mod) => mod.GiftModal), { ssr: false });
 
 
 // Safe storage helper to prevent QuotaExceededError or Privacy Mode crashes
@@ -52,6 +53,21 @@ function RefCapture() {
       safeStorage.setSession("advisor_ref_source", ref);
     }
   }, [searchParams]);
+  return null;
+}
+
+/** ?gift=1 检测组件：从 /gift 旧链接（308 重定向）或全站"测肤有礼"入口进来时，
+ *  自动打开活动弹窗并清理 URL。独立组件是因 useSearchParams 需要 Suspense 边界。 */
+function GiftParamDetector({ onOpen }: { onOpen: () => void }) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (searchParams.get("gift") === "1") {
+      onOpen();
+      router.replace("/", { scroll: false });
+    }
+  }, [searchParams, onOpen, router]);
   return null;
 }
 
@@ -89,6 +105,9 @@ export default function HomeClient() {
 
   // Nickname state
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
+  // 测肤有礼活动弹窗（替代原独立 /gift 页面）
+  const [showGiftModal, setShowGiftModal] = useState(false);
+  const openGiftModal = useCallback(() => setShowGiftModal(true), []);
   const [nickname, setNickname] = useState("");
   const [isHomeExiting, setIsHomeExiting] = useState(false);
 
@@ -341,6 +360,7 @@ export default function HomeClient() {
       <Suspense fallback={null}>
         <AuthUrlDetector />
         <RefCapture />
+        <GiftParamDetector onOpen={openGiftModal} />
       </Suspense>
 
       {/* Full Screen Loading Overlay */}
@@ -439,8 +459,16 @@ export default function HomeClient() {
                           )}
                         </button>
                         <p className="text-[13px] md:text-[14px] text-brand-charcoal/50 font-light tracking-[0.08em]">
-                          深读水油、斑纹与真皮层状态
+                          肌肤的现在和未来，我们与您同在
                         </p>
+                        {/* 测肤有礼活动入口（弹窗形式，替代原 /gift 独立页面） */}
+                        <button
+                          onClick={openGiftModal}
+                          className="group relative inline-flex items-center justify-center gap-2 px-6 py-2 text-[13px] sm:text-[14px] tracking-[0.12em] font-light cursor-pointer text-brand-charcoal/60 transition-colors duration-500 hover:text-brand-charcoal focus-visible:outline-none focus-visible:text-brand-charcoal"
+                        >
+                          <span>肌智派送好礼 · 查看活动</span>
+                          <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1" />
+                        </button>
                       </div>
 
 
@@ -457,6 +485,14 @@ export default function HomeClient() {
         </m.div>
 
       {/* Modals */}
+      <GiftModal
+        isOpen={showGiftModal}
+        onClose={() => setShowGiftModal(false)}
+        onStartTest={() => {
+          setShowGiftModal(false);
+          handleStart();
+        }}
+      />
       <OnboardingFlowModal
         key={onboardingOpenCount}
         isOpen={showOnboardingModal}

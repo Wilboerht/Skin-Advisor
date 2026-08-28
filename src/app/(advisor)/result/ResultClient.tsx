@@ -205,8 +205,8 @@ export default function ResultClient(props: ResultClientProps) {
 
 function ResultClientContent({ id, initialData, user: serverUser }: ResultClientProps) {
     const router = useRouter();
-    // 预取首页/问卷/好礼页路由，避免点击导航按钮时冷导航"点了没反应"；isNavigating 提供即时反馈
-    const { push: navPush, isPending: isNavigating } = useNavPush(["/", "/questions?edit=true", "/gift"]);
+    // 预取首页/问卷路由，避免点击导航按钮时冷导航"点了没反应"；isNavigating 提供即时反馈
+    const { push: navPush, isPending: isNavigating } = useNavPush(["/", "/questions?edit=true"]);
 
     // 入口守卫：必须通过首页引导弹窗后才能查看结果
     // 历史报告页面（/reports/:id）会传入 id 与 initialData，跳过此守卫
@@ -235,7 +235,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
         const siteBase = process.env.NEXT_PUBLIC_SITE_URL || "https://advisor.nihplod.cn";
         const qrUrl = sessionId
             ? `${siteBase}/?ref=poster_${sessionId}`
-            : `${siteBase}/gift`;
+            : `${siteBase}/?gift=1`;
         toDataURL(
             qrUrl,
             { width: 80, margin: 1, color: { dark: "#00263E", light: "#0000" } }
@@ -1589,7 +1589,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                         回到首页
                                     </button>
                                     <button
-                                        onClick={() => navPush('/gift')}
+                                        onClick={() => navPush('/?gift=1')}
                                         disabled={isNavigating}
                                         className="group inline-flex items-center justify-center gap-2 w-auto sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 rounded-full border border-dashed border-[#8B7355]/40 bg-[#8B7355]/[0.04] text-[12px] sm:text-[13px] tracking-[0.1em] text-[#8B7355] hover:text-[#5c4937] hover:border-[#5c4937]/40 hover:bg-[#5c4937]/5 transition-all duration-300"
                                     >

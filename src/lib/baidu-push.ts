@@ -60,7 +60,6 @@ export function getAllSiteUrls(baseUrl: string): string[] {
   // 静态页面
   urls.push(`${baseUrl}/skin-types`);
   urls.push(`${baseUrl}/services`);
-  urls.push(`${baseUrl}/gift`);
   urls.push(`${baseUrl}/faq`);
 
   // 8 种肤质类型页面

@@ -61,7 +61,7 @@ export default function ResultIndexPage() {
             <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
           </Link>
           <Link
-            href="/gift"
+            href="/?gift=1"
             className="flex items-center justify-center gap-1.5 mt-5 text-[13px] sm:text-[14px] text-brand-charcoal/75 tracking-[0.12em] font-light opacity-0 animate-fade-in-up hover:text-brand-charcoal focus-visible:outline-none focus-visible:text-brand-charcoal transition-colors duration-300"
             style={{ animationDelay: "0.3s", animationFillMode: "forwards" }}
           >
@@ -112,7 +112,7 @@ export default function ResultIndexPage() {
       <section className="py-14 md:py-20 px-6 md:px-12 lg:px-20">
         <div className="max-w-5xl mx-auto">
           <Link
-            href="/gift"
+            href="/?gift=1"
             className="group relative block p-5 md:p-12 overflow-hidden [mask-image:radial-gradient(ellipse_at_center,black_50%,transparent_85%)]"
           >
             {/* 右侧背景水印 */}
