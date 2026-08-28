@@ -1,6 +1,7 @@
 "use client";
 
-import FingerprintJS from '@fingerprintjs/fingerprintjs';
+// 注意：@fingerprintjs/fingerprintjs 不静态引入——它在问卷页 mount 时就会被连带解析，
+// 改为在 getFingerprint 内动态 import，避免进入页面时的主线程长任务挤占交互响应。
 
 // 常量定义
 const COOKIE_NAME = 'nihplod_guest_id';
@@ -88,6 +89,7 @@ export async function getFingerprint(): Promise<string | null> {
     if (!fingerprintPromise) {
         fingerprintPromise = (async (): Promise<string | null> => {
             try {
+                const { default: FingerprintJS } = await import('@fingerprintjs/fingerprintjs');
                 const fp = await FingerprintJS.load();
                 const result = await fp.get();
                 const fingerprint = result.visitorId;

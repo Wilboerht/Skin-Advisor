@@ -6,6 +6,7 @@
  */
 
 import { logger } from "@/lib/logger";
+import { runWhenIdle } from "@/lib/idle";
 
 /** 跟踪预加载状态 */
 let faceApiPreloadPromise: Promise<unknown> | null = null;
@@ -63,15 +64,7 @@ export function scheduleFaceModelPreload(idleTimeout = 5000, fallbackDelay = 200
   if (preloadScheduled || faceApiPreloadPromise) return;
   preloadScheduled = true;
 
-  const start = () => {
+  runWhenIdle(() => {
     preloadAllFaceModels();
-  };
-
-  if (typeof window !== "undefined" && "requestIdleCallback" in window) {
-    (window as Window & {
-      requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number;
-    }).requestIdleCallback(start, { timeout: idleTimeout });
-  } else {
-    setTimeout(start, fallbackDelay);
-  }
+  }, { timeout: idleTimeout, fallbackDelay });
 }

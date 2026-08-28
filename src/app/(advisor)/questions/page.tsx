@@ -14,6 +14,7 @@ import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useToast } from "@/components/ui/Toast";
 import { cn } from "@/lib/utils";
 import { scheduleFaceModelPreload } from "@/lib/preload-models";
+import { runWhenIdle } from "@/lib/idle";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useNavPush } from "@/hooks/use-nav-push";
@@ -118,7 +119,10 @@ export default function QuestionsPage() {
     }, []);
 
     // 预检测试次数：在用户开始问卷前确认是否还有剩余次数
+    // 空闲调度：内部会加载 FingerprintJS 并计算指纹（主线程任务），
+    // 推迟到空闲时执行，避免进页瞬间挤占顶部栏按钮的点击响应
     useEffect(() => {
+        const cancelIdle = runWhenIdle(() => {
         const checkLimit = async () => {
             try {
                 const { getGuestIdentity } = await import("@/lib/guest-identity");
@@ -140,6 +144,8 @@ export default function QuestionsPage() {
             }
         };
         checkLimit();
+        }, { timeout: 2000, fallbackDelay: 800 });
+        return cancelIdle;
     }, []);
 
     // 从 API 获取问题列表（数据库优先，静态降级）

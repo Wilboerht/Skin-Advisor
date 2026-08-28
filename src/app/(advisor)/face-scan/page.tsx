@@ -12,6 +12,7 @@ import { ScanGuideModal } from "@/components/advisor/ScanGuideModal";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useNavPush } from "@/hooks/use-nav-push";
+import { runWhenIdle } from "@/lib/idle";
 import type { UploadMetadata } from "@/lib/upload-client";
 
 export default function FaceScanPage() {
@@ -75,8 +76,11 @@ export default function FaceScanPage() {
     }, [isPreparing]);
 
     // 预加载 face-api 模型：用户还在看引导页时就开始加载，减少等待时间
+    // 空闲调度启动：直接进入本页（如刷新恢复）时，face-api/TF.js 的解析编译是
+    // 主线程长任务，避免挤占顶部栏"返回/退出"的点击响应
     useEffect(() => {
         let cancelled = false;
+        const cancelIdle = runWhenIdle(() => {
         const preloadModels = async () => {
             try {
                 const faceapi = await import("@vladmandic/face-api");
@@ -93,7 +97,8 @@ export default function FaceScanPage() {
             }
         };
         preloadModels();
-        return () => { cancelled = true; };
+        }, { timeout: 3000, fallbackDelay: 1000 });
+        return () => { cancelled = true; cancelIdle(); };
     }, []);
 
     const handleCaptureComplete = async (images: FaceCaptureImages) => {
