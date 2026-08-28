@@ -13,7 +13,7 @@ import { ChevronLeft, LogOut, Loader2 } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useToast } from "@/components/ui/Toast";
 import { cn } from "@/lib/utils";
-import { preloadAllFaceModels } from "@/lib/preload-models";
+import { scheduleFaceModelPreload } from "@/lib/preload-models";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useNavPush } from "@/hooks/use-nav-push";
@@ -433,8 +433,9 @@ export default function QuestionsPage() {
         setGender(selectedGender);
         setAnswers(prev => ({ ...prev, gender: selectedGender }));
         safeStorage.set(STORAGE_KEYS.ADVISOR_GENDER, selectedGender);
-        // 首次交互后再开始预加载面部识别模型，避免 mount 时 import face-api/TF.js 阻塞主线程
-        preloadAllFaceModels();
+        // 面部识别模型改为空闲时预加载：face-api/TF.js 的解析编译是主线程长任务，
+        // 同步启动会卡住紧随其后的"上一题"/"退出"点击（交互优先于预加载）
+        scheduleFaceModelPreload();
         // 追踪问卷开始（从选择性别开始算）
         if (!hasTrackedStart.current) {
             trackQuestionnaireStart();
