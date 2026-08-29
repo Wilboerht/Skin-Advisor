@@ -39,7 +39,7 @@ export function GiftModal({ isOpen, onClose, onStartTest }: GiftModalProps) {
         <div
           ref={dialogRef}
           tabIndex={-1}
-          className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center p-4"
+          className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center p-0 sm:p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="gift-modal-title"
@@ -59,20 +59,20 @@ export function GiftModal({ isOpen, onClose, onStartTest }: GiftModalProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 10 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative z-10 w-full max-w-lg max-h-[85dvh] bg-[#FDFBF7] rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col"
+            className="relative z-10 w-full h-full sm:h-auto sm:max-w-lg sm:max-h-[85dvh] bg-[#FDFBF7] rounded-none sm:rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col"
             onClick={(e: React.MouseEvent) => e.stopPropagation()}
           >
-            {/* 关闭按钮 */}
+            {/* 关闭按钮：移动端加大触摸区域并避开刘海 */}
             <button
               onClick={onClose}
               aria-label="关闭"
-              className="absolute top-5 right-5 z-20 w-8 h-8 flex items-center justify-center rounded-full bg-brand-charcoal/5 text-brand-charcoal/40 hover:text-brand-charcoal hover:bg-brand-charcoal/10 transition-colors"
+              className="absolute top-[calc(0.75rem+env(safe-area-inset-top,0px))] right-3 sm:top-5 sm:right-5 z-20 w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-brand-charcoal/5 text-brand-charcoal/40 hover:text-brand-charcoal hover:bg-brand-charcoal/10 transition-colors"
             >
               <X size={16} strokeWidth={2.5} />
             </button>
 
-            {/* 可滚动内容区 */}
-            <div className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain no-scrollbar px-6 md:px-8 pt-10 pb-8">
+            {/* 可滚动内容区：移动端适配上下安全区 */}
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain no-scrollbar px-6 md:px-8 pt-[calc(3.5rem+env(safe-area-inset-top,0px))] sm:pt-10 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] sm:pb-8">
               <h2
                 id="gift-modal-title"
                 className="text-2xl font-serif font-light text-brand-charcoal text-center tracking-[0.08em] mb-8"

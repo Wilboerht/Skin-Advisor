@@ -4,12 +4,11 @@ import { useEffect, useState, useCallback, Suspense, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { LazyMotion, domAnimation, AnimatePresence, m, useReducedMotion } from "framer-motion";
 import Image from "next/image";
-import { ArrowRight, Loader2, X, Clock, ScanFace, FileText, BadgeCheck } from "lucide-react";
+import { ArrowRight, Loader2, X, Clock, ScanFace, FileText, BadgeCheck, Gift } from "lucide-react";
 
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
-import { GiftFloatCard } from "@/components/website/GiftFloatCard";
 
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { AuthUrlDetector } from "@/components/auth/AuthUrlDetector";
@@ -465,6 +464,16 @@ export default function HomeClient() {
                         <p className="text-[13px] md:text-[14px] text-brand-charcoal/50 font-light tracking-[0.08em]">
                           肌肤的现在和未来，我们与您同在
                         </p>
+
+                        {/* 活动次级入口：替代右下角悬浮卡片，融入主视觉动线 */}
+                        <button
+                          onClick={openGiftModal}
+                          className="group inline-flex items-center justify-center gap-1.5 min-h-[44px] px-3 text-[13px] md:text-[14px] text-brand-charcoal/60 hover:text-brand-charcoal font-light tracking-[0.08em] transition-colors touch-manipulation"
+                        >
+                          <Gift className="w-3.5 h-3.5 text-brand-charcoal/50 group-hover:text-brand-charcoal transition-colors" strokeWidth={1.5} />
+                          <span>测肤有礼 · 参与赢好礼</span>
+                          <ArrowRight className="w-3.5 h-3.5 transition-transform duration-500 group-hover:translate-x-0.5" />
+                        </button>
                       </div>
 
 
@@ -480,8 +489,7 @@ export default function HomeClient() {
           </div>
         </m.div>
 
-      {/* 右下角悬浮"测肤有礼"入口 */}
-      <GiftFloatCard onClick={openGiftModal} />
+      {/* "测肤有礼"入口已移入主视觉次级链接（见上方 CTA 区），不再使用右下角悬浮卡片 */}
 
       {/* Modals */}
       <GiftModal
