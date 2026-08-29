@@ -12,9 +12,12 @@ export function SiteFooter() {
   return (
     <footer className="pt-6 md:pt-8 pb-[calc(1.5rem+env(safe-area-inset-bottom,16px))] px-6 text-center">
       <div className="flex flex-col items-center justify-center gap-2 text-xs font-light text-brand-charcoal/70 tracking-[0.12em]">
-        {/* 版权与政策链接同一行（窄屏自动换行居中） */}
+        {/* 版权与政策链接同一行（窄屏自动换行居中）；移动端版权用简写避免拥挤 */}
         <nav aria-label="法律信息" className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
-          <p suppressHydrationWarning>© {CURRENT_YEAR} NIHPLOD. All Rights Reserved.</p>
+          <p suppressHydrationWarning>
+            <span className="hidden sm:inline">© {CURRENT_YEAR} NIHPLOD. All Rights Reserved.</span>
+            <span className="sm:hidden">© {CURRENT_YEAR} NIHPLOD</span>
+          </p>
           <span aria-hidden="true" className="text-brand-charcoal/30">·</span>
           <Link href="/privacy" className="transition-colors duration-300 hover:text-brand-charcoal">
             隐私政策

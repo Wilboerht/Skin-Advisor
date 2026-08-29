@@ -6,10 +6,11 @@ import Image from "next/image";
 export function HomepageFooter() {
     return (
         <footer className="home-footer w-full mt-auto">
-            {/* 版权与政策链接同一行 */}
+            {/* 版权与政策链接同一行；移动端版权用简写避免拥挤 */}
             <div className="footer-beian">
                 <p className="footer-copyright relative z-10">
-                    &copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.
+                    <span className="hidden sm:inline">&copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</span>
+                    <span className="sm:hidden">&copy; {new Date().getFullYear()} NIHPLOD</span>
                 </p>
 
                 <span aria-hidden="true">|</span>
