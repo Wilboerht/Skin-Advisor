@@ -15,7 +15,10 @@ export function GenderSelection({ onSelect, selectedGender }: GenderSelectionPro
     };
 
     return (
-        <div className="flex w-full flex-col items-center -mt-8 sm:mt-0">
+        // -mt-8（仅移动端）：父容器为 justify-center 垂直居中，移动端正中位置偏低，
+    // 该负边距把性别选择视觉上移，让标题与选项落在屏幕视觉中心。
+    // 改动前请在真机验证：性别页由父级 h-full 容器居中，直接移除会整体下沉。
+    <div className="flex w-full flex-col items-center -mt-8 sm:mt-0">
             <m.h2
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}

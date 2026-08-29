@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Share2, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { getTZoneLabel, getCharacterImage, getSkinTypeName, type IPMatchParams } from '@/lib/result-utils';
@@ -31,9 +31,19 @@ interface ResultCardsProps {
 }
 
 const AnimatedNumber = ({ value, duration = 1.5 }: { value: number; duration?: number }) => {
-  const [displayValue, setDisplayValue] = useState(0);
+  // prefers-reduced-motion：直接呈现最终值，跳过逐帧数字滚动
+  const prefersReducedMotion = useReducedMotion();
+  const [displayValue, setDisplayValue] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      ? Math.round(value)
+      : 0
+  );
 
   useEffect(() => {
+    if (prefersReducedMotion) {
+      setDisplayValue(Math.round(value));
+      return;
+    }
     let start = 0;
     const increment = value / (duration * 1000 / 16);
     const timer = setInterval(() => {
@@ -46,8 +56,7 @@ const AnimatedNumber = ({ value, duration = 1.5 }: { value: number; duration?: n
       }
     }, 16);
     return () => clearInterval(timer);
-  }, [value, duration]);
-
+  }, [value, duration, prefersReducedMotion]);
   return (
     <motion.span
       initial={{ opacity: 0, y: 10 }}
@@ -141,7 +150,7 @@ export default function ResultCards({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="relative rounded-[20px] lg:rounded-[24px] p-6 lg:p-10 border border-[#3d2f25]/8 overflow-visible"
+          className="relative rounded-[20px] lg:rounded-[24px] p-6 lg:p-10 border border-brand-espresso/8 overflow-visible"
           style={{
           background: '#F5F2ED',
         }}
@@ -150,29 +159,29 @@ export default function ResultCards({
           {/* Text Content */}
           <div className="flex flex-col justify-center z-10">
             {/* 分享版标签 */}
-            <div className="relative z-10 mb-4 lg:mb-6 inline-flex h-[24px] px-2 items-center justify-center rounded-full border border-[#00263e]/15 bg-transparent text-xs font-bold text-[#00263e] lg:h-[26px] lg:px-2.5 lg:text-xs lg:tracking-wide lg:rounded-lg lg:border lg:border-[#00263e]/30 whitespace-nowrap self-start">
+            <div className="relative z-10 mb-4 lg:mb-6 inline-flex h-[24px] px-2 items-center justify-center rounded-full border border-[var(--color-brand-charcoal)]/15 bg-transparent text-xs font-bold text-[var(--color-brand-charcoal)] lg:h-[26px] lg:px-2.5 lg:text-xs lg:tracking-wide lg:rounded-lg lg:border lg:border-[var(--color-brand-charcoal)]/30 whitespace-nowrap self-start">
               肌智派证书
             </div>
 
-            <h2 className="text-lg lg:text-[24px] font-bold text-[#3d2f25] leading-snug tracking-tight mb-1 lg:mb-2">
+            <h2 className="text-lg lg:text-[24px] font-bold text-brand-espresso leading-snug tracking-tight mb-1 lg:mb-2">
               你的肌肤类型是「{skinTypeName}」
             </h2>
 
             {score === undefined ? (
-              <h3 className="text-lg lg:text-[24px] font-bold text-[#3d2f25] leading-snug tracking-tight mb-3 lg:mb-4">
+              <h3 className="text-lg lg:text-[24px] font-bold text-brand-espresso leading-snug tracking-tight mb-3 lg:mb-4">
                 基于问卷的肤质评估
               </h3>
             ) : rankPercentile !== undefined ? (
-              <h3 className="text-lg lg:text-[24px] font-bold text-[#3d2f25] leading-snug tracking-tight mb-3 lg:mb-4">
-                素颜评分超越了全国 <span className="text-lg lg:text-[24px] px-0.5 text-[#00263e]">{rankPercentile}%</span> 的用户
+              <h3 className="text-lg lg:text-[24px] font-bold text-brand-espresso leading-snug tracking-tight mb-3 lg:mb-4">
+                素颜评分超越了全国 <span className="text-lg lg:text-[24px] px-0.5 text-[var(--color-brand-charcoal)]">{rankPercentile}%</span> 的用户
               </h3>
             ) : (
-              <h3 className="text-lg lg:text-[24px] font-bold text-[#3d2f25] leading-snug tracking-tight mb-3 lg:mb-4">
+              <h3 className="text-lg lg:text-[24px] font-bold text-brand-espresso leading-snug tracking-tight mb-3 lg:mb-4">
                 素颜评估已完成
               </h3>
             )}
 
-            <p className="text-[14px] leading-relaxed text-[#5c4937] mb-5 lg:mb-6 max-w-full lg:max-w-[420px]">
+            <p className="text-[14px] leading-relaxed text-[var(--color-brand-cocoa)] mb-5 lg:mb-6 max-w-full lg:max-w-[420px]">
               {summary || '整体状态极佳，肌肤屏障健康，水油平衡度完美。'}
             </p>
 
@@ -183,12 +192,12 @@ export default function ResultCards({
                 whileTap={isPosterLoading ? {} : { scale: 0.98 }}
                 onClick={onDownloadPoster}
                 disabled={isPosterLoading}
-                className="inline-flex items-center justify-center gap-2 h-[34px] sm:h-[40px] px-4 sm:px-6 rounded-full border border-[#8c7a6b]/40 bg-transparent text-[#5c4937] text-xs sm:text-[13px] font-medium transition-colors hover:bg-[#3d2f25]/5 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="inline-flex items-center justify-center gap-2 min-h-[44px] h-[44px] px-4 sm:px-6 rounded-full border border-[var(--color-brand-taupe)]/40 bg-transparent text-[var(--color-brand-cocoa)] text-xs sm:text-[13px] font-medium transition-colors hover:bg-brand-espresso/5 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {isPosterLoading ? (
-                  <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#8c7a6b] stroke-[2] animate-spin" />
+                  <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--color-brand-taupe)] stroke-[2] animate-spin" />
                 ) : (
-                  <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#8c7a6b] stroke-[2]" />
+                  <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--color-brand-taupe)] stroke-[2]" />
                 )}
                 {isPosterLoading ? '生成中...' : '保存素颜证书'}
               </motion.button>
@@ -218,7 +227,7 @@ export default function ResultCards({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className={`relative rounded-[32px] p-6 lg:p-10 border border-[#3d2f25]/8 overflow-hidden ${professionalClassName || ''}`}
+        className={`relative rounded-[32px] p-6 lg:p-10 border border-brand-espresso/8 overflow-hidden ${professionalClassName || ''}`}
         style={{
           background: '#F5F2ED',
           boxShadow: '0 8px 32px rgba(0,0,0,0.04)',
@@ -228,13 +237,13 @@ export default function ResultCards({
         <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-0 lg:gap-12 h-full">
           <div className="flex flex-col justify-between items-start w-full lg:w-[30%] shrink-0">
             <div>
-              <div className="relative z-10 mb-4 inline-flex h-[24px] px-2 items-center justify-center rounded-full border border-[#00263e]/15 bg-transparent text-xs font-bold text-[#00263e] lg:mb-6 lg:h-[26px] lg:px-2.5 lg:text-xs lg:tracking-wide lg:rounded-lg lg:border lg:border-[#00263e]/30 whitespace-nowrap">
+              <div className="relative z-10 mb-4 inline-flex h-[24px] px-2 items-center justify-center rounded-full border border-[var(--color-brand-charcoal)]/15 bg-transparent text-xs font-bold text-[var(--color-brand-charcoal)] lg:mb-6 lg:h-[26px] lg:px-2.5 lg:text-xs lg:tracking-wide lg:rounded-lg lg:border lg:border-[var(--color-brand-charcoal)]/30 whitespace-nowrap">
                 专业版报告
               </div>
-              <h2 className="text-lg lg:text-2xl font-bold text-[#3d2f25] mb-2 relative z-10">
+              <h2 className="text-lg lg:text-2xl font-bold text-brand-espresso mb-2 relative z-10">
                 深度肌肤检测报告
               </h2>
-              <p className="text-[#5c4937] text-xs lg:text-xs max-w-xs leading-relaxed mb-4 lg:mb-8 font-medium tracking-wide relative z-10">
+              <p className="text-[var(--color-brand-cocoa)] text-xs lg:text-xs max-w-xs leading-relaxed mb-4 lg:mb-8 font-medium tracking-wide relative z-10">
                 基于千万级亚洲肌肤数据库，全方位解析您的肌肤问题。
               </p>
             </div>
@@ -257,7 +266,7 @@ export default function ResultCards({
               <div className="flex flex-row lg:flex-col items-center lg:items-start gap-2 lg:justify-between w-full h-full relative z-20">
                 <p className="text-xs lg:text-xs text-[#7a6552] font-medium shrink-0">综合评分</p>
                 <div className="flex items-baseline">
-                  <span className="text-xs lg:text-3xl font-bold text-[#00263e] lg:text-[#5c4937] leading-none">
+                  <span className="text-xs lg:text-3xl font-bold text-[var(--color-brand-charcoal)] lg:text-[var(--color-brand-cocoa)] leading-none">
                     {score === undefined ? '-' : <AnimatedNumber value={score} duration={1.5} />}
                   </span>
                   {score !== undefined && (
@@ -282,7 +291,7 @@ export default function ResultCards({
                 <div className="flex flex-row lg:flex-col items-center lg:items-start gap-2 lg:justify-between w-full h-full relative z-20">
                   <p className="text-xs lg:text-xs text-[#7a6552] font-medium shrink-0">肌肤年龄</p>
                   <div className="flex items-baseline">
-                    <span className="text-xs lg:text-3xl font-bold text-[#00263e] lg:text-[#5c4937] leading-none">
+                    <span className="text-xs lg:text-3xl font-bold text-[var(--color-brand-charcoal)] lg:text-[var(--color-brand-cocoa)] leading-none">
                       <AnimatedNumber value={skinAge} duration={1.5} />
                     </span>
                     <span className="text-xs lg:text-xs text-[#7a6552] ml-0.5 font-medium">岁</span>
@@ -305,7 +314,7 @@ export default function ResultCards({
               <div className="flex flex-row lg:flex-col items-center lg:items-start gap-2 lg:justify-between w-full h-full relative z-20">
                 <p className="text-xs lg:text-xs text-[#7a6552] font-medium shrink-0">油脂分泌</p>
                 <div className="flex items-baseline">
-                  <span className="text-xs lg:text-xl font-bold text-[#00263e] lg:text-[#5c4937] leading-tight">{tZoneLabel}</span>
+                  <span className="text-xs lg:text-xl font-bold text-[var(--color-brand-charcoal)] lg:text-[var(--color-brand-cocoa)] leading-tight">{tZoneLabel}</span>
                 </div>
               </div>
             </motion.div>
@@ -321,7 +330,7 @@ export default function ResultCards({
               <div className="flex flex-row lg:flex-col items-center lg:items-start gap-2 lg:justify-between w-full h-full relative z-20">
                 <p className="text-xs lg:text-xs text-[#7a6552] font-medium shrink-0">皮肤弹性</p>
                 <div className="flex items-baseline">
-                  <span className="text-xs lg:text-3xl font-bold text-[#00263e] lg:text-[#5c4937] leading-none">
+                  <span className="text-xs lg:text-3xl font-bold text-[var(--color-brand-charcoal)] lg:text-[var(--color-brand-cocoa)] leading-none">
                     {dimensions?.firmness?.score === undefined ? '-' : <AnimatedNumber value={dimensions.firmness.score} duration={1.5} />}
                   </span>
                   {dimensions?.firmness?.score !== undefined && (

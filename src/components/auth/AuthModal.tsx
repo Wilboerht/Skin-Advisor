@@ -5,11 +5,14 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useAuthModal } from "./AuthModalContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/Toast";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useAnimationControls, useReducedMotion } from "framer-motion";
 import { X, Eye, EyeOff, CheckCircle, Check, ChevronLeft } from "lucide-react";
 import { validatePasswordStrength, PASSWORD_MIN_LENGTH } from "@/lib/password";
 import { fetchWithCsrf } from "@/lib/fetch-client";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
+import { STORAGE_KEYS } from "@/lib/storage-keys";
+import { isSafeInternalPath } from "@/lib/url-utils";
 
 // SSO 迁移后，login / register / forgot_password 统一引导至主站账号中心，
 // 仅 wechat_bind 仍在弹窗内完成。
@@ -29,10 +32,10 @@ export function AuthModal() {
     useEffect(() => {
         if (searchParams.get("login") === "wechat_bind") {
             // exchange token 已通过 httpOnly Cookie 传递，无需从 URL 读取
-            // 保留最终重定向目标，供绑定成功后使用
+            // 保留最终重定向目标，供绑定成功后使用（仅允许站内路径）
             const redirect = searchParams.get("redirect");
-            if (redirect) {
-                sessionStorage.setItem("auth_redirect", redirect);
+            if (redirect && isSafeInternalPath(redirect)) {
+                sessionStorage.setItem(STORAGE_KEYS.AUTH_REDIRECT, redirect);
             }
             openAuthModal("wechat_bind");
             // Remove params from URL so it doesn't trigger again
@@ -56,7 +59,9 @@ export function AuthModal() {
 
     const [showPassword, setShowPassword] = useState(false);
     const [mobileAgreed, setMobileAgreed] = useState(false);
-    const [agreementShake, setAgreementShake] = useState(0);
+    // 协议抖动动画：用 animate controls 触发，仅在未勾选提交时播一次
+    const agreementShakeControls = useAnimationControls();
+    const prefersReducedMotion = useReducedMotion();
 
     // Reset states when modal opens/closes
     useEffect(() => {
@@ -69,7 +74,6 @@ export function AuthModal() {
             setRegCountdown(0);
             setShowPassword(false);
             setMobileAgreed(false);
-            setAgreementShake(0);
         }
     }, [isOpen]);
 
@@ -96,16 +100,38 @@ export function AuthModal() {
     useBodyScrollLock({ enabled: isOpen, iosSafe: true });
 
     const handleCancelWechatBind = () => {
-        // 微信绑定凭证由 httpOnly Cookie (__Host-wechat_bind_token) 管理
-        // 取消绑定时后端清除该 Cookie，前端无需额外操作
-        toast.error("已退出微信登录，您可以使用手机号登录。");
+        // 微信绑定凭证由 httpOnly Cookie (__Host-wechat_bind_token) 管理，前端 JS 无法清除；
+        // 这里仅关闭弹窗、放弃本次绑定流程，Cookie 到期后由后端自动失效
+        toast.info("已退出微信登录，您可以使用手机号登录。");
         closeAuthModal();
     };
+
+    // Escape 关闭弹窗（wechat_bind 视图下与"取消绑定"同义）
+    const handleEscape = () => {
+        if (loading) return;
+        if (view === "wechat_bind") {
+            handleCancelWechatBind();
+        } else {
+            closeAuthModal();
+        }
+    };
+    const dialogRef = useFocusTrap<HTMLDivElement>(isOpen, handleEscape);
+
+    // 打开时焦点进入首个可见输入框（触屏设备跳过，避免弹出虚拟键盘）
+    useEffect(() => {
+        if (!isOpen || view !== "wechat_bind") return;
+        if (window.matchMedia("(hover: none)").matches) return;
+        const inputs = dialogRef.current?.querySelectorAll<HTMLInputElement>('input[type="tel"]');
+        const visible = Array.from(inputs ?? []).find((el) => el.offsetParent !== null);
+        visible?.focus({ preventScroll: true });
+    }, [isOpen, view, dialogRef]);
 
     const handleWechatBind = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!mobileAgreed) {
-            setAgreementShake(n => n + 1);
+            if (!prefersReducedMotion) {
+                agreementShakeControls.start({ x: [-5, 5, -5, 5, -3, 3, 0], transition: { duration: 0.4 } });
+            }
             return;
         }
         if (!regPassword || regPassword.length === 0) {
@@ -135,10 +161,10 @@ export function AuthModal() {
 
             toast.success("绑定成功！");
 
-            // 检查是否有 pending redirect
-            const redirectUrl = sessionStorage.getItem("auth_redirect");
-            sessionStorage.removeItem("auth_redirect");
-            window.location.href = redirectUrl || "/";
+            // 检查是否有 pending redirect（仅允许站内路径）
+            const redirectUrl = sessionStorage.getItem(STORAGE_KEYS.AUTH_REDIRECT);
+            sessionStorage.removeItem(STORAGE_KEYS.AUTH_REDIRECT);
+            window.location.href = isSafeInternalPath(redirectUrl) ? redirectUrl : "/";
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             console.error("[WechatBind]", err.message);
@@ -182,7 +208,7 @@ export function AuthModal() {
     // login / register / forgot_password：SSO 迁移后统一引导至主站账号中心
     const ssoPanel = (
         <>
-            <h1 className="text-center text-[2rem] font-light tracking-[0.15em] text-brand-charcoal mb-8">
+            <h1 id="auth-modal-title-desktop" className="text-center text-[2rem] font-light tracking-[0.15em] text-brand-charcoal mb-8">
                 {SSO_VIEW_TITLES[view] ?? "登录"}
             </h1>
             <p className="text-center text-sm leading-relaxed text-brand-charcoal/60 tracking-wide mb-12">
@@ -201,7 +227,7 @@ export function AuthModal() {
     return (
         <AnimatePresence>
             {isOpen && (
-                <>
+                <div key="auth-modal-container" ref={dialogRef} className="contents">
                 <motion.div
                     key="backdrop"
                     initial={{ opacity: 0 }}
@@ -213,6 +239,9 @@ export function AuthModal() {
                 />
                 <motion.div
                     key={`pc-panel-${view}`}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="auth-modal-title-desktop"
                     initial={{ x: "100%" }}
                     animate={{ x: 0, transition: { duration: 0.8, ease: [0.8, 0, 0.13, 1] } }}
                     exit={{ x: "100%", transition: { duration: 0.5, ease: [0.8, 0, 0.13, 1] } }}
@@ -231,6 +260,7 @@ export function AuthModal() {
                             <button
                                 onClick={closeAuthModal}
                                 disabled={loading}
+                                aria-label="关闭"
                                 className="absolute top-8 right-8 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-brand-charcoal/5 text-brand-charcoal/40 backdrop-blur-sm transition-all hover:bg-brand-charcoal/10 hover:text-brand-charcoal/70"
                             >
                                 <X size={20} strokeWidth={1.5} />
@@ -255,7 +285,7 @@ export function AuthModal() {
                                 {/* ====== WECHAT BIND ====== */}
                                 {view === "wechat_bind" && (
                                     <>
-                                        <h1 className="text-center text-[2rem] font-light tracking-[0.15em] text-brand-charcoal mb-10">
+                                        <h1 id="auth-modal-title-desktop" className="text-center text-[2rem] font-light tracking-[0.15em] text-brand-charcoal mb-10">
                                             绑定手机号
                                         </h1>
                                         <p className="text-center text-sm text-brand-charcoal/50 tracking-wide mb-10">
@@ -264,21 +294,27 @@ export function AuthModal() {
                                         <form onSubmit={handleWechatBind} className="space-y-8">
                                             <input
                                                 type="tel"
+                                                inputMode="numeric"
+                                                pattern="[0-9]*"
+                                                autoComplete="tel"
                                                 required
                                                 value={regPhone}
-                                                onChange={(e) => setRegPhone(e.target.value)}
+                                                onChange={(e) => setRegPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
                                                 className={pcInputClass}
                                                 placeholder="手机号"
+                                                aria-label="手机号"
                                             />
                                             <div className="relative flex gap-3">
                                                 <input
                                                     type="text"
                                                     required
                                                     maxLength={6}
+                                                    autoComplete="one-time-code"
                                                     value={regCode}
                                                     onChange={(e) => setRegCode(e.target.value)}
                                                     className={`${pcInputClass} flex-1`}
                                                     placeholder="验证码"
+                                                    aria-label="验证码"
                                                 />
                                                 <button
                                                     type="button"
@@ -294,24 +330,26 @@ export function AuthModal() {
                                                     type={showPassword ? "text" : "password"}
                                                     required
                                                     minLength={PASSWORD_MIN_LENGTH}
+                                                    maxLength={32}
+                                                    autoComplete="new-password"
                                                     value={regPassword}
                                                     onChange={(e) => setRegPassword(e.target.value)}
                                                     className={`${pcInputClass} pr-10`}
                                                     placeholder="密码（8位且含大写/小写/数字）"
+                                                    aria-label="密码"
                                                 />
                                                 <button
                                                     type="button"
                                                     onClick={() => setShowPassword(!showPassword)}
+                                                    aria-label={showPassword ? "隐藏密码" : "显示密码"}
                                                     className="absolute right-0 top-1/2 -translate-y-1/2 text-brand-charcoal/40 hover:text-brand-charcoal/70 transition-colors"
                                                 >
                                                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                                                 </button>
                                             </div>
                                             <motion.div
-                                                key={agreementShake}
                                                 initial={{ x: 0 }}
-                                                animate={{ x: [-5, 5, -5, 5, -3, 3, 0] }}
-                                                transition={{ duration: 0.4 }}
+                                                animate={agreementShakeControls}
                                             >
                                                 <label className="flex cursor-pointer items-center gap-2.5 group/agreement">
                                                     <div className="relative flex-shrink-0">
@@ -321,7 +359,7 @@ export function AuthModal() {
                                                             onChange={(e) => setMobileAgreed(e.target.checked)}
                                                             className="peer sr-only"
                                                         />
-                                                        <div className="h-4 w-4 rounded border border-brand-charcoal/25 bg-transparent transition-all peer-checked:bg-brand-charcoal/50 peer-checked:border-brand-charcoal/50" />
+                                                        <div className="h-4 w-4 rounded border border-brand-charcoal/25 bg-transparent transition-all peer-checked:bg-brand-charcoal/50 peer-checked:border-brand-charcoal/50 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-gold/60 peer-focus-visible:ring-offset-2" />
                                                         <Check className="absolute inset-0 m-auto h-3 w-3 scale-0 text-white transition-transform peer-checked:scale-100" strokeWidth={3} />
                                                     </div>
                                                     <span className="text-xs text-brand-charcoal/50 tracking-wide">
@@ -349,11 +387,11 @@ export function AuthModal() {
                             </div>
                         </div>
                     </motion.div>
-                </>
-            )}
-            {isOpen && (
                 <motion.div
                     key={`mobile-modal-${view}`}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="auth-modal-title-mobile"
                     initial={{ x: "100%" }}
                     animate={{ x: 0, transition: { duration: 0.8, ease: [0.8, 0, 0.13, 1] } }}
                     exit={{ x: "100%", transition: { duration: 0.5, ease: [0.8, 0, 0.13, 1] } }}
@@ -364,6 +402,7 @@ export function AuthModal() {
                         <button
                             type="button"
                             onClick={view === "wechat_bind" ? handleCancelWechatBind : closeAuthModal}
+                            aria-label={view === "wechat_bind" ? "取消绑定" : "关闭"}
                             className="absolute left-0 top-0 bottom-0 flex items-center justify-center px-4 py-[10px]"
                         >
                             <ChevronLeft className="h-6 w-6 text-[#00263E]" />
@@ -395,7 +434,7 @@ export function AuthModal() {
                                     </div>
                                 )}
                                 <div className="text-center pt-[6px] pb-4">
-                                    <h2 className="text-[24px] font-medium tracking-[0.2em] text-[#00263E]">
+                                    <h2 id="auth-modal-title-mobile" className="text-[24px] font-medium tracking-[0.2em] text-[#00263E]">
                                         {SSO_VIEW_TITLES[view] ?? "登录"}
                                     </h2>
                                     <div className="mx-auto mt-2 w-[70px] border-b-[1.5px] border-[#00263E]" />
@@ -417,7 +456,7 @@ export function AuthModal() {
                         {view === "wechat_bind" && (
                             <div className="flex flex-col gap-10">
                                 <div className="text-center pt-[6px] pb-4">
-                                    <h2 className="text-[24px] font-medium tracking-[0.2em] text-[#00263E]">绑定手机号</h2>
+                                    <h2 id="auth-modal-title-mobile" className="text-[24px] font-medium tracking-[0.2em] text-[#00263E]">绑定手机号</h2>
                                     <div className="mx-auto mt-2 w-[70px] border-b-[1.5px] border-[#00263E]" />
                                 </div>
                             <form onSubmit={handleWechatBind} className="w-full space-y-6">
@@ -434,6 +473,7 @@ export function AuthModal() {
                                         value={regPhone}
                                         onChange={(e) => setRegPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
                                         placeholder="手机号"
+                                        aria-label="手机号"
                                         className="w-full bg-transparent border-0 border-b border-brand-charcoal/25 rounded-none py-3 px-0 text-base tracking-wide text-brand-charcoal placeholder:text-brand-charcoal/40 placeholder:text-sm placeholder:tracking-wider focus:outline-none focus:border-brand-gold/60 transition-colors"
                                     />
                                 </div>
@@ -442,31 +482,43 @@ export function AuthModal() {
                                         type="text"
                                         required
                                         maxLength={6}
+                                        autoComplete="one-time-code"
                                         value={regCode}
                                         onChange={(e) => setRegCode(e.target.value)}
                                         placeholder="验证码"
+                                        aria-label="验证码"
                                         className="flex-1 bg-transparent border-0 border-b border-brand-charcoal/25 rounded-none py-3 px-0 text-base tracking-wide text-brand-charcoal placeholder:text-brand-charcoal/40 placeholder:text-sm placeholder:tracking-wider focus:outline-none focus:border-brand-gold/60 transition-colors"
                                     />
                                     <button
                                         type="button"
                                         onClick={handleSendRegCode}
                                         disabled={regCodeSending || regCountdown > 0 || !regPhone}
-                                        className="shrink-0 self-end mb-2 px-3 py-1 text-xs font-medium tracking-wider text-brand-charcoal/60 border border-brand-charcoal/25 disabled:opacity-30 transition-all"
+                                        className="shrink-0 self-end mb-2 min-h-[44px] px-3 py-1 text-xs font-medium tracking-wider text-brand-charcoal/60 border border-brand-charcoal/25 disabled:opacity-30 transition-all"
                                     >
                                         {regCountdown > 0 ? `${regCountdown}s` : "获取"}
                                     </button>
                                 </div>
-                                <div>
+                                <div className="relative">
                                     <input
-                                        type="password"
+                                        type={showPassword ? "text" : "password"}
                                         required
                                         minLength={PASSWORD_MIN_LENGTH}
                                         value={regPassword}
                                         onChange={(e) => setRegPassword(e.target.value)}
                                         placeholder="密码（8位且含大写/小写/数字）"
                                         maxLength={32}
-                                        className="w-full bg-transparent border-0 border-b border-brand-charcoal/25 rounded-none py-3 px-0 text-base tracking-wide text-brand-charcoal placeholder:text-brand-charcoal/40 placeholder:text-sm placeholder:tracking-wider focus:outline-none focus:border-brand-gold/60 transition-colors"
+                                        autoComplete="new-password"
+                                        aria-label="密码"
+                                        className="w-full bg-transparent border-0 border-b border-brand-charcoal/25 rounded-none py-3 px-0 pr-10 text-base tracking-wide text-brand-charcoal placeholder:text-brand-charcoal/40 placeholder:text-sm placeholder:tracking-wider focus:outline-none focus:border-brand-gold/60 transition-colors"
                                     />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        aria-label={showPassword ? "隐藏密码" : "显示密码"}
+                                        className="absolute right-0 top-1/2 -translate-y-1/2 p-2 text-brand-charcoal/40 hover:text-brand-charcoal/70 transition-colors"
+                                    >
+                                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                    </button>
                                 </div>
                                 <label className="flex cursor-pointer items-center gap-2.5 pt-2 group/agreement">
                                     <div className="relative flex-shrink-0">
@@ -476,7 +528,7 @@ export function AuthModal() {
                                             onChange={(e) => setMobileAgreed(e.target.checked)}
                                             className="peer sr-only"
                                         />
-                                        <div className="h-4 w-4 rounded border border-brand-charcoal/25 bg-transparent transition-all peer-checked:bg-brand-gold peer-checked:border-brand-gold" />
+                                        <div className="h-4 w-4 rounded border border-brand-charcoal/25 bg-transparent transition-all peer-checked:bg-brand-gold peer-checked:border-brand-gold peer-focus-visible:ring-2 peer-focus-visible:ring-brand-gold/60 peer-focus-visible:ring-offset-2" />
                                         <Check className="absolute inset-0 m-auto h-3 w-3 scale-0 text-white transition-transform peer-checked:scale-100" strokeWidth={3} />
                                     </div>
                                     <span className="text-xs text-brand-charcoal/50 tracking-wide">
@@ -514,6 +566,7 @@ export function AuthModal() {
                         </p>
                     </div>
                 </motion.div>
+                </div>
             )}
         </AnimatePresence>
     );

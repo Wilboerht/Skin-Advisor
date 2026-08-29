@@ -1,0 +1,366 @@
+[
+  {
+    "name": "home",
+    "viewport": "desktop",
+    "url": "/",
+    "finalUrl": "http://localhost:3000/",
+    "status": 200,
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CONNECTION_CLOSED",
+      "Refused to connect to 'https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68q1v9258178333za200zd9258178333&_p=1787994065724&gcd=13l3l3l3l1l1&npa=0&dma=0&are=1&cid=1783107305.1787994068&frm=0&ngs=1&pscdl=noapi&rcb=10&sr=1440x900&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0.0%7CChromiu",
+      "Fetch API cannot load https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68q1v9258178333za200zd9258178333&_p=1787994065724&gcd=13l3l3l3l1l1&npa=0&dma=0&are=1&cid=1783107305.1787994068&frm=0&ngs=1&pscdl=noapi&rcb=10&sr=1440x900&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0.0%7CChromium"
+    ],
+    "failedRequests": [
+      "POST https://www.google-analytics.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68q1v9258178333za200zd9258178333&_p=1787994065724&gcd=13l3l3l3l1l1&npa=0&dma=0 :: net::ERR_CONNECTION_CLOSED"
+    ]
+  },
+  {
+    "name": "questions",
+    "viewport": "desktop",
+    "url": "/questions",
+    "finalUrl": "http://localhost:3000/questions",
+    "status": 200,
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CONNECTION_CLOSED",
+      "Refused to connect to 'https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68q1v9258178333za200zd9258178333&_p=1787994076971&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=1783107305.1787994068&frm=0&ngs=1&pscdl=noapi&rcb=17&sr=1440x900&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0",
+      "Fetch API cannot load https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68q1v9258178333za200zd9258178333&_p=1787994076971&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=1783107305.1787994068&frm=0&ngs=1&pscdl=noapi&rcb=17&sr=1440x900&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0."
+    ],
+    "failedRequests": [
+      "POST https://www.google-analytics.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68q1v9258178333za200zd9258178333&_p=1787994076971&gcd=13l3l3l3l1l1&npa=0&dma=0 :: net::ERR_CONNECTION_CLOSED"
+    ]
+  },
+  {
+    "name": "face-scan",
+    "viewport": "desktop",
+    "url": "/face-scan",
+    "finalUrl": "http://localhost:3000/",
+    "status": 200,
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CONNECTION_CLOSED",
+      "Refused to connect to 'https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68q1v9258178333za200zd9258178333&_p=1787994084512&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=1783107305.1787994068&frm=0&ngs=1&pscdl=noapi&rcb=10&sr=1440x900&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0",
+      "Fetch API cannot load https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68q1v9258178333za200zd9258178333&_p=1787994084512&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=1783107305.1787994068&frm=0&ngs=1&pscdl=noapi&rcb=10&sr=1440x900&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0."
+    ],
+    "failedRequests": [
+      "POST https://www.google-analytics.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68q1v9258178333za200zd9258178333&_p=1787994084512&gcd=13l3l3l3l1l1&npa=0&dma=0 :: net::ERR_CONNECTION_CLOSED"
+    ]
+  },
+  {
+    "name": "result",
+    "viewport": "desktop",
+    "url": "/result",
+    "finalUrl": "http://localhost:3000/questions",
+    "status": 200,
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CONNECTION_CLOSED",
+      "Refused to connect to 'https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68q1v9258178333za200zd9258178333&_p=1787994093576&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=1783107305.1787994068&frm=0&ngs=1&pscdl=noapi&rcb=15&sr=1440x900&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0",
+      "Fetch API cannot load https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68q1v9258178333za200zd9258178333&_p=1787994093576&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=1783107305.1787994068&frm=0&ngs=1&pscdl=noapi&rcb=15&sr=1440x900&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0."
+    ],
+    "failedRequests": [
+      "POST https://www.google-analytics.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68q1v9258178333za200zd9258178333&_p=1787994093576&gcd=13l3l3l3l1l1&npa=0&dma=0 :: net::ERR_CONNECTION_CLOSED"
+    ]
+  },
+  {
+    "name": "login",
+    "viewport": "desktop",
+    "url": "/login",
+    "finalUrl": "http://localhost:3000/login",
+    "status": 200,
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CONNECTION_CLOSED",
+      "Refused to connect to 'https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68q1v9258178333za200zd9258178333&_p=1787994101379&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=1783107305.1787994068&frm=0&ngs=1&pscdl=noapi&rcb=0&sr=1440x900&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0.",
+      "Fetch API cannot load https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68q1v9258178333za200zd9258178333&_p=1787994101379&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=1783107305.1787994068&frm=0&ngs=1&pscdl=noapi&rcb=0&sr=1440x900&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0.0",
+      "Failed to load resource: net::ERR_CONNECTION_CLOSED",
+      "Refused to connect to 'https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68q1v9258178333za200zd9258178333&_p=1787994101379&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AEAAAAQ&ae=a&are=1&cid=1783107305.1787994068&frm=0&ngs=1&pscdl=noapi&rcb=0&sr=1440x900&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24",
+      "Fetch API cannot load https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68q1v9258178333za200zd9258178333&_p=1787994101379&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AEAAAAQ&ae=a&are=1&cid=1783107305.1787994068&frm=0&ngs=1&pscdl=noapi&rcb=0&sr=1440x900&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24."
+    ],
+    "failedRequests": [
+      "POST https://www.google-analytics.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68q1v9258178333za200zd9258178333&_p=1787994101379&gcd=13l3l3l3l1l1&npa=0&dma=0 :: net::ERR_CONNECTION_CLOSED",
+      "GET http://localhost:3000/api/auth/login?return_to=%2F :: net::ERR_ABORTED",
+      "GET http://localhost:3000/api/auth/login?return_to=%2F :: net::ERR_ABORTED",
+      "POST https://www.google-analytics.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68q1v9258178333za200zd9258178333&_p=1787994101379&gcd=13l3l3l3l1l1&npa=0&dma=0 :: net::ERR_CONNECTION_CLOSED"
+    ]
+  },
+  {
+    "name": "register",
+    "viewport": "desktop",
+    "url": "/register",
+    "finalUrl": "http://localhost:3000/register",
+    "status": 200,
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CONNECTION_CLOSED",
+      "Refused to connect to 'https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68q1v9258178333za200zd9258178333&_p=1787994111013&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=1783107305.1787994068&frm=0&ngs=1&pscdl=noapi&rcb=6&sr=1440x900&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0.",
+      "Fetch API cannot load https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68q1v9258178333za200zd9258178333&_p=1787994111013&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=1783107305.1787994068&frm=0&ngs=1&pscdl=noapi&rcb=6&sr=1440x900&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0.0"
+    ],
+    "failedRequests": [
+      "POST https://www.google-analytics.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68q1v9258178333za200zd9258178333&_p=1787994111013&gcd=13l3l3l3l1l1&npa=0&dma=0 :: net::ERR_CONNECTION_CLOSED",
+      "GET http://localhost:3000/api/auth/login?return_to=%2F :: net::ERR_ABORTED",
+      "GET http://localhost:3000/api/auth/login?return_to=%2F :: net::ERR_ABORTED"
+    ]
+  },
+  {
+    "name": "faq",
+    "viewport": "desktop",
+    "url": "/faq",
+    "finalUrl": "http://localhost:3000/faq",
+    "status": 200,
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CONNECTION_CLOSED",
+      "Refused to connect to 'https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68q1v9258178333za200zd9258178333&_p=1787994117257&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=1783107305.1787994068&frm=0&ngs=1&pscdl=noapi&rcb=18&sr=1440x900&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0",
+      "Fetch API cannot load https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68q1v9258178333za200zd9258178333&_p=1787994117257&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=1783107305.1787994068&frm=0&ngs=1&pscdl=noapi&rcb=18&sr=1440x900&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0."
+    ],
+    "failedRequests": [
+      "POST https://www.google-analytics.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68q1v9258178333za200zd9258178333&_p=1787994117257&gcd=13l3l3l3l1l1&npa=0&dma=0 :: net::ERR_CONNECTION_CLOSED"
+    ]
+  },
+  {
+    "name": "skin-types",
+    "viewport": "desktop",
+    "url": "/skin-types",
+    "finalUrl": "http://localhost:3000/skin-types",
+    "status": 200,
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CONNECTION_CLOSED",
+      "Refused to connect to 'https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68q1v9258178333za200zd9258178333&_p=1787994123348&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=1783107305.1787994068&frm=0&ngs=1&pscdl=noapi&rcb=15&sr=1440x900&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0",
+      "Fetch API cannot load https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68q1v9258178333za200zd9258178333&_p=1787994123348&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=1783107305.1787994068&frm=0&ngs=1&pscdl=noapi&rcb=15&sr=1440x900&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0."
+    ],
+    "failedRequests": [
+      "POST https://www.google-analytics.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68q1v9258178333za200zd9258178333&_p=1787994123348&gcd=13l3l3l3l1l1&npa=0&dma=0 :: net::ERR_CONNECTION_CLOSED"
+    ]
+  },
+  {
+    "name": "skin-types-detail-minminpai",
+    "viewport": "desktop",
+    "url": "/skin-types/minminpai",
+    "finalUrl": "http://localhost:3000/skin-types/minminpai",
+    "status": 200,
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CONNECTION_CLOSED",
+      "Refused to connect to 'https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68q1v9258178333za200zd9258178333&_p=1787994133394&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=1783107305.1787994068&frm=0&ngs=1&pscdl=noapi&rcb=19&sr=1440x900&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0",
+      "Fetch API cannot load https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68q1v9258178333za200zd9258178333&_p=1787994133394&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=1783107305.1787994068&frm=0&ngs=1&pscdl=noapi&rcb=19&sr=1440x900&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0."
+    ],
+    "failedRequests": [
+      "POST https://www.google-analytics.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68q1v9258178333za200zd9258178333&_p=1787994133394&gcd=13l3l3l3l1l1&npa=0&dma=0 :: net::ERR_CONNECTION_CLOSED"
+    ]
+  },
+  {
+    "name": "privacy",
+    "viewport": "desktop",
+    "url": "/privacy",
+    "finalUrl": "https://nihplod.cn/privacy",
+    "status": 200,
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CONNECTION_CLOSED",
+      "Refused to connect to 'https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68q1v9258178333za200zd9258178333&_p=1787994138998&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=1783107305.1787994068&frm=0&ngs=1&pscdl=noapi&rcb=6&sr=1440x900&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0.",
+      "Fetch API cannot load https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68q1v9258178333za200zd9258178333&_p=1787994138998&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=1783107305.1787994068&frm=0&ngs=1&pscdl=noapi&rcb=6&sr=1440x900&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0.0",
+      "Refused to load the script 'https://nihplod.cn/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js' because it violates the following Content Security Policy directive: \"script-src 'self' 'nonce-Kwc2LEAym1HMnrpxIG95GA==' 'strict-dynamic'  https://static.cloudflareinsights.com https://*.am"
+    ],
+    "failedRequests": [
+      "POST https://www.google-analytics.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68q1v9258178333za200zd9258178333&_p=1787994138998&gcd=13l3l3l3l1l1&npa=0&dma=0 :: net::ERR_CONNECTION_CLOSED",
+      "GET https://nihplod.cn/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js :: csp",
+      "GET https://nihplod.cn/_next/image?url=%2Fimages%2Fwatermark-mobile.webp&w=375&q=75 :: net::ERR_ABORTED"
+    ]
+  },
+  {
+    "name": "terms",
+    "viewport": "desktop",
+    "url": "/terms",
+    "finalUrl": "http://localhost:3000/terms",
+    "status": 200,
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CONNECTION_CLOSED",
+      "Refused to connect to 'https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68q1v9258178333za200zd9258178333&_p=1787994150805&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=1783107305.1787994068&frm=0&ngs=1&pscdl=noapi&rcb=12&sr=1440x900&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0",
+      "Fetch API cannot load https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68q1v9258178333za200zd9258178333&_p=1787994150805&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=1783107305.1787994068&frm=0&ngs=1&pscdl=noapi&rcb=12&sr=1440x900&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0."
+    ],
+    "failedRequests": [
+      "POST https://www.google-analytics.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68q1v9258178333za200zd9258178333&_p=1787994150805&gcd=13l3l3l3l1l1&npa=0&dma=0 :: net::ERR_CONNECTION_CLOSED"
+    ]
+  },
+  {
+    "name": "home",
+    "viewport": "mobile",
+    "url": "/",
+    "finalUrl": "http://localhost:3000/",
+    "status": 200,
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CONNECTION_CLOSED",
+      "Refused to connect to 'https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68r0h2v9258178333za200zd9258178333&_p=1787994155467&gcd=13l3l3l3l1l1&npa=0&dma=0&are=1&cid=306169773.1787994157&frm=0&ngs=1&pscdl=noapi&rcb=8&sr=390x844&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0.0%7CChromium",
+      "Fetch API cannot load https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68r0h2v9258178333za200zd9258178333&_p=1787994155467&gcd=13l3l3l3l1l1&npa=0&dma=0&are=1&cid=306169773.1787994157&frm=0&ngs=1&pscdl=noapi&rcb=8&sr=390x844&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0.0%7CChromium%"
+    ],
+    "failedRequests": [
+      "POST https://www.google-analytics.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68r0h2v9258178333za200zd9258178333&_p=1787994155467&gcd=13l3l3l3l1l1&npa=0&dma :: net::ERR_CONNECTION_CLOSED"
+    ]
+  },
+  {
+    "name": "questions",
+    "viewport": "mobile",
+    "url": "/questions",
+    "finalUrl": "http://localhost:3000/questions",
+    "status": 200,
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CONNECTION_CLOSED",
+      "Refused to connect to 'https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68r0h2v9258178333za200zd9258178333&_p=1787994159167&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=306169773.1787994157&frm=0&ngs=1&pscdl=noapi&rcb=12&sr=390x844&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0",
+      "Fetch API cannot load https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68r0h2v9258178333za200zd9258178333&_p=1787994159167&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=306169773.1787994157&frm=0&ngs=1&pscdl=noapi&rcb=12&sr=390x844&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0."
+    ],
+    "failedRequests": [
+      "POST https://www.google-analytics.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68r0h2v9258178333za200zd9258178333&_p=1787994159167&gcd=13l3l3l3l1l1&npa=0&dma :: net::ERR_CONNECTION_CLOSED"
+    ]
+  },
+  {
+    "name": "face-scan",
+    "viewport": "mobile",
+    "url": "/face-scan",
+    "finalUrl": "http://localhost:3000/",
+    "status": 200,
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CONNECTION_CLOSED",
+      "Refused to connect to 'https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68r0h2v9258178333za200zd9258178333&_p=1787994166477&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=306169773.1787994157&frm=0&ngs=1&pscdl=noapi&rcb=5&sr=390x844&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0.",
+      "Fetch API cannot load https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68r0h2v9258178333za200zd9258178333&_p=1787994166477&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=306169773.1787994157&frm=0&ngs=1&pscdl=noapi&rcb=5&sr=390x844&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0.0"
+    ],
+    "failedRequests": [
+      "POST https://www.google-analytics.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68r0h2v9258178333za200zd9258178333&_p=1787994166477&gcd=13l3l3l3l1l1&npa=0&dma :: net::ERR_CONNECTION_CLOSED"
+    ]
+  },
+  {
+    "name": "result",
+    "viewport": "mobile",
+    "url": "/result",
+    "finalUrl": "http://localhost:3000/questions",
+    "status": 200,
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CONNECTION_CLOSED",
+      "Refused to connect to 'https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68r0h2v9258178333za200zd9258178333&_p=1787994173094&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=306169773.1787994157&frm=0&ngs=1&pscdl=noapi&rcb=5&sr=390x844&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0.",
+      "Fetch API cannot load https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68r0h2v9258178333za200zd9258178333&_p=1787994173094&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=306169773.1787994157&frm=0&ngs=1&pscdl=noapi&rcb=5&sr=390x844&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0.0"
+    ],
+    "failedRequests": [
+      "POST https://www.google-analytics.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68r0h2v9258178333za200zd9258178333&_p=1787994173094&gcd=13l3l3l3l1l1&npa=0&dma :: net::ERR_CONNECTION_CLOSED"
+    ]
+  },
+  {
+    "name": "login",
+    "viewport": "mobile",
+    "url": "/login",
+    "finalUrl": "http://localhost:3000/login",
+    "status": 200,
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CONNECTION_CLOSED",
+      "Refused to connect to 'https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68r0h2v9258178333za200zd9258178333&_p=1787994176684&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=306169773.1787994157&frm=0&ngs=1&pscdl=noapi&rcb=7&sr=390x844&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0.",
+      "Fetch API cannot load https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68r0h2v9258178333za200zd9258178333&_p=1787994176684&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=306169773.1787994157&frm=0&ngs=1&pscdl=noapi&rcb=7&sr=390x844&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0.0"
+    ],
+    "failedRequests": [
+      "POST https://www.google-analytics.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68r0h2v9258178333za200zd9258178333&_p=1787994176684&gcd=13l3l3l3l1l1&npa=0&dma :: net::ERR_CONNECTION_CLOSED",
+      "GET http://localhost:3000/api/auth/login?return_to=%2F :: net::ERR_ABORTED",
+      "GET http://localhost:3000/api/auth/login?return_to=%2F :: net::ERR_ABORTED"
+    ]
+  },
+  {
+    "name": "register",
+    "viewport": "mobile",
+    "url": "/register",
+    "finalUrl": "https://nihplod.cn/login?return_to=%2Fapi%2Foauth%2Fauthorize%3Fresponse_type%3Dcode%26client_id%3Dq6n4aitms0wgn2sz1nj96au5%26redirect_uri%3Dhttps%253A%252F%252Fadvisor.nihplod.cn%252Fapi%252Fauth%252Fcallback%26scope%3Dopenid%2Bprofile%2Bphone%26state%3DTI_C7W_88JolZZ_GpRQcUd0nhDpTh_0h%26code_challenge%3DoTMcRwauzXfS3VQTSdv0veMy2hg52kFGhBAX15HSP6c%26code_challenge_method%3DS256&client_name=%E8%82%8C%E6%99%BA%E6%B4%BE%E7%B4%A0%E9%A2%9C%E6%B5%8B%E8%82%A4",
+    "status": 200,
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CONNECTION_CLOSED",
+      "Refused to connect to 'https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68r0h2v9258178333za200zd9258178333&_p=1787994183201&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=306169773.1787994157&frm=0&ngs=1&pscdl=noapi&rcb=13&sr=390x844&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0",
+      "Fetch API cannot load https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68r0h2v9258178333za200zd9258178333&_p=1787994183201&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=306169773.1787994157&frm=0&ngs=1&pscdl=noapi&rcb=13&sr=390x844&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0.",
+      "Failed to load resource: net::ERR_CONNECTION_CLOSED",
+      "Refused to connect to 'https://www.google.com/g/collect?v=2&tid=G-HX6PED5CZ2&gtm=45je68r0h2v9258173410za200zd9258173410&_p=1787994190037&gcd=13l3l3l3l1l1&npa=0&dma=0&are=1&cid=61810624.1787994190&frm=0&ngs=1&pscdl=noapi&rcb=16&sr=390x844&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0.0%7CChromium",
+      "Fetch API cannot load https://www.google.com/g/collect?v=2&tid=G-HX6PED5CZ2&gtm=45je68r0h2v9258173410za200zd9258173410&_p=1787994190037&gcd=13l3l3l3l1l1&npa=0&dma=0&are=1&cid=61810624.1787994190&frm=0&ngs=1&pscdl=noapi&rcb=16&sr=390x844&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0.0%7CChromium%"
+    ],
+    "failedRequests": [
+      "POST https://www.google-analytics.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68r0h2v9258178333za200zd9258178333&_p=1787994183201&gcd=13l3l3l3l1l1&npa=0&dma :: net::ERR_CONNECTION_CLOSED",
+      "GET http://localhost:3000/api/auth/login?return_to=%2F :: net::ERR_ABORTED",
+      "GET http://localhost:3000/api/auth/login?return_to=%2F :: net::ERR_ABORTED",
+      "POST https://www.google-analytics.com/g/collect?v=2&tid=G-HX6PED5CZ2&gtm=45je68r0h2v9258173410za200zd9258173410&_p=1787994190037&gcd=13l3l3l3l1l1&npa=0&dma :: net::ERR_CONNECTION_CLOSED"
+    ]
+  },
+  {
+    "name": "faq",
+    "viewport": "mobile",
+    "url": "/faq",
+    "finalUrl": "http://localhost:3000/faq",
+    "status": 200,
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CONNECTION_CLOSED",
+      "Refused to connect to 'https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68r0h2v9258178333za200zd9258178333&_p=1787994190819&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=306169773.1787994157&frm=0&ngs=1&pscdl=noapi&rcb=0&sr=390x844&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0.",
+      "Fetch API cannot load https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68r0h2v9258178333za200zd9258178333&_p=1787994190819&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=306169773.1787994157&frm=0&ngs=1&pscdl=noapi&rcb=0&sr=390x844&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0.0"
+    ],
+    "failedRequests": [
+      "POST https://www.google-analytics.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68r0h2v9258178333za200zd9258178333&_p=1787994190819&gcd=13l3l3l3l1l1&npa=0&dma :: net::ERR_CONNECTION_CLOSED"
+    ]
+  },
+  {
+    "name": "skin-types",
+    "viewport": "mobile",
+    "url": "/skin-types",
+    "finalUrl": "http://localhost:3000/skin-types",
+    "status": 200,
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CONNECTION_CLOSED",
+      "Refused to connect to 'https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68r0h2v9258178333za200zd9258178333&_p=1787994194601&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=306169773.1787994157&frm=0&ngs=1&pscdl=noapi&rcb=14&sr=390x844&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0",
+      "Fetch API cannot load https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68r0h2v9258178333za200zd9258178333&_p=1787994194601&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=306169773.1787994157&frm=0&ngs=1&pscdl=noapi&rcb=14&sr=390x844&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0."
+    ],
+    "failedRequests": [
+      "POST https://www.google-analytics.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68r0h2v9258178333za200zd9258178333&_p=1787994194601&gcd=13l3l3l3l1l1&npa=0&dma :: net::ERR_CONNECTION_CLOSED"
+    ]
+  },
+  {
+    "name": "skin-types-detail-minminpai",
+    "viewport": "mobile",
+    "url": "/skin-types/minminpai",
+    "finalUrl": "http://localhost:3000/skin-types/minminpai",
+    "status": 200,
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CONNECTION_CLOSED",
+      "Refused to connect to 'https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68r0h2v9258178333za200zd9258178333&_p=1787994200768&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=306169773.1787994157&frm=0&ngs=1&pscdl=noapi&rcb=9&sr=390x844&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0.",
+      "Fetch API cannot load https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68r0h2v9258178333za200zd9258178333&_p=1787994200768&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=306169773.1787994157&frm=0&ngs=1&pscdl=noapi&rcb=9&sr=390x844&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0.0"
+    ],
+    "failedRequests": [
+      "POST https://www.google-analytics.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68r0h2v9258178333za200zd9258178333&_p=1787994200768&gcd=13l3l3l3l1l1&npa=0&dma :: net::ERR_CONNECTION_CLOSED"
+    ]
+  },
+  {
+    "name": "privacy",
+    "viewport": "mobile",
+    "url": "/privacy",
+    "finalUrl": "https://nihplod.cn/privacy",
+    "status": 200,
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CONNECTION_CLOSED",
+      "Refused to connect to 'https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68r0h2v9258178333za200zd9258178333&_p=1787994204846&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=306169773.1787994157&frm=0&ngs=1&pscdl=noapi&rcb=9&sr=390x844&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0.",
+      "Fetch API cannot load https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68r0h2v9258178333za200zd9258178333&_p=1787994204846&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=306169773.1787994157&frm=0&ngs=1&pscdl=noapi&rcb=9&sr=390x844&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0.0",
+      "Refused to load the script 'https://nihplod.cn/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js' because it violates the following Content Security Policy directive: \"script-src 'self' 'nonce-UykLFMFSip3McBzCWSGWzg==' 'strict-dynamic'  https://static.cloudflareinsights.com https://*.am",
+      "PAGEERROR: Error: Minified React error #418; visit https://react.dev/errors/418?args[]=text&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "Failed to load resource: net::ERR_CONNECTION_CLOSED",
+      "Refused to connect to 'https://www.google.com/g/collect?v=2&tid=G-HX6PED5CZ2&gtm=45je68r0h2v9258173410za200zd9258173410&_p=1787994208785&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=61810624.1787994190&frm=0&ngs=1&pscdl=noapi&rcb=0&sr=390x844&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0.0",
+      "Fetch API cannot load https://www.google.com/g/collect?v=2&tid=G-HX6PED5CZ2&gtm=45je68r0h2v9258173410za200zd9258173410&_p=1787994208785&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=61810624.1787994190&frm=0&ngs=1&pscdl=noapi&rcb=0&sr=390x844&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0.0%"
+    ],
+    "failedRequests": [
+      "POST https://www.google-analytics.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68r0h2v9258178333za200zd9258178333&_p=1787994204846&gcd=13l3l3l3l1l1&npa=0&dma :: net::ERR_CONNECTION_CLOSED",
+      "GET https://nihplod.cn/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js :: csp",
+      "GET https://nihplod.cn/?_rsc=UnGutxUMZihRxjHi :: net::ERR_ABORTED",
+      "POST https://www.google-analytics.com/g/collect?v=2&tid=G-HX6PED5CZ2&gtm=45je68r0h2v9258173410za200zd9258173410&_p=1787994208785&gcd=13l3l3l3l1l1&npa=0&dma :: net::ERR_CONNECTION_CLOSED"
+    ]
+  },
+  {
+    "name": "terms",
+    "viewport": "mobile",
+    "url": "/terms",
+    "finalUrl": "https://nihplod.cn/terms",
+    "status": 200,
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CONNECTION_CLOSED",
+      "Refused to connect to 'https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68r0h2v9258178333za200zd9258178333&_p=1787994215103&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=306169773.1787994157&frm=0&ngs=1&pscdl=noapi&rcb=3&sr=390x844&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0.",
+      "Fetch API cannot load https://www.google.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68r0h2v9258178333za200zd9258178333&_p=1787994215103&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=306169773.1787994157&frm=0&ngs=1&pscdl=noapi&rcb=3&sr=390x844&uaa=x86&uab=64&uafvl=Not%253DA%253FBrand%3B24.0.0.0",
+      "Refused to load the script 'https://nihplod.cn/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js' because it violates the following Content Security Policy directive: \"script-src 'self' 'nonce-ec3wpfiZHuzDEGy6KWDtdQ==' 'strict-dynamic'  https://static.cloudflareinsights.com https://*.am",
+      "PAGEERROR: Error: Minified React error #418; visit https://react.dev/errors/418?args[]=text&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    ],
+    "failedRequests": [
+      "POST https://www.google-analytics.com/g/collect?v=2&tid=G-KJZCVXRV2B&gtm=45je68r0h2v9258178333za200zd9258178333&_p=1787994215103&gcd=13l3l3l3l1l1&npa=0&dma :: net::ERR_CONNECTION_CLOSED",
+      "GET https://nihplod.cn/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js :: csp",
+      "GET https://nihplod.cn/?_rsc=pfWg1qw4uMxqj7N2 :: net::ERR_ABORTED",
+      "GET https://nihplod.cn/privacy?_rsc=pfWg1qw4uMxqj7N2 :: net::ERR_ABORTED",
+      "GET https://nihplod.cn/?_rsc=Jm_KudBfn_F9em99 :: net::ERR_ABORTED",
+      "GET https://nihplod.cn/privacy?_rsc=Jm_KudBfn_F9em99 :: net::ERR_ABORTED"
+    ]
+  }
+]

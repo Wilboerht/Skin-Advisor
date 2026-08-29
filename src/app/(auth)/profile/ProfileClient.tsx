@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchWithCsrf } from "@/lib/fetch-client";
@@ -18,7 +18,6 @@ import {
   Pencil,
   Check,
   X,
-  Calendar,
   Award,
 } from "lucide-react";
 import { LazyMotion, domAnimation, m } from "framer-motion";
@@ -52,6 +51,10 @@ export default function ProfileClient() {
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState("");
   const [updatingAvatar, setUpdatingAvatar] = useState(false);
+  const [historyError, setHistoryError] = useState(false);
+
+  const AVATAR_MAX_SIZE = 5 * 1024 * 1024; // 5MB
+  const AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
   const maskPhone = (phone?: string | null) => {
     if (!phone) return "—";
@@ -62,6 +65,17 @@ export default function ProfileClient() {
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
+    // 客户端预校验：类型与大小，避免无效上传请求
+    if (!AVATAR_TYPES.includes(file.type)) {
+      toast.error("仅支持 JPG / PNG / WebP / GIF 格式的图片");
+      e.target.value = "";
+      return;
+    }
+    if (file.size > AVATAR_MAX_SIZE) {
+      toast.error("图片大小不能超过 5MB");
+      e.target.value = "";
+      return;
+    }
     setUpdatingAvatar(true);
     try {
       const formData = new FormData();
@@ -82,6 +96,8 @@ export default function ProfileClient() {
       toast.error(err instanceof Error ? err.message : "头像更新未成功");
     } finally {
       setUpdatingAvatar(false);
+      // 清空 input，保证选择同一文件也能再次触发 change
+      e.target.value = "";
     }
   };
 
@@ -111,34 +127,36 @@ export default function ProfileClient() {
 
   useEffect(() => {
     if (!loading && !user) {
-      router.push("/?auth=login");
+      router.push("/?auth=login&redirect=/profile");
     }
   }, [user, loading, router]);
 
-  useEffect(() => {
-    const fetchHistory = async () => {
-      if (!user) return;
-      setLoadingHistory(true);
-      try {
-        const res = await fetch(`/api/advisor/history?page=${page}&limit=${limit}`);
-        if (res.ok) {
-          const data = await res.json();
-          setAuditHistory(data.history);
-          setTotalPages(data.pagination?.totalPages || 0);
-          setTotal(data.pagination?.total || 0);
-        }
-      } catch (e) {
-        console.error("History fetch error:", e);
-      } finally {
-        setLoadingHistory(false);
-      }
-    };
-    fetchHistory();
+  const fetchHistory = useCallback(async () => {
+    if (!user) return;
+    setLoadingHistory(true);
+    setHistoryError(false);
+    try {
+      const res = await fetch(`/api/advisor/history?page=${page}&limit=${limit}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setAuditHistory(data.history);
+      setTotalPages(data.pagination?.totalPages || 0);
+      setTotal(data.pagination?.total || 0);
+    } catch (e) {
+      console.error("History fetch error:", e);
+      setHistoryError(true);
+    } finally {
+      setLoadingHistory(false);
+    }
   }, [user, page, limit]);
 
+  useEffect(() => {
+    fetchHistory();
+  }, [fetchHistory]);
+
   const handleLogout = async () => {
+    // logout 内部已完成整页跳转，无需再 router.push
     await logout();
-    router.push("/");
   };
 
   const formatDate = (dateStr: string) => {
@@ -165,22 +183,27 @@ export default function ProfileClient() {
   }
 
   const latestResult = auditHistory[0]?.analysisResult;
+  // 平均评分只对实际有评分的记录求平均；无评分记录不计入，全部无评分时显示"—"
+  const scoredSessions = auditHistory.filter(
+    (s) => typeof s.analysisResult?.faceAnalysis?.overallScore === "number"
+  );
   const avgScore =
-    auditHistory.length > 0
+    scoredSessions.length > 0
       ? Math.round(
-          auditHistory.reduce(
-            (sum, s) => sum + (s.analysisResult?.faceAnalysis?.overallScore || 0),
+          scoredSessions.reduce(
+            (sum, s) => sum + (s.analysisResult?.faceAnalysis?.overallScore ?? 0),
             0
-          ) / auditHistory.length
+          ) / scoredSessions.length
         )
       : null;
 
   const latestSkinTypeCode = latestResult?.skinProfile?.type;
-  const latestScore = latestResult?.faceAnalysis?.overallScore ?? 0;
-  const latestSkinTypeName = latestScore > 0 && latestSkinTypeCode
+  // 无评分记录时保持 null，UI 显示"—"
+  const latestScore = latestResult?.faceAnalysis?.overallScore ?? null;
+  const latestSkinTypeName = latestScore && latestSkinTypeCode
     ? getSkinTypeName({ score: latestScore, skinType: latestSkinTypeCode })
     : null;
-  const latestCharacterImage = latestScore > 0 && latestSkinTypeCode
+  const latestCharacterImage = latestScore && latestSkinTypeCode
     ? getCharacterImage({ score: latestScore, skinType: latestSkinTypeCode, gender: "female" })
     : null;
 
@@ -191,7 +214,8 @@ export default function ProfileClient() {
       <div className="min-h-screen bg-[#FDFBF7] text-[#1A1A1A]">
         <WebsiteNavbar />
 
-        <main className="pt-20 md:pt-24 pb-20 md:pb-28">
+        {/* layout 已提供唯一 <main> 地标，这里用 div 避免嵌套 */}
+        <div className="pt-20 md:pt-24 pb-20 md:pb-28">
           <div className="max-w-2xl mx-auto">
             {/* Cover */}
             <div className="relative h-40 md:h-52 bg-gradient-to-br from-[#E8E4D9] via-[#F0EDE3] to-[#E8E4D9]" />
@@ -258,14 +282,15 @@ export default function ProfileClient() {
                     />
                     <button
                       onClick={handleSaveName}
-                      className="p-1.5 rounded-full text-[#5E5E5E] hover:text-[#1A1A1A] hover:bg-[rgba(61,68,48,0.06)] transition-colors"
+                      disabled={!editedName.trim()}
+                      className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full text-[#5E5E5E] hover:text-[#1A1A1A] hover:bg-[rgba(61,68,48,0.06)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                       aria-label="保存昵称"
                     >
                       <Check className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => setIsEditingName(false)}
-                      className="p-1.5 rounded-full text-[#5E5E5E] hover:text-[#1A1A1A] hover:bg-[rgba(61,68,48,0.06)] transition-colors"
+                      className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full text-[#5E5E5E] hover:text-[#1A1A1A] hover:bg-[rgba(61,68,48,0.06)] transition-colors"
                       aria-label="取消"
                     >
                       <X className="w-4 h-4" />
@@ -288,14 +313,11 @@ export default function ProfileClient() {
               </div>
 
               {/* Meta */}
+              {/* 注：User 接口暂无 createdAt 字段，"加入时间"待后端补充后再展示 */}
               <div className="flex flex-wrap items-center gap-3 text-[14px] text-[#5E5E5E] mb-4">
                 <div className="flex items-center gap-1.5">
                   <Smartphone className="w-3.5 h-3.5" />
                   <span>{maskPhone(user.phone)}</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-[#8A8A8A]">
-                  <Calendar className="w-3.5 h-3.5" />
-                  <span>加入于 {new Date().getFullYear()}</span>
                 </div>
               </div>
 
@@ -335,6 +357,17 @@ export default function ProfileClient() {
                 <div className="h-48 flex flex-col items-center justify-center gap-4">
                   <Loader2 className="w-5 h-5 text-[#C9A86C] animate-spin" />
                   <span className="text-[13px] text-[#8A8A8A]">加载记录中...</span>
+                </div>
+              ) : historyError ? (
+                <div className="h-48 flex flex-col items-center justify-center gap-4">
+                  <p className="text-[13px] text-[#8A8A8A]">测肤记录加载失败，请检查网络后重试</p>
+                  <button
+                    type="button"
+                    onClick={fetchHistory}
+                    className="inline-flex items-center gap-2 h-9 px-5 rounded-full text-[12px] tracking-[0.05em] text-[#1B3A5C] border border-[#1B3A5C]/20 hover:border-[#1B3A5C]/40 hover:bg-[#1B3A5C]/[0.04] transition-all duration-300"
+                  >
+                    重新加载
+                  </button>
                 </div>
               ) : auditHistory.length === 0 ? (
                 <div className="text-center py-14 md:py-20">
@@ -450,7 +483,7 @@ export default function ProfileClient() {
               </button>
             </div>
           </div>
-        </main>
+        </div>
 
         {/* Footer */}
         <footer className="py-8 px-6 text-center">

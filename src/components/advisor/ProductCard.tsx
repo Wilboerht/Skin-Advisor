@@ -138,7 +138,7 @@ function CompactProductCard({
 
                         {/* 匹配度 */}
                         {typeof product.matchScore === "number" && product.matchScore > 0 && (
-                            <span className="mb-1 inline-flex items-center rounded-full bg-[#5c4937]/8 px-2 py-0.5 text-[10px] font-medium text-[#5c4937]">
+                            <span className="mb-1 inline-flex items-center rounded-full bg-[var(--color-brand-cocoa)]/8 px-2 py-0.5 text-[10px] font-medium text-[var(--color-brand-cocoa)]">
                                 匹配度 {product.matchScore}%
                             </span>
                         )}
@@ -151,7 +151,7 @@ function CompactProductCard({
                         )}
 
                         {/* 推荐理由 */}
-                        <p className="line-clamp-1 text-xs text-[#8c7a6b] lg:text-[#666]">
+                        <p className="line-clamp-1 text-xs text-[var(--color-brand-taupe)] lg:text-[#666]">
                             {product.reason}
                         </p>
 
@@ -176,7 +176,7 @@ function CompactProductCard({
                                 e.stopPropagation();
                                 onViewDetail?.(product);
                             }}
-                            className="inline-flex items-center gap-1 rounded-full border border-[#5c4937]/30 bg-transparent px-3 py-1.5 text-xs font-medium text-[#5c4937] transition-colors hover:border-[#5c4937]/50 hover:bg-[#5c4937]/5"
+                            className="inline-flex items-center gap-1 rounded-full border border-[var(--color-brand-cocoa)]/30 bg-transparent px-3 py-1.5 text-xs font-medium text-[var(--color-brand-cocoa)] transition-colors hover:border-[var(--color-brand-cocoa)]/50 hover:bg-[var(--color-brand-cocoa)]/5"
                         >
                             查看详情
                             <ChevronRight className="w-3 h-3" />
@@ -193,7 +193,7 @@ function CompactProductCard({
                                 e.stopPropagation();
                                 onViewDetail?.(product);
                             }}
-                            className="group/btn inline-flex items-center gap-1.5 rounded-full border border-[#5c4937]/30 bg-transparent px-4 py-2 text-[13px] font-medium text-[#5c4937] transition-colors hover:border-[#5c4937]/50 hover:bg-[#5c4937]/5"
+                            className="group/btn inline-flex items-center gap-1.5 rounded-full border border-[var(--color-brand-cocoa)]/30 bg-transparent px-4 py-2 text-[13px] font-medium text-[var(--color-brand-cocoa)] transition-colors hover:border-[var(--color-brand-cocoa)]/50 hover:bg-[var(--color-brand-cocoa)]/5"
                         >
                             查看详情
                             <ChevronRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover/btn:translate-x-0.5" />
@@ -356,7 +356,7 @@ function ProductImage({
         return (
             <div className={cn(
                 "flex h-full w-full flex-col items-center justify-center",
-                compact ? "text-[#8c7a6b]/50" : "text-white/30"
+                compact ? "text-[var(--color-brand-taupe)]/50" : "text-white/30"
             )}>
                 <ImageOff className={cn("h-8 w-8", compact && "h-6 w-6")} />
                 {!compact && (

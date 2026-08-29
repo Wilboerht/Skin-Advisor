@@ -11,9 +11,14 @@ const FOCUSABLE_SELECTORS = [
     '[tabindex]:not([tabindex="-1"])',
 ].join(", ");
 
-export function useFocusTrap<T extends HTMLElement>(isOpen: boolean) {
+export function useFocusTrap<T extends HTMLElement>(isOpen: boolean, onEscape?: () => void) {
     const containerRef = useRef<T>(null);
     const previousActiveElement = useRef<HTMLElement | null>(null);
+    // 用 ref 持有回调，避免调用方传入内联函数导致 effect 反复重建
+    const onEscapeRef = useRef(onEscape);
+    useEffect(() => {
+        onEscapeRef.current = onEscape;
+    }, [onEscape]);
 
     useEffect(() => {
         if (!isOpen) return;
@@ -41,6 +46,10 @@ export function useFocusTrap<T extends HTMLElement>(isOpen: boolean) {
         }
 
         const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                onEscapeRef.current?.();
+                return;
+            }
             if (e.key !== "Tab") return;
 
             // 每次 Tab 时实时查询，确保动态内容变化后焦点循环仍正确

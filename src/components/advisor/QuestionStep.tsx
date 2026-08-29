@@ -12,6 +12,8 @@ interface QuestionStepProps {
   selectedValue: string | string[] | null;
   onSelect: (value: string) => void;
   onNext: () => void;
+  /** 仅 skippable 题目传入：不写入答案直接进入下一题 */
+  onSkip?: () => void;
   direction: number; // 1: 向前, -1: 向后（切题滑入滑出由外层 page 的 AnimatePresence 负责）
   currentStep: number;
   totalSteps: number;
@@ -32,6 +34,7 @@ export function QuestionStep({
   selectedValue,
   onSelect,
   onNext,
+  onSkip,
   currentStep,
   totalSteps,
 }: QuestionStepProps) {
@@ -43,6 +46,20 @@ export function QuestionStep({
   const isNextDisabled = !selectedValue || (Array.isArray(selectedValue) && selectedValue.length === 0);
   const selectedCount = Array.isArray(selectedValue) ? selectedValue.length : selectedValue ? 1 : 0;
   const showNextButton = question.type === "multiple" || (currentStep === totalSteps && !isNextDisabled);
+
+  // 单选题支持方向键切换选项（符合 radiogroup 键盘惯例）
+  const handleGroupKeyDown = (e: React.KeyboardEvent) => {
+    if (question.type !== "single") return;
+    if (e.key !== "ArrowDown" && e.key !== "ArrowRight" && e.key !== "ArrowUp" && e.key !== "ArrowLeft") return;
+    e.preventDefault();
+    const values = question.options.map((o) => o.value);
+    const currentIdx = values.indexOf(typeof selectedValue === "string" ? selectedValue : "");
+    const delta = e.key === "ArrowDown" || e.key === "ArrowRight" ? 1 : -1;
+    const nextIdx = currentIdx === -1
+      ? (delta === 1 ? 0 : values.length - 1)
+      : (currentIdx + delta + values.length) % values.length;
+    onSelect(values[nextIdx]);
+  };
 
   const nextLabel = (() => {
     if (isNextDisabled) return "请至少选择一项";
@@ -86,6 +103,7 @@ export function QuestionStep({
           role={question.type === "multiple" ? "group" : "radiogroup"}
           aria-label={question.question}
           aria-multiselectable={question.type === "multiple" ? true : undefined}
+          onKeyDown={handleGroupKeyDown}
         >
           {question.options.map((option, index) => {
             const isSelected = Array.isArray(selectedValue)
@@ -136,6 +154,19 @@ export function QuestionStep({
             </m.div>
           )}
         </AnimatePresence>
+
+        {/* Skip Button — 仅 skippable 题目显示 */}
+        {onSkip && (
+          <div className="mt-4 flex justify-center">
+            <button
+              type="button"
+              onClick={onSkip}
+              className="min-h-[44px] px-6 text-[13px] text-brand-charcoal/50 hover:text-brand-charcoal font-light tracking-[0.1em] underline underline-offset-4 decoration-brand-charcoal/30 hover:decoration-brand-charcoal/60 transition-colors touch-manipulation"
+            >
+              跳过此题
+            </button>
+          </div>
+        )}
       </div>
   );
 }

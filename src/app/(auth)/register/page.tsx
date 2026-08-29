@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useUser } from "@/components/auth/UserProvider";
+import { SsoRedirectScreen } from "@/components/auth/SsoRedirectScreen";
 
 export default function RegisterPage() {
     const { register } = useUser();
@@ -11,9 +12,5 @@ export default function RegisterPage() {
         register();
     }, [register]);
 
-    return (
-        <div className="flex min-h-screen items-center justify-center">
-            <p className="text-muted-foreground">正在跳转到 NIHPLOD 注册页…</p>
-        </div>
-    );
+    return <SsoRedirectScreen message="正在跳转到 NIHPLOD 注册页…" />;
 }

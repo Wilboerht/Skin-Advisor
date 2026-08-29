@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
+import { SiteFooter } from "@/components/website/SiteFooter";
 import type { SkinTypeData } from "@/lib/result-content";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
-
-const CURRENT_YEAR = new Date().getFullYear();
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 // WebGL 背景懒加载，避免 SSR 开销 & 手机端不必要初始化
 const Threads = dynamic(() => import("@/components/ui/Threads"), { ssr: false });
@@ -26,6 +26,9 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
 
   const [genderSuffix, setGenderSuffix] = useState<"female" | "male">("female");
 
+  // 用户偏好减少动画时，不渲染持续运动的 WebGL 背景（静态降级）
+  const prefersReducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
+
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEYS.ADVISOR_GENDER);
@@ -38,7 +41,7 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
   const characterSrc = `/images/character/${data.ipKey}/${data.ipKey}_${genderSuffix}.webp`;
 
   return (
-    <main className="min-h-screen bg-[#FDFBF7] text-brand-charcoal">
+    <div className="min-h-screen bg-[#FDFBF7] text-brand-charcoal">
       {/* 顶部导航 */}
       <WebsiteNavbar />
 
@@ -47,7 +50,27 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       <section
         className="relative min-h-[380px] md:min-h-[560px] px-6 md:px-12 lg:px-20 overflow-hidden bg-[#FDFBF7] text-brand-charcoal"
       >
-        <div className="relative z-10 max-w-5xl mx-auto w-full pt-24 md:pt-28 pb-10 md:pb-14 grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 lg:gap-12 items-center">
+        {/* 可见面包屑（与 BreadcrumbSchema JSON-LD 对应） */}
+        <nav aria-label="面包屑" className="relative z-10 max-w-5xl mx-auto w-full pt-20 md:pt-24">
+          <ol className="flex items-center gap-2 text-xs font-light tracking-[0.08em] text-brand-charcoal/50">
+            <li>
+              <Link href="/" className="hover:text-brand-charcoal transition-colors duration-300">
+                首页
+              </Link>
+            </li>
+            <li aria-hidden="true">/</li>
+            <li>
+              <Link href="/skin-types" className="hover:text-brand-charcoal transition-colors duration-300">
+                肌肤类型
+              </Link>
+            </li>
+            <li aria-hidden="true">/</li>
+            <li aria-current="page" className="text-brand-charcoal/80">
+              {data.typeName}
+            </li>
+          </ol>
+        </nav>
+        <div className="relative z-10 max-w-5xl mx-auto w-full pt-6 md:pt-8 pb-10 md:pb-14 grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 lg:gap-12 items-center">
           <div className="max-w-2xl">
             <h1 className="text-2xl md:text-4xl lg:text-6xl font-serif font-light tracking-[0.02em] leading-[1.1] text-brand-charcoal mb-4 md:mb-5">
               {data.typeName}
@@ -78,13 +101,15 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
 
       {/* Advantages */}
       <section className="relative overflow-hidden py-14 md:py-16 px-6 md:px-12 lg:px-20 bg-white">
-        <Threads
-          className="hidden md:block absolute top-[40%] left-0 right-0 -translate-y-1/2 h-[95%] z-0 pointer-events-none opacity-30"
-          color={[0.92, 0.93, 0.94]}
-          amplitude={0.8}
-          distance={0}
-          enableMouseInteraction={false}
-        />
+        {!prefersReducedMotion && (
+          <Threads
+            className="hidden md:block absolute top-[40%] left-0 right-0 -translate-y-1/2 h-[95%] z-0 pointer-events-none opacity-30"
+            color={[0.92, 0.93, 0.94]}
+            amplitude={0.8}
+            distance={0}
+            enableMouseInteraction={false}
+          />
+        )}
         <div className="relative z-10 max-w-5xl mx-auto">
           <h2 className="text-lg md:text-2xl font-serif font-light text-brand-charcoal tracking-[0.02em] mb-6 md:mb-8">
             {data.m5?.title || "优势高光"}
@@ -270,24 +295,8 @@ export default function ResultDetailPage({ data }: ResultDetailPageProps) {
       </section>
 
       {/* Footer */}
-      <footer className="pt-6 md:pt-8 pb-[calc(1.5rem+env(safe-area-inset-bottom,16px))] px-6 text-center">
-        <div className="flex flex-col items-center justify-center gap-2 text-[11px] font-light text-brand-charcoal/[0.48]">
-          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 tracking-[0.1em] md:tracking-[0.12em]">
-            <p suppressHydrationWarning>© {CURRENT_YEAR} NIHPLOD. All Rights Reserved.</p>
-          </div>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-3 tracking-[0.12em]">
-            <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" className="transition-colors duration-300 hover:text-brand-charcoal/70">
-              沪ICP备2026014764号-1
-            </a>
-            <span aria-hidden="true" className="hidden sm:inline text-brand-charcoal/20">|</span>
-            <a href="http://www.beian.gov.cn/portal/registerSystemInfo" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 transition-colors duration-300 hover:text-brand-charcoal/70">
-              <Image src="/images/beian.webp" alt="" width={12} height={12} className="shrink-0 opacity-80" />
-              <span>沪公网安备31010702010178号</span>
-            </a>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
       </article>
-    </main>
+    </div>
   );
 }

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
+import Script from "next/script";
 import "./globals.css";
 import { OrganizationSchema, WebApplicationSchema, WebsiteSearchSchema } from "@/components/website/StructuredData";
 
@@ -10,6 +11,10 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: 'cover',
   themeColor: '#FDFBF7',
+  // 品牌浅色站：显式声明，避免浏览器自动深色反转
+  colorScheme: 'light',
+  // 移动端键盘弹出时调整布局视口，避免输入框/提交按钮被遮挡
+  interactiveWidget: 'resizes-content',
 };
 
 export const metadata: Metadata = {
@@ -109,7 +114,9 @@ export default function RootLayout({
           <WebApplicationSchema />
           <WebsiteSearchSchema />
           {process.env.BAIDU_TONGJI_ID && (
-            <script
+            <Script
+              id="baidu-tongji"
+              strategy="afterInteractive"
               dangerouslySetInnerHTML={{
                 __html: `var _hmt=_hmt||[];(function(){var hm=document.createElement("script");hm.src="https://hm.baidu.com/hm.js?${process.env.BAIDU_TONGJI_ID}";var s=document.getElementsByTagName("script")[0];s.parentNode.insertBefore(hm,s);})();`,
               }}
@@ -117,8 +124,10 @@ export default function RootLayout({
           )}
           {process.env.NEXT_PUBLIC_GA_ID && (
             <>
-              <script async src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`} />
-              <script
+              <Script async src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`} strategy="afterInteractive" />
+              <Script
+                id="ga-init"
+                strategy="afterInteractive"
                 dangerouslySetInnerHTML={{
                   __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${process.env.NEXT_PUBLIC_GA_ID}');`,
                 }}
@@ -130,6 +139,13 @@ export default function RootLayout({
           className={`antialiased bg-[#FDFBF7]`}
           suppressHydrationWarning
         >
+          {/* 键盘/屏幕阅读器用户跳转主内容 */}
+          <a
+            href="#main-content"
+            className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-[100200] focus:px-4 focus:py-2 focus:bg-brand-charcoal focus:text-white focus:rounded-lg focus:text-sm"
+          >
+            跳转到主内容
+          </a>
           <ToastProvider>
             <UserProvider>
               <AuthModalProvider>

@@ -5,6 +5,8 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useAuthModal } from "./AuthModalContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/Toast";
+import { STORAGE_KEYS } from "@/lib/storage-keys";
+import { isSafeInternalPath } from "@/lib/url-utils";
 
 export function AuthUrlDetector() {
     const searchParams = useSearchParams();
@@ -23,15 +25,21 @@ export function AuthUrlDetector() {
         const redirectUrl = searchParams.get("redirect");
 
         if (authView === "login" || authView === "register" || authView === "forgot_password") {
-            if (redirectUrl) {
-                sessionStorage.setItem("auth_redirect", redirectUrl);
+            // 仅保留站内路径，防止开放重定向
+            if (redirectUrl && isSafeInternalPath(redirectUrl)) {
+                sessionStorage.setItem(STORAGE_KEYS.AUTH_REDIRECT, redirectUrl);
             }
 
             // 已登录用户直接跳转，无需打开弹窗
             if (user) {
-                const target = redirectUrl || sessionStorage.getItem("auth_redirect");
+                const pending = sessionStorage.getItem(STORAGE_KEYS.AUTH_REDIRECT);
+                const target = isSafeInternalPath(redirectUrl)
+                    ? redirectUrl
+                    : isSafeInternalPath(pending)
+                    ? pending
+                    : null;
                 if (target) {
-                    sessionStorage.removeItem("auth_redirect");
+                    sessionStorage.removeItem(STORAGE_KEYS.AUTH_REDIRECT);
                     router.push(target);
                 }
                 if (typeof window !== "undefined") {
@@ -54,10 +62,10 @@ export function AuthUrlDetector() {
     // 登录后自动消费 pending redirect（覆盖微信OAuth回调等场景）
     useEffect(() => {
         if (user) {
-            const pendingRedirect = sessionStorage.getItem("auth_redirect");
+            const pendingRedirect = sessionStorage.getItem(STORAGE_KEYS.AUTH_REDIRECT);
             if (pendingRedirect) {
-                sessionStorage.removeItem("auth_redirect");
-                router.push(pendingRedirect);
+                sessionStorage.removeItem(STORAGE_KEYS.AUTH_REDIRECT);
+                router.push(isSafeInternalPath(pendingRedirect) ? pendingRedirect : "/");
             }
         }
     }, [user, router]);

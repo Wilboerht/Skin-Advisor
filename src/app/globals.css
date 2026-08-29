@@ -47,10 +47,17 @@
   --color-olive-light: rgba(61, 68, 48, 0.15);
   --color-brand-charcoal: #00263E;
   --color-brand-charcoal-light: #4A6272;
+  /* 肌智派结果页暖色系 token（result 组件使用） */
+  --color-brand-espresso: #3d2f25;
+  --color-brand-cocoa: #5c4937;
+  --color-brand-taupe: #8c7a6b;
+  --color-brand-cream: #F5F2ED;
   --color-text-primary: #1A1A1A;
   --color-text-secondary: #00263E;
   --color-white: #ffffff;
 
+  /* 注意：未打包 Futura LT 字体文件（public/fonts 为空、无 @font-face），
+     实际渲染依赖系统字体兜底（PingFang SC / Microsoft YaHei 等） */
   --font-sans: "Futura LT", "Futura", "PingFang SC", "Source Han Sans", "Microsoft YaHei", sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
@@ -93,25 +100,12 @@
     }
   }
 
-  @keyframes floatBadge {
-
-    0%,
-    100% {
-      transform: translateY(0);
-    }
-
-    50% {
-      transform: translateY(-5px);
-    }
-  }
-
   /* Legacy Colors (Keep for other pages) */
   --color-brand-gold: #C9A86C;
   --color-brand-gold-light: #D4B77A;
   --color-brand-gold-dark: #B8975B;
-  --color-brand-cream: #FAF8F5;
+  --color-brand-cream: #F5F2ED;
   --color-brand-cream-dark: #F5F2ED;
-  --color-brand-charcoal: #2C2C2C;
   --color-brand-charcoal-light: #4A4A4A;
   --color-brand-blush: #F5E6E0;
   --color-brand-beige: #E8E2D9;
@@ -121,6 +115,8 @@
   --color-brand-champagne: #F7E7CE;
 
   /* Legacy Fonts */
+  /* 命名误导注意：--font-serif 的内容实际是无衬线字体栈（历史遗留），
+     font-serif 类渲染的并非衬线字体 */
   --font-serif: "Futura LT", "Futura", "PingFang SC", "Source Han Sans", "Microsoft YaHei", serif;
 }
 
@@ -138,6 +134,11 @@
 
     --section-padding: 6rem;
     --transition-smooth: cubic-bezier(0.16, 1, 0.3, 1);
+
+    /* 全站 z-index 层级规范：模态层必须高于导航，Toast 层由组件内另行定义（最高） */
+    --z-float: 9999;    /* 悬浮入口、全屏加载遮罩 */
+    --z-navbar: 100000; /* 全站顶部导航 */
+    --z-modal: 100100;  /* 模态/抽屉层（须高于导航） */
 
     /* Notion-like Design System (from result.module.css) */
     --notion-bg: #FFFFFF;
@@ -164,7 +165,7 @@
     --tag-purple-text: #9065B0;
     --tag-pink-bg: #F9F2F5;
     --tag-pink-text: #C14C8A;
-    --tag-red-bg: #FDEEB;
+    --tag-red-bg: #FDECEA;
     --tag-red-text: #D44C47;
   }
 
@@ -349,26 +350,6 @@
     animation: floatBadge 4s ease-in-out infinite;
   }
 
-  /* Custom Scrollbar - Minimalist & Premium */
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(139, 115, 85, 0.15);
-    border-radius: 10px;
-    transition: all 0.3s ease;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(139, 115, 85, 0.3);
-  }
-
   /* ========== Custom Scrollbar for Modals ========== */
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
@@ -509,12 +490,13 @@
   font-weight: 300;
   font-size: 11px;
   letter-spacing: 0.12em;
-  color: color-mix(in srgb, var(--color-brand-charcoal) 48%, transparent);
+  /* 70% 不透明度，确保米白背景上达到 WCAG AA 对比度 */
+  color: color-mix(in srgb, var(--color-brand-charcoal) 70%, transparent);
   transition: color 0.3s ease;
 }
 
 .home-container .footer-beian a:hover {
-  color: color-mix(in srgb, var(--color-brand-charcoal) 70%, transparent);
+  color: color-mix(in srgb, var(--color-brand-charcoal) 85%, transparent);
 }
 
 .home-container .footer-copyright {
@@ -530,7 +512,7 @@
   letter-spacing: 0.12em;
 }
 
-/* 手机端 footer 排版优化：备案信息垂直堆叠 */
+/* 手机端 footer 排版优化：版权与政策链接同一行，备案信息换行居中 */
 @media (max-width: 767px) {
   .home-container .home-footer {
     gap: 0.625rem;
@@ -538,28 +520,12 @@
     padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
   }
 
-  .home-container .footer-copyright,
-  .home-container .footer-beian,
-  .home-container .footer-beian a,
-  .home-container .footer-beian span {
-    color: color-mix(in srgb, var(--color-brand-charcoal) 28%, transparent);
-  }
-
-  .home-container .footer-beian a:hover {
-    color: color-mix(in srgb, var(--color-brand-charcoal) 42%, transparent);
-  }
-
   .home-container .footer-copyright {
     letter-spacing: 0.1em;
   }
 
   .home-container .footer-beian {
-    flex-direction: column;
-    gap: 0.625rem;
-  }
-
-  .home-container .footer-beian > span[aria-hidden="true"] {
-    display: none;
+    gap: 0.375rem 0.75rem;
   }
 }
 
@@ -617,221 +583,7 @@
   pointer-events: none;
 }
 
-/* 网格容器 */
-.kinetic-container {
-  position: absolute;
-  top: 46%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 85vw;
-  max-width: 1100px;
-  display: grid;
-  grid-template-columns: 1.2fr repeat(3, 1fr);
-  grid-template-rows: repeat(2, 1fr);
-  gap: 16px;
-  perspective: 1000px;
-  pointer-events: auto;
-  z-index: 2;
-}
-
-/* 单个卡片基础样式 */
-.kinetic-cell {
-  position: relative;
-  aspect-ratio: 1 / 1;
-  background: rgba(21, 21, 21, 0.4);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-  border-radius: var(--kinetic-border-radius);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  padding: 40px;
-  transition: transform var(--kinetic-transition) var(--kinetic-ease), box-shadow var(--kinetic-transition) var(--kinetic-ease);
-  box-shadow: 6px 6px 0px rgba(200, 200, 200, 0.15), 0 15px 30px -8px rgba(0, 0, 0, 0.1);
-  pointer-events: auto;
-}
-
-.kinetic-cell-large {
-  grid-row: span 2;
-  aspect-ratio: auto !important;
-  height: 100%;
-}
-
-.kinetic-image-cell {
-  padding: 0 !important;
-}
-
-.kinetic-cell-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  filter: grayscale(100%) sepia(25%) contrast(1.05) brightness(1);
-  transition: transform 1.2s var(--kinetic-ease), filter 0.8s var(--kinetic-ease);
-}
-
-.kinetic-cell:hover .kinetic-cell-image {
-  transform: scale(1.05);
-  filter: grayscale(0%) sepia(0%);
-}
-
-.kinetic-text-cell {
-  background: transparent;
-  justify-content: center;
-}
-
-.kinetic-name {
-  font-size: 2.2rem;
-  font-weight: 800;
-  line-height: 1.1;
-  margin-bottom: 12px;
-  color: var(--kinetic-text-primary);
-  font-family: inherit;
-}
-
-.kinetic-desc {
-  font-size: 0.9rem;
-  color: var(--kinetic-text-secondary);
-  letter-spacing: 0.1em;
-}
-
-.kinetic-login-cell {
-  background: #efede6;
-  justify-content: center;
-}
-
-.kinetic-cell-user-premium {
-  background: linear-gradient(145deg, #ffffff 0%, #fcfaf2 100%) !important;
-  box-shadow: 0 20px 50px -12px rgba(44, 44, 44, 0.08) !important;
-}
-
-/* ========== 平板端 (820px-1024px) - 显示完整布局 ========== */
-@media (min-width: 820px) and (max-width: 1024px) {
-  .kinetic-container {
-    grid-template-columns: repeat(2, 1fr);
-    width: min(86vw, 40vh);
-    max-width: 480px;
-    gap: 12px;
-  }
-  .kinetic-cell-large { grid-row: span 1; aspect-ratio: 1/1 !important; }
-  
-  .kinetic-cell-steps,
-  .kinetic-cell-reverse {
-    display: flex !important;
-    order: 3;
-  }
-}
-
-/* ========== 手机端 (<820px) - 精简布局 ========== */
-@media (max-width: 819px) {
-  .kinetic-container {
-    grid-template-columns: repeat(2, 1fr);
-    width: min(86vw, 40vh);
-    max-width: 450px;
-    gap: 12px;
-    top: 49%;
-  }
-
-  /* 隐藏两个文字卡片 */
-  .kinetic-cell-steps,
-  .kinetic-cell-reverse {
-    display: none !important;
-  }
-
-  /* 重新排列卡片顺序 */
-  .kinetic-cell-boxes {
-    order: 1;
-    grid-column: span 1;
-    aspect-ratio: 1/1 !important;
-  }
-
-  .kinetic-cell-login {
-    order: 2;
-    grid-column: span 1;
-    aspect-ratio: 1/1 !important;
-  }
-
-  /* LESS BUT BETTER 图片卡 - 单独占一行 */
-  .kinetic-cell-less {
-    order: 3;
-    grid-column: span 2;
-    aspect-ratio: 2.1/1 !important;
-  }
-
-  /* 产品图片卡 - 占一行 */
-  .kinetic-cell-skin {
-    order: 4;
-    grid-column: span 2;
-    aspect-ratio: 2.1/1 !important;
-  }
-
-  /* 卡片样式调整 */
-  .kinetic-cell {
-    padding: 16px;
-    border-radius: 16px;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1) !important;
-  }
-
-  .kinetic-cell-large { 
-    grid-row: span 1; 
-    aspect-ratio: 1/1 !important; 
-  }
-
-  .kinetic-name {
-    font-size: 1.35rem;
-    text-shadow: none !important;
-  }
-
-  .kinetic-login-cell {
-    padding: 16px;
-  }
-
-  .kinetic-btn {
-    padding: 10px 16px;
-    font-size: 14px;
-  }
-
-  .kinetic-btn-group {
-    gap: 8px;
-  }
-
-  /* 禁用移动端悬浮效果 */
-  .kinetic-cell:hover,
-  .kinetic-cell:active,
-  .kinetic-login-cell:not(.no-hover-effect):hover,
-  .kinetic-login-cell:not(.no-hover-effect):active {
-    transform: none !important;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1) !important;
-  }
-}
-
-/* ========== 自定义彩色卡片样式 - 极简淡色玻璃感设计 ========== */
-
-/* 黄色调卡片 - 回复至淡雅质感 */
-.kinetic-cell-yellow {
-    background: linear-gradient(135deg, rgba(250, 231, 171, 0.18) 0%, rgba(250, 231, 171, 0.08) 100%) !important;
-    -webkit-backdrop-filter: blur(25px) saturate(180%);
-    backdrop-filter: blur(25px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
-}
-
-.kinetic-cell-yellow .kinetic-name,
-.kinetic-cell-yellow .kinetic-desc {
-    color: #ffffff !important;
-}
-
-/* 橙色调卡片 - 回复至淡雅质感 */
-.kinetic-cell-orange {
-    background: linear-gradient(135deg, rgba(225, 186, 161, 0.18) 0%, rgba(225, 186, 161, 0.08) 100%) !important;
-    -webkit-backdrop-filter: blur(25px) saturate(180%);
-    backdrop-filter: blur(25px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
-}
-
-.kinetic-cell-orange .kinetic-name,
-.kinetic-cell-orange .kinetic-desc {
-    color: #ffffff !important;
-}
+/* 网格卡片样式（.kinetic-container/.kinetic-cell 等）已删除：全站无 DOM 引用 */
 
 /* 隐藏滚动条但保留滚动功能 */
 .scrollbar-hide {

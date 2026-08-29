@@ -46,10 +46,12 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     const addToast = React.useCallback(
-        (message: string, type: ToastType, duration = 3000) => {
+        (message: string, type: ToastType, duration?: number) => {
+            // 错误类 toast 默认展示更久，给用户留足阅读时间
+            const effectiveDuration = duration ?? (type === "error" ? 5000 : 3000);
             const id = `${++toastIdCounter.current}-${Date.now()}`;
             setToasts((prev) => {
-                const next = [...prev, { id, message, type, duration }];
+                const next = [...prev, { id, message, type, duration: effectiveDuration }];
                 // 超过上限时移除最早的 toast
                 if (next.length > MAX_TOASTS) {
                     const removed = next.shift();
@@ -61,11 +63,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 return next;
             });
 
-            if (duration > 0) {
+            if (effectiveDuration > 0) {
                 const timer = setTimeout(() => {
                     timeoutRefs.current.delete(timer);
                     removeToast(id);
-                }, duration);
+                }, effectiveDuration);
                 timeoutRefs.current.add(timer);
             }
         },
@@ -122,7 +124,8 @@ function ToastContainer({
 
     return (
         <div
-            className="fixed right-0 left-0 bottom-[calc(1rem+env(safe-area-inset-bottom,16px))] md:right-6 md:left-auto md:top-6 md:bottom-auto z-[100000] flex flex-col items-center md:items-end gap-2 px-4 md:px-0"
+            aria-live="polite"
+            className="fixed right-0 left-0 bottom-[calc(1rem+env(safe-area-inset-bottom,16px))] md:right-6 md:left-auto md:top-6 md:bottom-auto z-[100100] flex flex-col items-center md:items-end gap-2 px-4 md:px-0"
         >
             <AnimatePresence>
                 {toasts.map((t) => {
@@ -130,6 +133,7 @@ function ToastContainer({
                     return (
                     <motion.div
                         key={t.id}
+                        role={t.type === "error" ? "alert" : undefined}
                         initial={reducedMotion ? false : { opacity: 0, y: 8, x: 0 }}
                         animate={reducedMotion ? {} : { opacity: 1, y: 0, x: 0 }}
                         exit={reducedMotion ? {} : { opacity: 0, y: 8, transition: { duration: 0.15 } }}

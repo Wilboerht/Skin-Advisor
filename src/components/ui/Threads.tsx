@@ -217,9 +217,13 @@ export default function Threads({
     const targetFPS = 30;
     const frameInterval = 1000 / targetFPS;
     let lastTime = 0;
+    // prefers-reduced-motion：只渲染一帧静态画面，不做持续动画
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     function update(t: number) {
-      animationFrameId.current = requestAnimationFrame(update);
+      if (!prefersReducedMotion) {
+        animationFrameId.current = requestAnimationFrame(update);
+      }
 
       if (!isPageVisible || !isInViewport) return;
       if (t - lastTime < frameInterval) return;

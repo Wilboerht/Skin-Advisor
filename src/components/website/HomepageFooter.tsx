@@ -6,9 +6,24 @@ import Image from "next/image";
 export function HomepageFooter() {
     return (
         <footer className="home-footer w-full mt-auto">
-            <p className="footer-copyright relative z-10">
-                &copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.
-            </p>
+            {/* 版权与政策链接同一行 */}
+            <div className="footer-beian">
+                <p className="footer-copyright relative z-10">
+                    &copy; {new Date().getFullYear()} NIHPLOD. All Rights Reserved.
+                </p>
+
+                <span aria-hidden="true">|</span>
+
+                <Link href="/privacy" className="flex !min-h-0 !min-w-0 items-center">
+                    隐私政策
+                </Link>
+
+                <span aria-hidden="true">|</span>
+
+                <Link href="/terms" className="flex !min-h-0 !min-w-0 items-center">
+                    服务条款
+                </Link>
+            </div>
 
             <div className="footer-beian">
                 <Link

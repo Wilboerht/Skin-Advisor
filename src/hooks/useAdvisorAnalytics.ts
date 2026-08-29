@@ -39,12 +39,17 @@ function generateSessionId(): string {
 function getOrCreateSessionId(): string {
   if (typeof window === "undefined") return "";
 
-  let sessionId = sessionStorage.getItem(SESSION_ID_KEY);
-  if (!sessionId) {
-    sessionId = generateSessionId();
-    sessionStorage.setItem(SESSION_ID_KEY, sessionId);
+  // 无痕模式 / 禁用存储时 sessionStorage 访问会抛异常，降级为不上报
+  try {
+    let sessionId = sessionStorage.getItem(SESSION_ID_KEY);
+    if (!sessionId) {
+      sessionId = generateSessionId();
+      sessionStorage.setItem(SESSION_ID_KEY, sessionId);
+    }
+    return sessionId;
+  } catch {
+    return "";
   }
-  return sessionId;
 }
 
 /**
@@ -80,10 +85,11 @@ async function sendTrackEvent(
   event: AnalyticsEvent,
   data?: Record<string, unknown>
 ): Promise<void> {
-  const sessionId = getOrCreateSessionId();
-  if (!sessionId) return;
-
   try {
+    // sessionStorage 可能不可用（无痕模式），在 try 内获取，失败则静默跳过
+    const sessionId = getOrCreateSessionId();
+    if (!sessionId) return;
+
     // 使用 sendBeacon 确保页面关闭时也能发送
     const payload = JSON.stringify({
       sessionId,

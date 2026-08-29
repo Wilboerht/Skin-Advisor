@@ -22,13 +22,13 @@ export function useMediaQuery(query: string): boolean {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
 
-// 预定义断点
+// 预定义断点（与 Tailwind md 的 min-width:768px 对齐，避免 768px 处"既是手机又是桌面"）
 export function useIsMobile() {
-  return useMediaQuery("(max-width: 768px)");
+  return useMediaQuery("(max-width: 767.98px)");
 }
 
 export function useIsTablet() {
-  return useMediaQuery("(min-width: 769px) and (max-width: 1024px)");
+  return useMediaQuery("(min-width: 768px) and (max-width: 1023.98px)");
 }
 
 export function useIsDesktop() {

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { withDefaultOgImage } from "@/lib/metadata";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
+import { SiteFooter } from "@/components/website/SiteFooter";
 import { FAQPageSchema, BreadcrumbSchema } from "@/components/website/StructuredData";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://nihplod.cn";
@@ -74,7 +74,7 @@ const faqs: { question: string; answer: string }[] = [
   {
     question: "如何使用微信顾问服务？",
     answer:
-      "访问顾问服务页面，使用微信扫描页面上的二维码，即可添加 NIHPLOD 护肤顾问微信。顾问会为你提供一对一专业护肤咨询，根据你的肤质报告给出更详细的建议和产品指导。",
+      "关注 NIHPLOD 官方微信服务号，回复「护肤顾问」，即可添加 NIHPLOD 护肤顾问微信。顾问会为你提供一对一专业护肤咨询，根据你的肤质报告给出更详细的建议和产品指导。",
   },
 ];
 
@@ -82,7 +82,7 @@ export const revalidate = 86400;
 
 export default function FAQPage() {
   return (
-    <main className="relative min-h-screen text-[#1A1A1A] bg-[#FDFBF7]">
+    <div className="relative min-h-screen text-[#1A1A1A] bg-[#FDFBF7]">
       <FAQPageSchema faqs={faqs} />
       <BreadcrumbSchema
         items={[
@@ -129,37 +129,10 @@ export default function FAQPage() {
             </details>
           ))}
         </div>
-
-        {/* 底部 CTA */}
-        <div className="max-w-3xl mx-auto mt-16 text-center">
-          <p className="text-[13px] text-[#5E5E5E]/60 mb-5 font-light">
-            还有其他问题？
-          </p>
-          <Link
-            href="/services"
-            className="inline-flex items-center gap-2 px-8 py-3 border border-[#1B3A5C] text-[#1B3A5C] rounded-lg text-[13px] tracking-[0.12em] font-light hover:bg-[#1B3A5C] hover:text-white focus-visible:outline-none focus-visible:bg-[#1B3A5C]/[0.08] transition-all duration-500"
-          >
-            联系护肤顾问
-          </Link>
-        </div>
       </section>
 
       {/* 页脚 */}
-      <footer className="pb-[calc(1rem+env(safe-area-inset-bottom,16px))] md:pb-[calc(2rem+env(safe-area-inset-bottom,16px))] px-6 text-center shrink-0">
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-4 text-[10px] md:text-xs tracking-widest text-[#5E5E5E]/60">
-          <p>© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
-          <span className="hidden sm:inline text-[#5E5E5E]/30">·</span>
-          <div className="hidden sm:flex items-center gap-4">
-            <Link href="https://nihplod.cn/privacy" className="hover:text-[#3D4430] transition-colors duration-300">
-                隐私政策
-            </Link>
-            <span className="text-[#5E5E5E]/30">·</span>
-            <Link href="https://nihplod.cn/terms" className="hover:text-[#3D4430] transition-colors duration-300">
-                服务条款
-            </Link>
-          </div>
-        </div>
-      </footer>
-    </main>
+      <SiteFooter />
+    </div>
   );
 }

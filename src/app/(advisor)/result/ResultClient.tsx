@@ -18,6 +18,7 @@ import {
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavPush } from "@/hooks/use-nav-push";
+import { useToast } from "@/components/ui/Toast";
 import type { FaceAnalysisResult } from "@/lib/advisor-utils";
 import { DIMENSION_LABELS, DIMENSION_DESCRIPTIONS, DIMENSION_ORDER } from "@/lib/advisor-utils";
 import { normalizeAnalysisResult, type ComprehensiveResult } from "@/lib/analysis-result";
@@ -92,15 +93,6 @@ async function waitForImages(container: HTMLElement): Promise<void> {
     );
 }
 
-function getErrorRetryLabel(): string {
-    try {
-        const hasFaceImages = !!localStorage.getItem(STORAGE_KEYS.ADVISOR_FACE_IMAGES);
-        return hasFaceImages ? "重新测试" : "重新填写问卷";
-    } catch {
-        return "重新填写问卷";
-    }
-}
-
 // 手机端：十维分析表单（替代 ScientificBarChart）
 function MobileDimensionForm({ dimensions }: { dimensions: Record<string, { score?: number } | undefined> }) {
     const order = DIMENSION_ORDER;
@@ -110,7 +102,7 @@ function MobileDimensionForm({ dimensions }: { dimensions: Record<string, { scor
             {order.map((key) => {
                 const item = dimensions[key];
                 const score = item?.score ?? 0;
-                const color = score >= 80 ? 'bg-[#5c4937]' : score >= 60 ? 'bg-amber-500' : 'bg-red-500';
+                const color = score >= 80 ? 'bg-[var(--color-brand-cocoa)]' : score >= 60 ? 'bg-amber-500' : 'bg-red-500';
                 return (
                     <div key={key} className="py-3 border-b border-[#E8E2D9] last:border-0">
                         <div className="flex items-center justify-between mb-1.5">
@@ -136,11 +128,11 @@ function MobileLabRow({ metric }: { metric: LabMetric }) {
     return (
         <div className="mb-3 rounded-xl border border-[#E8E2D9] bg-white/50 p-3">
             <div className="flex items-start justify-between gap-2 mb-2">
-                <span className="text-[13px] font-medium text-[#3d2f25] leading-tight">{metric.param}</span>
+                <span className="text-[13px] font-medium text-[var(--color-brand-espresso)] leading-tight">{metric.param}</span>
                 {metric.status && (
                     <span className={cn(
                         "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium",
-                        isGood ? "bg-[#5c4937]/10 text-[#5c4937]" : "bg-red-100 text-red-700"
+                        isGood ? "bg-[var(--color-brand-cocoa)]/10 text-[var(--color-brand-cocoa)]" : "bg-red-100 text-red-700"
                     )}>
                         {metric.status}
                     </span>
@@ -204,6 +196,7 @@ export default function ResultClient(props: ResultClientProps) {
 
 function ResultClientContent({ id, initialData, user: serverUser }: ResultClientProps) {
     const router = useRouter();
+    const toast = useToast();
     // 预取首页/问卷路由，避免点击导航按钮时冷导航"点了没反应"；isNavigating 提供即时反馈
     const { push: navPush, isPending: isNavigating } = useNavPush(["/", "/questions?edit=true"]);
 
@@ -255,6 +248,23 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
     // Data State
     const normalizedResult = useMemo(() => normalizeAnalysisResult(initialData?.result || null), [initialData]);
     const [result, setResult] = useState<ComprehensiveResult | null>(normalizedResult);
+
+    // 错误态重试按钮文案：异步检查真实存储（照片存 IndexedDB 时 localStorage 键已被删除，
+    // 只看 localStorage 会在照片完好时误显示"重新填写问卷"）
+    const [errorRetryLabel, setErrorRetryLabel] = useState("重新测试");
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const { advisorStorage } = await import("@/lib/advisor-storage");
+                const images = await advisorStorage.getFaceImages();
+                if (!cancelled) setErrorRetryLabel(images ? "重新测试" : "重新填写问卷");
+            } catch {
+                if (!cancelled) setErrorRetryLabel("重新填写问卷");
+            }
+        })();
+        return () => { cancelled = true; };
+    }, []);
     const resultRef = useRef(result);
     useEffect(() => {
         resultRef.current = result;
@@ -606,6 +616,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
 
                     // If no cached result and not in analyzing mode, redirect back
                     if (searchParams.get('status') !== 'analyzing') {
+                        toast.warning("没有找到您的报告数据，请重新完成测评");
                         router.replace("/questions");
                         return;
                     }
@@ -627,7 +638,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
         };
 
         loadClientData();
-    }, [initialData, router, trackResultView, searchParams, user]);
+    }, [initialData, router, trackResultView, searchParams, user, toast]);
 
     // --- Environment Data Integration ---
     // REMOVED: Weather component has been disabled per user request
@@ -1004,7 +1015,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                 <div className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-brand-charcoal/[0.08] shadow-sm">
                     <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                         <div className="sm:w-[60%] text-center sm:text-left">
-                            <h3 className="text-lg font-bold text-[#3d2f25] mb-3 sm:mb-2">未授权访问</h3>
+                            <h3 className="text-lg font-bold text-[var(--color-brand-espresso)] mb-3 sm:mb-2">未授权访问</h3>
                             <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">请从首页开始皮肤测评，完成问卷后即可查看您的分析报告。</p>
                         </div>
                         <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
@@ -1031,7 +1042,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                 <div className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-brand-charcoal/[0.08] shadow-sm">
                     <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                         <div className="sm:w-[60%] text-center sm:text-left">
-                            <h3 className="text-lg font-bold text-[#3d2f25] mb-3 sm:mb-2">分析遇到了一些问题</h3>
+                            <h3 className="text-lg font-bold text-[var(--color-brand-espresso)] mb-3 sm:mb-2">分析遇到了一些问题</h3>
                             <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">
                                 {analysisState.error || "服务器暂时无法响应，请稍后再试。"}
                             </p>
@@ -1041,7 +1052,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                 onClick={() => navPush('/questions?edit=true')}
                                 className="px-6 h-10 border border-brand-charcoal/60 text-brand-charcoal hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                             >
-                                {getErrorRetryLabel()}
+                                {errorRetryLabel}
                             </button>
                         </div>
                     </div>
@@ -1063,7 +1074,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                 <div className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-brand-charcoal/[0.08] shadow-sm">
                     <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                         <div className="sm:w-[60%] text-center sm:text-left">
-                            <h3 className="text-lg font-bold text-[#3d2f25] mb-3 sm:mb-2">报告暂时无法加载</h3>
+                            <h3 className="text-lg font-bold text-[var(--color-brand-espresso)] mb-3 sm:mb-2">报告暂时无法加载</h3>
                             <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">请重新开始一次肌肤检测，获取您的专属分析报告。</p>
                         </div>
                         <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
@@ -1203,7 +1214,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                             className="h-8 sm:h-10 w-auto object-contain"
                             priority
                         />
-                        <p className="mt-6 mb-5 lg:mt-8 lg:mb-8 text-base lg:text-lg text-[#5c4937] font-medium tracking-wide flex items-center justify-center gap-2">
+                        <p className="mt-6 mb-5 lg:mt-8 lg:mb-8 text-base lg:text-lg text-[var(--color-brand-cocoa)] font-medium tracking-wide flex items-center justify-center gap-2">
                             <Sparkles className="w-4 h-4 lg:w-5 lg:h-5" />
                             {userNickname} 的专属肌智派素颜分析报告
                         </p>
@@ -1234,8 +1245,8 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                         </div>
                     )}
 
-                    {/* Main Content */}
-                    <main className={`${styles.main} lg:gap-8`}>
+                    {/* Main Content（layout 已提供唯一 <main> 地标，这里用 div 避免嵌套） */}
+                    <div className={`${styles.main} lg:gap-8`}>
 
                         {/* Report Summary Cards */}
                         <ResultCards
@@ -1256,19 +1267,19 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                 <>
                                     {/* 1、详细诊断报告 */}
                                     <div className="mt-6 lg:mt-14 mb-6">
-                                        <h4 className="text-base font-medium text-[#3d2f25] mb-3 border-b border-[#3d2f25]/20 pb-2">
+                                        <h4 className="text-base font-medium text-[var(--color-brand-espresso)] mb-3 border-b border-[var(--color-brand-espresso)]/20 pb-2">
                                             1、详细诊断报告 <span className="text-xs lg:text-base">(Detailed Diagnosis)</span>
                                         </h4>
 
                                         {result.analysis?.details && result.analysis.details.length > 0 ? (
                                             <>
                                                 {result.analysis.details[0] && (
-                                                    <p className="text-sm lg:text-[15px] leading-relaxed text-[#3d2f25] mb-4">
+                                                    <p className="text-sm lg:text-[15px] leading-relaxed text-[var(--color-brand-espresso)] mb-4">
                                                         {result.analysis.details[0]}
                                                     </p>
                                                 )}
                                                 {result.analysis.details.length > 1 && (
-                                                    <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
+                                                    <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[var(--color-brand-cocoa)]">
                                                         {result.analysis.details.slice(1).map((item, idx) => (
                                                             <li key={idx}>{item}</li>
                                                         ))}
@@ -1276,7 +1287,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                                 )}
                                             </>
                                         ) : (
-                                            <p className="text-[14px] leading-relaxed text-[#5c4937]">
+                                            <p className="text-[14px] leading-relaxed text-[var(--color-brand-cocoa)]">
                                                 {faceAnalysis?.summary || result.analysis?.summary || "暂无详细诊断报告"}
                                             </p>
                                         )}
@@ -1284,20 +1295,20 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
 
                                     {/* 2、专家护肤建议 */}
                                     <div className="mb-8">
-                                        <h4 className="text-base font-medium text-[#3d2f25] mb-3 border-b border-[#3d2f25]/20 pb-2">
+                                        <h4 className="text-base font-medium text-[var(--color-brand-espresso)] mb-3 border-b border-[var(--color-brand-espresso)]/20 pb-2">
                                             2、专家护肤建议 <span className="text-xs lg:text-base">(Expert Recommendations)</span>
                                         </h4>
 
-                                        <p className="text-sm text-[#8c7a6b] mb-3">根据您的肌肤数据，以下是针对性的护理和生活方式建议：</p>
+                                        <p className="text-sm text-[var(--color-brand-taupe)] mb-3">根据您的肌肤数据，以下是针对性的护理和生活方式建议：</p>
 
                                         {(faceAnalysis?.recommendations && faceAnalysis.recommendations.length > 0) ? (
-                                            <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
+                                            <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[var(--color-brand-cocoa)]">
                                                 {(faceAnalysis.recommendations).map((rec, idx) => (
                                                     <li key={idx}>{rec}</li>
                                                 ))}
                                             </ul>
                                         ) : (
-                                            <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
+                                            <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[var(--color-brand-cocoa)]">
                                                 <li>每日早晚温和清洁，避免过度去脂。</li>
                                                 <li>严格做好防晒，减少紫外线损伤。</li>
                                                 <li>根据季节调整保湿产品，保持水油平衡。</li>
@@ -1306,8 +1317,8 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
 
                                         {/* 🌿 生活建议（嵌套在专家护肤建议内） */}
                                         {result.analysis?.lifestyleTips && result.analysis.lifestyleTips.length > 0 && (
-                                            <div className="mt-5 pt-4 border-t border-dashed border-[#3d2f25]/10">
-                                                <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[#5c4937]">
+                                            <div className="mt-5 pt-4 border-t border-dashed border-[var(--color-brand-espresso)]/10">
+                                                <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[var(--color-brand-cocoa)]">
                                                     {result.analysis.lifestyleTips.map((tip, idx) => (
                                                         <li key={idx}>{tip}</li>
                                                     ))}
@@ -1323,7 +1334,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                                 <div className="mb-8 min-h-[200px]" />
                                             ) : user ? (
                                                 <div className="mb-8">
-                                                    <h4 className="text-base font-medium text-[#3d2f25] mb-4 border-b border-[#3d2f25]/20 pb-2">
+                                                    <h4 className="text-base font-medium text-[var(--color-brand-espresso)] mb-4 border-b border-[var(--color-brand-espresso)]/20 pb-2">
                                                         3、区域重点关注 <span className="text-xs lg:text-base">(Area Focus)</span>
                                                     </h4>
                                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1338,16 +1349,16 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                                             const zoneData = faceAnalysis.zoneAnalysis![key as keyof typeof faceAnalysis.zoneAnalysis];
                                                             if (!zoneData) return null;
                                                             return (
-                                                                <div key={key} className="bg-[#3d2f25]/5 border text-left border-[#3d2f25]/15 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+                                                                <div key={key} className="bg-[var(--color-brand-espresso)]/5 border text-left border-[var(--color-brand-espresso)]/15 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
                                                                     <div className="flex items-center justify-between mb-2">
-                                                                        <div className="font-semibold text-[#3d2f25] text-sm">{label}</div>
+                                                                        <div className="font-semibold text-[var(--color-brand-espresso)] text-sm">{label}</div>
                                                                     </div>
-                                                                    <p className="text-sm text-[#5c4937] mb-2 leading-snug lg:line-clamp-2">
+                                                                    <p className="text-sm text-[var(--color-brand-cocoa)] mb-2 leading-snug lg:line-clamp-2">
                                                                         {zoneData.condition}
                                                                     </p>
-                                                                    <div className="mt-2 pt-2 border-t border-dashed border-[#3d2f25]/10">
-                                                                        <p className="text-xs text-[#00263e] leading-snug">
-                                                                            <span className="font-medium text-[#5c4937] mr-1">建议:</span>
+                                                                    <div className="mt-2 pt-2 border-t border-dashed border-[var(--color-brand-espresso)]/10">
+                                                                        <p className="text-xs text-[var(--color-brand-charcoal)] leading-snug">
+                                                                            <span className="font-medium text-[var(--color-brand-cocoa)] mr-1">建议:</span>
                                                                             {zoneData.advice}
                                                                         </p>
                                                                     </div>
@@ -1358,17 +1369,17 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                                 </div>
                                             ) : (
                                                 <div className="mb-8">
-                                                    <h4 className="text-base font-medium text-[#3d2f25] mb-4 border-b border-[#3d2f25]/20 pb-2">
+                                                    <h4 className="text-base font-medium text-[var(--color-brand-espresso)] mb-4 border-b border-[var(--color-brand-espresso)]/20 pb-2">
                                                         3、区域重点关注 <span className="text-xs lg:text-base">(Area Focus)</span>
                                                     </h4>
-                                                    <div className="rounded-xl border border-dashed border-[#C9A86C]/40 bg-gradient-to-br from-[#FBF8F3] to-[#F5F2ED] p-6 text-center">
+                                                    <div className="rounded-xl border border-dashed border-[#C9A86C]/40 bg-gradient-to-br from-[#FBF8F3] to-[var(--color-brand-cream)] p-6 text-center">
                                                         <Lock className="w-8 h-8 text-[#C9A86C] mx-auto mb-3" />
-                                                        <p className="text-sm text-[#5c4937] mb-3 leading-relaxed">
+                                                        <p className="text-sm text-[var(--color-brand-cocoa)] mb-3 leading-relaxed">
                                                             登录后可解锁区域重点分析，查看额头、T区、脸颊等六大区域的详细诊断与专属建议
                                                         </p>
                                                         <button
                                                             onClick={() => openAuthModal("login")}
-                                                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#5c4937] text-white text-xs font-medium hover:bg-[#4a3a2c] transition-colors"
+                                                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[var(--color-brand-cocoa)] text-white text-xs font-medium hover:bg-[#4a3a2c] transition-colors"
                                                         >
                                                             立即登录解锁
                                                         </button>
@@ -1383,22 +1394,22 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                         <button
                                             type="button"
                                             onClick={() => setShowLabData(true)}
-                                            className="w-full text-left rounded-xl border border-[#3d2f25]/15 bg-[#3d2f25]/5 shadow-sm overflow-hidden font-sans cursor-pointer hover:bg-[#3d2f25]/[0.07] transition-colors"
+                                            className="w-full text-left rounded-xl border border-[var(--color-brand-espresso)]/15 bg-[var(--color-brand-espresso)]/5 shadow-sm overflow-hidden font-sans cursor-pointer hover:bg-[var(--color-brand-espresso)]/[0.07] transition-colors"
                                         >
                                             <div className="px-5 py-3 flex justify-between items-center">
                                                 <div className="flex items-center gap-2">
-                                                    <Activity className="w-4 h-4 text-[#8c7a6b]" />
-                                                    <span className="text-sm font-medium text-[#3d2f25]">定制化专业分析数据详情</span>
+                                                    <Activity className="w-4 h-4 text-[var(--color-brand-taupe)]" />
+                                                    <span className="text-sm font-medium text-[var(--color-brand-espresso)]">定制化专业分析数据详情</span>
                                                 </div>
                                                 <div className="flex items-center gap-3">
-                                                    <span className="text-xs text-[#8c7a6b] font-normal hidden sm:inline-block">
+                                                    <span className="text-xs text-[var(--color-brand-taupe)] font-normal hidden sm:inline-block">
                                                         MySkin.Today™ Gold Standard
                                                     </span>
-                                                    <ChevronRight className="w-4 h-4 text-[#8c7a6b]" />
+                                                    <ChevronRight className="w-4 h-4 text-[var(--color-brand-taupe)]" />
                                                 </div>
                                             </div>
                                             <div className="px-5 pb-3 pt-0">
-                                                <p className="text-xs text-[#8c7a6b]/80 leading-relaxed pl-6">
+                                                <p className="text-xs text-[var(--color-brand-taupe)]/80 leading-relaxed pl-6">
                                                     联系您的专属护肤顾问，或咨询门店顾问获取专业分析解读
                                                 </p>
                                             </div>
@@ -1418,7 +1429,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                     exit={{ opacity: 0 }}
                                 >
                                     <m.div
-                                        className="absolute inset-0 bg-[#3d2f25]/25 backdrop-blur-sm"
+                                        className="absolute inset-0 bg-[var(--color-brand-espresso)]/25 backdrop-blur-sm"
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
                                         exit={{ opacity: 0 }}
@@ -1426,7 +1437,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                     />
                                     <m.div
                                         ref={labModalRef}
-                                        className="relative z-10 w-full max-w-3xl max-h-[85vh] rounded-2xl border border-[#3d2f25]/10 shadow-2xl flex flex-col bg-[#F5F2ED]"
+                                        className="relative z-10 w-full max-w-3xl max-h-[85vh] rounded-2xl border border-[var(--color-brand-espresso)]/10 shadow-2xl flex flex-col bg-[var(--color-brand-cream)]"
                                         initial={{ opacity: 0, scale: 0.95, y: 20 }}
                                         animate={{ opacity: 1, scale: 1, y: 0 }}
                                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -1443,14 +1454,14 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                     >
                                         <button
                                             onClick={() => setShowLabData(false)}
-                                            className="absolute top-4 right-4 z-20 text-[#8c7a6b]/60 hover:text-[#5c4937] transition-colors bg-transparent border-none cursor-pointer"
+                                            className="absolute top-4 right-4 z-20 text-[var(--color-brand-taupe)]/60 hover:text-[var(--color-brand-cocoa)] transition-colors bg-transparent border-none cursor-pointer"
                                         >
                                             <X className="w-5 h-5" />
                                         </button>
                                         <div className="px-6 sm:px-8 pt-6 sm:pt-8 pb-2 flex-shrink-0">
                                             <div className="flex items-center gap-3">
-                                                <Activity className="w-5 h-5 text-[#8c7a6b]" />
-                                                <h3 className="text-lg font-bold text-[#3d2f25]">定制化专业分析数据详情</h3>
+                                                <Activity className="w-5 h-5 text-[var(--color-brand-taupe)]" />
+                                                <h3 className="text-lg font-bold text-[var(--color-brand-espresso)]">定制化专业分析数据详情</h3>
                                             </div>
                                         </div>
                                         <div className="overflow-y-auto custom-scrollbar px-6 sm:px-8 py-5 sm:py-6 flex-1">
@@ -1494,13 +1505,13 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                                 ))}
                                             </div>
 
-                                            <div className="mt-5 pt-3 border-t border-dashed border-[#3d2f25]/15">
-                                                <div className="flex gap-2.5 items-start text-xs leading-relaxed text-[#5c4937]">
+                                            <div className="mt-5 pt-3 border-t border-dashed border-[var(--color-brand-espresso)]/15">
+                                                <div className="flex gap-2.5 items-start text-xs leading-relaxed text-[var(--color-brand-cocoa)]">
                                                     <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-[#C9A86C]" />
                                                     <div className="space-y-1.5">
-                                                        <p className="font-medium text-[#3d2f25]">数据说明 (Data Disclaimer)</p>
+                                                        <p className="font-medium text-[var(--color-brand-espresso)]">数据说明 (Data Disclaimer)</p>
                                                         <p>
-                                                            <span className="font-semibold text-[#3d2f25]">* AI ESTIMATE:</span> 上述数值均由 AI 算法基于您的面部图像特征（纹理、色泽、对比度）反演推算得出，<span className="border-b border-[#3d2f25]/20 text-[#3d2f25]">并非物理探头实测数据</span>。
+                                                            <span className="font-semibold text-[var(--color-brand-espresso)]">* AI ESTIMATE:</span> 上述数值均由 AI 算法基于您的面部图像特征（纹理、色泽、对比度）反演推算得出，<span className="border-b border-[var(--color-brand-espresso)]/20 text-[var(--color-brand-espresso)]">并非物理探头实测数据</span>。
                                                         </p>
                                                         <p>
                                                             例如：皱纹严重度分级（Wrinkle Severity）是根据面部纹理与阴影的视觉表现估算而来。本报告仅作护肤参考，不可替代医疗诊断。
@@ -1516,7 +1527,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
 
 
 
-                    </main>
+                    </div>
 
                     {/* 4. Products - 与上方专业版报告卡片（含边距）宽度对齐 */}
                     <div className="w-full max-w-[900px] mx-auto px-6 lg:px-10">
@@ -1566,7 +1577,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                     <button
                                         onClick={() => navPush('/')}
                                         disabled={isNavigating}
-                                        className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-[12px] sm:text-[13px] tracking-[0.1em] text-[#5c4937]/70 font-medium hover:text-[#5c4937] transition-colors"
+                                        className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-[12px] sm:text-[13px] tracking-[0.1em] text-[var(--color-brand-cocoa)]/70 font-medium hover:text-[var(--color-brand-cocoa)] transition-colors"
                                     >
                                         <House className="w-3.5 h-3.5" />
                                         回到首页
@@ -1574,7 +1585,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                     <button
                                         onClick={() => navPush('/?gift=1')}
                                         disabled={isNavigating}
-                                        className="group inline-flex items-center justify-center gap-2 w-auto sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 rounded-full border border-dashed border-[#8B7355]/40 bg-[#8B7355]/[0.04] text-[12px] sm:text-[13px] tracking-[0.1em] text-[#8B7355] hover:text-[#5c4937] hover:border-[#5c4937]/40 hover:bg-[#5c4937]/5 transition-all duration-300"
+                                        className="group inline-flex items-center justify-center gap-2 w-auto sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 rounded-full border border-dashed border-[#8B7355]/40 bg-[#8B7355]/[0.04] text-[12px] sm:text-[13px] tracking-[0.1em] text-[#8B7355] hover:text-[var(--color-brand-cocoa)] hover:border-[var(--color-brand-cocoa)]/40 hover:bg-[var(--color-brand-cocoa)]/5 transition-all duration-300"
                                     >
                                         <Gift className="w-4 h-4" />
                                         肌智派送好礼 · 参与抽奖
@@ -1621,7 +1632,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                     </footer>
 
                     {posterError && (
-                        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-full bg-red-50 border border-red-200 text-red-700 text-sm shadow-lg">
+                        <div className="fixed bottom-[max(1.5rem,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-full bg-red-50 border border-red-200 text-red-700 text-sm shadow-lg">
                             {posterError}
                         </div>
                     )}
@@ -1693,11 +1704,11 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                         }
                                     }}
                                 >
-                                    <p className="text-[15px] font-medium text-[#3d2f25] mb-1">长按图片保存证书</p>
-                                    <p className="text-[12px] text-[#8c7a6b] mb-4">
+                                    <p className="text-[15px] font-medium text-[var(--color-brand-espresso)] mb-1">长按图片保存证书</p>
+                                    <p className="text-[12px] text-[var(--color-brand-taupe)] mb-4">
                                         微信内长按下方图片，选择「保存图片」即可存入相册
                                     </p>
-                                    <div className="mx-auto w-full max-w-[300px] rounded-xl overflow-hidden border border-black/5 bg-[#F5F2ED]">
+                                    <div className="mx-auto w-full max-w-[300px] rounded-xl overflow-hidden border border-black/5 bg-[var(--color-brand-cream)]">
                                         <Image
                                             src={savedPosterForSave}
                                             alt="肌智派证书海报"
@@ -1709,7 +1720,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                     </div>
                                     <button
                                         onClick={closePosterSaveModal}
-                                        className="mt-4 inline-flex items-center justify-center gap-2 px-8 py-2.5 rounded-full border border-[#5c4937]/30 text-[#5c4937] text-[13px] tracking-[0.1em] font-medium hover:bg-[#5c4937]/5 transition-colors"
+                                        className="mt-4 inline-flex items-center justify-center gap-2 px-8 py-2.5 rounded-full border border-[var(--color-brand-cocoa)]/30 text-[var(--color-brand-cocoa)] text-[13px] tracking-[0.1em] font-medium hover:bg-[var(--color-brand-cocoa)]/5 transition-colors"
                                     >
                                         已保存，关闭
                                     </button>

@@ -17,6 +17,7 @@ import { getGuestIdentity, type GuestIdentity } from "@/lib/guest-identity";
 import { CONSENT_VERSION } from "@/components/advisor/PrivacyConsent";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useNavPush } from "@/hooks/use-nav-push";
 import dynamic from "next/dynamic";
 const OnboardingFlowModal = dynamic(() => import("@/components/advisor/OnboardingFlowModal").then((mod) => mod.OnboardingFlowModal), { ssr: false });
@@ -244,6 +245,8 @@ export default function HomeClient() {
     error?: string | null;
   } | null>(null);
   const [showLimitModal, setShowLimitModal] = useState(false);
+  // 限额弹窗焦点圈定 + Escape 关闭
+  const limitModalRef = useFocusTrap<HTMLDivElement>(showLimitModal, () => setShowLimitModal(false));
   const [onboardingOpenCount, setOnboardingOpenCount] = useState(0);
   const [guestIdentity, setGuestIdentity] = useState<GuestIdentity | null>(null);
 
@@ -389,9 +392,9 @@ export default function HomeClient() {
         animate={isHomeExiting ? (prefersReducedMotion ? { opacity: 0 } : { y: "-100%" }) : { opacity: 1, scale: 1, y: 0 }}
         transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.7, ease: [0.65, 0, 0.35, 1] }}
       >
-        <div className="home-container relative flex flex-col flex-1 w-full">
-          {/* Main Content Area */}
-          <main className="main-content relative z-10 flex flex-col flex-1 items-center justify-center text-center px-6 pt-20 md:pt-28">
+        <div className="home-container relative flex flex-col flex-1 min-h-0 w-full overflow-y-auto overscroll-y-contain">
+          {/* Main Content Area（layout 已提供唯一 <main> 地标，这里用 div 避免嵌套 main） */}
+          <div className="main-content relative z-10 flex flex-col flex-1 items-center justify-center text-center px-6 pt-20 md:pt-28">
                 {/* Center AI Actions */}
                 <div className="z-10 flex flex-col items-center text-center max-w-3xl mx-auto">
                   <div className="opacity-0 animate-fade-in-up flex flex-col items-center">
@@ -470,7 +473,7 @@ export default function HomeClient() {
                   </div>
                 </div>
 
-            </main>
+            </div>
 
             {/* Homepage Footer */}
             <HomepageFooter />
@@ -513,7 +516,14 @@ export default function HomeClient() {
 
       <AnimatePresence>
         {showLimitModal && (
-          <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
+          <div
+            ref={limitModalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="limit-modal-title"
+            tabIndex={-1}
+            className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center p-4"
+          >
             {/* Backdrop with Blur */}
             <m.div
               initial={{ opacity: 0 }}
@@ -535,6 +545,7 @@ export default function HomeClient() {
               {/* Close Button */}
               <button
                 onClick={() => setShowLimitModal(false)}
+                aria-label="关闭"
                 className="absolute top-6 right-6 z-20 w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
               >
                 <X size={16} strokeWidth={2.5} />
@@ -556,7 +567,7 @@ export default function HomeClient() {
               {/* Content */}
               <div className="px-10 pb-10 pt-2 flex flex-col items-center gap-6">
                 <div className="text-center space-y-2">
-                  <h2 className="text-base font-bold" style={{ color: '#5c4937' }}>
+                  <h2 id="limit-modal-title" className="text-base font-bold" style={{ color: '#5c4937' }}>
                     今日测试次数已用完
                   </h2>
                   <p className="text-sm leading-relaxed" style={{ color: '#5c4937', opacity: 0.8 }}>

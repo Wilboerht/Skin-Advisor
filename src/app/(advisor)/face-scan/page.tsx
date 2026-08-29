@@ -11,6 +11,7 @@ import { useToast } from "@/components/ui/Toast";
 import { ScanGuideModal } from "@/components/advisor/ScanGuideModal";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useNavPush } from "@/hooks/use-nav-push";
 import { runWhenIdle } from "@/lib/idle";
 import type { UploadMetadata } from "@/lib/upload-client";
@@ -38,15 +39,19 @@ export default function FaceScanPage() {
 
     // 模态框打开时锁定 body 滚动，防止 iOS 上顶部栏跟随滑动
     useBodyScrollLock({ enabled: isModalOpen || showExitConfirm });
+    // 弹窗焦点管理 + Escape 关闭
+    const exitModalRef = useFocusTrap<HTMLDivElement>(showExitConfirm, () => setShowExitConfirm(false));
+    const storageErrorModalRef = useFocusTrap<HTMLDivElement>(storageError);
 
     useEffect(() => {
         // 校验是否有问卷数据 (增加对无痕模式及禁用Storage时的异常处理)
         let answers = null;
         try {
-            answers = localStorage.getItem("advisor_answers");
+            answers = localStorage.getItem(STORAGE_KEYS.ADVISOR_ANSWERS);
         } catch (e) {
             console.warn("Storage API disabled or unavailable", e);
             // Storage 不可用时重定向回问卷页，由问卷页引导用户
+            toast.warning("请先完成问卷");
             router.replace("/questions");
             return;
         }
@@ -55,9 +60,11 @@ export default function FaceScanPage() {
             // 额外检查：是否有隐私授权（防止直接输入URL绕过）
             const hasConsent = localStorage.getItem(STORAGE_KEYS.ADVISOR_PRIVACY_CONSENT);
             if (!hasConsent) {
+                toast.warning("请先完成问卷");
                 router.replace("/");
                 return;
             }
+            toast.warning("请先完成问卷");
             router.replace("/questions");
             return;
         }
@@ -66,7 +73,7 @@ export default function FaceScanPage() {
             trackFaceScanStart();
             hasTrackedStart.current = true;
         }
-    }, [trackFaceScanStart, router]);
+    }, [trackFaceScanStart, router, toast]);
 
     // 双保险：isPreparing 全屏遮罩 30 秒兜底关闭，防止模型加载异常时遮罩永不消失
     useEffect(() => {
@@ -234,7 +241,7 @@ export default function FaceScanPage() {
     return (
         <div className="relative h-dvh overflow-hidden w-full bg-[#F5F2E9] flex flex-col items-center">
             {/* Top Bar —— 复用 /questions 统一样式 */}
-            <header className={`w-full relative flex items-center justify-center py-6 md:py-7 px-4 md:px-12 lg:px-20 z-[310] shrink-0 border-b border-brand-charcoal/5 transition-colors duration-300 ${isModalOpen ? 'bg-[#FAF8F5]' : 'bg-[#F5F2E9]'}`}>
+            <header className={`w-full relative flex items-center justify-center pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-6 md:pt-[calc(1.75rem+env(safe-area-inset-top,0px))] md:pb-7 px-4 md:px-12 lg:px-20 z-[310] shrink-0 border-b border-brand-charcoal/5 transition-colors duration-300 ${isModalOpen ? 'bg-[#FAF8F5]' : 'bg-[#F5F2E9]'}`}>
                 <button
                     onClick={() => navPush("/questions?edit=true")}
                     disabled={isNavigating}
@@ -333,7 +340,14 @@ export default function FaceScanPage() {
             {/* Exit Confirmation Modal —— 复用 /questions 风格 */}
             <AnimatePresence>
                 {showExitConfirm && (
-                    <div className="fixed inset-0 z-[400] flex items-center justify-center p-4">
+                    <div
+                        ref={exitModalRef}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="face-scan-exit-title"
+                        tabIndex={-1}
+                        className="fixed inset-0 z-[400] flex items-center justify-center p-4"
+                    >
                         <m.div
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                             className="absolute inset-0 bg-[#FDFBF7]/90 backdrop-blur-sm"
@@ -347,7 +361,7 @@ export default function FaceScanPage() {
                         >
 <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                                 <div className="sm:w-[60%] text-center sm:text-left">
-                                    <h3 className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-3 sm:mb-2">退出测试？</h3>
+                                    <h3 id="face-scan-exit-title" className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-3 sm:mb-2">退出测试？</h3>
                                     <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">
                                         您的进度已自动保存，下次返回可直接从此处继续。
                                     </p>
@@ -381,7 +395,14 @@ export default function FaceScanPage() {
             {/* Storage Error Modal —— 存储空间不足时的逃生出口 */}
             <AnimatePresence>
                 {storageError && (
-                    <div className="fixed inset-0 z-[400] flex items-center justify-center p-4">
+                    <div
+                        ref={storageErrorModalRef}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="storage-error-title"
+                        tabIndex={-1}
+                        className="fixed inset-0 z-[400] flex items-center justify-center p-4"
+                    >
                         <m.div
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                             className="absolute inset-0 bg-[#FDFBF7]/90 backdrop-blur-sm"
@@ -394,7 +415,7 @@ export default function FaceScanPage() {
                         >
 <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                                 <div className="sm:w-[60%] text-center sm:text-left">
-                                    <h3 className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-3 sm:mb-2">存储空间不足</h3>
+                                    <h3 id="storage-error-title" className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-3 sm:mb-2">存储空间不足</h3>
                                     <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">
                                         浏览器存储空间已满，无法保存照片。请清理浏览器缓存后重新尝试。
                                     </p>

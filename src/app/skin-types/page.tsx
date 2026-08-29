@@ -5,7 +5,7 @@ import { ArrowRight, Gift } from "lucide-react";
 import { skinTypes, routeOrder } from "@/lib/result-content";
 import { withDefaultOgImage } from "@/lib/metadata";
 import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
-import { GiftFloatCard } from "@/components/website/GiftFloatCard";
+import { SiteFooter } from "@/components/website/SiteFooter";
 import { BreadcrumbSchema } from "@/components/website/StructuredData";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://nihplod.cn";
@@ -32,7 +32,7 @@ export default function ResultIndexPage() {
     .filter(Boolean);
 
   return (
-    <main className="relative min-h-dvh text-brand-charcoal bg-[#FDFBF7]">
+    <div className="relative min-h-dvh text-brand-charcoal bg-[#FDFBF7]">
       <BreadcrumbSchema
         items={[
           { name: "首页", url: BASE_URL },
@@ -151,25 +151,7 @@ export default function ResultIndexPage() {
       </section>
 
       {/* 页脚 */}
-      <footer className="pt-6 md:pt-8 pb-[calc(1.5rem+env(safe-area-inset-bottom,16px))] px-6 text-center">
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-3 text-[11px] font-light text-brand-charcoal/[0.48]">
-          <p className="tracking-[0.1em] md:tracking-[0.15em]">© {new Date().getFullYear()} NIHPLOD. All Rights Reserved.</p>
-          <span className="hidden sm:inline text-brand-charcoal/20">·</span>
-          <div className="hidden sm:flex items-center gap-3 tracking-[0.12em]">
-            <Link href="https://nihplod.cn/privacy" className="transition-colors duration-300 hover:text-brand-charcoal/70">
-              隐私政策
-            </Link>
-            <span className="text-brand-charcoal/20">·</span>
-            <Link href="https://nihplod.cn/terms" className="transition-colors duration-300 hover:text-brand-charcoal/70">
-              服务条款
-            </Link>
-          </div>
-        </div>
-      </footer>
-      {/* 右下角悬浮活动卡片 */}
-      <div className="hidden md:block">
-        <GiftFloatCard />
-      </div>
-    </main>
+      <SiteFooter />
+    </div>
   );
 }

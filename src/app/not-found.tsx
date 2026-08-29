@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function NotFound() {
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen bg-[#FDFBF7] text-[#1A1A1A] px-6 text-center">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-[#FDFBF7] text-[#1A1A1A] px-6 text-center">
       <p className="text-[80px] md:text-[120px] font-serif text-[#8B7355]/30 leading-none mb-4">
         404
       </p>
@@ -19,11 +19,11 @@ export default function NotFound() {
       </p>
       <Link
         href="/"
-        className="inline-flex items-center gap-2 px-8 py-3 border border-[#1B3A5C] text-[#1B3A5C] rounded-lg text-[13px] tracking-[0.12em] font-light hover:bg-[#1B3A5C] hover:text-white focus-visible:outline-none focus-visible:bg-[#1B3A5C]/[0.08] transition-all duration-500"
+        className="inline-flex items-center gap-2 px-8 py-3 border border-brand-charcoal text-brand-charcoal rounded-lg text-[13px] tracking-[0.12em] font-light hover:bg-brand-charcoal hover:text-white focus-visible:outline-none focus-visible:bg-brand-charcoal/[0.08] transition-all duration-500"
       >
         回到首页
         <ArrowRight className="w-4 h-4" />
       </Link>
-    </main>
+    </div>
   );
 }

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { m, AnimatePresence } from "framer-motion";
 import { ArrowRight, X } from "lucide-react";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 
 interface GiftModalProps {
   isOpen: boolean;
@@ -23,6 +24,8 @@ interface GiftModalProps {
 export function GiftModal({ isOpen, onClose, onStartTest }: GiftModalProps) {
   // 打开弹窗时锁定背景滚动（首页自身也有一把 iosSafe 锁，引用计数保证嵌套安全）
   useBodyScrollLock({ enabled: isOpen, iosSafe: true });
+  // 焦点圈定 + Escape 关闭
+  const dialogRef = useFocusTrap<HTMLDivElement>(isOpen, onClose);
 
   const steps = [
     { title: "完成测肤或护肤习惯问卷", desc: "获取您的肌智派测肤结果及所属派系形象海报" },
@@ -34,7 +37,9 @@ export function GiftModal({ isOpen, onClose, onStartTest }: GiftModalProps) {
     <AnimatePresence>
       {isOpen && (
         <div
-          className="fixed inset-0 z-[99999] flex items-center justify-center p-4"
+          ref={dialogRef}
+          tabIndex={-1}
+          className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="gift-modal-title"

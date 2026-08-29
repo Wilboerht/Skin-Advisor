@@ -292,7 +292,7 @@ export function useAsyncAnalysis() {
             if (!acquireAnalysisLock(sessionId)) {
                 console.warn(`[useAsyncAnalysis] Analysis lock already held for another session, skipping`);
                 // 设置错误状态让 ResultClient 感知并显示重试按钮，而非永久停留在 preparing 状态
-                setAnalysisState({ status: 'error', progress: 0, error: '上一次分析还在进行中，请稍候，完成后将自动展示结果。' });
+                setAnalysisState({ status: 'error', progress: 0, error: '上一次分析还在进行中，请稍等片刻后点击重试查看结果。' });
                 return;
             }
 

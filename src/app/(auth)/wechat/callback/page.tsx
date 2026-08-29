@@ -35,9 +35,10 @@ export default function WechatCallbackPage() {
     }, [searchParams]);
 
     return (
-        <main className="flex min-h-screen flex-col items-center justify-center bg-[#FDFBF7] px-6 text-center">
+        // layout 已提供唯一 <main> 地标，这里用 div 避免嵌套
+        <div className="flex min-h-screen flex-col items-center justify-center bg-[#FDFBF7] px-6 text-center">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-charcoal/20 border-t-brand-charcoal" />
             <p className="mt-6 text-sm tracking-wide text-brand-charcoal/70">{message}</p>
-        </main>
+        </div>
     );
 }

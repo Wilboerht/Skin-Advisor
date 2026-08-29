@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Sparkles, Sun, ScanEye, LogOut, ChevronLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 
 interface ScanGuideModalProps {
     isOpen: boolean;
@@ -23,10 +24,18 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
         onExit?.();
     };
 
+    // 对话框焦点圈定 + Escape 关闭
+    const containerRef = useFocusTrap<HTMLDivElement>(isOpen, handleClose);
+
     return (
         <AnimatePresence>
             {isOpen && (
                 <motion.div
+                    ref={containerRef}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="开始面部扫描"
+                    tabIndex={-1}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
@@ -34,7 +43,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
                     className="fixed inset-0 z-[320] bg-[#FAF8F5] flex flex-col items-center overflow-y-auto overscroll-contain"
                 >
                     {/* ---- App Bar / Header ---- */}
-                    <header className="fixed top-0 left-0 right-0 z-[330] flex items-center justify-center px-6 md:px-12 lg:px-20 py-6 md:py-7 bg-[#FAF8F5]/95 backdrop-blur-sm border-b border-brand-charcoal/5">
+                    <header className="fixed top-0 left-0 right-0 z-[330] flex items-center justify-center px-6 md:px-12 lg:px-20 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-6 md:pt-[calc(1.75rem+env(safe-area-inset-top,0px))] md:pb-7 bg-[#FAF8F5]/95 backdrop-blur-sm border-b border-brand-charcoal/5">
                         <button
                             onClick={handleClose}
                             className="absolute left-4 md:left-12 lg:left-20 min-w-[44px] min-h-[44px] px-3 py-2 flex items-center justify-center gap-1.5 text-brand-charcoal/70 hover:text-brand-charcoal transition-colors rounded-md hover:bg-brand-charcoal/5 cursor-pointer bg-transparent border-none touch-manipulation active:scale-95"

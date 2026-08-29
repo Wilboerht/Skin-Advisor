@@ -1,6 +1,6 @@
 "use client";
 
-import { motion as m, AnimatePresence } from "framer-motion";
+import { motion as m, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useEffect, useState, useRef, useCallback, useSyncExternalStore } from "react";
 import { LogOut } from "lucide-react";
 import Image from "next/image";
@@ -27,6 +27,7 @@ interface AnalyzingOverlayProps {
 
 export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitSeconds }: AnalyzingOverlayProps) {
     const [showCancel, setShowCancel] = useState(false);
+    const prefersReducedMotion = useReducedMotion();
     // 避免 SSR 与服务端渲染状态不一致，同时避免 effect 中同步 setState
     const isMounted = useSyncExternalStore(
         () => () => {},
@@ -145,11 +146,11 @@ export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitS
                             onCancel();
                         }}
                         disabled={isExiting}
-                        className="absolute top-8 right-4 md:right-12 lg:right-20 z-50 flex items-center gap-2 transition-all group text-brand-charcoal/60 hover:text-brand-charcoal disabled:opacity-30 disabled:cursor-not-allowed"
-                        aria-label="退出测试"
+                        className="absolute top-8 right-4 md:right-12 lg:right-20 z-50 flex items-center gap-2 min-h-[44px] min-w-[44px] px-3 py-2 transition-all group text-brand-charcoal/60 hover:text-brand-charcoal disabled:opacity-30 disabled:cursor-not-allowed"
+                        aria-label="离开此页（分析将在后台继续）"
                     >
                         <span className="text-[12px] font-light tracking-[0.12em] transition-colors">
-                            {isExiting ? "退出中..." : "退出测试"}
+                            {isExiting ? "正在离开..." : "离开此页"}
                         </span>
                         <LogOut className="w-4 h-4 opacity-40 group-hover:opacity-100 transition-opacity" strokeWidth={1.5} />
                     </m.button>
@@ -164,9 +165,9 @@ export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitS
             {/* Main Content */}
             <div className="relative z-10 flex flex-col items-center w-full max-w-md px-8">
 
-                {/* IP 形象轮播 — 无框裸排 + 极慢浮动 */}
+                {/* IP 形象轮播 — 无框裸排 + 极慢浮动（reduced-motion 时静止） */}
                 <m.div
-                    animate={{ y: [0, -6, 0] }}
+                    animate={prefersReducedMotion ? undefined : { y: [0, -6, 0] }}
                     transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
                     className="relative w-40 h-48 md:w-52 md:h-60 mb-4 flex items-center justify-center"
                 >
@@ -204,7 +205,7 @@ export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitS
                 </AnimatePresence>
 
                 {/* Status text */}
-                <div className="h-7 flex items-center justify-center mb-8">
+                <div className="h-7 flex items-center justify-center mb-8" aria-live="polite">
                     <AnimatePresence mode="wait">
                         <m.span
                             key={statusText}
@@ -220,13 +221,20 @@ export function AnalyzingOverlay({ progress, onCancel, queuePosition, queueWaitS
                 </div>
 
                 {/* Progress — hairline, no percentage */}
-                <div className="w-full max-w-[240px] relative h-px bg-brand-charcoal/10 overflow-hidden">
+                <div
+                    className="w-full max-w-[240px] relative h-px bg-brand-charcoal/10 overflow-hidden"
+                    role="progressbar"
+                    aria-valuenow={Math.round(progress)}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label="分析进度"
+                >
                     <m.div
                         className="absolute top-0 bottom-0 left-0 bg-brand-charcoal/50"
                         initial={{ width: 0 }}
                         animate={{ width: `${progress}%`, transition: { duration: 0.4, ease: "easeInOut" } }}
                     />
-                    {isWaitingLLM && (
+                    {isWaitingLLM && !prefersReducedMotion && (
                         <m.div
                             className="absolute top-0 bottom-0 bg-gradient-to-r from-transparent via-brand-charcoal/30 to-transparent"
                             style={{ width: '30%' }}

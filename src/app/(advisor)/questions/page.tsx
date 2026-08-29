@@ -90,18 +90,21 @@ export default function QuestionsPage() {
     // AI 配置校验
     const [aiConfigured, setAiConfigured] = useState<boolean | null>(null);
     const [configMessage, setConfigMessage] = useState("");
+    // 区分"服务未配置"与"网络错误"，前者是运营态，后者需要提供重试
+    const [configNetworkError, setConfigNetworkError] = useState(false);
 
     // 排队状态（防止高峰期用户无感知地长时间等待）
     const [queueBusy, setQueueBusy] = useState(false);
     const [queueWaitSeconds, setQueueWaitSeconds] = useState(0);
     const [queueDismissed, setQueueDismissed] = useState(false);
 
-    // 测试次数预检（避免用户完成全流程后才被拒绝）
-    const [limitExceeded, setLimitExceeded] = useState(false);
-    const [limitMessage, setLimitMessage] = useState("");
-
-    useEffect(() => {
-        fetch("/api/advisor/check-config")
+    const checkAiConfig = useCallback(() => {
+        setAiConfigured(null);
+        setConfigNetworkError(false);
+        const controller = new AbortController();
+        // 10s 超时兜底，避免请求挂起时性别选择页永远停在"正在检查服务状态"
+        const timer = setTimeout(() => controller.abort(), 10000);
+        fetch("/api/advisor/check-config", { signal: controller.signal })
             .then((r) => r.json())
             .then((data) => {
                 setAiConfigured(data.configured);
@@ -114,9 +117,19 @@ export default function QuestionsPage() {
             })
             .catch(() => {
                 setAiConfigured(false);
-                setConfigMessage("无法验证 AI 配置，请稍后重试。");
-            });
+                setConfigNetworkError(true);
+                setConfigMessage("网络连接异常，无法检查服务状态。");
+            })
+            .finally(() => clearTimeout(timer));
     }, []);
+
+    useEffect(() => {
+        checkAiConfig();
+    }, [checkAiConfig]);
+
+    // 测试次数预检（避免用户完成全流程后才被拒绝）
+    const [limitExceeded, setLimitExceeded] = useState(false);
+    const [limitMessage, setLimitMessage] = useState("");
 
     // 预检测试次数：在用户开始问卷前确认是否还有剩余次数
     // 空闲调度：内部会加载 FingerprintJS 并计算指纹（主线程任务），
@@ -180,15 +193,14 @@ export default function QuestionsPage() {
         fetchQuestions();
     }, [fetchQuestions]);
 
-    // 入口守卫：必须通过首页引导弹窗后才能进入问卷
-    const [accessDenied, setAccessDenied] = useState(false);
+    // 入口守卫：必须通过首页引导弹窗（同意隐私协议）后才能进入问卷
+    // null = 尚未检查（避免首帧闪出性别选择页）
+    const [accessDenied, setAccessDenied] = useState<boolean | null>(null);
     useEffect(() => {
         try {
             const hasConsent = localStorage.getItem(STORAGE_KEYS.ADVISOR_PRIVACY_CONSENT);
             const hasAnswers = localStorage.getItem(STORAGE_KEYS.ADVISOR_ANSWERS);
-            if (!hasConsent && !hasAnswers) {
-                setAccessDenied(true);
-            }
+            setAccessDenied(!hasConsent && !hasAnswers);
         } catch {
             setAccessDenied(true);
         }
@@ -452,14 +464,14 @@ export default function QuestionsPage() {
     };
 
     // 调度自动切题：回调里通过 answersRef 校验该题答案未被改动（闭包捕获的是旧 state，必须读 ref），
-    // 防止 300ms 内改选/回退后 pending 的定时器把用户推到错误位置
+    // 防止 500ms 内改选/回退后 pending 的定时器把用户推到错误位置
     const scheduleAutoAdvance = (fieldName: string, expected: unknown, newAnswers: Record<string, unknown>) => {
         autoAdvanceTimerRef.current = setTimeout(() => {
             autoAdvanceTimerRef.current = null;
             const latest = answersRef.current[fieldName];
             if (JSON.stringify(latest ?? null) !== JSON.stringify(expected ?? null)) return;
             handleNextWithAnswers(newAnswers);
-        }, 300);
+        }, 500);
     };
 
     const handleSelect = (value: string) => {
@@ -577,6 +589,16 @@ export default function QuestionsPage() {
         handleNextWithAnswers(answers);
     };
 
+    // 跳过当前题（仅限 skippable 题目）：不写入答案直接前进
+    const handleSkip = () => {
+        if (!gender || !currentQuestion || !currentQuestion.skippable) return;
+        if (autoAdvanceTimerRef.current) {
+            clearTimeout(autoAdvanceTimerRef.current);
+            autoAdvanceTimerRef.current = null;
+        }
+        handleNextWithAnswers(answers);
+    };
+
     // 安全检查
     const isNextDisabled = () => {
         if (!currentQuestion) return true;
@@ -590,13 +612,16 @@ export default function QuestionsPage() {
     // 键盘支持 — 使用 ref 避免闭包捕获旧值及 ESLimmutability 警告
     const handleNextRef = useRef(handleNext);
     const isNextDisabledRef = useRef(isNextDisabled);
+    // 弹窗打开时 Enter 不应触发底层"下一题"，避免弹窗按钮点击与跳题同时发生
+    const modalOpenRef = useRef(false);
     useEffect(() => {
         handleNextRef.current = handleNext;
         isNextDisabledRef.current = isNextDisabled;
+        modalOpenRef.current = showExitConfirm || showQualityWarning;
     });
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "Enter" && !isNextDisabledRef.current()) {
+            if (e.key === "Enter" && !modalOpenRef.current && !isNextDisabledRef.current()) {
                 handleNextRef.current();
             }
         };
@@ -605,7 +630,32 @@ export default function QuestionsPage() {
     }, []);
 
 
-    // 如果没有选择性别，显示隐私同意或性别选择
+    // 入口守卫：未同意隐私协议时显示友好提示
+    // 必须在 !gender 分支之前——新用户 gender 必为 null，放后面守卫永远不生效
+    if (accessDenied === null) {
+        // 守卫检查（localStorage）尚未完成，先渲染加载态避免闪出性别选择页
+        return (
+            <div className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col items-center justify-center bg-[#F5F2E9]">
+                <Loader2 className="w-6 h-6 text-brand-charcoal/60 animate-spin" />
+            </div>
+        );
+    }
+
+    if (accessDenied) {
+        return (
+            <div className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col items-center justify-center bg-[#F5F2E9] gap-4 px-4">
+                <p className="text-sm text-brand-charcoal/60 font-light tracking-wide text-center leading-relaxed">请从首页同意隐私协议后开始测评。</p>
+                <button
+                    onClick={() => navPush("/")}
+                    className="px-6 h-10 rounded-lg border border-brand-charcoal text-brand-charcoal hover:bg-brand-charcoal hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
+                >
+                    返回首页
+                </button>
+            </div>
+        );
+    }
+
+    // 如果没有选择性别，显示性别选择
     if (!gender) {
         return (
             <AnimatePresence mode="wait">
@@ -635,10 +685,16 @@ export default function QuestionsPage() {
                             priority
                         />
                         <button
-                            onClick={() => navPush("/")}
+                            onClick={() => {
+                                // "退出"明确放弃本次进度；左侧"回首页"则保留进度以便下次继续
+                                safeStorage.remove(STORAGE_KEYS.ADVISOR_ANSWERS);
+                                safeStorage.remove(STORAGE_KEYS.ADVISOR_STEP);
+                                safeStorage.remove(STORAGE_KEYS.ADVISOR_GENDER);
+                                navPush("/");
+                            }}
                             disabled={isNavigating}
                             className="absolute right-2 sm:right-4 md:right-12 lg:right-20 min-w-[44px] min-h-[44px] p-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-brand-charcoal/60 hover:text-brand-charcoal transition-colors rounded-md hover:bg-[#3D4430]/5 touch-manipulation active:scale-95 disabled:opacity-40"
-                            aria-label="回到首页"
+                            aria-label="退出并清除进度"
                         >
                             <LogOut className="w-6 h-6 sm:w-5 sm:h-5" strokeWidth={1.5} />
                             <span className="hidden sm:inline text-[14px] font-medium tracking-[0.1em]">退出</span>
@@ -657,14 +713,26 @@ export default function QuestionsPage() {
                                 </div>
                             ) : aiConfigured === false ? (
                                 <div className="w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm text-center">
-                                    <h3 className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-2">敬请期待</h3>
+                                    <h3 className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-2">
+                                        {configNetworkError ? "网络异常" : "敬请期待"}
+                                    </h3>
                                     <p className="text-sm text-brand-charcoal/60 font-light mb-6">{configMessage}</p>
-                                    <button
-                                        onClick={() => navPush("/")}
-                                        className="px-6 h-10 rounded-lg border border-brand-charcoal text-brand-charcoal hover:bg-brand-charcoal hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
-                                    >
-                                        返回首页
-                                    </button>
+                                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                                        {configNetworkError && (
+                                            <button
+                                                onClick={checkAiConfig}
+                                                className="px-6 h-10 rounded-lg bg-brand-charcoal text-white hover:bg-brand-charcoal/90 text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
+                                            >
+                                                重新检查
+                                            </button>
+                                        )}
+                                        <button
+                                            onClick={() => navPush("/")}
+                                            className="px-6 h-10 rounded-lg border border-brand-charcoal text-brand-charcoal hover:bg-brand-charcoal hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
+                                        >
+                                            返回首页
+                                        </button>
+                                    </div>
                                 </div>
                             ) : limitExceeded ? (
                                 <div className="w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-[#E8E2D9] shadow-sm text-center">
@@ -747,21 +815,6 @@ export default function QuestionsPage() {
         );
     }
 
-    // 入口守卫：未同意隐私协议时显示友好提示
-    if (accessDenied) {
-        return (
-            <div className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col items-center justify-center bg-[#F5F2E9] gap-4 px-4">
-                <p className="text-sm text-brand-charcoal/60 font-light tracking-wide text-center leading-relaxed">请从首页同意隐私协议后开始测评。</p>
-                <button
-                    onClick={() => navPush("/")}
-                    className="px-6 h-10 rounded-lg border border-brand-charcoal text-brand-charcoal hover:bg-brand-charcoal hover:text-white text-[13px] font-medium tracking-[0.1em] transition-all duration-300"
-                >
-                    返回首页
-                </button>
-            </div>
-        );
-    }
-
     return (
         <div className="fixed top-0 left-0 w-full h-dvh z-0 flex flex-col bg-[#F5F2E9] text-brand-charcoal overflow-hidden pointer-events-auto">
 
@@ -817,6 +870,29 @@ export default function QuestionsPage() {
                 </button>
             </div>
 
+            {/* 进度条：动态题数（含条件题），让用户随时知道所处位置 */}
+            <div className="shrink-0 px-4 md:px-12 lg:px-20 pb-2">
+                <div className="max-w-5xl mx-auto flex items-center gap-3">
+                    <div
+                        className="flex-1 h-px bg-brand-charcoal/10 overflow-hidden"
+                        role="progressbar"
+                        aria-valuenow={currentStepIndex + 1}
+                        aria-valuemin={1}
+                        aria-valuemax={questions.length}
+                        aria-label={`第 ${currentStepIndex + 1} 题，共 ${questions.length} 题`}
+                    >
+                        <m.div
+                            className="h-full bg-brand-charcoal/50"
+                            initial={false}
+                            animate={{ width: `${((currentStepIndex + 1) / questions.length) * 100}%` }}
+                            transition={{ duration: 0.3, ease: "easeOut" }}
+                        />
+                    </div>
+                    <span className="text-[11px] text-brand-charcoal/50 font-light tracking-[0.1em] tabular-nums shrink-0" aria-hidden="true">
+                        {currentStepIndex + 1} / {questions.length}
+                    </span>
+                </div>
+            </div>
 
             {/* Main Content Area */}
             <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain scrollbar-hide relative w-full max-w-5xl mx-auto z-10 px-4 md:px-8 mb-4">
@@ -837,6 +913,7 @@ export default function QuestionsPage() {
                                 selectedValue={(answers[currentQuestion.fieldName] as string | string[] | null) || null}
                                 onSelect={handleSelect}
                                 onNext={handleNext}
+                                onSkip={currentQuestion.skippable ? handleSkip : undefined}
                                 direction={direction}
                                 currentStep={currentStepIndex + 1}
                                 totalSteps={questions.length}

@@ -57,6 +57,7 @@ export function PaginationBar({
             <select
               value={pageSize}
               onChange={(e) => onPageSizeChange(Number(e.target.value))}
+              aria-label="每页条数"
               className="px-2 py-1 text-sm border border-slate-200 rounded-lg bg-white hover:bg-slate-50 focus:outline-none focus:ring-1 focus:ring-slate-300 cursor-pointer"
             >
               {pageSizeOptions.map((size) => (

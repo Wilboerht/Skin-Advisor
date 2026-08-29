@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { User, ExternalLink, Menu } from "lucide-react";
+import { User, ExternalLink, Menu, X } from "lucide-react";
 import { HomeSvg } from "@/components/icons/HomeSvg";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { useUser } from "@/components/auth/UserProvider";
@@ -23,8 +23,6 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: "素颜测肤", href: "/" },
   { label: "了解肌智派", href: "/skin-types" },
-  // 顾问服务页暂时下线，重新开放后取消下面这行注释
-  // { label: "顾问服务", href: "/services", hop: true },
 ];
 
 interface WebsiteNavbarProps {
@@ -54,6 +52,16 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
   // 打开移动端菜单时锁定背景滚动（与首页的锁可正确嵌套：菜单关闭时还原到"已锁定"状态）
   useBodyScrollLock({ enabled: mobileMenuOpen, iosSafe: true });
 
+  // Escape 关闭移动端菜单（Tab 焦点圈定由 useFocusTrap 处理）
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileMenuOpen(false);
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [mobileMenuOpen]);
+
   const handleNavClick = () => {
     setMobileMenuOpen(false);
   };
@@ -67,7 +75,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
     <>
       <nav
         style={{ pointerEvents: "none" }}
-        className={`fixed top-0 left-0 right-0 z-[100000] px-6 md:px-12 lg:px-20 py-7 transition-all duration-500 ${
+        className={`fixed top-0 left-0 right-0 z-[var(--z-navbar)] px-6 md:px-12 lg:px-20 py-7 transition-all duration-500 ${
           scrolled
             ? "bg-[#FDFBF7]/80 backdrop-blur-md border-b border-[rgba(61,68,48,0.06)]"
             : isDark
@@ -99,10 +107,10 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                   href={item.href}
                   className={`group relative py-2 px-1 -mx-1 rounded-md ${(item.icon || item.badge || item.image) ? "flex items-center gap-1.5" : ""} text-[15px] font-light tracking-[0.15em] transition-colors duration-500 focus-visible:outline-none ${
                     isActive
-                      ? isDark ? "text-white" : "text-[#00263E]"
+                      ? isDark ? "text-white" : "text-brand-charcoal"
                       : isDark
                         ? `text-white/70 hover:text-white focus-visible:text-white ${scrolled ? "hover:bg-white/[0.06]" : ""}`
-                        : `text-[#00263E] hover:text-[#4A6272] focus-visible:text-[#4A6272] ${scrolled ? "hover:bg-[#00263E]/[0.03]" : ""}`
+                        : `text-brand-charcoal hover:text-brand-charcoal-light focus-visible:text-brand-charcoal-light ${scrolled ? "hover:bg-brand-charcoal/[0.03]" : ""}`
                   }`}
                 >
                   {item.image && (
@@ -153,7 +161,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
               className={`group relative flex items-center gap-1.5 py-2 px-1 -mx-1 rounded-md text-[15px] font-light tracking-[0.15em] transition-colors duration-500 focus-visible:outline-none ${
                 isDark
                   ? `text-white/70 hover:text-white focus-visible:text-white ${scrolled ? "hover:bg-white/[0.06]" : ""}`
-                  : `text-[#00263E] hover:text-[#4A6272] focus-visible:text-[#4A6272] ${scrolled ? "hover:bg-[#00263E]/[0.03]" : ""}`
+                  : `text-brand-charcoal hover:text-brand-charcoal-light focus-visible:text-brand-charcoal-light ${scrolled ? "hover:bg-brand-charcoal/[0.03]" : ""}`
               }`}
             >
               探索旎柏
@@ -170,10 +178,10 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                 className={`group relative flex items-center gap-2 py-2 px-1 -mx-1 rounded-md text-[15px] font-light tracking-[0.15em] transition-colors duration-500 cursor-pointer focus-visible:outline-none ${
                   isDark
                     ? `text-white/70 hover:text-white focus-visible:text-white ${scrolled ? "hover:bg-white/[0.06]" : ""}`
-                    : `text-[#00263E] hover:text-[#4A6272] focus-visible:text-[#4A6272] ${scrolled ? "hover:bg-[#00263E]/[0.03]" : ""}`
+                    : `text-brand-charcoal hover:text-brand-charcoal-light focus-visible:text-brand-charcoal-light ${scrolled ? "hover:bg-brand-charcoal/[0.03]" : ""}`
                 }`}
               >
-                <div className="relative w-7 h-7 rounded-full overflow-hidden bg-[#00263E]/10 flex items-center justify-center text-[#00263E] text-xs font-serif shrink-0">
+                <div className="relative w-7 h-7 rounded-full overflow-hidden bg-brand-charcoal/10 flex items-center justify-center text-brand-charcoal text-xs font-serif shrink-0">
                   {user.avatar ? (
                     <Image src={user.avatar} alt="" fill unoptimized className="object-cover" />
                   ) : (
@@ -191,7 +199,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                 className={`group relative flex items-center gap-2 py-2 px-1 -mx-1 rounded-md text-[15px] font-light tracking-[0.15em] transition-colors duration-500 cursor-pointer focus-visible:outline-none ${
                   isDark
                     ? `text-white/70 hover:text-white focus-visible:text-white ${scrolled ? "hover:bg-white/[0.06]" : ""}`
-                    : `text-[#00263E] hover:text-[#4A6272] focus-visible:text-[#4A6272] ${scrolled ? "hover:bg-[#00263E]/[0.03]" : ""}`
+                    : `text-brand-charcoal hover:text-brand-charcoal-light focus-visible:text-brand-charcoal-light ${scrolled ? "hover:bg-brand-charcoal/[0.03]" : ""}`
                 }`}
               >
                 <User className="w-5 h-5 sm:w-[1.125rem] sm:h-[1.125rem] transition-opacity duration-500" />
@@ -207,7 +215,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                 className={`group relative flex items-center gap-2 py-2 px-1 -mx-1 rounded-md text-[15px] font-light tracking-[0.15em] transition-colors duration-500 focus-visible:outline-none ${
                   isDark
                     ? `text-white/70 hover:text-white focus-visible:text-white ${scrolled ? "hover:bg-white/[0.06]" : ""}`
-                    : `text-[#00263E] hover:text-[#4A6272] focus-visible:text-[#4A6272] ${scrolled ? "hover:bg-[#00263E]/[0.03]" : ""}`
+                    : `text-brand-charcoal hover:text-brand-charcoal-light focus-visible:text-brand-charcoal-light ${scrolled ? "hover:bg-brand-charcoal/[0.03]" : ""}`
                 }`}
               >
                 <HomeSvg className="w-6 h-6 sm:w-5 sm:h-5 transition-opacity duration-500" />
@@ -228,7 +236,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
             className={`md:hidden absolute left-0 flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-500 cursor-pointer ${
               isDark
                 ? "text-white/70 active:text-white active:bg-white/10"
-                : "text-[#00263E] active:bg-[#00263E]/5"
+                : "text-brand-charcoal active:bg-brand-charcoal/5"
             }`}
           >
             <Menu className="w-5 h-5 transition-opacity duration-500" />
@@ -242,10 +250,10 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
               className={`md:hidden absolute right-0 flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-500 ${
                 isDark
                   ? "text-white/70 active:text-white active:bg-white/10"
-                  : "text-[#00263E] active:bg-[#00263E]/5"
+                  : "text-brand-charcoal active:bg-brand-charcoal/5"
               }`}
             >
-              <div className="relative w-7 h-7 rounded-full overflow-hidden bg-[#00263E]/10 flex items-center justify-center text-[#00263E] text-xs font-serif">
+              <div className="relative w-7 h-7 rounded-full overflow-hidden bg-brand-charcoal/10 flex items-center justify-center text-brand-charcoal text-xs font-serif">
                 {user.avatar ? (
                   <Image src={user.avatar} alt="" fill unoptimized className="object-cover" />
                 ) : (
@@ -260,7 +268,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
               className={`md:hidden absolute right-0 flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-500 cursor-pointer ${
                 isDark
                   ? "text-white/70 active:text-white active:bg-white/10"
-                  : "text-[#00263E] active:bg-[#00263E]/5"
+                  : "text-brand-charcoal active:bg-brand-charcoal/5"
               }`}
             >
               <User className="w-5 h-5 transition-opacity duration-500" />
@@ -276,7 +284,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
         role="dialog"
         aria-modal={mobileMenuOpen}
         aria-label="导航菜单"
-        className={`fixed inset-0 z-[100001] md:hidden transition-all duration-500 ${
+        className={`fixed inset-0 z-[var(--z-modal)] md:hidden transition-all duration-500 ${
           mobileMenuOpen ? "visible opacity-100" : "invisible opacity-0"
         }`}
       >
@@ -292,6 +300,14 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
             mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
+          {/* 关闭按钮 */}
+          <button
+            onClick={() => setMobileMenuOpen(false)}
+            aria-label="关闭菜单"
+            className="absolute top-[calc(1.25rem+env(safe-area-inset-top,0px))] right-3 z-10 w-10 h-10 flex items-center justify-center rounded-full text-brand-charcoal/60 hover:text-brand-charcoal hover:bg-brand-charcoal/5 transition-colors duration-300 cursor-pointer"
+          >
+            <X className="w-5 h-5" />
+          </button>
           <div className="flex flex-col h-full px-6 pt-[calc(1.25rem+env(safe-area-inset-top,0px))] pb-[calc(1.25rem+env(safe-area-inset-bottom,16px))]">
             {/* Logo */}
             <div className="flex justify-center mt-6 mb-10">
@@ -312,7 +328,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                   onClick={handleNavClick}
                   className="flex items-center gap-4 group"
                 >
-                  <div className="relative w-14 h-14 rounded-full overflow-hidden bg-[#00263E]/10 flex items-center justify-center text-[#00263E] shrink-0">
+                  <div className="relative w-14 h-14 rounded-full overflow-hidden bg-brand-charcoal/10 flex items-center justify-center text-brand-charcoal shrink-0">
                     {user.avatar ? (
                       <Image src={user.avatar} alt="" fill unoptimized className="object-cover" />
                     ) : (
@@ -322,11 +338,11 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                     )}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[15px] font-light text-[#00263E] truncate">
+                    <p className="text-[15px] font-light text-brand-charcoal truncate">
                       {user.name || user.email || user.phone || "用户"}
                     </p>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-[15px] text-[#4A6272]">
+                      <span className="text-[15px] text-brand-charcoal-light">
                         查看个人中心
                       </span>
                     </div>
@@ -337,19 +353,19 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                   onClick={handleLoginClick}
                   className="w-full flex items-center gap-4 group cursor-pointer"
                 >
-                  <div className="w-14 h-14 rounded-full bg-[#00263E]/8 flex items-center justify-center text-[#00263E]/50 shrink-0 group-hover:bg-[#00263E]/12 transition-colors duration-300">
+                  <div className="w-14 h-14 rounded-full bg-brand-charcoal/8 flex items-center justify-center text-brand-charcoal/50 shrink-0 group-hover:bg-brand-charcoal/12 transition-colors duration-300">
                     <User className="w-7 h-7" />
                   </div>
                   <div className="flex-1 min-w-0 text-left">
-                    <p className="text-[15px] font-light text-[#00263E]">
+                    <p className="text-[15px] font-light text-brand-charcoal">
                       未登录
                     </p>
-                    <p className="text-[15px] text-[#4A6272] mt-0.5">
+                    <p className="text-[15px] text-brand-charcoal-light mt-0.5">
                       点击登录或注册
                     </p>
                   </div>
                   <svg
-                    className="w-5 h-5 text-[#00263E]/30 group-hover:text-[#00263E]/50 transition-colors duration-300"
+                    className="w-5 h-5 text-brand-charcoal/30 group-hover:text-brand-charcoal/50 transition-colors duration-300"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -374,8 +390,8 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                     onClick={handleNavClick}
                     className={`group relative ${(item.icon || item.image) ? "flex items-center gap-2" : ""} px-4 py-4 text-[15px] font-light tracking-[0.08em] rounded-xl transition-all duration-300 ${
                       isActive
-                        ? "text-[#00263E] bg-[#00263E]/8"
-                        : "text-[#00263E] active:bg-[#00263E]/5"
+                        ? "text-brand-charcoal bg-brand-charcoal/8"
+                        : "text-brand-charcoal active:bg-brand-charcoal/5"
                     }`}
                   >
                     {item.image && (
@@ -399,7 +415,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={handleNavClick}
-                className="group flex items-center gap-2 px-4 py-4 text-[15px] font-light tracking-[0.08em] text-[#00263E] active:bg-[#00263E]/5 rounded-xl transition-all duration-300"
+                className="group flex items-center gap-2 px-4 py-4 text-[15px] font-light tracking-[0.08em] text-brand-charcoal active:bg-brand-charcoal/5 rounded-xl transition-all duration-300"
               >
                 探索旎柏
                 <ExternalLink className="w-3.5 h-3.5" />
@@ -411,7 +427,7 @@ export function WebsiteNavbar({ variant = "light" }: WebsiteNavbarProps) {
                 <Link
                   href="/"
                   onClick={handleNavClick}
-                  className="group flex items-center gap-3 px-4 py-4 text-[15px] font-light tracking-[0.08em] text-[#00263E] active:bg-[#00263E]/5 rounded-xl transition-all duration-300"
+                  className="group flex items-center gap-3 px-4 py-4 text-[15px] font-light tracking-[0.08em] text-brand-charcoal active:bg-brand-charcoal/5 rounded-xl transition-all duration-300"
                 >
                   <HomeSvg className="w-5 h-5" />
                   首页

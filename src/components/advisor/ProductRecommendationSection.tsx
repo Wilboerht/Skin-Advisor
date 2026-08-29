@@ -123,7 +123,7 @@ export function ProductRecommendationSection({
     if (!isLoading && products.length === 0) {
         return (
             <div className="py-12 text-center">
-                <h4 className="text-base font-medium text-[#3d2f25] mb-2">暂无产品推荐</h4>
+                <h4 className="text-base font-medium text-brand-espresso mb-2">暂无产品推荐</h4>
                 <p className="text-sm text-[#8c7a6b]">更多精选产品即将上线，敬请期待</p>
             </div>
         );
@@ -138,7 +138,7 @@ export function ProductRecommendationSection({
                 viewport={{ once: true }}
                 className="text-center mb-6"
             >
-                <h2 className="text-lg lg:text-2xl font-bold text-[#3d2f25] tracking-wide">
+                <h2 className="text-lg lg:text-2xl font-bold text-brand-espresso tracking-wide">
                     {personaLabel ? `你的「${personaLabel}」甄选推荐` : "甄选产品推荐"}
                 </h2>
                 <p className="text-xs lg:text-sm text-[#8c7a6b] mt-2">
@@ -164,7 +164,8 @@ export function ProductRecommendationSection({
                                     ? "w-full lg:flex-1 lg:min-w-[220px] lg:max-w-[290px]"
                                     : "flex-shrink-0 w-[85vw] sm:w-[45vw] md:w-[32vw] lg:w-[28vw]"
                             )}>
-                                <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/10 h-[380px] animate-pulse" />
+                                {/* 骨架屏：米白背景上 white/10 几乎不可见，用深色低透明度保证可见性 */}
+                                <div className="bg-brand-charcoal/[0.06] rounded-xl border border-brand-charcoal/10 h-[380px] animate-pulse" />
                             </div>
                         ))}
                     </div>

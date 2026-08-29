@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { m } from "framer-motion";
 import {
   RefreshCw,
@@ -89,6 +90,7 @@ const CAPTURE_STEPS: { step: CaptureStep; label: string; instruction: string; ic
  * - 前置/后置摄像头切换
  */
 export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: FaceCaptureProps) {
+  const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const faceDetectionRef = useRef<number | null>(null);
@@ -225,8 +227,18 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     setError(null);
     const callId = ++initCallIdRef.current;
 
+    // 权限弹窗挂起（用户不点允许/拒绝）时 getUserMedia 永不 resolve，
+    // 20s 超时兜底给出可操作的错误态而非无限转圈
+    const initTimeout = setTimeout(() => {
+      if (callId !== initCallIdRef.current) return;
+      setError("摄像头启动超时，请检查浏览器权限弹窗后重试");
+      setIsLoading(false);
+      setIsSwitchingCamera(false);
+    }, 20000);
+
     // 非 HTTPS 或旧 webview 中 navigator.mediaDevices 可能为 undefined，走独立错误文案而非抛 TypeError
     if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+      clearTimeout(initTimeout);
       setError("当前环境不支持摄像头，请使用 HTTPS 访问或更换浏览器后重试");
       setIsLoading(false);
       setIsSwitchingCamera(false);
@@ -334,9 +346,13 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
 
       streamRef.current = mediaStream!;
       setStream(mediaStream!);
+      clearTimeout(initTimeout);
+      // 超时兜底可能已先置过错误态，流真正到达时清除
+      setError(null);
       setIsLoading(false);
       setIsSwitchingCamera(false);
     } catch (err) {
+      clearTimeout(initTimeout);
       // 竞态保护：忽略过期的错误
       if (callId !== initCallIdRef.current) return;
 
@@ -1659,9 +1675,9 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
         </div>
       )}
 
-      {/* 模型加载失败提示 */}
+      {/* 模型加载失败提示 —— pointer-events-none 让点击穿透到底部的手动拍照按钮 */}
       {modelLoadFailed && !isLoading && (
-        <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm p-8 text-center">
+        <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm p-8 text-center pointer-events-none">
           <AlertCircle className="h-10 w-10 text-yellow-400 mb-3" />
            <p className="text-white/80 text-sm mb-2">面部检测加载未成功</p>
           <p className="text-white/50 text-xs">您可以点击下方按钮手动拍照</p>
@@ -1676,16 +1692,16 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
           <p className="text-white/60 max-w-md mb-8">{error}</p>
           <div className="flex gap-4">
             <button
-              onClick={() => window.location.href = '/questions'}
+              onClick={() => router.back()}
               className="px-8 py-3 bg-white/10 border border-white/20 text-white rounded-full text-sm font-medium hover:bg-white/20 backdrop-blur-sm transition-colors"
             >
               返回上一页
             </button>
             <button
-              onClick={() => window.location.reload()}
+              onClick={() => initCameraRef.current()}
               className="px-8 py-3 bg-white text-black rounded-full text-sm font-medium hover:bg-gray-200 shadow-xl transition-colors"
             >
-              刷新重试
+              重试
             </button>
           </div>
         </div>
@@ -1696,6 +1712,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
         <div className="absolute top-8 right-8 z-30 flex gap-3">
           <button
             onClick={() => setIsMuted(!isMuted)}
+            aria-label={isMuted ? "取消静音" : "静音"}
             className="p-3 rounded-full bg-black/20 border border-white/10 text-white hover:bg-black/40 backdrop-blur-md transition-all"
           >
             {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}

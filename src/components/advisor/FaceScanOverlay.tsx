@@ -1,6 +1,6 @@
 "use client";
 
-import { m, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +24,7 @@ export function FaceScanOverlay({
     stabilityProgress,
     successStep,
 }: FaceScanOverlayProps) {
+    const prefersReducedMotion = useReducedMotion();
 
     const getBorderColor = () => {
         switch (faceStatus) {
@@ -48,12 +49,12 @@ export function FaceScanOverlay({
                         faceStatus !== "ready" && "border-dashed opacity-50"
                     )} />
 
-                    {/* 动态呼吸光环 (Found) */}
+                    {/* 动态呼吸光环 (Found)：reduced-motion 时退化为静态光环 */}
                     {faceStatus === "found" && (
                         <m.div
                             className="absolute -inset-[2px] rounded-[50%] border-2 border-brand-gold/60"
-                            animate={{ opacity: [0, 0.8, 0], scale: [1, 1.05, 1] }}
-                            transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                            animate={prefersReducedMotion ? { opacity: 0.6 } : { opacity: [0, 0.8, 0], scale: [1, 1.05, 1] }}
+                            transition={prefersReducedMotion ? { duration: 0 } : { repeat: Infinity, duration: 2, ease: "easeInOut" }}
                         />
                     )}
 
@@ -102,7 +103,7 @@ export function FaceScanOverlay({
                 {/* 扫描激光：元素高度等于扫描轨道（top 10% → 90%），仅顶部 2px 线条可见；
                     用 transform（y 百分比相对自身高度）替代 top 动画，只走合成层，避免每帧 layout */}
                 <AnimatePresence>
-                    {currentStep === "front" && faceStatus !== "ready" && faceStatus !== "success" && (
+                    {currentStep === "front" && faceStatus !== "ready" && faceStatus !== "success" && !prefersReducedMotion && (
                         <m.div
                             className="absolute left-[8%] right-[8%] top-[10%] h-[80%] bg-[linear-gradient(to_right,transparent,#C9A86C,transparent)] bg-[length:100%_2px] bg-no-repeat [filter:drop-shadow(0_0_7px_rgba(234,179,8,0.5))]"
                             initial={{ y: "0%", opacity: 0 }}

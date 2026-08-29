@@ -26,10 +26,10 @@ export function SaveReportBanner({ className = "" }: SaveReportBannerProps) {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -24 }}
                     transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
-                    className={`w-full bg-[#F5F2ED] border-b border-[#3d2f25]/10 ${className}`}
+                    className={`w-full bg-[var(--color-brand-cream)] border-b border-brand-espresso/10 ${className}`}
                 >
                     <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-2.5">
-                        <div className="flex items-center justify-center gap-2 sm:gap-3 text-[12px] sm:text-[13px] text-[#5c4937]">
+                        <div className="flex items-center justify-center gap-2 sm:gap-3 text-[12px] sm:text-[13px] text-[var(--color-brand-cocoa)]">
                             <Image
                                 src="/images/watermark.png"
                                 alt=""
@@ -43,13 +43,13 @@ export function SaveReportBanner({ className = "" }: SaveReportBannerProps) {
                             </span>
                             <button
                                 onClick={() => openAuthModal("register")}
-                                className="font-medium underline underline-offset-2 hover:text-[#00263e] transition-colors"
+                                className="font-medium underline underline-offset-2 hover:text-[var(--color-brand-charcoal)] transition-colors"
                             >
                                 立即注册
                             </button>
                             <button
                                 onClick={() => setDismissed(true)}
-                                className="ml-1 text-[#a89582] hover:text-[#5c4937] transition-colors"
+                                className="ml-1 text-[#a89582] hover:text-[var(--color-brand-cocoa)] transition-colors"
                                 aria-label="关闭"
                             >
                                 <X className="w-3.5 h-3.5" />

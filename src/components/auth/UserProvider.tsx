@@ -46,17 +46,25 @@ export function UserProvider({ children }: { children: ReactNode }) {
     const [loading, setLoading] = useState(true);
 
     const loadUser = useCallback(async () => {
+        // 10s 超时兜底；超时不视为未登录，保留现有会话状态（避免弱网误踢）
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
         try {
-            const res = await fetch("/api/auth/me", { cache: "no-store" });
+            const res = await fetch("/api/auth/me", { cache: "no-store", signal: controller.signal });
             if (!res.ok) {
                 setUser(null);
                 return;
             }
             const data = (await res.json()) as { user: User | null };
             setUser(data.user ?? null);
-        } catch {
+        } catch (err) {
+            if (err instanceof DOMException && err.name === "AbortError") {
+                // 请求超时：保持现有登录状态不变
+                return;
+            }
             setUser(null);
         } finally {
+            clearTimeout(timeoutId);
             setLoading(false);
         }
     }, []);
@@ -66,19 +74,19 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }, [loadUser]);
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const login = async (_credentials?: { email?: string; phone?: string; password?: string }) => {
+    const login = useCallback(async (_credentials?: { email?: string; phone?: string; password?: string }) => {
         // 登录/注册页自身不作为回跳目标，避免登录成功后回到 /login 再次触发跳转
         const { pathname, search } = window.location;
         const returnTo = pathname === "/login" || pathname === "/register" ? "/" : pathname + search;
         window.location.href = `/api/auth/login?return_to=${encodeURIComponent(returnTo)}`;
-    };
+    }, []);
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const loginWithCode = async (_credentials: { phone: string; code: string }) => login();
+    const loginWithCode = useCallback(async (_credentials: { phone: string; code: string }) => login(), [login]);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const register = async (_userData?: { email?: string; phone?: string; password?: string; name?: string; code?: string }) => login();
+    const register = useCallback(async (_userData?: { email?: string; phone?: string; password?: string; name?: string; code?: string }) => login(), [login]);
 
-    const logout = async () => {
+    const logout = useCallback(async () => {
         try {
             // POST-only + 同源校验；服务端会清除 SSO Cookie、撤销 refresh_token 并清本地会话
             await fetch("/api/auth/logout", { method: "POST" });
@@ -87,11 +95,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
         }
         setUser(null);
         window.location.href = "/";
-    };
+    }, []);
 
-    const refresh = async () => {
+    const refresh = useCallback(async () => {
         await loadUser();
-    };
+    }, [loadUser]);
 
     const value: AuthContextType = {
         user,
