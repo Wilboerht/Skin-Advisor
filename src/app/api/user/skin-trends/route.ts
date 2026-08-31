@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // 获取最近 5 次分析结果，用于对比（先按时间倒序取最新 5 条，再翻转为时间正序）
+        // 获取最近 12 次分析结果，用于对比（先按时间倒序取最新 12 条，再翻转为时间正序）
         const recentSessions = (
             await prisma.advisorSession.findMany({
                 where: {
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
                     completedAt: { not: null }
                 },
                 orderBy: { completedAt: 'desc' },
-                take: 5,
+                take: 12,
                 select: {
                     completedAt: true,
                     analysisResult: true

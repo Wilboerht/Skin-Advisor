@@ -78,50 +78,158 @@ function TestHistoryModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
   );
 }
 
-/** 测肤趋势迷你折线图（纯 SVG，无图表库依赖） */
+/** 测肤趋势图（纯 SVG，无图表库依赖）：平滑曲线 + 渐变面积 + 网格刻度 + 最新评分摘要 */
 function TrendChart({ trends }: { trends: TrendsData }) {
-  const W = 320;
-  const H = 120;
-  const PAD_X = 20;
-  const PAD_TOP = 16;
-  const PAD_BOTTOM = 26;
-  const min = Math.min(...trends.scores);
-  const max = Math.max(...trends.scores);
-  // 评分域上下留余量，避免折线贴边；全相等时给固定幅度
-  const lo = Math.max(0, min - 5);
-  const hi = Math.min(100, max === min ? min + 10 : max + 5);
+  const W = 640;
+  const H = 200;
+  const PAD_L = 40;
+  const PAD_R = 20;
+  const PAD_TOP = 24;
+  const PAD_BOTTOM = 32;
 
-  const points = trends.scores.map((score, i) => {
-    const x = PAD_X + (i * (W - PAD_X * 2)) / Math.max(1, trends.scores.length - 1);
-    const y = PAD_TOP + ((hi - score) / (hi - lo)) * (H - PAD_TOP - PAD_BOTTOM);
-    return { x, y, score, date: trends.dates[i] };
-  });
-  const path = points.map((p) => `${p.x},${p.y}`).join(" ");
+  const scores = trends.scores;
+  const n = scores.length;
+  const min = Math.min(...scores);
+  const max = Math.max(...scores);
+  // Y 域对齐到 10 的整倍并留余量，刻度才有"数据感"
+  let lo = Math.max(0, Math.floor((min - 8) / 10) * 10);
+  let hi = Math.min(100, Math.ceil((max + 8) / 10) * 10);
+  if (hi - lo < 20) hi = Math.min(100, lo + 20);
+  if (hi - lo < 20) lo = Math.max(0, hi - 20);
+
+  const gridValues = [lo, Math.round((lo + hi) / 2 / 10) * 10, hi];
+  const yOf = (v: number) => PAD_TOP + ((hi - v) / (hi - lo)) * (H - PAD_TOP - PAD_BOTTOM);
+
+  const points = scores.map((score, i) => ({
+    x: PAD_L + (i * (W - PAD_L - PAD_R)) / Math.max(1, n - 1),
+    y: yOf(score),
+    score,
+    date: trends.dates[i],
+  }));
+
+  // Catmull-Rom 平滑曲线
+  const smoothPath = (pts: { x: number; y: number }[]): string => {
+    if (pts.length < 2) return "";
+    if (pts.length === 2) return `M ${pts[0].x},${pts[0].y} L ${pts[1].x},${pts[1].y}`;
+    let d = `M ${pts[0].x},${pts[0].y}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[Math.max(0, i - 1)];
+      const p1 = pts[i];
+      const p2 = pts[i + 1];
+      const p3 = pts[Math.min(pts.length - 1, i + 2)];
+      const c1x = p1.x + (p2.x - p0.x) / 6;
+      const c1y = p1.y + (p2.y - p0.y) / 6;
+      const c2x = p2.x - (p3.x - p1.x) / 6;
+      const c2y = p2.y - (p3.y - p1.y) / 6;
+      d += ` C ${c1x},${c1y} ${c2x},${c2y} ${p2.x},${p2.y}`;
+    }
+    return d;
+  };
+
+  const linePath = smoothPath(points);
+  const areaPath = `${linePath} L ${points[n - 1].x},${H - PAD_BOTTOM} L ${points[0].x},${H - PAD_BOTTOM} Z`;
+
+  const latest = scores[n - 1];
+  const delta = n >= 2 ? latest - scores[n - 2] : 0;
 
   return (
     <div>
+      {/* 摘要：最新评分 + 与上次差值 */}
+      <div className="flex items-end justify-between mb-4">
+        <div>
+          <p className="text-[11px] tracking-[0.15em] text-brand-charcoal/45 font-light mb-1">
+            最新综合评分
+          </p>
+          <p className="text-3xl md:text-4xl font-serif font-light text-brand-charcoal leading-none">
+            {latest}
+            <span className="text-sm text-brand-charcoal/40 ml-1.5">分</span>
+          </p>
+        </div>
+        {delta !== 0 && (
+          <span
+            className={`text-[12px] font-light px-2.5 py-1 rounded-full ${
+              delta > 0 ? "bg-[#4C8055]/10 text-[#4C8055]" : "bg-[#D44C47]/10 text-[#D44C47]"
+            }`}
+          >
+            较上次 {delta > 0 ? `+${delta}` : delta}
+          </span>
+        )}
+      </div>
+
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="近几次测肤综合评分趋势">
-        <polyline
-          points={path}
+        <defs>
+          <linearGradient id="trendArea" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#00263E" stopOpacity="0.10" />
+            <stop offset="100%" stopColor="#00263E" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+
+        {/* 横向网格线 + 左侧刻度 */}
+        {gridValues.map((v) => (
+          <g key={v}>
+            <line
+              x1={PAD_L}
+              y1={yOf(v)}
+              x2={W - PAD_R}
+              y2={yOf(v)}
+              stroke="#00263E"
+              strokeOpacity="0.07"
+              strokeDasharray="3 5"
+            />
+            <text x={PAD_L - 8} y={yOf(v) + 3} textAnchor="end" fontSize="9" fill="#8A8A8A">
+              {v}
+            </text>
+          </g>
+        ))}
+
+        {/* 面积 + 曲线 */}
+        <path d={areaPath} fill="url(#trendArea)" />
+        <path
+          d={linePath}
           fill="none"
           stroke="#00263E"
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-        {points.map((p, i) => (
-          <g key={i}>
-            <circle cx={p.x} cy={p.y} r="3.5" fill="#FDFBF7" stroke="#00263E" strokeWidth="2" />
-            <text x={p.x} y={p.y - 8} textAnchor="middle" fontSize="10" fill="#00263E">
-              {p.score}
-            </text>
-            <text x={p.x} y={H - 8} textAnchor="middle" fontSize="9" fill="#8A8A8A">
-              {new Date(p.date).toLocaleDateString("zh-CN", { month: "numeric", day: "numeric" })}
-            </text>
-          </g>
-        ))}
+
+        {/* 数据点 + 数值 + 日期（点多时仅标最新值、隔点标日期，避免拥挤） */}
+        {points.map((p, i) => {
+          const isLatest = i === n - 1;
+          const showScore = n <= 6 || isLatest;
+          const showDate = n <= 6 || i % 2 === 0 || isLatest;
+          return (
+            <g key={i}>
+              <circle
+                cx={p.x}
+                cy={p.y}
+                r={isLatest ? 4.5 : 3}
+                fill={isLatest ? "#00263E" : "#FDFBF7"}
+                stroke="#00263E"
+                strokeWidth="2"
+              />
+              {showScore && (
+                <text
+                  x={p.x}
+                  y={p.y - 9}
+                  textAnchor="middle"
+                  fontSize="10"
+                  fontWeight={isLatest ? 600 : 400}
+                  fill="#00263E"
+                >
+                  {p.score}
+                </text>
+              )}
+              {showDate && (
+                <text x={p.x} y={H - 8} textAnchor="middle" fontSize="9" fill="#8A8A8A">
+                  {new Date(p.date).toLocaleDateString("zh-CN", { month: "numeric", day: "numeric" })}
+                </text>
+              )}
+            </g>
+          );
+        })}
       </svg>
-      <p className="mt-1 text-[12px] text-[#8A8A8A] font-light">近 {trends.scores.length} 次测肤综合评分</p>
+      <p className="mt-1 text-[12px] text-[#8A8A8A] font-light">近 {n} 次测肤综合评分</p>
     </div>
   );
 }
@@ -195,7 +303,10 @@ export default function DiaryClient() {
     d.setDate(d.getDate() - n);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   };
-  const mockTrends: TrendsData = { dates: [dayStr(6), dayStr(4), dayStr(1)], scores: [76, 82, 80] };
+  const mockTrends: TrendsData = {
+    dates: [dayStr(26), dayStr(24), dayStr(21), dayStr(19), dayStr(16), dayStr(14), dayStr(12), dayStr(9), dayStr(7), dayStr(5), dayStr(3), dayStr(1)],
+    scores: [72, 75, 71, 78, 76, 80, 77, 82, 79, 83, 81, 84],
+  };
   const mockEntries: DiaryEntry[] = [
     { id: "mock-1", date: `${dayStr(1)}T00:00:00.000Z`, skinState: "good", tags: [], note: "AI 测肤 · 综合评分 82 分 · 混合肌" },
     { id: "mock-2", date: `${dayStr(3)}T00:00:00.000Z`, skinState: "normal", tags: [], note: "AI 测肤 · 综合评分 74 分 · 混合肌" },
