@@ -4,7 +4,6 @@ import Image from "next/image";
 import { ArrowRight, Gift } from "lucide-react";
 import { skinTypes, routeOrder } from "@/lib/result-content";
 import { withDefaultOgImage } from "@/lib/metadata";
-import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
 import { SiteFooter } from "@/components/website/SiteFooter";
 import { BreadcrumbSchema } from "@/components/website/StructuredData";
 
@@ -32,18 +31,17 @@ export default function ResultIndexPage() {
     .filter(Boolean);
 
   return (
-    <div className="relative min-h-dvh text-brand-charcoal bg-[#FDFBF7]">
+    <div className="relative min-h-dvh text-brand-charcoal bg-[#FDFBF7] pb-dock">
       <BreadcrumbSchema
         items={[
           { name: "首页", url: BASE_URL },
           { name: "肌肤类型", url: `${BASE_URL}/skin-types` },
         ]}
       />
-      {/* 顶部导航 */}
-      <WebsiteNavbar />
+      {/* 顶部导航已移除，由根 layout 的 BottomDock 统一承担导航 */}
 
       {/* Hero */}
-      <section className="relative pt-24 md:pt-40 pb-14 md:pb-32 px-6 md:px-12 lg:px-20 overflow-hidden">
+      <section className="relative pt-12 md:pt-20 pb-14 md:pb-32 px-6 md:px-12 lg:px-20 overflow-hidden">
 
         <div className="relative z-10 max-w-5xl mx-auto text-center">
           <h1

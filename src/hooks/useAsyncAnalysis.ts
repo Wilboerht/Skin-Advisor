@@ -26,6 +26,11 @@ export interface SessionStatusResponse {
 
 const ANALYSIS_LOCK_TTL_MS = 90 * 1000;
 
+/** 客户端本地日历日 → YYYY-MM-DD（与护肤日记 date 语义一致） */
+function localDateStr(d: Date): string {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 function acquireAnalysisLock(sessionId: string): boolean {
     try {
         const existing = sessionStorage.getItem(STORAGE_KEYS.ADVISOR_ANALYSIS_LOCK);
@@ -506,6 +511,7 @@ export function useAsyncAnalysis() {
                     sessionId: sessionId,
                     nickname: nickname,
                     privacyConsent,
+                    clientDate: localDateStr(new Date()),
                     ...(isFreeRetry ? { freeRetry: true } : {})
                 }),
                 signal: abortController.signal

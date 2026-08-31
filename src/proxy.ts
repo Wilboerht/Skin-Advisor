@@ -26,6 +26,7 @@ const PUBLIC_PATHS = [
     "/skin-types/:path*",      // 具体肤质类型页
     "/services",               // 顾问服务
     "/faq",                    // FAQ
+    "/diary",                  // 护肤日记（游客可浏览页面，打卡/趋势 API 仍需登录）
     "/privacy",                // 隐私政策
     "/terms",                  // 服务条款
     "/robots.txt",

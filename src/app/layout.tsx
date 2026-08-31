@@ -99,7 +99,9 @@ import { UserProvider } from "@/components/auth/UserProvider";
 
 import { AuthModalProvider } from "@/components/auth/AuthModalContext";
 import { AuthModal } from "@/components/auth/AuthModal";
+import { AuthUrlDetector } from "@/components/auth/AuthUrlDetector";
 import { WebsiteLayoutClient } from "@/components/website/WebsiteLayoutClient";
+import { BottomDock } from "@/components/website/BottomDock";
 
 export default function RootLayout({
   children,
@@ -160,7 +162,11 @@ export default function RootLayout({
                 </WebsiteLayoutClient>
                 <Suspense fallback={null}>
                   <AuthModal />
+                  {/* URL 认证参数（?auth= / ?login=wechat_bind 等）的全局监听器，无 UI */}
+                  <AuthUrlDetector />
                 </Suspense>
+                {/* 全端底部 Dock：置于 <main> 外，避开 main 的 pointer-events hack；组件内按路由自我排除 */}
+                <BottomDock />
               </AuthModalProvider>
             </UserProvider>
           </ToastProvider>

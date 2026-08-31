@@ -189,6 +189,7 @@ model User {
   testRecords       TestRecord[]
   refreshTokens     RefreshToken[]
   productFeedbacks  ProductFeedback[]
+  diaryEntries      DiaryEntry[]
 
   // 隐私同意
   privacyConsentAt     DateTime?
@@ -412,3 +413,19 @@ model ProductFeedback {
 }
 
 
+
+// 护肤日记打卡 — 每日一条（upsert by userId+date），date 为客户端本地日历日（按 UTC 零点存储）
+model DiaryEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  skinState String   // great / good / normal / bad / terrible
+  tags      Json?    // 情境标签 string[]，如 ["熬夜", "换季"]
+  note      String?  @db.VarChar(200)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, date])
+  @@index([userId])
+}

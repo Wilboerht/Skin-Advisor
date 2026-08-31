@@ -13,6 +13,7 @@ import { getSkinTypeLabel, getConcernLabel, type FaceAnalysisResult } from "@/li
 // import { PRODUCTS_CATALOG } from "@/config/products"; // Deprecated, use DB or matchProducts
 import { determineSkinType, identifyConcerns } from "@/lib/advisor-utils";
 import { AnalyzeRequestSchema } from "@/lib/schemas";
+import { upsertAutoDiaryEntry } from "@/lib/diary";
 import { recommendProducts, getCandidateProducts, type ProductRecommendation } from "@/lib/recommendations";
 import { normalizeImagePath } from "@/types/product";
 import { resolveIPLocation } from "@/lib/geoip";
@@ -263,7 +264,7 @@ export async function POST(request: NextRequest) {
             return apiError(ErrorCode.VALIDATION_ERROR, "请求参数错误", 400, result.error.flatten().fieldErrors);
         }
 
-        const { answers, faceAnalysis, sessionId, nickname, freeRetry, privacyConsent } = result.data;
+        const { answers, faceAnalysis, sessionId, nickname, freeRetry, clientDate, privacyConsent } = result.data;
 
         // 提取客户端标识（用于会话归属与审计）
         const identifiers = extractGuestIdentifiers(request, body as Record<string, unknown>);
@@ -817,6 +818,18 @@ export async function POST(request: NextRequest) {
                 const response = apiError(ErrorCode.SERVICE_UNAVAILABLE, "分析结果保存未成功，请重试", 503, "DATABASE_PERSISTENCE_ERROR");
             Object.entries(rateLimitHeaders).forEach(([k, v]) => response.headers.set(k, v));
             return response;
+            }
+
+            // ====== 护肤日记自动生成：测肤完成后写入/更新当日条目 ======
+            // 失败不影响分析响应；纯问卷测肤（无面部评分）不生成
+            const overallScore = (finalFaceAnalysis as Record<string, unknown> | null)?.overallScore;
+            if (user?.id && clientDate && typeof overallScore === "number") {
+                upsertAutoDiaryEntry({
+                    userId: user.id,
+                    dateStr: clientDate,
+                    score: overallScore,
+                    skinTypeLabel
+                }).catch((err) => logger.error("[Diary] 自动生成日记失败:", err));
             }
 
             // ====== 微信公众号模板消息推送（通过官网内部 API v1） ======

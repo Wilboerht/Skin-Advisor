@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useSyncExternalStore } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuthModal } from "./AuthModalContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -116,6 +116,18 @@ export function AuthModal() {
         }
     };
     const dialogRef = useFocusTrap<HTMLDivElement>(isOpen, handleEscape);
+
+    // 桌面/移动面板按断点条件渲染（而非 CSS 隐藏同时挂载两个 aria-modal dialog）。
+    // SSR 快照固定为 false（移动面板），避免水合不匹配
+    const isDesktop = useSyncExternalStore(
+        (cb) => {
+            const mq = window.matchMedia("(min-width: 768px)");
+            mq.addEventListener("change", cb);
+            return () => mq.removeEventListener("change", cb);
+        },
+        () => window.matchMedia("(min-width: 768px)").matches,
+        () => false
+    );
 
     // 打开时焦点进入首个可见输入框（触屏设备跳过，避免弹出虚拟键盘）
     useEffect(() => {
@@ -237,6 +249,7 @@ export function AuthModal() {
                     onClick={view === "wechat_bind" ? undefined : closeAuthModal}
                     className="fixed inset-0 z-[100002] bg-black/20 backdrop-blur-md"
                 />
+                {isDesktop ? (
                 <motion.div
                     key={`pc-panel-${view}`}
                     role="dialog"
@@ -245,7 +258,7 @@ export function AuthModal() {
                     initial={{ x: "100%" }}
                     animate={{ x: 0, transition: { duration: 0.8, ease: [0.8, 0, 0.13, 1] } }}
                     exit={{ x: "100%", transition: { duration: 0.5, ease: [0.8, 0, 0.13, 1] } }}
-                    className="hidden md:flex fixed inset-y-0 right-0 w-full bg-white flex-col z-[100003]"
+                    className="fixed inset-y-0 right-0 w-full bg-white flex flex-col z-[100003]"
                 >
                         {/* 关闭/取消按钮 */}
                         {view === "wechat_bind" ? (
@@ -387,6 +400,7 @@ export function AuthModal() {
                             </div>
                         </div>
                     </motion.div>
+                ) : (
                 <motion.div
                     key={`mobile-modal-${view}`}
                     role="dialog"
@@ -395,7 +409,7 @@ export function AuthModal() {
                     initial={{ x: "100%" }}
                     animate={{ x: 0, transition: { duration: 0.8, ease: [0.8, 0, 0.13, 1] } }}
                     exit={{ x: "100%", transition: { duration: 0.5, ease: [0.8, 0, 0.13, 1] } }}
-                    className="md:hidden fixed inset-0 z-[100003] pl-4 pr-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] pt-[calc(1rem+env(safe-area-inset-top,0px))] bg-[#FDFBF7] flex flex-col"
+                    className="fixed inset-0 z-[100003] pl-4 pr-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] pt-[calc(1rem+env(safe-area-inset-top,0px))] bg-[#FDFBF7] flex flex-col"
                 >
                     {/* 手机端顶部栏 */}
                     <div className="flex-shrink-0 h-[56px] w-full flex items-center justify-center relative">
@@ -566,6 +580,7 @@ export function AuthModal() {
                         </p>
                     </div>
                 </motion.div>
+                )}
                 </div>
             )}
         </AnimatePresence>

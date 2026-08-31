@@ -7,10 +7,7 @@ import { fetchWithCsrf } from "@/lib/fetch-client";
 import { useToast } from "@/components/ui/Toast";
 import { Link } from "next-view-transitions";
 import {
-  Clock,
   Loader2,
-  ChevronRight,
-  ChevronLeft,
   ScanFace,
   LogOut,
   Smartphone,
@@ -18,40 +15,21 @@ import {
   Pencil,
   Check,
   X,
-  Award,
 } from "lucide-react";
 import { LazyMotion, domAnimation, m } from "framer-motion";
 import Image from "next/image";
-import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
+import { TestHistoryList, type HistorySession } from "@/components/website/TestHistoryList";
 import { getCharacterImage, getSkinTypeName } from "@/lib/result-utils";
-
-interface AnalysisResult {
-  faceAnalysis?: { overallScore?: number; skinAge?: number };
-  skinProfile?: { type?: string; typeLabel?: string; concerns?: string[]; skinAge?: number };
-  skinType?: { typeLabel?: string };
-  concerns?: string[];
-}
-
-interface HistorySession {
-  sessionId: string;
-  completedAt: string;
-  analysisResult?: AnalysisResult;
-}
 
 export default function ProfileClient() {
   const { user, loading, logout, refresh } = useAuth();
   const toast = useToast();
   const router = useRouter();
-  const [auditHistory, setAuditHistory] = useState<HistorySession[]>([]);
-  const [loadingHistory, setLoadingHistory] = useState(true);
-  const [page, setPage] = useState(1);
-  const [limit] = useState(10);
-  const [totalPages, setTotalPages] = useState(0);
-  const [total, setTotal] = useState(0);
+  // 测肤记录当前页数据（由 TestHistoryList 拉取后回调，仅用于统计行）
+  const [historySessions, setHistorySessions] = useState<HistorySession[]>([]);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState("");
   const [updatingAvatar, setUpdatingAvatar] = useState(false);
-  const [historyError, setHistoryError] = useState(false);
 
   const AVATAR_MAX_SIZE = 5 * 1024 * 1024; // 5MB
   const AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
@@ -131,47 +109,14 @@ export default function ProfileClient() {
     }
   }, [user, loading, router]);
 
-  const fetchHistory = useCallback(async () => {
-    if (!user) return;
-    setLoadingHistory(true);
-    setHistoryError(false);
-    try {
-      const res = await fetch(`/api/advisor/history?page=${page}&limit=${limit}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      setAuditHistory(data.history);
-      setTotalPages(data.pagination?.totalPages || 0);
-      setTotal(data.pagination?.total || 0);
-    } catch (e) {
-      console.error("History fetch error:", e);
-      setHistoryError(true);
-    } finally {
-      setLoadingHistory(false);
-    }
-  }, [user, page, limit]);
-
-  useEffect(() => {
-    fetchHistory();
-  }, [fetchHistory]);
+  // 测肤记录拉取与分页由 TestHistoryList 自管理，这里只接收当前页数据用于统计行
+  const handleHistoryData = useCallback((sessions: HistorySession[]) => {
+    setHistorySessions(sessions);
+  }, []);
 
   const handleLogout = async () => {
     // logout 内部已完成整页跳转，无需再 router.push
     await logout();
-  };
-
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return {
-      full: date.toLocaleDateString("zh-CN", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      short: date.toLocaleDateString("zh-CN", { month: "short", day: "numeric" }),
-      relative: date.toLocaleDateString("zh-CN", { month: "long", day: "numeric" }),
-    };
   };
 
   if (loading || !user) {
@@ -182,9 +127,9 @@ export default function ProfileClient() {
     );
   }
 
-  const latestResult = auditHistory[0]?.analysisResult;
+  const latestResult = historySessions[0]?.analysisResult;
   // 平均评分只对实际有评分的记录求平均；无评分记录不计入，全部无评分时显示"—"
-  const scoredSessions = auditHistory.filter(
+  const scoredSessions = historySessions.filter(
     (s) => typeof s.analysisResult?.faceAnalysis?.overallScore === "number"
   );
   const avgScore =
@@ -212,10 +157,10 @@ export default function ProfileClient() {
   return (
     <LazyMotion features={domAnimation}>
       <div className="min-h-screen bg-[#FDFBF7] text-[#1A1A1A]">
-        <WebsiteNavbar />
+        {/* 顶部导航已移除，由根 layout 的 BottomDock 统一承担导航 */}
 
         {/* layout 已提供唯一 <main> 地标，这里用 div 避免嵌套 */}
-        <div className="pt-20 md:pt-24 pb-20 md:pb-28">
+        <div className="pt-6 md:pt-10 pb-dock">
           <div className="max-w-2xl mx-auto">
             {/* Cover */}
             <div className="relative h-40 md:h-52 bg-gradient-to-br from-[#E8E4D9] via-[#F0EDE3] to-[#E8E4D9]" />
@@ -324,7 +269,7 @@ export default function ProfileClient() {
               {/* Stats row */}
               <div className="flex items-center gap-6 text-[14px]">
                 <div className="flex items-center gap-1.5">
-                  <span className="font-semibold text-[#1A1A1A]">{auditHistory.length}</span>
+                  <span className="font-semibold text-[#1A1A1A]">{historySessions.length}</span>
                   <span className="text-[#5E5E5E]">次测肤</span>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -348,128 +293,7 @@ export default function ProfileClient() {
               transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
               className="px-6 md:px-8 py-6"
             >
-              <div className="flex items-center justify-between mb-5">
-                <h2 className="text-base md:text-lg font-semibold text-[#1A1A1A]">测肤记录</h2>
-                {total > 0 && <span className="text-[12px] text-[#8A8A8A]">共 {total} 条</span>}
-              </div>
-
-              {loadingHistory ? (
-                <div className="h-48 flex flex-col items-center justify-center gap-4">
-                  <Loader2 className="w-5 h-5 text-[#C9A86C] animate-spin" />
-                  <span className="text-[13px] text-[#8A8A8A]">加载记录中...</span>
-                </div>
-              ) : historyError ? (
-                <div className="h-48 flex flex-col items-center justify-center gap-4">
-                  <p className="text-[13px] text-[#8A8A8A]">测肤记录加载失败，请检查网络后重试</p>
-                  <button
-                    type="button"
-                    onClick={fetchHistory}
-                    className="inline-flex items-center gap-2 h-9 px-5 rounded-full text-[12px] tracking-[0.05em] text-[#1B3A5C] border border-[#1B3A5C]/20 hover:border-[#1B3A5C]/40 hover:bg-[#1B3A5C]/[0.04] transition-all duration-300"
-                  >
-                    重新加载
-                  </button>
-                </div>
-              ) : auditHistory.length === 0 ? (
-                <div className="text-center py-14 md:py-20">
-                  <div className="w-12 h-12 mx-auto mb-4 rounded-2xl bg-[rgba(61,68,48,0.06)] flex items-center justify-center text-[#C9A86C]">
-                    <Clock className="w-6 h-6" strokeWidth={1.5} />
-                  </div>
-                  <h3 className="text-[15px] font-medium text-[#1A1A1A] mb-1.5">暂无测肤记录</h3>
-                  <p className="text-[13px] text-[#8A8A8A] mb-5">开始第一次 AI 皮肤分析</p>
-                  <Link
-                    href="/questions"
-                    className="inline-flex items-center gap-2 h-9 px-5 rounded-full text-[12px] tracking-[0.05em] text-[#1B3A5C] border border-[#1B3A5C]/20 hover:border-[#1B3A5C]/40 hover:bg-[#1B3A5C]/[0.04] transition-all duration-300"
-                  >
-                    <ScanFace className="w-3.5 h-3.5" />
-                    立即测肤
-                  </Link>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {auditHistory.map((session) => {
-                    const result = session.analysisResult;
-                    const score = result?.faceAnalysis?.overallScore;
-                    const skinType = result?.skinProfile?.typeLabel || result?.skinType?.typeLabel;
-                    const concerns = result?.skinProfile?.concerns || result?.concerns || [];
-                    const skinAge = result?.skinProfile?.skinAge || result?.faceAnalysis?.skinAge;
-                    const dateInfo = formatDate(session.completedAt);
-
-                    return (
-                      <Link
-                        key={session.sessionId}
-                        href={`/reports/${session.sessionId}`}
-                        className="group block bg-white rounded-2xl p-5 shadow-[0_2px_12px_rgba(61,68,48,0.04)] hover:shadow-[0_4px_20px_rgba(61,68,48,0.08)] transition-shadow"
-                      >
-                        <div className="flex items-start justify-between gap-4 mb-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-[rgba(61,68,48,0.06)] flex items-center justify-center text-[#3D4430]">
-                              <Award className="w-4 h-4" />
-                            </div>
-                            <div>
-                              <div className="text-[14px] font-medium text-[#1A1A1A]">
-                                {skinType || "肌肤分析"}
-                              </div>
-                              <div className="text-[12px] text-[#8A8A8A]">{dateInfo.relative}</div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-1 text-[#1A1A1A]">
-                            <span className="text-lg font-semibold">{score ?? "—"}</span>
-                            {score && <span className="text-[11px] text-[#8A8A8A]">分</span>}
-                          </div>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-2">
-                          {concerns.slice(0, 3).map((c, idx) => (
-                            <span
-                              key={idx}
-                              className="px-2.5 py-1 text-[11px] rounded-full bg-[rgba(61,68,48,0.08)] text-[#5E5E5E]"
-                            >
-                              {c}
-                            </span>
-                          ))}
-                          {concerns.length > 3 && (
-                            <span className="text-[11px] text-[#8A8A8A]">+{concerns.length - 3}</span>
-                          )}
-                          {skinAge && (
-                            <span className="text-[11px] text-[#8A8A8A]">肤龄 {skinAge}</span>
-                          )}
-                        </div>
-
-                        <div className="mt-4 flex items-center text-[12px] text-[#1B3A5C] font-medium">
-                          <span>查看报告</span>
-                          <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
-
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between mt-6">
-                  <button
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page <= 1 || loadingHistory}
-                    className="flex items-center gap-1.5 text-[12px] text-[#8A8A8A] hover:text-[#1A1A1A] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                    上一页
-                  </button>
-
-                  <span className="text-[12px] text-[#8A8A8A]">
-                    {page} / {totalPages}
-                  </span>
-
-                  <button
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={page >= totalPages || loadingHistory}
-                    className="flex items-center gap-1.5 text-[12px] text-[#8A8A8A] hover:text-[#1A1A1A] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                  >
-                    下一页
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
+              <TestHistoryList title="测肤记录" onDataChange={handleHistoryData} />
             </m.section>
 
             {/* Logout */}

@@ -28,6 +28,7 @@ export const AnalyzeRequestSchema = z.object({
     sessionId: SessionIdSchema.optional(), // 可选，如果客户端已生成
     nickname: z.string().max(10).optional(), // 用户昵称
     freeRetry: z.boolean().optional(), // 性别不匹配免费重试标记
+    clientDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), // 客户端本地日历日，用于自动生成护肤日记
     privacyConsent: z.object({
         version: z.string(),
         consentedAt: z.string()

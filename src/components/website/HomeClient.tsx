@@ -4,14 +4,14 @@ import { useEffect, useState, useCallback, Suspense, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { LazyMotion, domAnimation, AnimatePresence, m, useReducedMotion } from "framer-motion";
 import Image from "next/image";
-import { ArrowRight, Loader2, X, Clock, ScanFace, FileText, BadgeCheck, Gift } from "lucide-react";
+import { ArrowRight, Loader2, X, Clock, ScanFace, FileText, Gift, CircleHelp } from "lucide-react";
 
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
-import { WebsiteNavbar } from "@/components/website/WebsiteNavbar";
+import Link from "next/link";
+import { skinTypes, routeOrder } from "@/lib/result-content";
 
 import { useAuthModal } from "@/components/auth/AuthModalContext";
-import { AuthUrlDetector } from "@/components/auth/AuthUrlDetector";
 import { getGuestIdentity, type GuestIdentity } from "@/lib/guest-identity";
 import { CONSENT_VERSION } from "@/components/advisor/PrivacyConsent";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
@@ -20,8 +20,14 @@ import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useNavPush } from "@/hooks/use-nav-push";
 import dynamic from "next/dynamic";
 const OnboardingFlowModal = dynamic(() => import("@/components/advisor/OnboardingFlowModal").then((mod) => mod.OnboardingFlowModal), { ssr: false });
-const HomepageFooter = dynamic(() => import("@/components/website/HomepageFooter").then((mod) => mod.HomepageFooter), { ssr: false });
+import { HomepageFooter } from "@/components/website/HomepageFooter";
 const GiftModal = dynamic(() => import("@/components/website/GiftModal").then((mod) => mod.GiftModal), { ssr: false });
+const FaqModal = dynamic(() => import("@/components/website/FaqModal").then((mod) => mod.FaqModal), { ssr: false });
+
+// 派系墙数据：与 /skin-types 页同一数据源（skinTypes + routeOrder）
+const orderedSkinTypes = routeOrder
+  .map((route) => skinTypes.find((t) => t.route === route))
+  .filter((t): t is NonNullable<typeof t> => Boolean(t));
 
 
 // Safe storage helper to prevent QuotaExceededError or Privacy Mode crashes
@@ -101,14 +107,16 @@ export default function HomeClient() {
 
   // Capture ref parameter: moved to <RefCapture /> rendered in JSX (useSearchParams needs Suspense boundary)
 
-  // 首页锁定 body 滚动，防止 iPhone 上出现滚动条 / overscroll
-  useBodyScrollLock({ enabled: true, iosSafe: true });
+  // 首页改版后为正常文档流（内容超过一屏），不再整页锁定 body 滚动；
+  // 限额弹窗的滚动锁在其 state 声明后单独处理
 
   // Nickname state
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
   // 测肤有礼活动弹窗（替代原独立 /gift 页面）
   const [showGiftModal, setShowGiftModal] = useState(false);
   const openGiftModal = useCallback(() => setShowGiftModal(true), []);
+  // FAQ 模态框（首页"常见问题"描边胶囊入口）
+  const [showFaqModal, setShowFaqModal] = useState(false);
   const [nickname, setNickname] = useState("");
   const [isHomeExiting, setIsHomeExiting] = useState(false);
 
@@ -244,6 +252,8 @@ export default function HomeClient() {
     error?: string | null;
   } | null>(null);
   const [showLimitModal, setShowLimitModal] = useState(false);
+  // 限额弹窗打开时锁定背景滚动（整页锁定已随改版移除）
+  useBodyScrollLock({ enabled: showLimitModal, iosSafe: true });
   // 限额弹窗焦点圈定 + Escape 关闭
   const limitModalRef = useFocusTrap<HTMLDivElement>(showLimitModal, () => setShowLimitModal(false));
   const [onboardingOpenCount, setOnboardingOpenCount] = useState(0);
@@ -361,7 +371,6 @@ export default function HomeClient() {
   return (
     <LazyMotion features={domAnimation}>
       <Suspense fallback={null}>
-        <AuthUrlDetector />
         <RefCapture />
         <GiftParamDetector onOpen={openGiftModal} />
       </Suspense>
@@ -381,20 +390,17 @@ export default function HomeClient() {
         )}
       </AnimatePresence>
 
-      {/* 全局顶部导航 */}
-      <WebsiteNavbar />
+      {/* 顶部导航已移除，由根 layout 的 BottomDock 统一承担导航 */}
 
-      {/* 内容区域容器 - 全屏显示 */}
+      {/* 内容区域 - 正常文档流（改版后为多区块长页面，不再固定全屏）；pb-dock 为底部 Dock 留白 */}
       <m.div
-        className="fixed inset-0 z-20 flex flex-col bg-[#FDFBF7]"
+        className="relative z-20 flex flex-col min-h-dvh bg-[#FDFBF7] pb-dock"
         initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.98 }}
         animate={isHomeExiting ? (prefersReducedMotion ? { opacity: 0 } : { y: "-100%" }) : { opacity: 1, scale: 1, y: 0 }}
         transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.7, ease: [0.65, 0, 0.35, 1] }}
       >
-        <div className="home-container relative flex flex-col flex-1 min-h-0 w-full overflow-y-auto overscroll-y-contain">
-          {/* Main Content Area（layout 已提供唯一 <main> 地标，这里用 div 避免嵌套 main） */}
-          <div className="main-content relative z-10 flex flex-col flex-1 items-center justify-center text-center px-6 pt-20 md:pt-28">
-                {/* Center AI Actions */}
+          {/* 品牌区（layout 已提供唯一 <main> 地标，这里用 section 避免嵌套 main） */}
+          <section className="relative z-10 flex flex-col items-center text-center px-6 pt-14 md:pt-20">
                 <div className="z-10 flex flex-col items-center text-center max-w-3xl mx-auto">
                   <div className="opacity-0 animate-fade-in-up flex flex-col items-center">
                     {/* 印章徽标（标题上方居中） */}
@@ -419,77 +425,123 @@ export default function HomeClient() {
                       在线 AI 测肤
                     </h1>
 
-                    {/* Info Features */}
-                    <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4 mb-8 md:mb-12 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
-                      {[
-                        { num: "2-5 分钟", rest: "完成", icon: Clock },
-                        { num: "10 维", rest: "精准检测", icon: ScanFace },
-                        { num: "1 份", rest: "专属报告", icon: FileText },
-                      ].map(({ num, rest, icon: Icon }, index, arr) => (
-                        <span key={rest} className="flex items-center gap-2 md:gap-3 text-brand-charcoal/70 text-[15px] md:text-base font-light tracking-[0.06em]">
-                          <BadgeCheck className="md:hidden w-4 h-4 text-[#173D62]/60 flex-shrink-0" strokeWidth={1.5} />
-                          <Icon className="hidden md:block w-4 h-4 text-[#173D62] flex-shrink-0" strokeWidth={1.5} />
-                          <span>
-                            <span className="text-brand-charcoal/90">{num}</span>
-                            {rest}
-                          </span>
-                          {index < arr.length - 1 && (
-                            <span className="hidden md:inline text-brand-charcoal/25" aria-hidden="true">·</span>
-                          )}
-                        </span>
-                      ))}
-                    </div>
-
-                    {/* CTA + Guide + History */}
-                    <div className="flex flex-col items-center gap-6 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.4s', animationFillMode: 'forwards' }}>
-                      {/* CTA */}
-                      <div className="flex flex-col items-center gap-3 md:gap-4 w-full max-w-md">
-                        <button
-                          onClick={handleStart}
-                          disabled={isLoading || isNavigating}
-                          className="group relative w-full inline-flex items-center justify-center gap-2.5 px-8 py-4 text-[13px] sm:text-[14px] tracking-[0.12em] font-light cursor-pointer border border-brand-charcoal/60 text-brand-charcoal bg-transparent transition-all duration-500 hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,38,62,0.12)] focus-visible:outline-none focus-visible:border-brand-charcoal focus-visible:bg-brand-charcoal/[0.05] active:translate-y-0 active:shadow-none disabled:opacity-40 disabled:cursor-not-allowed"
-                        >
-                          {isLoading ? (
-                            <>
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                              <span>正在连接</span>
-                            </>
-                          ) : (
-                            <>
-                              <span>开始完整肌肤检测</span>
-                              <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1" />
-                            </>
-                          )}
-                        </button>
-                        <p className="text-[13px] md:text-[14px] text-brand-charcoal/50 font-light tracking-[0.08em]">
-                          肌肤的现在和未来，我们与您同在
-                        </p>
-
-                        {/* 活动次级入口：替代右下角悬浮卡片，融入主视觉动线 */}
-                        <button
-                          onClick={openGiftModal}
-                          className="group inline-flex items-center justify-center gap-1.5 min-h-[44px] px-3 text-[13px] md:text-[14px] text-brand-charcoal/60 hover:text-brand-charcoal font-light tracking-[0.08em] transition-colors touch-manipulation"
-                        >
-                          <Gift className="w-3.5 h-3.5 text-brand-charcoal/50 group-hover:text-brand-charcoal transition-colors" strokeWidth={1.5} />
-                          <span>测肤有礼 · 参与赢好礼</span>
-                          <ArrowRight className="w-3.5 h-3.5 transition-transform duration-500 group-hover:translate-x-0.5" />
-                        </button>
-                      </div>
-
-
-
-                    </div>
+                    {/* 卖点与 CTA 已迁入下方主视觉卡 */}
                   </div>
                 </div>
+          </section>
 
+          {/* 主视觉卡：整卡可点击，触发 handleStart 流程（隐私同意 → 问卷） */}
+          <section className="px-6 md:px-12 mt-10 md:mt-14">
+            <button
+              onClick={handleStart}
+              disabled={isLoading || isNavigating}
+              className="group relative block w-full max-w-4xl mx-auto text-left bg-brand-charcoal rounded-3xl overflow-hidden cursor-pointer transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_24px_48px_rgba(0,38,62,0.25)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/40 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+            >
+              <div className="flex flex-col md:flex-row md:items-center">
+                <div className="flex-1 p-7 md:p-12">
+                  <h2 className="text-xl md:text-2xl font-serif font-light text-white tracking-[0.02em] mb-4 md:mb-5">
+                    开始完整肌肤检测
+                  </h2>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-white/60 text-[13px] md:text-sm font-light tracking-[0.06em] mb-7 md:mb-9">
+                    <span className="flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5" strokeWidth={1.5} />
+                      2-5 分钟完成
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <ScanFace className="w-3.5 h-3.5" strokeWidth={1.5} />
+                      10 维精准检测
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <FileText className="w-3.5 h-3.5" strokeWidth={1.5} />
+                      1 份专属报告
+                    </span>
+                  </div>
+                  <span className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full border border-white/50 text-white text-[13px] tracking-[0.12em] font-light transition-colors duration-300 group-hover:bg-white/10 group-hover:border-white/80">
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>正在连接</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>立即开始</span>
+                        <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1 motion-reduce:transition-none" />
+                      </>
+                    )}
+                  </span>
+                </div>
+                <div className="shrink-0 self-end md:self-center md:pr-10">
+                  <Image
+                    src="/images/character/guardian/guardian_female.webp"
+                    alt="肌智派 IP 形象"
+                    width={180}
+                    height={280}
+                    className="w-40 md:w-52 h-auto object-contain mx-auto"
+                    priority
+                  />
+                </div>
+              </div>
+            </button>
+          </section>
+
+          {/* 次级入口：测肤有礼活动 + 常见问题（描边胶囊，同一视觉层级） */}
+          <section className="flex flex-wrap items-center justify-center gap-3 px-6 mt-6 md:mt-8">
+            <button
+              onClick={openGiftModal}
+              className="group inline-flex items-center gap-1.5 min-h-[44px] px-5 rounded-full border border-brand-charcoal/25 text-brand-charcoal/70 text-[13px] font-light tracking-[0.08em] transition-all duration-300 hover:border-brand-charcoal/60 hover:text-brand-charcoal cursor-pointer touch-manipulation"
+            >
+              <Gift className="w-3.5 h-3.5" strokeWidth={1.5} />
+              <span>测肤有礼 · 参与赢好礼</span>
+            </button>
+            <button
+              onClick={() => setShowFaqModal(true)}
+              className="group inline-flex items-center gap-1.5 min-h-[44px] px-5 rounded-full border border-brand-charcoal/25 text-brand-charcoal/70 text-[13px] font-light tracking-[0.08em] transition-all duration-300 hover:border-brand-charcoal/60 hover:text-brand-charcoal cursor-pointer touch-manipulation"
+            >
+              <CircleHelp className="w-3.5 h-3.5" strokeWidth={1.5} />
+              <span>常见问题</span>
+            </button>
+          </section>
+
+          {/* 派系卡片墙：移动端横向滑动（snap），桌面端 4 列网格 */}
+          <section className="mt-14 md:mt-20">
+            <h2 className="text-center text-lg md:text-2xl font-serif font-light text-brand-charcoal tracking-[0.02em] px-6">
+              八大肌智派，你是哪一派？
+            </h2>
+            <div className="mt-7 md:mt-10 flex gap-4 overflow-x-auto snap-x snap-mandatory px-6 md:grid md:grid-cols-4 md:gap-5 md:max-w-6xl md:mx-auto md:overflow-visible">
+              {orderedSkinTypes.map((type) => (
+                <Link
+                  key={type.route}
+                  href={`/skin-types/${type.route}`}
+                  className="group snap-start shrink-0 w-[68vw] max-w-[260px] md:w-auto md:max-w-none rounded-2xl border border-brand-charcoal/[0.08] bg-[#FAF9F6] p-5 transition-all duration-500 hover:shadow-[0_16px_32px_rgba(0,38,62,0.08)] hover:-translate-y-1 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+                >
+                  <div className="h-36 md:h-44 mb-3 flex items-end justify-center">
+                    <Image
+                      src={`/images/character/${type.ipKey}/${type.ipKey}_female.webp`}
+                      alt={type.typeName}
+                      width={180}
+                      height={280}
+                      loading="lazy"
+                      className="h-full w-auto object-contain group-hover:scale-105 transition-transform duration-500 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+                    />
+                  </div>
+                  <h3 className="text-[15px] md:text-base font-serif font-light text-brand-charcoal text-center">
+                    {type.typeName}
+                  </h3>
+                  <p className="mt-1 text-[12px] text-brand-charcoal/60 font-light text-center line-clamp-1">
+                    {type.m1.persona}
+                  </p>
+                </Link>
+              ))}
             </div>
+          </section>
 
-            {/* Homepage Footer */}
+          {/* 页脚 */}
+          <div className="mt-auto pt-14 md:pt-20">
             <HomepageFooter />
           </div>
         </m.div>
 
-      {/* "测肤有礼"入口已移入主视觉次级链接（见上方 CTA 区），不再使用右下角悬浮卡片 */}
+      {/* "测肤有礼"入口为主视觉卡下方的描边胶囊（见上方次级入口区），不再使用右下角悬浮卡片 */}
 
       {/* Modals */}
       <GiftModal
@@ -500,9 +552,12 @@ export default function HomeClient() {
           handleStart();
         }}
       />
+      <FaqModal
+        isOpen={showFaqModal}
+        onClose={() => setShowFaqModal(false)}
+      />
       <OnboardingFlowModal
-        key={onboardingOpenCount}
-        isOpen={showOnboardingModal}
+        key={onboardingOpenCount}        isOpen={showOnboardingModal}
         onClose={() => {
           // 标记用户已主动取消，防止 handleStart 中待完成的异步回调重新打开弹窗或恢复 loading
           startCancelledRef.current = true;
