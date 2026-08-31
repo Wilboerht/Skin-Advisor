@@ -463,6 +463,24 @@ export default function HomeClient() {
         </div>
       </div>
 
+      {/* PC 端品牌 Logo：左上角落款，链向品牌主站（移动端不显示，印章徽标已承担品牌识别） */}
+      <a
+        href="https://nihplod.cn"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="NIHPLOD 品牌官网"
+        className="hidden md:block fixed top-6 left-6 z-20 opacity-80 hover:opacity-100 transition-opacity"
+      >
+        <Image
+          src="/NIHPLOD-logo.svg"
+          alt="NIHPLOD"
+          width={130}
+          height={33}
+          className="w-[130px] h-auto"
+          priority
+        />
+      </a>
+
       {/* 顶部导航已移除，由根 layout 的 BottomDock 统一承担导航 */}
 
       {/* 内容区域 - 一屏布局（h-dvh 不滚动）；pb-dock 为底部 Dock 留白 */}
