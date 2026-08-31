@@ -3,7 +3,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { m, LazyMotion, domAnimation } from "framer-motion";
 import { ScanFace, NotebookPen, Sparkles, CircleUserRound } from "lucide-react";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { useUser } from "@/components/auth/UserProvider";
@@ -59,9 +58,6 @@ export function BottomDock() {
   const isActive = (tab: DockTab) =>
     tab.exact ? pathname === tab.href : pathname.startsWith(tab.href);
 
-  // 激活 tab 下标：指示器按此滑动定位（-1 = 当前不在任何 tab 页，隐藏指示器）
-  const activeIndex = TABS.findIndex((tab) => isActive(tab));
-
   // 未登录点"我的"：先记下目标页，SSO 登录完成后由 AuthUrlDetector（根 layout）消费并回跳
   const handleAuthRequired = (href: string) => {
     try {
@@ -87,7 +83,7 @@ export function BottomDock() {
   };
 
   const renderContent = (tab: DockTab, active: boolean) => (
-    <span className="relative z-10 flex flex-col items-center gap-1">
+    <>
       {tab.href === "/profile" && user?.avatar ? (
         <span className="relative block w-[22px] h-[22px] rounded-full overflow-hidden">
           <Image src={user.avatar} alt="" fill unoptimized className="object-cover" />
@@ -99,11 +95,10 @@ export function BottomDock() {
         />
       )}
       <span className={active ? "font-medium" : "font-light"}>{tab.label}</span>
-    </span>
+    </>
   );
 
   return (
-    <LazyMotion features={domAnimation}>
     <nav
       aria-label="主导航"
       className="fixed bottom-0 left-0 right-0 z-[var(--z-dock)] pointer-events-none"
@@ -112,18 +107,6 @@ export function BottomDock() {
       <div
         className="relative mx-auto flex items-stretch h-[var(--dock-height)] px-2 bg-[#FDFBF7]/90 backdrop-blur-md border-t border-brand-charcoal/[0.08] pb-[env(safe-area-inset-bottom,0px)] md:mb-8 md:max-w-md md:rounded-full md:border md:shadow-[0_8px_30px_rgba(0,38,62,0.10)] box-content pointer-events-auto"
       >
-        {/* 激活指示器：常驻单元素，按激活 tab 下标滑动（inset 与容器 px-2 对齐，保证百分比坐标一致） */}
-        <div className="absolute inset-y-0 left-2 right-2 pointer-events-none" aria-hidden="true">
-          {activeIndex >= 0 && (
-            <m.span
-              className="absolute top-1.5 bottom-1.5 rounded-full bg-brand-charcoal/[0.07]"
-              style={{ width: "calc(25% - 12px)" }}
-              initial={false}
-              animate={{ left: `calc(${activeIndex * 25}% + 6px)` }}
-              transition={{ type: "spring", stiffness: 400, damping: 32 }}
-            />
-          )}
-        </div>
         {TABS.map((tab) => {
           const active = isActive(tab);
           if (tab.requiresAuth && !user) {
@@ -155,6 +138,5 @@ export function BottomDock() {
         })}
       </div>
     </nav>
-    </LazyMotion>
   );
 }
