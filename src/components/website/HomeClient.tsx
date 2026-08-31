@@ -73,6 +73,24 @@ function GiftParamDetector({ onOpen }: { onOpen: () => void }) {
   return null;
 }
 
+/** ?start=1 检测组件：从站外页面（如 /skin-types 活动弹窗）点"开始测肤"进来时，
+ *  自动拉起与首页 CTA 完全相同的 handleStart 流程（限额检查 → 隐私授权），并清理 URL。
+ *  firedRef 防 StrictMode 双跑导致重复触发。 */
+function StartParamDetector({ onStart }: { onStart: () => void }) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const firedRef = useRef(false);
+  useEffect(() => {
+    if (typeof window === "undefined" || firedRef.current) return;
+    if (searchParams.get("start") === "1") {
+      firedRef.current = true;
+      router.replace("/", { scroll: false });
+      onStart();
+    }
+  }, [searchParams, onStart, router]);
+  return null;
+}
+
 // Region options
 const regionOptions = [
   { group: "华北/东北", regions: ["北京", "天津", "河北", "山西", "内蒙古", "黑龙江", "吉林", "辽宁"] },
@@ -403,6 +421,7 @@ export default function HomeClient() {
       <Suspense fallback={null}>
         <RefCapture />
         <GiftParamDetector onOpen={openGiftModal} />
+        <StartParamDetector onStart={handleStart} />
       </Suspense>
 
       {/* Full Screen Loading Overlay */}
