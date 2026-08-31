@@ -105,7 +105,7 @@ export function BottomDock() {
     >
       {/* 移动端：贴底通栏；桌面端：居中悬浮胶囊（仅胶囊响应点击，透明区域放行下方内容） */}
       <div
-        className="relative mx-auto flex items-stretch h-[var(--dock-height)] px-2 bg-[#FDFBF7]/90 backdrop-blur-md border-t border-brand-charcoal/[0.08] pb-[env(safe-area-inset-bottom,0px)] md:mb-8 md:max-w-md md:rounded-full md:border md:shadow-[0_8px_30px_rgba(0,38,62,0.10)] box-content pointer-events-auto"
+        className="dock-panel relative mx-auto flex items-stretch h-[var(--dock-height)] px-2 bg-[#FDFBF7]/90 backdrop-blur-md border-t border-brand-charcoal/[0.08] pb-[env(safe-area-inset-bottom,0px)] md:mb-8 md:max-w-md md:rounded-full md:border md:shadow-[0_8px_30px_rgba(0,38,62,0.10)] box-content pointer-events-auto"
       >
         {TABS.map((tab) => {
           const active = isActive(tab);

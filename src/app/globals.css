@@ -687,3 +687,21 @@
     display: none;
   }
 }
+
+/* ========== 底部 Dock：模态框/覆盖层打开时自动收起 ========== */
+/* 触发源：useBodyScrollLock 加锁时在 <body> 上设置 data-scroll-locked */
+.dock-panel {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s;
+}
+
+body[data-scroll-locked] .dock-panel {
+  transform: translateY(calc(100% + 2rem));
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dock-panel {
+    transition: none;
+  }
+}

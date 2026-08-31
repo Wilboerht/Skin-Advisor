@@ -58,6 +58,8 @@ function acquireLock(useIos: boolean) {
         savedScrollY = window.scrollY;
         fixedApplied = false;
         document.body.style.overflow = "hidden";
+        // 打标供全局 CSS 响应（如模态框打开时底部 Dock 自动收起）
+        document.body.setAttribute("data-scroll-locked", "");
     }
     lockCount++;
 
@@ -91,6 +93,7 @@ function releaseLock(useIos: boolean) {
             iosLockCount = 0;
         }
         document.body.style.overflow = saved.overflow;
+        document.body.removeAttribute("data-scroll-locked");
         // 应用过 fixed 定位时，body 曾脱离文档流，需恢复加锁前的滚动位置，
         // 否则 iOS 解锁后页面会跳回顶部
         if (fixedApplied) {
