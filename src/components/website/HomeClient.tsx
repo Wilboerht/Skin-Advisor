@@ -355,37 +355,46 @@ export default function HomeClient() {
   }, [guestIdentity, user, refreshUser]);
 
 
+  // 防重复触发：限额检查是异步的，等待期间按钮仍可点，快速双击会并发跑两遍流程
+  const startingRef = useRef(false);
+
   const handleStart = useCallback(async () => {
+    if (startingRef.current) return;
+    startingRef.current = true;
     startCancelledRef.current = false;
 
-    // Check test limit first
-    const canTest = await checkTestLimit();
+    try {
+      // Check test limit first
+      const canTest = await checkTestLimit();
 
-    // 用户在等待限额检查时已主动关闭弹窗/返回首页：中止后续流程并清理 loading 状态
-    if (startCancelledRef.current) {
-      return;
-    }
+      // 用户在等待限额检查时已主动关闭弹窗/返回首页：中止后续流程并清理 loading 状态
+      if (startCancelledRef.current) {
+        return;
+      }
 
-    if (!canTest) {
-      setShowLimitModal(true);
-      return;
-    }
+      if (!canTest) {
+        setShowLimitModal(true);
+        return;
+      }
 
-    // 用户在 checkTestLimit 完成后、打开弹窗前又关闭了：清理状态并中止
-    if (startCancelledRef.current) {
-      return;
-    }
+      // 用户在 checkTestLimit 完成后、打开弹窗前又关闭了：清理状态并中止
+      if (startCancelledRef.current) {
+        return;
+      }
 
-    // If user is logged in and has a name, pre-fill it and let the modal handle skipping the step
-    if (user?.name) {
-      setNickname(user.name);
-      safeStorage.set(STORAGE_KEYS.ADVISOR_NICKNAME, user.name);
+      // If user is logged in and has a name, pre-fill it and let the modal handle skipping the step
+      if (user?.name) {
+        setNickname(user.name);
+        safeStorage.set(STORAGE_KEYS.ADVISOR_NICKNAME, user.name);
+      }
+      setIsHomeExiting(true);
+      if (!showOnboardingModal) {
+        setOnboardingOpenCount(prev => prev + 1);
+      }
+      setShowOnboardingModal(true);
+    } finally {
+      startingRef.current = false;
     }
-    setIsHomeExiting(true);
-    if (!showOnboardingModal) {
-      setOnboardingOpenCount(prev => prev + 1);
-    }
-    setShowOnboardingModal(true);
   }, [checkTestLimit, user, showOnboardingModal]);
 
   const handleNicknameSubmit = () => {
