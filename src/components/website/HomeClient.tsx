@@ -108,12 +108,12 @@ export default function HomeClient() {
     delta: number | null;
   } | null>(null);
 
-  // 社会证明取数（公开接口，失败静默降级为只显示隐私半句）
+  // 社会证明取数（公开接口，失败静默降级为不显示该行——非关键增强，不报错惊扰用户）
   useEffect(() => {
     fetch("/api/public/test-count")
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
       .then((data) => setTestCount(typeof data.count === "number" ? data.count : null))
-      .catch((e) => console.error("Test count fetch error:", e));
+      .catch((e) => console.warn("Test count fetch failed (该行将隐藏):", e));
   }, []);
 
   // 老用户最近报告取数（仅登录后，取最近 2 条算评分差）
