@@ -116,10 +116,10 @@ export function BottomDock() {
         <div className="absolute inset-y-0 left-2 right-2 pointer-events-none" aria-hidden="true">
           {activeIndex >= 0 && (
             <m.span
-              className="absolute top-1 bottom-1 rounded-full bg-brand-charcoal/[0.07]"
-              style={{ width: "calc(25% - 8px)" }}
+              className="absolute top-1.5 bottom-1.5 rounded-full bg-brand-charcoal/[0.07]"
+              style={{ width: "calc(25% - 12px)" }}
               initial={false}
-              animate={{ left: `calc(${activeIndex * 25}% + 4px)` }}
+              animate={{ left: `calc(${activeIndex * 25}% + 6px)` }}
               transition={{ type: "spring", stiffness: 400, damping: 32 }}
             />
           )}

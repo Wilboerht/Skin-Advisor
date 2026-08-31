@@ -537,8 +537,8 @@ export default function HomeClient() {
           </div>
         </m.div>
 
-      {/* 桌面端页脚：固定屏幕左下角，位于悬浮胶囊 Dock 之下（z 高于内容层 z-20、低于 Dock） */}
-      <div className="hidden md:block fixed bottom-2 left-4 z-30 max-w-[calc(100vw-2rem)]">
+      {/* 桌面端页脚：固定屏幕底部通栏，备案居左、链接与版权居右（z 高于内容层 z-20、低于 Dock） */}
+      <div className="hidden md:block fixed bottom-2 left-4 right-4 z-30">
         <HomepageFooter />
       </div>
 
