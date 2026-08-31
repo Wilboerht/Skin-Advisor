@@ -130,64 +130,6 @@ export function FAQPageSchema({ faqs }: { faqs: FAQItem[] }) {
 }
 
 // ============================================================
-// 肤质文章 Article Schema（用于 skin-types/[type] 页面）
-// ============================================================
-export function ArticleSchema({
-  headline,
-  description,
-  image,
-  datePublished,
-  dateModified,
-  authorName = "NIHPLOD",
-  url,
-}: {
-  headline: string;
-  description: string;
-  image?: string;
-  datePublished?: string;
-  dateModified?: string;
-  authorName?: string;
-  url: string;
-}) {
-  const schema: Record<string, unknown> = {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    headline,
-    description,
-    author: {
-      "@type": "Organization",
-      name: authorName,
-      url: BASE_URL,
-    },
-    publisher: {
-      "@type": "Organization",
-      name: "NIHPLOD",
-      logo: {
-        "@type": "ImageObject",
-        url: `${BASE_URL}/images/watermark.png`,
-      },
-    },
-    datePublished: datePublished || "2024-01-01",
-    dateModified: dateModified || new Date().toISOString().split("T")[0],
-    mainEntityOfPage: {
-      "@type": "WebPage",
-      "@id": url,
-    },
-  };
-
-  if (image) {
-    schema.image = image;
-  }
-
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
-    />
-  );
-}
-
-// ============================================================
 // 产品 Product Schema
 // ============================================================
 export function ProductSchema({

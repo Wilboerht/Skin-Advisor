@@ -5,6 +5,8 @@ import { ArrowRight, Gift } from "lucide-react";
 import { skinTypes, routeOrder } from "@/lib/result-content";
 import { withDefaultOgImage } from "@/lib/metadata";
 import { KineticBackground } from "@/components/website/KineticBackground";
+import { HidePageScrollbar } from "@/components/website/HidePageScrollbar";
+import { SkinTypesClient } from "@/components/website/SkinTypesClient";
 import { BreadcrumbSchema } from "@/components/website/StructuredData";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://nihplod.cn";
@@ -34,6 +36,8 @@ export default function ResultIndexPage() {
     <div className="relative min-h-dvh text-brand-charcoal pb-dock">
       {/* Kinetic 背景：与首页一致的米白底 + 水印 */}
       <KineticBackground />
+      {/* 隐藏页面滚动条（保留滚动） */}
+      <HidePageScrollbar />
       <BreadcrumbSchema
         items={[
           { name: "首页", url: BASE_URL },
@@ -72,40 +76,9 @@ export default function ResultIndexPage() {
         </div>
       </section>
 
-      {/* 类型卡片 */}
-      <section className="px-6 md:px-12 lg:px-20">
-        <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-x-5 md:gap-x-7 gap-y-6 md:gap-y-10">
-          {orderedTypes.map((type) => {
-            if (!type) return null;
-            return (
-              <Link
-                key={type.route}
-                href={`/skin-types/${type.route}`}
-                className="group relative rounded-2xl border border-brand-charcoal/[0.08] bg-[#FAF9F6] p-4 md:p-9 transition-all duration-500 hover:shadow-[0_16px_32px_rgba(0,38,62,0.08)] hover:-translate-y-1"
-              >
-                <Image
-                  src={`/images/character/${type.ipKey}/${type.ipKey}_female.webp`}
-                  alt=""
-                  width={180}
-                  height={280}
-                  className="absolute -right-2 -bottom-3 w-[110px] h-[184px] md:w-[152px] md:h-[264px] object-contain opacity-100 group-hover:scale-105 transition-transform duration-500 pointer-events-none select-none"
-                />
-                <div className="relative z-10 pr-20 md:pr-24">
-                  <h2 className="text-lg md:text-2xl font-serif font-light tracking-[0.02em] text-brand-charcoal mb-1 md:mb-2 group-hover:text-brand-charcoal-light transition-colors duration-500">
-                    {type.typeName}
-                  </h2>
-                  <p className="text-[13px] md:text-sm text-brand-charcoal/60 font-light tracking-[0.06em] md:tracking-[0.12em] mb-3 md:mb-5 line-clamp-1">
-                    {type.m1.persona}
-                  </p>
-                  <div className="inline-flex items-center text-xs md:text-[13px] font-light tracking-[0.12em] text-brand-charcoal/60 group-hover:text-brand-charcoal-light transition-colors duration-300">
-                    查看完整解读
-                    <ArrowRight className="w-3.5 h-3.5 ml-1.5 transition-transform duration-500 group-hover:translate-x-1.5" />
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
+      {/* 类型卡片（点击打开详情弹窗） */}
+      <section className="relative z-10 px-6 md:px-12 lg:px-20">
+        <SkinTypesClient types={orderedTypes.filter((t): t is NonNullable<typeof t> => Boolean(t))} />
       </section>
 
       {/* 底部 CTA - 送好礼 */}

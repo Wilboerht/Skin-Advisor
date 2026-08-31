@@ -705,3 +705,12 @@ body[data-scroll-locked] .dock-panel {
     transition: none;
   }
 }
+
+/* 页面级隐藏滚动条（由 HidePageScrollbar 组件挂载时在 <html> 加类，保留滚动） */
+html.hide-page-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+html.hide-page-scrollbar::-webkit-scrollbar {
+  display: none;
+}

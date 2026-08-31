@@ -62,14 +62,5 @@ export function getAllSiteUrls(baseUrl: string): string[] {
   urls.push(`${baseUrl}/services`);
   urls.push(`${baseUrl}/faq`);
 
-  // 8 种肤质类型页面
-  const skinTypes = [
-    "minminpai", "jijianpai", "shehuapai", "donglingpai",
-    "shamopai", "youtiaopai", "hunhepai", "shouhupai",
-  ];
-  for (const type of skinTypes) {
-    urls.push(`${baseUrl}/skin-types/${type}`);
-  }
-
   return urls;
 }

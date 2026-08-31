@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AnimatePresence, m } from "framer-motion";
+import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
 import {
   History,
   Loader2,
@@ -188,10 +188,11 @@ export default function DiaryClient() {
   }, [user]);
 
   return (
+    <LazyMotion features={domAnimation}>
     <div className="min-h-dvh text-[#1A1A1A] pb-dock">
       {/* Kinetic 背景：与首页一致的米白底 + 水印 */}
       <KineticBackground />
-      <div className="relative z-20 max-w-2xl mx-auto px-6 pt-12 md:pt-16">
+      <div className="relative z-20 max-w-3xl mx-auto px-6 pt-12 md:pt-16">
         {/* 页面标题 */}
         <header className="mb-8 md:mb-10">
           <h1 className="text-2xl md:text-3xl font-serif font-light text-brand-charcoal tracking-[0.02em]">
@@ -274,5 +275,6 @@ export default function DiaryClient() {
       {/* 测肤记录模态框（仅登录后可达） */}
       <TestHistoryModal isOpen={showHistoryModal} onClose={() => setShowHistoryModal(false)} />
     </div>
+    </LazyMotion>
   );
 }

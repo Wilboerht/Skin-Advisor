@@ -1,5 +1,4 @@
 import type { MetadataRoute } from "next";
-import { routeOrder } from "@/lib/result-content";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://nihplod.cn";
 
@@ -29,13 +28,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  // 8 种肤质类型页面
-  const skinTypePages: MetadataRoute.Sitemap = routeOrder.map((route) => ({
-    url: `${baseUrl}/skin-types/${route}`,
-    lastModified: CONTENT_UPDATED_AT,
-    changeFrequency: "monthly" as const,
-    priority: 0.8,
-  }));
-
-  return [...staticPages, ...skinTypePages];
+  return staticPages;
 }
