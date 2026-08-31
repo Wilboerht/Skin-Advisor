@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
 import {
   History,
@@ -226,30 +227,32 @@ export default function DiaryClient() {
             <Loader2 className="w-6 h-6 text-brand-charcoal/40 animate-spin" />
           </div>
         ) : (
-          <div className="relative">
-            {/* 未登录：同样的内容区渲染模拟数据，整体模糊 + 引导登录浮层 */}
-            <div
-              className={!user ? "blur-md pointer-events-none select-none" : undefined}
-              aria-hidden={!user || undefined}
+          <>
+            {/* 测肤趋势区（未登录：模拟数据清晰展示，作为"试读"） */}
+            <section
+              className="rounded-3xl border border-brand-charcoal/[0.08] bg-gradient-to-br from-white to-[#FBF7EE] shadow-[0_8px_24px_rgba(0,38,62,0.06)] p-6 md:p-8 mb-8"
+              {...(!user ? { "aria-label": "测肤趋势预览（模拟数据）" } : {})}
             >
-            {/* 测肤趋势区 */}
-            <section className="rounded-3xl border border-brand-charcoal/[0.08] bg-gradient-to-br from-white to-[#FBF7EE] shadow-[0_8px_24px_rgba(0,38,62,0.06)] p-6 md:p-8 mb-8">
               <div className="flex items-center justify-between mb-5">
                 <h2 className="text-base md:text-lg font-semibold flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-brand-charcoal/60" strokeWidth={1.5} />
                   测肤趋势
                 </h2>
-                <button
-                  onClick={() => setShowHistoryModal(true)}
-                  className="inline-flex items-center gap-1.5 min-h-[36px] px-3.5 rounded-full border border-brand-charcoal/20 text-brand-charcoal/70 text-[12px] font-light tracking-[0.05em] transition-all duration-300 hover:border-brand-charcoal/50 hover:text-brand-charcoal cursor-pointer"
-                >
-                  <History className="w-3.5 h-3.5" strokeWidth={1.5} />
-                  测肤记录
-                </button>
+                {user && (
+                  <button
+                    onClick={() => setShowHistoryModal(true)}
+                    className="inline-flex items-center gap-1.5 min-h-[36px] px-3.5 rounded-full border border-brand-charcoal/20 text-brand-charcoal/70 text-[12px] font-light tracking-[0.05em] transition-all duration-300 hover:border-brand-charcoal/50 hover:text-brand-charcoal cursor-pointer"
+                  >
+                    <History className="w-3.5 h-3.5" strokeWidth={1.5} />
+                    测肤记录
+                  </button>
+                )}
               </div>
 
               {!user ? (
-                <TrendChart trends={mockTrends} />
+                <div className="pointer-events-none select-none" aria-hidden="true">
+                  <TrendChart trends={mockTrends} />
+                </div>
               ) : !trendsLoaded || !entriesLoaded ? (
                 <div className="h-32 flex items-center justify-center">
                   <Loader2 className="w-5 h-5 text-brand-charcoal/30 animate-spin" />
@@ -266,8 +269,40 @@ export default function DiaryClient() {
               )}
             </section>
 
-            {/* 历程时间线（PRD v1.5）：日记打卡 + 测肤里程碑按日合并倒序 */}
-            <section className="mb-8">
+            {/* 未登录引导卡：位于趋势与时间线之间（渐隐交界处） */}
+            {!user && (
+              <div className="relative z-10 rounded-3xl border border-brand-charcoal/[0.08] bg-white/90 backdrop-blur-md shadow-[0_24px_48px_rgba(0,38,62,0.12)] p-8 md:p-10 text-center max-w-sm mx-auto mb-8">
+                <p className="text-[15px] text-brand-charcoal mb-2">登录后查看你的护肤档案</p>
+                <p className="text-[13px] text-brand-charcoal/60 font-light mb-6">
+                  每次测肤后自动记录，趋势与历程都在这里
+                </p>
+                <div className="flex flex-col items-center gap-3">
+                  <button
+                    onClick={() => openAuthModal("login")}
+                    className="inline-flex items-center gap-2 h-10 px-6 rounded-full bg-brand-charcoal text-white text-[13px] tracking-[0.08em] font-light transition-opacity hover:opacity-90 cursor-pointer"
+                  >
+                    <LogIn className="w-4 h-4" />
+                    登录 / 注册
+                  </button>
+                  <Link
+                    href="/questions"
+                    className="text-[13px] text-brand-charcoal/60 font-light tracking-[0.06em] hover:text-brand-charcoal transition-colors"
+                  >
+                    先去测肤，稍后再登录 →
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {/* 历程时间线（未登录：模拟数据，向下渐隐"试读"） */}
+            <section
+              className={
+                !user
+                  ? "mb-8 pointer-events-none select-none max-h-[360px] overflow-hidden [mask-image:linear-gradient(to_bottom,black_0%,black_25%,transparent_80%)]"
+                  : "mb-8"
+              }
+              aria-hidden={!user || undefined}
+            >
               <h2 className="text-base md:text-lg font-semibold mb-5 flex items-center gap-2">
                 <NotebookPen className="w-4 h-4 text-brand-charcoal/60" strokeWidth={1.5} />
                 护肤历程
@@ -278,27 +313,7 @@ export default function DiaryClient() {
                 loading={user ? !entriesLoaded || !testsLoaded : false}
               />
             </section>
-            </div>
-
-            {/* 未登录引导浮层 */}
-            {!user && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center px-6">
-                <div className="rounded-3xl border border-brand-charcoal/[0.08] bg-white/90 backdrop-blur-md shadow-[0_24px_48px_rgba(0,38,62,0.12)] p-8 md:p-10 text-center max-w-sm">
-                  <p className="text-[15px] text-brand-charcoal mb-2">登录后查看你的护肤档案</p>
-                  <p className="text-[13px] text-brand-charcoal/60 font-light mb-6">
-                    测肤趋势与护肤历程都将在登录后开启
-                  </p>
-                  <button
-                    onClick={() => openAuthModal("login")}
-                    className="inline-flex items-center gap-2 h-10 px-6 rounded-full bg-brand-charcoal text-white text-[13px] tracking-[0.08em] font-light transition-opacity hover:opacity-90 cursor-pointer"
-                  >
-                    <LogIn className="w-4 h-4" />
-                    登录 / 注册
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+          </>
         )}
       </div>
 
