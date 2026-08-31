@@ -70,14 +70,14 @@ export function FaqModal({ isOpen, onClose }: FaqModalProps) {
               {/* FAQ 手风琴列表 */}
               <div className="divide-y divide-brand-charcoal/[0.08]">
                 {faqs.map((faq, i) => (
-                  <details key={i} className="group py-4 md:py-5 cursor-pointer">
-                    <summary className="flex items-center justify-between gap-4 text-[14px] md:text-[15px] font-medium text-[#1A1A1A] list-none marker:content-none hover:text-brand-charcoal transition-colors">
+                  <details key={i} className="group cursor-pointer">
+                    <summary className="flex items-center justify-between gap-4 py-4 md:py-5 px-2 -mx-2 rounded-xl text-[14px] md:text-[15px] font-medium text-[#1A1A1A] list-none marker:content-none hover:text-brand-charcoal active:bg-brand-charcoal/[0.04] transition-colors touch-manipulation select-none">
                       <span>{faq.question}</span>
                       <span className="shrink-0 text-[#8B7355] text-lg leading-none group-open:rotate-45 transition-transform duration-300 motion-reduce:transition-none">
                         +
                       </span>
                     </summary>
-                    <p className="mt-3 text-[13px] md:text-[14px] text-[#5E5E5E] font-light leading-relaxed">
+                    <p className="mt-1 mb-4 md:mb-5 px-2 text-[13px] md:text-[14px] text-[#5E5E5E] font-light leading-relaxed">
                       {faq.answer}
                     </p>
                   </details>
