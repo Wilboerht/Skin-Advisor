@@ -13,7 +13,8 @@ interface FaqModalProps {
 
 /**
  * FaqModal — 首页"常见问题"入口弹出的 FAQ 模态框
- * 内容与 /faq 静态页共用 src/lib/faq-data.ts，手风琴样式与静态页一致
+ * 内容与 /faq 静态页共用 src/lib/faq-data.ts，手风琴样式与静态页一致；
+ * 容器/动效/关闭按钮与 GiftModal（肌智派送好礼）对齐
  */
 export function FaqModal({ isOpen, onClose }: FaqModalProps) {
   const modalRef = useFocusTrap<HTMLDivElement>(isOpen, onClose);
@@ -28,7 +29,7 @@ export function FaqModal({ isOpen, onClose }: FaqModalProps) {
           aria-modal="true"
           aria-labelledby="faq-modal-title"
           tabIndex={-1}
-          className="fixed inset-0 z-[var(--z-modal)] flex items-end md:items-center justify-center"
+          className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center p-0 sm:p-4"
         >
           {/* 背景遮罩 */}
           <m.div
@@ -36,39 +37,37 @@ export function FaqModal({ isOpen, onClose }: FaqModalProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-[#1A1A1A]/30 backdrop-blur-sm"
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
           />
 
-          {/* 面板：移动端底部升起，桌面端居中 */}
+          {/* 弹窗主体：移动端全屏，桌面端居中卡片 */}
           <m.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 24 }}
-            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="relative z-10 w-full md:max-w-2xl max-h-[85dvh] bg-[#FDFBF7] rounded-t-3xl md:rounded-3xl shadow-2xl flex flex-col motion-reduce:transition-none"
+            initial={{ opacity: 0, scale: 0.96, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: 10 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="relative z-10 w-full h-full sm:h-auto sm:max-w-lg sm:max-h-[85dvh] bg-[#FDFBF7] rounded-none sm:rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* 头部 */}
-            <div className="flex items-center justify-between px-6 md:px-8 pt-6 md:pt-7 pb-4 border-b border-brand-charcoal/[0.06] shrink-0">
-              <div>
-                <p className="text-[10px] tracking-[0.25em] text-[#8B7355] uppercase mb-1">
-                  Frequently Asked Questions
-                </p>
-                <h2 id="faq-modal-title" className="text-lg md:text-xl font-serif text-brand-charcoal">
-                  常见问题
-                </h2>
-              </div>
-              <button
-                onClick={onClose}
-                aria-label="关闭"
-                className="w-10 h-10 flex items-center justify-center rounded-full text-brand-charcoal/60 hover:text-brand-charcoal hover:bg-brand-charcoal/5 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+            {/* 关闭按钮：移动端加大触摸区域并避开刘海 */}
+            <button
+              onClick={onClose}
+              aria-label="关闭"
+              className="absolute top-[calc(0.75rem+env(safe-area-inset-top,0px))] right-3 sm:top-5 sm:right-5 z-20 w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-brand-charcoal/5 text-brand-charcoal/40 hover:text-brand-charcoal hover:bg-brand-charcoal/10 transition-colors"
+            >
+              <X size={16} strokeWidth={2.5} />
+            </button>
 
-            {/* FAQ 列表（可滚动） */}
-            <div className="overflow-y-auto overscroll-contain px-6 md:px-8 py-2 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))]">
+            {/* 可滚动内容区：移动端适配上下安全区 */}
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain no-scrollbar px-6 md:px-8 pt-[calc(3.5rem+env(safe-area-inset-top,0px))] sm:pt-10 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] sm:pb-8">
+              <h2
+                id="faq-modal-title"
+                className="text-2xl font-serif font-light text-brand-charcoal text-center tracking-[0.08em] mb-8"
+              >
+                常见问题
+              </h2>
+
+              {/* FAQ 手风琴列表 */}
               <div className="divide-y divide-brand-charcoal/[0.08]">
                 {faqs.map((faq, i) => (
                   <details key={i} className="group py-4 md:py-5 cursor-pointer">
