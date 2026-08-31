@@ -40,8 +40,6 @@ import { SharePoster } from "@/components/advisor/poster/SharePoster";
 import { toBlob } from "html-to-image";
 import { toDataURL } from "qrcode";
 import ResultCards from "@/components/advisor/ResultCards";
-import AdvisorConsultCard from "@/components/advisor/AdvisorConsultCard";
-import { buildAdvisorReportText, ADVISOR_WECOM_LINK } from "@/lib/advisor-report-text";
 
 // Import the new CSS Module
 import styles from "./result.module.css";
@@ -293,11 +291,6 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
 
     // IP 匹配所需数据
     const [ipBudget, setIpBudget] = useState<string | undefined>(undefined);
-    // 完整问卷答案：用于生成给护肤顾问的报告摘要（含过敏史/孕期/预算等档案字段）。
-    // 历史报告页（initialData.answers 来自 DB）优先，避免与 localStorage 里最新一次测肤串数据
-    const [questionnaireAnswers, setQuestionnaireAnswers] = useState<Record<string, unknown> | null>(
-        initialData?.answers ?? null
-    );
     const [ipSkincareFrequency, setIpSkincareFrequency] = useState<string | undefined>(undefined);
 
     // UI State
@@ -333,43 +326,6 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
         },
         [faceAnalysis?.overallScore, result?.dataSource]
     );
-
-    // 给护肤顾问的报告摘要（只含用户问卷主动填写的信息，供一键复制粘贴）
-    const advisorReportText = useMemo(() => {
-        if (!result) return "";
-        return buildAdvisorReportText({
-            result,
-            faceAnalysis,
-            gender: socialGender,
-            nickname: userNickname,
-            answers: questionnaireAnswers,
-        });
-    }, [result, faceAnalysis, socialGender, userNickname, questionnaireAnswers]);
-
-    // 带 scene_param 的顾问客服链接：进入会话事件会把 scene_param 原样返回，
-    // 客服后端据此自动拉取报告写入档案。失败时回退静态链接（复制粘贴流程兜底）。
-    const [advisorLink, setAdvisorLink] = useState<string>(ADVISOR_WECOM_LINK);
-
-    useEffect(() => {
-        if (!sessionId) {
-            setAdvisorLink(ADVISOR_WECOM_LINK);
-            return;
-        }
-        let cancelled = false;
-        fetch(`/api/advisor/kf-link?sessionId=${encodeURIComponent(sessionId)}`, {
-            cache: "no-store",
-        })
-            .then((res) => res.json())
-            .then((data) => {
-                if (!cancelled && data?.url) setAdvisorLink(data.url);
-            })
-            .catch(() => {
-                // 保持静态链接兜底
-            });
-        return () => {
-            cancelled = true;
-        };
-    }, [sessionId]);
 
     const isGenderMismatch = useMemo(() => {
         if (!faceAnalysis || !socialGender) return false;
@@ -540,8 +496,6 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                 if (answersStr) {
                     try {
                         const answers = JSON.parse(answersStr);
-                        // 历史报告页已有 DB 下发的该次答案，不用 localStorage（可能是最新一次测肤的）覆盖
-                        if (!initialData?.answers) setQuestionnaireAnswers(answers);
                         if (answers.budget) setIpBudget(answers.budget);
                         if (answers.skincareFrequency) setIpSkincareFrequency(answers.skincareFrequency);
                     } catch { /* ignore parse errors */ }
@@ -1563,14 +1517,6 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                     {/* Global Footer */}
                     <footer className="w-full bg-transparent mt-0 pb-12">
                         <div className="max-w-[900px] mx-auto px-6 lg:px-10">
-                            {/* 咨询护肤顾问：三步引导 + 一键复制报告摘要 + 直达微信客服 */}
-                            <AdvisorConsultCard
-                                reportText={advisorReportText}
-                                advisorLink={advisorLink}
-                                onCopied={() => trackResultShare("link")}
-                                onOpenAdvisor={() => trackResultShare("wechat")}
-                            />
-
                             {/* Secondary actions */}
                             <div className="flex flex-col items-center justify-center gap-2.5 mt-10 mb-10">
                                 <div className="flex flex-row flex-wrap justify-center gap-3">
