@@ -348,6 +348,11 @@ export default function DiaryClient() {
                 <h2 className="text-base md:text-lg font-semibold flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-brand-charcoal/60" strokeWidth={1.5} />
                   测肤趋势
+                  {!user && (
+                    <span className="text-[11px] font-light px-2 py-0.5 rounded-full border border-brand-charcoal/15 text-brand-charcoal/45 tracking-[0.1em]">
+                      示例数据
+                    </span>
+                  )}
                 </h2>
                 {user && (
                   <button
@@ -380,9 +385,34 @@ export default function DiaryClient() {
               )}
             </section>
 
-            {/* 未登录引导卡：位于趋势与时间线之间（渐隐交界处） */}
+            {/* 历程时间线（未登录：模拟数据，向下渐隐"试读"） */}
+            <section
+              className={
+                !user
+                  ? "mb-8 pointer-events-none select-none max-h-[360px] overflow-hidden [mask-image:linear-gradient(to_bottom,black_0%,black_25%,transparent_80%)]"
+                  : "mb-8"
+              }
+              aria-hidden={!user || undefined}
+            >
+              <h2 className="text-base md:text-lg font-semibold mb-5 flex items-center gap-2">
+                <NotebookPen className="w-4 h-4 text-brand-charcoal/60" strokeWidth={1.5} />
+                护肤历程
+                {!user && (
+                  <span className="text-[11px] font-light px-2 py-0.5 rounded-full border border-brand-charcoal/15 text-brand-charcoal/45 tracking-[0.1em]">
+                    示例数据
+                  </span>
+                )}
+              </h2>
+              <DiaryTimeline
+                entries={user ? entries : mockEntries}
+                tests={user ? tests : mockTests}
+                loading={user ? !entriesLoaded || !testsLoaded : false}
+              />
+            </section>
+
+            {/* 未登录引导卡：沉底（不重叠），位于渐隐时间线之后 */}
             {!user && (
-              <div className="relative z-10 rounded-3xl border border-brand-charcoal/[0.08] bg-white/90 backdrop-blur-md shadow-[0_24px_48px_rgba(0,38,62,0.12)] p-8 md:p-10 text-center max-w-sm mx-auto mb-8">
+              <div className="rounded-3xl border border-brand-charcoal/[0.08] bg-white/90 backdrop-blur-md shadow-[0_24px_48px_rgba(0,38,62,0.12)] p-8 md:p-10 text-center max-w-sm mx-auto mb-8">
                 <p className="text-[15px] text-brand-charcoal mb-2">登录后查看你的护肤档案</p>
                 <p className="text-[13px] text-brand-charcoal/60 font-light mb-6">
                   每次测肤后自动记录，趋势与历程都在这里
@@ -404,26 +434,6 @@ export default function DiaryClient() {
                 </div>
               </div>
             )}
-
-            {/* 历程时间线（未登录：模拟数据，向下渐隐"试读"） */}
-            <section
-              className={
-                !user
-                  ? "mb-8 pointer-events-none select-none max-h-[360px] overflow-hidden [mask-image:linear-gradient(to_bottom,black_0%,black_25%,transparent_80%)]"
-                  : "mb-8"
-              }
-              aria-hidden={!user || undefined}
-            >
-              <h2 className="text-base md:text-lg font-semibold mb-5 flex items-center gap-2">
-                <NotebookPen className="w-4 h-4 text-brand-charcoal/60" strokeWidth={1.5} />
-                护肤历程
-              </h2>
-              <DiaryTimeline
-                entries={user ? entries : mockEntries}
-                tests={user ? tests : mockTests}
-                loading={user ? !entriesLoaded || !testsLoaded : false}
-              />
-            </section>
           </>
         )}
       </div>
