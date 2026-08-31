@@ -7,6 +7,7 @@ import { withDefaultOgImage } from "@/lib/metadata";
 import { KineticBackground } from "@/components/website/KineticBackground";
 import { HidePageScrollbar } from "@/components/website/HidePageScrollbar";
 import { SkinTypesClient } from "@/components/website/SkinTypesClient";
+import { GiftLink } from "@/components/website/GiftLink";
 import { BreadcrumbSchema } from "@/components/website/StructuredData";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://nihplod.cn";
@@ -64,14 +65,13 @@ export default function ResultIndexPage() {
             <span>了解我的肤质类型</span>
             <ArrowRight className="w-4 h-4 transition-transform duration-500 group-hover:translate-x-1.5" />
           </Link>
-          <Link
-            href="/?gift=1"
-            className="flex items-center justify-center gap-1.5 mt-5 text-[13px] sm:text-[14px] text-brand-charcoal/75 tracking-[0.12em] font-light opacity-0 animate-fade-in-up hover:text-brand-charcoal focus-visible:outline-none focus-visible:text-brand-charcoal transition-colors duration-300"
+          <GiftLink
+            className="flex items-center justify-center gap-1.5 mt-5 text-[13px] sm:text-[14px] text-brand-charcoal/75 tracking-[0.12em] font-light opacity-0 animate-fade-in-up hover:text-brand-charcoal focus-visible:outline-none focus-visible:text-brand-charcoal transition-colors duration-300 mx-auto cursor-pointer"
             style={{ animationDelay: "0.3s", animationFillMode: "forwards" }}
           >
             参与「肌智派」活动，抽奖赢好礼
             <Gift className="w-3.5 h-3.5" />
-          </Link>
+          </GiftLink>
 
         </div>
       </section>
@@ -84,10 +84,7 @@ export default function ResultIndexPage() {
       {/* 底部 CTA - 送好礼 */}
       <section className="py-14 md:py-20 px-6 md:px-12 lg:px-20">
         <div className="max-w-5xl mx-auto">
-          <Link
-            href="/?gift=1"
-            className="group relative block p-5 md:p-12 overflow-hidden [mask-image:radial-gradient(ellipse_at_center,black_50%,transparent_85%)]"
-          >
+          <GiftLink className="group relative block w-full p-5 md:p-12 overflow-hidden [mask-image:radial-gradient(ellipse_at_center,black_50%,transparent_85%)] cursor-pointer text-left">
             {/* 右侧背景水印 */}
             <Image
               src="/images/watermark.png"
@@ -119,7 +116,7 @@ export default function ResultIndexPage() {
                 </span>
               </div>
             </div>
-          </Link>
+          </GiftLink>
         </div>
       </section>
     </div>

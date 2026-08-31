@@ -187,6 +187,21 @@ export default function DiaryClient() {
     };
   }, [user]);
 
+  // 未登录展示的模拟数据（模糊遮罩下仅作版式示意，非真实数据）
+  const dayStr = (n: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() - n);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  };
+  const mockTrends: TrendsData = { dates: [dayStr(6), dayStr(4), dayStr(1)], scores: [76, 82, 80] };
+  const mockEntries: DiaryEntry[] = [
+    { id: "mock-1", date: `${dayStr(1)}T00:00:00.000Z`, skinState: "good", tags: [], note: "AI 测肤 · 综合评分 82 分 · 混合肌" },
+    { id: "mock-2", date: `${dayStr(3)}T00:00:00.000Z`, skinState: "normal", tags: [], note: "AI 测肤 · 综合评分 74 分 · 混合肌" },
+  ];
+  const mockTests: HistorySession[] = [
+    { sessionId: "mock", completedAt: `${dayStr(1)}T10:00:00.000Z`, analysisResult: { faceAnalysis: { overallScore: 82 } } },
+  ];
+
   return (
     <LazyMotion features={domAnimation}>
     <div className="min-h-dvh text-[#1A1A1A] pb-dock">
@@ -207,23 +222,13 @@ export default function DiaryClient() {
           <div className="py-24 flex justify-center">
             <Loader2 className="w-6 h-6 text-brand-charcoal/40 animate-spin" />
           </div>
-        ) : !user ? (
-          /* 未登录引导卡 */
-          <div className="rounded-3xl border border-brand-charcoal/[0.08] bg-gradient-to-br from-white to-[#FBF7EE] shadow-[0_8px_24px_rgba(0,38,62,0.06)] p-8 md:p-10 text-center">
-            <p className="text-[15px] text-brand-charcoal mb-2">登录后查看你的护肤档案</p>
-            <p className="text-[13px] text-brand-charcoal/60 font-light mb-6">
-              测肤趋势与护肤历程都将在登录后开启
-            </p>
-            <button
-              onClick={() => openAuthModal("login")}
-              className="inline-flex items-center gap-2 h-10 px-6 rounded-full bg-brand-charcoal text-white text-[13px] tracking-[0.08em] font-light transition-opacity hover:opacity-90 cursor-pointer"
-            >
-              <LogIn className="w-4 h-4" />
-              登录 / 注册
-            </button>
-          </div>
         ) : (
-          <>
+          <div className="relative">
+            {/* 未登录：同样的内容区渲染模拟数据，整体模糊 + 引导登录浮层 */}
+            <div
+              className={!user ? "blur-md pointer-events-none select-none" : undefined}
+              aria-hidden={!user || undefined}
+            >
             {/* 测肤趋势区 */}
             <section className="rounded-3xl border border-brand-charcoal/[0.08] bg-gradient-to-br from-white to-[#FBF7EE] shadow-[0_8px_24px_rgba(0,38,62,0.06)] p-6 md:p-8 mb-8">
               <div className="flex items-center justify-between mb-5">
@@ -240,7 +245,9 @@ export default function DiaryClient() {
                 </button>
               </div>
 
-              {!trendsLoaded || !entriesLoaded ? (
+              {!user ? (
+                <TrendChart trends={mockTrends} />
+              ) : !trendsLoaded || !entriesLoaded ? (
                 <div className="h-32 flex items-center justify-center">
                   <Loader2 className="w-5 h-5 text-brand-charcoal/30 animate-spin" />
                 </div>
@@ -263,12 +270,32 @@ export default function DiaryClient() {
                 护肤历程
               </h2>
               <DiaryTimeline
-                entries={entries}
-                tests={tests}
-                loading={!entriesLoaded || !testsLoaded}
+                entries={user ? entries : mockEntries}
+                tests={user ? tests : mockTests}
+                loading={user ? !entriesLoaded || !testsLoaded : false}
               />
             </section>
-          </>
+            </div>
+
+            {/* 未登录引导浮层 */}
+            {!user && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center px-6">
+                <div className="rounded-3xl border border-brand-charcoal/[0.08] bg-white/90 backdrop-blur-md shadow-[0_24px_48px_rgba(0,38,62,0.12)] p-8 md:p-10 text-center max-w-sm">
+                  <p className="text-[15px] text-brand-charcoal mb-2">登录后查看你的护肤档案</p>
+                  <p className="text-[13px] text-brand-charcoal/60 font-light mb-6">
+                    测肤趋势与护肤历程都将在登录后开启
+                  </p>
+                  <button
+                    onClick={() => openAuthModal("login")}
+                    className="inline-flex items-center gap-2 h-10 px-6 rounded-full bg-brand-charcoal text-white text-[13px] tracking-[0.08em] font-light transition-opacity hover:opacity-90 cursor-pointer"
+                  >
+                    <LogIn className="w-4 h-4" />
+                    登录 / 注册
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </div>
 

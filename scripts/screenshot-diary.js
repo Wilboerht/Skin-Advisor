@@ -20,7 +20,7 @@ const { chromium } = require("playwright-core");
     });
     await page.goto("http://localhost:3000/diary", { waitUntil: "domcontentloaded", timeout: 60000 });
     await page.waitForSelector("text=护肤档案", { timeout: 60000 });
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(8000);
     await page.screenshot({ path: `screenshots-check/${s.name}.png` });
     await page.close();
   }

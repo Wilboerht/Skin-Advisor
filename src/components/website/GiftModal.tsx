@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { m, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence, LazyMotion, domAnimation } from "framer-motion";
 import { ArrowRight, X } from "lucide-react";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
@@ -34,6 +34,7 @@ export function GiftModal({ isOpen, onClose, onStartTest }: GiftModalProps) {
   ];
 
   return (
+    <LazyMotion features={domAnimation}>
     <AnimatePresence>
       {isOpen && (
         <div
@@ -145,5 +146,6 @@ export function GiftModal({ isOpen, onClose, onStartTest }: GiftModalProps) {
         </div>
       )}
     </AnimatePresence>
+    </LazyMotion>
   );
 }
