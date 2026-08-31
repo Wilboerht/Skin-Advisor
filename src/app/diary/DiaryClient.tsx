@@ -210,9 +210,9 @@ function TrendChart({ trends }: { trends: TrendsData }) {
               />
               {showScore && (
                 <text
-                  x={p.x}
+                  x={i === 0 ? p.x + 7 : p.x}
                   y={p.y - 9}
-                  textAnchor="middle"
+                  textAnchor={i === 0 ? "start" : "middle"}
                   fontSize="10"
                   fontWeight={isLatest ? 600 : 400}
                   fill="#00263E"
