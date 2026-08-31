@@ -14,6 +14,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { TestHistoryList, type HistorySession } from "@/components/website/TestHistoryList";
 import { KineticBackground } from "@/components/website/KineticBackground";
+import { HidePageScrollbar } from "@/components/website/HidePageScrollbar";
 import { DiaryTimeline, type DiaryEntry } from "./DiaryTimeline";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
@@ -207,6 +208,8 @@ export default function DiaryClient() {
     <div className="min-h-dvh text-[#1A1A1A] pb-dock">
       {/* Kinetic 背景：与首页一致的米白底 + 水印 */}
       <KineticBackground />
+      {/* 隐藏页面滚动条（保留滚动） */}
+      <HidePageScrollbar />
       <div className="relative z-20 max-w-3xl mx-auto px-6 pt-12 md:pt-16">
         {/* 页面标题 */}
         <header className="mb-8 md:mb-10">
