@@ -68,7 +68,7 @@ export function BottomDock() {
   };
 
   const tabClass = (active: boolean) =>
-    `relative flex flex-col items-center justify-center gap-1 flex-1 min-w-[48px] min-h-[48px] rounded-xl text-[10px] tracking-[0.05em] transition-colors duration-300 motion-reduce:transition-none focus-visible:outline-none focus-visible:bg-brand-charcoal/5 ${
+    `relative flex flex-col items-center justify-center gap-1 flex-1 min-w-[48px] min-h-[48px] rounded-xl text-[11px] tracking-[0.05em] transition-colors duration-300 motion-reduce:transition-none focus-visible:outline-none focus-visible:bg-brand-charcoal/5 ${
       active
         ? "text-brand-charcoal"
         : "text-brand-charcoal/50 hover:text-brand-charcoal/80 active:text-brand-charcoal"
