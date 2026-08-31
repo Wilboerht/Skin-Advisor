@@ -188,6 +188,13 @@
     padding-bottom: calc(var(--dock-height) + env(safe-area-inset-bottom, 0px) + 16px);
   }
 
+  /* 桌面端 Dock 悬浮上移 32px（md:mb-8），留白同步加大 */
+  @media (min-width: 768px) {
+    .pb-dock {
+      padding-bottom: calc(var(--dock-height) + 32px);
+    }
+  }
+
   html {
     scroll-behavior: smooth;
     background-color: #FDFBF7;

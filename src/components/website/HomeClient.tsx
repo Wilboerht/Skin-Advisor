@@ -531,11 +531,16 @@ export default function HomeClient() {
           </section>
           </div>
 
-          {/* 页脚（沉底，pb-dock 之上） */}
-          <div className="mt-auto pt-6">
+          {/* 页脚（移动端：沉底于 Dock 上方；桌面端见下方固定左下角版本） */}
+          <div className="mt-auto pt-6 px-6 md:hidden">
             <HomepageFooter />
           </div>
         </m.div>
+
+      {/* 桌面端页脚：固定屏幕左下角，位于悬浮胶囊 Dock 之下（z 低于 Dock） */}
+      <div className="hidden md:block fixed bottom-2 left-4 z-10 max-w-[calc(100vw-2rem)]">
+        <HomepageFooter />
+      </div>
 
       {/* "测肤有礼"入口为主视觉卡下方的描边胶囊（见上方次级入口区），不再使用右下角悬浮卡片 */}
 
