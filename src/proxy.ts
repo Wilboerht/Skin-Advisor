@@ -55,6 +55,7 @@ const PUBLIC_PATHS = [
       "/api/oss/sign",           // 游客上传签名（扫脸后保存图片）
       "/api/local-upload",       // 游客本地上传端点
       "/api/products",           // 公开产品列表
+      "/api/public/test-count",  // 累计测肤人数（首页社会证明）
       "/api/wechat/webhook",     // 微信回调（无需用户认证）
       "/api/admin/:path*",
     "/admin/:path*",

@@ -4,10 +4,11 @@ import { useEffect, useState, useCallback, Suspense, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { LazyMotion, domAnimation, AnimatePresence, m, useReducedMotion } from "framer-motion";
 import Image from "next/image";
-import { ArrowRight, Loader2, X, Clock, ScanFace, FileText, Gift, CircleHelp } from "lucide-react";
+import { ArrowRight, ChevronRight, Loader2, X, ScanFace, Sparkles, FileText, Gift, CircleHelp } from "lucide-react";
 
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
+import Link from "next/link";
 
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { getGuestIdentity, type GuestIdentity } from "@/lib/guest-identity";
@@ -16,6 +17,7 @@ import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useNavPush } from "@/hooks/use-nav-push";
+import type { HistorySession } from "@/components/website/TestHistoryList";
 import dynamic from "next/dynamic";
 const OnboardingFlowModal = dynamic(() => import("@/components/advisor/OnboardingFlowModal").then((mod) => mod.OnboardingFlowModal), { ssr: false });
 import { HomepageFooter } from "@/components/website/HomepageFooter";
@@ -96,6 +98,42 @@ export default function HomeClient() {
   useEffect(() => {
     initSession();
   }, [initSession]);
+
+  // 社会证明：累计测肤人数（< 100 时不展示数字）
+  const [testCount, setTestCount] = useState<number | null>(null);
+  // 老用户快捷入口：最近一次已完成测肤（含与上次的评分差）
+  const [latestReport, setLatestReport] = useState<{
+    sessionId: string;
+    score: number | null;
+    delta: number | null;
+  } | null>(null);
+
+  // 社会证明取数（公开接口，失败静默降级为只显示隐私半句）
+  useEffect(() => {
+    fetch("/api/public/test-count")
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
+      .then((data) => setTestCount(typeof data.count === "number" ? data.count : null))
+      .catch((e) => console.error("Test count fetch error:", e));
+  }, []);
+
+  // 老用户最近报告取数（仅登录后，取最近 2 条算评分差）
+  useEffect(() => {
+    if (!user) return;
+    fetch("/api/advisor/history?page=1&limit=2")
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
+      .then((data) => {
+        const history = (data.history ?? []) as HistorySession[];
+        if (history.length === 0) return;
+        const score = history[0].analysisResult?.faceAnalysis?.overallScore ?? null;
+        const prevScore = history[1]?.analysisResult?.faceAnalysis?.overallScore;
+        setLatestReport({
+          sessionId: history[0].sessionId,
+          score,
+          delta: score != null && prevScore != null ? score - prevScore : null,
+        });
+      })
+      .catch((e) => console.error("Latest report fetch error:", e));
+  }, [user]);
 
   // Capture ref parameter: moved to <RefCapture /> rendered in JSX (useSearchParams needs Suspense boundary)
 
@@ -458,33 +496,36 @@ export default function HomeClient() {
                 </div>
           </section>
 
-          {/* 主视觉卡：整卡可点击，触发 handleStart 流程（隐私同意 → 问卷） */}
+          {/* 主视觉卡：浅色设计，藏青只留给标题与按钮；整卡可点击，触发 handleStart 流程（隐私同意 → 问卷） */}
           <section className="w-full px-6 md:px-12 mt-6 md:mt-8">
             <button
               onClick={handleStart}
               disabled={isLoading || isNavigating}
-              className="group relative block w-full max-w-4xl mx-auto text-left bg-brand-charcoal rounded-3xl overflow-hidden cursor-pointer transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_24px_48px_rgba(0,38,62,0.25)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/40 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+              className="group relative block w-full max-w-4xl mx-auto text-left bg-white border border-brand-charcoal/[0.08] rounded-3xl overflow-hidden cursor-pointer transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_24px_48px_rgba(0,38,62,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/40 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed motion-reduce:transition-none motion-reduce:hover:translate-y-0"
             >
               <div className="flex flex-col md:flex-row md:items-center">
                 <div className="flex-1 p-7 md:p-12">
-                  <h2 className="text-xl md:text-2xl font-serif font-light text-white tracking-[0.02em] mb-4 md:mb-5">
+                  <h2 className="text-xl md:text-2xl font-serif font-light text-brand-charcoal tracking-[0.02em] mb-4 md:mb-5">
                     开始完整肌肤检测
                   </h2>
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-white/60 text-[13px] md:text-sm font-light tracking-[0.06em] mb-7 md:mb-9">
-                    <span className="flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5" strokeWidth={1.5} />
-                      2-5 分钟完成
-                    </span>
+                  {/* 三步流程预告：降低"点进去要干嘛"的不确定感 */}
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-2 text-brand-charcoal/60 text-[13px] md:text-sm font-light tracking-[0.06em] mb-7 md:mb-9">
                     <span className="flex items-center gap-1.5">
                       <ScanFace className="w-3.5 h-3.5" strokeWidth={1.5} />
-                      10 维精准检测
+                      问卷及面部扫描
                     </span>
+                    <ChevronRight className="w-3.5 h-3.5 text-brand-charcoal/30" strokeWidth={1.5} />
+                    <span className="flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5" strokeWidth={1.5} />
+                      AI 分析
+                    </span>
+                    <ChevronRight className="w-3.5 h-3.5 text-brand-charcoal/30" strokeWidth={1.5} />
                     <span className="flex items-center gap-1.5">
                       <FileText className="w-3.5 h-3.5" strokeWidth={1.5} />
-                      1 份专属报告
+                      专属报告
                     </span>
                   </div>
-                  <span className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full border border-white/50 text-white text-[13px] tracking-[0.12em] font-light transition-colors duration-300 group-hover:bg-white/10 group-hover:border-white/80">
+                  <span className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-brand-charcoal text-white text-[13px] tracking-[0.12em] font-light transition-opacity duration-300 group-hover:opacity-90">
                     {isLoading ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -510,6 +551,31 @@ export default function HomeClient() {
                 </div>
               </div>
             </button>
+
+            {/* 社会证明（≥100 人才显示） */}
+            {testCount != null && testCount >= 100 && (
+              <p className="mt-4 text-[12px] text-brand-charcoal/45 font-light tracking-[0.05em] text-center">
+                已有 {testCount.toLocaleString()} 人完成测肤
+              </p>
+            )}
+
+            {/* 老用户快捷入口：最近报告直达（新用户不渲染） */}
+            {latestReport && (
+              <Link
+                href={`/reports/${latestReport.sessionId}`}
+                className="mt-3 inline-flex items-center gap-1.5 min-h-[36px] text-[13px] text-brand-charcoal/70 hover:text-brand-charcoal transition-colors font-light tracking-[0.05em]"
+              >
+                <span>
+                  最近测肤{latestReport.score != null && <> <span className="font-medium text-brand-charcoal">{latestReport.score}</span> 分</>}
+                  {latestReport.delta != null && latestReport.delta !== 0 && (
+                    <span className={latestReport.delta > 0 ? "text-[#4C8055]" : "text-[#D44C47]"}>
+                      ，较上次 {latestReport.delta > 0 ? `+${latestReport.delta}` : latestReport.delta}
+                    </span>
+                  )}
+                </span>
+                <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.5} />
+              </Link>
+            )}
           </section>
 
           {/* 次级入口：测肤有礼活动 + 常见问题（描边胶囊，同一视觉层级） */}
