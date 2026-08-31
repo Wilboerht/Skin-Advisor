@@ -25,7 +25,7 @@ export function SkinTypesClient({ types }: SkinTypesClientProps) {
             key={type.route}
             type="button"
             onClick={() => setSelected(type)}
-            className="group relative rounded-2xl border border-brand-charcoal/[0.08] bg-[#FAF9F6] p-4 md:p-9 text-left cursor-pointer transition-all duration-500 hover:shadow-[0_16px_32px_rgba(0,38,62,0.08)] hover:-translate-y-1"
+            className="group relative rounded-2xl border border-brand-charcoal/[0.08] bg-gradient-to-br from-white to-[#FBF7EE] shadow-[0_8px_24px_rgba(0,38,62,0.06)] p-4 md:p-9 text-left cursor-pointer transition-all duration-500 hover:shadow-[0_24px_48px_rgba(0,38,62,0.12)] hover:-translate-y-1 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
           >
             <Image
               src={`/images/character/${type.ipKey}/${type.ipKey}_female.webp`}
