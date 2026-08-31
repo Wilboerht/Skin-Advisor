@@ -513,8 +513,8 @@ export default function HomeClient() {
                       />
                     </m.div>
 
-                    {/* Title */}
-                    <h1 className="text-[40px] sm:text-[48px] md:text-[58px] font-serif text-brand-charcoal font-light leading-[1.1] tracking-[0.02em] mb-6 md:mb-8">
+                    {/* Title（间距由卡片区的 mt 统一控制，这里不再设 mb，避免 flex 下双倍叠加） */}
+                    <h1 className="text-[40px] sm:text-[48px] md:text-[58px] font-serif text-brand-charcoal font-light leading-[1.1] tracking-[0.02em]">
                       在线 AI 测肤
                     </h1>
 
@@ -524,19 +524,19 @@ export default function HomeClient() {
           </section>
 
           {/* 主视觉卡：浅色设计，藏青只留给标题与按钮；整卡可点击，触发 handleStart 流程（隐私同意 → 问卷） */}
-          <section className="w-full px-6 md:px-12 mt-6 md:mt-8">
+          <section className="w-full px-6 md:px-12 mt-8 md:mt-10">
             <button
               onClick={handleStart}
               disabled={isLoading || isNavigating}
-              className="group relative block w-full max-w-3xl mx-auto text-left bg-gradient-to-br from-white to-[#FBF7EE] border border-brand-charcoal/[0.08] rounded-3xl overflow-hidden cursor-pointer shadow-[0_8px_24px_rgba(0,38,62,0.06)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_24px_48px_rgba(0,38,62,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/40 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+              className="group relative block w-full max-w-3xl mx-auto text-left bg-gradient-to-br from-white to-[#FBF7EE] border border-brand-charcoal/[0.08] rounded-3xl cursor-pointer shadow-[0_8px_24px_rgba(0,38,62,0.06)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_24px_48px_rgba(0,38,62,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-charcoal/40 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed motion-reduce:transition-none motion-reduce:hover:translate-y-0"
             >
               <div className="flex flex-col md:flex-row md:items-center">
                 <div className="flex-1 p-6 md:p-10">
-                  <h2 className="text-xl md:text-2xl font-serif font-light text-brand-charcoal tracking-[0.02em] mb-4 md:mb-5">
+                  <h2 className="text-xl md:text-2xl font-serif font-light text-brand-charcoal tracking-[0.02em] mb-4">
                     开始完整肌肤检测
                   </h2>
                   {/* 三步流程预告：降低"点进去要干嘛"的不确定感（单行不折行） */}
-                  <div className="flex items-center gap-x-2 whitespace-nowrap text-brand-charcoal/60 text-[12px] md:text-sm font-light tracking-[0.06em] mb-7 md:mb-9">
+                  <div className="flex items-center gap-x-2 whitespace-nowrap text-brand-charcoal/60 text-[12px] md:text-sm font-light tracking-[0.06em] mb-6 md:mb-8">
                     <span className="flex items-center gap-1.5">
                       <ScanFace className="w-3.5 h-3.5" strokeWidth={1.5} />
                       问卷及面部扫描
@@ -566,13 +566,14 @@ export default function HomeClient() {
                     )}
                   </span>
                 </div>
-                <div className="shrink-0 self-end md:self-center -mt-4 md:mt-0 md:pr-10 [@media(max-height:700px)]:hidden">
+                {/* 礼盒图：底部与卡片底边对齐，探出卡片顶部与右侧，呼应"测肤有礼"活动 */}
+                <div className="shrink-0 self-end -mt-6 md:-mt-14 -mr-4 md:-mr-14 [@media(max-height:700px)]:hidden">
                   <Image
-                    src="/images/character/guardian/guardian_female.webp"
-                    alt="肌智派 IP 形象"
-                    width={180}
-                    height={280}
-                    className="w-32 md:w-44 h-auto object-contain mx-auto"
+                    src="/images/gift-box.webp"
+                    alt="测肤有礼礼盒"
+                    width={960}
+                    height={551}
+                    className="w-64 md:w-[420px] h-auto object-contain mx-auto drop-shadow-[0_10px_20px_rgba(0,38,62,0.18)]"
                     priority
                   />
                 </div>
