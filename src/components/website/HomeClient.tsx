@@ -8,8 +8,6 @@ import { ArrowRight, Loader2, X, Clock, ScanFace, FileText, Gift, CircleHelp } f
 
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
-import Link from "next/link";
-import { skinTypes, routeOrder } from "@/lib/result-content";
 
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { getGuestIdentity, type GuestIdentity } from "@/lib/guest-identity";
@@ -23,12 +21,6 @@ const OnboardingFlowModal = dynamic(() => import("@/components/advisor/Onboardin
 import { HomepageFooter } from "@/components/website/HomepageFooter";
 const GiftModal = dynamic(() => import("@/components/website/GiftModal").then((mod) => mod.GiftModal), { ssr: false });
 const FaqModal = dynamic(() => import("@/components/website/FaqModal").then((mod) => mod.FaqModal), { ssr: false });
-
-// 派系墙数据：与 /skin-types 页同一数据源（skinTypes + routeOrder）
-const orderedSkinTypes = routeOrder
-  .map((route) => skinTypes.find((t) => t.route === route))
-  .filter((t): t is NonNullable<typeof t> => Boolean(t));
-
 
 // Safe storage helper to prevent QuotaExceededError or Privacy Mode crashes
 const safeStorage = {
@@ -107,7 +99,7 @@ export default function HomeClient() {
 
   // Capture ref parameter: moved to <RefCapture /> rendered in JSX (useSearchParams needs Suspense boundary)
 
-  // 首页改版后为正常文档流（内容超过一屏），不再整页锁定 body 滚动；
+  // 首页为一屏布局（h-dvh 不滚动），无需整页锁定 body 滚动；
   // 限额弹窗的滚动锁在其 state 声明后单独处理
 
   // Nickname state
@@ -390,22 +382,58 @@ export default function HomeClient() {
         )}
       </AnimatePresence>
 
+      {/* 首页 Kinetic 背景：米白底 + 点阵 + N 水印（与 nihplod.cn 主站一致，仅首页渲染） */}
+      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none" aria-hidden="true">
+        <div className="kinetic-bg-base" />
+        <div className="kinetic-dot-pattern" />
+        <div className="kinetic-watermark">
+          {/* PC 端水印（≥1025px 断点切换见 globals.css） */}
+          <div
+            className="kinetic-watermark-pc relative"
+            style={{ filter: "brightness(0) invert(0.95)", opacity: 0.22 }}
+          >
+            <Image
+              src="/images/N-web.svg"
+              alt=""
+              width={2800}
+              height={800}
+              style={{ objectFit: "contain" }}
+              unoptimized
+            />
+          </div>
+          {/* 移动端水印 - 竖版，深色水印在浅色背景上形成品牌纹理 */}
+          <div
+            className="kinetic-watermark-mobile absolute inset-0"
+            style={{ filter: "brightness(0)" }}
+          >
+            <Image
+              src="/images/watermark-mobile.webp"
+              alt=""
+              fill
+              style={{ objectFit: "cover" }}
+            />
+          </div>
+        </div>
+      </div>
+
       {/* 顶部导航已移除，由根 layout 的 BottomDock 统一承担导航 */}
 
-      {/* 内容区域 - 正常文档流（改版后为多区块长页面，不再固定全屏）；pb-dock 为底部 Dock 留白 */}
+      {/* 内容区域 - 一屏布局（h-dvh 不滚动）；pb-dock 为底部 Dock 留白 */}
       <m.div
-        className="relative z-20 flex flex-col min-h-dvh bg-[#FDFBF7] pb-dock"
+        className="relative z-20 flex flex-col h-dvh overflow-hidden pb-dock"
         initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.98 }}
         animate={isHomeExiting ? (prefersReducedMotion ? { opacity: 0 } : { y: "-100%" }) : { opacity: 1, scale: 1, y: 0 }}
         transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.7, ease: [0.65, 0, 0.35, 1] }}
       >
+          {/* 首屏主内容组：垂直居中，保证各端一屏放下 */}
+          <div className="flex-1 flex flex-col items-center justify-center w-full">
           {/* 品牌区（layout 已提供唯一 <main> 地标，这里用 section 避免嵌套 main） */}
-          <section className="relative z-10 flex flex-col items-center text-center px-6 pt-14 md:pt-20">
+          <section className="relative z-10 flex flex-col items-center text-center px-6">
                 <div className="z-10 flex flex-col items-center text-center max-w-3xl mx-auto">
                   <div className="opacity-0 animate-fade-in-up flex flex-col items-center">
                     {/* 印章徽标（标题上方居中） */}
                     <m.div
-                      className="mb-8 md:mb-12 inline-flex items-center"
+                      className="mb-6 md:mb-8 inline-flex items-center"
                       initial={{ opacity: 0, scale: 1.5, y: -10, filter: "blur(2px)" }}
                       animate={{ opacity: [0, 1, 1], scale: [1.5, 0.97, 1], y: [-10, 0, 0], filter: ["blur(2px)", "blur(0px)", "blur(0px)"] }}
                       transition={{ delay: 0.5, duration: 0.45, ease: "easeOut", times: [0, 0.55, 1] }}
@@ -421,7 +449,7 @@ export default function HomeClient() {
                     </m.div>
 
                     {/* Title */}
-                    <h1 className="text-[40px] sm:text-[48px] md:text-[58px] font-serif text-brand-charcoal font-light leading-[1.1] tracking-[0.02em] mb-8 md:mb-12">
+                    <h1 className="text-[40px] sm:text-[48px] md:text-[58px] font-serif text-brand-charcoal font-light leading-[1.1] tracking-[0.02em] mb-6 md:mb-8">
                       在线 AI 测肤
                     </h1>
 
@@ -431,7 +459,7 @@ export default function HomeClient() {
           </section>
 
           {/* 主视觉卡：整卡可点击，触发 handleStart 流程（隐私同意 → 问卷） */}
-          <section className="px-6 md:px-12 mt-10 md:mt-14">
+          <section className="w-full px-6 md:px-12 mt-6 md:mt-8">
             <button
               onClick={handleStart}
               disabled={isLoading || isNavigating}
@@ -470,7 +498,7 @@ export default function HomeClient() {
                     )}
                   </span>
                 </div>
-                <div className="shrink-0 self-end md:self-center md:pr-10">
+                <div className="shrink-0 self-end md:self-center md:pr-10 [@media(max-height:700px)]:hidden">
                   <Image
                     src="/images/character/guardian/guardian_female.webp"
                     alt="肌智派 IP 形象"
@@ -485,7 +513,7 @@ export default function HomeClient() {
           </section>
 
           {/* 次级入口：测肤有礼活动 + 常见问题（描边胶囊，同一视觉层级） */}
-          <section className="flex flex-wrap items-center justify-center gap-3 px-6 mt-6 md:mt-8">
+          <section className="flex flex-wrap items-center justify-center gap-3 px-6 mt-4 md:mt-6">
             <button
               onClick={openGiftModal}
               className="group inline-flex items-center gap-1.5 min-h-[44px] px-5 rounded-full border border-brand-charcoal/25 text-brand-charcoal/70 text-[13px] font-light tracking-[0.08em] transition-all duration-300 hover:border-brand-charcoal/60 hover:text-brand-charcoal cursor-pointer touch-manipulation"
@@ -501,42 +529,10 @@ export default function HomeClient() {
               <span>常见问题</span>
             </button>
           </section>
+          </div>
 
-          {/* 派系卡片墙：移动端横向滑动（snap），桌面端 4 列网格 */}
-          <section className="mt-14 md:mt-20">
-            <h2 className="text-center text-lg md:text-2xl font-serif font-light text-brand-charcoal tracking-[0.02em] px-6">
-              八大肌智派，你是哪一派？
-            </h2>
-            <div className="mt-7 md:mt-10 flex gap-4 overflow-x-auto snap-x snap-mandatory px-6 md:grid md:grid-cols-4 md:gap-5 md:max-w-6xl md:mx-auto md:overflow-visible">
-              {orderedSkinTypes.map((type) => (
-                <Link
-                  key={type.route}
-                  href={`/skin-types/${type.route}`}
-                  className="group snap-start shrink-0 w-[68vw] max-w-[260px] md:w-auto md:max-w-none rounded-2xl border border-brand-charcoal/[0.08] bg-[#FAF9F6] p-5 transition-all duration-500 hover:shadow-[0_16px_32px_rgba(0,38,62,0.08)] hover:-translate-y-1 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
-                >
-                  <div className="h-36 md:h-44 mb-3 flex items-end justify-center">
-                    <Image
-                      src={`/images/character/${type.ipKey}/${type.ipKey}_female.webp`}
-                      alt={type.typeName}
-                      width={180}
-                      height={280}
-                      loading="lazy"
-                      className="h-full w-auto object-contain group-hover:scale-105 transition-transform duration-500 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
-                    />
-                  </div>
-                  <h3 className="text-[15px] md:text-base font-serif font-light text-brand-charcoal text-center">
-                    {type.typeName}
-                  </h3>
-                  <p className="mt-1 text-[12px] text-brand-charcoal/60 font-light text-center line-clamp-1">
-                    {type.m1.persona}
-                  </p>
-                </Link>
-              ))}
-            </div>
-          </section>
-
-          {/* 页脚 */}
-          <div className="mt-auto pt-14 md:pt-20">
+          {/* 页脚（沉底，pb-dock 之上） */}
+          <div className="mt-auto pt-6">
             <HomepageFooter />
           </div>
         </m.div>
