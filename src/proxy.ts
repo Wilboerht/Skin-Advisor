@@ -26,7 +26,7 @@ const PUBLIC_PATHS = [
     "/skin-types/:path*",      // 具体肤质类型页
     "/services",               // 顾问服务
     "/faq",                    // FAQ
-    "/diary",                  // 护肤日记（游客可浏览页面，打卡/趋势 API 仍需登录）
+    "/diary",                  // 护肤档案（游客可浏览页面，趋势/历程 API 仍需登录）
     "/privacy",                // 隐私政策
     "/terms",                  // 服务条款
     "/robots.txt",
@@ -55,7 +55,6 @@ const PUBLIC_PATHS = [
       "/api/oss/sign",           // 游客上传签名（扫脸后保存图片）
       "/api/local-upload",       // 游客本地上传端点
       "/api/products",           // 公开产品列表
-      "/api/public/test-count",  // 累计测肤人数（首页社会证明）
       "/api/wechat/webhook",     // 微信回调（无需用户认证）
       "/api/admin/:path*",
     "/admin/:path*",

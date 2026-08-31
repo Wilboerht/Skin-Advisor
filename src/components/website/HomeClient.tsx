@@ -21,6 +21,7 @@ import type { HistorySession } from "@/components/website/TestHistoryList";
 import dynamic from "next/dynamic";
 const OnboardingFlowModal = dynamic(() => import("@/components/advisor/OnboardingFlowModal").then((mod) => mod.OnboardingFlowModal), { ssr: false });
 import { HomepageFooter } from "@/components/website/HomepageFooter";
+import { KineticBackground } from "@/components/website/KineticBackground";
 const GiftModal = dynamic(() => import("@/components/website/GiftModal").then((mod) => mod.GiftModal), { ssr: false });
 const FaqModal = dynamic(() => import("@/components/website/FaqModal").then((mod) => mod.FaqModal), { ssr: false });
 
@@ -99,22 +100,12 @@ export default function HomeClient() {
     initSession();
   }, [initSession]);
 
-  // 社会证明：累计测肤人数（< 100 时不展示数字）
-  const [testCount, setTestCount] = useState<number | null>(null);
   // 老用户快捷入口：最近一次已完成测肤（含与上次的评分差）
   const [latestReport, setLatestReport] = useState<{
     sessionId: string;
     score: number | null;
     delta: number | null;
   } | null>(null);
-
-  // 社会证明取数（公开接口，失败静默降级为不显示该行——非关键增强，不报错惊扰用户）
-  useEffect(() => {
-    fetch("/api/public/test-count")
-      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
-      .then((data) => setTestCount(typeof data.count === "number" ? data.count : null))
-      .catch((e) => console.warn("Test count fetch failed (该行将隐藏):", e));
-  }, []);
 
   // 老用户最近报告取数（仅登录后，取最近 2 条算评分差）
   useEffect(() => {
@@ -429,39 +420,8 @@ export default function HomeClient() {
         )}
       </AnimatePresence>
 
-      {/* 首页 Kinetic 背景：米白底 + 点阵 + N 水印（与 nihplod.cn 主站一致，仅首页渲染） */}
-      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none" aria-hidden="true">
-        <div className="kinetic-bg-base" />
-        <div className="kinetic-dot-pattern" />
-        <div className="kinetic-watermark">
-          {/* PC 端水印（≥1025px 断点切换见 globals.css） */}
-          <div
-            className="kinetic-watermark-pc relative"
-            style={{ filter: "brightness(0) invert(0.95)", opacity: 0.22 }}
-          >
-            <Image
-              src="/images/N-web.svg"
-              alt=""
-              width={2800}
-              height={800}
-              style={{ objectFit: "contain" }}
-              unoptimized
-            />
-          </div>
-          {/* 移动端水印 - 竖版，深色水印在浅色背景上形成品牌纹理 */}
-          <div
-            className="kinetic-watermark-mobile absolute inset-0"
-            style={{ filter: "brightness(0)" }}
-          >
-            <Image
-              src="/images/watermark-mobile.webp"
-              alt=""
-              fill
-              style={{ objectFit: "cover" }}
-            />
-          </div>
-        </div>
-      </div>
+      {/* 首页 Kinetic 背景：米白底 + 点阵 + N 水印（共享组件，样式类见 globals.css） */}
+      <KineticBackground />
 
       {/* PC 端品牌 Logo：左上角落款，链向品牌主站（移动端不显示，印章徽标已承担品牌识别） */}
       <a
@@ -573,19 +533,12 @@ export default function HomeClient() {
                     alt="测肤有礼礼盒"
                     width={960}
                     height={551}
-                    className="w-64 md:w-[420px] h-auto object-contain mx-auto drop-shadow-[0_10px_20px_rgba(0,38,62,0.18)]"
+                    className="w-64 md:w-[420px] h-auto object-contain mx-auto drop-shadow-[0_8px_16px_rgba(0,38,62,0.10)]"
                     priority
                   />
                 </div>
               </div>
             </button>
-
-            {/* 社会证明（≥100 人才显示） */}
-            {testCount != null && testCount >= 100 && (
-              <p className="mt-4 text-[12px] text-brand-charcoal/45 font-light tracking-[0.05em] text-center">
-                已有 {testCount.toLocaleString()} 人完成测肤
-              </p>
-            )}
 
             {/* 老用户快捷入口：最近报告直达（新用户不渲染） */}
             {latestReport && (
@@ -606,8 +559,8 @@ export default function HomeClient() {
             )}
           </section>
 
-          {/* 次级入口：测肤有礼活动 + 常见问题（描边胶囊，同一视觉层级） */}
-          <section className="flex flex-wrap items-center justify-center gap-3 px-6 mt-4 md:mt-6">
+          {/* 次级入口：测肤有礼活动 + 常见问题（描边胶囊，同一视觉层级；与主卡平级，间距按 8px 节奏） */}
+          <section className="flex flex-wrap items-center justify-center gap-3 px-6 mt-6 md:mt-8">
             <button
               onClick={openGiftModal}
               className="group inline-flex items-center gap-1.5 min-h-[44px] px-5 rounded-full border border-brand-charcoal/25 text-brand-charcoal/70 text-[13px] font-light tracking-[0.08em] transition-all duration-300 hover:border-brand-charcoal/60 hover:text-brand-charcoal cursor-pointer touch-manipulation"

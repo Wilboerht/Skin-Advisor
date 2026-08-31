@@ -13,6 +13,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { TestHistoryList, type HistorySession } from "@/components/website/TestHistoryList";
+import { KineticBackground } from "@/components/website/KineticBackground";
 import { DiaryTimeline, type DiaryEntry } from "./DiaryTimeline";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
@@ -187,12 +188,14 @@ export default function DiaryClient() {
   }, [user]);
 
   return (
-    <div className="min-h-dvh bg-[#FDFBF7] text-[#1A1A1A] pb-dock">
-      <div className="max-w-2xl mx-auto px-6 pt-12 md:pt-16">
+    <div className="min-h-dvh text-[#1A1A1A] pb-dock">
+      {/* Kinetic 背景：与首页一致的米白底 + 水印 */}
+      <KineticBackground />
+      <div className="relative z-20 max-w-2xl mx-auto px-6 pt-12 md:pt-16">
         {/* 页面标题 */}
         <header className="mb-8 md:mb-10">
           <h1 className="text-2xl md:text-3xl font-serif font-light text-brand-charcoal tracking-[0.02em]">
-            护肤日记
+            护肤档案
           </h1>
           <p className="mt-2 text-[13px] md:text-sm text-brand-charcoal/60 font-light tracking-[0.06em]">
             每次测肤后，自动记录肌肤的真实状态
@@ -205,8 +208,8 @@ export default function DiaryClient() {
           </div>
         ) : !user ? (
           /* 未登录引导卡 */
-          <div className="rounded-3xl border border-brand-charcoal/[0.08] bg-white p-8 md:p-10 text-center">
-            <p className="text-[15px] text-brand-charcoal mb-2">登录后记录你的护肤日记</p>
+          <div className="rounded-3xl border border-brand-charcoal/[0.08] bg-gradient-to-br from-white to-[#FBF7EE] shadow-[0_8px_24px_rgba(0,38,62,0.06)] p-8 md:p-10 text-center">
+            <p className="text-[15px] text-brand-charcoal mb-2">登录后查看你的护肤档案</p>
             <p className="text-[13px] text-brand-charcoal/60 font-light mb-6">
               测肤趋势与护肤历程都将在登录后开启
             </p>
@@ -221,7 +224,7 @@ export default function DiaryClient() {
         ) : (
           <>
             {/* 测肤趋势区 */}
-            <section className="rounded-3xl border border-brand-charcoal/[0.08] bg-white p-6 md:p-8 mb-8">
+            <section className="rounded-3xl border border-brand-charcoal/[0.08] bg-gradient-to-br from-white to-[#FBF7EE] shadow-[0_8px_24px_rgba(0,38,62,0.06)] p-6 md:p-8 mb-8">
               <div className="flex items-center justify-between mb-5">
                 <h2 className="text-base md:text-lg font-semibold flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-brand-charcoal/60" strokeWidth={1.5} />

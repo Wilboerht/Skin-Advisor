@@ -4,7 +4,7 @@ import Image from "next/image";
 import { ArrowRight, Gift } from "lucide-react";
 import { skinTypes, routeOrder } from "@/lib/result-content";
 import { withDefaultOgImage } from "@/lib/metadata";
-import { SiteFooter } from "@/components/website/SiteFooter";
+import { KineticBackground } from "@/components/website/KineticBackground";
 import { BreadcrumbSchema } from "@/components/website/StructuredData";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://nihplod.cn";
@@ -31,7 +31,9 @@ export default function ResultIndexPage() {
     .filter(Boolean);
 
   return (
-    <div className="relative min-h-dvh text-brand-charcoal bg-[#FDFBF7] pb-dock">
+    <div className="relative min-h-dvh text-brand-charcoal pb-dock">
+      {/* Kinetic 背景：与首页一致的米白底 + 水印 */}
+      <KineticBackground />
       <BreadcrumbSchema
         items={[
           { name: "首页", url: BASE_URL },
@@ -147,9 +149,6 @@ export default function ResultIndexPage() {
           </Link>
         </div>
       </section>
-
-      {/* 页脚 */}
-      <SiteFooter />
     </div>
   );
 }

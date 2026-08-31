@@ -1,22 +1,14 @@
 "use client";
 
 import { ReactNode } from "react";
-import { KineticBackground } from "@/components/website/KineticBackground";
 
 /**
- * WebsiteLayoutClient
- * 
- * 作用：
- * 1. 渲染全局单一的 KineticBackground
- * 2. 包装页面内容
+ * WebsiteLayoutClient — 包装页面内容
+ * （Kinetic 背景由各页面按需显式渲染：首页、护肤档案，见 KineticBackground 组件）
  */
 export function WebsiteLayoutClient({ children }: { children: ReactNode }) {
     return (
         <>
-            {/* 底层 3D 动力学背景 (简化版) */}
-            <KineticBackground />
-
-            {/* 布局内容 */}
             {children}
         </>
     );
