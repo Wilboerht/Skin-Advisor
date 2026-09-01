@@ -70,6 +70,28 @@ export function normalizeSsoAvatarUrl(avatar?: string | null): string | undefine
     return avatar;
 }
 
+/**
+ * 调用主站 OIDC userinfo 端点（Bearer access token），获取昵称/头像/手机号。
+ * id_token 不一定携带全部 claims，本地资料缺失时以此兜底。
+ * 注意：主站返回的 phone 可能是掩码格式（138****1234），调用方不得直接落库。
+ */
+export async function fetchSsoUserinfo(accessToken: string): Promise<IdTokenProfileClaims | null> {
+    try {
+        const res = await fetch(`${SSO_BASE_URL}/api/oauth/userinfo`, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        if (!res.ok) return null;
+        const data = (await res.json()) as Record<string, unknown>;
+        return {
+            nickname: typeof data.nickname === "string" ? data.nickname : undefined,
+            avatar: typeof data.avatar === "string" ? data.avatar : undefined,
+            phone: typeof data.phone === "string" ? data.phone : undefined,
+        };
+    } catch {
+        return null;
+    }
+}
+
 export const ssoVerifier = createTokenVerifier({
     introspectionEndpoint: `${SSO_BASE_URL}/api/oauth/introspect`,
     clientId: SSO_CLIENT_ID,
@@ -150,18 +172,21 @@ export async function upsertLocalUser(payload: VerifiedTokenPayload, profile?: I
 
     // 昵称优先取 id_token 的 nickname，其次手机号；access token introspect 不含 nickname
     const name = profile?.nickname || payload.phone || undefined;
+    // userinfo 返回的 phone 可能是掩码格式，掩码值不落库（避免污染真实手机号）
+    const claimsPhone = profile?.phone && !profile.phone.includes("*") ? profile.phone : undefined;
+    const phone = payload.phone || claimsPhone || undefined;
     const avatarUrl = normalizeSsoAvatarUrl(profile?.avatar);
 
     const dbUser = await prisma.user.upsert({
         where: { id: payload.sub },
         update: {
-            phoneNumber: payload.phone || undefined,
+            phoneNumber: phone,
             name,
             ...(avatarUrl ? { avatarUrl } : {}),
         },
         create: {
             id: payload.sub,
-            phoneNumber: payload.phone || null,
+            phoneNumber: phone || null,
             name: name || "",
             avatarUrl: avatarUrl || null,
             password: null,

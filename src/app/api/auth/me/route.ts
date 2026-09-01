@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { ssoVerifier, getAccessToken, getIdTokenProfileClaims, normalizeSsoAvatarUrl, upsertLocalUser, SSO_BASE_URL, REFRESH_TOKEN_COOKIE, ACCESS_TOKEN_COOKIE, ID_TOKEN_COOKIE, refreshSsoTokens } from "@/lib/sso-auth";
+import { ssoVerifier, getAccessToken, getIdTokenProfileClaims, fetchSsoUserinfo, normalizeSsoAvatarUrl, upsertLocalUser, SSO_BASE_URL, REFRESH_TOKEN_COOKIE, ACCESS_TOKEN_COOKIE, ID_TOKEN_COOKIE, refreshSsoTokens } from "@/lib/sso-auth";
 import { SSO_INSECURE_LOCAL_DEV } from "@/lib/sso-config";
 import prisma from "@/lib/prisma";
 import { apiError, apiSuccess } from "@/lib/api-response";
@@ -39,7 +39,20 @@ export async function GET(req: NextRequest) {
 
     // 顺带从 id_token 同步 nickname/avatar 到本地（introspect 的 access token 不含这些 claims）
     const profileClaims = await getIdTokenProfileClaims();
-    const localUser = await upsertLocalUser(payload, profileClaims ?? undefined);
+    let localUser = await upsertLocalUser(payload, profileClaims ?? undefined);
+
+    // id_token 缺头像/手机号时兜底：向主站 userinfo 拉一次并落库（仅在本地缺失时触发，避免每次请求都回源）
+    if (localUser && (!localUser.avatarUrl || !localUser.phoneNumber)) {
+        const userinfoToken = refreshed?.access_token ?? token;
+        const info = userinfoToken ? await fetchSsoUserinfo(userinfoToken) : null;
+        if (info) {
+            localUser = await upsertLocalUser(payload, {
+                nickname: info.nickname ?? profileClaims?.nickname,
+                avatar: info.avatar ?? profileClaims?.avatar,
+                phone: info.phone ?? profileClaims?.phone,
+            });
+        }
+    }
 
     // 被禁用的用户视为未登录，前端会引导其退出
     if (localUser && isDisabledUser(localUser.role)) {
@@ -49,7 +62,7 @@ export async function GET(req: NextRequest) {
     const response = NextResponse.json({
         user: {
             id: payload.sub,
-            phone: payload.phone || null,
+            phone: localUser?.phoneNumber || payload.phone || null,
             name: localUser?.name || payload.phone || "",
             avatar: localUser?.avatarUrl || null,
             role: localUser?.role || "user",
