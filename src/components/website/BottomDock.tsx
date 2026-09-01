@@ -1,12 +1,13 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { ScanFace, NotebookPen, Sparkles, CircleUserRound } from "lucide-react";
-import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { useUser } from "@/components/auth/UserProvider";
-import { STORAGE_KEYS } from "@/lib/storage-keys";
+import { AccountModal } from "@/components/website/AccountModal";
 
 /**
  * BottomDock — 全端统一底部导航（移动端贴底通栏 / 桌面端悬浮胶囊）
@@ -35,7 +36,7 @@ interface DockTab {
   icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
   /** 首页需精确匹配，其余前缀匹配 */
   exact?: boolean;
-  /** 未登录时拦截跳转、改为打开登录弹窗 */
+  /** 拦截跳转、改为打开账户弹层 */
   requiresAuth?: boolean;
 }
 
@@ -43,13 +44,17 @@ const TABS: DockTab[] = [
   { label: "素颜测肤", href: "/", icon: ScanFace, exact: true },
   { label: "护肤档案", href: "/diary", icon: NotebookPen },
   { label: "了解肌智派", href: "/skin-types", icon: Sparkles },
-  { label: "我的", href: "/profile", icon: CircleUserRound },
+  { label: "我的", href: "/profile", icon: CircleUserRound, requiresAuth: true },
 ];
 
 export function BottomDock() {
   const pathname = usePathname();
-  const { openAuthModal } = useAuthModal();
   const { user } = useUser();
+  // 「我的」账户弹层（未登录时弹层内展示登录引导）
+  const [showAccountModal, setShowAccountModal] = useState(false);
+  // Portal 需等客户端挂载（SSR 期无 document）
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   if (HIDDEN_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
     return null;
@@ -57,15 +62,6 @@ export function BottomDock() {
 
   const isActive = (tab: DockTab) =>
     tab.exact ? pathname === tab.href : pathname.startsWith(tab.href);
-
-  // 未登录点"我的"：先记下目标页，SSO 登录完成后由 AuthUrlDetector（根 layout）消费并回跳
-  const handleAuthRequired = (href: string) => {
-    try {
-      sessionStorage.setItem(STORAGE_KEYS.AUTH_REDIRECT, href);
-    } catch {
-      // sessionStorage 不可用时退化为停留在当前页
-    }
-  };
 
   const tabClass = (active: boolean) =>
     `relative flex flex-col items-center justify-center gap-1 flex-1 min-w-[48px] min-h-[48px] rounded-xl text-[11px] tracking-[0.05em] transition-colors duration-300 motion-reduce:transition-none focus-visible:outline-none focus-visible:bg-brand-charcoal/5 ${
@@ -109,15 +105,13 @@ export function BottomDock() {
       >
         {TABS.map((tab) => {
           const active = isActive(tab);
-          if (tab.requiresAuth && !user) {
+          // 「我的」始终是按钮：统一打开账户弹层，未登录时由弹层展示登录引导（不再跳转 /profile 页面）
+          if (tab.requiresAuth) {
             return (
               <button
                 key={tab.href}
                 type="button"
-                onClick={() => {
-                  handleAuthRequired(tab.href);
-                  openAuthModal("login");
-                }}
+                onClick={() => setShowAccountModal(true)}
                 className={`${tabClass(active)} cursor-pointer`}
               >
                 {renderContent(tab, active)}
@@ -137,6 +131,12 @@ export function BottomDock() {
           );
         })}
       </div>
+
+      {/* 账户弹层：Portal 到 body，避免受 Dock 容器样式影响 */}
+      {mounted && createPortal(
+        <AccountModal isOpen={showAccountModal} onClose={() => setShowAccountModal(false)} />,
+        document.body
+      )}
     </nav>
   );
 }

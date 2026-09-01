@@ -1538,10 +1538,6 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                         <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
                                     </button>
                                 </div>
-                                {/* 活动说明：静态展示，具体活动以官方媒体发布为准 */}
-                                <p className="text-[11px] font-light tracking-[0.06em] text-brand-charcoal/40 text-center leading-relaxed">
-                                    具体活动时间、奖品与规则以 NIHPLOD 官方媒体账号发布的实际活动内容为准
-                                </p>
                             </div>
 
                             {/* Minimal Footer Text — 与首页 Footer 对齐 */}

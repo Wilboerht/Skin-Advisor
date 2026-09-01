@@ -1,6 +1,6 @@
-import ProfileClient from "./ProfileClient";
+import { redirect } from "next/navigation";
 
-// 未登录也可访问：ProfileClient 渲染占位预览 + 登录引导（资料/记录 API 仍由服务端鉴权保护）
-export default async function ProfilePage() {
-    return <ProfileClient />;
+// 「我的」已改为 Dock 内账户弹层（AccountModal），旧 /profile 链接重定向到首页
+export default function ProfilePage() {
+    redirect("/");
 }
