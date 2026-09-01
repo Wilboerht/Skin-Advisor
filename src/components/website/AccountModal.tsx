@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
-import { CircleUserRound, LogOut, Settings2, Smartphone, X } from "lucide-react";
+import { ChevronRight, CircleUserRound, LogOut, Settings2, Smartphone, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/Toast";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
@@ -131,15 +131,18 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
                   <span>{maskPhone(user.phone)}</span>
                 </div>
 
-                {/* 资料编辑统一到主站账号中心 */}
+                {/* 资料编辑统一到主站账号中心：整行卡片式入口，与弱操作「退出登录」拉开层级 */}
                 <a
                   href="https://nihplod.cn/account"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-[13px] tracking-[0.05em] text-[#8A8A8A] hover:text-[#1A1A1A] transition-colors mb-4"
+                  className="group w-full flex items-center justify-between px-4 py-3 mb-6 rounded-2xl border border-brand-charcoal/[0.08] bg-white/70 text-[13px] tracking-[0.05em] text-[#5E5E5E] hover:text-brand-charcoal hover:border-brand-charcoal/20 transition-colors"
                 >
-                  <Settings2 className="w-3.5 h-3.5" />
-                  管理账号资料
+                  <span className="inline-flex items-center gap-2">
+                    <Settings2 className="w-4 h-4" />
+                    管理账号资料
+                  </span>
+                  <ChevronRight className="w-4 h-4 text-brand-charcoal/30 transition-transform duration-300 group-hover:translate-x-0.5" />
                 </a>
 
                 {/* 退出登录 */}
