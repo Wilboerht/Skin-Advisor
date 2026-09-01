@@ -42,10 +42,13 @@ export async function GET(req: NextRequest) {
     let localUser = await upsertLocalUser(payload, profileClaims ?? undefined);
 
     // id_token 缺头像/手机号时兜底：向主站 userinfo 拉一次并落库（仅在本地缺失时触发，避免每次请求都回源）
+    // userinfo 的 phone 是掩码格式（不落库），但弹层展示本来就要打码，可直接用于显示
+    let maskedPhone: string | null = null;
     if (localUser && (!localUser.avatarUrl || !localUser.phoneNumber)) {
         const userinfoToken = refreshed?.access_token ?? token;
         const info = userinfoToken ? await fetchSsoUserinfo(userinfoToken) : null;
         if (info) {
+            maskedPhone = info.phone ?? null;
             localUser = await upsertLocalUser(payload, {
                 nickname: info.nickname ?? profileClaims?.nickname,
                 avatar: info.avatar ?? profileClaims?.avatar,
@@ -62,7 +65,7 @@ export async function GET(req: NextRequest) {
     const response = NextResponse.json({
         user: {
             id: payload.sub,
-            phone: localUser?.phoneNumber || payload.phone || null,
+            phone: localUser?.phoneNumber || payload.phone || profileClaims?.phone || maskedPhone,
             name: localUser?.name || payload.phone || "",
             avatar: localUser?.avatarUrl || null,
             role: localUser?.role || "user",
