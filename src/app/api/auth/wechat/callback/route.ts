@@ -187,7 +187,7 @@ export async function GET(req: NextRequest) {
 
         const response = NextResponse.redirect(successUrl, 302);
 
-        // 设置官网同款 Cookie，后续代理 /api/user/profile 等接口时可透传
+        // 设置官网同款 Cookie，后续代理官网接口时可透传
         response.cookies.set(USER_COOKIE_NAME, result.accessToken, USER_ACCESS_COOKIE_OPTIONS);
         response.cookies.set(USER_REFRESH_COOKIE_NAME, result.refreshToken, USER_REFRESH_COOKIE_OPTIONS);
 
