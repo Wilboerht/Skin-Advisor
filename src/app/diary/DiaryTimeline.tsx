@@ -9,6 +9,7 @@ import {
   Laugh,
   Loader2,
   Meh,
+  Pencil,
   ScanFace,
   Smile,
 } from "lucide-react";
@@ -33,7 +34,7 @@ export function localDateStr(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-const STATE_META: Record<string, { label: string; color: string; icon: React.ComponentType<{ className?: string; strokeWidth?: number }> }> = {
+export const STATE_META: Record<string, { label: string; color: string; icon: React.ComponentType<{ className?: string; strokeWidth?: number }> }> = {
   great: { label: "很好", color: "#4C8055", icon: Laugh },
   good: { label: "不错", color: "#7A9A5B", icon: Smile },
   normal: { label: "一般", color: "#C9A86C", icon: Meh },
@@ -56,9 +57,11 @@ interface DiaryTimelineProps {
   entries: DiaryEntry[];
   tests: HistorySession[];
   loading: boolean;
+  /** 登录后传入：今日打卡（existing 为 null）或编辑当日记录 */
+  onCheckIn?: (existing: DiaryEntry | null) => void;
 }
 
-export function DiaryTimeline({ entries, tests, loading }: DiaryTimelineProps) {
+export function DiaryTimeline({ entries, tests, loading, onCheckIn }: DiaryTimelineProps) {
   const [showAll, setShowAll] = useState(false);
 
   const todayStr = localDateStr(new Date());
@@ -143,16 +146,46 @@ export function DiaryTimeline({ entries, tests, loading }: DiaryTimelineProps) {
 
               {/* 右侧事件列：细竖线串联 */}
               <div className="relative flex-1 border-l border-brand-charcoal/10 pl-4 pb-7 space-y-2.5">
-                {group.events.length === 0 && isToday && (
-                  <div className="relative">
-                    <span className="absolute -left-[21px] top-4 w-2.5 h-2.5 rounded-full border-2 border-dashed border-brand-charcoal/30 bg-[#FDFBF7]" />
-                    <Link
-                      href="/questions"
-                      className="block w-full rounded-2xl border border-dashed border-brand-charcoal/20 px-4 py-3.5 text-left text-[13px] text-brand-charcoal/55 font-light hover:border-brand-charcoal/40 hover:text-brand-charcoal transition-colors cursor-pointer"
-                    >
-                      今天还没有记录，去测肤 →
-                    </Link>
-                  </div>
+                {/* 今日打卡引导：今天没有任何事件时展示完整引导盒；有测肤等事件但无日记时补一条打卡入口 */}
+                {isToday && !group.events.some((e) => e.kind === "diary") && (
+                  group.events.length === 0 ? (
+                    <div className="relative">
+                      <span className="absolute -left-[21px] top-4 w-2.5 h-2.5 rounded-full border-2 border-dashed border-brand-charcoal/30 bg-[#FDFBF7]" />
+                      <div className="rounded-2xl border border-dashed border-brand-charcoal/20 px-4 py-3.5 flex items-center gap-3">
+                        <span className="flex-1 text-[13px] text-brand-charcoal/55 font-light">
+                          今天还没有记录
+                        </span>
+                        {onCheckIn && (
+                          <button
+                            type="button"
+                            onClick={() => onCheckIn(null)}
+                            className="shrink-0 min-h-[32px] px-3.5 rounded-full bg-brand-charcoal text-white text-[12px] font-light tracking-[0.05em] transition-opacity hover:opacity-85 cursor-pointer"
+                          >
+                            打卡
+                          </button>
+                        )}
+                        <Link
+                          href="/questions"
+                          className="shrink-0 min-h-[32px] inline-flex items-center px-3.5 rounded-full border border-brand-charcoal/20 text-brand-charcoal/70 text-[12px] font-light tracking-[0.05em] transition-colors hover:border-brand-charcoal/50 hover:text-brand-charcoal"
+                        >
+                          去测肤 →
+                        </Link>
+                      </div>
+                    </div>
+                  ) : (
+                    onCheckIn && (
+                      <div className="relative">
+                        <span className="absolute -left-[21px] top-4 w-2.5 h-2.5 rounded-full border-2 border-dashed border-brand-charcoal/30 bg-[#FDFBF7]" />
+                        <button
+                          type="button"
+                          onClick={() => onCheckIn(null)}
+                          className="block w-full rounded-2xl border border-dashed border-brand-charcoal/20 px-4 py-3 text-left text-[12px] text-brand-charcoal/55 font-light hover:border-brand-charcoal/40 hover:text-brand-charcoal transition-colors cursor-pointer"
+                        >
+                          今天还没有打卡，记录一下今日肌肤状态 →
+                        </button>
+                      </div>
+                    )
+                  )
                 )}
 
                 {group.events.map((ev, i) => {
@@ -166,6 +199,16 @@ export function DiaryTimeline({ entries, tests, loading }: DiaryTimelineProps) {
                           style={{ backgroundColor: meta.color }}
                         />
                         <div className="rounded-2xl bg-white border border-brand-charcoal/[0.06] px-4 py-3.5">
+                          {isToday && onCheckIn && (
+                            <button
+                              type="button"
+                              onClick={() => onCheckIn(ev.entry)}
+                              aria-label="编辑今日记录"
+                              className="float-right ml-2 -mt-0.5 w-8 h-8 flex items-center justify-center rounded-full text-brand-charcoal/40 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.06] transition-colors cursor-pointer"
+                            >
+                              <Pencil className="w-3.5 h-3.5" strokeWidth={1.8} />
+                            </button>
+                          )}
                           <div className="flex items-center gap-2 flex-wrap">
                             <span
                               className="inline-flex items-center gap-1 text-[12px] px-2.5 py-1 rounded-full"

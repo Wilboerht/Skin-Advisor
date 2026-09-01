@@ -1,81 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
-import {
-  History,
-  Loader2,
-  LogIn,
-  NotebookPen,
-  TrendingUp,
-  X,
-} from "lucide-react";
+import { Loader2, LogIn, NotebookPen, TrendingUp } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
-import { TestHistoryList, type HistorySession } from "@/components/website/TestHistoryList";
 import { KineticBackground } from "@/components/website/KineticBackground";
 import { HidePageScrollbar } from "@/components/website/HidePageScrollbar";
+import type { HistorySession } from "@/components/website/TestHistoryList";
 import { DiaryTimeline, type DiaryEntry } from "./DiaryTimeline";
-import { useFocusTrap } from "@/hooks/use-focus-trap";
-import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
+import { CheckInModal } from "./CheckInModal";
 
 interface TrendsData {
   dates: string[];
   scores: number[];
-}
-
-/** 测肤记录模态框：内嵌共享的 TestHistoryList */
-function TestHistoryModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const modalRef = useFocusTrap<HTMLDivElement>(isOpen, onClose);
-  useBodyScrollLock({ enabled: isOpen, iosSafe: true });
-
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <div
-          ref={modalRef}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="history-modal-title"
-          tabIndex={-1}
-          className="fixed inset-0 z-[var(--z-modal)] flex items-end md:items-center justify-center"
-        >
-          <m.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="absolute inset-0 bg-[#1A1A1A]/30 backdrop-blur-sm"
-          />
-          <m.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 24 }}
-            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="relative z-10 w-full md:max-w-2xl max-h-[85dvh] bg-[#FDFBF7] rounded-t-3xl md:rounded-3xl shadow-2xl flex flex-col motion-reduce:transition-none"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between px-6 md:px-8 pt-6 pb-4 border-b border-brand-charcoal/[0.06] shrink-0">
-              <h2 id="history-modal-title" className="text-lg md:text-xl font-serif text-brand-charcoal">
-                测肤记录
-              </h2>
-              <button
-                onClick={onClose}
-                aria-label="关闭"
-                className="w-10 h-10 flex items-center justify-center rounded-full text-brand-charcoal/60 hover:text-brand-charcoal hover:bg-brand-charcoal/5 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="overflow-y-auto overscroll-contain px-6 md:px-8 py-5 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))]">
-              <TestHistoryList />
-            </div>
-          </m.div>
-        </div>
-      )}
-    </AnimatePresence>
-  );
 }
 
 /** 测肤趋势图（纯 SVG，无图表库依赖）：平滑曲线 + 渐变面积 + 网格刻度 + 最新评分摘要 */
@@ -176,7 +114,7 @@ function TrendChart({ trends }: { trends: TrendsData }) {
               strokeOpacity="0.07"
               strokeDasharray="3 5"
             />
-            <text x={PAD_L - 8} y={yOf(v) + 3} textAnchor="end" fontSize="9" fill="#8A8A8A">
+            <text x={PAD_L - 8} y={yOf(v) + 3.5} textAnchor="end" fontSize="10.5" fill="#8A8A8A">
               {v}
             </text>
           </g>
@@ -213,7 +151,7 @@ function TrendChart({ trends }: { trends: TrendsData }) {
                   x={i === 0 ? p.x + 7 : p.x}
                   y={p.y - 9}
                   textAnchor={i === 0 ? "start" : "middle"}
-                  fontSize="10"
+                  fontSize="11"
                   fontWeight={isLatest ? 600 : 400}
                   fill="#00263E"
                 >
@@ -221,7 +159,7 @@ function TrendChart({ trends }: { trends: TrendsData }) {
                 </text>
               )}
               {showDate && (
-                <text x={p.x} y={H - 8} textAnchor="middle" fontSize="9" fill="#8A8A8A">
+                <text x={p.x} y={H - 6} textAnchor="middle" fontSize="10" fill="#8A8A8A">
                   {new Date(p.date).toLocaleDateString("zh-CN", { month: "numeric", day: "numeric" })}
                 </text>
               )}
@@ -246,7 +184,25 @@ export default function DiaryClient() {
   const [tests, setTests] = useState<HistorySession[]>([]);
   const [testsLoaded, setTestsLoaded] = useState(false);
 
-  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  // 打卡弹层：existing 为 null 表示新建当日记录
+  const [checkIn, setCheckIn] = useState<{ open: boolean; existing: DiaryEntry | null }>({
+    open: false,
+    existing: null,
+  });
+
+  // 拉取日记列表（打卡保存后复用刷新）
+  const refreshEntries = useCallback(() => {
+    fetch("/api/user/diary")
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
+      .then((data) => {
+        setEntries(data.data ?? []);
+        setEntriesLoaded(true);
+      })
+      .catch((e) => {
+        console.error("Diary fetch error:", e);
+        setEntriesLoaded(true);
+      });
+  }, []);
 
   // 已登录后拉取日记与趋势
   useEffect(() => {
@@ -316,7 +272,6 @@ export default function DiaryClient() {
   ];
 
   return (
-    <LazyMotion features={domAnimation}>
     <div className="min-h-dvh text-[#1A1A1A] pb-dock">
       {/* Kinetic 背景：与首页一致的米白底 + 水印 */}
       <KineticBackground />
@@ -334,8 +289,15 @@ export default function DiaryClient() {
         </header>
 
         {authLoading ? (
-          <div className="py-24 flex justify-center">
-            <Loader2 className="w-6 h-6 text-brand-charcoal/40 animate-spin" />
+          // 登录态探测期间的骨架屏（游客预览/真实数据待 /api/auth/me 返回后一次性切换，避免闪空）
+          <div className="animate-pulse" aria-hidden="true">
+            <div className="rounded-3xl border border-brand-charcoal/[0.08] bg-white/60 h-[260px] mb-8" />
+            <div className="h-5 w-28 rounded bg-brand-charcoal/[0.06] mb-5" />
+            <div className="space-y-2.5">
+              <div className="h-[54px] rounded-2xl bg-brand-charcoal/[0.05]" />
+              <div className="h-[54px] rounded-2xl bg-brand-charcoal/[0.05]" />
+              <div className="h-[54px] rounded-2xl bg-brand-charcoal/[0.05]" />
+            </div>
           </div>
         ) : (
           <>
@@ -344,7 +306,7 @@ export default function DiaryClient() {
               className="rounded-3xl border border-brand-charcoal/[0.08] bg-gradient-to-br from-white to-[#FBF7EE] shadow-[0_8px_24px_rgba(0,38,62,0.06)] p-6 md:p-8 mb-8"
               {...(!user ? { "aria-label": "测肤趋势预览（模拟数据）" } : {})}
             >
-              <div className="flex items-center justify-between mb-5">
+              <div className="mb-5">
                 <h2 className="text-base md:text-lg font-semibold flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-brand-charcoal/60" strokeWidth={1.5} />
                   测肤趋势
@@ -354,15 +316,6 @@ export default function DiaryClient() {
                     </span>
                   )}
                 </h2>
-                {user && (
-                  <button
-                    onClick={() => setShowHistoryModal(true)}
-                    className="inline-flex items-center gap-1.5 min-h-[36px] px-3.5 rounded-full border border-brand-charcoal/20 text-brand-charcoal/70 text-[12px] font-light tracking-[0.05em] transition-all duration-300 hover:border-brand-charcoal/50 hover:text-brand-charcoal cursor-pointer"
-                  >
-                    <History className="w-3.5 h-3.5" strokeWidth={1.5} />
-                    测肤记录
-                  </button>
-                )}
               </div>
 
               {!user ? (
@@ -407,6 +360,7 @@ export default function DiaryClient() {
                 entries={user ? entries : mockEntries}
                 tests={user ? tests : mockTests}
                 loading={user ? !entriesLoaded || !testsLoaded : false}
+                onCheckIn={user ? (existing) => setCheckIn({ open: true, existing }) : undefined}
               />
             </section>
 
@@ -438,9 +392,13 @@ export default function DiaryClient() {
         )}
       </div>
 
-      {/* 测肤记录模态框（仅登录后可达） */}
-      <TestHistoryModal isOpen={showHistoryModal} onClose={() => setShowHistoryModal(false)} />
+      {/* 打卡弹层（仅登录后可达） */}
+      <CheckInModal
+        isOpen={checkIn.open}
+        existing={checkIn.existing}
+        onClose={() => setCheckIn((s) => ({ ...s, open: false }))}
+        onSaved={refreshEntries}
+      />
     </div>
-    </LazyMotion>
   );
 }
