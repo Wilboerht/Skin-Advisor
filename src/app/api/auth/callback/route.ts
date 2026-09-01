@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createCallbackRouteHandler } from "@nihplod/sso-sdk/next";
+import {
+  createCallbackRouteHandler,
+  DEFAULT_RETURN_COOKIE_NAME,
+  toInsecureCookieName,
+} from "@nihplod/sso-sdk/next";
 import { SSO_INSECURE_LOCAL_DEV } from "@/lib/sso-config";
 
 const ssoCallback = createCallbackRouteHandler({
@@ -12,6 +16,13 @@ const ssoCallback = createCallbackRouteHandler({
   insecureLocalDev: SSO_INSECURE_LOCAL_DEV,
 });
 
+/** return_to 仅允许站内相对路径，防开放重定向（与 login 入口同一规则） */
+function sanitizeReturnTo(value: string | null): string {
+  if (!value) return "/";
+  if (!value.startsWith("/") || value.startsWith("//")) return "/";
+  return value.slice(0, 2048);
+}
+
 /**
  * SSO OAuth 回调处理器（带本地 Session 引导）。
  *
@@ -21,6 +32,16 @@ const ssoCallback = createCallbackRouteHandler({
  * 然后再跳转到最终目标页面。
  */
 export async function GET(req: NextRequest) {
+  // 用户在授权页取消/拒绝：SDK 会吐裸 JSON 错误页，这里改为跳回发起登录的页面
+  //（return_to 由 /api/auth/login 在发起时写入 Cookie）
+  if (req.nextUrl.searchParams.has("error")) {
+    const returnCookieName = SSO_INSECURE_LOCAL_DEV
+      ? toInsecureCookieName(DEFAULT_RETURN_COOKIE_NAME)
+      : DEFAULT_RETURN_COOKIE_NAME;
+    const returnTo = sanitizeReturnTo(req.cookies.get(returnCookieName)?.value ?? null);
+    return NextResponse.redirect(new URL(returnTo, req.url));
+  }
+
   const response = await ssoCallback(req);
 
   const location = response.headers.get("location");
