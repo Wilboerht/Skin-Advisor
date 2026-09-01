@@ -43,7 +43,7 @@ const TABS: DockTab[] = [
   { label: "素颜测肤", href: "/", icon: ScanFace, exact: true },
   { label: "护肤档案", href: "/diary", icon: NotebookPen },
   { label: "了解肌智派", href: "/skin-types", icon: Sparkles },
-  { label: "我的", href: "/profile", icon: CircleUserRound, requiresAuth: true },
+  { label: "我的", href: "/profile", icon: CircleUserRound },
 ];
 
 export function BottomDock() {

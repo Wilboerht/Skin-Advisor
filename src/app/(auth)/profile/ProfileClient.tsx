@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchWithCsrf } from "@/lib/fetch-client";
 import { useToast } from "@/components/ui/Toast";
+import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { Link } from "next-view-transitions";
 import {
   Loader2,
   ScanFace,
   LogOut,
+  LogIn,
   Smartphone,
   Camera,
   Pencil,
@@ -23,8 +24,8 @@ import { getCharacterImage, getSkinTypeName } from "@/lib/result-utils";
 
 export default function ProfileClient() {
   const { user, loading, logout, refresh } = useAuth();
+  const { openAuthModal } = useAuthModal();
   const toast = useToast();
-  const router = useRouter();
   // 测肤记录当前页数据（由 TestHistoryList 拉取后回调，仅用于统计行）
   const [historySessions, setHistorySessions] = useState<HistorySession[]>([]);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -103,12 +104,6 @@ export default function ProfileClient() {
     setIsEditingName(true);
   };
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push("/?auth=login&redirect=/profile");
-    }
-  }, [user, loading, router]);
-
   // 测肤记录拉取与分页由 TestHistoryList 自管理，这里只接收当前页数据用于统计行
   const handleHistoryData = useCallback((sessions: HistorySession[]) => {
     setHistorySessions(sessions);
@@ -119,7 +114,10 @@ export default function ProfileClient() {
     await logout();
   };
 
-  if (loading || !user) {
+  // 未登录：展示占位预览（头像/昵称/统计均为占位符），登录引导在记录区
+  const isGuest = !user;
+
+  if (loading) {
     return (
       <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-[#C9A86C] animate-spin" />
@@ -168,6 +166,12 @@ export default function ProfileClient() {
             {/* Avatar + basic info */}
             <div className="relative px-6 md:px-8 pb-5">
               <div className="flex justify-between items-end -mt-16 md:-mt-20 mb-4">
+                {isGuest ? (
+                  /* 未登录：头像占位，不可交互 */
+                  <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden bg-[#ECEBE6] border-4 border-[#FDFBF7] shadow-lg flex items-center justify-center text-4xl md:text-5xl font-medium text-[#8A8A8A]">
+                    ?
+                  </div>
+                ) : (
                 <label className="relative w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden bg-[#ECEBE6] border-4 border-[#FDFBF7] cursor-pointer group shadow-lg">
                   {avatarUrl ? (
                     <Image src={avatarUrl} alt="" fill unoptimized className="object-cover" />
@@ -191,6 +195,7 @@ export default function ProfileClient() {
                     className="sr-only"
                   />
                 </label>
+                )}
 
                 <div className="relative w-28 h-36 md:w-36 md:h-44 mb-2">
                   {latestCharacterImage ? (
@@ -244,15 +249,17 @@ export default function ProfileClient() {
                 ) : (
                   <div className="flex items-center gap-2">
                     <h1 className="text-2xl md:text-3xl font-semibold text-[#1A1A1A]">
-                      {user.name || "朋友"}
+                      {isGuest ? "未登录用户" : user.name || "朋友"}
                     </h1>
-                    <button
-                      onClick={startEditName}
-                      className="p-1.5 rounded-full text-[#8A8A8A] hover:text-[#3D4430] hover:bg-[rgba(61,68,48,0.06)] transition-colors"
-                      aria-label="编辑昵称"
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                    </button>
+                    {!isGuest && (
+                      <button
+                        onClick={startEditName}
+                        className="p-1.5 rounded-full text-[#8A8A8A] hover:text-[#3D4430] hover:bg-[rgba(61,68,48,0.06)] transition-colors"
+                        aria-label="编辑昵称"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -262,22 +269,22 @@ export default function ProfileClient() {
               <div className="flex flex-wrap items-center gap-3 text-[14px] text-[#5E5E5E] mb-4">
                 <div className="flex items-center gap-1.5">
                   <Smartphone className="w-3.5 h-3.5" />
-                  <span>{maskPhone(user.phone)}</span>
+                  <span>{isGuest ? "登录后可见" : maskPhone(user.phone)}</span>
                 </div>
               </div>
 
               {/* Stats row */}
               <div className="flex items-center gap-6 text-[14px]">
                 <div className="flex items-center gap-1.5">
-                  <span className="font-semibold text-[#1A1A1A]">{historySessions.length}</span>
+                  <span className="font-semibold text-[#1A1A1A]">{isGuest ? "—" : historySessions.length}</span>
                   <span className="text-[#5E5E5E]">次测肤</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="font-semibold text-[#1A1A1A]">{latestScore ?? "—"}</span>
+                  <span className="font-semibold text-[#1A1A1A]">{isGuest ? "—" : latestScore ?? "—"}</span>
                   <span className="text-[#5E5E5E]">最近评分</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="font-semibold text-[#1A1A1A]">{avgScore ?? "—"}</span>
+                  <span className="font-semibold text-[#1A1A1A]">{isGuest ? "—" : avgScore ?? "—"}</span>
                   <span className="text-[#5E5E5E]">平均评分</span>
                 </div>
               </div>
@@ -286,26 +293,44 @@ export default function ProfileClient() {
             {/* Divider */}
             <div className="border-b border-[rgba(61,68,48,0.08)]" />
 
-            {/* History */}
+            {/* History（未登录：登录引导卡） */}
             <m.section
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
               className="px-6 md:px-8 py-6"
             >
-              <TestHistoryList title="测肤记录" onDataChange={handleHistoryData} />
+              {isGuest ? (
+                <div className="rounded-3xl border border-brand-charcoal/[0.08] bg-gradient-to-br from-white to-[#FBF7EE] shadow-[0_8px_24px_rgba(0,38,62,0.06)] p-8 md:p-10 text-center">
+                  <p className="text-[15px] text-brand-charcoal mb-2">登录后查看你的主页</p>
+                  <p className="text-[13px] text-brand-charcoal/60 font-light mb-6">
+                    测肤记录、评分统计与头像昵称都在这里
+                  </p>
+                  <button
+                    onClick={() => openAuthModal("login")}
+                    className="inline-flex items-center gap-2 h-10 px-6 rounded-full bg-brand-charcoal text-white text-[13px] tracking-[0.08em] font-light transition-opacity hover:opacity-90 cursor-pointer"
+                  >
+                    <LogIn className="w-4 h-4" />
+                    登录 / 注册
+                  </button>
+                </div>
+              ) : (
+                <TestHistoryList title="测肤记录" onDataChange={handleHistoryData} />
+              )}
             </m.section>
 
             {/* Logout */}
-            <div className="px-6 md:px-8 pb-8 text-center">
-              <button
-                onClick={handleLogout}
-                className="inline-flex items-center gap-2 text-[13px] tracking-[0.05em] text-[#8A8A8A] hover:text-[#1A1A1A] transition-colors"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-                退出登录
-              </button>
-            </div>
+            {!isGuest && (
+              <div className="px-6 md:px-8 pb-8 text-center">
+                <button
+                  onClick={handleLogout}
+                  className="inline-flex items-center gap-2 text-[13px] tracking-[0.05em] text-[#8A8A8A] hover:text-[#1A1A1A] transition-colors"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  退出登录
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
