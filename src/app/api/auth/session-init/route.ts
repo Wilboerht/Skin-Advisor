@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAccessToken, ssoVerifier, upsertLocalUser } from "@/lib/sso-auth";
+import { getAccessToken, getIdTokenProfileClaims, ssoVerifier, upsertLocalUser } from "@/lib/sso-auth";
 import { signLocalSession } from "@/lib/auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { isDisabledUser } from "@/lib/permissions";
@@ -46,7 +46,9 @@ export async function GET(req: NextRequest) {
             return NextResponse.redirect(new URL(`/?error=invalid_token&return_to=${encodeURIComponent(returnTo)}`, req.url));
         }
 
-        const dbUser = await upsertLocalUser(payload);
+        // 顺带从 id_token 取 nickname/avatar 同步到本地（introspect 的 access token 不含这些 claims）
+        const profileClaims = await getIdTokenProfileClaims();
+        const dbUser = await upsertLocalUser(payload, profileClaims ?? undefined);
         if (!dbUser) {
             logger.error("[session-init] Failed to upsert local user", { sub: payload.sub });
             return NextResponse.redirect(new URL(`/?error=db_error&return_to=${encodeURIComponent(returnTo)}`, req.url));

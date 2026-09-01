@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { ssoVerifier, getAccessToken, upsertLocalUser, SSO_BASE_URL, REFRESH_TOKEN_COOKIE, ACCESS_TOKEN_COOKIE, ID_TOKEN_COOKIE, refreshSsoTokens } from "@/lib/sso-auth";
+import { ssoVerifier, getAccessToken, getIdTokenProfileClaims, normalizeSsoAvatarUrl, upsertLocalUser, SSO_BASE_URL, REFRESH_TOKEN_COOKIE, ACCESS_TOKEN_COOKIE, ID_TOKEN_COOKIE, refreshSsoTokens } from "@/lib/sso-auth";
 import { SSO_INSECURE_LOCAL_DEV } from "@/lib/sso-config";
 import prisma from "@/lib/prisma";
 import { apiError, apiSuccess } from "@/lib/api-response";
@@ -37,7 +37,9 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ user: null });
     }
 
-    const localUser = await upsertLocalUser(payload);
+    // 顺带从 id_token 同步 nickname/avatar 到本地（introspect 的 access token 不含这些 claims）
+    const profileClaims = await getIdTokenProfileClaims();
+    const localUser = await upsertLocalUser(payload, profileClaims ?? undefined);
 
     // 被禁用的用户视为未登录，前端会引导其退出
     if (localUser && isDisabledUser(localUser.role)) {
@@ -49,7 +51,7 @@ export async function GET(req: NextRequest) {
             id: payload.sub,
             phone: payload.phone || null,
             name: localUser?.name || payload.phone || "",
-            avatar: null,
+            avatar: localUser?.avatarUrl || null,
             role: localUser?.role || "user",
         },
     });
@@ -144,6 +146,7 @@ export async function PUT(req: NextRequest) {
         }
 
         const user = data.data.user;
+        const avatarUrl = normalizeSsoAvatarUrl(user.avatar) ?? null;
 
         // Sync the updated profile back to the local DB
         await prisma.user.upsert({
@@ -151,12 +154,14 @@ export async function PUT(req: NextRequest) {
             update: {
                 phoneNumber: user.phone,
                 name: user.nickname || user.phone,
+                avatarUrl,
             },
             create: {
                 id: user.id,
                 phoneNumber: user.phone,
                 password: null,
                 name: user.nickname || user.phone,
+                avatarUrl,
                 role: UserRole.USER,
                 tokenVersion: 0,
             },
@@ -167,7 +172,7 @@ export async function PUT(req: NextRequest) {
                 id: user.id,
                 phone: user.phone,
                 name: user.nickname || user.phone,
-                avatar: user.avatar,
+                avatar: avatarUrl,
                 role: "user",
             },
         });
