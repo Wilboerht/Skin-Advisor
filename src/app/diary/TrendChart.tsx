@@ -1,5 +1,7 @@
 "use client";
 
+import { useId } from "react";
+
 export interface TrendsData {
   dates: string[];
   scores: number[];
@@ -7,6 +9,8 @@ export interface TrendsData {
 
 /** 测肤趋势图（纯 SVG，无图表库依赖）：平滑曲线 + 渐变面积 + 网格刻度 + 最新评分摘要 */
 export function TrendChart({ trends }: { trends: TrendsData }) {
+  // 实例级唯一 ID，避免同页多图表实例的渐变 defs 互相覆盖
+  const gradientId = `trendArea-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
   const W = 640;
   const H = 200;
   const PAD_L = 40;
@@ -95,7 +99,7 @@ export function TrendChart({ trends }: { trends: TrendsData }) {
 
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="近几次测肤综合评分趋势">
         <defs>
-          <linearGradient id="trendArea" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#00263E" stopOpacity="0.10" />
             <stop offset="100%" stopColor="#00263E" stopOpacity="0" />
           </linearGradient>
@@ -120,7 +124,7 @@ export function TrendChart({ trends }: { trends: TrendsData }) {
         ))}
 
         {/* 面积 + 曲线 */}
-        <path d={areaPath} fill="url(#trendArea)" />
+        <path d={areaPath} fill={`url(#${gradientId})`} />
         <path
           d={linePath}
           fill="none"

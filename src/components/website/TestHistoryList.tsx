@@ -129,7 +129,7 @@ export function TestHistoryList({ title, pageSize = 10, onDataChange }: TestHist
                   {skinType || "肌肤分析"}
                 </span>
                 <span className="shrink-0 text-[13px] font-medium text-brand-charcoal tabular-nums">
-                  {score != null ? `${score} 分` : "—"}
+                  {score != null && score > 0 ? `${score} 分` : "—"}
                 </span>
                 <ChevronRight className="w-3.5 h-3.5 shrink-0 text-brand-charcoal/30 group-hover:translate-x-0.5 transition-transform" />
               </Link>

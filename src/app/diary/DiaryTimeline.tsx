@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Angry,
@@ -59,10 +59,29 @@ interface DiaryTimelineProps {
   loading: boolean;
   /** 登录后传入：今日打卡（existing 为 null）或编辑当日记录 */
   onCheckIn?: (existing: DiaryEntry | null) => void;
+  /** 服务端还有更早的测肤记录未拉取（分页未拉完） */
+  hasMoreTests?: boolean;
+  /** 正在分页拉取更早的测肤记录 */
+  testsLoadingMore?: boolean;
+  /** 请求加载更早的测肤记录（追加到 tests） */
+  onLoadMoreTests?: () => void;
 }
 
-export function DiaryTimeline({ entries, tests, loading, onCheckIn }: DiaryTimelineProps) {
+export function DiaryTimeline({
+  entries,
+  tests,
+  loading,
+  onCheckIn,
+  hasMoreTests = false,
+  testsLoadingMore = false,
+  onLoadMoreTests,
+}: DiaryTimelineProps) {
   const [showAll, setShowAll] = useState(false);
+
+  // 打卡保存/刷新日记后回到"近 30 天"折叠态（entries 引用变化触发；分页追加 tests 不重置展开态）
+  useEffect(() => {
+    setShowAll(false);
+  }, [entries]);
 
   const todayStr = localDateStr(new Date());
 
@@ -83,11 +102,10 @@ export function DiaryTimeline({ entries, tests, loading, onCheckIn }: DiaryTimel
       .sort((a, b) => b.dateStr.localeCompare(a.dateStr));
   }, [entries, tests, todayStr]);
 
-  const cutoffStr = useMemo(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - (RECENT_DAYS - 1));
-    return localDateStr(d);
-  }, []);
+  // 每次渲染按当前本地日计算（跨午夜后"近 30 天"口径自动更新）
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - (RECENT_DAYS - 1));
+  const cutoffStr = localDateStr(cutoff);
 
   const visibleGroups = showAll ? groups : groups.filter((g) => g.dateStr >= cutoffStr);
   const hiddenCount = groups.length - visibleGroups.length;
@@ -114,16 +132,27 @@ export function DiaryTimeline({ entries, tests, loading, onCheckIn }: DiaryTimel
           <p className="text-[13px] text-brand-charcoal/50 font-light mb-4">
             完成一次测肤后，这里会自动生成你的护肤记录
           </p>
-          <Link
-            href="/questions"
-            className="inline-flex items-center justify-center px-5 h-9 rounded-full bg-brand-charcoal text-white text-[12px] tracking-[0.08em] font-light transition-opacity hover:opacity-90"
-          >
-            去测肤
-          </Link>
+          <div className="flex items-center justify-center gap-3">
+            {onCheckIn && (
+              <button
+                type="button"
+                onClick={() => onCheckIn(null)}
+                className="inline-flex items-center justify-center px-5 h-9 rounded-full bg-brand-charcoal text-white text-[12px] tracking-[0.08em] font-light transition-opacity hover:opacity-90 cursor-pointer"
+              >
+                打卡
+              </button>
+            )}
+            <Link
+              href="/questions"
+              className="inline-flex items-center justify-center px-5 h-9 rounded-full border border-brand-charcoal/20 text-brand-charcoal/70 text-[12px] tracking-[0.08em] font-light transition-colors hover:border-brand-charcoal/50 hover:text-brand-charcoal"
+            >
+              去测肤 →
+            </Link>
+          </div>
         </div>
       )}
 
-      {visibleGroups.map((group, gi) => {
+      {hasAnyEvent && visibleGroups.map((group, gi) => {
         const isToday = group.dateStr === todayStr;
         const month = group.dateStr.slice(0, 7);
         // 跨月时插入月份分隔行（纯函数判定，不依赖渲染期可变状态）
@@ -260,7 +289,7 @@ export function DiaryTimeline({ entries, tests, loading, onCheckIn }: DiaryTimel
                         <span className="flex-1 min-w-0 text-[13px] font-light truncate">
                           完成测肤{skinType ? ` · ${skinType}` : ""}
                         </span>
-                        {score != null && (
+                        {score != null && score > 0 && (
                           <span className="text-[13px] font-medium shrink-0">{score} 分</span>
                         )}
                         <ChevronRight className="w-3.5 h-3.5 shrink-0 text-white/50 group-hover:translate-x-0.5 transition-transform" />
@@ -274,13 +303,18 @@ export function DiaryTimeline({ entries, tests, loading, onCheckIn }: DiaryTimel
         );
       })}
 
-      {hiddenCount > 0 && (
+      {(hiddenCount > 0 || hasMoreTests) && (
         <button
           type="button"
-          onClick={() => setShowAll(true)}
-          className="w-full h-10 rounded-full border border-brand-charcoal/15 text-[12px] text-brand-charcoal/60 font-light tracking-[0.08em] hover:border-brand-charcoal/40 hover:text-brand-charcoal transition-colors cursor-pointer"
+          onClick={() => {
+            if (hiddenCount > 0 || hasMoreTests) setShowAll(true);
+            onLoadMoreTests?.();
+          }}
+          disabled={testsLoadingMore}
+          className="w-full h-10 inline-flex items-center justify-center gap-2 rounded-full border border-brand-charcoal/15 text-[12px] text-brand-charcoal/60 font-light tracking-[0.08em] hover:border-brand-charcoal/40 hover:text-brand-charcoal transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-wait"
         >
-          加载更早的记录（还有 {hiddenCount} 天）
+          {testsLoadingMore && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+          {hiddenCount > 0 ? `加载更早的记录（还有 ${hiddenCount} 天）` : "加载更早的记录"}
         </button>
       )}
     </div>

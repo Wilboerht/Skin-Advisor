@@ -43,14 +43,6 @@ export async function GET(request: NextRequest) {
             })
         ).reverse();
 
-        if (recentSessions.length < 2) {
-            return NextResponse.json({
-                success: true,
-                data: null,
-                message: "Not enough data for trend analysis"
-            }, { headers: rateLimitHeaders });
-        }
-
         // analysisResult 为 JSON 快照，用结构化类型收窄后安全读取
         interface TrendDimension { score?: number }
         interface TrendFaceAnalysis {
@@ -65,14 +57,28 @@ export async function GET(request: NextRequest) {
         const asFaceAnalysis = (result: unknown): TrendFaceAnalysis | undefined =>
             (result as { faceAnalysis?: TrendFaceAnalysis } | null | undefined)?.faceAnalysis;
 
+        // 过滤缺失/非法评分的样本：兜底 0 会把趋势域拉到 0、曲线失真
+        const validSessions = recentSessions.filter((s) => {
+            const score = asFaceAnalysis(s.analysisResult)?.overallScore;
+            return typeof score === "number" && Number.isFinite(score) && score > 0;
+        });
+
+        if (validSessions.length < 2) {
+            return NextResponse.json({
+                success: true,
+                data: null,
+                message: "Not enough data for trend analysis"
+            }, { headers: rateLimitHeaders });
+        }
+
         const trends = {
-            dates: recentSessions.map(s => s.completedAt),
-            scores: recentSessions.map(s => asFaceAnalysis(s.analysisResult)?.overallScore || 0),
+            dates: validSessions.map(s => s.completedAt),
+            scores: validSessions.map(s => asFaceAnalysis(s.analysisResult)?.overallScore || 0),
             dimensions: {
-                wrinkles: recentSessions.map(s => asFaceAnalysis(s.analysisResult)?.dimensions?.wrinkles?.score || 0),
-                waterOil: recentSessions.map(s => asFaceAnalysis(s.analysisResult)?.dimensions?.waterOil?.score || 0),
-                spots: recentSessions.map(s => asFaceAnalysis(s.analysisResult)?.dimensions?.spots?.score || 0),
-                texture: recentSessions.map(s => asFaceAnalysis(s.analysisResult)?.dimensions?.texture?.score || 0),
+                wrinkles: validSessions.map(s => asFaceAnalysis(s.analysisResult)?.dimensions?.wrinkles?.score || 0),
+                waterOil: validSessions.map(s => asFaceAnalysis(s.analysisResult)?.dimensions?.waterOil?.score || 0),
+                spots: validSessions.map(s => asFaceAnalysis(s.analysisResult)?.dimensions?.spots?.score || 0),
+                texture: validSessions.map(s => asFaceAnalysis(s.analysisResult)?.dimensions?.texture?.score || 0),
             }
         };
 

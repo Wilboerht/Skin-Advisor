@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Loader2, LogIn, NotebookPen, TrendingUp } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -21,9 +21,14 @@ export default function DiaryClient() {
   const [entriesLoaded, setEntriesLoaded] = useState(false);
   const [trends, setTrends] = useState<TrendsData | null>(null);
   const [trendsLoaded, setTrendsLoaded] = useState(false);
-  // 测肤里程碑（时间线合并事件用，取最近 50 条覆盖近 90 天）
+  // 测肤里程碑（时间线合并事件用，首屏取最近 50 条，更多记录按分页追加）
   const [tests, setTests] = useState<HistorySession[]>([]);
   const [testsLoaded, setTestsLoaded] = useState(false);
+  const [testsTotal, setTestsTotal] = useState(0);
+  const [testsLoadingMore, setTestsLoadingMore] = useState(false);
+  // 已拉取条数（分页游标，避免闭包读旧 state）
+  const testsLoadedRef = useRef(0);
+  const TESTS_PAGE_SIZE = 50;
 
   // 打卡弹层：existing 为 null 表示新建当日记录
   const [checkIn, setCheckIn] = useState<{ open: boolean; existing: DiaryEntry | null }>({
@@ -52,7 +57,6 @@ export default function DiaryClient() {
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
-
     fetch("/api/user/diary")
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
       .then((data) => {
@@ -79,11 +83,14 @@ export default function DiaryClient() {
         setTrendsLoaded(true);
       });
 
-    fetch("/api/advisor/history?page=1&limit=50")
+    fetch(`/api/advisor/history?page=1&limit=${TESTS_PAGE_SIZE}`)
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
       .then((data) => {
         if (cancelled) return;
-        setTests(data.history ?? []);
+        const history: HistorySession[] = data.history ?? [];
+        setTests(history);
+        testsLoadedRef.current = history.length;
+        setTestsTotal(data.pagination?.total ?? 0);
         setTestsLoaded(true);
       })
       .catch((e) => {
@@ -97,11 +104,40 @@ export default function DiaryClient() {
     };
   }, [user]);
 
+  // 时间线「加载更早」：分页追加更早测肤记录（sessionId 去重，避免新记录插入导致页偏移重复）
+  const loadMoreTests = useCallback(async () => {
+    if (testsLoadingMore) return;
+    setTestsLoadingMore(true);
+    try {
+      const page = Math.floor(testsLoadedRef.current / TESTS_PAGE_SIZE) + 1;
+      const res = await fetch(`/api/advisor/history?page=${page}&limit=${TESTS_PAGE_SIZE}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const more: HistorySession[] = data.history ?? [];
+      setTests((prev) => {
+        const seen = new Set(prev.map((t) => t.sessionId));
+        return [...prev, ...more.filter((t) => !seen.has(t.sessionId))];
+      });
+      testsLoadedRef.current += more.length;
+      setTestsTotal(data.pagination?.total ?? 0);
+    } catch (e) {
+      console.error("Load more tests error:", e);
+    } finally {
+      setTestsLoadingMore(false);
+    }
+  }, [testsLoadingMore]);
+
   // 未登录展示的模拟数据（模糊遮罩下仅作版式示意，非真实数据）
   const dayStr = (n: number) => {
     const d = new Date();
     d.setDate(d.getDate() - n);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  };
+  // 测肤里程碑时间戳按本地日历日构造（负时区下 UTC 字符串会漂移成前一天）
+  const dayTs = (n: number, hour = 10) => {
+    const d = new Date();
+    d.setDate(d.getDate() - n);
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate(), hour, 0, 0).toISOString();
   };
   const mockTrends: TrendsData = {
     dates: [dayStr(26), dayStr(24), dayStr(21), dayStr(19), dayStr(16), dayStr(14), dayStr(12), dayStr(9), dayStr(7), dayStr(5), dayStr(3), dayStr(1)],
@@ -112,7 +148,7 @@ export default function DiaryClient() {
     { id: "mock-2", date: `${dayStr(3)}T00:00:00.000Z`, skinState: "normal", tags: [], note: "AI 测肤 · 综合评分 74 分 · 混合肌" },
   ];
   const mockTests: HistorySession[] = [
-    { sessionId: "mock", completedAt: `${dayStr(1)}T10:00:00.000Z`, analysisResult: { faceAnalysis: { overallScore: 82 } } },
+    { sessionId: "mock", completedAt: dayTs(1), analysisResult: { faceAnalysis: { overallScore: 82 } } },
   ];
 
   return (
@@ -227,6 +263,9 @@ export default function DiaryClient() {
                 tests={user ? tests : mockTests}
                 loading={user ? !entriesLoaded || !testsLoaded : false}
                 onCheckIn={user ? (existing) => setCheckIn({ open: true, existing }) : undefined}
+                hasMoreTests={user ? tests.length < testsTotal : false}
+                testsLoadingMore={testsLoadingMore}
+                onLoadMoreTests={user ? loadMoreTests : undefined}
               />
             </section>
 
