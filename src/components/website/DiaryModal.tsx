@@ -347,7 +347,7 @@ export function DiaryModal() {
                           <p className="text-[13px] text-brand-charcoal/55 font-light mb-1.5">
                             完成 2 次测肤后解锁趋势
                           </p>
-                          <p className="text-[12px] text-brand-charcoal/50 font-light mb-4">
+                          <p className="text-[13px] text-brand-charcoal/50 font-light mb-4">
                             定期测肤，看见肌肤的真实变化
                           </p>
                           <Link
