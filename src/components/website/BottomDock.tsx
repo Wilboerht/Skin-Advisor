@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation";
 import { ScanFace, NotebookPen, Sparkles, CircleUserRound } from "lucide-react";
 import { useUser } from "@/components/auth/UserProvider";
 import { AccountModal } from "@/components/website/AccountModal";
+import { useDiaryModal } from "@/components/website/DiaryModalContext";
 
 /**
  * BottomDock — 全端统一底部导航（移动端贴底通栏 / 桌面端悬浮胶囊）
@@ -36,20 +37,21 @@ interface DockTab {
   icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
   /** 首页需精确匹配，其余前缀匹配 */
   exact?: boolean;
-  /** 拦截跳转、改为打开账户弹层 */
-  requiresAuth?: boolean;
+  /** 拦截跳转、改为打开弹层：account=账户弹层（未登录引导登录），diary=护肤档案弹层 */
+  panel?: "account" | "diary";
 }
 
 const TABS: DockTab[] = [
-  { label: "素颜测肤", href: "/", icon: ScanFace, exact: true },
-  { label: "护肤档案", href: "/diary", icon: NotebookPen },
+  { label: "在线测肤", href: "/", icon: ScanFace, exact: true },
+  { label: "护肤档案", href: "/diary", icon: NotebookPen, panel: "diary" },
   { label: "了解肌智派", href: "/skin-types", icon: Sparkles },
-  { label: "我的", href: "/profile", icon: CircleUserRound, requiresAuth: true },
+  { label: "我的", href: "/profile", icon: CircleUserRound, panel: "account" },
 ];
 
 export function BottomDock() {
   const pathname = usePathname();
   const { user } = useUser();
+  const { openDiaryModal } = useDiaryModal();
   // 「我的」账户弹层（未登录时弹层内展示登录引导）
   const [showAccountModal, setShowAccountModal] = useState(false);
   // Portal 需等客户端挂载（SSR 期无 document）
@@ -80,7 +82,7 @@ export function BottomDock() {
 
   const renderContent = (tab: DockTab, active: boolean) => (
     <>
-      {tab.href === "/profile" && user?.avatar ? (
+      {tab.panel === "account" && user?.avatar ? (
         <span className="relative block w-[22px] h-[22px] rounded-full overflow-hidden">
           <Image src={user.avatar} alt="" fill unoptimized className="object-cover" />
         </span>
@@ -105,13 +107,13 @@ export function BottomDock() {
       >
         {TABS.map((tab) => {
           const active = isActive(tab);
-          // 「我的」始终是按钮：统一打开账户弹层，未登录时由弹层展示登录引导（不再跳转 /profile 页面）
-          if (tab.requiresAuth) {
+          // 「我的」/「护肤档案」是按钮：统一打开对应弹层（未登录由弹层展示登录引导）
+          if (tab.panel) {
             return (
               <button
                 key={tab.href}
                 type="button"
-                onClick={() => setShowAccountModal(true)}
+                onClick={() => (tab.panel === "diary" ? openDiaryModal() : setShowAccountModal(true))}
                 className={`${tabClass(active)} cursor-pointer`}
               >
                 {renderContent(tab, active)}

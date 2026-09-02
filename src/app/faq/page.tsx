@@ -9,7 +9,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://nihplod.cn";
 export const metadata: Metadata = withDefaultOgImage({
   title: "常见问题 — AI 护肤分析 FAQ",
   description:
-    "关于 NIHPLOD AI 护肤分析的常见问题解答：AI 测肤准确吗？如何上传照片？数据安全吗？护肤品推荐怎么来的？",
+    "关于 NIHPLOD AI 护肤分析的常见问题解答：在线测肤准确吗？如何上传照片？数据安全吗？护肤品推荐怎么来的？",
   keywords: ["AI护肤FAQ", "测肤问题", "护肤常见问题", "NIHPLOD帮助"],
   alternates: { canonical: "/faq" },
   openGraph: {

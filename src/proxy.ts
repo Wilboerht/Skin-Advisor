@@ -27,6 +27,7 @@ const PUBLIC_PATHS = [
     "/services",               // 顾问服务
     "/faq",                    // FAQ
     "/diary",                  // 护肤档案（游客可浏览页面，趋势/历程 API 仍需登录）
+    "/preview/:path*",         // 前端风格预览演示页（myskin 复刻 Demo 用）
     "/profile",                // 我的（游客可预览页面，资料/记录 API 仍需登录）
     "/privacy",                // 隐私政策
     "/terms",                  // 服务条款

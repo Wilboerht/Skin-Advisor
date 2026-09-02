@@ -74,7 +74,7 @@ describe("buildAdvisorReportText", () => {
 
         expect(text).not.toContain("肌肤年龄");
         expect(text).not.toContain("肤质");
-        expect(text).not.toContain("素颜评分");
+        expect(text).not.toContain("素颜");
         expect(text).not.toContain("重点问题");
         expect(text).not.toContain("各维度评分");
         expect(text).not.toContain("过敏史");

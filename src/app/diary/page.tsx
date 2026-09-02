@@ -1,13 +1,6 @@
-import type { Metadata } from "next";
-import { withDefaultOgImage } from "@/lib/metadata";
-import DiaryClient from "./DiaryClient";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = withDefaultOgImage({
-  title: "护肤档案",
-  description: "测肤后自动记录肌肤状态，追踪测肤趋势。",
-  robots: { index: false, follow: false },
-});
-
+// 「护肤档案」已改为全局弹层（DiaryModal），独立路由保留作兼容：旧链接 301 回首页
 export default function DiaryPage() {
-  return <DiaryClient />;
+  redirect("/");
 }

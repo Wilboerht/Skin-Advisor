@@ -64,7 +64,7 @@
 
 | Tab | 图标（lucide） | 目标 | 说明 |
 |-----|------|------|------|
-| 素颜测肤 | ScanFace | / | 首页 |
+| 在线测肤 | ScanFace | / | 首页 |
 | 护肤日记 | NotebookPen | /diary | 新建页面，见 4.3 |
 | 了解肌智派 | Sparkles | /skin-types | 派系列表 |
 | 我的 | CircleUserRound | /profile | 未登录时打开登录弹窗（复用 AuthModal），登录后进个人中心 |

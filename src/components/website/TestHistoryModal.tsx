@@ -8,7 +8,7 @@ import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 
 /**
  * TestHistoryModal — 全部测肤记录（分页列表，一行一条）
- * 入口在 /diary 测肤趋势卡标题行「全部记录」；容器/动效与 AccountModal 等全站模态框对齐。
+ * 入口在护肤档案弹层（DiaryModal）测肤趋势卡标题行「全部记录」；容器/动效与 AccountModal 等全站模态框对齐。
  */
 export function TestHistoryModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const modalRef = useFocusTrap<HTMLDivElement>(isOpen, onClose);

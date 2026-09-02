@@ -2,11 +2,12 @@
 
 import Image from "next/image";
 import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
-import { ChevronRight, CircleUserRound, LogOut, Settings2, Smartphone, X } from "lucide-react";
+import { ChevronRight, CircleUserRound, LogOut, NotebookPen, Settings2, Smartphone, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/Toast";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
+import { useDiaryModal } from "@/components/website/DiaryModalContext";
 
 interface AccountModalProps {
   isOpen: boolean;
@@ -21,12 +22,13 @@ function maskPhone(phone?: string | null) {
 
 /**
  * AccountModal — 「我的」账户弹层（替代原 /profile 独立页）
- * 已登录：头像、昵称、手机号（纯展示；资料编辑统一到 NIHPLOD 主站账号中心）、退出登录。
+ * 已登录：头像、昵称、手机号（纯展示；资料编辑统一到 NIHPLOD 主站账号中心）、护肤档案入口、退出登录。
  * 未登录：登录引导视图，点击按钮走 SSO 统一登录。
- * 容器/动效/关闭按钮与 GiftModal 等全站模态框对齐；测肤记录在 /diary 页查看。
+ * 容器/动效/关闭按钮与 GiftModal 等全站模态框对齐；测肤记录在护肤档案弹层查看。
  */
 export function AccountModal({ isOpen, onClose }: AccountModalProps) {
   const { user, logout, login } = useAuth();
+  const { openDiaryModal } = useDiaryModal();
   const toast = useToast();
 
   const modalRef = useFocusTrap<HTMLDivElement>(isOpen, onClose);
@@ -139,6 +141,21 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
                   <Smartphone className="w-3.5 h-3.5" />
                   <span>{maskPhone(user.phone)}</span>
                 </div>
+
+                {/* 护肤档案入口：打开全局护肤档案弹层 */}
+                <button
+                  onClick={() => {
+                    onClose();
+                    openDiaryModal();
+                  }}
+                  className="group w-full flex items-center justify-between px-4 py-3 mb-3 rounded-2xl border border-brand-charcoal/[0.08] bg-white/70 text-[13px] tracking-[0.05em] text-[#5E5E5E] hover:text-brand-charcoal hover:border-brand-charcoal/20 transition-colors cursor-pointer"
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <NotebookPen className="w-4 h-4" />
+                    护肤档案
+                  </span>
+                  <ChevronRight className="w-4 h-4 text-brand-charcoal/30 transition-transform duration-300 group-hover:translate-x-0.5" />
+                </button>
 
                 {/* 资料编辑统一到主站账号中心：整行卡片式入口，与弱操作「退出登录」拉开层级 */}
                 <a

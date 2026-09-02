@@ -6,7 +6,7 @@ import Image from "next/image";
  * KineticBackground — 米白底 + 点阵 + N 水印（与 nihplod.cn 主站一致）
  * fixed 定位、z-0、不响应事件；使用方需保证内容层在 relative z-10 以上。
  * 样式类定义见 globals.css「首页 Kinetic 背景」一节。
- * 使用页面：首页、护肤档案（/diary）。
+ * 使用页面：首页。
  */
 export function KineticBackground() {
     return (

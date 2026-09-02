@@ -173,11 +173,11 @@ export default function ResultCards({
               </h3>
             ) : rankPercentile !== undefined ? (
               <h3 className="text-lg lg:text-[24px] font-bold text-brand-espresso leading-snug tracking-tight mb-3 lg:mb-4">
-                素颜评分超越了全国 <span className="text-lg lg:text-[24px] px-0.5 text-[var(--color-brand-charcoal)]">{rankPercentile}%</span> 的用户
+                测肤评分超越了全国 <span className="text-lg lg:text-[24px] px-0.5 text-[var(--color-brand-charcoal)]">{rankPercentile}%</span> 的用户
               </h3>
             ) : (
               <h3 className="text-lg lg:text-[24px] font-bold text-brand-espresso leading-snug tracking-tight mb-3 lg:mb-4">
-                素颜评估已完成
+                测肤评估已完成
               </h3>
             )}
 
@@ -199,7 +199,7 @@ export default function ResultCards({
                 ) : (
                   <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--color-brand-taupe)] stroke-[2]" />
                 )}
-                {isPosterLoading ? '生成中...' : '保存素颜证书'}
+                {isPosterLoading ? '生成中...' : '保存测肤证书'}
               </motion.button>
             </div>
           </div>

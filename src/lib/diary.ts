@@ -35,7 +35,7 @@ export async function upsertAutoDiaryEntry({ userId, dateStr, score, skinTypeLab
     if (!date) return null;
 
     const roundedScore = Math.round(score);
-    const note = [`AI 测肤 · 综合评分 ${roundedScore} 分`, skinTypeLabel].filter(Boolean).join(" · ");
+    const note = [`在线测肤 · 综合评分 ${roundedScore} 分`, skinTypeLabel].filter(Boolean).join(" · ");
 
     return prisma.diaryEntry.upsert({
         where: { userId_date: { userId, date } },

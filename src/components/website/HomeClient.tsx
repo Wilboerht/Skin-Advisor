@@ -495,7 +495,7 @@ export default function HomeClient() {
 
                     {/* Title（间距由卡片区的 mt 统一控制，这里不再设 mb，避免 flex 下双倍叠加） */}
                     <h1 className="text-[40px] sm:text-[48px] md:text-[58px] font-serif text-brand-charcoal font-light leading-[1.1] tracking-[0.02em]">
-                      在线 AI 测肤
+                      肌智派在线测肤
                     </h1>
 
                     {/* 卖点与 CTA 已迁入下方主视觉卡 */}

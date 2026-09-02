@@ -21,7 +21,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: "素颜测肤", href: "/" },
+  { label: "在线测肤", href: "/" },
   { label: "了解肌智派", href: "/skin-types" },
 ];
 

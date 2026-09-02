@@ -20,14 +20,14 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
   title: {
-    default: "NIHPLOD | 肌智派素颜测肤",
+    default: "NIHPLOD | 肌智派在线测肤",
     template: "%s | NIHPLOD",
   },
   description:
     "扫脸拍照或在线答题，快速测出你的专属肤质类型，精准匹配科学护肤方案与好物推荐。",
   keywords: [
     "AI护肤", "肤质测试", "面部识别", "护肤顾问", "肤质分析",
-    "护肤品推荐", "AI测肤", "敏感肌", "油性皮肤", "干性皮肤",
+    "护肤品推荐", "在线测肤", "敏感肌", "油性皮肤", "干性皮肤",
     "NIHPLOD", "NIHPLOD护肤", "NIHPLOD测肤", "NIHPLOD官网",
     "NIHPLOD皮肤测试", "NIHPLOD AI", "NIHPLOD 人工智能",
     "nihplod skincare", "nihplod skin test", "nihplod beauty",
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     type: "website",
     locale: "zh_CN",
     siteName: "NIHPLOD 肌智派",
-    title: "NIHPLOD | 肌智派素颜测肤",
+    title: "NIHPLOD | 肌智派在线测肤",
     description:
       "扫脸拍照或在线答题，快速测出你的专属肤质类型，精准匹配科学护肤方案与好物推荐。",
     images: [
@@ -56,7 +56,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "NIHPLOD | 肌智派素颜测肤",
+    title: "NIHPLOD | 肌智派在线测肤",
     description:
       "扫脸拍照或在线答题，快速测出你的专属肤质类型，精准匹配科学护肤方案。",
     images: ["/images/og-default.png"],
@@ -100,6 +100,8 @@ import { UserProvider } from "@/components/auth/UserProvider";
 import { AuthModalProvider } from "@/components/auth/AuthModalContext";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { AuthUrlDetector } from "@/components/auth/AuthUrlDetector";
+import { DiaryModalProvider } from "@/components/website/DiaryModalContext";
+import { DiaryModal } from "@/components/website/DiaryModal";
 import { WebsiteLayoutClient } from "@/components/website/WebsiteLayoutClient";
 import { BottomDock } from "@/components/website/BottomDock";
 
@@ -165,8 +167,12 @@ export default function RootLayout({
                   {/* URL 认证参数（?auth= / ?login=wechat_bind 等）的全局监听器，无 UI */}
                   <AuthUrlDetector />
                 </Suspense>
-                {/* 全端底部 Dock：置于 <main> 外，避开 main 的 pointer-events hack；组件内按路由自我排除 */}
-                <BottomDock />
+                {/* 护肤档案弹层：全局开关（Dock/账户弹层均为入口） */}
+                <DiaryModalProvider>
+                  <DiaryModal />
+                  {/* 全端底部 Dock：置于 <main> 外，避开 main 的 pointer-events hack；组件内按路由自我排除 */}
+                  <BottomDock />
+                </DiaryModalProvider>
               </AuthModalProvider>
             </UserProvider>
           </ToastProvider>

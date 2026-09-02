@@ -1170,7 +1170,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                         />
                         <p className="mt-6 mb-5 lg:mt-8 lg:mb-8 text-base lg:text-lg text-[var(--color-brand-cocoa)] font-medium tracking-wide flex items-center justify-center gap-2">
                             <Sparkles className="w-4 h-4 lg:w-5 lg:h-5" />
-                            {userNickname} 的专属肌智派素颜分析报告
+                            {userNickname} 的专属肌智派在线测肤报告
                         </p>
                     </div>
 
@@ -1638,7 +1638,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                     className="relative z-10 w-full max-w-[420px] rounded-2xl bg-white p-5 text-center shadow-xl"
                                     role="dialog"
                                     aria-modal="true"
-                                    aria-label="保存素颜证书"
+                                    aria-label="保存测肤证书"
                                     onKeyDown={(e) => {
                                         if (e.key === "Escape") {
                                             e.stopPropagation();

@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, Clock, Loader2, ScanFace } from "lucide-reac
 
 /**
  * TestHistoryList — 测肤记录列表（含数据拉取与分页）
- * 使用方：/diary 测肤记录模态框
+ * 使用方：护肤档案弹层（DiaryModal）测肤记录模态框
  * 数据源：/api/advisor/history（分页、排除冷层归档）
  * 条目为一行紧凑式：日期 · 肤质 · 分数，点击进入报告详情
  */
