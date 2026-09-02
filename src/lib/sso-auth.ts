@@ -31,11 +31,17 @@ export const ACCESS_TOKEN_COOKIE = ssoCookieName("__Host-nihplod_sso_at");
 export const REFRESH_TOKEN_COOKIE = ssoCookieName("__Host-nihplod_sso_rt");
 export const ID_TOKEN_COOKIE = ssoCookieName("__Host-nihplod_sso_id");
 
-/** id_token 里与展示相关的 claims（身份判定永远只用验证过的 access token，这里仅取昵称/头像） */
-export interface IdTokenProfileClaims {
+/**
+ * 主站用户资料 claims。
+ * 展示字段（nickname/avatar/phone）可来自 id_token Cookie；
+ * membershipLevel 只接受服务端验证过的 userinfo 响应——它决定测肤额度，
+ * 客户端可篡改自己的 Cookie，绝不从 id_token Cookie 读取该字段。
+ */
+export interface SsoProfileClaims {
     nickname?: string;
     avatar?: string;
     phone?: string;
+    membershipLevel?: string;
 }
 
 /**
@@ -44,7 +50,7 @@ export interface IdTokenProfileClaims {
  * nickname/avatar 等展示字段；即便 Cookie 被篡改，最坏结果只是本人
  * 看到自己设置的昵称/头像，不影响身份与权限（sub 来自 access token）。
  */
-export async function getIdTokenProfileClaims(): Promise<IdTokenProfileClaims | null> {
+export async function getIdTokenProfileClaims(): Promise<SsoProfileClaims | null> {
     const cookieStore = await cookies();
     const idToken = cookieStore.get(ID_TOKEN_COOKIE)?.value;
     if (!idToken) return null;
@@ -71,11 +77,12 @@ export function normalizeSsoAvatarUrl(avatar?: string | null): string | undefine
 }
 
 /**
- * 调用主站 OIDC userinfo 端点（Bearer access token），获取昵称/头像/手机号。
+ * 调用主站 OIDC userinfo 端点（Bearer access token），获取昵称/头像/手机号/会员等级。
  * id_token 不一定携带全部 claims，本地资料缺失时以此兜底。
+ * membershipLevel 的唯一可信来源（服务端到服务端，凭证为真实的 access token）。
  * 注意：主站返回的 phone 可能是掩码格式（138****1234），调用方不得直接落库。
  */
-export async function fetchSsoUserinfo(accessToken: string): Promise<IdTokenProfileClaims | null> {
+export async function fetchSsoUserinfo(accessToken: string): Promise<SsoProfileClaims | null> {
     try {
         const res = await fetch(`${SSO_BASE_URL}/api/oauth/userinfo`, {
             headers: { Authorization: `Bearer ${accessToken}` },
@@ -86,6 +93,7 @@ export async function fetchSsoUserinfo(accessToken: string): Promise<IdTokenProf
             nickname: typeof data.nickname === "string" ? data.nickname : undefined,
             avatar: typeof data.avatar === "string" ? data.avatar : undefined,
             phone: typeof data.phone === "string" ? data.phone : undefined,
+            membershipLevel: typeof data.membership_level === "string" ? data.membership_level : undefined,
         };
     } catch {
         return null;
@@ -167,7 +175,7 @@ export async function getSsoUser(req?: NextRequest): Promise<SsoAuthUser | null>
     };
 }
 
-export async function upsertLocalUser(payload: VerifiedTokenPayload, profile?: IdTokenProfileClaims) {
+export async function upsertLocalUser(payload: VerifiedTokenPayload, profile?: SsoProfileClaims) {
     if (!payload.sub) return null;
 
     // 昵称优先取 id_token 的 nickname，其次手机号；access token introspect 不含 nickname
@@ -176,6 +184,8 @@ export async function upsertLocalUser(payload: VerifiedTokenPayload, profile?: I
     const claimsPhone = profile?.phone && !profile.phone.includes("*") ? profile.phone : undefined;
     const phone = payload.phone || claimsPhone || undefined;
     const avatarUrl = normalizeSsoAvatarUrl(profile?.avatar);
+    // membershipLevel 仅来自服务端验证过的 userinfo（见 SsoProfileClaims 注释）
+    const membershipLevel = profile?.membershipLevel || undefined;
 
     const dbUser = await prisma.user.upsert({
         where: { id: payload.sub },
@@ -183,12 +193,14 @@ export async function upsertLocalUser(payload: VerifiedTokenPayload, profile?: I
             phoneNumber: phone,
             name,
             ...(avatarUrl ? { avatarUrl } : {}),
+            ...(membershipLevel ? { membershipLevel } : {}),
         },
         create: {
             id: payload.sub,
             phoneNumber: phone || null,
             name: name || "",
             avatarUrl: avatarUrl || null,
+            membershipLevel: membershipLevel || null,
             password: null,
             role: UserRole.USER,
             tokenVersion: 0,
@@ -199,6 +211,7 @@ export async function upsertLocalUser(payload: VerifiedTokenPayload, profile?: I
             phoneNumber: true,
             name: true,
             avatarUrl: true,
+            membershipLevel: true,
             role: true,
             dailyTestLimit: true,
             tokenVersion: true,
@@ -231,6 +244,7 @@ export async function getSessionUser(req?: NextRequest): Promise<SessionUser | n
         role: dbUser.role,
         tokenVersion: dbUser.tokenVersion,
         dailyTestLimit: dbUser.dailyTestLimit,
+        membershipLevel: dbUser.membershipLevel,
     };
 }
 

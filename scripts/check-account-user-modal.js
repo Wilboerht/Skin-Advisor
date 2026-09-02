@@ -8,6 +8,7 @@ const MOCK_USER = {
     name: "Hank",
     avatar: null,
     role: "user",
+    membershipLevel: "ADVANCED",
   },
 };
 

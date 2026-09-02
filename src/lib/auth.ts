@@ -48,6 +48,8 @@ export interface SessionUser {
     role: string;
     tokenVersion: number;
     dailyTestLimit?: number | null;
+    /** SSO 会员等级（REGULAR/ADVANCED），null 视为普通会员 */
+    membershipLevel?: string | null;
 }
 
 export async function incrementTokenVersion(userId: string): Promise<number | null> {

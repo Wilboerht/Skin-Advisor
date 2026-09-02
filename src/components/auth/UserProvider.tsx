@@ -11,6 +11,8 @@ export interface User {
     name?: string;
     role: string;
     avatar?: string | null;
+    /** SSO 会员等级（REGULAR/ADVANCED），null 视为普通会员 */
+    membershipLevel?: string | null;
 }
 
 interface AuthContextType {

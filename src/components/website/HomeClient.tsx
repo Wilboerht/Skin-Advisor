@@ -287,6 +287,7 @@ export default function HomeClient() {
     usedCount: number;
     dailyLimit: number;
     remaining: number;
+    quotaPeriod?: 'day' | 'lifetime';
     isGuest?: boolean;
     error?: string | null;
   } | null>(null);
@@ -698,7 +699,7 @@ export default function HomeClient() {
               <div className="px-10 pb-10 pt-2 flex flex-col items-center gap-6">
                 <div className="text-center space-y-2">
                   <h2 id="limit-modal-title" className="text-base font-bold" style={{ color: '#5c4937' }}>
-                    今日测试次数已用完
+                    {testLimitInfo?.quotaPeriod === 'lifetime' ? '免费测肤次数已用完' : '今日测试次数已用完'}
                   </h2>
                   <p className="text-sm leading-relaxed" style={{ color: '#5c4937', opacity: 0.8 }}>
                     {(() => {
@@ -709,11 +710,19 @@ export default function HomeClient() {
                       if (remaining > 0) {
                         return <>{info?.error || "当前暂时无法开始测肤，请稍后再试"}</>;
                       }
+                      if (info?.quotaPeriod === 'lifetime') {
+                        return (
+                          <>
+                            免费测肤次数已用完（共 {dailyLimit} 次）
+                            <br />升级高级会员，享不限次测肤
+                          </>
+                        );
+                      }
                       return (
                         <>
                           今日测试次数已用完（共 {dailyLimit} 次）
                           {!user && (
-                            <><br />登录会员可获更多次数，立即注册解锁完整权益</>
+                            <><br />注册即享 12 次免费测肤，高级会员不限次数</>
                           )}
                         </>
                       );

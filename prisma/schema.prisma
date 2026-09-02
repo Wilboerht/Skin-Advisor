@@ -173,6 +173,9 @@ model User {
   
   avatarUrl       String?
 
+  // SSO 会员等级（主站 membership_level claim）：REGULAR 普通 / ADVANCED 高级；null 视为普通
+  membershipLevel String?
+
   // NOTE: role should ideally be an enum (user, disabled).
   // Kept as String for broader database compatibility.
   role            String           @default("user")

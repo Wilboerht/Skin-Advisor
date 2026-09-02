@@ -14,6 +14,8 @@ export interface UsageLimitResult {
     error?: string;
     remaining: number;
     dailyLimit: number;
+    /** 额度口径：day = 每日上限（游客/高级会员），lifetime = 终身总量（普通会员） */
+    quotaPeriod?: 'day' | 'lifetime';
     resetTime?: Date;
     role: 'guest' | 'member';
 }
@@ -35,16 +37,39 @@ export interface ReserveUsageResult {
 // 游客每日测试次数限制（业务可随时调整，保持单点配置）
 const GUEST_DAILY_LIMIT = 3;
 
+// ===== 会员测肤额度（业务规则，单点配置）=====
+// 普通会员（REGULAR 或未识别）：终身总量 12 次
+const REGULAR_TOTAL_LIMIT = 12;
+// 高级会员（ADVANCED）：总量不限，每日 3 次
+const ADVANCED_DAILY_LIMIT = 3;
+// dailyTestLimit 的历史系统默认值；等于该值视为未被管理员自定义
+const LEGACY_DEFAULT_DAILY_LIMIT = 10;
+
+interface MemberQuota {
+    /** 每日上限；null = 不限 */
+    dailyLimit: number | null;
+    /** 终身总量上限；null = 不限 */
+    totalLimit: number | null;
+    isAdvanced: boolean;
+}
+
 /**
- * 获取登录用户的每日测试限制
+ * 会员额度规则：
+ * - ADVANCED（高级会员）：每日 3 次，总量不限
+ * - REGULAR（普通会员，含 null/未知等级兜底）：终身总量 12 次，无每日上限
+ * - 管理员自定义 dailyTestLimit（≠ 系统默认 10）作为每日上限，优先于会员默认值
  */
-function getUserDailyLimit(user: { dailyTestLimit?: number | null } | null | undefined): number {
-    // dailyTestLimit 为 null/undefined 时回退到系统默认值；
-    // 显式设置为 0-1 均视为有效自定义值（0 表示禁用测试）。
-    if (user && typeof user.dailyTestLimit === 'number') {
-        return Math.max(0, user.dailyTestLimit);
-    }
-    return 10;
+function getMemberQuota(user: { membershipLevel?: string | null; dailyTestLimit?: number | null } | null | undefined): MemberQuota {
+    const isAdvanced = user?.membershipLevel === "ADVANCED";
+    const adminOverride =
+        user && typeof user.dailyTestLimit === 'number' && user.dailyTestLimit !== LEGACY_DEFAULT_DAILY_LIMIT
+            ? Math.max(0, user.dailyTestLimit)
+            : null;
+    return {
+        dailyLimit: adminOverride ?? (isAdvanced ? ADVANCED_DAILY_LIMIT : null),
+        totalLimit: isAdvanced ? null : REGULAR_TOTAL_LIMIT,
+        isAdvanced,
+    };
 }
 
 /**
@@ -52,7 +77,9 @@ function getUserDailyLimit(user: { dailyTestLimit?: number | null } | null | und
  *
  * 规则：
  * 1. 访客：每日 3 次
- * 2. 登录用户：默认每日 10 次（管理员可通过 dailyTestLimit 按用户调整，0 表示禁用）
+ * 2. 普通会员（REGULAR）：终身总量 12 次
+ * 3. 高级会员（ADVANCED）：总量不限，每日 3 次
+ * 4. 管理员自定义 dailyTestLimit（≠ 系统默认 10）作为每日上限，优先于会员默认值
  */
 export async function checkUsageLimit(request: NextRequest, body?: Record<string, unknown>): Promise<UsageLimitResult> {
     // 本地开发环境不限制次数
@@ -68,8 +95,9 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
         const userId = user.id;
         // 日界固定北京时间，避免 UTC 部署时凌晨时段额度计算漂移
         const today = startOfTodayShanghai();
+        const quota = getMemberQuota(user);
 
-        const [count, inProgressCount] = await Promise.all([
+        const [count, inProgressCount, lifetimeCount] = await Promise.all([
             withDbRetry(() =>
                 prisma.testRecord.count({
                     where: { userId, testDate: { gte: today } }
@@ -79,18 +107,33 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
                 prisma.advisorSession.count({
                     where: { userId, analysisStartedAt: { gte: tenMinutesAgo }, completedAt: null }
                 })
-            )
+            ),
+            // 终身总量仅普通会员需要统计
+            quota.totalLimit != null
+                ? withDbRetry(() => prisma.testRecord.count({ where: { userId } }))
+                : Promise.resolve(0)
         ]);
 
-        const totalCount = count + inProgressCount;
-        // getSessionUser() 已返回最新的 dailyTestLimit（每次调用都查数据库确认状态）
-        const limit = getUserDailyLimit(user);
+        const usedToday = count + inProgressCount;
+        const usedTotal = lifetimeCount + inProgressCount;
+        const dailyRemaining = quota.dailyLimit == null ? Infinity : Math.max(0, quota.dailyLimit - usedToday);
+        const totalRemaining = quota.totalLimit == null ? Infinity : Math.max(0, quota.totalLimit - usedTotal);
+        const remaining = Math.min(dailyRemaining, totalRemaining);
+        // 展示口径：终身额度更紧张时按总量展示（普通会员），否则按日（高级会员/管理员自定义）
+        const lifetimeBinding = totalRemaining <= dailyRemaining;
+        const effectiveLimit = lifetimeBinding ? (quota.totalLimit ?? 0) : (quota.dailyLimit ?? 0);
+
         return {
-            canTest: totalCount < limit,
-            remaining: Math.max(0, limit - totalCount),
-            dailyLimit: limit,
+            canTest: remaining > 0,
+            remaining: remaining === Infinity ? 999 : remaining,
+            dailyLimit: effectiveLimit,
+            quotaPeriod: lifetimeBinding ? 'lifetime' : 'day',
             role: 'member',
-            error: totalCount >= limit ? '今日免费测试已达上限，登录即可继续。' : undefined
+            error: remaining <= 0
+                ? (lifetimeBinding
+                    ? `免费测肤次数已用完（共 ${effectiveLimit} 次），升级高级会员可享不限次测肤。`
+                    : '今日测肤次数已用完，明天再来。')
+                : undefined
         };
     }
 
@@ -164,7 +207,7 @@ export async function checkUsageLimit(request: NextRequest, body?: Record<string
             remaining: 0,
             dailyLimit: limit,
             role: 'guest',
-            error: '今日免费测试已达上限，登录即可解锁更多次数。'
+            error: '今日免费测试已达上限，注册即享 12 次免费测肤。'
         };
     }
 
@@ -207,15 +250,20 @@ export async function reserveUsage(
                 // 1. 登录用户（从数据库读取最新额度，避免 JWT 缓存滞后）
                 if (user) {
                     const userId = user.id;
-                    const [dbUser, count, inProgressCount] = await Promise.all([
-                        tx.user.findUnique({ where: { id: userId }, select: { dailyTestLimit: true } }),
+                    const [dbUser, count, inProgressCount, lifetimeCount] = await Promise.all([
+                        tx.user.findUnique({ where: { id: userId }, select: { dailyTestLimit: true, membershipLevel: true } }),
                         tx.testRecord.count({ where: { userId, testDate: { gte: today } } }),
-                        tx.advisorSession.count({ where: { userId, analysisStartedAt: { gte: tenMinutesAgo }, completedAt: null } })
+                        tx.advisorSession.count({ where: { userId, analysisStartedAt: { gte: tenMinutesAgo }, completedAt: null } }),
+                        tx.testRecord.count({ where: { userId } })
                     ]);
-                    const totalCount = count + inProgressCount;
-                    const limit = getUserDailyLimit(dbUser);
-                    if (totalCount >= limit) {
-                        return { success: false, error: '今日测试次数已用完，请明天再试。', role: 'member' };
+                    const quota = getMemberQuota(dbUser);
+                    const usedToday = count + inProgressCount;
+                    const usedTotal = lifetimeCount + inProgressCount;
+                    if (quota.dailyLimit != null && usedToday >= quota.dailyLimit) {
+                        return { success: false, error: '今日测肤次数已用完，明天再来。', role: 'member' };
+                    }
+                    if (quota.totalLimit != null && usedTotal >= quota.totalLimit) {
+                        return { success: false, error: `免费测肤次数已用完（共 ${quota.totalLimit} 次），升级高级会员可享不限次测肤。`, role: 'member' };
                     }
                     // upsert 语义：createMany + skipDuplicates 天然幂等。
                     // 原 create 在 withDbRetry 重试时会撞 P2002 被外层 catch 归为
@@ -276,7 +324,7 @@ export async function reserveUsage(
                 const totalCount = currentCount + guestInProgress;
 
                 if (totalCount >= limit) {
-                    return { success: false, error: '今日测试次数已用完，登录后可获更多次数。', role: 'guest' };
+                    return { success: false, error: '今日测试次数已用完，注册即享 12 次免费测肤。', role: 'guest' };
                 }
 
                 // upsert 语义：同登录用户分支，按实际插入行数判断是否首次预占，

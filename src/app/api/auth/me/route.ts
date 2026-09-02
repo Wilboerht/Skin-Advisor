@@ -41,10 +41,11 @@ export async function GET(req: NextRequest) {
     const profileClaims = await getIdTokenProfileClaims();
     let localUser = await upsertLocalUser(payload, profileClaims ?? undefined);
 
-    // id_token 缺头像/手机号时兜底：向主站 userinfo 拉一次并落库（仅在本地缺失时触发，避免每次请求都回源）
-    // userinfo 的 phone 是掩码格式（不落库），但弹层展示本来就要打码，可直接用于显示
+    // 本地缺头像/手机号/会员等级时兜底：向主站 userinfo 拉一次并落库（仅缺失时触发，避免每次请求都回源）
+    // userinfo 的 phone 是掩码格式（不落库），但弹层展示本来就要打码，可直接用于显示；
+    // membershipLevel 只信 userinfo（服务端验证），不读 id_token Cookie
     let maskedPhone: string | null = null;
-    if (localUser && (!localUser.avatarUrl || !localUser.phoneNumber)) {
+    if (localUser && (!localUser.avatarUrl || !localUser.phoneNumber || !localUser.membershipLevel)) {
         const userinfoToken = refreshed?.access_token ?? token;
         const info = userinfoToken ? await fetchSsoUserinfo(userinfoToken) : null;
         if (info) {
@@ -53,6 +54,7 @@ export async function GET(req: NextRequest) {
                 nickname: info.nickname ?? profileClaims?.nickname,
                 avatar: info.avatar ?? profileClaims?.avatar,
                 phone: info.phone ?? profileClaims?.phone,
+                membershipLevel: info.membershipLevel,
             });
         }
     }
@@ -68,6 +70,7 @@ export async function GET(req: NextRequest) {
             phone: localUser?.phoneNumber || payload.phone || profileClaims?.phone || maskedPhone,
             name: localUser?.name || payload.phone || "",
             avatar: localUser?.avatarUrl || null,
+            membershipLevel: localUser?.membershipLevel || null,
             role: localUser?.role || "user",
         },
     });

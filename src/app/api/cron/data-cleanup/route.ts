@@ -12,6 +12,8 @@ const MAX_FULL_REPORTS = 10;
 const ARCHIVE_BATCH_LIMIT = 500;
 // 单个用户最多保留报告数（热层 + 冷层摘要合计，滚动续期策略下的安全阀）
 const MAX_USER_REPORTS = 100;
+// 普通会员（REGULAR）测肤数据留存天数，满期降级为冷层摘要；高级会员（ADVANCED）永久保留
+const REGULAR_RETENTION_DAYS = 365;
 
 interface CleanupStats {
     sessions: number;
@@ -113,20 +115,26 @@ export async function GET(request: NextRequest) {
         });
         await cleanupSessions(oldUserSessions, stats);
 
-        // ===== 3. 冷热分层：每用户最近 10 条完整报告之外的，就地脱水为脱敏摘要 =====
+        // ===== 3. 冷热分层：REGULAR 用户最近 10 条之外、或满 365 天的报告脱水为脱敏摘要 =====
         // 热层（最近 10 条）用户可见、数据完整；冷层仅留统计摘要（无敏感问卷字段），
-        // 用户不可见，供趋势对比与白皮书群体统计。单次限量，多轮 cron 收敛。
+        // 用户不可见，供趋势对比与白皮书群体统计。高级会员（ADVANCED）档案永久保留、不参与归档。
+        // 单次限量，多轮 cron 收敛。
+        const retentionCutoff = new Date(now - REGULAR_RETENTION_DAYS * 24 * 60 * 60 * 1000);
         const archivable = await prisma.$queryRaw<Array<{ sessionId: string }>>`
             SELECT "sessionId"
             FROM (
-                SELECT "sessionId",
-                       ROW_NUMBER() OVER (PARTITION BY "userId" ORDER BY "completedAt" DESC) as rn
-                FROM "AdvisorSession"
-                WHERE "userId" IS NOT NULL
-                  AND "completedAt" IS NOT NULL
-                  AND "archivedAt" IS NULL
+                SELECT s."sessionId",
+                       s."completedAt",
+                       u."membershipLevel",
+                       ROW_NUMBER() OVER (PARTITION BY s."userId" ORDER BY s."completedAt" DESC) as rn
+                FROM "AdvisorSession" s
+                LEFT JOIN "User" u ON u."id" = s."userId"
+                WHERE s."userId" IS NOT NULL
+                  AND s."completedAt" IS NOT NULL
+                  AND s."archivedAt" IS NULL
             ) t
-            WHERE rn > ${MAX_FULL_REPORTS}
+            WHERE t."membershipLevel" IS DISTINCT FROM 'ADVANCED'
+              AND (t.rn > ${MAX_FULL_REPORTS} OR t."completedAt" < ${retentionCutoff})
             LIMIT ${ARCHIVE_BATCH_LIMIT}
         `;
 
@@ -154,18 +162,21 @@ export async function GET(request: NextRequest) {
             }
         }
 
-        // ===== 4. 清理注册用户超量数据（全部历史中每个用户最多保留 100 条，含冷层摘要）=====
+        // ===== 4. 清理注册用户超量数据（普通会员最多保留 100 条，含冷层摘要；高级会员永久保留豁免）=====
         // 使用 window function 一次性获取所有超量记录，避免 N+1 查询
         const excessSessions = await prisma.$queryRaw<Array<{ sessionId: string }>>`
             SELECT "sessionId"
             FROM (
-                SELECT "sessionId", "createdAt",
-                       ROW_NUMBER() OVER (PARTITION BY "userId" ORDER BY "createdAt" DESC) as rn
-                FROM "AdvisorSession"
-                WHERE "userId" IS NOT NULL
+                SELECT s."sessionId", s."createdAt",
+                       u."membershipLevel",
+                       ROW_NUMBER() OVER (PARTITION BY s."userId" ORDER BY s."createdAt" DESC) as rn
+                FROM "AdvisorSession" s
+                LEFT JOIN "User" u ON u."id" = s."userId"
+                WHERE s."userId" IS NOT NULL
             ) t
-            WHERE rn > ${MAX_USER_REPORTS}
-            ORDER BY "createdAt" ASC
+            WHERE t."membershipLevel" IS DISTINCT FROM 'ADVANCED'
+              AND t.rn > ${MAX_USER_REPORTS}
+            ORDER BY t."createdAt" ASC
         `;
 
         await cleanupSessions(excessSessions, stats);

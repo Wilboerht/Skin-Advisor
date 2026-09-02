@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
             usedCount,
             dailyLimit,
             remaining: limit.remaining,
+            quotaPeriod: limit.quotaPeriod ?? 'day',
             isGuest: limit.role === 'guest',
             error: limit.error,
         });

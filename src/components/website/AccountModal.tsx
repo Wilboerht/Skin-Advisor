@@ -120,9 +120,14 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
                   )}
                 </div>
 
-                {/* 昵称（纯展示） */}
-                <p className="text-xl font-semibold text-[#1A1A1A] mb-1.5">
+                {/* 昵称（纯展示）+ 会员徽章（仅高级会员） */}
+                <p className="text-xl font-semibold text-[#1A1A1A] mb-1.5 flex items-center gap-2">
                   {user.name || "朋友"}
+                  {user.membershipLevel === "ADVANCED" && (
+                    <span className="text-[10px] font-light tracking-[0.1em] px-2 py-0.5 rounded-full border border-[#C9A86C]/70 text-[#8B7355]">
+                      高级会员
+                    </span>
+                  )}
                 </p>
 
                 {/* 手机号 */}
