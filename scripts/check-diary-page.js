@@ -99,15 +99,24 @@ const day = (n) => {
       ok = false;
     }
 
-    // 打开全部记录二级弹层
+    // 打开全部记录视图（同弹层内切换，无新 dialog）
     try {
       await page.getByText("全部记录").click();
-      await page.waitForSelector("#history-modal-title", { timeout: 8000 });
-      await page.waitForTimeout(800);
+      await page.waitForTimeout(700);
+      const secondDialog = await page.locator('[role="dialog"]').count();
+      const historyVisible = (await page.locator("text=测肤记录").count()) > 0 && (await page.locator("text=全部记录").count()) > 0;
+      const backOk = historyVisible;
       await page.screenshot({ path: `screenshots-check/diary-modal-history-${name}.png` });
-      console.log(`✓ ${name} 记录弹层叠加正常`);
+      console.log(`${secondDialog === 1 ? "✓" : "✗"} ${name} 记录视图无独立弹层（dialog 数 ${secondDialog}）`);
+      console.log(`${backOk ? "✓" : "✗"} ${name} 记录视图内容出现`);
+      // 返回主视图
+      await page.getByLabel("返回护肤档案").click();
+      await page.waitForTimeout(700);
+      const mainBack = (await page.locator("text=护肤历程").count()) > 0;
+      console.log(`${mainBack ? "✓" : "✗"} ${name} 返回主视图`);
+      if (secondDialog !== 1 || !historyVisible || !mainBack) ok = false;
     } catch (e) {
-      console.log(`✗ ${name} 记录弹层未打开`, String(e));
+      console.log(`✗ ${name} 记录视图未打开`, String(e));
       ok = false;
     }
 

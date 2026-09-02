@@ -3,16 +3,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
-import { Loader2, NotebookPen, ScanFace, Smile, TrendingUp, X } from "lucide-react";
+import { ChevronLeft, Loader2, NotebookPen, ScanFace, Smile, TrendingUp, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import type { HistorySession } from "@/components/website/TestHistoryList";
+import { TestHistoryList } from "@/components/website/TestHistoryList";
 import { DiaryTimeline, type DiaryEntry } from "@/components/website/DiaryTimeline";
 import { TrendChart, type TrendsData } from "@/components/website/TrendChart";
 import { CheckInModal } from "@/components/website/CheckInModal";
-import { TestHistoryModal } from "@/components/website/TestHistoryModal";
 import { useDiaryModal } from "@/components/website/DiaryModalContext";
 
 const TESTS_PAGE_SIZE = 50;
@@ -49,8 +49,8 @@ function GuestTrendCurve() {
 /**
  * DiaryModal — 「护肤档案」弹层（原独立页 /diary，2026-09 改为全局弹层）
  * 未登录：紧凑登录引导视图（示意曲线 + 功能胶囊 + CTA）；
- * 已登录：测肤趋势 + 护肤历程时间线；打卡/全部记录为二级弹层（sheet 叠 sheet）。
- * 容器/动效与 AccountModal 全站模态框对齐。
+ * 已登录：测肤趋势 + 护肤历程时间线；「全部记录」为弹层内视图切换（原内容淡出 → 记录淡入），
+ * 打卡保持二级弹层。容器/动效与 AccountModal 全站模态框对齐。
  */
 export function DiaryModal() {
   const { isOpen, closeDiaryModal } = useDiaryModal();
@@ -72,14 +72,17 @@ export function DiaryModal() {
     open: false,
     existing: null,
   });
-  // 全部测肤记录弹层
-  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  // 视图切换：true=全部记录（同一弹层内内容淡去切换，不开新弹层）
+  const [historyView, setHistoryView] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const modalRef = useFocusTrap<HTMLDivElement>(
-    isOpen && !checkIn.open && !showHistoryModal,
-    closeDiaryModal
-  );
+  const modalRef = useFocusTrap<HTMLDivElement>(isOpen && !checkIn.open, closeDiaryModal);
   useBodyScrollLock({ enabled: isOpen, iosSafe: true });
+
+  // 切换视图时内容区回到顶部
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: 0 });
+  }, [historyView]);
 
   // 打开时拉取（每次打开刷新；未登录直接跳过走游客视图）
   const refreshEntries = useCallback(() => {
@@ -105,6 +108,7 @@ export function DiaryModal() {
     setTrendsLoaded(false);
     setTests([]);
     setTestsLoaded(false);
+    setHistoryView(false);
     testsLoadedRef.current = 0;
 
     fetch("/api/user/diary")
@@ -207,13 +211,13 @@ export function DiaryModal() {
               className="relative z-10 w-full sm:max-w-xl max-h-[86dvh] bg-[#FDFBF7] rounded-t-[28px] sm:rounded-[28px] shadow-[0_45px_80px_-16px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* 标题栏 */}
+              {/* 标题栏（视图切换时标题随视图变化） */}
               <div className="flex items-center justify-between shrink-0 px-6 md:px-8 pt-[calc(1.25rem+env(safe-area-inset-top,0px))] sm:pt-6 pb-4 border-b border-brand-charcoal/[0.06]">
                 <h2
                   id="diary-modal-title"
                   className="text-xl font-serif font-light text-brand-charcoal tracking-[0.08em]"
                 >
-                  护肤档案
+                  {historyView ? "测肤记录" : "护肤档案"}
                 </h2>
                 <button
                   onClick={closeDiaryModal}
@@ -224,8 +228,43 @@ export function DiaryModal() {
                 </button>
               </div>
 
-              {/* 内容区（可滚动） */}
-              <div className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain px-5 md:px-7 py-5 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))]">
+              {/* 内容区（可滚动）：两视图淡出/淡入切换，同一弹层内完成 */}
+              <div
+                ref={scrollRef}
+                className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain px-5 md:px-7 py-5 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))]"
+              >
+                <AnimatePresence mode="wait" initial={false}>
+                  {historyView ? (
+                    <m.div
+                      key="history"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.18 }}
+                    >
+                      <div className="flex items-center gap-2 mb-4">
+                        <button
+                          type="button"
+                          onClick={() => setHistoryView(false)}
+                          aria-label="返回护肤档案"
+                          className="w-8 h-8 -ml-1 flex items-center justify-center rounded-full text-brand-charcoal/50 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.05] transition-colors cursor-pointer"
+                        >
+                          <ChevronLeft className="w-4 h-4" strokeWidth={2} />
+                        </button>
+                        <span className="text-[12px] text-brand-charcoal/50 font-light tracking-[0.05em]">
+                          全部记录
+                        </span>
+                      </div>
+                      <TestHistoryList />
+                    </m.div>
+                  ) : (
+                    <m.div
+                      key="main"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.18 }}
+                    >
                 {!user ? (
                   /* ===== 游客：登录引导视图 ===== */
                   <div className="flex flex-col items-center text-center py-4">
@@ -272,8 +311,8 @@ export function DiaryModal() {
                 ) : (
                   /* ===== 登录：趋势 + 时间线 ===== */
                   <div>
-                    {/* 测肤趋势 */}
-                    <section className="rounded-3xl border border-brand-charcoal/[0.08] bg-gradient-to-br from-white to-[#FBF7EE] shadow-[0_8px_24px_rgba(0,38,62,0.06)] p-5 mb-6">
+                    {/* 测肤趋势（标题与护肤历程同构：区标题在卡片外，等距） */}
+                    <section className="mb-6">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-[15px] font-semibold flex items-center gap-2">
                           <TrendingUp className="w-4 h-4 text-brand-charcoal/60" strokeWidth={1.5} />
@@ -287,7 +326,7 @@ export function DiaryModal() {
                           )}
                           <button
                             type="button"
-                            onClick={() => setShowHistoryModal(true)}
+                            onClick={() => setHistoryView(true)}
                             className="text-[12px] text-brand-charcoal/60 font-light tracking-[0.05em] hover:text-brand-charcoal transition-colors cursor-pointer"
                           >
                             全部记录 →
@@ -295,26 +334,31 @@ export function DiaryModal() {
                         </span>
                       </div>
 
-                      {!trendsLoaded || !entriesLoaded ? (
-                        <div className="h-32 flex items-center justify-center">
-                          <Loader2 className="w-5 h-5 text-brand-charcoal/30 animate-spin" />
-                        </div>
-                      ) : trends ? (
-                        <TrendChart trends={trends} />
-                      ) : (
-                        <div className="text-center py-6">
-                          <p className="text-[14px] text-brand-charcoal/70 mb-1.5">完成 2 次测肤后解锁趋势</p>
-                          <p className="text-[12px] text-brand-charcoal/50 font-light mb-4">
-                            定期测肤，看见肌肤的真实变化
-                          </p>
-                          <Link
-                            href="/questions"
-                            className="inline-flex items-center justify-center px-5 h-9 rounded-full bg-brand-charcoal text-white text-[12px] tracking-[0.08em] font-light transition-opacity hover:opacity-90"
-                          >
-                            去测肤
-                          </Link>
-                        </div>
-                      )}
+                      <div className="rounded-3xl border border-brand-charcoal/[0.08] bg-gradient-to-br from-white to-[#FBF7EE] shadow-[0_8px_24px_rgba(0,38,62,0.06)] p-5">
+                        {!trendsLoaded || !entriesLoaded ? (
+                          <div className="h-32 flex items-center justify-center">
+                            <Loader2 className="w-5 h-5 text-brand-charcoal/30 animate-spin" />
+                          </div>
+                        ) : trends ? (
+                          <TrendChart trends={trends} />
+                        ) : (
+                          /* 解锁引导：与护肤历程空态/打卡引导同款虚线框，样式统一 */
+                          <div className="rounded-2xl border border-dashed border-brand-charcoal/20 px-4 py-5 text-center">
+                            <p className="text-[13px] text-brand-charcoal/55 font-light mb-1.5">
+                              完成 2 次测肤后解锁趋势
+                            </p>
+                            <p className="text-[12px] text-brand-charcoal/50 font-light mb-4">
+                              定期测肤，看见肌肤的真实变化
+                            </p>
+                            <Link
+                              href="/questions"
+                              className="inline-flex items-center justify-center px-4 h-8 rounded-full border border-brand-charcoal/20 text-brand-charcoal/70 text-[12px] font-light tracking-[0.05em] transition-colors hover:border-brand-charcoal/50 hover:text-brand-charcoal"
+                            >
+                              去测肤 →
+                            </Link>
+                          </div>
+                        )}
+                      </div>
                     </section>
 
                     {/* 护肤历程 */}
@@ -335,17 +379,19 @@ export function DiaryModal() {
                     </section>
                   </div>
                 )}
+                  </m.div>
+                )}
+                </AnimatePresence>
               </div>
             </m.div>
 
-            {/* 二级弹层：打卡 / 全部记录（sheet 叠 sheet，DOM 在后自然置顶） */}
+            {/* 二级弹层：打卡（sheet 叠 sheet，DOM 在后自然置顶）；全部记录已改为同弹层内视图切换 */}
             <CheckInModal
               isOpen={checkIn.open && !!user}
               existing={checkIn.existing}
               onClose={() => setCheckIn((s) => ({ ...s, open: false }))}
               onSaved={refreshEntries}
             />
-            <TestHistoryModal isOpen={showHistoryModal && !!user} onClose={() => setShowHistoryModal(false)} />
           </div>
         )}
       </AnimatePresence>
