@@ -111,9 +111,15 @@ export function DiaryTimeline({ entries, tests, loading, onCheckIn }: DiaryTimel
     <div>
       {!hasAnyEvent && (
         <div className="rounded-3xl border border-dashed border-brand-charcoal/[0.15] py-10 text-center mb-6">
-          <p className="text-[13px] text-brand-charcoal/50 font-light">
+          <p className="text-[13px] text-brand-charcoal/50 font-light mb-4">
             完成一次测肤后，这里会自动生成你的护肤记录
           </p>
+          <Link
+            href="/questions"
+            className="inline-flex items-center justify-center px-5 h-9 rounded-full bg-brand-charcoal text-white text-[12px] tracking-[0.08em] font-light transition-opacity hover:opacity-90"
+          >
+            去测肤
+          </Link>
         </div>
       )}
 
@@ -129,8 +135,11 @@ export function DiaryTimeline({ entries, tests, loading, onCheckIn }: DiaryTimel
         return (
           <div key={group.dateStr}>
             {monthDivider && (
-              <div className="text-[11px] tracking-[0.2em] text-brand-charcoal/40 mb-3 mt-2 first:mt-0">
-                {monthDivider}
+              <div className="flex items-center gap-3 mb-3 mt-2 first:mt-0">
+                <span className="shrink-0 text-[11px] tracking-[0.2em] text-brand-charcoal/40">
+                  {monthDivider}
+                </span>
+                <span className="flex-1 h-px bg-brand-charcoal/[0.08]" />
               </div>
             )}
             <div className="flex gap-4 md:gap-5">
@@ -145,7 +154,7 @@ export function DiaryTimeline({ entries, tests, loading, onCheckIn }: DiaryTimel
               </div>
 
               {/* 右侧事件列：细竖线串联 */}
-              <div className="relative flex-1 border-l border-brand-charcoal/10 pl-4 pb-7 space-y-2.5">
+              <div className="relative flex-1 border-l border-brand-charcoal/10 pl-4 pb-6 space-y-2.5">
                 {/* 今日打卡引导：今天没有任何事件时展示完整引导盒；有测肤等事件但无日记时补一条打卡入口 */}
                 {isToday && !group.events.some((e) => e.kind === "diary") && (
                   group.events.length === 0 ? (
@@ -198,7 +207,7 @@ export function DiaryTimeline({ entries, tests, loading, onCheckIn }: DiaryTimel
                           className="absolute -left-[21px] top-4 w-2.5 h-2.5 rounded-full border-2 border-[#FDFBF7]"
                           style={{ backgroundColor: meta.color }}
                         />
-                        <div className="rounded-2xl bg-white border border-brand-charcoal/[0.06] px-4 py-3.5">
+                        <div className="rounded-2xl bg-white border border-brand-charcoal/[0.06] px-4 py-3.5 transition-colors hover:border-brand-charcoal/[0.15]">
                           {isToday && onCheckIn && (
                             <button
                               type="button"

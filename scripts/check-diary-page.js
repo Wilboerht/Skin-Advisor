@@ -45,8 +45,21 @@ const day = (n) => {
       await page.waitForTimeout(600);
       await page.screenshot({ path: `screenshots-check/diary-checkin-${name}.png` });
       console.log(`${name} checkin modal done`);
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(500);
     } catch (e) {
       console.log(`!! ${name} 打卡弹层未打开`, String(e));
+    }
+
+    // 打开全部测肤记录弹层截图
+    try {
+      await page.getByText("全部记录").click();
+      await page.waitForSelector("#history-modal-title", { timeout: 8000 });
+      await page.waitForTimeout(800);
+      await page.screenshot({ path: `screenshots-check/diary-history-${name}.png` });
+      console.log(`${name} history modal done`);
+    } catch (e) {
+      console.log(`!! ${name} 记录弹层未打开`, String(e));
     }
   }
 

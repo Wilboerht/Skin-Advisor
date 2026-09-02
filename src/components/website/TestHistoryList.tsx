@@ -2,12 +2,13 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Award, ChevronLeft, ChevronRight, Clock, Loader2, ScanFace } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, Loader2, ScanFace } from "lucide-react";
 
 /**
  * TestHistoryList — 测肤记录列表（含数据拉取与分页）
- * 共用方：/profile 测肤记录区块、/diary 测肤记录模态框
+ * 使用方：/diary 测肤记录模态框
  * 数据源：/api/advisor/history（分页、排除冷层归档）
+ * 条目为一行紧凑式：日期 · 肤质 · 分数，点击进入报告详情
  */
 
 export interface HistoryAnalysisResult {
@@ -27,12 +28,12 @@ interface TestHistoryListProps {
   /** 传入时显示内置标题栏（标题 + 共 N 条）；模态框场景可不传（模态框自带标题） */
   title?: string;
   pageSize?: number;
-  /** 每次数据加载完成后回调（/profile 用它计算统计行） */
+  /** 每次数据加载完成后回调 */
   onDataChange?: (sessions: HistorySession[], total: number) => void;
 }
 
-function formatRelativeDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString("zh-CN", { month: "long", day: "numeric" });
+function formatDay(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString("zh-CN", { month: "numeric", day: "numeric" });
 }
 
 export function TestHistoryList({ title, pageSize = 10, onDataChange }: TestHistoryListProps) {
@@ -109,59 +110,28 @@ export function TestHistoryList({ title, pageSize = 10, onDataChange }: TestHist
           </Link>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="divide-y divide-brand-charcoal/[0.06]">
           {history.map((session) => {
             const result = session.analysisResult;
             const score = result?.faceAnalysis?.overallScore;
             const skinType = result?.skinProfile?.typeLabel || result?.skinType?.typeLabel;
-            const concerns = result?.skinProfile?.concerns || result?.concerns || [];
-            const skinAge = result?.skinProfile?.skinAge || result?.faceAnalysis?.skinAge;
 
             return (
               <Link
                 key={session.sessionId}
                 href={`/reports/${session.sessionId}`}
-                className="group block bg-white rounded-2xl p-5 shadow-[0_2px_12px_rgba(61,68,48,0.04)] hover:shadow-[0_4px_20px_rgba(61,68,48,0.08)] transition-shadow"
+                className="group flex items-center gap-3 px-2 py-3 rounded-lg hover:bg-brand-charcoal/[0.04] transition-colors"
               >
-                <div className="flex items-start justify-between gap-4 mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[rgba(61,68,48,0.06)] flex items-center justify-center text-[#3D4430]">
-                      <Award className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="text-[14px] font-medium text-[#1A1A1A]">
-                        {skinType || "肌肤分析"}
-                      </div>
-                      <div className="text-[12px] text-[#8A8A8A]">{formatRelativeDate(session.completedAt)}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 text-[#1A1A1A]">
-                    <span className="text-lg font-semibold">{score ?? "—"}</span>
-                    {score != null && <span className="text-[11px] text-[#8A8A8A]">分</span>}
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                  {concerns.slice(0, 3).map((c, idx) => (
-                    <span
-                      key={idx}
-                      className="px-2.5 py-1 text-[11px] rounded-full bg-[rgba(61,68,48,0.08)] text-[#5E5E5E]"
-                    >
-                      {c}
-                    </span>
-                  ))}
-                  {concerns.length > 3 && (
-                    <span className="text-[11px] text-[#8A8A8A]">+{concerns.length - 3}</span>
-                  )}
-                  {skinAge != null && skinAge > 0 && (
-                    <span className="text-[11px] text-[#8A8A8A]">肤龄 {skinAge}</span>
-                  )}
-                </div>
-
-                <div className="mt-4 flex items-center text-[12px] text-[#1B3A5C] font-medium">
-                  <span>查看报告</span>
-                  <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-                </div>
+                <span className="shrink-0 w-12 text-[13px] text-brand-charcoal/50 font-light tabular-nums">
+                  {formatDay(session.completedAt)}
+                </span>
+                <span className="flex-1 min-w-0 truncate text-[13px] text-[#1A1A1A]">
+                  {skinType || "肌肤分析"}
+                </span>
+                <span className="shrink-0 text-[13px] font-medium text-brand-charcoal tabular-nums">
+                  {score != null ? `${score} 分` : "—"}
+                </span>
+                <ChevronRight className="w-3.5 h-3.5 shrink-0 text-brand-charcoal/30 group-hover:translate-x-0.5 transition-transform" />
               </Link>
             );
           })}
