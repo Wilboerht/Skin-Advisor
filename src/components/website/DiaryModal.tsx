@@ -334,31 +334,30 @@ export function DiaryModal() {
                         </span>
                       </div>
 
-                      <div className="rounded-3xl border border-brand-charcoal/[0.08] bg-gradient-to-br from-white to-[#FBF7EE] shadow-[0_8px_24px_rgba(0,38,62,0.06)] p-5">
-                        {!trendsLoaded || !entriesLoaded ? (
-                          <div className="h-32 flex items-center justify-center">
-                            <Loader2 className="w-5 h-5 text-brand-charcoal/30 animate-spin" />
-                          </div>
-                        ) : trends ? (
-                          <TrendChart trends={trends} />
-                        ) : (
-                          /* 解锁引导：与护肤历程空态/打卡引导同款虚线框，样式统一 */
-                          <div className="rounded-2xl border border-dashed border-brand-charcoal/20 px-4 py-5 text-center">
-                            <p className="text-[13px] text-brand-charcoal/55 font-light mb-1.5">
-                              完成 2 次测肤后解锁趋势
-                            </p>
-                            <p className="text-[12px] text-brand-charcoal/50 font-light mb-4">
-                              定期测肤，看见肌肤的真实变化
-                            </p>
-                            <Link
-                              href="/questions"
-                              className="inline-flex items-center justify-center px-4 h-8 rounded-full border border-brand-charcoal/20 text-brand-charcoal/70 text-[12px] font-light tracking-[0.05em] transition-colors hover:border-brand-charcoal/50 hover:text-brand-charcoal"
-                            >
-                              去测肤 →
-                            </Link>
-                          </div>
-                        )}
-                      </div>
+                      {/* 趋势区扁平化：与护肤历程一致，不加外层卡片（图表直接平铺） */}
+                      {!trendsLoaded || !entriesLoaded ? (
+                        <div className="h-32 flex items-center justify-center">
+                          <Loader2 className="w-5 h-5 text-brand-charcoal/30 animate-spin" />
+                        </div>
+                      ) : trends ? (
+                        <TrendChart trends={trends} />
+                      ) : (
+                        /* 解锁引导：与护肤历程空态/打卡引导同款虚线框，样式统一 */
+                        <div className="rounded-2xl border border-dashed border-brand-charcoal/20 px-4 py-5 text-center">
+                          <p className="text-[13px] text-brand-charcoal/55 font-light mb-1.5">
+                            完成 2 次测肤后解锁趋势
+                          </p>
+                          <p className="text-[12px] text-brand-charcoal/50 font-light mb-4">
+                            定期测肤，看见肌肤的真实变化
+                          </p>
+                          <Link
+                            href="/questions"
+                            className="inline-flex items-center justify-center px-4 h-8 rounded-full border border-brand-charcoal/20 text-brand-charcoal/70 text-[12px] font-light tracking-[0.05em] transition-colors hover:border-brand-charcoal/50 hover:text-brand-charcoal"
+                          >
+                            去测肤 →
+                          </Link>
+                        </div>
+                      )}
                     </section>
 
                     {/* 护肤历程 */}
