@@ -12,13 +12,17 @@ import {
   Pencil,
   ScanFace,
   Smile,
+  Trash2,
 } from "lucide-react";
 import type { HistorySession } from "@/components/website/TestHistoryList";
+import { localDateStr } from "@/lib/local-date";
+import { isAutoDiaryEntry, isDiaryDateInRange, parseClientDate } from "@/lib/diary-utils";
 
 /**
  * DiaryTimeline — 护肤历程时间线（PRD v1.5）
  * 合并两类事件按日分组倒序：日记打卡 + 测肤里程碑；
  * 空日期不渲染，今天置顶，首屏近 30 天 + "加载更早"。
+ * 同日既有测肤又有其自动生成的日记条目时，隐藏自动日记卡避免重复展示。
  */
 
 export interface DiaryEntry {
@@ -27,11 +31,6 @@ export interface DiaryEntry {
   skinState: string;
   tags?: string[] | null;
   note?: string | null;
-}
-
-/** 客户端本地日历日 → YYYY-MM-DD（"当日"判据，与 PRD 时区方案一致） */
-export function localDateStr(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 export const STATE_META: Record<string, { label: string; color: string; icon: React.ComponentType<{ className?: string; strokeWidth?: number }> }> = {
@@ -57,14 +56,26 @@ interface DiaryTimelineProps {
   entries: DiaryEntry[];
   tests: HistorySession[];
   loading: boolean;
-  /** 登录后传入：今日打卡（existing 为 null）或编辑当日记录 */
-  onCheckIn?: (existing: DiaryEntry | null) => void;
+  /** 打开打卡弹层：existing 为 null 新建（dateStr 目标日期），非 null 编辑当日记录 */
+  onCheckIn?: (existing: DiaryEntry | null, dateStr: string) => void;
+  /** 删除指定日记条目（时间线卡片删除入口） */
+  onDeleteEntry?: (entry: DiaryEntry) => void;
+  /** 正在删除的条目 id（禁用态/加载提示） */
+  deletingId?: string | null;
   /** 服务端还有更早的测肤记录未拉取（分页未拉完） */
   hasMoreTests?: boolean;
   /** 正在分页拉取更早的测肤记录 */
   testsLoadingMore?: boolean;
   /** 请求加载更早的测肤记录（追加到 tests） */
   onLoadMoreTests?: () => void;
+  /** 服务端还有更早的日记记录未拉取（分页未拉完） */
+  hasMoreEntries?: boolean;
+  /** 正在分页拉取更早的日记记录 */
+  entriesLoadingMore?: boolean;
+  /** 请求加载更早的日记记录（追加到 entries） */
+  onLoadMoreEntries?: () => void;
+  /** 日记列表刷新（如打卡保存）后自增，用于收起"近 30 天"折叠态 */
+  refreshKey?: number;
 }
 
 export function DiaryTimeline({
@@ -72,16 +83,24 @@ export function DiaryTimeline({
   tests,
   loading,
   onCheckIn,
+  onDeleteEntry,
+  deletingId,
   hasMoreTests = false,
   testsLoadingMore = false,
   onLoadMoreTests,
+  hasMoreEntries = false,
+  entriesLoadingMore = false,
+  onLoadMoreEntries,
+  refreshKey,
 }: DiaryTimelineProps) {
   const [showAll, setShowAll] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
-  // 打卡保存/刷新日记后回到"近 30 天"折叠态（entries 引用变化触发；分页追加 tests 不重置展开态）
+  // 打卡保存/刷新日记后回到"近 30 天"折叠态；
+  // 追加分页（entries 尾部新增）不重置展开态
   useEffect(() => {
     setShowAll(false);
-  }, [entries]);
+  }, [refreshKey]);
 
   const todayStr = localDateStr(new Date());
 
@@ -124,6 +143,10 @@ export function DiaryTimeline({
   const dayOf = (dateStr: string) => String(parseInt(dateStr.slice(8, 10), 10));
   const monthLabelOf = (dateStr: string) =>
     `${dateStr.slice(0, 4)} 年 ${parseInt(dateStr.slice(5, 7), 10)} 月`;
+  const canBackfill = (dateStr: string) => {
+    const d = parseClientDate(dateStr);
+    return !!d && isDiaryDateInRange(d, new Date());
+  };
 
   return (
     <div>
@@ -136,7 +159,7 @@ export function DiaryTimeline({
             {onCheckIn && (
               <button
                 type="button"
-                onClick={() => onCheckIn(null)}
+                onClick={() => onCheckIn(null, todayStr)}
                 className="inline-flex items-center justify-center px-5 h-9 rounded-full bg-brand-charcoal text-white text-[12px] tracking-[0.08em] font-light transition-opacity hover:opacity-90 cursor-pointer"
               >
                 打卡
@@ -155,6 +178,16 @@ export function DiaryTimeline({
       {hasAnyEvent && visibleGroups.map((group, gi) => {
         const isToday = group.dateStr === todayStr;
         const month = group.dateStr.slice(0, 7);
+        // 同日既有测肤又有其自动生成的日记条目时，隐藏自动日记卡，避免同一次测肤重复展示
+        const visibleEvents = group.events.filter(
+          (e) => e.kind === "test" || !isAutoDiaryEntry(e.entry)
+        );
+        // 当日测肤最高分（用于手动打卡卡片的同日对照提示）
+        const dayScores = group.events
+          .flatMap((e) => (e.kind === "test" ? [e.test] : []))
+          .map((t) => t.analysisResult?.faceAnalysis?.overallScore)
+          .filter((s): s is number => typeof s === "number" && s > 0);
+        const maxDayScore = dayScores.length > 0 ? Math.max(...dayScores) : null;
         // 跨月时插入月份分隔行（纯函数判定，不依赖渲染期可变状态）
         const monthDivider =
           gi === 0 || visibleGroups[gi - 1].dateStr.slice(0, 7) !== month
@@ -185,8 +218,8 @@ export function DiaryTimeline({
               {/* 右侧事件列：细竖线串联 */}
               <div className="relative flex-1 border-l border-brand-charcoal/10 pl-4 pb-6 space-y-2.5">
                 {/* 今日打卡引导：今天没有任何事件时展示完整引导盒；有测肤等事件但无日记时补一条打卡入口 */}
-                {isToday && !group.events.some((e) => e.kind === "diary") && (
-                  group.events.length === 0 ? (
+                {isToday && !visibleEvents.some((e) => e.kind === "diary") && (
+                  visibleEvents.length === 0 ? (
                     <div className="relative">
                       <span className="absolute -left-[21px] top-4 w-2.5 h-2.5 rounded-full border-2 border-dashed border-brand-charcoal/30 bg-[#FDFBF7]" />
                       <div className="rounded-2xl border border-dashed border-brand-charcoal/20 px-4 py-3.5 flex items-center gap-3">
@@ -196,7 +229,7 @@ export function DiaryTimeline({
                         {onCheckIn && (
                           <button
                             type="button"
-                            onClick={() => onCheckIn(null)}
+                            onClick={() => onCheckIn(null, todayStr)}
                             className="shrink-0 min-h-[32px] px-3.5 rounded-full bg-brand-charcoal text-white text-[12px] font-light tracking-[0.05em] transition-opacity hover:opacity-85 cursor-pointer"
                           >
                             打卡
@@ -216,7 +249,7 @@ export function DiaryTimeline({
                         <span className="absolute -left-[21px] top-4 w-2.5 h-2.5 rounded-full border-2 border-dashed border-brand-charcoal/30 bg-[#FDFBF7]" />
                         <button
                           type="button"
-                          onClick={() => onCheckIn(null)}
+                          onClick={() => onCheckIn(null, todayStr)}
                           className="block w-full rounded-2xl border border-dashed border-brand-charcoal/20 px-4 py-3 text-left text-[12px] text-brand-charcoal/55 font-light hover:border-brand-charcoal/40 hover:text-brand-charcoal transition-colors cursor-pointer"
                         >
                           今天还没有打卡，记录一下今日肌肤状态 →
@@ -226,10 +259,28 @@ export function DiaryTimeline({
                   )
                 )}
 
-                {group.events.map((ev, i) => {
+                {/* 补打卡：过去的空日期（写入窗口内）提供补录入口，错过不再永久断档 */}
+                {!isToday &&
+                  !visibleEvents.some((e) => e.kind === "diary") &&
+                  onCheckIn &&
+                  canBackfill(group.dateStr) && (
+                    <div className="relative">
+                      <span className="absolute -left-[21px] top-4 w-2.5 h-2.5 rounded-full border-2 border-dashed border-brand-charcoal/30 bg-[#FDFBF7]" />
+                      <button
+                        type="button"
+                        onClick={() => onCheckIn(null, group.dateStr)}
+                        className="block w-full rounded-2xl border border-dashed border-brand-charcoal/20 px-4 py-3 text-left text-[12px] text-brand-charcoal/45 font-light hover:border-brand-charcoal/40 hover:text-brand-charcoal transition-colors cursor-pointer"
+                      >
+                        补打卡 →
+                      </button>
+                    </div>
+                  )}
+
+                {visibleEvents.map((ev, i) => {
                   if (ev.kind === "diary") {
                     const meta = STATE_META[ev.entry.skinState] ?? STATE_META.normal;
                     const Icon = meta.icon;
+                    const auto = isAutoDiaryEntry(ev.entry);
                     return (
                       <div key={`d-${ev.entry.id}-${i}`} className="relative">
                         <span
@@ -237,15 +288,47 @@ export function DiaryTimeline({
                           style={{ backgroundColor: meta.color }}
                         />
                         <div className="rounded-2xl bg-white border border-brand-charcoal/[0.06] px-4 py-3.5 transition-colors hover:border-brand-charcoal/[0.15]">
-                          {isToday && onCheckIn && (
-                            <button
-                              type="button"
-                              onClick={() => onCheckIn(ev.entry)}
-                              aria-label="编辑今日记录"
-                              className="float-right ml-2 -mt-0.5 w-8 h-8 flex items-center justify-center rounded-full text-brand-charcoal/40 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.06] transition-colors cursor-pointer"
-                            >
-                              <Pencil className="w-3.5 h-3.5" strokeWidth={1.8} />
-                            </button>
+                          {(onDeleteEntry || (isToday && onCheckIn)) && (
+                            <div className="flex justify-end gap-1 -mt-1 mb-1">
+                              {isToday && onCheckIn && (
+                                <button
+                                  type="button"
+                                  onClick={() => onCheckIn(ev.entry, todayStr)}
+                                  aria-label="编辑今日记录"
+                                  className="w-8 h-8 flex items-center justify-center rounded-full text-brand-charcoal/40 hover:text-brand-charcoal hover:bg-brand-charcoal/[0.06] transition-colors cursor-pointer"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" strokeWidth={1.8} />
+                                </button>
+                              )}
+                              {onDeleteEntry && (confirmDeleteId === ev.entry.id ? (
+                                <>
+                                  <button
+                                    type="button"
+                                    disabled={deletingId === ev.entry.id}
+                                    onClick={() => onDeleteEntry(ev.entry)}
+                                    className="h-8 px-2.5 flex items-center rounded-full bg-[#D44C47]/10 text-[#D44C47] text-[11px] font-light tracking-[0.05em] disabled:opacity-50 cursor-pointer"
+                                  >
+                                    确认删除
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setConfirmDeleteId(null)}
+                                    className="h-8 px-2.5 flex items-center rounded-full text-brand-charcoal/50 text-[11px] font-light hover:bg-brand-charcoal/[0.05] cursor-pointer"
+                                  >
+                                    取消
+                                  </button>
+                                </>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => setConfirmDeleteId(ev.entry.id)}
+                                  aria-label="删除记录"
+                                  className="w-8 h-8 flex items-center justify-center rounded-full text-brand-charcoal/30 hover:text-[#D44C47] hover:bg-[#D44C47]/[0.06] transition-colors cursor-pointer"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" strokeWidth={1.8} />
+                                </button>
+                              ))}
+                            </div>
                           )}
                           <div className="flex items-center gap-2 flex-wrap">
                             <span
@@ -267,6 +350,12 @@ export function DiaryTimeline({
                           {ev.entry.note && (
                             <p className="mt-2 text-[13px] text-[#5E5E5E] font-light leading-relaxed">
                               {ev.entry.note}
+                            </p>
+                          )}
+                          {/* 同日冲突提示：手动打卡与测肤评分同屏时，补一句客观评分帮助对照 */}
+                          {!auto && maxDayScore != null && (
+                            <p className="mt-2 text-[11px] text-brand-charcoal/40 font-light">
+                              同日测肤 {maxDayScore} 分
                             </p>
                           )}
                         </div>
@@ -303,17 +392,18 @@ export function DiaryTimeline({
         );
       })}
 
-      {(hiddenCount > 0 || hasMoreTests) && (
+      {(hiddenCount > 0 || hasMoreTests || hasMoreEntries) && (
         <button
           type="button"
           onClick={() => {
-            if (hiddenCount > 0 || hasMoreTests) setShowAll(true);
+            if (hiddenCount > 0 || hasMoreTests || hasMoreEntries) setShowAll(true);
             onLoadMoreTests?.();
+            onLoadMoreEntries?.();
           }}
-          disabled={testsLoadingMore}
+          disabled={testsLoadingMore || entriesLoadingMore}
           className="w-full h-10 inline-flex items-center justify-center gap-2 rounded-full border border-brand-charcoal/15 text-[12px] text-brand-charcoal/60 font-light tracking-[0.08em] hover:border-brand-charcoal/40 hover:text-brand-charcoal transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-wait"
         >
-          {testsLoadingMore && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+          {(testsLoadingMore || entriesLoadingMore) && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
           {hiddenCount > 0 ? `加载更早的记录（还有 ${hiddenCount} 天）` : "加载更早的记录"}
         </button>
       )}

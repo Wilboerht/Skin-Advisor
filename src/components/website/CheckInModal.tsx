@@ -7,7 +7,8 @@ import { fetchWithCsrf } from "@/lib/fetch-client";
 import { useToast } from "@/components/ui/Toast";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
-import { localDateStr, STATE_META, type DiaryEntry } from "./DiaryTimeline";
+import { localDateStr } from "@/lib/local-date";
+import { STATE_META, type DiaryEntry } from "./DiaryTimeline";
 
 /** 预置情境标签（多选，与服务端 tags 上限一致） */
 const PRESET_TAGS = ["熬夜", "换季", "爆痘", "敏感泛红", "日晒", "姨妈期"];
@@ -18,20 +19,30 @@ interface CheckInModalProps {
   onClose: () => void;
   /** 编辑当日已有记录时传入；新建为 null */
   existing: DiaryEntry | null;
+  /** 打卡目标日期（YYYY-MM-DD，默认今天）；补打卡时传过去日期 */
+  dateStr?: string;
   /** 保存成功后回调（父级刷新日记列表） */
   onSaved: () => void;
 }
 
 /**
- * CheckInModal — 护肤打卡弹层（当日一条，upsert）
- * 选择肌肤状态 + 情境标签 + 可选备注；容器/动效与 AccountModal 等全站模态框对齐。
+ * CheckInModal — 护肤打卡弹层（userId+date 唯一，upsert）
+ * 选择肌肤状态 + 情境标签 + 可选备注；支持补打卡（指定过去日期）；
+ * 容器/动效与 AccountModal 等全站模态框对齐。
  */
-export function CheckInModal({ isOpen, onClose, existing, onSaved }: CheckInModalProps) {
+export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved }: CheckInModalProps) {
   const toast = useToast();
   const [skinState, setSkinState] = useState<string>("good");
   const [tags, setTags] = useState<string[]>([]);
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const targetDate = dateStr ?? localDateStr(new Date());
+  const isToday = targetDate === localDateStr(new Date());
+  const targetLabel = new Date(`${targetDate}T00:00:00.000Z`).toLocaleDateString("zh-CN", {
+    month: "numeric",
+    day: "numeric",
+  });
 
   const modalRef = useFocusTrap<HTMLDivElement>(isOpen, onClose);
   useBodyScrollLock({ enabled: isOpen, iosSafe: true });
@@ -56,14 +67,14 @@ export function CheckInModal({ isOpen, onClose, existing, onSaved }: CheckInModa
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          date: localDateStr(new Date()),
+          date: targetDate,
           skinState,
           tags,
           note: note.trim() || undefined,
         }),
       });
       if (!res.ok) throw new Error("保存未成功");
-      toast.success(existing ? "今日记录已更新" : "打卡成功");
+      toast.success(existing ? "今日记录已更新" : isToday ? "打卡成功" : `已补打卡 ${targetLabel}`);
       onSaved();
       onClose();
     } catch (err) {
@@ -117,7 +128,7 @@ export function CheckInModal({ isOpen, onClose, existing, onSaved }: CheckInModa
                 id="checkin-modal-title"
                 className="text-xl font-serif font-light text-brand-charcoal tracking-[0.08em] text-center mb-6"
               >
-                {existing ? "编辑今日记录" : "记录今日肌肤"}
+                {existing ? "编辑今日记录" : isToday ? "记录今日肌肤" : `补打卡 · ${targetLabel}`}
               </h2>
 
               {/* 肌肤状态（单选） */}

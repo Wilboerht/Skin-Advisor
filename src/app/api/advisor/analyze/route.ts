@@ -821,9 +821,11 @@ export async function POST(request: NextRequest) {
             }
 
             // ====== 护肤日记自动生成：测肤完成后写入/更新当日条目 ======
-            // 失败不影响分析响应；纯问卷测肤（无面部评分）不生成
+            // 失败不影响分析响应；仅真实面部分析（faceAnalysis 存在）生成。
+            // 不加 faceAnalysis 条件时，纯问卷测肤在 AI 失败走规则引擎降级路径
+            // 会拿到默认 overallScore 75，伪装成真实测肤记录写入日记。
             const overallScore = (finalFaceAnalysis as Record<string, unknown> | null)?.overallScore;
-            if (user?.id && clientDate && typeof overallScore === "number") {
+            if (user?.id && clientDate && faceAnalysis && typeof overallScore === "number") {
                 upsertAutoDiaryEntry({
                     userId: user.id,
                     dateStr: clientDate,

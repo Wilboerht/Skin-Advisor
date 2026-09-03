@@ -7,6 +7,7 @@ import { preprocessFaceImage } from '@/lib/image-processing';
 
 import { getPrivacyConsentPayload } from '@/components/advisor/PrivacyConsent';
 import { STORAGE_KEYS } from '@/lib/storage-keys';
+import { localDateStr } from '@/lib/local-date';
 
 export interface AsyncAnalysisState {
     status: 'idle' | 'preparing' | 'analyzing_face' | 'analyzing_skin' | 'completed' | 'error';
@@ -25,11 +26,6 @@ export interface SessionStatusResponse {
 }
 
 const ANALYSIS_LOCK_TTL_MS = 90 * 1000;
-
-/** 客户端本地日历日 → YYYY-MM-DD（与护肤日记 date 语义一致） */
-function localDateStr(d: Date): string {
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
 
 function acquireAnalysisLock(sessionId: string): boolean {
     try {

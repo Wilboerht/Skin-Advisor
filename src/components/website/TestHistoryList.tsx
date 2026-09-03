@@ -28,6 +28,14 @@ interface TestHistoryListProps {
   /** 传入时显示内置标题栏（标题 + 共 N 条）；模态框场景可不传（模态框自带标题） */
   title?: string;
   pageSize?: number;
+  /** 提供非空首屏数据时跳过初始拉取（需与 pageSize 对齐），避免重复请求同一接口 */
+  initialSessions?: HistorySession[];
+  /** 首屏数据对应的服务端总条数（配合 initialSessions 使用） */
+  initialTotal?: number;
+  /** 初始页码（配合父级保留翻页位置） */
+  initialPage?: number;
+  /** 翻页回调（父级保存当前位置，重新进入时恢复） */
+  onPageChange?: (page: number) => void;
   /** 每次数据加载完成后回调 */
   onDataChange?: (sessions: HistorySession[], total: number) => void;
 }
@@ -36,19 +44,28 @@ function formatDay(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("zh-CN", { month: "numeric", day: "numeric" });
 }
 
-export function TestHistoryList({ title, pageSize = 10, onDataChange }: TestHistoryListProps) {
-  const [history, setHistory] = useState<HistorySession[]>([]);
-  const [loading, setLoading] = useState(true);
+export function TestHistoryList({
+  title,
+  pageSize = 10,
+  initialSessions,
+  initialTotal = 0,
+  initialPage,
+  onPageChange,
+  onDataChange,
+}: TestHistoryListProps) {
+  const hasInitial = !!initialSessions && initialSessions.length > 0;
+  const [history, setHistory] = useState<HistorySession[]>(initialSessions ?? []);
+  const [loading, setLoading] = useState(!hasInitial);
   const [error, setError] = useState(false);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(0);
-  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(initialPage ?? 1);
+  const [totalPages, setTotalPages] = useState(initialTotal > 0 ? Math.ceil(initialTotal / pageSize) : 0);
+  const [total, setTotal] = useState(initialTotal);
 
   const fetchHistory = useCallback(async () => {
     setLoading(true);
     setError(false);
     try {
-      const res = await fetch(`/api/advisor/history?page=${page}&limit=${pageSize}`);
+      const res = await fetch(`/api/advisor/history?page=${page}&limit=${pageSize}&lite=1`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       const sessions: HistorySession[] = data.history ?? [];
@@ -66,8 +83,14 @@ export function TestHistoryList({ title, pageSize = 10, onDataChange }: TestHist
   }, [page, pageSize, onDataChange]);
 
   useEffect(() => {
+    // 已提供首屏数据：跳过初始拉取，避免与父级（DiaryModal 时间线）重复请求
+    if (hasInitial) return;
     fetchHistory();
-  }, [fetchHistory]);
+  }, [fetchHistory, hasInitial]);
+
+  useEffect(() => {
+    onPageChange?.(page);
+  }, [page, onPageChange]);
 
   return (
     <div>

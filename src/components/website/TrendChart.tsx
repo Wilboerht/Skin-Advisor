@@ -7,7 +7,7 @@ export interface TrendsData {
   scores: number[];
 }
 
-/** 测肤趋势图（纯 SVG，无图表库依赖）：平滑曲线 + 渐变面积 + 网格刻度 + 最新评分摘要 */
+/** 肌肤变化图（纯 SVG，无图表库依赖）：平滑曲线 + 渐变面积 + 网格刻度 + 最新评分摘要 */
 export function TrendChart({ trends }: { trends: TrendsData }) {
   // 实例级唯一 ID，避免同页多图表实例的渐变 defs 互相覆盖
   const gradientId = `trendArea-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;

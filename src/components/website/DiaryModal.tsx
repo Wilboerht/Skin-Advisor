@@ -3,7 +3,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
-import { ChevronLeft, Loader2, NotebookPen, ScanFace, Smile, TrendingUp, X } from "lucide-react";
+import {
+  CalendarCheck,
+  ChevronLeft,
+  Flame,
+  Loader2,
+  NotebookPen,
+  ScanFace,
+  Smile,
+  TrendingUp,
+  X,
+} from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
@@ -11,11 +21,34 @@ import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import type { HistorySession } from "@/components/website/TestHistoryList";
 import { TestHistoryList } from "@/components/website/TestHistoryList";
 import { DiaryTimeline, type DiaryEntry } from "@/components/website/DiaryTimeline";
+import { DiaryCalendar } from "@/components/website/DiaryCalendar";
 import { TrendChart, type TrendsData } from "@/components/website/TrendChart";
 import { CheckInModal } from "@/components/website/CheckInModal";
 import { useDiaryModal } from "@/components/website/DiaryModalContext";
+import { useToast } from "@/components/ui/Toast";
+import { fetchWithCsrf } from "@/lib/fetch-client";
+import { localDateStr } from "@/lib/local-date";
 
 const TESTS_PAGE_SIZE = 50;
+const ENTRIES_PAGE_SIZE = 30;
+
+interface DiarySummary {
+  totalCheckins: number;
+  currentStreak: number;
+  longestStreak: number;
+  testCount: number;
+}
+
+// 60s 短缓存：趋势与测肤列表重复开关弹层时不重复请求（打卡/删除通过刷新路径绕开）
+const SHORT_CACHE_TTL_MS = 60_000;
+const shortCache = new Map<string, { ts: number; promise: Promise<Response> }>();
+function fetchWithShortCache(url: string): Promise<Response> {
+  const hit = shortCache.get(url);
+  if (hit && Date.now() - hit.ts < SHORT_CACHE_TTL_MS) return hit.promise;
+  const promise = fetch(url);
+  shortCache.set(url, { ts: Date.now(), promise });
+  return promise;
+}
 
 /** 游客视图的装饰性示意曲线（无数值，不代表真实数据） */
 function GuestTrendCurve() {
@@ -49,28 +82,47 @@ function GuestTrendCurve() {
 /**
  * DiaryModal — 「护肤档案」弹层（原独立页 /diary，2026-09 改为全局弹层）
  * 未登录：紧凑登录引导视图（示意曲线 + 功能胶囊 + CTA）；
- * 已登录：测肤趋势 + 护肤历程时间线；「全部记录」为弹层内视图切换（原内容淡出 → 记录淡入），
+ * 已登录：肌肤变化 + 护肤历程时间线；「全部记录」为弹层内视图切换（原内容淡出 → 记录淡入），
  * 打卡保持二级弹层。容器/动效与 AccountModal 全站模态框对齐。
  */
 export function DiaryModal() {
   const { isOpen, closeDiaryModal } = useDiaryModal();
   const { user } = useAuth();
   const { openAuthModal } = useAuthModal();
+  const toast = useToast();
 
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
   const [entriesLoaded, setEntriesLoaded] = useState(false);
+  const [entriesTotal, setEntriesTotal] = useState(0);
+  const [entriesLoadingMore, setEntriesLoadingMore] = useState(false);
+  const [diaryRefreshKey, setDiaryRefreshKey] = useState(0);
+  const entriesOffsetRef = useRef(0);
+  const [summary, setSummary] = useState<DiarySummary | null>(null);
   const [trends, setTrends] = useState<TrendsData | null>(null);
   const [trendsLoaded, setTrendsLoaded] = useState(false);
   const [tests, setTests] = useState<HistorySession[]>([]);
   const [testsLoaded, setTestsLoaded] = useState(false);
   const [testsTotal, setTestsTotal] = useState(0);
   const [testsLoadingMore, setTestsLoadingMore] = useState(false);
+  const [testsExhausted, setTestsExhausted] = useState(false);
   const testsLoadedRef = useRef(0);
+  const loadedTestIdsRef = useRef<Set<string>>(new Set());
+  // 日历热力图
+  const [calendarView, setCalendarView] = useState(false);
+  const [calendarMonth, setCalendarMonth] = useState(() => localDateStr(new Date()).slice(0, 7));
+  const [calendarEntries, setCalendarEntries] = useState<DiaryEntry[]>([]);
+  const [calendarLoading, setCalendarLoading] = useState(false);
+  const [calendarRefreshKey, setCalendarRefreshKey] = useState(0);
+  // 全部记录翻页位置保留
+  const [lastHistoryPage, setLastHistoryPage] = useState(1);
+  // 删除中条目 id
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  // 打卡弹层：existing 为 null 表示新建当日记录
-  const [checkIn, setCheckIn] = useState<{ open: boolean; existing: DiaryEntry | null }>({
+  // 打卡弹层：existing 为 null 表示新建；dateStr 为目标日历日（补打卡为过去日期）
+  const [checkIn, setCheckIn] = useState<{ open: boolean; existing: DiaryEntry | null; dateStr: string | null }>({
     open: false,
     existing: null,
+    dateStr: null,
   });
   // 视图切换：true=全部记录（同一弹层内内容淡去切换，不开新弹层）
   const [historyView, setHistoryView] = useState(false);
@@ -84,19 +136,63 @@ export function DiaryModal() {
     scrollRef.current?.scrollTo({ top: 0 });
   }, [historyView]);
 
-  // 打开时拉取（每次打开刷新；未登录直接跳过走游客视图）
+  // 日记列表分页加载：offset 分页，append 时按 id 去重
+  const loadEntries = useCallback(async (offset: number, limit: number, append: boolean) => {
+    const res = await fetch(`/api/user/diary?limit=${limit}&offset=${offset}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const list: DiaryEntry[] = data.data ?? [];
+    const total: number = data.pagination?.total ?? 0;
+    setEntries((prev) => {
+      if (!append) return list;
+      const seen = new Set(prev.map((e) => e.id));
+      return [...prev, ...list.filter((e) => !seen.has(e.id))];
+    });
+    setEntriesTotal(total);
+    entriesOffsetRef.current = offset + list.length;
+  }, []);
+
+  // 里程碑统计（连续/累计打卡、测肤次数）
+  const loadSummary = useCallback(async () => {
+    try {
+      const res = await fetch("/api/user/diary?summary=1");
+      if (!res.ok) return;
+      const data = await res.json();
+      setSummary(data.summary ?? null);
+    } catch (e) {
+      console.error("Diary summary fetch error:", e);
+    }
+  }, []);
+
+  // 打卡保存/删除后刷新：带回已加载过的条目数量 + 折叠回"近 30 天"（refreshKey 自增触发时间线收起）
   const refreshEntries = useCallback(() => {
-    fetch("/api/user/diary")
-      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
-      .then((data) => {
-        setEntries(data.data ?? []);
+    const limit = Math.max(ENTRIES_PAGE_SIZE, entriesOffsetRef.current + ENTRIES_PAGE_SIZE);
+    loadEntries(0, limit, false)
+      .then(() => {
         setEntriesLoaded(true);
+        setDiaryRefreshKey((k) => k + 1);
       })
       .catch((e) => {
         console.error("Diary fetch error:", e);
         setEntriesLoaded(true);
       });
-  }, []);
+    // 里程碑统计与日历视图同步刷新
+    loadSummary();
+    setCalendarRefreshKey((k) => k + 1);
+  }, [loadEntries, loadSummary]);
+
+  // 时间线"加载更早"：追加下一页日记
+  const loadMoreEntries = useCallback(async () => {
+    if (entriesLoadingMore) return;
+    setEntriesLoadingMore(true);
+    try {
+      await loadEntries(entriesOffsetRef.current, ENTRIES_PAGE_SIZE, true);
+    } catch (e) {
+      console.error("Load more entries error:", e);
+    } finally {
+      setEntriesLoadingMore(false);
+    }
+  }, [entriesLoadingMore, loadEntries]);
 
   useEffect(() => {
     if (!isOpen || !user) return;
@@ -104,18 +200,25 @@ export function DiaryModal() {
 
     setEntries([]);
     setEntriesLoaded(false);
+    entriesOffsetRef.current = 0;
+    setEntriesTotal(0);
+    setSummary(null);
     setTrends(null);
     setTrendsLoaded(false);
     setTests([]);
     setTestsLoaded(false);
+    setTestsExhausted(false);
+    loadedTestIdsRef.current = new Set();
     setHistoryView(false);
     testsLoadedRef.current = 0;
+    setCalendarView(false);
+    setCalendarEntries([]);
+    setLastHistoryPage(1);
+    setDeletingId(null);
 
-    fetch("/api/user/diary")
-      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
-      .then((data) => {
+    loadEntries(0, ENTRIES_PAGE_SIZE, false)
+      .then(() => {
         if (cancelled) return;
-        setEntries(data.data ?? []);
         setEntriesLoaded(true);
       })
       .catch((e) => {
@@ -124,7 +227,10 @@ export function DiaryModal() {
         setEntriesLoaded(true);
       });
 
-    fetch("/api/user/skin-trends")
+    loadSummary();
+
+    // 趋势与测肤首屏带 60s 短缓存，重复开关弹层不重复请求
+    fetchWithShortCache("/api/user/skin-trends")
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
       .then((data) => {
         if (cancelled) return;
@@ -137,13 +243,14 @@ export function DiaryModal() {
         setTrendsLoaded(true);
       });
 
-    fetch(`/api/advisor/history?page=1&limit=${TESTS_PAGE_SIZE}`)
+    fetchWithShortCache(`/api/advisor/history?page=1&limit=${TESTS_PAGE_SIZE}&lite=1`)
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
       .then((data) => {
         if (cancelled) return;
         const history: HistorySession[] = data.history ?? [];
         setTests(history);
         testsLoadedRef.current = history.length;
+        loadedTestIdsRef.current = new Set(history.map((t) => t.sessionId));
         setTestsTotal(data.pagination?.total ?? 0);
         setTestsLoaded(true);
       })
@@ -156,30 +263,70 @@ export function DiaryModal() {
     return () => {
       cancelled = true;
     };
-  }, [isOpen, user]);
+  }, [isOpen, user, loadEntries, loadSummary]);
 
-  // 时间线「加载更早」：分页追加（sessionId 去重）
+  // 日历热力图：切换视图/月份时按需拉取该月条目；打卡保存/删除后随 refreshKey 重拉
+  useEffect(() => {
+    if (!isOpen || !user || !calendarView) return;
+    let cancelled = false;
+    setCalendarLoading(true);
+    fetch(`/api/user/diary?month=${calendarMonth}`)
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
+      .then((data) => {
+        if (cancelled) return;
+        setCalendarEntries(data.data ?? []);
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        console.error("Calendar month fetch error:", e);
+      })
+      .finally(() => {
+        if (!cancelled) setCalendarLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, user, calendarView, calendarMonth, calendarRefreshKey]);
+
+  // 时间线「加载更早」：分页追加测肤记录（sessionId 去重；无新增时置 exhausted 防止重复拉取）
   const loadMoreTests = useCallback(async () => {
     if (testsLoadingMore) return;
     setTestsLoadingMore(true);
     try {
       const page = Math.floor(testsLoadedRef.current / TESTS_PAGE_SIZE) + 1;
-      const res = await fetch(`/api/advisor/history?page=${page}&limit=${TESTS_PAGE_SIZE}`);
+      const res = await fetch(`/api/advisor/history?page=${page}&limit=${TESTS_PAGE_SIZE}&lite=1`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       const more: HistorySession[] = data.history ?? [];
-      setTests((prev) => {
-        const seen = new Set(prev.map((t) => t.sessionId));
-        return [...prev, ...more.filter((t) => !seen.has(t.sessionId))];
-      });
-      testsLoadedRef.current += more.length;
+      const unique = more.filter((t) => !loadedTestIdsRef.current.has(t.sessionId));
+      unique.forEach((t) => loadedTestIdsRef.current.add(t.sessionId));
+      setTests((prev) => [...prev, ...unique]);
+      testsLoadedRef.current += unique.length;
       setTestsTotal(data.pagination?.total ?? 0);
+      if (unique.length === 0) setTestsExhausted(true);
     } catch (e) {
       console.error("Load more tests error:", e);
     } finally {
       setTestsLoadingMore(false);
     }
   }, [testsLoadingMore]);
+
+  // 删除日记条目（含历史日期）；删除后刷新列表/统计/日历
+  const handleDeleteEntry = useCallback(async (entry: DiaryEntry) => {
+    if (deletingId) return;
+    setDeletingId(entry.id);
+    try {
+      const res = await fetchWithCsrf(`/api/user/diary?date=${entry.date.slice(0, 10)}`, { method: "DELETE" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      toast.success("记录已删除");
+      refreshEntries();
+    } catch (e) {
+      console.error("Diary delete error:", e);
+      toast.error("删除未成功，请稍后再试");
+    } finally {
+      setDeletingId(null);
+    }
+  }, [deletingId, refreshEntries, toast]);
 
   return (
     <LazyMotion features={domAnimation}>
@@ -255,7 +402,13 @@ export function DiaryModal() {
                           全部记录
                         </span>
                       </div>
-                      <TestHistoryList />
+                      <TestHistoryList
+                        pageSize={TESTS_PAGE_SIZE}
+                        initialPage={lastHistoryPage}
+                        initialSessions={lastHistoryPage <= 1 ? tests.slice(0, TESTS_PAGE_SIZE) : undefined}
+                        initialTotal={testsTotal}
+                        onPageChange={setLastHistoryPage}
+                      />
                     </m.div>
                   ) : (
                     <m.div
@@ -279,7 +432,7 @@ export function DiaryModal() {
                     </p>
                     <div className="flex flex-wrap items-center justify-center gap-2 mb-7">
                       {[
-                        { icon: TrendingUp, label: "测肤趋势" },
+                        { icon: TrendingUp, label: "肌肤变化" },
                         { icon: ScanFace, label: "里程碑记录" },
                         { icon: Smile, label: "每日打卡" },
                       ].map((f) => {
@@ -311,12 +464,12 @@ export function DiaryModal() {
                 ) : (
                   /* ===== 登录：趋势 + 时间线 ===== */
                   <div>
-                    {/* 测肤趋势（标题与护肤历程同构：区标题在卡片外，等距） */}
+                    {/* 肌肤变化（标题与护肤历程同构：区标题在卡片外，等距） */}
                     <section className="mb-6">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-[15px] font-semibold flex items-center gap-2">
                           <TrendingUp className="w-4 h-4 text-brand-charcoal/60" strokeWidth={1.5} />
-                          测肤趋势
+                          肌肤变化
                         </h3>
                         <span className="flex items-center gap-3">
                           {trends && (
@@ -345,7 +498,7 @@ export function DiaryModal() {
                         /* 解锁引导：与护肤历程空态/打卡引导同款虚线框，样式统一 */
                         <div className="rounded-2xl border border-dashed border-brand-charcoal/20 px-4 py-5 text-center">
                           <p className="text-[13px] text-brand-charcoal/55 font-light mb-1.5">
-                            完成 2 次测肤后解锁趋势
+                            完成 2 次测肤后解锁肌肤变化
                           </p>
                           <p className="text-[13px] text-brand-charcoal/50 font-light mb-4">
                             定期测肤，看见肌肤的真实变化
@@ -362,19 +515,82 @@ export function DiaryModal() {
 
                     {/* 护肤历程 */}
                     <section>
-                      <h3 className="text-[15px] font-semibold mb-4 flex items-center gap-2">
-                        <NotebookPen className="w-4 h-4 text-brand-charcoal/60" strokeWidth={1.5} />
-                        护肤历程
-                      </h3>
-                      <DiaryTimeline
-                        entries={entries}
-                        tests={tests}
-                        loading={!entriesLoaded || !testsLoaded}
-                        onCheckIn={(existing) => setCheckIn({ open: true, existing })}
-                        hasMoreTests={tests.length < testsTotal}
-                        testsLoadingMore={testsLoadingMore}
-                        onLoadMoreTests={loadMoreTests}
-                      />
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-[15px] font-semibold flex items-center gap-2">
+                          <NotebookPen className="w-4 h-4 text-brand-charcoal/60" strokeWidth={1.5} />
+                          护肤历程
+                        </h3>
+                        {/* 视图切换：时间线 / 日历热力图 */}
+                        <div className="flex items-center rounded-full border border-brand-charcoal/[0.12] p-0.5">
+                          {([
+                            { key: false, label: "时间线" },
+                            { key: true, label: "日历" },
+                          ] as const).map((v) => (
+                            <button
+                              key={v.label}
+                              type="button"
+                              onClick={() => setCalendarView(v.key)}
+                              aria-pressed={calendarView === v.key}
+                              className={`px-3 h-7 rounded-full text-[12px] font-light tracking-[0.05em] transition-colors cursor-pointer ${
+                                calendarView === v.key
+                                  ? "bg-brand-charcoal text-white"
+                                  : "text-brand-charcoal/50 hover:text-brand-charcoal"
+                              }`}
+                            >
+                              {v.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* 里程碑统计：连续/累计打卡 + 测肤次数 */}
+                      {summary && (summary.totalCheckins > 0 || summary.testCount > 0) && (
+                        <div className="flex items-center gap-2 mb-4 flex-wrap">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-brand-charcoal/[0.08] text-[12px] text-brand-charcoal/70 font-light">
+                            <Flame className="w-3.5 h-3.5 text-[#D9730D]" strokeWidth={1.8} />
+                            连续打卡 {summary.currentStreak} 天
+                          </span>
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-brand-charcoal/[0.08] text-[12px] text-brand-charcoal/70 font-light">
+                            <CalendarCheck className="w-3.5 h-3.5 text-brand-charcoal/50" strokeWidth={1.8} />
+                            累计打卡 {summary.totalCheckins} 天
+                          </span>
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-brand-charcoal/[0.08] text-[12px] text-brand-charcoal/70 font-light">
+                            <ScanFace className="w-3.5 h-3.5 text-brand-charcoal/50" strokeWidth={1.8} />
+                            已测肤 {summary.testCount} 次
+                          </span>
+                          {summary.longestStreak > 0 && (
+                            <span className="inline-flex items-center px-3 py-1.5 rounded-full text-[11px] text-brand-charcoal/40 font-light">
+                              最长连续 {summary.longestStreak} 天
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {calendarView ? (
+                        <DiaryCalendar
+                          entries={calendarEntries}
+                          month={calendarMonth}
+                          onMonthChange={setCalendarMonth}
+                          onBackfill={(dateStr) => setCheckIn({ open: true, existing: null, dateStr })}
+                          loading={calendarLoading}
+                        />
+                      ) : (
+                        <DiaryTimeline
+                          entries={entries}
+                          tests={tests}
+                          loading={!entriesLoaded || !testsLoaded}
+                          onCheckIn={(existing, dateStr) => setCheckIn({ open: true, existing, dateStr })}
+                          onDeleteEntry={handleDeleteEntry}
+                          deletingId={deletingId}
+                          hasMoreTests={!testsExhausted && tests.length < testsTotal}
+                          testsLoadingMore={testsLoadingMore}
+                          onLoadMoreTests={loadMoreTests}
+                          hasMoreEntries={entries.length < entriesTotal}
+                          entriesLoadingMore={entriesLoadingMore}
+                          onLoadMoreEntries={loadMoreEntries}
+                          refreshKey={diaryRefreshKey}
+                        />
+                      )}
                     </section>
                   </div>
                 )}
@@ -384,10 +600,11 @@ export function DiaryModal() {
               </div>
             </m.div>
 
-            {/* 二级弹层：打卡（sheet 叠 sheet，DOM 在后自然置顶）；全部记录已改为同弹层内视图切换 */}
+            {/* 二级弹层：打卡/补打卡（sheet 叠 sheet，DOM 在后自然置顶）；全部记录已改为同弹层内视图切换 */}
             <CheckInModal
               isOpen={checkIn.open && !!user}
               existing={checkIn.existing}
+              dateStr={checkIn.dateStr ?? undefined}
               onClose={() => setCheckIn((s) => ({ ...s, open: false }))}
               onSaved={refreshEntries}
             />

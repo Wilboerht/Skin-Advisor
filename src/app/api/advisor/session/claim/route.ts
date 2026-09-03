@@ -5,6 +5,7 @@ import { getSessionUser } from "@/lib/sso-auth";
 import { rateLimit, getClientIP } from "@/lib/ratelimit";
 import { hashIP } from "@/lib/privacy";
 import { logger } from "@/lib/logger";
+import { upsertAutoDiaryEntry } from "@/lib/diary";
 
 /**
  * POST /api/advisor/session/claim
@@ -32,8 +33,9 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: rateLimitHeaders });
         }
 
-        const { sessionId } = await request.json();
-        if (!sessionId) {
+        const body = await request.json().catch(() => null);
+        const sessionId = body && typeof body === "object" ? (body as { sessionId?: unknown }).sessionId : null;
+        if (!sessionId || typeof sessionId !== "string") {
             return NextResponse.json({ error: "Missing sessionId" }, { status: 400, headers: rateLimitHeaders });
         }
 
@@ -53,11 +55,13 @@ export async function POST(request: NextRequest) {
         }
 
         // Atomic claim: only update if userId is null (not yet claimed)
+        let claimed = false;
         try {
             const updated = await prisma.advisorSession.updateMany({
                 where: { sessionId, userId: null },
                 data: { userId: user.id }
             });
+            claimed = updated.count > 0;
 
             if (updated.count === 0) {
                 // 可能已被其他用户认领，检查所有权
@@ -73,6 +77,42 @@ export async function POST(request: NextRequest) {
         } catch (e) {
             logger.error("Failed to claim session:", e);
             return NextResponse.json({ error: "Failed to claim session" }, { status: 500, headers: rateLimitHeaders });
+        }
+
+        // 补建当日自动日记：认领的游客测肤（带面部评分）同步生成/更新日记条目，
+        // 避免时间线出现测肤里程碑却没有对应日记卡的断层。失败不影响认领结果。
+        if (claimed) {
+            try {
+                const session = await prisma.advisorSession.findUnique({
+                    where: { sessionId },
+                    select: { completedAt: true, analysisResult: true }
+                });
+                if (session?.completedAt && session.analysisResult) {
+                    const result = session.analysisResult as Record<string, unknown>;
+                    const face = (result.faceAnalysis ?? null) as
+                        | { overallScore?: unknown }
+                        | null | undefined;
+                    const overallScore = face?.overallScore;
+                    if (typeof overallScore === "number") {
+                        // 日期优先用客户端本地日历日（body.dateStr）；缺失时回退 completedAt 的 UTC 日
+                        const bodyDateStr = (body as { dateStr?: unknown })?.dateStr;
+                        const dateStr =
+                            typeof bodyDateStr === "string" && /^\d{4}-\d{2}-\d{2}$/.test(bodyDateStr)
+                                ? bodyDateStr
+                                : session.completedAt.toISOString().slice(0, 10);
+                        const skinProfile = (result.skinProfile ?? null) as { typeLabel?: unknown } | null | undefined;
+                        const skinType = (result.skinType ?? null) as { typeLabel?: unknown } | null | undefined;
+                        const skinTypeLabel =
+                            typeof skinProfile?.typeLabel === "string" ? skinProfile.typeLabel
+                            : typeof skinType?.typeLabel === "string" ? skinType.typeLabel
+                            : undefined;
+                        upsertAutoDiaryEntry({ userId: user.id, dateStr, score: overallScore, skinTypeLabel })
+                            .catch((err) => logger.error("[Diary] claim 后补建日记失败:", err));
+                    }
+                }
+            } catch (e) {
+                logger.error("[Diary] claim 补建日记查询失败:", e);
+            }
         }
 
         return NextResponse.json({ success: true }, { headers: rateLimitHeaders });
