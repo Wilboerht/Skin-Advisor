@@ -97,7 +97,7 @@ export const MOCK_FACE_ANALYSIS: FaceAnalysisResult = {
         sensitivity: { score: 45, percentile: 38, grade: "fair", details: "屏障偏薄，易受刺激" },
         darkCircles: { score: 62, percentile: 55, grade: "good", details: "轻度暗沉" },
         firmness: { score: 80, percentile: 76, grade: "good", details: "弹性良好" },
-        acne: { score: 76, percentile: 72, grade: "good", details: "鼻翼轻微毛孔粗大" },
+        acne: { score: 76, percentile: 72, grade: "good", details: "鼻翼轻微毛孔粗大", blackheads: 65, pimples: 88 },
         radiance: { score: 71, percentile: 66, grade: "good", details: "光泽度中等偏上" },
     },
     overallScore: 72,

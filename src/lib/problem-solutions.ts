@@ -2,7 +2,7 @@
  * 重点问题关注板块知识库
  *
  * 以用户视角的具体问题（暗沉、黑头、痘痘、黑眼圈、细纹等）为单位：
- * - 存在性判断：对应维度分数 <70，或 AI 症状清单（skinConditions）检测到
+ * - 存在性判断：对应维度分数 <70（黑头/痘痘优先使用 acne 子分），或 AI 症状清单（skinConditions）检测到
  * - 程度量化：分数档位（<40 重度 / 40-54 中度 / 55-69 轻度）或症状严重度
  * - 成因科普：基础成因（恒展示）+ 不良因素影响加量（仅当问卷数据佐证时展示）
  * - 解决方法：护肤、睡眠、饮食、运动、情绪、压力 六类分组
@@ -51,6 +51,8 @@ interface FocusProblemEntry {
     name: string;
     /** 用于量化分数的十维 key */
     dimensionKey: string;
+    /** 优先使用的维度子分字段（如 acne 的黑头分/痘痘分）；缺失时回退综合分 */
+    subScoreKey?: "blackheads" | "pimples";
     description: string;
     basicCauses: string[];
     aggravators: Partial<Record<AggravatorKey, string[]>>;
@@ -110,6 +112,7 @@ export const FOCUS_PROBLEM_ENTRIES: FocusProblemEntry[] = [
         key: "blackheads",
         name: "黑头",
         dimensionKey: "acne",
+        subScoreKey: "blackheads",
         description: "鼻翼、鼻头等部位可见黑色小点，属于开放性粉刺",
         basicCauses: [
             "皮脂分泌旺盛，油脂氧化后变黑",
@@ -138,6 +141,7 @@ export const FOCUS_PROBLEM_ENTRIES: FocusProblemEntry[] = [
         key: "acne",
         name: "痘痘",
         dimensionKey: "acne",
+        subScoreKey: "pimples",
         description: "面部可见炎性痘痘或闭口，按压有轻微痛感",
         basicCauses: [
             "毛囊堵塞后痤疮丙酸杆菌活跃，引发炎症",
@@ -405,7 +409,10 @@ function buildSolutionGroups(entry: FocusProblemEntry): AdviceGroup[] {
  */
 export function buildFocusProblems(
     dimensions:
-        | Record<string, { score?: number; grade?: string; details?: string } | undefined>
+        | Record<
+              string,
+              { score?: number; grade?: string; details?: string; blackheads?: number; pimples?: number } | undefined
+          >
         | undefined,
     answers: LifestyleAnswers = {},
     skinConditions?: SkinCondition[] | null
@@ -416,9 +423,15 @@ export function buildFocusProblems(
 
     for (const entry of FOCUS_PROBLEM_ENTRIES) {
         const dim = dimensionOf(entry.dimensionKey);
-        const dimScore = typeof dim?.score === "number" && !Number.isNaN(dim.score)
-            ? dim.score
-            : undefined;
+        // 子分优先（黑头分/痘痘分），旧数据无子分时回退维度综合分
+        const subScore =
+            entry.subScoreKey && typeof dim?.[entry.subScoreKey] === "number"
+                ? (dim[entry.subScoreKey] as number)
+                : undefined;
+        const rawScore =
+            typeof dim?.score === "number" && !Number.isNaN(dim.score) ? dim.score : undefined;
+        const dimScore =
+            typeof subScore === "number" && !Number.isNaN(subScore) ? subScore : rawScore;
 
         const matchedConditions = (skinConditions ?? []).filter(
             (c) => c?.condition && matchEntryCondition(entry, c.condition)

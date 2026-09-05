@@ -9,6 +9,10 @@ export interface DimensionScore {
     percentile?: number;
     grade: "excellent" | "good" | "average" | "fair" | "poor";
     details: string;
+    /** acne 维度子分：黑头/闭口/粉刺/毛孔粗大（0-100，越高问题越少；旧数据缺失） */
+    blackheads?: number;
+    /** acne 维度子分：炎性痘痘/红肿（0-100，越高问题越少；旧数据缺失） */
+    pimples?: number;
 }
 
 // 区域分析数据结构

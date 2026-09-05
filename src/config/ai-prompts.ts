@@ -84,7 +84,7 @@ export const VISION_ANALYSIS_SYSTEM_PROMPT = `你是一位专业的皮肤科医�
     "sensitivity":{"score":0-100,"grade":"...","details":"..."},
     "darkCircles":{"score":0-100,"grade":"...","details":"..."},
     "firmness":{"score":0-100,"grade":"...","details":"..."},
-    "acne":{"score":0-100,"grade":"...","details":"..."},
+    "acne":{"score":0-100,"grade":"...","details":"...","blackheads":0-100,"pimples":0-100},
     "radiance":{"score":0-100,"grade":"...","details":"..."}
   },
   "overallScore":0-100,
@@ -101,6 +101,11 @@ export const VISION_ANALYSIS_SYSTEM_PROMPT = `你是一位专业的皮肤科医�
     "jawline":{"condition":"自然语言描述该区域状态，禁止出现评分数字","advice":"具体护理建议(含成分和频率)","oil":0-100,"firmness":0-100,"contour":0-100}
   }
 }
+# acne 维度必须额外输出两个子分（用于分别量化黑头与痘痘问题）：
+#   "blackheads":0-100（黑头/闭口/粉刺/毛孔粗大的程度，越高表示问题越少）,
+#   "pimples":0-100（炎性痘痘/红肿的程度，越高表示问题越少）。
+# 子分与综合 score 使用同一评分标准（85-100优秀, 70-84良好, 55-69一般, 40-54需关注, <40差），
+# 必须与综合 score 逻辑一致：若黑头明显而炎性痘少，blackheads 应明显低于 pimples。
 # zoneAnalysis 6 区域全必填；advice 必须包含具体成分建议和使用频率，如"含壬二酸洁面 + 每周2次膨润土泥膜"而非仅"控油"；condition 用自然语言一句话概括该区域的核心状态，如"T区偏油，有轻微毛孔堵塞迹象"而非"油脂评分72偏高"。
 # ⚠️ advice 成分约束（严格遵守）：advice 中提及的所有成分必须在以下品牌成分体系内选择，不可推荐体系外的成分：
 #   保湿修护：透明质酸钠（玻尿酸）、泛醇（维生素B5）、神经酰胺NP、依克多因、角鲨烷、二裂酵母发酵溶胞产物、半乳糖发酵滤液、α-葡聚糖寡糖、银耳多糖、氢化卵磷脂
@@ -261,6 +266,7 @@ ${params.faceAnalysis ? `面部分析数据 (10维度评分):
 - 肌龄: ${params.faceAnalysis.skinAge?.estimated ?? 'N/A'} 岁
 - 水油平衡: ${params.faceAnalysis.dimensions?.waterOil?.score ?? 'N/A'}分 | 肤色: ${params.faceAnalysis.dimensions?.skinTone?.score ?? 'N/A'}分 | 色斑: ${params.faceAnalysis.dimensions?.spots?.score ?? 'N/A'}分 | 皱纹: ${params.faceAnalysis.dimensions?.wrinkles?.score ?? 'N/A'}分 | 光老化: ${params.faceAnalysis.dimensions?.uvDamage?.score ?? 'N/A'}分 | 敏感度: ${params.faceAnalysis.dimensions?.sensitivity?.score ?? 'N/A'}分 | 黑眼圈: ${params.faceAnalysis.dimensions?.darkCircles?.score ?? 'N/A'}分 | 紧致度: ${params.faceAnalysis.dimensions?.firmness?.score ?? 'N/A'}分 | 痤疮: ${params.faceAnalysis.dimensions?.acne?.score ?? 'N/A'}分 | 光泽度: ${params.faceAnalysis.dimensions?.radiance?.score ?? 'N/A'}分
 - 区域问题: ${params.faceAnalysis.summary ? wrapUserData("faceAnalysisSummary", sanitizePromptInput(params.faceAnalysis.summary)) : '无'}
+- 痤疮子分: 黑头/闭口 ${params.faceAnalysis.dimensions?.acne?.blackheads ?? 'N/A'}分 | 炎性痘痘 ${params.faceAnalysis.dimensions?.acne?.pimples ?? 'N/A'}分（仅参考，N/A 表示未提供）
 - 区域详情: ${wrapUserData("zoneAnalysis", sanitizePromptInput(JSON.stringify(params.faceAnalysis.zoneAnalysis ?? {}).slice(0, 500)))}` : ""}
 
 可用产品列表：

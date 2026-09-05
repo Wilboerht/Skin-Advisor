@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { buildFocusProblems, type LifestyleAnswers } from "./problem-solutions";
 import type { SkinCondition } from "./advisor-utils";
 
-function makeDimensions(): Record<string, { score?: number; grade?: string; details?: string }> {
+function makeDimensions(): Record<string, { score?: number; grade?: string; details?: string; blackheads?: number; pimples?: number }> {
     return {
         radiance: { score: 58, grade: "average", details: "光泽度不足" },
         acne: { score: 62, grade: "average", details: "下巴有闭口" },
@@ -124,6 +124,28 @@ describe("buildFocusProblems - 成因与解决方法", () => {
         expect(acne).toBeDefined();
         expect(blackheads?.score).toBe(62);
         expect(acne?.score).toBe(62);
+    });
+
+    it("acne 子分存在时黑头/痘痘分别量化（黑头分与痘痘分）", () => {
+        const dims = makeDimensions();
+        dims.acne = { score: 62, grade: "average", details: "", blackheads: 80, pimples: 45 };
+        const problems = buildFocusProblems(dims);
+        const blackheads = problems.find((p) => p.key === "blackheads");
+        const acne = problems.find((p) => p.key === "acne");
+        expect(blackheads).toBeUndefined();
+        expect(acne).toBeDefined();
+        expect(acne?.score).toBe(45);
+        expect(acne?.level).toBe("moderate");
+    });
+
+    it("子分缺失时回退 acne 综合分（旧数据兼容）", () => {
+        const dims = makeDimensions();
+        dims.acne = { score: 58, grade: "average", details: "" };
+        const problems = buildFocusProblems(dims);
+        const blackheads = problems.find((p) => p.key === "blackheads");
+        const acne = problems.find((p) => p.key === "acne");
+        expect(blackheads?.score).toBe(58);
+        expect(acne?.score).toBe(58);
     });
 
     it("描述优先使用 AI 维度解读（dim.details），无解读时回退知识库文案", () => {
