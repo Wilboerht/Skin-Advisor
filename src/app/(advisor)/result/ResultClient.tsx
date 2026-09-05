@@ -332,10 +332,10 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
         [faceAnalysis?.overallScore, result?.dataSource]
     );
 
-    // 问题聚焦：低分维度卡片（poor/fair），按严重程度排序
+    // 问题聚焦：低分维度（poor/fair/average）+ AI 检测症状（skinConditions），按严重程度排序
     const problemCards = useMemo(
-        () => buildProblemCards(faceAnalysis?.dimensions, lifestyleAnswers),
-        [faceAnalysis?.dimensions, lifestyleAnswers]
+        () => buildProblemCards(faceAnalysis?.dimensions, lifestyleAnswers, faceAnalysis?.skinConditions),
+        [faceAnalysis?.dimensions, faceAnalysis?.skinConditions, lifestyleAnswers]
     );
 
     const isGenderMismatch = useMemo(() => {

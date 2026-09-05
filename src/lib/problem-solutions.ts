@@ -1,14 +1,19 @@
 /**
  * 问题聚焦板块知识库
  *
- * 从十维分析中筛出低分维度（poor / fair），为每个问题提供：
+ * 从十维分析中筛出问题维度（poor / fair / average），并并入 AI 检测出的
+ * 具体症状清单（skinConditions），为每个问题提供：
  * - 基础成因（肤质/先天因素，恒展示）
  * - 生活习惯加重因素（仅当问卷数据佐证时展示，避免无数据指控）
  * - 护肤解决方案（可直接执行的动作）
  * - 生活方式建议（睡眠/饮食/运动/情绪，按数据可得性门控）
+ *
+ * 卡片分级：
+ * - full：poor/fair 维度 + moderate/severe 症状（完整成因+方案）
+ * - compact：average 维度 + mild 症状（仅描述+精简建议）
  */
 
-import { DIMENSION_LABELS, DIMENSION_ORDER } from "@/lib/advisor-utils";
+import { DIMENSION_LABELS, DIMENSION_ORDER, type SkinCondition } from "@/lib/advisor-utils";
 
 export interface LifestyleAnswers {
     sleepQuality?: string;      // good | fair | poor
@@ -22,13 +27,19 @@ export interface AdviceGroup {
     items: string[];
 }
 
+export type ProblemTier = "full" | "compact";
+
 export interface ProblemCardData {
     key: string;
     label: string;
-    score: number;
-    grade: string;
+    tier: ProblemTier;
+    source: "dimension" | "condition";
     /** 优先使用 AI 生成的维度解读，缺省时回退知识库文案 */
     description: string;
+    score?: number;
+    grade?: string;
+    severity?: string;
+    area?: string;
     basicCauses: string[];
     aggravatorGroups: AdviceGroup[];
     skincareActions: string[];
@@ -277,8 +288,29 @@ export const PROBLEM_ENTRIES: Record<string, ProblemEntry> = {
     },
 };
 
-const FOCUS_GRADES = new Set(["poor", "fair"]);
-const GRADE_ORDER: Record<string, number> = { poor: 0, fair: 1 };
+const FOCUS_GRADES = new Set(["poor", "fair", "average"]);
+const GRADE_ORDER: Record<string, number> = { poor: 0, fair: 1, average: 2 };
+const SEVERITY_ORDER: Record<string, number> = { severe: 0, moderate: 1, mild: 2 };
+
+// AI 症状名（自由文本）→ 知识库维度映射，按顺序匹配，先命中先得
+const CONDITION_KEYWORD_MAP: Array<{ keywords: string[]; dimKey: string }> = [
+    { keywords: ["黑头", "闭口", "粉刺", "毛孔", "痘痘", "痤疮", "丘疹"], dimKey: "acne" },
+    { keywords: ["色斑", "晒斑", "雀斑", "色沉", "色素", "痘印"], dimKey: "spots" },
+    { keywords: ["泛红", "红血丝", "敏感", "刺痛", "发红", "红肿"], dimKey: "sensitivity" },
+    { keywords: ["黑眼圈", "眼袋", "浮肿"], dimKey: "darkCircles" },
+    { keywords: ["细纹", "皱纹", "干纹", "法令纹", "表情纹"], dimKey: "wrinkles" },
+    { keywords: ["干燥", "脱皮", "紧绷", "缺水"], dimKey: "waterOil" },
+    { keywords: ["松弛", "下垂", "不紧致", "垮"], dimKey: "firmness" },
+    { keywords: ["暗沉", "粗糙", "无光泽", "蜡黄"], dimKey: "radiance" },
+    { keywords: ["肤色不均"], dimKey: "skinTone" },
+];
+
+function matchConditionDimKey(condition: string): string | null {
+    for (const { keywords, dimKey } of CONDITION_KEYWORD_MAP) {
+        if (keywords.some((kw) => condition.includes(kw))) return dimKey;
+    }
+    return null;
+}
 
 function pushGroup(
     groups: AdviceGroup[],
@@ -290,69 +322,121 @@ function pushGroup(
     }
 }
 
+/** 根据问卷答案构建加重因素与生活方式建议分组 */
+function buildAdviceGroups(entry: ProblemEntry, answers: LifestyleAnswers) {
+    const aggravatorGroups: AdviceGroup[] = [];
+    if (answers.sleepQuality && answers.sleepQuality !== "good") {
+        pushGroup(aggravatorGroups, "sleep", entry.aggravators.sleep);
+    }
+    if (answers.stressLevel && answers.stressLevel !== "low") {
+        pushGroup(aggravatorGroups, "stress", entry.aggravators.stress);
+    }
+    if (
+        answers.skincareFrequency &&
+        ["occasional", "rarely"].includes(answers.skincareFrequency)
+    ) {
+        pushGroup(aggravatorGroups, "care", entry.aggravators.care);
+    }
+    pushGroup(aggravatorGroups, "sun", entry.aggravators.sun);
+
+    const lifestyleTipGroups: AdviceGroup[] = [];
+    if (answers.sleepQuality && answers.sleepQuality !== "good") {
+        pushGroup(lifestyleTipGroups, "sleep", entry.lifestyleTips.sleep);
+    }
+    pushGroup(lifestyleTipGroups, "diet", entry.lifestyleTips.diet);
+    pushGroup(lifestyleTipGroups, "exercise", entry.lifestyleTips.exercise);
+    if (answers.stressLevel && answers.stressLevel !== "low") {
+        pushGroup(lifestyleTipGroups, "mood", entry.lifestyleTips.mood);
+    }
+    return { aggravatorGroups, lifestyleTipGroups };
+}
+
+/** 卡片排序权重：严重问题在前，轻度关注在后；同档按分数升序 */
+function cardSortWeight(card: ProblemCardData): [number, number] {
+    if (card.grade) {
+        const rank = GRADE_ORDER[card.grade] ?? 3;
+        return [rank, card.score ?? 999];
+    }
+    const rank = SEVERITY_ORDER[card.severity ?? "mild"] ?? 3;
+    return [rank, 999];
+}
+
 /**
- * 从十维分析中构建问题聚焦卡片：
- * - 仅取 poor / fair 维度
- * - 按严重程度排序：poor 在前，同级按分数升序
+ * 构建问题聚焦卡片：
+ * - 维度：poor/fair → full 卡；average → compact 卡；good/excellent 忽略
+ * - skinConditions：moderate/severe → full 卡；mild → compact 卡；
+ *   关键词映射到知识库，映射维度已有卡时跳过，避免重复；无法映射时忽略
  * - 加重因素仅在有问卷数据佐证时展示（日晒为环境因素恒展示）
+ * - 排序：poor/severe → fair/moderate → average/mild，同级按分数升序
  */
 export function buildProblemCards(
     dimensions:
         | Record<string, { score?: number; grade?: string; details?: string } | undefined>
         | undefined,
-    answers: LifestyleAnswers = {}
+    answers: LifestyleAnswers = {},
+    skinConditions?: SkinCondition[] | null
 ): ProblemCardData[] {
-    if (!dimensions) return [];
-
     const cards: ProblemCardData[] = [];
+    const dimensionKeysWithCard = new Set<string>();
 
-    for (const key of DIMENSION_ORDER) {
-        const dim = dimensions[key];
-        const entry = PROBLEM_ENTRIES[key];
-        if (!dim || !entry || !dim.grade || !FOCUS_GRADES.has(dim.grade)) continue;
+    if (dimensions) {
+        for (const key of DIMENSION_ORDER) {
+            const dim = dimensions[key];
+            const entry = PROBLEM_ENTRIES[key];
+            if (!dim || !entry || !dim.grade || !FOCUS_GRADES.has(dim.grade)) continue;
 
-        const aggravatorGroups: AdviceGroup[] = [];
-        if (answers.sleepQuality && answers.sleepQuality !== "good") {
-            pushGroup(aggravatorGroups, "sleep", entry.aggravators.sleep);
+            const { aggravatorGroups, lifestyleTipGroups } = buildAdviceGroups(entry, answers);
+            dimensionKeysWithCard.add(key);
+            cards.push({
+                key,
+                label: DIMENSION_LABELS[key] ?? key,
+                tier: dim.grade === "average" ? "compact" : "full",
+                source: "dimension",
+                description: dim.details || entry.description,
+                score: dim.score ?? 0,
+                grade: dim.grade,
+                basicCauses: entry.basicCauses,
+                aggravatorGroups,
+                skincareActions: entry.skincareActions,
+                lifestyleTipGroups,
+            });
         }
-        if (answers.stressLevel && answers.stressLevel !== "low") {
-            pushGroup(aggravatorGroups, "stress", entry.aggravators.stress);
-        }
-        if (
-            answers.skincareFrequency &&
-            ["occasional", "rarely"].includes(answers.skincareFrequency)
-        ) {
-            pushGroup(aggravatorGroups, "care", entry.aggravators.care);
-        }
-        pushGroup(aggravatorGroups, "sun", entry.aggravators.sun);
+    }
 
-        const lifestyleTipGroups: AdviceGroup[] = [];
-        if (answers.sleepQuality && answers.sleepQuality !== "good") {
-            pushGroup(lifestyleTipGroups, "sleep", entry.lifestyleTips.sleep);
-        }
-        pushGroup(lifestyleTipGroups, "diet", entry.lifestyleTips.diet);
-        pushGroup(lifestyleTipGroups, "exercise", entry.lifestyleTips.exercise);
-        if (answers.stressLevel && answers.stressLevel !== "low") {
-            pushGroup(lifestyleTipGroups, "mood", entry.lifestyleTips.mood);
-        }
+    const usedConditionDimKeys = new Set<string>();
+    if (skinConditions && skinConditions.length > 0) {
+        skinConditions.forEach((condition, index) => {
+            if (!condition?.condition) return;
+            const dimKey = matchConditionDimKey(condition.condition);
+            if (!dimKey || dimensionKeysWithCard.has(dimKey) || usedConditionDimKeys.has(dimKey)) {
+                return;
+            }
+            const entry = PROBLEM_ENTRIES[dimKey];
+            if (!entry) return;
+            usedConditionDimKeys.add(dimKey);
 
-        cards.push({
-            key,
-            label: DIMENSION_LABELS[key] ?? key,
-            score: dim.score ?? 0,
-            grade: dim.grade,
-            description: dim.details || entry.description,
-            basicCauses: entry.basicCauses,
-            aggravatorGroups,
-            skincareActions: entry.skincareActions,
-            lifestyleTipGroups,
+            const severity = condition.severity || "mild";
+            const { aggravatorGroups, lifestyleTipGroups } = buildAdviceGroups(entry, answers);
+            cards.push({
+                key: `condition-${index}`,
+                label: condition.condition,
+                tier: severity === "mild" ? "compact" : "full",
+                source: "condition",
+                description: condition.description || entry.description,
+                severity,
+                area: condition.area || undefined,
+                basicCauses: entry.basicCauses,
+                aggravatorGroups,
+                skincareActions: entry.skincareActions,
+                lifestyleTipGroups,
+            });
         });
     }
 
-    cards.sort(
-        (a, b) =>
-            (GRADE_ORDER[a.grade] ?? 2) - (GRADE_ORDER[b.grade] ?? 2) ||
-            a.score - b.score
-    );
+    cards.sort((a, b) => {
+        const [ar, as] = cardSortWeight(a);
+        const [br, bs] = cardSortWeight(b);
+        return ar - br || as - bs;
+    });
     return cards;
 }
