@@ -52,6 +52,8 @@ import { skinTypes } from "@/lib/result-content";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { ResultErrorBoundary } from "@/components/advisor/ResultErrorBoundary";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
+import { SkinProblemsSection } from "@/components/advisor/SkinProblemsSection";
+import { buildProblemCards, type LifestyleAnswers } from "@/lib/problem-solutions";
 
 // Re-export for backward compatibility with existing imports
 export { normalizeAnalysisResult, type ComprehensiveResult } from "@/lib/analysis-result";
@@ -293,6 +295,9 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
     const [ipBudget, setIpBudget] = useState<string | undefined>(undefined);
     const [ipSkincareFrequency, setIpSkincareFrequency] = useState<string | undefined>(undefined);
 
+    // 问题聚焦板块：问卷生活方式答案（睡眠/压力/护肤频率）
+    const [lifestyleAnswers, setLifestyleAnswers] = useState<LifestyleAnswers>({});
+
     // UI State
     const [loading, setLoading] = useState(!initialData);
     const hasTrackedView = useRef(false);
@@ -325,6 +330,12 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
             return getRankPercentile(rawScore);
         },
         [faceAnalysis?.overallScore, result?.dataSource]
+    );
+
+    // 问题聚焦：低分维度卡片（poor/fair），按严重程度排序
+    const problemCards = useMemo(
+        () => buildProblemCards(faceAnalysis?.dimensions, lifestyleAnswers),
+        [faceAnalysis?.dimensions, lifestyleAnswers]
     );
 
     const isGenderMismatch = useMemo(() => {
@@ -461,6 +472,27 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
     // renderLabRow 已抽为组件外部函数，避免每次渲染重新创建
 
 
+    // 历史报告页（/reports/:id）：initialData.answers 为 DB 传入的该次测肤问卷答案。
+    // loadClientData 对已有结果会短路，localStorage 恢复不会执行，因此这里单独恢复
+    // 问题聚焦所需的生活方式数据（睡眠/压力/护肤频率）与 IP 匹配数据（预算/护肤频率）。
+    useEffect(() => {
+        const answers = initialData?.answers;
+        if (!answers) return;
+        if (typeof answers.sleepQuality === "string") {
+            setLifestyleAnswers(prev => ({ ...prev, sleepQuality: answers.sleepQuality as string }));
+        }
+        if (typeof answers.stressLevel === "string") {
+            setLifestyleAnswers(prev => ({ ...prev, stressLevel: answers.stressLevel as string }));
+        }
+        if (typeof answers.skincareFrequency === "string") {
+            setLifestyleAnswers(prev => ({ ...prev, skincareFrequency: answers.skincareFrequency as string }));
+            setIpSkincareFrequency(answers.skincareFrequency as string);
+        }
+        if (typeof answers.budget === "string") {
+            setIpBudget(answers.budget as string);
+        }
+    }, [initialData]);
+
     // Initialize & Restore Data
     useEffect(() => {
         const loadClientData = async () => {
@@ -498,6 +530,11 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                         const answers = JSON.parse(answersStr);
                         if (answers.budget) setIpBudget(answers.budget);
                         if (answers.skincareFrequency) setIpSkincareFrequency(answers.skincareFrequency);
+                        setLifestyleAnswers({
+                            sleepQuality: typeof answers.sleepQuality === "string" ? answers.sleepQuality : undefined,
+                            stressLevel: typeof answers.stressLevel === "string" ? answers.stressLevel : undefined,
+                            skincareFrequency: typeof answers.skincareFrequency === "string" ? answers.skincareFrequency : undefined,
+                        });
                     } catch { /* ignore parse errors */ }
                 }
             } catch (e) {
@@ -1247,37 +1284,48 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                         )}
                                     </div>
 
-                                    {/* 2、专家护肤建议 */}
+                                    {/* 2、问题聚焦 */}
                                     <div className="mb-8">
                                         <h4 className="text-base font-medium text-[var(--color-brand-espresso)] mb-3 border-b border-[var(--color-brand-espresso)]/20 pb-2">
-                                            2、专家护肤建议 <span className="text-xs lg:text-base">(Expert Recommendations)</span>
+                                            2、问题聚焦 <span className="text-xs lg:text-base">(Skin Concerns)</span>
                                         </h4>
 
-                                        <p className="text-sm text-[var(--color-brand-taupe)] mb-3">根据您的肌肤数据，以下是针对性的护理和生活方式建议：</p>
-
-                                        {(faceAnalysis?.recommendations && faceAnalysis.recommendations.length > 0) ? (
-                                            <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[var(--color-brand-cocoa)]">
-                                                {(faceAnalysis.recommendations).map((rec, idx) => (
-                                                    <li key={idx}>{rec}</li>
-                                                ))}
-                                            </ul>
+                                        {problemCards.length > 0 ? (
+                                            <SkinProblemsSection
+                                                cards={problemCards}
+                                                authInitialized={authInitialized}
+                                                isLoggedIn={!!user}
+                                                onUnlock={() => openAuthModal("login")}
+                                            />
                                         ) : (
-                                            <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[var(--color-brand-cocoa)]">
-                                                <li>每日早晚温和清洁，避免过度去脂。</li>
-                                                <li>严格做好防晒，减少紫外线损伤。</li>
-                                                <li>根据季节调整保湿产品，保持水油平衡。</li>
-                                            </ul>
-                                        )}
+                                            <>
+                                                {/* 无低分维度时的兜底：沿用原有通用建议 */}
+                                                <p className="text-sm text-[var(--color-brand-taupe)] mb-3">根据您的肌肤数据，以下是针对性的护理和生活方式建议：</p>
 
-                                        {/* 🌿 生活建议（嵌套在专家护肤建议内） */}
-                                        {result.analysis?.lifestyleTips && result.analysis.lifestyleTips.length > 0 && (
-                                            <div className="mt-5 pt-4 border-t border-dashed border-[var(--color-brand-espresso)]/10">
-                                                <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[var(--color-brand-cocoa)]">
-                                                    {result.analysis.lifestyleTips.map((tip, idx) => (
-                                                        <li key={idx}>{tip}</li>
-                                                    ))}
-                                                </ul>
-                                            </div>
+                                                {(faceAnalysis?.recommendations && faceAnalysis.recommendations.length > 0) ? (
+                                                    <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[var(--color-brand-cocoa)]">
+                                                        {(faceAnalysis.recommendations).map((rec, idx) => (
+                                                            <li key={idx}>{rec}</li>
+                                                        ))}
+                                                    </ul>
+                                                ) : (
+                                                    <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[var(--color-brand-cocoa)]">
+                                                        <li>每日早晚温和清洁，避免过度去脂。</li>
+                                                        <li>严格做好防晒，减少紫外线损伤。</li>
+                                                        <li>根据季节调整保湿产品，保持水油平衡。</li>
+                                                    </ul>
+                                                )}
+
+                                                {result.analysis?.lifestyleTips && result.analysis.lifestyleTips.length > 0 && (
+                                                    <div className="mt-5 pt-4 border-t border-dashed border-[var(--color-brand-espresso)]/10">
+                                                        <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[var(--color-brand-cocoa)]">
+                                                            {result.analysis.lifestyleTips.map((tip, idx) => (
+                                                                <li key={idx}>{tip}</li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
+                                                )}
+                                            </>
                                         )}
                                     </div>
 
