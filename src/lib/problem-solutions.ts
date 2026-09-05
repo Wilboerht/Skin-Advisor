@@ -431,15 +431,18 @@ export function buildFocusProblems(
         if (!scoreLevel && !conditionLevel) continue;
         const level = worseLevel(scoreLevel, conditionLevel) ?? "mild";
 
-        // 分数 ≥70 时靠 AI 检测出卡：不显示分数条，标记 detected
-        const detected = dimScore === undefined || dimScore >= 70;
+        // 分数条仅在「分数档位与最终程度一致」时展示，避免"68 分 + 重度"的矛盾呈现；
+        // 程度被症状检测上调时隐藏分数、改以「AI 面部检测确认存在」说明存在依据
+        const showScore = scoreLevel !== null && level === scoreLevel;
+        const score = showScore ? dimScore : undefined;
+        const detected = !showScore;
 
         problems.push({
             key: entry.key,
             name: entry.name,
             level,
-            score: dimScore,
-            description: firstCondition?.description || entry.description,
+            score,
+            description: firstCondition?.description || dim?.details || entry.description,
             area: firstCondition?.area || undefined,
             detected: detected || undefined,
             basicCauses: entry.basicCauses,

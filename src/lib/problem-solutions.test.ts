@@ -124,7 +124,28 @@ describe("buildFocusProblems - 成因与解决方法", () => {
         expect(acne).toBeDefined();
         expect(blackheads?.score).toBe(62);
         expect(acne?.score).toBe(62);
-        expect(blackheads?.description).not.toBe(acne?.description);
+    });
+
+    it("描述优先使用 AI 维度解读（dim.details），无解读时回退知识库文案", () => {
+        const dims = makeDimensions();
+        const problems = buildFocusProblems(dims);
+        const blackheads = problems.find((p) => p.key === "blackheads");
+        expect(blackheads?.description).toBe("下巴有闭口");
+        const dullness = problems.find((p) => p.key === "dullness");
+        expect(dullness?.description).toBe("光泽度不足");
+    });
+
+    it("程度被症状检测上调时隐藏分数条，标记 AI 检测", () => {
+        const dims = makeDimensions();
+        const conditions: SkinCondition[] = [
+            { condition: "痘痘", severity: "severe", area: "下巴", description: "下巴炎性痘痘" },
+        ];
+        const problems = buildFocusProblems(dims, {}, conditions);
+        const acne = problems.find((p) => p.key === "acne");
+        expect(acne?.level).toBe("severe");
+        expect(acne?.score).toBeUndefined();
+        expect(acne?.detected).toBe(true);
+        expect(acne?.description).toBe("下巴炎性痘痘");
     });
 
     it("黑头症状只匹配黑头卡，不污染痘痘卡", () => {
