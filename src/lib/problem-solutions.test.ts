@@ -25,7 +25,7 @@ describe("buildFocusProblems - 问题存在性与程度量化", () => {
         expect(names).toContain("黑头");
         expect(names).toContain("痘痘");
         expect(names).toContain("黑眼圈");
-        expect(names).toContain("干燥");
+        expect(names).toContain("水油失衡");
         expect(names).not.toContain("松弛");
         expect(names).not.toContain("细纹");
     });
@@ -33,7 +33,7 @@ describe("buildFocusProblems - 问题存在性与程度量化", () => {
     it("程度按分数档位量化：<40 重度 / 40-54 中度 / 55-69 轻度", () => {
         const problems = buildFocusProblems(makeDimensions());
         expect(problems.find((p) => p.name === "黑眼圈")?.level).toBe("severe");
-        expect(problems.find((p) => p.name === "干燥")?.level).toBe("moderate");
+        expect(problems.find((p) => p.name === "水油失衡")?.level).toBe("moderate");
         expect(problems.find((p) => p.name === "暗沉")?.level).toBe("mild");
     });
 
@@ -125,5 +125,33 @@ describe("buildFocusProblems - 成因与解决方法", () => {
         expect(blackheads?.score).toBe(62);
         expect(acne?.score).toBe(62);
         expect(blackheads?.description).not.toBe(acne?.description);
+    });
+
+    it("黑头症状只匹配黑头卡，不污染痘痘卡", () => {
+        const dims = makeDimensions();
+        dims.acne = { score: 90, grade: "excellent", details: "" };
+        const conditions: SkinCondition[] = [
+            { condition: "黑头", severity: "mild", area: "鼻翼", description: "鼻翼可见黑头" },
+        ];
+        const problems = buildFocusProblems(dims, {}, conditions);
+        const blackheads = problems.find((p) => p.key === "blackheads");
+        const acne = problems.find((p) => p.key === "acne");
+        expect(blackheads).toBeDefined();
+        expect(blackheads?.description).toBe("鼻翼可见黑头");
+        expect(acne).toBeUndefined();
+    });
+
+    it("出油类症状归入水油失衡卡而非痘痘/黑头卡", () => {
+        const dims = makeDimensions();
+        dims.acne = { score: 90, grade: "excellent", details: "" };
+        dims.waterOil = { score: 90, grade: "excellent", details: "" };
+        const conditions: SkinCondition[] = [
+            { condition: "T区出油明显", severity: "mild", area: "T区", description: "T区油脂分泌旺盛" },
+        ];
+        const problems = buildFocusProblems(dims, {}, conditions);
+        const imbalance = problems.find((p) => p.key === "imbalance");
+        expect(imbalance).toBeDefined();
+        expect(imbalance?.description).toBe("T区油脂分泌旺盛");
+        expect(problems.filter((p) => p.key === "blackheads" || p.key === "acne")).toHaveLength(0);
     });
 });

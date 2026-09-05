@@ -8,7 +8,7 @@
  * - 解决方法：护肤、睡眠、饮食、运动、情绪、压力 六类分组
  */
 
-import { DIMENSION_LABELS, type SkinCondition } from "@/lib/advisor-utils";
+import type { SkinCondition } from "@/lib/advisor-utils";
 
 export interface LifestyleAnswers {
     sleepQuality?: string;      // good | fair | poor
@@ -55,6 +55,8 @@ interface FocusProblemEntry {
     basicCauses: string[];
     aggravators: Partial<Record<AggravatorKey, string[]>>;
     solutions: Partial<Record<SolutionKey, string[]>>;
+    /** 匹配 AI 症状名的关键词（按条目独立匹配，避免同维度问题互相串描述） */
+    conditionKeywords: string[];
 }
 
 const SOLUTION_GROUP_LABELS: Record<SolutionKey, string> = {
@@ -102,6 +104,7 @@ export const FOCUS_PROBLEM_ENTRIES: FocusProblemEntry[] = [
             mood: ["保持心情舒畅，长期情绪低落会影响气色"],
             stress: ["压力大时做深呼吸放松，减轻皮质醇对肤色的影响"],
         },
+        conditionKeywords: ["暗沉", "粗糙", "无光泽", "蜡黄", "肤色不均"],
     },
     {
         key: "blackheads",
@@ -129,6 +132,7 @@ export const FOCUS_PROBLEM_ENTRIES: FocusProblemEntry[] = [
             mood: ["保持情绪平稳，情绪波动会加重出油"],
             stress: ["学会减压，压力是皮脂分泌的催化剂"],
         },
+        conditionKeywords: ["黑头", "闭口", "粉刺", "毛孔"],
     },
     {
         key: "acne",
@@ -156,6 +160,7 @@ export const FOCUS_PROBLEM_ENTRIES: FocusProblemEntry[] = [
             mood: ["保持情绪平稳，压力大时痘痘更易爆发"],
             stress: ["通过运动、倾诉等方式减压，减少压力性爆痘"],
         },
+        conditionKeywords: ["痘痘", "痤疮", "丘疹", "红肿"],
     },
     {
         key: "darkCircles",
@@ -183,6 +188,7 @@ export const FOCUS_PROBLEM_ENTRIES: FocusProblemEntry[] = [
             mood: ["放松心情，疲劳是黑眼圈的放大器"],
             stress: ["减少精神内耗，压力影响睡眠进而加重黑眼圈"],
         },
+        conditionKeywords: ["黑眼圈", "眼袋", "浮肿"],
     },
     {
         key: "fineLines",
@@ -210,6 +216,7 @@ export const FOCUS_PROBLEM_ENTRIES: FocusProblemEntry[] = [
             mood: ["保持轻松心态，避免长期皱眉等紧张表情"],
             stress: ["压力会加速衰老，通过冥想、运动等方式放松"],
         },
+        conditionKeywords: ["细纹", "皱纹", "干纹", "法令纹", "表情纹"],
     },
     {
         key: "spots",
@@ -237,6 +244,7 @@ export const FOCUS_PROBLEM_ENTRIES: FocusProblemEntry[] = [
             mood: ["保持好心态，情绪稳定有利于内分泌平衡"],
             stress: ["减少压力引发的炎症反应，避免色素加重"],
         },
+        conditionKeywords: ["色斑", "晒斑", "雀斑", "色沉", "色素", "痘印"],
     },
     {
         key: "redness",
@@ -264,33 +272,35 @@ export const FOCUS_PROBLEM_ENTRIES: FocusProblemEntry[] = [
             mood: ["情绪平稳有助于降低皮肤炎症水平"],
             stress: ["减压是敏感肌护理的重要一环，压力会加重泛红"],
         },
+        conditionKeywords: ["泛红", "红血丝", "敏感", "刺痛", "发红", "红肿", "屏障"],
     },
     {
-        key: "dryness",
-        name: "干燥",
+        key: "imbalance",
+        name: "水油失衡",
         dimensionKey: "waterOil",
-        description: "皮肤干燥紧绷，易起皮、上妆卡粉",
+        description: "皮肤水油比例失衡，可能出现干燥紧绷或 T 区出油",
         basicCauses: [
-            "肌肤屏障锁水能力不足，水分流失加快",
-            "皮脂分泌偏少，天然保湿膜不完整",
+            "皮肤自身水油调节机制失衡",
+            "环境变化或护理不当打破皮脂膜平衡",
         ],
         aggravators: {
-            sleep: ["熬夜影响保湿因子的夜间生成"],
-            stress: ["压力扰乱水油平衡，加重干燥"],
-            care: ["过度清洁去脂，破坏屏障"],
+            sleep: ["熬夜影响水油调节，出油或干燥加重"],
+            stress: ["压力扰乱内分泌，加剧水油失衡"],
+            care: ["过度清洁去脂，破坏皮脂膜平衡"],
         },
         solutions: {
             skincare: [
                 "使用温和氨基酸洁面，避免过度去脂",
-                "使用含玻尿酸、泛醇的保湿精华",
-                "叠加面霜锁水，干燥季可用护肤油",
+                "分区护理：出油区域清爽控油，干燥区域加强保湿",
+                "使用含玻尿酸、泛醇的保湿产品维持水润",
             ],
-            sleep: ["睡眠充足时肌肤自我修复能力更强"],
+            sleep: ["睡眠充足时肌肤自我调节能力更强"],
             diet: ["多喝水，多摄入富含 Omega-3 的深海鱼"],
             exercise: ["适度运动促进循环，改善肌肤供血"],
             mood: ["心情舒畅有助于内分泌稳定"],
-            stress: ["压力大会加重干燥，注意调节节奏"],
+            stress: ["压力大会扰乱水油平衡，注意调节节奏"],
         },
+        conditionKeywords: ["干燥", "脱皮", "紧绷", "缺水", "出油", "油光"],
     },
     {
         key: "sagging",
@@ -318,26 +328,13 @@ export const FOCUS_PROBLEM_ENTRIES: FocusProblemEntry[] = [
             mood: ["保持积极心态，精气神也会影响状态"],
             stress: ["长期压力加速衰老，学会为自己放松"],
         },
+        conditionKeywords: ["松弛", "下垂", "不紧致", "垮"],
     },
 ];
 
-// AI 症状名（自由文本）→ 问题维度映射，按顺序匹配，先命中先得
-const CONDITION_KEYWORD_MAP: Array<{ keywords: string[]; dimensionKey: string }> = [
-    { keywords: ["黑头", "闭口", "粉刺", "毛孔", "痘痘", "痤疮", "丘疹"], dimensionKey: "acne" },
-    { keywords: ["色斑", "晒斑", "雀斑", "色沉", "色素", "痘印"], dimensionKey: "spots" },
-    { keywords: ["泛红", "红血丝", "敏感", "刺痛", "发红", "红肿", "屏障"], dimensionKey: "sensitivity" },
-    { keywords: ["黑眼圈", "眼袋", "浮肿"], dimensionKey: "darkCircles" },
-    { keywords: ["细纹", "皱纹", "干纹", "法令纹", "表情纹"], dimensionKey: "wrinkles" },
-    { keywords: ["干燥", "脱皮", "紧绷", "缺水", "出油", "油光"], dimensionKey: "waterOil" },
-    { keywords: ["松弛", "下垂", "不紧致", "垮"], dimensionKey: "firmness" },
-    { keywords: ["暗沉", "粗糙", "无光泽", "蜡黄", "肤色不均"], dimensionKey: "radiance" },
-];
-
-function matchConditionDimKey(condition: string): string | null {
-    for (const { keywords, dimensionKey } of CONDITION_KEYWORD_MAP) {
-        if (keywords.some((kw) => condition.includes(kw))) return dimensionKey;
-    }
-    return null;
+// AI 症状名（自由文本）按问题条目关键词匹配
+function matchEntryCondition(entry: FocusProblemEntry, condition: string): boolean {
+    return entry.conditionKeywords.some((kw) => condition.includes(kw));
 }
 
 const LEVEL_ORDER: Record<ConcernLevel, number> = { severe: 0, moderate: 1, mild: 2 };
@@ -424,7 +421,7 @@ export function buildFocusProblems(
             : undefined;
 
         const matchedConditions = (skinConditions ?? []).filter(
-            (c) => c?.condition && matchConditionDimKey(c.condition) === entry.dimensionKey
+            (c) => c?.condition && matchEntryCondition(entry, c.condition)
         );
         const firstCondition = matchedConditions[0];
 
@@ -458,6 +455,3 @@ export function buildFocusProblems(
     });
     return problems;
 }
-
-/** 供其他模块复用：问题名 → 维度中文名 */
-export { DIMENSION_LABELS };

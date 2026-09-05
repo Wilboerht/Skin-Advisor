@@ -295,7 +295,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
     const [ipBudget, setIpBudget] = useState<string | undefined>(undefined);
     const [ipSkincareFrequency, setIpSkincareFrequency] = useState<string | undefined>(undefined);
 
-    // 问题聚焦板块：问卷生活方式答案（睡眠/压力/护肤频率）
+    // 重点问题关注板块：问卷生活方式答案（睡眠/压力/护肤频率）
     const [lifestyleAnswers, setLifestyleAnswers] = useState<LifestyleAnswers>({});
 
     // UI State
@@ -474,7 +474,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
 
     // 历史报告页（/reports/:id）：initialData.answers 为 DB 传入的该次测肤问卷答案。
     // loadClientData 对已有结果会短路，localStorage 恢复不会执行，因此这里单独恢复
-    // 问题聚焦所需的生活方式数据（睡眠/压力/护肤频率）与 IP 匹配数据（预算/护肤频率）。
+    // 重点问题关注所需的生活方式数据（睡眠/压力/护肤频率）与 IP 匹配数据（预算/护肤频率）。
     useEffect(() => {
         const answers = initialData?.answers;
         if (!answers) return;
