@@ -296,10 +296,10 @@ const SEVERITY_ORDER: Record<string, number> = { severe: 0, moderate: 1, mild: 2
 const CONDITION_KEYWORD_MAP: Array<{ keywords: string[]; dimKey: string }> = [
     { keywords: ["黑头", "闭口", "粉刺", "毛孔", "痘痘", "痤疮", "丘疹"], dimKey: "acne" },
     { keywords: ["色斑", "晒斑", "雀斑", "色沉", "色素", "痘印"], dimKey: "spots" },
-    { keywords: ["泛红", "红血丝", "敏感", "刺痛", "发红", "红肿"], dimKey: "sensitivity" },
+    { keywords: ["泛红", "红血丝", "敏感", "刺痛", "发红", "红肿", "屏障"], dimKey: "sensitivity" },
     { keywords: ["黑眼圈", "眼袋", "浮肿"], dimKey: "darkCircles" },
     { keywords: ["细纹", "皱纹", "干纹", "法令纹", "表情纹"], dimKey: "wrinkles" },
-    { keywords: ["干燥", "脱皮", "紧绷", "缺水"], dimKey: "waterOil" },
+    { keywords: ["干燥", "脱皮", "紧绷", "缺水", "出油", "油光"], dimKey: "waterOil" },
     { keywords: ["松弛", "下垂", "不紧致", "垮"], dimKey: "firmness" },
     { keywords: ["暗沉", "粗糙", "无光泽", "蜡黄"], dimKey: "radiance" },
     { keywords: ["肤色不均"], dimKey: "skinTone" },
