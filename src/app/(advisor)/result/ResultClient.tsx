@@ -52,8 +52,8 @@ import { skinTypes } from "@/lib/result-content";
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { ResultErrorBoundary } from "@/components/advisor/ResultErrorBoundary";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
-import { SkinProblemsSection } from "@/components/advisor/SkinProblemsSection";
-import { buildProblemCards, type LifestyleAnswers } from "@/lib/problem-solutions";
+import { FocusProblemsSection } from "@/components/advisor/FocusProblemsSection";
+import { buildFocusProblems, type LifestyleAnswers } from "@/lib/problem-solutions";
 
 // Re-export for backward compatibility with existing imports
 export { normalizeAnalysisResult, type ComprehensiveResult } from "@/lib/analysis-result";
@@ -332,9 +332,9 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
         [faceAnalysis?.overallScore, result?.dataSource]
     );
 
-    // 问题聚焦：低分维度（poor/fair/average）+ AI 检测症状（skinConditions），按严重程度排序
-    const problemCards = useMemo(
-        () => buildProblemCards(faceAnalysis?.dimensions, lifestyleAnswers, faceAnalysis?.skinConditions),
+    // 重点问题关注：暗沉/黑头/痘痘等具体问题（维度分数 <70 或 AI 症状检测），按严重程度排序
+    const focusProblems = useMemo(
+        () => buildFocusProblems(faceAnalysis?.dimensions, lifestyleAnswers, faceAnalysis?.skinConditions),
         [faceAnalysis?.dimensions, faceAnalysis?.skinConditions, lifestyleAnswers]
     );
 
@@ -1284,48 +1284,37 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                         )}
                                     </div>
 
-                                    {/* 2、问题聚焦 */}
+                                    {/* 2、专家护肤建议 */}
                                     <div className="mb-8">
                                         <h4 className="text-base font-medium text-[var(--color-brand-espresso)] mb-3 border-b border-[var(--color-brand-espresso)]/20 pb-2">
-                                            2、问题聚焦 <span className="text-xs lg:text-base">(Skin Concerns)</span>
+                                            2、专家护肤建议 <span className="text-xs lg:text-base">(Expert Recommendations)</span>
                                         </h4>
 
-                                        {problemCards.length > 0 ? (
-                                            <SkinProblemsSection
-                                                cards={problemCards}
-                                                authInitialized={authInitialized}
-                                                isLoggedIn={!!user}
-                                                onUnlock={() => openAuthModal("login")}
-                                            />
+                                        <p className="text-sm text-[var(--color-brand-taupe)] mb-3">根据您的肌肤数据，以下是针对性的护理和生活方式建议：</p>
+
+                                        {(faceAnalysis?.recommendations && faceAnalysis.recommendations.length > 0) ? (
+                                            <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[var(--color-brand-cocoa)]">
+                                                {(faceAnalysis.recommendations).map((rec, idx) => (
+                                                    <li key={idx}>{rec}</li>
+                                                ))}
+                                            </ul>
                                         ) : (
-                                            <>
-                                                {/* 无低分维度时的兜底：沿用原有通用建议 */}
-                                                <p className="text-sm text-[var(--color-brand-taupe)] mb-3">根据您的肌肤数据，以下是针对性的护理和生活方式建议：</p>
+                                            <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[var(--color-brand-cocoa)]">
+                                                <li>每日早晚温和清洁，避免过度去脂。</li>
+                                                <li>严格做好防晒，减少紫外线损伤。</li>
+                                                <li>根据季节调整保湿产品，保持水油平衡。</li>
+                                            </ul>
+                                        )}
 
-                                                {(faceAnalysis?.recommendations && faceAnalysis.recommendations.length > 0) ? (
-                                                    <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[var(--color-brand-cocoa)]">
-                                                        {(faceAnalysis.recommendations).map((rec, idx) => (
-                                                            <li key={idx}>{rec}</li>
-                                                        ))}
-                                                    </ul>
-                                                ) : (
-                                                    <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[var(--color-brand-cocoa)]">
-                                                        <li>每日早晚温和清洁，避免过度去脂。</li>
-                                                        <li>严格做好防晒，减少紫外线损伤。</li>
-                                                        <li>根据季节调整保湿产品，保持水油平衡。</li>
-                                                    </ul>
-                                                )}
-
-                                                {result.analysis?.lifestyleTips && result.analysis.lifestyleTips.length > 0 && (
-                                                    <div className="mt-5 pt-4 border-t border-dashed border-[var(--color-brand-espresso)]/10">
-                                                        <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[var(--color-brand-cocoa)]">
-                                                            {result.analysis.lifestyleTips.map((tip, idx) => (
-                                                                <li key={idx}>{tip}</li>
-                                                            ))}
-                                                        </ul>
-                                                    </div>
-                                                )}
-                                            </>
+                                        {/* 🌿 生活建议（嵌套在专家护肤建议内） */}
+                                        {result.analysis?.lifestyleTips && result.analysis.lifestyleTips.length > 0 && (
+                                            <div className="mt-5 pt-4 border-t border-dashed border-[var(--color-brand-espresso)]/10">
+                                                <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[var(--color-brand-cocoa)]">
+                                                    {result.analysis.lifestyleTips.map((tip, idx) => (
+                                                        <li key={idx}>{tip}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
                                         )}
                                     </div>
 
@@ -1389,6 +1378,21 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                                 </div>
                                             )}
                                         </>
+                                    )}
+
+                                    {/* 4、重点问题关注 */}
+                                    {faceAnalysis && (
+                                        <div className="mb-8">
+                                            <h4 className="text-base font-medium text-[var(--color-brand-espresso)] mb-3 border-b border-[var(--color-brand-espresso)]/20 pb-2">
+                                                4、重点问题关注 <span className="text-xs lg:text-base">(Key Concerns)</span>
+                                            </h4>
+                                            <FocusProblemsSection
+                                                problems={focusProblems}
+                                                authInitialized={authInitialized}
+                                                isLoggedIn={!!user}
+                                                onUnlock={() => openAuthModal("login")}
+                                            />
+                                        </div>
                                     )}
 
                                     {/* Lab-Grade Analysis Metrics */}

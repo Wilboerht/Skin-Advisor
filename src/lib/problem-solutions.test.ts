@@ -1,114 +1,107 @@
 import { describe, it, expect } from "vitest";
-import { buildProblemCards, PROBLEM_ENTRIES, type LifestyleAnswers } from "./problem-solutions";
+import { buildFocusProblems, type LifestyleAnswers } from "./problem-solutions";
 import type { SkinCondition } from "./advisor-utils";
 
 function makeDimensions(): Record<string, { score?: number; grade?: string; details?: string }> {
     return {
-        radiance: { score: 70, grade: "good", details: "光泽度中等" },
-        acne: { score: 55, grade: "average", details: "下巴有闭口" },
-        firmness: { score: 80, grade: "good", details: "弹性良好" },
+        radiance: { score: 58, grade: "average", details: "光泽度不足" },
+        acne: { score: 62, grade: "average", details: "下巴有闭口" },
+        firmness: { score: 84, grade: "good", details: "弹性良好" },
         darkCircles: { score: 38, grade: "poor", details: "青黑色黑眼圈明显" },
         sensitivity: { score: 85, grade: "excellent", details: "耐受良好" },
         uvDamage: { score: 60, grade: "average", details: "" },
         wrinkles: { score: 92, grade: "excellent", details: "" },
         spots: { score: 75, grade: "good", details: "" },
         skinTone: { score: 50, grade: "fair", details: "" },
-        waterOil: { score: 68, grade: "average", details: "" },
+        waterOil: { score: 45, grade: "fair", details: "" },
     };
 }
 
-describe("buildProblemCards - 维度筛选与分级", () => {
-    it("按评分标准筛选：<70 出卡，70 及以上忽略", () => {
-        const cards = buildProblemCards(makeDimensions());
-        expect(cards.map((c) => c.key)).toEqual([
-            "darkCircles",
-            "skinTone",
-            "acne",
-            "uvDamage",
-            "waterOil",
-        ]);
+describe("buildFocusProblems - 问题存在性与程度量化", () => {
+    it("分数 <70 的问题出卡（以用户视角问题名为单位）", () => {
+        const problems = buildFocusProblems(makeDimensions());
+        const names = problems.map((p) => p.name);
+        expect(names).toContain("暗沉");
+        expect(names).toContain("黑头");
+        expect(names).toContain("痘痘");
+        expect(names).toContain("黑眼圈");
+        expect(names).toContain("干燥");
+        expect(names).not.toContain("松弛");
+        expect(names).not.toContain("细纹");
     });
 
-    it("poor / fair 为 full 卡，average 为 compact 卡", () => {
-        const cards = buildProblemCards(makeDimensions());
-        expect(cards.find((c) => c.key === "darkCircles")?.tier).toBe("full");
-        expect(cards.find((c) => c.key === "skinTone")?.tier).toBe("full");
-        expect(cards.find((c) => c.key === "acne")?.tier).toBe("compact");
-        expect(cards.find((c) => c.key === "uvDamage")?.tier).toBe("compact");
-        expect(cards.find((c) => c.key === "waterOil")?.tier).toBe("compact");
+    it("程度按分数档位量化：<40 重度 / 40-54 中度 / 55-69 轻度", () => {
+        const problems = buildFocusProblems(makeDimensions());
+        expect(problems.find((p) => p.name === "黑眼圈")?.level).toBe("severe");
+        expect(problems.find((p) => p.name === "干燥")?.level).toBe("moderate");
+        expect(problems.find((p) => p.name === "暗沉")?.level).toBe("mild");
     });
 
-    it("full 卡在前，compact 卡在后；同级按分数升序", () => {
+    it("分数 ≥70 但 AI 检测到时出卡并标记 detected", () => {
+        const conditions: SkinCondition[] = [
+            { condition: "色斑", severity: "mild", area: "颧骨", description: "颧骨浅层色斑" },
+        ];
+        const problems = buildFocusProblems(makeDimensions(), {}, conditions);
+        const spots = problems.find((p) => p.name === "色斑");
+        expect(spots).toBeDefined();
+        expect(spots?.detected).toBe(true);
+        expect(spots?.area).toBe("颧骨");
+        expect(spots?.description).toBe("颧骨浅层色斑");
+    });
+
+    it("分数档位与症状严重度取更严重者", () => {
         const dims = makeDimensions();
-        dims.acne = { score: 30, grade: "poor", details: "" };
-        dims.skinTone = { score: 35, grade: "poor", details: "" };
-        const cards = buildProblemCards(dims);
-        const full = cards.filter((c) => c.tier === "full");
-        expect(full.map((c) => `${c.key}:${c.grade}`)).toEqual([
-            "acne:poor",
-            "skinTone:poor",
-            "darkCircles:poor",
-        ]);
-        const compact = cards.filter((c) => c.tier === "compact");
-        expect(compact.map((c) => c.key)).toEqual(["uvDamage", "waterOil"]);
+        const conditions: SkinCondition[] = [
+            { condition: "黑眼圈", severity: "moderate", area: "眼周", description: "眼周色素沉着" },
+        ];
+        const problems = buildFocusProblems(dims, {}, conditions);
+        const darkCircles = problems.find((p) => p.name === "黑眼圈");
+        expect(darkCircles?.level).toBe("severe");
     });
 
-    it("模型 grade 与分数不一致时以分数为准（grade good + score 60 → average 出卡）", () => {
-        const dims = makeDimensions();
-        dims.waterOil = { score: 60, grade: "good", details: "" };
-        const cards = buildProblemCards(dims);
-        const card = cards.find((c) => c.key === "waterOil");
-        expect(card?.grade).toBe("average");
-        expect(card?.tier).toBe("compact");
-    });
-
-    it("grade 缺失时由分数推导（score 48 → fair full 卡）", () => {
-        const dims = makeDimensions();
-        dims.spots = { score: 48, details: "有浅层色斑" };
-        const cards = buildProblemCards(dims);
-        const card = cards.find((c) => c.key === "spots");
-        expect(card?.grade).toBe("fair");
-        expect(card?.tier).toBe("full");
+    it("按严重程度排序：重度 → 中度 → 轻度", () => {
+        const problems = buildFocusProblems(makeDimensions());
+        const levels = problems.map((p) => p.level);
+        const firstSevere = levels.indexOf("severe");
+        const firstModerate = levels.indexOf("moderate");
+        const firstMild = levels.indexOf("mild");
+        if (firstSevere !== -1 && firstModerate !== -1) {
+            expect(firstSevere).toBeLessThan(firstModerate);
+        }
+        if (firstModerate !== -1 && firstMild !== -1) {
+            expect(firstModerate).toBeLessThan(firstMild);
+        }
     });
 
     it("无数据时返回空数组", () => {
-        expect(buildProblemCards(undefined)).toEqual([]);
-    });
-
-    it("优先使用 AI details 作为问题描述", () => {
-        const cards = buildProblemCards(makeDimensions());
-        const acne = cards.find((c) => c.key === "acne");
-        expect(acne?.description).toBe("下巴有闭口");
-        const skinTone = cards.find((c) => c.key === "skinTone");
-        expect(skinTone?.description).toBe(PROBLEM_ENTRIES.skinTone.description);
+        expect(buildFocusProblems(undefined)).toEqual([]);
     });
 });
 
-describe("buildProblemCards - 问卷生活方式门控", () => {
-    it("睡眠差时才展示睡眠加重因素与睡眠建议", () => {
+describe("buildFocusProblems - 成因与解决方法", () => {
+    it("解决方案按 护肤/睡眠/饮食/运动/情绪/压力 分组", () => {
+        const problems = buildFocusProblems(makeDimensions());
+        const darkCircles = problems.find((p) => p.name === "黑眼圈");
+        const categories = darkCircles?.solutionGroups.map((g) => g.category) ?? [];
+        expect(categories).toEqual(["skincare", "sleep", "diet", "exercise", "mood", "stress"]);
+        expect(categories[0]).toBe("skincare");
+    });
+
+    it("睡眠差时才展示睡眠加重因素", () => {
         const dims = makeDimensions();
-        const noSleepIssue: LifestyleAnswers = { sleepQuality: "good" };
-        const withSleepIssue: LifestyleAnswers = { sleepQuality: "poor" };
+        const noSleep: LifestyleAnswers = { sleepQuality: "good" };
+        const poorSleep: LifestyleAnswers = { sleepQuality: "poor" };
 
-        const cardsWithout = buildProblemCards(dims, noSleepIssue);
-        const darkCirclesWithout = cardsWithout.find((c) => c.key === "darkCircles");
-        expect(
-            darkCirclesWithout?.aggravatorGroups.some((g) => g.category === "sleep")
-        ).toBe(false);
+        const without = buildFocusProblems(dims, noSleep).find((p) => p.name === "黑眼圈");
+        expect(without?.aggravatorGroups.some((g) => g.category === "sleep")).toBe(false);
 
-        const cardsWith = buildProblemCards(dims, withSleepIssue);
-        const darkCirclesWith = cardsWith.find((c) => c.key === "darkCircles");
-        expect(
-            darkCirclesWith?.aggravatorGroups.some((g) => g.category === "sleep")
-        ).toBe(true);
-        expect(
-            darkCirclesWith?.lifestyleTipGroups.some((g) => g.category === "sleep")
-        ).toBe(true);
+        const withSleep = buildFocusProblems(dims, poorSleep).find((p) => p.name === "黑眼圈");
+        expect(withSleep?.aggravatorGroups.some((g) => g.category === "sleep")).toBe(true);
     });
 
     it("无问卷数据时不凭空展示睡眠/压力/护肤习惯加重因素", () => {
-        const cards = buildProblemCards(makeDimensions(), {});
-        const darkCircles = cards.find((c) => c.key === "darkCircles");
+        const problems = buildFocusProblems(makeDimensions(), {});
+        const darkCircles = problems.find((p) => p.name === "黑眼圈");
         const categories = darkCircles?.aggravatorGroups.map((g) => g.category) ?? [];
         expect(categories).not.toContain("sleep");
         expect(categories).not.toContain("stress");
@@ -118,68 +111,19 @@ describe("buildProblemCards - 问卷生活方式门控", () => {
     it("日晒加重因素恒展示（环境因素）", () => {
         const dims = makeDimensions();
         dims.wrinkles = { score: 45, grade: "poor", details: "" };
-        const cards = buildProblemCards(dims, {});
-        const wrinkles = cards.find((c) => c.key === "wrinkles");
-        expect(wrinkles?.aggravatorGroups.some((g) => g.category === "sun")).toBe(true);
-    });
-});
-
-describe("buildProblemCards - skinConditions 症状合并", () => {
-    const blackheads: SkinCondition = {
-        condition: "黑头",
-        severity: "moderate",
-        area: "鼻翼",
-        description: "鼻翼两侧可见明显黑头",
-    };
-
-    it("moderate 症状并入为 full 卡，使用 AI 描述与部位", () => {
-        const dims = makeDimensions();
-        dims.acne = { score: 90, grade: "excellent", details: "" };
-        const cards = buildProblemCards(dims, {}, [blackheads]);
-        const card = cards.find((c) => c.source === "condition" && c.label === "黑头");
-        expect(card).toBeDefined();
-        expect(card?.tier).toBe("full");
-        expect(card?.severity).toBe("moderate");
-        expect(card?.area).toBe("鼻翼");
-        expect(card?.description).toBe("鼻翼两侧可见明显黑头");
-        expect(card?.skincareActions).toEqual(PROBLEM_ENTRIES.acne.skincareActions);
+        const problems = buildFocusProblems(dims, {});
+        const fineLines = problems.find((p) => p.name === "细纹");
+        expect(fineLines?.aggravatorGroups.some((g) => g.category === "sun")).toBe(true);
     });
 
-    it("mild 症状并入为 compact 卡", () => {
-        const dims = makeDimensions();
-        dims.acne = { score: 90, grade: "excellent", details: "" };
-        const mild: SkinCondition = { ...blackheads, severity: "mild" };
-        const cards = buildProblemCards(dims, {}, [mild]);
-        const card = cards.find((c) => c.source === "condition");
-        expect(card?.tier).toBe("compact");
-    });
-
-    it("映射维度已有卡时跳过症状，避免重复", () => {
-        const cards = buildProblemCards(makeDimensions(), {}, [blackheads]);
-        expect(cards.some((c) => c.source === "condition")).toBe(false);
-    });
-
-    it("同一映射维度的多个症状只保留第一个", () => {
-        const dims = makeDimensions();
-        dims.acne = { score: 90, grade: "excellent", details: "" };
-        const conditions: SkinCondition[] = [
-            blackheads,
-            { condition: "毛孔粗大", severity: "mild", area: "T区", description: "毛孔扩张" },
-        ];
-        const cards = buildProblemCards(dims, {}, conditions);
-        const conditionCards = cards.filter((c) => c.source === "condition");
-        expect(conditionCards).toHaveLength(1);
-        expect(conditionCards[0].label).toBe("黑头");
-    });
-
-    it("无法映射的症状被忽略", () => {
-        const unknown: SkinCondition = {
-            condition: "不明症状",
-            severity: "severe",
-            area: "全脸",
-            description: "未知",
-        };
-        const cards = buildProblemCards(makeDimensions(), {}, [unknown]);
-        expect(cards.some((c) => c.source === "condition")).toBe(false);
+    it("黑头与痘痘同源 acne 分数，各自出卡", () => {
+        const problems = buildFocusProblems(makeDimensions());
+        const blackheads = problems.find((p) => p.key === "blackheads");
+        const acne = problems.find((p) => p.key === "acne");
+        expect(blackheads).toBeDefined();
+        expect(acne).toBeDefined();
+        expect(blackheads?.score).toBe(62);
+        expect(acne?.score).toBe(62);
+        expect(blackheads?.description).not.toBe(acne?.description);
     });
 });
