@@ -2,10 +2,10 @@ import { describe, it, expect } from "vitest";
 import { buildProblemCards, PROBLEM_ENTRIES, type LifestyleAnswers } from "./problem-solutions";
 import type { SkinCondition } from "./advisor-utils";
 
-function makeDimensions() {
+function makeDimensions(): Record<string, { score?: number; grade?: string; details?: string }> {
     return {
         radiance: { score: 70, grade: "good", details: "光泽度中等" },
-        acne: { score: 55, grade: "fair", details: "下巴有闭口" },
+        acne: { score: 55, grade: "average", details: "下巴有闭口" },
         firmness: { score: 80, grade: "good", details: "弹性良好" },
         darkCircles: { score: 38, grade: "poor", details: "青黑色黑眼圈明显" },
         sensitivity: { score: 85, grade: "excellent", details: "耐受良好" },
@@ -18,7 +18,7 @@ function makeDimensions() {
 }
 
 describe("buildProblemCards - 维度筛选与分级", () => {
-    it("筛选 poor / fair / average 维度，忽略 good / excellent", () => {
+    it("按评分标准筛选：<70 出卡，70 及以上忽略", () => {
         const cards = buildProblemCards(makeDimensions());
         expect(cards.map((c) => c.key)).toEqual([
             "darkCircles",
@@ -32,24 +32,43 @@ describe("buildProblemCards - 维度筛选与分级", () => {
     it("poor / fair 为 full 卡，average 为 compact 卡", () => {
         const cards = buildProblemCards(makeDimensions());
         expect(cards.find((c) => c.key === "darkCircles")?.tier).toBe("full");
-        expect(cards.find((c) => c.key === "acne")?.tier).toBe("full");
+        expect(cards.find((c) => c.key === "skinTone")?.tier).toBe("full");
+        expect(cards.find((c) => c.key === "acne")?.tier).toBe("compact");
         expect(cards.find((c) => c.key === "uvDamage")?.tier).toBe("compact");
         expect(cards.find((c) => c.key === "waterOil")?.tier).toBe("compact");
     });
 
     it("full 卡在前，compact 卡在后；同级按分数升序", () => {
         const dims = makeDimensions();
-        dims.acne = { score: 55, grade: "poor", details: "" };
-        dims.skinTone = { score: 42, grade: "poor", details: "" };
+        dims.acne = { score: 30, grade: "poor", details: "" };
+        dims.skinTone = { score: 35, grade: "poor", details: "" };
         const cards = buildProblemCards(dims);
         const full = cards.filter((c) => c.tier === "full");
         expect(full.map((c) => `${c.key}:${c.grade}`)).toEqual([
-            "darkCircles:poor",
-            "skinTone:poor",
             "acne:poor",
+            "skinTone:poor",
+            "darkCircles:poor",
         ]);
         const compact = cards.filter((c) => c.tier === "compact");
         expect(compact.map((c) => c.key)).toEqual(["uvDamage", "waterOil"]);
+    });
+
+    it("模型 grade 与分数不一致时以分数为准（grade good + score 60 → average 出卡）", () => {
+        const dims = makeDimensions();
+        dims.waterOil = { score: 60, grade: "good", details: "" };
+        const cards = buildProblemCards(dims);
+        const card = cards.find((c) => c.key === "waterOil");
+        expect(card?.grade).toBe("average");
+        expect(card?.tier).toBe("compact");
+    });
+
+    it("grade 缺失时由分数推导（score 48 → fair full 卡）", () => {
+        const dims = makeDimensions();
+        dims.spots = { score: 48, details: "有浅层色斑" };
+        const cards = buildProblemCards(dims);
+        const card = cards.find((c) => c.key === "spots");
+        expect(card?.grade).toBe("fair");
+        expect(card?.tier).toBe("full");
     });
 
     it("无数据时返回空数组", () => {

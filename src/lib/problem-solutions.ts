@@ -292,6 +292,31 @@ const FOCUS_GRADES = new Set(["poor", "fair", "average"]);
 const GRADE_ORDER: Record<string, number> = { poor: 0, fair: 1, average: 2 };
 const SEVERITY_ORDER: Record<string, number> = { severe: 0, moderate: 1, mild: 2 };
 
+// 与 vision prompt 评分标准一致：85-100优秀, 70-84良好, 55-69一般, 40-54需关注, <40差
+const GRADE_SCORE_BANDS: Array<{ min: number; grade: "poor" | "fair" | "average" | "good" | "excellent" }> = [
+    { min: 85, grade: "excellent" },
+    { min: 70, grade: "good" },
+    { min: 55, grade: "average" },
+    { min: 40, grade: "fair" },
+    { min: 0, grade: "poor" },
+];
+
+/**
+ * 解析维度的聚焦等级（仅返回需要出卡的等级，good/excellent 返回 null）。
+ * 模型输出的 grade 字段不稳定（可能缺失或与分数不一致），因此以分数推导为主、
+ * 模型 grade 兜底：只要有分数就按评分标准推导，保证"低分维度必出卡"。
+ */
+function resolveFocusGrade(dim: { score?: number; grade?: string } | undefined): string | null {
+    if (!dim) return null;
+    if (typeof dim.score === "number" && !Number.isNaN(dim.score)) {
+        const band = GRADE_SCORE_BANDS.find((b) => dim.score! >= b.min);
+        if (!band || band.grade === "good" || band.grade === "excellent") return null;
+        return band.grade;
+    }
+    const g = dim.grade;
+    return g && FOCUS_GRADES.has(g) ? g : null;
+}
+
 // AI 症状名（自由文本）→ 知识库维度映射，按顺序匹配，先命中先得
 const CONDITION_KEYWORD_MAP: Array<{ keywords: string[]; dimKey: string }> = [
     { keywords: ["黑头", "闭口", "粉刺", "毛孔", "痘痘", "痤疮", "丘疹"], dimKey: "acne" },
@@ -383,18 +408,20 @@ export function buildProblemCards(
         for (const key of DIMENSION_ORDER) {
             const dim = dimensions[key];
             const entry = PROBLEM_ENTRIES[key];
-            if (!dim || !entry || !dim.grade || !FOCUS_GRADES.has(dim.grade)) continue;
+            if (!dim || !entry) continue;
+            const focusGrade = resolveFocusGrade(dim);
+            if (!focusGrade) continue;
 
             const { aggravatorGroups, lifestyleTipGroups } = buildAdviceGroups(entry, answers);
             dimensionKeysWithCard.add(key);
             cards.push({
                 key,
                 label: DIMENSION_LABELS[key] ?? key,
-                tier: dim.grade === "average" ? "compact" : "full",
+                tier: focusGrade === "average" ? "compact" : "full",
                 source: "dimension",
                 description: dim.details || entry.description,
                 score: dim.score ?? 0,
-                grade: dim.grade,
+                grade: focusGrade,
                 basicCauses: entry.basicCauses,
                 aggravatorGroups,
                 skincareActions: entry.skincareActions,
