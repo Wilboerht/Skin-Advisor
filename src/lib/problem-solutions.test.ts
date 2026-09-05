@@ -148,6 +148,18 @@ describe("buildFocusProblems - 成因与解决方法", () => {
         expect(acne?.score).toBe(58);
     });
 
+    it("综合分低但两个子分都高时回退综合分出双卡（口径兜底）", () => {
+        const dims = makeDimensions();
+        dims.acne = { score: 62, grade: "average", details: "", blackheads: 80, pimples: 82 };
+        const problems = buildFocusProblems(dims);
+        const blackheads = problems.find((p) => p.key === "blackheads");
+        const acne = problems.find((p) => p.key === "acne");
+        expect(blackheads).toBeDefined();
+        expect(acne).toBeDefined();
+        expect(blackheads?.score).toBe(62);
+        expect(acne?.score).toBe(62);
+    });
+
     it("描述优先使用 AI 维度解读（dim.details），无解读时回退知识库文案", () => {
         const dims = makeDimensions();
         const problems = buildFocusProblems(dims);

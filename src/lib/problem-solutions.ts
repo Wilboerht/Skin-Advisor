@@ -419,19 +419,31 @@ export function buildFocusProblems(
 ): FocusProblemData[] {
     const dimensionOf = (dimKey: string) => dimensions?.[dimKey];
 
+    // 黑头/痘痘双卡子分回退规则：综合分低但两个子分都高时（子分可能失真），
+    // 回退用综合分出双卡，保持与十维口径一致
+    const acneDim = dimensionOf("acne");
+    const toScore = (v: unknown): number | undefined =>
+        typeof v === "number" && !Number.isNaN(v) ? v : undefined;
+    const acneOverall = toScore(acneDim?.score);
+    const acneSubsBothGood =
+        acneOverall !== undefined &&
+        acneOverall < 70 &&
+        toScore(acneDim?.blackheads) !== undefined &&
+        (toScore(acneDim?.blackheads) ?? 0) >= 70 &&
+        toScore(acneDim?.pimples) !== undefined &&
+        (toScore(acneDim?.pimples) ?? 0) >= 70;
+
     const problems: FocusProblemData[] = [];
 
     for (const entry of FOCUS_PROBLEM_ENTRIES) {
         const dim = dimensionOf(entry.dimensionKey);
-        // 子分优先（黑头分/痘痘分），旧数据无子分时回退维度综合分
+        // 子分优先（黑头分/痘痘分），旧数据无子分或子分整体失真时回退维度综合分
         const subScore =
-            entry.subScoreKey && typeof dim?.[entry.subScoreKey] === "number"
-                ? (dim[entry.subScoreKey] as number)
+            entry.subScoreKey && !acneSubsBothGood
+                ? toScore(dim?.[entry.subScoreKey])
                 : undefined;
-        const rawScore =
-            typeof dim?.score === "number" && !Number.isNaN(dim.score) ? dim.score : undefined;
-        const dimScore =
-            typeof subScore === "number" && !Number.isNaN(subScore) ? subScore : rawScore;
+        const rawScore = toScore(dim?.score);
+        const dimScore = subScore ?? rawScore;
 
         const matchedConditions = (skinConditions ?? []).filter(
             (c) => c?.condition && matchEntryCondition(entry, c.condition)
