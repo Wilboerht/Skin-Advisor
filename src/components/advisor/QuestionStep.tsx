@@ -12,8 +12,6 @@ interface QuestionStepProps {
   selectedValue: string | string[] | null;
   onSelect: (value: string) => void;
   onNext: () => void;
-  /** 仅 skippable 题目传入：不写入答案直接进入下一题 */
-  onSkip?: () => void;
   direction: number; // 1: 向前, -1: 向后（切题滑入滑出由外层 page 的 AnimatePresence 负责）
   currentStep: number;
   totalSteps: number;
@@ -34,7 +32,6 @@ export function QuestionStep({
   selectedValue,
   onSelect,
   onNext,
-  onSkip,
   currentStep,
   totalSteps,
 }: QuestionStepProps) {
@@ -154,19 +151,6 @@ export function QuestionStep({
             </m.div>
           )}
         </AnimatePresence>
-
-        {/* Skip Button — 仅 skippable 题目显示 */}
-        {onSkip && (
-          <div className="mt-4 flex justify-center">
-            <button
-              type="button"
-              onClick={onSkip}
-              className="min-h-[44px] px-6 text-[13px] text-brand-charcoal/50 hover:text-brand-charcoal font-light tracking-[0.1em] underline underline-offset-4 decoration-brand-charcoal/30 hover:decoration-brand-charcoal/60 transition-colors touch-manipulation"
-            >
-              跳过此题
-            </button>
-          </div>
-        )}
       </div>
   );
 }

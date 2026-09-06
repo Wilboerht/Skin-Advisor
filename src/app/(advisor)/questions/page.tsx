@@ -52,7 +52,6 @@ const questionSchema = z.object({
         value: z.union([z.string(), z.array(z.string())]),
         operator: z.enum(["equals", "notEquals", "contains"]).optional(),
     }).optional(),
-    skippable: z.boolean().optional(),
 });
 
 const questionListSchema = z.array(questionSchema);
@@ -589,16 +588,6 @@ export default function QuestionsPage() {
         handleNextWithAnswers(answers);
     };
 
-    // 跳过当前题（仅限 skippable 题目）：不写入答案直接前进
-    const handleSkip = () => {
-        if (!gender || !currentQuestion || !currentQuestion.skippable) return;
-        if (autoAdvanceTimerRef.current) {
-            clearTimeout(autoAdvanceTimerRef.current);
-            autoAdvanceTimerRef.current = null;
-        }
-        handleNextWithAnswers(answers);
-    };
-
     // 安全检查
     const isNextDisabled = () => {
         if (!currentQuestion) return true;
@@ -913,7 +902,6 @@ export default function QuestionsPage() {
                                 selectedValue={(answers[currentQuestion.fieldName] as string | string[] | null) || null}
                                 onSelect={handleSelect}
                                 onNext={handleNext}
-                                onSkip={currentQuestion.skippable ? handleSkip : undefined}
                                 direction={direction}
                                 currentStep={currentStepIndex + 1}
                                 totalSteps={questions.length}

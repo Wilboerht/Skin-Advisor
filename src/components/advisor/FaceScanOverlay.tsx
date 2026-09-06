@@ -68,6 +68,32 @@ export function FaceScanOverlay({
                         />
                     )}
 
+                    {/* 椭圆框进度描边：随倒计时稳定度从 0 逐渐闭合到 100%（金色的"进度圈"） */}
+                    {faceStatus === "found" && stabilityProgress > 0 && stabilityProgress < 100 && (
+                        <svg
+                            className="absolute inset-0 h-full w-full overflow-visible pointer-events-none"
+                            viewBox="0 0 100 100"
+                            preserveAspectRatio="none"
+                            aria-hidden="true"
+                            style={{ filter: "drop-shadow(0 0 6px rgba(201,168,108,0.5))" }}
+                        >
+                            <m.ellipse
+                                cx="50"
+                                cy="50"
+                                rx="49"
+                                ry="49"
+                                fill="none"
+                                stroke="#C9A86C"
+                                strokeWidth={3}
+                                vectorEffect="non-scaling-stroke"
+                                strokeLinecap="round"
+                                initial={{ pathLength: 0 }}
+                                animate={{ pathLength: stabilityProgress / 100 }}
+                                transition={{ duration: prefersReducedMotion ? 0 : 0.25, ease: "linear" }}
+                            />
+                        </svg>
+                    )}
+
                     {/* 拍摄成功确认态 */}
                     {faceStatus === "success" && successStep && (
                         <m.div
@@ -125,9 +151,10 @@ export function FaceScanOverlay({
                 </div>
 
                 {/* 扫描激光：元素高度等于扫描轨道（top 10% → 90%），仅顶部 2px 线条可见；
-                    用 transform（y 百分比相对自身高度）替代 top 动画，只走合成层，避免每帧 layout */}
+                    用 transform（y 百分比相对自身高度）替代 top 动画，只走合成层，避免每帧 layout。
+                    仅在未找到脸/检测中播放：found 阶段让位给金色进度描边与倒计时，避免动效叠加 */}
                 <AnimatePresence>
-                    {currentStep === "front" && faceStatus !== "ready" && faceStatus !== "success" && !prefersReducedMotion && (
+                    {currentStep === "front" && (faceStatus === "none" || faceStatus === "detecting") && !prefersReducedMotion && (
                         <m.div
                             className="absolute left-[8%] right-[8%] top-[10%] h-[80%] bg-[linear-gradient(to_right,transparent,#C9A86C,transparent)] bg-[length:100%_2px] bg-no-repeat [filter:drop-shadow(0_0_7px_rgba(234,179,8,0.5))]"
                             initial={{ y: "0%", opacity: 0 }}
@@ -143,7 +170,7 @@ export function FaceScanOverlay({
             {/* 2. 顶部指引已移除，由父组件统一接管 */}
 
 
-            {/* 3. 中心倒计时 (仅在Found且未Ready时显示) */}
+            {/* 3. 中心倒计时数字 (仅在Found且未Ready时显示；进度视觉已由椭圆框描边承担) */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <AnimatePresence>
                     {faceStatus === "found" && stabilityProgress > 0 && stabilityProgress < 100 && (
@@ -153,21 +180,9 @@ export function FaceScanOverlay({
                             exit={{ scale: 1.2, opacity: 0 }}
                             className="relative z-10"
                         >
-                            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 backdrop-blur-md border border-white/40 shadow-lg">
-                                <span className="font-mono text-3xl font-bold text-white tracking-tighter drop-shadow-md">
-                                    {Math.max(1, Math.ceil((100 - stabilityProgress) / 25))}
-                                </span>
-                                <svg className="absolute inset-0 h-full w-full -rotate-90">
-                                    <circle cx="40" cy="40" r="38" className="fill-none stroke-white/20 stroke-[3]" />
-                                    <m.circle
-                                        cx="40" cy="40" r="38"
-                                        className="fill-none stroke-brand-gold stroke-[3] stroke-linecap-round filter drop-shadow-sm"
-                                        initial={{ pathLength: 0 }}
-                                        animate={{ pathLength: stabilityProgress / 100 }}
-                                        transition={{ duration: 0.2 }}
-                                    />
-                                </svg>
-                            </div>
+                            <span className="font-mono text-4xl font-bold text-white tracking-tighter drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
+                                {Math.max(1, Math.ceil((100 - stabilityProgress) / 25))}
+                            </span>
                         </m.div>
                     )}
                 </AnimatePresence>
