@@ -264,7 +264,7 @@ export async function POST(request: NextRequest) {
             return apiError(ErrorCode.VALIDATION_ERROR, "请求参数错误", 400, result.error.flatten().fieldErrors);
         }
 
-        const { answers, faceAnalysis, sessionId, nickname, freeRetry, clientDate, privacyConsent } = result.data;
+        const { answers, faceAnalysis, sessionId, nickname, freeRetry, clientDate, privacyConsent, skinState } = result.data;
 
         // 提取客户端标识（用于会话归属与审计）
         const identifiers = extractGuestIdentifiers(request, body as Record<string, unknown>);
@@ -544,7 +544,8 @@ export async function POST(request: NextRequest) {
                 zoneAnalysis: faceAnalysis.zoneAnalysis,
                 skinAge: faceAnalysis.skinAge,
             } as Partial<FaceAnalysisResult> : undefined,
-            products: candidateProducts
+            products: candidateProducts,
+            skinState
         });
 
         const systemPrompt = user
@@ -751,7 +752,8 @@ export async function POST(request: NextRequest) {
             dataSource: "hybrid",
             persona: personaKey,          // IP 形象 key (8-pie)
             userLocation: geoLocation,
-            nickname: nickname || "护肤达人" // Include user nickname for sharing
+            nickname: nickname || "护肤达人", // Include user nickname for sharing
+            skinState: finalFaceAnalysis && typeof skinState === "string" ? skinState : undefined // 拍摄时肌肤状态（仅面部扫描流程有意义）
         };
 
         // 清理 AI 输出中的潜在危险内容（存储型 XSS 防护）

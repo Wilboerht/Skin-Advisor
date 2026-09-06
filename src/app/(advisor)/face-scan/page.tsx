@@ -452,7 +452,9 @@ export default function FaceScanPage() {
             {/* Prep Guide Modal */}
             <ScanGuideModal
                 isOpen={isModalOpen}
-                onConfirm={() => {
+                onConfirm={(skinState) => {
+                    // 记录拍摄时肌肤状态（供分析条件化与结果页提示）
+                    try { localStorage.setItem(STORAGE_KEYS.ADVISOR_SKIN_STATE, skinState); } catch { /* ignore */ }
                     setHasStarted(true);
                     setIsPreparing(true);
                     setIsModalOpen(false);

@@ -321,6 +321,12 @@ export function useAsyncAnalysis() {
             // 1. Face Analysis
             let faceAnalysis = null;
 
+            // 拍摄时肌肤状态（扫脸引导弹窗选择）：随分析请求透传，用于视觉/文本 prompt 条件化
+            let skinState: string | undefined;
+            try {
+                skinState = localStorage.getItem(STORAGE_KEYS.ADVISOR_SKIN_STATE) || undefined;
+            } catch { /* ignore */ }
+
             // Use advisorStorage to get images (supports IndexedDB)
             const { advisorStorage } = await import("@/lib/advisor-storage");
             const rawImages = await advisorStorage.getFaceImages();
@@ -434,7 +440,7 @@ export function useAsyncAnalysis() {
                             const faceRes = await fetchWithRetry("/api/advisor/face-analyze", {
                                 method: "POST",
                                 headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ sessionId, images: visionImages }),
+                                body: JSON.stringify({ sessionId, images: visionImages, skinState }),
                                 signal: faceAnalyzeAbort.signal
                             }, { retries: 0 });
 
@@ -514,6 +520,7 @@ export function useAsyncAnalysis() {
                     nickname: nickname,
                     privacyConsent,
                     clientDate: localDateStr(new Date()),
+                    skinState,
                     ...(isFreeRetry ? { freeRetry: true } : {})
                 }),
                 signal: abortController.signal

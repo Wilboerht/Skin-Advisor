@@ -1,21 +1,27 @@
 "use client";
 
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Sparkles, Sun, ScanEye, LogOut, ChevronLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
+import { SKIN_STATE_OPTIONS, DEFAULT_SKIN_STATE, isMakeupState, type SkinStateValue } from "@/lib/skin-state";
 
 interface ScanGuideModalProps {
     isOpen: boolean;
-    onConfirm: () => void;
+    /** 确认开始扫描时回传拍摄时肌肤状态 */
+    onConfirm: (skinState: SkinStateValue) => void;
     onExit?: () => void;
 }
 
 export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProps) {
 
+    const [skinState, setSkinState] = useState<SkinStateValue>(DEFAULT_SKIN_STATE);
+
     const guideItems = [
-        { icon: Sparkles, title: "保持素颜" },
+        // 带妆时"保持素颜"的提示与实际状态矛盾，改为"如实记录状态"
+        { icon: Sparkles, title: isMakeupState(skinState) ? "如实记录状态" : "保持素颜" },
         { icon: Sun, title: "光线充足" },
         { icon: ScanEye, title: "对准镜头" }
     ];
@@ -116,6 +122,43 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
                                 })}
                             </motion.div>
 
+                            {/* 拍摄时肌肤状态（单选，默认纯素颜；影响分析准确度与报告提示） */}
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.25, duration: 0.5 }}
+                                className="w-full mb-8 md:mb-10"
+                            >
+                                <p className="text-center text-[12px] text-brand-charcoal/50 font-light tracking-[0.08em] mb-3">
+                                    此刻镜头前的肌肤状态是？
+                                </p>
+                                <div
+                                    role="radiogroup"
+                                    aria-label="拍摄时肌肤状态"
+                                    className="flex flex-wrap items-center justify-center gap-2"
+                                >
+                                    {SKIN_STATE_OPTIONS.map((option) => {
+                                        const selected = skinState === option.value;
+                                        return (
+                                            <button
+                                                key={option.value}
+                                                type="button"
+                                                role="radio"
+                                                aria-checked={selected}
+                                                onClick={() => setSkinState(option.value)}
+                                                className={`px-4 py-2 rounded-full text-[12px] font-light tracking-[0.04em] border transition-colors cursor-pointer ${
+                                                    selected
+                                                        ? "border-brand-charcoal bg-brand-charcoal text-white"
+                                                        : "border-brand-charcoal/20 text-brand-charcoal/60 hover:border-brand-charcoal/50 hover:text-brand-charcoal"
+                                                }`}
+                                            >
+                                                {option.label}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </motion.div>
+
                             {/* Actions */}
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}
@@ -135,7 +178,7 @@ export function ScanGuideModal({ isOpen, onConfirm, onExit }: ScanGuideModalProp
                                                 console.warn("[ScanGuide] speechSynthesis wake-up failed:", e);
                                             }
                                         }
-                                        onConfirm();
+                                        onConfirm(skinState);
                                     }}
                                     className="group relative inline-flex items-center justify-center gap-3 px-10 py-4 sm:px-14 border border-brand-charcoal/60 text-brand-charcoal bg-transparent text-[13px] sm:text-[14px] tracking-[0.1em] font-light cursor-pointer transition-all duration-500 hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,38,62,0.12)] active:translate-y-0 active:shadow-none"
                                 >

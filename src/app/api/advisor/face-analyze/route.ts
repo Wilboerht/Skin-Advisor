@@ -5,6 +5,7 @@ import crypto from "crypto";
 
 import { analyzeImages, type VisionImage } from "@/lib/ai-vision";
 import type { AIProvider } from "@/lib/ai";
+import { buildSkinStateVisionNote } from "@/lib/skin-state";
 import { isAIEnabled } from "@/lib/ai";
 import { circuitBreaker } from "@/lib/circuit-breaker";
 import { FaceAnalyzeRequestSchema } from "@/lib/schemas";
@@ -32,15 +33,17 @@ const faceAnalysisCache = new Map<string, { result: Record<string, unknown>; at:
 const FACE_CACHE_TTL_MS = 10 * 60 * 1000; // 10分钟过期
 const FACE_CACHE_MAX_SIZE = 50; // 最多缓存 50 条
 
-function buildCacheKey(_sessionId: string, images: VisionImage[]): string {
+function buildCacheKey(_sessionId: string, images: VisionImage[], skinState?: string): string {
     // 仅基于图片内容哈希（不含 sessionId），这样刷新页面也能命中缓存
     // 对单张图片取前 50KB 进行 sha256，避免超大 base64 占用内存；多张图片合并后再哈希
+    // skinState 参与 key：同一组照片在不同拍摄状态下需要不同的条件化分析，不能互串缓存
     const samples = images.map(img => {
         const data = img.data || "";
         const sample = data.slice(0, 50 * 1024);
         return `${img.angle}:${crypto.createHash("sha256").update(sample).digest("hex")}`;
     }).join("|");
-    return `face:${crypto.createHash("sha256").update(samples).digest("hex")}`;
+    const stateSuffix = skinState ? `:${skinState}` : "";
+    return `face:${crypto.createHash("sha256").update(samples + stateSuffix).digest("hex")}`;
 }
 
 function getCachedResult(key: string): Record<string, unknown> | null {
@@ -328,12 +331,20 @@ export async function POST(request: NextRequest) {
             systemPrompt += `\n\n${REGISTERED_USER_DEEP_ANALYSIS_INSTRUCTION}`;
             aiLogger.info(`[FaceAnalyze] Deep analysis mode activated for user ${session?.id}`);
         }
+
+        // 拍摄时肌肤状态条件化：带妆掩盖纹理/泛红/色斑、洗后短暂泛红、防晒影响油光等
+        const skinState = typeof result.data.skinState === "string" ? result.data.skinState : undefined;
+        const skinStateVisionNote = buildSkinStateVisionNote(skinState);
+        if (skinStateVisionNote) {
+            systemPrompt += `\n\n${skinStateVisionNote}`;
+            aiLogger.info(`[FaceAnalyze] Skin state conditioning applied: ${skinState}`);
+        }
         // --------------------------------------------------------
 
         let acquired = false;
         try {
             // 3.5 缓存检查：相同图片跳过 AI 调用（必须在队列获取之前，避免浪费槽位）
-            const cacheKey = buildCacheKey(faceSessionId || ip, validImages);
+            const cacheKey = buildCacheKey(faceSessionId || ip, validImages, skinState);
             const cachedResult = getCachedResult(cacheKey);
             if (cachedResult) {
                 aiLogger.info(`[FaceAnalyze] Cache hit, returning cached result`);

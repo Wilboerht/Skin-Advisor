@@ -13,6 +13,8 @@ export const STORAGE_KEYS = {
     ADVISOR_GENDER: 'advisor_gender',
     ADVISOR_STEP: 'advisor_step',
     ADVISOR_GENDER_MISMATCH_ACK: 'advisor_gender_mismatch_ack',
+    // 测肤拍摄时肌肤状态（纯素颜/带妆等，扫脸引导弹窗选择）
+    ADVISOR_SKIN_STATE: 'advisor_skin_state',
 
     // 免费重试
     ADVISOR_FREE_RETRY: 'advisor_free_retry',

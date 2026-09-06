@@ -29,6 +29,7 @@ export const AnalyzeRequestSchema = z.object({
     nickname: z.string().max(10).optional(), // 用户昵称
     freeRetry: z.boolean().optional(), // 性别不匹配免费重试标记
     clientDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), // 客户端本地日历日，用于自动生成护肤日记
+    skinState: z.string().max(30).optional(), // 拍摄时肌肤状态（扫脸引导弹窗选择）
     privacyConsent: z.object({
         version: z.string(),
         consentedAt: z.string()
@@ -156,6 +157,7 @@ export const FaceAnalyzeRequestSchema = z.object({
         })
     ]).optional(),
     image: z.string().max(MAX_IMAGE_BASE64_CHARS, "单张图片过大，请压缩后重试").optional(), // 兼容旧版单图
+    skinState: z.string().max(30).optional(), // 拍摄时肌肤状态（bare/sunscreen/washed/light_makeup/heavy_makeup）
 }).refine(data => {
     if (data.image) return true;
     if (Array.isArray(data.images)) return data.images.length > 0;

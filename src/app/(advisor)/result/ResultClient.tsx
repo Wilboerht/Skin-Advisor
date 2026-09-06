@@ -14,7 +14,8 @@ import {
     Activity,
     AlertCircle,
     Sparkles,
-    X
+    X,
+    Info
 } from "lucide-react";
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
@@ -55,6 +56,7 @@ import { ResultErrorBoundary } from "@/components/advisor/ResultErrorBoundary";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { FocusProblemsSection } from "@/components/advisor/FocusProblemsSection";
 import { buildFocusProblems, type LifestyleAnswers } from "@/lib/problem-solutions";
+import { SKIN_STATE_LABELS, isMakeupState } from "@/lib/skin-state";
 
 // Re-export for backward compatibility with existing imports
 export { normalizeAnalysisResult, type ComprehensiveResult } from "@/lib/analysis-result";
@@ -350,6 +352,13 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
         () => buildFocusProblems(faceAnalysis?.dimensions, lifestyleAnswers, faceAnalysis?.skinConditions),
         [faceAnalysis?.dimensions, faceAnalysis?.skinConditions, lifestyleAnswers]
     );
+
+    // 拍摄时肌肤状态：优先取分析结果落库值（历史报告），缺失时回退本地存储（当前会话）
+    const skinStateValue = useMemo(() => {
+        if (result?.skinState) return result.skinState;
+        if (typeof window === "undefined") return null;
+        try { return localStorage.getItem(STORAGE_KEYS.ADVISOR_SKIN_STATE) || null; } catch { return null; }
+    }, [result]);
 
     const isGenderMismatch = useMemo(() => {
         if (!faceAnalysis || !socialGender) return false;
@@ -1227,6 +1236,21 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                             <Sparkles className="w-4 h-4 lg:w-5 lg:h-5" />
                             {userNickname} 的专属肌智派在线测肤报告
                         </p>
+
+                        {/* 拍摄时肌肤状态徽章：带妆/洗后/防晒等影响分析口径，向用户明示 */}
+                        {skinStateValue && SKIN_STATE_LABELS[skinStateValue] && (
+                            <div className="flex flex-col items-center gap-1 -mt-2 mb-5 lg:-mt-4 lg:mb-7">
+                                <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-charcoal/15 bg-white/60 px-3 py-1 text-[11px] text-brand-charcoal/60 font-light tracking-[0.05em]">
+                                    <Info className="w-3 h-3 text-brand-charcoal/40" strokeWidth={1.5} />
+                                    本次测肤状态：{SKIN_STATE_LABELS[skinStateValue]}
+                                </span>
+                                {isMakeupState(skinStateValue) && (
+                                    <p className="text-[11px] text-brand-charcoal/40 font-light tracking-[0.04em]">
+                                        带妆拍摄，色斑、泛红与肤色相关结果仅供参考
+                                    </p>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     {/* Validation Warning Banner */}

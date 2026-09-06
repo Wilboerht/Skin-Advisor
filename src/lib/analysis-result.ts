@@ -33,6 +33,8 @@ export interface ComprehensiveResult {
     dataSource: "comprehensive" | "questionnaire" | "hybrid";
     persona?: string;
     expiresAt?: string;
+    /** 拍摄时肌肤状态（bare/sunscreen/washed/light_makeup/heavy_makeup），结果页提示用 */
+    skinState?: string;
 }
 
 function normalizeDataSource(
@@ -82,5 +84,6 @@ export function normalizeAnalysisResult(raw: unknown): ComprehensiveResult | nul
         products: (record.products as ComprehensiveResult["products"]) || [],
         persona: record.persona as string | undefined,
         expiresAt: record.expiresAt as string | undefined,
+        skinState: typeof record.skinState === "string" ? record.skinState : undefined,
     };
 }

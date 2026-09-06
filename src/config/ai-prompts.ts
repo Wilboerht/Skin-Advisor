@@ -4,6 +4,7 @@
  */
 
 import type { FaceAnalysisResult } from "@/lib/advisor-utils";
+import { SKIN_STATE_LABELS, buildSkinStateTextNote } from "@/lib/skin-state";
 
 export const BRAND_CONFIG = {
   name: "NIHPLOD",
@@ -159,6 +160,8 @@ export function buildTextAnalysisPrompt(params: {
   faceAnalysis?: Partial<FaceAnalysisResult>;
   products?: unknown[];
   isLoggedIn?: boolean;
+  /** 拍摄时肌肤状态（扫脸引导弹窗选择；带妆/洗后/防晒影响判定） */
+  skinState?: string;
 }) {
   // 简化产品列表供 AI 选择
   const productSource = params.products && params.products.length > 0
@@ -242,6 +245,7 @@ ${params.pregnancyStatus === "yes" ? `- ⚠️ 孕期：是（在此基础上额
 - 日晒程度：${sunText}
 - 当前护肤流程：${freqText}
 - 护肤预算：${budgetText}
+${params.skinState && SKIN_STATE_LABELS[params.skinState] ? `- 拍摄时肌肤状态：${SKIN_STATE_LABELS[params.skinState]}` : ""}
 ${params.medicationHistory && params.medicationHistory !== "none" ? `- 用药史：${wrapUserData("medicationHistory", sanitizePromptInput(params.medicationHistory))}（可能影响皮肤状态）` : ""}
 
 品牌成分哲学（核心约束，适用于所有用户）：
@@ -266,6 +270,7 @@ ${params.medicationHistory && params.medicationHistory !== "none" ? `- 用药史
 6. 根据所在地的气候特征给出针对性建议（如北方干燥需加强保湿，南方湿热需控油清爽）。
 7. 根据当前护肤流程复杂度，给出可升级的下一步建议。
 8. 产品推荐遵循"先合适再择优"原则：首先确保产品功效真正匹配用户肤质和问题，其次在同等合适的产品中根据预算选择价格区间。不是贵就推，而是合适的产品中推匹配预算的。${params.isLoggedIn ? '\n9. 当前为已登录会员，提供更深度、更专业的分析。' : ''}
+${buildSkinStateTextNote(params.skinState) ? `\n⚠️ 拍摄状态规则：${buildSkinStateTextNote(params.skinState)}` : ""}
 
 ${params.faceAnalysis ? `面部分析数据 (10维度评分):
 - 综合评分: ${params.faceAnalysis.overallScore ?? 'N/A'}/100
