@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FaceScanOverlay } from "./FaceScanOverlay";
+import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import type * as FaceApi from "@vladmandic/face-api";
 
 const DEBUG = process.env.NODE_ENV === 'development';
@@ -69,6 +70,17 @@ const MANUAL_BUTTON_DELAY_MS = 3000; // 3 秒，比原 5 秒更友好
 // 若持续未检测到面部，提前显示手动拍照按钮
 const NO_FACE_MANUAL_BUTTON_DELAY_MS = 5000;
 
+// 闭眼检测阈值：EAR（眼纵横比）低于此值判定为闭眼，禁止自动拍摄
+// 0.18 比文献常用 0.20 略宽松，兼容眼睛偏小的亚洲人群；取双眼最大值避免侧脸步骤远侧眼遮挡误判
+const EYE_CLOSED_EAR_THRESHOLD = 0.18;
+// 模糊检测：拉普拉斯方差低于此值判定为画面模糊，禁止自动拍摄（阈值从宽，仅供 A/B 校准）
+const MIN_SHARPNESS_VARIANCE = 40;
+// 模糊分析节流间隔（ms），画框区域 64x64 下采样，开销很小
+const BLUR_ANALYSIS_INTERVAL_MS = 500;
+// 无脸超过该时长后，检测间隔拉到 500ms 节能降热
+const NO_FACE_IDLE_THRESHOLD_MS = 3000;
+const NO_FACE_IDLE_INTERVAL_MS = 500;
+
 // 步骤配置
 const CAPTURE_STEPS: { step: CaptureStep; label: string; instruction: string; icon: React.ReactNode }[] = [
   { step: "front", label: "正脸", instruction: "请正对镜头", icon: <User className="h-6 w-6" /> },
@@ -91,6 +103,7 @@ const CAPTURE_STEPS: { step: CaptureStep; label: string; instruction: string; ic
  */
 export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: FaceCaptureProps) {
   const router = useRouter();
+  const { trackFaceScanStep } = useAdvisorAnalytics();
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const faceDetectionRef = useRef<number | null>(null);
@@ -133,6 +146,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
   const [isSwitchingCamera, setIsSwitchingCamera] = useState(false); // 切换摄像头中
   const [faceStatus, setFaceStatus] = useState<FaceStatus>("none");
   const [showManualButton, setShowManualButton] = useState(false); // 是否显示手动拍照按钮
+  const [qualityHint, setQualityHint] = useState<string | null>(null); // 质量提示（闭眼/模糊）
   const [modelsLoaded, setModelsLoaded] = useState(false);
   const [faceApiLoaded, setFaceApiLoaded] = useState(false);
   const [isAllCaptured, setIsAllCaptured] = useState(false);
@@ -170,11 +184,15 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
   const detectionIntervalRef = useRef(100);
   const detectionTimesRef = useRef<number[]>([]);
   // 解决 takePhotoAuto 在 detectFace 之前被访问的闭包问题
-  const takePhotoAutoRef = useRef<() => void>(() => {});
+  const takePhotoAutoRef = useRef<(mode?: "auto" | "manual") => void>(() => {});
   // 光线分析最后运行时间，用于节流
   const lastLightAnalysisRef = useRef<number>(0);
   // 光线亮度数值 (0-1)，供检测循环判断是否能自动拍照
   const lightBrightnessRef = useRef<number>(1);
+  // 模糊分析最后运行时间，用于节流
+  const lastBlurAnalysisRef = useRef<number>(0);
+  // 画面清晰度判定结果（默认 true：未知/无脸时不拦截，仅在明确模糊时禁止自动拍摄）
+  const isFrameSharpRef = useRef<boolean>(true);
   // 屏幕常亮锁
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const trackMuteListenersRef = useRef<{ track: MediaStreamTrack; onMute: () => void; onUnmute: () => void } | null>(null);
@@ -553,6 +571,31 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
   }, []);
 
   /**
+   * 计算眼纵横比（EAR）：左眼 36-41，右眼 42-47
+   * 返回两只眼睛中较开的一只的 EAR，避免侧脸步骤远侧眼被遮挡导致的误判
+   */
+  const calculateEyeAspectRatio = useCallback((positions: { x: number; y: number }[]): number => {
+    if (!positions || positions.length < 48) return 1;
+
+    const dist = (a: { x: number; y: number }, b: { x: number; y: number }) =>
+      Math.hypot(a.x - b.x, a.y - b.y);
+
+    const leftHorizontal = dist(positions[36], positions[39]);
+    const rightHorizontal = dist(positions[42], positions[45]);
+    // 水平距离异常（0 或极小）时视为睁眼，避免除零误判
+    if (leftHorizontal < 1 || rightHorizontal < 1) return 1;
+
+    const leftEAR =
+      (dist(positions[37], positions[41]) + dist(positions[38], positions[40])) /
+      (2 * leftHorizontal);
+    const rightEAR =
+      (dist(positions[43], positions[47]) + dist(positions[44], positions[46])) /
+      (2 * rightHorizontal);
+
+    return Math.max(leftEAR, rightEAR);
+  }, []);
+
+  /**
    * 把视频原始坐标框映射到 CSS 显示坐标系（处理 object-fit: cover 的缩放/裁剪）
    * 前置摄像头时额外处理 CSS scale-x-[-1] 镜像，确保 overlay 对齐
    */
@@ -724,6 +767,13 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
         // 检查当前头部朝向是否匹配当前步骤
         const isPoseCorrect = headPose === currentStep;
 
+        // 闭眼检测（EAR）：双眼均闭合时判定为闭眼，禁止自动拍摄
+        const eyeAspectRatio = calculateEyeAspectRatio(detection.landmarks.positions);
+        const isEyesOpen = eyeAspectRatio >= EYE_CLOSED_EAR_THRESHOLD;
+
+        // 画面清晰度（拉普拉斯方差，由独立节流任务 analyzeFrameSharpness 更新）
+        const isSharp = isFrameSharpRef.current;
+
         // 调试信息
         if (DEBUG) {
           const positions = detection.landmarks.positions;
@@ -759,9 +809,10 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
         const requiredFrames = currentStep === 'chin' ? 7 : 5;
         const progressFrames = currentStep === 'chin' ? 8 : 6;
 
-        // 核心拍照条件：姿势正确 + 大小基本合适 + 光线足够（光线不足仍可手动拍照）
+        // 核心拍照条件：姿势正确 + 大小基本合适 + 光线足够 + 睁眼 + 画面清晰
+        //（光线不足/闭眼/模糊时仍可手动拍照）
         const isLightSufficient = lightBrightnessRef.current >= MIN_LIGHT_LEVEL_FOR_AUTO_CAPTURE;
-        const canCapture = isSizeOk && isPoseCorrect && isLightSufficient;
+        const canCapture = isSizeOk && isPoseCorrect && isLightSufficient && isEyesOpen && isSharp;
 
         if (canCapture) {
           // 冷却结束后的静默期内：检测正常进行但不累加 stableCount，给用户调整姿势的缓冲
@@ -770,6 +821,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
             stableCountRef.current += 1;
           }
           setFaceStatus((prev) => (prev === "found" ? prev : "found"));
+          setQualityHint((prev) => (prev === null ? prev : null));
 
           // 更新稳定进度：统一使用 progressFrames 作为分母，避免进度回跳
           // 取整后与旧值相同则跳过 setState，减少检测高频回调带来的无效重渲染
@@ -793,7 +845,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
             }
 
             // 冷却会在 takePhotoAuto 入口处立即设置，这里不再提前重置 stableCount
-            takePhotoAutoRef.current();
+            takePhotoAutoRef.current("auto");
           } else if (stableCountRef.current === 1) {
             const now = Date.now();
             if (now > speakLockUntilRef.current && now - lastSpeakTimeRef.current > 2000 && lastSpokenPhraseRef.current !== "保持") {
@@ -812,17 +864,32 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
           });
           setFaceStatus((prev) => (prev === "detecting" ? prev : "detecting"));
 
+          // 质量提示：仅姿势正确时展示闭眼/模糊原因（姿势错误由主指令与语音引导，光线由底部指示器提示）
+          const hint =
+            isPoseCorrect && !isEyesOpen
+              ? "请睁大眼睛"
+              : isPoseCorrect && !isSharp && isLightSufficient
+                ? "画面模糊，请保持手机稳定"
+                : null;
+          setQualityHint((prev) => (prev === hint ? prev : hint));
+
           const now = Date.now();
-          if (now > speakLockUntilRef.current && now - lastSpeakTimeRef.current > 6000 && !isPoseCorrect) {
+          if (now > speakLockUntilRef.current && now - lastSpeakTimeRef.current > 6000) {
             let feedback = "";
-            if (currentStep === "left") {
-              feedback = "请向右转头";
-            } else if (currentStep === "right") {
-              feedback = "请向左转头";
-            } else if (currentStep === "chin") {
-              feedback = "请稍微抬头";
-            } else if (currentStep === "front") {
-              feedback = "请正对镜头";
+            if (!isPoseCorrect) {
+              if (currentStep === "left") {
+                feedback = "请向右转头";
+              } else if (currentStep === "right") {
+                feedback = "请向左转头";
+              } else if (currentStep === "chin") {
+                feedback = "请稍微抬头";
+              } else if (currentStep === "front") {
+                feedback = "请正对镜头";
+              }
+            } else if (!isEyesOpen) {
+              feedback = "请睁大眼睛";
+            } else if (!isSharp && isLightSufficient) {
+              feedback = "画面模糊，请保持手机稳定";
             }
 
             if (feedback && feedback !== lastSpokenPhraseRef.current) {
@@ -922,12 +989,13 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
    * 优化：根据面部检测框裁剪图像，去除多余背景
    * 使用 ref 读取 currentStep/capturedImages，避免 setTimeout 闭包过时。
    */
-  const takePhotoAuto = useCallback(() => {
+  const takePhotoAuto = useCallback((mode: "auto" | "manual" = "auto") => {
     if (!videoRef.current || !canvasRef.current || cooldownRef.current) return;
 
     // 立即进入冷却，防止 detectFace 在异步窗口内再次触发
     cooldownRef.current = true;
     setIsInCooldown(true);
+    setQualityHint(null);
 
     setTimeout(async () => {
       const canvas = canvasRef.current;
@@ -1034,6 +1102,9 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
       ...prev,
       [step]: imageData,
     }));
+
+    // 单步完成埋点（漏斗分析：各角度完成率、手动/自动占比）
+    trackFaceScanStep(step, mode);
 
     // 播报拍照成功反馈，先清空队列避免旧指令滞后
     if (typeof window !== 'undefined' && window.speechSynthesis) {
@@ -1177,7 +1248,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
       }, successDisplayDuration);
     }
     }, 0);
-  }, [getNextStep, onCapture, speak]);
+  }, [getNextStep, onCapture, speak, trackFaceScanStep]);
 
   // 保持 detectFace 始终能访问到最新的 takePhotoAuto，避免闭包过时
   useEffect(() => {
@@ -1311,6 +1382,81 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
   }, []);
 
   /**
+   * 分析画面清晰度（模糊检测）
+   * 对脸部区域做 64x64 下采样灰度化后计算拉普拉斯方差；
+   * 方差低于阈值判定为模糊，写入 isFrameSharpRef 供检测循环拦截自动拍摄。
+   * 已节流：每 BLUR_ANALYSIS_INTERVAL_MS 最多运行一次。
+   */
+  const analyzeFrameSharpness = useCallback(() => {
+    const now = Date.now();
+    if (now - lastBlurAnalysisRef.current < BLUR_ANALYSIS_INTERVAL_MS) return;
+    lastBlurAnalysisRef.current = now;
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const faceBox = faceBoxRef.current;
+    if (!video || !canvas || !faceBox || video.readyState < 2) return;
+
+    const W = 64;
+    const H = 64;
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return;
+
+    // 人脸框四周扩展 10%，减少边界效应
+    const padX = faceBox.width * 0.1;
+    const padY = faceBox.height * 0.1;
+    const sx = Math.max(0, faceBox.x - padX);
+    const sy = Math.max(0, faceBox.y - padY);
+    const sw = Math.min(faceBox.width + padX * 2, video.videoWidth - sx);
+    const sh = Math.min(faceBox.height + padY * 2, video.videoHeight - sy);
+    if (sw <= 0 || sh <= 0) return;
+
+    try {
+      ctx.drawImage(video, sx, sy, sw, sh, 0, 0, W, H);
+    } catch (e) {
+      console.warn("[FaceCapture] drawImage failed in analyzeFrameSharpness:", e);
+      return;
+    }
+
+    let imageData: ImageData;
+    try {
+      imageData = ctx.getImageData(0, 0, W, H);
+    } catch (e) {
+      console.warn("[FaceCapture] getImageData failed in analyzeFrameSharpness:", e);
+      return;
+    }
+
+    const data = imageData.data;
+    const gray = new Float32Array(W * H);
+    for (let i = 0; i < W * H; i++) {
+      const j = i * 4;
+      gray[i] = 0.299 * data[j] + 0.587 * data[j + 1] + 0.114 * data[j + 2];
+    }
+
+    let sum = 0;
+    let sumSq = 0;
+    let count = 0;
+    for (let y = 1; y < H - 1; y++) {
+      for (let x = 1; x < W - 1; x++) {
+        const idx = y * W + x;
+        const lap =
+          4 * gray[idx] -
+          gray[idx - 1] -
+          gray[idx + 1] -
+          gray[idx - W] -
+          gray[idx + W];
+        sum += lap;
+        sumSq += lap * lap;
+        count++;
+      }
+    }
+    const variance = count > 0 ? sumSq / count - (sum / count) ** 2 : 0;
+    isFrameSharpRef.current = variance >= MIN_SHARPNESS_VARIANCE;
+  }, []);
+
+  /**
    * 切换前后摄像头
    * 切换过程中显示切换状态，并清除之前的错误提示
    */
@@ -1400,7 +1546,14 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     let lastDetectionTime = 0;
 
     const runDetection = (timestamp: number) => {
-      if (timestamp - lastDetectionTime >= detectionIntervalRef.current) {
+      // 无脸超过 3 秒后降低检测频率（500ms），减少主线程占用与手机发热；
+      // 重新检测到脸后由 detectFace 更新 lastFaceDetectedRef，自动恢复原频率
+      const idleMs = Date.now() - lastFaceDetectedRef.current;
+      const interval =
+        idleMs > NO_FACE_IDLE_THRESHOLD_MS
+          ? NO_FACE_IDLE_INTERVAL_MS
+          : detectionIntervalRef.current;
+      if (timestamp - lastDetectionTime >= interval) {
         detectFaceRef.current();
         lastDetectionTime = timestamp;
       }
@@ -1434,6 +1587,14 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     const interval = setInterval(analyzeLightLevel, 300);
     return () => clearInterval(interval);
   }, [stream, isAllCaptured, analyzeLightLevel]);
+
+  // 定时检测画面清晰度（analyzeFrameSharpness 内部已节流）
+  useEffect(() => {
+    if (!stream || isAllCaptured || modelLoadFailed) return;
+
+    const interval = setInterval(analyzeFrameSharpness, BLUR_ANALYSIS_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [stream, isAllCaptured, modelLoadFailed, analyzeFrameSharpness]);
 
   // 步骤切换时重置手动拍照按钮；计时到 MANUAL_BUTTON_DELAY_MS（3秒）后显示手动按钮
   useEffect(() => {
@@ -1651,13 +1812,18 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
                 <span>自动拍摄</span>
               </div>
             </div>
+
+            {/* 质量提示：闭眼/模糊（姿势错误与光线不足分别由主指令和光线指示器负责） */}
+            {qualityHint && (
+              <p className="mt-2 text-[13px] text-yellow-200 drop-shadow-md">{qualityHint}</p>
+            )}
           </m.div>
 
           {/* 手动拍照按钮 (Fallback) */}
           {(showManualButton || modelLoadFailed) && (
             <div className="pointer-events-auto mt-4">
               <button
-                onClick={takePhotoAuto}
+                onClick={() => takePhotoAuto("manual")}
                 className="px-6 py-2 min-h-[44px] rounded-full border border-white/30 text-white text-sm hover:bg-white/10 transition-colors backdrop-blur-sm touch-manipulation"
               >
                 {modelLoadFailed ? "面部检测不可用，点击手动拍照" : "无法自动识别？点击手动拍照"}

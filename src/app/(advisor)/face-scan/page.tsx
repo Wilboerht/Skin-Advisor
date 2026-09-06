@@ -363,7 +363,7 @@ export default function FaceScanPage() {
                                 <div className="sm:w-[60%] text-center sm:text-left">
                                     <h3 id="face-scan-exit-title" className="text-lg font-serif font-light text-brand-charcoal tracking-[0.02em] mb-3 sm:mb-2">退出测试？</h3>
                                     <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">
-                                        您的进度已自动保存，下次返回可直接从此处继续。
+                                        退出后将清除已拍摄的照片，下次进入需重新拍摄；问卷答案会保留。
                                     </p>
                                 </div>
                                 <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">

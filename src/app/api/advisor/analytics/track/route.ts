@@ -22,6 +22,7 @@ const EventSchema = z.object({
         "questionnaire_complete",  // 完成问卷
         "face_scan_start",         // 开始面部扫描
         "face_scan_complete",      // 完成面部扫描
+        "face_scan_step",          // 面部扫描单步完成（漏斗分析）
         "analysis_start",          // 开始分析
         "analysis_complete",       // 分析完成
         "result_view",             // 查看结果
@@ -216,6 +217,28 @@ export async function POST(request: NextRequest) {
                         faceScanUsed: true,
                         faceScanSkipped: false,
                     },
+                });
+                break;
+            }
+
+            case "face_scan_step": {
+                // 单步完成事件：追加到 interactions JSON 数组，用于漏斗分析（各角度完成率/卡点）
+                const step = typeof data?.step === "string" ? data.step : null;
+                if (!step) break;
+                const mode = typeof data?.mode === "string" ? data.mode : "auto";
+                const existing = await prisma.advisorSession.findUnique({
+                    where: { sessionId },
+                    select: { interactions: true },
+                });
+                const history = Array.isArray(existing?.interactions) ? existing.interactions : [];
+                const next = [
+                    ...history,
+                    { type: "face_scan_step", step, mode, at: now.toISOString() },
+                ];
+                await prisma.advisorSession.upsert({
+                    where: { sessionId },
+                    create: { sessionId, interactions: next },
+                    update: { interactions: next },
                 });
                 break;
             }

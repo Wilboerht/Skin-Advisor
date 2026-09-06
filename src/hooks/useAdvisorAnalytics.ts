@@ -15,6 +15,7 @@ type AnalyticsEvent =
   | "questionnaire_complete"
   | "face_scan_start"
   | "face_scan_complete"
+  | "face_scan_step"
   | "analysis_start"
   | "analysis_complete"
   | "result_view"
@@ -167,6 +168,11 @@ export function useAdvisorAnalytics() {
     sendTrackEvent("face_scan_complete");
   }, []);
 
+  // 追踪面部扫描单步完成（用于漏斗分析：正脸/右转/左转/抬头各步完成率与卡点）
+  const trackFaceScanStep = useCallback((step: string, mode: "auto" | "manual" = "auto") => {
+    sendTrackEvent("face_scan_step", { step, mode });
+  }, []);
+
   // 追踪分析开始
   const trackAnalysisStart = useCallback(() => {
     sendTrackEvent("analysis_start");
@@ -203,6 +209,7 @@ export function useAdvisorAnalytics() {
     trackQuestionnaireComplete,
     trackFaceScanStart,
     trackFaceScanComplete,
+    trackFaceScanStep,
     trackAnalysisStart,
     trackAnalysisComplete,
     trackResultView,
