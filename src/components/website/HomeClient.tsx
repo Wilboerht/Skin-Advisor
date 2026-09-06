@@ -8,7 +8,6 @@ import { ArrowRight, ChevronRight, Loader2, X, ScanFace, Sparkles, FileText, Gif
 
 import { useAdvisorAnalytics } from "@/hooks/useAdvisorAnalytics";
 import { useAuth } from "@/hooks/useAuth";
-import Link from "next/link";
 
 import { useAuthModal } from "@/components/auth/AuthModalContext";
 import { getGuestIdentity, type GuestIdentity } from "@/lib/guest-identity";
@@ -17,7 +16,6 @@ import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useNavPush } from "@/hooks/use-nav-push";
-import type { HistorySession } from "@/components/website/TestHistoryList";
 import dynamic from "next/dynamic";
 const OnboardingFlowModal = dynamic(() => import("@/components/advisor/OnboardingFlowModal").then((mod) => mod.OnboardingFlowModal), { ssr: false });
 import { HomepageFooter } from "@/components/website/HomepageFooter";
@@ -117,32 +115,6 @@ export default function HomeClient() {
   useEffect(() => {
     initSession();
   }, [initSession]);
-
-  // 老用户快捷入口：最近一次已完成测肤（含与上次的评分差）
-  const [latestReport, setLatestReport] = useState<{
-    sessionId: string;
-    score: number | null;
-    delta: number | null;
-  } | null>(null);
-
-  // 老用户最近报告取数（仅登录后，取最近 2 条算评分差）
-  useEffect(() => {
-    if (!user) return;
-    fetch("/api/advisor/history?page=1&limit=2")
-      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
-      .then((data) => {
-        const history = (data.history ?? []) as HistorySession[];
-        if (history.length === 0) return;
-        const score = history[0].analysisResult?.faceAnalysis?.overallScore ?? null;
-        const prevScore = history[1]?.analysisResult?.faceAnalysis?.overallScore;
-        setLatestReport({
-          sessionId: history[0].sessionId,
-          score,
-          delta: score != null && prevScore != null ? score - prevScore : null,
-        });
-      })
-      .catch((e) => console.error("Latest report fetch error:", e));
-  }, [user]);
 
   // Capture ref parameter: moved to <RefCapture /> rendered in JSX (useSearchParams needs Suspense boundary)
 
@@ -559,27 +531,11 @@ export default function HomeClient() {
                 </div>
               </div>
             </button>
-
-            {/* 老用户快捷入口：最近报告直达（新用户不渲染） */}
-            {latestReport && (
-              <Link
-                href={`/reports/${latestReport.sessionId}`}
-                className="mt-3 inline-flex items-center gap-1.5 min-h-[36px] text-[13px] text-brand-charcoal/70 hover:text-brand-charcoal transition-colors font-light tracking-[0.05em]"
-              >
-                <span>
-                  最近测肤{latestReport.score != null && <> <span className="font-medium text-brand-charcoal">{latestReport.score}</span> 分</>}
-                  {latestReport.delta != null && latestReport.delta !== 0 && (
-                    <span className={latestReport.delta > 0 ? "text-[#4C8055]" : "text-[#D44C47]"}>
-                      ，较上次 {latestReport.delta > 0 ? `+${latestReport.delta}` : latestReport.delta}
-                    </span>
-                  )}
-                </span>
-                <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.5} />
-              </Link>
-            )}
           </section>
 
-          {/* 次级入口：测肤有礼活动 + 常见问题（描边胶囊，同一视觉层级；与主卡平级，间距按 8px 节奏） */}
+            {/* 老用户快捷入口已移除：最近测肤分数展示不再于首页渲染 */}
+
+            {/* 次级入口：测肤有礼活动 + 常见问题（描边胶囊，同一视觉层级；与主卡平级，间距按 8px 节奏） */}
           <section className="flex flex-wrap items-center justify-center gap-3 px-6 mt-6 md:mt-8">
             <button
               onClick={openGiftModal}
