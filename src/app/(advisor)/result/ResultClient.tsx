@@ -1039,6 +1039,9 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
 
     // Error State
     if (analysisState.status === 'error') {
+        // 额度/限流类错误：重拍照片无法解决问题，按钮引导返回首页而非重测
+        const errorMessage = analysisState.error || "";
+        const isQuotaError = /测试次数|测试上限|次数已用完|免费重试|限流|明天再试/i.test(errorMessage);
         return (
             <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
                 <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
@@ -1046,17 +1049,19 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                 <div className="relative w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-brand-charcoal/[0.08] shadow-sm">
                     <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                         <div className="sm:w-[60%] text-center sm:text-left">
-                            <h3 className="text-lg font-bold text-[var(--color-brand-espresso)] mb-3 sm:mb-2">分析遇到了一些问题</h3>
+                            <h3 className="text-lg font-bold text-[var(--color-brand-espresso)] mb-3 sm:mb-2">
+                                {isQuotaError ? "今日测试次数已用完" : "分析遇到了一些问题"}
+                            </h3>
                             <p className="text-[13px] text-brand-charcoal/60 font-light leading-[1.8] tracking-[0.06em]">
                                 {analysisState.error || "服务器暂时无法响应，请稍后再试。"}
                             </p>
                         </div>
                         <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
                             <button
-                                onClick={() => navPush(errorRetryTarget)}
+                                onClick={() => navPush(isQuotaError ? "/" : errorRetryTarget)}
                                 className="px-6 h-10 border border-brand-charcoal/60 text-brand-charcoal hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                             >
-                                {errorRetryLabel}
+                                {isQuotaError ? "返回首页" : errorRetryLabel}
                             </button>
                         </div>
                     </div>

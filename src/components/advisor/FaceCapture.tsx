@@ -91,7 +91,7 @@ const NO_FACE_IDLE_INTERVAL_MS = 500;
 // 面部尺寸门槛（相对椭圆框高度的占比）：
 // 低于 MIN 判定距离太远（裁剪放大后分辨率不足，AI 无法可靠分析），高于 MAX 判定过近。
 // 旧值 0.15 过于宽松，导致远距离小脸也能通过拍摄、最终在分析阶段被拒。
-const MIN_FACE_TO_ELLIPSE_RATIO = 0.35;
+const MIN_FACE_TO_ELLIPSE_RATIO = 0.30;
 // chin（抬头）步骤的放宽下限：抬头动作会让人脸框高度略缩，避免误报"距离太远"
 const MIN_FACE_TO_ELLIPSE_RATIO_CHIN = 0.28;
 const MAX_FACE_TO_ELLIPSE_RATIO = 1.05;
