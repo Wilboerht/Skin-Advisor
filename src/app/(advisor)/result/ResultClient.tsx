@@ -253,13 +253,23 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
     // 错误态重试按钮文案：异步检查真实存储（照片存 IndexedDB 时 localStorage 键已被删除，
     // 只看 localStorage 会在照片完好时误显示"重新填写问卷"）
     const [errorRetryLabel, setErrorRetryLabel] = useState("重新测试");
+    // 错误态重试目标：有照片缓存时直接回扫脸页重拍（如距离过远被拒），否则回问卷页
+    const [errorRetryTarget, setErrorRetryTarget] = useState("/questions?edit=true");
     useEffect(() => {
         let cancelled = false;
         (async () => {
             try {
                 const { advisorStorage } = await import("@/lib/advisor-storage");
                 const images = await advisorStorage.getFaceImages();
-                if (!cancelled) setErrorRetryLabel(images ? "重新测试" : "重新填写问卷");
+                if (!cancelled) {
+                    if (images) {
+                        setErrorRetryLabel("重新拍摄");
+                        setErrorRetryTarget("/face-scan");
+                    } else {
+                        setErrorRetryLabel("重新填写问卷");
+                        setErrorRetryTarget("/questions?edit=true");
+                    }
+                }
             } catch {
                 if (!cancelled) setErrorRetryLabel("重新填写问卷");
             }
@@ -1043,7 +1053,7 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                         </div>
                         <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
                             <button
-                                onClick={() => navPush('/questions?edit=true')}
+                                onClick={() => navPush(errorRetryTarget)}
                                 className="px-6 h-10 border border-brand-charcoal/60 text-brand-charcoal hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                             >
                                 {errorRetryLabel}
@@ -1073,10 +1083,10 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                         </div>
                         <div className="flex flex-col gap-3 sm:gap-2 shrink-0 w-full sm:w-[40%]">
                             <button
-                                onClick={() => navPush("/questions?edit=true")}
+                                onClick={() => navPush(errorRetryTarget)}
                                 className="px-6 h-10 border border-brand-charcoal/60 text-brand-charcoal hover:bg-brand-charcoal/[0.07] hover:border-brand-charcoal text-[13px] font-light tracking-[0.1em] transition-all duration-300 whitespace-nowrap w-full"
                             >
-                                重新测试
+                                {errorRetryLabel === "重新填写问卷" ? "重新测试" : errorRetryLabel}
                             </button>
                         </div>
                     </div>

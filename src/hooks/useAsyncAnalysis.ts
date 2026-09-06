@@ -79,7 +79,13 @@ function getServerErrorMessage(errorData: Record<string, unknown>, fallback: str
     if (typeof errorData.error === 'string') return errorData.error;
     if (errorData.error && typeof errorData.error === 'object') {
         const nested = errorData.error as Record<string, unknown>;
-        if (typeof nested.message === 'string') return nested.message;
+        if (typeof nested.message === 'string') {
+            // 附带具体原因（如图片验证失败的具体理由：距离过远/遮挡等），帮助用户定位问题
+            if (typeof nested.details === 'string' && nested.details.length > 0) {
+                return `${nested.message}：${nested.details}`;
+            }
+            return nested.message;
+        }
         return JSON.stringify(errorData.error);
     }
     if (Object.keys(errorData).length > 0) return JSON.stringify(errorData);

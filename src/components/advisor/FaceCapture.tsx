@@ -86,6 +86,12 @@ const BLUR_ANALYSIS_INTERVAL_MS = 500;
 const NO_FACE_IDLE_THRESHOLD_MS = 3000;
 const NO_FACE_IDLE_INTERVAL_MS = 500;
 
+// 面部尺寸门槛（相对椭圆框高度的占比）：
+// 低于 MIN 判定距离太远（裁剪放大后分辨率不足，AI 无法可靠分析），高于 MAX 判定过近。
+// 旧值 0.15 过于宽松，导致远距离小脸也能通过拍摄、最终在分析阶段被拒。
+const MIN_FACE_TO_ELLIPSE_RATIO = 0.35;
+const MAX_FACE_TO_ELLIPSE_RATIO = 1.05;
+
 // 步骤配置
 const CAPTURE_STEPS: { step: CaptureStep; label: string; instruction: string; icon: React.ReactNode }[] = [
   { step: "front", label: "正脸", instruction: "请正对镜头", icon: <User className="h-6 w-6" /> },
@@ -775,10 +781,12 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
         // 检查面部是否在椭圆框内（仅作为视觉引导，不作为硬性拍照门槛）
         const isInEllipse = isFaceInEllipse(displayBox, displayWidth, displayHeight);
 
-        // 检查面部大小是否合适——大幅放宽，能拍到就行
+        // 检查面部大小是否合适——低于下限判定距离太远（分辨率不足），高于上限判定过近
         const ellipseHeight = videoHeight * 0.70;
         const faceToEllipseRatio = box.height / ellipseHeight;
-        const isSizeOk = faceToEllipseRatio > 0.15 && faceToEllipseRatio < 1.05;
+        const isFaceTooSmall = faceToEllipseRatio < MIN_FACE_TO_ELLIPSE_RATIO;
+        const isFaceTooBig = faceToEllipseRatio > MAX_FACE_TO_ELLIPSE_RATIO;
+        const isSizeOk = !isFaceTooSmall && !isFaceTooBig;
 
         const currentStep = currentStepRef.current;
         // 计算头部朝向 (传入 currentStep 以优化判定逻辑；前置摄像头时反转水平偏移以匹配镜像视角)
@@ -883,13 +891,17 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
           });
           setFaceStatus((prev) => (prev === "detecting" ? prev : "detecting"));
 
-          // 质量提示：仅姿势正确时展示闭眼/模糊原因（姿势错误由主指令与语音引导，光线由底部指示器提示）
+          // 质量提示：仅姿势正确时展示距离/闭眼/模糊原因（姿势错误由主指令与语音引导，光线由底部指示器提示）
           const hint =
-            isPoseCorrect && !isEyesOpen
-              ? "请睁大眼睛"
-              : isPoseCorrect && !isSharp && isLightSufficient
-                ? "画面模糊，请保持手机稳定"
-                : null;
+            isPoseCorrect && isFaceTooSmall
+              ? "距离太远，请靠近一些"
+              : isPoseCorrect && isFaceTooBig
+                ? "距离太近，请离远一点"
+                : isPoseCorrect && !isEyesOpen
+                  ? "请睁大眼睛"
+                  : isPoseCorrect && !isSharp && isLightSufficient
+                    ? "画面模糊，请保持手机稳定"
+                    : null;
           setQualityHint((prev) => (prev === hint ? prev : hint));
 
           const now = Date.now();
@@ -905,6 +917,10 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
               } else if (currentStep === "front") {
                 feedback = "请正对镜头";
               }
+            } else if (isFaceTooSmall) {
+              feedback = "距离太远，请靠近一些";
+            } else if (isFaceTooBig) {
+              feedback = "距离太近，请离远一点";
             } else if (!isEyesOpen) {
               feedback = "请睁大眼睛";
             } else if (!isSharp && isLightSufficient) {
