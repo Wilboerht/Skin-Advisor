@@ -426,6 +426,7 @@ model DiaryEntry {
   skinState String   // great / good / normal / bad / terrible
   tags      Json?    // 情境标签 string[]，如 ["熬夜", "换季"]
   note      String?  @db.VarChar(200)
+  sessionId String?  // 测肤自动生成条目的来源会话，用于跳转对应报告；手动打卡为空
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

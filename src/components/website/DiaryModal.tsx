@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
 import {
@@ -12,6 +12,7 @@ import {
   ScanFace,
   Smile,
   TrendingUp,
+  Trophy,
   X,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,9 +21,10 @@ import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import type { HistorySession } from "@/components/website/TestHistoryList";
 import { TestHistoryList } from "@/components/website/TestHistoryList";
-import { DiaryTimeline, type DiaryEntry } from "@/components/website/DiaryTimeline";
+import { DiaryTimeline, STATE_META, type DiaryEntry } from "@/components/website/DiaryTimeline";
 import { DiaryCalendar } from "@/components/website/DiaryCalendar";
 import { TrendChart, type TrendsData } from "@/components/website/TrendChart";
+import { CheckInTrend } from "@/components/website/CheckInTrend";
 import { CheckInModal } from "@/components/website/CheckInModal";
 import { useDiaryModal } from "@/components/website/DiaryModalContext";
 import { useToast } from "@/components/ui/Toast";
@@ -48,6 +50,15 @@ function fetchWithShortCache(url: string): Promise<Response> {
   const promise = fetch(url);
   shortCache.set(url, { ts: Date.now(), promise });
   return promise;
+}
+
+// 打卡/删除等数据变更后作废趋势与测肤列表缓存，保证下次打开立即拉取新数据
+function bustShortCache(): void {
+  for (const key of Array.from(shortCache.keys())) {
+    if (key.startsWith("/api/user/skin-trends") || key.startsWith("/api/advisor/history")) {
+      shortCache.delete(key);
+    }
+  }
 }
 
 /** 游客视图的装饰性示意曲线（无数值，不代表真实数据） */
@@ -128,6 +139,16 @@ export function DiaryModal() {
   const [historyView, setHistoryView] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // 近 30 天内有效打卡天数（与 CheckInTrend 的 30 天窗口口径一致，避免旧数据触发空图）
+  const recentCheckInCount = useMemo(() => {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 29);
+    const cutoffStr = localDateStr(cutoff);
+    return entries.filter(
+      (e) => Boolean(STATE_META[e.skinState]) && e.date.slice(0, 10) >= cutoffStr
+    ).length;
+  }, [entries]);
+
   const modalRef = useFocusTrap<HTMLDivElement>(isOpen && !checkIn.open, closeDiaryModal);
   useBodyScrollLock({ enabled: isOpen, iosSafe: true });
 
@@ -179,6 +200,8 @@ export function DiaryModal() {
     // 里程碑统计与日历视图同步刷新
     loadSummary();
     setCalendarRefreshKey((k) => k + 1);
+    // 数据变更后作废短缓存，保证趋势与测肤列表下次打开拉取新数据
+    bustShortCache();
   }, [loadEntries, loadSummary]);
 
   // 时间线"加载更早"：追加下一页日记
@@ -493,7 +516,21 @@ export function DiaryModal() {
                           <Loader2 className="w-5 h-5 text-brand-charcoal/30 animate-spin" />
                         </div>
                       ) : trends ? (
-                        <TrendChart trends={trends} />
+                        <>
+                          <TrendChart trends={trends} />
+                          {recentCheckInCount >= 2 && (
+                            <div className="mt-5 pt-4 border-t border-dashed border-brand-charcoal/[0.1]">
+                              <CheckInTrend entries={entries} />
+                            </div>
+                          )}
+                        </>
+                      ) : recentCheckInCount >= 2 ? (
+                        <>
+                          <CheckInTrend entries={entries} />
+                          <p className="mt-3 text-[11px] text-brand-charcoal/40 font-light text-center">
+                            完成 2 次测肤后，可叠加查看测肤评分趋势
+                          </p>
+                        </>
                       ) : (
                         /* 解锁引导：与护肤历程空态/打卡引导同款虚线框，样式统一 */
                         <div className="rounded-2xl border border-dashed border-brand-charcoal/20 px-4 py-5 text-center">
@@ -559,7 +596,8 @@ export function DiaryModal() {
                             已测肤 {summary.testCount} 次
                           </span>
                           {summary.longestStreak > 0 && (
-                            <span className="inline-flex items-center px-3 py-1.5 rounded-full text-[11px] text-brand-charcoal/40 font-light">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-brand-charcoal/[0.08] text-[12px] text-brand-charcoal/70 font-light">
+                              <Trophy className="w-3.5 h-3.5 text-[#C9A86C]" strokeWidth={1.8} />
                               最长连续 {summary.longestStreak} 天
                             </span>
                           )}

@@ -830,7 +830,8 @@ export async function POST(request: NextRequest) {
                     userId: user.id,
                     dateStr: clientDate,
                     score: overallScore,
-                    skinTypeLabel
+                    skinTypeLabel,
+                    sessionId: effectiveSessionId
                 }).catch((err) => logger.error("[Diary] 自动生成日记失败:", err));
             }
 

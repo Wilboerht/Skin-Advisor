@@ -21,6 +21,8 @@ interface AutoDiaryInput {
     dateStr: string;
     score: number;
     skinTypeLabel?: string | null;
+    /** 测肤会话 id：写入条目供时间线跳转对应报告（可空，兼容旧调用） */
+    sessionId?: string | null;
 }
 
 /**
@@ -29,7 +31,7 @@ interface AutoDiaryInput {
  * - 日期仅允许写入窗口内的日历日（与打卡 POST 一致），异常/越界日期直接忽略；
  * - 当日已有手动打卡（非自动备注或带情境标签）时保留用户数据，绝不覆盖。
  */
-export async function upsertAutoDiaryEntry({ userId, dateStr, score, skinTypeLabel }: AutoDiaryInput) {
+export async function upsertAutoDiaryEntry({ userId, dateStr, score, skinTypeLabel, sessionId }: AutoDiaryInput) {
     const date = parseClientDate(dateStr);
     if (!date || !isDiaryDateInRange(date)) return null;
 
@@ -52,7 +54,7 @@ export async function upsertAutoDiaryEntry({ userId, dateStr, score, skinTypeLab
     return prisma.diaryEntry.upsert({
         where: { userId_date: { userId, date } },
         // 仅更新自动生成的字段；tags 保持为空数组（自动记录无情境标签）
-        update: { skinState, note },
-        create: { userId, date, skinState, tags: [], note }
+        update: { skinState, note, sessionId: sessionId ?? null },
+        create: { userId, date, skinState, tags: [], note, sessionId: sessionId ?? null }
     });
 }

@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
                             typeof skinProfile?.typeLabel === "string" ? skinProfile.typeLabel
                             : typeof skinType?.typeLabel === "string" ? skinType.typeLabel
                             : undefined;
-                        upsertAutoDiaryEntry({ userId: user.id, dateStr, score: overallScore, skinTypeLabel })
+                        upsertAutoDiaryEntry({ userId: user.id, dateStr, score: overallScore, skinTypeLabel, sessionId })
                             .catch((err) => logger.error("[Diary] claim 后补建日记失败:", err));
                     }
                 }

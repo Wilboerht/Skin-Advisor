@@ -10,8 +10,9 @@ import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { localDateStr } from "@/lib/local-date";
 import { STATE_META, type DiaryEntry } from "./DiaryTimeline";
 
-/** 预置情境标签（多选，与服务端 tags 上限一致） */
-const PRESET_TAGS = ["熬夜", "换季", "爆痘", "敏感泛红", "日晒", "姨妈期"];
+/** 预置标签（多选，与服务端 tags 上限一致）：肌肤表现 + 情境因素 两类 */
+const SKIN_TAGS = ["出油", "干燥", "暗沉", "泛红", "痘痘", "闭口"];
+const SITUATION_TAGS = ["熬夜", "换季", "日晒", "姨妈期", "压力", "医美"];
 const STATE_KEYS = ["great", "good", "normal", "bad", "terrible"] as const;
 
 interface CheckInModalProps {
@@ -161,26 +162,38 @@ export function CheckInModal({ isOpen, onClose, existing, dateStr, onSaved }: Ch
                 })}
               </div>
 
-              {/* 情境标签（多选） */}
-              <div className="flex flex-wrap gap-2 mb-6">
-                {PRESET_TAGS.map((tag) => {
-                  const selected = tags.includes(tag);
-                  return (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() => toggleTag(tag)}
-                      aria-pressed={selected}
-                      className={`px-3 py-1.5 rounded-full text-[12px] font-light border transition-colors cursor-pointer ${
-                        selected
-                          ? "border-brand-charcoal/60 text-brand-charcoal bg-brand-charcoal/[0.06]"
-                          : "border-brand-charcoal/[0.12] text-brand-charcoal/55 hover:border-brand-charcoal/30"
-                      }`}
-                    >
-                      {tag}
-                    </button>
-                  );
-                })}
+              {/* 标签（多选，两类：肌肤表现 / 情境因素） */}
+              <div className="mb-6 space-y-3">
+                {[
+                  { caption: "肌肤表现", list: SKIN_TAGS },
+                  { caption: "情境因素", list: SITUATION_TAGS },
+                ].map((group) => (
+                  <div key={group.caption}>
+                    <p className="text-[11px] text-brand-charcoal/45 font-light mb-1.5 tracking-[0.08em]">
+                      {group.caption}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {group.list.map((tag) => {
+                        const selected = tags.includes(tag);
+                        return (
+                          <button
+                            key={tag}
+                            type="button"
+                            onClick={() => toggleTag(tag)}
+                            aria-pressed={selected}
+                            className={`px-3 py-1.5 rounded-full text-[12px] font-light border transition-colors cursor-pointer ${
+                              selected
+                                ? "border-brand-charcoal/60 text-brand-charcoal bg-brand-charcoal/[0.06]"
+                                : "border-brand-charcoal/[0.12] text-brand-charcoal/55 hover:border-brand-charcoal/30"
+                            }`}
+                          >
+                            {tag}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
               </div>
 
               {/* 备注（可选） */}

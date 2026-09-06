@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
                 orderBy: { date: "desc" },
                 skip: month ? undefined : offset,
                 take: month ? undefined : pageSize,
-                select: { id: true, date: true, skinState: true, tags: true, note: true, updatedAt: true }
+                select: { id: true, date: true, skinState: true, tags: true, note: true, sessionId: true, updatedAt: true }
             }),
             prisma.diaryEntry.count({ where })
         ]);

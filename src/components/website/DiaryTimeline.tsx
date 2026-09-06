@@ -31,6 +31,8 @@ export interface DiaryEntry {
   skinState: string;
   tags?: string[] | null;
   note?: string | null;
+  /** 测肤自动生成条目的来源会话（可跳转对应报告）；手动打卡为空 */
+  sessionId?: string | null;
 }
 
 export const STATE_META: Record<string, { label: string; color: string; icon: React.ComponentType<{ className?: string; strokeWidth?: number }> }> = {
@@ -101,6 +103,13 @@ export function DiaryTimeline({
   useEffect(() => {
     setShowAll(false);
   }, [refreshKey]);
+
+  // 删除确认 3s 未操作自动复原，避免误触后一直停留在确认态
+  useEffect(() => {
+    if (!confirmDeleteId) return;
+    const timer = setTimeout(() => setConfirmDeleteId(null), 3000);
+    return () => clearTimeout(timer);
+  }, [confirmDeleteId]);
 
   const todayStr = localDateStr(new Date());
 
@@ -281,6 +290,8 @@ export function DiaryTimeline({
                     const meta = STATE_META[ev.entry.skinState] ?? STATE_META.normal;
                     const Icon = meta.icon;
                     const auto = isAutoDiaryEntry(ev.entry);
+                    // 测肤自动条目带会话 id 时可跳转对应报告（同日已显示测肤里程碑时本卡会被隐藏，互不冲突）
+                    const autoReportUrl = auto && ev.entry.sessionId ? `/reports/${ev.entry.sessionId}` : null;
                     return (
                       <div key={`d-${ev.entry.id}-${i}`} className="relative">
                         <span
@@ -330,33 +341,58 @@ export function DiaryTimeline({
                               ))}
                             </div>
                           )}
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span
-                              className="inline-flex items-center gap-1 text-[12px] px-2.5 py-1 rounded-full"
-                              style={{ backgroundColor: `${meta.color}18`, color: meta.color }}
-                            >
-                              <Icon className="w-3.5 h-3.5" strokeWidth={1.8} />
-                              {meta.label}
-                            </span>
-                            {ev.entry.tags?.map((tag) => (
-                              <span
-                                key={tag}
-                                className="text-[11px] text-brand-charcoal/50 border border-brand-charcoal/[0.1] rounded-full px-2 py-0.5"
-                              >
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                          {ev.entry.note && (
-                            <p className="mt-2 text-[13px] text-[#5E5E5E] font-light leading-relaxed">
-                              {ev.entry.note}
-                            </p>
-                          )}
-                          {/* 同日冲突提示：手动打卡与测肤评分同屏时，补一句客观评分帮助对照 */}
-                          {!auto && maxDayScore != null && (
-                            <p className="mt-2 text-[11px] text-brand-charcoal/40 font-light">
-                              同日测肤 {maxDayScore} 分
-                            </p>
+                          {autoReportUrl ? (
+                            <Link href={autoReportUrl} className="group block">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span
+                                  className="inline-flex items-center gap-1 text-[12px] px-2.5 py-1 rounded-full"
+                                  style={{ backgroundColor: `${meta.color}18`, color: meta.color }}
+                                >
+                                  <Icon className="w-3.5 h-3.5" strokeWidth={1.8} />
+                                  {meta.label}
+                                </span>
+                                <span className="ml-auto inline-flex items-center gap-1 text-[11px] text-brand-charcoal/40 group-hover:text-brand-charcoal transition-colors">
+                                  查看报告
+                                  <ChevronRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
+                                </span>
+                              </div>
+                              {ev.entry.note && (
+                                <p className="mt-2 text-[13px] text-[#5E5E5E] font-light leading-relaxed">
+                                  {ev.entry.note}
+                                </p>
+                              )}
+                            </Link>
+                          ) : (
+                            <>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span
+                                  className="inline-flex items-center gap-1 text-[12px] px-2.5 py-1 rounded-full"
+                                  style={{ backgroundColor: `${meta.color}18`, color: meta.color }}
+                                >
+                                  <Icon className="w-3.5 h-3.5" strokeWidth={1.8} />
+                                  {meta.label}
+                                </span>
+                                {ev.entry.tags?.map((tag) => (
+                                  <span
+                                    key={tag}
+                                    className="text-[11px] text-brand-charcoal/50 border border-brand-charcoal/[0.1] rounded-full px-2 py-0.5"
+                                  >
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                              {ev.entry.note && (
+                                <p className="mt-2 text-[13px] text-[#5E5E5E] font-light leading-relaxed">
+                                  {ev.entry.note}
+                                </p>
+                              )}
+                              {/* 同日冲突提示：手动打卡与测肤评分同屏时，补一句客观评分帮助对照 */}
+                              {!auto && maxDayScore != null && (
+                                <p className="mt-2 text-[11px] text-brand-charcoal/40 font-light">
+                                  同日测肤 {maxDayScore} 分
+                                </p>
+                              )}
+                            </>
                           )}
                         </div>
                       </div>
