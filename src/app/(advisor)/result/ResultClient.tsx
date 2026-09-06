@@ -9,6 +9,7 @@ import { motion as m, AnimatePresence } from "framer-motion";
 import {
     RotateCcw,
     ChevronRight,
+    ChevronDown,
     ScanFace,
     Activity,
     AlertCircle,
@@ -310,6 +311,8 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
     // New State for interactivity
 
     const [showLabData, setShowLabData] = useState(false);
+    // 板块 2 专家护肤建议：默认只显示前 3 条，其余折叠
+    const [showAllRecommendations, setShowAllRecommendations] = useState(false);
     const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
     const [posterError, setPosterError] = useState<string | null>(null);
     // 微信内嵌浏览器无法可靠触发下载，生成后改用「长按保存」引导弹窗
@@ -1293,11 +1296,32 @@ function ResultClientContent({ id, initialData, user: serverUser }: ResultClient
                                         <p className="text-sm text-[var(--color-brand-taupe)] mb-3">根据您的肌肤数据，以下是针对性的护理和生活方式建议：</p>
 
                                         {(faceAnalysis?.recommendations && faceAnalysis.recommendations.length > 0) ? (
-                                            <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[var(--color-brand-cocoa)]">
-                                                {(faceAnalysis.recommendations).slice(0, 4).map((rec, idx) => (
-                                                    <li key={idx}>{rec}</li>
-                                                ))}
-                                            </ul>
+                                            <>
+                                                <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[var(--color-brand-cocoa)]">
+                                                    {faceAnalysis.recommendations
+                                                        .slice(0, showAllRecommendations ? undefined : 3)
+                                                        .map((rec, idx) => (
+                                                            <li key={idx}>{rec}</li>
+                                                        ))}
+                                                </ul>
+                                                {faceAnalysis.recommendations.length > 3 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowAllRecommendations(v => !v)}
+                                                        className="mt-2 inline-flex items-center gap-1 text-xs text-[var(--color-brand-cocoa)]/70 hover:text-[var(--color-brand-cocoa)] transition-colors"
+                                                    >
+                                                        {showAllRecommendations
+                                                            ? "收起"
+                                                            : `查看全部（共 ${faceAnalysis.recommendations.length} 条）`}
+                                                        <ChevronDown
+                                                            className={cn(
+                                                                "w-3.5 h-3.5 transition-transform duration-200",
+                                                                showAllRecommendations && "rotate-180"
+                                                            )}
+                                                        />
+                                                    </button>
+                                                )}
+                                            </>
                                         ) : (
                                             <ul className="list-disc pl-5 space-y-2 lg:space-y-3 text-sm lg:text-[14px] leading-snug lg:leading-relaxed text-[var(--color-brand-cocoa)]">
                                                 <li>每日早晚温和清洁，避免过度去脂。</li>
