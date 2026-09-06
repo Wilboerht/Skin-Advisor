@@ -1125,8 +1125,8 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     // 检查是否还有下一步
     const nextStep = getNextStep(step);
 
-    // 成功提示持续 1000ms
-    const successDisplayDuration = 1000;
+    // 成功提示持续 1200ms（绿环闭合 0.5s + 对勾弹出，留出从容观看时间）
+    const successDisplayDuration = 1200;
 
     if (nextStep) {
       // 冷却已在 takePhotoAuto 入口处设置，这里只需展示成功状态
