@@ -53,12 +53,17 @@ const HEAD_POSE_THRESHOLDS = {
   lookingLeft: 0.10,
   lookingRight: -0.10,
   centerHorizontal: 0.30,
-  chinNoseOffsetMax: 0.55,
+  chinNoseOffsetMax: 0.30,
   chinTiltMax: 0.15,
 };
 
-// 下颚（抬头）检测阈值：兼顾严格与宽松，与注释保持一致
-const CHIN_PITCH_THRESHOLD = 0.35;
+// 下颚（抬头）检测阈值：改为「与用户正脸实测基准的差值」判定
+// 原因：正常平视 tiltRatio 在 0.25~0.55 之间波动，旧绝对阈值 0.35 恰好落在波动区间内，
+// 导致用户尚未抬头就被误判为 chin（过于灵敏）。
+// 现以正脸步骤拍摄瞬间实测的 tiltRatio 为个人基准，抬头需低于基准 CHIN_PITCH_DELTA 以上；
+// 无基准（异常路径）时用 CHIN_PITCH_FALLBACK_THRESHOLD（低于平视波动下沿 0.25）兜底。
+const CHIN_PITCH_DELTA = 0.15;
+const CHIN_PITCH_FALLBACK_THRESHOLD = 0.22;
 
 // 光线不足阈值：低于此值时禁止自动拍摄，但允许手动拍照
 // 取值 0-1；0.08 对应约 20 的灰度值，比原 0.15 更宽松，适应更多室内场景
@@ -193,6 +198,10 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
   const lastBlurAnalysisRef = useRef<number>(0);
   // 画面清晰度判定结果（默认 true：未知/无脸时不拦截，仅在明确模糊时禁止自动拍摄）
   const isFrameSharpRef = useRef<boolean>(true);
+  // 正脸步骤实测的 tiltRatio 基准（抬头判定的个人化参照）
+  const baselineTiltRatioRef = useRef<number | null>(null);
+  // 最近一次检测的 tiltRatio（供正脸拍摄时写入基准）
+  const lastTiltRatioRef = useRef<number>(0.5);
   // 屏幕常亮锁
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const trackMuteListenersRef = useRef<{ track: MediaStreamTrack; onMute: () => void; onUnmute: () => void } | null>(null);
@@ -487,6 +496,22 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
   }, [faceApiLoaded, externalFaceApi, onModelsLoaded]);
 
   /**
+   * 计算仰头指标 tiltRatio：鼻尖到眼连线垂距 / 眼到下巴垂距（越小越仰头）
+   * 与 detectFace 共用，保证判定与调试输出一致
+   */
+  const calculateTiltRatio = useCallback((positions: { x: number; y: number }[]): number => {
+    if (!positions || positions.length < 46) return 0.5;
+    const noseTip = positions[30];
+    const leftEyeOuter = positions[36];
+    const rightEyeOuter = positions[45];
+    const chin = positions[8];
+    const eyesCenterY = (leftEyeOuter.y + rightEyeOuter.y) / 2;
+    const noseToEyesY = noseTip.y - eyesCenterY;
+    const eyesToChinY = chin.y - eyesCenterY;
+    return eyesToChinY !== 0 ? noseToEyesY / eyesToChinY : 0.5;
+  }, []);
+
+  /**
    * 根据面部关键点计算头部朝向
    * 使用鼻尖和眼睛位置来判断头部方向
    * 包含左右转头和仰头（下颚）检测
@@ -502,13 +527,11 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     const noseTip = positions[30];
     const faceLeft = positions[0];
     const faceRight = positions[16];
-    const chin = positions[8];
 
     const faceWidth = faceRight.x - faceLeft.x;
     if (faceWidth <= 0) return "unknown";
 
     const eyesCenterX = (leftEyeOuter.x + rightEyeOuter.x) / 2;
-    const eyesCenterY = (leftEyeOuter.y + rightEyeOuter.y) / 2;
 
     let noseOffsetRatio = (noseTip.x - eyesCenterX) / faceWidth;
 
@@ -518,11 +541,8 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
       noseOffsetRatio = -noseOffsetRatio;
     }
 
-    // 计算仰头指标：鼻尖到眼连线垂距 / 眼到下巴垂距
-    const noseToEyesY = noseTip.y - eyesCenterY;
-    const eyesToChinY = chin.y - eyesCenterY;
-    // 避免除以零
-    const tiltRatio = eyesToChinY !== 0 ? noseToEyesY / eyesToChinY : 0.5;
+    // 仰头指标：鼻尖到眼连线垂距 / 眼到下巴垂距（越小越仰头）
+    const tiltRatio = calculateTiltRatio(positions);
 
     // --- 判定逻辑 ---
 
@@ -532,8 +552,6 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     const isLookingRight = noseOffsetRatio < HEAD_POSE_THRESHOLDS.lookingRight;
     const isLookingCenter = Math.abs(noseOffsetRatio) < HEAD_POSE_THRESHOLDS.centerHorizontal;
 
-    // 抬头标志: tiltRatio 越小越仰头
-    // 大幅放宽到 0.50，几乎只要抬头就能过
     // 优先匹配当前目标步骤 (Bias towards user intent)
 
     if (targetStep === 'left') {
@@ -547,10 +565,12 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     }
 
     if (targetStep === 'chin') {
-      // 抬头检测：tiltRatio 越小表示仰头越明显
-      // 正常平视 tiltRatio 多在 0.25~0.55 之间波动。使用单一阈值 CHIN_PITCH_THRESHOLD(0.35)
-      // 作为判定界线，既保证真正的抬头动作能触发，也避免正常平视被误判。
-      if (tiltRatio < CHIN_PITCH_THRESHOLD && Math.abs(noseOffsetRatio) < HEAD_POSE_THRESHOLDS.chinNoseOffsetMax) {
+      // 抬头检测：以用户正脸实测 tiltRatio 为基准，抬头需低于基准 CHIN_PITCH_DELTA 以上。
+      // 绝对阈值落在平视波动区间（0.25~0.55）内是旧版"太灵敏"的根因，改为基准差值后
+      // 只有真正做出抬头动作（明显低于个人平视值）才会触发。
+      const baseline = baselineTiltRatioRef.current;
+      const threshold = baseline !== null ? baseline - CHIN_PITCH_DELTA : CHIN_PITCH_FALLBACK_THRESHOLD;
+      if (tiltRatio < threshold && Math.abs(noseOffsetRatio) < HEAD_POSE_THRESHOLDS.chinNoseOffsetMax) {
         return "chin";
       }
     }
@@ -568,7 +588,7 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     if (isLookingCenter) return "front";
 
     return "unknown";
-  }, []);
+  }, [calculateTiltRatio]);
 
   /**
    * 计算眼纵横比（EAR）：左眼 36-41，右眼 42-47
@@ -774,6 +794,10 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
         // 画面清晰度（拉普拉斯方差，由独立节流任务 analyzeFrameSharpness 更新）
         const isSharp = isFrameSharpRef.current;
 
+        // 记录最近一次仰头指标，正脸拍摄瞬间将写入个人基准（用于 chin 步判定）
+        const tiltRatio = calculateTiltRatio(detection.landmarks.positions);
+        lastTiltRatioRef.current = tiltRatio;
+
         // 调试信息
         if (DEBUG) {
           const positions = detection.landmarks.positions;
@@ -782,15 +806,10 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
           const noseTip = positions[30];
           const faceLeft = positions[0];
           const faceRight = positions[16];
-          const chin = positions[8];
           const eyesCenterX = (leftEyeOuter.x + rightEyeOuter.x) / 2;
-          const eyesCenterY = (leftEyeOuter.y + rightEyeOuter.y) / 2;
           const faceWidth = faceRight.x - faceLeft.x;
           let noseOffsetRatio = (noseTip.x - eyesCenterX) / faceWidth;
           if (facingModeRef.current === "user") noseOffsetRatio = -noseOffsetRatio;
-          const noseToEyesY = noseTip.y - eyesCenterY;
-          const eyesToChinY = chin.y - eyesCenterY;
-          const tiltRatio = eyesToChinY !== 0 ? noseToEyesY / eyesToChinY : 0.5;
           setDebugInfo({
             headPose,
             noseOffsetRatio: Math.round(noseOffsetRatio * 1000) / 1000,
