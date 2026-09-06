@@ -76,15 +76,39 @@ export function FaceScanOverlay({
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ duration: 0.3 }}
                         >
-                            {/* 绿色实心椭圆边框 */}
-                            <div className="absolute inset-0 rounded-[50%] border-[3px] border-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.4)]" />
+                            {/* 绿色圆环描边绘制动画：沿椭圆轨迹从 0 逐渐闭合到 100% */}
+                            <svg
+                                className="absolute inset-0 h-full w-full overflow-visible"
+                                viewBox="0 0 100 100"
+                                preserveAspectRatio="none"
+                                aria-hidden="true"
+                                style={{ filter: "drop-shadow(0 0 8px rgba(16,185,129,0.45))" }}
+                            >
+                                <m.ellipse
+                                    cx="50"
+                                    cy="50"
+                                    rx="49"
+                                    ry="49"
+                                    fill="none"
+                                    stroke="#10B981"
+                                    strokeWidth={3}
+                                    vectorEffect="non-scaling-stroke"
+                                    strokeLinecap="round"
+                                    initial={{ pathLength: 0 }}
+                                    animate={{ pathLength: 1 }}
+                                    transition={{
+                                        duration: prefersReducedMotion ? 0 : 0.5,
+                                        ease: "easeInOut",
+                                    }}
+                                />
+                            </svg>
 
                             {/* 中央成功提示 */}
                             <m.div
                                 className="relative z-10 flex flex-col items-center gap-2"
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.15, duration: 0.3 }}
+                                transition={{ delay: prefersReducedMotion ? 0 : 0.4, duration: 0.3 }}
                             >
                                 <div className="h-14 w-14 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg">
                                     <Check className="h-7 w-7 text-white" strokeWidth={3} />
