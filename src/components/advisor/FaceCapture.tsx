@@ -1116,6 +1116,11 @@ export function FaceCapture({ onCapture, onModelsLoaded, externalFaceApi }: Face
     // 从 ref 读取当前步骤，避免闭包过时
     const step = currentStepRef.current;
 
+    // 正脸拍摄瞬间记录个人仰头基准（tiltRatio），供 chin 步做差值判定
+    if (step === "front") {
+      baselineTiltRatioRef.current = lastTiltRatioRef.current;
+    }
+
     // 保存当前步骤的照片
     setCapturedImages(prev => ({
       ...prev,
